@@ -1,92 +1,83 @@
-# Uni+ Web
+# UniPlus Web — Sistema Unificado CEPS
 
-Frontend da plataforma **Uni+** da [UNIFESSPA](https://unifesspa.edu.br) — Universidade Federal do Sul e Sudeste do Pará.
+Frontend do Sistema Unificado CEPS da Unifesspa, construido como monorepo Nx com Angular 21.
 
-## Sobre
+## Aplicacoes
 
-Interface web para candidatos, servidores e gestores da UNIFESSPA interagirem com os processos seletivos e de ingresso. Desenvolvido pelo Departamento de Sistemas Acadêmicos (DISI/CTIC).
+| App | Descricao | Porta |
+|-----|-----------|-------|
+| **selecao** | Gestao de processos seletivos (editais, inscricoes, homologacao, notas, classificacao) | 4200 |
+| **ingresso** | Gestao de ingresso (chamadas, convocacoes, matriculas) | 4201 |
+| **portal** | Portal publico do candidato (inscricao, acompanhamento, documentos, recursos) | 4202 |
 
-## Apps
+## Bibliotecas compartilhadas
 
-| App | Descrição | Deploy |
-|---|---|---|
-| **selecao** | Processos seletivos — inscrição, acompanhamento, resultados | `selecao.uniplus.unifesspa.edu.br` |
-| **ingresso** | Matrícula — envio de documentos, homologação | `ingresso.uniplus.unifesspa.edu.br` |
-| **portal** | Portal público — editais, resultados, transparência | `uniplus.unifesspa.edu.br` |
+| Lib | Descricao |
+|-----|-----------|
+| **shared-ui** | Componentes reutilizaveis (cpf-input, data-table, file-upload, status-badge, etc.) |
+| **shared-auth** | Autenticacao Keycloak (services, guards, interceptors) |
+| **shared-data** | DTOs, API clients OpenAPI, utilitarios |
 
-## Libs compartilhadas
+## Pre-requisitos
 
-| Lib | Descrição |
-|---|---|
-| `shared-ui` | Componentes PrimeNG compartilhados |
-| `shared-auth` | Integração Keycloak/Gov.br |
-| `shared-data` | Clients TypeScript gerados do OpenAPI |
+- Node.js 22.x LTS
+- npm 10.x+
+- Docker (para build de producao)
+
+## Inicio rapido
+
+```bash
+# Instalar dependencias
+npm install
+
+# Servir a aplicacao selecao
+npx nx serve selecao
+
+# Abrir no navegador
+open http://localhost:4200
+```
+
+## Comandos
+
+```bash
+# Servir
+npx nx serve selecao
+npx nx serve ingresso
+npx nx serve portal
+
+# Build
+npx nx run-many --target=build --all
+
+# Testes
+npx nx run-many --target=vite:test --all
+
+# Lint
+npx nx run-many --target=lint --all
+
+# E2E
+npx nx e2e selecao-e2e
+
+# Gerar API clients
+npm run generate:api
+
+# Grafo de dependencias
+npx nx graph
+```
+
+## Docker
+
+```bash
+docker build -f docker/Dockerfile.selecao -t uniplus-selecao .
+docker build -f docker/Dockerfile.ingresso -t uniplus-ingresso .
+docker build -f docker/Dockerfile.portal -t uniplus-portal .
+```
 
 ## Stack
 
-- **Framework:** Angular 20 (LTS)
-- **UI Kit:** PrimeNG + Tailwind CSS
-- **State management:** NgRx SignalStore
-- **Workspace:** Nx
-- **Testes E2E:** Playwright
-- **Testes unitários:** Jest
-
-## Arquitetura
-
-Cada app é **independente** — compila e faz deploy como container separado no Kubernetes. Derrubar uma app para manutenção não afeta as outras.
-
-```
-apps/
-  selecao/        → container selecao-web  (pod K8s independente)
-  ingresso/       → container ingresso-web (pod K8s independente)
-  portal/         → container portal-web   (pod K8s independente)
-libs/
-  shared-ui/      → componentes compartilhados
-  shared-auth/    → autenticação
-  shared-data/    → clients API
-```
-
-## Pré-requisitos
-
-- Node.js 22 LTS
-- npm ou pnpm
-
-## Como executar
-
-```bash
-# Instalar dependências
-npm install
-
-# Executar app Seleção
-npx nx serve selecao
-
-# Executar app Ingresso
-npx nx serve ingresso
-
-# Executar Portal
-npx nx serve portal
-```
-
-## Testes
-
-```bash
-# Testes unitários (todas as apps)
-npx nx run-many --target=test
-
-# Testes E2E (Playwright)
-npx nx e2e selecao-e2e
-
-# Lint
-npx nx run-many --target=lint
-```
-
-## Contribuindo
-
-1. Crie uma branch: `feature/{slug}`, `fix/{slug}`
-2. Commits em conventional commits (pt-BR): `feat(selecao): adicionar formulário de inscrição`
-3. Abra um Pull Request para `main`
-4. Aguarde revisão e aprovação
-
-## Licença
-
-[MIT](LICENSE)
+- Angular 21 / TypeScript 5.9
+- Nx 22 (monorepo)
+- PrimeNG 21 (componentes UI)
+- Tailwind CSS 3 (estilizacao)
+- Keycloak (autenticacao)
+- Playwright (testes E2E)
+- Vitest (testes unitarios)

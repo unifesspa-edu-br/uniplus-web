@@ -1,0 +1,8 @@
+openapi: 3.0.3
+info:
+  title: API Ingresso - Sistema Unificado CEPS
+  description: API do módulo de Ingresso do Sistema Unificado CEPS da Unifesspa
+  version: 0.1.0
+  contact:
+    name: CTIC - Unifesspa
+paths: {}
