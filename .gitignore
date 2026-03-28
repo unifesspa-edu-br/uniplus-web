@@ -1,0 +1,32 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Angular / Nx
+dist/
+.angular/
+.nx/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+
+# Misc
+*.tgz
+.cache/
