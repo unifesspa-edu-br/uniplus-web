@@ -4,7 +4,7 @@
   "sourceRoot": "libs/shared-auth/src",
   "prefix": "auth",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:shared", "type:auth"],
   "targets": {
     "build": {
       "executor": "@nx/angular:ng-packagr-lite",

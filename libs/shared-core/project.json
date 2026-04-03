@@ -1,21 +1,21 @@
 {
-  "name": "shared-data",
+  "name": "shared-core",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared-data/src",
-  "prefix": "data",
+  "sourceRoot": "libs/shared-core/src",
+  "prefix": "core",
   "projectType": "library",
-  "tags": ["scope:shared", "type:data"],
+  "tags": ["scope:shared", "type:core"],
   "targets": {
     "build": {
       "executor": "@nx/angular:ng-packagr-lite",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/shared-data/ng-package.json",
-        "tsConfig": "libs/shared-data/tsconfig.lib.json"
+        "project": "libs/shared-core/ng-package.json",
+        "tsConfig": "libs/shared-core/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/shared-data/tsconfig.lib.prod.json"
+          "tsConfig": "libs/shared-core/tsconfig.lib.prod.json"
         },
         "development": {}
       },

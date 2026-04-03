@@ -82,6 +82,10 @@ npx nx affected --target=build
 npx nx affected --target=vite:test
 ```
 
+## Localização do repositório
+
+**REGRA ABSOLUTA:** este repositório deve estar clonado em `repositories/uniplus-web/` dentro do diretório de trabalho do projeto. NUNCA clonar ou criar cópias fora de `repositories/`.
+
 ## Git conventions
 
 - Conventional commits em pt-BR: `feat(selecao): adicionar listagem de editais`

@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "ing",
   "sourceRoot": "apps/ingresso/src",
-  "tags": [],
+  "tags": ["scope:ingresso", "type:app"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",

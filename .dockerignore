@@ -1,0 +1,17 @@
+.git
+.github
+.vscode
+node_modules
+dist
+tmp
+.nx
+.angular
+coverage
+*.md
+!README.md
+.env*
+.editorconfig
+.prettierrc
+.prettierignore
+playwright-report
+test-results

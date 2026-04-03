@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "sel",
   "sourceRoot": "apps/selecao/src",
-  "tags": [],
+  "tags": ["scope:selecao", "type:app"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",

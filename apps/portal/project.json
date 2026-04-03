@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "ptl",
   "sourceRoot": "apps/portal/src",
-  "tags": [],
+  "tags": ["scope:portal", "type:app"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
