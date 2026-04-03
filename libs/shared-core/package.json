@@ -1,0 +1,12 @@
+{
+  "name": "@uniplus/shared-core",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "vite": "^7.0.0",
+    "@analogjs/vite-plugin-angular": ">=2.0.0",
+    "@nx/vite": ">=22.0.0"
+  },
+  "sideEffects": false
+}

@@ -1,0 +1,8 @@
+openapi: 3.0.3
+info:
+  title: API Seleção - Sistema Unificado CEPS
+  description: API do módulo de Seleção do Sistema Unificado CEPS da Unifesspa
+  version: 0.1.0
+  contact:
+    name: CTIC - Unifesspa
+paths: {}
