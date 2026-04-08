@@ -20,7 +20,8 @@
             "input": "apps/selecao/public"
           }
         ],
-        "styles": ["apps/selecao/src/styles.scss"]
+        "styles": ["apps/selecao/src/styles.scss"],
+        "polyfills": ["zone.js"]
       },
       "configurations": {
         "production": {
