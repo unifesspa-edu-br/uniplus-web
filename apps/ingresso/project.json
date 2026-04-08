@@ -20,7 +20,8 @@
             "input": "apps/ingresso/public"
           }
         ],
-        "styles": ["apps/ingresso/src/styles.scss"]
+        "styles": ["apps/ingresso/src/styles.scss"],
+        "polyfills": ["zone.js"]
       },
       "configurations": {
         "production": {

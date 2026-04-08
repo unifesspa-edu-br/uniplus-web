@@ -20,7 +20,8 @@
             "input": "apps/portal/public"
           }
         ],
-        "styles": ["apps/portal/src/styles.scss"]
+        "styles": ["apps/portal/src/styles.scss"],
+        "polyfills": ["zone.js"]
       },
       "configurations": {
         "production": {
