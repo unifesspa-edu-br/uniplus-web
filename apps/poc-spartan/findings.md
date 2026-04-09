@@ -268,8 +268,120 @@ O tempo em workarounds (2h15) representou ~32% do tempo total. Em um projeto rea
 
 **Veredicto:** A abordagem headless + Gov.br tokens é correta. A questão é se o **Spartan** é o headless certo, ou se a **Zard UI** (que é Angular-native com Tailwind v4) resolve os problemas encontrados aqui. A PoC #18 vai responder isso.
 
+---
+
+## 10. Testes E2E automatizados — Protocolo padronizado
+
+**Protocolo:** [gist marmota-alpina/42dc5fe7...](https://gist.github.com/marmota-alpina/42dc5fe75a8fcb4a6ab837b256edb0a9)
+**Data de execução:** 2026-04-09
+**Resultado:** 70 passaram, 1 skipped (F10), 0 falhas
+
+### 10.1 Testes funcionais (F01–F15)
+
+| # | Cenário | Resultado | Observação |
+|---|---|---|---|
+| F01 | Página inicial | ✅ OK | Header Gov.br, título, 3 tabs, tab ativa |
+| F02 | Formulário vazio | ✅ OK | Placeholders corretos, sem erros visíveis |
+| F03 | Validação de erros | ✅ OK | Mensagens de erro aparecem ao blur, classe `border-govbr-danger` no HTML |
+| F04 | Preenchimento completo | ✅ OK | Todos os campos preenchidos sem erros |
+| F05 | CPF inválido | ✅ OK | `111.111.111-11` rejeitado, "CPF inválido" visível |
+| F06 | Email inválido | ✅ OK | "E-mail inválido" visível |
+| F07 | Tab Documentos | ✅ OK | Tab ativa com underline, modalidades e opção de curso listadas |
+| F08 | Seleção de modalidade | ✅ OK | Radio com borda azul e background primary-lightest |
+| F09 | Opção de curso | ✅ OK | Radio selecionado com indicador visual |
+| F10 | Tab Revisão com dados | ❌ Skipped | **Bug:** `computed` signal com `FormGroup.getRawValue()` não é reativo — tabela mostra "—" |
+| F11 | Dialog de confirmação | ✅ OK | Modal com overlay, título, botões Cancelar e Confirmar |
+| F12 | Fechar dialog | ✅ OK | Modal fecha ao clicar Cancelar |
+| F13 | Sucesso | ✅ OK | Alert verde "Inscrição enviada com sucesso!" |
+| F14 | Erro de validação | ✅ OK | Alert vermelho "Formulário incompleto" |
+| F15 | Navegação de volta | ✅ OK | Dados preservados ao navegar entre tabs |
+
+### 10.2 Testes de design tokens (T1–T8)
+
+| Grupo | Testes | Resultado | Observação |
+|---|---|---|---|
+| T1 — Tipografia | 10 + screenshot | ✅ OK | Raleway, tamanhos e weights conformes |
+| T2 — Cores de fundo | 6 + screenshot | ✅ OK | body, barra, header, footer, input, tabela header |
+| T3 — Cores de texto | 9 + screenshot | ✅ OK | Principal, header, footer, erro, placeholder, tabs, tabela |
+| T4 — Bordas | 7 + screenshot | ⚠️ Parcial | **Bug T4.2:** borda de input com erro não aplica visualmente (especificidade CSS) |
+| T5 — Focus ring | 5 + screenshots | ⚠️ Parcial | Inputs e tabs OK; botão dentro do dialog inconsistente via keyboard |
+| T6 — Hover states | 5 + screenshots | ✅ OK | Tab, botão, radio e tabela hover confirmados |
+| T7 — Espaçamento | 4 + screenshot | ✅ OK | Escala govbr (8/12/24px) nos inputs, botões e tabs |
+| T8 — Layout | 4 + screenshots | ✅ OK | Footer no bottom, header fixo, conteúdo centralizado, mobile 375px |
+
+### 10.3 Screenshots gerados (31 arquivos)
+
+```
+apps/poc-spartan-e2e/screenshots/
+├── 01-pagina-inicial.png      F01
+├── 02-form-vazio.png          F02
+├── 03-validacao-erros.png     F03
+├── 04-form-preenchido.png     F04
+├── 05-cpf-invalido.png        F05
+├── 06-email-invalido.png      F06
+├── 07-tab-documentos.png      F07
+├── 08-modalidade-selecionada  F08
+├── 09-opcao-curso.png         F09
+├── 11-dialog-confirmacao.png  F11
+├── 12-dialog-fechado.png      F12
+├── 13-sucesso.png             F13
+├── 14-erro-validacao.png      F14
+├── 15-navegacao-volta.png     F15
+├── t1-tipografia.png          T1
+├── t2-cores-fundo.png         T2
+├── t3-cores-texto.png         T3
+├── t4-bordas.png              T4
+├── t5-focus-*.png             T5 (5 arquivos)
+├── t6-hover-*.png             T6 (5 arquivos)
+├── t7-espacamento.png         T7
+├── t8-layout-desktop.png      T8.1–T8.3
+└── t8-layout-mobile.png       T8.4
+```
+
+---
+
+## 11. Comparação visual — PoC Spartan UI vs Gov.br DS oficial
+
+Screenshots de referência capturados do site oficial Gov.br DS (12 componentes) em `screenshots/ref-govbr-*.png`.
+
+### 11.1 Scorecard por componente
+
+| Componente | Fidelidade | Observação |
+|---|---|---|
+| Input de texto | ✅ OK | Bordas gray-20, radius 4px, placeholder gray-40, padding 8×12px — confere com Gov.br DS |
+| Select/dropdown | ✅ OK | Select nativo com mesma estilização. Placeholder e bordas corretos |
+| Radio button | ⚠️ Parcial | Indicador circular customizado OK; cor do border ao selecionar difere ~10% (`rgb(36,93,184)` vs `rgb(19,81,180)`). Gov.br DS usa radio simples, PoC usa card wrapper |
+| Tabs | ✅ OK | Underline azul ativo, texto gray-60 inativo, transição hover funcional. Muito fiel ao Gov.br DS Tab |
+| Dialog/Modal | ✅ OK | Overlay escuro, centralizado, radius 8px, botões pill. Fiel ao padrão Modal do Gov.br DS |
+| Table (CDK) | ✅ OK | Header azul primary, texto branco, zebra striping, hover primary-lightest |
+| Alert/Message | ✅ OK | Border-left 4px, ícone SVG, título bold, descrição gray-60. Sucesso e erro conferem |
+| Header Gov.br | ⚠️ Parcial | Barra darkest + logo + "GOVERNO FEDERAL" OK. Simplificado (sem hambúrguer mobile, busca, login) |
+| Botão primário | ✅ OK | Pill 100px, bg primary, font semibold 14px, hover para primary-hover |
+| Footer | ✅ OK | Primary-dark, texto branco, mt-auto no bottom |
+
+### 11.2 Findings visuais da comparação
+
+| # | Severidade | Componente | Finding |
+|---|---|---|---|
+| V1 | Bug | Input (erro) | Borda não muda para vermelho quando inválido. Classe `border-govbr-danger` é adicionada pelo Angular, mas não sobrepõe `border-govbr-gray-20` (mesma especificidade CSS). Correção: usar `!border-govbr-danger` (important) ou reorganizar classes condicionais |
+| V2 | Bug | Tabela revisão | `computed` signal com `FormGroup.getRawValue()` não é reativo — dados preenchidos não aparecem. Correção: usar `toSignal(form.valueChanges)` ou `effect()` |
+| V3 | Minor | Radio | Cor da borda ao selecionar (`rgb(36,93,184)`) difere do token primary (`rgb(19,81,180)`). Possível cálculo intermediário do Tailwind com `has-[:checked]` |
+| V4 | Design | Radio | Gov.br DS usa radio circular simples; PoC usa cards com borda. Funciona bem mas diverge esteticamente |
+| V5 | Design | Header | Simplificado vs Gov.br DS completo (falta menu hambúrguer, busca, avatar login). Aceitável para PoC |
+| V6 | OK | Tipografia | Raleway carregada, tamanhos (11.2/12.8/14/20/24/32px) e weights conferem com tokens |
+| V7 | OK | Cores | Todas as cores primary, success, danger, grays confirmadas via computed styles (T2, T3) |
+| V8 | OK | Espaçamento | Escala govbr (4/8/12/16/24/32px) aplicada corretamente |
+| V9 | OK | Focus ring | `*:focus-visible` global com outline 2px solid primary + offset 2px. Conforme WCAG 2.1 AA |
+| V10 | OK | Responsividade | Mobile 375px: nav escondida, form full-width, footer no bottom |
+
+### 11.3 Resumo da comparação visual
+
+**8/10 componentes OK ou aceitáveis.** Os dois bugs (V1, V2) são corrigíveis com ajustes pontuais e não comprometem a avaliação da biblioteca Spartan UI. A integração visual com Gov.br DS tokens via Tailwind é sólida — cores, tipografia, espaçamento e estados interativos reproduzem fielmente o design system oficial.
+
+---
+
 ### Próximos passos
 1. **Executar PoC Zard UI** (issue #18) — validar se Select, Radio e Dialog funcionam sem workarounds
-2. **Comparar findings** lado a lado: Spartan vs Zard UI
+2. **Comparar findings** lado a lado: Spartan vs Zard UI (usando mesmo protocolo de testes)
 3. Decisão final → ADR-018
 4. Revisitar ADR-017 (Zone.js) — independente da lib, zoneless funciona
