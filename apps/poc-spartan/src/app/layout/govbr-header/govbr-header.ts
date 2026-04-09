@@ -8,8 +8,11 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
     <!-- Barra superior Gov.br -->
     <div class="bg-govbr-primary-darkest text-govbr-pure-0 text-govbr-xs py-govbr-1 px-govbr-5">
       <div class="max-w-screen-xl mx-auto flex items-center gap-govbr-2">
-        <img src="https://www.gov.br/ds/assets/img/govbr-logo-small.png"
-             alt="Logo Gov.br" class="h-4" loading="lazy" />
+        <!-- Logo Gov.br inline SVG -->
+        <svg width="36" height="16" viewBox="0 0 112 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Logo Gov.br">
+          <text x="0" y="28" fill="white" font-family="Raleway, sans-serif" font-size="24" font-weight="700">gov</text>
+          <text x="52" y="28" fill="#FFCD07" font-family="Raleway, sans-serif" font-size="24" font-weight="700">.br</text>
+        </svg>
         <span class="font-semibold tracking-wide">GOVERNO FEDERAL</span>
       </div>
     </div>

@@ -1,28 +1,12 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import {
-  BrnSelect,
-  BrnSelectTrigger,
-  BrnSelectContent,
-  BrnSelectList,
-  BrnSelectItem,
-  BrnSelectPlaceholder,
-} from '@spartan-ng/brain/select';
 import { InscricaoForm } from '../../services/inscricao-form.service';
 import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
 
 @Component({
   selector: 'poc-dados-pessoais-tab',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    BrnSelect,
-    BrnSelectTrigger,
-    BrnSelectContent,
-    BrnSelectList,
-    BrnSelectItem,
-    BrnSelectPlaceholder,
-  ],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-govbr-5">
@@ -112,32 +96,26 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
         }
       </div>
 
-      <!-- Curso (Spartan Select — attribute directives) -->
+      <!-- Curso (select nativo estilizado Gov.br) -->
+      <!-- FINDING: BrnSelect requer BrnPopover para dropdown overlay.
+           Sem popover, o conteúdo renderiza inline. Para a PoC, usamos select nativo. -->
       <div class="flex flex-col gap-govbr-1">
-        <label class="text-govbr-sm font-semibold text-govbr-gray-80">
+        <label for="curso" class="text-govbr-sm font-semibold text-govbr-gray-80">
           Curso <span class="text-govbr-danger">*</span>
         </label>
-        <div brnSelect [formControl]="form().controls.cursoId" placeholder="Selecione um curso">
-          <button brnSelectTrigger
-            class="flex items-center justify-between w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm
-                   bg-govbr-pure-0 text-govbr-gray-80 text-govbr-base cursor-pointer
-                   border-govbr-gray-20 hover:border-govbr-primary">
-            <span brnSelectPlaceholder></span>
-          </button>
-          <div brnSelectContent
-            class="bg-govbr-pure-0 border border-govbr-gray-10 rounded-govbr-sm shadow-lg mt-1 max-h-60 overflow-y-auto">
-            <div brnSelectList>
-              @for (curso of cursos; track curso.id) {
-                <div brnSelectItem [value]="curso.id"
-                  class="px-govbr-3 py-govbr-2 text-govbr-base text-govbr-gray-80
-                         hover:bg-govbr-primary-lightest cursor-pointer
-                         data-[selected]:bg-govbr-primary data-[selected]:text-govbr-pure-0">
-                  {{ curso.nome }}
-                </div>
-              }
-            </div>
-          </div>
-        </div>
+        <select
+          id="curso"
+          [formControl]="form().controls.cursoId"
+          class="w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm text-govbr-base
+                 bg-govbr-pure-0 text-govbr-gray-80 appearance-none
+                 border-govbr-gray-20 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
+                 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23636363%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]
+                 bg-no-repeat bg-[right_12px_center]">
+          <option value="" disabled>Selecione um curso</option>
+          @for (curso of cursos; track curso.id) {
+            <option [value]="curso.id">{{ curso.nome }}</option>
+          }
+        </select>
         @if (form().controls.cursoId.touched && form().controls.cursoId.errors?.['required']) {
           <span class="text-govbr-xs text-govbr-danger mt-govbr-1">Selecione um curso.</span>
         }
@@ -145,30 +123,22 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
 
       <!-- Cidade -->
       <div class="flex flex-col gap-govbr-1">
-        <label class="text-govbr-sm font-semibold text-govbr-gray-80">
+        <label for="cidade" class="text-govbr-sm font-semibold text-govbr-gray-80">
           Cidade de residência <span class="text-govbr-danger">*</span>
         </label>
-        <div brnSelect [formControl]="form().controls.cidadeId" placeholder="Selecione uma cidade">
-          <button brnSelectTrigger
-            class="flex items-center justify-between w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm
-                   bg-govbr-pure-0 text-govbr-gray-80 text-govbr-base cursor-pointer
-                   border-govbr-gray-20 hover:border-govbr-primary">
-            <span brnSelectPlaceholder></span>
-          </button>
-          <div brnSelectContent
-            class="bg-govbr-pure-0 border border-govbr-gray-10 rounded-govbr-sm shadow-lg mt-1 max-h-60 overflow-y-auto">
-            <div brnSelectList>
-              @for (cidade of cidades; track cidade.id) {
-                <div brnSelectItem [value]="cidade.id"
-                  class="px-govbr-3 py-govbr-2 text-govbr-base text-govbr-gray-80
-                         hover:bg-govbr-primary-lightest cursor-pointer
-                         data-[selected]:bg-govbr-primary data-[selected]:text-govbr-pure-0">
-                  {{ cidade.nome }} — {{ cidade.uf }}
-                </div>
-              }
-            </div>
-          </div>
-        </div>
+        <select
+          id="cidade"
+          [formControl]="form().controls.cidadeId"
+          class="w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm text-govbr-base
+                 bg-govbr-pure-0 text-govbr-gray-80 appearance-none
+                 border-govbr-gray-20 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
+                 bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23636363%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]
+                 bg-no-repeat bg-[right_12px_center]">
+          <option value="" disabled>Selecione uma cidade</option>
+          @for (cidade of cidades; track cidade.id) {
+            <option [value]="cidade.id">{{ cidade.nome }} — {{ cidade.uf }}</option>
+          }
+        </select>
         @if (form().controls.cidadeId.touched && form().controls.cidadeId.errors?.['required']) {
           <span class="text-govbr-xs text-govbr-danger mt-govbr-1">Selecione uma cidade.</span>
         }

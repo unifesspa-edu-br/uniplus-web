@@ -31,8 +31,12 @@
 
 ### Problemas encontrados
 - **Dialog** (`@spartan-ng/brain/dialog`): O `BrnDialogContent` exige `TemplateRef` — não funciona com elementos DOM simples. A solução foi implementar um dialog custom com `@if` + signal, sem usar o brain do dialog. Isso é um gap significativo.
+- **Select** (`@spartan-ng/brain/select`): O `BrnSelectContent` renderiza inline sem overlay — requer `BrnPopover` para posicionamento dropdown. Sem ele, a lista de opções aparece sempre visível no fluxo do documento, quebrando o layout. Para a PoC, substituímos por `<select>` nativo estilizado. Em produção, é necessário configurar o `BrnPopover` corretamente ou usar a abordagem helm completa do Spartan.
+- **Radio** (`@spartan-ng/brain/radio-group`): O elemento `brn-radio` é um custom element vazio — não renderiza indicador visual. As pseudo-classes CSS (`::after`, `data-[state=checked]`) aplicadas via Tailwind não funcionam nele. A solução foi usar `<input type="radio">` nativo com `sr-only` + indicador visual via CSS adjacente (`input:checked + .indicator`).
 - **Selectors mistos:** Spartan usa uma mistura de element selectors (`brn-checkbox`, `brn-radio`) e attribute selectors (`[brnTabs]`, `[brnSelect]`). Não há padrão consistente — requer consulta à API de cada componente.
 - **Select marca touched na inicialização** em testes jsdom — comportamento inesperado que dificulta testes de validação visual.
+- **Logo Gov.br:** A URL externa `https://www.gov.br/ds/assets/img/govbr-logo-small.png` não carrega — substituída por SVG inline.
+- **Footer flutuante:** O layout precisou de `flex flex-col min-h-screen` + `flex-1` no main + `mt-auto` no footer para sticky footer.
 
 ### Helm directives
 - **Decisão:** Não criamos helm directives separadas na PoC. As classes Tailwind Gov.br foram aplicadas diretamente nos templates. Isso é mais simples mas menos reutilizável. Em produção, criar hlm-* directives centralizaria o estilo Gov.br.

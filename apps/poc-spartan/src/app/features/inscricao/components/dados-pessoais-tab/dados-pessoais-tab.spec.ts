@@ -32,7 +32,8 @@ describe('DadosPessoaisTabComponent', () => {
     expect(el.querySelector('#nome')).toBeTruthy();
     expect(el.querySelector('#cpf')).toBeTruthy();
     expect(el.querySelector('#email')).toBeTruthy();
-    expect(el.querySelector('[brnSelect]')).toBeTruthy();
+    expect(el.querySelector('#curso')).toBeTruthy();
+    expect(el.querySelector('#cidade')).toBeTruthy();
   });
 
   it('deve exibir erro quando nome está vazio e touched', async () => {
