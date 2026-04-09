@@ -53,6 +53,7 @@ import { MODALIDADES_COTA } from '../../models/inscricao.model';
             <label
               class="flex items-center gap-govbr-3 py-govbr-2 cursor-pointer group">
               <input type="radio"
+                name="modalidadeCota"
                 [formControl]="form().controls.modalidadeCota"
                 [value]="modalidade.id"
                 class="sr-only" />
@@ -76,6 +77,7 @@ import { MODALIDADES_COTA } from '../../models/inscricao.model';
             <label
               class="flex items-center gap-govbr-3 py-govbr-2 cursor-pointer group">
               <input type="radio"
+                name="opcaoCurso"
                 [formControl]="form().controls.opcaoCurso"
                 [value]="opcao.value"
                 class="sr-only" />
