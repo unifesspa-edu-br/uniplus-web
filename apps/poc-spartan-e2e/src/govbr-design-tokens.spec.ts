@@ -319,24 +319,16 @@ test.describe('Design tokens Gov.br DS — PoC Spartan', () => {
       ).toBeTruthy();
     });
 
-    // FINDING: has-[:checked] via Tailwind computa rgb(36, 93, 184) em vez de
-    // rgb(19, 81, 180). Possivel calculo intermediario do Tailwind com o token.
-    test('T4.10: radio selecionado — border primary', async ({ page }) => {
+    test('T4.10: radio selecionado — indicador com cor primary', async ({ page }) => {
       await page.locator('button[brnTabsTrigger="documentos"]').click();
       await page.locator('label', { hasText: 'Ampla Concorrência' }).click();
       await page.waitForTimeout(200);
 
-      const label = page.locator('label', { hasText: 'Ampla Concorrência' });
-      const styles = await getStyles(label, ['border-top-color']);
-      // Verificar que mudou do gray-10 para algo azul
-      expect(styles['border-top-color']).not.toBe('rgb(230, 230, 230)');
-      const match = styles['border-top-color'].match(/rgb\((\d+), (\d+), (\d+)\)/);
-      expect(match).not.toBeNull();
-      if (match) {
-        const [, r, , b] = match.map(Number);
-        expect(b).toBeGreaterThan(150);
-        expect(r).toBeLessThan(100);
-      }
+      // Indicador circular do radio selecionado deve ter background primary
+      const indicator = page.locator('label', { hasText: 'Ampla Concorrência' }).locator('.govbr-radio-indicator');
+      const styles = await getStyles(indicator, ['background-color', 'border-color']);
+      expect(styles['background-color']).toBe('rgb(19, 81, 180)');
+      expect(styles['border-color']).toBe('rgb(19, 81, 180)');
     });
 
     test('T4: screenshot de referência bordas', async ({ page }) => {
@@ -449,14 +441,13 @@ test.describe('Design tokens Gov.br DS — PoC Spartan', () => {
       await screenshot(page, 't6-hover-btn-cancelar');
     });
 
-    test('T6.4: radio item — hover muda borda e background', async ({ page }) => {
+    test('T6.4: radio label — hover mostra cursor pointer', async ({ page }) => {
       await page.locator('button[brnTabsTrigger="documentos"]').click();
       const radio = page.locator('label', { hasText: 'Ampla Concorrência' });
       await radio.hover();
       await page.waitForTimeout(200);
-      const styles = await getStyles(radio, ['border-top-color', 'background-color']);
-      expect(styles['border-top-color']).toBe('rgb(19, 81, 180)');
-      expect(styles['background-color']).toBe('rgb(237, 245, 255)');
+      const styles = await getStyles(radio, ['cursor']);
+      expect(styles['cursor']).toBe('pointer');
       await screenshot(page, 't6-hover-radio');
     });
 
@@ -565,11 +556,15 @@ test.describe('Design tokens Gov.br DS — PoC Spartan', () => {
       const mainBox = await main.boundingBox();
       expect(mainBox).not.toBeNull();
 
-      // Nav do header deve estar escondida
-      const nav = page.locator('poc-govbr-header nav');
+      // Nav desktop do header deve estar escondida
+      const nav = page.locator('poc-govbr-header nav.md\\:flex');
       if ((await nav.count()) > 0) {
         await expect(nav).not.toBeVisible();
       }
+
+      // Botão hambúrguer deve estar visível no mobile
+      const hamburger = page.locator('poc-govbr-header button[aria-label="Menu de navegação"]');
+      await expect(hamburger).toBeVisible();
 
       await screenshot(page, 't8-layout-mobile');
     });

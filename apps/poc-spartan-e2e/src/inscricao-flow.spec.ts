@@ -131,8 +131,8 @@ test.describe('Fluxo de inscrição — PoC Spartan + Gov.br DS', () => {
     // Clicar no label da Ampla Concorrência
     await page.locator('label', { hasText: 'Ampla Concorrência' }).click();
 
-    // Radio selecionado — label deve ter estilo de seleção
-    await expect(page.locator('label', { hasText: 'Ampla Concorrência' })).toHaveClass(/border-govbr-primary/);
+    // Radio selecionado — input checked
+    await expect(page.locator('label', { hasText: 'Ampla Concorrência' }).locator('input[type="radio"]')).toBeChecked();
 
     await screenshot(page, '08-modalidade-selecionada');
   });
@@ -143,7 +143,7 @@ test.describe('Fluxo de inscrição — PoC Spartan + Gov.br DS', () => {
 
     await page.locator('label', { hasText: '1ª Opção' }).click();
 
-    await expect(page.locator('label', { hasText: '1ª Opção' })).toHaveClass(/border-govbr-primary/);
+    await expect(page.locator('label', { hasText: '1ª Opção' }).locator('input[type="radio"]')).toBeChecked();
 
     await screenshot(page, '09-opcao-curso');
   });

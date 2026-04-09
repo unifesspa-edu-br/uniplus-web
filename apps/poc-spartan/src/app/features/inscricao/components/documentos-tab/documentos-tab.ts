@@ -13,7 +13,7 @@ import { MODALIDADES_COTA } from '../../models/inscricao.model';
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      border: 2px solid var(--gray-20, #cccccc);
+      border: 2px solid #cccccc;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -30,8 +30,8 @@ import { MODALIDADES_COTA } from '../../models/inscricao.model';
       transition: transform 0.15s;
     }
     input:checked + .govbr-radio-indicator {
-      border-color: var(--blue-warm-vivid-70, #1351b4);
-      background-color: var(--blue-warm-vivid-70, #1351b4);
+      border-color: #1351b4;
+      background-color: #1351b4;
     }
     input:checked + .govbr-radio-indicator::after {
       transform: scale(1);
@@ -51,12 +51,7 @@ import { MODALIDADES_COTA } from '../../models/inscricao.model';
         <div class="flex flex-col gap-govbr-2" role="radiogroup" aria-label="Modalidade de concorrência">
           @for (modalidade of modalidades; track modalidade.id) {
             <label
-              class="flex items-center gap-govbr-2 px-govbr-3 py-govbr-2
-                     border border-govbr-gray-10 rounded-govbr-sm
-                     bg-govbr-pure-0 cursor-pointer
-                     hover:border-govbr-primary hover:bg-govbr-primary-lightest
-                     has-[:checked]:border-govbr-primary has-[:checked]:bg-govbr-primary-lightest
-                     transition-colors">
+              class="flex items-center gap-govbr-3 py-govbr-2 cursor-pointer group">
               <input type="radio"
                 [formControl]="form().controls.modalidadeCota"
                 [value]="modalidade.id"
@@ -76,15 +71,10 @@ import { MODALIDADES_COTA } from '../../models/inscricao.model';
         <legend class="text-govbr-sm font-semibold text-govbr-gray-80 mb-govbr-2">
           Opção de curso <span class="text-govbr-danger">*</span>
         </legend>
-        <div class="flex gap-govbr-4" role="radiogroup" aria-label="Opção de curso">
+        <div class="flex gap-govbr-6" role="radiogroup" aria-label="Opção de curso">
           @for (opcao of opcoesLabel; track opcao.value) {
             <label
-              class="flex items-center gap-govbr-2 px-govbr-4 py-govbr-3
-                     border border-govbr-gray-10 rounded-govbr-sm
-                     bg-govbr-pure-0 cursor-pointer flex-1 justify-center
-                     hover:border-govbr-primary hover:bg-govbr-primary-lightest
-                     has-[:checked]:border-govbr-primary has-[:checked]:bg-govbr-primary-lightest
-                     transition-colors">
+              class="flex items-center gap-govbr-3 py-govbr-2 cursor-pointer group">
               <input type="radio"
                 [formControl]="form().controls.opcaoCurso"
                 [value]="opcao.value"
