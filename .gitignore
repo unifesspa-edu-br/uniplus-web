@@ -42,6 +42,7 @@ testem.log
 test-results/
 playwright-report/
 results/
+**/screenshots/
 
 # System Files
 .DS_Store
