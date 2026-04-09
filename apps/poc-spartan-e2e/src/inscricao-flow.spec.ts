@@ -149,11 +149,7 @@ test.describe('Fluxo de inscrição — PoC Spartan + Gov.br DS', () => {
   });
 
   // F10 — Tab Revisão com tabela
-  // FINDING: computed signal com form.getRawValue() não é reativo — os valores preenchidos
-  // nos campos não aparecem na tabela de revisão. O computed() é avaliado uma vez e não
-  // re-executa quando o FormGroup muda (getRawValue() não é um signal).
-  // Solução: converter para toSignal(form.valueChanges) ou usar form.getRawValue() com effect().
-  test.fixme('F10: deve exibir tabela de revisão com 7 linhas', async ({ page }) => {
+  test('F10: deve exibir tabela de revisão com 7 linhas', async ({ page }) => {
     // Preencher formulário completo primeiro
     await page.fill('#nome', 'Maria da Silva');
     await page.fill('#cpf', '529.982.247-25');
@@ -179,11 +175,11 @@ test.describe('Fluxo de inscrição — PoC Spartan + Gov.br DS', () => {
     const rows = table.locator('tr[cdk-row]');
     await expect(rows).toHaveCount(7);
 
-    // Valores corretos na tabela (aguardar computed signal atualizar)
-    await expect(page.getByText('Maria da Silva')).toBeVisible({ timeout: 3000 });
-    await expect(page.getByText('529.982.247-25')).toBeVisible();
-    await expect(page.getByText('maria@email.com')).toBeVisible();
-    await expect(page.getByText('Ciência da Computação')).toBeVisible();
+    // Valores corretos na tabela (scoped ao table para evitar duplicatas com select)
+    await expect(table.getByText('Maria da Silva')).toBeVisible({ timeout: 3000 });
+    await expect(table.getByText('529.982.247-25')).toBeVisible();
+    await expect(table.getByText('maria@email.com')).toBeVisible();
+    await expect(table.getByText('Ciência da Computação')).toBeVisible();
 
     // Header azul
     const headerRow = table.locator('tr[cdk-header-row]');

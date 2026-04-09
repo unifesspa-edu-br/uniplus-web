@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal, effect } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { CdkTableModule } from '@angular/cdk/table';
 import { InscricaoForm } from '../../services/inscricao-form.service';
@@ -65,15 +65,27 @@ interface ResumoItem {
 export class RevisaoTabComponent {
   readonly form = input.required<FormGroup<InscricaoForm>>();
   readonly colunas = ['campo', 'valor'];
+  readonly resumoData = signal<ResumoItem[]>([]);
 
-  readonly resumoData = computed<ResumoItem[]>(() => {
-    const f = this.form().getRawValue();
+  constructor() {
+    effect(() => {
+      const fg = this.form();
+      // Leitura inicial
+      this.atualizarResumo(fg);
+      // Subscrever mudanças do form
+      const sub = fg.valueChanges.subscribe(() => this.atualizarResumo(fg));
+      return () => sub.unsubscribe();
+    });
+  }
+
+  private atualizarResumo(fg: FormGroup<InscricaoForm>): void {
+    const f = fg.getRawValue();
     const curso = CURSOS_MOCK.find((c) => c.id === f.cursoId);
     const cidade = CIDADES_MOCK.find((c) => c.id === f.cidadeId);
     const modalidade = MODALIDADES_COTA.find((m) => m.id === f.modalidadeCota);
     const opcaoLabel = f.opcaoCurso === 'primeira' ? '1ª Opção' : f.opcaoCurso === 'segunda' ? '2ª Opção' : '';
 
-    return [
+    this.resumoData.set([
       { campo: 'Nome completo', valor: f.nome },
       { campo: 'CPF', valor: f.cpf },
       { campo: 'E-mail', valor: f.email },
@@ -81,6 +93,6 @@ export class RevisaoTabComponent {
       { campo: 'Cidade', valor: cidade ? `${cidade.nome} — ${cidade.uf}` : '' },
       { campo: 'Modalidade de concorrência', valor: modalidade?.label ?? '' },
       { campo: 'Opção de curso', valor: opcaoLabel },
-    ];
-  });
+    ]);
+  }
 }

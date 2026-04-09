@@ -274,7 +274,7 @@ O tempo em workarounds (2h15) representou ~32% do tempo total. Em um projeto rea
 
 **Protocolo:** [gist marmota-alpina/42dc5fe7...](https://gist.github.com/marmota-alpina/42dc5fe75a8fcb4a6ab837b256edb0a9)
 **Data de execução:** 2026-04-09
-**Resultado:** 70 passaram, 1 skipped (F10), 0 falhas
+**Resultado:** 71 passaram, 0 skipped, 0 falhas
 
 ### 10.1 Testes funcionais (F01–F15)
 
@@ -289,7 +289,7 @@ O tempo em workarounds (2h15) representou ~32% do tempo total. Em um projeto rea
 | F07 | Tab Documentos | ✅ OK | Tab ativa com underline, modalidades e opção de curso listadas |
 | F08 | Seleção de modalidade | ✅ OK | Radio com borda azul e background primary-lightest |
 | F09 | Opção de curso | ✅ OK | Radio selecionado com indicador visual |
-| F10 | Tab Revisão com dados | ❌ Skipped | **Bug:** `computed` signal com `FormGroup.getRawValue()` não é reativo — tabela mostra "—" |
+| F10 | Tab Revisão com dados | ✅ OK | Tabela reativa via `effect` + `valueChanges` — dados preenchidos aparecem corretamente |
 | F11 | Dialog de confirmação | ✅ OK | Modal com overlay, título, botões Cancelar e Confirmar |
 | F12 | Fechar dialog | ✅ OK | Modal fecha ao clicar Cancelar |
 | F13 | Sucesso | ✅ OK | Alert verde "Inscrição enviada com sucesso!" |
@@ -303,7 +303,7 @@ O tempo em workarounds (2h15) representou ~32% do tempo total. Em um projeto rea
 | T1 — Tipografia | 10 + screenshot | ✅ OK | Raleway, tamanhos e weights conformes |
 | T2 — Cores de fundo | 6 + screenshot | ✅ OK | body, barra, header, footer, input, tabela header |
 | T3 — Cores de texto | 9 + screenshot | ✅ OK | Principal, header, footer, erro, placeholder, tabs, tabela |
-| T4 — Bordas | 7 + screenshot | ⚠️ Parcial | **Bug T4.2:** borda de input com erro não aplica visualmente (especificidade CSS) |
+| T4 — Bordas | 7 + screenshot | ✅ OK | T4.2 corrigido: borda vermelha aplica via binding condicional |
 | T5 — Focus ring | 5 + screenshots | ⚠️ Parcial | Inputs e tabs OK; botão dentro do dialog inconsistente via keyboard |
 | T6 — Hover states | 5 + screenshots | ✅ OK | Tab, botão, radio e tabela hover confirmados |
 | T7 — Espaçamento | 4 + screenshot | ✅ OK | Escala govbr (8/12/24px) nos inputs, botões e tabs |
@@ -411,7 +411,7 @@ Screenshots de referência capturados do site oficial Gov.br DS (12 componentes)
 
 ### 12.3 Resultado dos testes após correções
 
-**70 passaram | 1 skipped (F10) | 0 falhas** — mesmo resultado, agora com T4.10 verificando cor exata `rgb(19, 81, 180)`.
+**71 passaram | 0 skipped | 0 falhas** — incluindo F10 (tabela reativa) e T4.2 (borda vermelha).
 
 ### 12.4 Novo scorecard visual — 10/10
 
@@ -428,17 +428,17 @@ Screenshots de referência capturados do site oficial Gov.br DS (12 componentes)
 | Botão primário | ✅ OK | ✅ OK | — |
 | Footer | ✅ OK | ✅ OK | — |
 
-### 12.5 Findings visuais remanescentes
+### 12.5 Findings — todos corrigidos
 
-| # | Severidade | Descrição | Status |
-|---|---|---|---|
-| V1 | Bug | Borda de input com erro não aplica visualmente | Mantido — requer refactor de especificidade CSS |
-| V2 | Bug | Tabela revisão não reativa (computed + FormGroup) | Mantido — requer refactor para toSignal() |
-| V3 | Minor | Cor da borda do radio selecionado | ✅ Corrigido |
-| V4 | Design | Radio em card vs circular simples | ✅ Corrigido |
-| V5 | Design | Header simplificado | ✅ Corrigido |
+| # | Severidade | Descrição | Status | Correção |
+|---|---|---|---|---|
+| V1 | Bug | Borda de input com erro não aplica visualmente | ✅ Corrigido | Removido `border-govbr-gray-20` estático; binding condicional alterna entre gray-20 e danger |
+| V2 | Bug | Tabela revisão não reativa (computed + FormGroup) | ✅ Corrigido | Substituído `computed` por `effect` + `signal` + `valueChanges.subscribe()` |
+| V3 | Minor | Cor da borda do radio selecionado | ✅ Corrigido | Hex direto `#1351b4` no CSS do indicador |
+| V4 | Design | Radio em card vs circular simples | ✅ Corrigido | Removido card wrapper, layout circular Gov.br DS |
+| V5 | Design | Header simplificado | ✅ Corrigido | Hambúrguer, busca, login adicionados |
 
-**V1 e V2 são bugs funcionais** (não visuais do scorecard) e estão documentados como itens de correção para a implementação real, não para a PoC.
+**0 findings remanescentes.** Todos os 71 testes E2E passam.
 
 ---
 

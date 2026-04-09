@@ -26,9 +26,10 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
           placeholder="Digite seu nome completo"
           class="w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm text-govbr-base
                  bg-govbr-pure-0 text-govbr-gray-80
-                 border-govbr-gray-20 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
+                 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
                  placeholder:text-govbr-gray-40"
           [class.border-govbr-danger]="form().controls.nome.touched && form().controls.nome.invalid"
+          [class.border-govbr-gray-20]="!(form().controls.nome.touched && form().controls.nome.invalid)"
         />
         @if (form().controls.nome.touched && form().controls.nome.invalid) {
           <span class="text-govbr-xs text-govbr-danger mt-govbr-1">
@@ -54,9 +55,10 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
           maxlength="14"
           class="w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm text-govbr-base
                  bg-govbr-pure-0 text-govbr-gray-80
-                 border-govbr-gray-20 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
+                 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
                  placeholder:text-govbr-gray-40"
           [class.border-govbr-danger]="form().controls.cpf.touched && form().controls.cpf.invalid"
+          [class.border-govbr-gray-20]="!(form().controls.cpf.touched && form().controls.cpf.invalid)"
         />
         @if (form().controls.cpf.touched && form().controls.cpf.invalid) {
           <span class="text-govbr-xs text-govbr-danger mt-govbr-1">
@@ -81,9 +83,10 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
           placeholder="seu.email@exemplo.com"
           class="w-full px-govbr-3 py-govbr-2 border rounded-govbr-sm text-govbr-base
                  bg-govbr-pure-0 text-govbr-gray-80
-                 border-govbr-gray-20 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
+                 focus:border-govbr-primary focus:ring-2 focus:ring-govbr-primary/20
                  placeholder:text-govbr-gray-40"
           [class.border-govbr-danger]="form().controls.email.touched && form().controls.email.invalid"
+          [class.border-govbr-gray-20]="!(form().controls.email.touched && form().controls.email.invalid)"
         />
         @if (form().controls.email.touched && form().controls.email.invalid) {
           <span class="text-govbr-xs text-govbr-danger mt-govbr-1">

@@ -259,24 +259,15 @@ test.describe('Design tokens Gov.br DS — PoC Spartan', () => {
     // Playwright .focus() marca o campo como touched, mas a classe CSS Tailwind
     // aplica via binding Angular dinâmico que requer change detection.
     // Em headless, a transição pode não completar antes da leitura do computed style.
-    // FINDING: [class.border-govbr-danger] no input com erro NÃO é aplicado visualmente.
-    // A mensagem de erro aparece, mas a borda do input permanece gray-20.
-    // Bug confirmado via screenshot: campo Nome inválido+touched mantém borda cinza.
-    // Provável causa: especificidade CSS — a classe base `border-govbr-gray-20` no
-    // template tem mesma especificidade que `border-govbr-danger` adicionada via binding.
-    // Correção: usar `!border-govbr-danger` (important) ou reorganizar classes condicionais.
     test('T4.2: input com erro — border-color danger', async ({ page }) => {
       await page.locator('#nome').click();
       await page.keyboard.type('x');
       await page.keyboard.press('Backspace');
       await page.locator('#cpf').click();
       await page.waitForTimeout(200);
-      // Mensagem de erro deve aparecer mesmo sem borda vermelha
       await expect(page.getByText('Nome é obrigatório')).toBeVisible();
       const styles = await getStyles(page.locator('#nome'), ['border-top-color']);
-      // BUG: esperado rgb(229, 34, 7) mas recebe rgb(204, 204, 204)
-      // Aceitar valor atual e documentar como finding
-      expect(styles['border-top-color']).toBe('rgb(204, 204, 204)');
+      expect(styles['border-top-color']).toBe('rgb(229, 34, 7)');
     });
 
     test('T4.3: input border-radius — 4px', async ({ page }) => {
