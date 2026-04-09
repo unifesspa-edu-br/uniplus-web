@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// Importar APENAS os design tokens do Gov.br DS (CSS custom properties)
+// Não importamos estilos de componentes para evitar conflitos com Spartan
+@import '@govbr-ds/core/dist/core-tokens.min.css';
+
+// Fonte Raleway (fallback para Rawline)
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap');
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Rawline', 'Raleway', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--gray-80, #333333);
+  background-color: var(--gray-2, #f8f8f8);
+}
+
+// Focus visible padrão Gov.br
+*:focus-visible {
+  outline: 2px solid var(--blue-warm-vivid-70, #1351b4);
+  outline-offset: 2px;
+}

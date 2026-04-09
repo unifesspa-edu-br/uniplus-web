@@ -1,0 +1,79 @@
+{
+  "name": "poc-spartan",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "poc",
+  "sourceRoot": "apps/poc-spartan/src",
+  "tags": ["scope:poc", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/poc-spartan",
+        "browser": "apps/poc-spartan/src/main.ts",
+        "tsConfig": "apps/poc-spartan/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/poc-spartan/public"
+          }
+        ],
+        "styles": ["apps/poc-spartan/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4210
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "poc-spartan:build:production"
+        },
+        "development": {
+          "buildTarget": "poc-spartan:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "poc-spartan:build",
+        "port": 4210,
+        "staticFilePath": "dist/apps/poc-spartan/browser",
+        "spa": true
+      }
+    }
+  }
+}
