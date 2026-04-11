@@ -49,7 +49,7 @@ export const govbrPassThrough = {
   inputtext: {
     root: {
       class: [
-        'w-full px-3 py-2',
+        'w-full px-[12px] py-[8px]',
         'border border-govbr-gray-20 rounded-govbr-sm',
         'bg-govbr-pure-0 text-govbr-gray-80',
         `${FONT_GOVBR} text-govbr-base`,

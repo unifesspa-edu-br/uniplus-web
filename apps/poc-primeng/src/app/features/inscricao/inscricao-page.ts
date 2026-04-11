@@ -5,9 +5,8 @@ import {
   signal,
 } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
@@ -20,10 +19,9 @@ import { RevisaoTabComponent } from './components/revisao-tab/revisao-tab';
   selector: 'poc-inscricao-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [ConfirmationService],
   imports: [
     ButtonModule,
-    ConfirmDialog,
+    Dialog,
     Message,
     Tabs,
     TabList,
@@ -77,7 +75,7 @@ import { RevisaoTabComponent } from './components/revisao-tab/revisao-tab';
             <div class="flex justify-end">
               <p-button
                 label="Enviar Inscrição"
-                (onClick)="abrirConfirmacao()"
+                (onClick)="dialogVisivel.set(true)"
                 data-testid="btn-enviar-inscricao"
               />
             </div>
@@ -86,47 +84,48 @@ import { RevisaoTabComponent } from './components/revisao-tab/revisao-tab';
       </p-tabpanels>
     </p-tabs>
 
-    <p-confirmdialog>
-      <ng-template #acceptButton let-acceptCallback="acceptCallback">
-        <button
-          class="inline-flex items-center justify-center gap-2 h-10 px-govbr-5 rounded-govbr-pill font-['Rawline','Raleway',sans-serif] text-[16.8px] font-semibold cursor-pointer transition-colors bg-govbr-success text-govbr-pure-0 hover:brightness-90"
-          data-testid="btn-confirmar"
-          (click)="acceptCallback($event)"
-        >
-          Confirmar
-        </button>
+    <p-dialog
+      header="Confirmar inscrição"
+      [(visible)]="dialogVisivel"
+      [modal]="true"
+      [closable]="true"
+      [draggable]="false"
+    >
+      <p class="text-govbr-base text-govbr-gray-60">
+        Tem certeza que deseja enviar sua inscrição? Após confirmar, os dados serão registrados.
+      </p>
+      <ng-template #footer>
+        <div class="flex justify-end gap-govbr-3">
+          <button
+            class="inline-flex items-center justify-center gap-2 h-10 px-govbr-5 rounded-govbr-pill font-['Rawline','Raleway',sans-serif] text-[16.8px] font-semibold cursor-pointer transition-colors bg-transparent text-govbr-gray-60 border border-govbr-gray-20 hover:bg-govbr-gray-2"
+            data-testid="btn-cancelar"
+            (click)="dialogVisivel.set(false)"
+          >
+            Cancelar
+          </button>
+          <button
+            class="inline-flex items-center justify-center gap-2 h-10 px-govbr-5 rounded-govbr-pill font-['Rawline','Raleway',sans-serif] text-[16.8px] font-semibold cursor-pointer transition-colors bg-govbr-success text-govbr-pure-0 hover:brightness-90"
+            data-testid="btn-confirmar"
+            (click)="handleConfirmar()"
+          >
+            Confirmar
+          </button>
+        </div>
       </ng-template>
-      <ng-template #rejectButton let-rejectCallback="rejectCallback">
-        <button
-          class="inline-flex items-center justify-center gap-2 h-10 px-govbr-5 rounded-govbr-pill font-['Rawline','Raleway',sans-serif] text-[16.8px] font-semibold cursor-pointer transition-colors bg-transparent text-govbr-gray-60 border border-govbr-gray-20 hover:bg-govbr-gray-2"
-          data-testid="btn-cancelar"
-          (click)="rejectCallback($event)"
-        >
-          Cancelar
-        </button>
-      </ng-template>
-    </p-confirmdialog>
+    </p-dialog>
   `,
 })
 export class InscricaoPageComponent {
   private readonly formService = inject(InscricaoFormService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   readonly form: FormGroup<InscricaoForm> = this.formService.createForm();
 
   readonly inscricaoEnviada = signal(false);
   readonly mostrarErroValidacao = signal(false);
+  readonly dialogVisivel = signal(false);
 
-  abrirConfirmacao(): void {
-    this.confirmationService.confirm({
-      header: 'Confirmar inscrição',
-      message:
-        'Tem certeza que deseja enviar sua inscrição? Após confirmar, os dados serão registrados.',
-      accept: () => this.handleConfirmar(),
-    });
-  }
-
-  private handleConfirmar(): void {
+  handleConfirmar(): void {
+    this.dialogVisivel.set(false);
     this.form.markAllAsTouched();
 
     if (this.form.valid) {

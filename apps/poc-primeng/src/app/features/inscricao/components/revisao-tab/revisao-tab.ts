@@ -34,8 +34,8 @@ interface ResumoLinha {
     <p-table [value]="linhas()" [tableStyle]="{ 'min-width': '100%' }">
       <ng-template #header>
         <tr>
-          <th>Campo</th>
-          <th>Valor informado</th>
+          <th class="bg-govbr-primary text-govbr-pure-0 text-left px-govbr-4 py-govbr-3 text-govbr-sm font-semibold">Campo</th>
+          <th class="bg-govbr-primary text-govbr-pure-0 text-left px-govbr-4 py-govbr-3 text-govbr-sm font-semibold">Valor informado</th>
         </tr>
       </ng-template>
       <ng-template #body let-linha>
