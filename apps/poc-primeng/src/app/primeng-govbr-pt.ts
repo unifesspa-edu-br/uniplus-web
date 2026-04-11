@@ -27,8 +27,8 @@ export const govbrPassThrough = {
   tab: {
     root: {
       class: [
-        'px-govbr-5 py-govbr-4 cursor-pointer select-none whitespace-nowrap shrink-0',
-        'text-[20.16px] font-medium text-govbr-gray-60',
+        'px-govbr-2 py-govbr-3 md:px-govbr-5 md:py-govbr-4 cursor-pointer select-none whitespace-nowrap shrink-0',
+        'text-govbr-base md:text-[20.16px] font-medium text-govbr-gray-60',
         `${FONT_GOVBR} bg-transparent`,
         'border-b-4 border-transparent',
         'transition-colors duration-200',
