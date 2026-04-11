@@ -304,7 +304,7 @@ Para o contexto específico do CEPS/Unifesspa:
 | **DX (produtividade)** | 10% | 9 | 7 | PrimeNG: docs oficiais completas, sem CLI interativo. Zard: docs incompletas, customização invasiva em source |
 | **Testabilidade** | 5% | 9 | 8 | PrimeNG: ARIA nativo em todos os componentes. Zard: seletores custom, precisou de fixes para ARIA |
 | **Zoneless** | 5% | 6 | 10 | PrimeNG: requer Zone.js (por enquanto). Zard: zoneless nativo confirmado |
-| **Manutenibilidade** | 5% | 9 | 6 | PrimeNG: PT centralizado em 1 arquivo, sem editar source. Zard: editar arquivos instalados via CLI |
+| **Manutenibilidade** | 5% | 9 | 6 | PrimeNG: PassThrough centralizado em 1 arquivo, sem editar source. Zard: editar arquivos instalados via CLI |
 
 **Nota final ponderada:**
 
@@ -316,7 +316,7 @@ Para o contexto específico do CEPS/Unifesspa:
 
 **Onde o Zard ganha:** bundle size (30 kB gzip menor) e zoneless (pronto para futuro Angular sem Zone.js).
 
-**Onde o PrimeNG ganha decisivamente:** acessibilidade (zero fixes), !important (1 vs 25), componentes (80+ vs ~30), risco (produto maduro vs beta), manutenção (PT centralizado vs editar source).
+**Onde o PrimeNG ganha decisivamente:** acessibilidade (zero fixes), !important (1 vs 25), componentes (80+ vs ~30), risco (produto maduro vs beta), manutenção (PassThrough centralizado vs editar source).
 
 **Conclusão para o CEPS/Unifesspa:** a diferença de 30 kB gzip não compensa o risco de uma lib beta com 25 `!important` e necessidade de editar source code dos componentes. PrimeNG é a escolha mais segura e produtiva para o prazo de agosto 2026 com equipe de 8 desenvolvedores.
 
