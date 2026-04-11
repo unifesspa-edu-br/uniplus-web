@@ -292,6 +292,34 @@ Para o contexto específico do CEPS/Unifesspa:
 - Gov.br DS com muitas regras visuais → PT API é o mecanismo ideal para mapear tokens
 - 6 módulos planejados com formulários complexos → 80+ componentes cobrem qualquer necessidade futura
 
+### Notas comparativas — PrimeNG vs Zard UI
+
+| Critério | Peso | PrimeNG | Zard | Justificativa |
+|---|---|---|---|---|
+| **Conformidade Gov.br DS** | 20% | 9 | 8 | PrimeNG: 1 `!important`, PT injeta tokens direto nos slots. Zard: 25 `!important`, luta contra CVA por especificidade |
+| **Acessibilidade (keyboard)** | 15% | 10 | 7 | PrimeNG: keyboard nav built-in completa, zero fixes. Zard: 6 fixes (role preservation, aria, tabs) |
+| **Bundle size** | 10% | 7 | 9 | PrimeNG: 119 kB gzip (Zone.js incluso). Zard: 90 kB gzip (zoneless) |
+| **Componentes disponíveis** | 15% | 10 | 6 | PrimeNG: 80+ componentes estáveis. Zard: ~30 componentes (beta, API pode mudar) |
+| **Maturidade / Risco** | 15% | 10 | 5 | PrimeNG: 10+ anos, equipe full-time, releases regulares. Zard: < 1 ano, beta |
+| **DX (produtividade)** | 10% | 9 | 7 | PrimeNG: docs oficiais completas, sem CLI interativo. Zard: docs incompletas, customização invasiva em source |
+| **Testabilidade** | 5% | 9 | 8 | PrimeNG: ARIA nativo em todos os componentes. Zard: seletores custom, precisou de fixes para ARIA |
+| **Zoneless** | 5% | 6 | 10 | PrimeNG: requer Zone.js (por enquanto). Zard: zoneless nativo confirmado |
+| **Manutenibilidade** | 5% | 9 | 6 | PrimeNG: PT centralizado em 1 arquivo, sem editar source. Zard: editar arquivos instalados via CLI |
+
+**Nota final ponderada:**
+
+| PoC | Nota |
+|---|---|
+| **PrimeNG (#19)** | **9.05 / 10** |
+| **Zard (#18)** | **7.05 / 10** |
+| Spartan (#17) | Descartado (2/5 componentes) |
+
+**Onde o Zard ganha:** bundle size (30 kB gzip menor) e zoneless (pronto para futuro Angular sem Zone.js).
+
+**Onde o PrimeNG ganha decisivamente:** acessibilidade (zero fixes), !important (1 vs 25), componentes (80+ vs ~30), risco (produto maduro vs beta), manutenção (PT centralizado vs editar source).
+
+**Conclusão para o CEPS/Unifesspa:** a diferença de 30 kB gzip não compensa o risco de uma lib beta com 25 `!important` e necessidade de editar source code dos componentes. PrimeNG é a escolha mais segura e produtiva para o prazo de agosto 2026 com equipe de 8 desenvolvedores.
+
 ---
 
 ## 10. Tabelas-resumo
