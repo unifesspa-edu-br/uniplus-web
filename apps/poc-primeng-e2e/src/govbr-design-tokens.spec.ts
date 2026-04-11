@@ -53,6 +53,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       expect(styles['font-family']).toMatch(/Rawline|Raleway/i);
       expect(styles['font-size']).toBe('14px');
       expect(styles['color']).toBe('rgb(51, 51, 51)');
+      await screenshot(page, 't1-01-body-font');
     });
 
     test('T1.2: h1 título da página — 32px, weight 700', async ({ page }) => {
@@ -60,6 +61,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(h1, ['font-size', 'font-weight']);
       expect(styles['font-size']).toBe('32px');
       expect(styles['font-weight']).toBe('700');
+      await screenshot(page, 't1-02-h1-titulo');
     });
 
     test('T1.3: h2 título de seção — 24px, weight 700', async ({ page }) => {
@@ -69,6 +71,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(h2, ['font-size', 'font-weight']);
       expect(styles['font-size']).toBe('24px');
       expect(styles['font-weight']).toBe('700');
+      await screenshot(page, 't1-03-h2-secao');
     });
 
     test('T1.4: label de campo — 12.8px, weight 600', async ({ page }) => {
@@ -76,12 +79,14 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(label, ['font-size', 'font-weight']);
       expect(styles['font-size']).toBe('12.8px');
       expect(styles['font-weight']).toBe('600');
+      await screenshot(page, 't1-04-label-campo');
     });
 
     test('T1.5: input de texto — 14px, font institucional', async ({ page }) => {
       const styles = await getStyles(page.locator('#nome'), ['font-size', 'font-family']);
       expect(styles['font-size']).toBe('14px');
       expect(styles['font-family']).toMatch(/Rawline|Raleway/i);
+      await screenshot(page, 't1-05-input-font');
     });
 
     test('T1.6: mensagem de erro — 11.2px, cor danger', async ({ page }) => {
@@ -93,6 +98,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(errMsg, ['font-size', 'color']);
       expect(styles['font-size']).toBe('11.2px');
       expect(styles['color']).toBe('rgb(229, 34, 7)');
+      await screenshot(page, 't1-06-erro-msg');
     });
 
     test('T1.7: barra Gov.br — 11.2px, weight 600, branco', async ({ page }) => {
@@ -101,6 +107,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       expect(styles['font-size']).toBe('11.2px');
       expect(styles['font-weight']).toBe('600');
       expect(styles['color']).toBe('rgb(255, 255, 255)');
+      await screenshot(page, 't1-07-barra-govbr');
     });
 
     test('T1.8: título do header — 20px, weight 700', async ({ page }) => {
@@ -108,6 +115,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(titulo, ['font-size', 'font-weight']);
       expect(styles['font-size']).toBe('20px');
       expect(styles['font-weight']).toBe('700');
+      await screenshot(page, 't1-08-header-titulo');
     });
 
     test('T1.9: tab trigger — 20.16px, ativa 600 / inativa 500 (Gov.br DS)', async ({ page }) => {
@@ -120,6 +128,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const stylesInativa = await getStyles(tabInativa, ['font-size', 'font-weight']);
       expect(stylesInativa['font-size']).toBe('20.16px');
       expect(stylesInativa['font-weight']).toBe('500');
+      await screenshot(page, 't1-09-tab-font');
     });
 
     test('T1.10: botão primário — 16.8px, weight 600 (Gov.br DS)', async ({ page }) => {
@@ -128,6 +137,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(btn, ['font-size', 'font-weight']);
       expect(styles['font-size']).toBe('16.8px');
       expect(styles['font-weight']).toBe('600');
+      await screenshot(page, 't1-10-botao-font');
     });
 
     test('T1: screenshot de referência tipografia', async ({ page }) => {
@@ -140,29 +150,34 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     test('T2.1: body background — rgb(248, 248, 248)', async ({ page }) => {
       const styles = await getStyles(page.locator('body'), ['background-color']);
       expect(styles['background-color']).toBe('rgb(248, 248, 248)');
+      await screenshot(page, 't2-01-body-bg');
     });
 
     test('T2.2: barra Gov.br — rgb(7, 29, 65)', async ({ page }) => {
       const barra = page.locator('.bg-govbr-primary-darkest').first();
       const styles = await getStyles(barra, ['background-color']);
       expect(styles['background-color']).toBe('rgb(7, 29, 65)');
+      await screenshot(page, 't2-02-barra-govbr-bg');
     });
 
     test('T2.3: header principal — rgb(19, 81, 180)', async ({ page }) => {
       const header = page.locator('header.bg-govbr-primary');
       const styles = await getStyles(header, ['background-color']);
       expect(styles['background-color']).toBe('rgb(19, 81, 180)');
+      await screenshot(page, 't2-03-header-bg');
     });
 
     test('T2.4: footer — rgb(12, 50, 111)', async ({ page }) => {
       const footer = page.locator('footer');
       const styles = await getStyles(footer, ['background-color']);
       expect(styles['background-color']).toBe('rgb(12, 50, 111)');
+      await screenshot(page, 't2-04-footer-bg');
     });
 
     test('T2.5: input background — branco', async ({ page }) => {
       const styles = await getStyles(page.locator('#nome'), ['background-color']);
       expect(styles['background-color']).toBe('rgb(255, 255, 255)');
+      await screenshot(page, 't2-05-input-bg');
     });
 
     test('T2.6: tabela header — rgb(19, 81, 180)', async ({ page }) => {
@@ -170,6 +185,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const headerCell = page.locator('p-table table thead th').first();
       const styles = await getStyles(headerCell, ['background-color']);
       expect(styles['background-color']).toBe('rgb(19, 81, 180)');
+      await screenshot(page, 't2-06-tabela-header-bg');
     });
 
     test('T2: screenshot de referência cores de fundo', async ({ page }) => {
@@ -182,18 +198,21 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     test('T3.1: texto principal — rgb(51, 51, 51)', async ({ page }) => {
       const styles = await getStyles(page.locator('body'), ['color']);
       expect(styles['color']).toBe('rgb(51, 51, 51)');
+      await screenshot(page, 't3-01-body-cor');
     });
 
     test('T3.2: texto do header — branco', async ({ page }) => {
       const titulo = page.getByText('Sistema Unificado CEPS');
       const styles = await getStyles(titulo, ['color']);
       expect(styles['color']).toBe('rgb(255, 255, 255)');
+      await screenshot(page, 't3-02-header-cor');
     });
 
     test('T3.3: texto do footer — branco', async ({ page }) => {
       const footer = page.locator('footer');
       const styles = await getStyles(footer, ['color']);
       expect(styles['color']).toBe('rgb(255, 255, 255)');
+      await screenshot(page, 't3-03-footer-cor');
     });
 
     test('T3.4: mensagem de erro — rgb(229, 34, 7)', async ({ page }) => {
@@ -203,30 +222,35 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await expect(errMsg).toBeVisible();
       const styles = await getStyles(errMsg, ['color']);
       expect(styles['color']).toBe('rgb(229, 34, 7)');
+      await screenshot(page, 't3-04-erro-cor');
     });
 
     test('T3.5: asterisco obrigatório — danger', async ({ page }) => {
       const asterisk = page.locator('label[for="nome"] .text-govbr-danger').first();
       const styles = await getStyles(asterisk, ['color']);
       expect(styles['color']).toBe('rgb(229, 34, 7)');
+      await screenshot(page, 't3-05-asterisco-cor');
     });
 
     test('T3.6: placeholder — cor cinza', async ({ page }) => {
       const styles = await getPseudoStyles(page.locator('#nome'), '::placeholder', ['color']);
       expect(styles['color']).not.toBe('rgb(51, 51, 51)');
       expect(styles['color']).not.toBe('rgb(0, 0, 0)');
+      await screenshot(page, 't3-06-placeholder-cor');
     });
 
     test('T3.7: tab ativa — primary', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="true"]');
       const styles = await getStyles(tab, ['color']);
       expect(styles['color']).toBe('rgb(19, 81, 180)');
+      await screenshot(page, 't3-07-tab-ativa-cor');
     });
 
     test('T3.8: tab inativa — gray escuro', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="false"]').first();
       const styles = await getStyles(tab, ['color']);
       expect(styles['color']).toBe('rgb(99, 99, 99)');
+      await screenshot(page, 't3-08-tab-inativa-cor');
     });
 
     test('T3.9: texto header da tabela — branco', async ({ page }) => {
@@ -234,6 +258,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const headerCell = page.locator('p-table table thead th').first();
       const styles = await getStyles(headerCell, ['color']);
       expect(styles['color']).toBe('rgb(255, 255, 255)');
+      await screenshot(page, 't3-09-tabela-header-cor');
     });
 
     test('T3: screenshot de referência cores de texto', async ({ page }) => {
@@ -247,6 +272,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(page.locator('#nome'), ['border-top-width', 'border-top-style']);
       expect(styles['border-top-width']).not.toBe('0px');
       expect(styles['border-top-style']).toBe('solid');
+      await screenshot(page, 't4-01-input-borda');
     });
 
     test('T4.2: input com erro — border danger', async ({ page }) => {
@@ -256,11 +282,13 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await page.locator('h1').click();
       await page.waitForTimeout(200);
       await expect(page.getByText('Nome é obrigatório')).toBeVisible();
+      await screenshot(page, 't4-02-input-erro-borda');
     });
 
     test('T4.3: input border-radius — 4px (Gov.br DS)', async ({ page }) => {
       const styles = await getStyles(page.locator('#nome'), ['border-radius']);
       expect(styles['border-radius']).toBe('4px');
+      await screenshot(page, 't4-03-input-radius');
     });
 
     test('T4.4: botão primário border-radius — pill (Gov.br DS 100px)', async ({ page }) => {
@@ -269,6 +297,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(btn, ['border-radius']);
       const radiusPx = parseFloat(styles['border-radius']);
       expect(radiusPx).toBeGreaterThanOrEqual(100);
+      await screenshot(page, 't4-04-botao-radius');
     });
 
     test('T4.5: dialog border-radius — 8px (Gov.br DS)', async ({ page }) => {
@@ -278,6 +307,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await expect(dialog).toBeVisible({ timeout: 3000 });
       const styles = await getStyles(dialog, ['border-radius']);
       expect(styles['border-radius']).toBe('8px');
+      await screenshot(page, 't4-05-dialog-radius');
     });
 
     test('T4.6: tab ativa — border-bottom 4px primary (Gov.br DS)', async ({ page }) => {
@@ -285,6 +315,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(tab, ['border-bottom-color', 'border-bottom-width']);
       expect(styles['border-bottom-color']).toBe('rgb(19, 81, 180)');
       expect(styles['border-bottom-width']).toBe('4px');
+      await screenshot(page, 't4-06-tab-ativa-borda');
     });
 
     test('T4.7: tab inativa — border-bottom transparente', async ({ page }) => {
@@ -294,6 +325,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
         styles['border-bottom-color'] === 'rgba(0, 0, 0, 0)' ||
           styles['border-bottom-color'] === 'transparent',
       ).toBeTruthy();
+      await screenshot(page, 't4-07-tab-inativa-borda');
     });
 
     test('T4.8: radio selecionado — indicador visível', async ({ page }) => {
@@ -303,6 +335,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
       const radioInput = page.locator('#mod-AC');
       await expect(radioInput).toBeChecked();
+      await screenshot(page, 't4-08-radio-check');
     });
 
     test('T4: screenshot de referência bordas', async ({ page }) => {
@@ -466,6 +499,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       expect(styles['padding-right']).toBe('12px');
       expect(styles['padding-bottom']).toBe('8px');
       expect(styles['padding-left']).toBe('12px');
+      await screenshot(page, 't7-01-input-padding');
     });
 
     test('T7.2: botão primário — width suficiente', async ({ page }) => {
@@ -477,6 +511,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThan(100);
       expect(box!.height).toBeGreaterThanOrEqual(32);
+      await screenshot(page, 't7-02-botao-size');
     });
 
     test('T7.3: main content padding horizontal — 24px', async ({ page }) => {
@@ -484,6 +519,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       const styles = await getStyles(main, ['padding-left', 'padding-right']);
       expect(styles['padding-left']).toBe('24px');
       expect(styles['padding-right']).toBe('24px');
+      await screenshot(page, 't7-03-main-padding');
     });
 
     test('T7.4: tab trigger padding — 16px 24px (Gov.br DS)', async ({ page }) => {
@@ -498,6 +534,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       expect(styles['padding-right']).toBe('24px');
       expect(styles['padding-bottom']).toBe('16px');
       expect(styles['padding-left']).toBe('24px');
+      await screenshot(page, 't7-04-tab-padding');
     });
 
     test('T7: screenshot de referência espaçamento', async ({ page }) => {
