@@ -1,0 +1,83 @@
+{
+  "name": "poc-primeng",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "poc",
+  "sourceRoot": "apps/poc-primeng/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/poc-primeng",
+        "browser": "apps/poc-primeng/src/main.ts",
+        "tsConfig": "apps/poc-primeng/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/poc-primeng/public"
+          }
+        ],
+        "polyfills": ["zone.js"],
+        "styles": ["apps/poc-primeng/src/styles.css"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4230
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "poc-primeng:build:production"
+        },
+        "development": {
+          "buildTarget": "poc-primeng:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {}
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "poc-primeng:build",
+        "port": 4230,
+        "staticFilePath": "dist/apps/poc-primeng/browser",
+        "spa": true
+      }
+    }
+  }
+}

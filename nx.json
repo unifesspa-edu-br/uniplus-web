@@ -20,10 +20,7 @@
     },
     "@nx/eslint:lint": {
       "cache": true,
-      "inputs": [
-        "default",
-        "{workspaceRoot}/eslint.config.mjs"
-      ]
+      "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
     },
     "@nx/angular:ng-packagr-lite": {
       "cache": true,
