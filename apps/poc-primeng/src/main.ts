@@ -5,14 +5,14 @@ import { App } from './app/app';
 /**
  * Focus ring Gov.br DS: 4px dashed #c2850c (gold), offset 4px.
  *
- * Estratégia (contorna bug outline-color em Tailwind v4):
- * - Elementos normais (buttons, tabs, divs): classe .govbr-focus-ring
- *   que ativa ::before com border: 4px dashed #c2850c
- * - Replaced elements (input, textarea, select, .p-select): overlay <span>
- *   com border: 4px dashed #c2850c posicionado sobre o elemento
+ * Estratégia UNIFICADA: overlay <span> com position:fixed no document.body.
+ * Não usa ::before/::after — evita corte por overflow de qualquer container.
  *
- * Detecção mouse/keyboard: inputs text focados via clique de mouse NÃO
- * recebem focus ring (comportamento Safari-like). Via Tab key, recebem.
+ * - Todos os elementos focáveis recebem overlay gold ao ganhar :focus-visible
+ * - Inputs text focados via mouse NÃO recebem focus ring (Safari-like)
+ * - Radio buttons: overlay circular no box (20x20px)
+ * - Selects PrimeNG: overlay no p-select wrapper
+ * - Demais: overlay retangular no próprio elemento
  */
 let lastInputWasMouse = false;
 
@@ -40,7 +40,7 @@ function removeOverlay() {
 function createOverlay(el: HTMLElement, circular = false) {
   removeOverlay();
   const rect = el.getBoundingClientRect();
-  const offset = circular ? 6 : 8;
+  const offset = circular ? 6 : 4;
   const radius = circular ? '9999px' : '4px';
   const overlay = document.createElement('span');
   overlay.className = 'govbr-focus-overlay';
@@ -59,8 +59,6 @@ function createOverlay(el: HTMLElement, circular = false) {
   activeOverlay = overlay;
 }
 
-const REPLACED_ELEMENTS = new Set(['TEXTAREA', 'SELECT']);
-
 function isTextInput(el: HTMLElement): boolean {
   const tag = el.tagName;
   if (tag === 'TEXTAREA') return true;
@@ -75,57 +73,36 @@ function isHiddenRadio(el: HTMLElement): boolean {
   return el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'radio';
 }
 
-interface FocusRingResult {
-  type: 'class' | 'overlay';
-  target: HTMLElement;
-  circular?: boolean;
-}
-
-function getFocusRingTarget(el: HTMLElement): FocusRingResult | null {
+function getOverlayTarget(el: HTMLElement): { target: HTMLElement; circular?: boolean } {
   // PrimeNG RadioButton: input[type=radio] is sr-only — overlay circular no box
   if (isHiddenRadio(el)) {
     const box = el.parentElement?.querySelector('[data-pc-section="box"]') as HTMLElement;
-    if (box) return { type: 'overlay', target: box, circular: true };
-    return null;
+    if (box) return { target: box, circular: true };
   }
   // PrimeNG Select: span[role=combobox] is inside p-select
   const pSelect = el.closest('p-select') as HTMLElement;
-  if (pSelect) return { type: 'overlay', target: pSelect };
-  // Native replaced elements (textarea, select)
-  if (REPLACED_ELEMENTS.has(el.tagName)) return { type: 'overlay', target: el };
-  // Text inputs (input[type=text], etc.)
-  if (isTextInput(el)) return { type: 'overlay', target: el };
-  return null;
+  if (pSelect) return { target: pSelect };
+  // Fallback: overlay no próprio elemento
+  return { target: el };
 }
 
 document.addEventListener('focusin', (e) => {
   const el = e.target as HTMLElement;
   if (!el || el === document.body) return;
 
+  // Mouse click em input text: sem focus ring (Safari-like)
   if (lastInputWasMouse && isTextInput(el)) {
-    el.classList.remove('govbr-focus-ring');
     removeOverlay();
     return;
   }
 
   if (!el.matches(':focus-visible')) return;
 
-  const result = getFocusRingTarget(el);
-  if (result) {
-    if (result.type === 'overlay') {
-      createOverlay(result.target, result.circular);
-    } else {
-      result.target.classList.add('govbr-focus-ring');
-    }
-  } else {
-    el.classList.add('govbr-focus-ring');
-  }
+  const { target, circular } = getOverlayTarget(el);
+  createOverlay(target, circular);
 });
 
-document.addEventListener('focusout', (e) => {
-  const el = e.target as HTMLElement;
-  if (!el) return;
-  el.classList.remove('govbr-focus-ring');
+document.addEventListener('focusout', () => {
   removeOverlay();
 });
 

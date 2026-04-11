@@ -18,7 +18,7 @@ export const govbrPassThrough = {
   },
   tablist: {
     root: { class: 'relative flex min-w-0' },
-    content: { class: 'flex overflow-x-auto scroll-smooth' },
+    content: { class: 'flex overflow-x-auto overflow-y-clip scroll-smooth' },
     tabList: { class: 'flex flex-nowrap border-b border-govbr-gray-10 gap-0' },
     activeBar: { class: 'hidden' },
     prevButton: { class: 'hidden' },

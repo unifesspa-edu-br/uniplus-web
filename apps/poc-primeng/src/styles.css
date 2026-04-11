@@ -94,35 +94,19 @@ body {
 /*
  * Focus ring Gov.br DS — 4px dashed #c2850c (gold), offset 4px.
  * Requisito legal (Lei de Acessibilidade Digital + Gov.br DS).
+ * Tokens: --focus (#c2850c), --focus-style (dashed), --focus-width (4px),
+ *         --focus-offset (4px).
  *
- * IMPLEMENTAÇÃO:
- * - Elementos normais (buttons, tabs, divs): classe .govbr-focus-ring
- *   com ::before { border: 4px dashed #c2850c } posicionado via inset -8px
- * - Replaced elements (input, textarea, select): overlay <span> criado
- *   em main.ts com border dashed gold
- * - Mouse click em input text: focus ring suprimido (Safari-like)
+ * IMPLEMENTAÇÃO: overlay <span class="govbr-focus-overlay"> com position:fixed
+ * no document.body (main.ts). Nunca cortado por overflow de containers.
+ * Nenhum uso de ::before — evita o bug de overflow-x:auto forçar overflow-y.
  *
- * Contorna bug Chrome + Tailwind v4 onde outline-color ignora !important.
+ * Suprime focus ring nativo do browser para não conflitar com o overlay.
  */
 *:focus-visible {
   --tw-ring-shadow: none !important;
   outline: none !important;
   box-shadow: none !important;
-}
-
-.govbr-focus-ring {
-  position: relative !important;
-  outline: none !important;
-}
-
-.govbr-focus-ring::before {
-  content: '' !important;
-  position: absolute !important;
-  inset: -8px !important;
-  border: 4px dashed #c2850c !important;
-  border-radius: inherit !important;
-  pointer-events: none !important;
-  z-index: 9999 !important;
 }
 
 /* ============================================================
