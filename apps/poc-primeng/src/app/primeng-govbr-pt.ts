@@ -14,7 +14,7 @@ const FOCUS_CLASSES = 'focus-visible:outline-none';
 export const govbrPassThrough = {
   /* ──────────────────── TABS ──────────────────── */
   tabs: {
-    root: { class: 'flex flex-col min-w-0 overflow-hidden' },
+    root: { class: 'flex flex-col min-w-0' },
   },
   tablist: {
     root: { class: 'relative flex min-w-0' },
