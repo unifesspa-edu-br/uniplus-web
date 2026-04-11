@@ -25,7 +25,7 @@
 | PrimeNG Button | ✅ OK | `p-button` com label, host renderiza `<button>` interno, styling via PT |
 | PrimeNG Dialog | ⚠️ Ajuste | `p-dialog` com `[(visible)]` funciona; `p-confirmdialog` NÃO renderiza em unstyled mode |
 | PrimeNG Table | ⚠️ Ajuste | PT headerCell/bodyCell NÃO aplica em `ng-template #header/#body` — classes devem ser manuais |
-| PrimeNG Message | ✅ OK | `p-message` com severity e styleClass para cores Gov.br |
+| PrimeNG Message | ⚠️ Ajuste | Unstyled não renderiza ícone — substituído por `div[role=alert]` customizado com SVG inline |
 | Gov.br DS tokens | ✅ OK | `@theme` + `@govbr-ds/core` import, 100% dos tokens mapeados via PT |
 | Reactive Forms | ✅ OK | Tipagem forte, cpfValidator portado, Zone.js compatible |
 | Testes unitários (Vitest) | ✅ OK | **13/13** em 1 spec file |
@@ -34,7 +34,7 @@
 | Acessibilidade (testes) | ✅ OK | 17 testes keyboard a11y, tabs ArrowRight/Left/Home/End built-in |
 | DX (Developer Experience) | ✅ Excelente | Sem CLI install, npm package, docs oficiais, MCP disponível |
 
-**Resumo:** dos 8 componentes PrimeNG testados, 6 funcionaram direto via PassThrough API e 2 precisaram de ajustes menores (Dialog/Table). A PassThrough API é o diferencial — mapeia classes Tailwind diretamente nos slots internos dos componentes, eliminando a necessidade de CSS overrides com `!important`. Resultado: **zero `!important` nos componentes** (apenas 5 no focus ring CSS global, mesmos do Zard).
+**Resumo:** dos 8 componentes PrimeNG testados, 5 funcionaram direto via PassThrough API e 3 precisaram de ajustes menores (Dialog, Table, Message). A PassThrough API é o diferencial — mapeia classes Tailwind diretamente nos slots internos dos componentes, eliminando a necessidade de CSS overrides com `!important`. Resultado: **zero `!important` nos componentes** e **apenas 1 `!important`** no CSS global (supressão de `outline` nativo do browser para não conflitar com o overlay gold). Focus ring implementado via overlay `<span>` com `position: fixed` — nunca cortado por overflow de containers.
 
 ---
 
@@ -115,11 +115,13 @@
 
 **PassThrough:** `datatable.root`, `tableContainer`, `table`, `thead`, `tbody`, `headerCell`, `bodyCell`, `bodyRow` — os 3 últimos só funcionam com columns binding.
 
-### 3.8 Message — ✅ Funcionou direto
+### 3.8 Message — ⚠️ Unstyled não renderiza ícone
 
-**API:** `p-message` com `severity` (success/error), `text`, `styleClass`. Import de `primeng/message`.
+**Problema:** `p-message` em unstyled mode não renderiza ícone SVG padrão — apenas texto.
 
-**Personalização:** `styleClass` para classes CSS externas (bordas e cores Gov.br), combinado com severity para semântica.
+**Solução:** substituir por `<div role="alert">` customizado com ícone SVG inline (check circle para sucesso, alert circle para erro), título em bold + descrição em cinza, borda esquerda colorida conforme Gov.br DS.
+
+**Esforço:** ~5 min para criar os 2 alerts com SVG inline.
 
 ---
 
@@ -129,19 +131,34 @@
 
 | Local | Qtd | Motivo |
 |---|---|---|
-| `styles.css` — focus ring global | 5 | Contornar bug outline-color Tailwind v4 |
+| `styles.css` — supressão outline nativo | **1** | `*:focus-visible { outline: none !important }` — evita conflito com overlay gold |
 | `primeng-govbr-pt.ts` — PassThrough | **0** | Classes aplicadas diretamente nos slots internos |
 | Componentes `.ts` templates | **0** | Classes Tailwind padrão |
-| **Total** | **5** | |
+| `main.ts` — focus ring overlay | **0** | Overlay `<span>` com `position: fixed`, sem CSS `!important` |
+| **Total** | **1** | |
 
 **Comparação:**
 | PoC | !important count | Motivo |
 |---|---|---|
 | Spartan | ~10 | CVA classes competindo com utility classes |
-| Zard | **25** | Overrides de CVA, dialog, button, table, tabs, input — documentados no findings |
-| PrimeNG | **5** | Apenas focus ring global (bug Tailwind v4) |
+| Zard | **25** | Overrides de CVA, dialog, button, table, tabs, input |
+| PrimeNG | **1** | Apenas supressão de outline nativo do browser |
 
-**Hipótese H3 validada: ✅ PassThrough elimina !important nos componentes.** A PT API injeta classes diretamente nos elementos internos do PrimeNG, sem competição de especificidade. Os 5 `!important` restantes são no focus ring CSS global — mesmo padrão do Zard.
+**Hipótese H3 validada: ✅ PassThrough elimina !important nos componentes.** A PT API injeta classes diretamente nos elementos internos do PrimeNG, sem competição de especificidade. O único `!important` restante é a supressão do outline nativo do browser para não conflitar com o overlay gold Gov.br DS.
+
+### Focus ring Gov.br DS — implementação final
+
+**Abordagem:** overlay `<span>` com `position: fixed` no `document.body` (main.ts). Diferente da PoC Zard que usava `::before` com `inset: -8px` (cortado por `overflow`).
+
+| Elemento | Implementação | Shape |
+|---|---|---|
+| Inputs text | Overlay retangular (4px offset) | `border-radius: 4px` |
+| Selects PrimeNG | Overlay no `p-select` wrapper | `border-radius: 4px` |
+| Tabs, buttons, links | Overlay no próprio elemento | `border-radius: 4px` |
+| Radio buttons | Overlay no box (20x20px) | `border-radius: 9999px` (circular) |
+| Mouse click em input | Suprimido (Safari-like) | — |
+
+**Vantagem sobre ::before:** nunca cortado por overflow de containers. Resolve o problema estrutural onde `overflow-x: auto` (scroll horizontal das tabs) forçava `overflow-y` para não-visible.
 
 ---
 
@@ -222,7 +239,7 @@ PrimeNG é a **única das 3 PoCs** com keyboard navigation completa built-in em 
 
 ### Focus ring Gov.br DS
 
-**Hipótese H2 (parcial):** outline-color nativo **NÃO funciona** em Tailwind v4 (mesmo bug das outras PoCs). Porém o workaround (`.govbr-focus-ring::before` + overlay `<span>`) funciona perfeitamente, adaptado para seletores PrimeNG (`p-select`).
+**Hipótese H2:** outline-color nativo **NÃO funciona** em Tailwind v4 (mesmo bug das outras PoCs). Solução final: overlay `<span>` com `position: fixed` no `document.body`. Circular para radio buttons (border-radius: 9999px), retangular para demais. Nunca cortado por overflow. Tabs responsivas em mobile (14px/8px padding) garantem que o overlay cabe na viewport 375px.
 
 ---
 
@@ -301,14 +318,76 @@ Para o contexto específico do CEPS/Unifesspa:
 | **Componentes testados** | 2/5 (abandonado) | 10/10 | 8/8 |
 | **Bundle initial (gzip)** | 83 kB | 90 kB | 119 kB |
 | **Zone.js** | Sim | **Não** (zoneless) | Sim |
-| **!important count** | ~10 | **25** | **5** |
+| **!important count** | ~10 | **25** | **1** |
 | **Keyboard nav built-in** | Parcial | Parcial (6 fixes) | **Completa** |
 | **ARIA correto nativo** | Parcial | Parcial (4 fixes) | **Completo** |
 | **Testes E2E** | — | 83/83 | **100/100** |
 | **Testes unitários** | — | 27/27 | 13/13 |
-| **Customização CSS** | CVA + override | CVA + 25 !important | **PT API (0 !important)** |
+| **Customização CSS** | CVA + override | CVA + 25 !important | **PT API (1 !important)** |
 | **Componentes disponíveis** | ~25 | ~30 (beta) | **80+** |
 | **Maturidade** | ~2 anos | < 1 ano (beta) | **10+ anos** |
 | **DX/Docs** | Boa | Parcial (beta) | **Excelente** |
 | **Tempo de implementação** | ~4h (abandonado) | ~5h (com fixes) | **~3h** |
 | **Recomendação** | ❌ Descartado | ⚠️ Viável com ressalvas | **✅ Recomendado** |
+
+---
+
+## Anexo — Screenshots para avaliação pelo QA
+
+86 screenshots capturados automaticamente pelo Playwright em cada teste E2E.
+Localizados em `apps/poc-primeng-e2e/apps/poc-primeng-e2e/screenshots/`.
+
+### Fluxo de inscrição (15 capturas)
+
+| Arquivo | Descrição |
+|---|---|
+| `01-pagina-inicial.png` | Página inicial com header Gov.br, 3 tabs, formulário vazio |
+| `02-form-vazio.png` | Campos com placeholders, sem erros |
+| `03-validacao-erros.png` | Mensagens de erro em vermelho após touch+blur |
+| `04-form-preenchido.png` | Formulário completo sem erros |
+| `05-cpf-invalido.png` | Erro "CPF inválido" com borda vermelha |
+| `06-email-invalido.png` | Erro "E-mail inválido" |
+| `07-tab-documentos.png` | Tab Documentos: 7 modalidades + 2 opções |
+| `08-modalidade-selecionada.png` | Radio "Ampla Concorrência" selecionado (indicador azul) |
+| `09-opcao-curso.png` | Radio "1ª Opção" selecionado |
+| `10-tab-revisao.png` | Tabela de revisão com 7 linhas preenchidas |
+| `11-dialog-confirmacao.png` | Dialog modal: título, X cinza, Cancelar, Confirmar verde |
+| `12-dialog-fechado.png` | Dialog fechado após Cancelar |
+| `13-sucesso.png` | Mensagem sucesso: ícone check verde, borda esquerda, fundo tonal |
+| `14-erro-validacao.png` | Mensagem erro: ícone alert, formulário incompleto |
+| `15-navegacao-volta.png` | Dados preservados após navegar entre tabs |
+
+### Design tokens Gov.br (47 capturas: t1 a t8)
+
+| Grupo | Capturas | Validação |
+|---|---|---|
+| T1 — Tipografia | 11 (`t1-01` a `t1-10` + grupo) | Body 14px, h1 32px, h2 24px, label 12.8px, tab 20.16px, botão 16.8px |
+| T2 — Cores de fundo | 7 (`t2-01` a `t2-06` + grupo) | Body #f8f8f8, barra #071d41, header #1351b4, footer #0c326f |
+| T3 — Cores de texto | 10 (`t3-01` a `t3-09` + grupo) | Body #333, header branco, erro #e52207, tab ativa #1351b4 |
+| T4 — Bordas | 9 (`t4-01` a `t4-08` + grupo) | Input 4px radius, botão pill, dialog 8px, tab underline 4px |
+| T5 — Focus ring | 5 (`t5-focus-*`) | Gold dashed 4px em nome, CPF, select, botão, tab |
+| T6 — Hover | 5 (`t6-hover-*`) | Cursor pointer em tab, botão, dialog cancelar, radio, tabela |
+| T7 — Espaçamento | 5 (`t7-01` a `t7-04` + grupo) | Input 8×12px, main 24px, tab 16×24px |
+| T8 — Layout | 2 (`t8-layout-*`) | Desktop centralizado, mobile 375px com 3 tabs visíveis |
+
+### Acessibilidade de teclado (17 capturas: k01 a k17)
+
+| Arquivo | Descrição |
+|---|---|
+| `k01-tab-forward.png` | Tab forward percorre todos os elementos |
+| `k02-shift-tab.png` | Shift+Tab retrocede |
+| `k03-select-open-keyboard.png` | Enter abre dropdown do select |
+| `k04-select-arrow-navigate.png` | Arrow navega entre opções |
+| `k05-select-enter-select.png` | Enter seleciona item |
+| `k06-select-escape.png` | Escape fecha dropdown |
+| `k07-select-navigate-last.png` | Arrow navega até último item |
+| `k08-outline-all-elements.png` | Outline none em todos (overlay gold ativo) |
+| `k09-outline-first-tab.png` | Focus ring completo na primeira tab |
+| `k10-click-no-gold.png` | Click no input NÃO mostra gold (Safari-like) |
+| `k11-tab-shows-gold.png` | Tab no input MOSTRA gold overlay |
+| `k12-click-button-no-ring.png` | Click no botão abre dialog |
+| `k13-arrow-tabs.png` | ArrowRight/Left navega entre tabs com wrap |
+| `k14-escape-dialog.png` | Escape fecha dialog |
+| `k15-tab-dialog-buttons.png` | Tab navega entre botões do dialog |
+| `k16-click-then-arrow-back.png` | ArrowLeft volta para tabs anteriores |
+| `k17-home-end-tabs.png` | Home/End navega para primeira/última tab |
