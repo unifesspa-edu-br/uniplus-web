@@ -172,6 +172,18 @@ export const govbrPassThrough = {
     footer: {
       class: 'flex justify-end gap-govbr-3 px-govbr-5 pb-govbr-5',
     },
+    pcCloseButton: {
+      root: {
+        class: [
+          'flex items-center justify-center',
+          'w-8 h-8 rounded-govbr-pill',
+          'bg-transparent text-govbr-gray-60',
+          'hover:bg-govbr-gray-2 hover:text-govbr-gray-80',
+          'cursor-pointer transition-colors',
+          FOCUS_CLASSES,
+        ].join(' '),
+      },
+    },
   },
 
   /* ──────────────────── CONFIRM DIALOG ──────────────────── */
