@@ -1,1 +1,155 @@
+/* @govbr-ds/core deve vir ANTES do @import 'tailwindcss' (que injeta @layer).
+ * Fonte Raleway é carregada via <link> no index.html para evitar conflito
+ * de ordem de @import CSS (core-tokens inlined começa com :root { ... }). */
+@import '@govbr-ds/core/dist/core-tokens.min.css';
+
 @import 'tailwindcss';
+
+/* Escopo de detecção de classes Tailwind v4 — @source explícito para Nx monorepo */
+@source './app/**/*.{ts,html}';
+
+/* ============================================================
+ * Tokens Gov.br DS → Tailwind v4 @theme
+ * Fonte-verdade: @govbr-ds/core/dist/core-tokens.min.css (importado acima)
+ * Este @theme expõe os tokens como classes utilitárias Tailwind
+ * (ex: bg-govbr-primary, text-govbr-danger, rounded-govbr-pill, etc.)
+ * ============================================================ */
+@theme {
+  /* Fonte institucional — Rawline (oficial Gov.br) com fallback Raleway */
+  --font-govbr: 'Rawline', 'Raleway', sans-serif;
+
+  /* Paleta primária — @govbr-ds/core blue-warm-vivid */
+  --color-govbr-primary: #1351b4;
+  --color-govbr-primary-hover: #155bcb;
+  --color-govbr-primary-dark: #0c326f;
+  --color-govbr-primary-darkest: #071d41;
+  --color-govbr-primary-light: #2670e8;
+  --color-govbr-primary-lightest: #edf5ff;
+
+  /* Cores de feedback */
+  --color-govbr-success: #168821;
+  --color-govbr-success-light: #e7f4e9;
+  --color-govbr-warning: #ffcd07;
+  --color-govbr-warning-light: #fef0c8;
+  --color-govbr-danger: #e52207;
+  --color-govbr-danger-light: #fcf0ee;
+  --color-govbr-info: #1351b4;
+  --color-govbr-info-light: #edf5ff;
+
+  /* Focus ring — token oficial Gov.br DS */
+  --color-govbr-gold: #c2850c;
+
+  /* Neutros */
+  --color-govbr-pure-0: #ffffff;
+  --color-govbr-pure-100: #000000;
+  --color-govbr-gray-2: #f8f8f8;
+  --color-govbr-gray-5: #ededed;
+  --color-govbr-gray-10: #e6e6e6;
+  --color-govbr-gray-20: #cccccc;
+  --color-govbr-gray-40: #888888;
+  --color-govbr-gray-60: #636363;
+  --color-govbr-gray-80: #333333;
+
+  /* Tipografia — font-size tokens Gov.br (escala fixa em px) */
+  --text-govbr-xs: 11.2px;
+  --text-govbr-sm: 12.8px;
+  --text-govbr-base: 14px;
+  --text-govbr-md: 16px;
+  --text-govbr-lg: 20px;
+  --text-govbr-xl: 24px;
+  --text-govbr-2xl: 32px;
+  --text-govbr-3xl: 40px;
+
+  /* Border radius — 4px (input), 8px (dialog), 100px (pill button) */
+  --radius-govbr-sm: 4px;
+  --radius-govbr-md: 8px;
+  --radius-govbr-pill: 100px;
+
+  /* Escala de spacing — Gov.br DS (múltiplos de 4px) */
+  --spacing-govbr-1: 4px;
+  --spacing-govbr-2: 8px;
+  --spacing-govbr-3: 12px;
+  --spacing-govbr-4: 16px;
+  --spacing-govbr-5: 24px;
+  --spacing-govbr-6: 32px;
+  --spacing-govbr-7: 40px;
+  --spacing-govbr-8: 48px;
+  --spacing-govbr-9: 64px;
+}
+
+/* ============================================================
+ * Base styles — html, body, focus ring universal
+ * ============================================================ */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Rawline', 'Raleway', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #333333;
+  background-color: #f8f8f8;
+}
+
+/*
+ * Focus ring Gov.br DS — 4px dashed #c2850c (gold), offset 4px.
+ * Requisito legal (Lei de Acessibilidade Digital + Gov.br DS).
+ *
+ * IMPLEMENTAÇÃO:
+ * - Elementos normais (buttons, tabs, divs): classe .govbr-focus-ring
+ *   com ::before { border: 4px dashed #c2850c } posicionado via inset -8px
+ * - Replaced elements (input, textarea, select): overlay <span> criado
+ *   em main.ts com border dashed gold
+ * - Mouse click em input text: focus ring suprimido (Safari-like)
+ *
+ * Contorna bug Chrome + Tailwind v4 onde outline-color ignora !important.
+ */
+*:focus-visible {
+  --tw-ring-shadow: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.govbr-focus-ring {
+  position: relative !important;
+  outline: none !important;
+}
+
+.govbr-focus-ring::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: -8px !important;
+  border: 4px dashed #c2850c !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+}
+
+/* ============================================================
+ * PrimeNG message severity styles (via CSS, não PassThrough,
+ * porque severity altera semanticamente a cor do componente)
+ * ============================================================ */
+
+/* Sucesso */
+.poc-message-success {
+  border-left: 4px solid var(--color-govbr-success);
+  background-color: var(--color-govbr-success-light);
+  color: var(--color-govbr-gray-80);
+}
+
+.poc-message-success svg,
+.poc-message-success .p-message-icon {
+  color: var(--color-govbr-success);
+}
+
+/* Erro */
+.poc-message-error {
+  border-left: 4px solid var(--color-govbr-danger);
+  background-color: var(--color-govbr-danger-light);
+  color: var(--color-govbr-gray-80);
+}
+
+.poc-message-error svg,
+.poc-message-error .p-message-icon {
+  color: var(--color-govbr-danger);
+}
