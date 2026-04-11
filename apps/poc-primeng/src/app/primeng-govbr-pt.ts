@@ -14,12 +14,12 @@ const FOCUS_CLASSES = 'focus-visible:outline-none';
 export const govbrPassThrough = {
   /* ──────────────────── TABS ──────────────────── */
   tabs: {
-    root: { class: 'flex flex-col' },
+    root: { class: 'flex flex-col min-w-0 overflow-hidden' },
   },
   tablist: {
-    root: { class: 'relative flex' },
-    content: { class: 'flex overflow-x-auto overflow-y-hidden p-2 -m-2' },
-    tabList: { class: 'flex border-b border-govbr-gray-10 gap-0' },
+    root: { class: 'relative flex min-w-0' },
+    content: { class: 'flex overflow-x-auto overflow-y-hidden scroll-smooth p-2 -m-2' },
+    tabList: { class: 'flex flex-nowrap border-b border-govbr-gray-10 gap-0' },
     activeBar: { class: 'hidden' },
     prevButton: { class: 'hidden' },
     nextButton: { class: 'hidden' },
@@ -27,7 +27,7 @@ export const govbrPassThrough = {
   tab: {
     root: {
       class: [
-        'px-govbr-5 py-govbr-4 cursor-pointer select-none',
+        'px-govbr-5 py-govbr-4 cursor-pointer select-none whitespace-nowrap shrink-0',
         'text-[20.16px] font-medium text-govbr-gray-60',
         `${FONT_GOVBR} bg-transparent`,
         'border-b-4 border-transparent',
@@ -112,21 +112,20 @@ export const govbrPassThrough = {
       class: 'inline-flex items-center gap-govbr-2 cursor-pointer',
     },
     input: {
-      class: 'peer sr-only',
+      class: 'sr-only',
     },
     box: {
       class: [
+        'govbr-radio-box',
         'flex items-center justify-center',
         'w-5 h-5 rounded-full border-2 border-govbr-gray-20',
         'bg-govbr-pure-0 transition-colors',
-        'peer-checked:border-govbr-primary',
-        'peer-focus-visible:outline-none',
       ].join(' '),
     },
     icon: {
       class: [
+        'govbr-radio-icon',
         'w-2.5 h-2.5 rounded-full bg-transparent transition-colors',
-        'peer-checked:bg-govbr-primary',
       ].join(' '),
     },
   },

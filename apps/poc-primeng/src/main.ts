@@ -57,17 +57,37 @@ function createOverlay(el: HTMLElement) {
   activeOverlay = overlay;
 }
 
-const REPLACED_ELEMENTS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+const REPLACED_ELEMENTS = new Set(['TEXTAREA', 'SELECT']);
 
-function isReplacedElement(el: HTMLElement): boolean {
-  if (REPLACED_ELEMENTS.has(el.tagName)) return true;
-  // PrimeNG Select renders as a <span> with role="combobox"
-  if (el.closest('p-select')) return true;
+function isTextInput(el: HTMLElement): boolean {
+  const tag = el.tagName;
+  if (tag === 'TEXTAREA') return true;
+  if (tag === 'INPUT') {
+    const type = (el as HTMLInputElement).type;
+    return type === 'text' || type === 'email' || type === 'tel' || type === 'url' || type === 'search' || type === 'password';
+  }
   return false;
 }
 
-function isTextInput(el: HTMLElement): boolean {
-  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
+function isHiddenRadio(el: HTMLElement): boolean {
+  return el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'radio';
+}
+
+function getFocusRingTarget(el: HTMLElement): { type: 'class'; target: HTMLElement } | { type: 'overlay'; target: HTMLElement } | null {
+  // PrimeNG RadioButton: input[type=radio] is sr-only — use ::before on the wrapper div
+  if (isHiddenRadio(el)) {
+    const wrapper = el.closest('.flex.items-center') as HTMLElement ?? el.closest('p-radiobutton') as HTMLElement;
+    if (wrapper) return { type: 'class', target: wrapper };
+    return null;
+  }
+  // PrimeNG Select: span[role=combobox] is inside p-select
+  const pSelect = el.closest('p-select') as HTMLElement;
+  if (pSelect) return { type: 'overlay' as const, target: pSelect };
+  // Native replaced elements (textarea, select)
+  if (REPLACED_ELEMENTS.has(el.tagName)) return { type: 'overlay' as const, target: el };
+  // Text inputs (input[type=text], etc.)
+  if (isTextInput(el)) return { type: 'overlay' as const, target: el };
+  return null;
 }
 
 document.addEventListener('focusin', (e) => {
@@ -82,9 +102,13 @@ document.addEventListener('focusin', (e) => {
 
   if (!el.matches(':focus-visible')) return;
 
-  if (isReplacedElement(el)) {
-    const overlayTarget = el.closest('p-select') as HTMLElement ?? el;
-    createOverlay(overlayTarget);
+  const result = getFocusRingTarget(el);
+  if (result) {
+    if (result.type === 'overlay') {
+      createOverlay(result.target);
+    } else {
+      result.target.classList.add('govbr-focus-ring');
+    }
   } else {
     el.classList.add('govbr-focus-ring');
   }
@@ -94,6 +118,11 @@ document.addEventListener('focusout', (e) => {
   const el = e.target as HTMLElement;
   if (!el) return;
   el.classList.remove('govbr-focus-ring');
+  // Remove focus ring from radio wrapper too
+  if (isHiddenRadio(el)) {
+    const wrapper = el.closest('.flex.items-center') as HTMLElement ?? el.closest('p-radiobutton') as HTMLElement;
+    wrapper?.classList.remove('govbr-focus-ring');
+  }
   removeOverlay();
 });
 

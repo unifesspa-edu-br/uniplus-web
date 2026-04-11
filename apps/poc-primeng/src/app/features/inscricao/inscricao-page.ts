@@ -7,7 +7,6 @@ import {
 import { FormGroup } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
-import { Message } from 'primeng/message';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
 import { InscricaoFormService, type InscricaoForm } from './services/inscricao-form.service';
@@ -22,7 +21,6 @@ import { RevisaoTabComponent } from './components/revisao-tab/revisao-tab';
   imports: [
     ButtonModule,
     Dialog,
-    Message,
     Tabs,
     TabList,
     Tab,
@@ -41,19 +39,30 @@ import { RevisaoTabComponent } from './components/revisao-tab/revisao-tab';
     </p>
 
     @if (inscricaoEnviada()) {
-      <p-message
-        severity="success"
-        styleClass="poc-message-success mb-govbr-5"
-        text="Inscrição enviada com sucesso! Sua inscrição foi registrada. Você receberá um e-mail de confirmação em breve."
-      />
+      <div role="alert" class="poc-message-success flex items-start gap-govbr-3 p-govbr-4 rounded-govbr-sm mb-govbr-5">
+        <svg class="poc-message-icon w-5 h-5 mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-govbr-sm text-govbr-gray-80">Inscrição enviada com sucesso!</p>
+          <p class="text-govbr-sm text-govbr-gray-60 mt-1">Sua inscrição foi registrada. Você receberá um e-mail de confirmação em breve.</p>
+        </div>
+      </div>
     }
 
     @if (mostrarErroValidacao()) {
-      <p-message
-        severity="error"
-        styleClass="poc-message-error mb-govbr-5"
-        text="Formulário incompleto. Preencha todos os campos obrigatórios antes de enviar a inscrição."
-      />
+      <div role="alert" class="poc-message-error flex items-start gap-govbr-3 p-govbr-4 rounded-govbr-sm mb-govbr-5">
+        <svg class="poc-message-icon w-5 h-5 mt-0.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+          <p class="font-semibold text-govbr-sm text-govbr-gray-80">Formulário incompleto</p>
+          <p class="text-govbr-sm text-govbr-gray-60 mt-1">Preencha todos os campos obrigatórios antes de enviar a inscrição.</p>
+        </div>
+      </div>
     }
 
     <p-tabs [value]="0">

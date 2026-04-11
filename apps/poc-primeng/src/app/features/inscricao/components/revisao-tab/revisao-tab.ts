@@ -38,10 +38,11 @@ interface ResumoLinha {
           <th class="bg-govbr-primary text-govbr-pure-0 text-left px-govbr-4 py-govbr-3 text-govbr-sm font-semibold">Valor informado</th>
         </tr>
       </ng-template>
-      <ng-template #body let-linha>
-        <tr>
-          <td>{{ linha.campo }}</td>
-          <td>{{ linha.valor }}</td>
+      <ng-template #body let-linha let-i="rowIndex">
+        <tr class="border-t border-govbr-gray-10 hover:bg-govbr-primary-lightest transition-colors"
+            [class.bg-govbr-gray-2]="i % 2 === 1">
+          <td class="px-govbr-4 py-govbr-3 text-govbr-sm text-govbr-gray-80">{{ linha.campo }}</td>
+          <td class="px-govbr-4 py-govbr-3 text-govbr-sm text-govbr-gray-80">{{ linha.valor }}</td>
         </tr>
       </ng-template>
     </p-table>

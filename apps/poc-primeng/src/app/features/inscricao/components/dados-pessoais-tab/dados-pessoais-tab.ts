@@ -27,9 +27,6 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
           type="text"
           formControlName="nome"
           placeholder="Digite seu nome completo"
-          [class.!border-govbr-danger]="
-            form().controls.nome.touched && form().controls.nome.invalid
-          "
         />
         @if (form().controls.nome.touched && form().controls.nome.invalid) {
           @if (form().controls.nome.errors?.['required']) {
@@ -51,9 +48,6 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
           type="text"
           formControlName="cpf"
           placeholder="000.000.000-00"
-          [class.!border-govbr-danger]="
-            form().controls.cpf.touched && form().controls.cpf.invalid
-          "
         />
         @if (form().controls.cpf.touched && form().controls.cpf.invalid) {
           @if (form().controls.cpf.errors?.['required']) {
@@ -75,9 +69,6 @@ import { CURSOS_MOCK, CIDADES_MOCK } from '../../models/inscricao.model';
           type="email"
           formControlName="email"
           placeholder="seu.email@exemplo.com"
-          [class.!border-govbr-danger]="
-            form().controls.email.touched && form().controls.email.invalid
-          "
         />
         @if (form().controls.email.touched && form().controls.email.invalid) {
           @if (form().controls.email.errors?.['required']) {

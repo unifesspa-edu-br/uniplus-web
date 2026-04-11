@@ -126,6 +126,19 @@ body {
 }
 
 /* ============================================================
+ * RadioButton Gov.br DS — estado checked via data-p-checked
+ * (peer-checked: do Tailwind não funciona porque icon é filho
+ * de box, não irmão do input.peer)
+ * ============================================================ */
+p-radiobutton[data-p-checked="true"] .govbr-radio-box {
+  border-color: var(--color-govbr-primary);
+}
+
+p-radiobutton[data-p-checked="true"] .govbr-radio-icon {
+  background-color: var(--color-govbr-primary);
+}
+
+/* ============================================================
  * PrimeNG message severity styles (via CSS, não PassThrough,
  * porque severity altera semanticamente a cor do componente)
  * ============================================================ */
@@ -137,9 +150,10 @@ body {
   color: var(--color-govbr-gray-80);
 }
 
-.poc-message-success svg,
-.poc-message-success .p-message-icon {
+.poc-message-success [data-pc-section="icon"],
+.poc-message-success .poc-message-icon {
   color: var(--color-govbr-success);
+  flex-shrink: 0;
 }
 
 /* Erro */
@@ -149,7 +163,17 @@ body {
   color: var(--color-govbr-gray-80);
 }
 
-.poc-message-error svg,
-.poc-message-error .p-message-icon {
+.poc-message-error [data-pc-section="icon"],
+.poc-message-error .poc-message-icon {
   color: var(--color-govbr-danger);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+ * Input error state — borda vermelha quando inválido + touched.
+ * PrimeNG inputtext em unstyled mode: a classe !border-govbr-danger
+ * pode não vencer a border do PT. Usar seletor mais específico.
+ * ============================================================ */
+input.ng-invalid.ng-touched {
+  border-color: var(--color-govbr-danger) !important;
 }
