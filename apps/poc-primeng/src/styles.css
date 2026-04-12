@@ -110,54 +110,48 @@ body {
 }
 
 /* ============================================================
- * RadioButton Gov.br DS — estado checked via data-p-checked
- * (peer-checked: do Tailwind não funciona porque icon é filho
- * de box, não irmão do input.peer)
+ * @layer govbr — overrides Gov.br DS para componentes PrimeNG.
+ * Layer separado evita conflitos de especificidade com classes
+ * utilitárias do Tailwind em produção.
  * ============================================================ */
-p-radiobutton[data-p-checked="true"] .govbr-radio-box {
-  border-color: var(--color-govbr-primary);
-}
+@layer govbr {
+  /* RadioButton — estado checked via data-p-checked
+   * (peer-checked: do Tailwind não funciona porque icon é filho
+   * de box, não irmão do input.peer) */
+  p-radiobutton[data-p-checked="true"] .govbr-radio-box {
+    border-color: var(--color-govbr-primary);
+  }
 
-p-radiobutton[data-p-checked="true"] .govbr-radio-icon {
-  background-color: var(--color-govbr-primary);
-}
+  p-radiobutton[data-p-checked="true"] .govbr-radio-icon {
+    background-color: var(--color-govbr-primary);
+  }
 
-/* ============================================================
- * PrimeNG message severity styles (via CSS, não PassThrough,
- * porque severity altera semanticamente a cor do componente)
- * ============================================================ */
+  /* Message — severity styles (não via PassThrough porque
+   * severity altera semanticamente a cor do componente) */
+  .poc-message-success {
+    border-left: 4px solid var(--color-govbr-success);
+    background-color: var(--color-govbr-success-light);
+    color: var(--color-govbr-gray-80);
+  }
 
-/* Sucesso */
-.poc-message-success {
-  border-left: 4px solid var(--color-govbr-success);
-  background-color: var(--color-govbr-success-light);
-  color: var(--color-govbr-gray-80);
-}
+  .poc-message-success .poc-message-icon {
+    color: var(--color-govbr-success);
+    flex-shrink: 0;
+  }
 
-.poc-message-success [data-pc-section="icon"],
-.poc-message-success .poc-message-icon {
-  color: var(--color-govbr-success);
-  flex-shrink: 0;
-}
+  .poc-message-error {
+    border-left: 4px solid var(--color-govbr-danger);
+    background-color: var(--color-govbr-danger-light);
+    color: var(--color-govbr-gray-80);
+  }
 
-/* Erro */
-.poc-message-error {
-  border-left: 4px solid var(--color-govbr-danger);
-  background-color: var(--color-govbr-danger-light);
-  color: var(--color-govbr-gray-80);
-}
+  .poc-message-error .poc-message-icon {
+    color: var(--color-govbr-danger);
+    flex-shrink: 0;
+  }
 
-.poc-message-error [data-pc-section="icon"],
-.poc-message-error .poc-message-icon {
-  color: var(--color-govbr-danger);
-  flex-shrink: 0;
-}
-
-/* ============================================================
- * Input error state — borda vermelha quando inválido + touched.
- * PrimeNG inputtext em unstyled mode: a classe !border-govbr-danger
- * pode não vencer a border do PT. Usar seletor mais específico.
- * ============================================================ */
-input.ng-invalid.ng-touched {
-  border-color: var(--color-govbr-danger) !important;
+  /* Input error — borda vermelha quando inválido + touched */
+  input.ng-invalid.ng-touched {
+    border-color: var(--color-govbr-danger) !important;
+  }
 }

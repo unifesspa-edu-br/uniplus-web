@@ -3,6 +3,7 @@
 **Data:** 2026-04-11
 **Branch:** `poc/19-primeng-govbr-ds`
 **Issue:** unifesspa-edu-br/uniplus-web#19
+**PR:** unifesspa-edu-br/uniplus-web#20
 **Versões:**
 - Angular 21.2.5 + Nx 22.6.2 + TypeScript 5.9
 - PrimeNG 21.1.4 (unstyled mode + PassThrough API)
@@ -363,7 +364,7 @@ Para o contexto específico do CEPS/Unifesspa:
 ## Anexo — Screenshots para avaliação pelo QA
 
 86 screenshots capturados automaticamente pelo Playwright em cada teste E2E.
-Localizados em `apps/poc-primeng-e2e/apps/poc-primeng-e2e/screenshots/`.
+Localizados em `apps/poc-primeng-e2e/screenshots/`.
 
 ### Fluxo de inscrição (15 capturas)
 

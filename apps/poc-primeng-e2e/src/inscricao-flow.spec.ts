@@ -1,6 +1,8 @@
 import { test, expect, Page } from '@playwright/test';
 
-const screenshotsDir = 'apps/poc-primeng-e2e/screenshots';
+import { join } from 'path';
+
+const screenshotsDir = join(__dirname, '..', 'screenshots');
 
 async function screenshot(page: Page, name: string) {
   await page.screenshot({

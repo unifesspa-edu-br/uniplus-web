@@ -1,6 +1,8 @@
 import { test } from '@playwright/test';
 
-const screenshotsDir = 'apps/poc-primeng-e2e/screenshots';
+import { join } from 'path';
+
+const screenshotsDir = join(__dirname, '..', 'screenshots');
 
 /**
  * Captura screenshots de referência do Gov.br Design System oficial.
