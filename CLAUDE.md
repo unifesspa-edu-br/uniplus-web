@@ -2,35 +2,71 @@
 
 ## Visao geral
 
-Frontend do Sistema Unificado CEPS (UniPlus) da Unifesspa. Monorepo Nx com 3 aplicacoes Angular e 3 bibliotecas compartilhadas.
+Frontend do Uni+ (S2U) (UniPlus) da Unifesspa. Monorepo Nx com 3 aplicacoes Angular e 3 bibliotecas compartilhadas.
 
-## Stack e versoes
+## Stack e versões
 
 - **Angular** 21.x (standalone components, signals, OnPush)
 - **Nx** 22.x (monorepo, affected, caching)
-- **PrimeNG** 21.x (componentes UI)
-- **Tailwind CSS** 3.x (estilizacao utility-first)
-- **Keycloak** (autenticacao via keycloak-angular)
+- **PrimeNG** 21.x (modo unstyled + PassThrough com tokens Gov.br)
+- **@govbr-ds/core** 3.7.x (design tokens CSS — sem JS)
+- **Tailwind CSS** 4.x (estilização utility-first com @theme)
+- **Keycloak** (autenticação via keycloak-angular)
 - **Playwright** (testes E2E)
-- **Vitest** (testes unitarios via @analogjs/vitest-angular)
+- **Vitest** (testes unitários via @analogjs/vitest-angular)
 - **TypeScript** 5.9.x (strict mode)
 
 ## Estrutura do workspace
 
 ```
 apps/
-  selecao/        → Modulo Selecao (gestao de editais, inscricoes, homologacao, notas, classificacao)
+  selecao/        → Módulo Seleção (gestão de editais, inscrições, homologação, notas, classificação)
   selecao-e2e/    → Testes E2E do selecao
-  ingresso/       → Modulo Ingresso (chamadas, convocacoes, matriculas)
+  ingresso/       → Módulo Ingresso (chamadas, convocações, matrículas)
   ingresso-e2e/   → Testes E2E do ingresso
-  portal/         → Portal publico do candidato (inscricao, acompanhamento, documentos, recursos)
+  portal/         → Portal público do candidato (inscrição, acompanhamento, documentos, recursos)
   portal-e2e/     → Testes E2E do portal
+  poc-primeng/    → POC: PrimeNG unstyled + Gov.br DS + Tailwind (referência de implementação)
+  poc-primeng-e2e/→ Testes E2E da POC (46 testes de tokens + 17 de acessibilidade)
 
 libs/
-  shared-ui/      → Componentes reutilizaveis (cpf-input, data-table, file-upload, status-badge, etc.)
-  shared-auth/    → Autenticacao Keycloak (auth.service, guards, interceptor, providers)
-  shared-data/    → DTOs, API clients, utilitarios (cpf.util, date.util, api-error-handler)
+  shared-ui/      → Componentes reutilizáveis (cpf-input, data-table, file-upload, status-badge, etc.)
+  shared-auth/    → Autenticação Keycloak (auth.service, guards, interceptor, providers)
+  shared-data/    → DTOs, API clients, utilitários (cpf.util, date.util, api-error-handler)
 ```
+
+## Estratégia de UI — PrimeNG unstyled + Gov.br Design System
+
+**Validado via POC (`apps/poc-primeng/`).** Esta é a estratégia obrigatória para todos os componentes do sistema.
+
+### Arquitetura de estilização
+
+```
+@govbr-ds/core (tokens CSS) → Tailwind @theme (46 tokens) → PrimeNG PassThrough (classes por slot)
+```
+
+1. Tokens Gov.br importados de `@govbr-ds/core/dist/core-tokens.min.css` (somente CSS, sem runtime JS)
+2. Tokens mapeados como extensões do Tailwind via `@theme` (ex.: `bg-govbr-primary`, `text-govbr-danger`)
+3. PrimeNG em **modo unstyled** — estilos aplicados via objeto `govbrPassThrough` que define classes Tailwind para cada slot de cada componente
+4. Focus ring customizado: overlay `<span>` com borda dourada tracejada (4px #c2850c), compatível com WCAG 2.1 AA
+
+### Regras de estilização
+
+- **Sempre** usar PrimeNG em modo unstyled com PassThrough
+- **Sempre** usar tokens Gov.br via classes Tailwind (`bg-govbr-*`, `text-govbr-*`, `rounded-govbr-*`)
+- **Nunca** importar temas PrimeNG (Aura, Lara, etc.)
+- **Nunca** usar cores hardcoded — sempre tokens
+- **Nunca** sobrescrever focus ring nativo sem usar o overlay Gov.br
+- A POC (`apps/poc-primeng/`) é a **referência de implementação** — consultar antes de criar novos componentes
+
+### Arquivos de referência da POC
+
+| Arquivo | O que contém |
+|---------|-------------|
+| `apps/poc-primeng/src/styles.css` | Mapeamento completo de 46 tokens Gov.br → Tailwind @theme |
+| `apps/poc-primeng/src/main.ts` | Configuração PrimeNG unstyled + `govbrPassThrough` + focus ring overlay |
+| `apps/poc-primeng/src/app/` | Componentes de exemplo (formulário multi-step com validação) |
+| `apps/poc-primeng-e2e/src/` | Suíte E2E: `govbr-design-tokens.spec.ts` (46 testes) + `keyboard-a11y.spec.ts` (17 testes) |
 
 ## Path aliases
 
