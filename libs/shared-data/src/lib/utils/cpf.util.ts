@@ -21,6 +21,6 @@ export function formatCpf(cpf: string): string {
 }
 
 export function maskCpf(cpf: string): string {
-  const digits = cpf.replace(/\D/g, '').padStart(11, '0');
-  return `***.${digits.slice(3, 6)}.***-${digits.slice(9)}`;
+  const digits = cpf.replace(/\D/g, '');
+  return `***.***.***-${digits.slice(-2)}`;
 }

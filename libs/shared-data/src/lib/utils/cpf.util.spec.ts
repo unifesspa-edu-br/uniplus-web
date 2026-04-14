@@ -23,7 +23,7 @@ describe('cpf.util', () => {
 
   describe('maskCpf', () => {
     it('should mask CPF for LGPD', () => {
-      expect(maskCpf('52998224725')).toBe('***.982.***-25');
+      expect(maskCpf('52998224725')).toBe('***.***.***-25');
     });
   });
 });
