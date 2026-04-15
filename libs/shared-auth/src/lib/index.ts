@@ -24,3 +24,8 @@ export { AUTH_ALLOWED_URLS } from './tokens/auth.tokens';
 // Components
 export { AuthErrorBannerComponent } from './components/auth-error-banner.component';
 export { AccessDeniedComponent } from './components/access-denied.component';
+export { LoginErrorBannerComponent } from './components/login-error-banner.component';
+
+// Models
+export { LoginErrorCode, classifyLoginError } from './models/login-error.model';
+export type { LoginErrorDetails } from './models/login-error.model';
