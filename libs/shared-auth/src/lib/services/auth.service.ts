@@ -15,6 +15,7 @@ export class AuthService {
   private keycloak: Keycloak | null = null;
   private readonly _authenticated = signal(false);
   private readonly _userProfile = signal<UserProfile | null>(null);
+  private readonly _initError = signal<string | null>(null);
 
   /**
    * Promise de refresh em voo — compartilhada entre chamadas concorrentes
@@ -27,27 +28,45 @@ export class AuthService {
   readonly authenticated = this._authenticated.asReadonly();
   readonly userProfile = this._userProfile.asReadonly();
   readonly roles = computed(() => this._userProfile()?.roles ?? []);
+  /**
+   * Mensagem de erro quando `init()` falha (ex.: Keycloak indisponível).
+   * `null` indica init bem-sucedido ou ainda não executado. Consumida
+   * por componentes de shell para exibir fallback ao usuário.
+   */
+  readonly initError = this._initError.asReadonly();
 
+  /**
+   * Inicializa o Keycloak. NUNCA lança — falhas são capturadas e
+   * expostas via `initError()`, permitindo que o bootstrap da app
+   * prossiga mesmo com o provedor de autenticação indisponível
+   * (finding I7). Nessa situação o app entra em modo "não autenticado"
+   * e o shell pode exibir um banner de fallback.
+   */
   async init(config: AuthConfig): Promise<boolean> {
-    this.keycloak = new Keycloak({
-      url: config.keycloakUrl,
-      realm: config.realm,
-      clientId: config.clientId,
-    });
+    this._initError.set(null);
+    try {
+      this.keycloak = this.createKeycloak(config);
 
-    const authenticated = await this.keycloak.init({
-      onLoad: 'check-sso',
-      silentCheckSsoRedirectUri: window.location.origin + '/assets/silent-check-sso.html',
-      checkLoginIframe: false,
-    });
+      const authenticated = await this.keycloak.init({
+        onLoad: 'check-sso',
+        silentCheckSsoRedirectUri: window.location.origin + '/assets/silent-check-sso.html',
+        checkLoginIframe: false,
+      });
 
-    this._authenticated.set(authenticated);
+      this._authenticated.set(authenticated);
 
-    if (authenticated) {
-      await this.loadProfile();
+      if (authenticated) {
+        await this.loadProfile();
+      }
+
+      return authenticated;
+    } catch (error) {
+      this.keycloak = null;
+      this._authenticated.set(false);
+      this._userProfile.set(null);
+      this._initError.set(describeInitError(error));
+      return false;
     }
-
-    return authenticated;
   }
 
   async login(): Promise<void> {
@@ -111,6 +130,18 @@ export class AuthService {
     return this.roles().includes(role);
   }
 
+  /**
+   * @internal Ponto de extensão para testes — substituído por spies
+   * que retornam duplos de Keycloak com `init()` estubado.
+   */
+  protected createKeycloak(config: AuthConfig): Keycloak {
+    return new Keycloak({
+      url: config.keycloakUrl,
+      realm: config.realm,
+      clientId: config.clientId,
+    });
+  }
+
   /** @internal Acesso somente para testes — expõe a promise em voo. */
   _getRefreshInFlight(): Promise<boolean> | null {
     return this.refreshInFlight;
@@ -133,6 +164,14 @@ export class AuthService {
       roles: realmRoles,
     });
   }
+}
+
+function describeInitError(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.length > 0) return error;
+  const message = extractErrorDescription(error);
+  if (message) return message;
+  return 'Não foi possível contatar o provedor de autenticação.';
 }
 
 function isRefreshReuseError(error: unknown): boolean {

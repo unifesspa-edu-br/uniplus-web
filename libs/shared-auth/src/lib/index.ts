@@ -19,3 +19,6 @@ export { provideAuth } from './providers/auth.provider';
 
 // Tokens
 export { AUTH_ALLOWED_URLS } from './tokens/auth.tokens';
+
+// Components
+export { AuthErrorBannerComponent } from './components/auth-error-banner.component';
