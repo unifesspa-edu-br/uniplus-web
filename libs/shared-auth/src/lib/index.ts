@@ -16,3 +16,6 @@ export type { AuthConfig } from './models/auth-config.model';
 
 // Providers
 export { provideAuth } from './providers/auth.provider';
+
+// Tokens
+export { AUTH_ALLOWED_URLS } from './tokens/auth.tokens';
