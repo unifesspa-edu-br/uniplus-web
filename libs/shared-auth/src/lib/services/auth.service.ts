@@ -47,6 +47,16 @@ export class AuthService {
     return this.keycloak?.token;
   }
 
+  /**
+   * Indica se o access token atual está expirado (ou expirará em menos
+   * de `minValidity` segundos). Retorna `true` quando não há Keycloak
+   * inicializado — o interceptor trata esse caso como "sem token".
+   */
+  isTokenExpired(minValidity = 30): boolean {
+    if (!this.keycloak) return true;
+    return this.keycloak.isTokenExpired(minValidity);
+  }
+
   async refreshToken(minValidity = 30): Promise<boolean> {
     try {
       const refreshed = await this.keycloak?.updateToken(minValidity);

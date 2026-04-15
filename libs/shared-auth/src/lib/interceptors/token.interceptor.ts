@@ -1,5 +1,6 @@
-import { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Observable, defer, switchMap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { AUTH_ALLOWED_URLS } from '../tokens/auth.tokens';
 
@@ -7,8 +8,12 @@ import { AUTH_ALLOWED_URLS } from '../tokens/auth.tokens';
  * Interceptor que anexa `Authorization: Bearer <token>` às requisições
  * destinadas a URLs da allowlist (`AUTH_ALLOWED_URLS`).
  *
- * Requisições para qualquer outro destino seguem sem o header, evitando
- * vazamento de credenciais para domínios externos.
+ * Antes de anexar o token, verifica expiração (`isTokenExpired(30)`) e,
+ * se necessário, dispara `refreshToken()` — garantindo que nenhuma
+ * requisição viaje com um Bearer prestes a expirar.
+ *
+ * Requisições para domínios fora da allowlist seguem sem o header,
+ * evitando vazamento de credenciais.
  */
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const allowedUrls = inject(AUTH_ALLOWED_URLS);
@@ -18,19 +23,38 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const authService = inject(AuthService);
-  const token = authService.getToken();
 
+  return defer(() => ensureFreshToken(authService)).pipe(
+    switchMap((token) => attach(req, next, token)),
+  );
+};
+
+async function ensureFreshToken(authService: AuthService): Promise<string | undefined> {
+  const current = authService.getToken();
+  if (!current) {
+    return undefined;
+  }
+
+  if (authService.isTokenExpired(30)) {
+    await authService.refreshToken(30);
+  }
+
+  return authService.getToken();
+}
+
+function attach(
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+  token: string | undefined,
+): Observable<HttpEvent<unknown>> {
   if (!token) {
     return next(req);
   }
-
   const cloned = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
+    setHeaders: { Authorization: `Bearer ${token}` },
   });
   return next(cloned);
-};
+}
 
 function isUrlAllowed(req: HttpRequest<unknown>, allowedUrls: readonly string[]): boolean {
   if (allowedUrls.length === 0) {
