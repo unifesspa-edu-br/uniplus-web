@@ -104,4 +104,31 @@ describe('AuthService.init — resiliência a Keycloak indisponível', () => {
     expect(result).toBe(false);
     expect(service.initError()).toBe('cannot reach');
   });
+
+  it('registra callback onTokenExpired que dispara refreshToken()', async () => {
+    let capturedCallback: (() => void) | undefined;
+    const kc = stubKeycloak({ init: async () => true });
+    // Captura de onTokenExpired via setter-ish
+    Object.defineProperty(kc, 'onTokenExpired', {
+      configurable: true,
+      get() {
+        return capturedCallback;
+      },
+      set(fn: () => void) {
+        capturedCallback = fn;
+      },
+    });
+
+    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
+      .mockReturnValue(kc);
+    // loadProfile depende de loadUserProfile — stub já retorna {}
+    const refreshSpy = vi.spyOn(service, 'refreshToken').mockResolvedValue(true);
+
+    await service.init(config);
+
+    expect(capturedCallback).toBeInstanceOf(Function);
+    capturedCallback?.();
+    // `refreshToken` é chamado de forma fire-and-forget via `void`
+    expect(refreshSpy).toHaveBeenCalledWith(30);
+  });
 });

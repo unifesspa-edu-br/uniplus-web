@@ -53,6 +53,14 @@ export class AuthService {
         checkLoginIframe: false,
       });
 
+      // Renovação periódica: o keycloak-js dispara `onTokenExpired`
+      // quando o access token expira. Como `refreshToken()` é serializado
+      // (Task #61), é seguro chamá-lo aqui sem risco de corrida com
+      // refreshes disparados pelo interceptor.
+      this.keycloak.onTokenExpired = () => {
+        void this.refreshToken(30);
+      };
+
       this._authenticated.set(authenticated);
 
       if (authenticated) {
