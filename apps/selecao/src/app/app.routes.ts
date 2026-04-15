@@ -1,8 +1,14 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from '@uniplus/shared-auth';
+import { AccessDeniedComponent, authGuard, roleGuard } from '@uniplus/shared-auth';
 import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Routes = [
+  {
+    // Página de 403 — acessível mesmo sem role específica (apenas
+    // exige autenticação prévia do Keycloak).
+    path: 'acesso-negado',
+    component: AccessDeniedComponent,
+  },
   {
     // Backoffice Seleção: todas as rotas exigem autenticação.
     // Roles elegíveis nesta SPA: admin, gestor, avaliador.

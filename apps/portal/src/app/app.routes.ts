@@ -1,8 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '@uniplus/shared-auth';
+import { AccessDeniedComponent, authGuard } from '@uniplus/shared-auth';
 import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Routes = [
+  {
+    path: 'acesso-negado',
+    component: AccessDeniedComponent,
+  },
   {
     path: '',
     component: LayoutComponent,
