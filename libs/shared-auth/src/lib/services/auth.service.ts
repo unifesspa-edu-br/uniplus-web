@@ -3,11 +3,26 @@ import Keycloak from 'keycloak-js';
 import { AuthConfig } from '../models/auth-config.model';
 import { UserProfile } from '../models/user.model';
 
+/**
+ * Padrão usado por Keycloak quando um refresh token é replayado:
+ * `error: "invalid_grant"`, `error_description: "... reuse exceeded ..."`
+ * com `revokeRefreshToken=true` + `refreshTokenMaxReuse=0`.
+ */
+const REFRESH_REUSE_MARKERS = ['reuse exceeded', 'session not active', 'token is not active'];
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private keycloak: Keycloak | null = null;
   private readonly _authenticated = signal(false);
   private readonly _userProfile = signal<UserProfile | null>(null);
+
+  /**
+   * Promise de refresh em voo — compartilhada entre chamadas concorrentes
+   * para evitar que duas requisições disparem dois refreshes paralelos.
+   * Com `refreshTokenMaxReuse=0`, o segundo refresh receberia
+   * `invalid_grant: reuse exceeded` e derrubaria a sessão.
+   */
+  private refreshInFlight: Promise<boolean> | null = null;
 
   readonly authenticated = this._authenticated.asReadonly();
   readonly userProfile = this._userProfile.asReadonly();
@@ -57,18 +72,48 @@ export class AuthService {
     return this.keycloak.isTokenExpired(minValidity);
   }
 
+  /**
+   * Renova o access token de forma **serializada**: múltiplas chamadas
+   * concorrentes compartilham a mesma Promise de rede, evitando que o
+   * Keycloak rejeite o segundo refresh com `invalid_grant: reuse
+   * exceeded` (Story uniplus-api#67 / PR #84 — `revokeRefreshToken=true`).
+   *
+   * Se a renovação falhar com marcador de replay/sessão morta, dispara
+   * `logout()` — a sessão está comprometida e um novo login é exigido.
+   */
   async refreshToken(minValidity = 30): Promise<boolean> {
+    if (this.refreshInFlight) {
+      return this.refreshInFlight;
+    }
+
+    this.refreshInFlight = this.runRefresh(minValidity).finally(() => {
+      this.refreshInFlight = null;
+    });
+
+    return this.refreshInFlight;
+  }
+
+  private async runRefresh(minValidity: number): Promise<boolean> {
     try {
       const refreshed = await this.keycloak?.updateToken(minValidity);
       return refreshed ?? false;
-    } catch {
+    } catch (error) {
       this._authenticated.set(false);
+      if (isRefreshReuseError(error)) {
+        // Replay/reuso detectado — sessão comprometida. Força logout.
+        void this.logout();
+      }
       return false;
     }
   }
 
   hasRole(role: string): boolean {
     return this.roles().includes(role);
+  }
+
+  /** @internal Acesso somente para testes — expõe a promise em voo. */
+  _getRefreshInFlight(): Promise<boolean> | null {
+    return this.refreshInFlight;
   }
 
   private async loadProfile(): Promise<void> {
@@ -88,4 +133,29 @@ export class AuthService {
       roles: realmRoles,
     });
   }
+}
+
+function isRefreshReuseError(error: unknown): boolean {
+  const description = extractErrorDescription(error).toLowerCase();
+  return REFRESH_REUSE_MARKERS.some((marker) => description.includes(marker));
+}
+
+function extractErrorDescription(error: unknown): string {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+  if (typeof error !== 'object') return '';
+
+  const candidates: unknown[] = [
+    (error as { error_description?: unknown }).error_description,
+    (error as { errorDescription?: unknown }).errorDescription,
+    (error as { description?: unknown }).description,
+    (error as { message?: unknown }).message,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.length > 0) {
+      return candidate;
+    }
+  }
+  return '';
 }
