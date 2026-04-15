@@ -3,7 +3,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
 import { errorInterceptor, loadingInterceptor } from '@uniplus/shared-core';
-import { provideAuth, tokenInterceptor } from '@uniplus/shared-auth';
+import { authErrorInterceptor, provideAuth, tokenInterceptor } from '@uniplus/shared-auth';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
@@ -14,7 +14,12 @@ export const appConfig: ApplicationConfig = {
     // loadingInterceptor para UX, errorInterceptor por último para
     // capturar falhas de toda a pilha.
     provideHttpClient(
-      withInterceptors([tokenInterceptor, loadingInterceptor, errorInterceptor]),
+      withInterceptors([
+        tokenInterceptor,
+        loadingInterceptor,
+        authErrorInterceptor,
+        errorInterceptor,
+      ]),
     ),
     provideAuth({
       keycloakUrl: environment.keycloak.url,

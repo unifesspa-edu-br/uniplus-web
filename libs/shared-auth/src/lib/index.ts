@@ -8,6 +8,7 @@ export { roleGuard } from './guards/role.guard';
 
 // Interceptors
 export { tokenInterceptor } from './interceptors/token.interceptor';
+export { authErrorInterceptor } from './interceptors/auth-error.interceptor';
 
 // Models
 export type { UserProfile } from './models/user.model';
