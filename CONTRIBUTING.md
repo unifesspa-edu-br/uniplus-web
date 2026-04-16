@@ -2,6 +2,8 @@
 
 Este documento descreve como contribuir com o frontend da plataforma Uni+. Leia-o por completo antes de abrir sua primeira contribuição.
 
+> **Regras transversais de commits e integração:** este repositório segue o **[Guia de Commits e Integração](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md)** — referência oficial para todos os repositórios do projeto (`uniplus-api`, `uniplus-web`, `uniplus-docs`), mantido em `uniplus-docs`. Este documento complementa o guia com regras específicas do frontend.
+
 ---
 
 ## Pré-requisitos
@@ -91,10 +93,12 @@ libs/
 
 ### 1. Criar branch
 
+> **Regra de ouro:** sem issue, sem código. Toda mudança não-trivial deve ter issue vinculada no GitHub antes de criar a branch.
+
 ```bash
 git checkout main
-git pull origin main
-git checkout -b feature/{slug-descritivo}
+git pull --rebase origin main
+git checkout -b feature/{issue-number}-{slug}
 ```
 
 **Convenção de nomes:**
@@ -137,37 +141,54 @@ Todos os comandos acima devem passar antes de abrir o PR.
 
 ### 4. Commit
 
-Mensagens em **conventional commits** (pt-BR):
+As regras de formato, tipos permitidos e convenções gerais de mensagem estão definidas no **[Guia de Commits e Integração § 1–4](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md)**. Siga-o na íntegra.
+
+**Escopos válidos neste repositório:**
+
+| Escopo | Quando usar |
+|---|---|
+| `selecao` | App Seleção (`apps/selecao/`) |
+| `ingresso` | App Ingresso (`apps/ingresso/`) |
+| `portal` | App Portal público (`apps/portal/`) |
+| `shared-ui` | Componentes reutilizáveis PrimeNG (`libs/shared-ui/`) |
+| `shared-data` | API clients, DTOs, utilitários (`libs/shared-data/`) |
+| `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
+| `govbr` | Tokens Gov.br DS, mapeamento CSS → Tailwind @theme |
+| `primeng` | PassThrough, configuração PrimeNG unstyled |
+| `auth` | Keycloak, `libs/shared-auth/` (guards, interceptor, tokens) |
+| `nx` | Configuração Nx (workspace, targets, caching, affected) |
+| `ci` | GitHub Actions, workflows, pipeline |
+| `docker` | Dockerfiles, `docker-compose` |
+| `deps` | Atualização de pacotes npm |
+| `e2e` | Testes E2E Playwright (`apps/*-e2e/`) |
+
+Para o Nx monorepo, prefira o nome da **app** ou **lib** afetada. Mudanças transversais (ex.: tokens Gov.br, estilo global) usam `govbr` ou `shared-ui`.
+
+**Alguns exemplos canônicos:**
 
 ```
-tipo(escopo): descrição curta
+feat(selecao): adiciona formulário de inscrição multi-etapa
+fix(auth): corrige refresh token expirado sem redirect
+refactor(shared-ui): extrai componente InputCpf para lib compartilhada
+style(govbr): ajusta tokens de espaçamento para e-MAG 3.1
+test(e2e): adiciona testes do fluxo de inscrição no portal
+chore(deps): atualiza PrimeNG para 21.x
 ```
 
-**Tipos:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`, `perf`, `ci`, `build`
+Para uma bateria completa de exemplos (bons e ruins, com justificativas), consulte [Guia § 4](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md).
 
-**Escopo:** app ou lib afetada — `selecao`, `ingresso`, `portal`, `shared-ui`, `shared-auth`, `shared-data`
+### 5. Rebase sobre `main`
 
-**Exemplos:**
+Integração via **rebase** — sem merge commits poluindo o histórico. Procedimento completo e regras de ouro em **[Guia de Commits e Integração § 5–6](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md)**.
 
-```
-feat(selecao): adicionar formulário de inscrição multi-etapa
-fix(shared-auth): corrigir refresh token expirado sem redirect
-refactor(shared-ui): extrair componente de upload de documentos
-style(ingresso): ajustar responsividade da tela de homologação
-test(selecao): adicionar testes E2E do fluxo de inscrição
-chore(deps): atualizar PrimeNG para 20.x
-```
+Resumo aplicado ao `uniplus-web`: mantenha a branch rebaseada sobre `origin/main`, organize os commits com `rebase -i` (squash/reword/drop) antes do PR e use `git push --force-with-lease` ao reescrever história — nunca `--force` puro.
 
-**Regras:**
-- Primeira linha: máximo 72 caracteres, sem ponto final
-- Descrição em pt-BR
-- Nunca adicionar `Co-Authored-By`
-- Nunca usar `--no-verify`
-
-### 5. Pull Request
+### 6. Pull Request
 
 ```bash
-git push -u origin feature/{slug}
+git push -u origin feature/{issue-number}-{slug}
+
+# Criar PR (Closes #N na descrição fecha a issue automaticamente no merge)
 gh pr create --base main
 ```
 
@@ -341,6 +362,22 @@ O PR será bloqueado se qualquer gate falhar:
 - [ ] Todos os testes E2E passando
 - [ ] Testes de acessibilidade passando (axe-core)
 - [ ] Nenhuma vulnerabilidade crítica em dependências (`npm audit`)
+
+---
+
+## Checklist antes de pedir merge
+
+Complementa os Quality gates acima (verificações de CI automáticas) com higiene de commits e branch — essas são verificações humanas:
+
+- [ ] Branch no padrão (`feature/{issue}-{slug}`, `fix/{issue}-{slug}`, `chore/{slug}`, `style/{slug}` ou `docs/{slug}`)
+- [ ] Issue vinculada no GitHub (regra de ouro: sem issue, sem código)
+- [ ] Todos os commits seguem Conventional Commits em pt-BR
+- [ ] Verbo no **imperativo presente** (`adiciona`, `corrige`, `remove`, `atualiza`) — nunca infinitivo (`adicionar`) nem gerúndio (`Adicionando`)
+- [ ] Subject em minúsculas, sem ponto final, máx. ~72 caracteres
+- [ ] Escopo presente (do conjunto definido em [§ Commit](#4-commit)) quando aplicável
+- [ ] Branch **rebaseada** sobre a `main` mais recente
+- [ ] Commits "WIP" / "ajustes do PR" foram **squashados** via `git rebase -i`
+- [ ] PR vinculado à issue com `Closes #N` na descrição
 
 ---
 
