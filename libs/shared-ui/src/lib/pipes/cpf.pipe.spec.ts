@@ -4,11 +4,11 @@ describe('CpfPipe', () => {
   const pipe = new CpfPipe();
 
   it('should format CPF correctly', () => {
-    expect(pipe.transform('12345678901')).toBe('123.456.789-01');
+    expect(pipe.transform('52998224725')).toBe('529.982.247-25');
   });
 
   it('should mask CPF correctly', () => {
-    expect(pipe.transform('12345678901', true)).toBe('***.456.***-01');
+    expect(pipe.transform('52998224725', true)).toBe('***.***.***-25');
   });
 
   it('should handle empty value', () => {
