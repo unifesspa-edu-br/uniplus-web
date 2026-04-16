@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, forwardRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, forwardRef, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
@@ -17,7 +17,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@a
         [id]="inputId()"
         type="text"
         [placeholder]="placeholder()"
-        [value]="displayValue"
+        [value]="displayValue()"
         (input)="onInput($event)"
         (blur)="onTouched()"
         maxlength="14"
@@ -48,7 +48,7 @@ export class CpfInputComponent implements ControlValueAccessor {
   readonly invalid = input<boolean>(false);
   readonly errorMessage = input<string>('');
 
-  displayValue = '';
+  displayValue = signal('');
   private rawValue = '';
 
   // noop — substituída por registerOnChange
@@ -58,7 +58,7 @@ export class CpfInputComponent implements ControlValueAccessor {
 
   writeValue(value: string): void {
     this.rawValue = (value || '').replace(/\D/g, '');
-    this.displayValue = this.formatCpf(this.rawValue);
+    this.displayValue.set(this.formatCpf(this.rawValue));
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -72,8 +72,8 @@ export class CpfInputComponent implements ControlValueAccessor {
   onInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.rawValue = input.value.replace(/\D/g, '').substring(0, 11);
-    this.displayValue = this.formatCpf(this.rawValue);
-    input.value = this.displayValue;
+    this.displayValue.set(this.formatCpf(this.rawValue));
+    input.value = this.displayValue();
     this.onChange(this.rawValue);
   }
 
