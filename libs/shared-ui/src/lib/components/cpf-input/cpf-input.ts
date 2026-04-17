@@ -20,6 +20,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@a
         [value]="displayValue()"
         (input)="onInput($event)"
         (blur)="onTouched()"
+        [disabled]="disabled()"
         maxlength="14"
         class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-unifesspa-primary focus:outline-none focus:ring-1 focus:ring-unifesspa-primary"
         [class.border-red-500]="invalid()"
@@ -47,8 +48,8 @@ export class CpfInputComponent implements ControlValueAccessor {
   readonly inputId = input<string>('cpf-input');
   readonly invalid = input<boolean>(false);
   readonly errorMessage = input<string>('');
-
-  displayValue = signal('');
+  readonly disabled = signal(false);
+  readonly displayValue = signal('');
   private rawValue = '';
 
   // noop — substituída por registerOnChange
@@ -67,6 +68,10 @@ export class CpfInputComponent implements ControlValueAccessor {
 
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled.set(isDisabled);
   }
 
   onInput(event: Event): void {
