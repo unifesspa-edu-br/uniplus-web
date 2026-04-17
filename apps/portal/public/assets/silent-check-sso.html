@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <title>Silent SSO check</title>
+  </head>
+  <body>
+    <!--
+      Página auxiliar para Silent SSO check do Keycloak.
+      Carregada em iframe durante o init com `onLoad: 'check-sso'` e
+      `silentCheckSsoRedirectUri: /assets/silent-check-sso.html`.
+      Retransmite o hash/query com o resultado para a janela pai.
+      Não deve conter lógica adicional nem recursos externos.
+    -->
+    <script>
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
+</html>
