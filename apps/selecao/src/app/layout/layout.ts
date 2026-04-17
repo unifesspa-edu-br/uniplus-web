@@ -1,18 +1,19 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { UserHeaderInfoComponent } from '@uniplus/shared-auth';
 
 @Component({
   selector: 'sel-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, UserHeaderInfoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex h-screen flex-col">
       <!-- Header -->
       <header class="flex h-16 items-center justify-between bg-unifesspa-primary px-6 text-white shadow-md">
         <div class="flex items-center gap-3">
-          <h1 class="text-lg font-bold">Seleção — Sistema Unificado CEPS</h1>
+          <h1 class="text-lg font-bold">Seleção — Uni+</h1>
         </div>
         <nav class="flex items-center gap-4 text-sm">
           <a routerLink="/dashboard" routerLinkActive="font-bold underline" class="hover:underline">Dashboard</a>
@@ -22,6 +23,7 @@ import { CommonModule } from '@angular/common';
           <a routerLink="/notas" routerLinkActive="font-bold underline" class="hover:underline">Notas</a>
           <a routerLink="/classificacao" routerLinkActive="font-bold underline" class="hover:underline">Classificação</a>
         </nav>
+        <auth-user-header-info />
       </header>
 
       <!-- Main -->

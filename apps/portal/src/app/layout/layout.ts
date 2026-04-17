@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { UserHeaderInfoComponent } from '@uniplus/shared-auth';
 
 @Component({
   selector: 'ptl-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, UserHeaderInfoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex min-h-screen flex-col">
@@ -19,6 +20,7 @@ import { CommonModule } from '@angular/common';
           <a routerLink="/documentos" routerLinkActive="font-bold underline" class="hover:underline">Documentos</a>
           <a routerLink="/perfil" routerLinkActive="font-bold underline" class="hover:underline">Meu Perfil</a>
         </nav>
+        <auth-user-header-info />
       </header>
       <main class="flex-1 bg-gray-50 p-6">
         <router-outlet />
