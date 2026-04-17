@@ -8,6 +8,7 @@ export { roleGuard } from './guards/role.guard';
 
 // Interceptors
 export { tokenInterceptor } from './interceptors/token.interceptor';
+export { authErrorInterceptor } from './interceptors/auth-error.interceptor';
 
 // Models
 export type { UserProfile } from './models/user.model';
@@ -16,3 +17,17 @@ export type { AuthConfig } from './models/auth-config.model';
 
 // Providers
 export { provideAuth } from './providers/auth.provider';
+
+// Tokens
+export { AUTH_ALLOWED_URLS } from './tokens/auth.tokens';
+
+// Components
+export { AuthErrorBannerComponent } from './components/auth-error-banner.component';
+export { AccessDeniedComponent } from './components/access-denied.component';
+export { LoginErrorBannerComponent } from './components/login-error-banner.component';
+export { UserHeaderInfoComponent } from './components/user-header-info.component';
+
+// Models
+export { LoginErrorCode, classifyLoginError } from './models/login-error.model';
+export type { LoginErrorDetails } from './models/login-error.model';
+export type { UniPlusTokenClaims } from './models/token-claims.model';
