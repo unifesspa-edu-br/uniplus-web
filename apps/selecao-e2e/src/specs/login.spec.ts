@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Login', () => {
-  test('deve redirecionar usuário não autenticado', async ({ page }) => {
+  test('deve redirecionar usuário não autenticado para o Keycloak', async ({ page }) => {
     await page.goto('/dashboard');
-    // TODO: verificar redirecionamento para Keycloak quando auth estiver habilitado
-    await expect(page).toHaveURL(/dashboard/);
+    await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, { timeout: 10_000 });
+    await expect(page.locator('#kc-login')).toBeVisible();
   });
 });
