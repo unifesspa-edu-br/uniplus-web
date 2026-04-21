@@ -19,23 +19,40 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
+      - name: Iniciar Keycloak
+        run: |
+          docker run -d \
+            --name keycloak \
+            --network host \
+            -e KC_HEALTH_ENABLED=true \
+            -e KC_HOSTNAME_STRICT=false \
+            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+            -e KC_BOOTSTRAP_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }} \
+            -v $PWD/tools/e2e-docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro \
+            quay.io/keycloak/keycloak:26.5 start-dev --import-realm
+
+      - name: Aguardar Keycloak ficar saudável
+        run: |
+          timeout 120 bash -c \
+            'until curl -sf http://localhost:9000/health/ready | grep -q "\"UP\""; do sleep 5; done'
+
       # This enables task distribution via Nx Cloud
       # Run this command as early as possible, before dependencies are installed
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
 
-      # Cache node_modules
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
       - run: npm ci
-      - run: npx playwright install --only-shell
+      - run: npx playwright install --with-deps
 
-      # Prepend any command with "nx record --" to record its logs to Nx Cloud
       - run: npx nx record -- echo Hello World
       - run: npx nx run-many -t lint test build typecheck e2e
-      # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
+        env:
+          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
+
       - run: npx nx fix-ci
         if: always()
