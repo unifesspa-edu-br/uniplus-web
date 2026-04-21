@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { UserContextService } from '../services/user-context.service';
+import { UserRole } from '../models/user.model';
+
+const DOMAIN_ROLES = new Set<string>(['admin', 'gestor', 'avaliador', 'candidato'] satisfies UserRole[]);
 
 /**
  * Bloco de identificação do usuário autenticado para uso em headers.
@@ -19,8 +22,10 @@ import { UserContextService } from '../services/user-context.service';
           <span class="font-semibold">{{ userContext.displayName() }}</span>
           <span class="text-xs opacity-80">
             &#64;{{ profile.username }}
-            @if (profile.roles.length) {
-              · {{ profile.roles.join(', ') }}
+            @if (domainRoles(profile.roles); as roles) {
+              @if (roles.length) {
+                · {{ roles.join(', ') }}
+              }
             }
           </span>
         </div>
@@ -39,6 +44,10 @@ import { UserContextService } from '../services/user-context.service';
 export class UserHeaderInfoComponent {
   protected readonly userContext = inject(UserContextService);
   private readonly authService = inject(AuthService);
+
+  protected domainRoles(roles: string[]): string[] {
+    return roles.filter((r) => DOMAIN_ROLES.has(r));
+  }
 
   protected logout(): void {
     void this.authService.logout();

@@ -10,7 +10,7 @@ export class UserContextService {
   readonly displayName = computed(() => {
     const profile = this.user();
     if (!profile) return '';
-    return profile.nomeSocial || profile.nomeCivil;
+    return profile.nomeSocial?.trim() || profile.nomeCivil;
   });
   readonly isAuthenticated = this.authService.authenticated;
 
