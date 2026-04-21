@@ -23,7 +23,8 @@
       "@uniplus/shared-ui": ["libs/shared-ui/src/index.ts"],
       "@uniplus/shared-auth": ["libs/shared-auth/src/index.ts"],
       "@uniplus/shared-core": ["libs/shared-core/src/index.ts"],
-      "@uniplus/shared-data": ["libs/shared-data/src/index.ts"]
+      "@uniplus/shared-data": ["libs/shared-data/src/index.ts"],
+      "@uniplus/shared-e2e": ["libs/shared-e2e/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
