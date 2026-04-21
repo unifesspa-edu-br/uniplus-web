@@ -3,7 +3,11 @@ import { Page, expect, request as playwrightRequest, APIRequestContext } from '@
 const KEYCLOAK_BASE = process.env['KEYCLOAK_URL'] || 'http://localhost:8080';
 const KEYCLOAK_REALM = 'unifesspa';
 const KEYCLOAK_ADMIN_USER = process.env['KEYCLOAK_ADMIN'] || 'admin';
-const KEYCLOAK_ADMIN_PASSWORD = process.env['KEYCLOAK_ADMIN_PASSWORD'] || 'admin';
+const KEYCLOAK_ADMIN_PASSWORD = (() => {
+  const val = process.env['KEYCLOAK_ADMIN_PASSWORD'];
+  if (!val) throw new Error('KEYCLOAK_ADMIN_PASSWORD não definido — configure a variável de ambiente antes de rodar os testes E2E.');
+  return val;
+})();
 
 /**
  * Reseta as senhas de múltiplos usuários para valores conhecidos e

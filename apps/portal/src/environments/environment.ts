@@ -1,6 +1,6 @@
 // Environment padrão — valores de desenvolvimento local.
-// Para produção, substituir via deploy (K8s ConfigMap, env var injection
-// ou fileReplacements quando o suporte no @angular/build for resolvido).
+// Em produção este arquivo é substituído por environment.prod.ts via fileReplacements.
+// Estratégia final: runtime config via provideAppInitializer + K8s ConfigMap (Option C).
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:5000/api/v1',
