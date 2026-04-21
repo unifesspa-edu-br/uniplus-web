@@ -5,6 +5,10 @@ import { workspaceRoot } from '@nx/devkit';
 // For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['BASE_URL'] || 'http://localhost:4202';
 
+// webkit requer libs Ubuntu (libicudata.so.74, libxml2.so.2 etc.) — só executa em CI.
+// Localmente em distros não-Debian, defina CI=true para incluir webkit.
+const isCI = !!process.env['CI'];
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -40,10 +44,10 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    {
+    ...(isCI ? [{
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-    },
+    }] : []),
 
     // Uncomment for mobile browsers support
     /* {
