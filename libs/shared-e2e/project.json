@@ -1,0 +1,12 @@
+{
+  "name": "shared-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-e2e/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:e2e"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

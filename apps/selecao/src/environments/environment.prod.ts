@@ -1,5 +1,5 @@
 // Configuração de PRODUÇÃO — ponte até a implementação de runtime config via
-// provideAppInitializer + K8s ConfigMap (Opção C, issue #TODO).
+// provideAppInitializer + K8s ConfigMap (Opção C, issue uniplus-web#84).
 //
 // ATENÇÃO: este arquivo NÃO contém valores reais. Em produção, fornecer via:
 //   - CI/CD fileReplacements com valores corretos por ambiente, OU
