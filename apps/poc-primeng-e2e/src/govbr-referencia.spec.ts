@@ -26,8 +26,8 @@ test.describe('Referência Gov.br DS — Screenshots oficiais', () => {
 
   for (const ref of referencias) {
     test(`capturar referência: ${ref.nome}`, async ({ page }) => {
+      // goto já aguarda o evento 'load' por padrão; páginas estáticas do Gov.br DS não precisam de espera adicional.
       await page.goto(ref.url);
-      await page.waitForLoadState('networkidle');
       await page.screenshot({
         path: `${screenshotsDir}/ref-govbr-${ref.nome}.png`,
         fullPage: true,

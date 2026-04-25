@@ -38,7 +38,7 @@ async function getActiveElementInfo(page: Page) {
 test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/inscricao');
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('poc-govbr-header')).toBeVisible({ timeout: 10_000 });
   });
 
   // ─── Navegação Tab / Shift+Tab completa ──────────────────────

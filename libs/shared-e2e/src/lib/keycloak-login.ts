@@ -1,4 +1,4 @@
-import { Page, expect, request as playwrightRequest, APIRequestContext } from '@playwright/test';
+import { Page, expect, request as playwrightRequest } from '@playwright/test';
 
 const KEYCLOAK_BASE = process.env['KEYCLOAK_URL'] || 'http://localhost:8080';
 const KEYCLOAK_REALM = 'unifesspa';

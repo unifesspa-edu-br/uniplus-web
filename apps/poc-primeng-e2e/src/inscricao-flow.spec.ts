@@ -14,7 +14,7 @@ async function screenshot(page: Page, name: string) {
 test.describe('Fluxo de inscrição — PoC PrimeNG + Gov.br DS', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/inscricao');
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('poc-govbr-header')).toBeVisible({ timeout: 10_000 });
   });
 
   // F01 — Página inicial
