@@ -1,10 +1,10 @@
 import { Component, ChangeDetectionStrategy, input, forwardRef, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { formatCpfProgressive } from '@uniplus/shared-data';
 
 @Component({
   selector: 'ui-cpf-input',
   standalone: true,
-  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-1">
@@ -49,7 +49,6 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@a
 })
 export class CpfInputComponent implements ControlValueAccessor {
   protected readonly MASKED_LENGTH = 14;
-  private static readonly DIGIT_LENGTH = 11;
 
   readonly label = input<string>('');
   readonly ariaLabel = input<string>('CPF');
@@ -66,8 +65,9 @@ export class CpfInputComponent implements ControlValueAccessor {
   private onTouched: () => void = () => undefined;
 
   writeValue(value: string | null | undefined): void {
-    this.rawValue = this.toRawDigits(value);
-    this.displayValue.set(this.formatCpf(this.rawValue));
+    const formatted = formatCpfProgressive(value);
+    this.displayValue.set(formatted);
+    this.rawValue = formatted.replace(/\D/g, '');
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -88,20 +88,10 @@ export class CpfInputComponent implements ControlValueAccessor {
 
   onInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.rawValue = this.toRawDigits(input.value);
-    this.displayValue.set(this.formatCpf(this.rawValue));
-    input.value = this.displayValue();
+    const formatted = formatCpfProgressive(input.value);
+    this.displayValue.set(formatted);
+    this.rawValue = formatted.replace(/\D/g, '');
+    input.value = formatted;
     this.onChange(this.rawValue);
-  }
-
-  private toRawDigits(value: string | null | undefined): string {
-    return (value ?? '').replace(/\D/g, '').slice(0, CpfInputComponent.DIGIT_LENGTH);
-  }
-
-  private formatCpf(value: string): string {
-    if (value.length <= 3) return value;
-    if (value.length <= 6) return `${value.slice(0, 3)}.${value.slice(3)}`;
-    if (value.length <= 9) return `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
-    return `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
   }
 }
