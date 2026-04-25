@@ -110,6 +110,49 @@ describe('CpfInputComponent (ControlValueAccessor)', () => {
     expect(input.getAttribute('aria-describedby')).toBe('cpf-error');
   });
 
+  it('aplica inputmode=numeric e autocomplete=off para UX mobile e LGPD', () => {
+    const { getInputEl } = setup();
+    const input = getInputEl();
+    expect(input.getAttribute('inputmode')).toBe('numeric');
+    expect(input.getAttribute('autocomplete')).toBe('off');
+  });
+
+  it('usa ariaLabel como fallback quando label() é vazio', () => {
+    const { fixture, getInputEl } = setup();
+    fixture.detectChanges();
+    expect(getInputEl().getAttribute('aria-label')).toBe('CPF');
+  });
+
+  it('omite aria-label quando label() está presente (para evitar duplicação)', () => {
+    const { fixture, getInputEl } = setup();
+    fixture.componentRef.setInput('label', 'Informe seu CPF');
+    fixture.detectChanges();
+    expect(getInputEl().getAttribute('aria-label')).toBeNull();
+  });
+
+  it('aceita ariaLabel customizado quando label() é vazio', () => {
+    const { fixture, getInputEl } = setup();
+    fixture.componentRef.setInput('ariaLabel', 'CPF do candidato');
+    fixture.detectChanges();
+    expect(getInputEl().getAttribute('aria-label')).toBe('CPF do candidato');
+  });
+
+  it('marca aria-required e required nativo quando required=true', () => {
+    const { fixture, getInputEl } = setup();
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+    const input = getInputEl();
+    expect(input.getAttribute('aria-required')).toBe('true');
+    expect(input.required).toBe(true);
+  });
+
+  it('omite aria-required quando required=false (default)', () => {
+    const { getInputEl } = setup();
+    const input = getInputEl();
+    expect(input.getAttribute('aria-required')).toBeNull();
+    expect(input.required).toBe(false);
+  });
+
   it('dispara o callback registrado em registerOnTouched no blur do input', () => {
     const { component, onTouchedSpy, getInputEl } = setup();
 

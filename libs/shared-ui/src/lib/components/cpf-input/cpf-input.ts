@@ -16,12 +16,17 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@a
       <input
         [id]="inputId()"
         type="text"
+        inputmode="numeric"
+        autocomplete="off"
         [placeholder]="placeholder()"
         [value]="displayValue()"
         (input)="onInput($event)"
-        (blur)="onTouched()"
+        (blur)="handleBlur()"
         [disabled]="disabled()"
-        maxlength="14"
+        [attr.maxlength]="MASKED_LENGTH"
+        [attr.aria-label]="label() ? null : ariaLabel()"
+        [attr.aria-required]="required() ? 'true' : null"
+        [attr.required]="required() ? '' : null"
         class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-unifesspa-primary focus:outline-none focus:ring-1 focus:ring-unifesspa-primary"
         [class.border-red-500]="invalid()"
         [attr.aria-invalid]="invalid()"
@@ -43,22 +48,25 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@a
   ],
 })
 export class CpfInputComponent implements ControlValueAccessor {
+  protected readonly MASKED_LENGTH = 14;
+  private static readonly DIGIT_LENGTH = 11;
+
   readonly label = input<string>('');
+  readonly ariaLabel = input<string>('CPF');
   readonly placeholder = input<string>('000.000.000-00');
   readonly inputId = input<string>('cpf-input');
   readonly invalid = input<boolean>(false);
+  readonly required = input<boolean>(false);
   readonly errorMessage = input<string>('');
   readonly disabled = signal(false);
   readonly displayValue = signal('');
   private rawValue = '';
 
-  // noop — substituída por registerOnChange
   private onChange: (value: string) => void = () => undefined;
-  // noop — substituída por registerOnTouched
-  onTouched: () => void = () => undefined;
+  private onTouched: () => void = () => undefined;
 
-  writeValue(value: string): void {
-    this.rawValue = (value || '').replace(/\D/g, '');
+  writeValue(value: string | null | undefined): void {
+    this.rawValue = this.toRawDigits(value);
     this.displayValue.set(this.formatCpf(this.rawValue));
   }
 
@@ -74,18 +82,26 @@ export class CpfInputComponent implements ControlValueAccessor {
     this.disabled.set(isDisabled);
   }
 
+  protected handleBlur(): void {
+    this.onTouched();
+  }
+
   onInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.rawValue = input.value.replace(/\D/g, '').substring(0, 11);
+    this.rawValue = this.toRawDigits(input.value);
     this.displayValue.set(this.formatCpf(this.rawValue));
     input.value = this.displayValue();
     this.onChange(this.rawValue);
+  }
+
+  private toRawDigits(value: string | null | undefined): string {
+    return (value ?? '').replace(/\D/g, '').slice(0, CpfInputComponent.DIGIT_LENGTH);
   }
 
   private formatCpf(value: string): string {
     if (value.length <= 3) return value;
     if (value.length <= 6) return `${value.slice(0, 3)}.${value.slice(3)}`;
     if (value.length <= 9) return `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
-    return `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9, 11)}`;
+    return `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
   }
 }
