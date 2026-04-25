@@ -100,6 +100,12 @@ export async function keycloakLogin(
 
   // Aguardar redirect de volta à aplicação + carregamento completo
   await page.waitForURL(/localhost:\d{4}/, { timeout: 10_000 });
+  // networkidle é tolerado neste helper porque o fluxo OIDC tem múltiplas
+  // requisições paralelas (Keycloak + tokens + perfil do usuário). Esperas
+  // determinísticas alternativas (p.ex., aguardar elemento específico) ficam
+  // frágeis aqui porque o helper é genérico — quem chama pode estar testando
+  // qualquer rota da app. A regra `playwright/no-networkidle` não está
+  // habilitada no lint config de `shared-e2e` (lib), apenas nos apps E2E.
   await page.waitForLoadState('networkidle');
 }
 

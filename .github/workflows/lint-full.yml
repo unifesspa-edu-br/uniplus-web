@@ -10,6 +10,12 @@ permissions:
   actions: read
   contents: read
 
+# Cancela runs em filas anteriores quando há novo push na mesma ref (PR ou branch),
+# evitando acúmulo de jobs redundantes.
+concurrency:
+  group: lint-full-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: nx run-many --target=lint --all
@@ -28,5 +34,8 @@ jobs:
 
       - run: npm ci
 
+      # Workflow standalone: não compartilha cache com o ci.yml principal.
+      # Aceitável dado que o lint roda em ~1min; otimização para Nx Cloud
+      # pode ser avaliada se o tempo crescer.
       - name: Executar lint em todos os projetos
         run: npx nx run-many --target=lint --all

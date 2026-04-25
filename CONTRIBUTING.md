@@ -147,8 +147,8 @@ O lint é checado em três pontos distintos, do mais rápido ao mais abrangente,
 
 | Camada | Quando roda | O que executa | Bloqueante? |
 |---|---|---|---|
-| **Pre-commit local** | Em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit) |
-| **CI rápido (afetado)** | Em cada push da PR | `npx nx affected --target=lint` (rode localmente antes do push) | Recomendado |
+| **Pre-commit local** | Automático em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit) |
+| **Lint afetado local** | Manual antes do push da PR | `npx nx affected --target=lint` | Recomendado (não há gate CI dedicado) |
 | **CI completo (`lint-full.yml`)** | Em cada PR e push para `main` | `npx nx run-many --target=lint --all` | Sim (gate de merge) |
 
 O hook de pre-commit é configurado via `husky` (`.husky/pre-commit`) e roda automaticamente após `npm install`. Em casos excepcionais, pode-se contornar com `git commit --no-verify` — mas a CI rejeitará o PR se o lint completo falhar.
