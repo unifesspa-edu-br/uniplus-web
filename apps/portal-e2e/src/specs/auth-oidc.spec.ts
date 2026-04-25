@@ -29,7 +29,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await page.goto('/processos');
 
       const logoutBtn = page.locator('button[aria-label="Sair da aplicação"]');
-      await expect(logoutBtn).not.toBeVisible();
+      await expect(logoutBtn).toBeHidden();
     });
   });
 
@@ -60,7 +60,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
 
       const header = page.locator('header');
       // Verifica que NÃO exibe o nome civil quando há nome social
-      await expect(header.getByText('Usuário Candidato')).not.toBeVisible();
+      await expect(header.getByText('Usuário Candidato')).toBeHidden();
     });
 
     test('candidato acessa /acompanhamento (authGuard sem roleGuard)', async ({ page }) => {

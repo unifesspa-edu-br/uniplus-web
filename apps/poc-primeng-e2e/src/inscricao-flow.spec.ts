@@ -200,7 +200,7 @@ test.describe('Fluxo de inscrição — PoC PrimeNG + Gov.br DS', () => {
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 });
     await page.locator('[data-testid="btn-cancelar"]').click();
 
-    await expect(page.locator('[role="dialog"]')).not.toBeVisible();
+    await expect(page.locator('[role="dialog"]')).toBeHidden();
 
     await screenshot(page, '12-dialog-fechado');
   });

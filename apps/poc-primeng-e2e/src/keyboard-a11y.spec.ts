@@ -146,7 +146,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
       await page.keyboard.press('Enter');
       await page.waitForTimeout(300);
 
-      await expect(page.locator('[role="listbox"]')).not.toBeVisible();
+      await expect(page.locator('[role="listbox"]')).toBeHidden();
 
       // PrimeNG select should show selected value
       const selectText = await page.locator('p-select#curso').textContent();
@@ -163,7 +163,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
       await page.keyboard.press('Escape');
       await page.waitForTimeout(300);
 
-      await expect(page.locator('[role="listbox"]')).not.toBeVisible();
+      await expect(page.locator('[role="listbox"]')).toBeHidden();
 
       await screenshot(page, 'k06-select-escape');
     });
@@ -183,7 +183,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
       await page.waitForTimeout(300);
 
       // Dropdown should close after selection
-      await expect(page.locator('[role="listbox"]')).not.toBeVisible();
+      await expect(page.locator('[role="listbox"]')).toBeHidden();
 
       // Select should show a value (not placeholder)
       const selectText = await page.locator('p-select#curso').textContent();
@@ -335,7 +335,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
       await page.keyboard.press('Escape');
       await page.waitForTimeout(300);
 
-      await expect(page.locator('[role="dialog"]')).not.toBeVisible();
+      await expect(page.locator('[role="dialog"]')).toBeHidden();
 
       await screenshot(page, 'k14-escape-dialog');
     });
