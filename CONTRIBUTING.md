@@ -23,6 +23,8 @@ cd uniplus-web
 npm install
 ```
 
+O `npm install` ativa o hook de pre-commit do `husky`, que roda `lint-staged` em cada `git commit` e formata/valida apenas os arquivos staged. Veja [Estratégia de lint em três camadas](#estratégia-de-lint-em-três-camadas).
+
 ---
 
 ## Estrutura do projeto
@@ -138,6 +140,20 @@ npx nx affected --target=build --configuration=production
 ```
 
 Todos os comandos acima devem passar antes de abrir o PR.
+
+#### Estratégia de lint em três camadas
+
+O lint é checado em três pontos distintos, do mais rápido ao mais abrangente, para evitar acúmulo silencioso de débito em projetos não-afetados:
+
+| Camada | Quando roda | O que executa | Bloqueante? |
+|---|---|---|---|
+| **Pre-commit local** | Em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit) |
+| **CI rápido (afetado)** | Em cada push da PR | `npx nx affected --target=lint` (rode localmente antes do push) | Recomendado |
+| **CI completo (`lint-full.yml`)** | Em cada PR e push para `main` | `npx nx run-many --target=lint --all` | Sim (gate de merge) |
+
+O hook de pre-commit é configurado via `husky` (`.husky/pre-commit`) e roda automaticamente após `npm install`. Em casos excepcionais, pode-se contornar com `git commit --no-verify` — mas a CI rejeitará o PR se o lint completo falhar.
+
+A regra de aceite: **`npx nx run-many --target=lint --all` deve sair com código 0**. Warnings são tolerados; errors bloqueiam o merge.
 
 ### 4. Commit
 
@@ -357,7 +373,7 @@ test('candidato deve conseguir completar inscrição', async ({ page }) => {
 O PR será bloqueado se qualquer gate falhar:
 
 - [ ] Build de produção sem erros (`nx build {app} --configuration=production`)
-- [ ] Lint sem erros (`nx lint {app}`)
+- [ ] Lint sem erros no workspace inteiro (`nx run-many --target=lint --all` — gate `lint-full.yml`)
 - [ ] Todos os testes unitários passando
 - [ ] Todos os testes E2E passando
 - [ ] Testes de acessibilidade passando (axe-core)

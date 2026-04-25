@@ -37,8 +37,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await page.goto('/dashboard');
       await keycloakLogin(page, user.username, user.password);
 
-      // Aguardar app carregar completamente após redirect do Keycloak
-      await page.waitForLoadState('networkidle');
+      // keycloakLogin já aguarda waitForURL + load completo; assertion abaixo confirma o estado final.
       await expect(page).toHaveURL(/localhost:4200/);
       await expectUserInHeader(page, user.displayName, user.username, user.roles);
     });
@@ -48,7 +47,6 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await page.goto('/editais');
       await keycloakLogin(page, user.username, user.password);
 
-      await page.waitForLoadState('networkidle');
       await expect(page).toHaveURL(/editais/);
       await expectUserInHeader(page, user.displayName, user.username, user.roles);
     });
@@ -71,7 +69,6 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await page.goto('/dashboard');
       await keycloakLogin(page, user.username, user.password);
 
-      await page.waitForLoadState('networkidle');
       await expectUserInHeader(page, user.displayName, user.username, user.roles);
 
       await keycloakLogout(page);

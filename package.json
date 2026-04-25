@@ -19,7 +19,11 @@
     "format": "nx format:write",
     "affected:test": "nx affected --target=vite:test",
     "affected:build": "nx affected --target=build",
-    "affected:lint": "nx affected --target=lint"
+    "affected:lint": "nx affected --target=lint",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": "eslint --fix"
   },
   "private": true,
   "dependencies": {
@@ -86,9 +90,11 @@
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-playwright": "^1.6.2",
+    "husky": "9.1.7",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "15.5.2",
     "ng-packagr": "~21.2.0",
     "nx": "22.6.2",
     "postcss": "^8.4.5",

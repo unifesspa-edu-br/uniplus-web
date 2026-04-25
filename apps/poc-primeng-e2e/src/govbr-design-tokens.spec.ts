@@ -40,7 +40,7 @@ async function getPseudoStyles(
 test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/inscricao');
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('poc-govbr-header')).toBeVisible({ timeout: 10_000 });
   });
 
   // ─── T1: Tipografia ─────────────────────────────────────────
