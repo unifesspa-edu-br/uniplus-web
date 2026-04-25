@@ -2,6 +2,17 @@ import { Component, ChangeDetectionStrategy, input, forwardRef, signal } from '@
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { formatCpfProgressive } from '@uniplus/shared-data';
 
+/**
+ * Input mascarado de CPF integrado a Reactive Forms via ControlValueAccessor.
+ *
+ * **Não valida o algoritmo do CPF** — apenas aplica máscara e propaga o valor
+ * raw (11 dígitos) para o FormControl. Para validação semântica, componha com
+ * `cpfValidator` de `@uniplus/shared-data`:
+ *
+ * @example
+ * import { cpfValidator } from '@uniplus/shared-data';
+ * new FormControl('', [Validators.required, cpfValidator]);
+ */
 @Component({
   selector: 'ui-cpf-input',
   standalone: true,
@@ -47,17 +58,6 @@ import { formatCpfProgressive } from '@uniplus/shared-data';
     },
   ],
 })
-/**
- * Input mascarado de CPF integrado a Reactive Forms via ControlValueAccessor.
- *
- * **Não valida o algoritmo do CPF** — apenas aplica máscara e propaga o valor
- * raw (11 dígitos) para o FormControl. Para validação semântica, componha com
- * `cpfValidator` de `@uniplus/shared-data`:
- *
- * @example
- * import { cpfValidator } from '@uniplus/shared-data';
- * new FormControl('', [Validators.required, cpfValidator]);
- */
 export class CpfInputComponent implements ControlValueAccessor {
   protected readonly MASKED_LENGTH = 14;
 
