@@ -12,3 +12,6 @@ export type { ProblemDetails } from './services/api-error-handler.service';
 // Utils
 export { isValidCpf, formatCpf, formatCpfProgressive, maskCpf } from './utils/cpf.util';
 export { formatDateBr, formatDateTimeBr, parseDate } from './utils/date.util';
+
+// Validators
+export { cpfValidator } from './validators/cpf.validator';
