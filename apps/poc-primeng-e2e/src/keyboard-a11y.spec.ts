@@ -40,27 +40,15 @@ function describeActiveElement(info: Awaited<ReturnType<typeof getActiveElementI
   return `${info.tag}#${handle}`;
 }
 
-async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 15): Promise<void> {
+async function tabUntilFocused(page: Page, target: Locator, maxTabs = 20): Promise<void> {
   await page.locator('body').click({ position: { x: 1, y: 1 } });
   for (let i = 0; i < maxTabs; i++) {
     await page.keyboard.press('Tab');
-    if (await locator.evaluate((el) => document.activeElement === el)) {
+    if (await target.evaluate((el) => document.activeElement === el)) {
       return;
     }
   }
-  throw new Error(`tabUntilFocused: elemento não focado após ${maxTabs} Tabs`);
-}
-
-async function tabUntilId(page: Page, id: string, maxTabs = 20): Promise<void> {
-  await page.locator('body').click({ position: { x: 1, y: 1 } });
-  for (let i = 0; i < maxTabs; i++) {
-    await page.keyboard.press('Tab');
-    const activeId = await page.evaluate(() => document.activeElement?.id ?? '');
-    if (activeId === id) {
-      return;
-    }
-  }
-  throw new Error(`tabUntilId: #${id} não focado após ${maxTabs} Tabs`);
+  throw new Error(`tabUntilFocused: alvo não focado após ${maxTabs} Tabs`);
 }
 
 async function collectTabbableLabels(page: Page, maxTabs = 25): Promise<string[]> {
@@ -126,8 +114,9 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
     });
 
     test('K02: Shift+Tab retrocede na ordem inversa', async ({ page }) => {
-      await tabUntilId(page, 'nome');
-      await expect(page.locator('#nome')).toBeFocused();
+      const nome = page.locator('#nome');
+      await tabUntilFocused(page, nome);
+      await expect(nome).toBeFocused();
 
       await page.keyboard.press('Shift+Tab');
       const info = await getActiveElementInfo(page);
@@ -148,7 +137,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
   test.describe('Select — navegação por teclado', () => {
     test('K03: Enter/Space abre o dropdown do select', async ({ page }) => {
       const trigger = page.locator('p-select#curso [role="combobox"]');
-      await tabUntilFocused(page, trigger, 20);
+      await tabUntilFocused(page, trigger);
 
       await page.keyboard.press('Enter');
 
@@ -266,7 +255,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
     });
 
     test('K11: Tab no input text MOSTRA focus ring gold via overlay', async ({ page }) => {
-      await tabUntilId(page, 'nome');
+      await tabUntilFocused(page, page.locator('#nome'));
 
       const overlay = page.locator('.govbr-focus-overlay');
       await expect(overlay).toBeVisible({ timeout: 2000 });
