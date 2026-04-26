@@ -37,6 +37,12 @@ async function getPseudoStyles(
   );
 }
 
+async function boundingBox(locator: Locator) {
+  const box = await locator.boundingBox();
+  expect(box, 'boundingBox() retornou null inesperadamente').not.toBeNull();
+  return box as NonNullable<typeof box>;
+}
+
 test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/inscricao');
@@ -143,6 +149,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     });
 
     test('T1: screenshot de referência tipografia', async ({ page }) => {
+      await expect(page.locator('poc-govbr-header')).toBeVisible();
       await screenshot(page, 't1-tipografia');
     });
   });
@@ -191,6 +198,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     });
 
     test('T2: screenshot de referência cores de fundo', async ({ page }) => {
+      await expect(page.locator('poc-govbr-header')).toBeVisible();
       await screenshot(page, 't2-cores-fundo');
     });
   });
@@ -264,6 +272,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     });
 
     test('T3: screenshot de referência cores de texto', async ({ page }) => {
+      await expect(page.locator('poc-govbr-header')).toBeVisible();
       await screenshot(page, 't3-cores-texto');
     });
   });
@@ -341,6 +350,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     });
 
     test('T4: screenshot de referência bordas', async ({ page }) => {
+      await expect(page.locator('poc-govbr-header')).toBeVisible();
       await screenshot(page, 't4-bordas');
     });
   });
@@ -396,6 +406,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     test('T5.1: input nome — focus ring gold 4px dashed Gov.br DS', async ({ page }) => {
       const nome = page.locator('#nome');
       await tabUntilFocused(page, nome);
+      await expect(nome).toBeFocused();
       await checkGovbrFocusRing(page, nome);
       await screenshot(page, 't5-focus-nome');
     });
@@ -403,6 +414,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     test('T5.2: input CPF — focus ring gold Gov.br DS', async ({ page }) => {
       const cpf = page.locator('#cpf');
       await tabUntilFocused(page, cpf);
+      await expect(cpf).toBeFocused();
       await checkGovbrFocusRing(page, cpf);
       await screenshot(page, 't5-focus-cpf');
     });
@@ -509,10 +521,9 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await page.waitForTimeout(500);
       const btn = page.locator('[data-testid="btn-enviar-inscricao"] button');
       await expect(btn).toBeVisible();
-      const box = await btn.boundingBox();
-      expect(box).not.toBeNull();
-      expect(box!.width).toBeGreaterThan(100);
-      expect(box!.height).toBeGreaterThanOrEqual(32);
+      const box = await boundingBox(btn);
+      expect(box.width).toBeGreaterThan(100);
+      expect(box.height).toBeGreaterThanOrEqual(32);
       await screenshot(page, 't7-02-botao-size');
     });
 
@@ -540,6 +551,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     });
 
     test('T7: screenshot de referência espaçamento', async ({ page }) => {
+      await expect(page.locator('poc-govbr-header')).toBeVisible();
       await screenshot(page, 't7-espacamento');
     });
   });
@@ -555,9 +567,8 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     });
 
     test('T8.2: header é o primeiro elemento visível', async ({ page }) => {
-      const headerBox = await page.locator('poc-govbr-header').boundingBox();
-      expect(headerBox).not.toBeNull();
-      expect(headerBox!.y).toBeLessThanOrEqual(5);
+      const headerBox = await boundingBox(page.locator('poc-govbr-header'));
+      expect(headerBox.y).toBeLessThanOrEqual(5);
     });
 
     test('T8.3: conteúdo centralizado com max-width', async ({ page }) => {
