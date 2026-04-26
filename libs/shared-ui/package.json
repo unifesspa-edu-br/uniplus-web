@@ -7,8 +7,7 @@
     "@angular/forms": "^21.2.0",
     "vite": "^7.0.0",
     "@analogjs/vite-plugin-angular": "^2.2.0",
-    "@nx/vite": "^22.6.0",
-    "@org/shared-data": "0.0.1"
+    "@nx/vite": "^22.6.0"
   },
   "sideEffects": false
 }
