@@ -47,6 +47,9 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/inscricao');
     await expect(page.locator('poc-govbr-header')).toBeVisible({ timeout: 10_000 });
+    // Aguarda fontes institucionais (Rawline/Raleway) terminarem de carregar
+    // — sem isso, font-family fica como fallback genérico e quebra T1.2/T1.5.
+    await page.evaluate(() => document.fonts.ready);
   });
 
   // ─── T1: Tipografia ─────────────────────────────────────────
@@ -249,15 +252,15 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T3.7: tab ativa — primary', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="true"]');
-      const styles = await getStyles(tab, ['color']);
-      expect(styles['color']).toBe('rgb(19, 81, 180)');
+      // toHaveCSS faz polling — necessário porque PrimeNG aplica os estilos de
+      // estado ativo após o ChangeDetection do Angular pós-navegação.
+      await expect(tab).toHaveCSS('color', 'rgb(19, 81, 180)');
       await screenshot(page, 't3-07-tab-ativa-cor');
     });
 
     test('T3.8: tab inativa — gray escuro', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="false"]').first();
-      const styles = await getStyles(tab, ['color']);
-      expect(styles['color']).toBe('rgb(99, 99, 99)');
+      await expect(tab).toHaveCSS('color', 'rgb(99, 99, 99)');
       await screenshot(page, 't3-08-tab-inativa-cor');
     });
 
@@ -319,19 +322,16 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T4.6: tab ativa — border-bottom 4px primary (Gov.br DS)', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="true"]');
-      const styles = await getStyles(tab, ['border-bottom-color', 'border-bottom-width']);
-      expect(styles['border-bottom-color']).toBe('rgb(19, 81, 180)');
-      expect(styles['border-bottom-width']).toBe('4px');
+      await expect(tab).toHaveCSS('border-bottom-color', 'rgb(19, 81, 180)');
+      await expect(tab).toHaveCSS('border-bottom-width', '4px');
       await screenshot(page, 't4-06-tab-ativa-borda');
     });
 
     test('T4.7: tab inativa — border-bottom transparente', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="false"]').first();
-      const styles = await getStyles(tab, ['border-bottom-color']);
-      expect(
-        styles['border-bottom-color'] === 'rgba(0, 0, 0, 0)' ||
-          styles['border-bottom-color'] === 'transparent',
-      ).toBeTruthy();
+      // Aceita tanto rgba(0,0,0,0) quanto 'transparent' — browsers podem
+      // serializar a cor transparente de qualquer das duas formas.
+      await expect(tab).toHaveCSS('border-bottom-color', /rgba\(0, 0, 0, 0\)|transparent/);
       await screenshot(page, 't4-07-tab-inativa-borda');
     });
 
