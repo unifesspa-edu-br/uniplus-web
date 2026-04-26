@@ -288,7 +288,6 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await page.keyboard.type('x');
       await page.keyboard.press('Backspace');
       await page.locator('h1').click();
-      await page.waitForTimeout(200);
       await expect(page.getByText('Nome é obrigatório')).toBeVisible();
       await screenshot(page, 't4-02-input-erro-borda');
     });
@@ -339,7 +338,6 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     test('T4.8: radio selecionado — indicador visível', async ({ page }) => {
       await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Documentos' }).click();
       await page.locator('label', { hasText: 'Ampla Concorrência' }).click();
-      await page.waitForTimeout(200);
 
       const radioInput = page.locator('#mod-AC');
       await expect(radioInput).toBeChecked();
@@ -428,8 +426,8 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T5.4: botão primário — focus ring visível', async ({ page }) => {
       await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
-      await page.waitForTimeout(500);
       const btn = page.locator('[data-testid="btn-enviar-inscricao"] button');
+      await expect(btn).toBeVisible();
       const tabindex = await btn.evaluate((el) => el.getAttribute('tabindex'));
       expect(tabindex === null || parseInt(tabindex) >= 0).toBeTruthy();
       await screenshot(page, 't5-focus-botao');
@@ -448,9 +446,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
     test('T6.1: tab inativa — hover cursor pointer', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"]', { hasText: 'Documentos' });
       await tab.hover();
-      await page.waitForTimeout(200);
-      const styles = await getStyles(tab, ['cursor']);
-      expect(styles['cursor']).toBe('pointer');
+      await expect(tab).toHaveCSS('cursor', 'pointer');
       await screenshot(page, 't6-hover-tab');
     });
 
@@ -458,9 +454,7 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
       const btn = page.locator('[data-testid="btn-enviar-inscricao"] button');
       await btn.hover();
-      await page.waitForTimeout(200);
-      const styles = await getStyles(btn, ['cursor']);
-      expect(styles['cursor']).toBe('pointer');
+      await expect(btn).toHaveCSS('cursor', 'pointer');
       await screenshot(page, 't6-hover-btn-primario');
     });
 
@@ -490,7 +484,6 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
       await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
       const row = page.locator('p-table table tbody tr').first();
       await row.hover();
-      await page.waitForTimeout(200);
       await expect(row).toBeVisible();
       await screenshot(page, 't6-hover-tabela');
     });
@@ -514,7 +507,6 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T7.2: botão primário — width suficiente', async ({ page }) => {
       await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
-      await page.waitForTimeout(500);
       const btn = page.locator('[data-testid="btn-enviar-inscricao"] button');
       await expect(btn).toBeVisible();
       const box = await requireBoundingBox(btn, 'botão enviar inscrição');
@@ -577,14 +569,12 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T8.4: responsividade mobile — 375px', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.waitForTimeout(300);
+      const hamburger = page.locator('poc-govbr-header button[aria-label="Menu de navegação"]');
+      await expect(hamburger).toBeVisible();
 
       const main = page.locator('main').first();
       const mainBox = await main.boundingBox();
       expect(mainBox).not.toBeNull();
-
-      const hamburger = page.locator('poc-govbr-header button[aria-label="Menu de navegação"]');
-      await expect(hamburger).toBeVisible();
 
       await screenshot(page, 't8-layout-mobile');
     });

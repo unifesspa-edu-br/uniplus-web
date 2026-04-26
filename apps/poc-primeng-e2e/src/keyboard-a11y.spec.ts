@@ -35,6 +35,77 @@ async function getActiveElementInfo(page: Page) {
   });
 }
 
+function describeActiveElement(info: Awaited<ReturnType<typeof getActiveElementInfo>>): string {
+  const handle = info.id || info.role || info.text.substring(0, 15);
+  return `${info.tag}#${handle}`;
+}
+
+async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 15): Promise<void> {
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  for (let i = 0; i < maxTabs; i++) {
+    await page.keyboard.press('Tab');
+    if (await locator.evaluate((el) => document.activeElement === el)) {
+      return;
+    }
+  }
+  throw new Error(`tabUntilFocused: elemento não focado após ${maxTabs} Tabs`);
+}
+
+async function tabUntilId(page: Page, id: string, maxTabs = 20): Promise<void> {
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  for (let i = 0; i < maxTabs; i++) {
+    await page.keyboard.press('Tab');
+    const activeId = await page.evaluate(() => document.activeElement?.id ?? '');
+    if (activeId === id) {
+      return;
+    }
+  }
+  throw new Error(`tabUntilId: #${id} não focado após ${maxTabs} Tabs`);
+}
+
+async function collectTabbableLabels(page: Page, maxTabs = 25): Promise<string[]> {
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  const labels: string[] = [];
+  for (let i = 0; i < maxTabs; i++) {
+    await page.keyboard.press('Tab');
+    const info = await getActiveElementInfo(page);
+    labels.push(describeActiveElement(info));
+    if (info.tag === 'body') {
+      break;
+    }
+  }
+  return labels;
+}
+
+type FocusableSnapshot = {
+  element: string;
+  outlineStyle: string;
+  outlineWidth: string;
+};
+
+async function collectFocusableOutlines(page: Page, maxTabs = 15): Promise<FocusableSnapshot[]> {
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  const results: FocusableSnapshot[] = [];
+  for (let i = 0; i < maxTabs; i++) {
+    await page.keyboard.press('Tab');
+    const snapshot = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el || el === document.body) return null;
+      const cs = getComputedStyle(el);
+      const handle = el.id || el.getAttribute('role') || el.textContent?.trim().substring(0, 15) || '';
+      return {
+        element: `${el.tagName.toLowerCase()}#${handle}`,
+        outlineStyle: cs.outlineStyle,
+        outlineWidth: cs.outlineWidth,
+      };
+    });
+    if (snapshot) {
+      results.push(snapshot);
+    }
+  }
+  return results;
+}
+
 test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/inscricao');
@@ -45,48 +116,22 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
 
   test.describe('Navegação Tab forward e Shift+Tab backward', () => {
     test('K01: Tab forward percorre todos os elementos focáveis na ordem correta', async ({ page }) => {
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-
-      const visitedElements: string[] = [];
-
-      for (let i = 0; i < 25; i++) {
-        await page.keyboard.press('Tab');
-        const info = await getActiveElementInfo(page);
-        const label = `${info.tag}#${info.id || info.role || info.text.substring(0, 15)}`;
-        visitedElements.push(label);
-
-        if (info.tag === 'body') break;
-      }
+      const visitedElements = await collectTabbableLabels(page);
 
       expect(visitedElements.length).toBeGreaterThan(8);
-
-      // Verifica que tabs foram visitadas
-      const tabsVisited = visitedElements.filter((e) => e.includes('tab'));
-      expect(tabsVisited.length).toBeGreaterThanOrEqual(1);
-
-      // Verifica que inputs foram visitados
-      const inputsVisited = visitedElements.filter((e) => e.includes('input'));
-      expect(inputsVisited.length).toBeGreaterThanOrEqual(1);
+      expect(visitedElements.filter((e) => e.includes('tab')).length).toBeGreaterThanOrEqual(1);
+      expect(visitedElements.filter((e) => e.includes('input')).length).toBeGreaterThanOrEqual(1);
 
       await screenshot(page, 'k01-tab-forward');
     });
 
     test('K02: Shift+Tab retrocede na ordem inversa', async ({ page }) => {
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-      let found = false;
-      for (let i = 0; i < 20; i++) {
-        await page.keyboard.press('Tab');
-        const info = await getActiveElementInfo(page);
-        if (info.id === 'nome') {
-          found = true;
-          break;
-        }
-      }
-      expect(found).toBe(true);
+      await tabUntilId(page, 'nome');
+      await expect(page.locator('#nome')).toBeFocused();
 
       await page.keyboard.press('Shift+Tab');
       const info = await getActiveElementInfo(page);
-      // Shift+Tab from input#nome goes to previous focusable (may be tab, button, span, etc.)
+      // Shift+Tab a partir de #nome volta ao focável anterior (tab, botão, span etc.)
       expect(info.tag).toBeTruthy();
       expect(info.id).not.toBe('nome');
 
@@ -103,15 +148,9 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
   test.describe('Select — navegação por teclado', () => {
     test('K03: Enter/Space abre o dropdown do select', async ({ page }) => {
       const trigger = page.locator('p-select#curso [role="combobox"]');
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-      for (let i = 0; i < 20; i++) {
-        await page.keyboard.press('Tab');
-        const focused = await trigger.evaluate((el) => document.activeElement === el);
-        if (focused) break;
-      }
+      await tabUntilFocused(page, trigger, 20);
 
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(300);
 
       const listbox = page.locator('[role="listbox"]');
       await expect(listbox).toBeVisible({ timeout: 3000 });
@@ -121,71 +160,65 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
 
     test('K04: setas navegam entre items do select', async ({ page }) => {
       await page.locator('p-select#curso').click();
-      await page.waitForTimeout(300);
-      await expect(page.locator('[role="listbox"]')).toBeVisible();
+      const listbox = page.locator('[role="listbox"]');
+      await expect(listbox).toBeVisible();
 
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(100);
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(100);
 
-      // PrimeNG marks focused option with data-p-focused="true"
-      const focusedItems = page.locator('[role="option"][data-p-focused="true"]');
-      const count = await focusedItems.count();
-      expect(count).toBeGreaterThanOrEqual(1);
+      // PrimeNG marca a opção focada com data-p-focused="true"
+      const focusedOption = page.locator('[role="option"][data-p-focused="true"]');
+      await expect(focusedOption.first()).toBeVisible();
 
       await screenshot(page, 'k04-select-arrow-navigate');
     });
 
     test('K05: Enter seleciona o item focado no dropdown', async ({ page }) => {
       await page.locator('p-select#curso').click();
-      await page.waitForTimeout(300);
+      const listbox = page.locator('[role="listbox"]');
+      await expect(listbox).toBeVisible();
 
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(100);
+      await expect(page.locator('[role="option"][data-p-focused="true"]').first()).toBeVisible();
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(300);
 
-      await expect(page.locator('[role="listbox"]')).toBeHidden();
+      await expect(listbox).toBeHidden();
 
-      // PrimeNG select should show selected value
-      const selectText = await page.locator('p-select#curso').textContent();
-      expect(selectText?.trim()).not.toContain('Selecione um curso');
+      // PrimeNG select deve exibir o valor selecionado
+      await expect(page.locator('p-select#curso')).not.toContainText('Selecione um curso');
 
       await screenshot(page, 'k05-select-enter-select');
     });
 
     test('K06: Escape fecha o dropdown sem selecionar', async ({ page }) => {
       await page.locator('p-select#curso').click();
-      await page.waitForTimeout(300);
-      await expect(page.locator('[role="listbox"]')).toBeVisible();
+      const listbox = page.locator('[role="listbox"]');
+      await expect(listbox).toBeVisible();
 
       await page.keyboard.press('Escape');
-      await page.waitForTimeout(300);
 
-      await expect(page.locator('[role="listbox"]')).toBeHidden();
+      await expect(listbox).toBeHidden();
 
       await screenshot(page, 'k06-select-escape');
     });
 
     test('K07: setas permitem navegar e selecionar itens', async ({ page }) => {
       await page.locator('p-select#curso').click();
-      await page.waitForTimeout(300);
+      const listbox = page.locator('[role="listbox"]');
+      await expect(listbox).toBeVisible();
 
-      // Navigate down through items
+      // Avançar 4 itens via ArrowDown — espera a opção focada propagar a cada press
       for (let i = 0; i < 4; i++) {
         await page.keyboard.press('ArrowDown');
-        await page.waitForTimeout(50);
+        await expect(page.locator('[role="option"][data-p-focused="true"]').first()).toBeVisible();
       }
 
-      // Select the focused item
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(300);
 
-      // Dropdown should close after selection
-      await expect(page.locator('[role="listbox"]')).toBeHidden();
+      // Dropdown deve fechar após seleção
+      await expect(listbox).toBeHidden();
 
-      // Select should show a value (not placeholder)
+      // Select deve mostrar um valor (não o placeholder)
       const selectText = await page.locator('p-select#curso').textContent();
       expect(selectText?.trim()).toBeTruthy();
 
@@ -197,32 +230,11 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
 
   test.describe('Focus ring — outline consistente em todos os elementos', () => {
     test('K08: todos os elementos focáveis têm outline:none via Tab (govbr focus ring)', async ({ page }) => {
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
+      const results = await collectFocusableOutlines(page);
 
-      const results: { element: string; outlineStyle: string; outlineWidth: string }[] = [];
-
-      for (let i = 0; i < 15; i++) {
-        await page.keyboard.press('Tab');
-        await page.waitForTimeout(50);
-        const info = await page.evaluate(() => {
-          const el = document.activeElement as HTMLElement;
-          if (!el || el === document.body) return null;
-          const cs = getComputedStyle(el);
-          return {
-            element: `${el.tagName.toLowerCase()}#${el.id || el.getAttribute('role') || el.textContent?.trim().substring(0, 15)}`,
-            outlineStyle: cs.outlineStyle,
-            outlineWidth: cs.outlineWidth,
-          };
-        });
-        if (info) results.push(info);
-      }
-
-      const failingElements: string[] = [];
-      for (const r of results) {
-        if (r.outlineStyle !== 'none') {
-          failingElements.push(`${r.element}: outline-style=${r.outlineStyle} (esperado none)`);
-        }
-      }
+      const failingElements = results
+        .filter((r) => r.outlineStyle !== 'none')
+        .map((r) => `${r.element}: outline-style=${r.outlineStyle} (esperado none)`);
       expect(failingElements).toEqual([]);
 
       await screenshot(page, 'k08-outline-all-elements');
@@ -230,11 +242,7 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
 
     test('K09: outline do tab NÃO é cortado (overflow)', async ({ page }) => {
       const firstTab = page.locator('[role="tablist"] [role="tab"]').first();
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-      for (let i = 0; i < 15; i++) {
-        await page.keyboard.press('Tab');
-        if (await firstTab.evaluate((el) => document.activeElement === el)) break;
-      }
+      await tabUntilFocused(page, firstTab);
 
       const tabBox = await firstTab.boundingBox();
       expect(tabBox).not.toBeNull();
@@ -247,22 +255,18 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
 
   test.describe('Focus ring — mouse click vs keyboard Tab', () => {
     test('K10: clicar no input text NÃO mostra focus ring gold', async ({ page }) => {
-      await page.locator('#nome').click();
-      await page.waitForTimeout(100);
+      const nome = page.locator('#nome');
+      await nome.click();
+      await expect(nome).toBeFocused();
 
-      const styles = await getStyles(page.locator('#nome'), ['box-shadow']);
+      const styles = await getStyles(nome, ['box-shadow']);
       expect(styles['box-shadow']).toBe('none');
 
       await screenshot(page, 'k10-click-no-gold');
     });
 
     test('K11: Tab no input text MOSTRA focus ring gold via overlay', async ({ page }) => {
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-      for (let i = 0; i < 15; i++) {
-        await page.keyboard.press('Tab');
-        const id = await page.evaluate(() => document.activeElement?.id);
-        if (id === 'nome') break;
-      }
+      await tabUntilId(page, 'nome');
 
       const overlay = page.locator('.govbr-focus-overlay');
       await expect(overlay).toBeVisible({ timeout: 2000 });
@@ -277,11 +281,11 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
     });
 
     test('K12: clicar no botão — dialog abre, foco muda', async ({ page }) => {
-      await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
-      await page.waitForTimeout(200);
-      const btn = page.locator('[data-testid="btn-enviar-inscricao"]');
-      await btn.click();
-      await page.waitForTimeout(100);
+      const revisaoTab = page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' });
+      await revisaoTab.click();
+      await expect(revisaoTab).toHaveAttribute('aria-selected', 'true');
+
+      await page.locator('[data-testid="btn-enviar-inscricao"]').click();
 
       await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 });
       await screenshot(page, 'k12-click-button-no-ring');
@@ -292,37 +296,26 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
 
   test.describe('Navegação — setas do teclado e Escape', () => {
     test('K13: ArrowRight/ArrowLeft navegam entre tabs', async ({ page }) => {
-      const firstTab = page.locator('[role="tablist"] [role="tab"]').first();
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-      for (let i = 0; i < 15; i++) {
-        await page.keyboard.press('Tab');
-        if (await firstTab.evaluate((el) => document.activeElement === el)) break;
-      }
-      expect(await firstTab.evaluate((el) => document.activeElement === el)).toBe(true);
+      const tablist = page.locator('[role="tablist"]');
+      const firstTab = tablist.locator('[role="tab"]').first();
+      await tabUntilFocused(page, firstTab);
+      await expect(firstTab).toBeFocused();
 
-      // ArrowRight → second tab (Documentos)
+      // ArrowRight → segunda tab (Documentos)
       await page.keyboard.press('ArrowRight');
-      await page.waitForTimeout(100);
-      const info1 = await getActiveElementInfo(page);
-      expect(info1.text).toMatch(/Documentos/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Documentos' })).toBeFocused();
 
-      // ArrowRight → third tab (Revisão)
+      // ArrowRight → terceira tab (Revisão)
       await page.keyboard.press('ArrowRight');
-      await page.waitForTimeout(100);
-      const info2 = await getActiveElementInfo(page);
-      expect(info2.text).toMatch(/Revisão/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Revisão' })).toBeFocused();
 
-      // ArrowRight → wrap to first tab
+      // ArrowRight → wrap para primeira tab
       await page.keyboard.press('ArrowRight');
-      await page.waitForTimeout(100);
-      const info3 = await getActiveElementInfo(page);
-      expect(info3.text).toMatch(/Dados Pessoais/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Dados Pessoais' })).toBeFocused();
 
-      // ArrowLeft → wrap to last tab
+      // ArrowLeft → wrap para última tab
       await page.keyboard.press('ArrowLeft');
-      await page.waitForTimeout(100);
-      const info4 = await getActiveElementInfo(page);
-      expect(info4.text).toMatch(/Revisão/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Revisão' })).toBeFocused();
 
       await screenshot(page, 'k13-arrow-tabs');
     });
@@ -330,12 +323,12 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
     test('K14: Escape fecha o dialog de confirmação', async ({ page }) => {
       await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
       await page.locator('[data-testid="btn-enviar-inscricao"]').click();
-      await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 });
+      const dialog = page.locator('[role="dialog"]');
+      await expect(dialog).toBeVisible({ timeout: 3000 });
 
       await page.keyboard.press('Escape');
-      await page.waitForTimeout(300);
 
-      await expect(page.locator('[role="dialog"]')).toBeHidden();
+      await expect(dialog).toBeHidden();
 
       await screenshot(page, 'k14-escape-dialog');
     });
@@ -346,60 +339,45 @@ test.describe('Acessibilidade de teclado — PoC PrimeNG + Gov.br DS', () => {
       await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 });
 
       await page.keyboard.press('Tab');
-      await page.waitForTimeout(100);
       const info1 = await getActiveElementInfo(page);
+      expect(info1.tag).toBeTruthy();
 
       await page.keyboard.press('Tab');
-      await page.waitForTimeout(100);
       const info2 = await getActiveElementInfo(page);
-
-      expect(info1.tag).toBeTruthy();
       expect(info2.tag).toBeTruthy();
 
       await screenshot(page, 'k15-tab-dialog-buttons');
     });
 
     test('K16: clicar em Revisão, depois ArrowLeft volta para tabs anteriores', async ({ page }) => {
-      await page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' }).click();
-      await page.waitForTimeout(200);
-
-      const revisaoTab = page.locator('[role="tablist"] [role="tab"]', { hasText: 'Revisão' });
+      const tablist = page.locator('[role="tablist"]');
+      const revisaoTab = tablist.locator('[role="tab"]', { hasText: 'Revisão' });
+      await revisaoTab.click();
       await expect(revisaoTab).toHaveAttribute('aria-selected', 'true');
 
-      // Focus the tab via keyboard
+      // Focar a tab via teclado
       await revisaoTab.focus();
-      await page.waitForTimeout(100);
+      await expect(revisaoTab).toBeFocused();
 
       await page.keyboard.press('ArrowLeft');
-      await page.waitForTimeout(100);
-      const info1 = await getActiveElementInfo(page);
-      expect(info1.text).toMatch(/Documentos/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Documentos' })).toBeFocused();
 
       await page.keyboard.press('ArrowLeft');
-      await page.waitForTimeout(100);
-      const info2 = await getActiveElementInfo(page);
-      expect(info2.text).toMatch(/Dados Pessoais/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Dados Pessoais' })).toBeFocused();
 
       await screenshot(page, 'k16-click-then-arrow-back');
     });
 
     test('K17: Home/End navegam para primeira/última tab', async ({ page }) => {
-      const firstTab = page.locator('[role="tablist"] [role="tab"]').first();
-      await page.locator('body').click({ position: { x: 1, y: 1 } });
-      for (let i = 0; i < 15; i++) {
-        await page.keyboard.press('Tab');
-        if (await firstTab.evaluate((el) => document.activeElement === el)) break;
-      }
+      const tablist = page.locator('[role="tablist"]');
+      const firstTab = tablist.locator('[role="tab"]').first();
+      await tabUntilFocused(page, firstTab);
 
       await page.keyboard.press('End');
-      await page.waitForTimeout(100);
-      const endInfo = await getActiveElementInfo(page);
-      expect(endInfo.text).toMatch(/Revisão/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Revisão' })).toBeFocused();
 
       await page.keyboard.press('Home');
-      await page.waitForTimeout(100);
-      const homeInfo = await getActiveElementInfo(page);
-      expect(homeInfo.text).toMatch(/Dados Pessoais/);
+      await expect(tablist.locator('[role="tab"]', { hasText: 'Dados Pessoais' })).toBeFocused();
 
       await screenshot(page, 'k17-home-end-tabs');
     });
