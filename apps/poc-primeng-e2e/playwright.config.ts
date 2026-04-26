@@ -6,6 +6,12 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4230';
 
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
+  // Limita paralelismo e adiciona retries para mitigar
+  // `page.screenshot: Protocol error (Page.captureScreenshot)` sob carga
+  // (Chromium crashando em dev machine com workers paralelos + screenshots
+  // fullPage). Ver #123 para detalhes.
+  workers: process.env['CI'] ? 1 : 2,
+  retries: process.env['CI'] ? 2 : 1,
   use: {
     baseURL,
     trace: 'on-first-retry',
