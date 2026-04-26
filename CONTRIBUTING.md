@@ -20,8 +20,11 @@ Este documento descreve como contribuir com o frontend da plataforma Uni+. Leia-
 ```bash
 git clone git@github.com:unifesspa-edu-br/uniplus-web.git
 cd uniplus-web
+nvm use   # lê a versão do .nvmrc (Node 22 LTS)
 npm install
 ```
+
+> Sem `nvm`? Garanta Node 22.x manualmente — o `npm install` falha com `EBADENGINE` em outras versões (`engine-strict=true` em `.npmrc`).
 
 O `npm install` ativa o hook de pre-commit do `husky`, que roda `lint-staged` em cada `git commit` e formata/valida apenas os arquivos staged. Veja [Estratégia de lint em três camadas](#estratégia-de-lint-em-três-camadas).
 

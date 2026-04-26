@@ -2,6 +2,9 @@
   "name": "uniplus-web",
   "version": "0.0.0",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.0.0 <23.0.0"
+  },
   "scripts": {
     "start:selecao": "nx serve selecao",
     "start:ingresso": "nx serve ingresso",
@@ -21,9 +24,6 @@
     "affected:build": "nx affected --target=build",
     "affected:lint": "nx affected --target=lint",
     "prepare": "husky"
-  },
-  "engines": {
-    "node": ">=22.0.0 <23.0.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": "eslint --fix"
