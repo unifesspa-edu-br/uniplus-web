@@ -5,10 +5,26 @@ import { join } from 'path';
 const screenshotsDir = join(__dirname, '..', 'screenshots');
 
 async function screenshot(page: Page, name: string) {
-  await page.screenshot({
-    path: `${screenshotsDir}/${name}.png`,
-    fullPage: true,
-  });
+  // Retry interno para `Page.captureScreenshot Protocol error` (Chromium
+  // crashando sob carga em dev machine). Defesa em profundidade — o
+  // playwright.config também tem retries de teste, mas isso evita
+  // re-rodar todo o teste por causa de um único screenshot transitório.
+  // Ver #123.
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await page.screenshot({
+        path: `${screenshotsDir}/${name}.png`,
+        fullPage: true,
+      });
+      return;
+    } catch (err) {
+      const isProtocolError =
+        err instanceof Error && /Protocol error.*captureScreenshot/i.test(err.message);
+      if (!isProtocolError || attempt === maxAttempts) throw err;
+      await page.waitForTimeout(500);
+    }
+  }
 }
 
 async function getStyles(
