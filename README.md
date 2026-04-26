@@ -28,8 +28,8 @@ Frontend do Uni+ (S2U) da Unifesspa, construido como monorepo Nx com Angular 21.
 ## Inicio rapido
 
 ```bash
-# Instalar dependencias
-npm install
+# Instalar dependencias (requer Node 22.x — veja CONTRIBUTING.md para setup com nvm)
+nvm use && npm install
 
 # Servir a aplicacao selecao
 npx nx serve selecao
