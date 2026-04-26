@@ -210,6 +210,26 @@ gh pr create --base main
 
 ---
 
+## Regras de integração
+
+Este repositório adota políticas de proteção da branch `main` para garantir histórico linear, previsível e auditável. As regras são aplicadas automaticamente pelo GitHub aos colaboradores sem permissão administrativa.
+
+- Apenas **Rebase merge** é permitido — merge commits e squash estão desabilitados
+- Histórico linear obrigatório
+- Force-push e deleção da `main` bloqueados
+- PRs exigem:
+  - 1 aprovação de colaborador com permissão de escrita
+  - Status checks de CI passando:
+    - `main` (workflow `CI` — `.github/workflows/ci.yml`, job `main`)
+    - `nx run-many --target=lint --all` (workflow `Lint completo (workspace)` — `.github/workflows/lint-full.yml`)
+  - Branch atualizada com a `main` antes do merge
+  - Todas as conversas do review resolvidas
+  - Aprovações anteriores são descartadas quando novos commits são enviados (*dismiss stale reviews* + *require last push approval*)
+
+Casos excepcionais podem ser tratados por admins do repositório. A política operacional completa — incluindo procedimento de rebase, regras de ouro e troubleshooting — vive no **[Guia de Commits e Integração § 5](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md)**, fonte de verdade para todos os repositórios do projeto.
+
+---
+
 ## Padrões de código
 
 ### Organização de features (por app)
