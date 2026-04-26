@@ -10,7 +10,7 @@ export { ApiErrorHandlerService } from './services/api-error-handler.service';
 export type { ProblemDetails } from './services/api-error-handler.service';
 
 // Utils
-export { isValidCpf, formatCpf, formatCpfProgressive, maskCpf } from './utils/cpf.util';
+export { isValidCpf, formatCpf, maskCpf } from './utils/cpf.util';
 export { formatDateBr, formatDateTimeBr, parseDate } from './utils/date.util';
 
 // Validators
