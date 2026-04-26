@@ -6,7 +6,14 @@ export default [
   ...baseConfig,
   {
     files: ['**/*.ts', '**/*.js'],
-    // Override or add rules here
-    rules: {},
+    rules: {
+      // Reconhece como assertions os helpers de captura visual e checagem de
+      // focus ring Gov.br. Evita tornar testes apenas-screenshot ruidosos com
+      // expects tautológicos.
+      'playwright/expect-expect': [
+        'warn',
+        { assertFunctionNames: ['screenshot', 'checkGovbrFocusRing'] },
+      ],
+    },
   },
 ];
