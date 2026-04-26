@@ -252,8 +252,6 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T3.7: tab ativa — primary', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="true"]');
-      // toHaveCSS faz polling — necessário porque PrimeNG aplica os estilos de
-      // estado ativo após o ChangeDetection do Angular pós-navegação.
       await expect(tab).toHaveCSS('color', 'rgb(19, 81, 180)');
       await screenshot(page, 't3-07-tab-ativa-cor');
     });
@@ -329,9 +327,10 @@ test.describe('Design tokens Gov.br DS — PoC PrimeNG', () => {
 
     test('T4.7: tab inativa — border-bottom transparente', async ({ page }) => {
       const tab = page.locator('[role="tablist"] [role="tab"][aria-selected="false"]').first();
-      // Aceita tanto rgba(0,0,0,0) quanto 'transparent' — browsers podem
-      // serializar a cor transparente de qualquer das duas formas.
-      await expect(tab).toHaveCSS('border-bottom-color', /rgba\(0, 0, 0, 0\)|transparent/);
+      // Aceita tanto rgba(0, 0, 0, 0) quanto 'transparent' — browsers podem
+      // serializar a cor transparente de qualquer das duas formas. Regex
+      // ancorado para evitar match em strings que apenas contenham o pattern.
+      await expect(tab).toHaveCSS('border-bottom-color', /^(rgba\(0, 0, 0, 0\)|transparent)$/);
       await screenshot(page, 't4-07-tab-inativa-borda');
     });
 
