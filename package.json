@@ -22,6 +22,9 @@
     "affected:lint": "nx affected --target=lint",
     "prepare": "husky"
   },
+  "engines": {
+    "node": ">=22.0.0 <23.0.0"
+  },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": "eslint --fix"
   },
