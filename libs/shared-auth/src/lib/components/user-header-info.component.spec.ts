@@ -44,7 +44,8 @@ describe('UserHeaderInfoComponent', () => {
       ],
     });
 
-    const fixture: ComponentFixture<UserHeaderInfoComponent> = TestBed.createComponent(UserHeaderInfoComponent);
+    const fixture: ComponentFixture<UserHeaderInfoComponent> =
+      TestBed.createComponent(UserHeaderInfoComponent);
     fixture.detectChanges();
     return { fixture, logout };
   }
@@ -155,14 +156,16 @@ describe('UserHeaderInfoComponent', () => {
     expect(el.querySelector('button')).toBeTruthy();
   });
 
-  it('exibe roles com underscore ou caractere especial sem quebrar', () => {
-    const rolesEspeciais: UserProfile = {
+  it('filtra roles internas do Keycloak sem quebrar', () => {
+    const rolesInternas: UserProfile = {
       ...profileData,
-      roles: ['offline_access', 'uma-role-composta'],
+      roles: ['candidato', 'offline_access', 'uma_authorization'],
     };
-    const { fixture } = setup(rolesEspeciais);
+    const { fixture } = setup(rolesInternas);
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('offline_access, uma-role-composta');
+    expect(el.textContent).toContain('candidato');
+    expect(el.textContent).not.toContain('offline_access');
+    expect(el.textContent).not.toContain('uma_authorization');
   });
 
   it('dispara logout() a cada clique (sem debounce)', () => {
