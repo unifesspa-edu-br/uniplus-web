@@ -25,9 +25,10 @@ export default defineConfig({
   // linhas 195–202) — o segundo disparo do handler crasha com ENOENT.
   // Substituir pelo `http-server` direto evita o bug e mantém o mesmo
   // comportamento de SPA fallback via `--proxy ?`. Ver #131.
+  // O build é garantido via `dependsOn` no project.json, não inline aqui.
   webServer: {
     command:
-      'npx nx run poc-primeng:build && npx http-server dist/apps/poc-primeng/browser -p 4230 -s -c-1 --cors --proxy "http://localhost:4230?"',
+      'npx http-server dist/apps/poc-primeng/browser -p 4230 -s -c-1 --cors --proxy "http://localhost:4230?"',
     url: 'http://localhost:4230',
     reuseExistingServer: true,
     cwd: workspaceRoot,
