@@ -36,10 +36,11 @@ jobs:
           timeout 120 bash -c \
             'until curl -sf http://localhost:9000/health/ready | grep -q "\"UP\""; do sleep 5; done'
 
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
+      # This enables task distribution via Nx Cloud.
+      # Keep --stop-agents-after aligned with every target executed below so the
+      # distributed run cannot finish before all blocking gates are reconciled.
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e"
+      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,e2e"
 
       - uses: actions/setup-node@v4
         with:
@@ -50,7 +51,7 @@ jobs:
       - run: npx playwright install --with-deps
 
       - run: npx nx record -- echo Hello World
-      - run: npx nx run-many -t lint test build typecheck e2e
+      - run: npx nx run-many -t lint test build typecheck e2e --nxBail --outputStyle=static
         env:
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
