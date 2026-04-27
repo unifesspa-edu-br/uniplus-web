@@ -78,6 +78,15 @@
         "staticFilePath": "dist/apps/poc-primeng/browser",
         "spa": true
       }
+    },
+    "serve-static-e2e": {
+      "continuous": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx http-server dist/apps/poc-primeng/browser -p 4230 -s -c-1 --cors --proxy \"http://localhost:4230?\"",
+        "cwd": "{workspaceRoot}"
+      },
+      "dependsOn": [{ "target": "build" }]
     }
   }
 }

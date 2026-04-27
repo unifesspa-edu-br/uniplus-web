@@ -23,12 +23,11 @@ export default defineConfig({
   // `exit` e `SIGTERM` para fazer `unlinkSync('404.html')` no shutdown
   // (ver node_modules/@nx/web/src/executors/file-server/file-server.impl.js
   // linhas 195–202) — o segundo disparo do handler crasha com ENOENT.
-  // Substituir pelo `http-server` direto evita o bug e mantém o mesmo
-  // comportamento de SPA fallback via `--proxy ?`. Ver #131.
-  // O build é garantido via `dependsOn` no project.json, não inline aqui.
+  // O target `serve-static-e2e` (em apps/poc-primeng/project.json) usa
+  // `nx:run-commands` com `http-server` direto, evitando o bug.
+  // Ver #131.
   webServer: {
-    command:
-      'npx http-server dist/apps/poc-primeng/browser -p 4230 -s -c-1 --cors --proxy "http://localhost:4230?"',
+    command: 'npx nx run poc-primeng:serve-static-e2e',
     url: 'http://localhost:4230',
     reuseExistingServer: true,
     cwd: workspaceRoot,
