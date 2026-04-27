@@ -18,8 +18,16 @@ export default defineConfig({
     locale: 'pt-BR',
     timezoneId: 'America/Belem',
   },
+  // Antes usava `npx nx run poc-primeng:serve-static`, que delega ao
+  // `@nx/web:file-server`. Esse executor registra o mesmo handler em
+  // `exit` e `SIGTERM` para fazer `unlinkSync('404.html')` no shutdown
+  // (ver node_modules/@nx/web/src/executors/file-server/file-server.impl.js
+  // linhas 195–202) — o segundo disparo do handler crasha com ENOENT.
+  // Substituir pelo `http-server` direto evita o bug e mantém o mesmo
+  // comportamento de SPA fallback via `--proxy ?`. Ver #131.
   webServer: {
-    command: 'npx nx run poc-primeng:serve-static',
+    command:
+      'npx nx run poc-primeng:build && npx http-server dist/apps/poc-primeng/browser -p 4230 -s -c-1 --cors --proxy "http://localhost:4230?"',
     url: 'http://localhost:4230',
     reuseExistingServer: true,
     cwd: workspaceRoot,
