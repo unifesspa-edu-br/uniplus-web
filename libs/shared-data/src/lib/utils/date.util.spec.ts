@@ -51,7 +51,7 @@ describe('Date Util', () => {
     });
 
     it('retorna null quando a data é um texto vazio', () => {
-      expect(parseDate).toBe(null);
+      expect(parseDate('')).toBe(null);
     });
 
     it('retorna null quando a entrada de texto difere da localidade pt-br e do formato (dd/mm/yyyy)', () => {
