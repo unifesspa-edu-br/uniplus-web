@@ -64,8 +64,8 @@ Configuração centralizada em `vite.config.mts` por projeto. Major versions de 
 
 ## Confirmação
 
-- `npx nx vite:test <projeto>` é o comando canônico de execução local.
-- Pipeline de CI executa `nx affected --target=vite:test` em PRs.
+- `npx nx test <projeto>` é o comando canônico de execução local (o target `test` resolve para o executor Vitest configurado no projeto, exposto pelo plugin Nx como `vite:test`).
+- Pipeline de CI (`.github/workflows/ci.yml`) executa `npx nx run-many -t lint test build typecheck e2e --nxBail`, com o target `test` cobrindo todos os projetos do workspace.
 
 ## Mais informações
 
