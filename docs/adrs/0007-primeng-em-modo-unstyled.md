@@ -34,7 +34,7 @@ O wrapper oficial `@govbr-ds/webcomponents-angular` foi descartado por pre-relea
 
 Diretrizes derivadas da decisão:
 
-1. Habilitar o modo unstyled via `providePrimeNG({ theme: 'none' })` no `app.config.ts` de cada app.
+1. Habilitar o modo unstyled no `app.config.ts` de cada app via `providePrimeNG({ unstyled: true, pt: govbrPassThrough })` — `unstyled: true` é o flag canônico do PrimeNG 21 para suprimir os estilos de componente; `pt` injeta o objeto PassThrough Gov.br.
 2. **Não** importar temas do PrimeNG (Aura, Lara, Saga, etc.) — qualquer tema entraria em conflito com os tokens Gov.br.
 3. Manter um objeto `govbrPassThrough` central (ex.: `apps/*/src/app/primeng-govbr-pt.ts`) que define, slot a slot, as classes Tailwind aplicadas a cada componente PrimeNG utilizado.
 4. Para componentes que o PrimeNG não cobre adequadamente (ex.: header/footer institucional Gov.br, componentes específicos do contrato visual), implementar em Angular nativo aplicando classes Tailwind derivadas dos tokens.
@@ -64,7 +64,7 @@ A POC validou esta estratégia em `apps/poc-primeng/` com 8 componentes funciona
 
 ## Confirmação
 
-- `app.config.ts` de cada app deve conter `providePrimeNG({ theme: 'none' })`.
+- `app.config.ts` de cada app deve conter `providePrimeNG({ unstyled: true, pt: govbrPassThrough })`.
 - Lint/CI pode verificar ausência de imports de temas do PrimeNG (`primeng/themes/aura`, `primeng/themes/lara`).
 - Suíte E2E da POC em `apps/poc-primeng-e2e/` é o gate de regressão visual e de acessibilidade.
 

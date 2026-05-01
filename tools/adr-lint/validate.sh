@@ -52,7 +52,10 @@ for FILE in "$DIR"/*.md; do
     fi
   done
 
-  STATUS=$(printf '%s\n' "$FM" | grep '^status:' | head -1 | sed -E 's/^status:[[:space:]]*"?([^"]*)"?[[:space:]]*$/\1/')
+  # `|| true` evita que o pipeline aborte sob `set -euo pipefail` quando o
+  # campo está ausente — o erro já foi registrado no loop anterior e o script
+  # precisa seguir até o relatório final.
+  STATUS=$(printf '%s\n' "$FM" | { grep '^status:' || true; } | head -1 | sed -E 's/^status:[[:space:]]*"?([^"]*)"?[[:space:]]*$/\1/')
   if [[ -n "$STATUS" ]]; then
     if [[ ! "$STATUS" =~ ^(proposed|accepted|rejected|deprecated)$ ]] && \
        [[ ! "$STATUS" =~ ^superseded\ by\ ADR-[0-9]{4}$ ]]; then
@@ -60,7 +63,7 @@ for FILE in "$DIR"/*.md; do
     fi
   fi
 
-  DATE=$(printf '%s\n' "$FM" | grep '^date:' | head -1 | sed -E 's/^date:[[:space:]]*"?([^"]*)"?[[:space:]]*$/\1/')
+  DATE=$(printf '%s\n' "$FM" | { grep '^date:' || true; } | head -1 | sed -E 's/^date:[[:space:]]*"?([^"]*)"?[[:space:]]*$/\1/')
   if [[ -n "$DATE" ]] && [[ ! "$DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
     ERR+=("date inválida: '$DATE' (esperado YYYY-MM-DD)")
   fi
