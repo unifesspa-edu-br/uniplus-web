@@ -6,7 +6,13 @@
 
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:26.5
+    # Imagem composta uniplus-keycloak: base quay.io/keycloak/keycloak:26.5.7
+    # + JAR cpf-matcher embutido em /opt/keycloak/providers/ (Authenticator Java
+    # SPI custom para Identity Brokering gov.br). Mesma imagem consumida pelo
+    # uniplus-api/docker/docker-compose.yml. Patch fixo para reprodutibilidade
+    # entre devs do time — atualização é PR explícito. Política e ciclo de
+    # release em uniplus-api/docker/keycloak/README.md#imagem-do-keycloak.
+    image: ghcr.io/unifesspa-edu-br/uniplus-keycloak:1.0.2
     command: start-dev --import-realm
     environment:
       KC_HEALTH_ENABLED: "true"
