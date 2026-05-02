@@ -108,7 +108,17 @@ jobs:
       - if: steps.gate.outputs.run == 'true'
         run: npx nx record -- echo Hello World
 
-      - if: steps.gate.outputs.run == 'true'
+      # Em pull_request, usamos `nx affected` para rodar apenas os projects
+      # impactados pelo diff contra a branch base. Em push para main, fazemos
+      # sweep completo via `nx run-many` como rede de segurança.
+      - name: Rodar gates (nx affected — pull_request)
+        if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
+        run: npx nx affected -t lint test build typecheck e2e --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
+        env:
+          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
+
+      - name: Rodar gates (nx run-many — push em main)
+        if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
         run: npx nx run-many -t lint test build typecheck e2e --nxBail --outputStyle=static
         env:
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
