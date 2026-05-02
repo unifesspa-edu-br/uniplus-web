@@ -74,9 +74,10 @@ Diretrizes derivadas da decisão:
 
 ## Confirmação
 
-- Lint pode banir cores hardcoded (`#xxx`, `rgb(...)`) no código-fonte de apps e libs.
-- Suíte E2E em `apps/poc-primeng-e2e/src/govbr-design-tokens.spec.ts` (46 testes) executa em CI como gate de regressão visual.
-- O guia de tokens (em documentação interna do projeto) explicita o catálogo de utilitários disponíveis.
+- **Validação atual.** Os tokens Gov.br e o mapeamento Tailwind 4 via `@theme` foram validados em `apps/poc-primeng/src/styles.css`, exercitados pela suíte E2E `apps/poc-primeng-e2e/src/govbr-design-tokens.spec.ts` (46 testes) como gate de regressão visual.
+- **Estado em produção.** Os apps `selecao`, `ingresso` e `portal` ainda usam `src/styles.scss` com apenas `@tailwind base/components/utilities`; não importam `@govbr-ds/core` nem expõem o `@theme` com tokens Gov.br.
+- **Plano de adoção.** A adoção produtiva depende da conclusão da fundação UX/design system; será conduzida em Stories de migração dedicadas (incluindo a transição de `styles.scss` para `styles.css` e o import dos tokens antes do Tailwind), fora do escopo deste ADR.
+- **Gates adicionais quando a migração ocorrer.** Lint/CI deve banir cores hardcoded (`#xxx`, `rgb(...)`) no código-fonte de apps e libs em produção; o guia interno de tokens documenta o catálogo de utilitários disponíveis.
 
 ## Mais informações
 

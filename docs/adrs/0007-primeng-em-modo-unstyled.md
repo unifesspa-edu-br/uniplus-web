@@ -64,9 +64,10 @@ A POC validou esta estratégia em `apps/poc-primeng/` com 8 componentes funciona
 
 ## Confirmação
 
-- `app.config.ts` de cada app deve conter `providePrimeNG({ unstyled: true, pt: govbrPassThrough })`.
-- Lint/CI pode verificar ausência de imports de temas do PrimeNG (`primeng/themes/aura`, `primeng/themes/lara`).
-- Suíte E2E da POC em `apps/poc-primeng-e2e/` é o gate de regressão visual e de acessibilidade.
+- **Validação atual.** A decisão está validada em `apps/poc-primeng/` (`providePrimeNG({ unstyled: true, pt: govbrPassThrough })` + `govbrPassThrough` central) e exercitada pela suíte E2E `apps/poc-primeng-e2e/` como gate de regressão visual e de acessibilidade.
+- **Estado em produção.** Os apps `selecao`, `ingresso` e `portal` ainda não aplicam `providePrimeNG({ unstyled: true, pt: govbrPassThrough })`; a configuração canônica está pendente de migração.
+- **Plano de adoção.** `selecao`, `ingresso` e `portal` devem adotar essa configuração quando a base UX/Gov.br for consolidada, em Stories de migração de UI dedicadas, fora do escopo deste ADR.
+- **Gate adicional quando a migração ocorrer.** Lint/CI deve verificar a ausência de imports de temas do PrimeNG (`primeng/themes/aura`, `primeng/themes/lara`, etc.) nos apps em produção.
 
 ## Mais informações
 
