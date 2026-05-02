@@ -116,14 +116,12 @@ jobs:
       # Em pull_request, usamos `nx affected` para rodar apenas os projects
       # impactados pelo diff contra a branch base. Em push para main, fazemos
       # sweep completo via `nx run-many` como rede de segurança.
-      # --exclude=uniplus-web: o root project tem um target `e2e` inferido
-      # pelo @nx/playwright a partir do `playwright.config.ts` da raiz que
-      # está mal configurado (testMatch pega specs de Vitest). `nx run-many`
-      # historicamente ignorava esse target, mas `nx affected` o invoca.
-      # Excluir é cirúrgico; a correção do config raiz fica em issue própria.
+      # Em pull_request, usamos `nx affected` para rodar apenas os projects
+      # impactados pelo diff contra a branch base. Em push para main, fazemos
+      # sweep completo via `nx run-many` como rede de segurança.
       - name: Rodar gates (nx affected — pull_request)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npx nx affected -t lint test build typecheck e2e --base=origin/${{ github.base_ref }} --head=HEAD --exclude=uniplus-web --nxBail --outputStyle=static
+        run: npx nx affected -t lint test build typecheck e2e --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
         env:
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
