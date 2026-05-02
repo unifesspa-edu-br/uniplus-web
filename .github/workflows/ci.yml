@@ -19,7 +19,36 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
+      # Em pull_request, detecta se houve mudança em código frontend.
+      # Em push para main, sempre rodamos os gates (passo abaixo decide).
+      - id: changes
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'apps/**'
+              - 'libs/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'nx.json'
+              - 'tsconfig*.json'
+              - 'tools/e2e-docker/**'
+              - '.github/workflows/ci.yml'
+
+      - id: gate
+        name: Decidir se gates frontend rodam
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ steps.changes.outputs.frontend }}" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Gates frontend habilitados"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "PR sem mudancas em codigo frontend - pulando gates"
+          fi
+
       - name: Iniciar Keycloak
+        if: steps.gate.outputs.run == 'true'
         run: |
           docker run -d \
             --name keycloak \
@@ -32,6 +61,7 @@ jobs:
             quay.io/keycloak/keycloak:26.5 start-dev --import-realm
 
       - name: Aguardar Keycloak ficar saudável
+        if: steps.gate.outputs.run == 'true'
         run: |
           timeout 120 bash -c \
             'until curl -sf http://localhost:9000/health/ready | grep -q "\"UP\""; do sleep 5; done'
@@ -40,20 +70,44 @@ jobs:
       # Keep --stop-agents-after aligned with every target executed below so the
       # distributed run cannot finish before all blocking gates are reconciled.
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,e2e"
+      - if: steps.gate.outputs.run == 'true'
+        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,e2e"
 
-      - uses: actions/setup-node@v4
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - run: npm ci
-      - run: npx playwright install --with-deps
+      - if: steps.gate.outputs.run == 'true'
+        run: npm ci
 
-      - run: npx nx record -- echo Hello World
-      - run: npx nx run-many -t lint test build typecheck e2e --nxBail --outputStyle=static
+      - name: Extrair versão do Playwright
+        id: pw-version
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          VERSION=$(node -e "const l=require('./package-lock.json'); console.log(l.packages['node_modules/@playwright/test'].version)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Cache de browsers do Playwright
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npx playwright install --with-deps
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npx nx record -- echo Hello World
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npx nx run-many -t lint test build typecheck e2e --nxBail --outputStyle=static
         env:
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
-      - run: npx nx fix-ci
-        if: always()
+      - if: always() && steps.gate.outputs.run == 'true'
+        run: npx nx fix-ci
