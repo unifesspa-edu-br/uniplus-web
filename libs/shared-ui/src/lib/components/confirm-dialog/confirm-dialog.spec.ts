@@ -1,33 +1,33 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ConfirmDialogComponent } from './confirm-dialog';
 
 describe('ConfirmDialogComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [ConfirmDialogComponent] });
+  });
+
   function setup() {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-    imports: [ConfirmDialogComponent],
-    });
     const fixture: ComponentFixture<ConfirmDialogComponent> =
-          TestBed.createComponent(ConfirmDialogComponent);
+      TestBed.createComponent(ConfirmDialogComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const getDialogEl = () =>
-        fixture.debugElement.query(By.css('[role="dialog"]')).nativeElement as HTMLDivElement;
+      fixture.debugElement.query(By.css('[role="dialog"]')).nativeElement as HTMLDivElement;
     const getButtons = () => fixture.debugElement.queryAll(By.css('button'));
     const getCancelButtonEl = () => getButtons().find(b => b.nativeElement.textContent.trim() === 'Cancelar')?.nativeElement as HTMLButtonElement;
     const getConfirmButtonEl = () => getButtons().find(b => b.nativeElement.textContent.trim() === 'Confirmar')?.nativeElement as HTMLButtonElement;
     const confirmedOutputSpy = vi.spyOn(component.confirmed, 'emit');
     const cancelledOutputSpy = vi.spyOn(component.cancelled, 'emit');
     return {
-        fixture,
-        component,
-        getDialogEl,
-        getCancelButtonEl,
-        getConfirmButtonEl,
-        confirmedOutputSpy,
-        cancelledOutputSpy
+      fixture,
+      component,
+      getDialogEl,
+      getCancelButtonEl,
+      getConfirmButtonEl,
+      confirmedOutputSpy,
+      cancelledOutputSpy
     };
   }
 
