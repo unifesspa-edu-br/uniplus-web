@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { formatDateBr, formatDateTimeBr, parseDate } from './date.util';
 
 describe('Date Util', () => {
-  const VALID_RAW_DATE = '02/14/2026 12:00:00';
-  const INVALID_RAW_DATE = '02/14/2026 25:00:00';
+  const VALID_RAW_DATE = '2026-02-14T12:00:00';
+  const INVALID_RAW_DATE = '2026-02-14T25:00:00';
   const DATE_STR = '02/14/2026';
   const DATE = new Date(VALID_RAW_DATE);
-  const INVALID_DATE_MSG = 'Invalid Date';
+  const INVALID_DATE_MSG = '—';
 
   describe('formatDateBr()', () => {
     it('formata uma entrada de data em texto bruto para a localidade pt-br', () => {
@@ -17,11 +17,11 @@ describe('Date Util', () => {
       expect(formatDateBr(DATE)).toBe('14/02/2026');
     });
 
-    it('retorna uma mensagem de data inválida quando a entrada de data e hora em texto bruto é inválida', () => {    
+    it('retorna um "—" quando a entrada de data e hora em texto bruto é inválida', () => {
       expect(formatDateBr(INVALID_RAW_DATE)).toBe(INVALID_DATE_MSG);
     });
 
-    it('retorna uma mensagem de data inválida quando a entrada de um objeto de data e hora é inválida', () => {            
+    it('retorna um "—" quando a entrada de um objeto de data e hora é inválida', () => {
       expect(formatDateBr(new Date(INVALID_RAW_DATE))).toBe(INVALID_DATE_MSG);
     });
   });
@@ -31,8 +31,16 @@ describe('Date Util', () => {
       expect(formatDateTimeBr(VALID_RAW_DATE)).toBe('14/02/2026, 12:00:00');
     });
 
-    it('formata uma entrada de data e hora para o formato de data e hora na localidade pt-br', () => {    
+    it('formata uma entrada de data e hora para o formato de data e hora na localidade pt-br', () => {
       expect(formatDateTimeBr(DATE)).toBe('14/02/2026, 12:00:00');
+    });
+
+    it('retorna um "—" quando a entrada de um texto bruto de data e hora é inválida', () => {
+      expect(formatDateTimeBr(new Date(INVALID_RAW_DATE))).toBe(INVALID_DATE_MSG);
+    });
+
+    it('retorna um "—" quando a entrada de um objeto de data e hora é inválida', () => {
+      expect(formatDateTimeBr(new Date(INVALID_RAW_DATE))).toBe(INVALID_DATE_MSG);
     });
   });
 
@@ -50,12 +58,32 @@ describe('Date Util', () => {
       expect(result?.getFullYear()).toBe(year);
     });
 
+    it('transforma corretamente entrada de texto referente a um ano bissexto', () => {
+      expect(parseDate('24/02/2026')).not.toBe(null);
+    });
+
     it('retorna null quando a data é um texto vazio', () => {
       expect(parseDate('')).toBe(null);
     });
 
-    it('retorna null quando a entrada de texto difere da localidade pt-br e do formato (dd/mm/yyyy)', () => {
+    it('retorna null quando o mês está fora do intervalo válido', () => {
         expect(parseDate(DATE_STR)).toBe(null);
+    });
+
+    it('retorna null quando o separador difere de "/"', () => {
+      expect(parseDate('14-02-2026')).toBe(null);
+    });
+
+    it('retorna null quando o dia não existe em um determinado mês', () => {
+      expect(parseDate('32/01/2026')).toBe(null);
+    });
+
+    it('retorna null quando o ano possui apenas dois dígitos', () => {
+      expect(parseDate('01/01/26')).toBe(null);
+    });
+
+    it('retorna null quando o ano não é bissexto', () => {
+      expect(parseDate('29/02/2026')).toBe(null);
     });
   });
 });

@@ -1,11 +1,11 @@
 export function formatDateBr(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('pt-BR');
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
 }
 
 export function formatDateTimeBr(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleString('pt-BR');
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR');
 }
 
 export function parseDate(dateStr: string): Date | null {
