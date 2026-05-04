@@ -87,16 +87,7 @@ Esta ADR explicitamente **não fecha a porta** para criar `libs/shared-http` mai
 - Cliente Angular codegen (`libs/api-selecao-client`) ou outras libs ficam acopladas pesadamente ao subdiretório, justificando export estável separado.
 - Mudança de equipe ou ownership exige isolamento técnico.
 
-…então promove via:
-
-```bash
-nx generate @nx/angular:move \
-  --project=shared-core \
-  --destination=shared-http \
-  --paths=src/lib/http
-```
-
-Promoção é um comando Nx + ajuste de imports cross-lib via codemod. Sem lock-in arquitetural na decisão de hoje.
+…então a subpasta vira lib própria. **Não há lock-in arquitetural** na decisão de hoje: o design do adapter (tipos, interceptor, i18n service) é independente do local físico, e a promoção é refactor mecânico — gerar a nova lib via `nx g lib`, deslocar os arquivos, atualizar imports dos consumidores via codemod. Os passos exatos serão definidos no PR de promoção, quando o contexto real existir; descrever procedimento agora seria especulação sobre código que ainda não foi escrito.
 
 ### Esta ADR não decide
 
@@ -140,6 +131,6 @@ Promoção é um comando Nx + ajuste de imports cross-lib via codemod. Sem lock-
 
 - [ADR-0011](0011-consumer-adapter-api-result.md) — superseded em parte por esta ADR (apenas placement; design e migração permanecem válidos).
 - ADR-0002 do `uniplus-api` (Clean Architecture) — base da analogia de simetria entre backend e frontend para cross-cutting infra.
-- [Nx — Move generator](https://nx.dev/nx-api/angular/generators/move) — caminho de promoção futura sem lock-in.
+- [Nx — Library generation](https://nx.dev/recipes/angular/library) — referência para `nx g lib` quando a promoção for feita.
 - [Nx — Library generation](https://nx.dev/recipes/angular/library) — critério para nova lib.
 - Princípio YAGNI ("You Aren't Gonna Need It") — base da rejeição de criar lib justificada por código especulativo.
