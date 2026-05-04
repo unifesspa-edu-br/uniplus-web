@@ -36,7 +36,7 @@ describe('Date Util', () => {
     });
 
     it('retorna um "—" quando a entrada de um texto bruto de data e hora é inválida', () => {
-      expect(formatDateTimeBr(new Date(INVALID_RAW_DATE))).toBe(INVALID_DATE_MSG);
+      expect(formatDateTimeBr(INVALID_RAW_DATE)).toBe(INVALID_DATE_MSG);
     });
 
     it('retorna um "—" quando a entrada de um objeto de data e hora é inválida', () => {
@@ -59,7 +59,7 @@ describe('Date Util', () => {
     });
 
     it('transforma corretamente entrada de texto referente a um ano bissexto', () => {
-      expect(parseDate('24/02/2026')).not.toBe(null);
+      expect(parseDate('29/02/2024 ')).not.toBe(null);
     });
 
     it('retorna null quando a data é um texto vazio', () => {
