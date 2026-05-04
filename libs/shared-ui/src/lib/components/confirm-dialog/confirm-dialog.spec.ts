@@ -1,6 +1,6 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ConfirmDialogComponent } from './confirm-dialog';
 
 describe('ConfirmDialogComponent', () => {
@@ -15,8 +15,9 @@ describe('ConfirmDialogComponent', () => {
     const component = fixture.componentInstance;
     const getDialogEl = () =>
         fixture.debugElement.query(By.css('[role="dialog"]')).nativeElement as HTMLDivElement;
-    const getCancelButtonEl = () => fixture.debugElement.queryAll(By.css('button'))[0].nativeElement as HTMLButtonElement;
-    const getConfirmButtonEl = () => fixture.debugElement.queryAll(By.css('button'))[1].nativeElement as HTMLButtonElement;
+    const getButtons = () => fixture.debugElement.queryAll(By.css('button'));
+    const getCancelButtonEl = () => getButtons().find(b => b.nativeElement.textContent.trim() === 'Cancelar')?.nativeElement as HTMLButtonElement;
+    const getConfirmButtonEl = () => getButtons().find(b => b.nativeElement.textContent.trim() === 'Confirmar')?.nativeElement as HTMLButtonElement;
     const confirmedOutputSpy = vi.spyOn(component.confirmed, 'emit');
     const cancelledOutputSpy = vi.spyOn(component.cancelled, 'emit');
     return {
@@ -55,8 +56,8 @@ describe('ConfirmDialogComponent', () => {
     expect(headingEl).toBeTruthy();
     expect(headingEl.textContent).toBe('Confirmação');
     expect(paragraphEl.textContent).toBe('Deseja realmente prosseguir?');
-    expect(confirmButtonEl.textContent).toBe(' Confirmar ');
-    expect(cancelButtonEl.textContent).toBe(' Cancelar ');
+    expect(confirmButtonEl.textContent?.trim()).toBe('Confirmar');
+    expect(cancelButtonEl.textContent?.trim()).toBe('Cancelar');
   });
 
   it('emite um evento de output cancelled() quando clicar no botão cancelar', () => {
