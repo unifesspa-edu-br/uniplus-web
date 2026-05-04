@@ -22,7 +22,7 @@ O backend manteve **um único projeto cross-cutting** com sub-pastas internas. A
 ## Drivers da decisão
 
 - **Simetria com backend.** Backend tem 3 projetos shared (`Application.Abstractions`, `Infrastructure.Core`, `Kernel`) e mantém HTTP-adjacent infra dentro de `Infrastructure.Core`. Frontend deveria seguir a mesma economia de projetos enquanto não houver necessidade real.
-- **YAGNI sobre evolução futura.** A justificativa "futuras features (idempotency client, cursor parsing helpers, content negotiation accept-header builder) ficarão isoladas em `shared-http`" é especulativa. Esses helpers ainda não existem; quando existirem, podem nascer em `shared-core/http/` e migrar para lib própria via `nx generate @nx/angular:move` quando atingirem complexidade que justifique.
+- **YAGNI sobre evolução futura.** A justificativa "futuras features (idempotency client, cursor parsing helpers, content negotiation accept-header builder) ficarão isoladas em `shared-http`" é especulativa. Esses helpers ainda não existem; quando existirem, podem nascer em `shared-core/http/` e migrar para lib própria via refactor manual (gerar nova lib, mover arquivos, ajustar imports) quando atingirem complexidade que justifique.
 - **Custo de manutenção real.** Cada lib Nx adiciona `project.json`, `tsconfig.lib.json`, `tsconfig.spec.json`, configuração ESLint, configuração Vitest, path alias em `tsconfig.base.json`, entrada em `nx.json`. Multiplicar por libs ainda imaturas é cargo cult.
 - **Fronteira por subpasta + ESLint.** O argumento "fronteira explícita via tag Nx" da ADR-0011 pode ser expressa por **subpasta nomeada** dentro de `shared-core` (`shared-core/src/lib/http/`) sem precisar de novo `project.json`. Convenção de import (`@uniplus/shared-core` → namespace estável) já enforça boundary.
 - **`shared-core` é destino natural.** O `error.interceptor.ts` que será substituído já vive em `shared-core/interceptors/`; o novo `apiResultInterceptor` toma seu lugar. Mover para outra lib durante a substituição complica o refactor sem ganho.
@@ -107,7 +107,7 @@ Esta ADR explicitamente **não fecha a porta** para criar `libs/shared-http` mai
 - **Simetria com backend.** Estrutura de cross-cutting infra fica consistente entre `uniplus-api` (`Infrastructure.Core`) e `uniplus-web` (`shared-core`).
 - **Menos manutenção.** Sem novo `project.json`, sem novo path alias, sem nova entrada em `nx.json`/`tsconfig.base.json`.
 - **Refactor mais simples.** Substituir `error.interceptor.ts` por `api-result.interceptor.ts` no mesmo lugar evita imports cross-lib desnecessários durante a migração.
-- **YAGNI honesto.** Evolução futura para lib própria é caminho aberto via `nx move`, mas não é prematura.
+- **YAGNI honesto.** Evolução futura para lib própria é caminho aberto via refactor manual, mas não é prematura.
 - **Consumidores não percebem diferença.** Import vem de `@uniplus/shared-core` (já existente) em vez de `@uniplus/shared-http` (que seria novo); diff de import é mínimo.
 
 ### Negativas
@@ -132,5 +132,4 @@ Esta ADR explicitamente **não fecha a porta** para criar `libs/shared-http` mai
 - [ADR-0011](0011-consumer-adapter-api-result.md) — superseded em parte por esta ADR (apenas placement; design e migração permanecem válidos).
 - ADR-0002 do `uniplus-api` (Clean Architecture) — base da analogia de simetria entre backend e frontend para cross-cutting infra.
 - [Nx — Library generation](https://nx.dev/recipes/angular/library) — referência para `nx g lib` quando a promoção for feita.
-- [Nx — Library generation](https://nx.dev/recipes/angular/library) — critério para nova lib.
 - Princípio YAGNI ("You Aren't Gonna Need It") — base da rejeição de criar lib justificada por código especulativo.
