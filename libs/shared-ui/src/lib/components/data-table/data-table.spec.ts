@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { describe, it, expect } from 'vitest';
-import { DataTableComponent,DataTableColumn } from './data-table';
+import { DataTableComponent, DataTableColumn } from './data-table';
 
 describe('DataTableComponent', () => {
   const COLUMNS: DataTableColumn[] = [{
@@ -54,15 +54,6 @@ describe('DataTableComponent', () => {
     expect(tbodyQuery.children.length).toBe(DATA.length);
   });
 
-  it('renderiza a tabela com linhas quando o input data() está preenchido', () => {
-    const { fixture } = setup();
-    fixture.componentRef.setInput('data', DATA);
-    fixture.detectChanges();
-    const tbodyQuery = fixture.debugElement.query(By.css('tbody'));
-
-    expect(tbodyQuery.children.length).toBe(DATA.length);
-  });
-
   it('renderiza o valor de cada célula conforme o field da coluna', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
@@ -72,6 +63,8 @@ describe('DataTableComponent', () => {
     const cells = fixture.debugElement.queryAll(By.css('tbody td'));
     expect(cells[0].nativeElement.textContent.trim()).toBe('1');
     expect(cells[1].nativeElement.textContent.trim()).toBe('Joe Doe');
+    expect(cells[2].nativeElement.textContent.trim()).toBe('2');
+    expect(cells[3].nativeElement.textContent.trim()).toBe('Joana Doe');
   });
 
   it('renderiza a tabela com mensagem de vazio quando o input columns() é um array vazio e data é um array vazio (default)', () => {
