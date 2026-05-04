@@ -1,11 +1,13 @@
 ---
-status: "accepted"
+status: "superseded by ADR-0012"
 date: "2026-05-03"
 decision-makers:
   - "Tech Lead (CTIC)"
 ---
 
 # ADR-0011: Consumer adapter `ApiResult<T>` em nova lib `libs/shared-http`
+
+> **Aviso de superseção parcial.** O **placement** decidido por esta ADR (criar nova lib `libs/shared-http`) foi superseded pela [ADR-0012](0012-placement-api-result-em-shared-core.md), que mantém o adapter dentro de `libs/shared-core/src/lib/http/`. Toda a substância de design abaixo (tipo `ApiResult<T>`, `ProblemDetails`, `apiResultInterceptor`, `ProblemI18nService`, plano de migração e preservação do `auth-error.interceptor`) **permanece binding** — apenas o local físico mudou. Consultar a ADR-0012 antes de implementar.
 
 ## Contexto e enunciado do problema
 
