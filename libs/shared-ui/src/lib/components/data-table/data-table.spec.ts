@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { DataTableComponent, DataTableColumn } from './data-table';
 
 describe('DataTableComponent', () => {
@@ -14,15 +14,17 @@ describe('DataTableComponent', () => {
     header: 'Name',
     sortable: true
   }];
+
   const DATA: Record<string, unknown>[] = [
     { id: '1', name: 'Joe Doe' },
     { id: '2', name: 'Joana Doe' }
   ];
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [DataTableComponent] });
+  });
+
   function setup() {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-        imports: [DataTableComponent],
-    });
     const fixture: ComponentFixture<DataTableComponent> =
       TestBed.createComponent(DataTableComponent);
     fixture.componentRef.setInput('columns', []);
