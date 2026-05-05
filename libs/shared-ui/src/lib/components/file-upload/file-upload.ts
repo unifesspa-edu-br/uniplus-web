@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, viewChild, ElementRef } from '@angular/core';
 
 @Component({
   selector: 'ui-file-upload',
@@ -59,14 +59,16 @@ import { Component, ChangeDetectionStrategy, input, output, signal } from '@angu
 export class FileUploadComponent {
   readonly label = input<string>('');
   readonly accept = input<string>('.pdf,.jpg,.jpeg,.png');
+  readonly allowedMimeType = input<string[]>(['application/pdf' ,'image/jpg', 'image/jpeg', 'image/png']);
   readonly acceptLabel = input<string>('PDF, JPG ou PNG');
   readonly maxSizeMb = input<number>(10);
-
+  readonly typeNotAllowedMsg = signal(`Tipo de arquivo não permitido. Envie arquivos nos formatos: ${this.accept()}`);
   readonly fileSelected = output<File>();
 
   readonly selectedFile = signal<File | null>(null);
   readonly isDragging = signal(false);
   readonly error = signal<string>('');
+  readonly fileInput = viewChild<ElementRef>('fileInput');
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -104,6 +106,12 @@ export class FileUploadComponent {
     const maxBytes = this.maxSizeMb() * 1024 * 1024;
     if (file.size > maxBytes) {
       this.error.set(`Arquivo excede o tamanho máximo de ${this.maxSizeMb()}MB.`);
+      return;
+    }
+
+    const extension = file.name.slice(file.name.lastIndexOf("."));
+    if (!this.allowedMimeType().includes(file.type) || !this.accept().split(',').includes(extension)) {
+      this.error.set(this.typeNotAllowedMsg());
       return;
     }
     this.error.set('');
