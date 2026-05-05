@@ -18,13 +18,16 @@ generated=(
 bash "$SCRIPT_DIR/generate-api-clients.sh"
 
 drift=0
-for file in "${generated[@]}"; do
-  committed=$(mktemp)
-  trap 'rm -f "$committed"' EXIT
+committed=$(mktemp)
+trap 'rm -f "$committed"' EXIT
 
+for file in "${generated[@]}"; do
   if ! git show "HEAD:$file" >"$committed" 2>/dev/null; then
-    echo "AVISO: $file ainda não existe em HEAD (primeiro commit do gerado)" >&2
-    rm -f "$committed"
+    # Se o arquivo gerado não existe em HEAD significa que ele foi removido
+    # (ou nunca committed) — o contrato do codegen-api-check é que todo
+    # schema gerado precisa estar committed. Tratamos como drift duro.
+    echo "DRIFT: $file não existe em HEAD — o gerado deve estar committed." >&2
+    drift=1
     continue
   fi
 
@@ -33,7 +36,6 @@ for file in "${generated[@]}"; do
     diff -u "$committed" "$file" || true
     drift=1
   fi
-  rm -f "$committed"
 done
 
 if (( drift )); then
