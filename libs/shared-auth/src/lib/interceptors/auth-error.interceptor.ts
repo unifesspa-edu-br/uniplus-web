@@ -1,40 +1,39 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { tap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Interceptor de erros de autenticação/autorização:
+ * Reage a respostas já envelopadas pelo `apiResultInterceptor` de
+ * `@uniplus/shared-core` (ADR-0011 + ADR-0012):
  *
- * - **401 Unauthorized** → dispara `authService.login()` (redireciona
- *   o usuário para o Keycloak). Usado quando o backend rejeita o token
- *   (ex.: sessão revogada, clock skew, refresh falhou).
- * - **403 Forbidden** → redireciona para `/acesso-negado`. O usuário
- *   está autenticado mas não tem permissão para o recurso solicitado.
+ * - **401 Unauthorized** → dispara `authService.login()` (redirect Keycloak).
+ * - **403 Forbidden** → redireciona para `/acesso-negado`.
  *
- * Outros status não são tratados aqui — ficam a cargo do
- * `errorInterceptor` de `@uniplus/shared-core` (0, 5xx) e de handlers
- * específicos por feature.
+ * Como o `apiResultInterceptor` converte 4xx/5xx em `HttpResponse` carregando
+ * `ApiResult.fail` (preservando o `status` HTTP original), este interceptor
+ * opera apenas sobre `HttpResponse` via `tap`, sem `catchError`. Os demais
+ * status são ignorados — feedback de UI fica a cargo do componente
+ * consumidor a partir do `ApiResult` recebido.
  *
- * Deve ser registrado depois do `tokenInterceptor` e preferencialmente
- * antes de interceptors que apresentam erros em UI (ex.: toasts),
- * para que um 401 não exiba um toast antes de redirecionar.
+ * Wiring: deve ficar mais externo que `apiResultInterceptor` no array de
+ * `withInterceptors([...])`, ou seja, registrado **antes** dele.
  */
 export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
   return next(req).pipe(
-    catchError((error: unknown) => {
-      if (error instanceof HttpErrorResponse) {
-        if (error.status === 401) {
-          void authService.login();
-        } else if (error.status === 403) {
-          void router.navigate(['/acesso-negado']);
-        }
+    tap((event) => {
+      if (!(event instanceof HttpResponse)) {
+        return;
       }
-      return throwError(() => error);
+      if (event.status === 401) {
+        void authService.login();
+      } else if (event.status === 403) {
+        void router.navigate(['/acesso-negado']);
+      }
     }),
   );
 };

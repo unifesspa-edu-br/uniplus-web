@@ -119,13 +119,13 @@ Path alias em `tsconfig.base.json`:
 ```typescript
 provideHttpClient(
   withInterceptors([
-    apiResultInterceptor, // @uniplus/shared-http (parsing)
-    authErrorInterceptor, // @uniplus/shared-auth (consumer de ApiResult)
+    authErrorInterceptor, // @uniplus/shared-auth (consumer do envelope)
+    apiResultInterceptor, // @uniplus/shared-core (envelopa em ApiResult)
   ])
 );
 ```
 
-Ordem importa: `apiResultInterceptor` produz o `ApiResult`; `authErrorInterceptor` consome.
+Ordem importa: `apiResultInterceptor` é o **mais interno** (último no array), portanto envelopa a response **antes** dela subir; `authErrorInterceptor` é mais externo e lê o `HttpResponse` já envelopado para reagir a 401/403. A consequência é que o `authErrorInterceptor` nunca recebe `HttpErrorResponse` cru — apenas `HttpResponse` carregando `ApiResult.fail` com `status` preservado.
 
 ### Esta ADR não decide
 
@@ -179,3 +179,45 @@ Ordem importa: `apiResultInterceptor` produz o `ApiResult`; `authErrorIntercepto
 - [Nx — Library generation](https://nx.dev/recipes/angular/library).
 - [Nx — Module boundaries enforcement](https://nx.dev/features/enforce-module-boundaries).
 - [RFC 9457 — Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457.html) — tipo de wire format consumido pelo adapter.
+
+## Implementação (2026-05-05)
+
+A entrega das issues [#169](https://github.com/unifesspa-edu-br/uniplus-web/issues/169) e [#170](https://github.com/unifesspa-edu-br/uniplus-web/issues/170) materializou o design desta ADR no placement acordado pela [ADR-0012](0012-placement-api-result-em-shared-core.md). A migração foi consolidada em um único PR — **não há coexistência com fragments antigos**: `error.interceptor.ts` (em `shared-core/interceptors/`) e `api-error-handler.service.ts` (em `shared-data/services/`) foram **removidos** nesta entrega, e o `auth-error.interceptor` foi refatorado para consumir `ApiResult` envelopado upstream.
+
+### Arquivos criados em `libs/shared-core/src/lib/http/`
+
+- `api-result.ts` — discriminated union `ApiResult<T>` + helpers `apiOk`, `apiFailure`, `isApiOk`, `isApiFailure`.
+- `problem-details.ts` — `ProblemDetails` casando byte-perfect com a wire format emitida pela `uniplus-api` (camelCase para core/extensions Uni+, `available_versions` em snake_case conforme ADR-0028 do backend), além de `CLIENT_PROBLEM_CODES` para fallbacks sintetizados.
+- `api-result.interceptor.ts` — `apiResultInterceptor` consolidado: injeta `Accept` do vendor MIME quando declarado, envelopa 2xx em `ApiResult.ok`, envelopa 4xx/5xx em `ApiResult.fail` (parsing real para `application/problem+json`, sintetizando `uniplus.client.unexpected_response` quando o body não corresponde) e sintetiza `uniplus.client.network_error` para falhas de conexão (status 0).
+- `problem-i18n.service.ts` — `ProblemI18nService` com `register`/`unregister`/`resolve` keyed por `problem.code`; default repete `title`/`detail` do backend. JSDoc destaca que callbacks de override **não devem** interpolar `detail`/`errors[].message` em UI logada/persistida (LGPD).
+- `vendor-mime.ts` — `VENDOR_MIME_TOKEN` (`HttpContextToken<VendorMimeDeclaration | null>`), `withVendorMime(resource, version)` builder e `buildVendorMimeAccept` para uso em testes/specs.
+- `api-result.testing.ts` — `okResult`, `errorResult`, `mockProblemDetails`, `mockValidationError` para uso em libs e apps consumidores.
+- `index.ts` — re-exporta apenas os símbolos públicos da subpasta.
+
+### Refatorações e remoções na mesma entrega
+
+- `libs/shared-auth/src/lib/interceptors/auth-error.interceptor.ts` — passou a operar via `tap(HttpResponse)` lendo `event.status` do envelope produzido pelo `apiResultInterceptor`. Sem `catchError`. Mantém `authService.login()` em 401 e `router.navigate(['/acesso-negado'])` em 403; demais status seguem para o consumer como `ApiFailure`.
+- `libs/shared-core/src/lib/interceptors/error.interceptor.ts` — **removido**. O comportamento de toast genérico em 0/5xx foi descontinuado; o consumer recebe `ApiResult.fail` com `code` específico (`uniplus.client.network_error`, `uniplus.client.unexpected_response` ou o `code` emitido pelo backend) e decide o feedback de UI apropriado.
+- `libs/shared-data/src/lib/services/api-error-handler.service.ts` — **removido**. O parsing RFC 7807 obsoleto foi substituído pelo parsing RFC 9457 dentro do `apiResultInterceptor`. O `ProblemDetails` (RFC 9457) agora vive em `@uniplus/shared-core/http`; o tipo homônimo RFC 7807 que existia em `shared-data` foi descontinuado.
+
+### Wiring nos apps
+
+Em `apps/{selecao,ingresso,portal}/src/app/app.config.ts` a chain é registrada como:
+
+```ts
+withInterceptors([
+  tokenInterceptor,
+  loadingInterceptor,
+  authErrorInterceptor,   // mais externo — lê HttpResponse já envelopado
+  apiResultInterceptor,   // mais interno — converte 4xx/5xx em ApiResult.fail
+])
+```
+
+Em response, a ordem real (mais interna → mais externa → consumer) é
+`apiResult → authError → loading → token → consumer`. O `authError` recebe sempre
+`HttpResponse` (incluindo o envelope de erro com `status` preservado), nunca
+`HttpErrorResponse` cru.
+
+### Cobertura de testes
+
+`libs/shared-core/src/lib/http/*.spec.ts` cobre 31 cenários Vitest: construtores `apiOk`/`apiFailure`, narrowing por `result.ok`, `withVendorMime` (incluindo rejeição de inputs inválidos), `ProblemI18nService` (default, override estático, override dinâmico via função, `action`, `unregister`) e o interceptor para 200/201/204, 401, 404, 422 com `errors[]`, 422 com `errors: []` (normalizado como ausência), 406 com `available_versions`, 500, body string JSON, status 0 (network), 5xx sem `application/problem+json`, 4xx com shape incompleto e injeção de vendor MIME (presente e ausente). `libs/shared-auth/src/lib/interceptors/auth-error.interceptor.spec.ts` foi atualizado para registrar a chain combinada (`[authError, apiResult]`) e validar 401, 403, status diversos (incluindo 0) e 2xx no novo modelo.

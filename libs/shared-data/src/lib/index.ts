@@ -5,9 +5,9 @@ export * from './models/candidato.model';
 export * from './models/cota.model';
 export * from './models/resultado.model';
 
-// Services
-export { ApiErrorHandlerService } from './services/api-error-handler.service';
-export type { ProblemDetails } from './services/api-error-handler.service';
+// HTTP — `ProblemDetails` (RFC 9457) e `ApiResult<T>` vivem em
+// `@uniplus/shared-core/http` desde a ADR-0012. O antigo
+// `ApiErrorHandlerService` (RFC 7807) foi removido.
 
 // Utils
 export { isValidCpf, formatCpf, maskCpf } from './utils/cpf.util';

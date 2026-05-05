@@ -4,5 +4,7 @@ export { NotificationService } from './services/notification.service';
 export type { Notification } from './services/notification.service';
 
 // Interceptors
-export { errorInterceptor } from './interceptors/error.interceptor';
 export { loadingInterceptor } from './interceptors/loading.interceptor';
+
+// HTTP — adapter `ApiResult<T>` consolidado (ADR-0011 + ADR-0012)
+export * from './http';
