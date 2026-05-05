@@ -3,6 +3,10 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
 import { apiResultInterceptor, loadingInterceptor } from '@uniplus/shared-core';
+import {
+  INGRESSO_BASE_PATH,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data';
 import { authErrorInterceptor, provideAuth, tokenInterceptor } from '@uniplus/shared-auth';
 import { environment } from '../environments/environment';
 
@@ -28,5 +32,10 @@ export const appConfig: ApplicationConfig = {
       clientId: environment.keycloak.clientId,
       allowedUrls: [environment.apiUrl, environment.keycloak.url],
     }),
+    // BASE_PATH dos clientes gerados (ADR-0013) — origin absoluta da
+    // uniplus-api. O portal pode consumir endpoints públicos de qualquer
+    // dos dois módulos, então provê ambos os tokens.
+    { provide: SELECAO_BASE_PATH, useValue: environment.apiUrl },
+    { provide: INGRESSO_BASE_PATH, useValue: environment.apiUrl },
   ],
 };

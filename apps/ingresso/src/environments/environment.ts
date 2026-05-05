@@ -3,7 +3,11 @@
 // Estratégia final: runtime config via provideAppInitializer + K8s ConfigMap (Option C).
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5000/api/v1',
+  // Origin absoluta da uniplus-api (sem sufixo /api/v1). O Contrato V1
+  // declara paths absolutos a partir do origin (`/api/...`) e o
+  // versionamento per-resource é feito via vendor MIME (ADR-0028 do
+  // `uniplus-api`), não via prefixo de URL.
+  apiUrl: 'http://localhost:5000',
   keycloak: {
     url: 'http://localhost:8080',
     realm: 'unifesspa',

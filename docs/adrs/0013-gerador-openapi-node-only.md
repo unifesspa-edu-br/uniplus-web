@@ -1,5 +1,5 @@
 ---
-status: "proposed"
+status: "accepted"
 date: "2026-05-05"
 decision-makers:
   - "Tech Lead (CTIC)"
@@ -158,3 +158,30 @@ A migração é trivial porque o gerador atual nunca produziu artefato em `main`
 - [`openapi-typescript`](https://openapi-ts.dev/) — gerador escolhido.
 - [`@openapitools/openapi-generator-cli`](https://www.npmjs.com/package/@openapitools/openapi-generator-cli) — gerador descontinuado para o `uniplus-web`.
 - Plano Frontend Milestone B (Frente 2) — implementação que consome esta decisão.
+
+## Implementação (2026-05-05)
+
+A entrega da issue [#172](https://github.com/unifesspa-edu-br/uniplus-web/issues/172) (US-F2-01) materializa esta decisão. Status promovido de `proposed` para `accepted` no merge do PR de implementação.
+
+### O que foi entregue
+
+- `libs/shared-data/openapi/{selecao,ingresso}.openapi.json` — baselines reais sincronizados a partir de `repositories/uniplus-api/contracts/`. Os YAML stubs anteriores foram removidos.
+- `libs/shared-data/scripts/generate-api-clients.sh` — reescrito para `npx openapi-typescript` (~40 ms para os dois módulos). Emite `--immutable` (`readonly` em todos os campos) e `--enum` (TS enums em vez de unions).
+- `libs/shared-data/src/lib/api/selecao/schema.ts` — gerado (paths para `/api/auth/me`, `/api/profile/me`, `/api/editais`, `/api/editais/{id}`, `/api/editais/{id}/publicar`; components: `EditalDto`, `CriarEditalCommand`, `TipoProcesso`, `AuthenticatedUserResponse`, `UserProfileResponse`, `ProblemDetails`).
+- `libs/shared-data/src/lib/api/ingresso/schema.ts` — gerado (paths `/api/auth/me`, `/api/profile/me`).
+- `libs/shared-data/src/lib/api/{selecao,ingresso}/tokens.ts` — `SELECAO_BASE_PATH` e `INGRESSO_BASE_PATH` (`InjectionToken<string>`).
+- `libs/shared-data/src/lib/api/selecao/editais.api.ts` — primeiro service thin de referência (`listar()`, `obter()`); demais métodos (`criar`, `publicar`) ficam para PRs subsequentes que dependem das Frentes 3 (idempotência) e 8 (HATEOAS).
+- `libs/shared-data/src/lib/api/selecao/editais.api.spec.ts` — 3 testes Vitest cobrindo `listar`, `obter` (com encoding seguro) e tratamento de 404 envelopado em `ApiFailure`.
+- `package.json` — `@openapitools/openapi-generator-cli` removido; `openapi-typescript@^7.13.0` adicionado como `devDependency`.
+- `libs/shared-data/project.json` — targets `codegen-api` (regen) e `codegen-api-check` (regen + `git diff --exit-code`).
+- `.github/workflows/ci.yml` — step "Verificar drift do codegen OpenAPI" rodando `nx run shared-data:codegen-api-check` antes dos gates principais.
+- `apps/{selecao,ingresso,portal}/src/environments/environment.ts` — `apiUrl` corrigido para a origin absoluta (`http://localhost:5000`), sem o sufixo `/api/v1` que era incompatível com os paths absolutos do contrato V1.
+- `apps/{selecao,ingresso,portal}/src/app/app.config.ts` — providers de `SELECAO_BASE_PATH` e `INGRESSO_BASE_PATH` apontando para `environment.apiUrl`.
+- `libs/shared-data/README.md` — workflow de regeneração + pattern dos services thin documentados.
+
+### Pontos não-óbvios capturados na implementação
+
+- **`ProblemDetails` no schema gerado.** `openapi-typescript` emite `components['schemas']['ProblemDetails']` espelhando o tipo default da .NET (RFC 7807, sem extensions Uni+). Esse tipo **não deve ser consumido**: a fonte canônica continua sendo `ProblemDetails` de `@uniplus/shared-core/http`. JSDoc no `editais.api.ts` reforça a regra; futura limpeza pode adicionar regra ESLint específica.
+- **Sem Configuration class.** Não há classe de configuração própria de cada módulo gerado. `BASE_PATH` continua único por módulo via `InjectionToken<string>`. `accessToken` da Configuration **não existe** — Bearer é responsabilidade exclusiva do `tokenInterceptor` (ADR-0009).
+- **Versionamento por recurso continua via vendor MIME.** Nenhum prefixo `/v1` na URL — paths declarados pelo contrato são absolutos (`/api/editais`). `withVendorMime('edital', 1)` injeta `Accept: application/vnd.uniplus.edital.v1+json` no `HttpContext` (ADR-0028 do `uniplus-api`).
+- **`number | string` para `int32`.** `openapi-typescript` mapeia `format: int32` para `number | string` por compatibilidade com serializers que emitem números grandes como string. Nos services consumidores, normalmente forçar `number` é aceitável; se o backend nunca emitir string, a flag `--alphabetize` ou um pos-processador podem normalizar — fora de escopo deste PR.
