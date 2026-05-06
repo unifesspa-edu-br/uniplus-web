@@ -38,9 +38,8 @@ export type CriarEditalCommand = components['schemas']['CriarEditalCommand'];
  * versionamento via vendor MIME `application/vnd.uniplus.edital.v1+json`
  * (ADR-0028 do `uniplus-api`) é declarado por `withVendorMime('edital', 1)`.
  *
- * Métodos `criar()` e `publicar()` ficam para PRs subsequentes — `criar`
- * depende do helper `withIdempotencyKey` (Frente 3) e `publicar` depende dos
- * `_links` HATEOAS (Frente 8).
+ * Métodos `criar()` e `publicar()` consomem `withIdempotencyKey` (ADR-0014;
+ * pattern entregue na F3 do Milestone B); detalhes em cada método abaixo.
  */
 @Injectable({ providedIn: 'root' })
 export class EditaisApi {

@@ -84,42 +84,50 @@ describe('EditaisDetailPage', () => {
     expect(component.errorMessage()).toBe('Edital não encontrado');
   });
 
-  it('podePublicar=true quando _links.publicar está presente (caminho A HATEOAS)', () => {
-    fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush({
-      ...editalSeed({ status: 'Publicado' }),
-      _links: {
-        self: `/api/editais/${ID}`,
-        publicar: `/api/editais/${ID}/publicar`,
-      },
-    });
-
-    // _links.publicar wins sobre status — backend é a única fonte da regra.
-    expect(component['podePublicar']()).toBe(true);
-  });
-
-  it('podePublicar=false quando _links presente mas sem .publicar (status irrelevante)', () => {
-    fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush({
-      ...editalSeed({ status: 'Rascunho' }),
-      _links: { self: `/api/editais/${ID}` },
-    });
-
-    expect(component['podePublicar']()).toBe(false);
-  });
-
-  it('fallback temporário (uniplus-api#334): sem _links, podePublicar=true se status=Rascunho', () => {
+  it('podePublicar=true quando status === "Rascunho" (única transição permitida)', () => {
     fixture.detectChanges();
     controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
 
     expect(component['podePublicar']()).toBe(true);
   });
 
-  it('fallback: sem _links, podePublicar=false se status diferente de Rascunho', () => {
+  it('podePublicar=false quando status diferente de "Rascunho"', () => {
     fixture.detectChanges();
     controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
 
     expect(component['podePublicar']()).toBe(false);
+  });
+
+  it('_links.publicar no payload NUNCA habilita o botão (vedação ADR-0029 honrada — gate só por status)', () => {
+    fixture.detectChanges();
+    // Cenário hipotético defensivo: backend (incorretamente) emite _links.publicar.
+    // Frontend deve ignorar — gating é exclusivamente por status do recurso.
+    controller.expectOne(`${BASE}/api/editais/${ID}`).flush({
+      ...editalSeed({ status: 'Publicado' }),
+      _links: {
+        self: `/api/editais/${ID}`,
+        collection: '/api/editais',
+        publicar: `/api/editais/${ID}/publicar`,
+      },
+    } as never);
+
+    expect(component['podePublicar']()).toBe(false);
+  });
+
+  it('_links navigation (self/collection) presente em recurso single per ADR-0029', () => {
+    fixture.detectChanges();
+    controller.expectOne(`${BASE}/api/editais/${ID}`).flush({
+      ...editalSeed({ status: 'Rascunho' }),
+      _links: {
+        self: `/api/editais/${ID}`,
+        collection: '/api/editais',
+      },
+    });
+
+    expect(component.edital()?._links?.['self']).toBe(`/api/editais/${ID}`);
+    expect(component.edital()?._links?.['collection']).toBe('/api/editais');
+    // Action links nunca aparecem em _links (descobertos via OpenAPI).
+    expect(component.edital()?._links?.['publicar']).toBeUndefined();
   });
 
   it('confirmarPublicacao envia POST com Idempotency-Key, recebe 204 e refetcha o edital', () => {
