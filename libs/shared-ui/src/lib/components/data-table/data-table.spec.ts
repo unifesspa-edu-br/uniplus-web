@@ -184,6 +184,24 @@ describe('DataTableComponent', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
+  it('Space na linha clicável emite rowClick e cancela o scroll default do browser', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('rowClickable', true);
+    fixture.detectChanges();
+
+    const emit = vi.fn();
+    component.rowClick.subscribe(emit);
+
+    const linha = fixture.debugElement.queryAll(By.css('tbody tr'))[0];
+    const spaceEvent = new KeyboardEvent('keydown', { key: ' ', code: 'Space', cancelable: true });
+    linha.nativeElement.dispatchEvent(spaceEvent);
+
+    expect(emit).toHaveBeenCalledWith(DATA[0]);
+    expect(spaceEvent.defaultPrevented).toBe(true);
+  });
+
   it('rowClickable=true ativa role=button + tabindex e emite rowClick com a linha clicada', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
