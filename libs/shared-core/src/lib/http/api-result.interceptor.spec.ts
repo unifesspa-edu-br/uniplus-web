@@ -13,6 +13,11 @@ import {
   isApiOk,
 } from './api-result';
 import { apiResultInterceptor } from './api-result.interceptor';
+import {
+  IDEMPOTENCY_KEY_TOKEN,
+  idempotencyKey,
+  withIdempotencyKey,
+} from './idempotency';
 import { CLIENT_PROBLEM_CODES, ProblemDetails } from './problem-details';
 import { withVendorMime } from './vendor-mime';
 
@@ -322,6 +327,46 @@ describe('apiResultInterceptor', () => {
       const req = controller.expectOne('/api/editais');
       const accept = req.request.headers.get('Accept');
       expect(accept ?? '').not.toContain('vnd.uniplus');
+      req.flush([]);
+    });
+  });
+
+  describe('Idempotency-Key injection (ADR-0014)', () => {
+    it('quando withIdempotencyKey é usado, request anexa header Idempotency-Key', () => {
+      const explicitKey = idempotencyKey.create();
+
+      http
+        .post<ApiResult<Edital>>('/api/editais', { titulo: 'X' }, {
+          context: withIdempotencyKey(explicitKey),
+        })
+        .subscribe();
+
+      const req = controller.expectOne('/api/editais');
+      expect(req.request.headers.get('Idempotency-Key')).toBe(explicitKey);
+      req.flush({ id: 'edt-9', numero: 9 }, { status: 201, statusText: 'Created' });
+    });
+
+    it('compõe vendor MIME + Idempotency-Key num só HttpContext', () => {
+      const composed = withVendorMime('edital', 1).set(
+        IDEMPOTENCY_KEY_TOKEN,
+        idempotencyKey.create(),
+      );
+
+      http
+        .post<ApiResult<Edital>>('/api/editais', { titulo: 'X' }, { context: composed })
+        .subscribe();
+
+      const req = controller.expectOne('/api/editais');
+      expect(req.request.headers.get('Accept')).toBe('application/vnd.uniplus.edital.v1+json');
+      expect(req.request.headers.get('Idempotency-Key')).not.toBeNull();
+      req.flush({ id: 'edt-1', numero: 1 }, { status: 201, statusText: 'Created' });
+    });
+
+    it('sem withIdempotencyKey, request não recebe header Idempotency-Key', () => {
+      http.get<ApiResult<Edital>>('/api/editais').subscribe();
+
+      const req = controller.expectOne('/api/editais');
+      expect(req.request.headers.get('Idempotency-Key')).toBeNull();
       req.flush([]);
     });
   });
