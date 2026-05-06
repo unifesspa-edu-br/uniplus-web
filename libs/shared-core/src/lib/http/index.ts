@@ -22,6 +22,12 @@ export {
   withIdempotencyKey,
 } from './idempotency';
 
+export { parseLink } from './link-header';
+export type { ParsedLink } from './link-header';
+
+export { createCursor, cursorToString, extractNextCursor } from './pagination';
+export type { Cursor } from './pagination';
+
 export { CLIENT_PROBLEM_CODES } from './problem-details';
 export type {
   ClientProblemCode,

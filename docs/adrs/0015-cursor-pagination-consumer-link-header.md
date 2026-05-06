@@ -1,5 +1,5 @@
 ---
-status: "proposed"
+status: "accepted"
 date: "2026-05-06"
 decision-makers:
   - "Tech Lead (CTIC)"
@@ -136,3 +136,23 @@ this.editaisApi.listar(this.cursor()).subscribe(result => {
 - [RFC 5988](https://www.rfc-editor.org/rfc/rfc5988.html) / [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288.html) — Web Linking.
 - [TypeScript branded types](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-9.html#unique-symbol) — `unique symbol` desde 2.9.
 - Plano Frontend Milestone B (Frente 4) — `~/.claude/plans/novo-plano-para-implementar-glistening-petal.md`.
+
+## Implementação (2026-05-06)
+
+A entrega da Story [#191](https://github.com/unifesspa-edu-br/uniplus-web/issues/191) materializa a decisão. Status promovido de `proposed` para `accepted` no merge.
+
+### Arquivos criados/modificados
+
+- `libs/shared-core/src/lib/http/link-header.ts` (criado) — parser RFC 5988/8288 puro TypeScript: `parseLink(headerValue): Map<rel, ParsedLink>`. Tokenizer char-by-char preserva vírgulas e ponto-e-vírgulas dentro de quoted-strings (com escape `\\`). Suporta `rel="self next"` (RFC 5988 §5.3.1) registrando uma entrada por valor. Param keys são lowercased.
+- `libs/shared-core/src/lib/http/pagination.ts` (criado) — `Cursor` branded type via `unique symbol`; `createCursor(value: string): Cursor`; `cursorToString(cursor: Cursor): string`; `extractNextCursor(linkHeader): Cursor | null` consome `parseLink` e extrai o valor do query param `cursor=` da URI do `rel="next"`. Decode percent-encoded values com fallback a `null` em malformed.
+- `libs/shared-core/src/lib/http/link-header.spec.ts` (criado) — 22 cenários cobrindo: header ausente/vazio (4), 1 link-value (3), múltiplos link-values (3), `rel` multi-valor (1), aspas/ponto-e-vírgula/vírgula escapadas em quoted-string (3), formas defensivas (5).
+- `libs/shared-core/src/lib/http/pagination.spec.ts` (criado) — 19 cenários cobrindo: branded type (3), happy paths de `extractNextCursor` (6), retornos `null` legítimos (5), formas defensivas (5).
+- `libs/shared-core/src/lib/http/index.ts` (atualizado) — re-exporta `parseLink`, `ParsedLink`, `createCursor`, `cursorToString`, `extractNextCursor`, `Cursor`.
+
+### Pontos não-óbvios capturados na implementação
+
+- **`rel="next"` sem `cursor=` retorna `null`** em vez de `Cursor` com string vazia. Justificativa: um `rel="next"` que não carrega cursor opaco é defeituoso server-side; tratá-lo como ausência preserva a invariante "cliente nunca decide o cursor".
+- **`decodeURIComponent` envelopado em try/catch** — servidor mandando `%2` ou `%XY` lança `URIError`; convertemos para `null` em vez de propagar exception ao consumer.
+- **Quando dois link-values declaram o mesmo `rel`, o primeiro vence.** RFC 5988 não proíbe duplicatas mas também não define semântica; escolhemos determinismo previsível.
+- **Hash fragment (`#...`) é descartado** ao extrair query string — embora paginação por cursor não use fragment, ser defensivo evita bug se algum endpoint futuro emitir.
+- **Branded type em runtime é apenas string** — `JSON.stringify(cursor)` funciona, comparação `cursor === otherCursor` funciona; o branding só vive no compile time. Isso é desejável: serialização para query param/storage transparente.
