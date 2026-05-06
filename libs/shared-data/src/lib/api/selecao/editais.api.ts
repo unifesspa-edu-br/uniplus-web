@@ -1,7 +1,12 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core';
+import {
+  ApiResult,
+  Cursor,
+  cursorToString,
+  withVendorMime,
+} from '@uniplus/shared-core';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -36,11 +41,30 @@ export class EditaisApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
-  /** GET `/api/editais` — lista de editais (sem cursor pagination até a Frente 4). */
-  listar(): Observable<ApiResult<readonly EditalDto[]>> {
+  /**
+   * GET `/api/editais` — lista paginada por cursor opaco (ADR-0026 + ADR-0031
+   * do `uniplus-api`; consumer client-side via ADR-0015).
+   *
+   * Parâmetros opcionais:
+   * - `cursor`: cursor opaco emitido pelo servidor no header `Link rel="next"`
+   *   da página anterior. Ausente na 1ª página.
+   * - `limit`: tamanho máximo da janela. Ausente => default do servidor.
+   *
+   * O cursor é serializado no query param `cursor=`; o cliente nunca decifra
+   * o conteúdo (ADR-0031 do backend). Use `extractNextCursor(result.headers
+   * .get('Link'))` para obter o próximo cursor a partir do header de resposta.
+   */
+  listar(cursor?: Cursor, limit?: number): Observable<ApiResult<readonly EditalDto[]>> {
+    let params = new HttpParams();
+    if (cursor !== undefined) {
+      params = params.set('cursor', cursorToString(cursor));
+    }
+    if (limit !== undefined) {
+      params = params.set('limit', String(limit));
+    }
     return this.http.get<ApiResult<readonly EditalDto[]>>(
       `${this.basePath}/api/editais`,
-      { context: withVendorMime('edital', 1) },
+      { context: withVendorMime('edital', 1), params },
     );
   }
 
