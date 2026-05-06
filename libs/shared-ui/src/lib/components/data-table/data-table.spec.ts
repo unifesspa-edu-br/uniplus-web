@@ -183,4 +183,41 @@ describe('DataTableComponent', () => {
 
     expect(emit).not.toHaveBeenCalled();
   });
+
+  it('rowClickable=true ativa role=button + tabindex e emite rowClick com a linha clicada', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('rowClickable', true);
+    fixture.detectChanges();
+
+    const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
+    expect(linhas.length).toBe(DATA.length);
+    expect(linhas[0].nativeElement.getAttribute('role')).toBe('button');
+    expect(linhas[0].nativeElement.getAttribute('tabindex')).toBe('0');
+
+    const emit = vi.fn();
+    component.rowClick.subscribe(emit);
+
+    linhas[1].nativeElement.click();
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith(DATA[1]);
+  });
+
+  it('rowClickable=false (default) não ativa role/tabindex e clique na linha não emite rowClick', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.detectChanges();
+
+    const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
+    expect(linhas[0].nativeElement.getAttribute('role')).toBeNull();
+    expect(linhas[0].nativeElement.getAttribute('tabindex')).toBeNull();
+
+    const emit = vi.fn();
+    component.rowClick.subscribe(emit);
+
+    linhas[0].nativeElement.click();
+    expect(emit).not.toHaveBeenCalled();
+  });
 });

@@ -69,7 +69,16 @@ export interface DataTableColumn {
             </tr>
           } @else {
             @for (row of data(); track row[trackByField()] ?? $index) {
-              <tr class="hover:bg-gray-50 transition-colors">
+              <tr
+                class="transition-colors"
+                [class.hover:bg-gray-50]="rowClickable()"
+                [class.cursor-pointer]="rowClickable()"
+                [attr.role]="rowClickable() ? 'button' : null"
+                [attr.tabindex]="rowClickable() ? 0 : null"
+                (click)="rowClickable() && rowClick.emit(row)"
+                (keydown.enter)="rowClickable() && rowClick.emit(row)"
+                (keydown.space)="rowClickable() && rowClick.emit(row)"
+              >
                 @for (col of columns(); track col.field) {
                   <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
                     {{ row[col.field] }}
@@ -128,6 +137,9 @@ export class DataTableComponent {
   readonly trackByField = input<string>('id');
 
   readonly loadNext = output<Cursor>();
+  readonly rowClick = output<Record<string, unknown>>();
+  /** Quando true, linhas ganham hover/cursor/role=button e respondem a click + Enter/Space. */
+  readonly rowClickable = input<boolean>(false);
 
   /** Erro substitui o tbody apenas quando ainda não há dados carregados. */
   protected readonly mostrarErroNoCorpo = computed(

@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 import {
   ApiResult,
   Cursor,
+  IDEMPOTENCY_KEY_TOKEN,
   cursorToString,
   withVendorMime,
 } from '@uniplus/shared-core';
@@ -112,6 +113,32 @@ export class EditaisApi {
         context,
         headers: new HttpHeaders({ Accept: 'application/json' }),
       },
+    );
+  }
+
+  /**
+   * POST `/api/editais/{id}/publicar` — publica um edital em rascunho.
+   *
+   * **Header obrigatório:** `Idempotency-Key` (ADR-0027 do `uniplus-api`).
+   * O caller declara via `withIdempotencyKey(key)` no `HttpContext`; este
+   * método compõe `withVendorMime('edital', 1)` no contexto recebido para
+   * declarar a versão do recurso (ADR-0028 backend, ADR-0016 cliente),
+   * mantendo simetria com `obter()` e `listar()`.
+   *
+   * **Resposta 204 No Content** em sucesso (sem body — vendor MIME não
+   * afeta o parse, mas é mantido por consistência de versionamento do recurso).
+   * **422 `uniplus.selecao.edital.ja_publicado`** quando o edital já está publicado.
+   */
+  publicar(id: string, context: HttpContext): Observable<ApiResult<void>> {
+    const idempotencyKeyValue = context.get(IDEMPOTENCY_KEY_TOKEN);
+    const ctxComposto = withVendorMime('edital', 1).set(
+      IDEMPOTENCY_KEY_TOKEN,
+      idempotencyKeyValue,
+    );
+    return this.http.post<ApiResult<void>>(
+      `${this.basePath}/api/editais/${encodeURIComponent(id)}/publicar`,
+      null,
+      { context: ctxComposto },
     );
   }
 }
