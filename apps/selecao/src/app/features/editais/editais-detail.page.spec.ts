@@ -186,6 +186,27 @@ describe('EditaisDetailPage', () => {
     expect(botao).toBeNull();
   });
 
+  it('race guard: response stale do id anterior é descartada quando id mudou (Codex P1 round 2)', () => {
+    fixture.detectChanges();
+    const reqId1 = controller.expectOne(`${BASE}/api/editais/${ID}`);
+
+    // Usuário navega antes do id1 retornar
+    const ID_NOVO = '01960000-0000-7000-0000-000000000bbb';
+    fixture.componentRef.setInput('id', ID_NOVO);
+    fixture.detectChanges();
+    const reqId2 = controller.expectOne(`${BASE}/api/editais/${ID_NOVO}`);
+
+    // id2 retorna primeiro com dados novos
+    reqId2.flush(editalSeed({ id: ID_NOVO, titulo: 'PSE 2027' }));
+    expect(component.edital()?.titulo).toBe('PSE 2027');
+    expect(component.loading()).toBe(false);
+
+    // id1 (stale) retorna depois — guard descarta sem mutar state
+    reqId1.flush(editalSeed({ titulo: 'PSE 2026' }));
+    expect(component.edital()?.titulo).toBe('PSE 2027'); // não mudou para PSE 2026
+    expect(component.loading()).toBe(false);
+  });
+
   it('mudança no input id refetcha automaticamente e zera estado anterior (Codex P1)', () => {
     fixture.detectChanges();
     controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ titulo: 'PSE 2026' }));
