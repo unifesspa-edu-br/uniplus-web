@@ -24,14 +24,6 @@ const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
  */
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
-  /**
-   * `globalSetup` autentica como admin uma vez por test run e persiste o
-   * `storageState` em disco — specs no project `selecao-authenticated`
-   * pulam o login UI. Specs legadas em `chromium`/`firefox`/`webkit`
-   * continuam fazendo login UI via `keycloakLogin` helper. Ver F9 em
-   * `~/.claude/plans/novo-plano-fechamento-milestone-b-luminous-keystone.md`.
-   */
-  globalSetup: require.resolve('./src/global-setup'),
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
@@ -46,27 +38,41 @@ export default defineConfig({
     cwd: workspaceRoot,
   },
   projects: [
+    /**
+     * Setup project (Playwright ≥1.31) que persiste `storageState` admin via
+     * Keycloak. Roda APENAS quando algum project que declara
+     * `dependencies: ['auth-setup']` é selecionado — `--project=chromium`
+     * sozinho não dispara este setup, preservando o invariante de não exigir
+     * `KEYCLOAK_ADMIN_PASSWORD` em runs não-autenticadas. Ver F9 em
+     * `~/.claude/plans/novo-plano-fechamento-milestone-b-luminous-keystone.md`.
+     */
+    {
+      name: 'auth-setup',
+      testMatch: /auth\.setup\.ts$/,
+    },
+
     {
       name: 'chromium',
-      testIgnore: /.*\.authenticated\.spec\.ts/,
+      testIgnore: /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
-      testIgnore: /.*\.authenticated\.spec\.ts/,
+      testIgnore: /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/,
       use: { ...devices['Desktop Firefox'] },
     },
 
     ...(isCI ? [{
       name: 'webkit',
-      testIgnore: /.*\.authenticated\.spec\.ts/,
+      testIgnore: /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/,
       use: { ...devices['Desktop Safari'] },
     }] : []),
 
     {
       name: 'selecao-authenticated',
       testMatch: /.*\.authenticated\.spec\.ts/,
+      dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: storageStateAdmin,

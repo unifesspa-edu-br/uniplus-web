@@ -13,46 +13,53 @@ Helpers reutilizáveis pelos `apps/*-e2e` do workspace. Atualmente foca em auten
 
 ### Setup de `storageState` autenticado (F9)
 
-- `setupKeycloakAuth(options)` — single-shot: reset de senha + login UI + persistência do `storageState` em disco. Invocado a partir do `globalSetup` do Playwright.
-- `createGlobalSetup(options)` — wrapper para o uso canônico (`globalSetup: require.resolve('./src/global-setup')`).
+- `setupKeycloakAuth(options)` — single-shot: reset de senha + login UI + persistência do `storageState` em disco. Invocado de dentro de um **setup project** Playwright (≥1.31) — não usar `globalSetup` para evitar exigir `KEYCLOAK_ADMIN_PASSWORD` em runs filtradas (`--project=chromium`) que não precisam de auth.
+- `createGlobalSetup(options)` — wrapper para o uso canônico (`globalSetup: require.resolve('./src/global-setup')`). Mantido para compatibilidade com apps que precisam de globalSetup, mas o pattern preferido é o setup project descrito abaixo.
 
-#### Padrão de uso por app E2E
+#### Padrão de uso por app E2E (setup project)
 
 ```ts
-// apps/<app>-e2e/src/global-setup.ts
-import type { FullConfig } from '@playwright/test';
+// apps/<app>-e2e/src/auth.setup.ts
+import { test as setup } from '@playwright/test';
 import * as path from 'node:path';
 import { setupKeycloakAuth } from '@uniplus/shared-e2e';
 import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
 
-export default async function globalSetup(config: FullConfig) {
+setup('autentica admin via Keycloak e persiste storageState', async ({}, testInfo) => {
+  const baseURL =
+    testInfo.config.projects[0]?.use.baseURL ?? 'http://localhost:4200';
+
   await setupKeycloakAuth({
-    // path.resolve(__dirname, '..', ...) ancora no app e2e — o cwd do globalSetup
-    // é o workspace root pelo preset Nx, então paths relativos cairiam fora.
+    // path.resolve ancora no app e2e — paths relativos cairiam no cwd
+    // do runner Playwright (variável conforme invocação).
     storageStatePath: path.resolve(__dirname, '..', STORAGE_STATE_PATH_ADMIN),
-    appBaseUrl: config.projects[0]?.use.baseURL ?? 'http://localhost:4200',
+    appBaseUrl: baseURL,
     username: ADMIN_USER.username,
     password: ADMIN_USER.password,
   });
-}
+});
 ```
 
 ```ts
 // apps/<app>-e2e/playwright.config.ts
 export default defineConfig({
-  globalSetup: require.resolve('./src/global-setup'),
   projects: [
-    // ... projects de UI login (legados) ...
+    {
+      name: 'auth-setup',
+      testMatch: /auth\.setup\.ts$/,
+    },
+    // ... projects de UI login (legados) com testIgnore para auth.setup.ts ...
     {
       name: '<app>-authenticated',
       testMatch: /.*\.authenticated\.spec\.ts/,
+      dependencies: ['auth-setup'],
       use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE_PATH_ADMIN },
     },
   ],
 });
 ```
 
-Specs com sufixo `*.authenticated.spec.ts` rodam no project `*-authenticated` e abrem direto na app autenticada — sem login UI dentro do test.
+Specs com sufixo `*.authenticated.spec.ts` rodam no project `*-authenticated` e abrem direto na app autenticada — sem login UI dentro do test. O `auth-setup` só roda quando algum project que declara `dependencies: ['auth-setup']` é selecionado, então `--project=chromium` sozinho NÃO dispara o setup nem exige `KEYCLOAK_ADMIN_PASSWORD`.
 
 ## Padrão #20 — JWT só em memória (importante)
 
