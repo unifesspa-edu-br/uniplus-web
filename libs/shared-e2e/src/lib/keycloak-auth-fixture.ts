@@ -53,12 +53,16 @@ export async function setupKeycloakAuth(options: KeycloakAuthSetupOptions): Prom
   const context = await browser.newContext();
   const page = await context.newPage();
 
+  // Pattern de redirect pós-login deriva do appBaseUrl — caller pode passar
+  // staging/prod sem que o keycloakLogin trave esperando por localhost.
+  const baseUrlPattern = new RegExp(escapeRegex(options.appBaseUrl));
+
   try {
     await page.goto(`${options.appBaseUrl}${protectedRoute}`);
-    await keycloakLogin(page, options.username, options.password);
-    await expect(page).toHaveURL(new RegExp(`${escapeRegex(options.appBaseUrl)}.*`), {
-      timeout: 15_000,
+    await keycloakLogin(page, options.username, options.password, {
+      expectRedirectTo: baseUrlPattern,
     });
+    await expect(page).toHaveURL(baseUrlPattern, { timeout: 15_000 });
     await context.storageState({ path: options.storageStatePath });
   } finally {
     await context.close();

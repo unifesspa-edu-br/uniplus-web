@@ -72,17 +72,27 @@ export async function resetPasswords(
   }
 }
 
+/** Pattern default de redirect pós-login — apps locais em `localhost:<porta>`. */
+const DEFAULT_REDIRECT_PATTERN = /localhost:\d{4}/;
+
 /**
  * Realiza login via UI do Keycloak.
  *
  * Espera que a página já tenha sido redirecionada ao Keycloak
  * (ex.: após navegar para rota protegida por authGuard).
+ *
+ * `expectRedirectTo` controla o pattern de URL esperada após o submit do
+ * login. Default `/localhost:\d{4}/` cobre dev local; passe um pattern
+ * customizado para staging/prod (ex.: `/staging\.uniplus\.unifesspa\.edu\.br/`).
  */
 export async function keycloakLogin(
   page: Page,
   username: string,
   password: string,
+  options: { readonly expectRedirectTo?: RegExp } = {},
 ): Promise<void> {
+  const expectRedirectTo = options.expectRedirectTo ?? DEFAULT_REDIRECT_PATTERN;
+
   // Aguardar o formulário de login do Keycloak
   await page.waitForSelector('#kc-login', { timeout: 10_000 });
 
@@ -99,7 +109,7 @@ export async function keycloakLogin(
   }
 
   // Aguardar redirect de volta à aplicação + carregamento completo
-  await page.waitForURL(/localhost:\d{4}/, { timeout: 10_000 });
+  await page.waitForURL(expectRedirectTo, { timeout: 10_000 });
   // networkidle é tolerado neste helper porque o fluxo OIDC tem múltiplas
   // requisições paralelas (Keycloak + tokens + perfil do usuário). Esperas
   // determinísticas alternativas (p.ex., aguardar elemento específico) ficam
