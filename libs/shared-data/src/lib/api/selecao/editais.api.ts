@@ -1,4 +1,9 @@
-import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpContext,
+  HttpHeaders,
+  HttpParams,
+} from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
@@ -84,10 +89,17 @@ export class EditaisApi {
    * compõe num `HttpContext` próprio (ex.: `withIdempotencyKey(key).set(...)`).
    * Sem o header, o backend rejeita com `400 uniplus.idempotency.key_ausente`.
    *
-   * **Resposta 201:** body é `string` com o ID do recurso criado; header
+   * **Resposta 201:** body é `string` (o ID do recurso criado); header
    * `Location` aponta para o detalhe (ADR-0029). Replays válidos com a mesma
    * key + body idêntico recebem a resposta original cacheada com
    * `Idempotency-Replayed: true` (ADR-0027).
+   *
+   * **Accept fixado em `application/json`** porque o contrato declara também
+   * `text/plain` para 201 — sem Accept explícito, Angular envia
+   * `application/json, text/plain` (mais o wildcard genérico) e um 201 com
+   * `text/plain` body `<id>` (sem aspas) faria `responseType: 'json'` lançar
+   * JSON parse error em sucesso legítimo. Forçar JSON garante que o body
+   * chega como `string` JSON-decodificada.
    */
   criar(
     command: CriarEditalCommand,
@@ -96,7 +108,10 @@ export class EditaisApi {
     return this.http.post<ApiResult<string>>(
       `${this.basePath}/api/editais`,
       command,
-      { context },
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
     );
   }
 }

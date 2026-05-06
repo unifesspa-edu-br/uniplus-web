@@ -161,13 +161,16 @@ describe('EditaisApi', () => {
       maximoOpcoesCurso: 2,
     };
 
-    it('faz POST /api/editais com Idempotency-Key e devolve 201 com o ID', async () => {
+    it('faz POST /api/editais com Idempotency-Key + Accept: application/json e devolve 201 com o ID', async () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a8057';
       const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
 
       const req = controller.expectOne(`${BASE}/api/editais`);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      // Accept fixado evita que backend devolva text/plain (que quebraria
+      // responseType: 'json') quando o contrato permite ambos.
+      expect(req.request.headers.get('Accept')).toBe('application/json');
       expect(req.request.body).toEqual(comando);
       req.flush('01960000-0000-7000-0000-000000000099', {
         status: 201,
