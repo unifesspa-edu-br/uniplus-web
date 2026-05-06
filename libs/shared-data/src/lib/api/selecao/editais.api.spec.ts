@@ -12,8 +12,9 @@ import {
   buildVendorMimeAccept,
   createCursor,
   isApiOk,
+  withIdempotencyKey,
 } from '@uniplus/shared-core';
-import { EditaisApi, EditalDto } from './editais.api';
+import { CriarEditalCommand, EditaisApi, EditalDto } from './editais.api';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -149,5 +150,109 @@ describe('EditaisApi', () => {
       expect(result.problem.code).toBe('uniplus.selecao.edital.nao_encontrado');
       expect(result.status).toBe(404);
     }
+  });
+
+  describe('criar()', () => {
+    const comando: CriarEditalCommand = {
+      numeroEdital: 42,
+      anoEdital: 2026,
+      titulo: 'PSE 2026',
+      tipoProcesso: 1,
+      maximoOpcoesCurso: 2,
+    };
+
+    it('faz POST /api/editais com Idempotency-Key e devolve 201 com o ID', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a8057';
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(`${BASE}/api/editais`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      expect(req.request.body).toEqual(comando);
+      req.flush('01960000-0000-7000-0000-000000000099', {
+        status: 201,
+        statusText: 'Created',
+        headers: { Location: '/api/editais/01960000-0000-7000-0000-000000000099' },
+      });
+
+      const result = (await promise) as ApiResult<string>;
+      expect(isApiOk(result)).toBe(true);
+      if (result.ok) {
+        expect(result.data).toBe('01960000-0000-7000-0000-000000000099');
+        expect(result.headers.get('Location')).toBe('/api/editais/01960000-0000-7000-0000-000000000099');
+      }
+    });
+
+    it('mapeia 422 com errors[] como ApiFailure preservando o array de validações', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a8058';
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      controller.expectOne(`${BASE}/api/editais`).flush(
+        {
+          type: 'about:blank',
+          title: 'Falha de validação',
+          status: 422,
+          code: 'uniplus.validation.falhou',
+          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+          errors: [
+            { field: 'titulo', code: 'NotEmpty', message: 'Título é obrigatório.' },
+            { field: 'numeroEdital', code: 'GreaterThan', message: 'Número deve ser positivo.' },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+
+      const result = (await promise) as ApiResult<string>;
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problem.code).toBe('uniplus.validation.falhou');
+        expect(result.problem.errors).toHaveLength(2);
+        expect(result.problem.errors?.[0].field).toBe('titulo');
+        expect(result.problem.errors?.[1].code).toBe('GreaterThan');
+      }
+    });
+
+    it('mapeia 409 conflict como ApiFailure', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a8059';
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      controller.expectOne(`${BASE}/api/editais`).flush(
+        {
+          type: 'about:blank',
+          title: 'Edital já existente',
+          status: 409,
+          code: 'uniplus.selecao.edital.duplicado',
+          traceId: '4bf92f3577b34da6a3ce929d0e0e4737',
+        },
+        { status: 409, statusText: 'Conflict', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+
+      const result = (await promise) as ApiResult<string>;
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problem.code).toBe('uniplus.selecao.edital.duplicado');
+        expect(result.status).toBe(409);
+      }
+    });
+
+    it('replay com mesma key reusa o header e o backend devolve resposta cacheada com Idempotency-Replayed: true', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a805a';
+
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(`${BASE}/api/editais`);
+      expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      req.flush('01960000-0000-7000-0000-000000000099', {
+        status: 201,
+        statusText: 'Created',
+        headers: { 'Idempotency-Replayed': 'true' },
+      });
+
+      const result = (await promise) as ApiResult<string>;
+      expect(isApiOk(result)).toBe(true);
+      if (result.ok) {
+        expect(result.headers.get('Idempotency-Replayed')).toBe('true');
+      }
+    });
   });
 });

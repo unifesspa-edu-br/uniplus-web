@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import {
   Cursor,
   ProblemI18nService,
@@ -26,11 +27,19 @@ import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
   selector: 'sel-editais-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, RouterLink],
   template: `
-    <header class="mb-5">
-      <h2 class="text-2xl font-bold text-gray-800">Editais</h2>
-      <p class="text-sm text-gray-600">Gestão de editais de processos seletivos.</p>
+    <header class="mb-5 flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Editais</h2>
+        <p class="text-sm text-gray-600">Gestão de editais de processos seletivos.</p>
+      </div>
+      <a
+        routerLink="novo"
+        class="inline-flex shrink-0 items-center rounded-md bg-unifesspa-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
+      >
+        Novo edital
+      </a>
     </header>
 
     <ui-data-table

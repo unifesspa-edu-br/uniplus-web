@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
@@ -73,6 +73,30 @@ export class EditaisApi {
     return this.http.get<ApiResult<EditalDto>>(
       `${this.basePath}/api/editais/${encodeURIComponent(id)}`,
       { context: withVendorMime('edital', 1) },
+    );
+  }
+
+  /**
+   * POST `/api/editais` — cria um novo edital.
+   *
+   * **Header obrigatório:** `Idempotency-Key` (ADR-0027 do `uniplus-api`,
+   * ADR-0014 do consumer). O caller declara via `withIdempotencyKey(key)` ou
+   * compõe num `HttpContext` próprio (ex.: `withIdempotencyKey(key).set(...)`).
+   * Sem o header, o backend rejeita com `400 uniplus.idempotency.key_ausente`.
+   *
+   * **Resposta 201:** body é `string` com o ID do recurso criado; header
+   * `Location` aponta para o detalhe (ADR-0029). Replays válidos com a mesma
+   * key + body idêntico recebem a resposta original cacheada com
+   * `Idempotency-Replayed: true` (ADR-0027).
+   */
+  criar(
+    command: CriarEditalCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/editais`,
+      command,
+      { context },
     );
   }
 }

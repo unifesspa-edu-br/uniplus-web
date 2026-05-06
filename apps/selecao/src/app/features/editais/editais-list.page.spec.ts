@@ -5,6 +5,7 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core';
 import { EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data';
@@ -35,6 +36,7 @@ describe('EditaisListPage', () => {
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
       ],
     });

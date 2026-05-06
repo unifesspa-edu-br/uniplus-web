@@ -167,3 +167,47 @@ A entrega da Story [#184](https://github.com/unifesspa-edu-br/uniplus-web/issues
 - **Validação aplicada apenas a keys explícitas.** Keys geradas internamente (UUID v7) sempre passam — o draft IETF é tolerante a hex+hyphens.
 - **`appendContextHeaders` é o ponto único de extensão** para futuros tokens HTTP-derivados (ex.: `X-Tenant-Id` se algum dia precisarmos): adicionar uma leitura ao Map. Sem necessidade de novo interceptor.
 - **`uuid@14.x.x` é a versão atual** quando esta entrega foi feita; a peerDep do `shared-core` foi pinned em `^14.0.0`. Bumps semânticos seguem políticas normais de upgrade.
+
+## Form-scoped key strategy aplicada — `EditaisCreatePage` (2026-05-06, F7)
+
+A primeira página binding a aplicar a estratégia form-scoped foi `EditaisCreatePage` (Frente F7 do plano Milestone B; Story [#198](https://github.com/unifesspa-edu-br/uniplus-web/issues/198)). O pattern concretizado:
+
+```ts
+export class EditaisCreatePage {
+  // Gerada 1× por inicialização do componente — vive no signal até reset.
+  readonly idempotencyKeyAtual = signal<string>(idempotencyKey.create());
+
+  enviar(): void {
+    if (this.submitting() || this.form.invalid) { /* ... */ return; }
+    this.submitting.set(true);
+
+    this.api
+      .criar(command, withIdempotencyKey(this.idempotencyKeyAtual()))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.submitting.set(false);
+        if (result.ok) {
+          // Reset SOMENTE após sucesso — próximo submit ganha key nova.
+          this.idempotencyKeyAtual.set(idempotencyKey.create());
+          this.router.navigate(['/editais']);
+          return;
+        }
+        // Em 422/409/etc., a key é PRESERVADA. Retries (com correção do payload
+        // ou simples retentativa de transient) reusam a mesma key, e o backend
+        // distingue replay legítimo de double-submit acidental conforme ADR-0027.
+        this.aplicarFalha(result.problem);
+      });
+  }
+}
+```
+
+### Decisões binding capturadas na aplicação
+
+- **Key viva no `signal`, nunca em `localStorage`/`sessionStorage`** — aderência ao padrão #20.
+- **Reset só em `result.ok`** — falhas de validação ou conflito mantêm a key porque o usuário está corrigindo o mesmo "intent de submit". Mudar a key em cada retry derrotaria o propósito do header (backend não reconheceria como replay).
+- **Falha de rede / timeout** — caller pode chamar `enviar()` de novo com a mesma key; backend dedupa. Sem retry automático embutido na page (decisão do operador humano).
+- **Cancelamento explícito (usuário clica "Cancelar"** ou navega para fora**)** — nesta page, `routerLink="/editais"` simplesmente abandona o componente; `takeUntilDestroyed` cancela qualquer subscribe pendente. A key gerada é descartada com o componente — sem necessidade de reset manual.
+
+### Trade-off conhecido
+
+A página exibe `errorMessage` (banner) ou erros inline por campo, mas **não dá feedback visual sobre estar reusando a mesma key em retries**. Para V1 isto é aceitável; se o cenário "double-submit acidental retornando 200 cacheado com `Idempotency-Replayed: true`" virar comum em telemetria, adicionar um indicador visual sutil pode ajudar UX (parqueado).
