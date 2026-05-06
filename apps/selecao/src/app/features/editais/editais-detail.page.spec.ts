@@ -186,7 +186,7 @@ describe('EditaisDetailPage', () => {
     expect(botao).toBeNull();
   });
 
-  it('race guard: response stale do id anterior é descartada quando id mudou (Codex P1 round 2)', () => {
+  it('race guard: response stale do id anterior é descartada quando id mudou', () => {
     fixture.detectChanges();
     const reqId1 = controller.expectOne(`${BASE}/api/editais/${ID}`);
 
@@ -207,7 +207,7 @@ describe('EditaisDetailPage', () => {
     expect(component.loading()).toBe(false);
   });
 
-  it('mudança no input id refetcha automaticamente e zera estado anterior (Codex P1)', () => {
+  it('mudança no input id refetcha automaticamente e zera estado anterior', () => {
     fixture.detectChanges();
     controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ titulo: 'PSE 2026' }));
     fixture.detectChanges();
