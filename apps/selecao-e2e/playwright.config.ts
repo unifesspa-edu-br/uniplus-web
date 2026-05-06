@@ -14,6 +14,18 @@ const isCI = !!process.env['CI'];
 const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
 
 /**
+ * Patterns excluídos dos projects de UI login (chromium/firefox/webkit) para
+ * evitar que specs especiais sejam executadas sem o setup correspondente:
+ * - `*.authenticated.spec.ts` rodam apenas no project `selecao-authenticated`
+ *   (com `storageState`); rodar sem o storage causa redirect ao Keycloak.
+ * - `auth.setup.ts` é o test do setup project — não é um spec funcional.
+ *
+ * Adicionar novos sufixos especiais à alternation; demais projects herdam
+ * automaticamente. Reduz drift quando 3º+ sufixo surgir (ex.: `.smoke`).
+ */
+const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/;
+
+/**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
@@ -53,19 +65,19 @@ export default defineConfig({
 
     {
       name: 'chromium',
-      testIgnore: /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/,
+      testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
-      testIgnore: /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/,
+      testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
       use: { ...devices['Desktop Firefox'] },
     },
 
     ...(isCI ? [{
       name: 'webkit',
-      testIgnore: /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/,
+      testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
       use: { ...devices['Desktop Safari'] },
     }] : []),
 
