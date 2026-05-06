@@ -75,9 +75,9 @@ export interface DataTableColumn {
                 [class.cursor-pointer]="rowClickable()"
                 [attr.role]="rowClickable() ? 'button' : null"
                 [attr.tabindex]="rowClickable() ? 0 : null"
-                (click)="rowClickable() && rowClick.emit(row)"
-                (keydown.enter)="rowClickable() && rowClick.emit(row)"
-                (keydown.space)="rowClickable() && rowClick.emit(row)"
+                (click)="ativarLinha(row)"
+                (keydown.enter)="ativarLinha(row, $event)"
+                (keydown.space)="ativarLinha(row, $event)"
               >
                 @for (col of columns(); track col.field) {
                   <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
@@ -164,5 +164,18 @@ export class DataTableComponent {
     if (cursor !== null && !this.loading()) {
       this.loadNext.emit(cursor);
     }
+  }
+
+  /**
+   * Emite `rowClick` quando a linha é ativada via mouse ou teclado. Para
+   * Enter/Space, cancela o default do browser — Space sem preventDefault
+   * rola a página, e Enter pode submeter forms ancestrais.
+   */
+  protected ativarLinha(row: Record<string, unknown>, event?: Event): void {
+    if (!this.rowClickable()) {
+      return;
+    }
+    event?.preventDefault();
+    this.rowClick.emit(row);
   }
 }
