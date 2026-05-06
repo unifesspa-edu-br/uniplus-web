@@ -85,16 +85,39 @@ describe('DataTableComponent', () => {
     expect(cell.textContent?.trim()).toBe('Carregando…');
   });
 
-  it('exibe banner role=alert quando errorMessage está populado, mesmo durante loading', () => {
+  it('exibe erro no tbody quando errorMessage está populado e data está vazio', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
     fixture.componentRef.setInput('loading', true);
     fixture.componentRef.setInput('errorMessage', 'Falha ao carregar editais.');
     fixture.detectChanges();
 
-    const alerta = fixture.debugElement.query(By.css('[role="alert"]'));
-    expect(alerta).toBeTruthy();
-    expect(alerta.nativeElement.textContent).toContain('Falha ao carregar editais.');
+    const alertaTbody = fixture.debugElement.query(By.css('tbody [role="alert"]'));
+    expect(alertaTbody).toBeTruthy();
+    expect(alertaTbody.nativeElement.textContent).toContain('Falha ao carregar editais.');
+  });
+
+  it('em erro com data carregado: linhas preservadas + banner de erro fora do tbody + botão "Carregar mais" disponível', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('errorMessage', 'Falha de rede ao paginar.');
+    fixture.componentRef.setInput('nextCursor', createCursor('cursor-retry'));
+    fixture.detectChanges();
+
+    const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
+    expect(linhas.length).toBe(DATA.length);
+
+    const alertasTbody = fixture.debugElement.queryAll(By.css('tbody [role="alert"]'));
+    expect(alertasTbody.length).toBe(0);
+
+    const banners = fixture.debugElement.queryAll(By.css('[role="alert"]'));
+    expect(banners.length).toBe(1);
+    expect(banners[0].nativeElement.textContent).toContain('Falha de rede ao paginar.');
+
+    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
+    expect(botao).toBeTruthy();
+    expect(botao.disabled).toBe(false);
   });
 
   it('botão "Carregar mais" só aparece quando nextCursor está populado', () => {

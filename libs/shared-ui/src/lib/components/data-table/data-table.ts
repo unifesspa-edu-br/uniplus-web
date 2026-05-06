@@ -47,7 +47,7 @@ export interface DataTableColumn {
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
-          @if (mostrarErro()) {
+          @if (mostrarErroNoCorpo()) {
             <tr>
               <td
                 [attr.colspan]="columns().length"
@@ -88,6 +88,15 @@ export interface DataTableColumn {
       </table>
     </div>
 
+    @if (mostrarBannerDeErro()) {
+      <div
+        class="mt-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        role="alert"
+      >
+        <span class="font-semibold">{{ errorMessage() }}</span>
+      </div>
+    }
+
     @if (mostrarBotaoCarregarMais()) {
       <div class="mt-3 flex justify-center">
         <button
@@ -120,12 +129,22 @@ export class DataTableComponent {
 
   readonly loadNext = output<Cursor>();
 
-  protected readonly mostrarErro = computed(() => this.errorMessage() !== null);
-  protected readonly mostrarLoadingInicial = computed(
-    () => this.loading() && !this.mostrarErro() && this.data().length === 0,
+  /** Erro substitui o tbody apenas quando ainda não há dados carregados. */
+  protected readonly mostrarErroNoCorpo = computed(
+    () => this.errorMessage() !== null && this.data().length === 0,
   );
+  /** Erro vira banner não-bloqueante quando já existem linhas — preserva
+   *  o histórico carregado e permite retry via "Carregar mais". */
+  protected readonly mostrarBannerDeErro = computed(
+    () => this.errorMessage() !== null && this.data().length > 0,
+  );
+  protected readonly mostrarLoadingInicial = computed(
+    () =>
+      this.loading() && this.errorMessage() === null && this.data().length === 0,
+  );
+  /** Botão segue disponível mesmo em erro pós-1ª página, para permitir retry. */
   protected readonly mostrarBotaoCarregarMais = computed(
-    () => this.nextCursor() !== null && !this.mostrarErro(),
+    () => this.nextCursor() !== null,
   );
 
   protected emitirLoadNext(): void {

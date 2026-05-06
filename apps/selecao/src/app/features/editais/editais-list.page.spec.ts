@@ -115,7 +115,7 @@ describe('EditaisListPage', () => {
     expect(component.nextCursor()).toBeNull();
   });
 
-  it('falha 4xx popula errorMessage com mensagem resolvida pelo ProblemI18nService', () => {
+  it('falha 4xx na carga inicial popula errorMessage; cursor permanece null', () => {
     fixture.detectChanges();
 
     controller.expectOne(`${BASE}/api/editais`).flush(
@@ -136,6 +136,46 @@ describe('EditaisListPage', () => {
     expect(component.errorMessage()).toBe('Token de acesso inválido');
     expect(component.loading()).toBe(false);
     expect(component.nextCursor()).toBeNull();
+    expect(component.editais()).toEqual([]);
+  });
+
+  it('falha 4xx em load-more preserva cursor e items já carregados (retry possível)', () => {
+    fixture.detectChanges();
+
+    // 1ª página OK: ganha cursor para a próxima
+    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
+      headers: {
+        Link: '<https://api/editais?cursor=cursor-retry>; rel="next"',
+      },
+    });
+
+    expect(component.editais()).toHaveLength(1);
+    expect(component.nextCursor()).toBe('cursor-retry');
+
+    // 2ª página falha
+    component['aoCarregarMais'](component.nextCursor()!);
+    controller
+      .expectOne((request) => request.params.get('cursor') === 'cursor-retry')
+      .flush(
+        {
+          type: 'about:blank',
+          title: 'Falha temporária do servidor',
+          status: 503,
+          code: 'uniplus.server.indisponivel',
+          traceId: '7af92f3577b34da6a3ce929d0e0e4742',
+        },
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      );
+
+    expect(component.errorMessage()).toBe('Falha temporária do servidor');
+    expect(component.loading()).toBe(false);
+    // Items da 1ª página preservados; cursor mantido para retry.
+    expect(component.editais()).toHaveLength(1);
+    expect(component.nextCursor()).toBe('cursor-retry');
   });
 
   it('renderiza ui-data-table com dados e header correto após carga inicial', () => {
