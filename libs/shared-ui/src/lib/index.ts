@@ -4,6 +4,7 @@ export { DataTableComponent, type DataTableColumn } from './components/data-tabl
 export { FileUploadComponent } from './components/file-upload/file-upload';
 export { StatusBadgeComponent, type StatusType } from './components/status-badge/status-badge';
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
+export { FormFieldComponent } from './components/form-field/form-field';
 export { LoadingOverlayComponent } from './components/loading-overlay/loading-overlay';
 
 // Pipes

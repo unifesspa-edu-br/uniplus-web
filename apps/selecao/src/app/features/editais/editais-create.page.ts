@@ -21,6 +21,7 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core';
 import { CriarEditalCommand, EditaisApi } from '@uniplus/shared-data';
+import { FormFieldComponent } from '@uniplus/shared-ui';
 
 /**
  * Form Reactive tipado para criação de edital.
@@ -51,7 +52,7 @@ interface CriarEditalForm {
   selector: 'sel-editais-create-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, FormFieldComponent],
   template: `
     <header class="mb-5">
       <h2 class="text-2xl font-bold text-gray-800">Novo edital</h2>
@@ -68,90 +69,42 @@ interface CriarEditalForm {
     }
 
     <form [formGroup]="form" (ngSubmit)="enviar()" novalidate class="grid max-w-2xl gap-4">
-      <div>
-        <label for="numeroEdital" class="mb-1 block text-sm font-medium text-gray-700">
-          Número do edital
-        </label>
-        <input
-          id="numeroEdital"
-          type="number"
-          formControlName="numeroEdital"
-          [attr.aria-invalid]="erroDoCampo('numeroEdital') ? 'true' : null"
-          [attr.aria-describedby]="erroDoCampo('numeroEdital') ? 'erro-numeroEdital' : null"
-          class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
-        />
-        @if (erroDoCampo('numeroEdital')) {
-          <p id="erro-numeroEdital" class="mt-1 text-xs text-red-700">{{ erroDoCampo('numeroEdital') }}</p>
-        }
-      </div>
+      <ui-form-field
+        label="Número do edital"
+        type="number"
+        [control]="form.controls.numeroEdital"
+        [errorMessage]="erroDoCampo('numeroEdital')"
+      />
 
-      <div>
-        <label for="anoEdital" class="mb-1 block text-sm font-medium text-gray-700">Ano</label>
-        <input
-          id="anoEdital"
-          type="number"
-          formControlName="anoEdital"
-          [attr.aria-invalid]="erroDoCampo('anoEdital') ? 'true' : null"
-          [attr.aria-describedby]="erroDoCampo('anoEdital') ? 'erro-anoEdital' : null"
-          class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
-        />
-        @if (erroDoCampo('anoEdital')) {
-          <p id="erro-anoEdital" class="mt-1 text-xs text-red-700">{{ erroDoCampo('anoEdital') }}</p>
-        }
-      </div>
+      <ui-form-field
+        label="Ano"
+        type="number"
+        [control]="form.controls.anoEdital"
+        [errorMessage]="erroDoCampo('anoEdital')"
+      />
 
-      <div>
-        <label for="titulo" class="mb-1 block text-sm font-medium text-gray-700">Título</label>
-        <input
-          id="titulo"
-          type="text"
-          formControlName="titulo"
-          [attr.aria-invalid]="erroDoCampo('titulo') ? 'true' : null"
-          [attr.aria-describedby]="erroDoCampo('titulo') ? 'erro-titulo' : null"
-          class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
-        />
-        @if (erroDoCampo('titulo')) {
-          <p id="erro-titulo" class="mt-1 text-xs text-red-700">{{ erroDoCampo('titulo') }}</p>
-        }
-      </div>
+      <ui-form-field
+        label="Título"
+        type="text"
+        [control]="form.controls.titulo"
+        [errorMessage]="erroDoCampo('titulo')"
+      />
 
-      <div>
-        <label for="tipoProcesso" class="mb-1 block text-sm font-medium text-gray-700">
-          Tipo de processo (código numérico)
-        </label>
-        <input
-          id="tipoProcesso"
-          type="number"
-          formControlName="tipoProcesso"
-          [attr.aria-invalid]="erroDoCampo('tipoProcesso') ? 'true' : null"
-          [attr.aria-describedby]="erroDoCampo('tipoProcesso') ? 'erro-tipoProcesso' : null"
-          class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
-        />
-        @if (erroDoCampo('tipoProcesso')) {
-          <p id="erro-tipoProcesso" class="mt-1 text-xs text-red-700">{{ erroDoCampo('tipoProcesso') }}</p>
-        }
-      </div>
+      <ui-form-field
+        label="Tipo de processo (código numérico)"
+        type="number"
+        [control]="form.controls.tipoProcesso"
+        [errorMessage]="erroDoCampo('tipoProcesso')"
+      />
 
-      <div>
-        <label for="maximoOpcoesCurso" class="mb-1 block text-sm font-medium text-gray-700">
-          Máximo de opções de curso
-        </label>
-        <input
-          id="maximoOpcoesCurso"
-          type="number"
-          formControlName="maximoOpcoesCurso"
-          min="1"
-          max="2"
-          [attr.aria-invalid]="erroDoCampo('maximoOpcoesCurso') ? 'true' : null"
-          [attr.aria-describedby]="erroDoCampo('maximoOpcoesCurso') ? 'erro-maximoOpcoesCurso' : null"
-          class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
-        />
-        @if (erroDoCampo('maximoOpcoesCurso')) {
-          <p id="erro-maximoOpcoesCurso" class="mt-1 text-xs text-red-700">
-            {{ erroDoCampo('maximoOpcoesCurso') }}
-          </p>
-        }
-      </div>
+      <ui-form-field
+        label="Máximo de opções de curso"
+        type="number"
+        [min]="1"
+        [max]="2"
+        [control]="form.controls.maximoOpcoesCurso"
+        [errorMessage]="erroDoCampo('maximoOpcoesCurso')"
+      />
 
       <div class="mt-2 flex items-center justify-end gap-2">
         <a
