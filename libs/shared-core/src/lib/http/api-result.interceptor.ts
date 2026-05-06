@@ -3,10 +3,12 @@ import {
   HttpEvent,
   HttpHeaders,
   HttpInterceptorFn,
+  HttpRequest,
   HttpResponse,
 } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
 import { ApiResult, apiFailure, apiOk } from './api-result';
+import { IDEMPOTENCY_KEY_TOKEN } from './idempotency';
 import {
   CLIENT_PROBLEM_CODES,
   ProblemDetails,
@@ -20,16 +22,20 @@ import {
 const PROBLEM_DETAILS_MEDIA_TYPE = 'application/problem+json';
 
 /**
- * Interceptor consolidado (ADR-0011 + ADR-0012). Em uma única passada:
+ * Interceptor consolidado (ADR-0011 + ADR-0012 + ADR-0014). Em uma única
+ * passada:
  *
  * 1. Se a requisição declarou versão via `withVendorMime(...)`, injeta o header
  *    `Accept: application/vnd.uniplus.<resource>.v<N>+json` (ADR-0028).
- * 2. Em respostas 2xx, envelopa o body em `ApiResult.ok`.
- * 3. Em respostas 4xx/5xx com `application/problem+json`, parseia o
+ * 2. Se a requisição declarou idempotência via `withIdempotencyKey(...)`,
+ *    injeta o header `Idempotency-Key: <value>` (ADR-0014; consumido pela
+ *    ADR-0027 do `uniplus-api`).
+ * 3. Em respostas 2xx, envelopa o body em `ApiResult.ok`.
+ * 4. Em respostas 4xx/5xx com `application/problem+json`, parseia o
  *    `ProblemDetails` e emite `ApiResult.fail` — sem propagar erro.
- * 4. Em falhas de conexão (status 0), sintetiza `ProblemDetails` com
+ * 5. Em falhas de conexão (status 0), sintetiza `ProblemDetails` com
  *    `code: uniplus.client.network_error`.
- * 5. Em respostas de erro com body fora do contrato, sintetiza
+ * 6. Em respostas de erro com body fora do contrato, sintetiza
  *    `code: uniplus.client.unexpected_response`.
  *
  * O interceptor não loga `problem.detail` nem `errors[].message` — esses
@@ -37,18 +43,37 @@ const PROBLEM_DETAILS_MEDIA_TYPE = 'application/problem+json';
  * em logs (CA-05 da issue #169).
  */
 export const apiResultInterceptor: HttpInterceptorFn = (req, next) => {
-  const vendorMime = req.context.get(VENDOR_MIME_TOKEN);
-  const requestWithAccept = vendorMime
-    ? req.clone({
-        setHeaders: { Accept: buildVendorMimeAccept(vendorMime.resource, vendorMime.version) },
-      })
-    : req;
+  const requestWithHeaders = appendContextHeaders(req);
 
-  return next(requestWithAccept).pipe(
+  return next(requestWithHeaders).pipe(
     map(envelopeSuccess),
     catchError(envelopeFailure),
   );
 };
+
+/**
+ * Lê tokens declarados no `HttpContext` e anexa headers correspondentes.
+ * Mantém o pattern simétrico — vendor MIME e idempotência saem do mesmo
+ * leitor de contexto (ADR-0014).
+ */
+function appendContextHeaders(req: HttpRequest<unknown>): HttpRequest<unknown> {
+  const headers: Record<string, string> = {};
+
+  const vendorMime = req.context.get(VENDOR_MIME_TOKEN);
+  if (vendorMime) {
+    headers['Accept'] = buildVendorMimeAccept(vendorMime.resource, vendorMime.version);
+  }
+
+  const idempotencyKey = req.context.get(IDEMPOTENCY_KEY_TOKEN);
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
+
+  if (Object.keys(headers).length === 0) {
+    return req;
+  }
+  return req.clone({ setHeaders: headers });
+}
 
 function envelopeSuccess(event: HttpEvent<unknown>): HttpEvent<unknown> {
   if (!(event instanceof HttpResponse)) {

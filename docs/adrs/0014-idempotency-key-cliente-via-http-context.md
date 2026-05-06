@@ -1,5 +1,5 @@
 ---
-status: "proposed"
+status: "accepted"
 date: "2026-05-05"
 decision-makers:
   - "Tech Lead (CTIC)"
@@ -146,3 +146,24 @@ Esta orientação **não é enforçada pelo helper** — é responsabilidade do 
 - [ADR-0011](0011-consumer-adapter-api-result.md) + [ADR-0012](0012-placement-api-result-em-shared-core.md) — placement do helper em `libs/shared-core/src/lib/http/`.
 - ADR-0028 do `uniplus-api` (vendor MIME) — pattern simétrico já entregue na F1 (PR #176).
 - Plano Frontend Milestone B (Frente 3) — implementação que consome esta decisão (Story #184).
+
+## Implementação (2026-05-05)
+
+A entrega da Story [#184](https://github.com/unifesspa-edu-br/uniplus-web/issues/184) materializa a decisão. Status promovido de `proposed` para `accepted` no merge.
+
+### Arquivos criados/modificados
+
+- `libs/shared-core/src/lib/http/idempotency.ts` (criado) — `IDEMPOTENCY_KEY_TOKEN`, `idempotencyKey.create()` (delegando para `uuid@^14`'s `v7()`), `withIdempotencyKey(key?)`, `isValidIdempotencyKey()`.
+- `libs/shared-core/src/lib/http/api-result.interceptor.ts` (refator) — extraiu `appendContextHeaders(req)` que lê `VENDOR_MIME_TOKEN` e `IDEMPOTENCY_KEY_TOKEN` num único passo e anexa os headers correspondentes (`Accept`, `Idempotency-Key`). Mantém o pattern simétrico que era binding da decisão.
+- `libs/shared-core/src/lib/http/index.ts` — re-exporta `IDEMPOTENCY_KEY_TOKEN`, `idempotencyKey`, `isValidIdempotencyKey`, `withIdempotencyKey`.
+- `libs/shared-core/package.json` — `uuid` adicionada como peerDep `^14.0.0` (transitiva do projeto raiz; `@types/uuid` no root como devDep).
+- `package.json` (raiz) — `uuid@^14`, `@types/uuid@^10` adicionados.
+- `libs/shared-core/src/lib/http/idempotency.spec.ts` (criado) — 19 cenários: geração canônica de UUID v7, distinção entre chamadas, helper sem/com argumento, validação completa de keys (vazia, > 255, vírgula, ponto-e-vírgula, controle, acentuada).
+- `libs/shared-core/src/lib/http/api-result.interceptor.spec.ts` (atualizado) — 3 testes novos cobrindo header presente, composição com vendor MIME no mesmo `HttpContext`, ausência do header sem declaração.
+
+### Pontos não-óbvios capturados na implementação
+
+- **`uuid@^14` é a versão atual da biblioteca** (lançada após v11 inicial citada na ADR como referência). `v7()` continua sendo o export canônico.
+- **Validação aplicada apenas a keys explícitas.** Keys geradas internamente (UUID v7) sempre passam — o draft IETF é tolerante a hex+hyphens.
+- **`appendContextHeaders` é o ponto único de extensão** para futuros tokens HTTP-derivados (ex.: `X-Tenant-Id` se algum dia precisarmos): adicionar uma leitura ao Map. Sem necessidade de novo interceptor.
+- **`uuid@14.x.x` é a versão atual** quando esta entrega foi feita; a peerDep do `shared-core` foi pinned em `^14.0.0`. Bumps semânticos seguem políticas normais de upgrade.

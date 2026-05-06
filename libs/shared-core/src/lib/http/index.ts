@@ -15,6 +15,13 @@ export {
   okResult,
 } from './api-result.testing';
 
+export {
+  IDEMPOTENCY_KEY_TOKEN,
+  idempotencyKey,
+  isValidIdempotencyKey,
+  withIdempotencyKey,
+} from './idempotency';
+
 export { CLIENT_PROBLEM_CODES } from './problem-details';
 export type {
   ClientProblemCode,
