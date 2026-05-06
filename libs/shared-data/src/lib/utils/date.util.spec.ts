@@ -59,7 +59,7 @@ describe('Date Util', () => {
     });
 
     it('transforma corretamente entrada de texto referente a um ano bissexto', () => {
-      expect(parseDate('29/02/2024 ')).not.toBe(null);
+      expect(parseDate('29/02/2024')).toBeTruthy();
     });
 
     it('retorna null quando a data é um texto vazio', () => {
