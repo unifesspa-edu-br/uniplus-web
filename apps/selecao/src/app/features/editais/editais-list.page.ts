@@ -91,7 +91,9 @@ export class EditaisListPage {
           return;
         }
         this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
-        this.nextCursor.set(null);
+        // Em falha pós-1ª página, preserva o cursor original — usuário consegue
+        // retentar via "Carregar mais" sem perder os items já carregados. Em
+        // falha de carga inicial, o cursor já é null por construção.
       });
   }
 }
