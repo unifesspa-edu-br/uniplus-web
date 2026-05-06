@@ -55,6 +55,9 @@ Thumbs.db
 .angular
 .claude
 .playwright-mcp
+# storageState autenticado produzido por setup project E2E (F9) —
+# contém cookies de sessão Keycloak; nunca commitar.
+.playwright-auth/
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
