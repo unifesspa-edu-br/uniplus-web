@@ -54,8 +54,10 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly AfterId?: string;
-                    readonly Limit?: number | string;
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
                 };
                 readonly header?: never;
                 readonly path?: never;
@@ -66,6 +68,10 @@ export interface paths {
                 /** @description OK */
                 readonly 200: {
                     headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="next" só quando há próxima página. Cada link carrega o cursor opaco no parâmetro `cursor` (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
                         readonly [name: string]: unknown;
                     };
                     content: {
