@@ -6,4 +6,9 @@ export const EDITAIS_ROUTES: Routes = [
     loadComponent: () =>
       import('./editais-list.page').then((m) => m.EditaisListPage),
   },
+  {
+    path: 'novo',
+    loadComponent: () =>
+      import('./editais-create.page').then((m) => m.EditaisCreatePage),
+  },
 ];
