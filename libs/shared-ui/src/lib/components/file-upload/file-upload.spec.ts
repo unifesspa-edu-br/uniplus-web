@@ -1,18 +1,9 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { FileUploadComponent } from './file-upload';
 
 describe('FileUploadComponent', () => {
-  const MAX_SIZE_IN_MB = 10;
-  const MAX_SIZE_IN_BYTES = MAX_SIZE_IN_MB * 1024 * 1024;
-  const MAX_SIZE_MB_MSG = `Arquivo excede o tamanho máximo de ${MAX_SIZE_IN_MB}MB.`
-  const VALID_FILE_MOCK = new File([new ArrayBuffer(MAX_SIZE_IN_BYTES)], "file-mock.pdf", { type: "application/pdf" });
-  const OVERSIZED_FILE_MOCK = new File([new ArrayBuffer(MAX_SIZE_IN_BYTES + 1)], "oversized-file-mock.pdf", { type: "application/pdf" });
-  const TYPE_NOT_ALLOWED_FILE_MOCK = new File([new ArrayBuffer(MAX_SIZE_IN_BYTES)], "not-allowed-file-mock.gif", { type: "image/gif" });
-  const EXTENSION_NOT_ALLOWED_FILE_MOCK = new File([new ArrayBuffer(MAX_SIZE_IN_BYTES)], "not-allowed-file-mock.gif", { type: "image/png" });
-  const TYPE_NOT_ALLOWED_MSG = 'Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf,.jpg,.jpeg,.png';
-
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [FileUploadComponent] });
   });
@@ -22,197 +13,264 @@ describe('FileUploadComponent', () => {
       TestBed.createComponent(FileUploadComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
-    const fileSelectOutputSpy = vi.spyOn(component.fileSelected, 'emit');
-    const removeFileSpy = vi.spyOn(component, 'removeFile');
-    const onDragLeaveSpy = vi.spyOn(component, "onDragLeave");
-    const onDragOverSpy = vi.spyOn(component, "onDragOver");
-    const onFileSelectedSpy = vi.spyOn(component, "onFileSelected");
-    const onDropSpy = vi.spyOn(component, "onDrop");
-    const fileInputClickSpy = vi.spyOn(component.fileInput()?.nativeElement, 'click');
-    const getDivButton = () =>
-        fixture.debugElement.query(By.css('[role="button"]'));
-    const getFileInput = () =>
-        fixture.debugElement.query(By.css('#file-upload-input'));
-    const getFileInputEl = () => getFileInput().nativeElement as HTMLInputElement;
-    const getButtons = () => fixture.debugElement.queryAll(By.css('button'));
-    const getSelectButtonEl = () =>
-      getButtons().find(button => button.nativeElement.textContent.trim() === 'selecione do computador')?.nativeElement as HTMLButtonElement;
-    const getRemoveButtonEl = () =>
-        getButtons().find(button => button.nativeElement.textContent.trim() === 'Remover')?.nativeElement as HTMLButtonElement;
-    return {
-      fixture,
-      component,
-      getDivButton,
-      getFileInputEl,
-      getFileInput,
-      getSelectButtonEl,
-      getRemoveButtonEl,
-      fileSelectOutputSpy,
-      removeFileSpy,
-      onDragLeaveSpy,
-      onDragOverSpy,
-      onFileSelectedSpy,
-      fileInputClickSpy,
-      onDropSpy
-    }
+
+    const dropZone = () => fixture.debugElement.query(By.css('button[aria-label^="Área de upload"]'));
+    const hiddenInput = () => fixture.debugElement.query(By.css('input[type="file"]'));
+    const errorMessage = () => fixture.debugElement.query(By.css('[role="alert"]'));
+    const removeButton = () => fixture.debugElement.query(By.css('button[aria-label="Remover arquivo"]'));
+
+    return { fixture, component, dropZone, hiddenInput, errorMessage, removeButton };
   }
 
-  it('inicializa o componente corretamente', () => {
+  function makeFile(options: { name: string; type: string; sizeBytes: number }): File {
+    return new File([new ArrayBuffer(options.sizeBytes)], options.name, { type: options.type });
+  }
+
+  function setInputFiles(input: HTMLInputElement, files: File[]): void {
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      get: () => Object.assign(files, { item: (i: number) => files[i] ?? null }),
+    });
+  }
+
+  function pickFile(fixture: ComponentFixture<FileUploadComponent>, file: File): void {
+    const input = fixture.debugElement.query(By.css('input[type="file"]')).nativeElement as HTMLInputElement;
+    setInputFiles(input, [file]);
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function dropFile(fixture: ComponentFixture<FileUploadComponent>, file: File | null): void {
+    const dropZone = fixture.debugElement.query(By.css('button[aria-label^="Área de upload"]'));
+    const dataTransfer = file ? { files: [file] } : { files: [] };
+    dropZone.triggerEventHandler('drop', { preventDefault: () => undefined, dataTransfer });
+    fixture.detectChanges();
+  }
+
+  const VALID_PDF = () => makeFile({ name: 'documento.pdf', type: 'application/pdf', sizeBytes: 1024 });
+  const OVERSIZED_PDF = () =>
+    makeFile({ name: 'grande.pdf', type: 'application/pdf', sizeBytes: 10 * 1024 * 1024 + 1 });
+  const GIF_FILE = () => makeFile({ name: 'foto.gif', type: 'image/gif', sizeBytes: 1024 });
+  const PNG_WITH_GIF_EXTENSION = () =>
+    makeFile({ name: 'foto.gif', type: 'image/png', sizeBytes: 1024 });
+  const UPPERCASE_PDF = () => makeFile({ name: 'RELATORIO.PDF', type: 'application/pdf', sizeBytes: 1024 });
+  const NO_EXTENSION = () => makeFile({ name: 'arquivo', type: 'application/pdf', sizeBytes: 1024 });
+  const MIME_SPOOFED = () => makeFile({ name: 'malicioso.pdf', type: 'text/html', sizeBytes: 1024 });
+
+  it('inicializa com estado vazio', () => {
     const { component } = setup();
-    expect(component).toBeTruthy();
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toBeNull();
+    expect(component.isDragging()).toBe(false);
   });
 
-  it('seleciona arquivo no input', () => {
-    const { fixture, component, getFileInput, fileSelectOutputSpy } = setup();
-    const fileInput = getFileInput();
-    const eventWithFileMock = {
-      target: {
-        files: [VALID_FILE_MOCK]
-      }
-    } as unknown as Event;
-    fileInput.triggerEventHandler('change', eventWithFileMock);
+  it('aceita um arquivo válido via input[type=file]', () => {
+    const { fixture, component } = setup();
+    const file = VALID_PDF();
 
-    fixture.detectChanges();
-    const file = (eventWithFileMock.target as HTMLInputElement).files?.[0];
+    pickFile(fixture, file);
 
-    expect(component.error()).toBe('');
     expect(component.selectedFile()).toBe(file);
-    expect(fileSelectOutputSpy).toHaveBeenCalledWith(file);
-    expect(fileInput.nativeElement.value).toBe('');
+    expect(component.error()).toBeNull();
   });
 
-  it('dispara o evento de dragover no container do input', () => {
-    const { fixture, component, getDivButton, onDragOverSpy } = setup();
-    const uploadButtonDiv = getDivButton();
-    const dragEventEmptyMock = {
-      preventDefault: vi.fn(),
-    } as unknown as DragEvent;
-    uploadButtonDiv.triggerEventHandler('dragover', dragEventEmptyMock);
-    fixture.detectChanges();
+  it('limpa o valor do input após cada seleção para permitir re-selecionar o mesmo arquivo', () => {
+    const { fixture, hiddenInput } = setup();
 
-    expect(onDragOverSpy).toHaveBeenCalled();
-    expect(dragEventEmptyMock.preventDefault).toHaveBeenCalled();
+    pickFile(fixture, VALID_PDF());
+
+    expect((hiddenInput().nativeElement as HTMLInputElement).value).toBe('');
+  });
+
+  it('marca isDragging como true durante dragover e false em dragleave', () => {
+    const { fixture, component, dropZone } = setup();
+
+    dropZone().triggerEventHandler('dragover', { preventDefault: () => undefined });
+    fixture.detectChanges();
     expect(component.isDragging()).toBe(true);
-  });
 
-  it('dispara o evento de dragleave no container do input', () => {
-    const { fixture, component, getDivButton, onDragLeaveSpy } = setup();
-    const uploadButtonDiv = getDivButton();
-    component.isDragging.set(true);
+    dropZone().triggerEventHandler('dragleave', undefined);
     fixture.detectChanges();
-
-    uploadButtonDiv.triggerEventHandler('dragleave');
-    fixture.detectChanges();
-
-    expect(onDragLeaveSpy).toHaveBeenCalled();
     expect(component.isDragging()).toBe(false);
   });
 
-  it('dispara evento drop no container do input quando um arquivo está selecionado', () => {
-    const { fixture, component, getDivButton, fileSelectOutputSpy, getFileInput, onDropSpy } = setup();
-    const uploadButtonDiv = getDivButton();
-    const fileInput = getFileInput();
-    const dragEventWithFileMock = {
-      preventDefault: vi.fn(),
-      dataTransfer: {
-        files: [VALID_FILE_MOCK]
-      }
-    } as unknown as DragEvent;
-    uploadButtonDiv.triggerEventHandler('drop', dragEventWithFileMock);
-    fixture.detectChanges();
+  it('aceita um arquivo válido via drag & drop', () => {
+    const { fixture, component } = setup();
+    const file = VALID_PDF();
 
-    expect(dragEventWithFileMock.preventDefault).toHaveBeenCalled();
-    expect(onDropSpy).toHaveBeenCalled();
+    dropFile(fixture, file);
+
+    expect(component.selectedFile()).toBe(file);
     expect(component.isDragging()).toBe(false);
-    expect(fileSelectOutputSpy).toHaveBeenCalled();
-    expect(fileInput.nativeElement.value).toBe('');
   });
 
-  it(`rejeita arquivos maiores que ${MAX_SIZE_IN_MB.toString()}MB`, () => {
-    const { fixture, component, getFileInput, fileSelectOutputSpy } = setup();
-    const fileInput = getFileInput();
-    const eventWithOversizedFileMock = {
-      target: {
-        files: [OVERSIZED_FILE_MOCK]
-      }
-    } as unknown as Event;
-    fileInput.triggerEventHandler('change', eventWithOversizedFileMock);
-    fixture.detectChanges();
+  it('rejeita drop sem arquivo sem alterar estado', () => {
+    const { fixture, component } = setup();
 
-    expect(fileSelectOutputSpy).not.toHaveBeenCalled();
-    expect(component.error()).toBe(MAX_SIZE_MB_MSG);
-    expect(component.selectedFile()).toBe(null);
+    dropFile(fixture, null);
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toBeNull();
   });
 
-  it('emite evento de clique no input quando clica no botão de selecionar arquivo do computador', () => {
-    const { fixture, getSelectButtonEl, fileInputClickSpy } = setup();
-    const selectButtonEl = getSelectButtonEl();
+  it('rejeita arquivo maior que o tamanho máximo configurado', () => {
+    const { fixture, component, errorMessage } = setup();
 
-    selectButtonEl.dispatchEvent(new Event('click'));
-    fixture.detectChanges();
+    pickFile(fixture, OVERSIZED_PDF());
 
-    expect(fileInputClickSpy).toHaveBeenCalled();
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toBe('Arquivo excede o tamanho máximo de 10MB.');
+    expect(errorMessage().nativeElement.textContent).toContain('10MB');
   });
 
-  it('remove um arquivo previamente selecionado', () => {
-    const { fixture, component, getRemoveButtonEl, removeFileSpy } = setup();
-    component.selectedFile.set(VALID_FILE_MOCK);
-    fixture.detectChanges();
+  it('rejeita arquivo cujo MIME não está na whitelist (mesmo com extensão válida)', () => {
+    const { fixture, component } = setup();
 
-    const removeButtonEl = getRemoveButtonEl();
-    removeButtonEl.dispatchEvent(new Event('click'));
-    fixture.detectChanges();
+    pickFile(fixture, MIME_SPOOFED());
 
-    expect(removeFileSpy).toHaveBeenCalled();
-    expect(component.selectedFile()).toBe(null);
-    expect(component.error()).toBe('');
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toContain('Tipo de arquivo não permitido');
   });
 
-  it('emite um evento keydown.enter no container do input', () => {
-    const { fixture, getFileInput, fileInputClickSpy } = setup();
-    const fileInputEl = getFileInput();
+  it('rejeita arquivo cuja extensão não está em accept (mesmo com MIME válido)', () => {
+    const { fixture, component } = setup();
 
-    fileInputEl.triggerEventHandler('keydown.enter', { target: fileInputEl.nativeElement.click() });
-    fixture.detectChanges();
+    pickFile(fixture, PNG_WITH_GIF_EXTENSION());
 
-    expect(fileInputClickSpy).toHaveBeenCalled();
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toContain('Tipo de arquivo não permitido');
   });
 
-  it('rejeita arquivo quando o tipo do arquivo não faz parte dos tipos aceitos', () => {
-    const { fixture, component, getFileInput, onFileSelectedSpy, fileSelectOutputSpy } = setup();
-    const fileInput = getFileInput();
-    const eventWithFileNotAllowedTypeMock = {
-      target: { files: [TYPE_NOT_ALLOWED_FILE_MOCK] }
-    } as unknown as Event;
+  it('rejeita arquivo sem nenhuma extensão', () => {
+    const { fixture, component } = setup();
 
-    fileInput.triggerEventHandler('change', eventWithFileNotAllowedTypeMock);
-    fixture.detectChanges();
-    const file = (eventWithFileNotAllowedTypeMock.target as HTMLInputElement).files?.[0];
+    pickFile(fixture, NO_EXTENSION());
 
-    expect(component.error()).toBe(TYPE_NOT_ALLOWED_MSG);
-    expect(file?.size).toBe(MAX_SIZE_IN_BYTES);
-    expect(onFileSelectedSpy).toHaveBeenCalledWith(eventWithFileNotAllowedTypeMock);
-    expect(fileInput.nativeElement.value).toBe('');
-    expect(fileSelectOutputSpy).not.toHaveBeenCalled();
-    expect(component.selectedFile()).toBe(null);
-    expect(fileInput.nativeElement.value).toBe('');
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toContain('Tipo de arquivo não permitido');
   });
 
-  it('rejeita arquivo quando a extensão do arquivo não faz parte das extensões aceitas', () => {
-    const { fixture, component, getFileInput, onFileSelectedSpy, fileSelectOutputSpy } = setup();
-    const fileInput = getFileInput();
-    const eventWithFileNotAllowedExtensionMock = {
-      target: {
-        files: [EXTENSION_NOT_ALLOWED_FILE_MOCK]
-      }
-    } as unknown as Event;
+  it('aceita arquivo com extensão em maiúsculas (case-insensitive)', () => {
+    const { fixture, component } = setup();
+    const file = UPPERCASE_PDF();
 
-    fileInput.triggerEventHandler('change', eventWithFileNotAllowedExtensionMock);
+    pickFile(fixture, file);
+
+    expect(component.selectedFile()).toBe(file);
+    expect(component.error()).toBeNull();
+  });
+
+  it('rejeita GIF independentemente de extensão e MIME', () => {
+    const { fixture, component } = setup();
+
+    pickFile(fixture, GIF_FILE());
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toContain('Tipo de arquivo não permitido');
+  });
+
+  it('respeita o accept configurado pelo consumidor (.pdf apenas)', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('accept', '.pdf');
+    fixture.componentRef.setInput('allowedMimeTypes', ['application/pdf']);
     fixture.detectChanges();
 
-    expect(onFileSelectedSpy).toHaveBeenCalledWith(eventWithFileNotAllowedExtensionMock);
-    expect(fileSelectOutputSpy).not.toHaveBeenCalled();
-    expect(component.error()).toBe(TYPE_NOT_ALLOWED_MSG);
-    expect(fileInput.nativeElement.value).toBe('');
+    pickFile(fixture, makeFile({ name: 'foto.png', type: 'image/png', sizeBytes: 1024 }));
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toBe('Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf');
+  });
+
+  it('respeita o maxSizeMb configurado pelo consumidor', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('maxSizeMb', 1);
+    fixture.detectChanges();
+
+    pickFile(fixture, makeFile({ name: 'doc.pdf', type: 'application/pdf', sizeBytes: 1024 * 1024 + 1 }));
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toBe('Arquivo excede o tamanho máximo de 1MB.');
+  });
+
+  it('atualiza a mensagem de tipo não permitido quando accept muda em runtime', () => {
+    const { fixture, component } = setup();
+
+    pickFile(fixture, GIF_FILE());
+    expect(component.error()).toContain('.pdf,.jpg,.jpeg,.png');
+
+    fixture.componentRef.setInput('accept', '.pdf');
+    fixture.componentRef.setInput('allowedMimeTypes', ['application/pdf']);
+    fixture.detectChanges();
+    pickFile(fixture, GIF_FILE());
+
+    expect(component.error()).toBe('Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf');
+  });
+
+  it('limpa estado quando o usuário clica em Remover', () => {
+    const { fixture, component, removeButton } = setup();
+    pickFile(fixture, VALID_PDF());
+
+    removeButton().triggerEventHandler('click', new MouseEvent('click'));
+    fixture.detectChanges();
+
+    expect(component.selectedFile()).toBeNull();
+    expect(component.error()).toBeNull();
+  });
+
+  it('abre o seletor de arquivo nativo ao clicar na área de drop', () => {
+    const { fixture, component, dropZone } = setup();
+    const inputElement = component.fileInput().nativeElement;
+    const clicks: number[] = [];
+    inputElement.click = () => clicks.push(1);
+
+    dropZone().triggerEventHandler('click', new MouseEvent('click'));
+    fixture.detectChanges();
+
+    expect(clicks.length).toBe(1);
+  });
+
+  it('é renderizado como <button> nativo (acessível por teclado Enter e Space sem handler manual)', () => {
+    const { dropZone } = setup();
+    expect(dropZone().nativeElement.tagName).toBe('BUTTON');
+    expect(dropZone().nativeElement.getAttribute('type')).toBe('button');
+  });
+
+  it('expõe a mensagem de erro com role=alert para leitores de tela', () => {
+    const { fixture, errorMessage } = setup();
+    pickFile(fixture, OVERSIZED_PDF());
+
+    expect(errorMessage().nativeElement.getAttribute('role')).toBe('alert');
+  });
+
+  it('substitui um arquivo previamente selecionado quando outro é escolhido', () => {
+    const { fixture, component } = setup();
+    const first = VALID_PDF();
+    const second = makeFile({ name: 'outro.pdf', type: 'application/pdf', sizeBytes: 2048 });
+
+    pickFile(fixture, first);
+    pickFile(fixture, second);
+
+    expect(component.selectedFile()).toBe(second);
+  });
+
+  it('limpa o erro anterior quando uma nova seleção válida é feita', () => {
+    const { fixture, component } = setup();
+
+    pickFile(fixture, OVERSIZED_PDF());
+    expect(component.error()).not.toBeNull();
+
+    pickFile(fixture, VALID_PDF());
+    expect(component.error()).toBeNull();
+  });
+
+  it('rejeita drop com arquivo inválido sem alterar selectedFile prévio', () => {
+    const { fixture, component } = setup();
+    const valid = VALID_PDF();
+    pickFile(fixture, valid);
+
+    dropFile(fixture, GIF_FILE());
+
+    expect(component.selectedFile()).toBe(valid);
+    expect(component.error()).toContain('Tipo de arquivo não permitido');
   });
 });
