@@ -351,6 +351,9 @@ export interface components {
             readonly bonusRegionalHabilitado: boolean;
             /** Format: date-time */
             readonly criadoEm: string;
+            readonly _links?: null | {
+                readonly [key: string]: string;
+            };
         };
         readonly ProblemDetails: {
             readonly type?: null | string;

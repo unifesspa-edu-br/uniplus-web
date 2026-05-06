@@ -20,30 +20,15 @@ import { EditaisApi, EditalDto } from '@uniplus/shared-data';
 import { ConfirmDialogComponent } from '@uniplus/shared-ui';
 
 /**
- * Extensão local de `EditalDto` para `_links` (HATEOAS Level 1, ADR-0029
- * backend). Hoje o backend ainda não emite `_links` em `EditalDto` — issue
- * tracked em [uniplus-api#334](https://github.com/unifesspa-edu-br/uniplus-api/issues/334).
- *
- * Quando o backend implementar, o codegen pegará a mudança automaticamente
- * (a propriedade já fica opcional aqui, então o cast é seguro). A page lê
- * `_links?.publicar` preferencialmente; se ausente, cai num fallback baseado
- * em `status === 'Rascunho'`. O fallback é temporário e será removido quando
- * `uniplus-api#334` fechar.
- */
-type EditalComLinks = EditalDto & {
-  readonly _links?: {
-    readonly self?: string;
-    readonly collection?: string;
-    readonly publicar?: string;
-  };
-};
-
-/**
  * Container (ADR-0017) da feature Editais — detalhe + ação Publicar.
  *
- * **Gating do botão "Publicar" (ADR-0029 backend):** preferencialmente
- * HATEOAS-driven via `_links?.publicar`; fallback temporário a
- * `status === 'Rascunho'` enquanto o backend não emite `_links` (uniplus-api#334).
+ * **Gating do botão "Publicar":** baseado em `status === 'Rascunho'` (única
+ * transição permitida hoje per `Edital.Publicar()` no domínio backend).
+ * **Action links NÃO entram em `_links`** per ADR-0029 do `uniplus-api`
+ * (vedação binding §"Esta ADR não decide" — operações de mutação são
+ * descobertas via OpenAPI, ADR-0030). O `EditalDto._links` carrega apenas
+ * navigation links (`self`, `collection`) — útil para self-identification
+ * e back-nav, sem interferir no gating de UI.
  *
  * **Idempotency-Key (ADR-0014):** gerada a cada submit (não form-scoped — a
  * ação "Publicar" não tem rascunho de form para preservar; replay protege
@@ -149,7 +134,7 @@ export class EditaisDetailPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly edital = signal<EditalComLinks | null>(null);
+  readonly edital = signal<EditalDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   readonly submitting = signal<boolean>(false);
@@ -157,17 +142,14 @@ export class EditaisDetailPage {
   readonly dialogVisivel = signal<boolean>(false);
 
   /**
-   * Caminho A (HATEOAS-driven, ADR-0029): se `_links.publicar` presente,
-   * gating vem do servidor. Caminho B (fallback temporário): se `_links`
-   * ausente (uniplus-api#334), gate por `status === 'Rascunho'`.
+   * Gating do botão "Publicar" — `status === 'Rascunho'` é a única transição
+   * permitida hoje (per `Edital.Publicar()` no domínio backend). Action links
+   * (`publicar`) são vedados em `_links` por ADR-0029 (operações de mutação
+   * descobertas via OpenAPI, ADR-0030); por isso o gate vem do `status`.
    */
   protected readonly podePublicar = computed(() => {
     const dto = this.edital();
-    if (!dto) return false;
-    if (dto._links !== undefined) {
-      return Boolean(dto._links.publicar);
-    }
-    return dto.status === 'Rascunho';
+    return dto?.status === 'Rascunho';
   });
 
   constructor() {
@@ -247,7 +229,7 @@ export class EditaisDetailPage {
         }
         this.loading.set(false);
         if (result.ok) {
-          this.edital.set(result.data as EditalComLinks);
+          this.edital.set(result.data);
           return;
         }
         this.edital.set(null);
