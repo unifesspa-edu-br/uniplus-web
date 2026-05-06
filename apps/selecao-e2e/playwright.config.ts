@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
+import * as path from 'node:path';
+import { STORAGE_STATE_PATH_ADMIN } from './src/fixtures/auth.fixture';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
@@ -8,6 +10,8 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
 // webkit requer libs Ubuntu (libicudata.so.74, libxml2.so.2 etc.) — só executa em CI.
 // Localmente em distros não-Debian, defina CI=true para incluir webkit.
 const isCI = !!process.env['CI'];
+
+const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
 
 /**
  * Read environment variables from file.
@@ -20,6 +24,14 @@ const isCI = !!process.env['CI'];
  */
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
+  /**
+   * `globalSetup` autentica como admin uma vez por test run e persiste o
+   * `storageState` em disco — specs no project `selecao-authenticated`
+   * pulam o login UI. Specs legadas em `chromium`/`firefox`/`webkit`
+   * continuam fazendo login UI via `keycloakLogin` helper. Ver F9 em
+   * `~/.claude/plans/novo-plano-fechamento-milestone-b-luminous-keystone.md`.
+   */
+  globalSetup: require.resolve('./src/global-setup'),
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
@@ -36,18 +48,30 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /.*\.authenticated\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
+      testIgnore: /.*\.authenticated\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
 
     ...(isCI ? [{
       name: 'webkit',
+      testIgnore: /.*\.authenticated\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
     }] : []),
+
+    {
+      name: 'selecao-authenticated',
+      testMatch: /.*\.authenticated\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: storageStateAdmin,
+      },
+    },
 
     // Uncomment for mobile browsers support
     /* {
