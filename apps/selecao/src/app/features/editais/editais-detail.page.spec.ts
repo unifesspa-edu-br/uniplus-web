@@ -185,4 +185,27 @@ describe('EditaisDetailPage', () => {
     const botao = fixture.debugElement.query(By.css('[data-testid="btn-publicar"]'));
     expect(botao).toBeNull();
   });
+
+  it('mudança no input id refetcha automaticamente e zera estado anterior (Codex P1)', () => {
+    fixture.detectChanges();
+    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ titulo: 'PSE 2026' }));
+    fixture.detectChanges();
+
+    expect(component.edital()?.titulo).toBe('PSE 2026');
+
+    // Navegação para outro :id sem destruir o componente (Angular reusa instância).
+    const ID_NOVO = '01960000-0000-7000-0000-000000000aaa';
+    fixture.componentRef.setInput('id', ID_NOVO);
+    fixture.detectChanges();
+
+    // Estado do edital anterior é zerado durante o fetch novo.
+    expect(component.edital()).toBeNull();
+    expect(component.loading()).toBe(true);
+
+    const reqNovo = controller.expectOne(`${BASE}/api/editais/${ID_NOVO}`);
+    reqNovo.flush(editalSeed({ id: ID_NOVO, titulo: 'PSE 2027' }));
+
+    expect(component.edital()?.titulo).toBe('PSE 2027');
+    expect(component.loading()).toBe(false);
+  });
 });

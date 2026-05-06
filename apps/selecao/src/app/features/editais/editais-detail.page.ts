@@ -2,11 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  OnInit,
   computed,
+  effect,
   inject,
   input,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -140,7 +141,7 @@ type EditalComLinks = EditalDto & {
     />
   `,
 })
-export class EditaisDetailPage implements OnInit {
+export class EditaisDetailPage {
   /** Path param do route (`:id`). Bind via `withComponentInputBinding()`. */
   readonly id = input.required<string>();
 
@@ -169,8 +170,24 @@ export class EditaisDetailPage implements OnInit {
     return dto.status === 'Rascunho';
   });
 
-  ngOnInit(): void {
-    this.carregar();
+  constructor() {
+    // Recarrega sempre que o input `id` mudar — caso de navegação entre
+    // /editais/:id1 → /editais/:id2 quando Angular reusa a mesma instância
+    // do componente. Sem isto, `edital()` ficaria stale e
+    // `confirmarPublicacao()` agiria contra o ID novo enquanto a UI mostra
+    // dados do anterior. `untracked` evita que mutations dentro do fetch
+    // re-disparem o effect.
+    effect(() => {
+      const currentId = this.id();
+      untracked(() => {
+        // Reset de estado dependente do ID anterior — só dispara quando o
+        // input muda. O refetch via publish (`confirmarPublicacao`) preserva
+        // `mensagemSucesso` porque chama `executarObterPorId` direto.
+        this.edital.set(null);
+        this.mensagemSucesso.set(null);
+        this.executarObterPorId(currentId);
+      });
+    });
   }
 
   protected abrirConfirmacao(): void {
@@ -193,29 +210,23 @@ export class EditaisDetailPage implements OnInit {
         this.submitting.set(false);
         if (result.ok) {
           this.mensagemSucesso.set('Edital publicado com sucesso.');
-          // Refetch incondicional — preserva mensagemSucesso, atualiza status.
-          // Bypass da guarda `loading` aqui é intencional: o sucesso do
-          // publicar exige reload garantido, mesmo se houver outra carga em voo.
-          this.executarObter();
+          // Refetch incondicional — bypassa guarda de `loading` para garantir
+          // reload pós-publicar, mesmo se houver outra carga em voo.
+          this.executarObterPorId(id);
           return;
         }
         this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
       });
   }
 
-  private carregar(): void {
-    if (this.loading()) {
-      return;
-    }
-    this.executarObter();
-  }
-
-  private executarObter(): void {
+  private executarObterPorId(id: string): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    // Mantém `edital` e `mensagemSucesso` intactos — quem chamou (`effect`
+    // de mudança de id ou refetch pós-publicar) decide o reset apropriado.
 
     this.api
-      .obter(this.id())
+      .obter(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.loading.set(false);
