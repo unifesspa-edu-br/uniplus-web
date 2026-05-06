@@ -43,6 +43,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0012](0012-placement-api-result-em-shared-core.md) | Placement do `ApiResult<T>` em subpasta de `shared-core`, não em nova lib | accepted | 2026-05-04 |
 | [0013](0013-gerador-openapi-node-only.md) | Gerador OpenAPI Node-only (`openapi-typescript`) em vez de `openapi-generator-cli` | accepted | 2026-05-05 |
 | [0014](0014-idempotency-key-cliente-via-http-context.md) | Idempotency-Key cliente via `HttpContext` + UUID v7, anexado pelo `apiResultInterceptor` | accepted | 2026-05-05 |
+| [0015](0015-cursor-pagination-consumer-link-header.md) | Cursor pagination consumer via parser de `Link` header — decode no caller, não no interceptor | proposed | 2026-05-06 |
 
 ## Como adicionar um novo ADR
 
