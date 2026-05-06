@@ -198,21 +198,29 @@ export class EditaisDetailPage {
     if (this.submitting()) {
       return;
     }
-    const id = this.id();
+    const idDoSubmit = this.id();
     this.submitting.set(true);
     this.errorMessage.set(null);
     this.mensagemSucesso.set(null);
 
     this.api
-      .publicar(id, withIdempotencyKey(idempotencyKey.create()))
+      .publicar(idDoSubmit, withIdempotencyKey(idempotencyKey.create()))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.submitting.set(false);
+        // Race guard: se usuário navegou para outro `:id` durante o publicar,
+        // descarta o feedback. Setar `mensagemSucesso` no edital errado
+        // confundiria o usuário; o backend já registrou a publicação do
+        // recurso original (Idempotency-Key garante).
+        if (this.id() !== idDoSubmit) {
+          return;
+        }
         if (result.ok) {
           this.mensagemSucesso.set('Edital publicado com sucesso.');
-          // Refetch incondicional — bypassa guarda de `loading` para garantir
-          // reload pós-publicar, mesmo se houver outra carga em voo.
-          this.executarObterPorId(id);
+          // Refetch — bypassa guarda de `loading` para garantir reload
+          // pós-publicar mesmo se houver outra carga em voo. O guard interno
+          // de `executarObterPorId` ainda protege contra response stale.
+          this.executarObterPorId(idDoSubmit);
           return;
         }
         this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
@@ -229,6 +237,14 @@ export class EditaisDetailPage {
       .obter(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        // Race guard: se o `id` corrente do componente mudou desde o início
+        // desta request (usuário navegou para outro `:id` mid-fetch), descarta
+        // a response stale. Sem isto, late response do id antigo poderia
+        // sobrescrever `edital`/`loading` do fetch do id novo (ADR-0017
+        // container responsabilidade — UI só reflete estado do id atual).
+        if (this.id() !== id) {
+          return;
+        }
         this.loading.set(false);
         if (result.ok) {
           this.edital.set(result.data as EditalComLinks);
