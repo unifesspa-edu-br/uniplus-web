@@ -238,7 +238,7 @@ describe('EditaisApi', () => {
       }
     });
 
-    it('replay com mesma key reusa o header e o backend devolve resposta cacheada com Idempotency-Replayed: true', async () => {
+    it('replay com mesma key reusa o header e o backend devolve resposta cacheada com Idempotency-Replayed: true (criar)', async () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a805a';
 
       const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
@@ -256,6 +256,62 @@ describe('EditaisApi', () => {
       if (result.ok) {
         expect(result.headers.get('Idempotency-Replayed')).toBe('true');
       }
+    });
+  });
+
+  describe('publicar()', () => {
+    const ID = '01960000-0000-7000-0000-000000000099';
+
+    it('faz POST /api/editais/{id}/publicar com Idempotency-Key + vendor MIME v1 e devolve 204 ApiResult.ok', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a805b';
+      const promise = firstValueFrom(api.publicar(ID, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(`${BASE}/api/editais/${ID}/publicar`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      // Vendor MIME mantido por simetria com obter()/listar() (ADR-0028).
+      expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
+      expect(req.request.body).toBeNull();
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      const result = (await promise) as ApiResult<void>;
+      expect(isApiOk(result)).toBe(true);
+      if (result.ok) {
+        expect(result.status).toBe(204);
+      }
+    });
+
+    it('mapeia 422 ja_publicado como ApiFailure preservando o code', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a805c';
+      const promise = firstValueFrom(api.publicar(ID, withIdempotencyKey(key)));
+
+      controller.expectOne(`${BASE}/api/editais/${ID}/publicar`).flush(
+        {
+          type: 'about:blank',
+          title: 'Edital já publicado',
+          status: 422,
+          code: 'uniplus.selecao.edital.ja_publicado',
+          traceId: 'tx-publicar',
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+
+      const result = (await promise) as ApiResult<void>;
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problem.code).toBe('uniplus.selecao.edital.ja_publicado');
+      }
+    });
+
+    it('encoding seguro do path param em IDs com caracteres especiais', () => {
+      const idComEspaco = 'edt with space/01';
+      const key = '01890a5d-ac96-774b-bcce-b302099a805d';
+      firstValueFrom(api.publicar(idComEspaco, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(
+        `${BASE}/api/editais/${encodeURIComponent(idComEspaco)}/publicar`,
+      );
+      req.flush(null, { status: 204, statusText: 'No Content' });
     });
   });
 });

@@ -36,4 +36,22 @@ test.describe('Editais — CRUD', () => {
     // Submit fica disabled enquanto form invalid + nenhum campo preenchido.
     await expect(page.getByRole('button', { name: 'Criar edital' })).toBeDisabled();
   });
+
+  test('deve renderizar EditaisDetailPage com banner de erro ao acessar /editais/{id} inexistente (F8)', async ({
+    page,
+  }) => {
+    // Smoke direto na URL — independe de a lista ter itens. ID arbitrário
+    // garante 404 no backend; a page deve mostrar banner role="alert" sem
+    // crash. Cobertura ponta-a-ponta com criar→listar→detalhar→publicar fica
+    // para F9 (auth fixture + happy path completo).
+    const idArbitrario = '01960000-0000-7000-0000-000000000001';
+    await page.goto(`/editais/${idArbitrario}`);
+    await keycloakLogin(page, ADMIN.username, ADMIN.password);
+
+    await expect(page.locator('h2')).toContainText('Detalhes do edital');
+    await expect(page.getByRole('link', { name: 'Voltar para lista' })).toBeVisible();
+    // Banner de erro role="alert" via problem-i18n — confirma que a page lida
+    // graciosamente com 404 sem crash do componente.
+    await expect(page.locator('[role="alert"]')).toBeVisible();
+  });
 });

@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   Cursor,
   ProblemI18nService,
@@ -48,8 +48,10 @@ import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
       [loading]="loading()"
       [errorMessage]="errorMessage()"
       [nextCursor]="nextCursor()"
+      [rowClickable]="true"
       emptyMessage="Nenhum edital cadastrado."
       (loadNext)="aoCarregarMais($event)"
+      (rowClick)="aoSelecionar($event)"
     />
   `,
 })
@@ -57,6 +59,7 @@ export class EditaisListPage {
   private readonly api = inject(EditaisApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   readonly editais = signal<readonly EditalDto[]>([]);
   readonly nextCursor = signal<Cursor | null>(null);
@@ -80,6 +83,13 @@ export class EditaisListPage {
 
   protected aoCarregarMais(cursor: Cursor): void {
     this.carregar(cursor);
+  }
+
+  protected aoSelecionar(row: Record<string, unknown>): void {
+    const id = row['id'];
+    if (typeof id === 'string' && id.length > 0) {
+      this.router.navigate(['/editais', id]);
+    }
   }
 
   private carregar(cursor: Cursor | undefined): void {
