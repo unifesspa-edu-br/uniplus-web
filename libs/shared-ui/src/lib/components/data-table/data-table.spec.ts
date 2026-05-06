@@ -1,23 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createCursor } from '@uniplus/shared-core';
 import { DataTableComponent, DataTableColumn } from './data-table';
 
 describe('DataTableComponent', () => {
-  const COLUMNS: DataTableColumn[] = [{
-    field: 'id',
-    header: 'ID',
-    sortable: false
-  },
-  {
-    field: 'name',
-    header: 'Name',
-    sortable: true
-  }];
+  const COLUMNS: DataTableColumn[] = [
+    { field: 'id', header: 'ID', sortable: false },
+    { field: 'name', header: 'Name', sortable: true },
+  ];
 
   const DATA: Record<string, unknown>[] = [
     { id: '1', name: 'Joe Doe' },
-    { id: '2', name: 'Joana Doe' }
+    { id: '2', name: 'Joana Doe' },
   ];
 
   beforeEach(() => {
@@ -49,11 +44,12 @@ describe('DataTableComponent', () => {
 
   it('renderiza a tabela com linhas quando o input data() está preenchido', () => {
     const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
     fixture.componentRef.setInput('data', DATA);
     fixture.detectChanges();
-    const tbodyQuery = fixture.debugElement.query(By.css('tbody'));
+    const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
 
-    expect(tbodyQuery.children.length).toBe(DATA.length);
+    expect(linhas.length).toBe(DATA.length);
   });
 
   it('renderiza o valor de cada célula conforme o field da coluna', () => {
@@ -69,14 +65,99 @@ describe('DataTableComponent', () => {
     expect(cells[3].nativeElement.textContent.trim()).toBe('Joana Doe');
   });
 
-  it('renderiza a tabela com mensagem de vazio quando o input columns() é um array vazio e data é um array vazio (default)', () => {
+  it('exibe emptyMessage padrão quando colunas e data estão vazios', () => {
     const { fixture, component } = setup();
     fixture.detectChanges();
     const tableCellEl = fixture.debugElement.query(By.css('td')).nativeElement as HTMLTableCellElement;
 
-    expect(component.columns()).toBeTruthy();
     expect(component.columns().length).toBe(0);
     expect(component.emptyMessage()).toBe('Nenhum registro encontrado.');
     expect(tableCellEl.textContent.trim()).toBe(component.emptyMessage());
+  });
+
+  it('exibe loadingLabel no tbody quando loading=true e data está vazio', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('loading', true);
+    fixture.detectChanges();
+
+    const cell = fixture.debugElement.query(By.css('tbody td')).nativeElement as HTMLTableCellElement;
+    expect(cell.textContent?.trim()).toBe('Carregando…');
+  });
+
+  it('exibe banner role=alert quando errorMessage está populado, mesmo durante loading', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('loading', true);
+    fixture.componentRef.setInput('errorMessage', 'Falha ao carregar editais.');
+    fixture.detectChanges();
+
+    const alerta = fixture.debugElement.query(By.css('[role="alert"]'));
+    expect(alerta).toBeTruthy();
+    expect(alerta.nativeElement.textContent).toContain('Falha ao carregar editais.');
+  });
+
+  it('botão "Carregar mais" só aparece quando nextCursor está populado', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('button'))).toBeNull();
+
+    fixture.componentRef.setInput('nextCursor', createCursor('proximo-cursor'));
+    fixture.detectChanges();
+
+    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
+    expect(botao.textContent?.trim()).toBe('Carregar mais');
+    expect(botao.disabled).toBe(false);
+  });
+
+  it('botão "Carregar mais" troca rótulo para loadingLabel e fica disabled durante loading', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('nextCursor', createCursor('proximo-cursor'));
+    fixture.componentRef.setInput('loading', true);
+    fixture.detectChanges();
+
+    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
+    expect(botao.disabled).toBe(true);
+    expect(botao.textContent?.trim()).toBe('Carregando…');
+  });
+
+  it('clicar em "Carregar mais" emite output loadNext com o cursor atual', () => {
+    const { fixture, component } = setup();
+    const cursor = createCursor('cursor-pagina-2');
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('nextCursor', cursor);
+    fixture.detectChanges();
+
+    const emit = vi.fn();
+    component.loadNext.subscribe(emit);
+
+    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
+    botao.click();
+
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith(cursor);
+  });
+
+  it('clicar no botão durante loading não emite loadNext (guarda interna)', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('nextCursor', createCursor('cursor-x'));
+    fixture.componentRef.setInput('loading', true);
+    fixture.detectChanges();
+
+    const emit = vi.fn();
+    component.loadNext.subscribe(emit);
+
+    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
+    botao.click();
+
+    expect(emit).not.toHaveBeenCalled();
   });
 });

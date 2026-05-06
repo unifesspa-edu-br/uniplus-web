@@ -45,6 +45,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0014](0014-idempotency-key-cliente-via-http-context.md) | Idempotency-Key cliente via `HttpContext` + UUID v7, anexado pelo `apiResultInterceptor` | accepted | 2026-05-05 |
 | [0015](0015-cursor-pagination-consumer-link-header.md) | Cursor pagination consumer via parser de `Link` header — decode no caller, não no interceptor | accepted | 2026-05-06 |
 | [0016](0016-vendor-mime-consumer-via-http-context.md) | Vendor MIME consumer via `HttpContext` — `withVendorMime` declara o recurso e o `apiResultInterceptor` anexa `Accept` | accepted | 2026-05-06 |
+| [0017](0017-pattern-feature-page-container-presentational.md) | Páginas de feature no padrão container/presentational — `XxxPage` smart + `ui-*` dumb | proposed | 2026-05-06 |
 
 ## Como adicionar um novo ADR
 

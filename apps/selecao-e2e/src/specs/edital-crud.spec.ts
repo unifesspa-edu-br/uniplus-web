@@ -12,5 +12,9 @@ test.describe('Editais — CRUD', () => {
     await page.goto('/editais');
     await keycloakLogin(page, ADMIN.username, ADMIN.password);
     await expect(page.locator('h2')).toContainText('Editais');
+    // EditaisListPage (F6) sempre renderiza um <table role="grid">; quando o
+    // backend devolve lista vazia, a mensagem "Nenhum edital cadastrado." cai
+    // no tbody. Quando há itens, as linhas aparecem em <tbody tr>.
+    await expect(page.locator('table[role="grid"]')).toBeVisible();
   });
 });
