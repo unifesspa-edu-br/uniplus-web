@@ -23,6 +23,29 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint"
+    },
+    "codegen-api": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash libs/shared-data/scripts/generate-api-clients.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "inputs": [
+        "{projectRoot}/openapi/selecao.openapi.json",
+        "{projectRoot}/openapi/ingresso.openapi.json",
+        "{projectRoot}/scripts/generate-api-clients.sh"
+      ],
+      "outputs": [
+        "{projectRoot}/src/lib/api/selecao/schema.ts",
+        "{projectRoot}/src/lib/api/ingresso/schema.ts"
+      ]
+    },
+    "codegen-api-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash libs/shared-data/scripts/verify-codegen.sh",
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }

@@ -5,6 +5,7 @@
     "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
+    "@uniplus/shared-core": "*",
     "vite": "^7.0.0",
     "@analogjs/vite-plugin-angular": "^2.2.0",
     "@nx/vite": "^22.6.0"

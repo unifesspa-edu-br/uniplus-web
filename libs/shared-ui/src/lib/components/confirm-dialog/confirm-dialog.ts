@@ -1,5 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output, model } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+let dialogIdSeed = 0;
 
 @Component({
   selector: 'ui-confirm-dialog',
@@ -8,10 +10,16 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="titleId()"
+        [attr.aria-describedby]="messageId()"
+      >
         <div class="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-          <h3 class="text-lg font-semibold text-gray-900">{{ title() }}</h3>
-          <p class="mt-2 text-sm text-gray-600">{{ message() }}</p>
+          <h3 [id]="titleId()" class="text-lg font-semibold text-gray-900">{{ title() }}</h3>
+          <p [id]="messageId()" class="mt-2 text-sm text-gray-600">{{ message() }}</p>
           <div class="mt-6 flex justify-end gap-3">
             <button
               type="button"
@@ -47,6 +55,12 @@ export class ConfirmDialogComponent {
 
   readonly confirmed = output<void>();
   readonly cancelled = output<void>();
+
+  /** IDs únicos por instância, garantindo aria-labelledby/describedby
+   *  válidos quando múltiplos dialogs convivem no DOM. */
+  private readonly idSuffix = ++dialogIdSeed;
+  protected readonly titleId = computed(() => `ui-confirm-dialog-title-${this.idSuffix}`);
+  protected readonly messageId = computed(() => `ui-confirm-dialog-msg-${this.idSuffix}`);
 
   onConfirm(): void {
     this.confirmed.emit();

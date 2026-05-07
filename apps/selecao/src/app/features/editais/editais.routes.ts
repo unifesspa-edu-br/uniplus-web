@@ -1,6 +1,19 @@
 import { Routes } from '@angular/router';
-import { EditaisComponent } from './editais';
 
 export const EDITAIS_ROUTES: Routes = [
-  { path: '', component: EditaisComponent },
+  {
+    path: '',
+    loadComponent: () =>
+      import('./editais-list.page').then((m) => m.EditaisListPage),
+  },
+  {
+    path: 'novo',
+    loadComponent: () =>
+      import('./editais-create.page').then((m) => m.EditaisCreatePage),
+  },
+  {
+    path: ':id',
+    loadComponent: () =>
+      import('./editais-detail.page').then((m) => m.EditaisDetailPage),
+  },
 ];

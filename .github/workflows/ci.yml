@@ -113,6 +113,13 @@ jobs:
       - if: steps.gate.outputs.run == 'true'
         run: npx nx record -- echo Hello World
 
+      # Drift check do codegen OpenAPI (ADR-0013): regenera e diffa
+      # libs/shared-data/src/lib/api/{selecao,ingresso}/schema.ts contra o
+      # committed. Falha se o spec mudou e o gerado não foi committed junto.
+      - name: Verificar drift do codegen OpenAPI (shared-data)
+        if: steps.gate.outputs.run == 'true'
+        run: npx nx run shared-data:codegen-api-check
+
       # Em pull_request, usamos `nx affected` para rodar apenas os projects
       # impactados pelo diff contra a branch base. Em push para main, fazemos
       # sweep completo via `nx run-many` como rede de segurança.

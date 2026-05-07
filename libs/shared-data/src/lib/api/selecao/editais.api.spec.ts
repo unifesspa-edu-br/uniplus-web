@@ -1,0 +1,317 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  ApiResult,
+  apiResultInterceptor,
+  buildVendorMimeAccept,
+  createCursor,
+  isApiOk,
+  withIdempotencyKey,
+} from '@uniplus/shared-core';
+import { CriarEditalCommand, EditaisApi, EditalDto } from './editais.api';
+import { SELECAO_BASE_PATH } from './tokens';
+
+const BASE = 'http://localhost:5000';
+
+const editalSeed: EditalDto = {
+  id: '01960000-0000-7000-0000-000000000001',
+  numeroEdital: '042/2026',
+  titulo: 'PSE 2026',
+  tipoProcesso: 'PSE',
+  status: 'Rascunho',
+  maximoOpcoesCurso: 2,
+  bonusRegionalHabilitado: true,
+  criadoEm: '2026-04-15T12:00:00Z',
+};
+
+describe('EditaisApi', () => {
+  let api: EditaisApi;
+  let controller: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+      ],
+    });
+    api = TestBed.inject(EditaisApi);
+    controller = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => controller.verify());
+
+  it('listar() sem cursor faz GET /api/editais sem query params, com vendor MIME v1', async () => {
+    const promise = firstValueFrom(api.listar());
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/editais` && request.params.keys().length === 0,
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
+    expect(req.request.params.has('cursor')).toBe(false);
+    expect(req.request.params.has('limit')).toBe(false);
+    req.flush([editalSeed]);
+
+    const result = (await promise) as ApiResult<readonly EditalDto[]>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].numeroEdital).toBe('042/2026');
+    }
+  });
+
+  it('listar(cursor) anexa o cursor opaco como query param ?cursor=...', async () => {
+    const cursor = createCursor('opaque-cursor-AES-GCM-blob');
+
+    const promise = firstValueFrom(api.listar(cursor));
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
+    );
+    expect(req.request.params.get('cursor')).toBe('opaque-cursor-AES-GCM-blob');
+    expect(req.request.params.has('limit')).toBe(false);
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
+    req.flush([]);
+
+    await promise;
+  });
+
+  it('listar(cursor, limit) anexa cursor + limit como query params', async () => {
+    const cursor = createCursor('next-page-cursor');
+
+    const promise = firstValueFrom(api.listar(cursor, 25));
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
+    );
+    expect(req.request.params.get('cursor')).toBe('next-page-cursor');
+    expect(req.request.params.get('limit')).toBe('25');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
+    req.flush([]);
+
+    await promise;
+  });
+
+  it('listar(undefined, limit) anexa apenas limit como query param', async () => {
+    const promise = firstValueFrom(api.listar(undefined, 10));
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/editais` && request.params.has('limit'),
+    );
+    expect(req.request.params.has('cursor')).toBe(false);
+    expect(req.request.params.get('limit')).toBe('10');
+    req.flush([]);
+
+    await promise;
+  });
+
+  it('obter() faz GET /api/editais/{id} com encoding seguro do path param', async () => {
+    const id = 'edt with space/01';
+
+    const promise = firstValueFrom(api.obter(id));
+
+    const req = controller.expectOne(`${BASE}/api/editais/${encodeURIComponent(id)}`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
+    req.flush(editalSeed);
+
+    const result = (await promise) as ApiResult<EditalDto>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) {
+      expect(result.data.id).toBe(editalSeed.id);
+    }
+  });
+
+  it('obter() entrega ApiFailure quando o backend devolve 404 problem+json', async () => {
+    const promise = firstValueFrom(api.obter('inexistente'));
+
+    controller.expectOne(`${BASE}/api/editais/inexistente`).flush(
+      {
+        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.selecao.edital.nao_encontrado',
+        title: 'Edital não encontrado',
+        status: 404,
+        code: 'uniplus.selecao.edital.nao_encontrado',
+        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      },
+      { status: 404, statusText: 'Not Found', headers: { 'Content-Type': 'application/problem+json' } },
+    );
+
+    const result = (await promise) as ApiResult<EditalDto>;
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.problem.code).toBe('uniplus.selecao.edital.nao_encontrado');
+      expect(result.status).toBe(404);
+    }
+  });
+
+  describe('criar()', () => {
+    const comando: CriarEditalCommand = {
+      numeroEdital: 42,
+      anoEdital: 2026,
+      titulo: 'PSE 2026',
+      tipoProcesso: 1,
+      maximoOpcoesCurso: 2,
+    };
+
+    it('faz POST /api/editais com Idempotency-Key + Accept: application/json e devolve 201 com o ID', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a8057';
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(`${BASE}/api/editais`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      // Accept fixado evita que backend devolva text/plain (que quebraria
+      // responseType: 'json') quando o contrato permite ambos.
+      expect(req.request.headers.get('Accept')).toBe('application/json');
+      expect(req.request.body).toEqual(comando);
+      req.flush('01960000-0000-7000-0000-000000000099', {
+        status: 201,
+        statusText: 'Created',
+        headers: { Location: '/api/editais/01960000-0000-7000-0000-000000000099' },
+      });
+
+      const result = (await promise) as ApiResult<string>;
+      expect(isApiOk(result)).toBe(true);
+      if (result.ok) {
+        expect(result.data).toBe('01960000-0000-7000-0000-000000000099');
+        expect(result.headers.get('Location')).toBe('/api/editais/01960000-0000-7000-0000-000000000099');
+      }
+    });
+
+    it('mapeia 422 com errors[] como ApiFailure preservando o array de validações', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a8058';
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      controller.expectOne(`${BASE}/api/editais`).flush(
+        {
+          type: 'about:blank',
+          title: 'Falha de validação',
+          status: 422,
+          code: 'uniplus.validation.falhou',
+          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+          errors: [
+            { field: 'titulo', code: 'NotEmpty', message: 'Título é obrigatório.' },
+            { field: 'numeroEdital', code: 'GreaterThan', message: 'Número deve ser positivo.' },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+
+      const result = (await promise) as ApiResult<string>;
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problem.code).toBe('uniplus.validation.falhou');
+        expect(result.problem.errors).toHaveLength(2);
+        expect(result.problem.errors?.[0].field).toBe('titulo');
+        expect(result.problem.errors?.[1].code).toBe('GreaterThan');
+      }
+    });
+
+    it('mapeia 409 conflict como ApiFailure', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a8059';
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      controller.expectOne(`${BASE}/api/editais`).flush(
+        {
+          type: 'about:blank',
+          title: 'Edital já existente',
+          status: 409,
+          code: 'uniplus.selecao.edital.duplicado',
+          traceId: '4bf92f3577b34da6a3ce929d0e0e4737',
+        },
+        { status: 409, statusText: 'Conflict', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+
+      const result = (await promise) as ApiResult<string>;
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problem.code).toBe('uniplus.selecao.edital.duplicado');
+        expect(result.status).toBe(409);
+      }
+    });
+
+    it('replay com mesma key reusa o header e o backend devolve resposta cacheada com Idempotency-Replayed: true (criar)', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a805a';
+
+      const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(`${BASE}/api/editais`);
+      expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      req.flush('01960000-0000-7000-0000-000000000099', {
+        status: 201,
+        statusText: 'Created',
+        headers: { 'Idempotency-Replayed': 'true' },
+      });
+
+      const result = (await promise) as ApiResult<string>;
+      expect(isApiOk(result)).toBe(true);
+      if (result.ok) {
+        expect(result.headers.get('Idempotency-Replayed')).toBe('true');
+      }
+    });
+  });
+
+  describe('publicar()', () => {
+    const ID = '01960000-0000-7000-0000-000000000099';
+
+    it('faz POST /api/editais/{id}/publicar com Idempotency-Key + vendor MIME v1 e devolve 204 ApiResult.ok', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a805b';
+      const promise = firstValueFrom(api.publicar(ID, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(`${BASE}/api/editais/${ID}/publicar`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.headers.get('Idempotency-Key')).toBe(key);
+      // Vendor MIME mantido por simetria com obter()/listar() (ADR-0028).
+      expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
+      expect(req.request.body).toBeNull();
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      const result = (await promise) as ApiResult<void>;
+      expect(isApiOk(result)).toBe(true);
+      if (result.ok) {
+        expect(result.status).toBe(204);
+      }
+    });
+
+    it('mapeia 422 ja_publicado como ApiFailure preservando o code', async () => {
+      const key = '01890a5d-ac96-774b-bcce-b302099a805c';
+      const promise = firstValueFrom(api.publicar(ID, withIdempotencyKey(key)));
+
+      controller.expectOne(`${BASE}/api/editais/${ID}/publicar`).flush(
+        {
+          type: 'about:blank',
+          title: 'Edital já publicado',
+          status: 422,
+          code: 'uniplus.selecao.edital.ja_publicado',
+          traceId: 'tx-publicar',
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+
+      const result = (await promise) as ApiResult<void>;
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problem.code).toBe('uniplus.selecao.edital.ja_publicado');
+      }
+    });
+
+    it('encoding seguro do path param em IDs com caracteres especiais', () => {
+      const idComEspaco = 'edt with space/01';
+      const key = '01890a5d-ac96-774b-bcce-b302099a805d';
+      firstValueFrom(api.publicar(idComEspaco, withIdempotencyKey(key)));
+
+      const req = controller.expectOne(
+        `${BASE}/api/editais/${encodeURIComponent(idComEspaco)}/publicar`,
+      );
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    });
+  });
+});
