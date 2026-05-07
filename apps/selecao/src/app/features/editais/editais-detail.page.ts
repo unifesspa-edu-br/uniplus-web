@@ -14,13 +14,30 @@ import { RouterLink } from '@angular/router';
 import {
   ProblemI18nService,
   idempotencyKey,
+  useApiResource,
   withIdempotencyKey,
+  withVendorMime,
 } from '@uniplus/shared-core';
-import { EditaisApi, EditalDto } from '@uniplus/shared-data';
+import {
+  EditaisApi,
+  EditalDto,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data';
 import { ConfirmDialogComponent } from '@uniplus/shared-ui';
 
 /**
  * Container (ADR-0017) da feature Editais — detalhe + ação Publicar.
+ *
+ * **GET reativo via `useApiResource` (ADR-0018):** o helper envelopa o
+ * `httpResource` Angular 21 sobre o `apiResultInterceptor`, exibindo
+ * `data()`/`problem()`/`isLoading()` como signals. Quando o input `id` muda,
+ * o helper cancela a request anterior automaticamente — substitui o race
+ * guard manual do pattern legado.
+ *
+ * **POST `publicar` continua via `EditaisApi` + `HttpClient`** (guidance
+ * Angular oficial: `httpResource` é GET-only — mutações via HttpClient direto).
+ * O race guard do publish (id capturado no closure do submit) **fica** porque
+ * é mutação one-shot, não fetch reativo.
  *
  * **Gating do botão "Publicar":** baseado em `status === 'Rascunho'` (única
  * transição permitida hoje per `Edital.Publicar()` no domínio backend).
@@ -43,8 +60,8 @@ import { ConfirmDialogComponent } from '@uniplus/shared-ui';
     <header class="mb-5 flex items-start justify-between gap-4">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Detalhes do edital</h2>
-        @if (edital()) {
-          <p class="text-sm text-gray-600">{{ edital()!.numeroEdital }} — {{ edital()!.titulo }}</p>
+        @if (edital(); as e) {
+          <p class="text-sm text-gray-600">{{ e.numeroEdital }} — {{ e.titulo }}</p>
         }
       </div>
       <a
@@ -55,21 +72,21 @@ import { ConfirmDialogComponent } from '@uniplus/shared-ui';
       </a>
     </header>
 
-    @if (errorMessage()) {
+    @if (errorMessage(); as msg) {
       <div
         class="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
         role="alert"
       >
-        <span class="font-semibold">{{ errorMessage() }}</span>
+        <span class="font-semibold">{{ msg }}</span>
       </div>
     }
 
-    @if (mensagemSucesso()) {
+    @if (mensagemSucesso(); as sucesso) {
       <div
         class="mb-4 flex items-start gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
         role="status"
       >
-        <span class="font-semibold">{{ mensagemSucesso() }}</span>
+        <span class="font-semibold">{{ sucesso }}</span>
       </div>
     }
 
@@ -133,10 +150,44 @@ export class EditaisDetailPage {
   private readonly api = inject(EditaisApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly basePath = inject(SELECAO_BASE_PATH);
 
-  readonly edital = signal<EditalDto | null>(null);
-  readonly loading = signal<boolean>(false);
-  readonly errorMessage = signal<string | null>(null);
+  /**
+   * Resource reativo do GET `/api/editais/{id}`. Re-dispara automaticamente
+   * quando `id()` muda; a request anterior é cancelada nativamente pelo
+   * `httpResource` (race-cancellation — substitui o guard manual do pattern
+   * legado). Vendor MIME `edital v1` declarado no `HttpContext`
+   * (ADR-0028 backend, ADR-0016 cliente).
+   */
+  private readonly editalResource = useApiResource<EditalDto>(() => ({
+    url: `${this.basePath}/api/editais/${encodeURIComponent(this.id())}`,
+    context: withVendorMime('edital', 1),
+  }));
+
+  readonly edital = this.editalResource.data;
+  readonly loading = this.editalResource.isLoading;
+
+  /**
+   * Mensagem de erro consolidada — combina o `problem` da request GET
+   * (cancelado/limpo automaticamente quando `id` muda) com o erro do POST
+   * `publicar` (signal local, resetado via `effect` em mudança de `id`) e
+   * com o canal de erro do `httpResource` para o caso raro em que um
+   * interceptor não-HTTP lança fora do contrato `ApiResult` (ex.: erro
+   * síncrono em interceptor de auth/logging) — sem este fallback, o
+   * spinner desapareceria sem mensagem ao usuário.
+   */
+  private readonly publishErrorMessage = signal<string | null>(null);
+  readonly errorMessage = computed<string | null>(() => {
+    const httpProblem = this.editalResource.problem();
+    if (httpProblem) {
+      return this.problemI18n.resolve(httpProblem).title;
+    }
+    if (this.editalResource.error()) {
+      return 'Erro inesperado ao carregar edital.';
+    }
+    return this.publishErrorMessage();
+  });
+
   readonly submitting = signal<boolean>(false);
   readonly mensagemSucesso = signal<string | null>(null);
   readonly dialogVisivel = signal<boolean>(false);
@@ -153,21 +204,15 @@ export class EditaisDetailPage {
   });
 
   constructor() {
-    // Recarrega sempre que o input `id` mudar — caso de navegação entre
-    // /editais/:id1 → /editais/:id2 quando Angular reusa a mesma instância
-    // do componente. Sem isto, `edital()` ficaria stale e
-    // `confirmarPublicacao()` agiria contra o ID novo enquanto a UI mostra
-    // dados do anterior. `untracked` evita que mutations dentro do fetch
-    // re-disparem o effect.
+    // Reset de signals locais (publish flow) quando o input `id` muda. O
+    // estado do GET (`edital`/`loading`/`problem`) já é resetado nativamente
+    // pelo httpResource ao trocar dependências reativas — só precisamos
+    // limpar o que vive fora do Resource.
     effect(() => {
-      const currentId = this.id();
+      this.id();
       untracked(() => {
-        // Reset de estado dependente do ID anterior — só dispara quando o
-        // input muda. O refetch via publish (`confirmarPublicacao`) preserva
-        // `mensagemSucesso` porque chama `executarObterPorId` direto.
-        this.edital.set(null);
+        this.publishErrorMessage.set(null);
         this.mensagemSucesso.set(null);
-        this.executarObterPorId(currentId);
       });
     });
   }
@@ -182,7 +227,7 @@ export class EditaisDetailPage {
     }
     const idDoSubmit = this.id();
     this.submitting.set(true);
-    this.errorMessage.set(null);
+    this.publishErrorMessage.set(null);
     this.mensagemSucesso.set(null);
 
     this.api
@@ -199,41 +244,12 @@ export class EditaisDetailPage {
         }
         if (result.ok) {
           this.mensagemSucesso.set('Edital publicado com sucesso.');
-          // Refetch — bypassa guarda de `loading` para garantir reload
-          // pós-publicar mesmo se houver outra carga em voo. O guard interno
-          // de `executarObterPorId` ainda protege contra response stale.
-          this.executarObterPorId(idDoSubmit);
+          // Refetch via httpResource — cancela qualquer request em voo e
+          // dispara nova com a mesma URL atual.
+          this.editalResource.reload();
           return;
         }
-        this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
-      });
-  }
-
-  private executarObterPorId(id: string): void {
-    this.loading.set(true);
-    this.errorMessage.set(null);
-    // Mantém `edital` e `mensagemSucesso` intactos — quem chamou (`effect`
-    // de mudança de id ou refetch pós-publicar) decide o reset apropriado.
-
-    this.api
-      .obter(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        // Race guard: se o `id` corrente do componente mudou desde o início
-        // desta request (usuário navegou para outro `:id` mid-fetch), descarta
-        // a response stale. Sem isto, late response do id antigo poderia
-        // sobrescrever `edital`/`loading` do fetch do id novo (ADR-0017
-        // container responsabilidade — UI só reflete estado do id atual).
-        if (this.id() !== id) {
-          return;
-        }
-        this.loading.set(false);
-        if (result.ok) {
-          this.edital.set(result.data);
-          return;
-        }
-        this.edital.set(null);
-        this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
+        this.publishErrorMessage.set(this.problemI18n.resolve(result.problem).title);
       });
   }
 }
