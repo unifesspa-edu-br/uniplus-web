@@ -79,7 +79,9 @@ O `apiResultInterceptor` neutraliza o canal de erro do RxJS — captura `HttpErr
 
 Isso significa que `error()` é praticamente sempre `undefined` no contrato Uni+ — toda discriminação success/failure é via `value().ok`, e o helper expõe `data()` / `problem()` como atalhos signal-based.
 
-**Callers DEVEM tratar `error()` como fallback** — sem isso, um interceptor não-HTTP lançando síncrono faria `isLoading()` voltar a `false` sem mensagem ao usuário (spinner desapareceria silenciosamente). O `EditaisDetailPage` consolida esse fallback no `errorMessage` computed:
+**Invariante crítica do helper:** o `Resource.value()` nativo do Angular **lança `ResourceValueError` quando `status()` é `'error'`** (vide `_resource-chunk.mjs` em `@angular/core` 21). O wrapper guarda explicitamente — `value`/`data`/`problem` checam `error()` antes de ler `value()` interno e retornam ausência segura (`undefined`/`null`). Sem este guard, qualquer leitura desses signals em estado de erro propagaria a exceção durante change detection e crasharia a página em vez de renderizar a mensagem de erro. Specs do helper validam (`expect(() => resource.data()).not.toThrow()`).
+
+**Callers PODEM tratar `error()` como fallback opcional** — para distinguir "escape de interceptor" de "ainda carregando" e exibir mensagem específica. Sem o tratamento, o usuário vê o spinner sumir sem feedback. O `EditaisDetailPage` consolida o fallback no `errorMessage` computed:
 
 ```ts
 readonly errorMessage = computed<string | null>(() => {
