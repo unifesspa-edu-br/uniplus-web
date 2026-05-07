@@ -80,7 +80,15 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
   });
 
   describe.each(apiFiles)('%s', (filePath) => {
-    const source = fs.readFileSync(filePath, 'utf-8');
+    const rawSource = fs.readFileSync(filePath, 'utf-8');
+
+    // Strip comentários globalmente — todos os checks operam sobre código
+    // executável, não JSDoc/inline. Evita falsos negativos onde exemplos
+    // em comentários satisfazem regex de production code (problema
+    // recorrente em fitness baseado em regex).
+    const source = rawSource
+      .replace(/\/\*[\s\S]*?\*\//g, '') // /* ... */ e /** ... */
+      .replace(/\/\/.*$/gm, '');         // // linha
 
     it('expõe classe @Injectable', () => {
       expect(source).toMatch(/@Injectable\(\{[^}]*providedIn:\s*'root'[^}]*\}\)/);
@@ -127,17 +135,9 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
       );
     });
 
-    it('chama withVendorMime em pelo menos 1 ponto do código (uso real, não comentário)', () => {
-      // Strip comentários antes de contar — exemplos em JSDoc com
-      // `withVendorMime('edital', 1)` poderiam contar como call site real,
-      // criando falso negativo (suíte passaria mesmo se TODOS call sites
-      // executáveis fossem removidos). Strip cobre `// linha`, `/* bloco */`
-      // (incl. multi-line) e `/** JSDoc */`.
-      const sourceSemComentarios = source
-        .replace(/\/\*[\s\S]*?\*\//g, '') // /* ... */ e /** ... */
-        .replace(/\/\/.*$/gm, '');         // // linha
-
-      const callSites = sourceSemComentarios.match(/withVendorMime\([^)]+\)/g) ?? [];
+    it('chama withVendorMime em pelo menos 1 ponto do código (uso real)', () => {
+      // `source` já está sem comentários (strip global no escopo do describe.each).
+      const callSites = source.match(/withVendorMime\([^)]+\)/g) ?? [];
       expect(callSites.length).toBeGreaterThan(0);
     });
   });
