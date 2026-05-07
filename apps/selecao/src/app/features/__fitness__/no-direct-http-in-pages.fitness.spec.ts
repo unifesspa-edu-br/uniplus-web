@@ -38,8 +38,15 @@ describe('Fitness — pages container em apps/selecao/src/app/features/', () => 
   });
 
   describe.each(pageFiles)('%s', (filePath) => {
-    const source = fs.readFileSync(filePath, 'utf-8');
+    const rawSource = fs.readFileSync(filePath, 'utf-8');
     const relativePath = path.relative(path.resolve(__dirname, '../../../../../..'), filePath);
+
+    // Strip comentários antes dos checks para evitar que exemplos em JSDoc
+    // (ex.: "// evitar inject(HttpClient)") quebrem o fitness com falsos
+    // positivos. Cobre `// linha`, `/* bloco */` e `/** JSDoc */`.
+    const source = rawSource
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '');
 
     it('NÃO importa HttpClient de @angular/common/http (use service em @uniplus/shared-data)', () => {
       // Falha se o page tem import de HttpClient — pages devem orquestrar
