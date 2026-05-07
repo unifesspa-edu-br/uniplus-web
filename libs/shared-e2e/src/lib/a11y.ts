@@ -35,9 +35,13 @@ export interface RunAxeOptions {
    */
   readonly include?: string;
   /**
-   * Selectors CSS a excluir da análise. Útil para suprimir elementos com
-   * violations conhecidas em libs de terceiros (Keycloak login, PrimeNG
-   * components legados) enquanto a equipe trabalha no fix.
+   * Selectors CSS a excluir da análise — cada elemento do array é um
+   * **seletor irmão** independente (não chain cross-frame). O helper
+   * encadeia `.exclude()` por seletor porque a API
+   * `AxeBuilder.exclude(SerialFrameSelector)` interpreta arrays como
+   * navegação `iframe → shadowDOM`, NÃO como múltiplos seletores root.
+   * Útil para suprimir elementos com violations conhecidas em libs de
+   * terceiros (Keycloak login, PrimeNG legados) enquanto há fix em curso.
    */
   readonly exclude?: readonly string[];
 }
@@ -73,8 +77,11 @@ export async function runAxeWcagAA(
     builder = builder.include(options.include);
   }
 
-  if (options.exclude && options.exclude.length > 0) {
-    builder = builder.exclude([...options.exclude]);
+  // Encadeia .exclude() por seletor — a API AxeBuilder interpreta arrays
+  // como navegação cross-frame (iframe → shadowDOM), NÃO como múltiplos
+  // seletores irmãos. Cada chamada acumula no exclude internal list.
+  for (const selector of options.exclude ?? []) {
+    builder = builder.exclude(selector);
   }
 
   return builder.analyze();
