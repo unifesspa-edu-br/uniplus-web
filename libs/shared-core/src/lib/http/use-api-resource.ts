@@ -68,9 +68,12 @@ export interface UseApiResourceRef<T> {
   readonly headers: Signal<HttpHeaders | undefined>;
   /**
    * Erro **fora** do contrato `ApiResult` — raro, porque o
-   * `apiResultInterceptor` envelopa todo HttpErrorResponse. Populado apenas
+   * `apiResultInterceptor` envelopa todo `HttpErrorResponse`. Populado apenas
    * quando algo escapa de toda a chain de interceptors (ex.: erro síncrono
-   * lançado por outro interceptor).
+   * lançado por outro interceptor de auth/logging). **Nunca lança** — leitura
+   * segura. Quando `error()` é truthy, `value()`/`data()`/`problem()` retornam
+   * ausência (`undefined`/`null`) por contrato deste helper, isolando o caller
+   * do throw nativo de `Resource.value()` em status `'error'`.
    */
   readonly error: Signal<Error | undefined>;
   /**
@@ -135,21 +138,32 @@ export function useApiResource<T>(
     return typeof next === 'string' ? { url: next } : next;
   }, options);
 
+  // `Resource.value()` **lança `ResourceValueError`** quando `status() ===
+  // 'error'` (caso real: interceptor não-HTTP que escapa do envelope `ApiResult`
+  // — vide ADR-0018 §"esta ADR não decide"). Sem o guard contra `error()`,
+  // `value()`/`data()`/`problem()` propagam a exceção durante change detection
+  // e a página crasha em vez de renderizar a mensagem de erro. O helper
+  // padroniza: em estado de erro, todos os derivados retornam ausência
+  // (`undefined`/`null`) e o caller diferencia via `error()` (que nunca lança).
+  const value: Signal<ApiResult<T> | undefined> = computed(() =>
+    resource.error() ? undefined : resource.value(),
+  );
+
   const data: Signal<T | null> = computed(() => {
+    if (resource.error()) {
+      return null;
+    }
     const envelope = resource.value();
     return envelope?.ok ? envelope.data : null;
   });
 
   const problem: Signal<ProblemDetails | null> = computed(() => {
+    if (resource.error()) {
+      return null;
+    }
     const envelope = resource.value();
     return envelope && !envelope.ok ? envelope.problem : null;
   });
-
-  // `httpResource.value` é `WritableSignal` em runtime — envelopar em
-  // `computed` garante que o consumer público receba um `Signal` somente-
-  // leitura genuíno (não apenas pelo tipo declarado), bloqueando `.set()`
-  // externo que driftaria do `status`/`statusCode`/`headers` do resource.
-  const value: Signal<ApiResult<T> | undefined> = computed(() => resource.value());
 
   return {
     value,

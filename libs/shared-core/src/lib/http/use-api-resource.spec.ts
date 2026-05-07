@@ -1,6 +1,7 @@
 import {
   HttpContext,
   HttpContextToken,
+  HttpInterceptorFn,
   HttpResourceRequest,
   provideHttpClient,
   withInterceptors,
@@ -287,5 +288,52 @@ describe('useApiResource', () => {
       code: 'Titulo.Vazio',
       message: 'Título obrigatório',
     });
+  });
+});
+
+/**
+ * Cenário isolado em describe próprio porque exige um interceptor adicional
+ * (`throwingInterceptor`) que faz o `Resource.value()` nativo do Angular
+ * lançar `ResourceValueError`. O wrapper deve isolar o caller — `data()`/
+ * `problem()`/`value()` retornam ausência segura em estado `'error'`, em vez
+ * de propagar a exceção e crashar a página durante change detection.
+ */
+describe('useApiResource — guarda contra Resource.value() throw em status error', () => {
+  it('data()/problem()/value() retornam ausência sem lançar quando status=error', async () => {
+    // Interceptor sintético que lança Error não-HttpErrorResponse ANTES do
+    // request sair (caso real: interceptor de auth/logging/telemetria com bug
+    // síncrono). O throw escapa do `envelopeFailure` do apiResultInterceptor
+    // (que só captura HttpErrorResponse — linha 89: `if (!(error instanceof
+    // HttpErrorResponse)) throw error;`) e chega ao httpResource em status
+    // 'error', causando `Resource.value()` a lançar `ResourceValueError` se
+    // chamado sem guard.
+    const throwingInterceptor: HttpInterceptorFn = () => {
+      throw new Error('synthetic non-HTTP failure (e.g. logging interceptor)');
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor, throwingInterceptor])),
+        provideHttpClientTesting(),
+      ],
+    });
+    const appRef = TestBed.inject(ApplicationRef);
+    const injector = TestBed.inject(Injector);
+    const resource = TestBed.runInInjectionContext(() =>
+      useApiResource<Edital>(() => '/api/editais/edt-1', { injector }),
+    );
+    appRef.tick();
+    await appRef.whenStable();
+
+    // Status do Resource é 'error' (interceptor throwing escapou da chain),
+    // mas o helper isola: data()/problem()/value() retornam ausência segura.
+    expect(resource.status()).toBe('error');
+    expect(resource.error()).toBeInstanceOf(Error);
+    expect(() => resource.data()).not.toThrow();
+    expect(() => resource.problem()).not.toThrow();
+    expect(() => resource.value()).not.toThrow();
+    expect(resource.data()).toBeNull();
+    expect(resource.problem()).toBeNull();
+    expect(resource.value()).toBeUndefined();
   });
 });
