@@ -98,6 +98,25 @@ describe('FormFieldComponent', () => {
     expect(hintEl.id).toMatch(/^ui-form-field-hint-\d+$/);
   });
 
+  it('errorMessage = "" (string vazia) é tratado como ausência de erro — hint visível, aria-invalid ausente', () => {
+    fixture.componentRef.setInput('errorMessage', '');
+    fixture.componentRef.setInput('hint', 'Hint visível.');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+
+    const ps = fixture.debugElement.queryAll(By.css('p'));
+    const hintEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-hint-'))!.nativeElement as HTMLParagraphElement;
+    const erroEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-error-'))!.nativeElement as HTMLParagraphElement;
+
+    // Hint visível, erro oculto — comportamento simétrico para "sem erro"
+    // (string vazia E null tratados igual, evitando inconsistência UX/a11y).
+    expect(hintEl.hasAttribute('hidden')).toBe(false);
+    expect(erroEl.hasAttribute('hidden')).toBe(true);
+    expect(input.getAttribute('aria-describedby')).toBe(hintEl.id);
+  });
+
   it('errorMessage tem precedência sobre hint quando ambos presentes (hint oculto)', () => {
     fixture.componentRef.setInput('hint', 'Hint que deveria ser ignorado.');
     fixture.componentRef.setInput('errorMessage', 'Erro vence.');
