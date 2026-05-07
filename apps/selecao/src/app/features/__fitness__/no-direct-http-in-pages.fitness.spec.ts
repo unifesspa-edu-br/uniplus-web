@@ -61,8 +61,11 @@ describe('Fitness — pages container em apps/selecao/src/app/features/', () => 
       );
     });
 
-    it('NÃO faz inject(HttpClient) (signal de HTTP direto na page)', () => {
-      const injectsHttpClient = /inject\(\s*HttpClient\s*\)/.test(source);
+    it('NÃO faz inject(HttpClient) (incluindo variantes com options)', () => {
+      // Cobre `inject(HttpClient)`, `inject(HttpClient, { optional: true })`,
+      // `inject(HttpClient, { skipSelf: true })` etc. Vírgula OU parêntese
+      // depois de HttpClient — qualquer variante de inject() do Angular DI.
+      const injectsHttpClient = /inject\(\s*HttpClient\s*[,)]/.test(source);
       expect(injectsHttpClient).toBe(
         false,
         `\nArquivo: ${relativePath}\n` +
