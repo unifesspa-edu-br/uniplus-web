@@ -28,11 +28,13 @@ test.describe('Editais — CRUD', () => {
 
     await expect(page).toHaveURL(/\/editais\/novo$/);
     await expect(page.locator('h2')).toContainText('Novo edital');
-    await expect(page.locator('#numeroEdital')).toBeVisible();
-    await expect(page.locator('#anoEdital')).toBeVisible();
-    await expect(page.locator('#titulo')).toBeVisible();
-    await expect(page.locator('#tipoProcesso')).toBeVisible();
-    await expect(page.locator('#maximoOpcoesCurso')).toBeVisible();
+    // Selectors por label são semânticos + resilientes a mudança de IDs
+    // (o ui-form-field wrapper gera IDs únicos por instância, não estáveis).
+    await expect(page.getByLabel('Número do edital')).toBeVisible();
+    await expect(page.getByLabel('Ano')).toBeVisible();
+    await expect(page.getByLabel('Título')).toBeVisible();
+    await expect(page.getByLabel('Tipo de processo (código numérico)')).toBeVisible();
+    await expect(page.getByLabel('Máximo de opções de curso')).toBeVisible();
     // Submit fica disabled enquanto form invalid + nenhum campo preenchido.
     await expect(page.getByRole('button', { name: 'Criar edital' })).toBeDisabled();
   });

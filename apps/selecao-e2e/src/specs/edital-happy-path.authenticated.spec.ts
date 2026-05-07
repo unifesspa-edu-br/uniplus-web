@@ -38,8 +38,10 @@ test.describe('Editais — smoke autenticado (F9)', () => {
 
     await expect(page).toHaveURL(/\/editais\/novo$/);
     await expect(page.locator('h2')).toContainText('Novo edital');
-    await expect(page.locator('#numeroEdital')).toBeVisible();
-    await expect(page.locator('#titulo')).toBeVisible();
+    // Selectors por label são semânticos + resilientes a IDs únicos
+    // gerados pelo wrapper ui-form-field.
+    await expect(page.getByLabel('Número do edital')).toBeVisible();
+    await expect(page.getByLabel('Título')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Criar edital' })).toBeDisabled();
   });
 
