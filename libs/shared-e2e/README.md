@@ -61,6 +61,31 @@ export default defineConfig({
 
 Specs com sufixo `*.authenticated.spec.ts` rodam no project `*-authenticated` e abrem direto na app autenticada — sem login UI dentro do test. O `auth-setup` só roda quando algum project que declara `dependencies: ['auth-setup']` é selecionado, então `--project=chromium` sozinho NÃO dispara o setup nem exige `KEYCLOAK_ADMIN_PASSWORD`.
 
+### Acessibilidade WCAG 2.1 A + AA
+
+- `runAxeWcagAA(page, options?)` — executa `@axe-core/playwright` filtrado por tags WCAG 2.1 A + AA. Retorna `AxeResults`; caller asserta sobre `violations`.
+- `WCAG_A_AA_TAGS` — constante `['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']`.
+- `RunAxeOptions` — `tags?` (override), `include?` (subtree), `exclude?` (selectors a suprimir).
+
+#### Padrão de uso
+
+```ts
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { test, expect } from '../fixtures/auth.fixture';
+
+test('GET /editais sem violations a11y', async ({ page }) => {
+  await page.goto('/editais');
+  await expect(page.locator('h2', { hasText: 'Editais' })).toBeVisible();
+  // SEMPRE aguardar estado estável antes de runAxeWcagAA — axe analisa
+  // o DOM no momento da chamada; lazy-loaded ou em transição é perdido.
+
+  const results = await runAxeWcagAA(page);
+  expect(results.violations).toEqual([]);
+});
+```
+
+Specs com sufixo `*.a11y.authenticated.spec.ts` (ou só `*.authenticated.spec.ts`) rodam no project `selecao-authenticated` — usam o mesmo `storageState` do setup project. Conformidade alvo: e-MAG 3.1 + WCAG 2.1 AA (autarquia federal — Lei 13.146/2015).
+
 ## Padrão #20 — JWT só em memória (importante)
 
 O `storageState` do Playwright persiste **apenas cookies de sessão do Keycloak** no contexto do browser de teste. Quando o spec carrega a app, o `keycloak-angular` faz silent-SSO via iframe usando essas cookies e popula o JWT em memória do `KeycloakService`. **A invariante "JWT nunca em localStorage/sessionStorage" do código de produção continua valendo** — o storageState é mecanismo de isolamento de browser context apenas para test runs, não pattern de produção.
