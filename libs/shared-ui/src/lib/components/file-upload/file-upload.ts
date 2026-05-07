@@ -18,7 +18,7 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
   template: `
     <div class="flex flex-col gap-2">
       @if (label()) {
-        <label for="file-upload-input" class="text-sm font-medium text-gray-700">{{ label() }}</label>
+        <label [attr.for]="inputId" class="text-sm font-medium text-gray-700">{{ label() }}</label>
       }
       <button
         #dropZone
@@ -27,7 +27,7 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
         [class.border-unifesspa-primary]="isDragging()"
         [class.bg-blue-50]="isDragging()"
         [attr.aria-label]="ariaLabel()"
-        [attr.aria-describedby]="error() ? 'file-upload-error' : null"
+        [attr.aria-describedby]="error() ? errorId : null"
         (click)="openFilePicker()"
         (dragover)="$event.preventDefault(); onDragOver()"
         (dragleave)="onDragLeave()"
@@ -45,7 +45,7 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
       </button>
       <input
         #fileInput
-        id="file-upload-input"
+        [id]="inputId"
         type="file"
         class="hidden"
         [accept]="accept()"
@@ -66,12 +66,20 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
         </div>
       }
       @if (error(); as message) {
-        <small id="file-upload-error" class="text-xs text-red-600" role="alert">{{ message }}</small>
+        <small [id]="errorId" class="text-xs text-red-600" role="alert">{{ message }}</small>
       }
     </div>
   `,
 })
 export class FileUploadComponent {
+  // Garante IDs únicos por instância para isolar `for`/`aria-describedby`
+  // quando há múltiplos `<ui-file-upload>` na mesma página.
+  private static instanceCount = 0;
+  private readonly instanceId = `ui-file-upload-${++FileUploadComponent.instanceCount}`;
+
+  readonly inputId = `${this.instanceId}-input`;
+  readonly errorId = `${this.instanceId}-error`;
+
   readonly label = input<string>('');
   readonly accept = input<string>('.pdf,.jpg,.jpeg,.png');
   readonly allowedMimeTypes = input<readonly string[]>([
