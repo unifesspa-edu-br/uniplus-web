@@ -43,6 +43,9 @@ export type {
   ProblemOverride,
 } from './problem-i18n.service';
 
+export { useApiResource } from './use-api-resource';
+export type { UseApiResourceRef } from './use-api-resource';
+
 export {
   buildVendorMimeAccept,
   VENDOR_MIME_TOKEN,
