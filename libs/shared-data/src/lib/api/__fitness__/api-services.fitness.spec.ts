@@ -117,9 +117,14 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
       expect(violacoes).toEqual([] as string[]);
     });
 
-    it('importa withVendorMime de @uniplus/shared-core (versionamento per-resource ADR-0016/0028)', () => {
-      expect(source).toMatch(/from\s+['"]@uniplus\/shared-core['"]/);
-      expect(source).toMatch(/withVendorMime/);
+    it('importa withVendorMime DE @uniplus/shared-core (regex bind import-source ADR-0016/0028)', () => {
+      // Regex única que valida `withVendorMime` está na lista de imports de
+      // `@uniplus/shared-core` — proíbe falso negativo onde o service importa
+      // ApiResult de shared-core mas withVendorMime de outra lib qualquer.
+      // Cobre imports multi-linha via [\s\S] dentro de {}.
+      expect(source).toMatch(
+        /import\s+(?:type\s+)?\{[\s\S]*?\bwithVendorMime\b[\s\S]*?\}\s+from\s+['"]@uniplus\/shared-core['"]/,
+      );
     });
 
     it('chama withVendorMime em pelo menos 1 ponto do código (uso real, não comentário)', () => {
