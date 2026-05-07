@@ -135,10 +135,26 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
       );
     });
 
-    it('chama withVendorMime em pelo menos 1 ponto do código (uso real)', () => {
-      // `source` já está sem comentários (strip global no escopo do describe.each).
-      const callSites = source.match(/withVendorMime\([^)]+\)/g) ?? [];
-      expect(callSites.length).toBeGreaterThan(0);
+    it('toda chamada this.http.get(...) compõe withVendorMime no contexto (ADR-0016)', () => {
+      // ADR-0016 cobre vendor MIME em GETs (Accept versionado). Mutações
+      // (POST/PUT/PATCH) ficam fora — body de mutação é versionado por
+      // Content-Type quando aplicável, decisão fica para ADR futura
+      // (ADR-0016 §"Esta ADR não decide" sobre POST/PUT). Invariante: ≥1
+      // call site de withVendorMime() para cada this.http.get<> existente.
+      const getCalls = (source.match(/this\.http\.get</g) ?? []).length;
+      const vendorMimeCalls = (source.match(/withVendorMime\([^)]+\)/g) ?? []).length;
+
+      // Sanity: arquivo sem GETs (futuro service só de mutação) ainda passa
+      // sem withVendorMime — não força redundância.
+      if (getCalls === 0) {
+        return;
+      }
+
+      expect(vendorMimeCalls).toBeGreaterThanOrEqual(
+        getCalls,
+        `\nEsperado ≥${getCalls} call sites de withVendorMime() (1 por this.http.get<>); ` +
+          `encontrado ${vendorMimeCalls}. ADR-0016 exige Accept versionado em todo GET de recurso versionado.`,
+      );
     });
   });
 });
