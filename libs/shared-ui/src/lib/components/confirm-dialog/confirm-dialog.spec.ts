@@ -1,165 +1,164 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfirmDialogComponent } from './confirm-dialog';
 
 describe('ConfirmDialogComponent', () => {
-  const DEFAULT_CONFIRM_LABEL = 'Confirmar';
-  const DEFAULT_CANCEL_LABEL = 'Cancelar';
-
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [ConfirmDialogComponent] });
   });
 
-  function setup(opt?: { confirmLabel?: string, cancelLabel?: string } ) {
+  function setup() {
     const fixture: ComponentFixture<ConfirmDialogComponent> =
       TestBed.createComponent(ConfirmDialogComponent);
-    fixture.detectChanges();
     const component = fixture.componentInstance;
-    const getDialogEl = () =>
-      fixture.debugElement.query(By.css('[role="dialog"]')).nativeElement as HTMLDivElement;
-    const getButtons = () => fixture.debugElement.queryAll(By.css('button'));
-    const getCancelButtonEl = () => getButtons().find(b => b.nativeElement.textContent.trim() === (opt?.cancelLabel ?? DEFAULT_CANCEL_LABEL))?.nativeElement as HTMLButtonElement;
-    const getConfirmButtonEl = () => getButtons().find(b => b.nativeElement.textContent.trim() === (opt?.confirmLabel ?? DEFAULT_CONFIRM_LABEL))?.nativeElement as HTMLButtonElement;
-    const confirmedOutputSpy = vi.spyOn(component.confirmed, 'emit');
-    const cancelledOutputSpy = vi.spyOn(component.cancelled, 'emit');
+
+    const dialog = () => fixture.debugElement.query(By.css('[role="dialog"]'));
+    const heading = () => fixture.debugElement.query(By.css('h3'));
+    const message = () => fixture.debugElement.query(By.css('p'));
+    const cancelButton = () =>
+      fixture.debugElement.query(By.css('[data-testid="confirm-dialog-cancel"]'));
+    const confirmButton = () =>
+      fixture.debugElement.query(By.css('[data-testid="confirm-dialog-confirm"]'));
+    const confirmedSpy = vi.spyOn(component.confirmed, 'emit');
+    const cancelledSpy = vi.spyOn(component.cancelled, 'emit');
+
     return {
       fixture,
       component,
-      getDialogEl,
-      getCancelButtonEl,
-      getConfirmButtonEl,
-      confirmedOutputSpy,
-      cancelledOutputSpy
+      dialog,
+      heading,
+      message,
+      cancelButton,
+      confirmButton,
+      confirmedSpy,
+      cancelledSpy,
     };
   }
 
-  it('inicializa o componente corretamente', () => {
-    const { component } = setup();
-    expect(component).toBeTruthy();
-  });
-
-  it('renderiza o componente sem nós filhos no DOM quando visible() é false (default)', () => {
-    const { fixture } = setup();
-    expect(fixture.debugElement.children.length).toBe(0);
-  });
-
-  it('renderiza o dialog quando o input visible() é inicializado com o valor true', () => {
-    const { fixture, getDialogEl, getCancelButtonEl, getConfirmButtonEl } = setup();
+  function open(fixture: ComponentFixture<ConfirmDialogComponent>): void {
     fixture.componentRef.setInput('visible', true);
     fixture.detectChanges();
+  }
 
-    const headingEl = fixture.debugElement.query(By.css('h3')).nativeElement as HTMLHeadingElement;
-    const paragraphEl = fixture.debugElement.query(By.css('p')).nativeElement as HTMLParagraphElement;
-    const cancelButtonEl = getCancelButtonEl();
-    const confirmButtonEl = getConfirmButtonEl();
-    const dialogEl = getDialogEl();
+  describe('estado inicial', () => {
+    it('inicializa o componente sem erros', () => {
+      const { component } = setup();
+      expect(component).toBeTruthy();
+    });
 
-    expect(dialogEl).toBeTruthy();
-    expect(headingEl).toBeTruthy();
-    expect(headingEl.textContent).toBe('Confirmação');
-    expect(paragraphEl.textContent).toBe('Deseja realmente prosseguir?');
-    expect(confirmButtonEl.textContent?.trim()).toBe('Confirmar');
-    expect(cancelButtonEl.textContent?.trim()).toBe('Cancelar');
+    it('não renderiza nada quando visible() é false (default)', () => {
+      const { fixture } = setup();
+      fixture.detectChanges();
+      expect(fixture.debugElement.children.length).toBe(0);
+    });
   });
 
-  it('emite um evento de output cancelled() quando clicar no botão cancelar', () => {
-    const { fixture, component, getCancelButtonEl, cancelledOutputSpy } = setup();
-    fixture.componentRef.setInput('visible', true);
-    fixture.detectChanges();
+  describe('quando visible() é true', () => {
+    it('renderiza o dialog com role e aria-modal corretos para leitores de tela', () => {
+      const { fixture, dialog } = setup();
+      open(fixture);
 
-    const cancelButtonEl = getCancelButtonEl();
-    cancelButtonEl.click();
-    fixture.detectChanges();
+      const dialogEl = dialog().nativeElement as HTMLElement;
+      expect(dialogEl.getAttribute('role')).toBe('dialog');
+      expect(dialogEl.getAttribute('aria-modal')).toBe('true');
+    });
 
-    expect(component.visible()).toBe(false);
-    expect(cancelledOutputSpy).toHaveBeenCalled();
+    it('usa textos default de título, mensagem e labels', () => {
+      const { fixture, heading, message, cancelButton, confirmButton } = setup();
+      open(fixture);
+
+      expect(heading().nativeElement.textContent.trim()).toBe('Confirmação');
+      expect(message().nativeElement.textContent.trim()).toBe('Deseja realmente prosseguir?');
+      expect(cancelButton().nativeElement.textContent.trim()).toBe('Cancelar');
+      expect(confirmButton().nativeElement.textContent.trim()).toBe('Confirmar');
+    });
   });
 
-  it('emite um evento de output confirmed() quando clicar no botão confirmar', () => {
-    const { fixture, component, getConfirmButtonEl, confirmedOutputSpy } = setup();
-    fixture.componentRef.setInput('visible', true);
-    fixture.detectChanges();
+  describe('emissão de eventos', () => {
+    it('emite cancelled() e fecha o dialog ao clicar em Cancelar', () => {
+      const { fixture, component, cancelButton, cancelledSpy } = setup();
+      open(fixture);
 
-    const confirmButtonEl = getConfirmButtonEl();
-    confirmButtonEl.click();
-    fixture.detectChanges();
+      (cancelButton().nativeElement as HTMLButtonElement).click();
+      fixture.detectChanges();
 
-    expect(component.visible()).toBe(false);
-    expect(confirmedOutputSpy).toHaveBeenCalled();
+      expect(cancelledSpy).toHaveBeenCalledOnce();
+      expect(component.visible()).toBe(false);
+    });
+
+    it('emite confirmed() e fecha o dialog ao clicar em Confirmar', () => {
+      const { fixture, component, confirmButton, confirmedSpy } = setup();
+      open(fixture);
+
+      (confirmButton().nativeElement as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(confirmedSpy).toHaveBeenCalledOnce();
+      expect(component.visible()).toBe(false);
+    });
+
+    it('não emite cancelled() quando o usuário clica em Confirmar', () => {
+      const { fixture, confirmButton, cancelledSpy } = setup();
+      open(fixture);
+
+      (confirmButton().nativeElement as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(cancelledSpy).not.toHaveBeenCalled();
+    });
   });
 
-  it('renderiza um título customizado', () => {
-    const { fixture, component } = setup();
-    fixture.componentRef.setInput('visible', true);
-    const title = 'Tela de Confirmação';
-    fixture.componentRef.setInput('title', title);
-    fixture.detectChanges();
+  describe('inputs customizados', () => {
+    it('aceita título customizado', () => {
+      const { fixture, heading } = setup();
+      const titulo = 'Tela de Confirmação';
+      fixture.componentRef.setInput('title', titulo);
+      open(fixture);
 
-    const headingEl = fixture.debugElement.query(By.css('h3')).nativeElement as HTMLHeadingElement;
+      expect(heading().nativeElement.textContent.trim()).toBe(titulo);
+    });
 
-    expect(component.title()).toBe(title);
-    expect(headingEl.textContent?.trim()).toBe(component.title());
+    it('aceita mensagem customizada', () => {
+      const { fixture, message } = setup();
+      const mensagem = 'Deseja realmente prosseguir com a operação?';
+      fixture.componentRef.setInput('message', mensagem);
+      open(fixture);
+
+      expect(message().nativeElement.textContent.trim()).toBe(mensagem);
+    });
+
+    it('aceita label customizado para o botão de confirmação', () => {
+      const { fixture, confirmButton } = setup();
+      fixture.componentRef.setInput('confirmLabel', 'Aprovar matrícula');
+      open(fixture);
+
+      expect(confirmButton().nativeElement.textContent.trim()).toBe('Aprovar matrícula');
+    });
+
+    it('aceita label customizado para o botão de cancelar', () => {
+      const { fixture, cancelButton } = setup();
+      fixture.componentRef.setInput('cancelLabel', 'Voltar');
+      open(fixture);
+
+      expect(cancelButton().nativeElement.textContent.trim()).toBe('Voltar');
+    });
   });
 
-  it('renderiza um parágrafo customizado', () => {
-    const { fixture, component } = setup();
-    fixture.componentRef.setInput('visible', true);
-    const message = 'Deseja realmente prosseguir com a operação?';
-    fixture.componentRef.setInput('message', message);
-    fixture.detectChanges();
+  describe('confirmVariant()', () => {
+    it('aplica variant primary por default', () => {
+      const { fixture, confirmButton } = setup();
+      open(fixture);
 
-    const paragraphEl = fixture.debugElement.query(By.css('p')).nativeElement as HTMLParagraphElement;
+      expect(confirmButton().nativeElement.getAttribute('data-variant')).toBe('primary');
+    });
 
-    expect(component.message()).toBe(message);
-    expect(paragraphEl.textContent?.trim()).toBe(component.message());
-  });
+    it('aplica variant danger quando configurado', () => {
+      const { fixture, confirmButton } = setup();
+      fixture.componentRef.setInput('confirmVariant', 'danger');
+      open(fixture);
 
-  it('renderiza botão de confirmação com um texto customizado', () => {
-    const confirmLabel = 'Confirmar Operação';
-    const { fixture, component, getConfirmButtonEl } = setup({ confirmLabel: confirmLabel });
-    fixture.componentRef.setInput('visible', true);
-    fixture.componentRef.setInput('confirmLabel', confirmLabel);
-    fixture.detectChanges();
-
-    const confirmButtonEl = getConfirmButtonEl();
-
-    expect(confirmButtonEl.textContent?.trim()).toBe(confirmLabel);
-    expect(confirmButtonEl.textContent?.trim()).toBe(component.confirmLabel());
-  });
-
-  it('renderiza botão de cancelar com texto customizado', () => {
-    const cancelLabel = 'Cancelar Operação';
-    const { fixture, getCancelButtonEl } = setup({ cancelLabel: cancelLabel });
-    fixture.componentRef.setInput('visible', true);
-    fixture.componentRef.setInput('cancelLabel', cancelLabel);
-    fixture.detectChanges();
-
-    const cancelButtonEl = getCancelButtonEl();
-
-    expect(cancelButtonEl.textContent?.trim()).toBe(cancelLabel);
-  });
-
-  it('aplica classes css no botão de confirmação quando o input confirmVariant() é "primary" (default)', () => {
-    const { fixture, getConfirmButtonEl } = setup();
-    fixture.componentRef.setInput('visible', true);
-    fixture.detectChanges();
-
-    const confirmButtonEl = getConfirmButtonEl();
-
-    expect(confirmButtonEl.classList).toContain('bg-unifesspa-primary');
-    expect(confirmButtonEl.classList).toContain('hover:bg-blue-800');
-  });
-
-  it('aplica classes css no botão de confirmação quando o input confirmVariant() é "danger"', () => {
-    const { fixture, getConfirmButtonEl } = setup();
-    fixture.componentRef.setInput('visible', true);
-    fixture.componentRef.setInput('confirmVariant', 'danger');
-    fixture.detectChanges();
-
-    const confirmButtonEl = getConfirmButtonEl();
-
-    expect(confirmButtonEl.classList).toContain('bg-red-600');
-    expect(confirmButtonEl.classList).toContain('hover:bg-red-700');
+      expect(confirmButton().nativeElement.getAttribute('data-variant')).toBe('danger');
+    });
   });
 });
