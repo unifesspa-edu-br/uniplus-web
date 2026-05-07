@@ -122,12 +122,17 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
       expect(source).toMatch(/withVendorMime/);
     });
 
-    it('chama withVendorMime em pelo menos 1 ponto do código (uso real, não só import)', () => {
-      // Regex conta call sites — `withVendorMime(` em meio ao código (não só
-      // na linha de import). Pelo menos 1 = pelo menos 1 endpoint declara
-      // versão. Múltiplos seria preferível (cobre todos endpoints), mas
-      // forcar isto requer AST analysis — por ora, sinal mínimo.
-      const callSites = source.match(/withVendorMime\([^)]+\)/g) ?? [];
+    it('chama withVendorMime em pelo menos 1 ponto do código (uso real, não comentário)', () => {
+      // Strip comentários antes de contar — exemplos em JSDoc com
+      // `withVendorMime('edital', 1)` poderiam contar como call site real,
+      // criando falso negativo (suíte passaria mesmo se TODOS call sites
+      // executáveis fossem removidos). Strip cobre `// linha`, `/* bloco */`
+      // (incl. multi-line) e `/** JSDoc */`.
+      const sourceSemComentarios = source
+        .replace(/\/\*[\s\S]*?\*\//g, '') // /* ... */ e /** ... */
+        .replace(/\/\/.*$/gm, '');         // // linha
+
+      const callSites = sourceSemComentarios.match(/withVendorMime\([^)]+\)/g) ?? [];
       expect(callSites.length).toBeGreaterThan(0);
     });
   });
