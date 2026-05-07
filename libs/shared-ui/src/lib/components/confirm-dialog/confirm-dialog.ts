@@ -23,6 +23,7 @@ let dialogIdSeed = 0;
           <div class="mt-6 flex justify-end gap-3">
             <button
               type="button"
+              data-testid="confirm-dialog-cancel"
               class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               (click)="onCancel()"
             >
@@ -30,6 +31,8 @@ let dialogIdSeed = 0;
             </button>
             <button
               type="button"
+              data-testid="confirm-dialog-confirm"
+              [attr.data-variant]="confirmVariant()"
               class="rounded-md px-4 py-2 text-sm font-medium text-white"
               [ngClass]="confirmVariant() === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-unifesspa-primary hover:bg-blue-800'"
               (click)="onConfirm()"
