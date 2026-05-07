@@ -273,4 +273,44 @@ describe('FileUploadComponent', () => {
     expect(component.selectedFile()).toBe(valid);
     expect(component.error()).toContain('Tipo de arquivo não permitido');
   });
+
+  it('gera IDs únicos por instância para isolar `for`/`aria-describedby` em multi-upload', () => {
+    const first = TestBed.createComponent(FileUploadComponent);
+    const second = TestBed.createComponent(FileUploadComponent);
+    first.detectChanges();
+    second.detectChanges();
+
+    expect(first.componentInstance.inputId).not.toBe(second.componentInstance.inputId);
+    expect(first.componentInstance.errorId).not.toBe(second.componentInstance.errorId);
+
+    const firstInput = first.debugElement.query(By.css('input[type="file"]')).nativeElement as HTMLInputElement;
+    const secondInput = second.debugElement.query(By.css('input[type="file"]')).nativeElement as HTMLInputElement;
+
+    expect(firstInput.id).toBe(first.componentInstance.inputId);
+    expect(secondInput.id).toBe(second.componentInstance.inputId);
+    expect(firstInput.id).not.toBe(secondInput.id);
+  });
+
+  it('aria-describedby aponta para o errorId da própria instância quando há erro', () => {
+    const { fixture, dropZone, errorMessage } = setup();
+    pickFile(fixture, OVERSIZED_PDF());
+
+    const dropZoneEl = dropZone().nativeElement as HTMLButtonElement;
+    const errorEl = errorMessage().nativeElement as HTMLElement;
+
+    expect(dropZoneEl.getAttribute('aria-describedby')).toBe(errorEl.id);
+    expect(errorEl.id).toMatch(/^ui-file-upload-\d+-error$/);
+  });
+
+  it('label[for] aponta para o inputId da própria instância', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('label', 'Documento de identificação');
+    fixture.detectChanges();
+
+    const labelEl = fixture.debugElement.query(By.css('label')).nativeElement as HTMLLabelElement;
+    const inputEl = fixture.debugElement.query(By.css('input[type="file"]')).nativeElement as HTMLInputElement;
+
+    expect(labelEl.htmlFor).toBe(inputEl.id);
+    expect(labelEl.htmlFor).toMatch(/^ui-file-upload-\d+-input$/);
+  });
 });
