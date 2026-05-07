@@ -61,7 +61,7 @@ let formFieldIdSeed = 0;
     </p>
     <p
       [id]="hintId"
-      [hidden]="errorMessage() !== null || !hint()"
+      [hidden]="!!errorMessage() || !hint()"
       class="mt-1 text-xs text-gray-500"
     >
       {{ hint() }}
