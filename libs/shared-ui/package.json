@@ -8,7 +8,9 @@
     "@uniplus/shared-core": "*",
     "vite": "^7.0.0",
     "@analogjs/vite-plugin-angular": "^2.2.0",
-    "@nx/vite": "^22.6.0"
+    "@nx/vite": "^22.6.0",
+    "@org/shared-data": "0.0.1",
+    "@org/shared-utils": "0.0.1"
   },
   "sideEffects": false
 }

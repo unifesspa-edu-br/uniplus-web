@@ -24,6 +24,7 @@
       "@uniplus/shared-auth": ["libs/shared-auth/src/index.ts"],
       "@uniplus/shared-core": ["libs/shared-core/src/index.ts"],
       "@uniplus/shared-data": ["libs/shared-data/src/index.ts"],
+      "@org/shared-utils": ["libs/shared-utils/src/index.ts"],
       "@uniplus/shared-e2e": ["libs/shared-e2e/src/index.ts"]
     }
   },
