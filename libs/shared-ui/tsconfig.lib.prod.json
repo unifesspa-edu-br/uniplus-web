@@ -3,7 +3,12 @@
   "compilerOptions": {
     "declarationMap": false,
     "paths": {
-      "@uniplus/shared-utils": ["../../dist/libs/shared-utils"]
+      "@uniplus/shared-ui": ["libs/shared-ui/src/index.ts"],
+      "@uniplus/shared-auth": ["libs/shared-auth/src/index.ts"],
+      "@uniplus/shared-core": ["libs/shared-core/src/index.ts"],
+      "@uniplus/shared-data": ["libs/shared-data/src/index.ts"],
+      "@uniplus/shared-e2e": ["libs/shared-e2e/src/index.ts"],
+      "@uniplus/shared-utils": ["dist/libs/shared-utils"]
     }
   },
   "angularCompilerOptions": {}
