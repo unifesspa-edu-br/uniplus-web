@@ -32,7 +32,7 @@ import { UserHeaderInfoComponent } from '@uniplus/shared-auth';
       </main>
 
       <!-- Footer -->
-      <footer class="flex h-10 items-center justify-center bg-gray-100 text-xs text-gray-500">
+      <footer class="flex h-10 items-center justify-center bg-govbr-gray-2 text-xs text-govbr-gray-60">
         CEPS — Unifesspa &copy; {{ currentYear }}
       </footer>
     </div>
