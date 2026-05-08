@@ -3,7 +3,7 @@
   "compilerOptions": {
     "declarationMap": false,
     "paths": {
-      "@org/shared-utils": ["../../dist/libs/shared-utils"]
+      "@uniplus/shared-utils": ["../../dist/libs/shared-utils"]
     }
   },
   "angularCompilerOptions": {}
