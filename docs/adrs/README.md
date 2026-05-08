@@ -47,6 +47,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0016](0016-vendor-mime-consumer-via-http-context.md) | Vendor MIME consumer via `HttpContext` — `withVendorMime` declara o recurso e o `apiResultInterceptor` anexa `Accept` | accepted | 2026-05-06 |
 | [0017](0017-pattern-feature-page-container-presentational.md) | Páginas de feature no padrão container/presentational — `XxxPage` smart + `ui-*` dumb | accepted | 2026-05-06 |
 | [0018](0018-adocao-httpresource-via-wrapper-use-api-resource.md) | Adoção de `httpResource` Angular 21 via wrapper `useApiResource` em `shared-core` | accepted | 2026-05-07 |
+| [0019](0019-tokens-govbr-compartilhados-em-shared-ui.md) | Tokens Gov.br compartilhados em `libs/shared-ui/src/styles/govbr-tokens.css` + migração Tailwind 3→4 cross-app | proposed | 2026-05-07 |
 
 ## Como adicionar um novo ADR
 

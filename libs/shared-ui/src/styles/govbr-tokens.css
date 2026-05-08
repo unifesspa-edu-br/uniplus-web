@@ -1,0 +1,84 @@
+/* =============================================================================
+ * Tokens Gov.br DS — fonte compartilhada para os 3 apps de produção.
+ * =============================================================================
+ *
+ * Foundation extraída da POC `apps/poc-primeng/src/styles.css` (validada como
+ * referência arquitetural pelo ADR-0006/0007/0008). Este arquivo expõe os
+ * tokens como CSS custom properties em `:root`, deixando a decisão de como
+ * mapeá-los para utilitários Tailwind a cargo de cada app:
+ *
+ * - **Tailwind 4** (D.2/D.3 — selecao/ingresso/portal pós-migração):
+ *   `@theme inline { --color-govbr-primary: var(--color-govbr-primary); }`
+ *   no styles do app gera utilities `bg-govbr-primary` etc. apontando para
+ *   estes tokens (tokens compartilhados, declaração reflexiva).
+ * - **Tailwind 3 legado** (estado atual): apps consomem via CSS direto
+ *   (`color: var(--color-govbr-primary)`) ou via classes do próprio config
+ *   `unifesspa-*` ainda declarado por app — sem regressão visual durante
+ *   D.1 porque ninguém usa `bg-govbr-*` ainda.
+ *
+ * Conformidade: WCAG 2.1 AA (contraste validado pela POC) + Gov.br DS 3.7
+ * (Portaria SEI-MCOM 540/2020, IN SGD/ME 94/2022 — ADR-0006/0008).
+ * ==========================================================================*/
+
+:root {
+  /* Fonte institucional — Rawline (oficial Gov.br) com fallback Raleway. */
+  --font-govbr: 'Rawline', 'Raleway', sans-serif;
+
+  /* Paleta primária — @govbr-ds/core blue-warm-vivid. */
+  --color-govbr-primary: #1351b4;
+  --color-govbr-primary-hover: #155bcb;
+  --color-govbr-primary-dark: #0c326f;
+  --color-govbr-primary-darkest: #071d41;
+  --color-govbr-primary-light: #2670e8;
+  --color-govbr-primary-lightest: #edf5ff;
+
+  /* Cores de feedback. */
+  --color-govbr-success: #168821;
+  --color-govbr-success-light: #e7f4e9;
+  --color-govbr-warning: #ffcd07;
+  --color-govbr-warning-light: #fef0c8;
+  --color-govbr-danger: #e52207;
+  --color-govbr-danger-light: #fcf0ee;
+  --color-govbr-info: #1351b4;
+  --color-govbr-info-light: #edf5ff;
+
+  /* Focus ring — token oficial Gov.br DS (dourado tracejado, WCAG 2.1 AA). */
+  --color-govbr-gold: #c2850c;
+
+  /* Neutros. */
+  --color-govbr-pure-0: #ffffff;
+  --color-govbr-pure-100: #000000;
+  --color-govbr-gray-2: #f8f8f8;
+  --color-govbr-gray-5: #ededed;
+  --color-govbr-gray-10: #e6e6e6;
+  --color-govbr-gray-20: #cccccc;
+  --color-govbr-gray-40: #888888;
+  --color-govbr-gray-60: #636363;
+  --color-govbr-gray-80: #333333;
+
+  /* Tipografia — font-size tokens Gov.br (escala fixa em px). */
+  --text-govbr-xs: 11.2px;
+  --text-govbr-sm: 12.8px;
+  --text-govbr-base: 14px;
+  --text-govbr-md: 16px;
+  --text-govbr-lg: 20px;
+  --text-govbr-xl: 24px;
+  --text-govbr-2xl: 32px;
+  --text-govbr-3xl: 40px;
+
+  /* Border radius — 4px (input), 8px (dialog), 100px (pill button). */
+  --radius-govbr-sm: 4px;
+  --radius-govbr-md: 8px;
+  --radius-govbr-pill: 100px;
+
+  /* Escala de spacing — Gov.br DS (múltiplos de 4px). */
+  --spacing-govbr-1: 4px;
+  --spacing-govbr-2: 8px;
+  --spacing-govbr-3: 12px;
+  --spacing-govbr-4: 16px;
+  --spacing-govbr-5: 24px;
+  --spacing-govbr-6: 32px;
+  --spacing-govbr-7: 40px;
+  --spacing-govbr-8: 48px;
+  --spacing-govbr-9: 64px;
+}
