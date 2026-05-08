@@ -12,6 +12,31 @@ permissions:
   pull-requests: read
 
 jobs:
+  adr-lint:
+    name: ADR lint (MADR 4.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validar ADRs (MADR 4.0)
+        run: bash tools/adr-lint/validate.sh
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Markdown lint (markdownlint-cli2)
+        # Versão pinada em sincronia com tools/adr-lint/validate.sh:
+        # bump exige edição coordenada dos dois para preservar paridade
+        # dev↔CI (script local invoca o mesmo binary).
+        run: npx --yes markdownlint-cli2@0.22.1 'docs/adrs/**/*.md'
+
   main:
     runs-on: ubuntu-latest
     steps:
