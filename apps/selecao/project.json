@@ -13,14 +13,13 @@
         "outputPath": "dist/apps/selecao",
         "browser": "apps/selecao/src/main.ts",
         "tsConfig": "apps/selecao/tsconfig.app.json",
-        "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
             "input": "apps/selecao/public"
           }
         ],
-        "styles": ["apps/selecao/src/styles.scss"],
+        "styles": ["apps/selecao/src/styles.css"],
         "polyfills": ["zone.js"]
       },
       "configurations": {

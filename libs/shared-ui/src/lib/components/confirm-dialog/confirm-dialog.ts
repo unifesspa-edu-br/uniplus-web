@@ -34,7 +34,7 @@ let dialogIdSeed = 0;
               data-testid="confirm-dialog-confirm"
               [attr.data-variant]="confirmVariant()"
               class="rounded-md px-4 py-2 text-sm font-medium text-white"
-              [ngClass]="confirmVariant() === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-unifesspa-primary hover:bg-blue-800'"
+              [ngClass]="confirmVariant() === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-govbr-primary hover:bg-blue-800'"
               (click)="onConfirm()"
             >
               {{ confirmLabel() }}

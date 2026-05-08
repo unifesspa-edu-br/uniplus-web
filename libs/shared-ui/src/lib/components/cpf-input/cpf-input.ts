@@ -38,7 +38,7 @@ import { formatCpfProgressive } from '../../utils/cpf-format.util';
         [attr.aria-label]="label() ? null : ariaLabel()"
         [attr.aria-required]="required() ? 'true' : null"
         [attr.required]="required() ? '' : null"
-        class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-unifesspa-primary focus:outline-none focus:ring-1 focus:ring-unifesspa-primary"
+        class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-govbr-primary focus:outline-none focus:ring-1 focus:ring-govbr-primary"
         [class.border-red-500]="invalid()"
         [attr.aria-invalid]="invalid()"
         [attr.aria-describedby]="invalid() ? inputId() + '-error' : null"

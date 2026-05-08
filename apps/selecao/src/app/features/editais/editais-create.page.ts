@@ -116,7 +116,7 @@ interface CriarEditalForm {
         <button
           type="submit"
           [disabled]="submitting() || form.invalid"
-          class="rounded-md bg-unifesspa-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-unifesspa-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="rounded-md bg-govbr-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-govbr-primary disabled:cursor-not-allowed disabled:opacity-60"
         >
           {{ submitting() ? 'Enviando…' : 'Criar edital' }}
         </button>

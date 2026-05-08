@@ -23,8 +23,8 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
       <button
         #dropZone
         type="button"
-        class="flex w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 text-left transition-colors hover:border-unifesspa-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-unifesspa-primary"
-        [class.border-unifesspa-primary]="isDragging()"
+        class="flex w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 text-left transition-colors hover:border-govbr-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-govbr-primary"
+        [class.border-govbr-primary]="isDragging()"
         [class.bg-blue-50]="isDragging()"
         [attr.aria-label]="ariaLabel()"
         [attr.aria-describedby]="error() ? errorId : null"
@@ -36,7 +36,7 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
         <div class="text-center">
           <p class="text-sm text-gray-600">
             Arraste um arquivo aqui ou
-            <span class="font-medium text-unifesspa-primary underline">selecione do computador</span>
+            <span class="font-medium text-govbr-primary underline">selecione do computador</span>
           </p>
           <p class="mt-1 text-xs text-gray-500">
             {{ acceptLabel() }} &mdash; Tamanho máximo: {{ maxSizeMb() }}MB

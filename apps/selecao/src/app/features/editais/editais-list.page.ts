@@ -36,7 +36,7 @@ import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
       </div>
       <a
         routerLink="novo"
-        class="inline-flex shrink-0 items-center rounded-md bg-unifesspa-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
+        class="inline-flex shrink-0 items-center rounded-md bg-govbr-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-govbr-primary"
       >
         Novo edital
       </a>

@@ -124,7 +124,7 @@ import { ConfirmDialogComponent } from '@uniplus/shared-ui';
             type="button"
             data-testid="btn-publicar"
             [disabled]="submitting()"
-            class="rounded-md bg-unifesspa-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-unifesspa-primary disabled:cursor-not-allowed disabled:opacity-60"
+            class="rounded-md bg-govbr-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-govbr-primary disabled:cursor-not-allowed disabled:opacity-60"
             (click)="abrirConfirmacao()"
           >
             {{ submitting() ? 'Publicando…' : 'Publicar' }}

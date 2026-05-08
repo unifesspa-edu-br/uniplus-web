@@ -33,7 +33,7 @@ export interface DataTableColumn {
   template: `
     <div class="overflow-x-auto rounded-lg border border-gray-200">
       <table class="min-w-full divide-y divide-gray-200" role="grid">
-        <thead class="bg-unifesspa-primary">
+        <thead class="bg-govbr-primary">
           <tr>
             @for (col of columns(); track col.field) {
               <th
@@ -110,7 +110,7 @@ export interface DataTableColumn {
       <div class="mt-3 flex justify-center">
         <button
           type="button"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-unifesspa-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-govbr-primary disabled:cursor-not-allowed disabled:opacity-60"
           [disabled]="loading()"
           (click)="emitirLoadNext()"
         >

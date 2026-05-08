@@ -50,7 +50,7 @@ A questão é dupla: **(a)** como consolidar a fonte única da paleta institucio
 | Frente | Branch | Escopo | Issue |
 |---|---|---|---|
 | **D.1 — foundation** (esta PR) | `feature/210-d1-shared-ui-govbr-tokens-css` | `libs/shared-ui/src/styles/govbr-tokens.css` (45 tokens em `:root`) + 3 imports nos `styles.scss` dos apps | vincula `#210` (não fecha) |
-| **D.2 — `selecao` cutover** | `feature/210-d2-selecao-tailwind-4-govbr-tokens` | Migra `apps/selecao` para sintaxe TW4 (`@import "tailwindcss"` + `@theme inline` apontando para foundation) + substitui `unifesspa-*` por `govbr-*` (44 estimadas, escopo `selecao` + `libs/shared-ui` consumido por selecao) + a11y baseline re-rodada | vincula `#210` (não fecha) |
+| **D.2 — `selecao` cutover** | `feature/210-d2-selecao-tailwind-4-govbr-tokens` | Migra `apps/selecao` para sintaxe TW4 (`@import "tailwindcss"` + `@theme inline` apontando para foundation), **deleta `apps/selecao/tailwind.config.js`** (decisão A consolidada), renomeia `styles.scss` → `styles.css` (sai do Sass importer; alinha com POC), substitui `unifesspa-primary` por `govbr-primary` em 11 arquivos (5 em `apps/selecao` + 6 em `libs/shared-ui` consumido por selecao). `@source` cobre `app/**`, `libs/shared-ui/lib/**` e `libs/shared-auth/lib/**`. A11y baseline re-rodada na CI. | vincula `#210` (não fecha) |
 | **D.3 — `ingresso` + `portal`** | `feature/210-d3-ingresso-portal-tailwind-4-govbr-tokens` | Replica D.2 para `ingresso` e `portal`. Atualiza `CLAUDE.md` removendo "POC é referência" (agora apps de produção também são referência) | **Closes `#210`** |
 
 ### Forma do arquivo foundation (D.1)
@@ -97,6 +97,27 @@ Caminho relativo direto. Não precisa de `stylePreprocessorOptions.includePaths`
 
 `@theme inline` referencia (não duplica) os valores da foundation. Manutenção: editar `govbr-tokens.css` no shared-ui propaga aos 3 apps.
 
+### Decisão sobre `tailwind.config.js` (D.2/D.3)
+
+Tailwind 4 substitui o config JS por config CSS-first via `@theme`. Os 3 apps já têm `.postcssrc.json` apontando para `@tailwindcss/postcss` (plugin v4). O `tailwind.config.js` legado de cada app só declarava `content`, paleta `unifesspa-*`, e `fontFamily.sans`; as 3 responsabilidades têm equivalente nativo no CSS-first:
+
+- `content` → `@source './app/**/*.{ts,html}'` no `styles.css`.
+- Paleta `unifesspa-*` → substituída por `@theme inline` referenciando foundation D.1.
+- `fontFamily.sans` (Inter) → `font-family` literal no reset `html, body`.
+
+**Decidido (D.2 e replicado em D.3):** deletar `apps/<app>/tailwind.config.js` em vez de manter como bridge. Tailwind 4 detecta arquivos via `@source`; manter config JS adicionaria superfície de confusão sem ganho. Nenhuma utility custom dependia de `theme.extend.<foo>` além de cores e fonte.
+
+### Mapeamento `unifesspa-*` → `govbr-*` (D.2 + D.3)
+
+Substituições aplicadas pelas migrações D.2/D.3:
+
+| `unifesspa-*` (TW3) | hex legado | `govbr-*` (TW4) | hex Gov.br DS | Ocorrências |
+|---|---|---|---|---|
+| `unifesspa-primary` | `#003366` | `govbr-primary` | `#1351b4` | 14 (selecao + shared-ui em D.2; portal/layout em D.3) |
+| `unifesspa-secondary` | `#006633` | `govbr-success` | `#168821` | 1 (ingresso/layout em D.3) |
+
+`unifesspa-accent`, `unifesspa-danger`, `unifesspa-warning`, `unifesspa-success`, `unifesspa-info` não tinham consumidores reais em apps/libs (declaravam-se em `tailwind.config.js` mas nenhum HTML usava). Foram simplesmente eliminados ao deletar o config.
+
 ### Esta ADR não decide
 
 - **Migração de PrimeNG passthrough para PrimeNG vanilla** — fora de escopo; ADR-0007 mantém modo unstyled.
@@ -122,7 +143,8 @@ Caminho relativo direto. Não precisa de `stylePreprocessorOptions.includePaths`
 
 ### Neutras
 
-- `tailwind.config.js` por app continua existindo até D.2/D.3 — coexiste com a foundation sem conflito.
+- `tailwind.config.js` por app coexiste com a foundation sem conflito durante D.1 e é deletado em D.2/D.3 (decisão A documentada acima).
+- `apps/<app>/src/styles.scss` é renomeado para `styles.css` em D.2/D.3 — não usa nenhum recurso Sass e o `@import 'tailwindcss'` no Sass importer é deprecated (Sass 3.0.0 vai remover).
 
 ## Confirmação
 
