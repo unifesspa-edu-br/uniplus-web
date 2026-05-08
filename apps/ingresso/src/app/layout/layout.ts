@@ -10,7 +10,7 @@ import { UserHeaderInfoComponent } from '@uniplus/shared-auth';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex h-screen flex-col">
-      <header class="flex h-16 items-center justify-between bg-unifesspa-secondary px-6 text-white shadow-md">
+      <header class="flex h-16 items-center justify-between bg-govbr-success px-6 text-white shadow-md">
         <div class="flex items-center gap-3">
           <h1 class="text-lg font-bold">Ingresso — Uni+</h1>
         </div>
@@ -25,8 +25,8 @@ import { UserHeaderInfoComponent } from '@uniplus/shared-auth';
       <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
         <router-outlet />
       </main>
-      <footer class="flex h-10 items-center justify-center bg-gray-100 text-xs text-gray-500">
-        CEPS — Unifesspa &copy; {{ currentYear }}
+      <footer class="flex h-10 items-center justify-center bg-govbr-gray-2 text-xs text-govbr-gray-60">
+        CRCA — Unifesspa &copy; {{ currentYear }}
       </footer>
     </div>
   `,

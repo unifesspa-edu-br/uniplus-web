@@ -13,14 +13,13 @@
         "outputPath": "dist/apps/portal",
         "browser": "apps/portal/src/main.ts",
         "tsConfig": "apps/portal/tsconfig.app.json",
-        "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
             "input": "apps/portal/public"
           }
         ],
-        "styles": ["apps/portal/src/styles.scss"],
+        "styles": ["apps/portal/src/styles.css"],
         "polyfills": ["zone.js"]
       },
       "configurations": {

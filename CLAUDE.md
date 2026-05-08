@@ -37,35 +37,38 @@ libs/
 
 ## Estratégia de UI — PrimeNG unstyled + Gov.br Design System
 
-**Validado via POC (`apps/poc-primeng/`).** Esta é a estratégia obrigatória para todos os componentes do sistema.
+Estratégia validada pela POC (`apps/poc-primeng/`) e operacionalizada nos 3 apps de produção pela ADR-0019 (foundation D.1 + cutover Tailwind 4 D.2/D.3). Obrigatória para todos os componentes do sistema.
 
 ### Arquitetura de estilização
 
 ```
-@govbr-ds/core (tokens CSS) → Tailwind @theme (46 tokens) → PrimeNG PassThrough (classes por slot)
+foundation Gov.br (libs/shared-ui/src/styles/govbr-tokens.css → :root)
+  → Tailwind 4 @theme inline (utilities bg-govbr-*, text-govbr-*, …)
+  → PrimeNG PassThrough (classes por slot)
 ```
 
-1. Tokens Gov.br importados de `@govbr-ds/core/dist/core-tokens.min.css` (somente CSS, sem runtime JS)
-2. Tokens mapeados como extensões do Tailwind via `@theme` (ex.: `bg-govbr-primary`, `text-govbr-danger`)
-3. PrimeNG em **modo unstyled** — estilos aplicados via objeto `govbrPassThrough` que define classes Tailwind para cada slot de cada componente
-4. Focus ring customizado: overlay `<span>` com borda dourada tracejada (4px #c2850c), compatível com WCAG 2.1 AA
+1. Tokens Gov.br declarados em `libs/shared-ui/src/styles/govbr-tokens.css` (45 tokens em `:root`, fonte única — ADR-0019).
+2. Apps importam a foundation no `styles.css` e mapeiam via `@theme inline` Tailwind 4 (`bg-govbr-primary`, `text-govbr-danger`, …).
+3. PrimeNG em **modo unstyled** — estilos aplicados via objeto `govbrPassThrough` que define classes Tailwind para cada slot de cada componente.
+4. Focus ring customizado: overlay `<span>` com borda dourada tracejada (4px #c2850c), compatível com WCAG 2.1 AA.
 
 ### Regras de estilização
 
-- **Sempre** usar PrimeNG em modo unstyled com PassThrough
-- **Sempre** usar tokens Gov.br via classes Tailwind (`bg-govbr-*`, `text-govbr-*`, `rounded-govbr-*`)
-- **Nunca** importar temas PrimeNG (Aura, Lara, etc.)
-- **Nunca** usar cores hardcoded — sempre tokens
-- **Nunca** sobrescrever focus ring nativo sem usar o overlay Gov.br
-- A POC (`apps/poc-primeng/`) é a **referência de implementação** — consultar antes de criar novos componentes
+- **Sempre** usar PrimeNG em modo unstyled com PassThrough.
+- **Sempre** usar tokens Gov.br via classes Tailwind (`bg-govbr-*`, `text-govbr-*`, `rounded-govbr-*`).
+- **Nunca** importar temas PrimeNG (Aura, Lara, etc.).
+- **Nunca** usar cores hardcoded — sempre tokens.
+- **Nunca** sobrescrever focus ring nativo sem usar o overlay Gov.br.
+- **Nunca** redeclarar tokens Gov.br nos apps — a fonte única é `libs/shared-ui/src/styles/govbr-tokens.css`. Mudanças à paleta institucional são editadas lá e propagam aos 3 apps + POC.
 
-### Arquivos de referência da POC
+### Arquivos de referência
 
 | Arquivo | O que contém |
 |---------|-------------|
-| `apps/poc-primeng/src/styles.css` | Mapeamento completo de 46 tokens Gov.br → Tailwind @theme |
+| `libs/shared-ui/src/styles/govbr-tokens.css` | Foundation com 45 tokens Gov.br em `:root` (fonte única — ADR-0019) |
+| `apps/<app>/src/styles.css` | Tailwind 4 syntax + `@source` + `@theme inline` apontando para foundation (3 apps de produção convergidos pela D.3) |
+| `apps/poc-primeng/src/styles.css` | POC histórica — `@theme {...}` direto (sem foundation), serve como exemplo de PrimeNG unstyled puro |
 | `apps/poc-primeng/src/main.ts` | Configuração PrimeNG unstyled + `govbrPassThrough` + focus ring overlay |
-| `apps/poc-primeng/src/app/` | Componentes de exemplo (formulário multi-step com validação) |
 | `apps/poc-primeng-e2e/src/` | Suíte E2E: `govbr-design-tokens.spec.ts` (46 testes) + `keyboard-a11y.spec.ts` (17 testes) |
 
 ## Path aliases

@@ -13,14 +13,13 @@
         "outputPath": "dist/apps/ingresso",
         "browser": "apps/ingresso/src/main.ts",
         "tsConfig": "apps/ingresso/tsconfig.app.json",
-        "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
             "input": "apps/ingresso/public"
           }
         ],
-        "styles": ["apps/ingresso/src/styles.scss"],
+        "styles": ["apps/ingresso/src/styles.css"],
         "polyfills": ["zone.js"]
       },
       "configurations": {
