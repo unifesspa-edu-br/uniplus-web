@@ -65,6 +65,9 @@
       }
     }
   ],
+  "projects": {
+    "shared-utils": "libs/shared-utils/project.json"
+  },
   "generators": {
     "@nx/angular:application": {
       "e2eTestRunner": "playwright",
