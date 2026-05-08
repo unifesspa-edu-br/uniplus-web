@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
     @if (visible()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-white/80" role="alert" aria-busy="true">
         <div class="flex flex-col items-center gap-3">
-          <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-unifesspa-primary"></div>
+          <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-govbr-primary"></div>
           <p class="text-sm font-medium text-gray-600">{{ message() }}</p>
         </div>
       </div>

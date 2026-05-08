@@ -44,7 +44,7 @@ let formFieldIdSeed = 0;
       [attr.max]="max() ?? null"
       [attr.aria-invalid]="errorMessage() ? 'true' : null"
       [attr.aria-describedby]="describedBy()"
-      class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-unifesspa-primary"
+      class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-govbr-primary"
     />
     <!-- Erro e hint sempre renderizados (com [hidden]) — garantem que o ID
          existe no DOM antes que aria-describedby o referencie, evitando gap

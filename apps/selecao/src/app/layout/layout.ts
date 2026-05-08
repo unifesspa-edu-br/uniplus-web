@@ -11,7 +11,7 @@ import { UserHeaderInfoComponent } from '@uniplus/shared-auth';
   template: `
     <div class="flex h-screen flex-col">
       <!-- Header -->
-      <header class="flex h-16 items-center justify-between bg-unifesspa-primary px-6 text-white shadow-md">
+      <header class="flex h-16 items-center justify-between bg-govbr-primary px-6 text-white shadow-md">
         <div class="flex items-center gap-3">
           <h1 class="text-lg font-bold">Seleção — Uni+</h1>
         </div>

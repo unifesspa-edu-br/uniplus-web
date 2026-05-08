@@ -1,0 +1,87 @@
+/* Tokens Gov.br DS compartilhados (foundation D.1, ADR-0019).
+ * Declara `--color-govbr-*`, `--text-govbr-*`, `--spacing-govbr-*`,
+ * `--radius-govbr-*`, `--font-govbr` em `:root`. */
+@import '../../../libs/shared-ui/src/styles/govbr-tokens.css';
+
+/* Tailwind CSS 4 — substitui `@tailwind base/components/utilities` legacy. */
+@import 'tailwindcss';
+
+/* Detecção explícita de classes em monorepo Nx (POC pattern).
+ * `shared-auth` incluído porque seus componentes (`auth-error-banner`,
+ * `login-error-banner`, `access-denied`) já usam classes `govbr-*` em
+ * templates inline. */
+@source './app/**/*.{ts,html}';
+@source '../../../libs/shared-ui/src/lib/**/*.{ts,html}';
+@source '../../../libs/shared-auth/src/lib/**/*.{ts,html}';
+
+/* Tokens Gov.br como utilities Tailwind via `@theme inline`.
+ * `inline` referencia as CSS variables da foundation sem duplicar `:root`
+ * (Tailwind docs theme.mdx + colors.mdx). Gera `bg-govbr-primary` etc. */
+@theme inline {
+  /* paleta primária */
+  --color-govbr-primary: var(--color-govbr-primary);
+  --color-govbr-primary-hover: var(--color-govbr-primary-hover);
+  --color-govbr-primary-dark: var(--color-govbr-primary-dark);
+  --color-govbr-primary-darkest: var(--color-govbr-primary-darkest);
+  --color-govbr-primary-light: var(--color-govbr-primary-light);
+  --color-govbr-primary-lightest: var(--color-govbr-primary-lightest);
+
+  /* feedback */
+  --color-govbr-success: var(--color-govbr-success);
+  --color-govbr-success-light: var(--color-govbr-success-light);
+  --color-govbr-warning: var(--color-govbr-warning);
+  --color-govbr-warning-light: var(--color-govbr-warning-light);
+  --color-govbr-danger: var(--color-govbr-danger);
+  --color-govbr-danger-light: var(--color-govbr-danger-light);
+  --color-govbr-info: var(--color-govbr-info);
+  --color-govbr-info-light: var(--color-govbr-info-light);
+
+  /* focus ring Gov.br DS */
+  --color-govbr-gold: var(--color-govbr-gold);
+
+  /* neutros */
+  --color-govbr-pure-0: var(--color-govbr-pure-0);
+  --color-govbr-pure-100: var(--color-govbr-pure-100);
+  --color-govbr-gray-2: var(--color-govbr-gray-2);
+  --color-govbr-gray-5: var(--color-govbr-gray-5);
+  --color-govbr-gray-10: var(--color-govbr-gray-10);
+  --color-govbr-gray-20: var(--color-govbr-gray-20);
+  --color-govbr-gray-40: var(--color-govbr-gray-40);
+  --color-govbr-gray-60: var(--color-govbr-gray-60);
+  --color-govbr-gray-80: var(--color-govbr-gray-80);
+
+  /* tipografia */
+  --text-govbr-xs: var(--text-govbr-xs);
+  --text-govbr-sm: var(--text-govbr-sm);
+  --text-govbr-base: var(--text-govbr-base);
+  --text-govbr-md: var(--text-govbr-md);
+  --text-govbr-lg: var(--text-govbr-lg);
+  --text-govbr-xl: var(--text-govbr-xl);
+  --text-govbr-2xl: var(--text-govbr-2xl);
+  --text-govbr-3xl: var(--text-govbr-3xl);
+
+  /* radius */
+  --radius-govbr-sm: var(--radius-govbr-sm);
+  --radius-govbr-md: var(--radius-govbr-md);
+  --radius-govbr-pill: var(--radius-govbr-pill);
+
+  /* spacing */
+  --spacing-govbr-1: var(--spacing-govbr-1);
+  --spacing-govbr-2: var(--spacing-govbr-2);
+  --spacing-govbr-3: var(--spacing-govbr-3);
+  --spacing-govbr-4: var(--spacing-govbr-4);
+  --spacing-govbr-5: var(--spacing-govbr-5);
+  --spacing-govbr-6: var(--spacing-govbr-6);
+  --spacing-govbr-7: var(--spacing-govbr-7);
+  --spacing-govbr-8: var(--spacing-govbr-8);
+  --spacing-govbr-9: var(--spacing-govbr-9);
+
+  /* font */
+  --font-govbr: var(--font-govbr);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}

@@ -7,14 +7,10 @@
  * tokens como CSS custom properties em `:root`, deixando a decisão de como
  * mapeá-los para utilitários Tailwind a cargo de cada app:
  *
- * - **Tailwind 4** (D.2/D.3 — selecao/ingresso/portal pós-migração):
+ * - **Tailwind 4** (selecao migrada em D.2; ingresso/portal em D.3):
  *   `@theme inline { --color-govbr-primary: var(--color-govbr-primary); }`
  *   no styles do app gera utilities `bg-govbr-primary` etc. apontando para
  *   estes tokens (tokens compartilhados, declaração reflexiva).
- * - **Tailwind 3 legado** (estado atual): apps consomem via CSS direto
- *   (`color: var(--color-govbr-primary)`) ou via classes do próprio config
- *   `unifesspa-*` ainda declarado por app — sem regressão visual durante
- *   D.1 porque ninguém usa `bg-govbr-*` ainda.
  *
  * Conformidade: WCAG 2.1 AA (contraste validado pela POC) + Gov.br DS 3.7
  * (Portaria SEI-MCOM 540/2020, IN SGD/ME 94/2022 — ADR-0006/0008).
