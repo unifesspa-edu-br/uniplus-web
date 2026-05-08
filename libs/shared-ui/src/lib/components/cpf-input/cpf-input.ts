@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, input, forwardRef, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { formatCpfProgressive } from '@org/shared-utils';
+import { formatCpfProgressive } from '@uniplus/shared-utils';
 
 /**
  * Input mascarado de CPF integrado a Reactive Forms via ControlValueAccessor.
