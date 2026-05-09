@@ -28,3 +28,7 @@ export { formatDateBr, formatDateTimeBr, parseDate } from './utils/date.util';
 
 // Validators
 export { cpfValidator } from './validators/cpf.validator';
+
+// Runtime config (ADR-0021)
+export type { AppConfig } from './config';
+export { AppConfigService, provideRuntimeConfig, RUNTIME_CONFIG_PATH } from './config';

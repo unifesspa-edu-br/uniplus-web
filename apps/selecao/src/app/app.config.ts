@@ -3,12 +3,8 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
 import { apiResultInterceptor, loadingInterceptor } from '@uniplus/shared-core';
-import {
-  INGRESSO_BASE_PATH,
-  SELECAO_BASE_PATH,
-} from '@uniplus/shared-data';
+import { provideRuntimeConfig } from '@uniplus/shared-data';
 import { authErrorInterceptor, provideAuth, tokenInterceptor } from '@uniplus/shared-auth';
-import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -29,16 +25,11 @@ export const appConfig: ApplicationConfig = {
         apiResultInterceptor,
       ]),
     ),
-    provideAuth({
-      keycloakUrl: environment.keycloak.url,
-      realm: environment.keycloak.realm,
-      clientId: environment.keycloak.clientId,
-      allowedUrls: [environment.apiUrl, environment.keycloak.url],
-    }),
-    // BASE_PATH dos clientes gerados (ADR-0013) — origin absoluta da
-    // uniplus-api. Versionamento por recurso (ADR-0028) é injetado pelo
-    // apiResultInterceptor via withVendorMime, não via prefixo de URL.
-    { provide: SELECAO_BASE_PATH, useValue: environment.apiUrl },
-    { provide: INGRESSO_BASE_PATH, useValue: environment.apiUrl },
+    // Runtime config (ADR-0021) — fetch /assets/runtime-config.json antes
+    // do bootstrap das rotas + provê AUTH_CONFIG, SELECAO_BASE_PATH e
+    // INGRESSO_BASE_PATH a partir do AppConfigService. DEVE vir antes de
+    // provideAuth() (que consome AUTH_CONFIG via factory).
+    provideRuntimeConfig(),
+    provideAuth(),
   ],
 };

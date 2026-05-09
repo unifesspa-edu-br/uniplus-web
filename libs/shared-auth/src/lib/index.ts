@@ -19,7 +19,7 @@ export type { AuthConfig } from './models/auth-config.model';
 export { provideAuth } from './providers/auth.provider';
 
 // Tokens
-export { AUTH_ALLOWED_URLS } from './tokens/auth.tokens';
+export { AUTH_ALLOWED_URLS, AUTH_CONFIG } from './tokens/auth.tokens';
 
 // Components
 export { AuthErrorBannerComponent } from './components/auth-error-banner.component';

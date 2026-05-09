@@ -10,8 +10,11 @@ RUN npx nx build selecao --configuration=production
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build --chown=nginx:nginx /app/dist/apps/selecao/browser /usr/share/nginx/html
-# Runtime config placeholder (ADR-0020 + #84). Sobrescrito por ConfigMap K8s
-# em produção; presença do arquivo evita 404 + Cache-Control no-store.
+# Sobrescreve o runtime-config.json copiado do dist (que tem URLs DEV
+# de localhost) por placeholders inválidos. Garante que produção sem
+# ConfigMap montado FALHA RÁPIDO no fetch de auth/API em vez de
+# silenciosamente tentar localhost. ConfigMap K8s em produção monta
+# sobre este path com URLs reais (ADR-0021 + ADR-0020).
 COPY --chown=nginx:nginx docker/runtime-config.json /usr/share/nginx/html/assets/runtime-config.json
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

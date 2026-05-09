@@ -3,6 +3,7 @@
   "compilerOptions": {
     "declarationMap": false,
     "paths": {
+      "@uniplus/shared-auth": ["dist/libs/shared-auth"],
       "@uniplus/shared-core": ["dist/libs/shared-core"]
     }
   },
