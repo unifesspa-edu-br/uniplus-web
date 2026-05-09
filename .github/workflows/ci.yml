@@ -37,6 +37,35 @@ jobs:
         # dev↔CI (script local invoca o mesmo binary).
         run: npx --yes markdownlint-cli2@0.22.1 'docs/adrs/**/*.md'
 
+  # Drift check do codegen OpenAPI (ADR-0013): regenera e diffa
+  # libs/shared-data/src/lib/api/{selecao,ingresso}/schema.ts contra o
+  # committed em HEAD. Falha se o spec mudou e o gerado não foi committed
+  # junto. Job dedicado (em vez de step do `main`) torna o gate visível em
+  # branch protection settings — ver `required_status_checks.contexts`.
+  codegen-drift-check:
+    name: codegen-drift-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci --no-audit --no-fund
+
+      - name: Verificar drift do codegen OpenAPI (shared-data)
+        run: npx nx run shared-data:codegen-api-check
+
   main:
     runs-on: ubuntu-latest
     steps:
@@ -138,12 +167,8 @@ jobs:
       - if: steps.gate.outputs.run == 'true'
         run: npx nx record -- echo Hello World
 
-      # Drift check do codegen OpenAPI (ADR-0013): regenera e diffa
-      # libs/shared-data/src/lib/api/{selecao,ingresso}/schema.ts contra o
-      # committed. Falha se o spec mudou e o gerado não foi committed junto.
-      - name: Verificar drift do codegen OpenAPI (shared-data)
-        if: steps.gate.outputs.run == 'true'
-        run: npx nx run shared-data:codegen-api-check
+      # Drift check do codegen OpenAPI vive em job dedicado `codegen-drift-check`
+      # (ver acima) — required check em branch protection desde 2026-05-09.
 
       # Em pull_request, usamos `nx affected` para rodar apenas os projects
       # impactados pelo diff contra a branch base. Em push para main, fazemos
