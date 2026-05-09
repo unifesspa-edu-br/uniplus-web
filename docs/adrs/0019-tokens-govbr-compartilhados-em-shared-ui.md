@@ -9,7 +9,7 @@ decision-makers:
 
 ## Contexto e enunciado do problema
 
-A POC `apps/poc-primeng/src/styles.css` (validada como referência arquitetural pelo ADR-0006/0007/0008) declara 45 tokens Gov.br DS via `@theme {...}` Tailwind 4 e foi entregue como prova de viabilidade do contrato visual. Os 3 apps de produção (`selecao`, `ingresso`, `portal`), entretanto, ainda usam **Tailwind 3 syntax legada** (`@tailwind base; @tailwind components; @tailwind utilities;`) e cada um declara **sua própria paleta `unifesspa-*`** (`#003366` primary, `#006633` secondary etc.) num `tailwind.config.js` por app. Estado de partida:
+A POC `docs/referencias/poc-primeng/src/styles.css` (validada como referência arquitetural pelo ADR-0006/0007/0008) declara 45 tokens Gov.br DS via `@theme {...}` Tailwind 4 e foi entregue como prova de viabilidade do contrato visual. Os 3 apps de produção (`selecao`, `ingresso`, `portal`), entretanto, ainda usam **Tailwind 3 syntax legada** (`@tailwind base; @tailwind components; @tailwind utilities;`) e cada um declara **sua própria paleta `unifesspa-*`** (`#003366` primary, `#006633` secondary etc.) num `tailwind.config.js` por app. Estado de partida:
 
 - 3 cópias da paleta institucional em arquivos JS de config.
 - 15 ocorrências de `unifesspa-*` em 10 arquivos (componentes `apps/<app>/src/...` e `libs/shared-ui/src/lib/components/...`).
@@ -27,7 +27,7 @@ A questão é dupla: **(a)** como consolidar a fonte única da paleta institucio
 - **Tailwind 4 já instalado** — não é "decisão de adotar v4", é "decisão de finalmente aproveitar o que já está no `package.json`".
 - **Granularidade de PR** — refator Tailwind cross-app numa PR única seria impossível de revisar; granular demais (1 PR por arquivo) seria churn.
 - **A11y baseline existente** (B.4 com `@axe-core/playwright`) — deve servir de gate na migração para detectar regressões de contraste.
-- **POC convergir com produção** — após migração completa, `apps/poc-primeng/` deixa de ser "referência paralela" e passa a ser apenas "exemplo de PrimeNG unstyled" reusando os mesmos tokens.
+- **POC convergir com produção** — após migração completa, `docs/referencias/poc-primeng/` deixa de ser "referência paralela" e passa a ser apenas "exemplo de PrimeNG unstyled" reusando os mesmos tokens.
 
 ## Opções consideradas
 
@@ -188,7 +188,7 @@ Substituições aplicadas pelas migrações D.2/D.3:
 
 ## Mais informações
 
-- [POC referência](../../apps/poc-primeng/src/styles.css) — fonte dos 45 tokens.
+- [POC referência](../referencias/poc-primeng/src/styles.css) — fonte dos 45 tokens.
 - [Tailwind v4 — Theme variables](https://tailwindcss.com/docs/theme) — `@theme` directive, custom properties shared via separate CSS file.
 - [Tailwind v4 — `@theme inline`](https://tailwindcss.com/docs/colors) — referenciar CSS variables externas em `@theme`.
 - [@govbr-ds/core](https://www.gov.br/ds/) — fonte oficial dos tokens (versão 3.7).

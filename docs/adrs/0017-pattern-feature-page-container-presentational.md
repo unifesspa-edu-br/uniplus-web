@@ -11,7 +11,7 @@ decision-makers:
 
 O Frontend Milestone B começa a entregar features reais (Editais lista na F6, Editais criar/detalhar/publicar nas F7/F8) consumindo o contrato V1 (`ApiResult<T>`, vendor MIME, Idempotency-Key, cursor pagination). Cada feature precisa decidir **como** estrutura sua página: tudo num único componente, ou separada em camadas com responsabilidades distintas.
 
-A POC `apps/poc-primeng/src/app/features/inscricao/` já validou uma forma — `inscricao-page.ts` orquestra serviços e estado enquanto `components/dados-pessoais-tab/`, `documentos-tab/` e `revisao-tab/` são componentes apresentacionais consumidos via inputs. Mas a separação ali emergiu organicamente, sem decisão registrada. Sem ADR explícita, cada nova feature pode reinventar a estrutura: alguém pode misturar HTTP calls dentro de um `ui-table` reusável, outra pessoa pode tornar `EditaisListPage` totalmente template-driven sem services, e em 6 meses o app vira um patchwork de patterns inconsistentes.
+A POC `docs/referencias/poc-primeng/src/app/features/inscricao/` já validou uma forma — `inscricao-page.ts` orquestra serviços e estado enquanto `components/dados-pessoais-tab/`, `documentos-tab/` e `revisao-tab/` são componentes apresentacionais consumidos via inputs. Mas a separação ali emergiu organicamente, sem decisão registrada. Sem ADR explícita, cada nova feature pode reinventar a estrutura: alguém pode misturar HTTP calls dentro de um `ui-table` reusável, outra pessoa pode tornar `EditaisListPage` totalmente template-driven sem services, e em 6 meses o app vira um patchwork de patterns inconsistentes.
 
 A questão é dupla: **(a) o pattern é binding** (toda feature page deve seguir) ou opcional (caso a caso)? **(b) qual é a fronteira exata** — onde container começa e presentational termina?
 
@@ -135,7 +135,7 @@ export class EditaisListPage {
 
 ## Mais informações
 
-- POC `apps/poc-primeng/src/app/features/inscricao/` — referência pré-existente do pattern.
+- POC `docs/referencias/poc-primeng/src/app/features/inscricao/` — referência pré-existente do pattern.
 - [Joshua Morony — "Component Architecture in Angular"](https://www.youtube.com/@JoshuaMorony) — canal de referência do pattern signal-based.
 - [Lars Gyrup Brink Nielsen — "Angular Architects"](https://layered-architecture.com) — separation of concerns em apps Angular.
 - [Tim Deschryver — Smart vs Presentational components](https://timdeschryver.dev) — patterns de teste com Testing Library.

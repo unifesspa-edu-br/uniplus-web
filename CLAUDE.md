@@ -26,18 +26,20 @@ apps/
   ingresso-e2e/   → Testes E2E do ingresso
   portal/         → Portal público do candidato (inscrição, acompanhamento, documentos, recursos)
   portal-e2e/     → Testes E2E do portal
-  poc-primeng/    → POC: PrimeNG unstyled + Gov.br DS + Tailwind (referência de implementação)
-  poc-primeng-e2e/→ Testes E2E da POC (46 testes de tokens + 17 de acessibilidade)
 
 libs/
   shared-ui/      → Componentes reutilizáveis (cpf-input, data-table, file-upload, status-badge, etc.)
   shared-auth/    → Autenticação Keycloak (auth.service, guards, interceptor, providers)
   shared-data/    → DTOs, API clients, utilitários (cpf.util, date.util, api-error-handler)
+
+docs/referencias/
+  poc-primeng/    → Código histórico da POC (read-only, fora do workspace Nx) — ADR-0022
+  poc-primeng-e2e/→ Suíte E2E histórica da POC (read-only, fora do workspace Nx) — ADR-0022
 ```
 
 ## Estratégia de UI — PrimeNG unstyled + Gov.br Design System
 
-Estratégia validada pela POC (`apps/poc-primeng/`) e operacionalizada nos 3 apps de produção pela ADR-0019 (foundation D.1 + cutover Tailwind 4 D.2/D.3). Obrigatória para todos os componentes do sistema.
+Estratégia validada pela POC histórica (`docs/referencias/poc-primeng/`) e operacionalizada nos 3 apps de produção pela ADR-0019 (foundation D.1 + cutover Tailwind 4 D.2/D.3). Obrigatória para todos os componentes do sistema. A POC saiu do workspace ativo após convergência (ADR-0022) — a foundation canônica é `libs/shared-ui/src/styles/govbr-tokens.css`.
 
 ### Arquitetura de estilização
 
@@ -67,9 +69,9 @@ foundation Gov.br (libs/shared-ui/src/styles/govbr-tokens.css → :root)
 |---------|-------------|
 | `libs/shared-ui/src/styles/govbr-tokens.css` | Foundation com 45 tokens Gov.br em `:root` (fonte única — ADR-0019) |
 | `apps/<app>/src/styles.css` | Tailwind 4 syntax + `@source` + `@theme inline` apontando para foundation (3 apps de produção convergidos pela D.3) |
-| `apps/poc-primeng/src/styles.css` | POC histórica — `@theme {...}` direto (sem foundation), serve como exemplo de PrimeNG unstyled puro |
-| `apps/poc-primeng/src/main.ts` | Configuração PrimeNG unstyled + `govbrPassThrough` + focus ring overlay |
-| `apps/poc-primeng-e2e/src/` | Suíte E2E: `govbr-design-tokens.spec.ts` (46 testes) + `keyboard-a11y.spec.ts` (17 testes) |
+| `docs/referencias/poc-primeng/src/styles.css` | POC histórica (read-only) — `@theme {...}` direto (sem foundation), serve como exemplo de PrimeNG unstyled puro |
+| `docs/referencias/poc-primeng/src/main.ts` | POC histórica (read-only) — configuração PrimeNG unstyled + `govbrPassThrough` + focus ring overlay |
+| `docs/referencias/poc-primeng-e2e/src/` | POC histórica (read-only) — suíte E2E `govbr-design-tokens.spec.ts` (46 testes) + `keyboard-a11y.spec.ts` (17 testes) |
 
 ## Path aliases
 
