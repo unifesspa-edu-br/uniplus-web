@@ -1,0 +1,6 @@
+/**
+ * Placeholder gerado por `@uniplus/workspace:feature-lib` (type=<%= type %>, scope=<%= scope %>).
+ *
+ * Substitua por código real assim que iniciar a implementação da feature.
+ */
+export const <%= name.replace(/-/g, '_') %>_placeholder = '<%= projectName %>';

@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "UniPlusFeatureLib",
+  "title": "Cria uma feature lib taggeada para um scope do Uni+",
+  "description": "Gera libs/<scope>/<name>/ com builder ng-packagr-lite, vitest config, index barrel e path mapping em tsconfig.base.json.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da lib no formato <scope>/<name>. Exemplo: selecao/feature-editais-detail.",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Qual o nome da lib (formato <scope>/<name>)?",
+      "pattern": "^(selecao|ingresso|portal)/[a-z][-a-z0-9]*$"
+    },
+    "type": {
+      "type": "string",
+      "description": "Tipo da lib no eixo type:* do enforce-module-boundaries.",
+      "enum": ["feature", "ui", "data-access"],
+      "x-prompt": {
+        "message": "Tipo da lib?",
+        "type": "list",
+        "items": ["feature", "ui", "data-access"]
+      }
+    }
+  },
+  "required": ["name", "type"]
+}

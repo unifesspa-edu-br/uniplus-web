@@ -1,0 +1,12 @@
+{
+  "name": "@uniplus/workspace",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Workspace generators do Uni+ — feature-lib taggeada para scopes da plataforma.",
+  "generators": "./generators.json",
+  "main": "./src/index.js",
+  "type": "commonjs",
+  "peerDependencies": {
+    "@nx/devkit": ">=22.0.0"
+  }
+}

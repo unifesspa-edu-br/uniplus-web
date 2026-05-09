@@ -10,7 +10,10 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "lib": ["ES2022", "dom"],
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
@@ -20,13 +23,28 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@uniplus/shared-ui": ["libs/shared-ui/src/index.ts"],
-      "@uniplus/shared-auth": ["libs/shared-auth/src/index.ts"],
-      "@uniplus/shared-core": ["libs/shared-core/src/index.ts"],
-      "@uniplus/shared-data": ["libs/shared-data/src/index.ts"],
-      "@uniplus/shared-utils": ["libs/shared-utils/src/index.ts"],
-      "@uniplus/shared-e2e": ["libs/shared-e2e/src/index.ts"]
+      "@uniplus/shared-ui": [
+        "libs/shared-ui/src/index.ts"
+      ],
+      "@uniplus/shared-auth": [
+        "libs/shared-auth/src/index.ts"
+      ],
+      "@uniplus/shared-core": [
+        "libs/shared-core/src/index.ts"
+      ],
+      "@uniplus/shared-data": [
+        "libs/shared-data/src/index.ts"
+      ],
+      "@uniplus/shared-utils": [
+        "libs/shared-utils/src/index.ts"
+      ],
+      "@uniplus/shared-e2e": [
+        "libs/shared-e2e/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }
