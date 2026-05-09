@@ -46,7 +46,12 @@ function normalizarOpcoes(options: FeatureLibSchema): NormalizedOptions {
     name: nomeNormalizado,
     type: options.type,
     projectRoot: joinPathFragments('libs', scope, nomeNormalizado),
-    projectName: nomeNormalizado,
+    // Project name é prefixado pelo scope (`<scope>-<name>`) para garantir
+    // unicidade no Nx graph quando dois scopes diferentes geram libs com o
+    // mesmo `<name>` (ex: `selecao/foo` e `portal/foo`). Sem o prefixo, ambos
+    // sairiam como project `foo` e o graph resolution quebraria. Manter
+    // alinhado com `importPath` (`@uniplus/<scope>-<name>`).
+    projectName: `${scope}-${nomeNormalizado}`,
     importPath: `@uniplus/${scope}-${nomeNormalizado}`,
     prefix: scope,
   };
