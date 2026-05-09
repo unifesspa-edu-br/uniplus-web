@@ -54,8 +54,20 @@ export default [
               onlyDependOnLibsWithTags: ['type:util', 'type:core'],
             },
             {
+              // `type:data-access` admite `type:data` porque feature libs HTTP
+              // por definição consomem DTOs/schemas/InjectionToken/services de
+              // `@uniplus/shared-data` (`type:data`) — `EditalDto`, `EditaisApi`,
+              // `SELECAO_BASE_PATH`, `provideRuntimeConfig`. Sem essa entrada,
+              // devs forçariam `type:feature` (mais permissivo) e o tipo
+              // `data-access` ficaria sem uso prático. Decisão registrada em
+              // [#254](https://github.com/unifesspa-edu-br/uniplus-web/issues/254).
               sourceTag: 'type:data-access',
-              onlyDependOnLibsWithTags: ['type:util', 'type:core'],
+              onlyDependOnLibsWithTags: [
+                'type:util',
+                'type:core',
+                'type:data',
+                'type:auth',
+              ],
             },
             {
               sourceTag: 'type:util',
