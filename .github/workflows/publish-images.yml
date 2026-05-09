@@ -1,0 +1,233 @@
+name: Publish Images
+
+# Publica imagens das apps web no GitHub Container Registry conforme ADR-0020.
+#
+# Trigger único: push em tag v* (ex.: v0.1.0). Push em main NÃO publica —
+# disciplina de release explícito, sem rolling tag mutável. Tags devem
+# apontar para commits em main (operacional, enforçado pelo gate abaixo).
+#
+# Tags publicadas para cada release v<X>.<Y>.<Z>:
+#   - sha-<7>             identidade imutável do commit
+#   - v<X>.<Y>.<Z>        release exata (imutável)
+#   - v<X>.<Y>            pin de minor (rola com patches)
+#   - v<X>                pin de major (rola com minors+patches)
+#
+# Sem `latest`, sem `main` — ArgoCD pina semver, devs usam `nx serve` ou
+# compose local com build-by-context. Imagem única por app + runtime config
+# via ConfigMap em produção (ADR-0020 + #84) — nunca embutir URL de Keycloak
+# ou da API.
+#
+# Imagens publicadas:
+#   - ghcr.io/<owner>/uniplus-portal
+#   - ghcr.io/<owner>/uniplus-web-selecao
+#   - ghcr.io/<owner>/uniplus-web-ingresso
+
+on:
+  push:
+    tags:
+      # Glob: aceita prefix `v` seguido de 3 partes ponto-separadas.
+      # Filtro fino (somente dígitos) é validado no step `Validar formato`.
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  # Tags semver são imutáveis; o concurrency aqui só protege contra dois
+  # workflows tentando publicar a MESMA tag por race condition (force-push).
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: portal
+            image: uniplus-portal
+          - module: selecao
+            image: uniplus-web-selecao
+          - module: ingresso
+            image: uniplus-web-ingresso
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # fetch-depth=0 traz o histórico completo necessário para
+          # `git merge-base --is-ancestor` no step de validação abaixo.
+          fetch-depth: 0
+
+      - name: Validar formato semver da tag
+        # ADR-0020 exige tags `v<X>.<Y>.<Z>` com X/Y/Z numéricos. O glob no
+        # trigger filtra por estrutura (3 partes ponto-separadas), mas aceita
+        # `v1.2.x`, `v1.0.0-rc1`, etc. Esta regex restringe a SemVer puro.
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Tag '$TAG' não segue o padrão v<X>.<Y>.<Z> exigido pela ADR-0020."
+            echo "::error::Tags pré-release (v1.0.0-rc1) ou genéricas (vtest) não publicam imagem."
+            exit 1
+          fi
+          echo "✓ Tag em formato semver: $TAG"
+
+      - name: Validar que a tag aponta para commit em main
+        # ADR-0020 exige que toda imagem publicada venha de commit já
+        # mergeado em main. Sem este gate, um operador poderia tagear um
+        # commit de feature branch e publicar silenciosamente. Falha cedo
+        # antes de qualquer build.
+        #
+        # `${GITHUB_REF}^{commit}` peel o tag object para o commit subjacente.
+        # Em tags anotadas (`git tag -a`) o ref aponta para um tag object
+        # cuja SHA difere do commit alvo; o `^{commit}` resolve para o commit.
+        # Em tags lightweight (`git tag`) o ref já aponta para o commit e o
+        # peel é noop.
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          TAG_COMMIT=$(git rev-parse "${GITHUB_REF}^{commit}")
+          if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
+            echo "::error::Tag ${GITHUB_REF#refs/tags/} aponta para commit $TAG_COMMIT fora de origin/main."
+            echo "::error::Tags v* só podem ser aplicadas a commits já mergeados em main (ADR-0020)."
+            exit 1
+          fi
+          echo "✓ Tag aponta para commit em main: $TAG_COMMIT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extrair metadados (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          # Política de tagging: ver ADR-0020.
+          # - sha-<7>          : identidade imutável do commit (sempre)
+          # - v<X>.<Y>.<Z>     : release exata (imutável)
+          # - v<X>.<Y>         : pin de minor (rola com patches)
+          # - v<X>             : pin de major (rola com minors+patches)
+          # Sem `latest` e sem `main` — disciplina semver explícita.
+          flavor: |
+            latest=false
+          # `pattern={{version}}` em docker/metadata-action remove o `v` da
+          # tag git, então `pattern=v{{version}}` mantém o `v` exigido.
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.description=App web ${{ matrix.module }} do Uni+ (Sistema Unificado Unifesspa)
+            org.opencontainers.image.vendor=Universidade Federal do Sul e Sudeste do Pará (Unifesspa)
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
+
+      # Build em duas fases para validar ANTES de tornar a tag pública:
+      # 1. Build com push=false e load=true → imagem fica no daemon Docker local
+      # 2. Smoke test contra a imagem local (non-root + /health.json)
+      # 3. Build com push=true → reusa cache, publica no GHCR após smoke verde
+      #
+      # O cache GHA torna o segundo build praticamente instantâneo (ele só
+      # exporta o manifest para o registry; layers já estão no GHA cache).
+      # Sem isso, uma imagem que falhe no smoke já estaria publicada como
+      # v<X>.<Y>.<Z> imutável no GHCR.
+
+      - name: Build local (sem push) para smoke
+        id: build_local
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.${{ matrix.module }}
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: smoke/${{ matrix.image }}:ci
+          # Cache scoped por módulo: builds independentes não invalidam cache
+          # uns dos outros (cada Dockerfile copia dist/apps/<module>/ separado).
+          cache-from: type=gha,scope=${{ matrix.module }}
+          cache-to: type=gha,scope=${{ matrix.module }},mode=max
+
+      - name: Smoke test — non-root + /health.json
+        # Smoke runtime cobre os dois critérios de aceite da Story #217 que
+        # validam o hardening da #4 e a saúde básica da imagem servida:
+        #   - Non-root: docker inspect Config.User != '' && != 'root' && != '0'
+        #   - /health.json: curl com retry retorna 200 e body {"status":"ok"}
+        # nginx-unprivileged escuta em :8080. Sem JS/Angular runtime em CI
+        # (runtime config via ConfigMap só em prod) — smoke é puro nginx.
+        run: |
+          set -euo pipefail
+          IMAGE_REF="smoke/${{ matrix.image }}:ci"
+          CONTAINER="smoke-${{ matrix.module }}"
+          echo "Smoke: $IMAGE_REF"
+
+          USER_FIELD=$(docker inspect -f '{{.Config.User}}' "$IMAGE_REF")
+          # USER pode ser: '' (default root), 'root', 'root:gid', '0' (uid root),
+          # '0:0' / '0:N' (uid root + qualquer gid). Todos significam root.
+          case "$USER_FIELD" in
+            ""|"root"|"root:"*|"0"|"0:"*)
+              echo "::error::Imagem roda como root ou USER não definido (got: '$USER_FIELD')"
+              exit 1
+              ;;
+          esac
+          echo "✓ Non-root user: $USER_FIELD"
+
+          docker run -d --name "$CONTAINER" -p 18080:8080 "$IMAGE_REF" >/dev/null
+
+          # Retry budget: nginx-unprivileged sobe rápido (~1-2s). 15 tentativas
+          # x 1s = 15s teto antes de falhar.
+          for i in $(seq 1 15); do
+            if RESPONSE=$(curl -fsS http://127.0.0.1:18080/health.json 2>/dev/null); then
+              echo "$RESPONSE" | grep -q '"status":"ok"' \
+                && { echo "✓ /health.json: $RESPONSE"; break; }
+            fi
+            sleep 1
+            if [ "$i" = "15" ]; then
+              echo "::error::/health.json não respondeu 200 + status=ok após 15s"
+              docker logs "$CONTAINER" || true
+              docker rm -f "$CONTAINER" >/dev/null
+              exit 1
+            fi
+          done
+
+          docker rm -f "$CONTAINER" >/dev/null
+
+      - name: Push para GHCR (após smoke verde)
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.${{ matrix.module }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Reusa o cache do build_local — segundo build é praticamente
+          # instantâneo (apenas resolve manifest e push das layers já em cache).
+          cache-from: type=gha,scope=${{ matrix.module }}
+
+      - name: Resumo
+        if: always()
+        run: |
+          echo "### Publish: \`${{ matrix.image }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tags publicadas:**" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.meta.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
