@@ -9,7 +9,7 @@ export default defineConfig(() => ({
   cacheDir: '../../../node_modules/.vite/<%= projectRoot %>',
   plugins: [angular(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   test: {
-    name: '<%= name %>',
+    name: '<%= projectName %>',
     watch: false,
     globals: true,
     environment: 'jsdom',
