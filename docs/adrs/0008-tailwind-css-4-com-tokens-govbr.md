@@ -52,7 +52,7 @@ Diretrizes derivadas da decisão:
    ```
 
 3. Consumir os tokens **sempre** via utilitários Tailwind (`bg-govbr-primary`, `text-govbr-danger`, `rounded-govbr-input`) — nunca hardcoded.
-4. Manter a POC (`apps/poc-primeng/src/styles.css`) como fonte-verdade do mapeamento; replicar mudanças para os apps em produção.
+4. Manter a POC (`docs/referencias/poc-primeng/src/styles.css`) como fonte-verdade do mapeamento; replicar mudanças para os apps em produção.
 
 ## Consequências
 
@@ -74,7 +74,7 @@ Diretrizes derivadas da decisão:
 
 ## Confirmação
 
-- **Validação atual.** Os tokens Gov.br e o mapeamento Tailwind 4 via `@theme` foram validados em `apps/poc-primeng/src/styles.css`, exercitados pela suíte E2E `apps/poc-primeng-e2e/src/govbr-design-tokens.spec.ts` (46 testes) como gate de regressão visual.
+- **Validação atual.** Os tokens Gov.br e o mapeamento Tailwind 4 via `@theme` foram validados em `docs/referencias/poc-primeng/src/styles.css`, exercitados pela suíte E2E `docs/referencias/poc-primeng-e2e/src/govbr-design-tokens.spec.ts` (46 testes) como gate de regressão visual.
 - **Estado em produção.** Os apps `selecao`, `ingresso` e `portal` ainda usam `src/styles.scss` com apenas `@tailwind base/components/utilities`; não importam `@govbr-ds/core` nem expõem o `@theme` com tokens Gov.br.
 - **Plano de adoção.** A adoção produtiva depende da conclusão da fundação UX/design system; será conduzida em Stories de migração dedicadas (incluindo a transição de `styles.scss` para `styles.css` e o import dos tokens antes do Tailwind), fora do escopo deste ADR.
 - **Gates adicionais quando a migração ocorrer.** Lint/CI deve banir cores hardcoded (`#xxx`, `rgb(...)`) no código-fonte de apps e libs em produção; o guia interno de tokens documenta o catálogo de utilitários disponíveis.

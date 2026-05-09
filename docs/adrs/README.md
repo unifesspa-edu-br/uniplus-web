@@ -50,6 +50,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0019](0019-tokens-govbr-compartilhados-em-shared-ui.md) | Tokens Gov.br compartilhados em `libs/shared-ui/src/styles/govbr-tokens.css` + migração Tailwind 3→4 cross-app | accepted | 2026-05-07 |
 | [0020](0020-registry-ghcr-e-tagging.md) | GitHub Container Registry e estratégia de tagging das imagens da `uniplus-web` | accepted | 2026-05-08 |
 | [0021](0021-runtime-config-via-token.md) | Runtime config via `AUTH_CONFIG` InjectionToken + fitness cross-app | accepted | 2026-05-09 |
+| [0022](0022-retirada-poc-primeng-do-workspace-ativo.md) | Retirada da POC `poc-primeng` do workspace Nx ativo | accepted | 2026-05-09 |
 
 ## Como adicionar um novo ADR
 

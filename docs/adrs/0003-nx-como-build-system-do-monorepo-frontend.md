@@ -36,12 +36,13 @@ apps/
   selecao/  selecao-e2e/
   ingresso/ ingresso-e2e/
   portal/   portal-e2e/
-  poc-primeng/ poc-primeng-e2e/
 libs/
   shared-ui/
   shared-auth/
   shared-data/
 ```
+
+> A POC `poc-primeng/` foi retirada do workspace ativo após convergência D.3 e arquivada em `docs/referencias/poc-primeng/` (read-only) — ver [ADR-0022](0022-retirada-poc-primeng-do-workspace-ativo.md).
 
 Path aliases:
 
