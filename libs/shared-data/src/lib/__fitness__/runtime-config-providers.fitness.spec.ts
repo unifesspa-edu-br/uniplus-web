@@ -64,13 +64,23 @@ describe('Fitness — apps app.config.ts (runtime config + auth, ADR-0021)', () 
     });
 
     it('chama provideRuntimeConfig() ANTES de provideAuth() no array providers', () => {
-      const indiceRuntime = conteudoSemComentarios.indexOf('provideRuntimeConfig(');
-      const indiceAuth = conteudoSemComentarios.indexOf('provideAuth(');
-      expect(indiceRuntime, `\nArquivo: ${relativo}\nprovideRuntimeConfig() não chamado.`).toBeGreaterThan(-1);
-      expect(indiceAuth, `\nArquivo: ${relativo}\nprovideAuth() não chamado.`).toBeGreaterThan(-1);
+      // Escopa o indexOf ao bloco `providers: [...]` para evitar falso
+      // positivo se o `import { provideAuth } from ...` aparecer antes do
+      // `import { provideRuntimeConfig } from ...` no source — a ordem que
+      // importa é a do array providers, não a dos imports.
+      const inicioProviders = conteudoSemComentarios.indexOf('providers:');
+      expect(
+        inicioProviders,
+        `\nArquivo: ${relativo}\nBloco 'providers:' não encontrado em ApplicationConfig.`,
+      ).toBeGreaterThan(-1);
+      const blocoProviders = conteudoSemComentarios.slice(inicioProviders);
+      const indiceRuntime = blocoProviders.indexOf('provideRuntimeConfig(');
+      const indiceAuth = blocoProviders.indexOf('provideAuth(');
+      expect(indiceRuntime, `\nArquivo: ${relativo}\nprovideRuntimeConfig() não chamado no array providers.`).toBeGreaterThan(-1);
+      expect(indiceAuth, `\nArquivo: ${relativo}\nprovideAuth() não chamado no array providers.`).toBeGreaterThan(-1);
       expect(
         indiceRuntime,
-        `\nArquivo: ${relativo}\nOrdem incorreta: provideRuntimeConfig() DEVE aparecer antes de provideAuth() — caso contrário, AUTH_CONFIG não está populado quando AuthService.init é chamado.`,
+        `\nArquivo: ${relativo}\nOrdem incorreta no array providers: provideRuntimeConfig() DEVE aparecer antes de provideAuth() — caso contrário, AUTH_CONFIG não está populado quando AuthService.init é chamado.`,
       ).toBeLessThan(indiceAuth);
     });
 
