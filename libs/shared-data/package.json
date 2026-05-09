@@ -5,6 +5,7 @@
     "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
+    "@uniplus/shared-auth": "*",
     "@uniplus/shared-core": "*",
     "rxjs": "~7.8.0",
     "vite": "^7.0.0",
