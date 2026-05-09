@@ -24,11 +24,11 @@ import { UserContextService } from '../services/user-context.service';
       <span aria-hidden="true" class="text-5xl">🚫</span>
       <div>
         <h1 class="text-2xl font-bold text-govbr-danger">Acesso negado</h1>
-        <p class="mt-2 text-govbr-text">
+        <p class="mt-2 text-govbr-gray-80">
           Sua conta não possui permissão para acessar esta área.
         </p>
         @if (user(); as profile) {
-          <p class="mt-1 text-sm text-govbr-text-secondary">
+          <p class="mt-1 text-sm text-govbr-gray-60">
             Conectado como <strong>{{ profile.username }}</strong>.
           </p>
         }
@@ -36,7 +36,7 @@ import { UserContextService } from '../services/user-context.service';
       <div class="flex flex-wrap justify-center gap-3">
         <button
           type="button"
-          class="rounded-govbr bg-govbr-primary px-4 py-2 text-white hover:bg-govbr-primary-hover"
+          class="rounded-govbr-sm bg-govbr-primary px-4 py-2 text-white hover:bg-govbr-primary-hover"
           (click)="voltar()"
         >
           Voltar ao início

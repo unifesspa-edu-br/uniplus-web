@@ -24,14 +24,17 @@ import { LoginErrorCode, classifyLoginError } from '../models/login-error.model'
         role="alert"
         aria-live="assertive"
         [class.border-govbr-danger]="isDanger()"
-        [class.bg-govbr-danger-lightest]="isDanger()"
-        [class.text-govbr-danger]="isDanger()"
+        [class.bg-govbr-danger-light]="isDanger()"
         [class.border-govbr-warning]="!isDanger()"
-        [class.bg-govbr-warning-lightest]="!isDanger()"
-        [class.text-govbr-warning]="!isDanger()"
-        class="flex items-start gap-3 border-b px-6 py-3"
+        [class.bg-govbr-warning-light]="!isDanger()"
+        class="flex items-start gap-3 border-b px-6 py-3 text-govbr-gray-80"
       >
-        <span aria-hidden="true" class="mt-0.5 text-lg">
+        <span
+          aria-hidden="true"
+          class="mt-0.5 text-lg"
+          [class.text-govbr-danger]="isDanger()"
+          [class.text-govbr-warning]="!isDanger()"
+        >
           {{ isDanger() ? '⚠' : 'ℹ' }}
         </span>
         <div class="flex-1 text-sm">
@@ -40,7 +43,7 @@ import { LoginErrorCode, classifyLoginError } from '../models/login-error.model'
         </div>
         <button
           type="button"
-          class="text-xs underline opacity-80 hover:opacity-100"
+          class="text-xs text-govbr-gray-60 underline hover:text-govbr-gray-80"
           (click)="dismiss()"
           aria-label="Fechar mensagem"
         >
