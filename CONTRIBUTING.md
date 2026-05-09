@@ -94,6 +94,71 @@ libs/
 
 ---
 
+## Arquitetura de bibliotecas
+
+### 1. Plataforma vs produto
+
+- **Plataforma** — todas as libs `shared-*` são propriedade do CTIC. Sem ownership por pró-reitoria. Decisões de evolução, refactor e versionamento ficam no time de plataforma; clientes institucionais não revisam código da plataforma.
+- **Produto** — cada app (`selecao`, `ingresso`, `portal`) é um produto institucional com stakeholder distinto (CEPS, CRCA, futuro PROEX/PROPIT). Stakeholders fornecem requisitos e validam aceite; não revisam código.
+
+### 2. Escopo canônico das 5 libs `shared-*`
+
+| Lib | Escopo |
+|---|---|
+| `@uniplus/shared-core` | Infra HTTP Angular: `LoadingService`, `NotificationService`, `ProblemI18nService`, `ApiResultInterceptor`, `HttpContext` tokens (vendor MIME, idempotency), `useApiResource`, `parseLink`, paginação cursor |
+| `@uniplus/shared-data` | DTOs, `schema.ts` gerado por OpenAPI, classes de serviço, `InjectionToken` de base paths, `ValidatorFn` de domínio (CPF, cota), runtime config (`provideRuntimeConfig`), utilidades puras de dados |
+| `@uniplus/shared-ui` | Componentes Angular standalone, pipes, integração de tokens Gov.br DS, recipe PrimeNG passthrough |
+| `@uniplus/shared-auth` | Integração Keycloak/OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
+| `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
+
+### 3. Regra de criação (rule of three + first-real-feature)
+
+- Componente/serviço/utilitário usado por **um** app e **uma** feature → mora em `libs/<scope>/<nome>/` criada via generator (próxima seção).
+- Usado por **dois ou mais** apps ou com reutilização cross-cutting hoje → mora na lib `shared-*` apropriada.
+- Em dúvida → defaulta feature lib local; promover para `shared-*` quando aparecer terceiro consumer.
+
+### 4. Comando do generator
+
+```bash
+npx nx g @uniplus/workspace:feature-lib <scope>/<nome> --type=<feature|ui|data-access>
+```
+
+Exemplos:
+
+```bash
+npx nx g @uniplus/workspace:feature-lib selecao/feature-editais-detail --type=feature
+npx nx g @uniplus/workspace:feature-lib portal/data-access-inscricoes --type=data-access
+```
+
+`<scope>` é validado contra o set `{selecao, ingresso, portal}` antes do factory rodar; `<type>` é validado pelo enum `{feature, ui, data-access}` no schema do Nx CLI. Tags emitidas no `project.json` gerado: `["scope:<scope>", "type:<type>"]`. Path mapping `@uniplus/<scope>-<nome>` é registrado automaticamente em `tsconfig.base.json`.
+
+Documentação de referência: [`tools/workspace-generators/uniplus-workspace/README.md`](tools/workspace-generators/uniplus-workspace/README.md).
+
+### 5. Required CI checks
+
+A branch protection da `main` exige aprovação dos seguintes status checks (ordem alfabética):
+
+1. `codegen-drift-check`
+2. `main`
+3. `nx run-many --target=lint --all`
+4. `PR author is org member`
+
+Renomeação dos jobs em `.github/workflows/*.yml` exige atualização correspondente da branch protection via `gh api PUT /repos/.../branches/main/protection` — os nomes nesta lista são contratuais.
+
+### 6. Roadmap V2
+
+V1 mantém topologia atual (5 libs em `@nx/angular:ng-packagr-lite`). Reativação de V2 antecipada por [ADR-0021](docs/adrs/0021-runtime-config-via-token.md) — escopo e ordem de reactivation no Epic Onda 2 quando ele for aberto:
+
+- Demote `shared-data` → `@nx/js:tsc` quando custo de metadata `ng-packagr` ficar visível.
+- Sub-entry points em `shared-data` (`@uniplus/shared-data/api/selecao`, `/validators`, `/utils`) quando volume de imports justificar.
+- Terceira dimensão de tag (`owner:*` ou `client:*`) ao primeiro conflito cross-pró-reitoria.
+
+---
+
+> Última validação: `d7e437504703` em 2026-05-09.
+
+---
+
 ## Fluxo de trabalho
 
 ### 1. Criar branch
@@ -223,8 +288,10 @@ Este repositório adota políticas de proteção da branch `main` para garantir 
 - PRs exigem:
   - 1 aprovação de colaborador com permissão de escrita
   - Status checks de CI passando — detalhes do que cada check verifica em [Quality gates](#quality-gates):
+    - `codegen-drift-check` (workflow `CI` — `.github/workflows/ci.yml`, job `codegen-drift-check`; valida que `libs/shared-data/src/lib/api/<modulo>/schema.ts` está em sync com o OpenAPI committed — ADR-0013)
     - `main` (workflow `CI` — `.github/workflows/ci.yml`, job `main`)
     - `nx run-many --target=lint --all` (workflow `Lint completo (workspace)` — `.github/workflows/lint-full.yml`)
+    - `PR author is org member` (workflow homônimo — bloqueia PRs de não-membros da organização)
   - Branch atualizada com a `main` antes do merge
   - Todas as conversas do review resolvidas
   - Aprovações anteriores são descartadas a cada novo commit (*dismiss stale reviews*)
