@@ -1,0 +1,8 @@
+import { describe, expect, it } from 'vitest';
+import { <%= name.replace(/-/g, '_') %>_placeholder } from './<%= name %>';
+
+describe('<%= name %> (placeholder)', () => {
+  it('exporta o identificador placeholder', () => {
+    expect(<%= name.replace(/-/g, '_') %>_placeholder).toBe('<%= projectName %>');
+  });
+});

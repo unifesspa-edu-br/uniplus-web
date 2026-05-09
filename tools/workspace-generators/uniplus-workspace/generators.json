@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "name": "@uniplus/workspace",
+  "version": "0.0.1",
+  "generators": {
+    "feature-lib": {
+      "factory": "./src/generators/feature-lib/generator",
+      "schema": "./src/generators/feature-lib/schema.json",
+      "description": "Cria uma feature lib taggeada [scope:<scope>, type:<type>] em libs/<scope>/<name>/."
+    }
+  }
+}
