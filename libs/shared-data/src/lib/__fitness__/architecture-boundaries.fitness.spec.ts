@@ -77,10 +77,10 @@ function extrairDepConstraints(): DepConstraint[] {
   return entries;
 }
 
-interface ResultadoAdmite {
-  ok: boolean;
-  constraint: DepConstraint | null;
-}
+type ResultadoAdmite =
+  | { ok: true; constraint: null }
+  | { ok: false; motivo: 'constraint'; constraint: DepConstraint }
+  | { ok: false; motivo: 'sem_constraint_aplicavel'; constraint: null };
 
 function admiteDependencia(
   sourceTags: string[],
@@ -91,13 +91,24 @@ function admiteDependencia(
   // o target precisa ter ao menos uma tag listada em
   // `onlyDependOnLibsWithTags`. Se qualquer constraint aplicável falha,
   // a dep viola.
+  //
+  // Se NENHUMA constraint é aplicável (source não tem nenhuma tag que
+  // apareça como `sourceTag` na matriz), tratamos como `'sem_constraint_aplicavel'`.
+  // O fitness é mais estrito que o `@nx/enforce-module-boundaries` aqui:
+  // qualquer lib mistagged ou novo project sem tagging adequado falha,
+  // forçando o ajuste das tags antes que a dep passe pelo gate. Apps de
+  // produção e suítes E2E devem ter pelo menos uma tag `scope:*` (sempre
+  // têm; ver invariante "toda lib/app tem ao menos uma tag de cada eixo").
   const aplicaveis = constraints.filter((c) => sourceTags.includes(c.sourceTag));
+  if (aplicaveis.length === 0) {
+    return { ok: false, motivo: 'sem_constraint_aplicavel', constraint: null };
+  }
   for (const c of aplicaveis) {
     const satisfaz = targetTags.some((t) =>
       c.onlyDependOnLibsWithTags.includes(t),
     );
     if (!satisfaz) {
-      return { ok: false, constraint: c };
+      return { ok: false, motivo: 'constraint', constraint: c };
     }
   }
   return { ok: true, constraint: null };
@@ -155,12 +166,20 @@ describe('Fitness — architecture boundaries (Stories #245 + #246)', () => {
       ).toBeGreaterThanOrEqual(11);
     });
 
-    it('todo edge do project graph respeita as constraints', () => {
+    it('todo edge static do project graph respeita as constraints', () => {
       const violacoes: string[] = [];
       for (const [source, edges] of Object.entries(graph.dependencies)) {
         const sourceTags = graph.nodes[source]?.data.tags ?? [];
         for (const edge of edges) {
           if (edge.target.startsWith('npm:')) continue;
+          // ESLint @nx/enforce-module-boundaries valida apenas imports
+          // TypeScript reais (edges `static` ou `dynamic` no graph). Edges
+          // `implicit` (declaradas em `apps/*-e2e/project.json` via
+          // `implicitDependencies`) representam relação operacional, não
+          // import statement — e ESLint não enforça constraints sobre elas.
+          // Pulamos para preservar a paridade "mesmos invariantes" com o
+          // ESLint.
+          if (edge.type === 'implicit') continue;
           const targetNode = graph.nodes[edge.target];
           if (!targetNode) continue;
           const targetTags = targetNode.data.tags ?? [];
@@ -169,11 +188,15 @@ describe('Fitness — architecture boundaries (Stories #245 + #246)', () => {
             targetTags,
             constraints,
           );
-          if (!resultado.ok && resultado.constraint) {
+          if (!resultado.ok) {
+            const explicacao =
+              resultado.motivo === 'constraint'
+                ? `viola constraint sourceTag=${resultado.constraint.sourceTag} ` +
+                  `(precisa ao menos uma de [${resultado.constraint.onlyDependOnLibsWithTags.join(', ')}])`
+                : `nenhuma constraint aplicável às tags do source ` +
+                  `(adicione uma entrada para alguma das tags em depConstraints, ou ajuste as tags do project)`;
             violacoes.push(
-              `  ${source} [${sourceTags.join(', ')}] -> ${edge.target} [${targetTags.join(', ')}] ` +
-                `viola constraint sourceTag=${resultado.constraint.sourceTag} ` +
-                `(precisa ao menos uma de [${resultado.constraint.onlyDependOnLibsWithTags.join(', ')}])`,
+              `  ${source} [${sourceTags.join(', ')}] -> ${edge.target} [${targetTags.join(', ')}] ${explicacao}`,
             );
           }
         }
