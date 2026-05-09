@@ -90,9 +90,15 @@ jobs:
         # cuja SHA difere do commit alvo; o `^{commit}` resolve para o commit.
         # Em tags lightweight (`git tag`) o ref já aponta para o commit e o
         # peel é noop.
+        #
+        # `git fetch origin main` sem `--depth` preserva o histórico completo
+        # já trazido pelo `actions/checkout fetch-depth: 0` acima. Adicionar
+        # `--depth=1` reverteria origin/main para shallow e quebraria
+        # `merge-base --is-ancestor` em tags pointing para commits antigos
+        # legítimos de main (false negative).
         run: |
           set -euo pipefail
-          git fetch origin main --depth=1
+          git fetch origin main
           TAG_COMMIT=$(git rev-parse "${GITHUB_REF}^{commit}")
           if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
             echo "::error::Tag ${GITHUB_REF#refs/tags/} aponta para commit $TAG_COMMIT fora de origin/main."
