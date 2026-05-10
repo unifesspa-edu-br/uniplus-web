@@ -76,6 +76,58 @@ docker pull ghcr.io/unifesspa-edu-br/uniplus-web-selecao:v0.1.0
 docker pull ghcr.io/unifesspa-edu-br/uniplus-web-ingresso:v0.1.0
 ```
 
+## Como sair de "imagem publicada" para "rodando em cluster"
+
+`publish-images.yml` **publica** a imagem no GHCR. **Não deploya.** A
+fonte de verdade GitOps que decide qual versão roda em cada cluster é o
+repositório [`unifesspa-edu-br/uniplus-infra`](https://github.com/unifesspa-edu-br/uniplus-infra).
+O desacoplamento é deliberado — invariante registrado na
+[ADR-0020](adrs/0020-registry-ghcr-e-tagging.md): a imagem é idêntica em
+todos os ambientes; só o `ConfigMap` injetado em runtime
+([#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)) muda.
+
+Fluxo completo entre tag e cluster (exemplo concreto `v0.1.2`):
+
+| Etapa | Onde | Quem | Tempo típico |
+|---|---|---|---|
+| Tag git semver | `uniplus-web` | dev | < 1 min |
+| Workflow `Publish Images` | `uniplus-web` Actions | CI | ~4 min |
+| 3 imagens em GHCR | `ghcr.io/unifesspa-edu-br/uniplus-{portal,web-selecao,web-ingresso}` | CI | parte do anterior |
+| PR de bump em `values.yaml` | `uniplus-infra/apps/uniplus-web/values.yaml` | dev/agente | ~1 min |
+| Codex AI review + CI | `uniplus-infra` | bot | ~5 min |
+| Merge do PR | `uniplus-infra` | dev | < 1 min |
+| ArgoCD reconcile | cluster | argocd (auto, poll ~3 min) | até 3 min |
+| Rolling restart dos pods | cluster | kubernetes | 1–2 min |
+| **Total tag → servindo em prod** | — | — | **15–20 min** |
+
+Snippet típico do PR de bump (`uniplus-infra`):
+
+```diff
+# apps/uniplus-web/values.yaml — repetir em cada um dos 3 apps:
+    portal:
+      image: uniplus-portal
+-     tag: v0.1.1
++     tag: v0.1.2
+```
+
+### Por que o gate manual
+
+- **Auditabilidade:** `git log` no `uniplus-infra` mostra exatamente quando
+  cada versão entrou em produção, por quem e com qual revisão.
+- **Rollback:** `git revert <commit-bump>` no `uniplus-infra` desfaz o
+  deploy sem precisar tocar imagens nem registry.
+- **Hotfix barato:** subir uma versão urgente custa um PR de ~10 linhas
+  (bump da tag), revisado e CI-validado, em vez de deploy não testado.
+
+### Quando automatizar
+
+Quando releases passarem a acontecer várias vezes por dia, vale plugar
+[`argocd-image-updater`](https://argocd-image-updater.readthedocs.io/) ou
+Renovate — ambos **abrem o PR de bump automaticamente** ao detectar nova
+tag no GHCR, mas o merge continua passando por CI + Codex + revisão
+humana. Hoje (2026-05) o volume de releases não justifica a automação;
+fica registrado como follow-up.
+
 ## Follow-ups deferidos
 
 - **SBOM e attestation cosign keyless via OIDC** — registrados em backlog,
