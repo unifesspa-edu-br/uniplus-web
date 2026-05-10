@@ -10,8 +10,19 @@ name: CodeQL
 on:
   push:
     branches: [main]
+    # paths-ignore evita execução em PRs/pushes docs-only (sem código TS/JS
+    # alterado, CodeQL não acrescenta sinal). O schedule semanal abaixo
+    # cobre drift acidental.
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
   schedule:
     # Segunda-feira 03:45 UTC (= 00:45 BRT). Defasado 15min do api/codeql.yml
     # para evitar concorrência por runners do GitHub Actions na mesma janela.
