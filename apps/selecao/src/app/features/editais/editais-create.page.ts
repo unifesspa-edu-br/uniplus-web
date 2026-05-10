@@ -14,6 +14,7 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
+  NotificationService,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -127,6 +128,7 @@ interface CriarEditalForm {
 export class EditaisCreatePage {
   private readonly api = inject(EditaisApi);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -212,7 +214,13 @@ export class EditaisCreatePage {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
-    this.errorMessage.set(this.problemI18n.resolve(problem).title);
+    const mensagem = this.problemI18n.resolve(problem).title;
+    this.errorMessage.set(mensagem);
+    // 5xx vira toast persistente em paralelo ao banner local — usuário
+    // copia o `traceId` para reportar incidente.
+    if (problem.status >= 500) {
+      this.notifications.errorFromProblem(problem, { title: mensagem });
+    }
   }
 
   private aplicarErrosDeValidacao(

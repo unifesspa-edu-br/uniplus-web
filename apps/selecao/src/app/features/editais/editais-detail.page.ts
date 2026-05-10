@@ -12,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {
+  NotificationService,
   ProblemI18nService,
   idempotencyKey,
   useApiResource,
@@ -149,6 +150,7 @@ export class EditaisDetailPage {
 
   private readonly api = inject(EditaisApi);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
@@ -215,6 +217,19 @@ export class EditaisDetailPage {
         this.mensagemSucesso.set(null);
       });
     });
+
+    // 5xx no GET → toast persistente em paralelo ao banner local. Disparado
+    // só quando o `problem` muda (mesmo problem repetido em re-renders não
+    // duplica toast). 4xx mantém apenas o banner inline.
+    effect(() => {
+      const problem = this.editalResource.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => {
+          this.notifications.errorFromProblem(problem, { title: titulo });
+        });
+      }
+    });
   }
 
   protected abrirConfirmacao(): void {
@@ -249,7 +264,13 @@ export class EditaisDetailPage {
           this.editalResource.reload();
           return;
         }
-        this.publishErrorMessage.set(this.problemI18n.resolve(result.problem).title);
+        const mensagem = this.problemI18n.resolve(result.problem).title;
+        this.publishErrorMessage.set(mensagem);
+        // 5xx no POST publicar também vira toast persistente — usuário
+        // copia o `traceId` para reportar incidente sem sair da página.
+        if (result.problem.status >= 500) {
+          this.notifications.errorFromProblem(result.problem, { title: mensagem });
+        }
       });
   }
 }

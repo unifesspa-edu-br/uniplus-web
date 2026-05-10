@@ -7,7 +7,11 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core';
+import {
+  NotificationService,
+  apiResultInterceptor,
+  buildVendorMimeAccept,
+} from '@uniplus/shared-core';
 import { EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data';
 import { EditaisListPage } from './editais-list.page';
 
@@ -29,6 +33,7 @@ describe('EditaisListPage', () => {
   let fixture: ComponentFixture<EditaisListPage>;
   let component: EditaisListPage;
   let controller: HttpTestingController;
+  let notifications: NotificationService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -44,6 +49,8 @@ describe('EditaisListPage', () => {
     fixture = TestBed.createComponent(EditaisListPage);
     component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
+    notifications = TestBed.inject(NotificationService);
+    notifications.clearAll();
   });
 
   afterEach(() => controller.verify());
@@ -188,9 +195,78 @@ describe('EditaisListPage', () => {
     const heading = fixture.debugElement.query(By.css('h2')).nativeElement as HTMLElement;
     expect(heading.textContent).toContain('Editais');
 
-    const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
+    const linhas = fixture.debugElement.queryAll(By.css('[data-testid="data-table-row"]'));
     expect(linhas.length).toBe(1);
     const cells = fixture.debugElement.queryAll(By.css('tbody td'));
     expect(cells[0].nativeElement.textContent.trim()).toBe('040/2026');
+  });
+
+  it('5xx dispara toast persistente via NotificationService (CA-04)', () => {
+    fixture.detectChanges();
+
+    controller.expectOne(`${BASE}/api/editais`).flush(
+      {
+        type: 'about:blank',
+        title: 'Falha temporária do servidor',
+        status: 503,
+        code: 'uniplus.server.indisponivel',
+        traceId: '7af92f3577b34da6a3ce929d0e0e4742',
+      },
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    expect(notifications.notifications()).toHaveLength(1);
+    const [toast] = notifications.notifications();
+    expect(toast.type).toBe('error');
+    expect(toast.title).toBe('Falha temporária do servidor');
+    expect(toast.traceId).toBe('7af92f3577b34da6a3ce929d0e0e4742');
+    expect(toast.persistent).toBe(true);
+  });
+
+  it('4xx NÃO dispara toast — apenas banner inline (CA-04)', () => {
+    fixture.detectChanges();
+
+    controller.expectOne(`${BASE}/api/editais`).flush(
+      {
+        type: 'about:blank',
+        title: 'Token inválido',
+        status: 401,
+        code: 'uniplus.auth.token_invalido',
+        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      },
+      {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    expect(component.errorMessage()).toBe('Token inválido');
+    expect(notifications.notifications()).toHaveLength(0);
+  });
+
+  it('errorTraceId é propagado ao DataTable em falha 5xx', () => {
+    fixture.detectChanges();
+
+    controller.expectOne(`${BASE}/api/editais`).flush(
+      {
+        type: 'about:blank',
+        title: 'Falha do servidor',
+        status: 502,
+        code: 'uniplus.server.gateway',
+        traceId: 'cafe1234567890abcdef1234567890ab',
+      },
+      {
+        status: 502,
+        statusText: 'Bad Gateway',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    expect(component.errorTraceId()).toBe('cafe1234567890abcdef1234567890ab');
   });
 });
