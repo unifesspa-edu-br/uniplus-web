@@ -10,6 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import {
   Cursor,
+  NotificationService,
   ProblemI18nService,
   extractNextCursor,
 } from '@uniplus/shared-core';
@@ -60,6 +61,7 @@ import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
 export class EditaisListPage {
   private readonly api = inject(EditaisApi);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
 
@@ -126,10 +128,17 @@ export class EditaisListPage {
           this.cursorUltimaFalha = undefined;
           return;
         }
-        this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
+        const mensagem = this.problemI18n.resolve(result.problem).title;
+        this.errorMessage.set(mensagem);
         this.errorTraceId.set(
           result.problem.traceId.length > 0 ? result.problem.traceId : null,
         );
+        // 5xx vira toast persistente em paralelo ao banner local — usuário
+        // pode copiar o `traceId` para reportar incidente sem precisar
+        // navegar até a tabela. 4xx mantém apenas o banner inline.
+        if (result.problem.status >= 500) {
+          this.notifications.errorFromProblem(result.problem, { title: mensagem });
+        }
         // Em falha pós-1ª página, preserva o cursor original — usuário consegue
         // retentar via "Carregar mais" sem perder os items já carregados. Em
         // falha de carga inicial, o cursor já é null por construção.
