@@ -47,11 +47,13 @@ import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
       [data]="rows()"
       [loading]="loading()"
       [errorMessage]="errorMessage()"
+      [errorTraceId]="errorTraceId()"
       [nextCursor]="nextCursor()"
       [rowClickable]="true"
       emptyMessage="Nenhum edital cadastrado."
       (loadNext)="aoCarregarMais($event)"
       (rowClick)="aoSelecionar($event)"
+      (retry)="aoTentarNovamente()"
     />
   `,
 })
@@ -65,6 +67,10 @@ export class EditaisListPage {
   readonly nextCursor = signal<Cursor | null>(null);
   readonly loading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
+  /** Trace context da última falha — alimenta o link "Reportar incidente" do DataTable. */
+  readonly errorTraceId = signal<string | null>(null);
+  /** Cursor preservado da última falha pós-1ª página, para o retry retomar do mesmo ponto. */
+  private cursorUltimaFalha: Cursor | undefined = undefined;
 
   protected readonly rows = computed(
     () => this.editais() as readonly Record<string, unknown>[],
@@ -92,12 +98,22 @@ export class EditaisListPage {
     }
   }
 
+  /**
+   * Handler do output `retry` do `DataTableComponent`. Reusa o cursor
+   * pré-falha (paginação) ou recomeça do zero (carga inicial). Sem
+   * `cursorUltimaFalha`, equivale a retentar a 1ª página.
+   */
+  protected aoTentarNovamente(): void {
+    this.carregar(this.cursorUltimaFalha);
+  }
+
   private carregar(cursor: Cursor | undefined): void {
     if (this.loading()) {
       return;
     }
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.errorTraceId.set(null);
 
     this.api
       .listar(cursor)
@@ -107,12 +123,17 @@ export class EditaisListPage {
         if (result.ok) {
           this.editais.update((prev) => [...prev, ...result.data]);
           this.nextCursor.set(extractNextCursor(result.headers.get('Link')));
+          this.cursorUltimaFalha = undefined;
           return;
         }
         this.errorMessage.set(this.problemI18n.resolve(result.problem).title);
+        this.errorTraceId.set(
+          result.problem.traceId.length > 0 ? result.problem.traceId : null,
+        );
         // Em falha pós-1ª página, preserva o cursor original — usuário consegue
         // retentar via "Carregar mais" sem perder os items já carregados. Em
         // falha de carga inicial, o cursor já é null por construção.
+        this.cursorUltimaFalha = cursor;
       });
   }
 }
