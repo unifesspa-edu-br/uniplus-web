@@ -6,6 +6,7 @@ export { StatusBadgeComponent, type StatusType } from './components/status-badge
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from './components/form-field/form-field';
 export { LoadingOverlayComponent } from './components/loading-overlay/loading-overlay';
+export { NotificationHostComponent } from './components/notification-host/notification-host';
 
 // Pipes
 export { CpfPipe } from './pipes/cpf.pipe';

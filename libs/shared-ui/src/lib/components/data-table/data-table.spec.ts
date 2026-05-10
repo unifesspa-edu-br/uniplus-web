@@ -238,4 +238,106 @@ describe('DataTableComponent', () => {
     linhas[0].nativeElement.click();
     expect(emit).not.toHaveBeenCalled();
   });
+
+  it('aria-busy=true no <table> quando loading()', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('loading', true);
+    fixture.detectChanges();
+
+    const table = fixture.debugElement.query(By.css('table')).nativeElement as HTMLTableElement;
+    expect(table.getAttribute('aria-busy')).toBe('true');
+
+    fixture.componentRef.setInput('loading', false);
+    fixture.detectChanges();
+    expect(table.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('estado erro inicial: renderiza botão "Tentar novamente" + emite output retry no clique', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('errorMessage', 'Falha de rede.');
+    fixture.detectChanges();
+
+    const retryButton = fixture.debugElement.query(
+      By.css('[data-testid="data-table-retry"]'),
+    );
+    expect(retryButton).not.toBeNull();
+    expect((retryButton.nativeElement as HTMLButtonElement).textContent?.trim()).toBe(
+      'Tentar novamente',
+    );
+
+    const emit = vi.fn();
+    component.retry.subscribe(emit);
+    (retryButton.nativeElement as HTMLButtonElement).click();
+    expect(emit).toHaveBeenCalledTimes(1);
+  });
+
+  it('estado erro inicial com errorTraceId: renderiza "Reportar incidente" e exibe o trace', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('errorMessage', 'Falha 500.');
+    fixture.componentRef.setInput('errorTraceId', '0123456789abcdef0123456789abcdef');
+    fixture.detectChanges();
+
+    const trace = fixture.debugElement.query(
+      By.css('[data-testid="data-table-error-trace"]'),
+    );
+    expect(trace).not.toBeNull();
+    expect(trace.nativeElement.textContent).toContain('Reportar incidente');
+    const traceId = fixture.debugElement.query(
+      By.css('[data-testid="data-table-error-trace-id"]'),
+    );
+    expect((traceId.nativeElement as HTMLElement).textContent).toBe(
+      '0123456789abcdef0123456789abcdef',
+    );
+  });
+
+  it('estado erro inicial sem errorTraceId: não renderiza "Reportar incidente"', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('errorMessage', 'Falha local.');
+    fixture.detectChanges();
+
+    expect(
+      fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]')),
+    ).toBeNull();
+  });
+
+  it('errorTraceId="" não habilita link "Reportar incidente" (boundary)', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('errorMessage', 'Falha local.');
+    fixture.componentRef.setInput('errorTraceId', '');
+    fixture.detectChanges();
+
+    expect(
+      fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]')),
+    ).toBeNull();
+  });
+
+  it('estado erro pós-1ª página: banner exibe botão "Tentar novamente" + emite retry', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('errorMessage', 'Falha de rede ao paginar.');
+    fixture.componentRef.setInput('nextCursor', createCursor('cursor-retry'));
+    fixture.detectChanges();
+
+    const banner = fixture.debugElement.query(
+      By.css('[data-testid="data-table-error-banner"]'),
+    );
+    expect(banner).not.toBeNull();
+    const retryButton = fixture.debugElement.query(
+      By.css('[data-testid="data-table-retry-banner"]'),
+    );
+    expect((retryButton.nativeElement as HTMLButtonElement).textContent?.trim()).toBe(
+      'Tentar novamente',
+    );
+
+    const emit = vi.fn();
+    component.retry.subscribe(emit);
+    (retryButton.nativeElement as HTMLButtonElement).click();
+    expect(emit).toHaveBeenCalledTimes(1);
+  });
 });
