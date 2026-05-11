@@ -3,21 +3,29 @@ import { signal } from '@angular/core';
 
 import { AuthService } from './auth.service';
 import { UserContextService } from './user-context.service';
-import type { UserProfile, UserRole } from '../models/user.model';
+import type { UserProfile } from '../models/user.model';
 
 // Stub mínimo do AuthService — exercita o contrato consumido por
 // UserContextService (userProfile, authenticated, hasRole), sem subir
 // keycloak-js. Mantém o teste rápido e isolado: o objetivo é provar a
 // lógica de derivação do contexto, não a integração com OIDC.
+//
+// O método `hasRole` é resolvido em duas camadas, em ordem de precedência:
+// 1. Se `hasRoleByLogin` foi configurado, ele decide por login (permite
+//    cenários como "só o role X bate").
+// 2. Caso contrário, devolve `hasRoleResult` (default uniforme).
+// Isso unifica os 2 padrões de mock e mantém a contagem de chamadas
+// centralizada em `hasRoleCalls`.
 class AuthServiceStub {
   readonly userProfile = signal<UserProfile | null>(null);
   readonly authenticated = signal(false);
-  hasRoleCalls: string[] = [];
+  readonly hasRoleCalls: string[] = [];
   hasRoleResult = false;
+  hasRoleByLogin: ((role: string) => boolean) | null = null;
 
   hasRole(role: string): boolean {
     this.hasRoleCalls.push(role);
-    return this.hasRoleResult;
+    return this.hasRoleByLogin?.(role) ?? this.hasRoleResult;
   }
 }
 
@@ -103,10 +111,7 @@ describe('UserContextService', () => {
       // Simula: usuário é "gestor" mas tenta hasAnyRole('admin','gestor').
       // O stub responde true só para "gestor" — provamos curto-circuito
       // sem ler nenhuma chamada extra.
-      authStub.hasRole = (role: string): boolean => {
-        authStub.hasRoleCalls.push(role);
-        return role === 'gestor';
-      };
+      authStub.hasRoleByLogin = (role) => role === 'gestor';
 
       const resultado = service.hasAnyRole('admin', 'gestor', 'avaliador');
 
@@ -119,10 +124,7 @@ describe('UserContextService', () => {
     it('hasAnyRole retorna false quando nenhum role bate', () => {
       authStub.hasRoleResult = false;
 
-      const resultado = service.hasAnyRole(
-        'admin' as UserRole,
-        'gestor' as UserRole,
-      );
+      const resultado = service.hasAnyRole('admin', 'gestor');
 
       expect(resultado).toBe(false);
       expect(authStub.hasRoleCalls).toEqual(['admin', 'gestor']);
