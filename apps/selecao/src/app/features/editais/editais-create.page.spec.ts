@@ -232,4 +232,50 @@ describe('EditaisCreatePage', () => {
 
     controller.expectOne(`${BASE}/api/editais`).flush('id', { status: 201, statusText: 'Created' });
   });
+
+  // Cobre o caminho real do usuário: preencher inputs via DOM (input event)
+  // em vez de form.setValue(...). O setValue() bypassa ControlValueAccessor
+  // e mascara o bug runtime — esse teste falha sem o fix em FormFieldComponent
+  // (ramo estatico type="number" para ativar NumberValueAccessor). Sem fix,
+  // tipoProcesso/numeroEdital/anoEdital sairiam no body como string e o
+  // backend retornaria 400 (issue #374, validado via Playwright real).
+  it('submit via DOM (NumberValueAccessor): body envia campos numericos como number, nao string', () => {
+    const numericInputs = fixture.nativeElement.querySelectorAll('input[type="number"]') as NodeListOf<HTMLInputElement>;
+    expect(numericInputs.length).toBe(4);
+
+    const [numeroEditalInput, anoEditalInput, tipoProcessoInput, maximoOpcoesInput] = numericInputs;
+    const tituloInput = fixture.nativeElement.querySelector('input[type="text"]') as HTMLInputElement;
+
+    numeroEditalInput.value = '42';
+    numeroEditalInput.dispatchEvent(new Event('input'));
+    anoEditalInput.value = '2026';
+    anoEditalInput.dispatchEvent(new Event('input'));
+    tituloInput.value = 'PSE 2026';
+    tituloInput.dispatchEvent(new Event('input'));
+    tipoProcessoInput.value = '1';
+    tipoProcessoInput.dispatchEvent(new Event('input'));
+    maximoOpcoesInput.value = '2';
+    maximoOpcoesInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    component['enviar']();
+
+    const req = controller.expectOne(`${BASE}/api/editais`);
+    expect(req.request.body).toEqual({
+      numeroEdital: 42,
+      anoEdital: 2026,
+      titulo: 'PSE 2026',
+      tipoProcesso: 1,
+      maximoOpcoesCurso: 2,
+    });
+    // Strict type check explícito: cada campo numerico tem que ser number,
+    // nao string. typeof === 'number' garante que NumberValueAccessor
+    // coergiu via FormFieldComponent (issue #374).
+    expect(typeof req.request.body.numeroEdital).toBe('number');
+    expect(typeof req.request.body.anoEdital).toBe('number');
+    expect(typeof req.request.body.tipoProcesso).toBe('number');
+    expect(typeof req.request.body.maximoOpcoesCurso).toBe('number');
+
+    req.flush('019e1a15-c374-7ae4-8f21-91e782f8f910', { status: 201, statusText: 'Created' });
+  });
 });

@@ -173,6 +173,60 @@ describe('FormFieldComponent', () => {
     expect(control.dirty).toBe(true);
   });
 
+  // Garante que o ramo estatico type="number" do template ativa o
+  // NumberValueAccessor do Angular Reactive Forms (selector estatico
+  // 'input[type=number][formControl]'). Sem essa cobertura, refactors
+  // futuros que tentem fundir os ramos de novo em um [type] dinamico
+  // regridem para DefaultValueAccessor entregando string ao FormControl<number>
+  // — exatamente o bug runtime identificado na issue #374 (criar edital
+  // via SPA falhava com 400 porque tipoProcesso chegava ao backend como
+  // string e quebrava o binding do enum integer).
+  it('type="number": NumberValueAccessor entrega valor como number ao FormControl<number>', () => {
+    const control = new FormControl<number | null>(null);
+    fixture.componentRef.setInput('control', control);
+    fixture.componentRef.setInput('type', 'number');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
+    expect(input.type).toBe('number');
+
+    input.value = '42';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(typeof control.value).toBe('number');
+    expect(control.value).toBe(42);
+  });
+
+  it('type="number": input vazio entrega null ao FormControl<number | null> (semantica do NumberValueAccessor)', () => {
+    const control = new FormControl<number | null>(42);
+    fixture.componentRef.setInput('control', control);
+    fixture.componentRef.setInput('type', 'number');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(control.value).toBeNull();
+  });
+
+  it('type="text": DefaultValueAccessor entrega string mesmo quando usuario digita digitos', () => {
+    const control = new FormControl<string>('');
+    fixture.componentRef.setInput('control', control);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.detectChanges();
+
+    const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
+    input.value = '42';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(typeof control.value).toBe('string');
+    expect(control.value).toBe('42');
+  });
+
   // Documenta a API: defaults dos inputs opcionais. Como signals nunca
   // são nulos (sempre objetos), checar `.toBeTruthy()` direto seria trivial;
   // chamar como função (`input()`) verifica o valor default real.
