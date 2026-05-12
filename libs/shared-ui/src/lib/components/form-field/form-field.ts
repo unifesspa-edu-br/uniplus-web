@@ -35,17 +35,38 @@ let formFieldIdSeed = 0;
     <label [for]="inputId" class="mb-1 block text-sm font-medium text-gray-700">
       {{ label() }}
     </label>
-    <input
-      [id]="inputId"
-      [type]="type()"
-      [formControl]="control()"
-      [attr.placeholder]="placeholder() || null"
-      [attr.min]="min() ?? null"
-      [attr.max]="max() ?? null"
-      [attr.aria-invalid]="errorMessage() ? 'true' : null"
-      [attr.aria-describedby]="describedBy()"
-      class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-govbr-primary"
-    />
+    <!-- Ramo estatico type="number": necessario para que o NumberValueAccessor
+         do Angular Reactive Forms case com seu selector estatico
+         ('input[type=number][formControl]'). Com [type] dinamico via signal,
+         o Angular cai no DefaultValueAccessor e entrega o valor como string,
+         quebrando FormControl<number> (issue #374). Demais types continuam
+         no ramo dinamico padrao porque DefaultValueAccessor (string) eh o
+         comportamento desejado para text/email/password/etc. -->
+    @if (type() === 'number') {
+      <input
+        [id]="inputId"
+        type="number"
+        [formControl]="control()"
+        [attr.placeholder]="placeholder() || null"
+        [attr.min]="min() ?? null"
+        [attr.max]="max() ?? null"
+        [attr.aria-invalid]="errorMessage() ? 'true' : null"
+        [attr.aria-describedby]="describedBy()"
+        class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-govbr-primary"
+      />
+    } @else {
+      <input
+        [id]="inputId"
+        [type]="type()"
+        [formControl]="control()"
+        [attr.placeholder]="placeholder() || null"
+        [attr.min]="min() ?? null"
+        [attr.max]="max() ?? null"
+        [attr.aria-invalid]="errorMessage() ? 'true' : null"
+        [attr.aria-describedby]="describedBy()"
+        class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-govbr-primary"
+      />
+    }
     <!-- Erro e hint sempre renderizados (com [hidden]) — garantem que o ID
          existe no DOM antes que aria-describedby o referencie, evitando gap
          para leitores de tela (NVDA/JAWS) na primeira exibição de erro.
