@@ -11,6 +11,19 @@ informed:
 
 # ADR-0020: GitHub Container Registry e estratégia de tagging das imagens da `uniplus-web`
 
+> **Emenda de 2026-05-17 — multi-arch (`linux/arm64`) habilitado**
+>
+> A decisão original limita publicação a `linux/amd64` (seção "Resultado da decisão") e lista "Sem multi-arch ARM" nas consequências negativas. A clausula é revisitada agora porque a Epic [`unifesspa-edu-br/uniplus-infra#317`](https://github.com/unifesspa-edu-br/uniplus-infra/issues/317) provisiona o lab Uni+ em `us-ashburn-1` sobre `VM.Standard.A1.Flex` (ARM Ampere) — alvo de migração do lab atual `standalone` (`sa-saopaulo-1`/E5 AMD) antes do trial OCI expirar em 2026-06-03.
+>
+> **O que muda:**
+>
+> - `publish-images.yml` passa a produzir manifest list multi-arch (`linux/amd64,linux/arm64`) por release. ArgoCD em cluster amd64 ou arm64 consome a mesma tag `vX.Y.Z`; o daemon Docker resolve o digest correto pela plataforma do nó.
+> - Smoke test runtime (non-root + `/health.json`) permanece em `linux/amd64` apenas: as invariantes validadas (usuário não-root, nginx servindo `/health.json` com `{"status":"ok"}`) são idênticas entre arquiteturas. `nginxinc/nginx-unprivileged` é imagem multi-arch nativa, então emular arm64 via QEMU só repete o mesmo cheque com overhead.
+> - Layer arm64 é compilado via QEMU emulation no runner amd64 do GitHub Actions (`docker/setup-qemu-action` registra os handlers `binfmt_misc`). Custo: ~2–3× mais lento por release. Aceitável porque o trigger continua sendo tag explícita (release raro, não rolling tag).
+> - O Dockerfile não muda — `node:22-alpine` (build) e `nginxinc/nginx-unprivileged:1.27-alpine` (runtime) já são multi-arch; o `npm ci` + `npx nx build` é puro JS arch-neutral.
+>
+> **O que permanece válido:** registry (GHCR), naming `uniplus-portal` / `uniplus-web-{selecao,ingresso}`, estratégia lockstep semver, gates de validação (formato semver, tag em commit em `main`), smoke runtime pré-push com hardening da [#4](https://github.com/unifesspa-edu-br/uniplus-web/issues/4) verificado. A emenda toca apenas a cláusula de plataformas.
+
 ## Contexto e enunciado do problema
 
 A Fase 5 do plano de deploy (cluster standalone) está bloqueada porque as imagens dos três frontends (`uniplus-portal`, `uniplus-web-selecao`, `uniplus-web-ingresso`) ainda não são publicadas em um registry acessível pelo cluster. Os Dockerfiles existem (`docker/Dockerfile.portal`, `docker/Dockerfile.selecao`, `docker/Dockerfile.ingresso`) e o pipeline de lint/test/build/E2E já é verde via Nx Cloud — mas não há workflow de publish, não há convenção de naming nem política de tagging.
