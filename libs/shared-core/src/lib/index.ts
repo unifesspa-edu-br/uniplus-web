@@ -9,5 +9,13 @@ export type {
 // Interceptors
 export { loadingInterceptor } from './interceptors/loading.interceptor';
 
+// DOM primitives
+export {
+  createDisclosureController,
+  type UiDisclosureController,
+  type UiDisclosureControllerOptions,
+  type UiDisclosureRef,
+} from './dom/disclosure';
+
 // HTTP — adapter `ApiResult<T>` consolidado (ADR-0011 + ADR-0012)
 export * from './http';
