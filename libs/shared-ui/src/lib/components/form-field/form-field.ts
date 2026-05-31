@@ -32,8 +32,12 @@ let formFieldIdSeed = 0;
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <label [for]="inputId" class="mb-1 block text-sm font-medium text-gray-700">
-      {{ label() }}
+    <label
+      [for]="inputId"
+      class="field__label"
+      [class.is-required]="isRequired()"
+    >
+      {{ fieldLabel() }}
     </label>
     <!-- Ramo estatico type="number": necessario para que o NumberValueAccessor
          do Angular Reactive Forms case com seu selector estatico
@@ -42,29 +46,33 @@ let formFieldIdSeed = 0;
          quebrando FormControl<number> (issue #374). Demais types continuam
          no ramo dinamico padrao porque DefaultValueAccessor (string) eh o
          comportamento desejado para text/email/password/etc. -->
-    @if (type() === 'number') {
+    @if (inputType() === 'number') {
       <input
         [id]="inputId"
         type="number"
-        [formControl]="control()"
-        [attr.placeholder]="placeholder() || null"
-        [attr.min]="min() ?? null"
-        [attr.max]="max() ?? null"
+        [formControl]="fieldControl()"
+        [attr.placeholder]="placeholderText() || null"
+        [attr.min]="minValue() ?? null"
+        [attr.max]="maxValue() ?? null"
+        [attr.required]="isRequired() ? '' : null"
+        [attr.aria-required]="isRequired() ? 'true' : null"
         [attr.aria-invalid]="errorMessage() ? 'true' : null"
         [attr.aria-describedby]="describedBy()"
-        class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-govbr-primary"
+        class="input"
       />
     } @else {
       <input
         [id]="inputId"
-        [type]="type()"
-        [formControl]="control()"
-        [attr.placeholder]="placeholder() || null"
-        [attr.min]="min() ?? null"
-        [attr.max]="max() ?? null"
+        [type]="inputType()"
+        [formControl]="fieldControl()"
+        [attr.placeholder]="placeholderText() || null"
+        [attr.min]="minValue() ?? null"
+        [attr.max]="maxValue() ?? null"
+        [attr.required]="isRequired() ? '' : null"
+        [attr.aria-required]="isRequired() ? 'true' : null"
         [attr.aria-invalid]="errorMessage() ? 'true' : null"
         [attr.aria-describedby]="describedBy()"
-        class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-govbr-primary"
+        class="input"
       />
     }
     <!-- Erro e hint sempre renderizados (com [hidden]) — garantem que o ID
@@ -75,7 +83,7 @@ let formFieldIdSeed = 0;
     <p
       [id]="errorId"
       [hidden]="!errorMessage()"
-      class="mt-1 text-xs text-red-700"
+      class="field__error"
       aria-live="polite"
     >
       {{ errorMessage() }}
@@ -83,26 +91,27 @@ let formFieldIdSeed = 0;
     <p
       [id]="hintId"
       [hidden]="!!errorMessage() || !hint()"
-      class="mt-1 text-xs text-gray-500"
+      class="field__hint"
     >
       {{ hint() }}
     </p>
   `,
 })
 export class FormFieldComponent {
-  readonly label = input.required<string>();
+  readonly fieldLabel = input.required<string>();
   /**
    * `FormControl` tipado — caller passa via `[control]="form.controls.<nome>"`.
    * Aceitar `FormControl<unknown>` permite que callers preservem o tipo
    * narrow sem cast. Internamente o wrapper só lê valor/erros.
    */
-  readonly control = input.required<FormControl<unknown>>();
-  readonly type = input<string>('text');
-  readonly placeholder = input<string>('');
+  readonly fieldControl = input.required<FormControl<unknown>>();
+  readonly inputType = input<string>('text');
+  readonly placeholderText = input<string>('');
   readonly errorMessage = input<string | null>(null);
   readonly hint = input<string | null>(null);
-  readonly min = input<number | null>(null);
-  readonly max = input<number | null>(null);
+  readonly minValue = input<number | null>(null);
+  readonly maxValue = input<number | null>(null);
+  readonly isRequired = input<boolean>(false);
 
   /**
    * IDs únicos por instância — counter privado ao módulo. Valores fixos
@@ -117,9 +126,9 @@ export class FormFieldComponent {
 
   /**
    * `aria-describedby` aponta para erro quando presente, hint caso contrário,
-   * ou null. Garante leitor de tela leia a única mensagem ativa. Como ambos
-   * `<p>` estão sempre no DOM (controlados por `[hidden]`), a referência é
-   * sempre válida.
+   * ou null. Garante que o leitor de tela leia a única mensagem ativa. Como
+   * ambos `<p>` estão sempre no DOM (controlados por `[hidden]`), a referência
+   * é sempre válida sem apontar para conteúdo oculto.
    */
   protected readonly describedBy = computed<string | null>(() => {
     if (this.errorMessage()) return this.errorId;

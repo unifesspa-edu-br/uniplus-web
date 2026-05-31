@@ -117,36 +117,36 @@ describe('CpfInputComponent (ControlValueAccessor)', () => {
     expect(input.getAttribute('autocomplete')).toBe('off');
   });
 
-  it('usa ariaLabel como fallback quando label() é vazio', () => {
+  it('usa accessibleName como fallback quando fieldLabel() é vazio', () => {
     const { fixture, getInputEl } = setup();
     fixture.detectChanges();
     expect(getInputEl().getAttribute('aria-label')).toBe('CPF');
   });
 
-  it('omite aria-label quando label() está presente (para evitar duplicação)', () => {
+  it('omite aria-label quando fieldLabel() está presente (para evitar duplicação)', () => {
     const { fixture, getInputEl } = setup();
-    fixture.componentRef.setInput('label', 'Informe seu CPF');
+    fixture.componentRef.setInput('fieldLabel', 'Informe seu CPF');
     fixture.detectChanges();
     expect(getInputEl().getAttribute('aria-label')).toBeNull();
   });
 
-  it('aceita ariaLabel customizado quando label() é vazio', () => {
+  it('aceita accessibleName customizado quando fieldLabel() é vazio', () => {
     const { fixture, getInputEl } = setup();
-    fixture.componentRef.setInput('ariaLabel', 'CPF do candidato');
+    fixture.componentRef.setInput('accessibleName', 'CPF do candidato');
     fixture.detectChanges();
     expect(getInputEl().getAttribute('aria-label')).toBe('CPF do candidato');
   });
 
-  it('marca aria-required e required nativo quando required=true', () => {
+  it('marca aria-required e required nativo quando isRequired=true', () => {
     const { fixture, getInputEl } = setup();
-    fixture.componentRef.setInput('required', true);
+    fixture.componentRef.setInput('isRequired', true);
     fixture.detectChanges();
     const input = getInputEl();
     expect(input.getAttribute('aria-required')).toBe('true');
     expect(input.required).toBe(true);
   });
 
-  it('omite aria-required quando required=false (default)', () => {
+  it('omite aria-required quando isRequired=false (default)', () => {
     const { getInputEl } = setup();
     const input = getInputEl();
     expect(input.getAttribute('aria-required')).toBeNull();

@@ -2,10 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createCursor } from '@uniplus/shared-core';
-import { DataTableComponent, DataTableColumn } from './data-table';
+import { DataTableComponent, UiDataTableColumn } from './data-table';
 
 describe('DataTableComponent', () => {
-  const COLUMNS: DataTableColumn[] = [
+  const COLUMNS: UiDataTableColumn[] = [
     { field: 'id', header: 'ID', sortable: false },
     { field: 'name', header: 'Name', sortable: true },
   ];
@@ -42,10 +42,10 @@ describe('DataTableComponent', () => {
     expect(component.columns().length).toBe(COLUMNS.length);
   });
 
-  it('renderiza a tabela com linhas quando o input data() está preenchido', () => {
+  it('renderiza a tabela com linhas quando o input records() está preenchido', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.detectChanges();
     const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
 
@@ -55,7 +55,7 @@ describe('DataTableComponent', () => {
   it('renderiza o valor de cada célula conforme o field da coluna', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.detectChanges();
 
     const cells = fixture.debugElement.queryAll(By.css('tbody td'));
@@ -75,20 +75,20 @@ describe('DataTableComponent', () => {
     expect(tableCellEl.textContent.trim()).toBe(component.emptyMessage());
   });
 
-  it('exibe loadingLabel no tbody quando loading=true e data está vazio', () => {
+  it('exibe loadingLabel no tbody quando isLoading=true e records está vazio', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('loading', true);
+    fixture.componentRef.setInput('isLoading', true);
     fixture.detectChanges();
 
     const cell = fixture.debugElement.query(By.css('tbody td')).nativeElement as HTMLTableCellElement;
     expect(cell.textContent?.trim()).toBe('Carregando…');
   });
 
-  it('exibe erro no tbody quando errorMessage está populado e data está vazio', () => {
+  it('exibe erro no tbody quando errorMessage está populado e records está vazio', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('loading', true);
+    fixture.componentRef.setInput('isLoading', true);
     fixture.componentRef.setInput('errorMessage', 'Falha ao carregar editais.');
     fixture.detectChanges();
 
@@ -97,10 +97,10 @@ describe('DataTableComponent', () => {
     expect(alertaTbody.nativeElement.textContent).toContain('Falha ao carregar editais.');
   });
 
-  it('em erro com data carregado: linhas preservadas + banner de erro fora do tbody + botão "Carregar mais" disponível', () => {
+  it('em erro com records carregados: linhas preservadas + banner de erro fora do tbody + botão "Carregar mais" disponível', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('errorMessage', 'Falha de rede ao paginar.');
     fixture.componentRef.setInput('nextCursor', createCursor('cursor-retry'));
     fixture.detectChanges();
@@ -123,7 +123,7 @@ describe('DataTableComponent', () => {
   it('botão "Carregar mais" só aparece quando nextCursor está populado', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('button'))).toBeNull();
@@ -139,9 +139,9 @@ describe('DataTableComponent', () => {
   it('botão "Carregar mais" troca rótulo para loadingLabel e fica disabled durante loading', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('nextCursor', createCursor('proximo-cursor'));
-    fixture.componentRef.setInput('loading', true);
+    fixture.componentRef.setInput('isLoading', true);
     fixture.detectChanges();
 
     const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
@@ -153,7 +153,7 @@ describe('DataTableComponent', () => {
     const { fixture, component } = setup();
     const cursor = createCursor('cursor-pagina-2');
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('nextCursor', cursor);
     fixture.detectChanges();
 
@@ -170,9 +170,9 @@ describe('DataTableComponent', () => {
   it('clicar no botão durante loading não emite loadNext (guarda interna)', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('nextCursor', createCursor('cursor-x'));
-    fixture.componentRef.setInput('loading', true);
+    fixture.componentRef.setInput('isLoading', true);
     fixture.detectChanges();
 
     const emit = vi.fn();
@@ -187,7 +187,7 @@ describe('DataTableComponent', () => {
   it('Space na linha clicável emite rowClick e cancela o scroll default do browser', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('rowClickable', true);
     fixture.detectChanges();
 
@@ -202,17 +202,18 @@ describe('DataTableComponent', () => {
     expect(spaceEvent.defaultPrevented).toBe(true);
   });
 
-  it('rowClickable=true ativa role=button + tabindex e emite rowClick com a linha clicada', () => {
+  it('rowClickable=true preserva semantica de linha, adiciona tabindex e emite rowClick', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('rowClickable', true);
     fixture.detectChanges();
 
     const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
     expect(linhas.length).toBe(DATA.length);
-    expect(linhas[0].nativeElement.getAttribute('role')).toBe('button');
+    expect(linhas[0].nativeElement.getAttribute('role')).toBeNull();
     expect(linhas[0].nativeElement.getAttribute('tabindex')).toBe('0');
+    expect(linhas[0].nativeElement.classList).toContain('table-responsive__row--clickable');
 
     const emit = vi.fn();
     component.rowClick.subscribe(emit);
@@ -225,7 +226,7 @@ describe('DataTableComponent', () => {
   it('rowClickable=false (default) não ativa role/tabindex e clique na linha não emite rowClick', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.detectChanges();
 
     const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
@@ -239,16 +240,16 @@ describe('DataTableComponent', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  it('aria-busy=true no <table> quando loading()', () => {
+  it('aria-busy=true no <table> quando isLoading()', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('loading', true);
+    fixture.componentRef.setInput('isLoading', true);
     fixture.detectChanges();
 
     const table = fixture.debugElement.query(By.css('table')).nativeElement as HTMLTableElement;
     expect(table.getAttribute('aria-busy')).toBe('true');
 
-    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('isLoading', false);
     fixture.detectChanges();
     expect(table.getAttribute('aria-busy')).toBeNull();
   });
@@ -319,7 +320,7 @@ describe('DataTableComponent', () => {
   it('estado erro pós-1ª página: banner exibe botão "Tentar novamente" + emite retry', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
-    fixture.componentRef.setInput('data', DATA);
+    fixture.componentRef.setInput('records', DATA);
     fixture.componentRef.setInput('errorMessage', 'Falha de rede ao paginar.');
     fixture.componentRef.setInput('nextCursor', createCursor('cursor-retry'));
     fixture.detectChanges();

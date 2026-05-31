@@ -171,7 +171,7 @@ describe('FileUploadComponent', () => {
 
   it('respeita o accept configurado pelo consumidor (.pdf apenas)', () => {
     const { fixture, component } = setup();
-    fixture.componentRef.setInput('accept', '.pdf');
+    fixture.componentRef.setInput('acceptedFileTypes', '.pdf');
     fixture.componentRef.setInput('allowedMimeTypes', ['application/pdf']);
     fixture.detectChanges();
 
@@ -198,7 +198,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, GIF_FILE());
     expect(component.error()).toContain('.pdf,.jpg,.jpeg,.png');
 
-    fixture.componentRef.setInput('accept', '.pdf');
+    fixture.componentRef.setInput('acceptedFileTypes', '.pdf');
     fixture.componentRef.setInput('allowedMimeTypes', ['application/pdf']);
     fixture.detectChanges();
     pickFile(fixture, GIF_FILE());
@@ -304,7 +304,7 @@ describe('FileUploadComponent', () => {
 
   it('label[for] aponta para o inputId da própria instância', () => {
     const { fixture } = setup();
-    fixture.componentRef.setInput('label', 'Documento de identificação');
+    fixture.componentRef.setInput('fieldLabel', 'Documento de identificação');
     fixture.detectChanges();
 
     const labelEl = fixture.debugElement.query(By.css('label')).nativeElement as HTMLLabelElement;

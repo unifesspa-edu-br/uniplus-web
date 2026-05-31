@@ -1,53 +1,76 @@
-import { Component, ChangeDetectionStrategy, computed, input, output, model } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  input,
+  model,
+  output,
+  viewChild,
+} from '@angular/core';
 
 let dialogIdSeed = 0;
 
 @Component({
   selector: 'ui-confirm-dialog',
   standalone: true,
-  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (visible()) {
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-        role="dialog"
-        aria-modal="true"
-        [attr.aria-labelledby]="titleId()"
-        [attr.aria-describedby]="messageId()"
-      >
-        <div class="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-          <h3 [id]="titleId()" class="text-lg font-semibold text-gray-900">{{ title() }}</h3>
-          <p [id]="messageId()" class="mt-2 text-sm text-gray-600">{{ message() }}</p>
-          <div class="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              data-testid="confirm-dialog-cancel"
-              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              (click)="onCancel()"
-            >
-              {{ cancelLabel() }}
-            </button>
-            <button
-              type="button"
-              data-testid="confirm-dialog-confirm"
-              [attr.data-variant]="confirmVariant()"
-              class="rounded-md px-4 py-2 text-sm font-medium text-white"
-              [ngClass]="confirmVariant() === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-govbr-primary hover:bg-blue-800'"
-              (click)="onConfirm()"
-            >
-              {{ confirmLabel() }}
-            </button>
+    <dialog
+      #dialog
+      class="uni-dialog"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="headingId()"
+      [attr.aria-describedby]="messageId()"
+      (cancel)="onCancel($event)"
+      (close)="onNativeClose()"
+    >
+      <div class="uni-dialog__panel">
+        <div class="uni-dialog__header">
+          <h3 [id]="headingId()" class="uni-dialog__title">{{ heading() }}</h3>
+          <button
+            #closeButton
+            type="button"
+            class="btn btn--tertiary btn--icon-only btn--rect"
+            data-testid="confirm-dialog-close"
+            aria-label="Fechar"
+            (click)="onCancel()"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="uni-dialog__body">
+          <p [id]="messageId()">{{ message() }}</p>
+        </div>
+        <div class="uni-dialog__footer">
+          <button
+            type="button"
+            class="btn btn--tertiary"
+            data-testid="confirm-dialog-cancel"
+            (click)="onCancel()"
+          >
+            {{ cancelLabel() }}
+          </button>
+          <button
+            type="button"
+            data-testid="confirm-dialog-confirm"
+            [attr.data-variant]="confirmVariant()"
+            class="btn"
+            [class.btn--danger]="confirmVariant() === 'danger'"
+            (click)="onConfirm()"
+          >
+            {{ confirmLabel() }}
+          </button>
           </div>
         </div>
-      </div>
-    }
+    </dialog>
   `,
 })
 export class ConfirmDialogComponent {
   readonly visible = model<boolean>(false);
-  readonly title = input<string>('Confirmação');
+  readonly heading = input<string>('Confirmação');
   readonly message = input<string>('Deseja realmente prosseguir?');
   readonly confirmLabel = input<string>('Confirmar');
   readonly cancelLabel = input<string>('Cancelar');
@@ -56,19 +79,69 @@ export class ConfirmDialogComponent {
   readonly confirmed = output<void>();
   readonly cancelled = output<void>();
 
+  private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly closeButtonRef = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
+  private lastFocusedElement: HTMLElement | null = null;
+
   /** IDs únicos por instância, garantindo aria-labelledby/describedby
    *  válidos quando múltiplos dialogs convivem no DOM. */
   private readonly idSuffix = ++dialogIdSeed;
-  protected readonly titleId = computed(() => `ui-confirm-dialog-title-${this.idSuffix}`);
+  protected readonly headingId = computed(() => `ui-confirm-dialog-heading-${this.idSuffix}`);
   protected readonly messageId = computed(() => `ui-confirm-dialog-msg-${this.idSuffix}`);
+
+  constructor() {
+    effect(() => {
+      const dialog = this.dialogRef()?.nativeElement;
+      if (!dialog) return;
+
+      if (this.visible()) {
+        this.openDialog(dialog);
+        return;
+      }
+
+      this.closeDialog(dialog);
+    });
+  }
 
   onConfirm(): void {
     this.confirmed.emit();
     this.visible.set(false);
   }
 
-  onCancel(): void {
+  onCancel(event?: Event): void {
+    event?.preventDefault();
     this.cancelled.emit();
     this.visible.set(false);
+  }
+
+  protected onNativeClose(): void {
+    if (this.visible()) {
+      this.visible.set(false);
+    }
+    this.lastFocusedElement?.focus();
+    this.lastFocusedElement = null;
+  }
+
+  private openDialog(dialog: HTMLDialogElement): void {
+    if (dialog.open) return;
+    this.lastFocusedElement = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute('open', '');
+    }
+    queueMicrotask(() => this.closeButtonRef()?.nativeElement.focus());
+  }
+
+  private closeDialog(dialog: HTMLDialogElement): void {
+    if (!dialog.open) return;
+    if (typeof dialog.close === 'function') {
+      dialog.close();
+    } else {
+      dialog.removeAttribute('open');
+      this.onNativeClose();
+    }
   }
 }

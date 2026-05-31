@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { By, DebugElement } from '@angular/platform-browser';
 import { FormControl, Validators } from '@angular/forms';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FormFieldComponent } from './form-field';
@@ -13,8 +13,8 @@ describe('FormFieldComponent', () => {
 
     fixture = TestBed.createComponent(FormFieldComponent);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('label', 'Título');
-    fixture.componentRef.setInput('control', new FormControl<string>(''));
+    fixture.componentRef.setInput('fieldLabel', 'Título');
+    fixture.componentRef.setInput('fieldControl', new FormControl<string>(''));
   });
 
   it('inicializa com label e input ligados via id único', () => {
@@ -30,7 +30,7 @@ describe('FormFieldComponent', () => {
 
   it('binda valor do FormControl via [formControl]', () => {
     const control = new FormControl<string>('PSE 2026');
-    fixture.componentRef.setInput('control', control);
+    fixture.componentRef.setInput('fieldControl', control);
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
@@ -47,7 +47,7 @@ describe('FormFieldComponent', () => {
     let input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
     expect(input.type).toBe('text');
 
-    fixture.componentRef.setInput('type', 'number');
+    fixture.componentRef.setInput('inputType', 'number');
     fixture.detectChanges();
     input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
     expect(input.type).toBe('number');
@@ -87,8 +87,8 @@ describe('FormFieldComponent', () => {
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
     const ps = fixture.debugElement.queryAll(By.css('p'));
-    const hintEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-hint-'))!.nativeElement as HTMLParagraphElement;
-    const erroEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-error-'))!.nativeElement as HTMLParagraphElement;
+    const hintEl = paragraphByIdPrefix(ps, 'ui-form-field-hint-');
+    const erroEl = paragraphByIdPrefix(ps, 'ui-form-field-error-');
 
     expect(hintEl.textContent?.trim()).toBe('Use somente dígitos.');
     expect(hintEl.hasAttribute('hidden')).toBe(false);
@@ -107,8 +107,8 @@ describe('FormFieldComponent', () => {
     expect(input.getAttribute('aria-invalid')).toBeNull();
 
     const ps = fixture.debugElement.queryAll(By.css('p'));
-    const hintEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-hint-'))!.nativeElement as HTMLParagraphElement;
-    const erroEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-error-'))!.nativeElement as HTMLParagraphElement;
+    const hintEl = paragraphByIdPrefix(ps, 'ui-form-field-hint-');
+    const erroEl = paragraphByIdPrefix(ps, 'ui-form-field-error-');
 
     // Hint visível, erro oculto — comportamento simétrico para "sem erro"
     // (string vazia E null tratados igual, evitando inconsistência UX/a11y).
@@ -123,8 +123,8 @@ describe('FormFieldComponent', () => {
     fixture.detectChanges();
 
     const ps = fixture.debugElement.queryAll(By.css('p'));
-    const hintEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-hint-'))!.nativeElement as HTMLParagraphElement;
-    const erroEl = ps.find((p) => (p.nativeElement as HTMLElement).id.startsWith('ui-form-field-error-'))!.nativeElement as HTMLParagraphElement;
+    const hintEl = paragraphByIdPrefix(ps, 'ui-form-field-hint-');
+    const erroEl = paragraphByIdPrefix(ps, 'ui-form-field-error-');
 
     expect(erroEl.textContent?.trim()).toBe('Erro vence.');
     expect(erroEl.hasAttribute('hidden')).toBe(false);
@@ -135,9 +135,9 @@ describe('FormFieldComponent', () => {
   });
 
   it('atributos opcionais min/max/placeholder são propagados quando setados', () => {
-    fixture.componentRef.setInput('min', 1);
-    fixture.componentRef.setInput('max', 99);
-    fixture.componentRef.setInput('placeholder', 'Ex.: 042');
+    fixture.componentRef.setInput('minValue', 1);
+    fixture.componentRef.setInput('maxValue', 99);
+    fixture.componentRef.setInput('placeholderText', 'Ex.: 042');
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
@@ -151,8 +151,8 @@ describe('FormFieldComponent', () => {
     const id1 = (fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement).id;
 
     const fixture2 = TestBed.createComponent(FormFieldComponent);
-    fixture2.componentRef.setInput('label', 'Outro');
-    fixture2.componentRef.setInput('control', new FormControl<string>(''));
+    fixture2.componentRef.setInput('fieldLabel', 'Outro');
+    fixture2.componentRef.setInput('fieldControl', new FormControl<string>(''));
     fixture2.detectChanges();
     const id2 = (fixture2.debugElement.query(By.css('input')).nativeElement as HTMLInputElement).id;
 
@@ -161,7 +161,7 @@ describe('FormFieldComponent', () => {
 
   it('FormControl com Validators.required emite evento de mudança ao usuário digitar', () => {
     const control = new FormControl<string>('', { nonNullable: true, validators: [Validators.required] });
-    fixture.componentRef.setInput('control', control);
+    fixture.componentRef.setInput('fieldControl', control);
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
@@ -183,8 +183,8 @@ describe('FormFieldComponent', () => {
   // string e quebrava o binding do enum integer).
   it('type="number": NumberValueAccessor entrega valor como number ao FormControl<number>', () => {
     const control = new FormControl<number | null>(null);
-    fixture.componentRef.setInput('control', control);
-    fixture.componentRef.setInput('type', 'number');
+    fixture.componentRef.setInput('fieldControl', control);
+    fixture.componentRef.setInput('inputType', 'number');
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
@@ -200,8 +200,8 @@ describe('FormFieldComponent', () => {
 
   it('type="number": input vazio entrega null ao FormControl<number | null> (semantica do NumberValueAccessor)', () => {
     const control = new FormControl<number | null>(42);
-    fixture.componentRef.setInput('control', control);
-    fixture.componentRef.setInput('type', 'number');
+    fixture.componentRef.setInput('fieldControl', control);
+    fixture.componentRef.setInput('inputType', 'number');
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
@@ -214,8 +214,8 @@ describe('FormFieldComponent', () => {
 
   it('type="text": DefaultValueAccessor entrega string mesmo quando usuario digita digitos', () => {
     const control = new FormControl<string>('');
-    fixture.componentRef.setInput('control', control);
-    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('fieldControl', control);
+    fixture.componentRef.setInput('inputType', 'text');
     fixture.detectChanges();
 
     const input = fixture.debugElement.query(By.css('input')).nativeElement as HTMLInputElement;
@@ -231,11 +231,21 @@ describe('FormFieldComponent', () => {
   // são nulos (sempre objetos), checar `.toBeTruthy()` direto seria trivial;
   // chamar como função (`input()`) verifica o valor default real.
   it('expõe inputs canônicos com defaults coerentes', () => {
-    expect(component.type()).toBe('text');
-    expect(component.placeholder()).toBe('');
+    expect(component.inputType()).toBe('text');
+    expect(component.placeholderText()).toBe('');
     expect(component.errorMessage()).toBeNull();
     expect(component.hint()).toBeNull();
-    expect(component.min()).toBeNull();
-    expect(component.max()).toBeNull();
+    expect(component.minValue()).toBeNull();
+    expect(component.maxValue()).toBeNull();
   });
 });
+
+function paragraphByIdPrefix(elements: DebugElement[], prefix: string): HTMLParagraphElement {
+  const element = elements.find((candidate) =>
+    (candidate.nativeElement as HTMLElement).id.startsWith(prefix),
+  );
+  if (!element) {
+    throw new Error(`Parágrafo com prefixo ${prefix} não encontrado.`);
+  }
+  return element.nativeElement as HTMLParagraphElement;
+}

@@ -18,10 +18,10 @@ import { formatCpfProgressive } from '@uniplus/shared-utils';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex flex-col gap-1">
-      @if (label()) {
-        <label [for]="inputId()" class="text-sm font-medium text-gray-700">
-          {{ label() }}
+    <div class="field" [class.is-error]="invalid()">
+      @if (fieldLabel()) {
+        <label [for]="inputId()" class="field__label" [class.is-required]="isRequired()">
+          {{ fieldLabel() }}
         </label>
       }
       <input
@@ -29,22 +29,21 @@ import { formatCpfProgressive } from '@uniplus/shared-utils';
         type="text"
         inputmode="numeric"
         autocomplete="off"
-        [placeholder]="placeholder()"
+        [placeholder]="placeholderText()"
         [value]="displayValue()"
         (input)="onInput($event)"
         (blur)="handleBlur()"
         [disabled]="disabled()"
         [attr.maxlength]="MASKED_LENGTH"
-        [attr.aria-label]="label() ? null : ariaLabel()"
-        [attr.aria-required]="required() ? 'true' : null"
-        [attr.required]="required() ? '' : null"
-        class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-govbr-primary focus:outline-none focus:ring-1 focus:ring-govbr-primary"
-        [class.border-red-500]="invalid()"
-        [attr.aria-invalid]="invalid()"
+        [attr.aria-label]="fieldLabel() ? null : accessibleName()"
+        [attr.aria-required]="isRequired() ? 'true' : null"
+        [attr.required]="isRequired() ? '' : null"
+        class="input"
+        [attr.aria-invalid]="invalid() ? 'true' : null"
         [attr.aria-describedby]="invalid() ? inputId() + '-error' : null"
       />
       @if (invalid() && errorMessage()) {
-        <small [id]="inputId() + '-error'" class="text-xs text-red-600">
+        <small [id]="inputId() + '-error'" class="field__error" role="alert">
           {{ errorMessage() }}
         </small>
       }
@@ -61,12 +60,12 @@ import { formatCpfProgressive } from '@uniplus/shared-utils';
 export class CpfInputComponent implements ControlValueAccessor {
   protected readonly MASKED_LENGTH = 14;
 
-  readonly label = input<string>('');
-  readonly ariaLabel = input<string>('CPF');
-  readonly placeholder = input<string>('000.000.000-00');
+  readonly fieldLabel = input<string>('');
+  readonly accessibleName = input<string>('CPF');
+  readonly placeholderText = input<string>('000.000.000-00');
   readonly inputId = input<string>('cpf-input');
   readonly invalid = input<boolean>(false);
-  readonly required = input<boolean>(false);
+  readonly isRequired = input<boolean>(false);
   readonly errorMessage = input<string>('');
   readonly disabled = signal(false);
   readonly displayValue = signal('');
