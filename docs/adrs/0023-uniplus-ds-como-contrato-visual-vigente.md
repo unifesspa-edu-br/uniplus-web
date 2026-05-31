@@ -103,4 +103,5 @@ Imports TypeScript seguem pelos aliases `@uniplus/shared-*`. Imports CSS `@unipl
 
 - Issue: [#377](https://github.com/unifesspa-edu-br/uniplus-web/issues/377)
 - Fonte canonica do DS: [`uniplus-ds`](https://github.com/unifesspa-edu-br/uniplus-ds)
+- Autoria CSS/SCSS dos wrappers Angular: [ADR-0025](0025-autoria-css-scss-no-angular.md)
 - Supersede para novas implementacoes: [ADR-0006](0006-govbr-design-system-como-contrato-visual.md), [ADR-0007](0007-primeng-em-modo-unstyled.md), [ADR-0008](0008-tailwind-css-4-com-tokens-govbr.md), [ADR-0019](0019-tokens-govbr-compartilhados-em-shared-ui.md)
