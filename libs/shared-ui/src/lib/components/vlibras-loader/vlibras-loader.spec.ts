@@ -14,6 +14,7 @@ describe('VlibrasLoaderComponent', () => {
   afterEach(() => {
     fixture?.destroy();
     document.getElementById('uniplus-vlibras-script')?.remove();
+    document.getElementById('uniplus-vlibras-stylesheet')?.remove();
     delete (window as WindowWithVlibras).VLibras;
     vi.restoreAllMocks();
   });
@@ -29,24 +30,26 @@ describe('VlibrasLoaderComponent', () => {
     expect(host.querySelector('[vw-plugin-wrapper] .vw-plugin-top-wrapper')).not.toBeNull();
   });
 
-  it('carrega o script e inicializa o widget com o rootPath oficial', async () => {
+  it('carrega o script self-hosted e inicializa o widget com o rootPath local', async () => {
     const widget = vi.fn();
     (window as WindowWithVlibras).VLibras = { Widget: widget };
     TestBed.configureTestingModule({ imports: [VlibrasLoaderComponent] });
     fixture = TestBed.createComponent(VlibrasLoaderComponent);
-    fixture.componentRef.setInput('scriptSrc', '/vlibras-plugin.js');
-    fixture.componentRef.setInput('rootPath', 'https://vlibras.gov.br/app');
 
     fixture.detectChanges();
     await fixture.whenStable();
 
     const script = document.getElementById('uniplus-vlibras-script') as HTMLScriptElement | null;
+    const stylesheet = document.getElementById('uniplus-vlibras-stylesheet') as HTMLLinkElement | null;
     expect(script).not.toBeNull();
-    expect(script?.getAttribute('src')).toBe('/vlibras-plugin.js');
+    expect(stylesheet).not.toBeNull();
+    expect(stylesheet?.getAttribute('href')).toBe('/assets/shared-ui/vlibras/vlibras.css');
+    expect(stylesheet?.rel).toBe('stylesheet');
+    expect(script?.getAttribute('src')).toBe('/assets/shared-ui/vlibras/vlibras-plugin.js');
 
     script?.dispatchEvent(new Event('load'));
 
-    expect(widget).toHaveBeenCalledWith('https://vlibras.gov.br/app');
+    expect(widget).toHaveBeenCalledWith('/assets/shared-ui/vlibras');
   });
 
   it('executa o onload registrado pelo VLibras quando o script chega após o load da página', async () => {
@@ -65,11 +68,11 @@ describe('VlibrasLoaderComponent', () => {
     document.getElementById('uniplus-vlibras-script')?.dispatchEvent(new Event('load'));
     await new Promise((resolve) => window.setTimeout(resolve, 0));
 
-    expect(widget).toHaveBeenCalledWith();
+    expect(widget).toHaveBeenCalledWith('/assets/shared-ui/vlibras');
     expect(pendingOnload).toHaveBeenCalledOnce();
   });
 
-  it('reaponta imagens quebradas do VLibras para o mirror documentado pelo DS', () => {
+  it('reaponta imagens quebradas do VLibras para os assets self-hosted', () => {
     TestBed.configureTestingModule({ imports: [VlibrasLoaderComponent] });
     fixture = TestBed.createComponent(VlibrasLoaderComponent);
     fixture.detectChanges();
@@ -80,7 +83,7 @@ describe('VlibrasLoaderComponent', () => {
     image.dispatchEvent(new Event('error'));
 
     expect(image.dataset['vwFixed']).toBe('1');
-    expect(image.src).toBe('https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/vlibras-portal@master/app/assets/brazil.png');
+    expect(image.src).toBe(new URL('/assets/shared-ui/vlibras/assets/brazil.png', window.location.href).href);
     image.remove();
   });
 });

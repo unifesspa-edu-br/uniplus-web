@@ -17,6 +17,11 @@
           {
             "glob": "**/*",
             "input": "apps/portal/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/shared-ui/src/assets",
+            "output": "assets/shared-ui"
           }
         ],
         "styles": ["apps/portal/src/styles.css"],

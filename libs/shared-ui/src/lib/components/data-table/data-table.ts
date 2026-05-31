@@ -191,25 +191,6 @@ export interface UiDataTableColumn {
       </nav>
     }
   `,
-  styles: `
-    .table-responsive__row--clickable {
-      cursor: pointer;
-    }
-
-    .table-responsive__row--clickable:hover {
-      background: var(--surface-page);
-    }
-
-    .ui-code {
-      font-family: var(--font-mono);
-      font-size: var(--text-xs);
-      background: var(--surface-subtle);
-      color: var(--text-primary);
-      border-radius: var(--radius-sm);
-      padding: 0 var(--space-1);
-      user-select: all;
-    }
-  `,
 })
 export class DataTableComponent {
   readonly columns = input.required<UiDataTableColumn[]>();

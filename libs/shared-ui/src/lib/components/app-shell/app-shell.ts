@@ -131,40 +131,6 @@ let shellIdSeed = 0;
       <ui-vlibras-loader />
     </div>
   `,
-  styles: `
-    .ui-app-shell {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: var(--surface-page);
-      color: var(--text-primary);
-    }
-
-    .ui-app-shell__main {
-      flex: 1;
-      width: 100%;
-      max-width: var(--content-max);
-      margin-inline: auto;
-      padding: var(--space-5) var(--space-4);
-    }
-
-    .ui-app-shell__footer {
-      display: flex;
-      min-height: 40px;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-2) var(--space-4);
-      background: var(--surface-inverse);
-      color: var(--text-on-inverse);
-      font-size: var(--text-sm);
-    }
-
-    @media (min-width: 768px) {
-      .ui-app-shell__main {
-        padding: var(--space-7);
-      }
-    }
-  `,
 })
 export class AppShellComponent {
   readonly appName = input.required<string>();

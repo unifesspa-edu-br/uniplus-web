@@ -17,6 +17,11 @@
           {
             "glob": "**/*",
             "input": "apps/ingresso/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/shared-ui/src/assets",
+            "output": "assets/shared-ui"
           }
         ],
         "styles": ["apps/ingresso/src/styles.css"],

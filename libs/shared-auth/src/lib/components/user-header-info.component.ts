@@ -83,31 +83,6 @@ const DOMAIN_ROLES = new Set<string>(['admin', 'gestor', 'avaliador', 'candidato
       </div>
     }
   `,
-  styles: `
-    .ui-user-header__text {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      line-height: var(--leading-snug);
-    }
-
-    .ui-user-header__text strong {
-      color: var(--text-primary);
-      font-size: var(--text-sm);
-    }
-
-    .ui-user-header__text span {
-      color: var(--text-secondary);
-      font-size: var(--text-sm);
-      white-space: nowrap;
-    }
-
-    @media (max-width: 640px) {
-      .ui-user-header__text {
-        display: none;
-      }
-    }
-  `,
 })
 export class UserHeaderInfoComponent {
   private static idSeed = 0;

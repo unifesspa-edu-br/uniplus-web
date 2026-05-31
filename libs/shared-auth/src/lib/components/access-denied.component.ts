@@ -42,15 +42,6 @@ import { UserContextService } from '../services/user-context.service';
       </div>
     </main>
   `,
-  styles: `
-    .ui-access-denied {
-      min-height: 60vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-6);
-    }
-  `,
 })
 export class AccessDeniedComponent {
   private readonly router = inject(Router);

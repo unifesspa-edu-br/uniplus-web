@@ -153,52 +153,6 @@ import {
       (confirmed)="confirmarPublicacao()"
     />
   `,
-  styles: `
-    .ui-loading-line {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      color: var(--text-secondary);
-      margin-top: var(--space-5);
-    }
-
-    .ui-detail-list {
-      display: grid;
-      grid-template-columns: minmax(8rem, 12rem) 1fr;
-      gap: var(--space-3) var(--space-5);
-      margin: 0;
-      max-width: var(--content-narrow);
-    }
-
-    .ui-detail-list dt {
-      color: var(--text-muted);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-semibold);
-    }
-
-    .ui-detail-list dd {
-      color: var(--text-primary);
-      font-size: var(--text-sm);
-      margin: 0;
-    }
-
-    .ui-detail-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: var(--space-4);
-    }
-
-    @media (max-width: 520px) {
-      .ui-detail-list {
-        grid-template-columns: 1fr;
-        gap: var(--space-1);
-      }
-
-      .ui-detail-list dd {
-        margin-bottom: var(--space-3);
-      }
-    }
-  `,
 })
 export class EditaisDetailPage {
   /** Path param do route (`:editalId`). Bind via `withComponentInputBinding()`. */
