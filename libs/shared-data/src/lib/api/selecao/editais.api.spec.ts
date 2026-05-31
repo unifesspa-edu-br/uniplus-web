@@ -1,8 +1,5 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -13,7 +10,7 @@ import {
   createCursor,
   isApiOk,
   withIdempotencyKey,
-} from '@uniplus/shared-core';
+} from '@uniplus/shared-core/http';
 import { CriarEditalCommand, EditaisApi, EditalDto } from './editais.api';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -141,7 +138,11 @@ describe('EditaisApi', () => {
         code: 'uniplus.selecao.edital.nao_encontrado',
         traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
       },
-      { status: 404, statusText: 'Not Found', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
 
     const result = (await promise) as ApiResult<EditalDto>;
@@ -182,7 +183,9 @@ describe('EditaisApi', () => {
       expect(isApiOk(result)).toBe(true);
       if (result.ok) {
         expect(result.data).toBe('01960000-0000-7000-0000-000000000099');
-        expect(result.headers.get('Location')).toBe('/api/editais/01960000-0000-7000-0000-000000000099');
+        expect(result.headers.get('Location')).toBe(
+          '/api/editais/01960000-0000-7000-0000-000000000099',
+        );
       }
     });
 
@@ -202,7 +205,11 @@ describe('EditaisApi', () => {
             { field: 'numeroEdital', code: 'GreaterThan', message: 'Número deve ser positivo.' },
           ],
         },
-        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
       );
 
       const result = (await promise) as ApiResult<string>;
@@ -227,7 +234,11 @@ describe('EditaisApi', () => {
           code: 'uniplus.selecao.edital.duplicado',
           traceId: '4bf92f3577b34da6a3ce929d0e0e4737',
         },
-        { status: 409, statusText: 'Conflict', headers: { 'Content-Type': 'application/problem+json' } },
+        {
+          status: 409,
+          statusText: 'Conflict',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
       );
 
       const result = (await promise) as ApiResult<string>;
@@ -293,7 +304,11 @@ describe('EditaisApi', () => {
           code: 'uniplus.selecao.edital.ja_publicado',
           traceId: 'tx-publicar',
         },
-        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
       );
 
       const result = (await promise) as ApiResult<void>;

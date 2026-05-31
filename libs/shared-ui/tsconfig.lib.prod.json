@@ -5,6 +5,9 @@
     "paths": {
       "@uniplus/shared-auth": ["dist/libs/shared-auth"],
       "@uniplus/shared-core": ["dist/libs/shared-core"],
+      "@uniplus/shared-core/dom": ["dist/libs/shared-core/dom"],
+      "@uniplus/shared-core/http": ["dist/libs/shared-core/http"],
+      "@uniplus/shared-core/notifications": ["dist/libs/shared-core/notifications"],
       "@uniplus/shared-data": ["dist/libs/shared-data"],
       "@uniplus/shared-utils": ["dist/libs/shared-utils"]
     }

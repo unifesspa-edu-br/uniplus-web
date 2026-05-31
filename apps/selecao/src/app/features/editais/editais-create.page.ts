@@ -1,28 +1,21 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
-  NotificationService,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
   idempotencyKey,
   withIdempotencyKey,
-} from '@uniplus/shared-core';
-import { CriarEditalCommand, EditaisApi } from '@uniplus/shared-data';
-import { AlertComponent, FormFieldComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+} from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import { CriarEditalCommand, EditaisApi } from '@uniplus/shared-data/selecao';
+import {
+  AlertComponent,
+  FormFieldComponent,
+  PageHeaderComponent,
+} from '@uniplus/shared-ui/components';
 
 /**
  * Form Reactive tipado para criação de edital.
@@ -53,7 +46,13 @@ interface CriarEditalForm {
   selector: 'sel-editais-create-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, AlertComponent, FormFieldComponent, PageHeaderComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    AlertComponent,
+    FormFieldComponent,
+    PageHeaderComponent,
+  ],
   template: `
     <ui-page-header
       heading="Novo edital"
@@ -110,12 +109,7 @@ interface CriarEditalForm {
       />
 
       <div class="ui-form-actions">
-        <a
-          routerLink="/editais"
-          class="btn btn--tertiary"
-        >
-          Cancelar
-        </a>
+        <a routerLink="/editais" class="btn btn--tertiary"> Cancelar </a>
         <button
           type="submit"
           [disabled]="submitting() || form.invalid"
@@ -229,9 +223,7 @@ export class EditaisCreatePage {
     }
   }
 
-  private aplicarErrosDeValidacao(
-    errors: ReadonlyArray<ProblemValidationError>,
-  ): void {
+  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     let aplicouAlgum = false;
     for (const erro of errors) {
       const campo = erro.field as keyof CriarEditalForm;

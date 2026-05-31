@@ -1,10 +1,7 @@
 // Services
-export { LoadingService } from './services/loading.service';
+export { LoadingService } from './interceptors/loading.service';
 export { NotificationService } from './services/notification.service';
-export type {
-  Notification,
-  NotificationType,
-} from './services/notification.service';
+export type { Notification, NotificationType } from './services/notification.service';
 
 // Interceptors
 export { loadingInterceptor } from './interceptors/loading.interceptor';

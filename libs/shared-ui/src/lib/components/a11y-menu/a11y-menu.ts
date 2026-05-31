@@ -10,7 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { createDisclosureController } from '@uniplus/shared-core';
+import { createDisclosureController } from '@uniplus/shared-core/dom';
 
 type UiTheme = 'auto' | 'light' | 'dark';
 
@@ -38,7 +38,15 @@ type UiA11yState = {
         data-a11y-menu-trigger
         (click)="toggle()"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
           <circle cx="12" cy="4" r="2" />
           <path d="M4 8h16M12 6v14M8 12l-2 8M16 12l2 8" />
         </svg>
@@ -64,21 +72,66 @@ type UiA11yState = {
         <div class="a11y-menu__group" role="group" aria-label="Tema">
           <span class="a11y-menu__group-label">Tema</span>
           <div class="a11y-menu__options">
-            <button class="a11y-opt" type="button" data-a11y="theme" data-value="light" [attr.aria-pressed]="theme() === 'light'" (click)="setTheme('light')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <button
+              class="a11y-opt"
+              type="button"
+              data-a11y="theme"
+              data-value="light"
+              [attr.aria-pressed]="theme() === 'light'"
+              (click)="setTheme('light')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
                 <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                />
               </svg>
               Claro
             </button>
-            <button class="a11y-opt" type="button" data-a11y="theme" data-value="dark" [attr.aria-pressed]="theme() === 'dark'" (click)="setTheme('dark')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <button
+              class="a11y-opt"
+              type="button"
+              data-a11y="theme"
+              data-value="dark"
+              [attr.aria-pressed]="theme() === 'dark'"
+              (click)="setTheme('dark')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
                 <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
               </svg>
               Escuro
             </button>
-            <button class="a11y-opt" type="button" data-a11y="theme" data-value="auto" [attr.aria-pressed]="theme() === 'auto'" (click)="setTheme('auto')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <button
+              class="a11y-opt"
+              type="button"
+              data-a11y="theme"
+              data-value="auto"
+              [attr.aria-pressed]="theme() === 'auto'"
+              (click)="setTheme('auto')"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 <rect x="2" y="3" width="20" height="14" rx="2" />
                 <path d="M8 21h8M12 17v4" />
               </svg>
@@ -89,20 +142,35 @@ type UiA11yState = {
         <div class="a11y-menu__group" role="group" aria-label="Ajustes de leitura">
           <span class="a11y-menu__group-label">Leitura</span>
           <div class="a11y-menu__options">
-            <button class="a11y-opt" type="button" data-a11y="contrast" data-value="on" [attr.aria-pressed]="contrast()" (click)="contrast.update(toggleBool)">
+            <button
+              class="a11y-opt"
+              type="button"
+              data-a11y="contrast"
+              data-value="on"
+              [attr.aria-pressed]="contrast()"
+              (click)="contrast.update(toggleBool)"
+            >
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2a10 10 0 100 20V2z" />
                 <path d="M12 2a10 10 0 010 20" fill="none" stroke="currentColor" stroke-width="2" />
               </svg>
               Alto contraste
             </button>
-            <button class="a11y-opt" type="button" data-a11y="font-mode" data-value="legible" [attr.aria-pressed]="legibleFont()" (click)="legibleFont.update(toggleBool)">
+            <button
+              class="a11y-opt"
+              type="button"
+              data-a11y="font-mode"
+              data-value="legible"
+              [attr.aria-pressed]="legibleFont()"
+              (click)="legibleFont.update(toggleBool)"
+            >
               Fonte legível
             </button>
           </div>
         </div>
         <p class="a11y-menu__hint">
-          Para ampliar o texto, use o zoom do navegador (<kbd>Ctrl</kbd> <kbd>+</kbd> / <kbd>Ctrl</kbd> <kbd>-</kbd>).
+          Para ampliar o texto, use o zoom do navegador (<kbd>Ctrl</kbd> <kbd>+</kbd> /
+          <kbd>Ctrl</kbd> <kbd>-</kbd>).
         </p>
       </div>
     </div>
@@ -127,7 +195,7 @@ export class A11yMenuComponent {
   protected readonly theme = signal<UiTheme>(this.initialState.theme);
   protected readonly contrast = signal(this.initialState.contrast);
   protected readonly legibleFont = signal(this.initialState.fontMode === 'legible');
-  protected readonly effectiveTheme = computed(() => this.contrast() ? 'contrast' : this.theme());
+  protected readonly effectiveTheme = computed(() => (this.contrast() ? 'contrast' : this.theme()));
   protected readonly toggleBool = (value: boolean) => !value;
 
   constructor() {
@@ -176,7 +244,10 @@ function readState(): UiA11yState {
     if (typeof localStorage === 'undefined') return defaultState();
     const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') as Partial<UiA11yState>;
     return {
-      theme: parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'auto' ? parsed.theme : 'auto',
+      theme:
+        parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'auto'
+          ? parsed.theme
+          : 'auto',
       contrast: parsed.contrast === true,
       fontMode: parsed.fontMode === 'legible' ? 'legible' : 'default',
     };

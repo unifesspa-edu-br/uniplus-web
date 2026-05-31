@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import type { ProblemDetails } from '../http/problem-details';
+import type { ProblemDetails } from '@uniplus/shared-core/http';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -91,13 +91,9 @@ export class NotificationService {
    * - `persistent` é `true` por default em status `>= 500`; pode ser
    *   sobrescrito via `overrides.persistent`.
    */
-  errorFromProblem(
-    problem: ProblemDetails,
-    overrides?: NotificationFromProblemOptions,
-  ): number {
+  errorFromProblem(problem: ProblemDetails, overrides?: NotificationFromProblemOptions): number {
     const id = ++this.counter;
-    const persistent =
-      overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD;
+    const persistent = overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD;
     const traceId = problem.traceId.length > 0 ? problem.traceId : undefined;
     const notification: Notification = {
       id,

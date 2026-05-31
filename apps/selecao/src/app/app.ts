@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthErrorBannerComponent } from '@uniplus/shared-auth/components/auth-error-banner.component';
-import { LoginErrorBannerComponent } from '@uniplus/shared-auth/components/login-error-banner.component';
-import { NotificationHostComponent } from '@uniplus/shared-ui/components/notification-host/notification-host';
+import {
+  AuthErrorBannerComponent,
+  LoginErrorBannerComponent,
+} from '@uniplus/shared-auth/components';
+import { NotificationHostComponent } from '@uniplus/shared-ui/notifications';
 
 @Component({
   selector: 'sel-root',

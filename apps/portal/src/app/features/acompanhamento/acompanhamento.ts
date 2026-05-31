@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'ptl-acompanhamento',
@@ -8,8 +8,14 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui-page-header heading="Acompanhamento" description="Acompanhe o status da sua inscrição e resultados." />
-    <ui-empty-state heading="Nenhum acompanhamento disponível" description="Quando houver inscrição ativa, o andamento será mostrado aqui." />
+    <ui-page-header
+      heading="Acompanhamento"
+      description="Acompanhe o status da sua inscrição e resultados."
+    />
+    <ui-empty-state
+      heading="Nenhum acompanhamento disponível"
+      description="Quando houver inscrição ativa, o andamento será mostrado aqui."
+    />
     <router-outlet />
   `,
 })

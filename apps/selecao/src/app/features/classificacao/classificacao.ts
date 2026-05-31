@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'sel-classificacao',
@@ -9,7 +9,10 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-page-header heading="Classificação" description="Classificação e resultados." />
-    <ui-empty-state heading="Classificação em preparação" description="A publicação dos resultados aparecerá nesta área." />
+    <ui-empty-state
+      heading="Classificação em preparação"
+      description="A publicação dos resultados aparecerá nesta área."
+    />
     <router-outlet />
   `,
 })

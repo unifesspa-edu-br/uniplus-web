@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'ptl-processos',
@@ -8,8 +8,14 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui-page-header heading="Processos Seletivos" description="Lista de processos seletivos abertos para inscrição." />
-    <ui-empty-state heading="Nenhum processo aberto" description="Os editais disponíveis para inscrição serão listados aqui." />
+    <ui-page-header
+      heading="Processos Seletivos"
+      description="Lista de processos seletivos abertos para inscrição."
+    />
+    <ui-empty-state
+      heading="Nenhum processo aberto"
+      description="Os editais disponíveis para inscrição serão listados aqui."
+    />
     <router-outlet />
   `,
 })

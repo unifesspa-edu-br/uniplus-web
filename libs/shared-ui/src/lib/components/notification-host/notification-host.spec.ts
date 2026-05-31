@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NotificationService } from '@uniplus/shared-core';
-import type { ProblemDetails } from '@uniplus/shared-core';
+import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { NotificationHostComponent } from './notification-host';
 
 function montarProblem(overrides: Partial<ProblemDetails> = {}): ProblemDetails {
@@ -171,8 +171,7 @@ describe('NotificationHostComponent', () => {
 
   describe('a11y', () => {
     it('section container tem role=region + aria-label', () => {
-      const section = fixture.debugElement.query(By.css('section'))
-        ?.nativeElement as HTMLElement;
+      const section = fixture.debugElement.query(By.css('section'))?.nativeElement as HTMLElement;
       expect(section?.getAttribute('role')).toBe('region');
       expect(section?.getAttribute('aria-label')).toBe('Notificações do sistema');
     });

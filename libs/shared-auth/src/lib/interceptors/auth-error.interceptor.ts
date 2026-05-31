@@ -2,7 +2,7 @@ import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Reage a respostas já envelopadas pelo `apiResultInterceptor` de

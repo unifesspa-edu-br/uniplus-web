@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
-import { LoginErrorCode, classifyLoginError } from '../models/login-error.model';
+import { LoginErrorCode, classifyLoginError } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Banner contextual exibido quando o provedor OIDC redireciona de volta à
@@ -27,10 +27,7 @@ import { LoginErrorCode, classifyLoginError } from '../models/login-error.model'
         [class.alert--danger]="isDanger()"
         [class.alert--warning]="!isDanger()"
       >
-        <span
-          aria-hidden="true"
-          class="alert__icon"
-        >
+        <span aria-hidden="true" class="alert__icon">
           {{ isDanger() ? '!' : 'i' }}
         </span>
         <div class="alert__body">

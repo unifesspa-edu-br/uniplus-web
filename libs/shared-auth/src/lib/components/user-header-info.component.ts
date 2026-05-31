@@ -7,12 +7,15 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { createDisclosureController } from '@uniplus/shared-core';
-import { AuthService } from '../services/auth.service';
-import { UserContextService } from '../services/user-context.service';
-import { UserRole } from '../models/user.model';
+import { createDisclosureController } from '@uniplus/shared-core/dom';
+import { AuthService, UserContextService, type UserRole } from '@uniplus/shared-auth/bootstrap';
 
-const DOMAIN_ROLES = new Set<string>(['admin', 'gestor', 'avaliador', 'candidato'] satisfies UserRole[]);
+const DOMAIN_ROLES = new Set<string>([
+  'admin',
+  'gestor',
+  'avaliador',
+  'candidato',
+] satisfies UserRole[]);
 
 /**
  * Bloco de identificação do usuário autenticado para uso em headers.
@@ -39,19 +42,30 @@ const DOMAIN_ROLES = new Set<string>(['admin', 'gestor', 'avaliador', 'candidato
           (click)="toggleMenu()"
           (keydown)="onTriggerKeydown($event)"
         >
-          <span class="user-chip__avatar" aria-hidden="true">{{ initials(userContext.displayName()) }}</span>
+          <span class="user-chip__avatar" aria-hidden="true">{{
+            initials(userContext.displayName())
+          }}</span>
           <span class="ui-user-header__text">
             <strong>{{ userContext.displayName() }}</strong>
             <span>
-            &#64;{{ profile.username }}
-            @if (domainRoles(profile.roles); as roles) {
-              @if (roles.length) {
-                · {{ roles.join(', ') }}
+              &#64;{{ profile.username }}
+              @if (domainRoles(profile.roles); as roles) {
+                @if (roles.length) {
+                  · {{ roles.join(', ') }}
+                }
               }
-            }
             </span>
           </span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
             <path d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -73,7 +87,13 @@ const DOMAIN_ROLES = new Set<string>(['admin', 'gestor', 'avaliador', 'candidato
               (keydown)="onMenuKeydown($event)"
               (click)="logout()"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
                 <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
               </svg>
               Sair
@@ -146,10 +166,17 @@ export class UserHeaderInfoComponent {
     const currentIndex = items.indexOf(this.document.activeElement as HTMLElement);
     const last = items.length - 1;
     const nextIndex =
-      event.key === 'Home' ? 0 :
-      event.key === 'End' ? last :
-      event.key === 'ArrowUp' ? (currentIndex <= 0 ? last : currentIndex - 1) :
-      (currentIndex >= last ? 0 : currentIndex + 1);
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? last
+          : event.key === 'ArrowUp'
+            ? currentIndex <= 0
+              ? last
+              : currentIndex - 1
+            : currentIndex >= last
+              ? 0
+              : currentIndex + 1;
 
     items[nextIndex]?.focus();
   }

@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
-import { AccessDeniedComponent } from '@uniplus/shared-auth/components/access-denied.component';
-import { authGuard } from '@uniplus/shared-auth/guards/auth.guard';
-import { roleGuard } from '@uniplus/shared-auth/guards/role.guard';
+import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
+import { authGuard, roleGuard } from '@uniplus/shared-auth/guards';
 import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Routes = [
@@ -21,22 +20,26 @@ export const appRoutes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
         path: 'dashboard',
-        loadChildren: () => import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
+        loadChildren: () =>
+          import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
         path: 'editais',
         canActivate: [roleGuard('admin', 'gestor')],
-        loadChildren: () => import('./features/editais/editais.routes').then((m) => m.EDITAIS_ROUTES),
+        loadChildren: () =>
+          import('./features/editais/editais.routes').then((m) => m.EDITAIS_ROUTES),
       },
       {
         path: 'inscricoes',
         canActivate: [roleGuard('admin', 'gestor')],
-        loadChildren: () => import('./features/inscricoes/inscricoes.routes').then((m) => m.INSCRICOES_ROUTES),
+        loadChildren: () =>
+          import('./features/inscricoes/inscricoes.routes').then((m) => m.INSCRICOES_ROUTES),
       },
       {
         path: 'homologacao',
         canActivate: [roleGuard('admin', 'gestor', 'avaliador')],
-        loadChildren: () => import('./features/homologacao/homologacao.routes').then((m) => m.HOMOLOGACAO_ROUTES),
+        loadChildren: () =>
+          import('./features/homologacao/homologacao.routes').then((m) => m.HOMOLOGACAO_ROUTES),
       },
       {
         path: 'notas',
@@ -46,7 +49,10 @@ export const appRoutes: Routes = [
       {
         path: 'classificacao',
         canActivate: [roleGuard('admin', 'gestor')],
-        loadChildren: () => import('./features/classificacao/classificacao.routes').then((m) => m.CLASSIFICACAO_ROUTES),
+        loadChildren: () =>
+          import('./features/classificacao/classificacao.routes').then(
+            (m) => m.CLASSIFICACAO_ROUTES,
+          ),
       },
     ],
   },

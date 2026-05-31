@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { AccessDeniedComponent } from '@uniplus/shared-auth/components/access-denied.component';
-import { authGuard } from '@uniplus/shared-auth/guards/auth.guard';
+import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
+import { authGuard } from '@uniplus/shared-auth/guards';
 import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Routes = [
@@ -16,28 +16,35 @@ export const appRoutes: Routes = [
       {
         // Consulta pública de processos seletivos — sem autenticação.
         path: 'processos',
-        loadChildren: () => import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),
+        loadChildren: () =>
+          import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),
       },
       {
         // Áreas autenticadas do candidato — exigem authGuard.
         path: 'inscricao',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/inscricao/inscricao.routes').then((m) => m.INSCRICAO_ROUTES),
+        loadChildren: () =>
+          import('./features/inscricao/inscricao.routes').then((m) => m.INSCRICAO_ROUTES),
       },
       {
         path: 'acompanhamento',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/acompanhamento/acompanhamento.routes').then((m) => m.ACOMPANHAMENTO_ROUTES),
+        loadChildren: () =>
+          import('./features/acompanhamento/acompanhamento.routes').then(
+            (m) => m.ACOMPANHAMENTO_ROUTES,
+          ),
       },
       {
         path: 'recursos',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/recursos/recursos.routes').then((m) => m.RECURSOS_ROUTES),
+        loadChildren: () =>
+          import('./features/recursos/recursos.routes').then((m) => m.RECURSOS_ROUTES),
       },
       {
         path: 'documentos',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/documentos/documentos.routes').then((m) => m.DOCUMENTOS_ROUTES),
+        loadChildren: () =>
+          import('./features/documentos/documentos.routes').then((m) => m.DOCUMENTOS_ROUTES),
       },
       {
         path: 'perfil',
