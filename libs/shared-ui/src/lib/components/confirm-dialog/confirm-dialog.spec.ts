@@ -16,6 +16,8 @@ describe('ConfirmDialogComponent', () => {
     const dialog = () => fixture.debugElement.query(By.css('[role="dialog"]'));
     const heading = () => fixture.debugElement.query(By.css('h3'));
     const message = () => fixture.debugElement.query(By.css('p'));
+    const closeButton = () =>
+      fixture.debugElement.query(By.css('[data-testid="confirm-dialog-close"]'));
     const cancelButton = () =>
       fixture.debugElement.query(By.css('[data-testid="confirm-dialog-cancel"]'));
     const confirmButton = () =>
@@ -29,6 +31,7 @@ describe('ConfirmDialogComponent', () => {
       dialog,
       heading,
       message,
+      closeButton,
       cancelButton,
       confirmButton,
       confirmedSpy,
@@ -47,10 +50,12 @@ describe('ConfirmDialogComponent', () => {
       expect(component).toBeTruthy();
     });
 
-    it('não renderiza nada quando visible() é false (default)', () => {
+    it('mantém o dialog nativo fechado quando visible() é false (default)', () => {
       const { fixture } = setup();
       fixture.detectChanges();
-      expect(fixture.debugElement.children.length).toBe(0);
+
+      const dialog = fixture.debugElement.query(By.css('dialog')).nativeElement as HTMLDialogElement;
+      expect(dialog.open).toBe(false);
     });
   });
 
@@ -107,13 +112,24 @@ describe('ConfirmDialogComponent', () => {
 
       expect(cancelledSpy).not.toHaveBeenCalled();
     });
+
+    it('emite cancelled() pelo botão de fechar do cabeçalho', () => {
+      const { fixture, component, closeButton, cancelledSpy } = setup();
+      open(fixture);
+
+      (closeButton().nativeElement as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(cancelledSpy).toHaveBeenCalledOnce();
+      expect(component.visible()).toBe(false);
+    });
   });
 
   describe('inputs customizados', () => {
     it('aceita título customizado', () => {
       const { fixture, heading } = setup();
       const titulo = 'Tela de Confirmação';
-      fixture.componentRef.setInput('title', titulo);
+      fixture.componentRef.setInput('heading', titulo);
       open(fixture);
 
       expect(heading().nativeElement.textContent.trim()).toBe(titulo);

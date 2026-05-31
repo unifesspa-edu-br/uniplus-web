@@ -16,48 +16,44 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex flex-col gap-2">
-      @if (label()) {
-        <label [attr.for]="inputId" class="text-sm font-medium text-gray-700">{{ label() }}</label>
+    <div class="uni-uploader">
+      @if (fieldLabel()) {
+        <label [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
       }
       <button
         #dropZone
         type="button"
-        class="flex w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 text-left transition-colors hover:border-govbr-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-govbr-primary"
-        [class.border-govbr-primary]="isDragging()"
-        [class.bg-blue-50]="isDragging()"
-        [attr.aria-label]="ariaLabel()"
+        class="uni-uploader__drop"
+        [class.is-dragging]="isDragging()"
+        [attr.aria-label]="dropZoneAccessibleName()"
         [attr.aria-describedby]="error() ? errorId : null"
         (click)="openFilePicker()"
         (dragover)="$event.preventDefault(); onDragOver()"
         (dragleave)="onDragLeave()"
         (drop)="$event.preventDefault(); onDrop($event.dataTransfer?.files)"
       >
-        <div class="text-center">
-          <p class="text-sm text-gray-600">
-            Arraste um arquivo aqui ou
-            <span class="font-medium text-govbr-primary underline">selecione do computador</span>
-          </p>
-          <p class="mt-1 text-xs text-gray-500">
-            {{ acceptLabel() }} &mdash; Tamanho máximo: {{ maxSizeMb() }}MB
-          </p>
-        </div>
+        <span class="uni-uploader__icon" aria-hidden="true">↑</span>
+        <p class="uni-uploader__title">Arraste um arquivo aqui ou selecione do computador</p>
+        <p class="uni-uploader__hint">{{ acceptLabel() }} - tamanho máximo: {{ maxSizeMb() }}MB</p>
       </button>
       <input
         #fileInput
         [id]="inputId"
         type="file"
         class="hidden"
-        [accept]="accept()"
+        [accept]="acceptedFileTypes()"
         (change)="onFilesPicked(fileInput)"
       />
       @let file = selectedFile();
       @if (file) {
-        <div class="flex items-center justify-between rounded-md bg-gray-100 px-3 py-2">
-          <span class="text-sm text-gray-700">{{ file.name }}</span>
+        <div class="uni-uploader__item">
+          <span class="uni-uploader__item-icon" aria-hidden="true">□</span>
+          <span class="uni-uploader__item-body">
+            <span class="uni-uploader__item-name">{{ file.name }}</span>
+          </span>
           <button
             type="button"
-            class="text-sm text-red-600 hover:underline"
+            class="btn btn--tertiary btn--sm"
             (click)="removeFile()"
             aria-label="Remover arquivo"
           >
@@ -66,7 +62,7 @@ type ValidationResult = { ok: true } | { ok: false; reason: string };
         </div>
       }
       @if (error(); as message) {
-        <small [id]="errorId" class="text-xs text-red-600" role="alert">{{ message }}</small>
+        <small [id]="errorId" class="field__error" role="alert">{{ message }}</small>
       }
     </div>
   `,
@@ -80,8 +76,8 @@ export class FileUploadComponent {
   readonly inputId = `${this.instanceId}-input`;
   readonly errorId = `${this.instanceId}-error`;
 
-  readonly label = input<string>('');
-  readonly accept = input<string>('.pdf,.jpg,.jpeg,.png');
+  readonly fieldLabel = input<string>('');
+  readonly acceptedFileTypes = input<string>('.pdf,.jpg,.jpeg,.png');
   readonly allowedMimeTypes = input<readonly string[]>([
     'application/pdf',
     'image/jpg',
@@ -97,13 +93,13 @@ export class FileUploadComponent {
 
   readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 
-  readonly ariaLabel = computed(
+  readonly dropZoneAccessibleName = computed(
     () => `Área de upload de arquivo. ${this.acceptLabel()}. Tamanho máximo ${this.maxSizeMb()}MB.`,
   );
 
   private readonly maxBytes = computed(() => this.maxSizeMb() * 1024 * 1024);
   private readonly acceptedExtensions = computed(() =>
-    this.accept()
+    this.acceptedFileTypes()
       .split(',')
       .map((extension) => extension.trim().toLowerCase())
       .filter((extension) => extension.length > 0),
@@ -115,7 +111,7 @@ export class FileUploadComponent {
     () => `Arquivo excede o tamanho máximo de ${this.maxSizeMb()}MB.`,
   );
   private readonly typeNotAllowedError = computed(
-    () => `Tipo de arquivo não permitido. Envie arquivos nos formatos: ${this.accept()}`,
+    () => `Tipo de arquivo não permitido. Envie arquivos nos formatos: ${this.acceptedFileTypes()}`,
   );
 
   onDragOver(): void {
