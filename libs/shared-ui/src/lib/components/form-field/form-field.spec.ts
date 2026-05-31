@@ -176,7 +176,7 @@ describe('FormFieldComponent', () => {
   // Garante que o ramo estatico type="number" do template ativa o
   // NumberValueAccessor do Angular Reactive Forms (selector estatico
   // 'input[type=number][formControl]'). Sem essa cobertura, refactors
-  // futuros que tentem fundir os ramos de novo em um [type] dinamico
+  // que tentem fundir os ramos de novo em um [type] dinamico
   // regridem para DefaultValueAccessor entregando string ao FormControl<number>
   // — exatamente o bug runtime identificado na issue #374 (criar edital
   // via SPA falhava com 400 porque tipoProcesso chegava ao backend como

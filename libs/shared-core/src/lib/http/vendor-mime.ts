@@ -16,7 +16,7 @@ export const VENDOR_MIME_TOKEN = new HttpContextToken<VendorMimeDeclaration | nu
 /**
  * Retorna um `HttpContext` com a declaração de versão do recurso anexada ao
  * `VENDOR_MIME_TOKEN`. Quando o caller já mantém um `HttpContext` com outros
- * tokens (ex.: `IDEMPOTENCY_KEY_TOKEN` em frente futura), pode encadear:
+ * tokens (ex.: `IDEMPOTENCY_KEY_TOKEN`), pode encadear:
  *
  * ```ts
  * const ctx = withVendorMime('edital', 1).set(SOME_OTHER_TOKEN, value);

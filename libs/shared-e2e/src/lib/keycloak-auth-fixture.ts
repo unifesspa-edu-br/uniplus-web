@@ -9,7 +9,7 @@ import { keycloakLogin, resetPasswords } from './keycloak-login';
  *
  * **Padrão #20 reforçado:** Playwright `storageState` armazena cookies +
  * localStorage do *browser context de teste apenas* — é isolamento por test
- * run, NÃO pattern de produção. O invariante "JWT nunca em localStorage" do
+ * run, NÃO contrato de produção. O invariante "JWT nunca em localStorage" do
  * `uniplus-web` continua valendo no código de produção; o storageState aqui
  * persiste apenas as cookies de sessão do Keycloak (que rebuildam a sessão
  * SPA via silent-SSO no carregamento da página).
@@ -53,8 +53,8 @@ export async function setupKeycloakAuth(options: KeycloakAuthSetupOptions): Prom
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Pattern de redirect pós-login deriva do appBaseUrl — caller pode passar
-  // staging/prod sem que o keycloakLogin trave esperando por localhost.
+  // A URL esperada pós-login deriva do appBaseUrl para permitir ambientes
+  // diferentes de localhost.
   const baseUrlPattern = new RegExp(escapeRegex(options.appBaseUrl));
 
   try {

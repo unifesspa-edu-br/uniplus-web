@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * `libs/shared-data` (ADR-0017 container/presentational; pages orquestram
  * services via `inject()`).
  *
- * Estratégia: glob + readFileSync + regex. Se uma futura page tentar
+ * Estratégia: glob + readFileSync + regex. Se uma page tentar
  * `inject(HttpClient)` ou `import { HttpClient } from '@angular/common/http'`,
  * o test falha — caller é direcionado a mover lógica para um service em
  * `shared-data` que retorne `Observable<ApiResult<T>>`.

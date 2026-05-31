@@ -33,7 +33,7 @@ const baseProblem: ProblemDetails = {
 };
 
 /**
- * Pattern de teste oficial do Angular team para `httpResource`
+ * Arranjo de teste recomendado pelo Angular team para `httpResource`
  * (https://angular.dev/guide/http/http-resource):
  *
  * 1. `TestBed.tick()` dispara o effect interno do `httpResource` (que cria a

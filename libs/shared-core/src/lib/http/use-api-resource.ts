@@ -10,7 +10,7 @@ import { ProblemDetails } from './problem-details';
 
 /**
  * Wrapper reativo que adapta `httpResource` ao envelope `ApiResult<T>` do
- * `apiResultInterceptor` (ADR-0011 + ADR-0012). Pattern canônico para
+ * `apiResultInterceptor` (ADR-0011 + ADR-0012). Helper canônico para
  * **detail/list pages que fazem GET reativo por signals** (ADR-0018).
  *
  * **Quando usar:**

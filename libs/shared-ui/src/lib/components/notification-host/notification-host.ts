@@ -6,7 +6,6 @@ import {
   signal,
 } from '@angular/core';
 import {
-  Notification,
   NotificationService,
   NotificationType,
 } from '@uniplus/shared-core';
@@ -31,7 +30,7 @@ import {
  *
  * **`Copiar traceId`:** botão renderizado apenas quando
  * `notification.traceId` é não-vazio. Usa `navigator.clipboard.writeText`
- * com fallback silencioso em navegadores antigos (operador opt-in via
+ * com fallback silencioso em navegadores sem suporte (operador opt-in via
  * `aria-pressed` para feedback). `traceId` selecionável via `select-all`
  * dispensa clipboard quando esta API não existir.
  */
@@ -126,7 +125,6 @@ export class NotificationHostComponent {
   private readonly _idsCopiados = signal<ReadonlySet<number>>(new Set());
   protected readonly idsCopiados = this._idsCopiados.asReadonly();
 
-  /** Labels — futuramente movíveis para um service de i18n; por enquanto pt-BR fixo. */
   protected readonly dismissLabel = 'Fechar notificação';
   protected readonly traceIdLabel = 'ID de rastreamento:';
   protected readonly copyLabel = 'Copiar';
@@ -141,10 +139,8 @@ export class NotificationHostComponent {
   }
 
   /**
-   * Copia o `traceId` para o clipboard. Em navegadores sem
-   * `navigator.clipboard` (HTTP non-secure context, IE legado etc.) cai em
-   * fallback no-op — o usuário pode selecionar o `<code>` (que tem
-   * `select-all`) e copiar manualmente.
+   * Copia o `traceId` para o clipboard. Quando `navigator.clipboard` não está
+   * disponível, o usuário ainda pode selecionar o `<code>` e copiar manualmente.
    */
   protected copiarTrace(id: number, traceId: string): void {
     const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
@@ -188,8 +184,4 @@ export class NotificationHostComponent {
     return `Copiar ID de rastreamento ${traceId}`;
   }
 
-  protected resetTraceCopiadoFlag(_notification: Notification): void {
-    // Reservado para futuro reset por timeout — por enquanto a flag persiste
-    // até o toast ser dispensado, o que é o ciclo de vida natural.
-  }
 }

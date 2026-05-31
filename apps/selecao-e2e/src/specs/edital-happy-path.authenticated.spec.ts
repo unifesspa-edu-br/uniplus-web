@@ -1,9 +1,9 @@
 import { test, expect } from '../fixtures/auth.fixture';
 
 /**
- * Smoke ponta-a-ponta autenticado — F9 do Frontend Milestone B. Roda no
+ * Smoke ponta-a-ponta autenticado. Roda no
  * project `selecao-authenticated` (declarado em `playwright.config.ts`),
- * que carrega o `storageState` produzido pelo `globalSetup` — sem login via
+ * que carrega o `storageState` produzido pelo setup de autenticação — sem login via
  * UI dentro do test.
  *
  * Os smokes aqui validam:
@@ -15,11 +15,9 @@ import { test, expect } from '../fixtures/auth.fixture';
  * **Não-escopo:** validar criação real de edital ponta-a-ponta. O fluxo de
  * POST `/api/editais` depende de premissas de backend (TipoProcesso enum
  * válido, RBAC do admin, validators FluentValidation) que evoluem
- * independente do frontend e tornariam o smoke flaky. Cobertura desse
- * caminho fica para integration tests dedicados quando o contrato de
- * `TipoProcesso` estabilizar (ver gap em `uniplus-api#334`).
+ * independente do frontend e tornariam o smoke flaky.
  */
-test.describe('Editais — smoke autenticado (F9)', () => {
+test.describe('Editais — smoke autenticado', () => {
   test('storageState carrega admin sem login UI e renderiza lista de editais', async ({
     page,
   }) => {

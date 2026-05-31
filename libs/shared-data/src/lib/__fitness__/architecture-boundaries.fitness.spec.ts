@@ -17,8 +17,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
  * - O fitness também detecta **ciclos** no project graph (back-edges em
  *   DFS), que `enforce-module-boundaries` não cobre.
  *
- * Pattern source: `runtime-config-providers.fitness.spec.ts` (ADR-0021)
- * — vitest + regex parsing de fontes + comment strip antes do match.
+ * Baseado em `runtime-config-providers.fitness.spec.ts` (ADR-0021):
+ * vitest + regex parsing de fontes + comment strip antes do match.
  */
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');

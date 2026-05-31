@@ -32,14 +32,14 @@ export type CriarEditalCommand = components['schemas']['CriarEditalCommand'];
 
 /**
  * Cliente Angular standalone do recurso `/api/editais` (módulo Seleção).
- * Pattern thin (ADR-0013): tipos vêm do `schema.ts` gerado, response é
+ * API thin (ADR-0013): tipos vêm do `schema.ts` gerado, response é
  * envelopada em `ApiResult<T>` pelo `apiResultInterceptor` upstream
  * (ADR-0011), Bearer é injetado pelo `tokenInterceptor` (ADR-0009),
  * versionamento via vendor MIME `application/vnd.uniplus.edital.v1+json`
  * (ADR-0028 do `uniplus-api`) é declarado por `withVendorMime('edital', 1)`.
  *
- * Métodos `criar()` e `publicar()` consomem `withIdempotencyKey` (ADR-0014;
- * pattern entregue na F3 do Milestone B); detalhes em cada método abaixo.
+ * Métodos `criar()` e `publicar()` consomem `withIdempotencyKey` (ADR-0014);
+ * detalhes em cada método abaixo.
  */
 @Injectable({ providedIn: 'root' })
 export class EditaisApi {

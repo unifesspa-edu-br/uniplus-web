@@ -170,7 +170,6 @@ describe('tokenInterceptor — allowlist', () => {
   });
 });
 
-// Sanity check: chamada direta à função do interceptor sem HttpClient.
 describe('tokenInterceptor — chamada direta', () => {
   it('encaminha a requisição inalterada se a URL não está na allowlist', () => {
     TestBed.configureTestingModule({

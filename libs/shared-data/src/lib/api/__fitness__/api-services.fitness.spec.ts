@@ -3,8 +3,8 @@ import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Fitness tests dos services HTTP do `shared-data`. Enforce padrões binding
- * estabelecidos no Frontend Milestone B (ADRs 0011/0012/0013/0014/0016):
+ * Fitness tests dos services HTTP do `shared-data`. Enforce invariantes de
+ * binding definidos pelas ADRs 0011/0012/0013/0014/0016:
  *
  * 1. Toda classe `@Injectable` em `*.api.ts` retorna `Observable<ApiResult<T>>`
  *    (nunca `Observable<T>` cru) — discriminated union ApiResult é o boundary
@@ -13,9 +13,8 @@ import { describe, expect, it } from 'vitest';
  *    `withVendorMime(...)` no `HttpContext` — versionamento per-resource
  *    (ADR-0028 backend, ADR-0016 cliente).
  *
- * Estratégia: glob + readFileSync + regex. Frágil-mas-suficiente: pega
- * regression cosmético (caller esquece pattern); não substitui code review
- * humano. Quando 5+ services existirem, considerar AST analysis via ts-morph.
+ * Estratégia: glob + readFileSync + regex. Detecta desvios simples de contrato
+ * sem substituir code review humano.
  */
 
 const API_GLOB_ROOT = path.resolve(__dirname, '..');
@@ -137,15 +136,13 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
 
     it('toda chamada this.http.get(...) compõe withVendorMime no contexto (ADR-0016)', () => {
       // ADR-0016 cobre vendor MIME em GETs (Accept versionado). Mutações
-      // (POST/PUT/PATCH) ficam fora — body de mutação é versionado por
-      // Content-Type quando aplicável, decisão fica para ADR futura
-      // (ADR-0016 §"Esta ADR não decide" sobre POST/PUT). Invariante: ≥1
-      // call site de withVendorMime() para cada this.http.get<> existente.
+      // (POST/PUT/PATCH) ficam fora porque usam versionamento por Content-Type
+      // quando aplicável (ADR-0016 §"Esta ADR não decide" sobre POST/PUT).
+      // Invariante: ≥1 call site de withVendorMime() por this.http.get<>.
       const getCalls = (source.match(/this\.http\.get</g) ?? []).length;
       const vendorMimeCalls = (source.match(/withVendorMime\([^)]+\)/g) ?? []).length;
 
-      // Sanity: arquivo sem GETs (futuro service só de mutação) ainda passa
-      // sem withVendorMime — não força redundância.
+      // Arquivo sem GETs ainda passa sem withVendorMime — não força redundância.
       if (getCalls === 0) {
         return;
       }
