@@ -1,0 +1,1862 @@
+/* =============================================================================
+ * Uni+ Design System — Components
+ * =============================================================================
+ * CSS-only implementation of the Figma components, ready to be re-implemented
+ * as Angular standalone components with PrimeNG unstyled PassThrough.
+ *
+ * Selectors use BEM-style flat naming (`.btn`, `.btn--primary`, `.btn__icon`)
+ * so they map cleanly to Tailwind class composition AND survive PrimeNG's
+ * deep selectors.
+ *
+ * Mobile-first; states (default → hover → focus → active → disabled) are
+ * complete; every interactive element ≥44×44.
+ * ==========================================================================*/
+
+/* NOTE: Depends on tokens.css + base.css loaded BEFORE this file. */
+
+/* ============================================================================
+ * BUTTON
+ * Types: solid (primary/secondary/tertiary), outline, ghost, danger
+ * Sizes: sm 32, default 40, lg 48
+ * Density (touch-target via padding) — default = comfortable 44 minimum
+ * Modifiers: --icon-only (square 44/40/32), --pill, --full
+ * ========================================================================== */
+.btn {
+  --btn-bg: var(--color-primary);
+  --btn-fg: var(--text-on-primary);
+  --btn-bd: transparent;
+  --btn-bg-hover: var(--color-primary-700);
+  --btn-bg-active: var(--color-primary-800);
+  --btn-height: var(--touch-min);
+  --btn-px: var(--space-5);
+  --btn-fs: var(--text-base);
+  --btn-radius: var(--radius-pill);
+
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--space-2);
+  /* WCAG 2.5.5: never below the 44px touch floor, even for sm/md. Variants
+   * tune font/padding only; --btn-height can grow the target (lg = 48) but
+   * max() clamps it so it can never shrink below --touch-min. */
+  min-height: max(var(--touch-min), var(--btn-height));
+  padding-inline: var(--btn-px);
+  font-family: inherit;
+  font-size: var(--btn-fs);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--btn-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard),
+              color var(--duration-fast) var(--ease-standard);
+}
+.btn:hover:not([disabled]):not(:disabled) { background: var(--btn-bg-hover); }
+.btn:active:not([disabled]):not(:disabled) { background: var(--btn-bg-active); }
+.btn[disabled], .btn:disabled {
+  cursor: not-allowed;
+  background: var(--surface-disabled);   /* F-002: themed disabled */
+  color: var(--text-disabled);
+  border-color: transparent;
+}
+
+.btn--secondary {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-primary);
+  --btn-bd: var(--color-primary);
+  --btn-bg-hover: var(--color-primary-50);
+  --btn-bg-active: var(--color-primary-100);
+}
+.btn--secondary:hover:not([disabled]):not(:disabled) { color: var(--text-on-primary-tint); border-color: var(--color-primary-700); }
+
+.btn--tertiary {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-primary);
+  --btn-bd: transparent;
+  --btn-bg-hover: var(--surface-subtle);
+  --btn-bg-active: var(--surface-disabled);  /* F-002: themed */
+}
+
+.btn--danger {
+  --btn-bg: var(--color-danger-solid);
+  --btn-fg: var(--color-neutral-0);
+  --btn-bg-hover: var(--color-danger-700);
+  --btn-bg-active: var(--color-danger-700);
+}
+[data-theme="contrast"] .btn--danger { --btn-fg: var(--text-on-primary); }
+
+/* sm/md keep the 44px floor (min-height clamps); they only shrink type + padding.
+ * lg opts UP to the 48px comfortable target. */
+.btn--sm { --btn-px: var(--space-4); --btn-fs: var(--text-sm); }
+.btn--md { --btn-px: var(--space-5); --btn-fs: var(--text-sm); }
+.btn--lg { --btn-height: var(--touch-comfortable); --btn-px: var(--space-6); --btn-fs: var(--text-md); }
+.btn--full { width: 100%; }
+/* F-026: pill is the default — .btn--pill is a no-op kept for clarity, .btn--rect opts out. */
+.btn--pill { border-radius: var(--radius-pill); }
+.btn--rect { border-radius: var(--radius-md); }
+
+.btn--icon-only {
+  width: max(var(--touch-min), var(--btn-height));
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0;
+  flex-shrink: 0;
+}
+.btn--circle { border-radius: var(--radius-circle); }
+
+.btn__icon { width: 1.25em; height: 1.25em; flex-shrink: 0; }
+
+/* ============================================================================
+ * FORM FIELDS (input, select, textarea)
+ * ========================================================================== */
+.field { display: flex; flex-direction: column; gap: var(--space-2); }
+.field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.field__label[required]::after,
+.field__label.is-required::after {
+  content: " *";
+  color: var(--color-danger-500);
+}
+.field__hint { font-size: var(--text-xs); color: var(--text-muted); }
+.field__error {
+  display: flex; align-items: flex-start; gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-danger-700);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.input::placeholder,
+.textarea::placeholder { color: var(--text-placeholder); opacity: 1; }
+.input:hover, .select:hover, .textarea:hover { border-color: var(--border-strong); }
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring-color);
+  box-shadow: var(--focus-ring);
+}
+.input[disabled], .input:disabled {
+  background: var(--surface-disabled);    /* F-002 themed */
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.input[aria-invalid="true"], .field.is-error .input {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}
+.input[aria-invalid="true"]:focus-visible {
+  /* F-020: invalid-ring color is derived from token. */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger-500) 25%, transparent);
+}
+
+.textarea { min-height: 96px; resize: vertical; line-height: var(--leading-normal); }
+
+/* Input-affix (icon + input) */
+.input-group {
+  display: flex; align-items: stretch;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.input-group:focus-within {
+  border-color: var(--focus-ring-color);
+  box-shadow: var(--focus-ring);
+}
+.input-group .input {
+  border: none; box-shadow: none; background: transparent; flex: 1; min-width: 0;
+}
+.input-group .input:focus-visible { box-shadow: none; }
+.input-group__addon {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+/* Checkbox + Radio (custom para parear com PrimeNG unstyled) */
+.checkbox, .radio {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: var(--touch-min); cursor: pointer;
+  user-select: none;
+}
+.checkbox input, .radio input {
+  position: absolute; opacity: 0; pointer-events: none;
+}
+.checkbox__box, .radio__dot {
+  width: 20px; height: 20px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-card);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+  flex-shrink: 0;
+}
+.checkbox__box { border-radius: var(--radius-xs); }
+.radio__dot { border-radius: var(--radius-circle); }
+.checkbox input:checked ~ .checkbox__box {
+  background: var(--color-primary); border-color: var(--color-primary);
+}
+.checkbox input:checked ~ .checkbox__box::after {
+  content: ""; width: 6px; height: 10px; border: solid var(--color-neutral-0);
+  border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px);
+}
+.radio input:checked ~ .radio__dot {
+  border-color: var(--color-primary);
+}
+.radio input:checked ~ .radio__dot::after {
+  content: ""; width: 10px; height: 10px;
+  background: var(--color-primary); border-radius: 50%;
+}
+.checkbox input:focus-visible ~ .checkbox__box,
+.radio input:focus-visible ~ .radio__dot {
+  box-shadow: var(--focus-ring);
+}
+
+/* Switch (toggle) */
+.switch {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  min-height: var(--touch-min); cursor: pointer;
+}
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch__track {
+  width: 40px; height: 22px; background: var(--color-neutral-300);
+  border-radius: var(--radius-pill); position: relative;
+  transition: background var(--duration-fast) var(--ease-standard);
+  flex-shrink: 0;
+}
+.switch__track::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; background: var(--color-neutral-0); border-radius: 50%;
+  transition: transform var(--duration-base) var(--ease-standard);
+  box-shadow: var(--shadow-1);
+}
+.switch input:checked ~ .switch__track { background: var(--color-primary); }
+.switch input:checked ~ .switch__track::after { transform: translateX(18px); }
+.switch input:focus-visible ~ .switch__track { box-shadow: var(--focus-ring); }
+
+/* ============================================================================
+ * TAG / BADGE
+ * type: status (dot + label), only-text, score (numeric), icon
+ * variant: primary, success, warning, danger, info, neutral
+ * ========================================================================== */
+.tag {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-half-3);  /* F-028 tokens, was 4px 10px */
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+}
+.tag__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor; opacity: 0.9;
+  flex-shrink: 0;
+}
+.tag--success { background: var(--color-success-50); color: var(--color-success-700); }
+.tag--warning { background: var(--color-warning-50); color: var(--color-warning-700); }
+.tag--danger  { background: var(--color-danger-50);  color: var(--color-danger-700); }
+.tag--info    { background: var(--color-info-50);    color: var(--color-info-700); }
+.tag--primary { background: var(--color-primary-50); color: var(--text-on-primary-tint); }
+
+/* Solid (para chamadas de atenção, ex.: ÚLTIMOS DIAS).
+ * Usa tokens *-solid que permanecem escuros em ambos os temas — assim o
+ * texto claro mantém contraste quando o modo escuro suaviza as cores de feedback.
+ */
+.tag--solid { color: var(--color-neutral-0); padding-inline: var(--space-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.tag--solid.tag--success { background: var(--color-success-solid); }
+.tag--solid.tag--warning { background: var(--color-warning-solid); color: var(--color-neutral-0); }
+.tag--solid.tag--danger  { background: var(--color-danger-solid);  color: var(--color-neutral-0); }
+.tag--solid.tag--info    { background: var(--color-info-solid);    color: var(--color-neutral-0); }
+.tag--solid.tag--primary { background: var(--color-primary-solid); color: var(--color-neutral-0); }
+[data-theme="contrast"] .tag--solid { color: var(--text-on-primary); }
+
+/* ============================================================================
+ * CARD
+ * ========================================================================== */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+@media (min-width: 768px) { .card { padding: var(--space-6); } }
+.card--interactive { cursor: pointer; transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard); }
+.card--interactive:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-1);
+}
+.card--interactive:focus-within { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+
+.card__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.card__title { font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-heading); margin: 0; line-height: var(--leading-snug); }
+.card__meta { font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.card__desc { font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-normal); }
+.card__footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; padding-top: var(--space-3); border-top: 1px solid var(--border-subtle); }
+.card__footer a {
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================================
+ * ALERT / MESSAGE
+ * F-029: hierarchy is danger > warning > info ≈ success. Danger gets a
+ * thicker left rule + shadow so it doesn't tie with success when both are
+ * on screen (common post-wizard-submit).
+ * ========================================================================== */
+.alert {
+  display: flex; gap: var(--space-3); padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  border-left: 4px solid var(--border-default);
+}
+.alert__icon {
+  width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;
+  color: var(--text-secondary);
+}
+.alert__body { flex: 1; }
+.alert__title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); margin: 0 0 var(--space-1); }
+.alert__msg { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+
+.alert--success { background: var(--color-success-50); border-left-color: var(--color-success-600); }
+.alert--success .alert__icon { color: var(--color-success-600); }
+.alert--success .alert__title { color: var(--color-success-700); }
+
+.alert--warning { background: var(--color-warning-50); border-left-color: var(--color-warning-600); }
+.alert--warning .alert__icon { color: var(--color-warning-600); }
+.alert--warning .alert__title { color: var(--color-warning-700); }
+
+/* F-029: danger — thicker rule + soft shadow to assert priority */
+.alert--danger {
+  background: var(--color-danger-50);
+  border-left: 6px solid var(--color-danger-500);
+  box-shadow: var(--shadow-1);
+}
+.alert--danger .alert__icon { color: var(--color-danger-500); }
+.alert--danger .alert__title { color: var(--color-danger-700); }
+
+.alert--info { background: var(--color-info-50); border-left-color: var(--color-primary); }
+.alert--info .alert__icon { color: var(--color-primary); }
+.alert--info .alert__title { color: var(--color-info-700); }
+
+/* ============================================================================
+ * INSTITUTIONAL BAR + ACCESSIBILITY BAR + TOPBAR (mobile-first)
+ * ========================================================================== */
+.institutional-bar {
+  background: var(--color-primary-900);
+  color: var(--text-on-inverse);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  display: flex; align-items: center; gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.institutional-bar__brand { font-weight: var(--weight-semibold); }
+.institutional-bar__sep { opacity: 0.5; }
+.institutional-bar__org { opacity: 0.9; }
+.institutional-bar__links { margin-left: auto; display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.institutional-bar a {
+  color: var(--text-on-inverse); text-decoration: none;
+  /* F-038 follow-up: preserva touch target de 44px via padding + margem negativa,
+   * sem inflar a altura visual da faixa institucional. */
+  display: inline-flex; align-items: center;
+  min-height: var(--touch-min);
+  padding: var(--space-2);
+  margin-block: calc(var(--space-2) * -1);
+  border-radius: var(--radius-sm);
+}
+.institutional-bar a:hover,
+.institutional-bar a[aria-current="page"] { text-decoration: underline; }
+@media (max-width: 640px) {
+  /* F-042: em telas estreitas a faixa vira um bar institucional de DOIS níveis,
+   * intencional — em vez de esconder o órgão (que deixava um "gov.br |" órfão).
+   *   Linha 1: identidade  ->  gov.br | <órgão>
+   *   Linha 2: utilitários ->  links, separados por um filete sutil
+   * F-038: NUNCA esconder "Acessibilidade"/"Privacidade" (Gov.br DS + LGPD).
+   * O órgão permanece visível: é a identidade institucional da faixa. */
+  .institutional-bar { column-gap: var(--space-2); row-gap: 0; }
+  .institutional-bar__links {
+    width: 100%;
+    margin-left: 0;
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    gap: var(--space-1) var(--space-4);
+    border-top: 1px solid color-mix(in srgb, var(--text-on-inverse) 18%, transparent);
+  }
+  .institutional-bar__links a { font-size: var(--text-xs); }
+}
+
+/* ============================================================================
+ * ACCESSIBILITY MENU — botão (disclosure) + popover de preferências
+ * ----------------------------------------------------------------------------
+ * ADR-0002: substitui a barra de acessibilidade fixa. Um botão no header abre
+ * um popover (desktop) / bottom-sheet (mobile) com tema, alto contraste e
+ * fonte legível. Padrão ARIA de disclosure (button[aria-expanded][aria-controls]
+ * -> region), não-modal: Esc fecha e devolve o foco ao gatilho; clique fora
+ * fecha. O tamanho de fonte foi removido (delegado ao zoom nativo do navegador).
+ * ========================================================================== */
+.a11y-menu { position: relative; display: inline-flex; }
+.a11y-menu__trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--touch-min); height: var(--touch-min);
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.a11y-menu__trigger:hover { background: var(--surface-subtle); color: var(--color-primary); }
+.a11y-menu__trigger[aria-expanded="true"] {
+  background: var(--surface-subtle); color: var(--color-primary); border-color: var(--color-primary);
+}
+.a11y-menu__trigger svg { width: 20px; height: 20px; }
+
+.a11y-menu__popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  z-index: var(--z-overlay);
+  width: 300px; max-width: calc(100vw - var(--space-6));
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  padding: var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+.a11y-menu__popover[hidden] { display: none; }
+.a11y-menu__title { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-heading); margin: 0; }
+.a11y-menu__group { display: flex; flex-direction: column; gap: var(--space-2); }
+.a11y-menu__group-label {
+  font-size: var(--text-xs); font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary);
+}
+.a11y-menu__options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.a11y-opt {
+  flex: 1 1 auto;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: var(--touch-min); padding: 0 var(--space-3);
+  background: transparent; color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-pill);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+.a11y-opt svg { width: 16px; height: 16px; flex-shrink: 0; }
+.a11y-opt:hover { background: var(--surface-subtle); }
+.a11y-opt[aria-pressed="true"] {
+  background: var(--color-primary); color: var(--text-on-primary); border-color: var(--color-primary);
+}
+.a11y-menu__hint { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.45; margin: 0; }
+.a11y-menu__hint kbd {
+  font-family: var(--font-mono); font-size: 0.92em;
+  background: var(--surface-subtle); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm); padding: 0 5px;
+}
+.a11y-menu__backdrop { display: none; }
+@media (prefers-reduced-motion: reduce) { .a11y-opt { transition: none; } }
+@media (max-width: 640px) {
+  .a11y-menu__popover {
+    position: fixed; inset: auto 0 0; top: auto;
+    width: 100%; max-width: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: var(--z-modal);
+    padding-bottom: max(var(--space-5), env(safe-area-inset-bottom));
+  }
+  .a11y-menu__backdrop {
+    display: block; position: fixed; inset: 0;
+    background: var(--surface-overlay); border: 0; cursor: pointer;
+    z-index: calc(var(--z-modal) - 1);
+  }
+  .a11y-menu__backdrop[hidden] { display: none; }
+}
+
+.topbar {
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--space-4);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3);
+}
+.topbar__brand { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.topbar__actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+.topbar__mark {
+  width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-primary-solid); color: var(--color-neutral-0);
+  font-weight: var(--weight-bold); font-size: var(--text-sm); letter-spacing: 0;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+[data-theme="contrast"] .topbar__mark { background: var(--color-primary); color: var(--text-on-primary); }
+.topbar__titles { min-width: 0; }
+.topbar__title { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-heading); line-height: var(--leading-snug); }
+.topbar__subtitle { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 2px; }
+.topbar__nav { display: none; align-items: center; gap: var(--space-1); }
+.topbar__nav a {
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  min-height: var(--touch-min);
+  display: inline-flex; align-items: center;
+  white-space: nowrap;
+}
+.topbar__nav a:hover { background: var(--surface-subtle); color: var(--text-link); }
+.topbar__nav a.is-active,
+.topbar__nav a[aria-current="page"] { color: var(--text-link); font-weight: var(--weight-semibold); }
+.topbar__menu-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--touch-min); height: var(--touch-min);
+  background: transparent; border: 1px solid var(--border-default);
+  border-radius: var(--radius-md); cursor: pointer;
+  color: var(--text-primary);
+}
+
+@media (min-width: 1024px) {
+  .topbar__nav { display: flex; }
+  .topbar__menu-btn { display: none; }
+}
+@media (max-width: 479px) {
+  .topbar {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+  .topbar__subtitle { display: none; }
+  .topbar__actions { gap: var(--space-1); }
+  .topbar .user-chip {
+    width: var(--touch-min);
+    padding: 0;
+    justify-content: center;
+  }
+  .topbar .user-chip > svg { display: none; }
+}
+
+/* ============================================================================
+ * PAGE HEADER — title + description + right actions
+ * ========================================================================== */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.page-header__content { min-width: 0; }
+.page-header__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  margin: 0;
+  line-height: var(--leading-tight);
+}
+.page-header__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+  line-height: var(--leading-normal);
+}
+.page-header__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (min-width: 600px) {
+  .page-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+  .page-header__actions {
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+}
+
+/* User chip */
+.user-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);  /* F-028 tokens, was 4px 12px 4px 4px */
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  font-size: var(--text-sm);
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
+.user-chip__avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--avatar-bg);   /* F-004 themed */
+  color: var(--avatar-fg);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: var(--weight-bold); font-size: var(--text-xs);
+}
+
+/* ============================================================================
+ * STEPPER / WIZARD
+ * ========================================================================== */
+/* F-041: steppers longos (ex.: wizard de 12 passos) excediam o container e o
+ * último passo era cortado na borda. Rola na horizontal quando não couber; com
+ * poucos passos não há overflow e o layout permanece idêntico. */
+.stepper { display: flex; align-items: stretch; gap: 0; overflow-x: auto; scrollbar-width: thin; }
+.stepper__step { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); flex: 0 0 auto; padding: 0 var(--space-2); }
+.stepper__dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--border-default); background: var(--surface-card);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: var(--weight-bold); font-size: var(--text-sm);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.stepper__dot.is-current { background: var(--color-primary); border-color: var(--color-primary); color: var(--text-on-primary); }
+/* F-005: var(--color-success-600) becomes light green in dark, so solid
+ * success is used for done steps. */
+.stepper__dot.is-done { background: var(--color-success-solid); border-color: var(--color-success-solid); color: var(--color-neutral-0); }
+.stepper__label { font-size: var(--text-xs); color: var(--text-muted); text-align: center; max-width: 12ch; }
+.stepper__step.is-current .stepper__label { color: var(--text-heading); font-weight: var(--weight-semibold); }
+.stepper__step.is-done .stepper__label { color: var(--color-success-700); }
+.stepper__bar {
+  flex: 1;
+  height: 2px;
+  background: var(--border-default);
+  align-self: center;
+  margin: 0 -4px;
+  margin-bottom: var(--space-5);  /* F-028 token, was 20px */
+}
+.stepper__bar.is-done {
+  background: var(--color-success-solid);  /* F-005: solid stays dark in both themes */
+}
+.stepper--vertical {
+  flex-direction: column;
+  align-items: stretch;
+  overflow-x: visible;  /* variante vertical não precisa do scroll guard horizontal */
+}
+.stepper--vertical .stepper__step {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+.stepper--vertical .stepper__label {
+  text-align: left;
+  max-width: none;
+  padding-top: var(--space-2);
+}
+.stepper--vertical .stepper__bar {
+  flex: 0 0 auto;
+  width: 2px;
+  height: var(--space-5);
+  align-self: flex-start;
+  margin: calc(var(--space-1) * -1) 0 calc(var(--space-1) * -1) 17px;
+}
+[data-theme="contrast"] .stepper__dot.is-done { color: var(--text-on-primary); }
+
+/* ============================================================================
+ * STEP RAIL — navegação vertical de etapas para fluxos longos (> 5 passos)
+ * ----------------------------------------------------------------------------
+ * ADR-0001: o stepper horizontal é limitado a 5 passos. Acima disso usa-se
+ * este rail. No desktop (≥768px) ele aparece como coluna lateral de etapas;
+ * em telas estreitas (inclusive 320px) colapsa em um cabeçalho textual
+ * "Etapa X de N" + nome do passo atual + barra de progresso, com a lista
+ * completa em progressive disclosure (<details>), sem depender de JS.
+ * ========================================================================== */
+.step-rail { display: block; }
+/* O <details> contém APENAS o <summary> (toggle puro). A lista é irmã e tem
+ * sua visibilidade controlada por `[open] ~` — assim não dependemos do
+ * mecanismo interno do <details> (content-visibility / ::details-content),
+ * que varia entre navegadores. */
+.step-rail__mobile { display: block; }
+
+/* ---- Mobile: cabeçalho textual + progresso (≤767px) ---- */
+.step-rail__summary {
+  list-style: none;
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: var(--touch-min);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.step-rail__summary::-webkit-details-marker { display: none; }
+.step-rail__summary:hover { background: var(--surface-subtle); }
+.step-rail__summary-count {
+  font-size: var(--text-xs); font-weight: var(--weight-bold);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-secondary); white-space: nowrap;
+}
+.step-rail__summary-name {
+  font-size: var(--text-sm); font-weight: var(--weight-semibold);
+  color: var(--text-heading);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.step-rail__progress {
+  flex: 1; min-width: 32px; height: 4px;
+  background: var(--border-subtle); border-radius: var(--radius-pill); overflow: hidden;
+}
+.step-rail__progress > span { display: block; height: 100%; background: var(--color-primary); border-radius: inherit; }
+.step-rail__chevron {
+  width: 20px; height: 20px; flex-shrink: 0; color: var(--text-secondary);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.step-rail__mobile[open] .step-rail__chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .step-rail__chevron { transition: none; } }
+
+/* ---- Lista vertical de etapas ---- */
+.step-rail__content { margin-top: var(--space-3); }
+.step-rail__title {
+  font-size: var(--text-xs); font-weight: var(--weight-bold);
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted);
+  margin: 0 0 var(--space-2); padding-inline: var(--space-3);
+}
+.step-rail__list { list-style: none; margin: 0; padding: 0; }
+.step-rail__step {
+  position: relative;
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-inline-start: 3px solid transparent;
+  border-radius: var(--radius-md);
+}
+/* Conector vertical contínuo, centralizado no marcador (32px → meia = 16px) */
+.step-rail__step::before {
+  content: ""; position: absolute;
+  inset-inline-start: calc(3px + var(--space-3) + 16px);
+  top: 0; bottom: 0; width: 2px;
+  margin-inline-start: -1px;
+  background: var(--border-default);
+}
+.step-rail__step:first-child::before { top: 50%; }
+.step-rail__step:last-child::before  { bottom: 50%; }
+.step-rail__step.is-done::before { background: var(--color-success-solid); }
+
+.step-rail__marker {
+  position: relative; z-index: 1;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border-default); background: var(--surface-card);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: var(--weight-bold); font-size: var(--text-sm);
+  color: var(--text-muted); flex-shrink: 0;
+}
+.step-rail__marker svg { width: 16px; height: 16px; }
+.step-rail__step.is-done .step-rail__marker {
+  background: var(--color-success-solid); border-color: var(--color-success-solid); color: var(--color-neutral-0);
+}
+.step-rail__step.is-current .step-rail__marker {
+  background: var(--color-primary); border-color: var(--color-primary); color: var(--text-on-primary);
+}
+.step-rail__label { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.3; min-width: 0; }
+.step-rail__step.is-done .step-rail__label { color: var(--text-primary); }
+.step-rail__step.is-current {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-inline-start-color: var(--color-primary);
+}
+.step-rail__step.is-current .step-rail__label { color: var(--text-heading); font-weight: var(--weight-semibold); }
+[data-theme="contrast"] .step-rail__step.is-done .step-rail__marker { color: var(--text-on-primary); }
+
+/* ---- Mobile: lista colapsada, revelada ao expandir o cabeçalho ---- */
+@media (max-width: 767px) {
+  .step-rail__content { display: none; }
+  .step-rail__mobile[open] ~ .step-rail__content { display: block; }
+}
+
+/* ---- Desktop: cabeçalho mobile oculto, rail sempre visível ---- */
+@media (min-width: 768px) {
+  .step-rail__mobile { display: none; }
+  .step-rail__content { display: block; margin-top: 0; }
+}
+
+/* ============================================================================
+ * AVATAR
+ * F-004: --avatar-bg / --avatar-fg are theme-aware tokens. Light: pale blue
+ * tint + dark blue text. Dark: primary-tinted dark + white text. Works in
+ * both without manual override per component.
+ * ========================================================================== */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--avatar-bg);
+  color: var(--avatar-fg);
+  font-weight: var(--weight-bold); font-size: var(--text-sm);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar--sm { width: 32px; height: 32px; font-size: var(--text-xs); }
+.avatar--lg { width: 56px; height: 56px; font-size: var(--text-md); }
+
+/* ============================================================================
+ * DIVIDER
+ * ========================================================================== */
+.divider {
+  border: none; height: 1px;
+  background: var(--border-subtle);
+  margin-block: var(--space-4);
+}
+.divider--vertical { width: 1px; height: auto; align-self: stretch; margin: 0; }
+
+/* ============================================================================
+ * TABLE RESPONSIVE — desktop table, mobile card list via td[data-label]
+ * ========================================================================== */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+.table-responsive table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.table-responsive th {
+  text-align: left;
+  padding: var(--space-3) var(--space-5);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface-page);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.table-responsive td {
+  padding: var(--space-4) var(--space-5);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.table-responsive tbody tr:hover { background: var(--surface-page); }
+.table-responsive tbody tr:last-child td { border-bottom: none; }
+.table-responsive__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.table-responsive__primary {
+  color: var(--color-primary);
+  font-weight: var(--weight-medium);
+}
+.table-responsive__meta {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  margin-top: var(--space-1);
+}
+@media (max-width: 767px) {
+  .table-responsive {
+    overflow: visible;
+  }
+  .table-responsive thead {
+    display: none;
+  }
+  .table-responsive table,
+  .table-responsive tbody,
+  .table-responsive tr,
+  .table-responsive td {
+    display: block;
+    width: 100%;
+  }
+  .table-responsive tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .table-responsive tbody tr {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+  }
+  .table-responsive tbody tr:hover {
+    border-color: var(--border-default);
+  }
+  .table-responsive td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+    text-align: right;
+  }
+  .table-responsive td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+  }
+  .table-responsive__num {
+    text-align: right;
+  }
+}
+
+/* ============================================================================
+ * DIALOG / MODAL / BOTTOM-SHEET
+ * Pattern: <dialog class="uni-dialog"> + .uni-dialog__panel inside.
+ * Mobile (<640px): bottom-sheet. Desktop: centered modal.
+ * Open with .showModal() (puts focus inside automatically).
+ * ========================================================================== */
+.uni-dialog {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  color: var(--text-primary);
+  display: none;
+}
+.uni-dialog[open] { display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 640px) { .uni-dialog[open] { align-items: center; } }
+.uni-dialog::backdrop { background: var(--surface-overlay); animation: uni-fade-in var(--duration-fast) var(--ease-standard); }
+
+.uni-dialog__panel {
+  background: var(--surface-card);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-3);
+  animation: uni-slide-up var(--duration-base) var(--ease-emphasized);
+}
+@media (min-width: 640px) {
+  .uni-dialog__panel { border-radius: var(--radius-lg); animation: uni-fade-in var(--duration-base) var(--ease-emphasized); }
+}
+.uni-dialog__header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-3);
+}
+.uni-dialog__title { font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-heading); margin: 0; line-height: 1.3; }
+.uni-dialog__body { padding: 0 var(--space-5); overflow-y: auto; flex: 1; }
+.uni-dialog__body > p { margin: 0 0 var(--space-3); color: var(--text-secondary); line-height: var(--leading-normal); }
+.uni-dialog__footer {
+  display: flex; flex-direction: column-reverse; gap: var(--space-2);
+  padding: var(--space-5);
+  border-top: 1px solid var(--border-subtle); margin-top: var(--space-4);
+}
+@media (min-width: 480px) {
+  .uni-dialog__footer { flex-direction: row; justify-content: flex-end; }
+}
+@keyframes uni-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes uni-slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .uni-dialog__panel, .uni-dialog::backdrop { animation: none; }
+}
+
+/* ============================================================================
+ * FILE UPLOADER
+ * Drag-and-drop + button trigger + file list with progress + remove.
+ * ========================================================================== */
+.uni-uploader {
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.uni-uploader__drop {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+}
+.uni-uploader__drop:hover,
+.uni-uploader__drop.is-dragging {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+.uni-uploader__drop:focus-within { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+.uni-uploader__icon {
+  width: 48px; height: 48px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-card);
+  border-radius: 50%;
+  color: var(--color-primary);
+}
+.uni-uploader__title { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-primary); margin: 0; }
+.uni-uploader__hint  { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; }
+.uni-uploader__input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.uni-uploader__list { display: flex; flex-direction: column; gap: var(--space-2); list-style: none; padding: 0; margin: 0; }
+.uni-uploader__item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.uni-uploader__item-icon { width: 32px; height: 32px; flex-shrink: 0; color: var(--color-primary); }
+.uni-uploader__item-body { flex: 1; min-width: 0; }
+.uni-uploader__item-name { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uni-uploader__item-meta { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+.uni-uploader__progress {
+  width: 100%; height: 6px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+.uni-uploader__progress > div {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width var(--duration-base) var(--ease-standard);
+}
+.uni-uploader__item.is-error { border-color: var(--color-danger-500); background: var(--color-danger-50); }
+.uni-uploader__item.is-error .uni-uploader__item-icon { color: var(--color-danger-500); }
+.uni-uploader__item.is-error .uni-uploader__progress > div { background: var(--color-danger-500); }
+.uni-uploader__item.is-success .uni-uploader__progress > div { background: var(--color-success-600); }
+
+/* ============================================================================
+ * STATUS TIMELINE (Inscrição state machine)
+ * Vertical, mobile-first. States: done, current, pending, blocked, danger.
+ * ========================================================================== */
+.uni-timeline { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0; }
+.uni-timeline__item {
+  display: grid; grid-template-columns: 36px 1fr; gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  position: relative;
+}
+.uni-timeline__item:not(:last-child)::before {
+  content: ""; position: absolute;
+  left: 17px; top: 36px; bottom: 0; width: 2px;
+  background: var(--border-default);
+}
+.uni-timeline__item.is-done:not(:last-child)::before,
+.uni-timeline__item.is-current:not(:last-child)::before {
+  background: var(--color-success-solid);
+}
+.uni-timeline__dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface-card);
+  border: 2px solid var(--border-default);
+  color: var(--text-muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: var(--weight-bold); font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.uni-timeline__item.is-done .uni-timeline__dot {
+  background: var(--color-success-solid); border-color: var(--color-success-solid); color: var(--color-neutral-0);
+}
+.uni-timeline__item.is-current .uni-timeline__dot {
+  background: var(--color-primary); border-color: var(--color-primary); color: var(--text-on-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+.uni-timeline__item.is-blocked .uni-timeline__dot {
+  background: var(--surface-card); border-color: var(--border-default); color: var(--text-muted);
+}
+.uni-timeline__item.is-danger .uni-timeline__dot {
+  background: var(--color-danger-solid); border-color: var(--color-danger-solid); color: var(--color-neutral-0);
+}
+[data-theme="contrast"] .uni-timeline__item.is-done .uni-timeline__dot,
+[data-theme="contrast"] .uni-timeline__item.is-danger .uni-timeline__dot {
+  color: var(--text-on-primary);
+}
+.uni-timeline__body { padding-top: var(--space-1); }
+.uni-timeline__head { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.uni-timeline__title { font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text-heading); margin: 0; line-height: 1.3; }
+.uni-timeline__item.is-current .uni-timeline__title { color: var(--text-heading); }
+.uni-timeline__item.is-blocked .uni-timeline__title { color: var(--text-muted); }
+.uni-timeline__when { font-size: var(--text-xs); color: var(--text-muted); }
+.uni-timeline__desc { font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-1) 0 0; line-height: var(--leading-normal); }
+.uni-timeline__actions { margin-top: var(--space-3); display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+/* ============================================================================
+ * FORM VALIDATION — error summary + accessible field errors
+ * Pattern (mandatory):
+ *   <input aria-describedby="cpf-hint cpf-error" aria-invalid="false|true">
+ *   <p id="cpf-hint" class="field__hint">…</p>
+ *   <p id="cpf-error" class="field__error" hidden>…</p>
+ *   On submit failure, set aria-invalid="true", reveal the error <p>, and
+ *   move focus to the FIRST invalid field. Use UniForm.summarize() for the
+ *   top-of-form error summary.
+ * ========================================================================== */
+.error-summary {
+  background: var(--color-danger-50);
+  border: 1px solid var(--color-danger-500);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.error-summary__title {
+  font-size: var(--text-base); font-weight: var(--weight-bold);
+  color: var(--color-danger-700); margin: 0 0 var(--space-2);
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.error-summary__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.error-summary__list a {
+  color: var(--color-danger-700); font-size: var(--text-sm); font-weight: var(--weight-medium);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.error-summary__list a:hover { text-decoration-thickness: 2px; }
+
+/* ============================================================================
+ * TOAST — aria-live region + dismissable notifications
+ * Two ARIA live regions (polite + assertive) wrapped in one visual stack
+ * (.toast-stack). F-021: assertive sits above polite so a stuck danger
+ * isn't covered by chatty info toasts.
+ *
+ * Mounted on first UniToast.show().
+ * ========================================================================== */
+.toast-stack {
+  position: fixed;
+  z-index: var(--z-toast);
+  pointer-events: none;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4);
+  bottom: 0; left: 0; right: 0;
+}
+@media (min-width: 768px) {
+  .toast-stack { top: 0; bottom: auto; left: auto; right: 0; max-width: 420px; }
+}
+.toast-region {
+  pointer-events: none;
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--color-neutral-400);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-2);
+  display: flex; gap: var(--space-3); align-items: flex-start;
+  animation: uni-toast-in var(--duration-base) var(--ease-emphasized);
+}
+@keyframes uni-toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+.toast--success { border-left-color: var(--color-success-solid); }
+.toast--success .toast__icon { color: var(--color-success-solid); }
+.toast--warning { border-left-color: var(--color-warning-solid); }
+.toast--warning .toast__icon { color: var(--color-warning-solid); }
+.toast--danger  { border-left-color: var(--color-danger-solid); }
+.toast--danger  .toast__icon { color: var(--color-danger-solid); }
+.toast--info    { border-left-color: var(--color-primary); }
+.toast--info    .toast__icon { color: var(--color-primary); }
+.toast__icon { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+.toast__body { flex: 1; min-width: 0; }
+.toast__title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); margin: 0 0 2px; }
+.toast__msg { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+.toast__close {
+  flex-shrink: 0; width: var(--touch-min); height: var(--touch-min);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: var(--radius-sm);
+  color: var(--text-muted); cursor: pointer;
+}
+.toast__close:hover { background: var(--surface-subtle); color: var(--text-primary); }
+
+/* ============================================================================
+ * DRAWER / OFF-CANVAS — left/right anchored, focus-trapped
+ * Uses <dialog> nativo (focus trap free), styled as side panel.
+ * ========================================================================== */
+.uni-drawer {
+  border: none; padding: 0; margin: 0;
+  background: transparent;
+  max-width: 100vw; max-height: 100vh;
+  width: 100%; height: 100%;
+  color: var(--text-primary);
+}
+.uni-drawer[open] { display: flex; justify-content: flex-start; }
+.uni-drawer--right[open] { justify-content: flex-end; }
+.uni-drawer::backdrop { background: var(--surface-overlay); animation: uni-fade-in var(--duration-fast) var(--ease-standard); }
+.uni-drawer__panel {
+  background: var(--surface-card);
+  width: 100%;
+  max-width: 320px;
+  height: 100vh;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: uni-drawer-in-left var(--duration-base) var(--ease-emphasized);
+}
+.uni-drawer--right .uni-drawer__panel { animation-name: uni-drawer-in-right; }
+@keyframes uni-drawer-in-left  { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes uni-drawer-in-right { from { transform: translateX(100%);  } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .uni-drawer__panel, .uni-drawer::backdrop { animation: none; } }
+.uni-drawer__header {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.uni-drawer__title { font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--text-heading); margin: 0; }
+.uni-drawer__body { flex: 1; overflow-y: auto; padding: var(--space-3) 0; }
+.uni-drawer__nav { list-style: none; padding: 0; margin: 0; }
+.uni-drawer__nav a,
+.uni-drawer__account a {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  color: var(--text-primary); text-decoration: none; font-size: var(--text-base); font-weight: var(--weight-medium);
+  min-height: var(--touch-min);
+}
+.uni-drawer__nav a:hover,
+.uni-drawer__account a:hover { background: var(--surface-subtle); }
+.uni-drawer__nav a.is-active,
+.uni-drawer__nav a[aria-current="page"] { background: var(--color-primary-50); color: var(--text-on-primary-tint); font-weight: var(--weight-semibold); border-left: 3px solid var(--color-primary); padding-left: calc(var(--space-5) - 3px); }
+.uni-drawer__nav a svg,
+.uni-drawer__account a svg { width: 20px; height: 20px; flex-shrink: 0; }
+.uni-drawer__account {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ============================================================================
+ * BACK-TO-TOP — floating action that appears after meaningful scroll
+ * Pattern: fixed bottom-right, ≥44, primary-tint, fade+slide in. ARIA-labeled.
+ * Respects prefers-reduced-motion. Scrolls page to top with focus restored
+ * to <body>/<main> so screen reader announcement is consistent.
+ *
+ * The button MUST be present in the DOM with `hidden` initial state; the JS
+ * sets aria-hidden + removes hidden when scroll threshold is crossed.
+ * ========================================================================== */
+.uni-back-to-top {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-sticky);
+  width: 48px; height: 48px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--radius-circle);
+  box-shadow: var(--shadow-2);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+  pointer-events: none;
+}
+.uni-back-to-top.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.uni-back-to-top:hover { background: var(--color-primary-700); }
+.uni-back-to-top:active { background: var(--color-primary-800); }
+.uni-back-to-top svg { width: 22px; height: 22px; }
+@media (min-width: 768px) {
+  .uni-back-to-top { right: var(--space-6); bottom: var(--space-6); width: 52px; height: 52px; }
+  .uni-back-to-top svg { width: 24px; height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uni-back-to-top { transition: opacity var(--duration-fast) linear; transform: none; }
+  .uni-back-to-top.is-visible { transform: none; }
+}
+
+/* ============================================================================
+ * PAGER — cursor-based pagination (keyset/seek)
+ * F-042: full API contract lives in docs/cursor-pagination.md (canonical).
+ * This block is UI-only. Pattern: prev/next + status com aria-live, sem
+ * paginação numerada. Botões desabilitados nos extremos.
+ *
+ * Usage:
+ *   <nav class="pager" aria-label="Paginação">
+ *     <button class="pager__btn" data-pager="prev" disabled>…</button>
+ *     <span class="pager__status" aria-live="polite">Página 1 · 10 resultados</span>
+ *     <button class="pager__btn" data-pager="next">…</button>
+ *   </nav>
+ * ========================================================================== */
+.pager {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-page);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.pager__btn {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  padding: 0 var(--space-4);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+.pager__btn:hover:not(:disabled) { background: var(--surface-subtle); border-color: var(--color-primary); color: var(--color-primary); }
+.pager__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--surface-disabled);   /* F-002 themed */
+  color: var(--text-disabled);
+  border-color: transparent;
+}
+.pager__btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.pager__status {
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  flex: 1 1 auto;
+}
+.pager__page { font-weight: var(--weight-semibold); color: var(--text-primary); }
+.pager__per-page {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.pager__per-page select {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit; font-size: var(--text-sm);
+}
+
+/* ============================================================================
+ * BREADCRUMB — hierarchical navigation
+ * Pattern: <nav aria-label="Breadcrumb"> + <ol> with chevron separators.
+ * Last item gets aria-current="page" and is non-interactive.
+ * ========================================================================== */
+.breadcrumb {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.breadcrumb__list {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.breadcrumb__item {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+}
+.breadcrumb__item + .breadcrumb__item::before {
+  content: "›";
+  color: var(--text-muted);
+  margin-right: var(--space-1);
+  font-size: var(--text-base);
+}
+.breadcrumb__link {
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  min-height: var(--touch-min);
+  display: inline-flex; align-items: center;
+}
+.breadcrumb__link:hover { text-decoration: underline; }
+.breadcrumb__current {
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);   /* F-027: was medium — non-color cue */
+  padding: var(--space-1) var(--space-2);
+}
+
+/* ============================================================================
+ * DROPDOWN MENU — actions / user menu
+ * Pattern: <button aria-haspopup="menu" aria-expanded="false"> +
+ *          <ul role="menu" hidden> with <li role="none"> + <a role="menuitem">
+ * JS toggles aria-expanded and the hidden attribute.
+ * ========================================================================== */
+.menu-wrapper { position: relative; display: inline-block; }
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 220px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  padding: var(--space-1);
+  z-index: var(--z-overlay);
+  list-style: none; margin: 0;
+}
+.menu[hidden] { display: none; }
+.menu__item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  min-height: var(--touch-min);
+}
+.menu__item:hover, .menu__item:focus-visible {
+  background: var(--surface-subtle);
+  color: var(--color-primary);
+  outline: none;
+}
+.menu__item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-muted); }
+.menu__item:hover svg, .menu__item:focus-visible svg { color: var(--color-primary); }
+.menu__item--danger { color: var(--color-danger-700); }
+.menu__item--danger:hover, .menu__item--danger:focus-visible { background: var(--color-danger-50); color: var(--color-danger-700); }
+.menu__item--danger svg { color: var(--color-danger-500); }
+.menu__divider { height: 1px; background: var(--border-subtle); margin: var(--space-1) 0; }
+.menu__group-title {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ============================================================================
+ * EMPTY STATE — F-023
+ * Spec (briefing-ux.md §8): primeira tela quando o candidato logou e ainda
+ * não tem inscrição; precisa reconhecer + ofertar próxima ação em texto claro.
+ * Variante --error: troca a cor do ícone para danger e o botão vira "Tentar de novo".
+ *
+ * Anatomia:
+ *   <div class="empty-state" role="status">
+ *     <div class="empty-state__icon" aria-hidden="true"><svg/></div>
+ *     <h3 class="empty-state__title">Você ainda não tem inscrições</h3>
+ *     <p class="empty-state__desc">Veja os editais abertos e escolha um para começar.</p>
+ *     <button class="btn btn--primary">Ver editais abertos</button>
+ *   </div>
+ * ========================================================================== */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+  max-width: 480px;
+  margin-inline: auto;
+}
+.empty-state__icon {
+  width: 56px; height: 56px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-circle);
+  margin-bottom: var(--space-2);
+}
+.empty-state__icon svg { width: 28px; height: 28px; }
+.empty-state__title {
+  font-size: var(--text-lg); font-weight: var(--weight-bold);
+  color: var(--text-heading); margin: 0; line-height: var(--leading-snug);
+}
+.empty-state__desc {
+  font-size: var(--text-sm); color: var(--text-secondary);
+  margin: 0; line-height: var(--leading-relaxed);
+  max-width: 40ch;
+}
+.empty-state .btn { margin-top: var(--space-3); }
+
+.empty-state--error .empty-state__icon {
+  background: var(--color-danger-50);
+  color: var(--color-danger-600);
+}
+.empty-state--error .empty-state__title { color: var(--color-danger-700); }
+
+/* ============================================================================
+ * SKELETON LOADER — F-003 theme-aware
+ * F-003: gradient stops come from --skeleton-from/to which flip per theme.
+ * In dark, they sit slightly above --surface-card luminance so the shimmer
+ * reads as "placeholder" not "finished content".
+ * Pattern: <div class="skeleton" style="width: …; height: …" aria-hidden="true"></div>
+ * Use inside a wrapper with aria-busy="true" + aria-label="Carregando".
+ * ========================================================================== */
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-from) 0%,
+    var(--skeleton-to)   50%,
+    var(--skeleton-from) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton--text { height: 1em; margin-block: 0.25em; }
+.skeleton--title { height: 1.5em; width: 60%; }
+.skeleton--circle { border-radius: var(--radius-circle); }
+.skeleton--card { height: 120px; border-radius: var(--radius-lg); }
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; background: var(--skeleton-from); }
+}
+
+/* ============================================================================
+ * SPINNER — indeterminate loading
+ * Pattern: <span class="spinner" role="status" aria-label="Carregando"></span>
+ * Inside button: replace btn content while keeping width (CSS sizes it).
+ * ========================================================================== */
+.spinner {
+  display: inline-block;
+  width: 1em; height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spinner-rotate 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.spinner--sm { font-size: 14px; border-width: 2px; }
+.spinner--md { font-size: 20px; border-width: 2.5px; }
+.spinner--lg { font-size: 32px; border-width: 3px; }
+@keyframes spinner-rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 1.5s; }   /* slower instead of off — still need motion */
+}
+
+/* Button in-flight state: keeps width, swaps to spinner + label.
+ * Content uses opacity:0 (NOT visibility:hidden) so the button keeps its
+ * accessible name — visibility:hidden removes the label from the a11y tree,
+ * leaving the spinner (aria-hidden) as the only content and an unnamed button.
+ * The spinner overlay may stay aria-hidden="true": the original label is still
+ * exposed to assistive tech, and aria-busy="true" should signal the loading. */
+.btn[data-loading="true"] {
+  position: relative;
+  pointer-events: none;
+  cursor: progress;
+}
+.btn[data-loading="true"] > :not(.spinner) { opacity: 0; }
+.btn[data-loading="true"] > .spinner {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================================================
+ * TOOLTIP — generic (not the sidebar inline one)
+ * Pattern: any element with [data-tooltip="texto"]. Use [data-tooltip-position]
+ * to control placement: top (default) | bottom | left | right.
+ * NOT a substitute for aria-label — keep BOTH for screen reader users.
+ * ========================================================================== */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: var(--color-primary-900);
+  color: var(--color-neutral-0);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
+  box-shadow: var(--shadow-2);
+  z-index: var(--z-overlay);
+}
+[data-tooltip]:not([data-tooltip-position])::after,
+[data-tooltip][data-tooltip-position="top"]::after {
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+}
+[data-tooltip]:not([data-tooltip-position]):hover::after,
+[data-tooltip]:not([data-tooltip-position]):focus-visible::after,
+[data-tooltip][data-tooltip-position="top"]:hover::after,
+[data-tooltip][data-tooltip-position="top"]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+[data-tooltip][data-tooltip-position="bottom"]::after { top: calc(100% + var(--space-2)); left: 50%; transform: translateX(-50%) translateY(-4px); }
+[data-tooltip][data-tooltip-position="bottom"]:hover::after,
+[data-tooltip][data-tooltip-position="bottom"]:focus-visible::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* F-024: left/right positions — used by collapsed admin sidebar (replaces
+ * the duplicated CSS in ui_kits/admin). */
+[data-tooltip][data-tooltip-position="right"]::after {
+  left: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+[data-tooltip][data-tooltip-position="right"]:hover::after,
+[data-tooltip][data-tooltip-position="right"]:focus-visible::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+[data-tooltip][data-tooltip-position="left"]::after {
+  right: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+}
+[data-tooltip][data-tooltip-position="left"]:hover::after,
+[data-tooltip][data-tooltip-position="left"]:focus-visible::after { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tooltip]::after { transition: opacity var(--duration-fast) linear; transform: none !important; }
+}
+
+/* ============================================================================
+ * SEGMENTED CONTROL (view toggle: list / cards / etc.)
+ * ========================================================================== */
+.segmented {
+  display: inline-flex;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 2px;
+}
+.segmented__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-half-2);
+  min-height: var(--touch-min);   /* F-022: was 36px, now WCAG 2.5.5 floor */
+  min-width: var(--touch-min);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard),
+              color var(--duration-fast) var(--ease-standard);
+}
+.segmented__btn:hover { color: var(--text-primary); }
+.segmented__btn[aria-pressed="true"] {
+  background: var(--surface-card);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-1);
+  font-weight: var(--weight-semibold);
+}
+.segmented__btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ============================================================================
+ * EDITAL LIST ROW (alternative to card grid — better for screen readers)
+ * ========================================================================== */
+.edital-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+}
+.edital-row:hover { border-color: var(--color-primary); box-shadow: var(--shadow-1); }
+.edital-row:focus-within { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+.edital-row__head { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.edital-row__title {
+  font-size: var(--text-lg); font-weight: var(--weight-bold);
+  color: var(--text-heading); margin: 0; line-height: var(--leading-snug);
+  flex: 1 1 100%;
+}
+.edital-row__desc { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+.edital-row__meta {
+  display: flex; flex-wrap: wrap; gap: var(--space-4);
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+.edital-row__meta strong { color: var(--text-primary); font-weight: var(--weight-semibold); }
+.edital-row__actions { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.edital-row__actions a {
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 768px) {
+  .edital-row {
+    grid-template-columns: 1fr auto;
+    gap: var(--space-5);
+    align-items: center;
+  }
+  .edital-row__title { flex: 1; }
+  .edital-row__body { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+  .edital-row__actions { justify-content: flex-end; }
+}
+
+/* ============================================================================
+ * FILTER BAR
+ * ========================================================================== */
+.filter-bar {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.filter-bar__row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.filter-bar__row > .input-group {
+  flex: 1 1 16rem;
+  min-width: min(100%, 16rem);
+}
+.filter-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: var(--space-half-2);
+  padding: var(--space-half-2) var(--space-half-3);  /* F-028: tokens, was 7px 14px */
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  font-size: var(--text-sm); font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  min-height: var(--touch-min);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+.filter-chip:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.filter-chip[aria-pressed="true"] {
+  background: var(--color-primary-50);
+  color: var(--text-on-primary-tint);
+  border-color: var(--color-primary);
+  font-weight: var(--weight-semibold);
+}
+.filter-chip__count {
+  font-size: var(--text-xs);
+  background: var(--surface-subtle);
+  padding: 1px 8px; border-radius: var(--radius-pill);
+  color: inherit;
+}
+.filter-chip[aria-pressed="true"] .filter-chip__count {
+  /* --text-on-primary flips per theme (#fff light / #0f172a dark / #000 contrast);
+   * --color-neutral-0 is a constant #fff and gives only 2.5:1 on primary dark. */
+  background: var(--color-primary); color: var(--text-on-primary);
+}
+
+/* ============================================================================
+ * CAROUSEL — manual (never auto-rotate), accessible
+ * Spec: role="region" + aria-roledescription="carousel" + aria-live="polite"
+ *       Each slide: role="group" + aria-roledescription="slide" + aria-label
+ *       Prev/Next: btn aria-label + disabled at boundaries (no-wrap pattern)
+ *       Dots: btn role + aria-current="true" on active
+ * ========================================================================== */
+.carousel {
+  position: relative;
+  background: var(--surface-banner);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+.carousel__viewport {
+  overflow: hidden;
+  scroll-behavior: smooth;
+}
+.carousel__track {
+  display: flex;
+  transform: translateX(0);
+  transition: transform var(--duration-slow) var(--ease-emphasized);
+  will-change: transform;
+}
+.carousel__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: var(--space-7) var(--space-5);
+}
+@media (min-width: 768px) {
+  .carousel__slide { padding: var(--space-9) var(--space-8); }
+}
+
+/* F-025: do NOT collapse slides via height:0 — that breaks the translateX
+ * calculation of the track. Keep slides full-width and use inert/aria-hidden
+ * only to remove them from the accessibility tree and focus order. */
+.carousel__slide[aria-hidden="true"] { pointer-events: none; }
+
+.carousel__controls {
+  display: grid;
+  grid-template-columns: var(--touch-min) minmax(0, 1fr) var(--touch-min);
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-4);
+}
+.carousel__nav {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--touch-min); height: var(--touch-min);
+  flex: 0 0 var(--touch-min);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+.carousel__controls > .carousel__nav:first-child { grid-column: 1; }
+.carousel__controls > .carousel__nav:last-child { grid-column: 3; }
+.carousel__nav:hover:not(:disabled) { background: var(--color-primary-50); border-color: var(--color-primary); }
+.carousel__nav:disabled { opacity: 0.4; cursor: not-allowed; }
+.carousel__nav svg { width: 20px; height: 20px; }
+
+.carousel__dots {
+  display: inline-flex; gap: var(--space-1); align-items: center; justify-content: center;
+  min-width: 0;
+}
+.carousel__dot {
+  /* Full 44px hit target (WCAG 2.5.5). box-sizing keeps the padding INSIDE the
+   * 44px box; the visible dot stays small via the ::after indicator. */
+  box-sizing: border-box;
+  width: var(--touch-min); height: var(--touch-min);
+  flex: 0 0 var(--touch-min);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: none; padding: 0;
+  cursor: pointer;
+}
+.carousel__dot::after {
+  content: ""; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--border-strong);
+  transition: background var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
+}
+.carousel__dot:hover::after { background: var(--color-primary); }
+.carousel__dot[aria-current="true"]::after {
+  background: var(--color-primary);
+  transform: scale(1.3);
+}
+.carousel__status {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  grid-column: 1 / -1;
+  text-align: center;
+}
+@media (min-width: 480px) {
+  .carousel__controls {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .carousel__dots { gap: var(--space-2); }
+  .carousel__status {
+    grid-column: auto;
+    flex: 1;
+  }
+}

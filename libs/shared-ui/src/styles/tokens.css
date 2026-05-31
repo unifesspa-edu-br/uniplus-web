@@ -1,0 +1,561 @@
+/* =============================================================================
+ * Uni+ Design System — Tokens
+ * =============================================================================
+ *
+ * Single source of truth for design tokens. Drop-in compatible with
+ * Tailwind CSS 4/5 via @theme inline. Four themes:
+ *   - light     (data-theme="light")            forces light
+ *   - dark      (data-theme="dark")             forces dark
+ *   - auto      (data-theme="auto", default)    follows prefers-color-scheme
+ *   - contrast  (data-theme="contrast")         AAA 7:1 dedicated palette
+ *
+ * Theme switching uses the CSS `light-dark()` function (Baseline 2024). The
+ * browser reads `color-scheme` on :root to decide which side of every
+ * `light-dark(<light>, <dark>)` to render — so we declare each theme-aware
+ * token ONCE, in light/dark pairs. No duplicated blocks.
+ *
+ * Naming follows the Figma component vocabulary (Surface, Text, Border,
+ * Button) so Angular components + PrimeNG PassThrough read the same tokens
+ * without a translation layer.
+ *
+ * Compliance: WCAG 2.1 AA (AAA where viable), e-MAG 3.1, Gov.br DS 3.7, LGPD.
+ * ==========================================================================*/
+
+/* ---------- 1. Font — Inter + Atkinson Hyperlegible Next + JetBrains Mono ----------
+ * Self-hosted WOFF2 under assets/fonts/ to avoid third-party requests.
+ * The files are variable subsets for latin + latin-ext; font-weight is
+ * constrained to the weights used by the DS. Inter remains the default UI
+ * family; Atkinson is activated only by data-font-mode="legible".
+ * ------------------------------------------------------------------------- */
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/atkinson-hyperlegible-next-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/atkinson-hyperlegible-next-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./assets/fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("./assets/fonts/jetbrains-mono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- 2. Base tokens ---------- */
+:root {
+  /* Default = auto (system). Explicit themes override below. */
+  color-scheme: light dark;
+
+  /* Font stack ----------------------------------------------------------- */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-legible: "Atkinson Hyperlegible Next", "Inter", system-ui,
+    -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ============================ BRAND PALETTE ============================
+   * Each color theme-aware via light-dark(). In dark we shift primary toward
+   * sky/blue-400 so CTAs remain legible (≥8.7:1) on dark surfaces. */
+  --color-primary-50:  light-dark(#f0f5ff, #1e293b);
+  --color-primary-100: light-dark(#d6e4ff, #1e3a5f);
+  --color-primary-200: light-dark(#adc6ff, #2a4d7a);
+  --color-primary-300: light-dark(#85a5ff, #3b6195);
+  --color-primary-400: light-dark(#5b8def, #4e7ab6);
+  --color-primary-500: light-dark(#2670e8, #60a5fa);
+  /* A escala primary é SUPERFÍCIE/FUNDO (vira azul escuro no dark). Para TEXTO
+   * use os tokens semânticos: --text-link (links), --text-heading (h1/h2),
+   * --text-on-primary-tint (texto sobre tint primary-50). Reusar a escala como
+   * texto reprova AA no dark (ex.: #2563eb sobre #1e293b = 2.8:1). */
+  --color-primary-600: light-dark(#1351b4, #60a5fa); /* fundo de CTA primário */
+  --color-primary-700: light-dark(#0c4194, #3b82f6); /* fundo de hover */
+  --color-primary-800: light-dark(#0c326f, #2563eb); /* fundo escuro / active */
+  --color-primary-900: light-dark(#071d41, #1e3a8a); /* institutional-bar background */
+  --color-primary: var(--color-primary-600);
+
+  /* ============================ NEUTRAL SCALE ============================
+   * Neutrals are a SCALE (constant set of grays), not semantic tokens. They
+   * don't flip per theme — semantic tokens (surface/text/border) flip and
+   * pull from this scale. Components should NEVER reference neutrals
+   * directly; always go through a semantic token. */
+  --color-neutral-0:   #ffffff;
+  --color-neutral-50:  #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;  /* F-010 bumped from #8899a8 → AA 4.7:1 vs white */
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
+  /* ============================ FEEDBACK ============================ */
+  --color-success-50:  light-dark(#e7f4e9, #052e16);
+  --color-success-100: light-dark(#ccecd3, #14532d);
+  --color-success-500: light-dark(#22c55e, #4ade80);
+  --color-success-600: light-dark(#168821, #4ade80); /* dot on tint bg */
+  --color-success-700: light-dark(#0a5a16, #86efac); /* text on tint bg */
+
+  --color-warning-50:  light-dark(#fef0c8, #422006);
+  --color-warning-100: light-dark(#fde68a, #78350f);
+  --color-warning-500: light-dark(#ffcd07, #fbbf24);
+  --color-warning-600: light-dark(#c2850c, #fbbf24);
+  --color-warning-700: light-dark(#5a3e08, #fde68a);
+
+  --color-danger-50:   light-dark(#fcf0ee, #450a0a);
+  --color-danger-100:  light-dark(#fecaca, #7f1d1d);
+  --color-danger-500:  light-dark(#991b1b, #fca5a5);
+  --color-danger-600:  light-dark(#8a1f1f, #fecaca);
+  --color-danger-700:  light-dark(#7f1d1d, #fecaca);
+
+  --color-info-50:     light-dark(#eff6ff, #172554);
+  --color-info-100:    light-dark(#dbeafe, #1e3a8a);
+  --color-info-500:    light-dark(#0ea5e9, #60a5fa);
+  --color-info-600:    light-dark(#2565ae, #93c5fd);
+  --color-info-700:    light-dark(#0c326f, #93c5fd);  /* F-009: text on info-50 tint — dark stays light (8.1:1) */
+
+  --color-help-500: #6366f1;
+  --color-help-600: #4f46e5;
+
+  /* "Solid" feedback — kept dark in BOTH themes so #fff text stays ≥4.5:1.
+   * Used on .tag--solid, .toast--*, .timeline solid bars, etc. */
+  --color-success-solid: #168821; /* 4.9:1 with #fff */
+  --color-warning-solid: #845a0a; /* 6.1:1 with #fff */
+  --color-danger-solid:  #991b1b; /* 8.3:1 with #fff */
+  --color-info-solid:    #1351b4; /* 7.1:1 with #fff */
+  --color-primary-solid: #1351b4;
+
+  /* ============================ SEMANTIC SURFACES ============================
+   * Component layer reads from THESE — never directly from neutrals. */
+  --surface-page:     light-dark(#f8fafc, #0f172a);
+  --surface-card:     light-dark(#ffffff, #1e293b);
+  --surface-subtle:   light-dark(#f1f5f9, #334155);
+  --surface-elevated: light-dark(#ffffff, #28344a);  /* F-013 new — modal/drawer/dropdown */
+  --surface-banner:   light-dark(#eff6ff, #1e2945);  /* F-008 fixed — distinct from card in dark */
+  --surface-inverse:  light-dark(#071d41, #020617);  /* institutional-bar / footer escuro */
+  --surface-overlay:  light-dark(rgba(7, 29, 65, 0.55), rgba(0, 0, 0, 0.55)); /* F-033 less opaque in dark */
+  --surface-disabled: light-dark(#e2e8f0, #2d3a52);  /* F-002 new — themed disabled bg */
+  --surface-accessibility-bar: light-dark(#0b2754, #050b1c); /* F-020 tokenized */
+
+  /* ============================ BORDERS ============================
+   * Required ≥3:1 vs adjacent surface for non-decorative use (WCAG 1.4.11). */
+  --border-subtle:   light-dark(#e2e8f0, #3f4d65);  /* F-032 bumped in dark */
+  --border-default:  light-dark(#cbd5e1, #475569);
+  --border-strong:   light-dark(#64748b, #94a3b8);  /* F-006 fixed — light was #94a3b8 (2.7:1), now 4.4:1 */
+
+  /* ============================ TEXT ============================ */
+  --text-primary:     light-dark(#333333, #f1f5f9);  /* corpo */
+  --text-secondary:   light-dark(#475569, #e2e8f0);  /* AAA aplicável: 7.5:1 vs white */
+  --text-muted:       light-dark(#475569, #cbd5e1);  /* AAA aplicável: 7.5:1 vs white */
+  --text-placeholder: light-dark(#8493a8, #94a3b8);  /* F-010 separated from muted; light keeps 3:1 UI floor */
+  --text-disabled:    light-dark(#94a3b8, #64748b);  /* F-002 new */
+  --text-on-primary:  light-dark(#ffffff, #0f172a);  /* texto sobre primary */
+  --text-on-inverse:  #ffffff;
+
+  /* Text tokens are DECOUPLED from the primary/info SCALE. The scale flips dark
+   * in dark mode (it backs surfaces, buttons, institutional-bar); text must stay light to
+   * keep ≥4.5:1. Declared as explicit light/dark pairs so a heading never
+   * inherits #2563eb (primary-800 dark) onto #1e293b (2.8:1 — fails AA). */
+  --text-heading:         light-dark(#0c326f, #dbe9ff);  /* h1/h2 — light 13.4:1, dark 11.9:1 (card) */
+  --text-title-soft:      light-dark(#1351b4, #bfdbfe);  /* título suave — light 7.3:1, dark AAA */
+  --text-link:            light-dark(#1351b4, #93c5fd);  /* links — light 7.7:1, dark 9.9:1 (page) */
+  --text-on-primary-tint: light-dark(#0c4194, #93c5fd);  /* texto/realce sobre tint primary-50 — dark 8.1:1 */
+
+  /* ============================ COMPONENT-SCOPED TOKENS ============================
+   * F-004: avatar tokenized so it survives theme switch. */
+  --avatar-bg: light-dark(
+    #d6e4ff,
+    color-mix(in srgb, var(--color-primary) 28%, #1e293b)
+  );
+  --avatar-fg: light-dark(#0c326f, #ffffff);
+
+  /* F-003: skeleton — animated gradient stops, theme-aware. */
+  --skeleton-from: light-dark(#f1f5f9, #2d3a52);
+  --skeleton-to:   light-dark(#e2e8f0, #3f4d68);
+
+  /* ============================ FOCUS RING ============================ */
+  --focus-ring-color:  light-dark(#3b82f6, #93c5fd);
+  --focus-ring-width:  3px;
+  --focus-ring-offset: 2px;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+
+  /* ============================ TYPE SCALE ============================
+   * clamp(min, fluid, max). Min = mobile floor (360px); max = desktop cap (≥1440). */
+  --text-xs:   0.75rem;                                          /* 12px */
+  --text-sm:   0.875rem;                                         /* 14px */
+  --text-base: 1rem;                                             /* 16px (corpo) */
+  --text-md:   clamp(1rem,    0.95rem + 0.25vw, 1.125rem);       /* 16→18 */
+  --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,  1.25rem);       /* 18→20 */
+  --text-xl:   clamp(1.25rem,  1.05rem + 1vw,    1.5rem);        /* 20→24 */
+  --text-2xl:  clamp(1.5rem,   1.2rem  + 1.5vw,  2rem);          /* 24→32 */
+  --text-3xl:  clamp(1.875rem, 1.4rem  + 2.4vw,  2.5rem);        /* 30→40 */
+  --text-4xl:  clamp(2.25rem,  1.6rem  + 3.2vw,  3rem);          /* 36→48 */
+
+  --leading-tight:   1.15;
+  --leading-snug:    1.3;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.6;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* ============================ SPACING (base 4) ============================ */
+  --space-0:  0;
+  --space-1:  0.25rem;  /* 4 */
+  --space-2:  0.5rem;   /* 8 */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 */
+  --space-7:  2rem;     /* 32 */
+  --space-8:  2.5rem;   /* 40 */
+  --space-9:  3rem;     /* 48 */
+  --space-10: 4rem;     /* 64 */
+  --space-11: 6rem;     /* 96 */
+
+  /* Half-step exceptions — only for chip/tag/pill paddings where the
+   * 4-multiple grid is too coarse. F-028. */
+  --space-half-2: 0.375rem; /* 6 */
+  --space-half-3: 0.625rem; /* 10 */
+
+  /* ============================ RADIUS ============================ */
+  --radius-xs:     2px;
+  --radius-sm:     4px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+  --radius-xl:     16px;
+  --radius-pill:   9999px;
+  --radius-circle: 50%;
+
+  /* ============================ ELEVATION ============================
+   * F-014: dark shadows combine a dim + a subtle outer ring so elevated
+   * surfaces still read as "lifted" against dark backgrounds. */
+  --shadow-1: light-dark(
+    0 1px 2px rgba(7, 29, 65, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.45)
+  );
+  --shadow-2: light-dark(
+    0 4px 12px rgba(7, 29, 65, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04)
+  );
+  --shadow-3: light-dark(
+    0 12px 32px rgba(7, 29, 65, 0.12),
+    0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06)
+  );
+
+  /* ============================ TOUCH TARGETS (WCAG 2.5.5 AAA) ============================ */
+  --touch-min:         44px;
+  --touch-comfortable: 48px;
+
+  /* ============================ LAYOUT LIMITS (WCAG 1.4.8) ============================ */
+  --measure-prose:  70ch;
+  --content-max:    75rem;  /* 1200px */
+  --content-narrow: 40rem;  /* 640px — login/forms */
+
+  /* ============================ MOTION ============================ */
+  --duration-fast:  120ms;
+  --duration-base:  200ms;
+  --duration-slow:  320ms;
+  --ease-standard:   cubic-bezier(0.2, 0, 0.38, 0.9);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0,    1);
+
+  /* ============================ Z-INDEX LADDER ============================ */
+  --z-base:    0;
+  --z-sticky:  10;
+  --z-overlay: 100;
+  --z-modal:   1000;
+  --z-toast:   1100;
+}
+
+/* ---------- 2b. Fallback for browsers without light-dark() ----------
+ * Placed AFTER :root so it WINS the cascade in unsupported browsers: custom
+ * properties don't validate at parse time, so the light-dark() declarations in
+ * :root above are stored as-is and only fail at used-value time — which would
+ * leave components with invalid colors. Redeclaring the light side here (after
+ * :root, before the theme overrides) guarantees valid light values. Theme
+ * overrides (incl. data-theme="contrast") come later and still win.
+ * Only the light side is defined — no dark theme is duplicated. */
+@supports not (color: light-dark(black, white)) {
+  :root {
+    color-scheme: light;
+    --color-primary-50:  #f0f5ff;
+    --color-primary-100: #d6e4ff;
+    --color-primary-200: #adc6ff;
+    --color-primary-300: #85a5ff;
+    --color-primary-400: #5b8def;
+    --color-primary-500: #2670e8;
+    --color-primary-600: #1351b4;
+    --color-primary-700: #0c4194;
+    --color-primary-800: #0c326f;
+    --color-primary-900: #071d41;
+    --color-primary: var(--color-primary-600);
+    --color-success-50:  #e7f4e9;
+    --color-success-100: #ccecd3;
+    --color-success-500: #22c55e;
+    --color-success-600: #168821;
+    --color-success-700: #0a5a16;
+    --color-warning-50:  #fef0c8;
+    --color-warning-100: #fde68a;
+    --color-warning-500: #ffcd07;
+    --color-warning-600: #c2850c;
+    --color-warning-700: #5a3e08;
+    --color-danger-50:   #fcf0ee;
+    --color-danger-100:  #fecaca;
+    --color-danger-500:  #991b1b;
+    --color-danger-600:  #8a1f1f;
+    --color-danger-700:  #7f1d1d;
+    --color-info-50:  #eff6ff;
+    --color-info-100: #dbeafe;
+    --color-info-500: #0ea5e9;
+    --color-info-600: #2565ae;
+    --color-info-700: #0c326f;
+    --surface-page:     #f8fafc;
+    --surface-card:     #ffffff;
+    --surface-subtle:   #f1f5f9;
+    --surface-elevated: #ffffff;
+    --surface-banner:   #eff6ff;
+    --surface-inverse:  #071d41;
+    --surface-overlay:  rgba(7, 29, 65, 0.55);
+    --surface-disabled: #e2e8f0;
+    --surface-accessibility-bar: #0b2754;
+    --border-subtle:  #e2e8f0;
+    --border-default: #cbd5e1;
+    --border-strong:  #64748b;
+    --text-primary:     #333333;
+    --text-secondary:   #475569;
+    --text-muted:       #475569;
+    --text-placeholder: #8493a8;
+    --text-disabled:    #94a3b8;
+    --text-on-primary:  #ffffff;
+    --text-heading:     #0c326f;
+    --text-title-soft:  #1351b4;
+    --text-link:        #1351b4;
+    --text-on-primary-tint: #0c4194;
+    --avatar-bg: #d6e4ff;
+    --avatar-fg: #0c326f;
+    --skeleton-from: #f1f5f9;
+    --skeleton-to:   #e2e8f0;
+    --focus-ring-color: #3b82f6;
+    --shadow-1: 0 1px 2px rgba(7, 29, 65, 0.06);
+    --shadow-2: 0 4px 12px rgba(7, 29, 65, 0.08);
+    --shadow-3: 0 12px 32px rgba(7, 29, 65, 0.12);
+  }
+}
+
+/* ---------- 3. Theme switches ----------
+ * F-034: clean explicit color-scheme per theme. light-dark() reads this
+ * value to decide which side of every token to render.
+ *
+ * Selectors are `[data-theme=…]` (not `:root[data-theme=…]`) so a child
+ * element can override the theme — useful for previews / side-by-side
+ * comparisons. Specificity stays low; the cascade still wins for the page
+ * root which always carries data-theme.
+ * ------------------------------------------------------------------------- */
+[data-theme="light"] { color-scheme: light; }
+[data-theme="dark"]  { color-scheme: dark;  }
+[data-theme="auto"]  { color-scheme: light dark; } /* explicit auto = same as default */
+
+/* ---------- 4. High-contrast theme ----------
+ * F-035 + F-036 + F-037: dedicated AAA 7:1+ palette. Overrides ALL tokens —
+ * including feedback — so the page is fully black + yellow/cyan, never an
+ * island of light-theme alerts inside a contrast page.
+ *
+ * Hierarchy in this theme is NOT cromatic — it's tipográfica + icon-based.
+ * Validar com NAIA/Unifesspa antes de fechar (briefing § 11).
+ *
+ * Selector is `[data-theme="contrast"]` (not `:root[…]`) so the contrast
+ * palette can be applied to any subtree — e.g. a swatch in colors-themes
+ * preview. The page root always carries data-theme so cascade still wins
+ * for whole-page contrast mode.
+ * ------------------------------------------------------------------------- */
+[data-theme="contrast"] {
+  color-scheme: dark;  /* F-037 — was "light" which gave inverted scrollbars */
+
+  /* Surfaces — everything collapses to pure black */
+  --surface-page:     #000000;
+  --surface-card:     #000000;
+  --surface-subtle:   #000000;
+  --surface-elevated: #000000;
+  --surface-banner:   #000000;
+  --surface-inverse:  #000000;
+  --surface-overlay:  rgba(0, 0, 0, 0.85);
+  --surface-disabled: #000000;
+  --surface-accessibility-bar: #000000;
+
+  /* Border hierarchy retained via dash + width — F-036 */
+  --border-subtle:  #666666;   /* decorative dividers */
+  --border-default: #ffff00;
+  --border-strong:  #ffff00;
+
+  /* Text */
+  --text-primary:     #ffff00;
+  --text-secondary:   #ffff00;
+  --text-muted:       #ffff00;
+  --text-placeholder: #cccc00;
+  --text-disabled:    #666666;
+  --text-on-primary:  #000000;
+  --text-on-inverse:  #ffff00;
+  --text-heading:     #ffff00;
+  --text-title-soft:  #ffff00;
+  --text-link:        #00ffff;
+  --text-on-primary-tint: #ffff00;
+
+  /* Primary collapses to text color (max contrast) */
+  --color-primary:     #ffff00;
+  --color-primary-50:  #000000;
+  --color-primary-100: #000000;
+  --color-primary-200: #ffff00;
+  --color-primary-500: #ffff00;
+  --color-primary-600: #ffff00;
+  --color-primary-700: #ffff00;
+  --color-primary-800: #ffff00;
+  --color-primary-900: #000000;
+
+  /* F-035: feedback redefined for contrast theme — semantics expressed by
+   * ICON + LABEL, not by hue. All tags/alerts render black bg + yellow text
+   * + bright accent border (cyan for info/primary, white for danger). */
+  --color-success-50:  #000000;
+  --color-success-100: #000000;
+  --color-success-500: #00ff00;
+  --color-success-600: #00ff00;
+  --color-success-700: #ffff00;
+  --color-success-solid: #00ff00;
+
+  --color-warning-50:  #000000;
+  --color-warning-100: #000000;
+  --color-warning-500: #ffff00;
+  --color-warning-600: #ffff00;
+  --color-warning-700: #ffff00;
+  --color-warning-solid: #ffff00;
+
+  --color-danger-50:   #000000;
+  --color-danger-100:  #000000;
+  --color-danger-500:  #ffffff;
+  --color-danger-600:  #ffffff;
+  --color-danger-700:  #ffffff;
+  --color-danger-solid: #ffffff;
+
+  --color-info-50:  #000000;
+  --color-info-100: #000000;
+  --color-info-500: #00ffff;
+  --color-info-600: #00ffff;
+  --color-info-700: #00ffff;
+  --color-info-solid: #00ffff;
+
+  /* Component-scoped */
+  --avatar-bg: #ffff00;  /* visible plaque against any contrast surface */
+  --avatar-fg: #000000;
+  --skeleton-from: #000000;
+  --skeleton-to:   #666666;
+
+  /* Focus + elevation */
+  --focus-ring-color: #ffffff;
+  --focus-ring-width: 4px;
+  --shadow-1: 0 0 0 1px #ffff00;
+  --shadow-2: 0 0 0 2px #ffff00;
+  --shadow-3: 0 0 0 3px #ffff00;
+}
+
+/* ---------- 5. User-preference: legible font ----------
+ * ADR-0002: o controle de tamanho de fonte foi removido (delegado ao zoom
+ * nativo do navegador, como e-MAG 3.1 e gov.br/ds). A preferência de fonte
+ * legível permanece. */
+:root[data-font-mode="legible"] { --font-sans: var(--font-legible); }
+
+/* ---------- 7. Reduced motion (WCAG 2.3.3) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- 8. Tailwind 4/5 @theme inline bridge ----------
+ * Drop this into your app's styles.css after `@import 'tailwindcss';`:
+ *
+ * @theme inline {
+ *   --color-primary:        var(--color-primary);
+ *   --color-primary-600:    var(--color-primary-600);
+ *   --color-primary-800:    var(--color-primary-800);
+ *   --color-surface-page:   var(--surface-page);
+ *   --color-surface-card:   var(--surface-card);
+ *   --color-surface-elevated: var(--surface-elevated);
+ *   --color-text-primary:   var(--text-primary);
+ *   --color-text-secondary: var(--text-secondary);
+ *   --color-text-heading:   var(--text-heading);
+ *   --color-border:         var(--border-default);
+ *   --color-border-subtle:  var(--border-subtle);
+ *   --radius-md:            var(--radius-md);
+ *   --radius-lg:            var(--radius-lg);
+ *   --radius-pill:          var(--radius-pill);
+ *   --font-sans:            var(--font-sans);
+ *   --font-legible:         var(--font-legible);
+ *   --font-mono:            var(--font-mono);
+ * }
+ *
+ * NOTE: Tailwind reads the right-hand var() at COMPILE time and inlines the
+ * resolved value — the self-reference is idiomatic, not a bug.
+ * Then in templates: bg-surface-card text-text-primary border-border rounded-md
+ * ------------------------------------------------------------------------- */

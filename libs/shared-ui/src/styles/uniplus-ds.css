@@ -1,0 +1,6 @@
+/* Uni+ Design System foundation for Angular consumers.
+ * Source: uniplus-ds CSS-only contract (tokens + base + components).
+ */
+@import url("./tokens.css");
+@import url("./base.css");
+@import url("./components.css");
