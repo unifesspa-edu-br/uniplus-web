@@ -52,6 +52,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0021](0021-runtime-config-via-token.md) | Runtime config via `AUTH_CONFIG` InjectionToken + fitness cross-app | accepted | 2026-05-09 |
 | [0022](0022-retirada-poc-primeng-do-workspace-ativo.md) | Retirada da POC `poc-primeng` do workspace Nx ativo | accepted | 2026-05-09 |
 | [0023](0023-uniplus-ds-como-contrato-visual-vigente.md) | Uni+ DS como contrato visual vigente | accepted | 2026-05-30 |
+| [0024](0024-uso-seletivo-primeng-wrappers-ui.md) | Uso seletivo de PrimeNG em wrappers `ui-*` | accepted | 2026-05-31 |
 
 ## Como adicionar um novo ADR
 
