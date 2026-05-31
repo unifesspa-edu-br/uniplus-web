@@ -1,8 +1,7 @@
 {
   "apiUrl": "https://configmap-nao-montado.invalid",
-  "keycloak": {
-    "url": "https://configmap-nao-montado.invalid",
-    "realm": "PLACEHOLDER_REALM",
+  "oidc": {
+    "issuerUrl": "https://PLACEHOLDER_OIDC_ISSUER.invalid",
     "clientId": "PLACEHOLDER_CLIENT_ID"
   }
 }

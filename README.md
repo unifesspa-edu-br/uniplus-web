@@ -15,7 +15,7 @@ Frontend do Uni+ (S2U) da Unifesspa, construido como monorepo Nx com Angular 21.
 | Lib | Descricao |
 |-----|-----------|
 | **shared-ui** | Wrappers Angular reutilizaveis do Uni+ DS (CSS-only), shells, forms, dados e overlays |
-| **shared-auth** | Autenticacao Keycloak (services, guards, interceptors) |
+| **shared-auth** | Autenticacao OIDC (services, guards, interceptors) |
 | **shared-data** | DTOs, API clients OpenAPI, utilitarios |
 
 ## Pre-requisitos
@@ -100,6 +100,6 @@ Regras principais:
 - Uni+ DS CSS-only via `libs/shared-ui/src/styles`
 - PrimeNG 21 (uso legado/complexo encapsulado quando necessário)
 - Tailwind CSS 4.2 (estilização utility-first com @theme)
-- Keycloak (autenticação)
+- OIDC (autenticação)
 - Playwright (testes E2E)
 - Vitest (testes unitários)

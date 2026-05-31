@@ -151,7 +151,7 @@ A migração é trivial porque o gerador atual nunca produziu artefato em `main`
 ## Mais informações
 
 - [ADR-0002](0002-angular-21-como-framework-spa.md) — Angular 21 standalone (binding).
-- [ADR-0009](0009-keycloak-como-identity-provider-oidc.md) — `tokenInterceptor` é a fonte única do Bearer.
+- [ADR-0009](0009-provedor-oidc-do-uniplus-web.md) — `tokenInterceptor` é a fonte única do Bearer.
 - [ADR-0011](0011-consumer-adapter-api-result.md) — `ApiResult<T>` consumido pelos services.
 - ADR-0028 do `uniplus-api` — versionamento per-resource (vendor MIME).
 - ADR-0030 do `uniplus-api` — OpenAPI 3.1 contract-first.

@@ -15,7 +15,7 @@ informed:
 
 A Fase 5 do plano de deploy (cluster standalone) está bloqueada porque as imagens dos três frontends (`uniplus-portal`, `uniplus-web-selecao`, `uniplus-web-ingresso`) ainda não são publicadas em um registry acessível pelo cluster. Os Dockerfiles existem (`docker/Dockerfile.portal`, `docker/Dockerfile.selecao`, `docker/Dockerfile.ingresso`) e o pipeline de lint/test/build/E2E já é verde via Nx Cloud — mas não há workflow de publish, não há convenção de naming nem política de tagging.
 
-Diferentemente do backend, os frontends carregam configuração de runtime (URL do Keycloak, base URL da API) que **não pode** ficar embutida na imagem — a Story [#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84) define `provideAppInitializer` + `ConfigMap` do Kubernetes como ponto de injeção. A imagem distribuída precisa ser idêntica em todos os ambientes; só o `ConfigMap` muda. Adicionalmente, os Dockerfiles atuais têm dívida de hardening ([#4](https://github.com/unifesspa-edu-br/uniplus-web/issues/4)): rodam nginx como root e não têm os headers de segurança no nginx.conf — pré-requisito a ser resolvido antes ou junto do primeiro publish para evitar republicar tags 5 minutos depois.
+Diferentemente do backend, os frontends carregam configuração de runtime (URL do provedor OIDC, base URL da API) que **não pode** ficar embutida na imagem — a Story [#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84) define `provideAppInitializer` + `ConfigMap` do Kubernetes como ponto de injeção. A imagem distribuída precisa ser idêntica em todos os ambientes; só o `ConfigMap` muda. Adicionalmente, os Dockerfiles atuais têm dívida de hardening ([#4](https://github.com/unifesspa-edu-br/uniplus-web/issues/4)): rodam nginx como root e não têm os headers de segurança no nginx.conf — pré-requisito a ser resolvido antes ou junto do primeiro publish para evitar republicar tags 5 minutos depois.
 
 A organização já valida GHCR como registry institucional (imagem composta `ghcr.io/unifesspa-edu-br/uniplus-keycloak:1.x`). A `uniplus-api` adota a mesma estratégia em ADR pareada (`ADR-0050` no `uniplus-api`). Manter o mesmo registry e a mesma convenção de tagging entre backend e frontend simplifica auditoria, scan de CVE e provisão de credenciais no ArgoCD.
 
@@ -23,7 +23,7 @@ A organização já valida GHCR como registry institucional (imagem composta `gh
 
 - Destravar Fase 5 (deploy das 3 apps no cluster standalone)
 - Paridade de registry e tagging com `uniplus-api` (auditoria e ArgoCD homogêneos)
-- Imagem única por app + runtime config via `ConfigMap` ([#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)) — nunca embutir URL de Keycloak/API
+- Imagem única por app + runtime config via `ConfigMap` ([#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)) — nunca embutir URL de API/provedor OIDC
 - Hardening de containers/nginx ([#4](https://github.com/unifesspa-edu-br/uniplus-web/issues/4)) aplicado antes ou no mesmo PR do primeiro publish
 - Custo zero para registry de repositório público
 - Login via `GITHUB_TOKEN`, sem PAT nem secret externo
@@ -53,7 +53,7 @@ Sem `latest` — convenção é dispensável quando `v<X>` já fornece soft-pinn
 
 Multi-arch limitado a `linux/amd64` neste momento.
 
-A imagem **nunca** embute URL de Keycloak ou API. O nginx serve `/assets/runtime-config.json` lido por `provideAppInitializer` antes do bootstrap Angular ([#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)); o `ConfigMap` do Kubernetes monta esse arquivo no path correto. O Dockerfile recebe `dist/apps/<app>` como build context (saída do `nx build`), aplica hardening (`nginxinc/nginx-unprivileged` ou `USER nginx` explícito, `server_tokens off`, headers HSTS/Permissions-Policy/CSP parametrizáveis) e expõe um `/health.json` estático para smoke pós-build.
+A imagem **nunca** embute URL de API ou provedor OIDC. O nginx serve `/assets/runtime-config.json` lido por `provideAppInitializer` antes do bootstrap Angular ([#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)); o `ConfigMap` do Kubernetes monta esse arquivo no path correto. O Dockerfile recebe `dist/apps/<app>` como build context (saída do `nx build`), aplica hardening (`nginxinc/nginx-unprivileged` ou `USER nginx` explícito, `server_tokens off`, headers HSTS/Permissions-Policy/CSP parametrizáveis) e expõe um `/health.json` estático para smoke pós-build.
 
 SBOM e attestation cosign keyless via OIDC do GitHub ficam deferidos como follow-up — registrados em backlog mas fora do escopo de unblock.
 
@@ -134,5 +134,5 @@ Verificável por:
 - Hardening de containers/nginx: [#4](https://github.com/unifesspa-edu-br/uniplus-web/issues/4) — pré-requisito ou conjunto
 - Runtime config via `ConfigMap`: [#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)
 - ADR pareada no backend: `uniplus-api/docs/adrs/0050-registry-ghcr-e-tagging.md`
-- Identity provider OIDC: [ADR-0009](0009-keycloak-como-identity-provider-oidc.md)
+- Identity provider OIDC: [ADR-0009](0009-provedor-oidc-do-uniplus-web.md)
 - Origem: pré-requisito da Fase 5 do plano de deploy do cluster standalone (snapshot 2026-05-07)

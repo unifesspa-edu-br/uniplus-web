@@ -5,11 +5,11 @@ import { filter, map, startWith } from 'rxjs/operators';
 import { LoginErrorCode, classifyLoginError } from '../models/login-error.model';
 
 /**
- * Banner contextual exibido quando o Keycloak redireciona de volta à
+ * Banner contextual exibido quando o provedor OIDC redireciona de volta à
  * SPA com `error` / `error_description` na query string. Distingue
  * credenciais inválidas de conta bloqueada (H2 — brute force protection)
  * para cumprir a DoD da Task #62 sem exigir um formulário de login
- * customizado (o login acontece 100% na UI hospedada do Keycloak).
+ * customizado (o login acontece 100% na UI hospedada pelo provedor).
  *
  * Acessibilidade: `role="alert"` + `aria-live="assertive"`, com tokens
  * semânticos Uni+ DS conforme severidade.
@@ -100,7 +100,7 @@ export class LoginErrorBannerComponent {
         return 'Conta bloqueada';
       case LoginErrorCode.InvalidCredentials:
         return 'Credenciais inválidas';
-      case LoginErrorCode.KeycloakUnavailable:
+      case LoginErrorCode.OidcProviderUnavailable:
         return 'Serviço indisponível';
       case LoginErrorCode.AccessDenied:
         return 'Acesso recusado';

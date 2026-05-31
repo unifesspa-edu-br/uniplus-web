@@ -20,7 +20,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
     test('rota /processos carrega sem autenticação', async ({ page }) => {
       await page.goto('/processos');
 
-      // Não deve redirecionar ao Keycloak (rota pública)
+      // Não deve redirecionar ao provedor OIDC (rota pública)
       await expect(page).toHaveURL(/processos/);
       await expect(page.getByRole('heading', { name: 'Processos Seletivos', level: 1 })).toBeVisible();
     });
@@ -34,7 +34,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   });
 
   test.describe('Rotas autenticadas — candidato', () => {
-    test('redireciona para Keycloak ao acessar /perfil sem sessão', async ({ page }) => {
+    test('redireciona para o provedor OIDC ao acessar /perfil sem sessão', async ({ page }) => {
       await page.goto('/perfil');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
@@ -85,7 +85,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   });
 
   test.describe('Logout', () => {
-    test('botão Sair encerra sessão e rota protegida redireciona ao Keycloak', async ({ page }) => {
+    test('botão Sair encerra sessão e rota protegida redireciona ao provedor OIDC', async ({ page }) => {
       const user = USERS.candidato;
       await page.goto('/perfil');
       await keycloakLogin(page, user.username, user.password);

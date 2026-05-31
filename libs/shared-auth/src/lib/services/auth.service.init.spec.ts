@@ -4,10 +4,9 @@ import { AuthService } from './auth.service';
 import { AuthConfig } from '../models/auth-config.model';
 
 const config: AuthConfig = {
-  keycloakUrl: 'http://localhost:8080',
-  realm: 'unifesspa',
+  issuerUrl: 'http://localhost:8080/realms/unifesspa',
   clientId: 'selecao-web',
-  allowedUrls: ['http://localhost:5000/api/v1', 'http://localhost:8080'],
+  allowedUrls: ['http://localhost:5000/api/v1', 'http://localhost:8080/realms/unifesspa'],
 };
 
 function stubKeycloak(partial: Partial<Keycloak>): Keycloak {
@@ -26,7 +25,7 @@ function stubKeycloak(partial: Partial<Keycloak>): Keycloak {
   } as unknown as Keycloak;
 }
 
-describe('AuthService.init — resiliência a Keycloak indisponível', () => {
+describe('AuthService.init — resiliência a provedor OIDC indisponível', () => {
   let service: AuthService;
 
   beforeEach(() => {
@@ -40,16 +39,16 @@ describe('AuthService.init — resiliência a Keycloak indisponível', () => {
     expect(service.authenticated()).toBe(false);
   });
 
-  it('captura erro do Keycloak.init() e NÃO propaga; expõe initError()', async () => {
+  it('captura erro do adapter OIDC e NÃO propaga; expõe initError()', async () => {
     vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
       .mockReturnValue(stubKeycloak({
-        init: () => Promise.reject(new Error('Keycloak offline')),
+        init: () => Promise.reject(new Error('OIDC offline')),
       }));
 
     const result = await service.init(config);
 
     expect(result).toBe(false);
-    expect(service.initError()).toBe('Keycloak offline');
+    expect(service.initError()).toBe('OIDC offline');
     expect(service.authenticated()).toBe(false);
   });
 

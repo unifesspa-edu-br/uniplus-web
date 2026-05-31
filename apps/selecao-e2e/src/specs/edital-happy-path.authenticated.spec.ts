@@ -22,7 +22,7 @@ test.describe('Editais — smoke autenticado', () => {
     page,
   }) => {
     await page.goto('/editais');
-    // Sem redirect ao Keycloak — storageState já contém a sessão admin.
+    // Sem redirect ao provedor OIDC — storageState já contém a sessão admin.
     await expect(page).toHaveURL(/\/editais$/, { timeout: 10_000 });
     await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
     await expect(page.locator('table[role="grid"]')).toBeVisible();

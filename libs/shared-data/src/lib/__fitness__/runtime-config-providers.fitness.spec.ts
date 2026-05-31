@@ -59,7 +59,7 @@ describe('Fitness — apps app.config.ts (runtime config + auth, ADR-0021)', () 
       const importou = /import\s+\{[^}]*\bprovideAuth\b[^}]*\}\s+from\s+['"]@uniplus\/shared-auth['"]/.test(conteudo);
       expect(
         importou,
-        `\nArquivo: ${relativo}\nFalta importar provideAuth — Keycloak não será inicializado.`,
+        `\nArquivo: ${relativo}\nFalta importar provideAuth — provedor OIDC não será inicializado.`,
       ).toBe(true);
     });
 

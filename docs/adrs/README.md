@@ -37,7 +37,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0006](0006-govbr-design-system-como-contrato-visual.md) | Adoção do Gov.br Design System como contrato visual | superseded by ADR-0023 | 2026-05-01 |
 | [0007](0007-primeng-em-modo-unstyled.md) | PrimeNG em modo unstyled como component library | superseded by ADR-0023 | 2026-05-01 |
 | [0008](0008-tailwind-css-4-com-tokens-govbr.md) | Tailwind CSS 4 com tokens Gov.br via `@theme` | superseded by ADR-0023 | 2026-05-01 |
-| [0009](0009-keycloak-como-identity-provider-oidc.md) | Keycloak como identity provider OIDC do `uniplus-web` | accepted | 2026-05-01 |
+| [0009](0009-provedor-oidc-do-uniplus-web.md) | Provedor OIDC do `uniplus-web` | accepted | 2026-05-01 |
 | [0010](0010-opentelemetry-para-instrumentacao-frontend.md) | OpenTelemetry para instrumentação do `uniplus-web` (RUM) | accepted | 2026-05-01 |
 | [0011](0011-consumer-adapter-api-result.md) | Consumer adapter `ApiResult<T>` em nova lib `libs/shared-http` | superseded by ADR-0012 | 2026-05-03 |
 | [0012](0012-placement-api-result-em-shared-core.md) | Placement do `ApiResult<T>` em subpasta de `shared-core`, não em nova lib | accepted | 2026-05-04 |

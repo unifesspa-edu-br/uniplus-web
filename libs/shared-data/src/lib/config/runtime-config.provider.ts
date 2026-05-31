@@ -6,7 +6,7 @@ import type { AuthConfig } from '@uniplus/shared-auth';
 import { SELECAO_BASE_PATH } from '../api/selecao/tokens';
 import { INGRESSO_BASE_PATH } from '../api/ingresso/tokens';
 import { AppConfigService } from './app-config.service';
-import type { AppConfig } from './app-config.model';
+import { resolveOidcConfig, type AppConfig } from './app-config.model';
 
 /**
  * Path canônico do runtime-config (ADR-0021). nginx serve este arquivo
@@ -29,8 +29,8 @@ export const RUNTIME_CONFIG_PATH = '/assets/runtime-config.json';
  *      a resposta JSON viria envelopada em `ApiResult<T>` em vez do
  *      `AppConfig` literal.
  *   2. `AppConfigService.load(cfg)` — populando o singleton.
- *   3. `AuthService.init(authConfig)` — Keycloak inicializado com URLs
- *      reais já carregadas.
+ *   3. `AuthService.init(authConfig)` — cliente OIDC inicializado com
+ *      URLs reais já carregadas.
  *
  * `AUTH_CONFIG`, `SELECAO_BASE_PATH` e `INGRESSO_BASE_PATH` continuam
  * provedidos como factories síncronas que leem do store. São injetados
@@ -78,11 +78,11 @@ export function provideRuntimeConfig(): EnvironmentProviders {
 }
 
 function toAuthConfig(cfg: AppConfig): AuthConfig {
+  const oidc = resolveOidcConfig(cfg);
   return {
-    keycloakUrl: cfg.keycloak.url,
-    realm: cfg.keycloak.realm,
-    clientId: cfg.keycloak.clientId,
-    allowedUrls: Object.freeze([cfg.apiUrl, cfg.keycloak.url]),
+    issuerUrl: oidc.issuerUrl,
+    clientId: oidc.clientId,
+    allowedUrls: Object.freeze([cfg.apiUrl, oidc.issuerUrl]),
   };
 }
 
@@ -90,8 +90,9 @@ function toAuthConfig(cfg: AppConfig): AuthConfig {
  * Sentinelas embutidos no `docker/runtime-config.json` (que sobrescreve o
  * placeholder dev no build da imagem). Em produção sem ConfigMap K8s
  * montado corretamente, o app receberia esses valores e — porque
- * `AuthService.init()` captura erros de Keycloak — subiria silenciosamente
- * em modo "não autenticado" tentando alcançar URLs `.invalid`.
+ * `AuthService.init()` captura erros do provedor OIDC — subiria
+ * silenciosamente em modo "não autenticado" tentando alcançar URLs
+ * `.invalid`.
  *
  * Ao detectar qualquer marcador, abortamos o bootstrap antes de
  * `store.load()` e `auth.init()` — falha visível no console + tela em

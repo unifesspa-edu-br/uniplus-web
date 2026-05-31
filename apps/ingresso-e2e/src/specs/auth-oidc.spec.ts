@@ -21,7 +21,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
     ]);
   });
 
-  test('redireciona para Keycloak ao acessar rota protegida sem sessão', async ({ page }) => {
+  test('redireciona para o provedor OIDC ao acessar rota protegida sem sessão', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
       timeout: 10_000,
@@ -58,7 +58,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
     await expect(page.getByRole('heading', { name: 'Acesso negado', level: 1 })).toBeVisible();
   });
 
-  test('Sair encerra a sessão e rota protegida redireciona ao Keycloak', async ({ page }) => {
+  test('Sair encerra a sessão e rota protegida redireciona ao provedor OIDC', async ({ page }) => {
     const user = USERS.admin;
     await page.goto('/dashboard');
     await keycloakLogin(page, user.username, user.password);

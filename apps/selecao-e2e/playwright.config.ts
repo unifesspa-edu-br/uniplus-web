@@ -16,7 +16,7 @@ const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
  * Sufixos excluídos dos projects de UI login (chromium/firefox/webkit) para
  * evitar que specs especiais sejam executadas sem o setup correspondente:
  * - `*.authenticated.spec.ts` rodam apenas no project `selecao-authenticated`
- *   (com `storageState`); rodar sem o storage causa redirect ao Keycloak.
+ *   (com `storageState`); rodar sem o storage causa redirect ao provedor OIDC.
  * - `*.ds-matrix.spec.ts` roda apenas nos projects da matriz DS
  *   320/768/desktop x light/dark/contrast.
  * - `*.aaa.spec.ts` roda apenas nos projects AAA aplicável
@@ -86,7 +86,7 @@ export default defineConfig({
   projects: [
     /**
      * Setup project (Playwright ≥1.31) que persiste `storageState` admin via
-     * Keycloak. Roda APENAS quando algum project que declara
+     * provedor OIDC. Roda APENAS quando algum project que declara
      * `dependencies: ['auth-setup']` é selecionado — `--project=chromium`
      * sozinho não dispara este setup, preservando o invariante de não exigir
      * `KEYCLOAK_ADMIN_PASSWORD` em runs não-autenticadas.

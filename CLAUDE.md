@@ -11,7 +11,7 @@ Frontend do Uni+ (S2U) (UniPlus) da Unifesspa. Monorepo Nx com 3 aplicacoes Angu
 - **Uni+ DS** CSS-only (tokens semanticos, temas e anatomia HTML)
 - **PrimeNG** 21.x (uso legado/complexo encapsulado quando necessário)
 - **Tailwind CSS** 4.x (estilização utility-first com @theme)
-- **Keycloak** (autenticação via keycloak-angular)
+- **OIDC** (autenticação; adapter atual via keycloak-angular)
 - **Playwright** (testes E2E)
 - **Vitest** (testes unitários via @analogjs/vitest-angular)
 - **TypeScript** 5.9.x (strict mode)
@@ -29,7 +29,7 @@ apps/
 
 libs/
   shared-ui/      → Componentes reutilizáveis (cpf-input, data-table, file-upload, status-badge, etc.)
-  shared-auth/    → Autenticação Keycloak (auth.service, guards, interceptor, providers)
+  shared-auth/    → Autenticação OIDC (auth.service, guards, interceptor, providers)
   shared-data/    → DTOs, API clients, utilitários (cpf.util, date.util, api-error-handler)
 
 docs/referencias/
@@ -140,4 +140,4 @@ npx nx affected --target=vite:test
 - LGPD: CPF mascarado em logs (`***.***.***-XX`)
 - Soft delete: nunca deletar registros fisicamente
 - Acessibilidade: ARIA em componentes interativos, WCAG 2.1 AA
-- Seguranca: tokens JWT via Keycloak, nunca em localStorage
+- Seguranca: tokens JWT via OIDC, nunca em localStorage

@@ -5,9 +5,8 @@ import type { AppConfig } from './app-config.model';
 
 const sampleConfig: AppConfig = {
   apiUrl: 'http://localhost:5000',
-  keycloak: {
-    url: 'http://localhost:8080',
-    realm: 'unifesspa',
+  oidc: {
+    issuerUrl: 'http://localhost:8080/realms/unifesspa',
     clientId: 'selecao-web',
   },
 };

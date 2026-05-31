@@ -8,7 +8,7 @@ import { test, expect } from '../fixtures/auth.fixture';
  *
  * Mocks por `page.route` evitam dependência do `uniplus-api` real para
  * exercitar 503 controlado — o storageState carregado pelo `auth-setup`
- * cobre o lado Keycloak (sessão válida sem login UI).
+ * cobre o lado OIDC (sessão válida sem login UI).
  *
  * Roda em `selecao-authenticated` (projeto chromium-only com
  * `storageState`), portanto `navigator.clipboard.writeText` está disponível
