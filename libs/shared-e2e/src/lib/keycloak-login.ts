@@ -108,7 +108,7 @@ async function clearBruteForceFailures(
   throw new Error(`Falha ao limpar brute-force do usuário '${userId}': ${response.status()} ${body}`);
 }
 
-/** Pattern default de redirect pós-login — apps locais em `localhost:<porta>`. */
+/** Regex default de redirect pós-login para apps locais em `localhost:<porta>`. */
 const DEFAULT_REDIRECT_PATTERN = /localhost:\d{4}/;
 
 /**
@@ -117,9 +117,9 @@ const DEFAULT_REDIRECT_PATTERN = /localhost:\d{4}/;
  * Espera que a página já tenha sido redirecionada ao Keycloak
  * (ex.: após navegar para rota protegida por authGuard).
  *
- * `expectRedirectTo` controla o pattern de URL esperada após o submit do
- * login. Default `/localhost:\d{4}/` cobre dev local; passe um pattern
- * customizado para staging/prod (ex.: `/staging\.uniplus\.unifesspa\.edu\.br/`).
+ * `expectRedirectTo` controla a regex de URL esperada após o submit do login.
+ * Default `/localhost:\d{4}/` cobre dev local; passe uma regex customizada
+ * para staging/prod (ex.: `/staging\.uniplus\.unifesspa\.edu\.br/`).
  */
 export async function keycloakLogin(
   page: Page,

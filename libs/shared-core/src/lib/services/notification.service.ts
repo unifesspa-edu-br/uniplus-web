@@ -9,7 +9,7 @@ export type NotificationType = 'success' | 'error' | 'warning' | 'info';
  * Campos `traceId` e `code` só aparecem em notificações disparadas por
  * `errorFromProblem(problem)` — em `success/info/warning/error` simples
  * ficam `undefined`. O host usa `traceId` para habilitar botão
- * "Copiar traceId" e `code` para hooks futuros de i18n/analytics.
+ * "Copiar traceId" e `code` para i18n/analytics.
  *
  * `persistent: true` instrui o host a não auto-dismiss; default em 5xx.
  */

@@ -1,18 +1,16 @@
 /* =============================================================================
  * Uni+ Design System — Components
  * =============================================================================
- * CSS-only implementation of the Figma components, ready to be re-implemented
- * as Angular standalone components with PrimeNG unstyled PassThrough.
+ * CSS-only implementation consumed by Angular standalone wrappers.
  *
  * Selectors use BEM-style flat naming (`.btn`, `.btn--primary`, `.btn__icon`)
- * so they map cleanly to Tailwind class composition AND survive PrimeNG's
- * deep selectors.
+ * so they map cleanly to Tailwind class composition.
  *
  * Mobile-first; states (default → hover → focus → active → disabled) are
  * complete; every interactive element ≥44×44.
  * ==========================================================================*/
 
-/* NOTE: Depends on tokens.css + base.css loaded BEFORE this file. */
+/* Load after tokens.css and base.css. */
 
 /* ============================================================================
  * BUTTON
@@ -57,7 +55,7 @@
 .btn:active:not([disabled]):not(:disabled) { background: var(--btn-bg-active); }
 .btn[disabled], .btn:disabled {
   cursor: not-allowed;
-  background: var(--surface-disabled);   /* F-002: themed disabled */
+  background: var(--surface-disabled);
   color: var(--text-disabled);
   border-color: transparent;
 }
@@ -76,7 +74,7 @@
   --btn-fg: var(--color-primary);
   --btn-bd: transparent;
   --btn-bg-hover: var(--surface-subtle);
-  --btn-bg-active: var(--surface-disabled);  /* F-002: themed */
+  --btn-bg-active: var(--surface-disabled);
 }
 
 .btn--danger {
@@ -87,13 +85,11 @@
 }
 [data-theme="contrast"] .btn--danger { --btn-fg: var(--text-on-primary); }
 
-/* sm/md keep the 44px floor (min-height clamps); they only shrink type + padding.
- * lg opts UP to the 48px comfortable target. */
+/* sm/md keep the 44px floor; lg opts up to the 48px comfortable target. */
 .btn--sm { --btn-px: var(--space-4); --btn-fs: var(--text-sm); }
 .btn--md { --btn-px: var(--space-5); --btn-fs: var(--text-sm); }
 .btn--lg { --btn-height: var(--touch-comfortable); --btn-px: var(--space-6); --btn-fs: var(--text-md); }
 .btn--full { width: 100%; }
-/* F-026: pill is the default — .btn--pill is a no-op kept for clarity, .btn--rect opts out. */
 .btn--pill { border-radius: var(--radius-pill); }
 .btn--rect { border-radius: var(--radius-md); }
 
@@ -153,7 +149,7 @@
   box-shadow: var(--focus-ring);
 }
 .input[disabled], .input:disabled {
-  background: var(--surface-disabled);    /* F-002 themed */
+  background: var(--surface-disabled);
   color: var(--text-disabled);
   cursor: not-allowed;
 }
@@ -162,7 +158,6 @@
   background: var(--color-danger-50);
 }
 .input[aria-invalid="true"]:focus-visible {
-  /* F-020: invalid-ring color is derived from token. */
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger-500) 25%, transparent);
 }
 
@@ -190,7 +185,7 @@
   color: var(--text-muted);
 }
 
-/* Checkbox + Radio (custom para parear com PrimeNG unstyled) */
+/* Checkbox + Radio */
 .checkbox, .radio {
   display: inline-flex; align-items: center; gap: var(--space-2);
   min-height: var(--touch-min); cursor: pointer;
@@ -258,7 +253,7 @@
  * ========================================================================== */
 .tag {
   display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-1) var(--space-half-3);  /* F-028 tokens, was 4px 10px */
+  padding: var(--space-1) var(--space-half-3);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   line-height: 1.25;
@@ -323,9 +318,9 @@
 
 /* ============================================================================
  * ALERT / MESSAGE
- * F-029: hierarchy is danger > warning > info ≈ success. Danger gets a
- * thicker left rule + shadow so it doesn't tie with success when both are
- * on screen (common post-wizard-submit).
+ * Hierarquia visual: danger > warning > info ≈ success. Danger usa régua
+ * lateral mais espessa e sombra para manter prioridade em telas com
+ * múltiplas mensagens.
  * ========================================================================== */
 .alert {
   display: flex; gap: var(--space-3); padding: var(--space-4);
@@ -349,7 +344,6 @@
 .alert--warning .alert__icon { color: var(--color-warning-600); }
 .alert--warning .alert__title { color: var(--color-warning-700); }
 
-/* F-029: danger — thicker rule + soft shadow to assert priority */
 .alert--danger {
   background: var(--color-danger-50);
   border-left: 6px solid var(--color-danger-500);
@@ -379,8 +373,7 @@
 .institutional-bar__links { margin-left: auto; display: flex; gap: var(--space-3); flex-wrap: wrap; }
 .institutional-bar a {
   color: var(--text-on-inverse); text-decoration: none;
-  /* F-038 follow-up: preserva touch target de 44px via padding + margem negativa,
-   * sem inflar a altura visual da faixa institucional. */
+  /* Preserva touch target de 44px sem inflar a altura visual da faixa. */
   display: inline-flex; align-items: center;
   min-height: var(--touch-min);
   padding: var(--space-2);
@@ -390,12 +383,8 @@
 .institutional-bar a:hover,
 .institutional-bar a[aria-current="page"] { text-decoration: underline; }
 @media (max-width: 640px) {
-  /* F-042: em telas estreitas a faixa vira um bar institucional de DOIS níveis,
-   * intencional — em vez de esconder o órgão (que deixava um "gov.br |" órfão).
-   *   Linha 1: identidade  ->  gov.br | <órgão>
-   *   Linha 2: utilitários ->  links, separados por um filete sutil
-   * F-038: NUNCA esconder "Acessibilidade"/"Privacidade" (Gov.br DS + LGPD).
-   * O órgão permanece visível: é a identidade institucional da faixa. */
+  /* Em telas estreitas, mantém identidade institucional e links utilitários
+   * em duas linhas para não ocultar órgão, acessibilidade ou privacidade. */
   .institutional-bar { column-gap: var(--space-2); row-gap: 0; }
   .institutional-bar__links {
     width: 100%;
@@ -415,7 +404,7 @@
  * um popover (desktop) / bottom-sheet (mobile) com tema, alto contraste e
  * fonte legível. Padrão ARIA de disclosure (button[aria-expanded][aria-controls]
  * -> region), não-modal: Esc fecha e devolve o foco ao gatilho; clique fora
- * fecha. O tamanho de fonte foi removido (delegado ao zoom nativo do navegador).
+ * fecha. Tamanho de fonte fica delegado ao zoom nativo do navegador.
  * ========================================================================== */
 .a11y-menu { position: relative; display: inline-flex; }
 .a11y-menu__trigger {
@@ -599,7 +588,7 @@
 /* User chip */
 .user-chip {
   display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);  /* F-028 tokens, was 4px 12px 4px 4px */
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
   background: var(--surface-card);
@@ -609,7 +598,7 @@
 }
 .user-chip__avatar {
   width: 32px; height: 32px; border-radius: 50%;
-  background: var(--avatar-bg);   /* F-004 themed */
+  background: var(--avatar-bg);
   color: var(--avatar-fg);
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: var(--weight-bold); font-size: var(--text-xs);
@@ -618,9 +607,7 @@
 /* ============================================================================
  * STEPPER / WIZARD
  * ========================================================================== */
-/* F-041: steppers longos (ex.: wizard de 12 passos) excediam o container e o
- * último passo era cortado na borda. Rola na horizontal quando não couber; com
- * poucos passos não há overflow e o layout permanece idêntico. */
+/* Steppers longos rolam na horizontal quando não couberem no container. */
 .stepper { display: flex; align-items: stretch; gap: 0; overflow-x: auto; scrollbar-width: thin; }
 .stepper__step { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); flex: 0 0 auto; padding: 0 var(--space-2); }
 .stepper__dot {
@@ -632,8 +619,6 @@
   flex-shrink: 0;
 }
 .stepper__dot.is-current { background: var(--color-primary); border-color: var(--color-primary); color: var(--text-on-primary); }
-/* F-005: var(--color-success-600) becomes light green in dark, so solid
- * success is used for done steps. */
 .stepper__dot.is-done { background: var(--color-success-solid); border-color: var(--color-success-solid); color: var(--color-neutral-0); }
 .stepper__label { font-size: var(--text-xs); color: var(--text-muted); text-align: center; max-width: 12ch; }
 .stepper__step.is-current .stepper__label { color: var(--text-heading); font-weight: var(--weight-semibold); }
@@ -644,10 +629,10 @@
   background: var(--border-default);
   align-self: center;
   margin: 0 -4px;
-  margin-bottom: var(--space-5);  /* F-028 token, was 20px */
+  margin-bottom: var(--space-5);
 }
 .stepper__bar.is-done {
-  background: var(--color-success-solid);  /* F-005: solid stays dark in both themes */
+  background: var(--color-success-solid);
 }
 .stepper--vertical {
   flex-direction: column;
@@ -792,9 +777,7 @@
 
 /* ============================================================================
  * AVATAR
- * F-004: --avatar-bg / --avatar-fg are theme-aware tokens. Light: pale blue
- * tint + dark blue text. Dark: primary-tinted dark + white text. Works in
- * both without manual override per component.
+ * --avatar-bg / --avatar-fg são tokens sensíveis ao tema.
  * ========================================================================== */
 .avatar {
   display: inline-flex; align-items: center; justify-content: center;
@@ -915,7 +898,7 @@
 
 /* ============================================================================
  * DIALOG / MODAL / BOTTOM-SHEET
- * Pattern: <dialog class="uni-dialog"> + .uni-dialog__panel inside.
+ * Contrato: <dialog class="uni-dialog"> + .uni-dialog__panel inside.
  * Mobile (<640px): bottom-sheet. Desktop: centered modal.
  * Open with .showModal() (puts focus inside automatically).
  * ========================================================================== */
@@ -1090,7 +1073,7 @@
 
 /* ============================================================================
  * FORM VALIDATION — error summary + accessible field errors
- * Pattern (mandatory):
+ * Contrato obrigatório:
  *   <input aria-describedby="cpf-hint cpf-error" aria-invalid="false|true">
  *   <p id="cpf-hint" class="field__hint">…</p>
  *   <p id="cpf-error" class="field__error" hidden>…</p>
@@ -1120,9 +1103,8 @@
 
 /* ============================================================================
  * TOAST — aria-live region + dismissable notifications
- * Two ARIA live regions (polite + assertive) wrapped in one visual stack
- * (.toast-stack). F-021: assertive sits above polite so a stuck danger
- * isn't covered by chatty info toasts.
+ * Two ARIA live regions (polite + assertive) wrapped in one visual stack.
+ * Alertas assertivos ficam acima de mensagens informativas.
  *
  * Mounted on first UniToast.show().
  * ========================================================================== */
@@ -1232,7 +1214,7 @@
 
 /* ============================================================================
  * BACK-TO-TOP — floating action that appears after meaningful scroll
- * Pattern: fixed bottom-right, ≥44, primary-tint, fade+slide in. ARIA-labeled.
+ * Contrato: fixed bottom-right, ≥44, primary-tint, fade+slide in. ARIA-labeled.
  * Respects prefers-reduced-motion. Scrolls page to top with focus restored
  * to <body>/<main> so screen reader announcement is consistent.
  *
@@ -1279,8 +1261,8 @@
 
 /* ============================================================================
  * PAGER — cursor-based pagination (keyset/seek)
- * F-042: full API contract lives in docs/cursor-pagination.md (canonical).
- * This block is UI-only. Pattern: prev/next + status com aria-live, sem
+ * O contrato de API vive em docs/cursor-pagination.md; este bloco é só UI.
+ * Contrato: prev/next + status com aria-live, sem
  * paginação numerada. Botões desabilitados nos extremos.
  *
  * Usage:
@@ -1317,7 +1299,7 @@
 .pager__btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background: var(--surface-disabled);   /* F-002 themed */
+  background: var(--surface-disabled);
   color: var(--text-disabled);
   border-color: transparent;
 }
@@ -1344,7 +1326,7 @@
 
 /* ============================================================================
  * BREADCRUMB — hierarchical navigation
- * Pattern: <nav aria-label="Breadcrumb"> + <ol> with chevron separators.
+ * Contrato: <nav aria-label="Breadcrumb"> + <ol> with chevron separators.
  * Last item gets aria-current="page" and is non-interactive.
  * ========================================================================== */
 .breadcrumb {
@@ -1377,13 +1359,13 @@
 .breadcrumb__link:hover { text-decoration: underline; }
 .breadcrumb__current {
   color: var(--text-primary);
-  font-weight: var(--weight-semibold);   /* F-027: was medium — non-color cue */
+  font-weight: var(--weight-semibold);
   padding: var(--space-1) var(--space-2);
 }
 
 /* ============================================================================
  * DROPDOWN MENU — actions / user menu
- * Pattern: <button aria-haspopup="menu" aria-expanded="false"> +
+ * Contrato: <button aria-haspopup="menu" aria-expanded="false"> +
  *          <ul role="menu" hidden> with <li role="none"> + <a role="menuitem">
  * JS toggles aria-expanded and the hidden attribute.
  * ========================================================================== */
@@ -1437,7 +1419,7 @@
 }
 
 /* ============================================================================
- * EMPTY STATE — F-023
+ * EMPTY STATE
  * Spec (briefing-ux.md §8): primeira tela quando o candidato logou e ainda
  * não tem inscrição; precisa reconhecer + ofertar próxima ação em texto claro.
  * Variante --error: troca a cor do ícone para danger e o botão vira "Tentar de novo".
@@ -1485,11 +1467,11 @@
 .empty-state--error .empty-state__title { color: var(--color-danger-700); }
 
 /* ============================================================================
- * SKELETON LOADER — F-003 theme-aware
- * F-003: gradient stops come from --skeleton-from/to which flip per theme.
+ * SKELETON LOADER
+ * Gradient stops come from --skeleton-from/to, which flip per theme.
  * In dark, they sit slightly above --surface-card luminance so the shimmer
  * reads as "placeholder" not "finished content".
- * Pattern: <div class="skeleton" style="width: …; height: …" aria-hidden="true"></div>
+ * Contrato: <div class="skeleton" style="width: …; height: …" aria-hidden="true"></div>
  * Use inside a wrapper with aria-busy="true" + aria-label="Carregando".
  * ========================================================================== */
 .skeleton {
@@ -1518,7 +1500,7 @@
 
 /* ============================================================================
  * SPINNER — indeterminate loading
- * Pattern: <span class="spinner" role="status" aria-label="Carregando"></span>
+ * Contrato: <span class="spinner" role="status" aria-label="Carregando"></span>
  * Inside button: replace btn content while keeping width (CSS sizes it).
  * ========================================================================== */
 .spinner {
@@ -1558,7 +1540,7 @@
 
 /* ============================================================================
  * TOOLTIP — generic (not the sidebar inline one)
- * Pattern: any element with [data-tooltip="texto"]. Use [data-tooltip-position]
+ * Contrato: any element with [data-tooltip="texto"]. Use [data-tooltip-position]
  * to control placement: top (default) | bottom | left | right.
  * NOT a substitute for aria-label — keep BOTH for screen reader users.
  * ========================================================================== */
@@ -1600,8 +1582,7 @@
 [data-tooltip][data-tooltip-position="bottom"]:hover::after,
 [data-tooltip][data-tooltip-position="bottom"]:focus-visible::after { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* F-024: left/right positions — used by collapsed admin sidebar (replaces
- * the duplicated CSS in ui_kits/admin). */
+/* Position right: used by the collapsed admin sidebar. */
 [data-tooltip][data-tooltip-position="right"]::after {
   left: calc(100% + var(--space-2));
   top: 50%;
@@ -1635,7 +1616,7 @@
 }
 .segmented__btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-half-2);
-  min-height: var(--touch-min);   /* F-022: was 36px, now WCAG 2.5.5 floor */
+  min-height: var(--touch-min);
   min-width: var(--touch-min);
   padding: 0 var(--space-3);
   background: transparent;
@@ -1724,7 +1705,7 @@
 .filter-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .filter-chip {
   display: inline-flex; align-items: center; gap: var(--space-half-2);
-  padding: var(--space-half-2) var(--space-half-3);  /* F-028: tokens, was 7px 14px */
+  padding: var(--space-half-2) var(--space-half-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
   background: var(--surface-card);
@@ -1785,9 +1766,8 @@
   .carousel__slide { padding: var(--space-9) var(--space-8); }
 }
 
-/* F-025: do NOT collapse slides via height:0 — that breaks the translateX
- * calculation of the track. Keep slides full-width and use inert/aria-hidden
- * only to remove them from the accessibility tree and focus order. */
+/* Slides stay full-width so track translateX calculations remain stable.
+ * inert/aria-hidden remove inactive slides from the accessibility tree and focus order. */
 .carousel__slide[aria-hidden="true"] { pointer-events: none; }
 
 .carousel__controls {

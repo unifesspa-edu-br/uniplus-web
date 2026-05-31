@@ -50,8 +50,8 @@ export interface RunAxeOptions {
    * encadeia `.exclude()` por seletor porque a API
    * `AxeBuilder.exclude(SerialFrameSelector)` interpreta arrays como
    * navegação `iframe → shadowDOM`, NÃO como múltiplos seletores root.
-   * Útil para suprimir elementos com violations conhecidas em libs de
-   * terceiros (Keycloak login, PrimeNG legados) enquanto há fix em curso.
+   * Útil para suprimir elementos de terceiros com violations conhecidas
+   * enquanto há correção em curso.
    */
   readonly exclude?: readonly string[];
 }
@@ -66,7 +66,7 @@ export interface AaaVisualContractOptions {
  * Roda axe-core na página atual filtrado por WCAG 2.1 A + AA. Retorna o
  * `AxeResults` para o caller asserir sobre `violations`.
  *
- * **Pattern de uso em specs:**
+ * **Exemplo de uso em specs:**
  *
  * ```ts
  * test('dashboard sem violations WCAG A/AA', async ({ page }) => {

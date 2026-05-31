@@ -38,8 +38,8 @@ import {
  * **GET reativo via `useApiResource` (ADR-0018):** o helper envelopa o
  * `httpResource` Angular 21 sobre o `apiResultInterceptor`, exibindo
  * `data()`/`problem()`/`isLoading()` como signals. Quando o input `editalId` muda,
- * o helper cancela a request anterior automaticamente — substitui o race
- * guard manual do pattern legado.
+ * o helper cancela a request anterior automaticamente, sem guard manual
+ * imperativo no componente.
  *
  * **POST `publicar` continua via `EditaisApi` + `HttpClient`** (guidance
  * Angular oficial: `httpResource` é GET-only — mutações via HttpClient direto).
@@ -213,8 +213,7 @@ export class EditaisDetailPage {
   /**
    * Resource reativo do GET `/api/editais/{editalId}`. Re-dispara automaticamente
    * quando `editalId()` muda; a request anterior é cancelada nativamente pelo
-   * `httpResource` (race-cancellation — substitui o guard manual do pattern
-   * legado). Vendor MIME `edital v1` declarado no `HttpContext`
+   * `httpResource` (race-cancellation). Vendor MIME `edital v1` declarado no `HttpContext`
    * (ADR-0028 backend, ADR-0016 cliente).
    */
   private readonly editalResource = useApiResource<EditalDto>(() => ({

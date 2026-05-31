@@ -16,7 +16,7 @@ let formFieldIdSeed = 0;
  * passa a referência do controle direto (ex.: `form.controls.titulo`),
  * preservando tipo via `FormControl<T>` e evitando o overhead de
  * `ControlValueAccessor`/`NgControl` que seria necessário para `formControlName`.
- * Pattern reusável em formulários tipados sem perder type-safety.
+ * Mantém o formulário tipado sem perder type-safety.
  *
  * **A11y:** label/input/erro vinculados via IDs únicos por instância
  * (counter privado), `aria-invalid`/`aria-describedby` setados quando
@@ -116,7 +116,7 @@ export class FormFieldComponent {
   /**
    * IDs únicos por instância — counter privado ao módulo. Valores fixos
    * pós-construção; expostos como `readonly` simples (não signals) porque
-   * nunca mudam — evita overhead reativo. Pattern simétrico ao usado em
+   * nunca mudam — evita overhead reativo. Estrutura simétrica à usada em
    * `ConfirmDialogComponent`.
    */
   private readonly idSuffix = ++formFieldIdSeed;

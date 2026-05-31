@@ -151,7 +151,7 @@ describe('NotificationService', () => {
 
   describe('signature compatibility', () => {
     it('HttpHeaders importado mas não exposto pelo signal — evita leak', () => {
-      // Sanity: garantir que ProblemDetails é o único contrato de entrada estruturada.
+      // Garante que ProblemDetails é o único contrato de entrada estruturada.
       const headers = new HttpHeaders({ 'x-trace-id': 'abc' });
       expect(headers.get('x-trace-id')).toBe('abc');
     });

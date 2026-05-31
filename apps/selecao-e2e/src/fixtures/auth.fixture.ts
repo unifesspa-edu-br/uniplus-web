@@ -23,9 +23,9 @@ export const ADMIN_USER = {
  * `selecao-authenticated` (declarado em `playwright.config.ts`) já carregam o
  * `storageState` automaticamente — não precisam logar no `beforeAll`.
  *
- * Specs legadas que continuam fazendo login via UI (ex.: `auth-oidc.spec.ts`,
- * `login.spec.ts`) usam diretamente `@playwright/test` e os helpers em
- * `../support/keycloak-login`. Não há conflito — projects são independentes.
+ * Specs que exercitam login via UI (ex.: `auth-oidc.spec.ts`, `login.spec.ts`)
+ * usam diretamente `@playwright/test` e os helpers em `../support/keycloak-login`.
+ * Não há conflito — projects são independentes.
  */
 export const test = base;
 

@@ -235,9 +235,8 @@ describe('EditaisDetailPage', () => {
     // unsubscribe da request stale para a próxima microtask.
     await propagate();
 
-    // httpResource cancela a request anterior automaticamente quando dependências
-    // reativas mudam — substitui o race guard manual ("if (this.editalId() !== editalId) return")
-    // do pattern legado.
+    // httpResource cancela a request anterior automaticamente quando
+    // dependências reativas mudam.
     expect(reqId1.cancelled).toBe(true);
 
     const reqId2 = controller.expectOne(`${BASE}/api/editais/${ID_NOVO}`);
