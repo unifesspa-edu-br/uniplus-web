@@ -93,9 +93,13 @@ describe('EditaisListPage', () => {
       },
     });
 
-    expect(component.nextCursor()).toBe('cursor-pagina-2');
+    const cursorPagina2 = component.nextCursor();
+    expect(cursorPagina2).toBe('cursor-pagina-2');
+    if (!cursorPagina2) {
+      throw new Error('Cursor da página 2 não foi extraído.');
+    }
 
-    component['aoCarregarMais'](component.nextCursor()!);
+    component['aoCarregarMais'](cursorPagina2);
 
     const req = controller.expectOne(
       (request) => request.url === `${BASE}/api/editais` && request.params.get('cursor') === 'cursor-pagina-2',
@@ -159,10 +163,14 @@ describe('EditaisListPage', () => {
     });
 
     expect(component.editais()).toHaveLength(1);
-    expect(component.nextCursor()).toBe('cursor-retry');
+    const cursorRetry = component.nextCursor();
+    expect(cursorRetry).toBe('cursor-retry');
+    if (!cursorRetry) {
+      throw new Error('Cursor de retry não foi extraído.');
+    }
 
     // 2ª página falha
-    component['aoCarregarMais'](component.nextCursor()!);
+    component['aoCarregarMais'](cursorRetry);
     controller
       .expectOne((request) => request.params.get('cursor') === 'cursor-retry')
       .flush(
@@ -192,7 +200,7 @@ describe('EditaisListPage', () => {
     controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')]);
     fixture.detectChanges();
 
-    const heading = fixture.debugElement.query(By.css('h2')).nativeElement as HTMLElement;
+    const heading = fixture.debugElement.query(By.css('h1.page-header__title')).nativeElement as HTMLElement;
     expect(heading.textContent).toContain('Editais');
 
     const linhas = fixture.debugElement.queryAll(By.css('[data-testid="data-table-row"]'));

@@ -24,20 +24,26 @@ import {
   EditalDto,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data';
-import { ConfirmDialogComponent } from '@uniplus/shared-ui';
+import {
+  AlertComponent,
+  CardComponent,
+  ConfirmDialogComponent,
+  PageHeaderComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui';
 
 /**
  * Container (ADR-0017) da feature Editais — detalhe + ação Publicar.
  *
  * **GET reativo via `useApiResource` (ADR-0018):** o helper envelopa o
  * `httpResource` Angular 21 sobre o `apiResultInterceptor`, exibindo
- * `data()`/`problem()`/`isLoading()` como signals. Quando o input `id` muda,
+ * `data()`/`problem()`/`isLoading()` como signals. Quando o input `editalId` muda,
  * o helper cancela a request anterior automaticamente — substitui o race
  * guard manual do pattern legado.
  *
  * **POST `publicar` continua via `EditaisApi` + `HttpClient`** (guidance
  * Angular oficial: `httpResource` é GET-only — mutações via HttpClient direto).
- * O race guard do publish (id capturado no closure do submit) **fica** porque
+ * O race guard do publish (editalId capturado no closure do submit) **fica** porque
  * é mutação one-shot, não fetch reativo.
  *
  * **Gating do botão "Publicar":** baseado em `status === 'Rascunho'` (única
@@ -56,78 +62,82 @@ import { ConfirmDialogComponent } from '@uniplus/shared-ui';
   selector: 'sel-editais-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ConfirmDialogComponent, RouterLink],
+  imports: [
+    AlertComponent,
+    CardComponent,
+    ConfirmDialogComponent,
+    PageHeaderComponent,
+    RouterLink,
+    SpinnerComponent,
+  ],
   template: `
-    <header class="mb-5 flex items-start justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-800">Detalhes do edital</h2>
-        @if (edital(); as e) {
-          <p class="text-sm text-gray-600">{{ e.numeroEdital }} — {{ e.titulo }}</p>
-        }
-      </div>
-      <a
-        routerLink="/editais"
-        class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-      >
+    <ui-page-header
+      heading="Detalhes do edital"
+      [description]="editalDescription()"
+    >
+      <a uiPageActions routerLink="/editais" class="btn btn--tertiary">
         Voltar para lista
       </a>
-    </header>
+    </ui-page-header>
 
     @if (errorMessage(); as msg) {
-      <div
-        class="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-        role="alert"
-      >
-        <span class="font-semibold">{{ msg }}</span>
-      </div>
+      <ui-alert variant="danger" heading="Não foi possível carregar a operação">
+        {{ msg }}
+      </ui-alert>
     }
 
     @if (mensagemSucesso(); as sucesso) {
-      <div
-        class="mb-4 flex items-start gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
-        role="status"
-      >
-        <span class="font-semibold">{{ sucesso }}</span>
-      </div>
+      <ui-alert variant="success" heading="Operação concluída">
+        {{ sucesso }}
+      </ui-alert>
     }
 
     @if (loading() && !edital()) {
-      <p class="text-sm text-gray-600" aria-live="polite">Carregando edital…</p>
+      <p class="ui-loading-line" aria-live="polite">
+        <ui-spinner spinnerSize="sm" />
+        Carregando edital…
+      </p>
     }
 
     @if (edital(); as e) {
-      <dl class="grid max-w-2xl grid-cols-[10rem_1fr] gap-x-4 gap-y-3 rounded-lg border border-gray-200 bg-white p-5">
-        <dt class="text-sm font-medium text-gray-500">Número</dt>
-        <dd class="text-sm text-gray-900">{{ e.numeroEdital }}</dd>
+      <ui-card>
+        <dl class="ui-detail-list">
+          <dt>Número</dt>
+          <dd>{{ e.numeroEdital }}</dd>
 
-        <dt class="text-sm font-medium text-gray-500">Título</dt>
-        <dd class="text-sm text-gray-900">{{ e.titulo }}</dd>
+          <dt>Título</dt>
+          <dd>{{ e.titulo }}</dd>
 
-        <dt class="text-sm font-medium text-gray-500">Tipo de processo</dt>
-        <dd class="text-sm text-gray-900">{{ e.tipoProcesso }}</dd>
+          <dt>Tipo de processo</dt>
+          <dd>{{ e.tipoProcesso }}</dd>
 
-        <dt class="text-sm font-medium text-gray-500">Status</dt>
-        <dd class="text-sm text-gray-900" data-testid="edital-status">{{ e.status }}</dd>
+          <dt>Status</dt>
+          <dd data-testid="edital-status">{{ e.status }}</dd>
 
-        <dt class="text-sm font-medium text-gray-500">Máx. opções de curso</dt>
-        <dd class="text-sm text-gray-900">{{ e.maximoOpcoesCurso }}</dd>
+          <dt>Máx. opções de curso</dt>
+          <dd>{{ e.maximoOpcoesCurso }}</dd>
 
-        <dt class="text-sm font-medium text-gray-500">Bônus regional</dt>
-        <dd class="text-sm text-gray-900">{{ e.bonusRegionalHabilitado ? 'Sim' : 'Não' }}</dd>
+          <dt>Bônus regional</dt>
+          <dd>{{ e.bonusRegionalHabilitado ? 'Sim' : 'Não' }}</dd>
 
-        <dt class="text-sm font-medium text-gray-500">Criado em</dt>
-        <dd class="text-sm text-gray-900">{{ e.criadoEm }}</dd>
-      </dl>
+          <dt>Criado em</dt>
+          <dd>{{ e.criadoEm }}</dd>
+        </dl>
+      </ui-card>
 
       @if (podePublicar()) {
-        <div class="mt-4 flex justify-end">
+        <div class="ui-detail-actions">
           <button
             type="button"
             data-testid="btn-publicar"
             [disabled]="submitting()"
-            class="rounded-md bg-govbr-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-govbr-primary disabled:cursor-not-allowed disabled:opacity-60"
+            class="btn"
+            [attr.data-loading]="submitting() ? 'true' : null"
             (click)="abrirConfirmacao()"
           >
+            @if (submitting()) {
+              <span class="spinner spinner--sm" aria-hidden="true"></span>
+            }
             {{ submitting() ? 'Publicando…' : 'Publicar' }}
           </button>
         </div>
@@ -136,17 +146,63 @@ import { ConfirmDialogComponent } from '@uniplus/shared-ui';
 
     <ui-confirm-dialog
       [(visible)]="dialogVisivel"
-      title="Confirmar publicação"
+      heading="Confirmar publicação"
       message="Após a publicação, o edital fica visível para candidatos e não pode mais ser editado. Deseja prosseguir?"
       confirmLabel="Publicar"
       cancelLabel="Cancelar"
       (confirmed)="confirmarPublicacao()"
     />
   `,
+  styles: `
+    .ui-loading-line {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-secondary);
+      margin-top: var(--space-5);
+    }
+
+    .ui-detail-list {
+      display: grid;
+      grid-template-columns: minmax(8rem, 12rem) 1fr;
+      gap: var(--space-3) var(--space-5);
+      margin: 0;
+      max-width: var(--content-narrow);
+    }
+
+    .ui-detail-list dt {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+    }
+
+    .ui-detail-list dd {
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+      margin: 0;
+    }
+
+    .ui-detail-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: var(--space-4);
+    }
+
+    @media (max-width: 520px) {
+      .ui-detail-list {
+        grid-template-columns: 1fr;
+        gap: var(--space-1);
+      }
+
+      .ui-detail-list dd {
+        margin-bottom: var(--space-3);
+      }
+    }
+  `,
 })
 export class EditaisDetailPage {
-  /** Path param do route (`:id`). Bind via `withComponentInputBinding()`. */
-  readonly id = input.required<string>();
+  /** Path param do route (`:editalId`). Bind via `withComponentInputBinding()`. */
+  readonly editalId = input.required<string>();
 
   private readonly api = inject(EditaisApi);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -155,14 +211,14 @@ export class EditaisDetailPage {
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
-   * Resource reativo do GET `/api/editais/{id}`. Re-dispara automaticamente
-   * quando `id()` muda; a request anterior é cancelada nativamente pelo
+   * Resource reativo do GET `/api/editais/{editalId}`. Re-dispara automaticamente
+   * quando `editalId()` muda; a request anterior é cancelada nativamente pelo
    * `httpResource` (race-cancellation — substitui o guard manual do pattern
    * legado). Vendor MIME `edital v1` declarado no `HttpContext`
    * (ADR-0028 backend, ADR-0016 cliente).
    */
   private readonly editalResource = useApiResource<EditalDto>(() => ({
-    url: `${this.basePath}/api/editais/${encodeURIComponent(this.id())}`,
+    url: `${this.basePath}/api/editais/${encodeURIComponent(this.editalId())}`,
     context: withVendorMime('edital', 1),
   }));
 
@@ -171,8 +227,8 @@ export class EditaisDetailPage {
 
   /**
    * Mensagem de erro consolidada — combina o `problem` da request GET
-   * (cancelado/limpo automaticamente quando `id` muda) com o erro do POST
-   * `publicar` (signal local, resetado via `effect` em mudança de `id`) e
+   * (cancelado/limpo automaticamente quando `editalId` muda) com o erro do POST
+   * `publicar` (signal local, resetado via `effect` em mudança de `editalId`) e
    * com o canal de erro do `httpResource` para o caso raro em que um
    * interceptor não-HTTP lança fora do contrato `ApiResult` (ex.: erro
    * síncrono em interceptor de auth/logging) — sem este fallback, o
@@ -205,13 +261,18 @@ export class EditaisDetailPage {
     return dto?.status === 'Rascunho';
   });
 
+  protected readonly editalDescription = computed(() => {
+    const dto = this.edital();
+    return dto ? `${dto.numeroEdital} - ${dto.titulo}` : 'Consulta de edital do processo seletivo.';
+  });
+
   constructor() {
-    // Reset de signals locais (publish flow) quando o input `id` muda. O
+    // Reset de signals locais (publish flow) quando o input `editalId` muda. O
     // estado do GET (`edital`/`loading`/`problem`) já é resetado nativamente
     // pelo httpResource ao trocar dependências reativas — só precisamos
     // limpar o que vive fora do Resource.
     effect(() => {
-      this.id();
+      this.editalId();
       untracked(() => {
         this.publishErrorMessage.set(null);
         this.mensagemSucesso.set(null);
@@ -240,7 +301,7 @@ export class EditaisDetailPage {
     if (this.submitting()) {
       return;
     }
-    const idDoSubmit = this.id();
+    const idDoSubmit = this.editalId();
     this.submitting.set(true);
     this.publishErrorMessage.set(null);
     this.mensagemSucesso.set(null);
@@ -250,11 +311,11 @@ export class EditaisDetailPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.submitting.set(false);
-        // Race guard: se usuário navegou para outro `:id` durante o publicar,
+        // Race guard: se usuário navegou para outro `:editalId` durante o publicar,
         // descarta o feedback. Setar `mensagemSucesso` no edital errado
         // confundiria o usuário; o backend já registrou a publicação do
         // recurso original (Idempotency-Key garante).
-        if (this.id() !== idDoSubmit) {
+        if (this.editalId() !== idDoSubmit) {
           return;
         }
         if (result.ok) {

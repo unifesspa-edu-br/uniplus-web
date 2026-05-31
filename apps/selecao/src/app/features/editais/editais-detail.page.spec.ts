@@ -48,7 +48,7 @@ describe('EditaisDetailPage', () => {
     component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
-    fixture.componentRef.setInput('id', ID);
+    fixture.componentRef.setInput('editalId', ID);
   });
 
   afterEach(() => controller.verify());
@@ -221,14 +221,14 @@ describe('EditaisDetailPage', () => {
     expect(botao).toBeNull();
   });
 
-  it('mudança no input id cancela GET stale e dispara nova request (httpResource race-cancellation nativa)', async () => {
+  it('mudança no input editalId cancela GET stale e dispara nova request (httpResource race-cancellation nativa)', async () => {
     fixture.detectChanges();
     const reqId1 = controller.expectOne(`${BASE}/api/editais/${ID}`);
     expect(reqId1.cancelled).toBe(false);
 
     // Usuário navega antes do id1 retornar — Angular reusa a instância do componente.
     const ID_NOVO = '01960000-0000-7000-0000-000000000bbb';
-    fixture.componentRef.setInput('id', ID_NOVO);
+    fixture.componentRef.setInput('editalId', ID_NOVO);
     fixture.detectChanges();
     // Drena microtasks do scheduler de signals — sem isto o assert de
     // cancellation pode ser flaky se o httpResource scheduler atrasar o
@@ -236,7 +236,7 @@ describe('EditaisDetailPage', () => {
     await propagate();
 
     // httpResource cancela a request anterior automaticamente quando dependências
-    // reativas mudam — substitui o race guard manual ("if (this.id() !== id) return")
+    // reativas mudam — substitui o race guard manual ("if (this.editalId() !== editalId) return")
     // do pattern legado.
     expect(reqId1.cancelled).toBe(true);
 
@@ -273,7 +273,7 @@ describe('EditaisDetailPage', () => {
     expect(component.mensagemSucesso()).toBe('Edital publicado com sucesso.');
   });
 
-  it('mudança no input id zera mensagemSucesso e errorMessage do publish anterior', async () => {
+  it('mudança no input editalId zera mensagemSucesso e errorMessage do publish anterior', async () => {
     fixture.detectChanges();
     controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
@@ -290,9 +290,9 @@ describe('EditaisDetailPage', () => {
     await propagate();
     expect(component.mensagemSucesso()).toBe('Edital publicado com sucesso.');
 
-    // Navegação para outro :id sem destruir o componente.
+    // Navegação para outro :editalId sem destruir o componente.
     const ID_NOVO = '01960000-0000-7000-0000-000000000aaa';
-    fixture.componentRef.setInput('id', ID_NOVO);
+    fixture.componentRef.setInput('editalId', ID_NOVO);
     fixture.detectChanges();
 
     // Effect zera signals locais (publish flow); httpResource zera value() automaticamente.

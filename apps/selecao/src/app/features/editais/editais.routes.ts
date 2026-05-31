@@ -12,7 +12,7 @@ export const EDITAIS_ROUTES: Routes = [
       import('./editais-create.page').then((m) => m.EditaisCreatePage),
   },
   {
-    path: ':id',
+    path: ':editalId',
     loadComponent: () =>
       import('./editais-detail.page').then((m) => m.EditaisDetailPage),
   },
