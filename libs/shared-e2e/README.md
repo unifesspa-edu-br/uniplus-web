@@ -7,8 +7,8 @@ Helpers reutilizáveis pelos `apps/*-e2e` do workspace. Atualmente foca em auten
 ### Login UI / admin
 
 - `keycloakLogin(page, username, password)` — preenche o formulário do Keycloak, trata password update se temporária, espera redirect.
-- `keycloakLogout(page)` — clica no botão "Sair" do header, espera redirect.
-- `resetPasswords([{ username, password }])` — Admin API para resetar senhas em batch (idempotente, com retry de 500 do Hibernate).
+- `keycloakLogout(page)` — abre o menu de conta, clica em "Sair" e espera redirect.
+- `resetPasswords([{ username, password }])` — Admin API para resetar senhas em batch (idempotente, serializado por lock local e com retry de 500 do Hibernate).
 - `expectUserInHeader(page, name, username, roles)` — assertion do header autenticado.
 
 ### Setup de `storageState` autenticado (F9)
@@ -67,6 +67,13 @@ Specs com sufixo `*.authenticated.spec.ts` rodam no project `*-authenticated` e 
 - `WCAG_A_AA_TAGS` — constante `['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']`.
 - `RunAxeOptions` — `tags?` (override), `include?` (subtree), `exclude?` (selectors a suprimir).
 
+### AAA aplicável do contrato visual Uni+ DS
+
+- `runAxeWcagAAAApplicable(page, options?)` — roda A/AA + `wcag2aaa` como gate automatizável do DS. Não declara conformidade WCAG AAA total.
+- `assertAaaVisualContract(page, options?)` — valida fontes self-hosted, família efetiva, contraste aprimorado, tipografia mínima, ausência de `letter-spacing` negativo e overflow horizontal.
+- `assertTextSpacingResilience(page)` — injeta o espaçamento de texto da WCAG 1.4.12 e confirma landmarks/menu/conteúdo sem clipping ou overflow.
+- `assertReflowContract(page)` — valida reflow no viewport atual; em 320 px exige navegação principal acessível por drawer.
+
 #### Padrão de uso
 
 ```ts
@@ -75,7 +82,7 @@ import { test, expect } from '../fixtures/auth.fixture';
 
 test('GET /editais sem violations a11y', async ({ page }) => {
   await page.goto('/editais');
-  await expect(page.locator('h2', { hasText: 'Editais' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
   // SEMPRE aguardar estado estável antes de runAxeWcagAA — axe analisa
   // o DOM no momento da chamada; lazy-loaded ou em transição é perdido.
 

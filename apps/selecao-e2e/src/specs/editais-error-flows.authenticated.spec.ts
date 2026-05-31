@@ -169,7 +169,7 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
       });
 
       await page.goto('/editais/novo');
-      await expect(page.locator('h2')).toContainText('Novo edital');
+      await expect(page.getByRole('heading', { name: 'Novo edital', level: 1 })).toBeVisible();
 
       // Preenche o form com valores válidos para todos os validators
       // declarados em `editais-create.page.ts`.

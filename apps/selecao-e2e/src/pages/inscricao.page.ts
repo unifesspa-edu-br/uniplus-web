@@ -6,7 +6,7 @@ export class InscricaoPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.locator('h2');
+    this.heading = page.getByRole('heading', { level: 1 });
   }
 
   async goto(): Promise<void> {

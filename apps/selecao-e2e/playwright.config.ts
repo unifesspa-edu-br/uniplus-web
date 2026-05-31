@@ -18,12 +18,59 @@ const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
  * evitar que specs especiais sejam executadas sem o setup correspondente:
  * - `*.authenticated.spec.ts` rodam apenas no project `selecao-authenticated`
  *   (com `storageState`); rodar sem o storage causa redirect ao Keycloak.
+ * - `*.ds-matrix.spec.ts` roda apenas nos projects da matriz DS
+ *   320/768/desktop x light/dark/contrast.
+ * - `*.aaa.spec.ts` roda apenas nos projects AAA aplicável
+ *   320/768/desktop x light/dark/contrast x default/legible.
  * - `auth.setup.ts` é o test do setup project — não é um spec funcional.
  *
  * Adicionar novos sufixos especiais à alternation; demais projects herdam
  * automaticamente. Reduz drift quando 3º+ sufixo surgir (ex.: `.smoke`).
  */
-const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.authenticated\.spec\.ts|auth\.setup\.ts)$/;
+const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.(authenticated|ds-matrix|aaa)\.spec\.ts|auth\.setup\.ts)$/;
+
+const DS_MATRIX_VIEWPORTS = [
+  { name: '320', viewport: { width: 320, height: 720 }, isMobile: true, hasTouch: true },
+  { name: '768', viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true },
+  { name: 'desktop', viewport: { width: 1366, height: 900 }, isMobile: false, hasTouch: false },
+] as const;
+
+const DS_MATRIX_THEMES = ['light', 'dark', 'contrast'] as const;
+const DS_MATRIX_FONT_MODES = ['default', 'legible'] as const;
+
+const DS_MATRIX_PROJECTS = DS_MATRIX_VIEWPORTS.flatMap((viewport) =>
+  DS_MATRIX_THEMES.map((theme) => ({
+    name: `ds-${viewport.name}-${theme}`,
+    testMatch: /.*\.ds-matrix\.spec\.ts/,
+    dependencies: ['auth-setup'],
+    metadata: { theme, viewport: viewport.name },
+    use: {
+      ...devices['Desktop Chrome'],
+      viewport: viewport.viewport,
+      isMobile: viewport.isMobile,
+      hasTouch: viewport.hasTouch,
+      storageState: storageStateAdmin,
+    },
+  })),
+);
+
+const AAA_PROJECTS = DS_MATRIX_VIEWPORTS.flatMap((viewport) =>
+  DS_MATRIX_THEMES.flatMap((theme) =>
+    DS_MATRIX_FONT_MODES.map((fontMode) => ({
+      name: `aaa-${viewport.name}-${theme}-${fontMode}`,
+      testMatch: /.*\.aaa\.spec\.ts/,
+      dependencies: ['auth-setup'],
+      metadata: { theme, viewport: viewport.name, fontMode },
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: viewport.viewport,
+        isMobile: viewport.isMobile,
+        hasTouch: viewport.hasTouch,
+        storageState: storageStateAdmin,
+      },
+    })),
+  ),
+);
 
 /**
  * Read environment variables from file.
@@ -90,6 +137,9 @@ export default defineConfig({
         storageState: storageStateAdmin,
       },
     },
+
+    ...DS_MATRIX_PROJECTS,
+    ...AAA_PROJECTS,
 
     // Uncomment for mobile browsers support
     /* {

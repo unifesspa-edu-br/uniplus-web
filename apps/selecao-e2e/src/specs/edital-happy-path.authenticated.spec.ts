@@ -26,7 +26,7 @@ test.describe('Editais — smoke autenticado (F9)', () => {
     await page.goto('/editais');
     // Sem redirect ao Keycloak — storageState já contém a sessão admin.
     await expect(page).toHaveURL(/\/editais$/, { timeout: 10_000 });
-    await expect(page.locator('h2')).toContainText('Editais');
+    await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
     await expect(page.locator('table[role="grid"]')).toBeVisible();
   });
 
@@ -37,7 +37,7 @@ test.describe('Editais — smoke autenticado (F9)', () => {
     await page.getByRole('link', { name: 'Novo edital' }).click();
 
     await expect(page).toHaveURL(/\/editais\/novo$/);
-    await expect(page.locator('h2')).toContainText('Novo edital');
+    await expect(page.getByRole('heading', { name: 'Novo edital', level: 1 })).toBeVisible();
     // Selectors por label são semânticos + resilientes a IDs únicos
     // gerados pelo wrapper ui-form-field.
     await expect(page.getByLabel('Número do edital')).toBeVisible();
@@ -47,11 +47,11 @@ test.describe('Editais — smoke autenticado (F9)', () => {
 
   test('cancelar form retorna para /editais', async ({ page }) => {
     await page.goto('/editais/novo');
-    await expect(page.locator('h2')).toContainText('Novo edital');
+    await expect(page.getByRole('heading', { name: 'Novo edital', level: 1 })).toBeVisible();
 
     await page.getByRole('link', { name: 'Cancelar' }).click();
     await expect(page).toHaveURL(/\/editais$/, { timeout: 10_000 });
-    await expect(page.locator('h2')).toContainText('Editais');
+    await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
   });
 
   test('navegacao direta para /editais/{id-inexistente} mostra banner de erro', async ({
@@ -60,7 +60,7 @@ test.describe('Editais — smoke autenticado (F9)', () => {
     const idInexistente = '01960000-0000-7000-0000-000000000fff';
     await page.goto(`/editais/${idInexistente}`);
 
-    await expect(page.locator('h2')).toContainText('Detalhes do edital');
+    await expect(page.getByRole('heading', { name: 'Detalhes do edital', level: 1 })).toBeVisible();
     await expect(page.locator('[role="alert"]')).toBeVisible();
   });
 });

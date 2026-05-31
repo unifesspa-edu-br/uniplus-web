@@ -15,6 +15,7 @@
     "e2e:selecao": "nx e2e selecao-e2e",
     "e2e:ingresso": "nx e2e ingresso-e2e",
     "e2e:portal": "nx e2e portal-e2e",
+    "e2e:aaa": "playwright test --config=apps/selecao-e2e/playwright.config.ts --grep @aaa --output=tmp/playwright/selecao-e2e --reporter=line && playwright test --config=apps/portal-e2e/playwright.config.ts --grep @aaa --output=tmp/playwright/portal-e2e --reporter=line && playwright test --config=apps/ingresso-e2e/playwright.config.ts --grep @aaa --output=tmp/playwright/ingresso-e2e --reporter=line",
     "e2e:docker": "tools/e2e-docker/run.sh all",
     "e2e:docker:selecao": "tools/e2e-docker/run.sh selecao-e2e",
     "e2e:docker:portal": "tools/e2e-docker/run.sh portal-e2e",
