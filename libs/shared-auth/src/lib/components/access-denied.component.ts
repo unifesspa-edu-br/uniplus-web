@@ -19,30 +19,37 @@ import { UserContextService } from '../services/user-context.service';
   template: `
     <main
       role="main"
-      class="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-6 p-6 text-center"
+      class="ui-access-denied"
     >
-      <span aria-hidden="true" class="text-5xl">🚫</span>
-      <div>
-        <h1 class="text-2xl font-bold text-govbr-danger">Acesso negado</h1>
-        <p class="mt-2 text-govbr-gray-80">
+      <div class="empty-state empty-state--error">
+        <div class="empty-state__icon" aria-hidden="true">!</div>
+        <h1 class="empty-state__title">Acesso negado</h1>
+        <p class="empty-state__desc">
           Sua conta não possui permissão para acessar esta área.
         </p>
         @if (user(); as profile) {
-          <p class="mt-1 text-sm text-govbr-gray-60">
+          <p class="u-caption">
             Conectado como <strong>{{ profile.username }}</strong>.
           </p>
         }
-      </div>
-      <div class="flex flex-wrap justify-center gap-3">
         <button
           type="button"
-          class="rounded-govbr-sm bg-govbr-primary px-4 py-2 text-white hover:bg-govbr-primary-hover"
+          class="btn"
           (click)="voltar()"
         >
           Voltar ao início
         </button>
       </div>
     </main>
+  `,
+  styles: `
+    .ui-access-denied {
+      min-height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6);
+    }
   `,
 })
 export class AccessDeniedComponent {

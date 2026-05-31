@@ -7,7 +7,7 @@ import { AuthService } from '../services/auth.service';
  * (`AppComponent`) para garantir visibilidade mesmo antes do router.
  *
  * Acessibilidade: `role="alert"` + `aria-live="assertive"` para leitores
- * de tela; cores e foco seguem tokens Gov.br DS (erro).
+ * de tela; cores e foco seguem os tokens semânticos do Uni+ DS.
  */
 @Component({
   selector: 'auth-error-banner',
@@ -18,19 +18,27 @@ import { AuthService } from '../services/auth.service';
       <div
         role="alert"
         aria-live="assertive"
-        class="flex items-start gap-3 border-b border-govbr-danger bg-govbr-danger-light px-6 py-3 text-govbr-gray-80"
+        class="alert alert--danger ui-auth-banner"
       >
-        <span aria-hidden="true" class="mt-0.5 text-lg text-govbr-danger">⚠</span>
-        <div class="flex-1 text-sm">
-          <strong class="block font-semibold">Serviço de autenticação indisponível</strong>
-          <span class="block">{{ message }}</span>
-          <span class="block text-xs text-govbr-gray-60">
+        <span aria-hidden="true" class="alert__icon">!</span>
+        <div class="alert__body">
+          <strong class="alert__title">Serviço de autenticação indisponível</strong>
+          <span class="alert__msg">{{ message }}</span>
+          <span class="u-caption">
             Você pode continuar navegando em áreas públicas. Recursos
             protegidos ficarão indisponíveis até o restabelecimento do
             serviço.
           </span>
         </div>
       </div>
+    }
+  `,
+  styles: `
+    .ui-auth-banner {
+      border-radius: 0;
+      border-right: 0;
+      border-top: 0;
+      border-bottom: 1px solid var(--border-subtle);
     }
   `,
 })
