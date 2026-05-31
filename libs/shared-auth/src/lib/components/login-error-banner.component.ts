@@ -11,8 +11,8 @@ import { LoginErrorCode, classifyLoginError } from '../models/login-error.model'
  * para cumprir a DoD da Task #62 sem exigir um formulário de login
  * customizado (o login acontece 100% na UI hospedada do Keycloak).
  *
- * Acessibilidade: `role="alert"` + `aria-live="assertive"`, cores
- * Gov.br danger/warning conforme severidade.
+ * Acessibilidade: `role="alert"` + `aria-live="assertive"`, com tokens
+ * semânticos Uni+ DS conforme severidade.
  */
 @Component({
   selector: 'auth-login-error-banner',
@@ -23,33 +23,37 @@ import { LoginErrorCode, classifyLoginError } from '../models/login-error.model'
       <div
         role="alert"
         aria-live="assertive"
-        [class.border-govbr-danger]="isDanger()"
-        [class.bg-govbr-danger-light]="isDanger()"
-        [class.border-govbr-warning]="!isDanger()"
-        [class.bg-govbr-warning-light]="!isDanger()"
-        class="flex items-start gap-3 border-b px-6 py-3 text-govbr-gray-80"
+        class="alert ui-auth-banner"
+        [class.alert--danger]="isDanger()"
+        [class.alert--warning]="!isDanger()"
       >
         <span
           aria-hidden="true"
-          class="mt-0.5 text-lg"
-          [class.text-govbr-danger]="isDanger()"
-          [class.text-govbr-warning]="!isDanger()"
+          class="alert__icon"
         >
-          {{ isDanger() ? '⚠' : 'ℹ' }}
+          {{ isDanger() ? '!' : 'i' }}
         </span>
-        <div class="flex-1 text-sm">
-          <strong class="block font-semibold">{{ title() }}</strong>
-          <span class="block">{{ d.message }}</span>
+        <div class="alert__body">
+          <strong class="alert__title">{{ title() }}</strong>
+          <span class="alert__msg">{{ d.message }}</span>
         </div>
         <button
           type="button"
-          class="text-xs text-govbr-gray-60 underline hover:text-govbr-gray-80"
+          class="btn btn--tertiary btn--sm"
           (click)="dismiss()"
           aria-label="Fechar mensagem"
         >
           Fechar
         </button>
       </div>
+    }
+  `,
+  styles: `
+    .ui-auth-banner {
+      border-radius: 0;
+      border-right: 0;
+      border-top: 0;
+      border-bottom: 1px solid var(--border-subtle);
     }
   `,
 })

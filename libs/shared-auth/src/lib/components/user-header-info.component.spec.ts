@@ -88,16 +88,22 @@ describe('UserHeaderInfoComponent', () => {
     expect(el.textContent).toContain('Usuário Candidato');
   });
 
-  it('renderiza botão de logout com aria-label', () => {
+  it('renderiza trigger de menu de conta conforme contrato DS', () => {
     const { fixture } = setup();
-    const btn = fixture.nativeElement.querySelector('button[aria-label="Sair da aplicação"]');
+    const btn = fixture.nativeElement.querySelector('button.user-chip');
     expect(btn).toBeTruthy();
-    expect(btn.textContent.trim()).toBe('Sair');
+    expect(btn.getAttribute('aria-haspopup')).toBe('menu');
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    expect(btn.getAttribute('aria-controls')).toMatch(/^auth-user-menu-/);
   });
 
   it('chama authService.logout() ao clicar em Sair', () => {
     const { fixture, logout } = setup();
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('button.user-chip');
+    trigger.click();
+    fixture.detectChanges();
+
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[role="menuitem"]');
     btn.click();
     expect(logout).toHaveBeenCalledOnce();
   });
@@ -170,9 +176,17 @@ describe('UserHeaderInfoComponent', () => {
 
   it('dispara logout() a cada clique (sem debounce)', () => {
     const { fixture, logout } = setup();
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('button.user-chip');
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[role="menuitem"]');
+
+    trigger.click();
+    fixture.detectChanges();
     btn.click();
+
+    trigger.click();
+    fixture.detectChanges();
     btn.click();
+
     expect(logout).toHaveBeenCalledTimes(2);
   });
 });
