@@ -26,14 +26,26 @@
       "@uniplus/shared-ui": [
         "libs/shared-ui/src/index.ts"
       ],
+      "@uniplus/shared-ui/*": [
+        "libs/shared-ui/src/lib/*"
+      ],
       "@uniplus/shared-auth": [
         "libs/shared-auth/src/index.ts"
+      ],
+      "@uniplus/shared-auth/*": [
+        "libs/shared-auth/src/lib/*"
       ],
       "@uniplus/shared-core": [
         "libs/shared-core/src/index.ts"
       ],
+      "@uniplus/shared-core/*": [
+        "libs/shared-core/src/lib/*"
+      ],
       "@uniplus/shared-data": [
         "libs/shared-data/src/index.ts"
+      ],
+      "@uniplus/shared-data/*": [
+        "libs/shared-data/src/lib/*"
       ],
       "@uniplus/shared-utils": [
         "libs/shared-utils/src/index.ts"
