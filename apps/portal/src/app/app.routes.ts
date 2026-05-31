@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
 import { authGuard } from '@uniplus/shared-auth/guards';
-import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Routes = [
   {
@@ -10,7 +9,7 @@ export const appRoutes: Routes = [
   },
   {
     path: '',
-    component: LayoutComponent,
+    loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
     children: [
       { path: '', redirectTo: 'processos', pathMatch: 'full' },
       {
