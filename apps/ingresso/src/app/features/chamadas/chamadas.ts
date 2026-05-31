@@ -1,17 +1,16 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
 
 @Component({
   selector: 'ing-chamadas',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div>
-      <h2 class="mb-4 text-2xl font-bold text-gray-800">Chamadas</h2>
-      <p class="text-gray-600">Gestão de chamadas de vagas.</p>
-      <router-outlet />
-    </div>
+    <ui-page-header heading="Chamadas" description="Gestão de chamadas de vagas." />
+    <ui-empty-state heading="Nenhuma chamada configurada" description="As listas de chamada serão apresentadas nesta área." />
+    <router-outlet />
   `,
 })
 export class ChamadasComponent {}

@@ -1,17 +1,16 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
 
 @Component({
   selector: 'ing-matriculas',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div>
-      <h2 class="mb-4 text-2xl font-bold text-gray-800">Matrículas</h2>
-      <p class="text-gray-600">Efetivação de matrículas.</p>
-      <router-outlet />
-    </div>
+    <ui-page-header heading="Matrículas" description="Efetivação de matrículas." />
+    <ui-empty-state heading="Nenhuma matrícula pendente" description="As etapas de efetivação aparecerão nesta área." />
+    <router-outlet />
   `,
 })
 export class MatriculasComponent {}

@@ -1,17 +1,16 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
 
 @Component({
   selector: 'sel-classificacao',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div>
-      <h2 class="mb-4 text-2xl font-bold text-gray-800">Classificação</h2>
-      <p class="text-gray-600">Classificação e resultados.</p>
-      <router-outlet />
-    </div>
+    <ui-page-header heading="Classificação" description="Classificação e resultados." />
+    <ui-empty-state heading="Classificação em preparação" description="A publicação dos resultados aparecerá nesta área." />
+    <router-outlet />
   `,
 })
 export class ClassificacaoComponent {}
