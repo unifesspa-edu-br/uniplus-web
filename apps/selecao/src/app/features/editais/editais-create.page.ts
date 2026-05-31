@@ -130,23 +130,6 @@ interface CriarEditalForm {
       </div>
     </form>
   `,
-  styles: `
-    .ui-edital-form {
-      display: grid;
-      max-width: var(--content-narrow);
-      gap: var(--space-4);
-      margin-top: var(--space-5);
-    }
-
-    .ui-form-actions {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-      margin-top: var(--space-2);
-    }
-  `,
 })
 export class EditaisCreatePage {
   private readonly api = inject(EditaisApi);

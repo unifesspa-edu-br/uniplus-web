@@ -26,16 +26,12 @@ declare global {
       </div>
     </div>
   `,
-  styles: `
-    :host {
-      display: contents;
-    }
-  `,
 })
 export class VlibrasLoaderComponent {
-  readonly scriptSrc = input<string>('https://vlibras.gov.br/app/vlibras-plugin.js');
-  readonly rootPath = input<string | undefined>(undefined);
-  readonly assetMirrorSrc = input<string>('https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/vlibras-portal@master/app/assets/');
+  readonly stylesheetHref = input<string>('/assets/shared-ui/vlibras/vlibras.css');
+  readonly scriptSrc = input<string>('/assets/shared-ui/vlibras/vlibras-plugin.js');
+  readonly rootPath = input<string | undefined>('/assets/shared-ui/vlibras');
+  readonly assetMirrorSrc = input<string>('/assets/shared-ui/vlibras/assets/');
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private initialized = false;
@@ -48,6 +44,8 @@ export class VlibrasLoaderComponent {
   }
 
   private load(): void {
+    this.ensureStylesheet();
+
     const scriptId = 'uniplus-vlibras-script';
     const existing = this.document.getElementById(scriptId) as HTMLScriptElement | null;
     if (existing) {
@@ -62,6 +60,19 @@ export class VlibrasLoaderComponent {
     script.async = true;
     script.onload = () => this.initWidget();
     this.document.body.appendChild(script);
+  }
+
+  private ensureStylesheet(): void {
+    const stylesheetId = 'uniplus-vlibras-stylesheet';
+    if (this.document.getElementById(stylesheetId)) {
+      return;
+    }
+
+    const link = this.document.createElement('link');
+    link.id = stylesheetId;
+    link.rel = 'stylesheet';
+    link.href = this.stylesheetHref();
+    this.document.head.appendChild(link);
   }
 
   private initWidget(): void {
@@ -90,7 +101,7 @@ export class VlibrasLoaderComponent {
       return;
     }
 
-    const match = target.src.match(/vlibras\.gov\.br\/app\/+assets\/(.+)$/);
+    const match = target.src.match(/(?:www\.)?vlibras\.gov\.br\/app\/+assets\/(.+)$/);
     if (match?.[1]) {
       target.dataset['vwFixed'] = '1';
       target.src = this.assetMirrorSrc() + match[1];

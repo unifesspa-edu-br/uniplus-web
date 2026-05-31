@@ -17,6 +17,11 @@
           {
             "glob": "**/*",
             "input": "apps/selecao/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/shared-ui/src/assets",
+            "output": "assets/shared-ui"
           }
         ],
         "styles": ["apps/selecao/src/styles.css"],

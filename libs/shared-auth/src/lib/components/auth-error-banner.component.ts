@@ -33,14 +33,6 @@ import { AuthService } from '../services/auth.service';
       </div>
     }
   `,
-  styles: `
-    .ui-auth-banner {
-      border-radius: 0;
-      border-right: 0;
-      border-top: 0;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-  `,
 })
 export class AuthErrorBannerComponent {
   protected readonly authService = inject(AuthService);

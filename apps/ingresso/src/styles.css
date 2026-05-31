@@ -1,6 +1,7 @@
 @import '../../../libs/shared-ui/src/styles/tokens.css';
 @import '../../../libs/shared-ui/src/styles/base.css';
 @import '../../../libs/shared-ui/src/styles/components.css';
+@import '../../../libs/shared-auth/src/styles/components.css';
 @import 'tailwindcss';
 
 @source './app/**/*.{ts,html}';

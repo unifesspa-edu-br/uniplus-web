@@ -95,28 +95,6 @@ import {
       </div>
     </section>
   `,
-  styles: `
-    .ui-toast-trace {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-2);
-      margin-top: var(--space-2);
-      padding-top: var(--space-2);
-      border-top: 1px solid var(--border-subtle);
-      font-size: var(--text-xs);
-      color: var(--text-secondary);
-    }
-
-    .ui-toast-trace code {
-      font-family: var(--font-mono);
-      color: var(--text-primary);
-      background: var(--surface-subtle);
-      border-radius: var(--radius-sm);
-      padding: 0 var(--space-1);
-      user-select: all;
-    }
-  `,
 })
 export class NotificationHostComponent {
   private readonly service = inject(NotificationService);

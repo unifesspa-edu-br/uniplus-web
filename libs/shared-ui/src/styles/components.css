@@ -359,6 +359,43 @@
 /* ============================================================================
  * INSTITUTIONAL BAR + ACCESSIBILITY BAR + TOPBAR (mobile-first)
  * ========================================================================== */
+.ui-app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-page);
+  color: var(--text-primary);
+}
+
+.ui-app-shell__main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-4);
+}
+
+.ui-app-shell__footer {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-inverse);
+  color: var(--text-on-inverse);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 768px) {
+  .ui-app-shell__main {
+    padding: var(--space-7);
+  }
+}
+
+ui-vlibras-loader {
+  display: contents;
+}
+
 .institutional-bar {
   background: var(--color-primary-900);
   color: var(--text-on-inverse);
@@ -837,6 +874,12 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.table-responsive__row--clickable {
+  cursor: pointer;
+}
+.table-responsive__row--clickable:hover {
+  background: var(--surface-page);
+}
 .table-responsive__primary {
   color: var(--color-primary);
   font-weight: var(--weight-medium);
@@ -894,6 +937,16 @@
   .table-responsive__num {
     text-align: right;
   }
+}
+
+.ui-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+  user-select: all;
 }
 
 /* ============================================================================
@@ -1150,6 +1203,25 @@
 .toast__body { flex: 1; min-width: 0; }
 .toast__title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); margin: 0 0 2px; }
 .toast__msg { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+.ui-toast-trace {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.ui-toast-trace code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+  user-select: all;
+}
 .toast__close {
   flex-shrink: 0; width: var(--touch-min); height: var(--touch-min);
   display: inline-flex; align-items: center; justify-content: center;
@@ -1518,6 +1590,29 @@
 @keyframes spinner-rotate { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 1.5s; }   /* slower instead of off — still need motion */
+}
+
+.ui-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-overlay);
+  padding: var(--space-4);
+}
+
+.ui-loading-overlay__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 
 /* Button in-flight state: keeps width, swaps to spinner + label.

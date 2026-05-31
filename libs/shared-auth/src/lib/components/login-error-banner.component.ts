@@ -48,14 +48,6 @@ import { LoginErrorCode, classifyLoginError } from '../models/login-error.model'
       </div>
     }
   `,
-  styles: `
-    .ui-auth-banner {
-      border-radius: 0;
-      border-right: 0;
-      border-top: 0;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-  `,
 })
 export class LoginErrorBannerComponent {
   private readonly router = inject(Router);
