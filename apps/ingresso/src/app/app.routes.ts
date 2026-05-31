@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
 import { authGuard, roleGuard } from '@uniplus/shared-auth/guards';
-import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Routes = [
   {
@@ -12,7 +11,7 @@ export const appRoutes: Routes = [
     // Backoffice Ingresso: todas as rotas exigem autenticação.
     // Roles elegíveis nesta SPA: admin, gestor.
     path: '',
-    component: LayoutComponent,
+    loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
     canActivate: [authGuard, roleGuard('admin', 'gestor')],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
