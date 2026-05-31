@@ -262,7 +262,8 @@ describe('EditaisCreatePage', () => {
     ) as NodeListOf<HTMLInputElement>;
     expect(numericInputs.length).toBe(4);
 
-    const [numeroEditalInput, anoEditalInput, tipoProcessoInput, maximoOpcoesInput] = numericInputs;
+    const [numeroEditalInput, anoEditalInput, tipoProcessoInput, maximoOpcoesInput] =
+      Array.from(numericInputs);
     const tituloInput = fixture.nativeElement.querySelector(
       'input[type="text"]',
     ) as HTMLInputElement;

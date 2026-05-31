@@ -53,12 +53,12 @@ describe('Fitness — pages container em apps/selecao/src/app/features/', () => 
       // services em shared-data via inject(EditaisApi) etc., não fazer HTTP
       // direto. ADR-0017 container/presentational + ADR-0011/0012.
       const importsHttpClient = /import\s+\{[^}]*\bHttpClient\b[^}]*\}\s+from\s+['"]@angular\/common\/http['"]/.test(source);
-      expect(importsHttpClient).toBe(
-        false,
+      expect(
+        importsHttpClient,
         `\nArquivo: ${relativePath}\n` +
           `Pages container não devem importar HttpClient direto. Crie um service em libs/shared-data/src/lib/api/<modulo>/<recurso>.api.ts ` +
           `que retorne Observable<ApiResult<T>> e injete-o via inject(<MeuApi>) na page (ADR-0017).`,
-      );
+      ).toBe(false);
     });
 
     it('NÃO faz inject(HttpClient) (incluindo variantes com options)', () => {
@@ -66,11 +66,11 @@ describe('Fitness — pages container em apps/selecao/src/app/features/', () => 
       // `inject(HttpClient, { skipSelf: true })` etc. Vírgula OU parêntese
       // depois de HttpClient — qualquer variante de inject() do Angular DI.
       const injectsHttpClient = /inject\(\s*HttpClient\s*[,)]/.test(source);
-      expect(injectsHttpClient).toBe(
-        false,
+      expect(
+        injectsHttpClient,
         `\nArquivo: ${relativePath}\n` +
           `inject(HttpClient) na page é HTTP direto — extraia para um service em shared-data.`,
-      );
+      ).toBe(false);
     });
   });
 });
