@@ -16,7 +16,7 @@ async function flushMicrotasks(times = 5): Promise<void> {
 
 describe('tokenInterceptor — allowlist', () => {
   const apiUrl = 'http://localhost:5000/api/v1';
-  const keycloakUrl = 'http://localhost:8080';
+  const issuerUrl = 'http://localhost:8080/realms/unifesspa';
   const externalUrl = 'https://evil.example.com/leak';
 
   function setup(
@@ -52,7 +52,7 @@ describe('tokenInterceptor — allowlist', () => {
   }
 
   it('anexa Bearer quando a URL está na allowlist (API)', async () => {
-    const { http, httpMock } = setup([apiUrl, keycloakUrl]);
+    const { http, httpMock } = setup([apiUrl, issuerUrl]);
 
     const promise = firstValueFrom(http.get(`${apiUrl}/editais`));
     await flushMicrotasks();
@@ -64,10 +64,10 @@ describe('tokenInterceptor — allowlist', () => {
     httpMock.verify();
   });
 
-  it('anexa Bearer quando a URL está na allowlist (Keycloak)', async () => {
-    const { http, httpMock } = setup([apiUrl, keycloakUrl]);
+  it('anexa Bearer quando a URL está na allowlist (provedor OIDC)', async () => {
+    const { http, httpMock } = setup([apiUrl, issuerUrl]);
 
-    const url = `${keycloakUrl}/realms/unifesspa/protocol/openid-connect/userinfo`;
+    const url = `${issuerUrl}/protocol/openid-connect/userinfo`;
     const promise = firstValueFrom(http.get(url));
     await flushMicrotasks();
     const req = httpMock.expectOne(url);
@@ -79,7 +79,7 @@ describe('tokenInterceptor — allowlist', () => {
   });
 
   it('NÃO anexa Bearer para URL fora da allowlist (domínio externo)', async () => {
-    const { http, httpMock } = setup([apiUrl, keycloakUrl]);
+    const { http, httpMock } = setup([apiUrl, issuerUrl]);
 
     const promise = firstValueFrom(http.get(externalUrl));
     const req = httpMock.expectOne(externalUrl);

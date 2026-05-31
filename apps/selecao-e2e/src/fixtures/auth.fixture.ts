@@ -6,8 +6,8 @@ import { test as base } from './base.fixture';
  * e consumido pelo project `selecao-authenticated` no `playwright.config.ts`.
  *
  * Padrão #20 reforçado: o storageState contém apenas cookies de sessão do
- * Keycloak (não JWT). É isolamento por test run, NÃO pattern de produção —
- * a invariante "JWT só em memória do KeycloakService" do código de produção
+ * provedor OIDC (não JWT). É isolamento por test run, NÃO pattern de produção —
+ * a invariante "JWT só em memória do adapter OIDC" do código de produção
  * continua valendo.
  */
 export const STORAGE_STATE_PATH_ADMIN = '.playwright-auth/storage-state-admin.json';
@@ -24,7 +24,7 @@ export const ADMIN_USER = {
  * `storageState` automaticamente — não precisam logar no `beforeAll`.
  *
  * Specs que exercitam login via UI (ex.: `auth-oidc.spec.ts`, `login.spec.ts`)
- * usam diretamente `@playwright/test` e os helpers em `../support/keycloak-login`.
+ * usam diretamente `@playwright/test` e os helpers do provider em `../support/keycloak-login`.
  * Não há conflito — projects são independentes.
  */
 export const test = base;

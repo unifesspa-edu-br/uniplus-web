@@ -3,7 +3,7 @@ import { AuthService } from '../services/auth.service';
 
 /**
  * Banner de fallback exibido quando `AuthService.init()` falha
- * (ex.: Keycloak indisponível). É renderizado no shell do app
+ * (ex.: provedor OIDC indisponível). É renderizado no shell do app
  * (`AppComponent`) para garantir visibilidade mesmo antes do router.
  *
  * Acessibilidade: `role="alert"` + `aria-live="assertive"` para leitores

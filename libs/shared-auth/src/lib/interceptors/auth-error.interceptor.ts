@@ -8,7 +8,7 @@ import { AuthService } from '../services/auth.service';
  * Reage a respostas já envelopadas pelo `apiResultInterceptor` de
  * `@uniplus/shared-core` (ADR-0011 + ADR-0012):
  *
- * - **401 Unauthorized** → dispara `authService.login()` (redirect Keycloak).
+ * - **401 Unauthorized** → dispara `authService.login()` (redirect OIDC).
  * - **403 Forbidden** → redireciona para `/acesso-negado`.
  *
  * Como o `apiResultInterceptor` converte 4xx/5xx em `HttpResponse` carregando

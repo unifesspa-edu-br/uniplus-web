@@ -49,7 +49,7 @@ A questão é dupla: **(a) o pattern é binding** (toda feature page deve seguir
 - Selector convention: `<app-prefix>-<feature>-<acao>-page` (ex.: `sel-editais-list-page` para `selecao`).
 - Responsabilidades:
   - **Estado reativo** via `signal<T>()`/`computed()`/`effect()`.
-  - **Injeção de services** (`EditaisApi`, `ProblemI18nService`, `Router`, `KeycloakService`, etc.) via `inject()`.
+  - **Injeção de services** (`EditaisApi`, `ProblemI18nService`, `Router`, `AuthService`, etc.) via `inject()`.
   - **Orquestração** — disparar HTTP, mapear `ApiResult<T>` para signals, navegar.
   - **Resolução de erros** via `ProblemI18nService.resolve(problem)`.
   - **Sem template visual reutilizável** — o template do container é a composição de presentational, não interface complexa própria.

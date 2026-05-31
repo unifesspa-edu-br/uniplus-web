@@ -1,7 +1,7 @@
 /**
  * Códigos de erro do fluxo de login, mapeados a partir das respostas
- * OIDC do Keycloak. Usado para exibir mensagens contextuais no shell
- * da app quando o Keycloak redireciona de volta à SPA com erro, e por
+ * OIDC do provedor de identidade. Usado para exibir mensagens contextuais
+ * no shell da app quando o provedor redireciona de volta à SPA com erro, e por
  * fluxos customizados (se/quando existirem) que consumam diretamente
  * o resource owner password grant.
  */
@@ -14,7 +14,7 @@ export enum LoginErrorCode {
    */
   UserLocked = 'user_locked',
   /** Provedor de autenticação inacessível. */
-  KeycloakUnavailable = 'keycloak_unavailable',
+  OidcProviderUnavailable = 'oidc_provider_unavailable',
   /** Usuário recusou o consentimento ou cancelou o fluxo. */
   AccessDenied = 'access_denied',
   /** Qualquer outro erro não reconhecido. */
@@ -25,7 +25,7 @@ export interface LoginErrorDetails {
   code: LoginErrorCode;
   /** Mensagem user-facing em pt-BR. */
   message: string;
-  /** Descrição original do Keycloak, se disponível (para logs). */
+  /** Descrição original do provedor OIDC, se disponível (para logs). */
   rawDescription?: string;
 }
 
@@ -55,7 +55,7 @@ const UNAVAILABLE_MARKERS = [
 ];
 
 /**
- * Classifica um erro OIDC/Keycloak em um `LoginErrorCode` + mensagem
+ * Classifica um erro OIDC em um `LoginErrorCode` + mensagem
  * contextual em pt-BR. Aceita entradas variadas (string de description,
  * objeto com `error_description`, Error genérico).
  */
@@ -82,7 +82,7 @@ export function classifyLoginError(input: unknown): LoginErrorDetails {
 
   if (UNAVAILABLE_MARKERS.some((m) => normalized.includes(m))) {
     return {
-      code: LoginErrorCode.KeycloakUnavailable,
+      code: LoginErrorCode.OidcProviderUnavailable,
       message:
         'Serviço de autenticação indisponível. Tente novamente em alguns instantes.',
       rawDescription: raw,

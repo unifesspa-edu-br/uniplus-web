@@ -21,8 +21,8 @@ test.describe('Autenticação OIDC — Seleção', () => {
     ]);
   });
 
-  test.describe('Redirecionamento ao Keycloak', () => {
-    test('redireciona para Keycloak ao acessar rota protegida sem sessão', async ({ page }) => {
+  test.describe('Redirecionamento ao provedor OIDC', () => {
+    test('redireciona para o provedor OIDC ao acessar rota protegida sem sessão', async ({ page }) => {
       await page.goto('/dashboard');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
@@ -73,7 +73,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
 
       await keycloakLogout(page);
 
-      // Após logout, ao tentar acessar rota protegida, volta ao Keycloak
+      // Após logout, ao tentar acessar rota protegida, volta ao provedor OIDC.
       await page.goto('/dashboard');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
@@ -83,7 +83,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
   });
 
   test.describe('Resiliência', () => {
-    test('app carrega mesmo se Keycloak estiver lento (check-sso timeout)', async ({ page }) => {
+    test('app carrega mesmo se o provedor OIDC estiver lento (check-sso timeout)', async ({ page }) => {
       await page.goto('/');
       const url = page.url();
       expect(url).toMatch(/realms\/unifesspa|localhost:4200/);

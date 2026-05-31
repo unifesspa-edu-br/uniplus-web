@@ -1,5 +1,5 @@
 /**
- * Ficha de cobertura — Story uniplus-web#5 (autenticação Keycloak
+ * Ficha de cobertura — Story uniplus-web#5 (autenticação OIDC
  * completa). Documenta quais cenários compõem a Definition of Done
  * da Story e aponta para os arquivos que os cobrem em detalhe.
  *

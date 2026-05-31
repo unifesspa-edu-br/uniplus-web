@@ -171,7 +171,7 @@ Ordem importa: `apiResultInterceptor` é o **mais interno** (último no array), 
 ## Mais informações
 
 - [ADR-0007](0007-primeng-em-modo-unstyled.md) — UI components consumirão `ApiResult` para differenciar loading/error/empty states.
-- [ADR-0009](0009-keycloak-como-identity-provider-oidc.md) — `auth-error.interceptor` em `shared-auth` permanece pure auth; consome `ApiResult` upstream.
+- [ADR-0009](0009-provedor-oidc-do-uniplus-web.md) — `auth-error.interceptor` em `shared-auth` permanece pure auth; consome `ApiResult` upstream.
 - ADR-0022 do `uniplus-api` — umbrella do contrato REST canônico V1 que esta ADR consome no lado client.
 - ADR-0023 do `uniplus-api` — wire format de erro RFC 9457 que `apiResultInterceptor` parseia.
 - ADR-0025 do `uniplus-api` — wire format de sucesso (body direto) que `ApiResult<T>` envelopa em `{ ok: true, data: T }`.

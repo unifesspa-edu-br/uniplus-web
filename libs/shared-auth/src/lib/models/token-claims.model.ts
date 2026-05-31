@@ -9,11 +9,11 @@ import type { KeycloakTokenParsed } from 'keycloak-js';
  * dot-notation tipado, sem acessos por chave nem coerções ad-hoc.
  */
 export interface UniPlusTokenClaims extends KeycloakTokenParsed {
-  /** `sub` — identificador opaco do usuário no Keycloak. */
+  /** `sub` — identificador opaco do usuário no provedor OIDC. */
   sub?: string;
   /** `preferred_username` — login normalizado (admin, gestor, etc.). */
   preferred_username?: string;
-  /** Nome completo (`given_name family_name`), populado pelo Keycloak. */
+  /** Nome completo (`given_name family_name`), populado pelo provedor OIDC. */
   name?: string;
   given_name?: string;
   family_name?: string;

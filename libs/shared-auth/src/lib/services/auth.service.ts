@@ -30,14 +30,14 @@ export class AuthService {
   readonly userProfile = this._userProfile.asReadonly();
   readonly roles = computed(() => this._userProfile()?.roles ?? []);
   /**
-   * Mensagem de erro quando `init()` falha (ex.: Keycloak indisponível).
+   * Mensagem de erro quando `init()` falha (ex.: provedor OIDC indisponível).
    * `null` indica init bem-sucedido ou ainda não executado. Consumida
    * por componentes de shell para exibir fallback ao usuário.
    */
   readonly initError = this._initError.asReadonly();
 
   /**
-   * Inicializa o Keycloak. NUNCA lança — falhas são capturadas e
+   * Inicializa o cliente OIDC via adapter Keycloak. NUNCA lança — falhas são capturadas e
    * expostas via `initError()`, permitindo que o bootstrap da app
    * prossiga mesmo com o provedor de autenticação indisponível
    * (finding I7). Nessa situação o app entra em modo "não autenticado"
@@ -92,7 +92,7 @@ export class AuthService {
 
   /**
    * Indica se o access token atual está expirado (ou expirará em menos
-   * de `minValidity` segundos). Retorna `true` quando não há Keycloak
+   * de `minValidity` segundos). Retorna `true` quando não há cliente OIDC
    * inicializado — o interceptor trata esse caso como "sem token".
    */
   isTokenExpired(minValidity = 30): boolean {
@@ -144,10 +144,11 @@ export class AuthService {
    * que retornam duplos de Keycloak com `init()` estubado.
    */
   protected createKeycloak(config: AuthConfig): Keycloak {
+    const keycloakConfig = toKeycloakConfig(config);
     return new Keycloak({
-      url: config.keycloakUrl,
-      realm: config.realm,
-      clientId: config.clientId,
+      url: keycloakConfig.url,
+      realm: keycloakConfig.realm,
+      clientId: keycloakConfig.clientId,
     });
   }
 
@@ -157,7 +158,7 @@ export class AuthService {
   }
 
   /**
-   * Popula o perfil lendo direto do access token parseado
+   * Popula o perfil lendo direto do access token OIDC parseado
    * (`keycloak.tokenParsed`). Todos os claims necessários vêm via
    * scope `uniplus-profile` + protocol mappers configurados no realm,
    * então não é preciso chamar `loadUserProfile()` — que bateria no
@@ -183,6 +184,38 @@ export class AuthService {
       roles: claims.realm_access?.roles ?? [],
     });
   }
+}
+
+interface KeycloakConfig {
+  url: string;
+  realm: string;
+  clientId: string;
+}
+
+function toKeycloakConfig(config: AuthConfig): KeycloakConfig {
+  const issuer = new URL(config.issuerUrl);
+  const marker = '/realms/';
+  const markerIndex = issuer.pathname.lastIndexOf(marker);
+  if (markerIndex < 0) {
+    throw new Error(
+      'issuerUrl OIDC incompatível com o adapter Keycloak atual: esperado path "/realms/{realm}".',
+    );
+  }
+
+  const realmPath = issuer.pathname.slice(markerIndex + marker.length).replace(/\/$/, '');
+  const realm = decodeURIComponent(realmPath);
+  if (!realm || realm.includes('/')) {
+    throw new Error(
+      'issuerUrl OIDC incompatível com o adapter Keycloak atual: realm ausente ou inválido.',
+    );
+  }
+
+  const basePath = issuer.pathname.slice(0, markerIndex);
+  return {
+    url: basePath ? `${issuer.origin}${basePath}` : issuer.origin,
+    realm,
+    clientId: config.clientId,
+  };
 }
 
 function describeInitError(error: unknown): string {

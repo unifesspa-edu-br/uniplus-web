@@ -13,9 +13,9 @@ informed:
 
 ## Contexto e enunciado do problema
 
-A Story [#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84) exige que as 3 apps (`selecao`, `ingresso`, `portal`) carreguem URL da API e parâmetros do Keycloak em runtime, lidos de `/assets/runtime-config.json`, para que a **mesma imagem** Docker (publicada via [ADR-0020](0020-registry-ghcr-e-tagging.md)) seja promovida entre ambientes apenas trocando o `ConfigMap` montado pelo Kubernetes — sem rebuild, sem `fileReplacements` por ambiente, sem URL embutida no bundle.
+A Story [#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84) exige que as 3 apps (`selecao`, `ingresso`, `portal`) carreguem URL da API e parâmetros OIDC em runtime, lidos de `/assets/runtime-config.json`, para que a **mesma imagem** Docker (publicada via [ADR-0020](0020-registry-ghcr-e-tagging.md)) seja promovida entre ambientes apenas trocando o `ConfigMap` montado pelo Kubernetes — sem rebuild, sem `fileReplacements` por ambiente, sem URL embutida no bundle.
 
-A estratégia legada usa `environment.prod.ts` com placeholders (`PLACEHOLDER_API_URL`, `PLACEHOLDER_KEYCLOAK_URL`) substituídos por `fileReplacements` no `project.json`. Isso quebra o invariante "imagem única por app" — a imagem hoje publicada pela ADR-0020 já contém os placeholders compilados, e mountar `ConfigMap` sobre `/assets/runtime-config.json` não muda o bundle Angular que lê `environment.*` em build time.
+A estratégia substituída usava `environment.prod.ts` com placeholders (`PLACEHOLDER_API_URL`, `PLACEHOLDER_OIDC_URL`) substituídos por `fileReplacements` no `project.json`. Isso quebra o invariante "imagem única por app" — a imagem hoje publicada pela ADR-0020 já contém os placeholders compilados, e mountar `ConfigMap` sobre `/assets/runtime-config.json` não muda o bundle Angular que lê `environment.*` em build time.
 
 A pergunta operacional, que conduziu o debate desta ADR, foi: **como o `provideAuth()` da `shared-auth` deve consumir a `AppConfig` resolvida em runtime?** Há três opções concretas, com trade-offs distintos sobre acoplamento `shared-auth ↔ shared-data`, boilerplate por app, e proteção contra esquecimento silencioso.
 
@@ -93,10 +93,9 @@ export function provideRuntimeConfig(): EnvironmentProviders {
       useFactory: (store: AppConfigService): AuthConfig => {
         const cfg = store.get();
         return {
-          keycloakUrl: cfg.keycloak.url,
-          realm: cfg.keycloak.realm,
-          clientId: cfg.keycloak.clientId,
-          allowedUrls: Object.freeze([cfg.apiUrl, cfg.keycloak.url]),
+          issuerUrl: cfg.oidc.issuerUrl,
+          clientId: cfg.oidc.clientId,
+          allowedUrls: Object.freeze([cfg.apiUrl, cfg.oidc.issuerUrl]),
         };
       },
       deps: [AppConfigService],
@@ -155,7 +154,7 @@ Adicionar 4º app: append em `APPS` array — fitness adiciona automaticamente.
 ### Negativas
 
 - `shared-data` adquire `peerDependency` `@org/shared-auth` (cross-import ng-packagr, exige `paths` override em `tsconfig.lib.prod.json` apontando para `dist/libs/shared-auth` — recipe da [ADR-0020](0020-registry-ghcr-e-tagging.md) aplicada cross-lib desde PR #224).
-- Para apps que NÃO usam Keycloak (hipotético), `AUTH_CONFIG` continua sendo provido — desperdício mínimo.
+- Para apps que NÃO usam autenticação OIDC (hipotético), `AUTH_CONFIG` continua sendo provido — desperdício mínimo.
 
 ### Neutras
 

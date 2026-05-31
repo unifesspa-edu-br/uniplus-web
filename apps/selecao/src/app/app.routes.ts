@@ -5,7 +5,7 @@ import { LayoutComponent } from './layout/layout';
 export const appRoutes: Routes = [
   {
     // Página de 403 — acessível mesmo sem role específica (apenas
-    // exige autenticação prévia do Keycloak).
+    // exige autenticação prévia via OIDC).
     path: 'acesso-negado',
     component: AccessDeniedComponent,
   },

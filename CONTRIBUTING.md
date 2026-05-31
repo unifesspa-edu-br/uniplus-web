@@ -72,7 +72,7 @@ libs/
       directives/
       pipes/
 
-  shared-auth/            → Integração Keycloak/Gov.br
+  shared-auth/            → Integração OIDC/Gov.br
     src/lib/
       services/           → AuthService, TokenInterceptor
       guards/             → AuthGuard, RoleGuard
@@ -108,7 +108,7 @@ libs/
 | `@uniplus/shared-core` | Infra HTTP Angular: `LoadingService`, `NotificationService`, `ProblemI18nService`, `ApiResultInterceptor`, `HttpContext` tokens (vendor MIME, idempotency), `useApiResource`, `parseLink`, paginação cursor |
 | `@uniplus/shared-data` | DTOs, `schema.ts` gerado por OpenAPI, classes de serviço, `InjectionToken` de base paths, `ValidatorFn` de domínio (CPF, cota), runtime config (`provideRuntimeConfig`), utilidades puras de dados |
 | `@uniplus/shared-ui` | Componentes Angular standalone, pipes, shells e wrappers do Uni+ DS CSS-only; PrimeNG apenas quando encapsulado e justificado |
-| `@uniplus/shared-auth` | Integração Keycloak/OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
+| `@uniplus/shared-auth` | Integração OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
 | `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
 
 ### 3. Regra de criação (rule of three + first-real-feature)
@@ -239,7 +239,7 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 | `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
 | `ds` | Tokens, foundation e mapeamento CSS do Uni+ DS |
 | `primeng` | Uso legado/complexo de PrimeNG encapsulado em `ui-*` |
-| `auth` | Keycloak, `libs/shared-auth/` (guards, interceptor, tokens) |
+| `auth` | OIDC, `libs/shared-auth/` (guards, interceptor, tokens) |
 | `nx` | Configuração Nx (workspace, targets, caching, affected) |
 | `ci` | GitHub Actions, workflows, pipeline |
 | `docker` | Dockerfiles, `docker-compose` |
@@ -394,7 +394,7 @@ npx nx e2e selecao-e2e -- --grep "accessibility"
 - **Nunca exibir CPF completo** em telas — usar máscara `***.***.***-XX`
 - **Nunca logar dados pessoais** no console do navegador
 - **XSS:** nunca usar `[innerHTML]` com dados do usuário — usar sanitização do Angular
-- **Tokens:** nunca armazenar tokens em localStorage — usar httpOnly cookies via Keycloak
+- **Tokens:** nunca armazenar tokens em localStorage — usar o fluxo OIDC configurado e manter JWT fora de logs
 - **Upload:** validar tipo de arquivo, tamanho máximo e exibir preview antes de enviar
 
 ### Nome social (RN02)

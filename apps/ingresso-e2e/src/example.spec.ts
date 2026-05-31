@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-test('deve redirecionar para o Keycloak ao acessar a raiz sem sessão', async ({ page }) => {
+test('deve redirecionar para o provedor OIDC ao acessar a raiz sem sessão', async ({ page }) => {
   await page.goto('/');
   await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, { timeout: 10_000 });
   await expect(page.locator('#kc-login')).toBeVisible();
 });
 
-test.skip('deve exibir dashboard após login (requer fixture Keycloak + API Ingresso)', async ({ page }) => {
+test.skip('deve exibir dashboard após login (requer fixture OIDC + API Ingresso)', async ({ page }) => {
   await page.goto('/dashboard');
   await expect(page.locator('h1')).toContainText('Ingresso');
 });

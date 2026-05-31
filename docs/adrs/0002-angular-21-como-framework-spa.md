@@ -49,7 +49,7 @@ Angular oferece um framework opinado com router, forms e DI integrados, reduzind
 - Reactive Forms tipados eliminam classes inteiras de bugs de formulário em compile time.
 - Standalone + signals reduzem boilerplate e tornam o grafo de dependências por feature explícito.
 - Ciclo LTS de 18 meses por major, com `nx migrate` cobrindo grande parte das atualizações automaticamente.
-- Ecossistema maduro com PrimeNG, Keycloak Angular e ferramentas de teste integradas (Vitest, Playwright).
+- Ecossistema maduro com PrimeNG, adapters OIDC para Angular e ferramentas de teste integradas (Vitest, Playwright).
 
 ### Negativas
 

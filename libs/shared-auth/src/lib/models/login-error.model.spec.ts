@@ -1,7 +1,7 @@
 import { LoginErrorCode, classifyLoginError } from './login-error.model';
 
 describe('classifyLoginError', () => {
-  it('detecta UserLocked a partir de error_description típico do Keycloak', () => {
+  it('detecta UserLocked a partir de error_description típico do provedor OIDC', () => {
     const result = classifyLoginError({
       error: 'invalid_grant',
       error_description: 'Account is temporarily locked',
@@ -24,9 +24,9 @@ describe('classifyLoginError', () => {
     expect(result.message).toContain('Usuário ou senha inválidos');
   });
 
-  it('detecta KeycloakUnavailable para erros de rede', () => {
+  it('detecta OidcProviderUnavailable para erros de rede', () => {
     const result = classifyLoginError(new Error('Failed to fetch'));
-    expect(result.code).toBe(LoginErrorCode.KeycloakUnavailable);
+    expect(result.code).toBe(LoginErrorCode.OidcProviderUnavailable);
   });
 
   it('detecta AccessDenied quando o usuário cancela o fluxo', () => {

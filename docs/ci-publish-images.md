@@ -50,7 +50,7 @@ imediatamente, sem consumir cache de build.
 - `server_tokens off` para esconder versão do nginx.
 - Headers de segurança: HSTS, X-Frame-Options, X-Content-Type-Options,
   X-XSS-Protection, Referrer-Policy, Permissions-Policy, Content-Security-Policy.
-- `connect-src *` na CSP é necessário porque a URL real de Keycloak e API
+- `connect-src *` na CSP é necessário porque a URL real do provedor OIDC e da API
   vem do `ConfigMap` em runtime ([#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84)),
   não embutida na imagem (invariante da [ADR-0020](adrs/0020-registry-ghcr-e-tagging.md)).
 
@@ -63,7 +63,7 @@ Antes de publicar a tag, o workflow executa:
    de 15s; valida resposta `200` com body `{"status":"ok"}`.
 
 Falha em qualquer dos checks aborta o publish — a tag não fica visível no
-GHCR. Smoke runtime do Angular (com runtime config real, Keycloak, API)
+GHCR. Smoke runtime do Angular (com runtime config real, provedor OIDC, API)
 acontece no compose local ou em Helm/ArgoCD pós-publish.
 
 ## Pull público
