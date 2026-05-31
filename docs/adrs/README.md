@@ -34,9 +34,9 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0003](0003-nx-como-build-system-do-monorepo-frontend.md) | Nx como build system do monorepo frontend | accepted | 2026-05-01 |
 | [0004](0004-vitest-como-framework-de-testes-unitarios.md) | Vitest como framework de testes unitários | accepted | 2026-05-01 |
 | [0005](0005-manter-zonejs-no-angular-21.md) | Manter Zone.js no Angular 21 | accepted | 2026-05-01 |
-| [0006](0006-govbr-design-system-como-contrato-visual.md) | Adoção do Gov.br Design System como contrato visual | accepted | 2026-05-01 |
-| [0007](0007-primeng-em-modo-unstyled.md) | PrimeNG em modo unstyled como component library | accepted | 2026-05-01 |
-| [0008](0008-tailwind-css-4-com-tokens-govbr.md) | Tailwind CSS 4 com tokens Gov.br via `@theme` | accepted | 2026-05-01 |
+| [0006](0006-govbr-design-system-como-contrato-visual.md) | Adoção do Gov.br Design System como contrato visual | superseded by ADR-0023 | 2026-05-01 |
+| [0007](0007-primeng-em-modo-unstyled.md) | PrimeNG em modo unstyled como component library | superseded by ADR-0023 | 2026-05-01 |
+| [0008](0008-tailwind-css-4-com-tokens-govbr.md) | Tailwind CSS 4 com tokens Gov.br via `@theme` | superseded by ADR-0023 | 2026-05-01 |
 | [0009](0009-keycloak-como-identity-provider-oidc.md) | Keycloak como identity provider OIDC do `uniplus-web` | accepted | 2026-05-01 |
 | [0010](0010-opentelemetry-para-instrumentacao-frontend.md) | OpenTelemetry para instrumentação do `uniplus-web` (RUM) | accepted | 2026-05-01 |
 | [0011](0011-consumer-adapter-api-result.md) | Consumer adapter `ApiResult<T>` em nova lib `libs/shared-http` | superseded by ADR-0012 | 2026-05-03 |
@@ -47,10 +47,11 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0016](0016-vendor-mime-consumer-via-http-context.md) | Vendor MIME consumer via `HttpContext` — `withVendorMime` declara o recurso e o `apiResultInterceptor` anexa `Accept` | accepted | 2026-05-06 |
 | [0017](0017-pattern-feature-page-container-presentational.md) | Páginas de feature no padrão container/presentational — `XxxPage` smart + `ui-*` dumb | accepted | 2026-05-06 |
 | [0018](0018-adocao-httpresource-via-wrapper-use-api-resource.md) | Adoção de `httpResource` Angular 21 via wrapper `useApiResource` em `shared-core` | accepted | 2026-05-07 |
-| [0019](0019-tokens-govbr-compartilhados-em-shared-ui.md) | Tokens Gov.br compartilhados em `libs/shared-ui/src/styles/govbr-tokens.css` + migração Tailwind 3→4 cross-app | accepted | 2026-05-07 |
+| [0019](0019-tokens-govbr-compartilhados-em-shared-ui.md) | Tokens Gov.br compartilhados em `libs/shared-ui/src/styles/govbr-tokens.css` + migração Tailwind 3→4 cross-app | superseded by ADR-0023 | 2026-05-07 |
 | [0020](0020-registry-ghcr-e-tagging.md) | GitHub Container Registry e estratégia de tagging das imagens da `uniplus-web` | accepted | 2026-05-08 |
 | [0021](0021-runtime-config-via-token.md) | Runtime config via `AUTH_CONFIG` InjectionToken + fitness cross-app | accepted | 2026-05-09 |
 | [0022](0022-retirada-poc-primeng-do-workspace-ativo.md) | Retirada da POC `poc-primeng` do workspace Nx ativo | accepted | 2026-05-09 |
+| [0023](0023-uniplus-ds-como-contrato-visual-vigente.md) | Uni+ DS como contrato visual vigente | accepted | 2026-05-30 |
 
 ## Como adicionar um novo ADR
 

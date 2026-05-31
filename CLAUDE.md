@@ -8,8 +8,8 @@ Frontend do Uni+ (S2U) (UniPlus) da Unifesspa. Monorepo Nx com 3 aplicacoes Angu
 
 - **Angular** 21.x (standalone components, signals, OnPush)
 - **Nx** 22.x (monorepo, affected, caching)
-- **PrimeNG** 21.x (modo unstyled + PassThrough com tokens Gov.br)
-- **@govbr-ds/core** 3.7.x (design tokens CSS — sem JS)
+- **Uni+ DS** CSS-only (tokens semanticos, temas e anatomia HTML)
+- **PrimeNG** 21.x (uso legado/complexo encapsulado quando necessário)
 - **Tailwind CSS** 4.x (estilização utility-first com @theme)
 - **Keycloak** (autenticação via keycloak-angular)
 - **Playwright** (testes E2E)
@@ -37,41 +37,43 @@ docs/referencias/
   poc-primeng-e2e/→ Suíte E2E histórica da POC (read-only, fora do workspace Nx) — ADR-0022
 ```
 
-## Estratégia de UI — PrimeNG unstyled + Gov.br Design System
+## Estratégia de UI — Uni+ DS CSS-only + wrappers Angular
 
-Estratégia validada pela POC histórica (`docs/referencias/poc-primeng/`) e operacionalizada nos 3 apps de produção pela ADR-0019 (foundation D.1 + cutover Tailwind 4 D.2/D.3). Obrigatória para todos os componentes do sistema. A POC saiu do workspace ativo após convergência (ADR-0022) — a foundation canônica é `libs/shared-ui/src/styles/govbr-tokens.css`.
+Estratégia vigente registrada na ADR-0023. O `uniplus-ds` é a fonte canonica CSS-only para tokens, temas, anatomia HTML, ARIA, foco e responsividade. O `uniplus-web` implementa wrappers Angular em `libs/shared-ui` sem criar um design system paralelo.
 
 ### Arquitetura de estilização
 
 ```
-foundation Gov.br (libs/shared-ui/src/styles/govbr-tokens.css → :root)
-  → Tailwind 4 @theme inline (utilities bg-govbr-*, text-govbr-*, …)
-  → PrimeNG PassThrough (classes por slot)
+uniplus-ds CSS-only
+  → libs/shared-ui/src/styles/{tokens,base,components}.css
+  → Tailwind 4 @theme inline (tokens semanticos)
+  → componentes Angular ui-* importados por @uniplus/shared-ui
 ```
 
-1. Tokens Gov.br declarados em `libs/shared-ui/src/styles/govbr-tokens.css` (45 tokens em `:root`, fonte única — ADR-0019).
-2. Apps importam a foundation no `styles.css` e mapeiam via `@theme inline` Tailwind 4 (`bg-govbr-primary`, `text-govbr-danger`, …).
-3. PrimeNG em **modo unstyled** — estilos aplicados via objeto `govbrPassThrough` que define classes Tailwind para cada slot de cada componente.
-4. Focus ring customizado: overlay `<span>` com borda dourada tracejada (4px #c2850c), compatível com WCAG 2.1 AA.
+1. Apps importam `tokens.css`, `base.css` e `components.css` antes do Tailwind.
+2. `@theme inline` expõe tokens semânticos sem duplicar valores.
+3. Componentes `ui-*` consomem classes canonicas do DS (`btn`, `field`, `table-responsive`, `alert`, `tag`, etc.).
+4. Temas são controlados por `data-theme="auto|light|dark|contrast"` e `data-font-mode="legible"` no shell.
 
 ### Regras de estilização
 
-- **Sempre** usar PrimeNG em modo unstyled com PassThrough.
-- **Sempre** usar tokens Gov.br via classes Tailwind (`bg-govbr-*`, `text-govbr-*`, `rounded-govbr-*`).
+- **Sempre** usar tokens semanticos do Uni+ DS; nao usar paletas Tailwind genericas como API visual.
+- **Sempre** criar componentes `ui-*` standalone, OnPush e sem dependência de domínio.
+- **Nunca** expor classes CSS como API publica de componente.
 - **Nunca** importar temas PrimeNG (Aura, Lara, etc.).
-- **Nunca** usar cores hardcoded — sempre tokens.
-- **Nunca** sobrescrever focus ring nativo sem usar o overlay Gov.br.
-- **Nunca** redeclarar tokens Gov.br nos apps — a fonte única é `libs/shared-ui/src/styles/govbr-tokens.css`. Mudanças à paleta institucional são editadas lá e propagam aos 3 apps + POC.
+- **Preferir** HTML nativo e Angular CDK; PrimeNG só com ganho claro em comportamento complexo e encapsulado.
+- **Validar** 320 px, teclado, foco visivel, tema contraste, zoom 200% e ausência de overflow horizontal.
+- **Manter** imports TypeScript por `@uniplus/shared-*`. Imports CSS globais permanecem relativos até `shared-ui` ter exports CSS como pacote resolvivel pelo builder.
 
 ### Arquivos de referência
 
 | Arquivo | O que contém |
 |---------|-------------|
-| `libs/shared-ui/src/styles/govbr-tokens.css` | Foundation com 45 tokens Gov.br em `:root` (fonte única — ADR-0019) |
-| `apps/<app>/src/styles.css` | Tailwind 4 syntax + `@source` + `@theme inline` apontando para foundation (3 apps de produção convergidos pela D.3) |
-| `docs/referencias/poc-primeng/src/styles.css` | POC histórica (read-only) — `@theme {...}` direto (sem foundation), serve como exemplo de PrimeNG unstyled puro |
-| `docs/referencias/poc-primeng/src/main.ts` | POC histórica (read-only) — configuração PrimeNG unstyled + `govbrPassThrough` + focus ring overlay |
-| `docs/referencias/poc-primeng-e2e/src/` | POC histórica (read-only) — suíte E2E `govbr-design-tokens.spec.ts` (46 testes) + `keyboard-a11y.spec.ts` (17 testes) |
+| `libs/shared-ui/src/styles/tokens.css` | Tokens semanticos do Uni+ DS |
+| `libs/shared-ui/src/styles/base.css` | Reset, tipografia, foco, skip link e utilitarios base |
+| `libs/shared-ui/src/styles/components.css` | Classes canonicas de componentes CSS-only |
+| `apps/<app>/src/styles.css` | Imports da foundation + `@source` + `@theme inline` |
+| `docs/referencias/poc-primeng/` | POC historica read-only; nao governa novas implementacoes |
 
 ## Path aliases
 

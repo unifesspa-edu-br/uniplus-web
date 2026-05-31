@@ -1,5 +1,5 @@
 ---
-status: "accepted"
+status: "superseded by ADR-0023"
 date: "2026-05-01"
 decision-makers:
   - "Tech Lead (CTIC)"

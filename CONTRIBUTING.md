@@ -66,7 +66,7 @@ apps/
   portal-e2e/
 
 libs/
-  shared-ui/              → Componentes PrimeNG reutilizáveis
+  shared-ui/              → Wrappers Angular reutilizáveis do Uni+ DS
     src/lib/
       components/         → Botões, tabelas, modais, formulários
       directives/
@@ -107,7 +107,7 @@ libs/
 |---|---|
 | `@uniplus/shared-core` | Infra HTTP Angular: `LoadingService`, `NotificationService`, `ProblemI18nService`, `ApiResultInterceptor`, `HttpContext` tokens (vendor MIME, idempotency), `useApiResource`, `parseLink`, paginação cursor |
 | `@uniplus/shared-data` | DTOs, `schema.ts` gerado por OpenAPI, classes de serviço, `InjectionToken` de base paths, `ValidatorFn` de domínio (CPF, cota), runtime config (`provideRuntimeConfig`), utilidades puras de dados |
-| `@uniplus/shared-ui` | Componentes Angular standalone, pipes, integração de tokens Gov.br DS, recipe PrimeNG passthrough |
+| `@uniplus/shared-ui` | Componentes Angular standalone, pipes, shells e wrappers do Uni+ DS CSS-only; PrimeNG apenas quando encapsulado e justificado |
 | `@uniplus/shared-auth` | Integração Keycloak/OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
 | `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
 
@@ -234,11 +234,11 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 | `selecao` | App Seleção (`apps/selecao/`) |
 | `ingresso` | App Ingresso (`apps/ingresso/`) |
 | `portal` | App Portal público (`apps/portal/`) |
-| `shared-ui` | Componentes reutilizáveis PrimeNG (`libs/shared-ui/`) |
+| `shared-ui` | Componentes reutilizáveis do Uni+ DS (`libs/shared-ui/`) |
 | `shared-data` | API clients, DTOs, utilitários (`libs/shared-data/`) |
 | `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
-| `govbr` | Tokens Gov.br DS, mapeamento CSS → Tailwind @theme |
-| `primeng` | PassThrough, configuração PrimeNG unstyled |
+| `ds` | Tokens, foundation e mapeamento CSS do Uni+ DS |
+| `primeng` | Uso legado/complexo de PrimeNG encapsulado em `ui-*` |
 | `auth` | Keycloak, `libs/shared-auth/` (guards, interceptor, tokens) |
 | `nx` | Configuração Nx (workspace, targets, caching, affected) |
 | `ci` | GitHub Actions, workflows, pipeline |
@@ -246,17 +246,17 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 | `deps` | Atualização de pacotes npm |
 | `e2e` | Testes E2E Playwright (`apps/*-e2e/`) |
 
-Para o Nx monorepo, prefira o nome da **app** ou **lib** afetada. Mudanças transversais (ex.: tokens Gov.br, estilo global) usam `govbr` ou `shared-ui`.
+Para o Nx monorepo, prefira o nome da **app** ou **lib** afetada. Mudanças transversais de tokens ou estilo global usam `ds` ou `shared-ui`.
 
 **Alguns exemplos canônicos:**
 
 ```
 feat(selecao): adiciona formulário de inscrição multi-etapa
 fix(auth): corrige refresh token expirado sem redirect
-refactor(shared-ui): extrai componente InputCpf para lib compartilhada
-style(govbr): ajusta tokens de espaçamento para e-MAG 3.1
+refactor(shared-ui): extrai componente input cpf para lib compartilhada
+style(ds): ajusta tokens de espaçamento do Uni+ DS
 test(e2e): adiciona testes do fluxo de inscrição no portal
-chore(deps): atualiza PrimeNG para 21.x
+chore(deps): atualiza dependências Angular
 ```
 
 Para uma bateria completa de exemplos (bons e ruins, com justificativas), consulte [Guia § 4](https://github.com/unifesspa-edu-br/uniplus-docs/blob/main/docs/guia-commits-e-integracao.md).
