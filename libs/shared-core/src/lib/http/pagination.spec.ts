@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createCursor, cursorToString, extractNextCursor } from './pagination';
 
+function extractRequiredNextCursor(linkHeader: string): string {
+  const next = extractNextCursor(linkHeader);
+  if (next === null) {
+    throw new Error(`Esperava cursor no Link header: ${linkHeader}`);
+  }
+  return cursorToString(next);
+}
+
 describe('Cursor branded type (ADR-0015)', () => {
   it('createCursor wraps string como Cursor compatível com string em runtime', () => {
     const cursor = createCursor('opaco-token-123');
@@ -27,40 +35,33 @@ describe('extractNextCursor — header Link → próximo cursor opaco', () => {
   describe('caminhos felizes', () => {
     it('rel="next" com cursor= no query string retorna Cursor', () => {
       const linkHeader = '<https://api.uniplus.unifesspa.edu.br/api/editais?cursor=ABC123>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(next).not.toBeNull();
-      expect(cursorToString(next!)).toBe('ABC123');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('ABC123');
     });
 
     it('extrai cursor de URI com múltiplos query params (cursor não é o primeiro)', () => {
       const linkHeader = '<https://api/x?status=open&limit=20&cursor=DEF456>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(cursorToString(next!)).toBe('DEF456');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('DEF456');
     });
 
     it('extrai cursor de URI com cursor como primeiro param', () => {
       const linkHeader = '<https://api/x?cursor=GHI789&limit=20>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(cursorToString(next!)).toBe('GHI789');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('GHI789');
     });
 
     it('decodifica percent-encoding do valor do cursor', () => {
       const linkHeader = '<https://api/x?cursor=abc%3Ddef%3D>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(cursorToString(next!)).toBe('abc=def=');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('abc=def=');
     });
 
     it('preserva URI relativa quando servidor não emite host (RFC 5988 §5.4)', () => {
       const linkHeader = '</api/editais?cursor=REL>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(cursorToString(next!)).toBe('REL');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('REL');
     });
 
     it('rel="self" + rel="next": extrai apenas o de next', () => {
       const linkHeader =
         '<https://api/x?cursor=SELF>; rel="self", <https://api/x?cursor=NEXT>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(cursorToString(next!)).toBe('NEXT');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('NEXT');
     });
   });
 
@@ -114,8 +115,7 @@ describe('extractNextCursor — header Link → próximo cursor opaco', () => {
 
     it('ignora hash fragment na URI (#...)', () => {
       const linkHeader = '<https://api/x?cursor=ABC#section>; rel="next"';
-      const next = extractNextCursor(linkHeader);
-      expect(cursorToString(next!)).toBe('ABC');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('ABC');
     });
   });
 });
