@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
-import type { Cursor } from '@uniplus/shared-core';
+import type { Cursor } from '@uniplus/shared-core/http';
 
 export interface UiDataTableColumn {
   field: string;
@@ -44,10 +44,7 @@ export interface UiDataTableColumn {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="table-responsive">
-      <table
-        role="grid"
-        [attr.aria-busy]="isLoading() ? 'true' : null"
-      >
+      <table role="grid" [attr.aria-busy]="isLoading() ? 'true' : null">
         <thead>
           <tr>
             @for (col of columns(); track col.field) {
@@ -72,7 +69,9 @@ export interface UiDataTableColumn {
               >
                 <div class="empty-state empty-state--error">
                   <div class="empty-state__icon" aria-hidden="true">!</div>
-                  <p class="empty-state__title" data-testid="data-table-error-message">{{ errorMessage() }}</p>
+                  <p class="empty-state__title" data-testid="data-table-error-message">
+                    {{ errorMessage() }}
+                  </p>
                   <div class="page-header__actions">
                     <button
                       type="button"
@@ -85,10 +84,9 @@ export interface UiDataTableColumn {
                     @if (mostrarReporteDeIncidente()) {
                       <span class="u-caption" data-testid="data-table-error-trace">
                         {{ reportIncidentLabel() }}
-                        <code
-                          class="ui-code"
-                          data-testid="data-table-error-trace-id"
-                        >{{ errorTraceId() }}</code>
+                        <code class="ui-code" data-testid="data-table-error-trace-id">{{
+                          errorTraceId()
+                        }}</code>
                       </span>
                     }
                   </div>
@@ -146,21 +144,18 @@ export interface UiDataTableColumn {
     </div>
 
     @if (mostrarBannerDeErro()) {
-      <div
-        class="alert alert--danger"
-        role="alert"
-        data-testid="data-table-error-banner"
-      >
+      <div class="alert alert--danger" role="alert" data-testid="data-table-error-banner">
         <span class="alert__icon" aria-hidden="true">!</span>
         <div class="alert__body">
-          <p class="alert__title" data-testid="data-table-error-banner-message">{{ errorMessage() }}</p>
+          <p class="alert__title" data-testid="data-table-error-banner-message">
+            {{ errorMessage() }}
+          </p>
           @if (mostrarReporteDeIncidente()) {
             <p class="alert__msg" data-testid="data-table-error-banner-trace">
               {{ reportIncidentLabel() }}
-              <code
-                class="ui-code"
-                data-testid="data-table-error-banner-trace-id"
-              >{{ errorTraceId() }}</code>
+              <code class="ui-code" data-testid="data-table-error-banner-trace-id">{{
+                errorTraceId()
+              }}</code>
             </p>
           }
         </div>
@@ -241,13 +236,10 @@ export class DataTableComponent {
     () => this.errorMessage() !== null && this.records().length > 0,
   );
   protected readonly mostrarLoadingInicial = computed(
-    () =>
-      this.isLoading() && this.errorMessage() === null && this.records().length === 0,
+    () => this.isLoading() && this.errorMessage() === null && this.records().length === 0,
   );
   /** Botão segue disponível mesmo em erro pós-1ª página, para permitir retry. */
-  protected readonly mostrarBotaoCarregarMais = computed(
-    () => this.nextCursor() !== null,
-  );
+  protected readonly mostrarBotaoCarregarMais = computed(() => this.nextCursor() !== null);
   /** Renderiza link "Reportar incidente" apenas quando há trace context não-vazio. */
   protected readonly mostrarReporteDeIncidente = computed(() => {
     const traceId = this.errorTraceId();

@@ -12,25 +12,21 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {
-  NotificationService,
   ProblemI18nService,
   idempotencyKey,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
-} from '@uniplus/shared-core';
-import {
-  EditaisApi,
-  EditalDto,
-  SELECAO_BASE_PATH,
-} from '@uniplus/shared-data';
+} from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import { EditaisApi, EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
   CardComponent,
   ConfirmDialogComponent,
   PageHeaderComponent,
   SpinnerComponent,
-} from '@uniplus/shared-ui';
+} from '@uniplus/shared-ui/components';
 
 /**
  * Container (ADR-0017) da feature Editais — detalhe + ação Publicar.
@@ -71,13 +67,8 @@ import {
     SpinnerComponent,
   ],
   template: `
-    <ui-page-header
-      heading="Detalhes do edital"
-      [description]="editalDescription()"
-    >
-      <a uiPageActions routerLink="/editais" class="btn btn--tertiary">
-        Voltar para lista
-      </a>
+    <ui-page-header heading="Detalhes do edital" [description]="editalDescription()">
+      <a uiPageActions routerLink="/editais" class="btn btn--tertiary"> Voltar para lista </a>
     </ui-page-header>
 
     @if (errorMessage(); as msg) {

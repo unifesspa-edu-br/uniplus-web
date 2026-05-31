@@ -2,12 +2,11 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
-import { loadingInterceptor } from '@uniplus/shared-core/interceptors/loading.interceptor';
-import { apiResultInterceptor } from '@uniplus/shared-core/http/api-result.interceptor';
+import { loadingInterceptor } from '@uniplus/shared-core/interceptors';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { provideRuntimeConfig } from '@uniplus/shared-data/config';
-import { authErrorInterceptor } from '@uniplus/shared-auth/interceptors/auth-error.interceptor';
-import { tokenInterceptor } from '@uniplus/shared-auth/interceptors/token.interceptor';
-import { provideAuth } from '@uniplus/shared-auth/providers/auth.provider';
+import { authErrorInterceptor, tokenInterceptor } from '@uniplus/shared-auth/interceptors';
+import { provideAuth } from '@uniplus/shared-auth/bootstrap';
 
 export const appConfig: ApplicationConfig = {
   providers: [

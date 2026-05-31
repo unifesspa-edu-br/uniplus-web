@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'ing-convocacoes',
@@ -9,7 +9,10 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-page-header heading="Convocações" description="Convocação de candidatos aprovados." />
-    <ui-empty-state heading="Nenhuma convocação emitida" description="As convocações publicadas serão exibidas nesta tela." />
+    <ui-empty-state
+      heading="Nenhuma convocação emitida"
+      description="As convocações publicadas serão exibidas nesta tela."
+    />
     <router-outlet />
   `,
 })

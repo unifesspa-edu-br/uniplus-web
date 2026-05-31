@@ -1,16 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import {
-  ApiResult,
-  apiResultInterceptor,
-  ProblemDetails,
-} from '@uniplus/shared-core';
+import { ApiResult, apiResultInterceptor, ProblemDetails } from '@uniplus/shared-core/http';
 import { authErrorInterceptor } from './auth-error.interceptor';
 import { AuthService } from '../services/auth.service';
 
@@ -36,9 +29,7 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
         // A ordem aqui replica a registrada nos apps:
         // authErrorInterceptor é mais externo que apiResultInterceptor,
         // portanto recebe o HttpResponse já envelopado pelo apiResult.
-        provideHttpClient(
-          withInterceptors([authErrorInterceptor, apiResultInterceptor]),
-        ),
+        provideHttpClient(withInterceptors([authErrorInterceptor, apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: AuthService, useValue: authServiceMock },
         { provide: Router, useValue: routerMock },
@@ -73,10 +64,12 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     const { http, httpMock, login, navigate } = setup();
 
     const promise = firstValueFrom(http.get<ApiResult<unknown>>('/api/admin'));
-    httpMock.expectOne('/api/admin').flush(
-      { ...baseProblem, code: 'uniplus.auth.forbidden', status: 403, title: 'Acesso negado' },
-      { status: 403, statusText: 'Forbidden', headers: PROBLEM_HEADERS },
-    );
+    httpMock
+      .expectOne('/api/admin')
+      .flush(
+        { ...baseProblem, code: 'uniplus.auth.forbidden', status: 403, title: 'Acesso negado' },
+        { status: 403, statusText: 'Forbidden', headers: PROBLEM_HEADERS },
+      );
 
     const result = await promise;
     expect(result.ok).toBe(false);
@@ -91,20 +84,23 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
 
     for (const status of [500, 404]) {
       const promise = firstValueFrom(http.get<ApiResult<unknown>>(`/api/x${status}`));
-      httpMock
-        .expectOne(`/api/x${status}`)
-        .flush({ ...baseProblem, status, code: `uniplus.test.${status}` }, {
+      httpMock.expectOne(`/api/x${status}`).flush(
+        { ...baseProblem, status, code: `uniplus.test.${status}` },
+        {
           status,
           statusText: 'error',
           headers: PROBLEM_HEADERS,
-        });
+        },
+      );
       const result = await promise;
       expect(result.ok).toBe(false);
       expect(result.status).toBe(status);
     }
 
     const promise0 = firstValueFrom(http.get<ApiResult<unknown>>('/api/x0'));
-    httpMock.expectOne('/api/x0').error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown' });
+    httpMock
+      .expectOne('/api/x0')
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown' });
     const result0 = await promise0;
     expect(result0.ok).toBe(false);
     expect(result0.status).toBe(0);

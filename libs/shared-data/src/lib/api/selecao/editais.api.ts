@@ -1,9 +1,4 @@
-import {
-  HttpClient,
-  HttpContext,
-  HttpHeaders,
-  HttpParams,
-} from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
@@ -12,7 +7,7 @@ import {
   IDEMPOTENCY_KEY_TOKEN,
   cursorToString,
   withVendorMime,
-} from '@uniplus/shared-core';
+} from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -67,10 +62,10 @@ export class EditaisApi {
     if (limit !== undefined) {
       params = params.set('limit', String(limit));
     }
-    return this.http.get<ApiResult<readonly EditalDto[]>>(
-      `${this.basePath}/api/editais`,
-      { context: withVendorMime('edital', 1), params },
-    );
+    return this.http.get<ApiResult<readonly EditalDto[]>>(`${this.basePath}/api/editais`, {
+      context: withVendorMime('edital', 1),
+      params,
+    });
   }
 
   /** GET `/api/editais/{id}` — detalhe de um edital. */
@@ -101,18 +96,11 @@ export class EditaisApi {
    * JSON parse error em sucesso legítimo. Forçar JSON garante que o body
    * chega como `string` JSON-decodificada.
    */
-  criar(
-    command: CriarEditalCommand,
-    context: HttpContext,
-  ): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(
-      `${this.basePath}/api/editais`,
-      command,
-      {
-        context,
-        headers: new HttpHeaders({ Accept: 'application/json' }),
-      },
-    );
+  criar(command: CriarEditalCommand, context: HttpContext): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(`${this.basePath}/api/editais`, command, {
+      context,
+      headers: new HttpHeaders({ Accept: 'application/json' }),
+    });
   }
 
   /**
@@ -130,10 +118,7 @@ export class EditaisApi {
    */
   publicar(id: string, context: HttpContext): Observable<ApiResult<void>> {
     const idempotencyKeyValue = context.get(IDEMPOTENCY_KEY_TOKEN);
-    const ctxComposto = withVendorMime('edital', 1).set(
-      IDEMPOTENCY_KEY_TOKEN,
-      idempotencyKeyValue,
-    );
+    const ctxComposto = withVendorMime('edital', 1).set(IDEMPOTENCY_KEY_TOKEN, idempotencyKeyValue);
     return this.http.post<ApiResult<void>>(
       `${this.basePath}/api/editais/${encodeURIComponent(id)}/publicar`,
       null,

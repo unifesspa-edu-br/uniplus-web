@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components/user-header-info.component';
-import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/components/app-shell/app-shell';
+import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
+import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell';
 
 @Component({
   selector: 'ing-layout',

@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'ptl-recursos',
@@ -9,7 +9,10 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-page-header heading="Recursos" description="Interposição de recursos administrativos." />
-    <ui-empty-state heading="Nenhum recurso disponível" description="Prazos e solicitações de recurso aparecerão nesta tela." />
+    <ui-empty-state
+      heading="Nenhum recurso disponível"
+      description="Prazos e solicitações de recurso aparecerão nesta tela."
+    />
     <router-outlet />
   `,
 })

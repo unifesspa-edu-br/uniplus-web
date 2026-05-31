@@ -1,13 +1,10 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiResultInterceptor } from '@uniplus/shared-core';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { EditaisCreatePage } from './editais-create.page';
 
 const BASE = 'http://localhost:5000';
@@ -107,7 +104,11 @@ describe('EditaisCreatePage', () => {
           { field: 'numeroEdital', code: 'GreaterThan', message: 'Número deve ser positivo.' },
         ],
       },
-      { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
 
     expect(component.submitting()).toBe(false);
@@ -135,7 +136,11 @@ describe('EditaisCreatePage', () => {
         traceId: 'tx',
         errors: [{ field: 'campo_inexistente', code: 'X', message: 'Y' }],
       },
-      { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
 
     expect(component.errorMessage()).toContain('Não foi possível mapear');
@@ -153,7 +158,11 @@ describe('EditaisCreatePage', () => {
         code: 'uniplus.selecao.edital.duplicado',
         traceId: 'tx2',
       },
-      { status: 409, statusText: 'Conflict', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
 
     expect(component.errorMessage()).toBe('Edital já existente');
@@ -174,7 +183,11 @@ describe('EditaisCreatePage', () => {
         traceId: 'tx',
         errors: [{ field: 'titulo', code: 'NotEmpty', message: 'Título é obrigatório.' }],
       },
-      { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
 
     expect(component.form.controls.titulo.errors).toMatchObject({
@@ -210,7 +223,11 @@ describe('EditaisCreatePage', () => {
         code: 'uniplus.selecao.edital.duplicado',
         traceId: 'tx',
       },
-      { status: 409, statusText: 'Conflict', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
 
     expect(component.idempotencyKeyAtual()).toBe(keyOriginal);
@@ -240,11 +257,15 @@ describe('EditaisCreatePage', () => {
   // tipoProcesso/numeroEdital/anoEdital sairiam no body como string e o
   // backend retornaria 400 (issue #374, validado via Playwright real).
   it('submit via DOM (NumberValueAccessor): body envia campos numericos como number, nao string', () => {
-    const numericInputs = fixture.nativeElement.querySelectorAll('input[type="number"]') as NodeListOf<HTMLInputElement>;
+    const numericInputs = fixture.nativeElement.querySelectorAll(
+      'input[type="number"]',
+    ) as NodeListOf<HTMLInputElement>;
     expect(numericInputs.length).toBe(4);
 
     const [numeroEditalInput, anoEditalInput, tipoProcessoInput, maximoOpcoesInput] = numericInputs;
-    const tituloInput = fixture.nativeElement.querySelector('input[type="text"]') as HTMLInputElement;
+    const tituloInput = fixture.nativeElement.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
 
     numeroEditalInput.value = '42';
     numeroEditalInput.dispatchEvent(new Event('input'));

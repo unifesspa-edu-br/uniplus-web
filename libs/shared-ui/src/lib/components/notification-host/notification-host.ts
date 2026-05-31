@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NotificationService,
-  NotificationType,
-} from '@uniplus/shared-core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NotificationService, NotificationType } from '@uniplus/shared-core/notifications';
 
 /**
  * Apresentacional (ADR-0017): renderiza a fila de toasts mantida pelo
@@ -40,11 +31,7 @@ import {
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section
-      class="toast-stack"
-      role="region"
-      aria-label="Notificações do sistema"
-    >
+    <section class="toast-stack" role="region" aria-label="Notificações do sistema">
       <div class="toast-region">
         @for (notification of notifications(); track notification.id) {
           <article
@@ -60,9 +47,13 @@ import {
           >
             <span class="toast__icon" aria-hidden="true">{{ iconFor(notification.type) }}</span>
             <div class="toast__body">
-              <p class="toast__title" data-testid="notification-host-title">{{ notification.title }}</p>
+              <p class="toast__title" data-testid="notification-host-title">
+                {{ notification.title }}
+              </p>
               @if (notification.detail) {
-                <p class="toast__msg" data-testid="notification-host-detail">{{ notification.detail }}</p>
+                <p class="toast__msg" data-testid="notification-host-detail">
+                  {{ notification.detail }}
+                </p>
               }
               @if (notification.traceId) {
                 <div class="ui-toast-trace" data-testid="notification-host-trace-block">
@@ -108,9 +99,7 @@ export class NotificationHostComponent {
   protected readonly copyLabel = 'Copiar';
   protected readonly copiedLabel = 'Copiado!';
 
-  protected readonly hasNotifications = computed(
-    () => this.notifications().length > 0,
-  );
+  protected readonly hasNotifications = computed(() => this.notifications().length > 0);
 
   protected dispensar(id: number): void {
     this.service.dismiss(id);
@@ -161,5 +150,4 @@ export class NotificationHostComponent {
   protected copyTraceLabelFor(traceId: string): string {
     return `Copiar ID de rastreamento ${traceId}`;
   }
-
 }

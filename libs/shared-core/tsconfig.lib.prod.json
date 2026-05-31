@@ -1,7 +1,10 @@
 {
   "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "declarationMap": false
+    "declarationMap": false,
+    "paths": {
+      "@uniplus/shared-core/http": ["dist/libs/shared-core/http"]
+    }
   },
   "angularCompilerOptions": {}
 }

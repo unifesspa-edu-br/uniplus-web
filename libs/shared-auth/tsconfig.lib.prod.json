@@ -3,7 +3,10 @@
   "compilerOptions": {
     "declarationMap": false,
     "paths": {
-      "@uniplus/shared-core": ["dist/libs/shared-core"]
+      "@uniplus/shared-auth/bootstrap": ["dist/libs/shared-auth/bootstrap"],
+      "@uniplus/shared-core": ["dist/libs/shared-core"],
+      "@uniplus/shared-core/dom": ["dist/libs/shared-core/dom"],
+      "@uniplus/shared-core/http": ["dist/libs/shared-core/http"]
     }
   },
   "angularCompilerOptions": {}

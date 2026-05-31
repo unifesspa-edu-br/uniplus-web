@@ -4,7 +4,11 @@
     "declarationMap": false,
     "paths": {
       "@uniplus/shared-auth": ["dist/libs/shared-auth"],
-      "@uniplus/shared-core": ["dist/libs/shared-core"]
+      "@uniplus/shared-auth/bootstrap": ["dist/libs/shared-auth/bootstrap"],
+      "@uniplus/shared-core": ["dist/libs/shared-core"],
+      "@uniplus/shared-core/http": ["dist/libs/shared-core/http"],
+      "@uniplus/shared-data/ingresso": ["dist/libs/shared-data/ingresso"],
+      "@uniplus/shared-data/selecao": ["dist/libs/shared-data/selecao"]
     }
   },
   "angularCompilerOptions": {}

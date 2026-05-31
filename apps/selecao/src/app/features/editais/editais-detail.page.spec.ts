@@ -1,15 +1,12 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiResultInterceptor } from '@uniplus/shared-core';
-import { EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { EditaisDetailPage } from './editais-detail.page';
 
 const BASE = 'http://localhost:5000';
@@ -92,7 +89,11 @@ describe('EditaisDetailPage', () => {
         code: 'uniplus.selecao.edital.nao_encontrado',
         traceId: 'tx',
       },
-      { status: 404, statusText: 'Not Found', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
     await propagate();
 
@@ -188,7 +189,11 @@ describe('EditaisDetailPage', () => {
         code: 'uniplus.selecao.edital.ja_publicado',
         traceId: 'tx',
       },
-      { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
     );
     await propagate();
 
@@ -263,9 +268,7 @@ describe('EditaisDetailPage', () => {
       .flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    controller
-      .expectOne(`${BASE}/api/editais/${ID}`)
-      .flush(editalSeed({ status: 'Publicado' }));
+    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
     await propagate();
 
     expect(component.submitting()).toBe(false);
@@ -283,9 +286,7 @@ describe('EditaisDetailPage', () => {
       .expectOne(`${BASE}/api/editais/${ID}/publicar`)
       .flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
-    controller
-      .expectOne(`${BASE}/api/editais/${ID}`)
-      .flush(editalSeed({ status: 'Publicado' }));
+    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
     await propagate();
     expect(component.mensagemSucesso()).toBe('Edital publicado com sucesso.');
 

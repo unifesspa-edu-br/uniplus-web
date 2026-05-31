@@ -1,24 +1,21 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  NotificationService,
-  apiResultInterceptor,
-  buildVendorMimeAccept,
-} from '@uniplus/shared-core';
-import { EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data';
+import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import { EditalDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { EditaisListPage } from './editais-list.page';
 
 const BASE = 'http://localhost:5000';
 const ACCEPT = buildVendorMimeAccept('edital', 1);
 
-const editalSeed = (numero: string, id = `01960000-0000-7000-0000-0000000000${numero}`): EditalDto => ({
+const editalSeed = (
+  numero: string,
+  id = `01960000-0000-7000-0000-0000000000${numero}`,
+): EditalDto => ({
   id,
   numeroEdital: `0${numero}/2026`,
   titulo: `Edital ${numero}`,
@@ -102,7 +99,8 @@ describe('EditaisListPage', () => {
     component['aoCarregarMais'](cursorPagina2);
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.get('cursor') === 'cursor-pagina-2',
+      (request) =>
+        request.url === `${BASE}/api/editais` && request.params.get('cursor') === 'cursor-pagina-2',
     );
     req.flush([editalSeed('41'), editalSeed('42')], {
       headers: {
@@ -200,7 +198,8 @@ describe('EditaisListPage', () => {
     controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')]);
     fixture.detectChanges();
 
-    const heading = fixture.debugElement.query(By.css('h1.page-header__title')).nativeElement as HTMLElement;
+    const heading = fixture.debugElement.query(By.css('h1.page-header__title'))
+      .nativeElement as HTMLElement;
     expect(heading.textContent).toContain('Editais');
 
     const linhas = fixture.debugElement.queryAll(By.css('[data-testid="data-table-row"]'));

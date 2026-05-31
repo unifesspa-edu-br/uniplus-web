@@ -7,10 +7,10 @@ import { describe, expect, it } from 'vitest';
  *
  * Para cada app de produção (selecao, ingresso, portal), garante que:
  *
- * 1. `app.config.ts` importa `provideRuntimeConfig` de `@uniplus/shared-data`
- *    ou subpath direto.
- * 2. `app.config.ts` importa `provideAuth` de `@uniplus/shared-auth`
- *    ou subpath direto.
+ * 1. `app.config.ts` importa `provideRuntimeConfig` de
+ *    `@uniplus/shared-data/config`.
+ * 2. `app.config.ts` importa `provideAuth` de
+ *    `@uniplus/shared-auth/bootstrap`.
  * 3. `provideRuntimeConfig()` aparece **antes** de `provideAuth()` no
  *    array `providers` — ordem é binding (Angular respeita ordem dos
  *    `APP_INITIALIZER` conforme aparecem no array; runtime-config DEVE
@@ -29,15 +29,17 @@ const APPS = ['selecao', 'ingresso', 'portal'] as const;
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');
 
-function lerAppConfig(app: string): { conteudo: string; conteudoSemComentarios: string; relativo: string } {
+function lerAppConfig(app: string): {
+  conteudo: string;
+  conteudoSemComentarios: string;
+  relativo: string;
+} {
   const filePath = path.join(WORKSPACE_ROOT, 'apps', app, 'src/app/app.config.ts');
   const conteudo = fs.readFileSync(filePath, 'utf-8');
   // Strip comentários antes do indexOf de chamadas — caso contrário, menções
   // a `provideAuth()` em JSDoc/inline produzem falsos positivos na verificação
   // de ordem. Cobre `// linha`, `/* bloco */` e `/** JSDoc */`.
-  const conteudoSemComentarios = conteudo
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '');
+  const conteudoSemComentarios = conteudo.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   return {
     conteudo,
     conteudoSemComentarios,
@@ -49,16 +51,22 @@ describe('Fitness — apps app.config.ts (runtime config + auth, ADR-0021)', () 
   describe.each(APPS)('app: %s', (app) => {
     const { conteudo, conteudoSemComentarios, relativo } = lerAppConfig(app);
 
-    it('importa provideRuntimeConfig de @uniplus/shared-data ou subpath direto', () => {
-      const importou = /import\s+\{[^}]*\bprovideRuntimeConfig\b[^}]*\}\s+from\s+['"]@uniplus\/shared-data(?:\/[^'"]+)?['"]/.test(conteudo);
+    it('importa provideRuntimeConfig de @uniplus/shared-data/config', () => {
+      const importou =
+        /import\s+\{[^}]*\bprovideRuntimeConfig\b[^}]*\}\s+from\s+['"]@uniplus\/shared-data\/config['"]/.test(
+          conteudo,
+        );
       expect(
         importou,
         `\nArquivo: ${relativo}\nFalta importar provideRuntimeConfig — runtime-config.json não será carregado e AUTH_CONFIG/BASE_PATHs não terão factory.`,
       ).toBe(true);
     });
 
-    it('importa provideAuth de @uniplus/shared-auth ou subpath direto', () => {
-      const importou = /import\s+\{[^}]*\bprovideAuth\b[^}]*\}\s+from\s+['"]@uniplus\/shared-auth(?:\/[^'"]+)?['"]/.test(conteudo);
+    it('importa provideAuth de @uniplus/shared-auth/bootstrap', () => {
+      const importou =
+        /import\s+\{[^}]*\bprovideAuth\b[^}]*\}\s+from\s+['"]@uniplus\/shared-auth\/bootstrap['"]/.test(
+          conteudo,
+        );
       expect(
         importou,
         `\nArquivo: ${relativo}\nFalta importar provideAuth — provedor OIDC não será inicializado.`,
@@ -78,8 +86,14 @@ describe('Fitness — apps app.config.ts (runtime config + auth, ADR-0021)', () 
       const blocoProviders = conteudoSemComentarios.slice(inicioProviders);
       const indiceRuntime = blocoProviders.indexOf('provideRuntimeConfig(');
       const indiceAuth = blocoProviders.indexOf('provideAuth(');
-      expect(indiceRuntime, `\nArquivo: ${relativo}\nprovideRuntimeConfig() não chamado no array providers.`).toBeGreaterThan(-1);
-      expect(indiceAuth, `\nArquivo: ${relativo}\nprovideAuth() não chamado no array providers.`).toBeGreaterThan(-1);
+      expect(
+        indiceRuntime,
+        `\nArquivo: ${relativo}\nprovideRuntimeConfig() não chamado no array providers.`,
+      ).toBeGreaterThan(-1);
+      expect(
+        indiceAuth,
+        `\nArquivo: ${relativo}\nprovideAuth() não chamado no array providers.`,
+      ).toBeGreaterThan(-1);
       expect(
         indiceRuntime,
         `\nArquivo: ${relativo}\nOrdem incorreta no array providers: provideRuntimeConfig() DEVE aparecer antes de provideAuth() — caso contrário, AUTH_CONFIG não está populado quando AuthService.init é chamado.`,

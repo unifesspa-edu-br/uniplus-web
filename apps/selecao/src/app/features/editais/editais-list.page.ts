@@ -8,18 +8,14 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import {
-  Cursor,
-  NotificationService,
-  ProblemI18nService,
-  extractNextCursor,
-} from '@uniplus/shared-core';
-import { EditaisApi, EditalDto } from '@uniplus/shared-data';
+import { Cursor, ProblemI18nService, extractNextCursor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import { EditaisApi, EditalDto } from '@uniplus/shared-data/selecao';
 import {
   UiDataTableColumn,
   DataTableComponent,
   PageHeaderComponent,
-} from '@uniplus/shared-ui';
+} from '@uniplus/shared-ui/components';
 
 /**
  * Container (ADR-0017) da feature Editais — lista paginada por cursor opaco.
@@ -34,13 +30,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DataTableComponent, PageHeaderComponent, RouterLink],
   template: `
-    <ui-page-header
-      heading="Editais"
-      description="Gestão de editais de processos seletivos."
-    >
-      <a uiPageActions routerLink="novo" class="btn">
-        Novo edital
-      </a>
+    <ui-page-header heading="Editais" description="Gestão de editais de processos seletivos.">
+      <a uiPageActions routerLink="novo" class="btn"> Novo edital </a>
     </ui-page-header>
 
     <ui-data-table
@@ -75,9 +66,7 @@ export class EditaisListPage {
   /** Cursor preservado da última falha pós-1ª página, para o retry retomar do mesmo ponto. */
   private cursorUltimaFalha: Cursor | undefined = undefined;
 
-  protected readonly rows = computed(
-    () => this.editais() as readonly Record<string, unknown>[],
-  );
+  protected readonly rows = computed(() => this.editais() as readonly Record<string, unknown>[]);
 
   protected readonly colunas: UiDataTableColumn[] = [
     { field: 'numeroEdital', header: 'Número', width: '12rem', primary: true },
@@ -131,9 +120,7 @@ export class EditaisListPage {
         }
         const mensagem = this.problemI18n.resolve(result.problem).title;
         this.errorMessage.set(mensagem);
-        this.errorTraceId.set(
-          result.problem.traceId.length > 0 ? result.problem.traceId : null,
-        );
+        this.errorTraceId.set(result.problem.traceId.length > 0 ? result.problem.traceId : null);
         // 5xx vira toast persistente em paralelo ao banner local — usuário
         // pode copiar o `traceId` para reportar incidente sem precisar
         // navegar até a tabela. 4xx mantém apenas o banner inline.

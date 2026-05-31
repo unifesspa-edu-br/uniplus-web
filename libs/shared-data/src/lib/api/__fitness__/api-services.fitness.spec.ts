@@ -64,7 +64,11 @@ function listarApiFiles(root: string): string[] {
       // Skip the __fitness__ folder itself.
       if (entry.name === '__fitness__') continue;
       arquivos.push(...listarApiFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith('.api.ts') && !entry.name.endsWith('.spec.ts')) {
+    } else if (
+      entry.isFile() &&
+      entry.name.endsWith('.api.ts') &&
+      !entry.name.endsWith('.spec.ts')
+    ) {
       arquivos.push(fullPath);
     }
   }
@@ -87,7 +91,7 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
     // recorrente em fitness baseado em regex).
     const source = rawSource
       .replace(/\/\*[\s\S]*?\*\//g, '') // /* ... */ e /** ... */
-      .replace(/\/\/.*$/gm, '');         // // linha
+      .replace(/\/\/.*$/gm, ''); // // linha
 
     it('expõe classe @Injectable', () => {
       expect(source).toMatch(/@Injectable\(\{[^}]*providedIn:\s*'root'[^}]*\}\)/);
@@ -105,7 +109,10 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
 
       for (const line of lines) {
         // Linhas com `): Observable<` ou `): Promise<` em método public top-level.
-        const isMethodSignature = /^\s{2}(?!private|protected|static|constructor)\w+[^(]*\([^)]*\):\s*(Observable|Promise)</.test(line);
+        const isMethodSignature =
+          /^\s{2}(?!private|protected|static|constructor)\w+[^(]*\([^)]*\):\s*(Observable|Promise)</.test(
+            line,
+          );
         if (!isMethodSignature) continue;
 
         // Promise é proibido em service HTTP — toda chamada deve usar Observable
@@ -124,13 +131,13 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
       expect(violacoes).toEqual([] as string[]);
     });
 
-    it('importa withVendorMime DE @uniplus/shared-core (regex bind import-source ADR-0016/0028)', () => {
+    it('importa withVendorMime DE @uniplus/shared-core/http (regex bind import-source ADR-0016/0028)', () => {
       // Regex única que valida `withVendorMime` está na lista de imports de
-      // `@uniplus/shared-core` — proíbe falso negativo onde o service importa
+      // `@uniplus/shared-core/http` — proíbe falso negativo onde o service importa
       // ApiResult de shared-core mas withVendorMime de outra lib qualquer.
       // Cobre imports multi-linha via [\s\S] dentro de {}.
       expect(source).toMatch(
-        /import\s+(?:type\s+)?\{[\s\S]*?\bwithVendorMime\b[\s\S]*?\}\s+from\s+['"]@uniplus\/shared-core['"]/,
+        /import\s+(?:type\s+)?\{[\s\S]*?\bwithVendorMime\b[\s\S]*?\}\s+from\s+['"]@uniplus\/shared-core\/http['"]/,
       );
     });
 

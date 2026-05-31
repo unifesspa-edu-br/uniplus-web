@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'ptl-documentos',
@@ -8,8 +8,14 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui-page-header heading="Documentos" description="Upload e gestão de documentos comprobatórios." />
-    <ui-empty-state heading="Nenhum documento solicitado" description="As pendências documentais serão listadas nesta tela." />
+    <ui-page-header
+      heading="Documentos"
+      description="Upload e gestão de documentos comprobatórios."
+    />
+    <ui-empty-state
+      heading="Nenhum documento solicitado"
+      description="As pendências documentais serão listadas nesta tela."
+    />
     <router-outlet />
   `,
 })

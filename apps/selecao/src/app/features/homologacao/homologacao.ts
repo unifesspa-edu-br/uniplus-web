@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
 
 @Component({
   selector: 'sel-homologacao',
@@ -9,7 +9,10 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-page-header heading="Homologação" description="Análise e homologação de documentos." />
-    <ui-empty-state heading="Fila de homologação vazia" description="As solicitações pendentes aparecerão nesta tela." />
+    <ui-empty-state
+      heading="Fila de homologação vazia"
+      description="As solicitações pendentes aparecerão nesta tela."
+    />
     <router-outlet />
   `,
 })

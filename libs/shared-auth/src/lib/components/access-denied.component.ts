@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { UserContextService } from '../services/user-context.service';
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Página de "Acesso negado" (HTTP 403). Exibida quando um usuário
@@ -17,28 +17,18 @@ import { UserContextService } from '../services/user-context.service';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <main
-      role="main"
-      class="ui-access-denied"
-    >
+    <main role="main" class="ui-access-denied">
       <div class="empty-state empty-state--error">
         <div class="empty-state__icon" aria-hidden="true">!</div>
         <h1 class="empty-state__title">Acesso negado</h1>
-        <p class="empty-state__desc">
-          Sua conta não possui permissão para acessar esta área.
-        </p>
+        <p class="empty-state__desc">Sua conta não possui permissão para acessar esta área.</p>
         @if (user(); as profile) {
           <p class="u-caption">
-            Conectado como <strong>{{ profile.username }}</strong>.
+            Conectado como <strong>{{ profile.username }}</strong
+            >.
           </p>
         }
-        <button
-          type="button"
-          class="btn"
-          (click)="voltar()"
-        >
-          Voltar ao início
-        </button>
+        <button type="button" class="btn" (click)="voltar()">Voltar ao início</button>
       </div>
     </main>
   `,

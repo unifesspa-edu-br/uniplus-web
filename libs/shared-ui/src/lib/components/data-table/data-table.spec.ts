@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createCursor } from '@uniplus/shared-core';
+import { createCursor } from '@uniplus/shared-core/http';
 import { DataTableComponent, UiDataTableColumn } from './data-table';
 
 describe('DataTableComponent', () => {
@@ -68,7 +68,8 @@ describe('DataTableComponent', () => {
   it('exibe emptyMessage padrão quando colunas e data estão vazios', () => {
     const { fixture, component } = setup();
     fixture.detectChanges();
-    const tableCellEl = fixture.debugElement.query(By.css('td')).nativeElement as HTMLTableCellElement;
+    const tableCellEl = fixture.debugElement.query(By.css('td'))
+      .nativeElement as HTMLTableCellElement;
 
     expect(component.columns().length).toBe(0);
     expect(component.emptyMessage()).toBe('Nenhum registro encontrado.');
@@ -81,7 +82,8 @@ describe('DataTableComponent', () => {
     fixture.componentRef.setInput('isLoading', true);
     fixture.detectChanges();
 
-    const cell = fixture.debugElement.query(By.css('tbody td')).nativeElement as HTMLTableCellElement;
+    const cell = fixture.debugElement.query(By.css('tbody td'))
+      .nativeElement as HTMLTableCellElement;
     expect(cell.textContent?.trim()).toBe('Carregando…');
   });
 
@@ -260,9 +262,7 @@ describe('DataTableComponent', () => {
     fixture.componentRef.setInput('errorMessage', 'Falha de rede.');
     fixture.detectChanges();
 
-    const retryButton = fixture.debugElement.query(
-      By.css('[data-testid="data-table-retry"]'),
-    );
+    const retryButton = fixture.debugElement.query(By.css('[data-testid="data-table-retry"]'));
     expect(retryButton).not.toBeNull();
     expect((retryButton.nativeElement as HTMLButtonElement).textContent?.trim()).toBe(
       'Tentar novamente',
@@ -281,14 +281,10 @@ describe('DataTableComponent', () => {
     fixture.componentRef.setInput('errorTraceId', '0123456789abcdef0123456789abcdef');
     fixture.detectChanges();
 
-    const trace = fixture.debugElement.query(
-      By.css('[data-testid="data-table-error-trace"]'),
-    );
+    const trace = fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]'));
     expect(trace).not.toBeNull();
     expect(trace.nativeElement.textContent).toContain('Reportar incidente');
-    const traceId = fixture.debugElement.query(
-      By.css('[data-testid="data-table-error-trace-id"]'),
-    );
+    const traceId = fixture.debugElement.query(By.css('[data-testid="data-table-error-trace-id"]'));
     expect((traceId.nativeElement as HTMLElement).textContent).toBe(
       '0123456789abcdef0123456789abcdef',
     );
@@ -300,9 +296,7 @@ describe('DataTableComponent', () => {
     fixture.componentRef.setInput('errorMessage', 'Falha local.');
     fixture.detectChanges();
 
-    expect(
-      fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]')),
-    ).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]'))).toBeNull();
   });
 
   it('errorTraceId="" não habilita link "Reportar incidente" (boundary)', () => {
@@ -312,9 +306,7 @@ describe('DataTableComponent', () => {
     fixture.componentRef.setInput('errorTraceId', '');
     fixture.detectChanges();
 
-    expect(
-      fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]')),
-    ).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-testid="data-table-error-trace"]'))).toBeNull();
   });
 
   it('estado erro pós-1ª página: banner exibe botão "Tentar novamente" + emite retry', () => {
@@ -325,9 +317,7 @@ describe('DataTableComponent', () => {
     fixture.componentRef.setInput('nextCursor', createCursor('cursor-retry'));
     fixture.detectChanges();
 
-    const banner = fixture.debugElement.query(
-      By.css('[data-testid="data-table-error-banner"]'),
-    );
+    const banner = fixture.debugElement.query(By.css('[data-testid="data-table-error-banner"]'));
     expect(banner).not.toBeNull();
     const retryButton = fixture.debugElement.query(
       By.css('[data-testid="data-table-retry-banner"]'),

@@ -1,8 +1,7 @@
 import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, defer, switchMap } from 'rxjs';
-import { AuthService } from '../services/auth.service';
-import { AUTH_ALLOWED_URLS } from '../tokens/auth.tokens';
+import { AUTH_ALLOWED_URLS, AuthService } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Interceptor que anexa `Authorization: Bearer <token>` às requisições

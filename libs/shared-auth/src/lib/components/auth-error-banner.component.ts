@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Banner de fallback exibido quando `AuthService.init()` falha
@@ -15,19 +15,14 @@ import { AuthService } from '../services/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (authService.initError(); as message) {
-      <div
-        role="alert"
-        aria-live="assertive"
-        class="alert alert--danger ui-auth-banner"
-      >
+      <div role="alert" aria-live="assertive" class="alert alert--danger ui-auth-banner">
         <span aria-hidden="true" class="alert__icon">!</span>
         <div class="alert__body">
           <strong class="alert__title">Serviço de autenticação indisponível</strong>
           <span class="alert__msg">{{ message }}</span>
           <span class="u-caption">
-            Você pode continuar navegando em áreas públicas. Recursos
-            protegidos ficarão indisponíveis até o restabelecimento do
-            serviço.
+            Você pode continuar navegando em áreas públicas. Recursos protegidos ficarão
+            indisponíveis até o restabelecimento do serviço.
           </span>
         </div>
       </div>
