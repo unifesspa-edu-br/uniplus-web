@@ -7,8 +7,10 @@ import { describe, expect, it } from 'vitest';
  *
  * Para cada app de produção (selecao, ingresso, portal), garante que:
  *
- * 1. `app.config.ts` importa `provideRuntimeConfig` de `@uniplus/shared-data`.
- * 2. `app.config.ts` importa `provideAuth` de `@uniplus/shared-auth`.
+ * 1. `app.config.ts` importa `provideRuntimeConfig` de `@uniplus/shared-data`
+ *    ou subpath direto.
+ * 2. `app.config.ts` importa `provideAuth` de `@uniplus/shared-auth`
+ *    ou subpath direto.
  * 3. `provideRuntimeConfig()` aparece **antes** de `provideAuth()` no
  *    array `providers` — ordem é binding (Angular respeita ordem dos
  *    `APP_INITIALIZER` conforme aparecem no array; runtime-config DEVE
@@ -47,16 +49,16 @@ describe('Fitness — apps app.config.ts (runtime config + auth, ADR-0021)', () 
   describe.each(APPS)('app: %s', (app) => {
     const { conteudo, conteudoSemComentarios, relativo } = lerAppConfig(app);
 
-    it('importa provideRuntimeConfig de @uniplus/shared-data', () => {
-      const importou = /import\s+\{[^}]*\bprovideRuntimeConfig\b[^}]*\}\s+from\s+['"]@uniplus\/shared-data['"]/.test(conteudo);
+    it('importa provideRuntimeConfig de @uniplus/shared-data ou subpath direto', () => {
+      const importou = /import\s+\{[^}]*\bprovideRuntimeConfig\b[^}]*\}\s+from\s+['"]@uniplus\/shared-data(?:\/[^'"]+)?['"]/.test(conteudo);
       expect(
         importou,
         `\nArquivo: ${relativo}\nFalta importar provideRuntimeConfig — runtime-config.json não será carregado e AUTH_CONFIG/BASE_PATHs não terão factory.`,
       ).toBe(true);
     });
 
-    it('importa provideAuth de @uniplus/shared-auth', () => {
-      const importou = /import\s+\{[^}]*\bprovideAuth\b[^}]*\}\s+from\s+['"]@uniplus\/shared-auth['"]/.test(conteudo);
+    it('importa provideAuth de @uniplus/shared-auth ou subpath direto', () => {
+      const importou = /import\s+\{[^}]*\bprovideAuth\b[^}]*\}\s+from\s+['"]@uniplus\/shared-auth(?:\/[^'"]+)?['"]/.test(conteudo);
       expect(
         importou,
         `\nArquivo: ${relativo}\nFalta importar provideAuth — provedor OIDC não será inicializado.`,
