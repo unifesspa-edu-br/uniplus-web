@@ -7,8 +7,8 @@ export class EditalPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.locator('h2');
-    this.createButton = page.locator('button:has-text("Novo Edital")');
+    this.heading = page.getByRole('heading', { level: 1 });
+    this.createButton = page.getByRole('link', { name: 'Novo edital' });
   }
 
   async goto(): Promise<void> {

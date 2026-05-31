@@ -10,5 +10,5 @@ test.skip('deve exibir listagem de editais após login (requer API)', async ({ p
   // Teste de integração completo — requer API Seleção (:5000) e usuário autenticado.
   // Coberto em profundidade pelos testes de auth-oidc.spec.ts + edital-crud.spec.ts.
   await page.goto('/editais');
-  await expect(page.locator('h2')).toContainText('Editais');
+  await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
 });

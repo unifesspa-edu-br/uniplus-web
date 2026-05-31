@@ -11,7 +11,7 @@ test.describe('Editais — CRUD', () => {
   test('deve exibir a listagem de editais após login como admin', async ({ page }) => {
     await page.goto('/editais');
     await keycloakLogin(page, ADMIN.username, ADMIN.password);
-    await expect(page.locator('h2')).toContainText('Editais');
+    await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
     // EditaisListPage (F6) sempre renderiza um <table role="grid">; quando o
     // backend devolve lista vazia, a mensagem "Nenhum edital cadastrado." cai
     // no tbody. Quando há itens, as linhas aparecem em <tbody tr>.
@@ -27,7 +27,7 @@ test.describe('Editais — CRUD', () => {
     await page.getByRole('link', { name: 'Novo edital' }).click();
 
     await expect(page).toHaveURL(/\/editais\/novo$/);
-    await expect(page.locator('h2')).toContainText('Novo edital');
+    await expect(page.getByRole('heading', { name: 'Novo edital', level: 1 })).toBeVisible();
     // Selectors por label são semânticos + resilientes a mudança de IDs
     // (o ui-form-field wrapper gera IDs únicos por instância, não estáveis).
     await expect(page.getByLabel('Número do edital')).toBeVisible();
@@ -50,7 +50,7 @@ test.describe('Editais — CRUD', () => {
     await page.goto(`/editais/${idArbitrario}`);
     await keycloakLogin(page, ADMIN.username, ADMIN.password);
 
-    await expect(page.locator('h2')).toContainText('Detalhes do edital');
+    await expect(page.getByRole('heading', { name: 'Detalhes do edital', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Voltar para lista' })).toBeVisible();
     // Banner de erro role="alert" via problem-i18n — confirma que a page lida
     // graciosamente com 404 sem crash do componente.

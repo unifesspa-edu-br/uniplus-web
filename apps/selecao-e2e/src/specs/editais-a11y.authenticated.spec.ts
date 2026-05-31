@@ -19,7 +19,7 @@ test.describe('Editais — a11y baseline WCAG 2.1 A+AA', () => {
   test('GET /editais (lista) sem violations', async ({ page }) => {
     await page.goto('/editais');
     // Aguarda o estado estável: header + tabela renderizados.
-    await expect(page.locator('h2', { hasText: 'Editais' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Editais', level: 1 })).toBeVisible();
     await expect(page.locator('table[role="grid"]')).toBeVisible();
 
     const results = await runAxeWcagAA(page);
@@ -28,7 +28,7 @@ test.describe('Editais — a11y baseline WCAG 2.1 A+AA', () => {
 
   test('GET /editais/novo (form) sem violations', async ({ page }) => {
     await page.goto('/editais/novo');
-    await expect(page.locator('h2', { hasText: 'Novo edital' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Novo edital', level: 1 })).toBeVisible();
     // Confirma form renderizado antes da análise (axe precisa do DOM final).
     await expect(page.getByLabel('Número do edital')).toBeVisible();
 
@@ -39,7 +39,7 @@ test.describe('Editais — a11y baseline WCAG 2.1 A+AA', () => {
   test('GET /editais/{id-inexistente} (banner de erro) sem violations', async ({ page }) => {
     const idArbitrario = '01960000-0000-7000-0000-000000000fff';
     await page.goto(`/editais/${idArbitrario}`);
-    await expect(page.locator('h2', { hasText: 'Detalhes do edital' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Detalhes do edital', level: 1 })).toBeVisible();
     // Aguarda banner de erro aparecer — confirma estado estável pós-404.
     await expect(page.locator('[role="alert"]')).toBeVisible();
 

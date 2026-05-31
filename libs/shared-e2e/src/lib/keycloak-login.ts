@@ -1,13 +1,15 @@
+import { open, stat, unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
 import { Page, expect, request as playwrightRequest } from '@playwright/test';
 
 const KEYCLOAK_BASE = process.env['KEYCLOAK_URL'] || 'http://localhost:8080';
 const KEYCLOAK_REALM = 'unifesspa';
 const KEYCLOAK_ADMIN_USER = process.env['KEYCLOAK_ADMIN'] || 'admin';
-const KEYCLOAK_ADMIN_PASSWORD = (() => {
-  const val = process.env['KEYCLOAK_ADMIN_PASSWORD'];
-  if (!val) throw new Error('KEYCLOAK_ADMIN_PASSWORD não definido — configure a variável de ambiente antes de rodar os testes E2E.');
-  return val;
-})();
+const RESET_LOCK_PATH = path.join(tmpdir(), 'uniplus-keycloak-reset.lock');
+const RESET_LOCK_TIMEOUT_MS = 60_000;
+const RESET_LOCK_STALE_MS = 60_000;
+const RESET_PASSWORD_MAX_ATTEMPTS = 8;
 
 /**
  * Reseta as senhas de múltiplos usuários para valores conhecidos e
@@ -18,58 +20,92 @@ const KEYCLOAK_ADMIN_PASSWORD = (() => {
 export async function resetPasswords(
   users: Array<{ username: string; password: string }>,
 ): Promise<void> {
-  const api = await playwrightRequest.newContext({ baseURL: KEYCLOAK_BASE });
+  await withResetLock(async () => {
+    const api = await playwrightRequest.newContext({ baseURL: KEYCLOAK_BASE });
 
-  try {
-    // 1. Obter admin token (uma vez)
-    const tokenResp = await api.post('/realms/master/protocol/openid-connect/token', {
-      form: {
-        grant_type: 'password',
-        client_id: 'admin-cli',
-        username: KEYCLOAK_ADMIN_USER,
-        password: KEYCLOAK_ADMIN_PASSWORD,
-      },
-    });
-    const tokenData = await tokenResp.json();
-    const adminToken = tokenData.access_token;
-    if (!adminToken) throw new Error(`Falha ao obter admin token: ${JSON.stringify(tokenData)}`);
+    try {
+      // 1. Obter admin token (uma vez)
+      const tokenResp = await api.post('/realms/master/protocol/openid-connect/token', {
+        form: {
+          grant_type: 'password',
+          client_id: 'admin-cli',
+          username: KEYCLOAK_ADMIN_USER,
+          password: keycloakAdminPassword(),
+        },
+      });
+      const tokenData = await tokenResp.json();
+      const adminToken = tokenData.access_token;
+      if (!adminToken) throw new Error(`Falha ao obter admin token: ${JSON.stringify(tokenData)}`);
 
-    const authHeader = { Authorization: `Bearer ${adminToken}` };
+      const authHeader = { Authorization: `Bearer ${adminToken}` };
 
-    // 2. Reset cada usuário sequencialmente (com retry para StaleStateException do Hibernate)
-    for (const { username, password } of users) {
-      const usersResp = await api.get(
-        `/admin/realms/${KEYCLOAK_REALM}/users?username=${username}&exact=true`,
-        { headers: authHeader },
-      );
-      const found = await usersResp.json();
-      if (!found.length) throw new Error(`Usuário '${username}' não encontrado no realm ${KEYCLOAK_REALM}`);
-
-      let lastStatus = 0;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
-
-        const resetResp = await api.put(
-          `/admin/realms/${KEYCLOAK_REALM}/users/${found[0].id}/reset-password`,
-          {
-            headers: { ...authHeader, 'Content-Type': 'application/json' },
-            data: JSON.stringify({ type: 'password', value: password, temporary: false }),
-          },
+      // 2. Reset cada usuário sequencialmente (com retry para StaleStateException do Hibernate)
+      for (const { username, password } of users) {
+        const usersResp = await api.get(
+          `/admin/realms/${KEYCLOAK_REALM}/users?username=${username}&exact=true`,
+          { headers: authHeader },
         );
-        lastStatus = resetResp.status();
-        if (resetResp.ok()) break;
-        if (lastStatus !== 500) {
-          const body = await resetResp.text();
-          throw new Error(`Falha ao resetar senha de '${username}': ${lastStatus} ${body}`);
+        const found = await usersResp.json();
+        if (!found.length) throw new Error(`Usuário '${username}' não encontrado no realm ${KEYCLOAK_REALM}`);
+        const userId = found[0].id as string;
+
+        await clearBruteForceFailures(api, authHeader, userId);
+
+        let lastStatus = 0;
+        for (let attempt = 0; attempt < RESET_PASSWORD_MAX_ATTEMPTS; attempt++) {
+          if (attempt > 0) await delay(250 * attempt);
+
+          const resetResp = await api.put(
+            `/admin/realms/${KEYCLOAK_REALM}/users/${userId}/reset-password`,
+            {
+              headers: { ...authHeader, 'Content-Type': 'application/json' },
+              data: JSON.stringify({ type: 'password', value: password, temporary: false }),
+            },
+          );
+          lastStatus = resetResp.status();
+          if (resetResp.ok()) break;
+          if (lastStatus !== 500) {
+            const body = await resetResp.text();
+            throw new Error(`Falha ao resetar senha de '${username}': ${lastStatus} ${body}`);
+          }
         }
+        if (lastStatus === 500) {
+          throw new Error(
+            `Falha ao resetar senha de '${username}' após ${RESET_PASSWORD_MAX_ATTEMPTS} tentativas (500 — provável StaleStateException no Keycloak)`,
+          );
+        }
+        await clearBruteForceFailures(api, authHeader, userId);
       }
-      if (lastStatus === 500) {
-        throw new Error(`Falha ao resetar senha de '${username}' após 3 tentativas (500 — provável StaleStateException no Keycloak)`);
-      }
+    } finally {
+      await api.dispose();
     }
-  } finally {
-    await api.dispose();
+  });
+}
+
+function keycloakAdminPassword(): string {
+  const val = process.env['KEYCLOAK_ADMIN_PASSWORD'];
+  if (!val) {
+    throw new Error('KEYCLOAK_ADMIN_PASSWORD não definido — configure a variável de ambiente antes de rodar os testes E2E autenticados.');
   }
+  return val;
+}
+
+async function clearBruteForceFailures(
+  api: Awaited<ReturnType<typeof playwrightRequest.newContext>>,
+  authHeader: { Authorization: string },
+  userId: string,
+): Promise<void> {
+  const response = await api.delete(
+    `/admin/realms/${KEYCLOAK_REALM}/attack-detection/brute-force/users/${userId}`,
+    { headers: authHeader },
+  );
+
+  if (response.ok() || response.status() === 404) {
+    return;
+  }
+
+  const body = await response.text();
+  throw new Error(`Falha ao limpar brute-force do usuário '${userId}': ${response.status()} ${body}`);
 }
 
 /** Pattern default de redirect pós-login — apps locais em `localhost:<porta>`. */
@@ -123,8 +159,7 @@ export async function keycloakLogin(
  * Realiza logout clicando no botão "Sair" do header.
  */
 export async function keycloakLogout(page: Page): Promise<void> {
-  const logoutBtn = page.locator('button[aria-label="Sair da aplicação"]');
-  await expect(logoutBtn).toBeVisible();
+  const logoutBtn = await openAccountMenu(page);
   await logoutBtn.click();
   await page.waitForURL(/localhost:\d{4}/, { timeout: 10_000 });
 }
@@ -143,5 +178,75 @@ export async function expectUserInHeader(
   const userInfo = page.locator('auth-user-header-info');
   await expect(userInfo.getByText(expectedName)).toBeVisible({ timeout: 5_000 });
   await expect(userInfo.getByText(`@${expectedUsername}`)).toBeVisible();
-  await expect(page.locator('button[aria-label="Sair da aplicação"]')).toBeVisible();
+  const trigger = userInfo.getByRole('button', {
+    name: new RegExp(`^Abrir menu da conta de ${escapeRegExp(expectedName)}$`),
+  });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(page.getByRole('menuitem', { name: 'Sair' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+}
+
+async function openAccountMenu(page: Page) {
+  const trigger = page.getByRole('button', { name: /^Abrir menu da conta de / });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  const logoutBtn = page.getByRole('menuitem', { name: 'Sair' });
+  await expect(logoutBtn).toBeVisible();
+  return logoutBtn;
+}
+
+async function withResetLock<T>(action: () => Promise<T>): Promise<T> {
+  const handle = await acquireResetLock();
+  try {
+    return await action();
+  } finally {
+    await handle.close();
+    await unlink(RESET_LOCK_PATH).catch(() => undefined);
+  }
+}
+
+async function acquireResetLock() {
+  const deadline = Date.now() + RESET_LOCK_TIMEOUT_MS;
+
+  while (true) {
+    try {
+      return await open(RESET_LOCK_PATH, 'wx');
+    } catch (error) {
+      if (!isNodeError(error) || error.code !== 'EEXIST') {
+        throw error;
+      }
+      await removeStaleResetLock();
+      if (Date.now() >= deadline) {
+        throw new Error(`Timeout aguardando lock de reset de senhas do Keycloak: ${RESET_LOCK_PATH}`);
+      }
+      await delay(250);
+    }
+  }
+}
+
+async function removeStaleResetLock(): Promise<void> {
+  try {
+    const info = await stat(RESET_LOCK_PATH);
+    if (Date.now() - info.mtimeMs > RESET_LOCK_STALE_MS) {
+      await unlink(RESET_LOCK_PATH);
+    }
+  } catch (error) {
+    if (!isNodeError(error) || error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

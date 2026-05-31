@@ -22,14 +22,14 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
 
       // Não deve redirecionar ao Keycloak (rota pública)
       await expect(page).toHaveURL(/processos/);
-      await expect(page.locator('h2')).toContainText('Processos Seletivos');
+      await expect(page.getByRole('heading', { name: 'Processos Seletivos', level: 1 })).toBeVisible();
     });
 
     test('header não exibe user info em rota pública', async ({ page }) => {
       await page.goto('/processos');
 
-      const logoutBtn = page.locator('button[aria-label="Sair da aplicação"]');
-      await expect(logoutBtn).toBeHidden();
+      const accountMenuTrigger = page.getByRole('button', { name: /^Abrir menu da conta de / });
+      await expect(accountMenuTrigger).toBeHidden();
     });
   });
 

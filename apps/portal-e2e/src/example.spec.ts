@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('deve carregar rota pública /processos sem autenticação', async ({ page }) => {
   await page.goto('/processos');
   await expect(page).toHaveURL(/processos/);
-  await expect(page.locator('h2')).toContainText('Processos Seletivos');
+  await expect(page.getByRole('heading', { name: 'Processos Seletivos', level: 1 })).toBeVisible();
 });
 
 test('deve redirecionar para o Keycloak ao acessar rota protegida sem sessão', async ({ page }) => {
