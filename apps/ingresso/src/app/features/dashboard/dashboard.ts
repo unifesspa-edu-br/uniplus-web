@@ -1,17 +1,16 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui';
 
 @Component({
   selector: 'ing-dashboard',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, EmptyStateComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div>
-      <h2 class="mb-4 text-2xl font-bold text-gray-800">Dashboard</h2>
-      <p class="text-gray-600">Painel administrativo do módulo Ingresso.</p>
-      <router-outlet />
-    </div>
+    <ui-page-header heading="Dashboard" description="Painel administrativo do módulo Ingresso." />
+    <ui-empty-state heading="Painel em preparação" description="Indicadores de ingresso e matrícula serão exibidos aqui." />
+    <router-outlet />
   `,
 })
 export class DashboardComponent {}
