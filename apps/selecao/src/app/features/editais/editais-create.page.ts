@@ -22,7 +22,7 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core';
 import { CriarEditalCommand, EditaisApi } from '@uniplus/shared-data';
-import { FormFieldComponent } from '@uniplus/shared-ui';
+import { AlertComponent, FormFieldComponent, PageHeaderComponent } from '@uniplus/shared-ui';
 
 /**
  * Form Reactive tipado para criação de edital.
@@ -53,76 +53,99 @@ interface CriarEditalForm {
   selector: 'sel-editais-create-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, FormFieldComponent],
+  imports: [ReactiveFormsModule, RouterLink, AlertComponent, FormFieldComponent, PageHeaderComponent],
   template: `
-    <header class="mb-5">
-      <h2 class="text-2xl font-bold text-gray-800">Novo edital</h2>
-      <p class="text-sm text-gray-600">Cadastre os dados básicos do processo seletivo.</p>
-    </header>
+    <ui-page-header
+      heading="Novo edital"
+      description="Cadastre os dados básicos do processo seletivo."
+    />
 
     @if (errorMessage()) {
-      <div
-        class="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-        role="alert"
-      >
-        <span class="font-semibold">{{ errorMessage() }}</span>
-      </div>
+      <ui-alert variant="danger" heading="Não foi possível criar o edital">
+        {{ errorMessage() }}
+      </ui-alert>
     }
 
-    <form [formGroup]="form" (ngSubmit)="enviar()" novalidate class="grid max-w-2xl gap-4">
+    <form [formGroup]="form" (ngSubmit)="enviar()" novalidate class="ui-edital-form">
       <ui-form-field
-        label="Número do edital"
-        type="number"
-        [control]="form.controls.numeroEdital"
+        fieldLabel="Número do edital"
+        inputType="number"
+        [isRequired]="true"
+        [fieldControl]="form.controls.numeroEdital"
         [errorMessage]="erroDoCampo('numeroEdital')"
       />
 
       <ui-form-field
-        label="Ano"
-        type="number"
-        [control]="form.controls.anoEdital"
+        fieldLabel="Ano"
+        inputType="number"
+        [isRequired]="true"
+        [fieldControl]="form.controls.anoEdital"
         [errorMessage]="erroDoCampo('anoEdital')"
       />
 
       <ui-form-field
-        label="Título"
-        type="text"
-        [control]="form.controls.titulo"
+        fieldLabel="Título"
+        inputType="text"
+        [isRequired]="true"
+        [fieldControl]="form.controls.titulo"
         [errorMessage]="erroDoCampo('titulo')"
       />
 
       <ui-form-field
-        label="Tipo de processo (código numérico)"
-        type="number"
-        [control]="form.controls.tipoProcesso"
+        fieldLabel="Tipo de processo (código numérico)"
+        inputType="number"
+        [isRequired]="true"
+        [fieldControl]="form.controls.tipoProcesso"
         [errorMessage]="erroDoCampo('tipoProcesso')"
       />
 
       <ui-form-field
-        label="Máximo de opções de curso"
-        type="number"
-        [min]="1"
-        [max]="2"
-        [control]="form.controls.maximoOpcoesCurso"
+        fieldLabel="Máximo de opções de curso"
+        inputType="number"
+        [isRequired]="true"
+        [minValue]="1"
+        [maxValue]="2"
+        [fieldControl]="form.controls.maximoOpcoesCurso"
         [errorMessage]="erroDoCampo('maximoOpcoesCurso')"
       />
 
-      <div class="mt-2 flex items-center justify-end gap-2">
+      <div class="ui-form-actions">
         <a
           routerLink="/editais"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          class="btn btn--tertiary"
         >
           Cancelar
         </a>
         <button
           type="submit"
           [disabled]="submitting() || form.invalid"
-          class="rounded-md bg-govbr-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-govbr-primary disabled:cursor-not-allowed disabled:opacity-60"
+          class="btn"
+          [attr.data-loading]="submitting() ? 'true' : null"
         >
+          @if (submitting()) {
+            <span class="spinner spinner--sm" aria-hidden="true"></span>
+          }
           {{ submitting() ? 'Enviando…' : 'Criar edital' }}
         </button>
       </div>
     </form>
+  `,
+  styles: `
+    .ui-edital-form {
+      display: grid;
+      max-width: var(--content-narrow);
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+    }
+
+    .ui-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-top: var(--space-2);
+    }
   `,
 })
 export class EditaisCreatePage {

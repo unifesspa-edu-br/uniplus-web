@@ -15,7 +15,11 @@ import {
   extractNextCursor,
 } from '@uniplus/shared-core';
 import { EditaisApi, EditalDto } from '@uniplus/shared-data';
-import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
+import {
+  UiDataTableColumn,
+  DataTableComponent,
+  PageHeaderComponent,
+} from '@uniplus/shared-ui';
 
 /**
  * Container (ADR-0017) da feature Editais — lista paginada por cursor opaco.
@@ -28,29 +32,26 @@ import { DataTableColumn, DataTableComponent } from '@uniplus/shared-ui';
   selector: 'sel-editais-list-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DataTableComponent, RouterLink],
+  imports: [DataTableComponent, PageHeaderComponent, RouterLink],
   template: `
-    <header class="mb-5 flex items-start justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-800">Editais</h2>
-        <p class="text-sm text-gray-600">Gestão de editais de processos seletivos.</p>
-      </div>
-      <a
-        routerLink="novo"
-        class="inline-flex shrink-0 items-center rounded-md bg-govbr-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-govbr-primary"
-      >
+    <ui-page-header
+      heading="Editais"
+      description="Gestão de editais de processos seletivos."
+    >
+      <a uiPageActions routerLink="novo" class="btn">
         Novo edital
       </a>
-    </header>
+    </ui-page-header>
 
     <ui-data-table
       [columns]="colunas"
-      [data]="rows()"
-      [loading]="loading()"
+      [records]="rows()"
+      [isLoading]="loading()"
       [errorMessage]="errorMessage()"
       [errorTraceId]="errorTraceId()"
       [nextCursor]="nextCursor()"
       [rowClickable]="true"
+      pageStatusLabel="Lista paginada por cursor"
       emptyMessage="Nenhum edital cadastrado."
       (loadNext)="aoCarregarMais($event)"
       (rowClick)="aoSelecionar($event)"
@@ -78,8 +79,8 @@ export class EditaisListPage {
     () => this.editais() as readonly Record<string, unknown>[],
   );
 
-  protected readonly colunas: DataTableColumn[] = [
-    { field: 'numeroEdital', header: 'Número', width: '12rem' },
+  protected readonly colunas: UiDataTableColumn[] = [
+    { field: 'numeroEdital', header: 'Número', width: '12rem', primary: true },
     { field: 'titulo', header: 'Título' },
     { field: 'tipoProcesso', header: 'Tipo', width: '8rem' },
     { field: 'status', header: 'Status', width: '10rem' },
