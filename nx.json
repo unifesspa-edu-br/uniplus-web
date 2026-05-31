@@ -30,6 +30,13 @@
     "@nx/vitest:test": {
       "cache": true,
       "inputs": ["default", "^production"]
+    },
+    "vite:test": {
+      "options": {
+        "env": {
+          "NO_COLOR": ""
+        }
+      }
     }
   },
   "plugins": [
