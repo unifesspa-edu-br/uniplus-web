@@ -191,7 +191,7 @@ async function mockUnidadesApi(page: Page): Promise<void> {
   const corsHeaders = {
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'authorization, content-type, accept',
+    'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
   };
   let firstCreateKey: string | undefined;
 
