@@ -30,7 +30,11 @@ describe('UserHeaderInfoComponent', () => {
       user: signal(profile).asReadonly(),
       displayName: computed(() => {
         if (!profile) return '';
-        return profile.nomeSocial || profile.nomeCivil;
+        return profile.nomeSocial?.trim() || profile.nomeCivil;
+      }),
+      firstDisplayName: computed(() => {
+        if (!profile) return '';
+        return firstNameFrom(profile.nomeSocial?.trim() || profile.nomeCivil);
       }),
       isAuthenticated: signal(profile !== null).asReadonly(),
     } as unknown as UserContextService;
@@ -50,10 +54,12 @@ describe('UserHeaderInfoComponent', () => {
     return { fixture, logout };
   }
 
-  it('exibe nome social do usuário autenticado', () => {
+  it('exibe apenas o primeiro nome social do usuário autenticado', () => {
     const { fixture } = setup();
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Candidato Teste');
+    const name = fixture.nativeElement.querySelector<HTMLElement>('.ui-user-header__text strong');
+    const avatar = fixture.nativeElement.querySelector<HTMLElement>('.user-chip__avatar');
+    expect(name?.textContent?.trim()).toBe('Candidato');
+    expect(avatar?.textContent?.trim()).toBe('C');
   });
 
   it('exibe username com prefixo @', () => {
@@ -78,14 +84,14 @@ describe('UserHeaderInfoComponent', () => {
     expect(el.textContent).toContain('admin, gestor');
   });
 
-  it('exibe nome civil quando nome social é vazio', () => {
+  it('exibe apenas o primeiro nome civil quando nome social é vazio', () => {
     const semNomeSocial: UserProfile = {
       ...profileData,
       nomeSocial: undefined,
     };
     const { fixture } = setup(semNomeSocial);
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Usuário Candidato');
+    const name = fixture.nativeElement.querySelector<HTMLElement>('.ui-user-header__text strong');
+    expect(name?.textContent?.trim()).toBe('Usuário');
   });
 
   it('renderiza trigger de menu de conta conforme contrato DS', () => {
@@ -95,6 +101,7 @@ describe('UserHeaderInfoComponent', () => {
     expect(btn.getAttribute('aria-haspopup')).toBe('menu');
     expect(btn.getAttribute('aria-expanded')).toBe('false');
     expect(btn.getAttribute('aria-controls')).toMatch(/^auth-user-menu-/);
+    expect(btn.getAttribute('aria-label')).toBe('Abrir menu da conta de Candidato Teste');
   });
 
   it('chama authService.logout() ao clicar em Sair', () => {
@@ -134,9 +141,8 @@ describe('UserHeaderInfoComponent', () => {
       nomeSocial: '',
     };
     const { fixture } = setup(nomeSocialVazio);
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Usuário Candidato');
-    expect(el.textContent).not.toContain('Candidato Teste');
+    const name = fixture.nativeElement.querySelector<HTMLElement>('.ui-user-header__text strong');
+    expect(name?.textContent?.trim()).toBe('Usuário');
   });
 
   it('não quebra quando nomeSocial e nomeCivil são ambos vazios', () => {
@@ -190,3 +196,7 @@ describe('UserHeaderInfoComponent', () => {
     expect(logout).toHaveBeenCalledTimes(2);
   });
 });
+
+function firstNameFrom(name: string): string {
+  return name.trim().split(/\s+/u)[0] ?? '';
+}

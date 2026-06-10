@@ -16,8 +16,15 @@ export {
   DataTableComponent,
   type UiDataTableColumn,
 } from '../../src/lib/components/data-table/data-table';
+export { DialogComponent } from '../../src/lib/components/dialog/dialog';
+export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
 export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
+export { FilterBarComponent } from '../../src/lib/components/filter-bar/filter-bar';
+export {
+  FilterChipsComponent,
+  type UiFilterChipOption,
+} from '../../src/lib/components/filter-chips/filter-chips';
 export { ConfirmDialogComponent } from '../../src/lib/components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from '../../src/lib/components/form-field/form-field';
 export { InstitutionalBarComponent } from '../../src/lib/components/institutional-bar/institutional-bar';

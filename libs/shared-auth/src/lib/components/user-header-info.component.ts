@@ -43,10 +43,10 @@ const DOMAIN_ROLES = new Set<string>([
           (keydown)="onTriggerKeydown($event)"
         >
           <span class="user-chip__avatar" aria-hidden="true">{{
-            initials(userContext.displayName())
+            initials(userContext.firstDisplayName())
           }}</span>
           <span class="ui-user-header__text">
-            <strong>{{ userContext.displayName() }}</strong>
+            <strong>{{ userContext.firstDisplayName() }}</strong>
             <span>
               &#64;{{ profile.username }}
               @if (domainRoles(profile.roles); as roles) {

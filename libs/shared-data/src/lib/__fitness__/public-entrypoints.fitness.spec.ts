@@ -11,7 +11,12 @@ import { describe, expect, it } from 'vitest';
  */
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');
-const APP_ROOTS = ['apps/selecao/src', 'apps/ingresso/src', 'apps/portal/src'] as const;
+const APP_ROOTS = [
+  'apps/selecao/src',
+  'apps/ingresso/src',
+  'apps/portal/src',
+  'apps/configuracao/src',
+] as const;
 
 const ENTRYPOINTS = {
   '@uniplus/shared-ui/components': 'libs/shared-ui/components',
@@ -22,7 +27,9 @@ const ENTRYPOINTS = {
   '@uniplus/shared-auth/guards': 'libs/shared-auth/guards',
   '@uniplus/shared-auth/interceptors': 'libs/shared-auth/interceptors',
   '@uniplus/shared-data/config': 'libs/shared-data/config',
+  '@uniplus/shared-data/configuracao': 'libs/shared-data/configuracao',
   '@uniplus/shared-data/ingresso': 'libs/shared-data/ingresso',
+  '@uniplus/shared-data/organizacao': 'libs/shared-data/organizacao',
   '@uniplus/shared-data/selecao': 'libs/shared-data/selecao',
   '@uniplus/shared-core/dom': 'libs/shared-core/dom',
   '@uniplus/shared-core/http': 'libs/shared-core/http',

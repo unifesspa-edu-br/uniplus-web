@@ -11,8 +11,15 @@ export { CardComponent } from './card/card';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
 export { CpfInputComponent } from './cpf-input/cpf-input';
 export { DataTableComponent, type UiDataTableColumn } from './data-table/data-table';
+export { DialogComponent } from './dialog/dialog';
+export { DrawerComponent } from './drawer/drawer';
 export { EmptyStateComponent } from './empty-state/empty-state';
 export { FileUploadComponent } from './file-upload/file-upload';
+export { FilterBarComponent } from './filter-bar/filter-bar';
+export {
+  FilterChipsComponent,
+  type UiFilterChipOption,
+} from './filter-chips/filter-chips';
 export { FormFieldComponent } from './form-field/form-field';
 export { IconButtonComponent } from './icon-button/icon-button';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';

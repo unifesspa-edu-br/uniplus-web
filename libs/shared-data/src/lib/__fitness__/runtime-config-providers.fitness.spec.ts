@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
  * Adicionar 4º app: append em `APPS` — fitness adiciona automaticamente.
  */
 
-const APPS = ['selecao', 'ingresso', 'portal'] as const;
+const APPS = ['selecao', 'ingresso', 'portal', 'configuracao'] as const;
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');
 

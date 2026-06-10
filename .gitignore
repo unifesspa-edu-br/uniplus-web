@@ -43,6 +43,7 @@ test-results/
 playwright-report/
 results/
 output/
+.playwright-cli/
 
 # System Files
 .DS_Store

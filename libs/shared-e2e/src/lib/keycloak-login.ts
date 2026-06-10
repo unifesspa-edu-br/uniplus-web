@@ -176,7 +176,7 @@ export async function expectUserInHeader(
   // Verificar presença do componente de user info no DOM (sem scoping ao <header>,
   // porque Angular custom elements podem criar fronteiras inesperadas para locators)
   const userInfo = page.locator('auth-user-header-info');
-  await expect(userInfo.getByText(expectedName)).toBeVisible({ timeout: 5_000 });
+  await expect(userInfo.getByText(firstNameFrom(expectedName))).toBeVisible({ timeout: 5_000 });
   await expect(userInfo.getByText(`@${expectedUsername}`)).toBeVisible();
   const trigger = userInfo.getByRole('button', {
     name: new RegExp(`^Abrir menu da conta de ${escapeRegExp(expectedName)}$`),
@@ -249,4 +249,8 @@ function delay(ms: number): Promise<void> {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function firstNameFrom(name: string): string {
+  return name.trim().split(/\s+/u)[0] ?? '';
 }

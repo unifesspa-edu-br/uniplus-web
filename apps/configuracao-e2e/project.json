@@ -1,0 +1,10 @@
+{
+  "name": "configuracao-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/configuracao-e2e/src",
+  "tags": ["scope:configuracao", "type:e2e"],
+  "implicitDependencies": ["configuracao"],
+  "// targets": "to see all targets run: nx show project configuracao-e2e --web",
+  "targets": {}
+}

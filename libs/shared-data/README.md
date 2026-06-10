@@ -8,7 +8,8 @@ Lib de dados do `uniplus-web`: DTOs, validators, utilitários de domínio (CPF, 
 libs/shared-data/
 ├── openapi/                       # baselines OpenAPI 3.1 (sincronizados de uniplus-api)
 │   ├── selecao.openapi.json
-│   └── ingresso.openapi.json
+│   ├── ingresso.openapi.json
+│   └── organizacao.openapi.json
 ├── scripts/
 │   └── generate-api-clients.sh   # codegen openapi-typescript (Node-only, ADR-0013)
 └── src/lib/
@@ -18,9 +19,13 @@ libs/shared-data/
     │   │   ├── tokens.ts          # SELECAO_BASE_PATH InjectionToken
     │   │   ├── editais.api.ts     # service Angular thin
     │   │   └── *.spec.ts
-    │   └── ingresso/
+    │   ├── ingresso/
+    │   │   ├── schema.ts
+    │   │   └── tokens.ts
+    │   └── organizacao/
     │       ├── schema.ts
-    │       └── tokens.ts
+    │       ├── tokens.ts
+    │       └── unidades.api.ts
     ├── models/                    # DTOs canônicos do projeto (não gerados)
     ├── utils/                     # cpf.util, date.util
     └── validators/                # cpfValidator (Reactive Forms)
@@ -34,7 +39,7 @@ Os services Angular são **escritos manualmente** e thin (~30 LOC cada). Pattern
 @Injectable({ providedIn: 'root' })
 export class FooApi {
   private readonly http = inject(HttpClient);
-  private readonly basePath = inject(SELECAO_BASE_PATH); // ou INGRESSO_BASE_PATH
+  private readonly basePath = inject(SELECAO_BASE_PATH); // ou INGRESSO_BASE_PATH/ORGANIZACAO_BASE_PATH
 
   listar(): Observable<ApiResult<readonly FooDto[]>> {
     return this.http.get<ApiResult<readonly FooDto[]>>(
@@ -50,7 +55,7 @@ Onde:
 - `FooDto` vem de `components['schemas']['FooDto']` em `schema.ts` (gerado).
 - `ApiResult<T>` envolve a response (sucesso ou falha) — produzido pelo `apiResultInterceptor` (ADR-0011).
 - `withVendorMime('foo', 1)` injeta `Accept: application/vnd.uniplus.foo.v1+json` (ADR-0028 do `uniplus-api`).
-- `SELECAO_BASE_PATH` / `INGRESSO_BASE_PATH` são `InjectionToken<string>` providos uma vez por aplicação em `app.config.ts` a partir de `environment.apiUrl`.
+- `SELECAO_BASE_PATH` / `INGRESSO_BASE_PATH` / `ORGANIZACAO_BASE_PATH` são `InjectionToken<string>` providos uma vez por aplicação via `provideRuntimeConfig()` a partir de `runtime-config.json`.
 - Bearer é injetado pelo `tokenInterceptor` (ADR-0009) — **nunca** lido manualmente.
 
 **`ProblemDetails`:** o `schema.ts` gerado também declara `components['schemas']['ProblemDetails']` (RFC 7807 default da .NET). **Não use esse tipo.** O wire format real RFC 9457 + extensions Uni+ vive em `@uniplus/shared-core` (ADR-0011 + ADR-0023 do `uniplus-api`).
@@ -63,12 +68,13 @@ Quando a `uniplus-api` publicar um spec novo:
 # 1. Sincronizar baselines a partir do backend
 cp ../uniplus-api/contracts/openapi.selecao.json   libs/shared-data/openapi/selecao.openapi.json
 cp ../uniplus-api/contracts/openapi.ingresso.json  libs/shared-data/openapi/ingresso.openapi.json
+cp ../uniplus-api/contracts/openapi.organizacao.json  libs/shared-data/openapi/organizacao.openapi.json
 
-# 2. Regerar schema.ts dos dois módulos (~40ms)
+# 2. Regerar schema.ts dos módulos
 npx nx run shared-data:codegen-api
 
 # 3. Commitar baselines + schema.ts juntos
-git add libs/shared-data/openapi/ libs/shared-data/src/lib/api/{selecao,ingresso}/schema.ts
+git add libs/shared-data/openapi/ libs/shared-data/src/lib/api/{selecao,ingresso,organizacao}/schema.ts
 ```
 
 ## Drift check em CI

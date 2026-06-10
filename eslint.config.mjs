@@ -5,7 +5,12 @@ export default [
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
   {
-    ignores: ['**/dist', '**/vite.config.*.timestamp*', '**/vitest.config.*.timestamp*', 'libs/shared-ui/src/assets/**'],
+    ignores: [
+      '**/dist',
+      '**/vite.config.*.timestamp*',
+      '**/vitest.config.*.timestamp*',
+      'libs/shared-ui/src/assets/**',
+    ],
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
@@ -39,6 +44,10 @@ export default [
               onlyDependOnLibsWithTags: ['scope:portal', 'scope:shared'],
             },
             {
+              sourceTag: 'scope:configuracao',
+              onlyDependOnLibsWithTags: ['scope:configuracao', 'scope:shared'],
+            },
+            {
               sourceTag: 'type:feature',
               onlyDependOnLibsWithTags: [
                 'type:ui',
@@ -62,12 +71,7 @@ export default [
               // `data-access` ficaria sem uso prático. Decisão registrada em
               // [#254](https://github.com/unifesspa-edu-br/uniplus-web/issues/254).
               sourceTag: 'type:data-access',
-              onlyDependOnLibsWithTags: [
-                'type:util',
-                'type:core',
-                'type:data',
-                'type:auth',
-              ],
+              onlyDependOnLibsWithTags: ['type:util', 'type:core', 'type:data', 'type:auth'],
             },
             {
               sourceTag: 'type:util',
