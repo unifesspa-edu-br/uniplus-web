@@ -46,8 +46,10 @@ const DOMAIN_ROLES = new Set<string>([
             initials(userContext.firstDisplayName())
           }}</span>
           <span class="ui-user-header__text">
-            <strong>{{ userContext.firstDisplayName() }}</strong>
-            <span>
+            <strong data-testid="auth-user-display-name">
+              {{ userContext.firstDisplayName() }}
+            </strong>
+            <span data-testid="auth-user-username">
               &#64;{{ profile.username }}
               @if (domainRoles(profile.roles); as roles) {
                 @if (roles.length) {

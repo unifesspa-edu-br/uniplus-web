@@ -2,6 +2,7 @@ import { test as setup } from '@playwright/test';
 import * as path from 'node:path';
 import { setupKeycloakAuth } from '@uniplus/shared-e2e';
 import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
+import { mockConfiguracaoRuntimeConfig } from './support/runtime-config';
 
 // eslint-disable-next-line no-empty-pattern -- setup project não consome fixtures Playwright.
 setup('autentica admin da Configuração e persiste storageState', async ({}, testInfo) => {
@@ -16,6 +17,6 @@ setup('autentica admin da Configuração e persiste storageState', async ({}, te
     username: ADMIN_USER.username,
     password: ADMIN_USER.password,
     protectedRoute: '/unidades',
-    resetPasswordBeforeLogin: false,
+    preparePage: mockConfiguracaoRuntimeConfig,
   });
 });

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
 type VisualViewport = 'mobile' | 'desktop';
@@ -69,6 +70,7 @@ const UNIDADES = [
 test.describe('Unidade — cobertura visual DS', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const theme = metadataTheme(testInfo);
+    await mockConfiguracaoRuntimeConfig(page);
     await page.addInitScript((dsTheme: VisualTheme) => {
       window.localStorage.setItem(
         'uniplus.a11y',
@@ -363,7 +365,7 @@ async function assertClickableHeaderMenus(page: Page, viewport: VisualViewport):
   const accountMenu = page.getByRole('button', { name: /Abrir menu da conta de / });
   if (viewport === 'desktop') {
     const userHeader = page.locator('auth-user-header-info');
-    await expect(userHeader.locator('.ui-user-header__text strong')).toHaveText('Admin');
+    await expect(userHeader.getByTestId('auth-user-display-name')).toHaveText('Admin');
     await expect(userHeader.locator('.user-chip__avatar')).toHaveText('A');
     await expect(
       userHeader.getByRole('button', { name: 'Abrir menu da conta de Admin Teste' }),

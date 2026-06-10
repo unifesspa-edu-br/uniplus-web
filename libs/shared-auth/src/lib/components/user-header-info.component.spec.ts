@@ -56,7 +56,9 @@ describe('UserHeaderInfoComponent', () => {
 
   it('exibe apenas o primeiro nome social do usuário autenticado', () => {
     const { fixture } = setup();
-    const name = fixture.nativeElement.querySelector<HTMLElement>('.ui-user-header__text strong');
+    const name = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="auth-user-display-name"]',
+    );
     const avatar = fixture.nativeElement.querySelector<HTMLElement>('.user-chip__avatar');
     expect(name?.textContent?.trim()).toBe('Candidato');
     expect(avatar?.textContent?.trim()).toBe('C');
@@ -64,8 +66,10 @@ describe('UserHeaderInfoComponent', () => {
 
   it('exibe username com prefixo @', () => {
     const { fixture } = setup();
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('@candidato');
+    const username = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="auth-user-username"]',
+    );
+    expect(username?.textContent).toContain('@candidato');
   });
 
   it('exibe roles do realm', () => {
@@ -90,7 +94,9 @@ describe('UserHeaderInfoComponent', () => {
       nomeSocial: undefined,
     };
     const { fixture } = setup(semNomeSocial);
-    const name = fixture.nativeElement.querySelector<HTMLElement>('.ui-user-header__text strong');
+    const name = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="auth-user-display-name"]',
+    );
     expect(name?.textContent?.trim()).toBe('Usuário');
   });
 
@@ -141,7 +147,9 @@ describe('UserHeaderInfoComponent', () => {
       nomeSocial: '',
     };
     const { fixture } = setup(nomeSocialVazio);
-    const name = fixture.nativeElement.querySelector<HTMLElement>('.ui-user-header__text strong');
+    const name = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="auth-user-display-name"]',
+    );
     expect(name?.textContent?.trim()).toBe('Usuário');
   });
 
