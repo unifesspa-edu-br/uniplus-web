@@ -1,4 +1,4 @@
-import { chromium, expect, type FullConfig } from '@playwright/test';
+import { chromium, expect, type FullConfig, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -27,6 +27,8 @@ export interface KeycloakAuthSetupOptions {
   readonly protectedRoute?: string;
   /** Quando true, faz reset da senha via Admin API antes de logar. Default true. */
   readonly resetPasswordBeforeLogin?: boolean;
+  /** Hook opcional para configurar mocks/rotas antes da primeira navegação. */
+  readonly preparePage?: (page: Page) => Promise<void>;
 }
 
 /**
@@ -58,6 +60,7 @@ export async function setupKeycloakAuth(options: KeycloakAuthSetupOptions): Prom
   const baseUrlPattern = new RegExp(escapeRegex(options.appBaseUrl));
 
   try {
+    await options.preparePage?.(page);
     await page.goto(`${options.appBaseUrl}${protectedRoute}`);
     await keycloakLogin(page, options.username, options.password, {
       expectRedirectTo: baseUrlPattern,
