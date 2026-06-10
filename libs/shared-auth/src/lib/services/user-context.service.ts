@@ -12,6 +12,7 @@ export class UserContextService {
     if (!profile) return '';
     return profile.nomeSocial?.trim() || profile.nomeCivil;
   });
+  readonly firstDisplayName = computed(() => firstNameFrom(this.displayName()));
   readonly isAuthenticated = this.authService.authenticated;
 
   hasRole(role: UserRole): boolean {
@@ -21,4 +22,8 @@ export class UserContextService {
   hasAnyRole(...roles: UserRole[]): boolean {
     return roles.some((role) => this.authService.hasRole(role));
   }
+}
+
+function firstNameFrom(name: string): string {
+  return name.trim().split(/\s+/u)[0] ?? '';
 }

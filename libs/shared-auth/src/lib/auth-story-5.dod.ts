@@ -58,6 +58,7 @@ export const coverage: readonly DoDItem[] = [
       'apps/selecao/public/assets/silent-check-sso.html',
       'apps/ingresso/public/assets/silent-check-sso.html',
       'apps/portal/public/assets/silent-check-sso.html',
+      'apps/configuracao/public/assets/silent-check-sso.html',
     ],
   },
   {

@@ -35,6 +35,8 @@
       "@uniplus/shared-auth/interceptors": ["libs/shared-auth/interceptors/src/index.ts"],
       "@uniplus/shared-data/config": ["libs/shared-data/config/src/index.ts"],
       "@uniplus/shared-data/selecao": ["libs/shared-data/selecao/src/index.ts"],
+      "@uniplus/shared-data/organizacao": ["libs/shared-data/organizacao/src/index.ts"],
+      "@uniplus/shared-data/configuracao": ["libs/shared-data/configuracao/src/index.ts"],
       "@uniplus/shared-core/http": ["libs/shared-core/http/src/index.ts"],
       "@uniplus/shared-core/interceptors": ["libs/shared-core/interceptors/src/index.ts"],
       "@uniplus/shared-core/dom": ["libs/shared-core/dom/src/index.ts"],

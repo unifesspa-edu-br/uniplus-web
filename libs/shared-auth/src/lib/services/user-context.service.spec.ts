@@ -97,6 +97,40 @@ describe('UserContextService', () => {
     });
   });
 
+  describe('firstDisplayName — primeiro nome para superfícies compactas', () => {
+    it('retorna string vazia quando não há perfil', () => {
+      expect(service.firstDisplayName()).toBe('');
+    });
+
+    it('retorna apenas o primeiro nome social quando preenchido', () => {
+      authStub.userProfile.set(
+        makeProfile({ nomeCivil: 'Usuário Candidato', nomeSocial: 'Candidato Teste' }),
+      );
+
+      expect(service.firstDisplayName()).toBe('Candidato');
+    });
+
+    it('retorna apenas o primeiro nome civil quando nome social está ausente', () => {
+      authStub.userProfile.set(makeProfile({ nomeSocial: undefined }));
+
+      expect(service.firstDisplayName()).toBe('Maria');
+    });
+
+    it('normaliza espaços excedentes antes de extrair o primeiro nome', () => {
+      authStub.userProfile.set(
+        makeProfile({ nomeCivil: '  Maria   das Dores  ', nomeSocial: undefined }),
+      );
+
+      expect(service.firstDisplayName()).toBe('Maria');
+    });
+
+    it('mantém nome único sem alteração', () => {
+      authStub.userProfile.set(makeProfile({ nomeCivil: 'Madonna', nomeSocial: undefined }));
+
+      expect(service.firstDisplayName()).toBe('Madonna');
+    });
+  });
+
   describe('hasRole / hasAnyRole — delegação ao AuthService', () => {
     it('hasRole delega a chamada para AuthService com o mesmo role', () => {
       authStub.hasRoleResult = true;

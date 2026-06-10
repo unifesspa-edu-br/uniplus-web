@@ -7,8 +7,12 @@ export { ButtonComponent, type UiButtonSize, type UiButtonType, type UiButtonVar
 export { CardComponent } from './components/card/card';
 export { CpfInputComponent } from './components/cpf-input/cpf-input';
 export { DataTableComponent, type UiDataTableColumn } from './components/data-table/data-table';
+export { DialogComponent } from './components/dialog/dialog';
+export { DrawerComponent } from './components/drawer/drawer';
 export { EmptyStateComponent } from './components/empty-state/empty-state';
 export { FileUploadComponent } from './components/file-upload/file-upload';
+export { FilterBarComponent } from './components/filter-bar/filter-bar';
+export { FilterChipsComponent, type UiFilterChipOption } from './components/filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from './components/form-field/form-field';
 export { InstitutionalBarComponent } from './components/institutional-bar/institutional-bar';

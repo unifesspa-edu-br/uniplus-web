@@ -19,8 +19,22 @@ export * from './models/resultado.model';
 // de `./api/selecao/schema`.
 export { SELECAO_BASE_PATH } from './api/selecao/tokens';
 export { INGRESSO_BASE_PATH } from './api/ingresso/tokens';
+export { CONFIGURACAO_BASE_PATH } from './api/configuracao/tokens';
+export { ORGANIZACAO_BASE_PATH } from './api/organizacao/tokens';
 export { EditaisApi } from './api/selecao/editais.api';
 export type { EditalDto, CriarEditalCommand } from './api/selecao/editais.api';
+export {
+  ORIGENS_UNIDADE,
+  TIPOS_UNIDADE,
+  UnidadesApi,
+  type AtualizarUnidadeCommand,
+  type CriarUnidadeCommand,
+  type OrigemUnidade,
+  type TipoUnidade,
+  type UnidadeDto,
+  type UnidadeOrigemOption,
+  type UnidadeTipoOption,
+} from './api/organizacao/unidades.api';
 
 // Utils
 export { isValidCpf, formatCpf, maskCpf } from './utils/cpf.util';

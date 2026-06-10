@@ -1,0 +1,7 @@
+{
+  "apiUrl": "http://localhost:5263",
+  "oidc": {
+    "issuerUrl": "http://localhost:8080/realms/unifesspa-dev-local",
+    "clientId": "configuracao-web"
+  }
+}

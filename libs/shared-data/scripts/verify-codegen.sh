@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 generated=(
   "libs/shared-data/src/lib/api/selecao/schema.ts"
   "libs/shared-data/src/lib/api/ingresso/schema.ts"
+  "libs/shared-data/src/lib/api/organizacao/schema.ts"
 )
 
 bash "$SCRIPT_DIR/generate-api-clients.sh"
