@@ -6,6 +6,11 @@ import { STORAGE_STATE_PATH_ADMIN } from './src/fixtures/auth.fixture';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['BASE_URL'] || 'http://localhost:4203';
+
+// webkit requer libs Ubuntu (libicudata.so.74, libxml2.so.2 etc.) — só executa em CI.
+// Localmente em distros não-Debian, defina CI=true para incluir webkit.
+const isCI = !!process.env['CI'];
+
 const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
 const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.visual\.spec\.ts|auth\.setup\.ts)$/;
 
@@ -74,11 +79,15 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    {
-      name: 'webkit',
-      testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
-      use: { ...devices['Desktop Safari'] },
-    },
+    ...(isCI
+      ? [
+          {
+            name: 'webkit',
+            testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
+            use: { ...devices['Desktop Safari'] },
+          },
+        ]
+      : []),
 
     ...VISUAL_PROJECTS,
 

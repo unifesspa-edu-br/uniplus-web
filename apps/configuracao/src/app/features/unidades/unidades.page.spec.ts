@@ -265,9 +265,13 @@ describe('UnidadesPage', () => {
 
   it('atualiza unidade sem enviar vigenciaInicio no command de update', () => {
     flushList();
-    component['abrirEdicao'](unidadesSeed[1]);
+    component['abrirEdicao']({ ...unidadesSeed[1], origem: 'ImportadoSIORG' });
     component['form'].controls.nome.setValue('Instituto Renomeado');
     const key = component['idempotencyKeyAtual']();
+
+    expect(component['form'].controls.origem.disabled).toBe(true);
+    expect(component['form'].controls.origem.value).toBe('3');
+    expect(component['origemEmEdicaoLabel']()).toBe('Importado SIORG');
 
     component['salvar']();
 
@@ -275,6 +279,7 @@ describe('UnidadesPage', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.headers.get('Idempotency-Key')).toBe(key);
     expect(req.request.body).not.toHaveProperty('vigenciaInicio');
+    expect(req.request.body).not.toHaveProperty('origem');
     expect(req.request.body).toMatchObject({
       id: INSTITUTO_ID,
       nome: 'Instituto Renomeado',
@@ -284,6 +289,22 @@ describe('UnidadesPage', () => {
 
     flushList();
     expect(component['formOpen']()).toBe(false);
+  });
+
+  it('preserva origem desconhecida ao editar e reabilita o campo ao criar', () => {
+    flushList();
+
+    component['abrirEdicao']({ ...unidadesSeed[1], origem: 'OrigemExterna' });
+
+    expect(component['form'].controls.origem.disabled).toBe(true);
+    expect(component['form'].controls.origem.value).toBe('');
+    expect(component['origemEmEdicaoLabel']()).toBe('OrigemExterna');
+
+    component['abrirCadastro']();
+
+    expect(component['form'].controls.origem.enabled).toBe(true);
+    expect(component['form'].controls.origem.value).toBe('2');
+    expect(component['origemEmEdicaoLabel']()).toBe('');
   });
 
   it('remove unidade sem Idempotency-Key porque o endpoint DELETE não exige o header', () => {
