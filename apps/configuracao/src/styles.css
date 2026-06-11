@@ -635,6 +635,20 @@ cfg-unidades-page {
   grid-column: 1 / -1;
 }
 
+.field__readonly {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
 .cfg-form-drawer .form-grid--compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

@@ -1,5 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -94,8 +101,8 @@ const BACKEND_FIELD_TO_CONTROL = {
       <div class="page-header__content">
         <h1 class="page-header__title">Unidade</h1>
         <p class="page-header__desc">
-          Estrutura organizacional hierárquica da Unifesspa — identidade rica com histórico
-          de identificadores · UNI-REQ-0008.
+          Estrutura organizacional hierárquica da Unifesspa — identidade rica com histórico de
+          identificadores · UNI-REQ-0008.
         </p>
       </div>
     </div>
@@ -105,10 +112,10 @@ const BACKEND_FIELD_TO_CONTROL = {
       heading="Hierarquia de unidades — 11 tipos em domínio fechado"
       [dynamic]="false"
     >
-      Cada unidade pode ter uma unidade superior do mesmo banco, sem ciclos. Sigla, Slug e
-      Código são únicos entre as unidades vivas; o Alias é livre. A remoção é bloqueada se
-      a unidade for superior de outra unidade viva ou a raiz da Instituição; referências por
-      snapshot em outros módulos não bloqueiam.
+      Cada unidade pode ter uma unidade superior do mesmo banco, sem ciclos. Sigla, Slug e Código
+      são únicos entre as unidades vivas; o Alias é livre. A remoção é bloqueada se a unidade for
+      superior de outra unidade viva ou a raiz da Instituição; referências por snapshot em outros
+      módulos não bloqueiam.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -133,7 +140,11 @@ const BACKEND_FIELD_TO_CONTROL = {
               (input)="busca.set(inputValue($event))"
             />
           </div>
-          <button type="button" class="btn btn--tertiary btn--sm btn--rect" (click)="limparFiltros()">
+          <button
+            type="button"
+            class="btn btn--tertiary btn--sm btn--rect"
+            (click)="limparFiltros()"
+          >
             Limpar
           </button>
         </div>
@@ -193,14 +204,18 @@ const BACKEND_FIELD_TO_CONTROL = {
             heading="Nenhuma unidade carregada"
             description="Cadastre a primeira unidade para iniciar a estrutura institucional."
           >
-            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">Nova unidade</button>
+            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+              Nova unidade
+            </button>
           </ui-empty-state>
         } @else if (unidadesFiltradas().length === 0) {
           <ui-empty-state
             heading="Nenhuma unidade encontrada"
             description="Ajuste a busca ou o filtro de tipo para ver resultados."
           >
-            <button type="button" class="btn btn--secondary" (click)="limparFiltros()">Limpar filtros</button>
+            <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
+              Limpar filtros
+            </button>
           </ui-empty-state>
         } @else {
           <div class="table-responsive">
@@ -235,12 +250,22 @@ const BACKEND_FIELD_TO_CONTROL = {
                     <td data-label="Tipo">
                       <span class="tag">{{ unidade.tipo }}</span>
                     </td>
-                    <td data-label="Unidade superior">{{ unidadeSuperiorLabel(unidade.unidadeSuperiorId) }}</td>
+                    <td data-label="Unidade superior">
+                      {{ unidadeSuperiorLabel(unidade.unidadeSuperiorId) }}
+                    </td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <button type="button" class="btn btn--tertiary btn--sm btn--rect" (click)="abrirEdicao(unidade)">
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        (click)="abrirEdicao(unidade)"
+                      >
                         Editar
                       </button>
-                      <button type="button" class="btn btn--tertiary btn--sm btn--rect" (click)="pedirRemocao(unidade)">
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        (click)="pedirRemocao(unidade)"
+                      >
                         Remover
                       </button>
                     </td>
@@ -356,12 +381,18 @@ const BACKEND_FIELD_TO_CONTROL = {
         </ui-alert>
       }
 
-      <form [formGroup]="form" id="cfg-unidade-form" (ngSubmit)="salvar()" novalidate class="cfg-form">
+      <form
+        [formGroup]="form"
+        id="cfg-unidade-form"
+        (ngSubmit)="salvar()"
+        novalidate
+        class="cfg-form"
+      >
         <section aria-labelledby="cfg-form-identificadores">
           <h3 id="cfg-form-identificadores" class="form-section__title">Identificadores</h3>
           <ui-alert variant="info" [dynamic]="false">
-            Sigla, Slug e Código são únicos entre as unidades vivas. Alias é livre e
-            não-único. Mudar qualquer identificador registra o valor anterior no histórico.
+            Sigla, Slug e Código são únicos entre as unidades vivas. Alias é livre e não-único.
+            Mudar qualquer identificador registra o valor anterior no histórico.
           </ui-alert>
 
           <div class="form-grid">
@@ -374,7 +405,9 @@ const BACKEND_FIELD_TO_CONTROL = {
                 formControlName="sigla"
                 [attr.aria-invalid]="erroDoCampo('sigla') ? 'true' : null"
               />
-              <span class="field__hint">Sigla institucional corrente. Única entre as unidades vivas.</span>
+              <span class="field__hint"
+                >Sigla institucional corrente. Única entre as unidades vivas.</span
+              >
               @if (erroDoCampo('sigla')) {
                 <span class="field__error">{{ erroDoCampo('sigla') }}</span>
               }
@@ -404,7 +437,9 @@ const BACKEND_FIELD_TO_CONTROL = {
                 formControlName="codigo"
                 [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
               />
-              <span class="field__hint">Código nos sistemas da Unifesspa. Único entre as unidades vivas.</span>
+              <span class="field__hint"
+                >Código nos sistemas da Unifesspa. Único entre as unidades vivas.</span
+              >
               @if (erroDoCampo('codigo')) {
                 <span class="field__error">{{ erroDoCampo('codigo') }}</span>
               }
@@ -412,9 +447,7 @@ const BACKEND_FIELD_TO_CONTROL = {
             <label class="field">
               <span class="field__label">Alias</span>
               <input class="input" type="text" placeholder="Ex.: PROEG" formControlName="alias" />
-              <span class="field__hint">
-                Nome popular de agrupamento. Não é único.
-              </span>
+              <span class="field__hint"> Nome popular de agrupamento. Não é único. </span>
             </label>
             <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome completo</span>
@@ -492,14 +525,21 @@ const BACKEND_FIELD_TO_CONTROL = {
                 <span class="field__error">{{ erroDoCampo('vigenciaFim') }}</span>
               }
             </label>
-            <label class="field field--full">
-              <span class="field__label is-required">Origem do registro</span>
-              <select class="select" formControlName="origem">
-                @for (origem of origemOptions; track origem.value) {
-                  <option [value]="origem.value">{{ origem.label }}</option>
-                }
-              </select>
-            </label>
+            @if (modo() === 'criar') {
+              <label class="field field--full">
+                <span class="field__label is-required">Origem do registro</span>
+                <select class="select" formControlName="origem">
+                  @for (origem of origemOptions; track origem.value) {
+                    <option [value]="origem.value">{{ origem.label }}</option>
+                  }
+                </select>
+              </label>
+            } @else {
+              <div class="field field--full">
+                <span class="field__label">Origem do registro</span>
+                <span class="field__readonly">{{ origemEmEdicaoLabel() }}</span>
+              </div>
+            }
             @if (modo() === 'editar') {
               <label class="field field--full">
                 <span class="field__label">Motivo da mudança de identificador</span>
@@ -514,7 +554,12 @@ const BACKEND_FIELD_TO_CONTROL = {
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>
-        <button type="submit" form="cfg-unidade-form" class="btn btn--primary" [disabled]="saving() || form.invalid">
+        <button
+          type="submit"
+          form="cfg-unidade-form"
+          class="btn btn--primary"
+          [disabled]="saving() || form.invalid"
+        >
           @if (saving()) {
             <ui-spinner size="sm" />
           }
@@ -554,6 +599,7 @@ export class UnidadesPage {
   protected readonly unidadeParaRemover = signal<UnidadeDto | null>(null);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly unidadeEmEdicaoId = signal<string | null>(null);
+  protected readonly origemEmEdicao = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
   protected readonly tipoOptions = TIPOS_UNIDADE.map((tipo) => ({
@@ -566,8 +612,9 @@ export class UnidadesPage {
   }));
 
   protected readonly tiposDisponiveis = computed(() =>
-    [...new Set(this.unidades().map((unidade) => unidade.tipo))]
-      .sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    [...new Set(this.unidades().map((unidade) => unidade.tipo))].sort((a, b) =>
+      a.localeCompare(b, 'pt-BR'),
+    ),
   );
 
   protected readonly tipoChips = computed<readonly UiFilterChipOption[]>(() => {
@@ -604,6 +651,9 @@ export class UnidadesPage {
   protected readonly arvore = computed(() => montarArvore(this.unidades()));
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova unidade' : 'Editar unidade',
+  );
+  protected readonly origemEmEdicaoLabel = computed(() =>
+    origemDisplayLabel(this.origemEmEdicao()),
   );
   protected readonly confirmMessage = computed(() => {
     const unidade = this.unidadeParaRemover();
@@ -653,6 +703,8 @@ export class UnidadesPage {
   protected abrirCadastro(): void {
     this.modo.set('criar');
     this.unidadeEmEdicaoId.set(null);
+    this.origemEmEdicao.set(null);
+    this.form.controls.origem.enable({ emitEvent: false });
     this.form.reset({
       nome: '',
       alias: '',
@@ -675,6 +727,8 @@ export class UnidadesPage {
   protected abrirEdicao(unidade: UnidadeDto): void {
     this.modo.set('editar');
     this.unidadeEmEdicaoId.set(unidade.id);
+    this.origemEmEdicao.set(unidade.origem);
+    this.form.controls.origem.disable({ emitEvent: false });
     this.form.reset({
       nome: unidade.nome,
       alias: unidade.alias ?? '',
@@ -833,9 +887,7 @@ export class UnidadesPage {
   private handleSalvarResult(result: ApiResult<string | void>): void {
     this.saving.set(false);
     if (result.ok) {
-      this.notifications.success(
-        this.modo() === 'criar' ? 'Unidade criada' : 'Unidade atualizada',
-      );
+      this.notifications.success(this.modo() === 'criar' ? 'Unidade criada' : 'Unidade atualizada');
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
       this.recarregar();
@@ -957,7 +1009,11 @@ function nullIfBlank(value: string): string | null {
 }
 
 function controlNameFromBackendField(field: string): keyof UnidadeForm | null {
-  const normalized = field.split('.').at(-1)?.replace(/\[\d+\]$/u, '') ?? field;
+  const normalized =
+    field
+      .split('.')
+      .at(-1)
+      ?.replace(/\[\d+\]$/u, '') ?? field;
   if (normalized in BACKEND_FIELD_TO_CONTROL) {
     return BACKEND_FIELD_TO_CONTROL[normalized as keyof typeof BACKEND_FIELD_TO_CONTROL];
   }
@@ -1001,6 +1057,28 @@ function tipoValueFromLabel(label: string): string {
 }
 
 function origemValueFromLabel(label: string): string {
-  const option = ORIGENS_UNIDADE.find((origem) => origem.label.replaceAll(' ', '') === label);
-  return String(option?.value ?? 2);
+  const option = ORIGENS_UNIDADE.find(
+    (origem) => normalizarEnumLabel(origem.label) === normalizarEnumLabel(label),
+  );
+  return option === undefined ? '' : String(option.value);
+}
+
+function origemDisplayLabel(label: string | null): string {
+  if (label === null || label.trim().length === 0) {
+    return '';
+  }
+
+  const option = ORIGENS_UNIDADE.find(
+    (origem) => normalizarEnumLabel(origem.label) === normalizarEnumLabel(label),
+  );
+  return option?.label ?? label;
+}
+
+function normalizarEnumLabel(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/\+/gu, 'plus')
+    .replace(/[^a-z0-9]/giu, '')
+    .toLocaleLowerCase('pt-BR');
 }
