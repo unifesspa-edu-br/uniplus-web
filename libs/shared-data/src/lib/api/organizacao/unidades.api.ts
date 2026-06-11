@@ -1,12 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  ApiResult,
-  Cursor,
-  cursorToString,
-  withVendorMime,
-} from '@uniplus/shared-core/http';
+import { ApiResult, Cursor, cursorToString, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { ORGANIZACAO_BASE_PATH } from './tokens';
 
@@ -28,15 +23,15 @@ export interface UnidadeOrigemOption {
 
 export const TIPOS_UNIDADE: readonly UnidadeTipoOption[] = [
   { value: 1, label: 'Reitoria' },
-  { value: 2, label: 'Pro-Reitoria' },
+  { value: 2, label: 'Pró-Reitoria' },
   { value: 3, label: 'Centro' },
   { value: 4, label: 'Instituto' },
   { value: 5, label: 'Faculdade' },
   { value: 6, label: 'Departamento' },
-  { value: 7, label: 'Coordenacao' },
+  { value: 7, label: 'Coordenação' },
   { value: 8, label: 'Diretoria' },
-  { value: 9, label: 'Divisao' },
-  { value: 10, label: 'Nucleo' },
+  { value: 9, label: 'Divisão' },
+  { value: 10, label: 'Núcleo' },
   { value: 11, label: 'Outro' },
 ] as const;
 
