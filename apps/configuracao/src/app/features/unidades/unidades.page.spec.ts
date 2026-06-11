@@ -291,6 +291,28 @@ describe('UnidadesPage', () => {
     expect(component['formOpen']()).toBe(false);
   });
 
+  it('preserva tipo Pro-Reitoria ao editar unidade', () => {
+    flushList();
+    component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'Pro-Reitoria' });
+    component['form'].controls.nome.setValue('Pró-Reitoria Renomeada');
+
+    expect(component['form'].controls.tipo.value).toBe('2');
+
+    component['salvar']();
+
+    const req = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toMatchObject({
+      id: INSTITUTO_ID,
+      nome: 'Pró-Reitoria Renomeada',
+      tipo: 2,
+    });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    flushList();
+    expect(component['formOpen']()).toBe(false);
+  });
+
   it('preserva origem desconhecida ao editar e reabilita o campo ao criar', () => {
     flushList();
 

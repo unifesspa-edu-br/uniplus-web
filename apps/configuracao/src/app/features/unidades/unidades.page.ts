@@ -1052,7 +1052,9 @@ function formatarData(value: string): string {
 }
 
 function tipoValueFromLabel(label: string): string {
-  const option = TIPOS_UNIDADE.find((tipo) => tipo.label.replace('-', '') === label);
+  const option = TIPOS_UNIDADE.find(
+    (tipo) => normalizarEnumLabel(tipo.label) === normalizarEnumLabel(label),
+  );
   return String(option?.value ?? 11);
 }
 
