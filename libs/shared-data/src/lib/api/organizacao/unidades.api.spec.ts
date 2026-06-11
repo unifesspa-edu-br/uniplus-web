@@ -14,6 +14,7 @@ import {
 import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
+  TIPOS_UNIDADE,
   UnidadeDto,
   UnidadesApi,
 } from './unidades.api';
@@ -144,6 +145,17 @@ describe('UnidadesApi', () => {
     if (result.ok) {
       expect(result.data).toBe(ID);
     }
+  });
+
+  it('expõe labels acentuados para tipos de unidade na UI', () => {
+    expect(TIPOS_UNIDADE).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: 2, label: 'Pró-Reitoria' }),
+        expect.objectContaining({ value: 7, label: 'Coordenação' }),
+        expect.objectContaining({ value: 9, label: 'Divisão' }),
+        expect.objectContaining({ value: 10, label: 'Núcleo' }),
+      ]),
+    );
   });
 
   it('atualizar() faz PUT /api/admin/unidades/{id} com Idempotency-Key', async () => {
