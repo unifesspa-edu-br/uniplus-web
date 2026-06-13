@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   ApiResult,
@@ -276,22 +276,19 @@ const BACKEND_FIELD_TO_CONTROL = {
           </div>
         }
 
-        <nav class="pager" aria-label="Paginação de unidades">
-          <button class="pager__btn" type="button" disabled>
-            <i class="pi pi-angle-left" aria-hidden="true"></i>
-            Anterior
-          </button>
-          <span class="pager__status">Página <span class="pager__page">1</span></span>
-          <button
-            class="pager__btn"
-            type="button"
-            [disabled]="!nextCursor() || loading()"
-            (click)="carregarMais()"
-          >
-            Próxima
-            <i class="pi pi-angle-right" aria-hidden="true"></i>
-          </button>
-        </nav>
+        @if (nextCursor()) {
+          <nav class="pager" aria-label="Carregar mais unidades">
+            <button
+              class="btn btn--secondary"
+              type="button"
+              [disabled]="loading()"
+              (click)="carregarMais()"
+            >
+              Carregar mais
+              <i class="pi pi-angle-down btn__icon" aria-hidden="true"></i>
+            </button>
+          </nav>
+        }
       </section>
     </div>
 
@@ -468,13 +465,25 @@ const BACKEND_FIELD_TO_CONTROL = {
         <section aria-labelledby="cfg-form-hierarquia">
           <h3 id="cfg-form-hierarquia" class="form-section__title">Classificação e hierarquia</h3>
           <div class="form-grid">
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="tipoNaoReconhecido()">
               <span class="field__label is-required">Tipo</span>
-              <select class="select" formControlName="tipo">
+              <select
+                class="select"
+                formControlName="tipo"
+                [attr.aria-invalid]="tipoNaoReconhecido() ? 'true' : null"
+              >
+                @if (tipoNaoReconhecido()) {
+                  <option value="" disabled>Selecione o tipo</option>
+                }
                 @for (tipo of tipoOptions; track tipo.value) {
                   <option [value]="tipo.value">{{ tipo.label }}</option>
                 }
               </select>
+              @if (tipoNaoReconhecido()) {
+                <span class="field__error">
+                  Tipo atual não reconhecido — selecione um tipo válido para salvar.
+                </span>
+              }
             </label>
             <label class="field field--full">
               <span class="field__label">Unidade superior</span>
@@ -689,6 +698,17 @@ export class UnidadesPage {
     motivoMudancaIdentificador: new FormControl('', { nonNullable: true }),
   });
 
+  // Reativo ao select de tipo: na edição, um `tipo` vindo do backend que não
+  // casa com nenhum dos 11 tipos conhecidos resulta em controle vazio — em vez
+  // de coagir silenciosamente para "Outro". Mantém o submit bloqueado (tipo é
+  // obrigatório) até o usuário escolher um tipo válido conscientemente.
+  private readonly tipoControlValue = toSignal(this.form.controls.tipo.valueChanges, {
+    initialValue: this.form.controls.tipo.value,
+  });
+  protected readonly tipoNaoReconhecido = computed(
+    () => this.tipoControlValue().trim().length === 0,
+  );
+
   constructor() {
     this.carregar(undefined, false);
   }
@@ -779,8 +799,11 @@ export class UnidadesPage {
           this.recarregar();
           return;
         }
-        this.formError.set(this.problemI18n.resolve(result.problem).title);
-        this.notifications.errorFromProblem(result.problem);
+        // Falha de remoção é disparada de fora do drawer de formulário: a razão
+        // (ex.: 409 "unidade é superior de outra") vai para a notificação, não
+        // para `formError` — que pertence ao formulário e não está visível aqui.
+        const mensagem = this.problemI18n.resolve(result.problem).title;
+        this.notifications.errorFromProblem(result.problem, { title: mensagem });
       });
   }
 
@@ -1040,7 +1063,13 @@ function isUnidadeControlName(value: string): value is keyof UnidadeForm {
 }
 
 function dataAtualIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  // Data local (não UTC): `toISOString` poderia adiantar um dia à noite em
+  // fusos negativos (ex.: 21h BRT vira o dia seguinte em UTC).
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
 }
 
 function formatarData(value: string): string {
@@ -1055,7 +1084,9 @@ function tipoValueFromLabel(label: string): string {
   const option = TIPOS_UNIDADE.find(
     (tipo) => normalizarEnumLabel(tipo.label) === normalizarEnumLabel(label),
   );
-  return String(option?.value ?? 11);
+  // Sem casamento: devolve vazio (controle inválido) em vez de assumir "Outro" —
+  // editar+salvar não deve reclassificar a unidade silenciosamente.
+  return option === undefined ? '' : String(option.value);
 }
 
 function origemValueFromLabel(label: string): string {

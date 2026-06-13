@@ -313,6 +313,21 @@ describe('UnidadesPage', () => {
     expect(component['formOpen']()).toBe(false);
   });
 
+  it('não coage tipo desconhecido para "Outro" ao editar — bloqueia o submit', () => {
+    flushList();
+
+    component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'TipoInexistente' });
+
+    expect(component['form'].controls.tipo.value).toBe('');
+    expect(component['tipoNaoReconhecido']()).toBe(true);
+    expect(component['form'].controls.tipo.valid).toBe(false);
+
+    // Escolher um tipo válido limpa o estado de "não reconhecido".
+    component['form'].controls.tipo.setValue('5');
+    expect(component['tipoNaoReconhecido']()).toBe(false);
+    expect(component['form'].controls.tipo.valid).toBe(true);
+  });
+
   it('preserva origem desconhecida ao editar e reabilita o campo ao criar', () => {
     flushList();
 
