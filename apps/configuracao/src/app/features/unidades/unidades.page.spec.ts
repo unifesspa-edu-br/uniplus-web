@@ -263,6 +263,50 @@ describe('UnidadesPage', () => {
     expect(component['idempotencyKeyAtual']()).not.toBe(primeiraChave);
   });
 
+  it('renova Idempotency-Key em 409 Conflict para permitir reenvio após corrigir identificador duplicado', () => {
+    flushList();
+    component['abrirCadastro']();
+    component['form'].setValue({
+      nome: 'Faculdade de Computação',
+      alias: '',
+      slug: 'facom',
+      sigla: 'FACOM',
+      codigo: 'FACOM',
+      unidadeSuperiorId: INSTITUTO_ID,
+      tipo: '5',
+      unidadeAcademica: true,
+      vigenciaInicio: '2026-06-10',
+      vigenciaFim: '2026-06-10',
+      origem: '2',
+      motivoMudancaIdentificador: '',
+    });
+
+    const primeiraChave = component['idempotencyKeyAtual']();
+    component['salvar']();
+
+    controller.expectOne(`${BASE}/api/admin/unidades`).flush(
+      {
+        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.unidade.sigla_duplicada',
+        title: 'Sigla já utilizada por outra unidade viva',
+        status: 409,
+        detail: 'A sigla FACOM já pertence a uma unidade vigente.',
+        code: 'uniplus.unidade.sigla_duplicada',
+        traceId: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
+      },
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    expect(component['saving']()).toBe(false);
+    expect(component['formError']()).toBe('Sigla já utilizada por outra unidade viva');
+    // Sem a renovação, o reenvio com sigla corrigida (body diferente) reusaria a
+    // chave e cairia em body_mismatch, forçando um terceiro submit.
+    expect(component['idempotencyKeyAtual']()).not.toBe(primeiraChave);
+  });
+
   it('atualiza unidade sem enviar vigenciaInicio no command de update', () => {
     flushList();
     component['abrirEdicao']({ ...unidadesSeed[1], origem: 'ImportadoSIORG' });
