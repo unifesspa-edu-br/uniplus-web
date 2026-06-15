@@ -925,7 +925,7 @@ export class UnidadesPage {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
-    if (problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);
