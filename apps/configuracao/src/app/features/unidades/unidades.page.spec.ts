@@ -560,4 +560,35 @@ describe('UnidadesPage', () => {
 
     expect(component['opcoesUnidadeSuperior']().map((u) => u.id)).toEqual([INSTITUTO_ID]);
   });
+
+  it('permite tentar novamente quando uma página falha, sem perder o que já foi carregado', async () => {
+    await flushInicial([unidadesSeed[0]], {
+      Link: `<${BASE}/api/unidades?cursor=pagina-2>; rel="next"`,
+    });
+    expect(component['unidades']()).toHaveLength(1);
+
+    component['carregarMais']();
+    await propagate();
+    expectListGet((r) => r.params.get('cursor') === 'pagina-2').flush(
+      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(1); // mantém a página já carregada
+    expect(component['errorMessage']()).not.toBeNull();
+
+    component['tentarNovamente']();
+    await propagate();
+    const retry = expectListGet((r) => r.params.get('cursor') === 'pagina-2');
+    retry.flush([unidadesSeed[1]]);
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(2); // acumulou após o retry
+    expect(component['errorMessage']()).toBeNull();
+  });
 });

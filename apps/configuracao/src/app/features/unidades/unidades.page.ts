@@ -140,6 +140,16 @@ const BACKEND_FIELD_TO_CONTROL = {
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar unidades">
         {{ errorMessage() }}
+        <div class="cfg-unidades__retry">
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="loading()"
+            (click)="tentarNovamente()"
+          >
+            Tentar novamente
+          </button>
+        </div>
       </ui-alert>
     }
 
@@ -858,6 +868,15 @@ export class UnidadesPage {
       // Só avança (cursor forward-only). A acumulação fica a cargo do
       // linkedSignal `unidades` quando a próxima página chega.
       this.cursor.set(proximo);
+    }
+  }
+
+  // Refaz a carga da página atual após falha. Reusa `reload()` porque o cursor
+  // já aponta para a página que falhou — `cursor.set(mesmoValor)` não dispararia
+  // novo request. Cobre falha da primeira página e de "Carregar mais".
+  protected tentarNovamente(): void {
+    if (!this.loading()) {
+      this.lista.reload();
     }
   }
 
