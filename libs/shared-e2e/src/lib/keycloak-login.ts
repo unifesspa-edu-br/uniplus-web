@@ -46,7 +46,8 @@ export async function resetPasswords(
           { headers: authHeader },
         );
         const found = await usersResp.json();
-        if (!found.length) throw new Error(`Usuário '${username}' não encontrado no realm ${KEYCLOAK_REALM}`);
+        if (!found.length)
+          throw new Error(`Usuário '${username}' não encontrado no realm ${KEYCLOAK_REALM}`);
         const userId = found[0].id as string;
 
         await clearBruteForceFailures(api, authHeader, userId);
@@ -85,7 +86,9 @@ export async function resetPasswords(
 function keycloakAdminPassword(): string {
   const val = process.env['KEYCLOAK_ADMIN_PASSWORD'];
   if (!val) {
-    throw new Error('KEYCLOAK_ADMIN_PASSWORD não definido — configure a variável de ambiente antes de rodar os testes E2E autenticados.');
+    throw new Error(
+      'KEYCLOAK_ADMIN_PASSWORD não definido — configure a variável de ambiente antes de rodar os testes E2E autenticados.',
+    );
   }
   return val;
 }
@@ -105,11 +108,17 @@ async function clearBruteForceFailures(
   }
 
   const body = await response.text();
-  throw new Error(`Falha ao limpar brute-force do usuário '${userId}': ${response.status()} ${body}`);
+  throw new Error(
+    `Falha ao limpar brute-force do usuário '${userId}': ${response.status()} ${body}`,
+  );
 }
 
-/** Regex default de redirect pós-login para apps locais em `localhost:<porta>`. */
-const DEFAULT_REDIRECT_PATTERN = /localhost:\d{4}/;
+/**
+ * Regex default de redirect pós-login para apps locais.
+ * Exclui o Keycloak em `localhost:8080` para evitar encerrar a espera cedo demais
+ * antes de voltar para o app sob teste.
+ */
+const DEFAULT_REDIRECT_PATTERN = /localhost:(?!8080)\d{4}/;
 
 /**
  * Realiza login via UI do Keycloak.
@@ -222,7 +231,9 @@ async function acquireResetLock() {
       }
       await removeStaleResetLock();
       if (Date.now() >= deadline) {
-        throw new Error(`Timeout aguardando lock de reset de senhas do Keycloak: ${RESET_LOCK_PATH}`);
+        throw new Error(
+          `Timeout aguardando lock de reset de senhas do Keycloak: ${RESET_LOCK_PATH}`,
+        );
       }
       await delay(250);
     }
