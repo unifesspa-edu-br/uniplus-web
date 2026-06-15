@@ -542,4 +542,22 @@ describe('UnidadesPage', () => {
 
     expect(component['unidadeParaRemover']()).toBeNull();
   });
+
+  it('busca de unidade superior consulta o backend com q e atualiza as opções (escala além de 1 página)', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior(); // GET inicial das opções (sem q)
+
+    component['buscaPai'].set('inst');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+
+    const request = expectListGet(
+      (r) => r.params.get('q') === 'inst' && !r.params.has('cursor'),
+    );
+    request.flush([unidadesSeed[1]]);
+    await propagate();
+
+    expect(component['opcoesUnidadeSuperior']().map((u) => u.id)).toEqual([INSTITUTO_ID]);
+  });
 });
