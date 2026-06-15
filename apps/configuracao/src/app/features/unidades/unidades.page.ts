@@ -506,9 +506,21 @@ const BACKEND_FIELD_TO_CONTROL = {
                 </span>
               }
             </label>
-            <label class="field field--full">
+            <div class="field field--full">
               <span class="field__label">Unidade superior</span>
-              <select class="select" formControlName="unidadeSuperiorId">
+              <input
+                type="search"
+                class="input"
+                placeholder="Buscar por sigla ou nome..."
+                aria-label="Buscar unidade superior"
+                [value]="buscaPai()"
+                (input)="buscaPai.set(inputValue($event))"
+              />
+              <select
+                class="select"
+                formControlName="unidadeSuperiorId"
+                aria-label="Unidade superior"
+              >
                 <option value="">Raiz — sem superior</option>
                 @for (unidade of opcoesUnidadeSuperior(); track unidade.id) {
                   <option [value]="unidade.id" [disabled]="unidade.id === unidadeEmEdicaoId()">
@@ -516,8 +528,10 @@ const BACKEND_FIELD_TO_CONTROL = {
                   </option>
                 }
               </select>
-              <span class="field__hint">Não pode formar ciclo na hierarquia.</span>
-            </label>
+              <span class="field__hint">
+                Digite para buscar entre todas as unidades. Não pode formar ciclo na hierarquia.
+              </span>
+            </div>
             <label class="checkbox cfg-form__checkbox">
               <input type="checkbox" formControlName="unidadeAcademica" />
               <span class="checkbox__box" aria-hidden="true"></span>
@@ -715,21 +729,39 @@ export class UnidadesPage {
   // formulário (lazy — sem custo de request enquanto o form nunca abre).
   private readonly carregarOpcoesSuperior = signal(false);
 
-  /**
-   * Opções de "unidade superior" do formulário — sempre **sem filtro**, para
-   * não sumir pais válidos (ex.: Reitoria) quando há filtro ativo na listagem.
-   * Resource próprio, desacoplado do filtro/paginação; recarregado a cada
-   * abertura do form para refletir unidades recém-criadas.
-   */
-  private readonly opcoesSuperiorResource = useApiResource<readonly UnidadeDto[]>(() =>
-    this.carregarOpcoesSuperior()
-      ? {
-          url: `${this.basePath}/api/unidades`,
-          params: new HttpParams().set('limit', String(PAGE_SIZE)),
-          context: withVendorMime('unidade', 1),
-        }
-      : undefined,
+  /** Termo de busca do campo "unidade superior" (input do formulário). */
+  protected readonly buscaPai = signal('');
+  private readonly buscaPaiAplicada = toSignal(
+    toObservable(this.buscaPai).pipe(
+      map((termo) => termo.trim()),
+      debounceTime(BUSCA_DEBOUNCE_MS),
+      distinctUntilChanged(),
+    ),
+    { initialValue: '' },
   );
+
+  /**
+   * Opções de "unidade superior" do formulário — desacopladas do filtro da
+   * **listagem**, mas com busca server-side própria (`q`) para escalar além de
+   * uma página: o usuário digita e o backend devolve os pais que casam, então
+   * pais fora da primeira página continuam selecionáveis. Resource próprio,
+   * lazy, recarregado a cada abertura do form.
+   */
+  private readonly opcoesSuperiorResource = useApiResource<readonly UnidadeDto[]>(() => {
+    if (!this.carregarOpcoesSuperior()) {
+      return undefined;
+    }
+    let params = new HttpParams().set('limit', String(PAGE_SIZE));
+    const q = this.buscaPaiAplicada();
+    if (q.length > 0) {
+      params = params.set('q', q);
+    }
+    return {
+      url: `${this.basePath}/api/unidades`,
+      params,
+      context: withVendorMime('unidade', 1),
+    };
+  });
   protected readonly opcoesUnidadeSuperior = computed(
     () => this.opcoesSuperiorResource.data() ?? [],
   );
@@ -852,6 +884,7 @@ export class UnidadesPage {
   // primeira vez ativa o resource (dispara o GET sem filtro); nas reaberturas
   // refaz a busca para incluir unidades criadas desde então.
   private prepararOpcoesSuperior(): void {
+    this.buscaPai.set('');
     if (this.carregarOpcoesSuperior()) {
       this.opcoesSuperiorResource.reload();
     } else {
