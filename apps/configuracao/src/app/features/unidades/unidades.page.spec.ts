@@ -114,6 +114,18 @@ describe('UnidadesPage', () => {
     await propagate();
   }
 
+  // Abrir o formulário dispara o GET (sem filtro) das opções de "unidade
+  // superior" — desacoplado do filtro da listagem. Flush logo após o abrir*.
+  async function flushOpcoesSuperior(
+    unidades: readonly UnidadeDto[] = unidadesSeed,
+  ): Promise<void> {
+    await propagate();
+    expectListGet(
+      (r) => !r.params.has('q') && !r.params.has('tipo') && !r.params.has('cursor'),
+    ).flush(unidades);
+    await propagate();
+  }
+
   it('carrega unidades na inicialização com limit 100 e monta hierarquia', async () => {
     await flushInicial();
 
@@ -209,6 +221,7 @@ describe('UnidadesPage', () => {
   it('cria unidade com Idempotency-Key e recarrega a lista após sucesso', async () => {
     await flushInicial();
     component['abrirCadastro']();
+    await flushOpcoesSuperior();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
       alias: '',
@@ -248,6 +261,7 @@ describe('UnidadesPage', () => {
   it('submete regra de vigência ao backend e exibe erro 422 inline no campo correspondente', async () => {
     await flushInicial();
     component['abrirCadastro']();
+    await flushOpcoesSuperior();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
       alias: '',
@@ -335,6 +349,7 @@ describe('UnidadesPage', () => {
   it('renova Idempotency-Key quando backend sinaliza body_mismatch', async () => {
     await flushInicial();
     component['abrirCadastro']();
+    await flushOpcoesSuperior();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
       alias: '',
@@ -378,6 +393,7 @@ describe('UnidadesPage', () => {
   it('renova Idempotency-Key em 409 Conflict para permitir reenvio após corrigir identificador duplicado', async () => {
     await flushInicial();
     component['abrirCadastro']();
+    await flushOpcoesSuperior();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
       alias: '',
@@ -422,6 +438,7 @@ describe('UnidadesPage', () => {
   it('atualiza unidade sem enviar vigenciaInicio no command de update', async () => {
     await flushInicial();
     component['abrirEdicao']({ ...unidadesSeed[1], origem: 'ImportadoSIORG' });
+    await flushOpcoesSuperior();
     component['form'].controls.nome.setValue('Instituto Renomeado');
     const key = component['idempotencyKeyAtual']();
 
@@ -452,6 +469,7 @@ describe('UnidadesPage', () => {
   it('preserva tipo Pro-Reitoria ao editar unidade', async () => {
     await flushInicial();
     component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'Pro-Reitoria' });
+    await flushOpcoesSuperior();
     component['form'].controls.nome.setValue('Pró-Reitoria Renomeada');
 
     expect(component['form'].controls.tipo.value).toBe('2');
@@ -477,6 +495,7 @@ describe('UnidadesPage', () => {
     await flushInicial();
 
     component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'TipoInexistente' });
+    await flushOpcoesSuperior();
 
     expect(component['form'].controls.tipo.value).toBe('');
     expect(component['tipoNaoReconhecido']()).toBe(true);
@@ -492,12 +511,14 @@ describe('UnidadesPage', () => {
     await flushInicial();
 
     component['abrirEdicao']({ ...unidadesSeed[1], origem: 'OrigemExterna' });
+    await flushOpcoesSuperior();
 
     expect(component['form'].controls.origem.disabled).toBe(true);
     expect(component['form'].controls.origem.value).toBe('');
     expect(component['origemEmEdicaoLabel']()).toBe('OrigemExterna');
 
     component['abrirCadastro']();
+    await flushOpcoesSuperior();
 
     expect(component['form'].controls.origem.enabled).toBe(true);
     expect(component['form'].controls.origem.value).toBe('2');

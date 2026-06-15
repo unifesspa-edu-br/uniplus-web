@@ -510,7 +510,7 @@ const BACKEND_FIELD_TO_CONTROL = {
               <span class="field__label">Unidade superior</span>
               <select class="select" formControlName="unidadeSuperiorId">
                 <option value="">Raiz — sem superior</option>
-                @for (unidade of unidades(); track unidade.id) {
+                @for (unidade of opcoesUnidadeSuperior(); track unidade.id) {
                   <option [value]="unidade.id" [disabled]="unidade.id === unidadeEmEdicaoId()">
                     {{ unidade.sigla }} — {{ unidade.nome }}
                   </option>
@@ -711,6 +711,29 @@ export class UnidadesPage {
     () => this.buscaAplicada().length > 0 || this.tipoFiltro().length > 0,
   );
 
+  // Ativa a busca das opções de "unidade superior" na primeira abertura do
+  // formulário (lazy — sem custo de request enquanto o form nunca abre).
+  private readonly carregarOpcoesSuperior = signal(false);
+
+  /**
+   * Opções de "unidade superior" do formulário — sempre **sem filtro**, para
+   * não sumir pais válidos (ex.: Reitoria) quando há filtro ativo na listagem.
+   * Resource próprio, desacoplado do filtro/paginação; recarregado a cada
+   * abertura do form para refletir unidades recém-criadas.
+   */
+  private readonly opcoesSuperiorResource = useApiResource<readonly UnidadeDto[]>(() =>
+    this.carregarOpcoesSuperior()
+      ? {
+          url: `${this.basePath}/api/unidades`,
+          params: new HttpParams().set('limit', String(PAGE_SIZE)),
+          context: withVendorMime('unidade', 1),
+        }
+      : undefined,
+  );
+  protected readonly opcoesUnidadeSuperior = computed(
+    () => this.opcoesSuperiorResource.data() ?? [],
+  );
+
   protected readonly tipoOptions = TIPOS_UNIDADE.map((tipo) => ({
     value: String(tipo.value),
     label: tipo.label,
@@ -825,6 +848,17 @@ export class UnidadesPage {
     return params;
   }
 
+  // Carrega/atualiza as opções de "unidade superior" ao abrir o formulário. Na
+  // primeira vez ativa o resource (dispara o GET sem filtro); nas reaberturas
+  // refaz a busca para incluir unidades criadas desde então.
+  private prepararOpcoesSuperior(): void {
+    if (this.carregarOpcoesSuperior()) {
+      this.opcoesSuperiorResource.reload();
+    } else {
+      this.carregarOpcoesSuperior.set(true);
+    }
+  }
+
   protected abrirCadastro(): void {
     this.modo.set('criar');
     this.unidadeEmEdicaoId.set(null);
@@ -846,6 +880,7 @@ export class UnidadesPage {
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
+    this.prepararOpcoesSuperior();
     this.formOpen.set(true);
   }
 
@@ -870,6 +905,7 @@ export class UnidadesPage {
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
+    this.prepararOpcoesSuperior();
     this.drawerOpen.set(false);
     this.formOpen.set(true);
   }
