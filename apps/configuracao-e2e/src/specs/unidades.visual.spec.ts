@@ -110,7 +110,9 @@ test.describe('Unidade — cobertura visual DS', () => {
     await expect(page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ })).toBeVisible();
 
     await page.getByRole('button', { name: 'Limpar' }).click();
-    await page.getByRole('button', { name: /Centro 2/ }).click();
+    // Chips vêm do roster fechado (sem contagem, server-side); nome exato
+    // evita colidir com os botões de linha "Centro de …".
+    await page.getByRole('button', { name: 'Centro', exact: true }).click();
     await expect(page.locator('table tbody tr')).toHaveCount(2);
     await expect(page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ })).toBeVisible();
     await expect(
@@ -265,12 +267,56 @@ async function mockUnidadesApi(page: Page): Promise<void> {
       return;
     }
 
+    // Mimetiza o filtro server-side do backend (q + tipo): a página não filtra
+    // mais em memória, então o mock precisa devolver só o que casa.
+    const url = new URL(request.url());
+    const q = url.searchParams.get('q');
+    const tipos = url.searchParams.getAll('tipo');
+
+    let resultado = [...UNIDADES];
+    if (q) {
+      const termo = normalizarBusca(q);
+      resultado = resultado.filter((u) =>
+        normalizarBusca(`${u.nome} ${u.sigla} ${u.codigo} ${u.slug} ${u.alias ?? ''}`).includes(
+          termo,
+        ),
+      );
+    }
+    if (tipos.length > 0) {
+      const labels = tipos.map((t) => TIPO_LABEL_POR_VALOR[t]).filter(Boolean);
+      resultado = resultado.filter((u) => labels.includes(u.tipo));
+    }
+
     await route.fulfill({
       status: 200,
       headers: { ...corsHeaders, 'content-type': 'application/json' },
-      body: JSON.stringify(UNIDADES),
+      body: JSON.stringify(resultado),
     });
   });
+}
+
+// Roster fechado TipoUnidade (valor numérico → label do DTO), espelhando
+// TIPOS_UNIDADE da página para traduzir o filtro `?tipo=N` do contrato.
+const TIPO_LABEL_POR_VALOR: Record<string, string> = {
+  '1': 'Reitoria',
+  '2': 'Pro-Reitoria',
+  '3': 'Centro',
+  '4': 'Instituto',
+  '5': 'Faculdade',
+  '6': 'Departamento',
+  '7': 'Coordenacao',
+  '8': 'Diretoria',
+  '9': 'Divisao',
+  '10': 'Nucleo',
+  '11': 'Outro',
+};
+
+function normalizarBusca(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('pt-BR')
+    .trim();
 }
 
 async function fillRequiredUnitForm(drawer: Locator): Promise<void> {

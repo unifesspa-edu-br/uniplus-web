@@ -1,7 +1,7 @@
-import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, Cursor, cursorToString, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { ORGANIZACAO_BASE_PATH } from './tokens';
 
@@ -45,21 +45,6 @@ export const ORIGENS_UNIDADE: readonly UnidadeOrigemOption[] = [
 export class UnidadesApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(ORGANIZACAO_BASE_PATH);
-
-  listar(cursor?: Cursor, limit?: number): Observable<ApiResult<readonly UnidadeDto[]>> {
-    let params = new HttpParams();
-    if (cursor !== undefined) {
-      params = params.set('cursor', cursorToString(cursor));
-    }
-    if (limit !== undefined) {
-      params = params.set('limit', String(limit));
-    }
-
-    return this.http.get<ApiResult<readonly UnidadeDto[]>>(`${this.basePath}/api/unidades`, {
-      context: withVendorMime('unidade', 1),
-      params,
-    });
-  }
 
   obter(id: string): Observable<ApiResult<UnidadeDto>> {
     return this.http.get<ApiResult<UnidadeDto>>(

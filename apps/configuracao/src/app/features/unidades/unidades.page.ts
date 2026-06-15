@@ -1,28 +1,37 @@
+import { HttpParams } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
+  linkedSignal,
   signal,
+  untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import {
   ApiResult,
   Cursor,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  cursorToString,
   extractNextCursor,
   idempotencyKey,
+  useApiResource,
   withIdempotencyKey,
+  withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
+  ORGANIZACAO_BASE_PATH,
   ORIGENS_UNIDADE,
   TIPOS_UNIDADE,
   OrigemUnidade,
@@ -39,6 +48,16 @@ import {
   SpinnerComponent,
   type UiFilterChipOption,
 } from '@uniplus/shared-ui/components';
+
+/** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
+const PAGE_SIZE = 100;
+
+/**
+ * Debounce da busca textual — uma request por rajada de digitação, não por
+ * tecla (critério de aceite #397). Angular 22 trará `debounced()`; no 21.x o
+ * padrão oficial é a interop `toObservable → debounceTime → toSignal`.
+ */
+const BUSCA_DEBOUNCE_MS = 300;
 
 interface UnidadeForm {
   nome: FormControl<string>;
@@ -151,7 +170,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         <div class="filter-bar__group">
           <span class="u-eyebrow">Tipo</span>
           <ui-filter-chips
-            [options]="tipoChips()"
+            [options]="tipoChips"
             [selected]="tipoFiltro()"
             (selectedChange)="tipoFiltro.set($event ?? '')"
             ariaLabel="Filtrar por tipo"
@@ -189,8 +208,8 @@ const BACKEND_FIELD_TO_CONTROL = {
         <div class="panel-head">
           <div class="panel-head__title">
             <h2 id="cfg-unidades-list-title">Unidades</h2>
-            <span class="list-count" aria-label="Total de unidades filtradas">
-              {{ unidadesFiltradas().length }}
+            <span class="list-count" aria-label="Total de unidades carregadas">
+              {{ unidades().length }}
             </span>
           </div>
           <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -199,25 +218,7 @@ const BACKEND_FIELD_TO_CONTROL = {
           </button>
         </div>
 
-        @if (!loading() && unidades().length === 0 && !errorMessage()) {
-          <ui-empty-state
-            heading="Nenhuma unidade carregada"
-            description="Cadastre a primeira unidade para iniciar a estrutura institucional."
-          >
-            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-              Nova unidade
-            </button>
-          </ui-empty-state>
-        } @else if (unidadesFiltradas().length === 0) {
-          <ui-empty-state
-            heading="Nenhuma unidade encontrada"
-            description="Ajuste a busca ou o filtro de tipo para ver resultados."
-          >
-            <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
-              Limpar filtros
-            </button>
-          </ui-empty-state>
-        } @else {
+        @if (unidades().length > 0) {
           <div class="table-responsive">
             <table>
               <thead>
@@ -230,7 +231,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                 </tr>
               </thead>
               <tbody>
-                @for (unidade of unidadesFiltradas(); track unidade.id) {
+                @for (unidade of unidades(); track unidade.id) {
                   <tr>
                     <td data-label="Sigla">
                       <code>{{ unidade.sigla }}</code>
@@ -274,6 +275,26 @@ const BACKEND_FIELD_TO_CONTROL = {
               </tbody>
             </table>
           </div>
+        } @else if (!loading() && !errorMessage()) {
+          @if (temFiltro()) {
+            <ui-empty-state
+              heading="Nenhuma unidade encontrada"
+              description="Ajuste a busca ou o filtro de tipo para ver resultados."
+            >
+              <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
+                Limpar filtros
+              </button>
+            </ui-empty-state>
+          } @else {
+            <ui-empty-state
+              heading="Nenhuma unidade carregada"
+              description="Cadastre a primeira unidade para iniciar a estrutura institucional."
+            >
+              <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+                Nova unidade
+              </button>
+            </ui-empty-state>
+          }
         }
 
         @if (nextCursor()) {
@@ -592,12 +613,9 @@ export class UnidadesPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly basePath = inject(ORGANIZACAO_BASE_PATH);
 
-  protected readonly unidades = signal<readonly UnidadeDto[]>([]);
-  protected readonly nextCursor = signal<Cursor | null>(null);
-  protected readonly loading = signal(false);
   protected readonly saving = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
   protected readonly busca = signal('');
   protected readonly tipoFiltro = signal('');
@@ -611,6 +629,88 @@ export class UnidadesPage {
   protected readonly origemEmEdicao = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
+  // Termo de busca aplicado — debounced (uma request por rajada, não por tecla).
+  private readonly buscaAplicada = toSignal(
+    toObservable(this.busca).pipe(
+      map((termo) => termo.trim()),
+      debounceTime(BUSCA_DEBOUNCE_MS),
+      distinctUntilChanged(),
+    ),
+    { initialValue: '' },
+  );
+
+  // Chave do filtro vigente — fonte do reset de paginação.
+  private readonly filtroKey = computed(() => JSON.stringify([this.buscaAplicada(), this.tipoFiltro()]));
+
+  /**
+   * Cursor da página atual (`undefined` = primeira). Volta para a primeira
+   * página sempre que o filtro muda (linkedSignal: `source` = `filtroKey`).
+   * "Carregar mais" faz `cursor.set(next)` — navegação só para frente, casando
+   * com o cursor forward-only do ADR-0026 (sem "Anterior", sem nº de página).
+   */
+  private readonly cursor = linkedSignal<string, Cursor | undefined>({
+    source: () => this.filtroKey(),
+    computation: () => undefined,
+  });
+
+  /**
+   * GET reativo de `/api/unidades`. Re-dispara quando filtro (`q`/`tipo`) ou
+   * `cursor` mudam; `httpResource` cancela a request anterior nativamente — sem
+   * `unsubscribe`/guarda manual. Vendor MIME `unidade v1` no HttpContext.
+   */
+  private readonly lista = useApiResource<readonly UnidadeDto[]>(() => ({
+    url: `${this.basePath}/api/unidades`,
+    params: this.montarParams(),
+    context: withVendorMime('unidade', 1),
+  }));
+
+  protected readonly loading = this.lista.isLoading;
+
+  /** Próximo cursor (rel="next" do header Link). `null` = última página. */
+  protected readonly nextCursor = computed(() =>
+    extractNextCursor(this.lista.headers()?.get('Link') ?? null),
+  );
+
+  /**
+   * Acumulação reativa das páginas ("Carregar mais"): substitui na primeira
+   * página (cursor `undefined` — cobre carga inicial, troca de filtro e refetch
+   * pós-mutação) e concatena nas seguintes. `linkedSignal` em vez de `effect`
+   * (guidance oficial Angular: `effect` não serve para atualizar outro signal).
+   */
+  protected readonly unidades = linkedSignal<
+    ApiResult<readonly UnidadeDto[]> | undefined,
+    readonly UnidadeDto[]
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const acumulado = previous?.value ?? [];
+      // Loading inicial ou falha: preserva o que já está na tela (o banner de
+      // erro cobre a falha; não piscar a lista para vazio).
+      if (envelope === undefined || !envelope.ok) {
+        return acumulado;
+      }
+      // Lê o cursor no instante em que os dados chegam — `untracked` porque a
+      // única dependência reativa deste linkedSignal é `lista.value()`; rastrear
+      // o cursor reexecutaria a computação com dados velhos e duplicaria a página.
+      const primeiraPagina = untracked(() => this.cursor() === undefined);
+      return primeiraPagina ? [...envelope.data] : [...acumulado, ...envelope.data];
+    },
+  });
+
+  /** Mensagem de erro da listagem (RFC 9457 → título i18n). */
+  protected readonly errorMessage = computed<string | null>(() => {
+    const problem = this.lista.problem();
+    if (problem) {
+      return this.problemI18n.resolve(problem).title;
+    }
+    return this.lista.error() ? 'Erro inesperado ao carregar unidades.' : null;
+  });
+
+  /** Há filtro ativo? Distingue "sem unidades" de "filtro sem resultado". */
+  protected readonly temFiltro = computed(
+    () => this.buscaAplicada().length > 0 || this.tipoFiltro().length > 0,
+  );
+
   protected readonly tipoOptions = TIPOS_UNIDADE.map((tipo) => ({
     value: String(tipo.value),
     label: tipo.label,
@@ -620,43 +720,19 @@ export class UnidadesPage {
     label: origem.label,
   }));
 
-  protected readonly tiposDisponiveis = computed(() =>
-    [...new Set(this.unidades().map((unidade) => unidade.tipo))].sort((a, b) =>
-      a.localeCompare(b, 'pt-BR'),
-    ),
-  );
+  /**
+   * Chips de tipo a partir do roster fechado `TIPOS_UNIDADE` (11 tipos, valor
+   * numérico). Estático — não derivado da página: com filtro server-side a
+   * contagem por tipo exigiria facetas que o backend não expõe, então sem count.
+   */
+  protected readonly tipoChips: readonly UiFilterChipOption[] = [
+    { value: '', label: 'Todas' },
+    ...TIPOS_UNIDADE.map((tipo) => ({ value: String(tipo.value), label: tipo.label })),
+  ];
 
-  protected readonly tipoChips = computed<readonly UiFilterChipOption[]>(() => {
-    const unidades = this.unidades();
-    return [
-      {
-        value: '',
-        label: 'Todas',
-        count: unidades.length,
-      },
-      ...this.tiposDisponiveis().map((tipo) => ({
-        value: tipo,
-        label: tipo,
-        count: unidades.filter((u) => u.tipo === tipo).length,
-      })),
-    ];
-  });
-
-  protected readonly unidadesFiltradas = computed(() => {
-    const termo = normalizarBusca(this.busca());
-    const tipo = this.tipoFiltro();
-
-    return this.unidades().filter((unidade) => {
-      const bateBusca =
-        termo.length === 0 ||
-        normalizarBusca(
-          `${unidade.nome} ${unidade.sigla} ${unidade.codigo} ${unidade.slug} ${unidade.alias ?? ''}`,
-        ).includes(termo);
-      const bateTipo = tipo.length === 0 || unidade.tipo === tipo;
-      return bateBusca && bateTipo;
-    });
-  });
-
+  // A árvore reflete o conjunto carregado/filtrado. Com filtro ativo, nós cujo
+  // pai foi filtrado aparecem como raiz — comportamento documentado (#397): não
+  // há endpoint de hierarquia dedicado.
   protected readonly arvore = computed(() => montarArvore(this.unidades()));
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova unidade' : 'Editar unidade',
@@ -710,14 +786,43 @@ export class UnidadesPage {
   );
 
   constructor() {
-    this.carregar(undefined, false);
+    // 5xx na listagem → toast persistente além do banner inline. Disparado só
+    // quando o problem muda (não duplica em re-render). 4xx fica só no banner.
+    effect(() => {
+      const problem = this.lista.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
   }
 
   protected carregarMais(): void {
-    const cursor = this.nextCursor();
-    if (cursor !== null) {
-      this.carregar(cursor, true);
+    const proximo = this.nextCursor();
+    if (proximo !== null && !this.loading()) {
+      // Só avança (cursor forward-only). A acumulação fica a cargo do
+      // linkedSignal `unidades` quando a próxima página chega.
+      this.cursor.set(proximo);
     }
+  }
+
+  private montarParams(): HttpParams {
+    let params = new HttpParams().set('limit', String(PAGE_SIZE));
+    const q = this.buscaAplicada();
+    if (q.length > 0) {
+      params = params.set('q', q);
+    }
+    const tipo = this.tipoFiltro();
+    if (tipo.length > 0) {
+      // Valor numérico-como-string do roster TIPOS_UNIDADE; `tipo` é repetível
+      // no contrato (?tipo=3). Valor fora do roster → backend responde 400.
+      params = params.append('tipo', tipo);
+    }
+    const cursor = this.cursor();
+    if (cursor !== undefined) {
+      params = params.set('cursor', cursorToString(cursor));
+    }
+    return params;
   }
 
   protected abrirCadastro(): void {
@@ -876,35 +981,16 @@ export class UnidadesPage {
     this.tipoFiltro.set('');
   }
 
-  private carregar(cursor: Cursor | undefined, append: boolean): void {
-    if (this.loading()) {
-      return;
-    }
-    this.loading.set(true);
-    this.errorMessage.set(null);
-
-    this.api
-      .listar(cursor, 100)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.loading.set(false);
-        if (result.ok) {
-          this.unidades.set(append ? [...this.unidades(), ...result.data] : result.data);
-          this.nextCursor.set(extractNextCursor(result.headers.get('Link')));
-          return;
-        }
-        const mensagem = this.problemI18n.resolve(result.problem).title;
-        this.errorMessage.set(mensagem);
-        if (result.problem.status >= 500) {
-          this.notifications.errorFromProblem(result.problem, { title: mensagem });
-        }
-      });
-  }
-
   private recarregar(): void {
-    this.unidades.set([]);
-    this.nextCursor.set(null);
-    this.carregar(undefined, false);
+    // Pós-mutação: volta para a primeira página e refaz o fetch. Se já está na
+    // primeira (cursor undefined), `reload()` força o refetch (params iguais);
+    // senão, resetar o cursor dispara o refetch reativo pelo httpResource. Em
+    // ambos os casos o linkedSignal `unidades` substitui (não acumula).
+    if (this.cursor() === undefined) {
+      this.lista.reload();
+    } else {
+      this.cursor.set(undefined);
+    }
   }
 
   private handleSalvarResult(result: ApiResult<string | void>): void {
@@ -1016,14 +1102,6 @@ function ordenarArvore(nodes: readonly UnidadeTreeNode[]): readonly UnidadeTreeN
   return [...nodes]
     .sort((a, b) => a.unidade.nome.localeCompare(b.unidade.nome, 'pt-BR'))
     .map((node) => ({ ...node, children: ordenarArvore(node.children) }));
-}
-
-function normalizarBusca(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase('pt-BR')
-    .trim();
 }
 
 function nullIfBlank(value: string): string | null {

@@ -1,5 +1,10 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
@@ -10,6 +15,9 @@ import { UnidadesPage } from './unidades.page';
 const BASE = 'http://localhost:5000';
 const REITORIA_ID = '01960000-0000-7000-0000-000000000001';
 const INSTITUTO_ID = '01960000-0000-7000-0000-000000000002';
+
+// Folga acima do debounce da busca (BUSCA_DEBOUNCE_MS = 300 na página).
+const DEBOUNCE_FOLGA_MS = 360;
 
 const unidadesSeed: readonly UnidadeDto[] = [
   {
@@ -48,6 +56,7 @@ describe('UnidadesPage', () => {
   let fixture: ComponentFixture<UnidadesPage>;
   let component: UnidadesPage;
   let controller: HttpTestingController;
+  let appRef: ApplicationRef;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -63,43 +72,142 @@ describe('UnidadesPage', () => {
     fixture = TestBed.createComponent(UnidadesPage);
     component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
-    fixture.detectChanges();
+    appRef = TestBed.inject(ApplicationRef);
   });
 
   afterEach(() => controller.verify());
 
-  function flushList(unidades: readonly UnidadeDto[] = unidadesSeed): void {
+  // Dreia o microtask queue + roda change detection para o `httpResource`
+  // propagar valores aos signals do resource (mesmo padrão de editais-detail).
+  const propagate = async (): Promise<void> => {
+    await Promise.resolve();
+    appRef.tick();
+  };
+
+  const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function expectListGet(matcher?: (request: HttpRequest<unknown>) => boolean): TestRequest {
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/unidades` && request.params.get('limit') === '100',
+      (request) =>
+        request.url === `${BASE}/api/unidades` &&
+        request.method === 'GET' &&
+        (matcher ? matcher(request) : true),
     );
-    expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('unidade', 1));
-    req.flush(unidades);
+    return req;
   }
 
-  it('carrega unidades na inicialização com limit 100 e monta hierarquia', () => {
-    flushList();
+  // Carga inicial (sem filtros). Opcionalmente injeta header Link (rel="next").
+  async function flushInicial(
+    unidades: readonly UnidadeDto[] = unidadesSeed,
+    headers?: Record<string, string>,
+  ): Promise<void> {
+    fixture.detectChanges();
+    const request = expectListGet(
+      (r) =>
+        !r.params.has('q') &&
+        !r.params.has('tipo') &&
+        !r.params.has('cursor') &&
+        r.params.get('limit') === '100',
+    );
+    request.flush(unidades, headers ? { headers } : undefined);
+    await propagate();
+  }
+
+  it('carrega unidades na inicialização com limit 100 e monta hierarquia', async () => {
+    await flushInicial();
 
     expect(component['unidades']()).toHaveLength(2);
     expect(component['arvore']()).toHaveLength(1);
     expect(component['arvore']()[0].children).toHaveLength(1);
   });
 
-  it('filtra client-side por busca e tipo sem enviar query inexistente ao backend', () => {
-    flushList();
+  it('busca server-side: digitação em rajada dispara um único GET com q após debounce', async () => {
+    await flushInicial();
 
+    component['busca'].set('i');
+    component['busca'].set('ie');
     component['busca'].set('iedar');
-    expect(component['unidadesFiltradas']()).toHaveLength(1);
-    expect(component['unidadesFiltradas']()[0].id).toBe(INSTITUTO_ID);
+    appRef.tick();
+    // Antes do debounce, nenhuma request com q (não dispara por tecla).
+    controller.expectNone(
+      (request) => request.url === `${BASE}/api/unidades` && request.params.has('q'),
+    );
 
-    component['busca'].set('');
-    component['tipoFiltro'].set('Instituto');
-    expect(component['unidadesFiltradas']()).toHaveLength(1);
-    expect(component['unidadesFiltradas']()[0].tipo).toBe('Instituto');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+
+    const request = expectListGet(
+      (r) => r.params.get('q') === 'iedar' && !r.params.has('cursor'),
+    );
+    request.flush([unidadesSeed[1]]);
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
   });
 
-  it('cria unidade com Idempotency-Key e recarrega a lista após sucesso', () => {
-    flushList();
+  it('filtro de tipo dispara GET imediato com tipo numérico do roster', async () => {
+    await flushInicial();
+
+    component['tipoFiltro'].set('4'); // Instituto
+    await propagate();
+
+    const request = expectListGet(
+      (r) => r.params.get('tipo') === '4' && !r.params.has('q'),
+    );
+    request.flush([unidadesSeed[1]]);
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].tipo).toBe('Instituto');
+  });
+
+  it('Carregar mais acumula a próxima página (cursor forward-only)', async () => {
+    await flushInicial([unidadesSeed[0]], {
+      Link: `<${BASE}/api/unidades?cursor=pagina-2>; rel="next"`,
+    });
+
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['nextCursor']()).not.toBeNull();
+
+    component['carregarMais']();
+    await propagate();
+
+    const request = expectListGet((r) => r.params.get('cursor') === 'pagina-2');
+    request.flush([unidadesSeed[1]]); // sem Link → última página
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(2);
+    expect(component['unidades']().map((u) => u.id)).toEqual([REITORIA_ID, INSTITUTO_ID]);
+    expect(component['nextCursor']()).toBeNull();
+  });
+
+  it('mudar o filtro reseta a paginação para a primeira página e substitui a lista', async () => {
+    await flushInicial([unidadesSeed[0]], {
+      Link: `<${BASE}/api/unidades?cursor=pagina-2>; rel="next"`,
+    });
+    component['carregarMais']();
+    await propagate();
+    expectListGet((r) => r.params.get('cursor') === 'pagina-2').flush([unidadesSeed[1]]);
+    await propagate();
+    expect(component['unidades']()).toHaveLength(2);
+
+    // Aplicar tipo volta à primeira página (sem cursor) e substitui, não acumula.
+    component['tipoFiltro'].set('1'); // Reitoria
+    await propagate();
+    const request = expectListGet(
+      (r) => r.params.get('tipo') === '1' && !r.params.has('cursor'),
+    );
+    request.flush([unidadesSeed[0]]);
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(REITORIA_ID);
+  });
+
+  it('cria unidade com Idempotency-Key e recarrega a lista após sucesso', async () => {
+    await flushInicial();
     component['abrirCadastro']();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
@@ -119,24 +227,26 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('Idempotency-Key')).toBe(key);
-    expect(req.request.body).toMatchObject({
+    const post = controller.expectOne(`${BASE}/api/admin/unidades`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.headers.get('Idempotency-Key')).toBe(key);
+    expect(post.request.body).toMatchObject({
       nome: 'Faculdade de Computação',
       alias: null,
       unidadeSuperiorId: INSTITUTO_ID,
       tipo: 5,
       origem: 2,
     });
-    req.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
-
-    flushList();
+    post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
     expect(component['formOpen']()).toBe(false);
+
+    await propagate();
+    expectListGet().flush(unidadesSeed); // refetch pós-mutação
+    await propagate();
   });
 
-  it('submete regra de vigência ao backend e exibe erro 422 inline no campo correspondente', () => {
-    flushList();
+  it('submete regra de vigência ao backend e exibe erro 422 inline no campo correspondente', async () => {
+    await flushInicial();
     component['abrirCadastro']();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
@@ -158,14 +268,14 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('Idempotency-Key')).toBe(primeiraChave);
-    expect(req.request.body).toMatchObject({
+    const req1 = controller.expectOne(`${BASE}/api/admin/unidades`);
+    expect(req1.request.method).toBe('POST');
+    expect(req1.request.headers.get('Idempotency-Key')).toBe(primeiraChave);
+    expect(req1.request.body).toMatchObject({
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-02',
     });
-    req.flush(
+    req1.flush(
       {
         type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
         title: 'Erro de validação',
@@ -215,13 +325,15 @@ describe('UnidadesPage', () => {
       status: 201,
       statusText: 'Created',
     });
-
-    flushList();
     expect(component['formOpen']()).toBe(false);
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
   });
 
-  it('renova Idempotency-Key quando backend sinaliza body_mismatch', () => {
-    flushList();
+  it('renova Idempotency-Key quando backend sinaliza body_mismatch', async () => {
+    await flushInicial();
     component['abrirCadastro']();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
@@ -263,8 +375,8 @@ describe('UnidadesPage', () => {
     expect(component['idempotencyKeyAtual']()).not.toBe(primeiraChave);
   });
 
-  it('renova Idempotency-Key em 409 Conflict para permitir reenvio após corrigir identificador duplicado', () => {
-    flushList();
+  it('renova Idempotency-Key em 409 Conflict para permitir reenvio após corrigir identificador duplicado', async () => {
+    await flushInicial();
     component['abrirCadastro']();
     component['form'].setValue({
       nome: 'Faculdade de Computação',
@@ -307,8 +419,8 @@ describe('UnidadesPage', () => {
     expect(component['idempotencyKeyAtual']()).not.toBe(primeiraChave);
   });
 
-  it('atualiza unidade sem enviar vigenciaInicio no command de update', () => {
-    flushList();
+  it('atualiza unidade sem enviar vigenciaInicio no command de update', async () => {
+    await flushInicial();
     component['abrirEdicao']({ ...unidadesSeed[1], origem: 'ImportadoSIORG' });
     component['form'].controls.nome.setValue('Instituto Renomeado');
     const key = component['idempotencyKeyAtual']();
@@ -319,24 +431,26 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.headers.get('Idempotency-Key')).toBe(key);
-    expect(req.request.body).not.toHaveProperty('vigenciaInicio');
-    expect(req.request.body).not.toHaveProperty('origem');
-    expect(req.request.body).toMatchObject({
+    const put = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.headers.get('Idempotency-Key')).toBe(key);
+    expect(put.request.body).not.toHaveProperty('vigenciaInicio');
+    expect(put.request.body).not.toHaveProperty('origem');
+    expect(put.request.body).toMatchObject({
       id: INSTITUTO_ID,
       nome: 'Instituto Renomeado',
       tipo: 4,
     });
-    req.flush(null, { status: 204, statusText: 'No Content' });
-
-    flushList();
+    put.flush(null, { status: 204, statusText: 'No Content' });
     expect(component['formOpen']()).toBe(false);
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
   });
 
-  it('preserva tipo Pro-Reitoria ao editar unidade', () => {
-    flushList();
+  it('preserva tipo Pro-Reitoria ao editar unidade', async () => {
+    await flushInicial();
     component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'Pro-Reitoria' });
     component['form'].controls.nome.setValue('Pró-Reitoria Renomeada');
 
@@ -344,21 +458,23 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toMatchObject({
+    const put = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toMatchObject({
       id: INSTITUTO_ID,
       nome: 'Pró-Reitoria Renomeada',
       tipo: 2,
     });
-    req.flush(null, { status: 204, statusText: 'No Content' });
-
-    flushList();
+    put.flush(null, { status: 204, statusText: 'No Content' });
     expect(component['formOpen']()).toBe(false);
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
   });
 
-  it('não coage tipo desconhecido para "Outro" ao editar — bloqueia o submit', () => {
-    flushList();
+  it('não coage tipo desconhecido para "Outro" ao editar — bloqueia o submit', async () => {
+    await flushInicial();
 
     component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'TipoInexistente' });
 
@@ -372,8 +488,8 @@ describe('UnidadesPage', () => {
     expect(component['form'].controls.tipo.valid).toBe(true);
   });
 
-  it('preserva origem desconhecida ao editar e reabilita o campo ao criar', () => {
-    flushList();
+  it('preserva origem desconhecida ao editar e reabilita o campo ao criar', async () => {
+    await flushInicial();
 
     component['abrirEdicao']({ ...unidadesSeed[1], origem: 'OrigemExterna' });
 
@@ -388,18 +504,21 @@ describe('UnidadesPage', () => {
     expect(component['origemEmEdicaoLabel']()).toBe('');
   });
 
-  it('remove unidade sem Idempotency-Key porque o endpoint DELETE não exige o header', () => {
-    flushList();
+  it('remove unidade sem Idempotency-Key porque o endpoint DELETE não exige o header', async () => {
+    await flushInicial();
     component['pedirRemocao'](unidadesSeed[1]);
 
     component['removerConfirmado']();
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
-    expect(req.request.method).toBe('DELETE');
-    expect(req.request.headers.has('Idempotency-Key')).toBe(false);
-    req.flush(null, { status: 204, statusText: 'No Content' });
+    const del = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    expect(del.request.method).toBe('DELETE');
+    expect(del.request.headers.has('Idempotency-Key')).toBe(false);
+    del.flush(null, { status: 204, statusText: 'No Content' });
 
-    flushList([unidadesSeed[0]]);
+    await propagate();
+    expectListGet().flush([unidadesSeed[0]]);
+    await propagate();
+
     expect(component['unidadeParaRemover']()).toBeNull();
   });
 });

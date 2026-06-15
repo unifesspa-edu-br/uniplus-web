@@ -7,7 +7,6 @@ import {
   ApiResult,
   apiResultInterceptor,
   buildVendorMimeAccept,
-  createCursor,
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
@@ -84,38 +83,6 @@ describe('UnidadesApi', () => {
   });
 
   afterEach(() => controller.verify());
-
-  it('listar() faz GET /api/unidades com vendor MIME v1', async () => {
-    const promise = firstValueFrom(api.listar());
-
-    const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/unidades` && request.params.keys().length === 0,
-    );
-    expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('unidade', 1));
-    req.flush([unidadeSeed]);
-
-    const result = (await promise) as ApiResult<readonly UnidadeDto[]>;
-    expect(isApiOk(result)).toBe(true);
-    if (result.ok) {
-      expect(result.data[0].sigla).toBe('IEDAR');
-    }
-  });
-
-  it('listar(cursor, limit) serializa cursor opaco e limit', async () => {
-    const cursor = createCursor('opaque-next-page');
-    const promise = firstValueFrom(api.listar(cursor, 50));
-
-    const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/unidades` && request.params.has('cursor'),
-    );
-    expect(req.request.params.get('cursor')).toBe('opaque-next-page');
-    expect(req.request.params.get('limit')).toBe('50');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('unidade', 1));
-    req.flush([]);
-
-    await promise;
-  });
 
   it('obter() faz GET /api/unidades/{id} com encoding seguro', async () => {
     const id = 'id com espaço/01';
