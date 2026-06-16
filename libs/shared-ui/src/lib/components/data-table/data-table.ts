@@ -119,8 +119,8 @@ export interface UiDataTableColumn {
             @for (row of records(); track row[trackByField()] ?? $index) {
               <tr
                 data-testid="data-table-row"
-                [class.table-responsive__row--clickable]="rowClickable()"
-                [attr.tabindex]="rowClickable() ? 0 : null"
+                [class.table-responsive__row--clickable]="linhasClicaveis()"
+                [attr.tabindex]="linhasClicaveis() ? 0 : null"
                 (click)="ativarLinha(row)"
                 (keydown.enter)="ativarLinha(row, $event)"
                 (keydown.space)="ativarLinha(row, $event)"
@@ -261,6 +261,16 @@ export class DataTableComponent {
     return typeof traceId === 'string' && traceId.length > 0;
   });
 
+  /**
+   * Linhas clicáveis apenas quando habilitado **e** fora de recarga. Com
+   * paginação por substituição (ADR-0089) as linhas exibidas durante o
+   * `isLoading()` são da página anterior e podem navegar para um item prestes a
+   * sair; gatear no componente evita que cada container precise lembrar disso.
+   */
+  protected readonly linhasClicaveis = computed(
+    () => this.rowClickable() && !this.isLoading(),
+  );
+
   protected emitirLoadNext(): void {
     const cursor = this.nextCursor();
     if (cursor !== null && !this.isLoading()) {
@@ -285,7 +295,7 @@ export class DataTableComponent {
    * rola a página, e Enter pode submeter forms ancestrais.
    */
   protected ativarLinha(row: Record<string, unknown>, event?: Event): void {
-    if (!this.rowClickable()) {
+    if (!this.linhasClicaveis()) {
       return;
     }
     event?.preventDefault();
