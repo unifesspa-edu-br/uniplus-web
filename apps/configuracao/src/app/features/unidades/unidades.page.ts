@@ -788,14 +788,10 @@ export class UnidadesPage {
 
   /** Termo de busca do campo "unidade superior" (input do formulário). */
   protected readonly buscaPai = signal('');
-  private readonly buscaPaiAplicada = toSignal(
-    toObservable(this.buscaPai).pipe(
-      map((termo) => termo.trim()),
-      debounceTime(BUSCA_DEBOUNCE_MS),
-      distinctUntilChanged(),
-    ),
-    { initialValue: '' },
-  );
+  // Termo de pai aplicado: atualizado com debounce na digitação (subscription
+  // no constructor) e resetado de forma SÍNCRONA ao abrir o form — sem esperar
+  // o debounce, senão a reabertura dispararia `?q=<termo antigo>`.
+  private readonly buscaPaiAplicada = signal('');
 
   /**
    * Opções de "unidade superior" do formulário — desacopladas do filtro da
@@ -944,6 +940,16 @@ export class UnidadesPage {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+
+    // Debounce da digitação no campo "unidade superior" → termo aplicado.
+    toObservable(this.buscaPai)
+      .pipe(
+        map((termo) => termo.trim()),
+        debounceTime(BUSCA_DEBOUNCE_MS),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((termo) => this.buscaPaiAplicada.set(termo));
   }
 
   protected carregarMais(): void {
@@ -987,11 +993,19 @@ export class UnidadesPage {
   // primeira vez ativa o resource (dispara o GET sem filtro); nas reaberturas
   // refaz a busca para incluir unidades criadas desde então.
   private prepararOpcoesSuperior(): void {
+    const tinhaTermo = this.buscaPaiAplicada().length > 0;
+    // Reset síncrono do termo (exibido e aplicado), para a reabertura não
+    // carregar com `q` da busca anterior enquanto o debounce não zera.
     this.buscaPai.set('');
-    if (this.carregarOpcoesSuperior()) {
+    this.buscaPaiAplicada.set('');
+
+    if (!this.carregarOpcoesSuperior()) {
+      this.carregarOpcoesSuperior.set(true); // primeira vez: ativa e dispara o GET
+    } else if (!tinhaTermo) {
+      // Sem termo anterior, o reset não muda params; força o refetch para
+      // refletir unidades recém-criadas. Com termo, o reset de `buscaPaiAplicada`
+      // já dispara o refetch (remove o `q`), sem duplicar a request.
       this.opcoesSuperiorResource.reload();
-    } else {
-      this.carregarOpcoesSuperior.set(true);
     }
   }
 

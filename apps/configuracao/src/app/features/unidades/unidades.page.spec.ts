@@ -677,4 +677,25 @@ describe('UnidadesPage', () => {
     // Reitoria não está na página filtrada, mas foi vista na carga inicial.
     expect(component['unidadeSuperiorLabel'](REITORIA_ID)).toBe('REITORIA — Reitoria');
   });
+
+  it('ao reabrir o formulário não reusa a busca anterior de unidade superior', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior(); // GET inicial das opções (sem q)
+
+    component['buscaPai'].set('inst');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    expectListGet((r) => r.params.get('q') === 'inst').flush([unidadesSeed[1]]);
+    await propagate();
+
+    // Reabre: o termo é resetado de forma síncrona, então o GET não leva o q
+    // antigo enquanto o debounce não zera.
+    component['abrirCadastro']();
+    await propagate();
+    const reaberto = expectListGet();
+    expect(reaberto.request.params.has('q')).toBe(false);
+    reaberto.flush(unidadesSeed);
+    await propagate();
+  });
 });
