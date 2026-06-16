@@ -5,6 +5,7 @@ import {
   ApiResult,
   Cursor,
   IDEMPOTENCY_KEY_TOKEN,
+  PaginationDirection,
   cursorToString,
   withVendorMime,
 } from '@uniplus/shared-core/http';
@@ -42,25 +43,34 @@ export class EditaisApi {
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
-   * GET `/api/editais` — lista paginada por cursor opaco (ADR-0026 + ADR-0031
-   * do `uniplus-api`; consumer client-side via ADR-0015).
+   * GET `/api/editais` — lista paginada por cursor opaco bidirecional
+   * (ADR-0026 + ADR-0031 + ADR-0089 do `uniplus-api`; consumer client-side
+   * via ADR-0015).
    *
    * Parâmetros opcionais:
-   * - `cursor`: cursor opaco emitido pelo servidor no header `Link rel="next"`
-   *   da página anterior. Ausente na 1ª página.
-   * - `limit`: tamanho máximo da janela. Ausente => default do servidor.
+   * - `cursor`: cursor opaco emitido pelo servidor no header `Link` (`rel="next"`
+   *   ou `rel="prev"`) da página atual. Ausente na 1ª página.
+   * - `direction`: `'next'` (avançar) ou `'prev'` (retroceder). Acompanha o
+   *   `cursor` e deve casar com a direção que ele cifra — o servidor rejeita
+   *   divergência (anti-adulteração, ADR-0089). Omitido na 1ª página (o
+   *   servidor coage para `'next'`).
    *
    * O cursor é serializado no query param `cursor=`; o cliente nunca decifra
-   * o conteúdo (ADR-0031 do backend). Use `extractNextCursor(result.headers
-   * .get('Link'))` para obter o próximo cursor a partir do header de resposta.
+   * o conteúdo (ADR-0031 do backend). Use `extractNextCursor`/`extractPrevCursor`
+   * sobre `result.headers.get('Link')` para obter os cursores de navegação.
    */
-  listar(cursor?: Cursor, limit?: number): Observable<ApiResult<readonly EditalDto[]>> {
+  listar(
+    cursor?: Cursor,
+    direction?: PaginationDirection,
+  ): Observable<ApiResult<readonly EditalDto[]>> {
     let params = new HttpParams();
     if (cursor !== undefined) {
       params = params.set('cursor', cursorToString(cursor));
-    }
-    if (limit !== undefined) {
-      params = params.set('limit', String(limit));
+      // `direction` só faz sentido com cursor: o servidor o valida contra a
+      // direção cifrada no cursor. Sem cursor (1ª página), é omitido.
+      if (direction !== undefined) {
+        params = params.set('direction', direction);
+      }
     }
     return this.http.get<ApiResult<readonly EditalDto[]>>(`${this.basePath}/api/editais`, {
       context: withVendorMime('edital', 1),

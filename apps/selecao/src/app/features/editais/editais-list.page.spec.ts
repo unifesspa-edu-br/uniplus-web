@@ -68,25 +68,28 @@ describe('EditaisListPage', () => {
     expect(component.editais()).toHaveLength(2);
   });
 
-  it('extrai nextCursor do header Link rel="next" da resposta de sucesso', () => {
+  it('extrai prev/next cursors do header Link da resposta de sucesso', () => {
     fixture.detectChanges();
 
     const req = controller.expectOne(`${BASE}/api/editais`);
     req.flush([editalSeed('40')], {
       headers: {
-        Link: '<https://api/editais?cursor=opaque-next-page>; rel="next"',
+        Link:
+          '<https://api/editais?cursor=opaque-prev&direction=prev>; rel="prev", ' +
+          '<https://api/editais?cursor=opaque-next-page&direction=next>; rel="next"',
       },
     });
 
+    expect(component.prevCursor()).toBe('opaque-prev');
     expect(component.nextCursor()).toBe('opaque-next-page');
   });
 
-  it('paginação acumula items da próxima página e atualiza o cursor', () => {
+  it('navegação "Próximo" substitui a página, envia direction=next e atualiza cursores', () => {
     fixture.detectChanges();
 
     controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
       headers: {
-        Link: '<https://api/editais?cursor=cursor-pagina-2>; rel="next"',
+        Link: '<https://api/editais?cursor=cursor-pagina-2&direction=next>; rel="next"',
       },
     });
 
@@ -96,25 +99,80 @@ describe('EditaisListPage', () => {
       throw new Error('Cursor da página 2 não foi extraído.');
     }
 
-    component['aoCarregarMais'](cursorPagina2);
+    component['aoProxima'](cursorPagina2);
 
     const req = controller.expectOne(
       (request) =>
-        request.url === `${BASE}/api/editais` && request.params.get('cursor') === 'cursor-pagina-2',
+        request.url === `${BASE}/api/editais` &&
+        request.params.get('cursor') === 'cursor-pagina-2' &&
+        request.params.get('direction') === 'next',
     );
     req.flush([editalSeed('41'), editalSeed('42')], {
       headers: {
-        Link: '<https://api/editais?cursor=cursor-pagina-3>; rel="next"',
+        Link:
+          '<https://api/editais?cursor=cursor-pagina-1&direction=prev>; rel="prev", ' +
+          '<https://api/editais?cursor=cursor-pagina-3&direction=next>; rel="next"',
       },
     });
 
-    expect(component.editais()).toHaveLength(3);
-    expect(component.editais()[0].numeroEdital).toBe('040/2026');
-    expect(component.editais()[2].numeroEdital).toBe('042/2026');
+    // Substituição (ADR-0089): a página 2 troca a 1 — 2 items, não 3.
+    expect(component.editais()).toHaveLength(2);
+    expect(component.editais()[0].numeroEdital).toBe('041/2026');
+    expect(component.editais()[1].numeroEdital).toBe('042/2026');
+    expect(component.prevCursor()).toBe('cursor-pagina-1');
     expect(component.nextCursor()).toBe('cursor-pagina-3');
   });
 
-  it('última página (sem rel="next") zera o nextCursor', () => {
+  it('navegação "Anterior" envia direction=prev e substitui a página', () => {
+    fixture.detectChanges();
+
+    // 1ª página com next disponível
+    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('43')], {
+      headers: {
+        Link: '<https://api/editais?cursor=c2&direction=next>; rel="next"',
+      },
+    });
+    const cursorProximo = component.nextCursor();
+    if (!cursorProximo) {
+      throw new Error('Cursor "next" não foi extraído.');
+    }
+    component['aoProxima'](cursorProximo);
+    controller
+      .expectOne((request) => request.params.get('cursor') === 'c2')
+      .flush([editalSeed('44')], {
+        headers: {
+          Link: '<https://api/editais?cursor=c1&direction=prev>; rel="prev"',
+        },
+      });
+
+    const cursorAnterior = component.prevCursor();
+    if (cursorAnterior === null) {
+      throw new Error('Cursor "prev" não foi extraído.');
+    }
+    expect(cursorAnterior).toBe('c1');
+    component['aoAnterior'](cursorAnterior);
+
+    const req = controller.expectOne(
+      (request) =>
+        request.params.get('cursor') === 'c1' && request.params.get('direction') === 'prev',
+    );
+    req.flush([editalSeed('43')]);
+
+    expect(component.editais()).toHaveLength(1);
+    expect(component.editais()[0].numeroEdital).toBe('043/2026');
+  });
+
+  it('1ª página não envia direction (servidor coage para next)', () => {
+    fixture.detectChanges();
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/editais` && !request.params.has('cursor'),
+    );
+    expect(req.request.params.has('direction')).toBe(false);
+    req.flush([editalSeed('40')]);
+  });
+
+  it('última página (sem rel="prev"/"next") zera os cursores', () => {
     fixture.detectChanges();
 
     controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
@@ -123,6 +181,7 @@ describe('EditaisListPage', () => {
       },
     });
 
+    expect(component.prevCursor()).toBeNull();
     expect(component.nextCursor()).toBeNull();
   });
 
@@ -150,13 +209,13 @@ describe('EditaisListPage', () => {
     expect(component.editais()).toEqual([]);
   });
 
-  it('falha 4xx em load-more preserva cursor e items já carregados (retry possível)', () => {
+  it('falha em navegação preserva a página atual e seus cursores (retry possível)', () => {
     fixture.detectChanges();
 
     // 1ª página OK: ganha cursor para a próxima
     controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
       headers: {
-        Link: '<https://api/editais?cursor=cursor-retry>; rel="next"',
+        Link: '<https://api/editais?cursor=cursor-retry&direction=next>; rel="next"',
       },
     });
 
@@ -168,7 +227,7 @@ describe('EditaisListPage', () => {
     }
 
     // 2ª página falha
-    component['aoCarregarMais'](cursorRetry);
+    component['aoProxima'](cursorRetry);
     controller
       .expectOne((request) => request.params.get('cursor') === 'cursor-retry')
       .flush(
@@ -188,9 +247,20 @@ describe('EditaisListPage', () => {
 
     expect(component.errorMessage()).toBe('Falha temporária do servidor');
     expect(component.loading()).toBe(false);
-    // Items da 1ª página preservados; cursor mantido para retry.
+    // Página atual (1) preservada; cursor mantido para o retry refazer.
     expect(component.editais()).toHaveLength(1);
     expect(component.nextCursor()).toBe('cursor-retry');
+
+    // Retry refaz exatamente a navegação que falhou (mesmo cursor + direction).
+    component['aoTentarNovamente']();
+    const retry = controller.expectOne(
+      (request) =>
+        request.params.get('cursor') === 'cursor-retry' &&
+        request.params.get('direction') === 'next',
+    );
+    retry.flush([editalSeed('41'), editalSeed('42')]);
+    expect(component.editais()).toHaveLength(2);
+    expect(component.errorMessage()).toBeNull();
   });
 
   it('renderiza ui-data-table com dados e header correto após carga inicial', () => {
