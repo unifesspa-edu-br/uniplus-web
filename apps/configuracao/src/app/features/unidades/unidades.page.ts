@@ -17,11 +17,13 @@ import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import {
   ApiResult,
   Cursor,
+  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
   extractNextCursor,
+  extractPrevCursor,
   idempotencyKey,
   useApiResource,
   withIdempotencyKey,
@@ -45,6 +47,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterChipsComponent,
+  PagerComponent,
   SpinnerComponent,
   type UiFilterChipOption,
 } from '@uniplus/shared-ui/components';
@@ -112,6 +115,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     EmptyStateComponent,
     FilterChipsComponent,
     NgTemplateOutlet,
+    PagerComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -310,18 +314,16 @@ const BACKEND_FIELD_TO_CONTROL = {
           }
         }
 
-        @if (nextCursor()) {
-          <nav class="pager" aria-label="Carregar mais unidades">
-            <button
-              class="btn btn--secondary"
-              type="button"
-              [disabled]="loading()"
-              (click)="carregarMais()"
-            >
-              Carregar mais
-              <i class="pi pi-angle-down btn__icon" aria-hidden="true"></i>
-            </button>
-          </nav>
+        @if (prevCursor() !== null || nextCursor() !== null) {
+          <ui-pager
+            statusText="Navegação por páginas"
+            navigationLabel="Paginação de unidades"
+            [hasPrevious]="prevCursor() !== null"
+            [hasNext]="nextCursor() !== null"
+            [isDisabled]="loading()"
+            (previous)="paginaAnterior()"
+            (next)="proximaPagina()"
+          />
         }
       </section>
     </div>
@@ -698,12 +700,17 @@ export class UnidadesPage {
   private readonly filtroKey = computed(() => JSON.stringify([this.buscaAplicada(), this.tipoFiltro()]));
 
   /**
-   * Cursor da página atual (`undefined` = primeira). Volta para a primeira
-   * página sempre que o filtro muda (linkedSignal: `source` = `filtroKey`).
-   * "Carregar mais" faz `cursor.set(next)` — navegação só para frente, casando
-   * com o cursor forward-only do ADR-0026 (sem "Anterior", sem nº de página).
+   * Página de navegação atual (`undefined` = primeira). Volta para a primeira
+   * sempre que o filtro muda (linkedSignal: `source` = `filtroKey`). "Anterior"/
+   * "Próximo" fazem `pagina.set({ cursor, direction })` com o cursor opaco do
+   * header `Link` e a direção casada (`'prev'`/`'next'`) — navegação por
+   * substituição sobre o cursor bidirecional (ADR-0089 do `uniplus-api`); o
+   * cliente não mantém pilha de cursores.
    */
-  private readonly cursor = linkedSignal<string, Cursor | undefined>({
+  private readonly pagina = linkedSignal<
+    string,
+    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
+  >({
     source: () => this.filtroKey(),
     computation: () => undefined,
   });
@@ -722,14 +729,17 @@ export class UnidadesPage {
   protected readonly loading = this.lista.isLoading;
 
   /**
-   * Recarga que **substitui** a lista em andamento (primeira página: troca de
-   * filtro ou refetch pós-mutação). Durante essa janela as linhas exibidas
-   * podem estar desatualizadas (ex.: linha recém-removida ainda visível até a
-   * resposta chegar), então as ações de linha ficam desabilitadas. "Carregar
-   * mais" (cursor definido) só acumula e não invalida as linhas atuais.
+   * Recarga que **substitui** a lista em andamento. Com navegação prev/next por
+   * substituição, toda carga troca as linhas exibidas (troca de filtro, refetch
+   * pós-mutação, ou navegação de página) — durante essa janela as linhas podem
+   * estar desatualizadas (ex.: linha recém-removida ainda visível até a resposta
+   * chegar), então as ações de linha ficam desabilitadas.
    */
-  protected readonly recarregandoLista = computed(
-    () => this.loading() && this.cursor() === undefined,
+  protected readonly recarregandoLista = computed(() => this.loading());
+
+  /** Cursor da página anterior (rel="prev" do header Link). `null` = primeira página. */
+  protected readonly prevCursor = computed(() =>
+    extractPrevCursor(this.lista.headers()?.get('Link') ?? null),
   );
 
   /** Próximo cursor (rel="next" do header Link). `null` = última página. */
@@ -738,9 +748,8 @@ export class UnidadesPage {
   );
 
   /**
-   * Acumulação reativa das páginas ("Carregar mais"): substitui na primeira
-   * página (cursor `undefined` — cobre carga inicial, troca de filtro e refetch
-   * pós-mutação) e concatena nas seguintes. `linkedSignal` em vez de `effect`
+   * Lista reativa por **substituição** (navegação prev/next, ADR-0089): cada
+   * página troca a anterior — sem acumular. `linkedSignal` em vez de `effect`
    * (guidance oficial Angular: `effect` não serve para atualizar outro signal).
    */
   protected readonly unidades = linkedSignal<
@@ -749,22 +758,23 @@ export class UnidadesPage {
   >({
     source: () => this.lista.value(),
     computation: (envelope, previous) => {
-      const acumulado = previous?.value ?? [];
+      const atual = previous?.value ?? [];
       // Sem resposta ainda (loading/reload): preserva para não piscar a lista.
       if (envelope === undefined) {
-        return acumulado;
+        return atual;
       }
-      // Lê o cursor no instante em que os dados chegam — `untracked` porque a
+      // Lê a página no instante em que os dados chegam — `untracked` porque a
       // única dependência reativa deste linkedSignal é `lista.value()`; rastrear
-      // o cursor reexecutaria a computação com dados velhos e duplicaria a página.
-      const primeiraPagina = untracked(() => this.cursor() === undefined);
+      // `pagina` reexecutaria a computação com dados velhos.
+      const primeiraPagina = untracked(() => this.pagina() === undefined);
       if (!envelope.ok) {
-        // Falha numa página seguinte preserva o acumulado (não perde o que já
-        // foi carregado); falha na primeira página limpa — após refetch
-        // pós-mutação a lista anterior está desatualizada (ex.: linha removida).
-        return primeiraPagina ? [] : acumulado;
+        // Falha na primeira página (troca de filtro / refetch pós-mutação) limpa
+        // — a lista anterior pode estar desatualizada (ex.: linha removida).
+        // Falha em navegação (cursor definido) preserva a página atual para o
+        // usuário não perder o contexto; o retry (banner) refaz a mesma página.
+        return primeiraPagina ? [] : atual;
       }
-      return primeiraPagina ? [...envelope.data] : [...acumulado, ...envelope.data];
+      return [...envelope.data];
     },
   });
 
@@ -952,18 +962,23 @@ export class UnidadesPage {
       .subscribe((termo) => this.buscaPaiAplicada.set(termo));
   }
 
-  protected carregarMais(): void {
+  protected proximaPagina(): void {
     const proximo = this.nextCursor();
     if (proximo !== null && !this.loading()) {
-      // Só avança (cursor forward-only). A acumulação fica a cargo do
-      // linkedSignal `unidades` quando a próxima página chega.
-      this.cursor.set(proximo);
+      this.pagina.set({ cursor: proximo, direction: 'next' });
     }
   }
 
-  // Refaz a carga da página atual após falha. Reusa `reload()` porque o cursor
-  // já aponta para a página que falhou — `cursor.set(mesmoValor)` não dispararia
-  // novo request. Cobre falha da primeira página e de "Carregar mais".
+  protected paginaAnterior(): void {
+    const anterior = this.prevCursor();
+    if (anterior !== null && !this.loading()) {
+      this.pagina.set({ cursor: anterior, direction: 'prev' });
+    }
+  }
+
+  // Refaz a carga da página atual após falha. Reusa `reload()` porque `pagina`
+  // já aponta para a página que falhou — `pagina.set(mesmoValor)` não dispararia
+  // novo request. Cobre falha da primeira página e de navegação prev/next.
   protected tentarNovamente(): void {
     if (!this.loading()) {
       this.lista.reload();
@@ -971,7 +986,7 @@ export class UnidadesPage {
   }
 
   private montarParams(): HttpParams {
-    let params = new HttpParams().set('limit', String(PAGE_SIZE));
+    let params = new HttpParams();
     const q = this.buscaAplicada();
     if (q.length > 0) {
       params = params.set('q', q);
@@ -982,9 +997,16 @@ export class UnidadesPage {
       // no contrato (?tipo=3). Valor fora do roster → backend responde 400.
       params = params.append('tipo', tipo);
     }
-    const cursor = this.cursor();
-    if (cursor !== undefined) {
-      params = params.set('cursor', cursorToString(cursor));
+    const pagina = this.pagina();
+    if (pagina === undefined) {
+      // Primeira página: define a janela; sem cursor/direction (o servidor
+      // coage para 'next').
+      params = params.set('limit', String(PAGE_SIZE));
+    } else {
+      // Navegação: o cursor opaco carrega a janela e a direção cifrada; envia
+      // `direction` casado ao cursor (ADR-0089) e omite `limit`.
+      params = params.set('cursor', cursorToString(pagina.cursor));
+      params = params.set('direction', pagina.direction);
     }
     return params;
   }
@@ -1175,13 +1197,13 @@ export class UnidadesPage {
 
   private recarregar(): void {
     // Pós-mutação: volta para a primeira página e refaz o fetch. Se já está na
-    // primeira (cursor undefined), `reload()` força o refetch (params iguais);
-    // senão, resetar o cursor dispara o refetch reativo pelo httpResource. Em
-    // ambos os casos o linkedSignal `unidades` substitui (não acumula).
-    if (this.cursor() === undefined) {
+    // primeira (`pagina` undefined), `reload()` força o refetch (params iguais);
+    // senão, resetar `pagina` dispara o refetch reativo pelo httpResource. Em
+    // ambos os casos o linkedSignal `unidades` substitui a lista.
+    if (this.pagina() === undefined) {
       this.lista.reload();
     } else {
-      this.cursor.set(undefined);
+      this.pagina.set(undefined);
     }
   }
 

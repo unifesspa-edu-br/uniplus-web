@@ -175,41 +175,73 @@ describe('UnidadesPage', () => {
     expect(component['unidades']()[0].tipo).toBe('Instituto');
   });
 
-  it('Carregar mais acumula a próxima página (cursor forward-only)', async () => {
+  it('navega Próximo/Anterior por substituição, com direction casado e sem limit (ADR-0089)', async () => {
     await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/unidades?cursor=pagina-2>; rel="next"`,
+      Link: `<${BASE}/api/unidades?cursor=pagina-2&direction=next>; rel="next"`,
     });
 
     expect(component['unidades']()).toHaveLength(1);
     expect(component['nextCursor']()).not.toBeNull();
+    expect(component['prevCursor']()).toBeNull();
 
-    component['carregarMais']();
+    // Próximo: envia cursor + direction=next, sem limit; substitui a lista.
+    component['proximaPagina']();
     await propagate();
 
-    const request = expectListGet((r) => r.params.get('cursor') === 'pagina-2');
-    request.flush([unidadesSeed[1]]); // sem Link → última página
+    const reqNext = expectListGet(
+      (r) =>
+        r.params.get('cursor') === 'pagina-2' &&
+        r.params.get('direction') === 'next' &&
+        !r.params.has('limit'),
+    );
+    reqNext.flush([unidadesSeed[1]], {
+      headers: { Link: `<${BASE}/api/unidades?cursor=pagina-1&direction=prev>; rel="prev"` },
+    });
     await propagate();
 
-    expect(component['unidades']()).toHaveLength(2);
-    expect(component['unidades']().map((u) => u.id)).toEqual([REITORIA_ID, INSTITUTO_ID]);
+    // Substituição: a página 2 troca a 1 (1 item, não 2).
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
+    expect(component['prevCursor']()).not.toBeNull();
     expect(component['nextCursor']()).toBeNull();
+
+    // Anterior: envia cursor + direction=prev, sem limit; substitui de volta.
+    component['paginaAnterior']();
+    await propagate();
+
+    const reqPrev = expectListGet(
+      (r) =>
+        r.params.get('cursor') === 'pagina-1' &&
+        r.params.get('direction') === 'prev' &&
+        !r.params.has('limit'),
+    );
+    reqPrev.flush([unidadesSeed[0]]);
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(REITORIA_ID);
   });
 
   it('mudar o filtro reseta a paginação para a primeira página e substitui a lista', async () => {
     await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/unidades?cursor=pagina-2>; rel="next"`,
+      Link: `<${BASE}/api/unidades?cursor=pagina-2&direction=next>; rel="next"`,
     });
-    component['carregarMais']();
+    component['proximaPagina']();
     await propagate();
     expectListGet((r) => r.params.get('cursor') === 'pagina-2').flush([unidadesSeed[1]]);
     await propagate();
-    expect(component['unidades']()).toHaveLength(2);
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
 
-    // Aplicar tipo volta à primeira página (sem cursor) e substitui, não acumula.
+    // Aplicar tipo volta à primeira página (sem cursor, com limit) e substitui.
     component['tipoFiltro'].set('1'); // Reitoria
     await propagate();
     const request = expectListGet(
-      (r) => r.params.get('tipo') === '1' && !r.params.has('cursor'),
+      (r) =>
+        r.params.get('tipo') === '1' &&
+        !r.params.has('cursor') &&
+        !r.params.has('direction') &&
+        r.params.get('limit') === '100',
     );
     request.flush([unidadesSeed[0]]);
     await propagate();
@@ -561,13 +593,13 @@ describe('UnidadesPage', () => {
     expect(component['opcoesUnidadeSuperior']().map((u) => u.id)).toEqual([INSTITUTO_ID]);
   });
 
-  it('permite tentar novamente quando uma página falha, sem perder o que já foi carregado', async () => {
+  it('permite tentar novamente quando a navegação falha, preservando a página atual', async () => {
     await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/unidades?cursor=pagina-2>; rel="next"`,
+      Link: `<${BASE}/api/unidades?cursor=pagina-2&direction=next>; rel="next"`,
     });
     expect(component['unidades']()).toHaveLength(1);
 
-    component['carregarMais']();
+    component['proximaPagina']();
     await propagate();
     expectListGet((r) => r.params.get('cursor') === 'pagina-2').flush(
       { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
@@ -579,7 +611,7 @@ describe('UnidadesPage', () => {
     );
     await propagate();
 
-    expect(component['unidades']()).toHaveLength(1); // mantém a página já carregada
+    expect(component['unidades']()).toHaveLength(1); // preserva a página atual
     expect(component['errorMessage']()).not.toBeNull();
 
     component['tentarNovamente']();
@@ -588,7 +620,9 @@ describe('UnidadesPage', () => {
     retry.flush([unidadesSeed[1]]);
     await propagate();
 
-    expect(component['unidades']()).toHaveLength(2); // acumulou após o retry
+    // Substitui a lista pela página recém-carregada (sem acumular).
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
     expect(component['errorMessage']()).toBeNull();
   });
 
