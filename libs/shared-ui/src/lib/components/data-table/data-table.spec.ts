@@ -289,6 +289,31 @@ describe('DataTableComponent', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
+  it('durante isLoading as linhas não são clicáveis mesmo com rowClickable=true (substituição)', () => {
+    const { fixture, component } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('records', DATA);
+    fixture.componentRef.setInput('rowClickable', true);
+    fixture.componentRef.setInput('isLoading', true);
+    fixture.detectChanges();
+
+    const linhas = fixture.debugElement.queryAll(By.css('tbody tr'));
+    // Linhas da página anterior preservadas, mas não clicáveis durante a recarga.
+    expect(linhas[0].nativeElement.getAttribute('tabindex')).toBeNull();
+    expect(linhas[0].nativeElement.classList).not.toContain('table-responsive__row--clickable');
+
+    const emit = vi.fn();
+    component.rowClick.subscribe(emit);
+    linhas[0].nativeElement.click();
+    expect(emit).not.toHaveBeenCalled();
+
+    // Ao terminar a recarga, as linhas voltam a ser clicáveis.
+    fixture.componentRef.setInput('isLoading', false);
+    fixture.detectChanges();
+    linhas[0].nativeElement.click();
+    expect(emit).toHaveBeenCalledWith(DATA[0]);
+  });
+
   it('aria-busy=true no <table> quando isLoading()', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
