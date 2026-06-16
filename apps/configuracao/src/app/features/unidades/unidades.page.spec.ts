@@ -613,6 +613,9 @@ describe('UnidadesPage', () => {
 
     expect(component['unidades']()).toHaveLength(1); // preserva a página atual
     expect(component['errorMessage']()).not.toBeNull();
+    // Cursores preservados na falha (resposta de erro não traz Link): o pager
+    // não some, o usuário continua podendo navegar a partir da página exibida.
+    expect(component['nextCursor']()).toBe('pagina-2');
 
     component['tentarNovamente']();
     await propagate();
