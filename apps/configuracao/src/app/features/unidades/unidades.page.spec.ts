@@ -591,4 +591,55 @@ describe('UnidadesPage', () => {
     expect(component['unidades']()).toHaveLength(2); // acumulou após o retry
     expect(component['errorMessage']()).toBeNull();
   });
+
+  it('limpa a lista quando o refetch pós-mutação falha, sem manter linhas desatualizadas', async () => {
+    await flushInicial();
+    expect(component['unidades']()).toHaveLength(2);
+
+    component['pedirRemocao'](unidadesSeed[1]);
+    component['removerConfirmado']();
+    controller
+      .expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+
+    await propagate();
+    expectListGet().flush(
+      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(0); // não mantém a linha removida
+    expect(component['errorMessage']()).not.toBeNull();
+  });
+
+  it('sinaliza falha ao carregar as opções de unidade superior e permite retry', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await propagate();
+    expectListGet((r) => !r.params.has('q') && !r.params.has('cursor')).flush(
+      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['opcoesSuperiorComErro']()).toBe(true);
+    expect(component['opcoesUnidadeSuperior']()).toHaveLength(0);
+
+    component['recarregarOpcoesSuperior']();
+    await propagate();
+    expectListGet((r) => !r.params.has('q')).flush(unidadesSeed);
+    await propagate();
+
+    expect(component['opcoesSuperiorComErro']()).toBe(false);
+    expect(component['opcoesUnidadeSuperior']()).toHaveLength(2);
+  });
 });
