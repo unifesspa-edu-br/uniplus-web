@@ -54,7 +54,21 @@ export function cursorToString(cursor: Cursor): string {
 }
 
 /**
- * Extrai o cursor da próxima página do header `Link`. Retorna `null` quando:
+ * Direção de navegação da paginação por cursor bidirecional (ADR-0089 do
+ * `uniplus-api`). É o valor literal do query param `direction` que o cliente
+ * envia junto ao cursor — `'next'` para avançar, `'prev'` para retroceder.
+ *
+ * O servidor cifra a direção dentro do próprio cursor e rejeita no boundary
+ * um `direction` que divirja do cifrado (anti-adulteração), então o cliente
+ * deve enviar a direção que casa com o cursor seguido: `extractNextCursor`
+ * pareia com `'next'`, `extractPrevCursor` com `'prev'`. Na primeira página
+ * (sem cursor) o param é omitido — o servidor coage para `'next'`.
+ */
+export type PaginationDirection = 'next' | 'prev';
+
+/**
+ * Extrai o cursor da próxima página do header `Link` (`rel="next"`). Retorna
+ * `null` quando:
  *
  * - header é `null`, `undefined` ou string vazia;
  * - header não tem entrada `rel="next"`;
@@ -66,12 +80,37 @@ export function cursorToString(cursor: Cursor): string {
  * - endpoint não-paginado retornando outros rels (ex.: `rel="related"`).
  */
 export function extractNextCursor(linkHeader: string | null | undefined): Cursor | null {
+  return extractCursorForRel(linkHeader, 'next');
+}
+
+/**
+ * Extrai o cursor da página anterior do header `Link` (`rel="prev"`).
+ * Simétrico a {@link extractNextCursor} — retorna `null` quando o header está
+ * ausente/vazio, não tem `rel="prev"`, ou o `rel="prev"` não carrega
+ * `cursor=`.
+ *
+ * `null` é o caso legítimo da **primeira página**: o servidor não emite
+ * `rel="prev"` quando não há âncora anterior (ADR-0089 do `uniplus-api`).
+ */
+export function extractPrevCursor(linkHeader: string | null | undefined): Cursor | null {
+  return extractCursorForRel(linkHeader, 'prev');
+}
+
+/**
+ * Resolve o cursor opaco de um `rel` específico do header `Link`. Núcleo
+ * comum a {@link extractNextCursor}/{@link extractPrevCursor}: parseia o
+ * header, localiza o link-value do `rel` e extrai o query param `cursor=`.
+ */
+function extractCursorForRel(
+  linkHeader: string | null | undefined,
+  rel: 'next' | 'prev',
+): Cursor | null {
   const links = parseLink(linkHeader);
-  const next = links.get('next');
-  if (next === undefined) {
+  const link = links.get(rel);
+  if (link === undefined) {
     return null;
   }
-  const cursorValue = extractCursorParam(next.uri);
+  const cursorValue = extractCursorParam(link.uri);
   if (cursorValue === null) {
     return null;
   }

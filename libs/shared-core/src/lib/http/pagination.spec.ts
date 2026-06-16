@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createCursor, cursorToString, extractNextCursor } from './pagination';
+import { createCursor, cursorToString, extractNextCursor, extractPrevCursor } from './pagination';
 
 function extractRequiredNextCursor(linkHeader: string): string {
   const next = extractNextCursor(linkHeader);
@@ -7,6 +7,14 @@ function extractRequiredNextCursor(linkHeader: string): string {
     throw new Error(`Esperava cursor no Link header: ${linkHeader}`);
   }
   return cursorToString(next);
+}
+
+function extractRequiredPrevCursor(linkHeader: string): string {
+  const prev = extractPrevCursor(linkHeader);
+  if (prev === null) {
+    throw new Error(`Esperava cursor "prev" no Link header: ${linkHeader}`);
+  }
+  return cursorToString(prev);
 }
 
 describe('Cursor branded type (ADR-0015)', () => {
@@ -116,6 +124,69 @@ describe('extractNextCursor — header Link → próximo cursor opaco', () => {
     it('ignora hash fragment na URI (#...)', () => {
       const linkHeader = '<https://api/x?cursor=ABC#section>; rel="next"';
       expect(extractRequiredNextCursor(linkHeader)).toBe('ABC');
+    });
+  });
+});
+
+describe('extractPrevCursor — header Link → cursor da página anterior (ADR-0089)', () => {
+  describe('caminhos felizes', () => {
+    it('rel="prev" com cursor= no query string retorna Cursor', () => {
+      const linkHeader = '<https://api/x?cursor=PREV1&direction=prev>; rel="prev"';
+      expect(extractRequiredPrevCursor(linkHeader)).toBe('PREV1');
+    });
+
+    it('extrai cursor de prev preservando os filtros na URI (q/tipo)', () => {
+      const linkHeader =
+        '<https://api/unidades?q=ceps&tipo=3&cursor=PREV2&direction=prev>; rel="prev"';
+      expect(extractRequiredPrevCursor(linkHeader)).toBe('PREV2');
+    });
+
+    it('rel="prev" + rel="next": extrai independentemente cada cursor', () => {
+      const linkHeader =
+        '<https://api/x?cursor=P&direction=prev>; rel="prev", ' +
+        '<https://api/x?cursor=N&direction=next>; rel="next"';
+      expect(extractRequiredPrevCursor(linkHeader)).toBe('P');
+      expect(extractRequiredNextCursor(linkHeader)).toBe('N');
+    });
+
+    it('decodifica percent-encoding do valor do cursor de prev', () => {
+      const linkHeader = '<https://api/x?cursor=ab%3Dcd%3D&direction=prev>; rel="prev"';
+      expect(extractRequiredPrevCursor(linkHeader)).toBe('ab=cd=');
+    });
+  });
+
+  describe('retorna null em casos legítimos', () => {
+    it('header null/undefined/vazio', () => {
+      expect(extractPrevCursor(null)).toBeNull();
+      expect(extractPrevCursor(undefined)).toBeNull();
+      expect(extractPrevCursor('')).toBeNull();
+    });
+
+    it('primeira página: só rel="next", sem rel="prev"', () => {
+      const linkHeader = '<https://api/x?cursor=N&direction=next>; rel="next"';
+      expect(extractPrevCursor(linkHeader)).toBeNull();
+    });
+
+    it('header só com rel="self"', () => {
+      const linkHeader = '<https://api/x>; rel="self"';
+      expect(extractPrevCursor(linkHeader)).toBeNull();
+    });
+  });
+
+  describe('retorna null em formas defensivas', () => {
+    it('rel="prev" sem query string', () => {
+      const linkHeader = '<https://api/x>; rel="prev"';
+      expect(extractPrevCursor(linkHeader)).toBeNull();
+    });
+
+    it('rel="prev" com query string mas sem cursor=', () => {
+      const linkHeader = '<https://api/x?direction=prev>; rel="prev"';
+      expect(extractPrevCursor(linkHeader)).toBeNull();
+    });
+
+    it('rel="prev" com cursor= vazio', () => {
+      const linkHeader = '<https://api/x?cursor=&direction=prev>; rel="prev"';
+      expect(extractPrevCursor(linkHeader)).toBeNull();
     });
   });
 });
