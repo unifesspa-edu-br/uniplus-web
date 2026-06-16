@@ -99,7 +99,7 @@ describe('DataTableComponent', () => {
     expect(alertaTbody.nativeElement.textContent).toContain('Falha ao carregar editais.');
   });
 
-  it('em erro com records carregados: linhas preservadas + banner de erro fora do tbody + botão "Carregar mais" disponível', () => {
+  it('em erro com records carregados: linhas preservadas + banner de erro fora do tbody + paginação disponível', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
     fixture.componentRef.setInput('records', DATA);
@@ -117,41 +117,66 @@ describe('DataTableComponent', () => {
     expect(banners.length).toBe(1);
     expect(banners[0].nativeElement.textContent).toContain('Falha de rede ao paginar.');
 
-    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
-    expect(botao).toBeTruthy();
-    expect(botao.disabled).toBe(false);
+    // A barra de paginação segue disponível em erro pós-1ª página: o "Próximo"
+    // permite retentar a navegação (isLoading=false → botão habilitado).
+    const proximo = fixture.debugElement.query(By.css('[data-pager="next"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(proximo).toBeTruthy();
+    expect(proximo.disabled).toBe(false);
   });
 
-  it('botão "Carregar mais" só aparece quando nextCursor está populado', () => {
+  it('barra de paginação só aparece quando há cursor (prev ou next)', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
     fixture.componentRef.setInput('records', DATA);
     fixture.detectChanges();
 
-    expect(fixture.debugElement.query(By.css('button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-pager]'))).toBeNull();
 
     fixture.componentRef.setInput('nextCursor', createCursor('proximo-cursor'));
     fixture.detectChanges();
 
-    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
-    expect(botao.textContent?.trim()).toBe('Carregar mais');
-    expect(botao.disabled).toBe(false);
+    const proximo = fixture.debugElement.query(By.css('[data-pager="next"]'))
+      .nativeElement as HTMLButtonElement;
+    const anterior = fixture.debugElement.query(By.css('[data-pager="prev"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(proximo.textContent?.trim()).toBe('Próximo');
+    expect(proximo.disabled).toBe(false);
+    // Primeira página: sem prevCursor, "Anterior" fica desabilitado.
+    expect(anterior.disabled).toBe(true);
   });
 
-  it('botão "Carregar mais" troca rótulo para loadingLabel e fica disabled durante loading', () => {
+  it('Anterior habilita quando prevCursor está populado', () => {
     const { fixture } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
     fixture.componentRef.setInput('records', DATA);
-    fixture.componentRef.setInput('nextCursor', createCursor('proximo-cursor'));
+    fixture.componentRef.setInput('prevCursor', createCursor('cursor-anterior'));
+    fixture.componentRef.setInput('nextCursor', createCursor('cursor-proximo'));
+    fixture.detectChanges();
+
+    const anterior = fixture.debugElement.query(By.css('[data-pager="prev"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(anterior.disabled).toBe(false);
+  });
+
+  it('botões Anterior/Próximo ficam disabled durante loading', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('records', DATA);
+    fixture.componentRef.setInput('prevCursor', createCursor('cursor-anterior'));
+    fixture.componentRef.setInput('nextCursor', createCursor('cursor-proximo'));
     fixture.componentRef.setInput('isLoading', true);
     fixture.detectChanges();
 
-    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
-    expect(botao.disabled).toBe(true);
-    expect(botao.textContent?.trim()).toBe('Carregando…');
+    const anterior = fixture.debugElement.query(By.css('[data-pager="prev"]'))
+      .nativeElement as HTMLButtonElement;
+    const proximo = fixture.debugElement.query(By.css('[data-pager="next"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(anterior.disabled).toBe(true);
+    expect(proximo.disabled).toBe(true);
   });
 
-  it('clicar em "Carregar mais" emite output loadNext com o cursor atual', () => {
+  it('clicar em "Próximo" emite output loadNext com o nextCursor', () => {
     const { fixture, component } = setup();
     const cursor = createCursor('cursor-pagina-2');
     fixture.componentRef.setInput('columns', COLUMNS);
@@ -162,14 +187,35 @@ describe('DataTableComponent', () => {
     const emit = vi.fn();
     component.loadNext.subscribe(emit);
 
-    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
-    botao.click();
+    const proximo = fixture.debugElement.query(By.css('[data-pager="next"]'))
+      .nativeElement as HTMLButtonElement;
+    proximo.click();
 
     expect(emit).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledWith(cursor);
   });
 
-  it('clicar no botão durante loading não emite loadNext (guarda interna)', () => {
+  it('clicar em "Anterior" emite output loadPrev com o prevCursor', () => {
+    const { fixture, component } = setup();
+    const cursor = createCursor('cursor-pagina-1');
+    fixture.componentRef.setInput('columns', COLUMNS);
+    fixture.componentRef.setInput('records', DATA);
+    fixture.componentRef.setInput('prevCursor', cursor);
+    fixture.componentRef.setInput('nextCursor', createCursor('cursor-pagina-3'));
+    fixture.detectChanges();
+
+    const emit = vi.fn();
+    component.loadPrev.subscribe(emit);
+
+    const anterior = fixture.debugElement.query(By.css('[data-pager="prev"]'))
+      .nativeElement as HTMLButtonElement;
+    anterior.click();
+
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith(cursor);
+  });
+
+  it('clicar em "Próximo" durante loading não emite loadNext (botão disabled)', () => {
     const { fixture, component } = setup();
     fixture.componentRef.setInput('columns', COLUMNS);
     fixture.componentRef.setInput('records', DATA);
@@ -180,8 +226,9 @@ describe('DataTableComponent', () => {
     const emit = vi.fn();
     component.loadNext.subscribe(emit);
 
-    const botao = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
-    botao.click();
+    const proximo = fixture.debugElement.query(By.css('[data-pager="next"]'))
+      .nativeElement as HTMLButtonElement;
+    proximo.click();
 
     expect(emit).not.toHaveBeenCalled();
   });
