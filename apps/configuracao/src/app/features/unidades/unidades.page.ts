@@ -268,6 +268,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                       <button
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
+                        [disabled]="recarregandoLista()"
                         (click)="abrirEdicao(unidade)"
                       >
                         Editar
@@ -275,6 +276,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                       <button
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
+                        [disabled]="recarregandoLista()"
                         (click)="pedirRemocao(unidade)"
                       >
                         Remover
@@ -338,6 +340,7 @@ const BACKEND_FIELD_TO_CONTROL = {
               type="button"
               class="btn btn--tertiary btn--sm btn--rect"
               [attr.aria-label]="'Editar ' + node.unidade.sigla"
+              [disabled]="recarregandoLista()"
               (click)="abrirEdicao(node.unidade)"
             >
               Editar
@@ -701,6 +704,17 @@ export class UnidadesPage {
   }));
 
   protected readonly loading = this.lista.isLoading;
+
+  /**
+   * Recarga que **substitui** a lista em andamento (primeira página: troca de
+   * filtro ou refetch pós-mutação). Durante essa janela as linhas exibidas
+   * podem estar desatualizadas (ex.: linha recém-removida ainda visível até a
+   * resposta chegar), então as ações de linha ficam desabilitadas. "Carregar
+   * mais" (cursor definido) só acumula e não invalida as linhas atuais.
+   */
+  protected readonly recarregandoLista = computed(
+    () => this.loading() && this.cursor() === undefined,
+  );
 
   /** Próximo cursor (rel="next" do header Link). `null` = última página. */
   protected readonly nextCursor = computed(() =>
