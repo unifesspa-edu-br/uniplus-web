@@ -642,4 +642,25 @@ describe('UnidadesPage', () => {
     expect(component['opcoesSuperiorComErro']()).toBe(false);
     expect(component['opcoesUnidadeSuperior']()).toHaveLength(2);
   });
+
+  it('marca a lista em recarga durante o refetch pós-mutação (ações de linha desabilitam)', async () => {
+    await flushInicial();
+    expect(component['recarregandoLista']()).toBe(false);
+
+    component['pedirRemocao'](unidadesSeed[1]);
+    component['removerConfirmado']();
+    controller
+      .expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+
+    await propagate();
+    // Refetch pós-remoção pendente: a lista ainda mostra dados, mas em recarga.
+    expect(component['recarregandoLista']()).toBe(true);
+
+    expectListGet().flush([unidadesSeed[0]]);
+    await propagate();
+
+    expect(component['recarregandoLista']()).toBe(false);
+    expect(component['unidades']()).toHaveLength(1);
+  });
 });
