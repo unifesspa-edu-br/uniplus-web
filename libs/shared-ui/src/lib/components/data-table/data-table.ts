@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import type { Cursor } from '@uniplus/shared-core/http';
+import { PagerComponent } from '../pager/pager';
 
 export interface UiDataTableColumn {
   field: string;
@@ -27,20 +28,29 @@ export interface UiDataTableColumn {
  *   preserva o histórico carregado.
  * - **Vazio** (`!isLoading() && !errorMessage() && records().length === 0`):
  *   mensagem `emptyMessage()` ocupa o tbody.
- * - **Com dados**: tabela renderizada normalmente; quando `nextCursor()`
- *   for truthy, exibe botão "Carregar mais" abaixo da tabela.
+ * - **Com dados**: tabela renderizada normalmente; quando há cursor de
+ *   navegação (`prevCursor()` e/ou `nextCursor()`), exibe a barra de
+ *   paginação **Anterior / Próximo** (`ui-pager`) abaixo da tabela.
+ *
+ * Navegação por **substituição** (ADR-0089 do `uniplus-api`, cursor
+ * bidirecional): cada página substitui a anterior — o container troca
+ * `records()` a cada `loadPrev`/`loadNext`. O componente é apresentacional
+ * (ADR-0017): só reflete os cursores que o container fornece e emite o
+ * cursor seguido; quem decide substituir/preservar e enviar a direção
+ * casada ao cursor é o container.
  *
  * Outputs:
- * - `loadNext` — emite o cursor atual quando "Carregar mais" é clicado.
+ * - `loadNext` — emite `nextCursor()` quando "Próximo" é clicado.
+ * - `loadPrev` — emite `prevCursor()` quando "Anterior" é clicado.
  * - `retry` — emite quando "Tentar novamente" é clicado em qualquer
- *   estado de erro. Container decide se reusa cursor pré-falha ou
+ *   estado de erro. Container decide se reusa o cursor pré-falha ou
  *   recomeça do zero.
  * - `rowClick` — emite quando uma linha clicável é ativada.
  */
 @Component({
   selector: 'ui-data-table',
   standalone: true,
-  imports: [],
+  imports: [PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="table-responsive">
@@ -170,20 +180,16 @@ export interface UiDataTableColumn {
       </div>
     }
 
-    @if (mostrarBotaoCarregarMais()) {
-      <nav class="pager" aria-label="Paginação">
-        <span class="pager__status" aria-live="polite">{{ pageStatusLabel() }}</span>
-        <button
-          type="button"
-          class="pager__btn"
-          data-pager="next"
-          data-testid="data-table-load-more"
-          [disabled]="isLoading()"
-          (click)="emitirLoadNext()"
-        >
-          {{ isLoading() ? loadingLabel() : loadMoreLabel() }}
-        </button>
-      </nav>
+    @if (mostrarPaginacao()) {
+      <ui-pager
+        [statusText]="pageStatusLabel()"
+        navigationLabel="Paginação"
+        [hasPrevious]="prevCursor() !== null"
+        [hasNext]="nextCursor() !== null"
+        [isDisabled]="isLoading()"
+        (previous)="emitirLoadPrev()"
+        (next)="emitirLoadNext()"
+      />
     }
   `,
 })
@@ -200,9 +206,11 @@ export class DataTableComponent {
    * pode vir vazio — neste caso o link é suprimido.
    */
   readonly errorTraceId = input<string | null>(null);
+  /** Cursor da página anterior (`rel="prev"`); `null` na primeira página. */
+  readonly prevCursor = input<Cursor | null>(null);
+  /** Cursor da próxima página (`rel="next"`); `null` na última página. */
   readonly nextCursor = input<Cursor | null>(null);
   readonly emptyMessage = input<string>('Nenhum registro encontrado.');
-  readonly loadMoreLabel = input<string>('Carregar mais');
   readonly loadingLabel = input<string>('Carregando…');
   readonly retryLabel = input<string>('Tentar novamente');
   readonly reportIncidentLabel = input<string>('Reportar incidente:');
@@ -215,6 +223,7 @@ export class DataTableComponent {
   readonly trackByField = input<string>('id');
 
   readonly loadNext = output<Cursor>();
+  readonly loadPrev = output<Cursor>();
   readonly rowClick = output<Record<string, unknown>>();
   /**
    * Emitido quando o usuário clica em "Tentar novamente" em qualquer
@@ -238,8 +247,14 @@ export class DataTableComponent {
   protected readonly mostrarLoadingInicial = computed(
     () => this.isLoading() && this.errorMessage() === null && this.records().length === 0,
   );
-  /** Botão segue disponível mesmo em erro pós-1ª página, para permitir retry. */
-  protected readonly mostrarBotaoCarregarMais = computed(() => this.nextCursor() !== null);
+  /**
+   * Barra de paginação visível quando há ao menos um cursor de navegação
+   * (anterior ou próximo). Segue disponível em erro pós-1ª página, permitindo
+   * retentar a navegação além do botão "Tentar novamente" do banner.
+   */
+  protected readonly mostrarPaginacao = computed(
+    () => this.prevCursor() !== null || this.nextCursor() !== null,
+  );
   /** Renderiza link "Reportar incidente" apenas quando há trace context não-vazio. */
   protected readonly mostrarReporteDeIncidente = computed(() => {
     const traceId = this.errorTraceId();
@@ -250,6 +265,13 @@ export class DataTableComponent {
     const cursor = this.nextCursor();
     if (cursor !== null && !this.isLoading()) {
       this.loadNext.emit(cursor);
+    }
+  }
+
+  protected emitirLoadPrev(): void {
+    const cursor = this.prevCursor();
+    if (cursor !== null && !this.isLoading()) {
+      this.loadPrev.emit(cursor);
     }
   }
 
