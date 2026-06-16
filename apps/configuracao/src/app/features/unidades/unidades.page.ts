@@ -737,15 +737,42 @@ export class UnidadesPage {
    */
   protected readonly recarregandoLista = computed(() => this.loading());
 
+  /**
+   * Cursores de navegação (prev/next) da página em exibição. `linkedSignal` em
+   * vez de `computed(headers())` para **preservar** os cursores quando uma
+   * navegação falha: em erro o `apiResultInterceptor` devolve os headers da
+   * resposta de erro (sem `Link`), então ler `headers()` direto zeraria o pager
+   * — o usuário perderia prev/next enquanto `unidades` ainda mostra a página
+   * preservada. Espelha o `unidades`: sucesso extrai do `Link`; erro na 1ª
+   * página zera (a lista também é limpa); erro em navegação ou loading preserva.
+   */
+  private readonly cursores = linkedSignal<
+    ApiResult<readonly UnidadeDto[]> | undefined,
+    { readonly prev: Cursor | null; readonly next: Cursor | null }
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? { prev: null, next: null };
+      // Sem resposta ainda (loading/reload): preserva para não piscar o pager.
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.pagina() === undefined);
+      if (!envelope.ok) {
+        // Erro na 1ª página zera (a lista é limpa); erro em navegação preserva
+        // os cursores da página atual para o usuário continuar navegando.
+        return primeiraPagina ? { prev: null, next: null } : atual;
+      }
+      const link = untracked(() => this.lista.headers()?.get('Link') ?? null);
+      return { prev: extractPrevCursor(link), next: extractNextCursor(link) };
+    },
+  });
+
   /** Cursor da página anterior (rel="prev" do header Link). `null` = primeira página. */
-  protected readonly prevCursor = computed(() =>
-    extractPrevCursor(this.lista.headers()?.get('Link') ?? null),
-  );
+  protected readonly prevCursor = computed(() => this.cursores().prev);
 
   /** Próximo cursor (rel="next" do header Link). `null` = última página. */
-  protected readonly nextCursor = computed(() =>
-    extractNextCursor(this.lista.headers()?.get('Link') ?? null),
-  );
+  protected readonly nextCursor = computed(() => this.cursores().next);
 
   /**
    * Lista reativa por **substituição** (navegação prev/next, ADR-0089): cada
