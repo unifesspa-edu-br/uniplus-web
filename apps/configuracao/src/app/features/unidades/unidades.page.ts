@@ -541,6 +541,18 @@ const BACKEND_FIELD_TO_CONTROL = {
               <span class="field__hint">
                 Digite para buscar entre todas as unidades. Não pode formar ciclo na hierarquia.
               </span>
+              @if (opcoesSuperiorComErro()) {
+                <span class="field__error">
+                  Não foi possível carregar as unidades para seleção.
+                  <button
+                    type="button"
+                    class="cfg-link-button"
+                    (click)="recarregarOpcoesSuperior()"
+                  >
+                    Tentar novamente
+                  </button>
+                </span>
+              }
             </div>
             <label class="checkbox cfg-form__checkbox">
               <input type="checkbox" formControlName="unidadeAcademica" />
@@ -708,15 +720,20 @@ export class UnidadesPage {
     source: () => this.lista.value(),
     computation: (envelope, previous) => {
       const acumulado = previous?.value ?? [];
-      // Loading inicial ou falha: preserva o que já está na tela (o banner de
-      // erro cobre a falha; não piscar a lista para vazio).
-      if (envelope === undefined || !envelope.ok) {
+      // Sem resposta ainda (loading/reload): preserva para não piscar a lista.
+      if (envelope === undefined) {
         return acumulado;
       }
       // Lê o cursor no instante em que os dados chegam — `untracked` porque a
       // única dependência reativa deste linkedSignal é `lista.value()`; rastrear
       // o cursor reexecutaria a computação com dados velhos e duplicaria a página.
       const primeiraPagina = untracked(() => this.cursor() === undefined);
+      if (!envelope.ok) {
+        // Falha numa página seguinte preserva o acumulado (não perde o que já
+        // foi carregado); falha na primeira página limpa — após refetch
+        // pós-mutação a lista anterior está desatualizada (ex.: linha removida).
+        return primeiraPagina ? [] : acumulado;
+      }
       return primeiraPagina ? [...envelope.data] : [...acumulado, ...envelope.data];
     },
   });
@@ -775,6 +792,19 @@ export class UnidadesPage {
   protected readonly opcoesUnidadeSuperior = computed(
     () => this.opcoesSuperiorResource.data() ?? [],
   );
+  /**
+   * Falha ao carregar as opções de pai — diferencia "sem opções" de "não
+   * carregou". Sem isso, um 5xx transitório no lookup deixaria o select só com
+   * "Raiz" e o usuário submeteria pai em branco sem saber da falha. Não bloqueia
+   * o submit (pai é opcional), mas sinaliza com retry.
+   */
+  protected readonly opcoesSuperiorComErro = computed(() => {
+    const envelope = this.opcoesSuperiorResource.value();
+    return (
+      (envelope !== undefined && !envelope.ok) ||
+      this.opcoesSuperiorResource.error() !== undefined
+    );
+  });
 
   protected readonly tipoOptions = TIPOS_UNIDADE.map((tipo) => ({
     value: String(tipo.value),
@@ -909,6 +939,10 @@ export class UnidadesPage {
     } else {
       this.carregarOpcoesSuperior.set(true);
     }
+  }
+
+  protected recarregarOpcoesSuperior(): void {
+    this.opcoesSuperiorResource.reload();
   }
 
   protected abrirCadastro(): void {
