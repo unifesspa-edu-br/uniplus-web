@@ -81,30 +81,45 @@ describe('EditaisApi', () => {
     await promise;
   });
 
-  it('listar(cursor, limit) anexa cursor + limit como query params', async () => {
+  it('listar(cursor, "next") anexa cursor + direction=next (ADR-0089)', async () => {
     const cursor = createCursor('next-page-cursor');
 
-    const promise = firstValueFrom(api.listar(cursor, 25));
+    const promise = firstValueFrom(api.listar(cursor, 'next'));
 
     const req = controller.expectOne(
       (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
     );
     expect(req.request.params.get('cursor')).toBe('next-page-cursor');
-    expect(req.request.params.get('limit')).toBe('25');
+    expect(req.request.params.get('direction')).toBe('next');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
     req.flush([]);
 
     await promise;
   });
 
-  it('listar(undefined, limit) anexa apenas limit como query param', async () => {
-    const promise = firstValueFrom(api.listar(undefined, 10));
+  it('listar(cursor, "prev") anexa cursor + direction=prev', async () => {
+    const cursor = createCursor('prev-page-cursor');
+
+    const promise = firstValueFrom(api.listar(cursor, 'prev'));
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.has('limit'),
+      (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
+    );
+    expect(req.request.params.get('cursor')).toBe('prev-page-cursor');
+    expect(req.request.params.get('direction')).toBe('prev');
+    req.flush([]);
+
+    await promise;
+  });
+
+  it('listar(undefined, "next") não envia direction sem cursor (1ª página)', async () => {
+    const promise = firstValueFrom(api.listar(undefined, 'next'));
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/editais` && request.params.keys().length === 0,
     );
     expect(req.request.params.has('cursor')).toBe(false);
-    expect(req.request.params.get('limit')).toBe('10');
+    expect(req.request.params.has('direction')).toBe(false);
     req.flush([]);
 
     await promise;

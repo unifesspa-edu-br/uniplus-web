@@ -8,7 +8,13 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { Cursor, ProblemI18nService, extractNextCursor } from '@uniplus/shared-core/http';
+import {
+  Cursor,
+  PaginationDirection,
+  ProblemI18nService,
+  extractNextCursor,
+  extractPrevCursor,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { EditaisApi, EditalDto } from '@uniplus/shared-data/selecao';
 import {
@@ -18,11 +24,14 @@ import {
 } from '@uniplus/shared-ui/components';
 
 /**
- * Container (ADR-0017) da feature Editais — lista paginada por cursor opaco.
+ * Container (ADR-0017) da feature Editais — lista paginada por cursor opaco
+ * bidirecional (ADR-0089 do `uniplus-api`).
  *
- * Carga inicial dispara via constructor (1ª página, sem cursor). Paginação
- * incremental via output `loadNext` do `DataTableComponent`. Erro 4xx/5xx é
- * resolvido em mensagem pt-BR via `ProblemI18nService.resolve(problem).title`.
+ * Carga inicial dispara via constructor (1ª página, sem cursor/direção).
+ * Navegação **Anterior / Próximo por substituição** via outputs `loadPrev`/
+ * `loadNext` do `DataTableComponent`: cada página troca a anterior (sem
+ * acumular). Erro 4xx/5xx é resolvido em mensagem pt-BR via
+ * `ProblemI18nService.resolve(problem).title`.
  */
 @Component({
   selector: 'sel-editais-list-page',
@@ -40,11 +49,13 @@ import {
       [isLoading]="loading()"
       [errorMessage]="errorMessage()"
       [errorTraceId]="errorTraceId()"
+      [prevCursor]="prevCursor()"
       [nextCursor]="nextCursor()"
       [rowClickable]="true"
       pageStatusLabel="Lista paginada por cursor"
       emptyMessage="Nenhum edital cadastrado."
-      (loadNext)="aoCarregarMais($event)"
+      (loadPrev)="aoAnterior($event)"
+      (loadNext)="aoProxima($event)"
       (rowClick)="aoSelecionar($event)"
       (retry)="aoTentarNovamente()"
     />
@@ -58,13 +69,17 @@ export class EditaisListPage {
   private readonly router = inject(Router);
 
   readonly editais = signal<readonly EditalDto[]>([]);
+  readonly prevCursor = signal<Cursor | null>(null);
   readonly nextCursor = signal<Cursor | null>(null);
   readonly loading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   /** Trace context da última falha — alimenta o link "Reportar incidente" do DataTable. */
   readonly errorTraceId = signal<string | null>(null);
-  /** Cursor preservado da última falha pós-1ª página, para o retry retomar do mesmo ponto. */
-  private cursorUltimaFalha: Cursor | undefined = undefined;
+  /**
+   * Requisição preservada da última falha, para o retry refazer exatamente a
+   * mesma navegação (1ª página, próximo ou anterior). Vazia em sucesso.
+   */
+  private ultimaRequisicao: { cursor?: Cursor; direction?: PaginationDirection } = {};
 
   protected readonly rows = computed(() => this.editais() as readonly Record<string, unknown>[]);
 
@@ -76,11 +91,15 @@ export class EditaisListPage {
   ];
 
   constructor() {
-    this.carregar(undefined);
+    this.carregar(undefined, undefined);
   }
 
-  protected aoCarregarMais(cursor: Cursor): void {
-    this.carregar(cursor);
+  protected aoProxima(cursor: Cursor): void {
+    this.carregar(cursor, 'next');
+  }
+
+  protected aoAnterior(cursor: Cursor): void {
+    this.carregar(cursor, 'prev');
   }
 
   protected aoSelecionar(row: Record<string, unknown>): void {
@@ -91,15 +110,15 @@ export class EditaisListPage {
   }
 
   /**
-   * Handler do output `retry` do `DataTableComponent`. Reusa o cursor
-   * pré-falha (paginação) ou recomeça do zero (carga inicial). Sem
-   * `cursorUltimaFalha`, equivale a retentar a 1ª página.
+   * Handler do output `retry` do `DataTableComponent`. Refaz a navegação que
+   * falhou (1ª página, próximo ou anterior); sem `ultimaRequisicao`, equivale
+   * a recarregar a 1ª página.
    */
   protected aoTentarNovamente(): void {
-    this.carregar(this.cursorUltimaFalha);
+    this.carregar(this.ultimaRequisicao.cursor, this.ultimaRequisicao.direction);
   }
 
-  private carregar(cursor: Cursor | undefined): void {
+  private carregar(cursor: Cursor | undefined, direction: PaginationDirection | undefined): void {
     if (this.loading()) {
       return;
     }
@@ -108,14 +127,18 @@ export class EditaisListPage {
     this.errorTraceId.set(null);
 
     this.api
-      .listar(cursor)
+      .listar(cursor, direction)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.loading.set(false);
         if (result.ok) {
-          this.editais.update((prev) => [...prev, ...result.data]);
-          this.nextCursor.set(extractNextCursor(result.headers.get('Link')));
-          this.cursorUltimaFalha = undefined;
+          // Substituição (ADR-0089): cada página troca a anterior — sem
+          // acumular. Os cursores prev/next vêm do header Link da resposta.
+          this.editais.set([...result.data]);
+          const link = result.headers.get('Link');
+          this.prevCursor.set(extractPrevCursor(link));
+          this.nextCursor.set(extractNextCursor(link));
+          this.ultimaRequisicao = {};
           return;
         }
         const mensagem = this.problemI18n.resolve(result.problem).title;
@@ -127,10 +150,9 @@ export class EditaisListPage {
         if (result.problem.status >= 500) {
           this.notifications.errorFromProblem(result.problem, { title: mensagem });
         }
-        // Em falha pós-1ª página, preserva o cursor original — usuário consegue
-        // retentar via "Carregar mais" sem perder os items já carregados. Em
-        // falha de carga inicial, o cursor já é null por construção.
-        this.cursorUltimaFalha = cursor;
+        // Falha de navegação preserva a página atual e seus cursores (o usuário
+        // não perde o contexto); guarda a requisição para o retry refazê-la.
+        this.ultimaRequisicao = { cursor, direction };
       });
   }
 }
