@@ -250,6 +250,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                       <button
                         type="button"
                         class="cfg-link-button table-responsive__primary"
+                        [disabled]="recarregandoLista()"
                         (click)="abrirDetalhe(unidade)"
                       >
                         {{ unidade.nome }}
@@ -331,7 +332,12 @@ const BACKEND_FIELD_TO_CONTROL = {
           <span class="unit-node__icon" aria-hidden="true">
             <i class="pi pi-sitemap"></i>
           </span>
-          <button type="button" class="unit-node__name" (click)="abrirDetalhe(node.unidade)">
+          <button
+            type="button"
+            class="unit-node__name"
+            [disabled]="recarregandoLista()"
+            (click)="abrirDetalhe(node.unidade)"
+          >
             {{ node.unidade.sigla }}
           </button>
           <span class="unit-node__type">{{ node.unidade.nome }}</span>
@@ -389,10 +395,20 @@ const BACKEND_FIELD_TO_CONTROL = {
           <dd>{{ vigenciaLabel(unidade) }}</dd>
         </dl>
         <div class="cfg-drawer-actions">
-          <button type="button" class="btn btn--tertiary btn--rect" (click)="abrirEdicao(unidade)">
+          <button
+            type="button"
+            class="btn btn--tertiary btn--rect"
+            [disabled]="recarregandoLista()"
+            (click)="abrirEdicao(unidade)"
+          >
             Editar
           </button>
-          <button type="button" class="btn btn--danger btn--rect" (click)="pedirRemocao(unidade)">
+          <button
+            type="button"
+            class="btn btn--danger btn--rect"
+            [disabled]="recarregandoLista()"
+            (click)="pedirRemocao(unidade)"
+          >
             Remover
           </button>
         </div>
