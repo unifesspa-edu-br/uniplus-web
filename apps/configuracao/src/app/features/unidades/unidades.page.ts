@@ -836,6 +836,30 @@ export class UnidadesPage {
     );
   });
 
+  /**
+   * Cache monotônico de unidades já vistas (páginas da lista + busca de pai),
+   * por id. `unidadeSuperiorLabel` consulta este cache em vez de só a página
+   * filtrada: com filtro server-side ativo o pai (ex.: Reitoria) pode sair da
+   * página, mas se já foi carregado antes seu rótulo continua resolvendo, sem
+   * cair em "Não carregada". `linkedSignal` acumula em vez de `effect`.
+   */
+  private readonly unidadesConhecidas = linkedSignal<
+    { lista: readonly UnidadeDto[]; opcoes: readonly UnidadeDto[] },
+    ReadonlyMap<string, UnidadeDto>
+  >({
+    source: () => ({ lista: this.unidades(), opcoes: this.opcoesUnidadeSuperior() }),
+    computation: (vistas, previous) => {
+      const mapa = new Map(previous?.value ?? []);
+      for (const unidade of vistas.lista) {
+        mapa.set(unidade.id, unidade);
+      }
+      for (const unidade of vistas.opcoes) {
+        mapa.set(unidade.id, unidade);
+      }
+      return mapa;
+    },
+  });
+
   protected readonly tipoOptions = TIPOS_UNIDADE.map((tipo) => ({
     value: String(tipo.value),
     label: tipo.label,
@@ -1114,7 +1138,9 @@ export class UnidadesPage {
     if (id === null) {
       return 'Sem superior';
     }
-    const superior = this.unidades().find((unidade) => unidade.id === id);
+    // Consulta o cache de unidades já vistas (não só a página filtrada atual),
+    // para o pai não virar "Não carregada" quando filtrado para fora da página.
+    const superior = this.unidadesConhecidas().get(id);
     return superior ? `${superior.sigla} — ${superior.nome}` : 'Não carregada';
   }
 

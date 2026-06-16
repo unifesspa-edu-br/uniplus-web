@@ -663,4 +663,18 @@ describe('UnidadesPage', () => {
     expect(component['recarregandoLista']()).toBe(false);
     expect(component['unidades']()).toHaveLength(1);
   });
+
+  it('resolve o rótulo do pai mesmo quando ele é filtrado para fora da página atual', async () => {
+    await flushInicial(); // Reitoria + Instituto na carga inicial (alimenta o cache)
+
+    component['tipoFiltro'].set('4'); // Instituto — o pai Reitoria sai da página
+    await propagate();
+    expectListGet((r) => r.params.get('tipo') === '4').flush([unidadesSeed[1]]);
+    await propagate();
+
+    expect(component['unidades']()).toHaveLength(1);
+    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
+    // Reitoria não está na página filtrada, mas foi vista na carga inicial.
+    expect(component['unidadeSuperiorLabel'](REITORIA_ID)).toBe('REITORIA — Reitoria');
+  });
 });
