@@ -284,4 +284,57 @@ describe('InstituicaoPage', () => {
     expect(component.drawerAberto()).toBe(false);
     expect(fixture.nativeElement.querySelector('ui-empty-state')).not.toBeNull();
   });
+
+  it('InstituicaoForm_RemocaoEmVoo_BloqueiaSalvar', async () => {
+    await carregar(instituicaoSeed);
+    component.abrirEdicao();
+    component.pedirRemocao();
+    component.removerConfirmado();
+    await propagate();
+
+    // DELETE em voo (não flushado): removendo() = true.
+    const del = controller.expectOne(`${BASE}/api/admin/instituicao/${ID}`);
+    expect(del.request.method).toBe('DELETE');
+
+    // Tentar salvar nessa janela é no-op (guard de corrida): retorna antes de
+    // marcar submitting e não dispara PUT. Se um PUT fosse criado, o
+    // controller.verify() do afterEach acusaria a request não consumida.
+    component.salvar();
+    await propagate();
+    expect(component.submitting()).toBe(false);
+
+    del.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    expect(component.instituicao()).toBeNull();
+  });
+
+  it('InstituicaoForm_ErroCampoOpcional_MapeiaInline', async () => {
+    await carregar(null);
+    component.abrirCadastro();
+    preencherObrigatorios();
+    component.salvar();
+    await propagate();
+
+    const req = controller.expectOne(`${BASE}/api/admin/instituicao`);
+    req.flush(
+      JSON.stringify({
+        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
+        title: 'Erro de validação',
+        status: 422,
+        code: 'uniplus.validacao',
+        traceId: 'test-trace',
+        errors: [{ field: 'Cnpj', code: 'FormatoInvalido', message: 'CNPJ inválido.' }],
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    // Erro de campo opcional é mapeado ao controle e renderizado inline.
+    expect(component.erroDoCampo('cnpj')).toBe('CNPJ inválido.');
+    expect(component.drawerAberto()).toBe(true);
+  });
 });
