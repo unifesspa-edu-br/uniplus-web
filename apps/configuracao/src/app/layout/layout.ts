@@ -1,5 +1,14 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  ActivatedRouteSnapshot,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 import { AuthService, UserContextService, type UserRole } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import {
@@ -149,7 +158,7 @@ const ROLE_LABELS: Record<string, string> = {
                 <a class="breadcrumb__link" routerLink="/unidades">Configuração</a>
               </li>
               <li class="breadcrumb__item">
-                <span class="breadcrumb__current" aria-current="page">Unidade</span>
+                <span class="breadcrumb__current" aria-current="page">{{ breadcrumbAtual() }}</span>
               </li>
             </ol>
           </nav>
@@ -172,7 +181,23 @@ const ROLE_LABELS: Record<string, string> = {
 export class LayoutComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   protected readonly userContext = inject(UserContextService);
+
+  /**
+   * Última folha do breadcrumb ("Início → Configuração → {atual}"), derivada do
+   * `data.breadcrumb` da rota ativada mais profunda. Reage a cada navegação;
+   * default "Unidade" (rota inicial). Mantém o breadcrumb coerente com a página
+   * em foco (CA-10 da story de Instituição).
+   */
+  protected readonly breadcrumbAtual = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      startWith(null),
+      map(() => this.breadcrumbDaRotaAtiva()),
+    ),
+    { initialValue: this.breadcrumbDaRotaAtiva() },
+  );
   private readonly desktopMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(min-width: 1024px)')
     : null;
@@ -216,7 +241,7 @@ export class LayoutComponent {
         { label: 'Cidade', icon: 'pi-map-marker' },
         { label: 'Campus', icon: 'pi-building' },
         { label: 'Local de oferta', icon: 'pi-map' },
-        { label: 'Instituição', icon: 'pi-warehouse' },
+        { label: 'Instituição', icon: 'pi-warehouse', routerLink: '/instituicao', exact: true },
         { label: 'Unidade', icon: 'pi-sitemap', routerLink: '/unidades', exact: true },
         { label: 'Curso', icon: 'pi-book' },
         { label: 'Oferta de curso', icon: 'pi-file-edit' },
@@ -259,6 +284,19 @@ export class LayoutComponent {
 
   protected closeSidebar(): void {
     this.sidebarMobileOpen.set(false);
+  }
+
+  private breadcrumbDaRotaAtiva(): string {
+    let route: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
+    let label = 'Unidade';
+    while (route !== null) {
+      const breadcrumb = route.data['breadcrumb'];
+      if (typeof breadcrumb === 'string') {
+        label = breadcrumb;
+      }
+      route = route.firstChild;
+    }
+    return label;
   }
 }
 
