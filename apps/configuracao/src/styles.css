@@ -401,7 +401,8 @@ cfg-root {
   }
 }
 
-cfg-unidades-page {
+cfg-unidades-page,
+cfg-instituicao-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-7);
@@ -598,6 +599,23 @@ cfg-unidades-page {
   font-size: var(--text-sm);
 }
 
+/*
+ * Corpo do card da ficha da Instituição: o panel-head já tem o seu padding, mas
+ * o body não tinha — os títulos de seção encostavam na divisória e na borda.
+ * Dá padding consistente ao body e espaça as seções via gap.
+ */
+.cfg-instituicao__ficha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5);
+}
+
+/* O padding do body já indenta; a lista de detalhes não repete o seu. */
+.cfg-instituicao__ficha .cfg-detail-list {
+  padding: 0;
+}
+
 .cfg-drawer-actions {
   justify-content: flex-end;
   padding: 0 var(--space-5) var(--space-5);
@@ -623,6 +641,22 @@ cfg-unidades-page {
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-5);
+}
+
+/*
+ * Espaça os elementos internos da seção (título, alerta, grade de campos) via
+ * gap do flex em vez de depender só da margem do título — assim um ui-alert
+ * inserido entre o título e os campos recebe respiro nos dois lados.
+ */
+.cfg-form > section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* O gap acima já separa o título; zera a margem para não dobrar o espaço. */
+.cfg-form > section > .form-section__title {
+  margin-bottom: 0;
 }
 
 .form-grid {
