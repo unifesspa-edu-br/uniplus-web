@@ -369,7 +369,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     </ng-template>
 
     <ui-drawer
-      class="cfg-detail-drawer"
+      class="cfg-form-drawer"
       [(visible)]="drawerOpen"
       heading="Detalhes da unidade"
       ariaLabel="Detalhes da unidade selecionada"
