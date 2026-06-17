@@ -98,6 +98,7 @@ uniplus-ds CSS-only
 npx nx serve selecao          # porta 4200
 npx nx serve ingresso         # porta 4201
 npx nx serve portal           # porta 4202
+npx nx serve configuracao     # porta 4203
 
 # Build
 npx nx build selecao
@@ -124,6 +125,14 @@ npm run generate:api
 npx nx affected --target=build
 npx nx affected --target=vite:test
 ```
+
+### Testar um app contra o backend real (local)
+
+Para exercitar um app contra as APIs do `uniplus-api` (login Keycloak + dados
+reais), o backend precisa validar o realm `unifesspa` — suba o `uniplus-api` com
+o override `frontend-test`, senão **toda mutação responde 401 + loop de re-login**
+(o GET de lista é `[AllowAnonymous]` e mascara). Passo a passo, credenciais e
+sintomas: [`docs/guia-testar-frontend-com-backend-local.md`](docs/guia-testar-frontend-com-backend-local.md).
 
 ## Localização do repositório
 
