@@ -15,8 +15,15 @@ export const appRoutes: Routes = [
       { path: '', redirectTo: 'unidades', pathMatch: 'full' },
       {
         path: 'unidades',
+        data: { breadcrumb: 'Unidade' },
         loadChildren: () =>
           import('./features/unidades/unidades.routes').then((m) => m.UNIDADES_ROUTES),
+      },
+      {
+        path: 'instituicao',
+        data: { breadcrumb: 'Instituição' },
+        loadChildren: () =>
+          import('./features/instituicao/instituicao.routes').then((m) => m.INSTITUICAO_ROUTES),
       },
     ],
   },
