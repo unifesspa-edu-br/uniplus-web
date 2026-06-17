@@ -300,15 +300,19 @@ interface InstituicaoForm {
                 <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
               }
             </label>
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('cnpj')">
               <span class="field__label">CNPJ</span>
               <input
                 class="input"
                 type="text"
                 placeholder="NN.NNN.NNN/NNNN-NN"
                 formControlName="cnpj"
+                [attr.aria-invalid]="erroDoCampo('cnpj') ? 'true' : null"
               />
               <span class="field__hint">CNPJ da pessoa jurídica. Opcional.</span>
+              @if (erroDoCampo('cnpj')) {
+                <span class="field__error">{{ erroDoCampo('cnpj') }}</span>
+              }
             </label>
           </div>
         </section>
@@ -364,18 +368,30 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-mantenedora">
           <h3 id="cfg-form-mantenedora" class="form-section__title">Mantenedora</h3>
           <div class="form-grid">
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('mantenedora')">
               <span class="field__label">Mantenedora</span>
-              <input class="input" type="text" formControlName="mantenedora" />
+              <input
+                class="input"
+                type="text"
+                formControlName="mantenedora"
+                [attr.aria-invalid]="erroDoCampo('mantenedora') ? 'true' : null"
+              />
+              @if (erroDoCampo('mantenedora')) {
+                <span class="field__error">{{ erroDoCampo('mantenedora') }}</span>
+              }
             </label>
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('codigoMantenedoraEmec')">
               <span class="field__label">Código mantenedora e-MEC</span>
               <input
                 class="input"
                 type="text"
                 inputmode="numeric"
                 formControlName="codigoMantenedoraEmec"
+                [attr.aria-invalid]="erroDoCampo('codigoMantenedoraEmec') ? 'true' : null"
               />
+              @if (erroDoCampo('codigoMantenedoraEmec')) {
+                <span class="field__error">{{ erroDoCampo('codigoMantenedoraEmec') }}</span>
+              }
             </label>
           </div>
         </section>
@@ -383,28 +399,44 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-situacao">
           <h3 id="cfg-form-situacao" class="form-section__title">Situação regulatória</h3>
           <div class="form-grid">
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('situacao')">
               <span class="field__label">Situação</span>
-              <input class="input" type="text" formControlName="situacao" />
+              <input
+                class="input"
+                type="text"
+                formControlName="situacao"
+                [attr.aria-invalid]="erroDoCampo('situacao') ? 'true' : null"
+              />
               <span class="field__hint">Situação regulatória atual junto ao MEC.</span>
+              @if (erroDoCampo('situacao')) {
+                <span class="field__error">{{ erroDoCampo('situacao') }}</span>
+              }
             </label>
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('atoCredenciamento')">
               <span class="field__label">Ato de credenciamento</span>
               <input
                 class="input"
                 type="text"
                 placeholder="Ex.: Lei nº 12.824, de 5 de junho de 2013"
                 formControlName="atoCredenciamento"
+                [attr.aria-invalid]="erroDoCampo('atoCredenciamento') ? 'true' : null"
               />
+              @if (erroDoCampo('atoCredenciamento')) {
+                <span class="field__error">{{ erroDoCampo('atoCredenciamento') }}</span>
+              }
             </label>
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('atoRecredenciamento')">
               <span class="field__label">Ato de recredenciamento</span>
               <input
                 class="input"
                 type="text"
                 placeholder="Ex.: Portaria MEC nº …"
                 formControlName="atoRecredenciamento"
+                [attr.aria-invalid]="erroDoCampo('atoRecredenciamento') ? 'true' : null"
               />
+              @if (erroDoCampo('atoRecredenciamento')) {
+                <span class="field__error">{{ erroDoCampo('atoRecredenciamento') }}</span>
+              }
             </label>
           </div>
         </section>
@@ -412,19 +444,32 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-indicadores">
           <h3 id="cfg-form-indicadores" class="form-section__title">Indicadores de qualidade</h3>
           <div class="form-grid form-grid--pair">
-            <label class="field">
+            <label class="field" [class.is-error]="erroDoCampo('conceitoInstitucional')">
               <span class="field__label">Conceito institucional (CI)</span>
               <input
                 class="input"
                 type="text"
                 inputmode="numeric"
                 formControlName="conceitoInstitucional"
+                [attr.aria-invalid]="erroDoCampo('conceitoInstitucional') ? 'true' : null"
               />
               <span class="field__hint">Valor e-MEC (1–5).</span>
+              @if (erroDoCampo('conceitoInstitucional')) {
+                <span class="field__error">{{ erroDoCampo('conceitoInstitucional') }}</span>
+              }
             </label>
-            <label class="field">
+            <label class="field" [class.is-error]="erroDoCampo('igc')">
               <span class="field__label">Índice geral de cursos (IGC)</span>
-              <input class="input" type="text" inputmode="numeric" formControlName="igc" />
+              <input
+                class="input"
+                type="text"
+                inputmode="numeric"
+                formControlName="igc"
+                [attr.aria-invalid]="erroDoCampo('igc') ? 'true' : null"
+              />
+              @if (erroDoCampo('igc')) {
+                <span class="field__error">{{ erroDoCampo('igc') }}</span>
+              }
             </label>
           </div>
         </section>
@@ -432,17 +477,41 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-contato">
           <h3 id="cfg-form-contato" class="form-section__title">Contato e localização da sede</h3>
           <div class="form-grid">
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('website')">
               <span class="field__label">Site institucional</span>
-              <input class="input" type="url" formControlName="website" />
+              <input
+                class="input"
+                type="url"
+                formControlName="website"
+                [attr.aria-invalid]="erroDoCampo('website') ? 'true' : null"
+              />
+              @if (erroDoCampo('website')) {
+                <span class="field__error">{{ erroDoCampo('website') }}</span>
+              }
             </label>
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('enderecoSede')">
               <span class="field__label">Endereço da sede</span>
-              <input class="input" type="text" formControlName="enderecoSede" />
+              <input
+                class="input"
+                type="text"
+                formControlName="enderecoSede"
+                [attr.aria-invalid]="erroDoCampo('enderecoSede') ? 'true' : null"
+              />
+              @if (erroDoCampo('enderecoSede')) {
+                <span class="field__error">{{ erroDoCampo('enderecoSede') }}</span>
+              }
             </label>
-            <label class="field field--full">
+            <label class="field field--full" [class.is-error]="erroDoCampo('municipioSede')">
               <span class="field__label">Município da sede</span>
-              <input class="input" type="text" formControlName="municipioSede" />
+              <input
+                class="input"
+                type="text"
+                formControlName="municipioSede"
+                [attr.aria-invalid]="erroDoCampo('municipioSede') ? 'true' : null"
+              />
+              @if (erroDoCampo('municipioSede')) {
+                <span class="field__error">{{ erroDoCampo('municipioSede') }}</span>
+              }
             </label>
           </div>
         </section>
@@ -500,7 +569,7 @@ interface InstituicaoForm {
           type="submit"
           form="cfg-instituicao-form"
           class="btn btn--primary"
-          [disabled]="submitting() || form.invalid"
+          [disabled]="submitting() || removendo() || form.invalid"
         >
           @if (submitting()) {
             <ui-spinner size="sm" />
@@ -690,7 +759,10 @@ export class InstituicaoPage {
   }
 
   protected salvar(): void {
-    if (this.submitting()) {
+    // Bloqueia salvar enquanto uma remoção (soft-delete) está em voo: o drawer
+    // continua aberto durante o DELETE, e sem este guard um PUT concorrente
+    // correria com a remoção, produzindo UI de sucesso/erro inconsistente.
+    if (this.submitting() || this.removendo()) {
       return;
     }
     if (this.form.invalid) {
