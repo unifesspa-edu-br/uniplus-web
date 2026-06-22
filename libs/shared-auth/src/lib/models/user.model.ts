@@ -8,4 +8,4 @@ export interface UserProfile {
   roles: string[];
 }
 
-export type UserRole = 'admin' | 'gestor' | 'avaliador' | 'candidato';
+export type UserRole = 'admin' | 'gestor' | 'avaliador' | 'candidato' |  'plataforma-admin';

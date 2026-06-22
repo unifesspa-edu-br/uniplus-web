@@ -15,6 +15,7 @@ const DOMAIN_ROLES = new Set<string>([
   'gestor',
   'avaliador',
   'candidato',
+  'plataforma-admin'
 ] satisfies UserRole[]);
 
 /**
