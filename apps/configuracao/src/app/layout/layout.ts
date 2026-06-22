@@ -9,7 +9,12 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  UserContextService,
+  DOMAIN_ROLES,
+  ROLE_LABELS,
+} from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import {
   A11yMenuComponent,
@@ -17,7 +22,6 @@ import {
   SkipLinkComponent,
   VlibrasLoaderComponent,
 } from '@uniplus/shared-ui/components';
-import { DOMAIN_ROLES, ROLE_LABELS } from '@uniplus/shared-auth/models';
 
 interface ConfigNavItem {
   readonly label: string;

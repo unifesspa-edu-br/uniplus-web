@@ -8,8 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { createDisclosureController } from '@uniplus/shared-core/dom';
-import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { DOMAIN_ROLES } from '../models/user.model';
+import { AuthService, UserContextService, DOMAIN_ROLES } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Bloco de identificação do usuário autenticado para uso em headers.
