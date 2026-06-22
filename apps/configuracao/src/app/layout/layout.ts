@@ -9,7 +9,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { AuthService, UserContextService, type UserRole } from '@uniplus/shared-auth/bootstrap';
+import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import {
   A11yMenuComponent,
@@ -17,6 +17,7 @@ import {
   SkipLinkComponent,
   VlibrasLoaderComponent,
 } from '@uniplus/shared-ui/components';
+import { DOMAIN_ROLES, ROLE_LABELS } from '@uniplus/shared-auth/models';
 
 interface ConfigNavItem {
   readonly label: string;
@@ -29,22 +30,6 @@ interface ConfigNavGroup {
   readonly label: string;
   readonly items: readonly ConfigNavItem[];
 }
-
-const DOMAIN_ROLES = new Set<string>([
-  'admin',
-  'gestor',
-  'avaliador',
-  'candidato',
-  'plataforma-admin'
-] satisfies UserRole[]);
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  gestor: 'Gestor',
-  avaliador: 'Avaliador',
-  candidato: 'Candidato',
-  'plataforma-admin': 'Administrador da Plataforma'
-};
 
 @Component({
   selector: 'cfg-layout',

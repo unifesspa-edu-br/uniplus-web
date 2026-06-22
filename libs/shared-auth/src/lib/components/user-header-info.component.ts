@@ -8,15 +8,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { createDisclosureController } from '@uniplus/shared-core/dom';
-import { AuthService, UserContextService, type UserRole } from '@uniplus/shared-auth/bootstrap';
-
-const DOMAIN_ROLES = new Set<string>([
-  'admin',
-  'gestor',
-  'avaliador',
-  'candidato',
-  'plataforma-admin'
-] satisfies UserRole[]);
+import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { DOMAIN_ROLES } from '../models/user.model';
 
 /**
  * Bloco de identificação do usuário autenticado para uso em headers.
