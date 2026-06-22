@@ -7,3 +7,4 @@ export type { AuthConfig } from '../../src/lib/models/auth-config.model';
 export type { LoginErrorDetails } from '../../src/lib/models/login-error.model';
 export type { UniPlusTokenClaims } from '../../src/lib/models/token-claims.model';
 export type { UserProfile, UserRole } from '../../src/lib/models/user.model';
+export { DOMAIN_ROLES, ROLE_LABELS } from '../../src/lib/models/user.model';
