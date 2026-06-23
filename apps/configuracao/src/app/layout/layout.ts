@@ -239,8 +239,8 @@ export class LayoutComponent {
       label: 'Configuração',
       items: [
         { label: 'Cidade', icon: 'pi-map-marker' },
-        { label: 'Campus', icon: 'pi-building' },
-        { label: 'Local de oferta', icon: 'pi-map' },
+        { label: 'Campus', icon: 'pi-building', routerLink: '/campi', exact: true },
+        { label: 'Local de oferta', icon: 'pi-map', routerLink: '/locais-oferta', exact: true },
         { label: 'Instituição', icon: 'pi-warehouse', routerLink: '/instituicao', exact: true },
         { label: 'Unidade', icon: 'pi-sitemap', routerLink: '/unidades', exact: true },
         { label: 'Curso', icon: 'pi-book' },

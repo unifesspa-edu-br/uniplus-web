@@ -3,6 +3,7 @@ export {
   ORIGEM_GEO,
   ORIGEM_MANUAL,
   camposAncorados,
+  cidadeObrigatoriaValidator,
   ehErroDeEndereco,
   enderecoEstruturadoDe,
   enderecoParaCommand,

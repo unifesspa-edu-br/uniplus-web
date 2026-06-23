@@ -1,3 +1,4 @@
+import type { AbstractControl, ValidationErrors } from '@angular/forms';
 import { NIVEIS_RESOLUCAO, type NivelResolucao } from '@uniplus/shared-data/geo';
 
 /** Referência estruturada de cidade ao Geo (espelha `CidadeReferenciaInput`). */
@@ -194,6 +195,17 @@ export function enderecoParaCommand(e: EnderecoEstruturado | null): EnderecoComm
     cidadeUf: cidade.uf,
     endereco,
   };
+}
+
+/**
+ * Validator: exige uma cidade no endereço (Campus e Local de Oferta têm cidade
+ * obrigatória no contrato — `cidade*` não-nulo). Instituição não usa (cidade
+ * opcional, all-or-nothing).
+ */
+export function cidadeObrigatoriaValidator(
+  control: AbstractControl<EnderecoEstruturado | null>,
+): ValidationErrors | null {
+  return control.value?.cidade ? null : { cidadeObrigatoria: true };
 }
 
 /** Heurística: o `field`/`code` do backend pertence ao bloco de endereço/cidade. */
