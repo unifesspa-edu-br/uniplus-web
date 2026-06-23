@@ -41,8 +41,8 @@ const INSTITUICAO = {
   conceitoInstitucional: null,
   igc: null,
   website: null,
-  enderecoSede: null,
-  municipioSede: null,
+  cidade: null,
+  endereco: null,
   unidadeRaizId: REITORIA_ID,
   criadoEm: '2026-06-10T12:00:00Z',
 } as const;
