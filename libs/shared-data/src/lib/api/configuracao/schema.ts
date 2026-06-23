@@ -104,288 +104,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/instituicao": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": components["schemas"]["InstituicaoDto"];
-                        readonly "application/json": components["schemas"]["InstituicaoDto"];
-                        readonly "text/json": components["schemas"]["InstituicaoDto"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/admin/instituicao": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path?: never;
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["CriarInstituicaoCommand"];
-                    readonly "text/json": components["schemas"]["CriarInstituicaoCommand"];
-                    readonly "application/*+json": components["schemas"]["CriarInstituicaoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description Created */
-                readonly 201: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": string;
-                        readonly "application/json": string;
-                        readonly "text/json": string;
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/admin/instituicao/{id}": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["AtualizarInstituicaoCommand"];
-                    readonly "text/json": components["schemas"]["AtualizarInstituicaoCommand"];
-                    readonly "application/*+json": components["schemas"]["AtualizarInstituicaoCommand"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly post?: never;
-        readonly delete: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/unidades": {
+    readonly "/api/campi": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -395,14 +114,12 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly q?: string;
-                    readonly tipo?: readonly (number | string)[];
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                    readonly direction?: PathsApiUnidadesGetParametersQueryDirection;
+                    readonly direction?: PathsApiCampiGetParametersQueryDirection;
                 };
                 readonly header?: never;
                 readonly path?: never;
@@ -420,9 +137,9 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["UnidadeDto"][];
-                        readonly "application/json": readonly components["schemas"]["UnidadeDto"][];
-                        readonly "text/json": readonly components["schemas"]["UnidadeDto"][];
+                        readonly "text/plain": readonly components["schemas"]["CampusDto"][];
+                        readonly "application/json": readonly components["schemas"]["CampusDto"][];
+                        readonly "text/json": readonly components["schemas"]["CampusDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -471,7 +188,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/unidades/{id}": {
+    readonly "/api/campi/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -495,9 +212,9 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["UnidadeDto"];
-                        readonly "application/json": components["schemas"]["UnidadeDto"];
-                        readonly "text/json": components["schemas"]["UnidadeDto"];
+                        readonly "text/plain": components["schemas"]["CampusDto"];
+                        readonly "application/json": components["schemas"]["CampusDto"];
+                        readonly "text/json": components["schemas"]["CampusDto"];
                     };
                 };
                 /** @description Not Found */
@@ -528,7 +245,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/admin/unidades": {
+    readonly "/api/admin/campi": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -549,9 +266,9 @@ export interface paths {
             };
             readonly requestBody: {
                 readonly content: {
-                    readonly "application/json": components["schemas"]["CriarUnidadeCommand"];
-                    readonly "text/json": components["schemas"]["CriarUnidadeCommand"];
-                    readonly "application/*+json": components["schemas"]["CriarUnidadeCommand"];
+                    readonly "application/json": components["schemas"]["CriarCampusCommand"];
+                    readonly "text/json": components["schemas"]["CriarCampusCommand"];
+                    readonly "application/*+json": components["schemas"]["CriarCampusCommand"];
                 };
             };
             readonly responses: {
@@ -619,7 +336,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/admin/unidades/{id}": {
+    readonly "/api/admin/campi/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -641,9 +358,9 @@ export interface paths {
             };
             readonly requestBody: {
                 readonly content: {
-                    readonly "application/json": components["schemas"]["AtualizarUnidadeCommand"];
-                    readonly "text/json": components["schemas"]["AtualizarUnidadeCommand"];
-                    readonly "application/*+json": components["schemas"]["AtualizarUnidadeCommand"];
+                    readonly "application/json": components["schemas"]["AtualizarCampusCommand"];
+                    readonly "text/json": components["schemas"]["AtualizarCampusCommand"];
+                    readonly "application/*+json": components["schemas"]["AtualizarCampusCommand"];
                 };
             };
             readonly responses: {
@@ -772,49 +489,787 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/locais-oferta": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiLocaisOfertaGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["LocalOfertaDto"][];
+                        readonly "application/json": readonly components["schemas"]["LocalOfertaDto"][];
+                        readonly "text/json": readonly components["schemas"]["LocalOfertaDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/locais-oferta/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["LocalOfertaDto"];
+                        readonly "application/json": components["schemas"]["LocalOfertaDto"];
+                        readonly "text/json": components["schemas"]["LocalOfertaDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/admin/locais-oferta": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["CriarLocalOfertaCommand"];
+                    readonly "text/json": components["schemas"]["CriarLocalOfertaCommand"];
+                    readonly "application/*+json": components["schemas"]["CriarLocalOfertaCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": string;
+                        readonly "application/json": string;
+                        readonly "text/json": string;
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/admin/locais-oferta/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AtualizarLocalOfertaCommand"];
+                    readonly "text/json": components["schemas"]["AtualizarLocalOfertaCommand"];
+                    readonly "application/*+json": components["schemas"]["AtualizarLocalOfertaCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/referencias-reserva-demografica": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiReferenciasReservaDemograficaGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
+                        readonly "application/json": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
+                        readonly "text/json": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/referencias-reserva-demografica/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["ReferenciaReservaDemograficaDto"];
+                        readonly "application/json": components["schemas"]["ReferenciaReservaDemograficaDto"];
+                        readonly "text/json": components["schemas"]["ReferenciaReservaDemograficaDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/admin/referencias-reserva-demografica": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["CriarReferenciaReservaDemograficaCommand"];
+                    readonly "text/json": components["schemas"]["CriarReferenciaReservaDemograficaCommand"];
+                    readonly "application/*+json": components["schemas"]["CriarReferenciaReservaDemograficaCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": string;
+                        readonly "application/json": string;
+                        readonly "text/json": string;
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/admin/referencias-reserva-demografica/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AtualizarReferenciaReservaDemograficaCommand"];
+                    readonly "text/json": components["schemas"]["AtualizarReferenciaReservaDemograficaCommand"];
+                    readonly "application/*+json": components["schemas"]["AtualizarReferenciaReservaDemograficaCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        readonly AtualizarInstituicaoCommand: {
+        readonly AtualizarCampusCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly codigoEmec: string;
-            readonly nome: string;
             readonly sigla: string;
-            readonly organizacaoAcademica: string;
-            readonly categoriaAdministrativa: string;
-            readonly cnpj: null | string;
-            readonly mantenedora: null | string;
-            readonly codigoMantenedoraEmec: null | string;
-            readonly situacao: null | string;
-            readonly atoCredenciamento: null | string;
-            readonly atoRecredenciamento: null | string;
-            readonly conceitoInstitucional: null | string;
-            readonly igc: null | string;
-            readonly website: null | string;
+            readonly nome: string;
+            readonly cidadeCodigoIbge: string;
+            readonly cidadeNome: string;
+            readonly cidadeUf: string;
             readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
-            readonly cidadeCodigoIbge: null | string;
-            readonly cidadeNome: null | string;
-            readonly cidadeUf: null | string;
-            /** Format: uuid */
-            readonly unidadeRaizId: null | string;
+            readonly codigoEmec: null | string;
         };
-        readonly AtualizarUnidadeCommand: {
+        readonly AtualizarLocalOfertaCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
-            readonly alias: null | string;
-            readonly slug: string;
-            readonly sigla: string;
-            readonly codigo: string;
+            readonly tipo: components["schemas"]["TipoLocalOferta"];
             /** Format: uuid */
-            readonly unidadeSuperiorId: null | string;
-            readonly tipo: components["schemas"]["TipoUnidade"];
-            readonly unidadeAcademica: boolean;
-            /** Format: date */
-            readonly vigenciaFim: null | string;
-            readonly motivoMudancaIdentificador?: null | string;
+            readonly campusResponsavelId: null | string;
+            readonly cidadeCodigoIbge: string;
+            readonly cidadeNome: string;
+            readonly cidadeUf: string;
+            readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
+            readonly codigoEmec: null | string;
+        };
+        readonly AtualizarReferenciaReservaDemograficaCommand: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly censoReferencia: string;
+            /** Format: double */
+            readonly ppiPercentual: number | string;
+            /** Format: double */
+            readonly quilombolaPercentual: number | string;
+            /** Format: double */
+            readonly pcdPercentual: number | string;
+            readonly baseLegal: string;
         };
         readonly AuthenticatedUserResponse: {
             readonly userId: null | string;
@@ -823,6 +1278,20 @@ export interface components {
             readonly roles: readonly string[];
             /** Format: date-time */
             readonly timestamp: string;
+        };
+        readonly CampusDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly sigla: string;
+            readonly nome: string;
+            readonly cidade: components["schemas"]["CidadeReferenciaDto"];
+            readonly endereco: null | components["schemas"]["EnderecoGeoDto"];
+            readonly codigoEmec: null | string;
+            /** Format: date-time */
+            readonly criadoEm: string;
+            readonly _links?: null | {
+                readonly [key: string]: string;
+            };
         };
         readonly CidadeReferenciaDto: {
             readonly codigoIbge: string;
@@ -837,43 +1306,34 @@ export interface components {
             readonly nome: null | string;
             readonly uf: null | string;
         };
-        readonly CriarInstituicaoCommand: {
-            readonly codigoEmec: string;
-            readonly nome: string;
+        readonly CriarCampusCommand: {
             readonly sigla: string;
-            readonly organizacaoAcademica: string;
-            readonly categoriaAdministrativa: string;
-            readonly cnpj: null | string;
-            readonly mantenedora: null | string;
-            readonly codigoMantenedoraEmec: null | string;
-            readonly situacao: null | string;
-            readonly atoCredenciamento: null | string;
-            readonly atoRecredenciamento: null | string;
-            readonly conceitoInstitucional: null | string;
-            readonly igc: null | string;
-            readonly website: null | string;
+            readonly nome: string;
+            readonly cidadeCodigoIbge: string;
+            readonly cidadeNome: string;
+            readonly cidadeUf: string;
             readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
-            readonly cidadeCodigoIbge: null | string;
-            readonly cidadeNome: null | string;
-            readonly cidadeUf: null | string;
-            /** Format: uuid */
-            readonly unidadeRaizId: null | string;
+            readonly codigoEmec: null | string;
         };
-        readonly CriarUnidadeCommand: {
-            readonly nome: string;
-            readonly alias: null | string;
-            readonly slug: string;
-            readonly sigla: string;
-            readonly codigo: string;
+        readonly CriarLocalOfertaCommand: {
+            readonly tipo: components["schemas"]["TipoLocalOferta"];
             /** Format: uuid */
-            readonly unidadeSuperiorId: null | string;
-            readonly tipo: components["schemas"]["TipoUnidade"];
-            readonly unidadeAcademica: boolean;
-            /** Format: date */
-            readonly vigenciaInicio: string;
-            /** Format: date */
-            readonly vigenciaFim: null | string;
-            readonly origem: components["schemas"]["OrigemUnidade"];
+            readonly campusResponsavelId: null | string;
+            readonly cidadeCodigoIbge: string;
+            readonly cidadeNome: string;
+            readonly cidadeUf: string;
+            readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
+            readonly codigoEmec: null | string;
+        };
+        readonly CriarReferenciaReservaDemograficaCommand: {
+            readonly censoReferencia: string;
+            /** Format: double */
+            readonly ppiPercentual: number | string;
+            /** Format: double */
+            readonly quilombolaPercentual: number | string;
+            /** Format: double */
+            readonly pcdPercentual: number | string;
+            readonly baseLegal: string;
         };
         readonly EnderecoGeoDto: {
             readonly cep: string;
@@ -909,34 +1369,21 @@ export interface components {
         };
         /** Format: binary */
         readonly IFormFile: string;
-        readonly InstituicaoDto: {
+        readonly LocalOfertaDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly codigoEmec: string;
-            readonly nome: string;
-            readonly sigla: string;
-            readonly organizacaoAcademica: string;
-            readonly categoriaAdministrativa: string;
-            readonly cnpj: null | string;
-            readonly mantenedora: null | string;
-            readonly codigoMantenedoraEmec: null | string;
-            readonly situacao: null | string;
-            readonly atoCredenciamento: null | string;
-            readonly atoRecredenciamento: null | string;
-            readonly conceitoInstitucional: null | string;
-            readonly igc: null | string;
-            readonly website: null | string;
-            readonly cidade: null | components["schemas"]["CidadeReferenciaDto"];
-            readonly endereco: null | components["schemas"]["EnderecoGeoDto"];
+            readonly tipo: components["schemas"]["TipoLocalOferta"];
             /** Format: uuid */
-            readonly unidadeRaizId: null | string;
+            readonly campusResponsavelId: null | string;
+            readonly cidade: components["schemas"]["CidadeReferenciaDto"];
+            readonly endereco: null | components["schemas"]["EnderecoGeoDto"];
+            readonly codigoEmec: null | string;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
         };
-        readonly OrigemUnidade: number;
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -945,30 +1392,25 @@ export interface components {
             readonly detail?: null | string;
             readonly instance?: null | string;
         };
-        readonly TipoUnidade: number;
-        readonly UnidadeDto: {
+        readonly ReferenciaReservaDemograficaDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
-            readonly alias: null | string;
-            readonly slug: string;
-            readonly sigla: string;
-            readonly codigo: string;
-            /** Format: uuid */
-            readonly unidadeSuperiorId: null | string;
-            readonly tipo: string;
-            readonly unidadeAcademica: boolean;
-            /** Format: date */
-            readonly vigenciaInicio: string;
-            /** Format: date */
-            readonly vigenciaFim: null | string;
-            readonly origem: string;
+            readonly censoReferencia: string;
+            /** Format: double */
+            readonly ppiPercentual: number | string;
+            /** Format: double */
+            readonly quilombolaPercentual: number | string;
+            /** Format: double */
+            readonly pcdPercentual: number | string;
+            readonly baseLegal: string;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
         };
+        /** @enum {string} */
+        readonly TipoLocalOferta: TipoLocalOferta;
         readonly UserProfileResponse: {
             readonly userId: null | string;
             readonly name: null | string;
@@ -1110,7 +1552,24 @@ export interface operations {
         };
     };
 }
-export enum PathsApiUnidadesGetParametersQueryDirection {
+export enum PathsApiCampiGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum PathsApiLocaisOfertaGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum PathsApiReferenciasReservaDemograficaGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum TipoLocalOferta {
+    nenhum = "nenhum",
+    campusSede = "campusSede",
+    campusForaDeSede = "campusForaDeSede",
+    cursoForaDeSede = "cursoForaDeSede",
+    poloEad = "poloEad",
+    convenioInteriorizacao = "convenioInteriorizacao",
+    outro = "outro"
 }

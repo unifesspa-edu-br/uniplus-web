@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "Uni\u002B \u2014 M\u00F3dulo Organiza\u00E7\u00E3o Institucional",
+    "title": "Uni\u002B \u2014 configuracao",
     "description": "API REST do Sistema Unificado Unifesspa (Uni\u002B). Contrato can\u00F4nico V1 \u2014 ProblemDetails RFC 9457, pagina\u00E7\u00E3o cursor opaco, vendor MIME versioning. Toda string user-facing em pt-BR (ADR-0022).",
     "contact": {
       "name": "CTIC Unifesspa",
@@ -162,357 +162,12 @@
         }
       }
     },
-    "/api/instituicao": {
+    "/api/campi": {
       "get": {
         "tags": [
-          "Instituicao"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstituicaoDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstituicaoDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstituicaoDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "406": {
-            "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/instituicao": {
-      "post": {
-        "tags": [
-          "Instituicao"
+          "Campi"
         ],
         "parameters": [
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CriarInstituicaoCommand"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CriarInstituicaoCommand"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/CriarInstituicaoCommand"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "string",
-                  "format": "uuid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-uniplus-idempotent": true
-      }
-    },
-    "/api/admin/instituicao/{id}": {
-      "put": {
-        "tags": [
-          "Instituicao"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AtualizarInstituicaoCommand"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AtualizarInstituicaoCommand"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/AtualizarInstituicaoCommand"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-uniplus-idempotent": true
-      },
-      "delete": {
-        "tags": [
-          "Instituicao"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/unidades": {
-      "get": {
-        "tags": [
-          "Unidades"
-        ],
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tipo",
-            "in": "query",
-            "schema": {
-              "type": "array",
-              "items": {
-                "pattern": "^-?(?:0|[1-9]\\d*)$",
-                "type": [
-                  "integer",
-                  "string"
-                ],
-                "format": "int32"
-              }
-            }
-          },
           {
             "name": "cursor",
             "in": "query",
@@ -567,7 +222,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UnidadeDto"
+                    "$ref": "#/components/schemas/CampusDto"
                   }
                 }
               },
@@ -575,7 +230,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UnidadeDto"
+                    "$ref": "#/components/schemas/CampusDto"
                   }
                 }
               },
@@ -583,7 +238,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UnidadeDto"
+                    "$ref": "#/components/schemas/CampusDto"
                   }
                 }
               }
@@ -633,10 +288,10 @@
         "x-uniplus-paginated": true
       }
     },
-    "/api/unidades/{id}": {
+    "/api/campi/{id}": {
       "get": {
         "tags": [
-          "Unidades"
+          "Campi"
         ],
         "parameters": [
           {
@@ -655,17 +310,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnidadeDto"
+                  "$ref": "#/components/schemas/CampusDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnidadeDto"
+                  "$ref": "#/components/schemas/CampusDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnidadeDto"
+                  "$ref": "#/components/schemas/CampusDto"
                 }
               }
             }
@@ -693,10 +348,10 @@
         }
       }
     },
-    "/api/admin/unidades": {
+    "/api/admin/campi": {
       "post": {
         "tags": [
-          "Unidades"
+          "Campi"
         ],
         "parameters": [
           {
@@ -716,17 +371,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CriarUnidadeCommand"
+                "$ref": "#/components/schemas/CriarCampusCommand"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CriarUnidadeCommand"
+                "$ref": "#/components/schemas/CriarCampusCommand"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/CriarUnidadeCommand"
+                "$ref": "#/components/schemas/CriarCampusCommand"
               }
             }
           },
@@ -810,10 +465,10 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/admin/unidades/{id}": {
+    "/api/admin/campi/{id}": {
       "put": {
         "tags": [
-          "Unidades"
+          "Campi"
         ],
         "parameters": [
           {
@@ -842,17 +497,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AtualizarUnidadeCommand"
+                "$ref": "#/components/schemas/AtualizarCampusCommand"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AtualizarUnidadeCommand"
+                "$ref": "#/components/schemas/AtualizarCampusCommand"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/AtualizarUnidadeCommand"
+                "$ref": "#/components/schemas/AtualizarCampusCommand"
               }
             }
           },
@@ -927,7 +582,7 @@
       },
       "delete": {
         "tags": [
-          "Unidades"
+          "Campi"
         ],
         "parameters": [
           {
@@ -986,32 +641,950 @@
           }
         }
       }
+    },
+    "/api/locais-oferta": {
+      "get": {
+        "tags": [
+          "LocaisOferta"
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor opaco AES-GCM emitido pelo servidor no header Link da p\u00E1gina anterior. Ausente na primeira p\u00E1gina. Cliente trata como string opaca \u2014 n\u00E3o decodificar (ADR-0026, ADR-0031).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "schema": {
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string",
+              "default": "next"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Link": {
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "description": "Quantidade de itens retornados na p\u00E1gina atual (sempre menor ou igual ao limit efetivo).",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocalOfertaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocalOfertaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocalOfertaDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-paginated": true
+      }
+    },
+    "/api/locais-oferta/{id}": {
+      "get": {
+        "tags": [
+          "LocaisOferta"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalOfertaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalOfertaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalOfertaDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/locais-oferta": {
+      "post": {
+        "tags": [
+          "LocaisOferta"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarLocalOfertaCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarLocalOfertaCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarLocalOfertaCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/admin/locais-oferta/{id}": {
+      "put": {
+        "tags": [
+          "LocaisOferta"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarLocalOfertaCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarLocalOfertaCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarLocalOfertaCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-idempotent": true
+      },
+      "delete": {
+        "tags": [
+          "LocaisOferta"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/referencias-reserva-demografica": {
+      "get": {
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor opaco AES-GCM emitido pelo servidor no header Link da p\u00E1gina anterior. Ausente na primeira p\u00E1gina. Cliente trata como string opaca \u2014 n\u00E3o decodificar (ADR-0026, ADR-0031).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "schema": {
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string",
+              "default": "next"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Link": {
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "description": "Quantidade de itens retornados na p\u00E1gina atual (sempre menor ou igual ao limit efetivo).",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReferenciaReservaDemograficaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReferenciaReservaDemograficaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReferenciaReservaDemograficaDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-paginated": true
+      }
+    },
+    "/api/referencias-reserva-demografica/{id}": {
+      "get": {
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenciaReservaDemograficaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenciaReservaDemograficaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenciaReservaDemograficaDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/referencias-reserva-demografica": {
+      "post": {
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarReferenciaReservaDemograficaCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarReferenciaReservaDemograficaCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarReferenciaReservaDemograficaCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/admin/referencias-reserva-demografica/{id}": {
+      "put": {
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarReferenciaReservaDemograficaCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarReferenciaReservaDemograficaCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarReferenciaReservaDemograficaCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-idempotent": true
+      },
+      "delete": {
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "AtualizarInstituicaoCommand": {
+      "AtualizarCampusCommand": {
         "required": [
           "id",
-          "codigoEmec",
-          "nome",
           "sigla",
-          "organizacaoAcademica",
-          "categoriaAdministrativa",
-          "cnpj",
-          "mantenedora",
-          "codigoMantenedoraEmec",
-          "situacao",
-          "atoCredenciamento",
-          "atoRecredenciamento",
-          "conceitoInstitucional",
-          "igc",
-          "website",
-          "endereco",
+          "nome",
           "cidadeCodigoIbge",
           "cidadeNome",
           "cidadeUf",
-          "unidadeRaizId"
+          "endereco",
+          "codigoEmec"
         ],
         "type": "object",
         "properties": {
@@ -1019,74 +1592,20 @@
             "type": "string",
             "format": "uuid"
           },
-          "codigoEmec": {
+          "sigla": {
             "type": "string"
           },
           "nome": {
             "type": "string"
           },
-          "sigla": {
+          "cidadeCodigoIbge": {
             "type": "string"
           },
-          "organizacaoAcademica": {
+          "cidadeNome": {
             "type": "string"
           },
-          "categoriaAdministrativa": {
+          "cidadeUf": {
             "type": "string"
-          },
-          "cnpj": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "mantenedora": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "codigoMantenedoraEmec": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "situacao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "atoCredenciamento": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "atoRecredenciamento": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "conceitoInstitucional": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "igc": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "website": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "endereco": {
             "oneOf": [
@@ -1098,45 +1617,24 @@
               }
             ]
           },
-          "cidadeCodigoIbge": {
+          "codigoEmec": {
             "type": [
               "null",
               "string"
             ]
-          },
-          "cidadeNome": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "cidadeUf": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "unidadeRaizId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
           }
         }
       },
-      "AtualizarUnidadeCommand": {
+      "AtualizarLocalOfertaCommand": {
         "required": [
           "id",
-          "nome",
-          "alias",
-          "slug",
-          "sigla",
-          "codigo",
-          "unidadeSuperiorId",
           "tipo",
-          "unidadeAcademica",
-          "vigenciaFim"
+          "campusResponsavelId",
+          "cidadeCodigoIbge",
+          "cidadeNome",
+          "cidadeUf",
+          "endereco",
+          "codigoEmec"
         ],
         "type": "object",
         "properties": {
@@ -1144,49 +1642,87 @@
             "type": "string",
             "format": "uuid"
           },
-          "nome": {
-            "type": "string"
+          "tipo": {
+            "$ref": "#/components/schemas/TipoLocalOferta"
           },
-          "alias": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "slug": {
-            "type": "string"
-          },
-          "sigla": {
-            "type": "string"
-          },
-          "codigo": {
-            "type": "string"
-          },
-          "unidadeSuperiorId": {
+          "campusResponsavelId": {
             "type": [
               "null",
               "string"
             ],
             "format": "uuid"
           },
-          "tipo": {
-            "$ref": "#/components/schemas/TipoUnidade"
+          "cidadeCodigoIbge": {
+            "type": "string"
           },
-          "unidadeAcademica": {
-            "type": "boolean"
+          "cidadeNome": {
+            "type": "string"
           },
-          "vigenciaFim": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
+          "cidadeUf": {
+            "type": "string"
           },
-          "motivoMudancaIdentificador": {
+          "endereco": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EnderecoGeoInput"
+              }
+            ]
+          },
+          "codigoEmec": {
             "type": [
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "AtualizarReferenciaReservaDemograficaCommand": {
+        "required": [
+          "id",
+          "censoReferencia",
+          "ppiPercentual",
+          "quilombolaPercentual",
+          "pcdPercentual",
+          "baseLegal"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "censoReferencia": {
+            "type": "string"
+          },
+          "ppiPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "quilombolaPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "pcdPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "baseLegal": {
+            "type": "string"
           }
         }
       },
@@ -1227,6 +1763,62 @@
           "timestamp": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "CampusDto": {
+        "required": [
+          "id",
+          "sigla",
+          "nome",
+          "cidade",
+          "endereco",
+          "codigoEmec",
+          "criadoEm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sigla": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "cidade": {
+            "$ref": "#/components/schemas/CidadeReferenciaDto"
+          },
+          "endereco": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EnderecoGeoDto"
+              }
+            ]
+          },
+          "codigoEmec": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "_links": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },
@@ -1290,98 +1882,32 @@
           }
         }
       },
-      "CriarInstituicaoCommand": {
+      "CriarCampusCommand": {
         "required": [
-          "codigoEmec",
-          "nome",
           "sigla",
-          "organizacaoAcademica",
-          "categoriaAdministrativa",
-          "cnpj",
-          "mantenedora",
-          "codigoMantenedoraEmec",
-          "situacao",
-          "atoCredenciamento",
-          "atoRecredenciamento",
-          "conceitoInstitucional",
-          "igc",
-          "website",
-          "endereco",
+          "nome",
           "cidadeCodigoIbge",
           "cidadeNome",
           "cidadeUf",
-          "unidadeRaizId"
+          "endereco",
+          "codigoEmec"
         ],
         "type": "object",
         "properties": {
-          "codigoEmec": {
+          "sigla": {
             "type": "string"
           },
           "nome": {
             "type": "string"
           },
-          "sigla": {
+          "cidadeCodigoIbge": {
             "type": "string"
           },
-          "organizacaoAcademica": {
+          "cidadeNome": {
             "type": "string"
           },
-          "categoriaAdministrativa": {
+          "cidadeUf": {
             "type": "string"
-          },
-          "cnpj": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "mantenedora": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "codigoMantenedoraEmec": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "situacao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "atoCredenciamento": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "atoRecredenciamento": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "conceitoInstitucional": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "igc": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "website": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "endereco": {
             "oneOf": [
@@ -1393,93 +1919,102 @@
               }
             ]
           },
-          "cidadeCodigoIbge": {
+          "codigoEmec": {
             "type": [
               "null",
               "string"
             ]
-          },
-          "cidadeNome": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "cidadeUf": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "unidadeRaizId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
           }
         }
       },
-      "CriarUnidadeCommand": {
+      "CriarLocalOfertaCommand": {
         "required": [
-          "nome",
-          "alias",
-          "slug",
-          "sigla",
-          "codigo",
-          "unidadeSuperiorId",
           "tipo",
-          "unidadeAcademica",
-          "vigenciaInicio",
-          "vigenciaFim",
-          "origem"
+          "campusResponsavelId",
+          "cidadeCodigoIbge",
+          "cidadeNome",
+          "cidadeUf",
+          "endereco",
+          "codigoEmec"
         ],
         "type": "object",
         "properties": {
-          "nome": {
-            "type": "string"
+          "tipo": {
+            "$ref": "#/components/schemas/TipoLocalOferta"
           },
-          "alias": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "slug": {
-            "type": "string"
-          },
-          "sigla": {
-            "type": "string"
-          },
-          "codigo": {
-            "type": "string"
-          },
-          "unidadeSuperiorId": {
+          "campusResponsavelId": {
             "type": [
               "null",
               "string"
             ],
             "format": "uuid"
           },
-          "tipo": {
-            "$ref": "#/components/schemas/TipoUnidade"
+          "cidadeCodigoIbge": {
+            "type": "string"
           },
-          "unidadeAcademica": {
-            "type": "boolean"
+          "cidadeNome": {
+            "type": "string"
           },
-          "vigenciaInicio": {
-            "type": "string",
-            "format": "date"
+          "cidadeUf": {
+            "type": "string"
           },
-          "vigenciaFim": {
+          "endereco": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EnderecoGeoInput"
+              }
+            ]
+          },
+          "codigoEmec": {
             "type": [
               "null",
               "string"
-            ],
-            "format": "date"
+            ]
+          }
+        }
+      },
+      "CriarReferenciaReservaDemograficaCommand": {
+        "required": [
+          "censoReferencia",
+          "ppiPercentual",
+          "quilombolaPercentual",
+          "pcdPercentual",
+          "baseLegal"
+        ],
+        "type": "object",
+        "properties": {
+          "censoReferencia": {
+            "type": "string"
           },
-          "origem": {
-            "$ref": "#/components/schemas/OrigemUnidade"
+          "ppiPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "quilombolaPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "pcdPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "baseLegal": {
+            "type": "string"
           }
         }
       },
@@ -1667,26 +2202,14 @@
         "type": "string",
         "format": "binary"
       },
-      "InstituicaoDto": {
+      "LocalOfertaDto": {
         "required": [
           "id",
-          "codigoEmec",
-          "nome",
-          "sigla",
-          "organizacaoAcademica",
-          "categoriaAdministrativa",
-          "cnpj",
-          "mantenedora",
-          "codigoMantenedoraEmec",
-          "situacao",
-          "atoCredenciamento",
-          "atoRecredenciamento",
-          "conceitoInstitucional",
-          "igc",
-          "website",
+          "tipo",
+          "campusResponsavelId",
           "cidade",
           "endereco",
-          "unidadeRaizId",
+          "codigoEmec",
           "criadoEm"
         ],
         "type": "object",
@@ -1695,84 +2218,18 @@
             "type": "string",
             "format": "uuid"
           },
-          "codigoEmec": {
-            "type": "string"
+          "tipo": {
+            "$ref": "#/components/schemas/TipoLocalOferta"
           },
-          "nome": {
-            "type": "string"
-          },
-          "sigla": {
-            "type": "string"
-          },
-          "organizacaoAcademica": {
-            "type": "string"
-          },
-          "categoriaAdministrativa": {
-            "type": "string"
-          },
-          "cnpj": {
+          "campusResponsavelId": {
             "type": [
               "null",
               "string"
-            ]
-          },
-          "mantenedora": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "codigoMantenedoraEmec": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "situacao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "atoCredenciamento": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "atoRecredenciamento": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "conceitoInstitucional": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "igc": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "website": {
-            "type": [
-              "null",
-              "string"
-            ]
+            ],
+            "format": "uuid"
           },
           "cidade": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CidadeReferenciaDto"
-              }
-            ]
+            "$ref": "#/components/schemas/CidadeReferenciaDto"
           },
           "endereco": {
             "oneOf": [
@@ -1784,12 +2241,11 @@
               }
             ]
           },
-          "unidadeRaizId": {
+          "codigoEmec": {
             "type": [
               "null",
               "string"
-            ],
-            "format": "uuid"
+            ]
           },
           "criadoEm": {
             "type": "string",
@@ -1805,9 +2261,6 @@
             }
           }
         }
-      },
-      "OrigemUnidade": {
-        "type": "integer"
       },
       "ProblemDetails": {
         "type": "object",
@@ -1847,23 +2300,14 @@
           }
         }
       },
-      "TipoUnidade": {
-        "type": "integer"
-      },
-      "UnidadeDto": {
+      "ReferenciaReservaDemograficaDto": {
         "required": [
           "id",
-          "nome",
-          "alias",
-          "slug",
-          "sigla",
-          "codigo",
-          "unidadeSuperiorId",
-          "tipo",
-          "unidadeAcademica",
-          "vigenciaInicio",
-          "vigenciaFim",
-          "origem",
+          "censoReferencia",
+          "ppiPercentual",
+          "quilombolaPercentual",
+          "pcdPercentual",
+          "baseLegal",
           "criadoEm"
         ],
         "type": "object",
@@ -1872,49 +2316,34 @@
             "type": "string",
             "format": "uuid"
           },
-          "nome": {
+          "censoReferencia": {
             "type": "string"
           },
-          "alias": {
+          "ppiPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
-              "null",
-              "string"
-            ]
-          },
-          "slug": {
-            "type": "string"
-          },
-          "sigla": {
-            "type": "string"
-          },
-          "codigo": {
-            "type": "string"
-          },
-          "unidadeSuperiorId": {
-            "type": [
-              "null",
+              "number",
               "string"
             ],
-            "format": "uuid"
+            "format": "double"
           },
-          "tipo": {
-            "type": "string"
-          },
-          "unidadeAcademica": {
-            "type": "boolean"
-          },
-          "vigenciaInicio": {
-            "type": "string",
-            "format": "date"
-          },
-          "vigenciaFim": {
+          "quilombolaPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
-              "null",
+              "number",
               "string"
             ],
-            "format": "date"
+            "format": "double"
           },
-          "origem": {
+          "pcdPercentual": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "baseLegal": {
             "type": "string"
           },
           "criadoEm": {
@@ -1931,6 +2360,18 @@
             }
           }
         }
+      },
+      "TipoLocalOferta": {
+        "enum": [
+          "nenhum",
+          "campusSede",
+          "campusForaDeSede",
+          "cursoForaDeSede",
+          "poloEad",
+          "convenioInteriorizacao",
+          "outro"
+        ],
+        "type": "string"
       },
       "UserProfileResponse": {
         "required": [
@@ -2001,10 +2442,13 @@
       "name": "_smoke"
     },
     {
-      "name": "Instituicao"
+      "name": "Campi"
     },
     {
-      "name": "Unidades"
+      "name": "LocaisOferta"
+    },
+    {
+      "name": "ReferenciasReservaDemografica"
     }
   ]
 }
