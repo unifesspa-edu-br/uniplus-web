@@ -9,10 +9,10 @@ export {
 export {
   LocaisOfertaApi,
   TIPOS_LOCAL_OFERTA,
+  TipoLocalOferta,
   type AtualizarLocalOfertaCommand,
   type CriarLocalOfertaCommand,
   type LocaisOfertaQuery,
   type LocalOfertaDto,
-  type TipoLocalOferta,
   type TipoLocalOfertaOption,
 } from './locais-oferta.api';
