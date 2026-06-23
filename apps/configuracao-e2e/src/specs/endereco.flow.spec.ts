@@ -48,8 +48,11 @@ async function jsonRoute(route: Route, body: unknown, status = 200): Promise<voi
 
 async function mockApi(page: Page, capturado: { post?: unknown }): Promise<void> {
   await page.route(/\/api\/campi(\?.*)?$/, (route) => jsonRoute(route, []));
-  await page.route(/\/api\/cep\/68507590$/, (route) => jsonRoute(route, CEP_LOGRADOURO));
+  // Playwright casa rotas na ordem inversa de registro: a regra genérica de CEP
+  // (404) vem primeiro; a específica do CEP resolvido é registrada depois para
+  // ter prioridade sobre a genérica.
   await page.route(/\/api\/cep\/\d+$/, (route) => jsonRoute(route, null, 404));
+  await page.route(/\/api\/cep\/68507590$/, (route) => jsonRoute(route, CEP_LOGRADOURO));
   await page.route(/\/api\/cidades(\?.*)?$/, (route) => jsonRoute(route, CIDADES));
   await page.route(/\/api\/admin\/campi$/, async (route) => {
     capturado.post = route.request().postDataJSON();
