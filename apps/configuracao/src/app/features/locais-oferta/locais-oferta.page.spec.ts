@@ -115,6 +115,25 @@ describe('LocaisOfertaPage', () => {
     expect(component['formOpen']()).toBe(false);
   });
 
+  it('I1: lista com local vinculado dispara o lookup de campi e exibe a sigla/nome', async () => {
+    const localVinculado: LocalOfertaDto = { ...localSeed, campusResponsavelId: 'cmp1' };
+    await flushLista([localVinculado]);
+    await propagate();
+    controller.expectOne((r) => r.url === `${BASE}/api/campi`).flush([
+      {
+        id: 'cmp1',
+        sigla: 'MAB',
+        nome: 'Campus de Marabá',
+        codigoEmec: null,
+        cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+        endereco: null,
+        criadoEm: '2026-06-10T12:00:00Z',
+      },
+    ]);
+    await propagate();
+    expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
+  });
+
   it('exige tipo e cidade — bloqueia salvar inválido', async () => {
     await flushLista([]);
     component['abrirCadastro']();

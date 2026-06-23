@@ -10,6 +10,7 @@ import { EnderecoFormComponent } from './endereco-form';
 import {
   EnderecoEstruturado,
   camposAncorados,
+  ehErroDeEndereco,
   enderecoEstruturadoDe,
   enderecoParaCommand,
   normalizarNivel,
@@ -187,6 +188,20 @@ describe('enderecoEstruturadoDe (DTO → componente)', () => {
   });
 });
 
+describe('ehErroDeEndereco (casamento por segmento, não substring)', () => {
+  it('reconhece campos/códigos do endereço e cidade', () => {
+    expect(ehErroDeEndereco('Endereco.Cep')).toBe(true);
+    expect(ehErroDeEndereco('CidadeCodigoIbge')).toBe(true);
+    expect(ehErroDeEndereco('uniplus.configuracao.endereco_referencia.cep_formato_invalido')).toBe(true);
+  });
+
+  it('não classifica errado chaves que apenas contêm o trecho', () => {
+    expect(ehErroDeEndereco('Concepcao')).toBe(false);
+    expect(ehErroDeEndereco('Mantenedora')).toBe(false);
+    expect(ehErroDeEndereco('Sigla')).toBe(false);
+  });
+});
+
 describe('EnderecoFormComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
@@ -250,7 +265,7 @@ describe('EnderecoFormComponent', () => {
     expect(bairro.readOnly).toBe(true);
   });
 
-  it('CA-06: CEP inexistente (404) exibe erro inline e mantém campos editáveis', () => {
+  it('CA-06: CEP inexistente (404) exibe erro inline e não exibe campos de endereço', () => {
     setInput(fixture, 't-cep', '00000000');
     botaoPorTexto(fixture, 'Buscar CEP').click();
     controller.expectOne(`${BASE}/api/cep/00000000`).flush(null, {
@@ -261,8 +276,8 @@ describe('EnderecoFormComponent', () => {
 
     const erro = fixture.nativeElement.querySelector('#t-cep-error') as HTMLElement;
     expect(erro.textContent).toContain('CEP não encontrado');
-    const logradouro = fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement;
-    expect(logradouro.readOnly).toBe(false);
+    // Sem CEP resolvido, os campos de endereço ficam ocultos (não persistiriam).
+    expect(fixture.nativeElement.querySelector('#t-logradouro')).toBeNull();
   });
 
   it('CA-06: CEP com menos de 8 dígitos não dispara request e avisa o formato', () => {
@@ -296,6 +311,147 @@ describe('EnderecoFormComponent', () => {
       origem: 'manual',
       nivelResolucao: null,
     });
+  });
+
+  it('após 404, entrar no modo manual limpa o CEP (não vaza endereço inválido) — #412', async () => {
+    setInput(fixture, 't-cep', '00000000');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/00000000`).flush(null, {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    fixture.detectChanges();
+
+    botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
+      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
+    ]);
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    select.value = '1504208';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(host.ctrl.value?.cep).toBeNull();
+    // O mapeamento para o command não deve montar `endereco` (só cidade).
+    expect(enderecoParaCommand(host.ctrl.value).endereco).toBeNull();
+    expect(enderecoParaCommand(host.ctrl.value).cidadeCodigoIbge).toBe('1504208');
+  });
+
+  it('CEP que falha (404) durante o modo manual não vira endereço — #412', async () => {
+    botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
+      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
+    ]);
+    fixture.detectChanges();
+    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
+    select.value = '1504208';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    setInput(fixture, 't-cep', '00000000');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/00000000`).flush(null, {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    fixture.detectChanges();
+
+    expect(host.ctrl.value?.cep).toBeNull();
+    expect(enderecoParaCommand(host.ctrl.value).endereco).toBeNull();
+    expect(host.ctrl.value?.cidade?.codigoIbge).toBe('1504208');
+  });
+
+  it('S1: falha na busca de cidades sinaliza erro e permite retry', async () => {
+    botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush(null, {
+      status: 500,
+      statusText: 'Server Error',
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Não foi possível carregar as cidades');
+
+    botaoPorTexto(fixture, 'Tentar novamente').click();
+    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
+      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
+    ]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Não foi possível carregar as cidades');
+  });
+
+  it('trocar para "sem CEP" após resolver limpa e oculta os campos de endereço — #412', async () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement).value).toBe(
+      'Folha 31, Quadra 7',
+    );
+
+    botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+
+    // Campos de endereço ocultos e limpos no fluxo sem CEP (não são descartados em silêncio).
+    expect(fixture.nativeElement.querySelector('#t-logradouro')).toBeNull();
+    expect(host.ctrl.value?.logradouro ?? null).toBeNull();
+    expect(host.ctrl.value?.cep).toBeNull();
+    expect(enderecoParaCommand(host.ctrl.value).endereco).toBeNull();
+
+    // Drena a busca de cidades disparada pelo modo manual.
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([]);
+  });
+
+  it('ignora resposta obsoleta de CEP quando o campo já mudou — #412', () => {
+    setInput(fixture, 't-cep', '11111111');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    // Usuário altera o CEP enquanto o lookup do 11111111 está em voo.
+    setInput(fixture, 't-cep', '22222222');
+    controller.expectOne(`${BASE}/api/cep/11111111`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    // A resposta obsoleta (de 11111111) não pode popular o formulário do 22222222:
+    // sem resolução aplicada, não há cidade nem campos de endereço exibidos.
+    expect(host.ctrl.value?.cidade ?? null).toBeNull();
+    expect(fixture.nativeElement.querySelector('#t-logradouro')).toBeNull();
+  });
+
+  it('autofill preenche o complemento vindo do Geo — #412', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller
+      .expectOne(`${BASE}/api/cep/68507590`)
+      .flush({ ...cepLogradouro, complemento: 'Bloco A' });
+    fixture.detectChanges();
+    expect(host.ctrl.value?.complemento).toBe('Bloco A');
+  });
+
+  it('bloqueia o save enquanto o CEP digitado não é resolvido (Validator) — #412', () => {
+    setInput(fixture, 't-cep', '12345678');
+    fixture.detectChanges();
+
+    expect(host.ctrl.invalid).toBe(true);
+    expect(host.ctrl.errors).toEqual({ cepNaoResolvido: true });
+    expect(host.ctrl.value?.cep ?? null).toBeNull();
+
+    // Limpar o CEP volta a validar (endereço opcional pode salvar sem CEP).
+    setInput(fixture, 't-cep', '');
+    fixture.detectChanges();
+    expect(host.ctrl.valid).toBe(true);
+  });
+
+  it('marca CEP sem dígitos (ex.: "abc") como pendente/inválido — #412', () => {
+    setInput(fixture, 't-cep', 'abc');
+    fixture.detectChanges();
+    expect(host.ctrl.invalid).toBe(true);
+    expect(host.ctrl.errors).toEqual({ cepNaoResolvido: true });
   });
 
   it('CA-06: erro externo de coerência (422) é exibido inline', () => {
