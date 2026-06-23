@@ -9,6 +9,15 @@ export type InstituicaoDto = components['schemas']['InstituicaoDto'];
 export type CriarInstituicaoCommand = components['schemas']['CriarInstituicaoCommand'];
 export type AtualizarInstituicaoCommand = components['schemas']['AtualizarInstituicaoCommand'];
 
+/** Endereço estruturado aninhado no DTO de resposta (referência ao Geo, ADR-0096). */
+export type EnderecoGeoDto = components['schemas']['EnderecoGeoDto'];
+/** Endereço estruturado enviado nos commands (`endereco` aninhado). */
+export type EnderecoGeoInput = components['schemas']['EnderecoGeoInput'];
+/** Referência de cidade aninhada no DTO de resposta. */
+export type CidadeReferenciaDto = components['schemas']['CidadeReferenciaDto'];
+/** Referência de cidade enviada dentro de `endereco` nos commands. */
+export type CidadeReferenciaInput = components['schemas']['CidadeReferenciaInput'];
+
 /**
  * Cliente Angular standalone do recurso Instituição (módulo Organização
  * Institucional). A Instituição é **singleton** (ADR-0055): não há listagem nem

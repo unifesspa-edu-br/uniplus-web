@@ -21,6 +21,7 @@ export { SELECAO_BASE_PATH } from './api/selecao/tokens';
 export { INGRESSO_BASE_PATH } from './api/ingresso/tokens';
 export { CONFIGURACAO_BASE_PATH } from './api/configuracao/tokens';
 export { ORGANIZACAO_BASE_PATH } from './api/organizacao/tokens';
+export { GEO_BASE_PATH } from './api/geo/tokens';
 export { EditaisApi } from './api/selecao/editais.api';
 export type { EditalDto, CriarEditalCommand } from './api/selecao/editais.api';
 export {

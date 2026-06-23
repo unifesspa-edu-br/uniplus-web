@@ -28,6 +28,7 @@ const ENTRYPOINTS = {
   '@uniplus/shared-auth/interceptors': 'libs/shared-auth/interceptors',
   '@uniplus/shared-data/config': 'libs/shared-data/config',
   '@uniplus/shared-data/configuracao': 'libs/shared-data/configuracao',
+  '@uniplus/shared-data/geo': 'libs/shared-data/geo',
   '@uniplus/shared-data/ingresso': 'libs/shared-data/ingresso',
   '@uniplus/shared-data/organizacao': 'libs/shared-data/organizacao',
   '@uniplus/shared-data/selecao': 'libs/shared-data/selecao',
