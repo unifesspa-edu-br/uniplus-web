@@ -12,7 +12,7 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4203';
 const isCI = !!process.env['CI'];
 
 const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
-const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.visual\.spec\.ts|auth\.setup\.ts)$/;
+const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.visual\.spec\.ts|.*\.flow\.spec\.ts|auth\.setup\.ts)$/;
 
 const VISUAL_VIEWPORTS = [
   { name: 'mobile', viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true },
@@ -71,6 +71,15 @@ export default defineConfig({
       name: 'chromium',
       testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
       use: { ...devices['Desktop Chrome'] },
+    },
+
+    // Fluxos funcionais autenticados (API mockada por page.route, auth real via
+    // auth-setup + storageState). Cobre os fluxos de endereço da story #412.
+    {
+      name: 'fluxo-chromium',
+      testMatch: /.*\.flow\.spec\.ts$/,
+      dependencies: ['auth-setup'],
+      use: { ...devices['Desktop Chrome'], storageState: storageStateAdmin },
     },
 
     {
