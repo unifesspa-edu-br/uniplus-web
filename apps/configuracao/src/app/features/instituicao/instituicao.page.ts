@@ -35,6 +35,13 @@ import {
   EmptyStateComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import {
+  EnderecoFormComponent,
+  ehErroDeEndereco,
+  enderecoEstruturadoDe,
+  enderecoParaCommand,
+  type EnderecoEstruturado,
+} from '../../shared/endereco';
 
 /** Valor de `TipoUnidade` da Reitoria no roster fechado (`TIPOS_UNIDADE`). */
 const TIPO_REITORIA = '1';
@@ -65,8 +72,7 @@ interface InstituicaoForm {
   conceitoInstitucional: FormControl<string>;
   igc: FormControl<string>;
   website: FormControl<string>;
-  enderecoSede: FormControl<string>;
-  municipioSede: FormControl<string>;
+  endereco: FormControl<EnderecoEstruturado | null>;
   unidadeRaizId: FormControl<string>;
 }
 
@@ -79,6 +85,7 @@ interface InstituicaoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    EnderecoFormComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -198,10 +205,12 @@ interface InstituicaoForm {
             <dl class="cfg-detail-list">
               <dt>Site institucional</dt>
               <dd>{{ inst.website || naoInformado }}</dd>
+              <dt>Cidade da sede</dt>
+              <dd>{{ cidadeLabel(inst) }}</dd>
+              <dt>CEP</dt>
+              <dd>{{ inst.endereco?.cep || naoInformado }}</dd>
               <dt>Endereço da sede</dt>
-              <dd>{{ inst.enderecoSede || naoInformado }}</dd>
-              <dt>Município da sede</dt>
-              <dd>{{ inst.municipioSede || naoInformado }}</dd>
+              <dd>{{ enderecoLinhaLabel(inst) }}</dd>
             </dl>
           </section>
 
@@ -489,31 +498,13 @@ interface InstituicaoForm {
                 <span class="field__error">{{ erroDoCampo('website') }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('enderecoSede')">
-              <span class="field__label">Endereço da sede</span>
-              <input
-                class="input"
-                type="text"
-                formControlName="enderecoSede"
-                [attr.aria-invalid]="erroDoCampo('enderecoSede') ? 'true' : null"
-              />
-              @if (erroDoCampo('enderecoSede')) {
-                <span class="field__error">{{ erroDoCampo('enderecoSede') }}</span>
-              }
-            </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('municipioSede')">
-              <span class="field__label">Município da sede</span>
-              <input
-                class="input"
-                type="text"
-                formControlName="municipioSede"
-                [attr.aria-invalid]="erroDoCampo('municipioSede') ? 'true' : null"
-              />
-              @if (erroDoCampo('municipioSede')) {
-                <span class="field__error">{{ erroDoCampo('municipioSede') }}</span>
-              }
-            </label>
           </div>
+          <cfg-endereco-form
+            formControlName="endereco"
+            idPrefix="inst-endereco"
+            legend="Endereço da sede"
+            [erroExterno]="enderecoErro()"
+          />
         </section>
 
         <section aria-labelledby="cfg-form-estrutura">
@@ -606,6 +597,8 @@ export class InstituicaoPage {
   protected readonly drawerAberto = signal(false);
   protected readonly submitting = signal(false);
   protected readonly submitError = signal<string | null>(null);
+  /** Erro de coerência cidade↔CEP / campos do endereço (422) exibido inline (CA-06). */
+  protected readonly enderecoErro = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
   protected readonly dialogRemover = signal(false);
@@ -682,8 +675,7 @@ export class InstituicaoPage {
     conceitoInstitucional: new FormControl('', { nonNullable: true }),
     igc: new FormControl('', { nonNullable: true }),
     website: new FormControl('', { nonNullable: true }),
-    enderecoSede: new FormControl('', { nonNullable: true }),
-    municipioSede: new FormControl('', { nonNullable: true }),
+    endereco: new FormControl<EnderecoEstruturado | null>(null),
     unidadeRaizId: new FormControl('', { nonNullable: true }),
   });
 
@@ -725,6 +717,7 @@ export class InstituicaoPage {
     this.instituicao.set(null);
     this.form.reset(EMPTY_FORM);
     this.submitError.set(null);
+    this.enderecoErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.drawerAberto.set(true);
   }
@@ -749,11 +742,11 @@ export class InstituicaoPage {
       conceitoInstitucional: inst.conceitoInstitucional ?? '',
       igc: inst.igc ?? '',
       website: inst.website ?? '',
-      enderecoSede: inst.enderecoSede ?? '',
-      municipioSede: inst.municipioSede ?? '',
+      endereco: enderecoEstruturadoDe(inst.cidade, inst.endereco),
       unidadeRaizId: inst.unidadeRaizId ?? '',
     });
     this.submitError.set(null);
+    this.enderecoErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.drawerAberto.set(true);
   }
@@ -844,6 +837,30 @@ export class InstituicaoPage {
     return 'Valor inválido.';
   }
 
+  /** Rótulo da cidade da sede na ficha de leitura (CA-03). */
+  protected cidadeLabel(inst: InstituicaoDto): string {
+    const cidade = inst.endereco?.cidade ?? inst.cidade;
+    return cidade ? `${cidade.nome} — ${cidade.uf}` : this.naoInformado;
+  }
+
+  /** Linha de endereço estruturado (logradouro, número, complemento, bairro). */
+  protected enderecoLinhaLabel(inst: InstituicaoDto): string {
+    const endereco = inst.endereco;
+    if (endereco === null || endereco === undefined) {
+      return this.naoInformado;
+    }
+    const numeroComplemento = [endereco.numero, endereco.complemento]
+      .filter((parte): parte is string => parte !== null && parte.trim().length > 0)
+      .join(' — ');
+    const partes = [
+      endereco.logradouro,
+      numeroComplemento.length > 0 ? numeroComplemento : null,
+      endereco.bairro,
+      endereco.distrito,
+    ].filter((parte): parte is string => parte !== null && parte.trim().length > 0);
+    return partes.length > 0 ? partes.join(', ') : this.naoInformado;
+  }
+
   private handleSalvarResult(result: ApiResult<string | void>): void {
     this.submitting.set(false);
     if (result.ok) {
@@ -851,6 +868,7 @@ export class InstituicaoPage {
         this.instituicao() ? 'Instituição atualizada' : 'Instituição criada',
       );
       this.drawerAberto.set(false);
+      this.enderecoErro.set(null);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
       this.carregar();
       return;
@@ -877,6 +895,13 @@ export class InstituicaoPage {
       this.submitError.set(null);
       return;
     }
+    // 2b) Erro de endereço/coerência cidade↔CEP — inline no componente (CA-06).
+    if (ehErroDeEndereco(problem.code)) {
+      this.renovarIdempotencyKey();
+      this.enderecoErro.set(this.problemI18n.resolve(problem).title);
+      this.submitError.set(null);
+      return;
+    }
     // 3) Conflito singleton (409) — banner de bloqueio, não inline (CA-06).
     if (problem.status === 409 || problem.code === 'uniplus.organizacao.instituicao.ja_existe') {
       this.renovarIdempotencyKey();
@@ -899,7 +924,15 @@ export class InstituicaoPage {
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     let aplicouAlgum = false;
+    let erroEndereco: string | null = null;
     for (const erro of errors) {
+      // Campos do endereço/cidade não têm controle flat — vão inline no
+      // componente de endereço (CA-06) em vez de serem descartados.
+      if (ehErroDeEndereco(erro.field) || ehErroDeEndereco(erro.code)) {
+        erroEndereco ??= erro.message;
+        aplicouAlgum = true;
+        continue;
+      }
       const controlName = controlNameFromBackendField(erro.field);
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
@@ -907,6 +940,8 @@ export class InstituicaoPage {
       control.markAsTouched();
       aplicouAlgum = true;
     }
+
+    this.enderecoErro.set(erroEndereco);
 
     if (aplicouAlgum) {
       this.submitError.set(null);
@@ -933,8 +968,7 @@ export class InstituicaoPage {
       conceitoInstitucional: nullIfBlank(raw.conceitoInstitucional),
       igc: nullIfBlank(raw.igc),
       website: nullIfBlank(raw.website),
-      enderecoSede: nullIfBlank(raw.enderecoSede),
-      municipioSede: nullIfBlank(raw.municipioSede),
+      ...enderecoParaCommand(raw.endereco),
       unidadeRaizId: nullIfBlank(raw.unidadeRaizId),
     };
   }
@@ -959,8 +993,7 @@ const EMPTY_FORM = {
   conceitoInstitucional: '',
   igc: '',
   website: '',
-  enderecoSede: '',
-  municipioSede: '',
+  endereco: null,
   unidadeRaizId: '',
 } as const;
 
@@ -979,8 +1012,6 @@ const INSTITUICAO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof Instituicao
   'conceitoInstitucional',
   'igc',
   'website',
-  'enderecoSede',
-  'municipioSede',
   'unidadeRaizId',
 ]);
 

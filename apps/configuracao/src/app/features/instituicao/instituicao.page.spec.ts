@@ -9,6 +9,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { InstituicaoDto, ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { InstituicaoPage } from './instituicao.page';
 
@@ -50,8 +51,8 @@ const instituicaoSeed: InstituicaoDto = {
   conceitoInstitucional: null,
   igc: null,
   website: null,
-  enderecoSede: null,
-  municipioSede: null,
+  cidade: null,
+  endereco: null,
   unidadeRaizId: REITORIA_ID,
   criadoEm: '2026-06-10T12:00:00Z',
 };
@@ -80,6 +81,7 @@ describe('InstituicaoPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
+        { provide: GEO_BASE_PATH, useValue: BASE },
       ],
     });
 
