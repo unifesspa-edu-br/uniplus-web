@@ -121,7 +121,9 @@ test.describe('Instituição — cobertura visual DS', () => {
     await expect(drawer.getByText('Identificação')).toBeVisible();
     await expect(drawer.getByText('Classificação e-MEC')).toBeVisible();
     await expect(drawer.getByText('Estrutura organizacional')).toBeVisible();
-    await expect(drawer.locator('.form-section__title')).toHaveCount(7);
+    // 7 seções do formulário + a legenda do cfg-endereco-form (também
+    // .form-section__title) = 8 após a migração ao endereço estruturado (#412).
+    await expect(drawer.locator('.form-section__title')).toHaveCount(8);
 
     const footer = drawer.locator('.cfg-form-footer');
     await expect(footer.getByRole('button', { name: 'Remover' })).toBeVisible();
