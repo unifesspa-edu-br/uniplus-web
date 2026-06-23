@@ -117,6 +117,14 @@ describe('CampiPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({ sigla: 'X', nome: 'Sem cidade', endereco: null });
+    fixture.detectChanges();
+
+    // O submit não fica desabilitado por form inválido — senão o usuário não
+    // alcançaria a validação/feedback (botão morto). Só desabilita ao salvar.
+    const submit = fixture.nativeElement.querySelector(
+      'button[form="cfg-campus-form"]',
+    ) as HTMLButtonElement;
+    expect(submit.disabled).toBe(false);
 
     component['salvar']();
 

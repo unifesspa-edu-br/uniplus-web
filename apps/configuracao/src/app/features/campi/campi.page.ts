@@ -255,7 +255,7 @@ interface CampusForm {
           type="submit"
           form="cfg-campus-form"
           class="btn btn--primary"
-          [disabled]="saving() || form.invalid"
+          [disabled]="saving()"
         >
           @if (saving()) {
             <ui-spinner size="sm" />

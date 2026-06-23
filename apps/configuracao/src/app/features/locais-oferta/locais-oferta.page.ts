@@ -272,7 +272,7 @@ interface LocalOfertaForm {
           type="submit"
           form="cfg-local-form"
           class="btn btn--primary"
-          [disabled]="saving() || form.invalid"
+          [disabled]="saving()"
         >
           @if (saving()) {
             <ui-spinner size="sm" />
@@ -418,6 +418,16 @@ export class LocaisOfertaPage {
       if (problem && problem.status >= 500) {
         const titulo = this.problemI18n.resolve(problem).title;
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
+
+    // Ativa o lookup de campi assim que a lista trouxer algum local vinculado,
+    // para a coluna "Campus responsável" exibir a sigla/nome em vez do genérico
+    // "Vinculado" já na carga inicial (mantém o lazy quando não há vínculo). #412.
+    effect(() => {
+      const temVinculo = this.locais().some((local) => local.campusResponsavelId !== null);
+      if (temVinculo && !this.carregarCampi()) {
+        untracked(() => this.carregarCampi.set(true));
       }
     });
   }

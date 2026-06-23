@@ -34,12 +34,16 @@
         "{projectRoot}/openapi/selecao.openapi.json",
         "{projectRoot}/openapi/ingresso.openapi.json",
         "{projectRoot}/openapi/organizacao.openapi.json",
+        "{projectRoot}/openapi/configuracao.openapi.json",
+        "{projectRoot}/openapi/geo.openapi.json",
         "{projectRoot}/scripts/generate-api-clients.sh"
       ],
       "outputs": [
         "{projectRoot}/src/lib/api/selecao/schema.ts",
         "{projectRoot}/src/lib/api/ingresso/schema.ts",
-        "{projectRoot}/src/lib/api/organizacao/schema.ts"
+        "{projectRoot}/src/lib/api/organizacao/schema.ts",
+        "{projectRoot}/src/lib/api/configuracao/schema.ts",
+        "{projectRoot}/src/lib/api/geo/schema.ts"
       ]
     },
     "codegen-api-check": {

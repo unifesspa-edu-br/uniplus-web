@@ -8,6 +8,7 @@
       "@uniplus/shared-core": ["dist/libs/shared-core"],
       "@uniplus/shared-core/http": ["dist/libs/shared-core/http"],
       "@uniplus/shared-data/configuracao": ["dist/libs/shared-data/configuracao"],
+      "@uniplus/shared-data/geo": ["dist/libs/shared-data/geo"],
       "@uniplus/shared-data/ingresso": ["dist/libs/shared-data/ingresso"],
       "@uniplus/shared-data/organizacao": ["dist/libs/shared-data/organizacao"],
       "@uniplus/shared-data/selecao": ["dist/libs/shared-data/selecao"]

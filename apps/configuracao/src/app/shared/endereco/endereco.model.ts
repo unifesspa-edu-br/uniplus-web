@@ -208,14 +208,22 @@ export function cidadeObrigatoriaValidator(
   return control.value?.cidade ? null : { cidadeObrigatoria: true };
 }
 
-/** Heurística: o `field`/`code` do backend pertence ao bloco de endereço/cidade. */
+/** Chaves de domínio que marcam um `field`/`code` como pertencente ao endereço. */
+const CHAVES_ENDERECO = ['endereco', 'cep', 'cidade'] as const;
+
+/**
+ * Heurística: o `field`/`code` do backend pertence ao bloco de endereço/cidade.
+ * Casa por **segmento** do path (`.`/`_`), não por substring crua, para não
+ * classificar errado uma chave que apenas contenha o trecho (ex.: "concepcao"
+ * contém "cep"). Cada segmento bate se for igual ou começar com uma chave —
+ * cobrindo `Endereco.Cep`, `endereco_referencia.cep_formato_invalido` e
+ * `CidadeCodigoIbge`.
+ */
 export function ehErroDeEndereco(valor: string): boolean {
-  const normalizado = valor.toLocaleLowerCase('pt-BR');
-  return (
-    normalizado.includes('endereco') ||
-    normalizado.includes('cep') ||
-    normalizado.includes('cidade')
-  );
+  return valor
+    .toLocaleLowerCase('pt-BR')
+    .split(/[._]/)
+    .some((segmento) => CHAVES_ENDERECO.some((chave) => segmento === chave || segmento.startsWith(chave)));
 }
 
 export function camposAncorados(nivel: NivelResolucao | null): ReadonlySet<CampoEndereco> {

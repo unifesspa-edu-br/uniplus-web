@@ -38,6 +38,13 @@ const CIDADES = [
 ];
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
+  // O app chama o apiUrl cross-origin com Authorization → o browser dispara um
+  // preflight OPTIONS antes do GET. Responde 204 ao preflight para o GET real
+  // (e sua resposta mockada) chegar até o app. #412
+  if (route.request().method() === 'OPTIONS') {
+    await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    return;
+  }
   await route.fulfill({
     status,
     contentType: 'application/json',
@@ -94,7 +101,7 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await expect(page.getByText('Cidade selecionada: Marabá — PA')).toBeVisible();
   });
 
-  test('CA-06: CEP inexistente exibe erro inline e mantém edição', async ({ page }) => {
+  test('CA-06: CEP inexistente exibe erro inline e oculta os campos de endereço', async ({ page }) => {
     await mockApi(page, {});
     await abrirCadastroCampus(page);
 
@@ -102,7 +109,8 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await page.getByRole('button', { name: 'Buscar CEP' }).click();
 
     await expect(page.locator('#campus-endereco-cep-error')).toContainText('CEP não encontrado');
-    await expect(page.locator('#campus-endereco-logradouro')).not.toHaveAttribute('readonly', '');
+    // Sem CEP resolvido, os campos de endereço não são exibidos (não persistiriam).
+    await expect(page.locator('#campus-endereco-logradouro')).toHaveCount(0);
   });
 
   test('CA-04: cria campus enviando cidade + endereço aninhado', async ({ page }) => {

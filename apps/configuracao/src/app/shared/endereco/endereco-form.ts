@@ -13,11 +13,14 @@ import {
   ControlValueAccessor,
   FormControl,
   FormGroup,
+  NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ReactiveFormsModule,
+  type ValidationErrors,
+  type Validator,
 } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
   CepResolvidoDto,
   CidadeResumoDto,
@@ -82,7 +85,7 @@ interface EnderecoFormControls {
       <legend class="form-section__title">{{ legend() }}</legend>
 
       <div class="form-grid">
-        <div class="field" [class.is-error]="cepErro() !== null">
+        <div class="field" [class.is-error]="cepErro() !== null || cepPendente()">
           <label [for]="id('cep')" class="field__label">CEP</label>
           <div class="input-group">
             <input
@@ -94,8 +97,8 @@ interface EnderecoFormControls {
               placeholder="00000-000"
               maxlength="9"
               [formControl]="form.controls.cep"
-              [readonly]="ehAncorado('cep')"
-              [attr.aria-readonly]="ehAncorado('cep') ? 'true' : null"
+              [readonly]="ehAncorado('cep') || resolvendoCep()"
+              [attr.aria-readonly]="ehAncorado('cep') || resolvendoCep() ? 'true' : null"
               [attr.aria-invalid]="cepErro() !== null ? 'true' : null"
               [attr.aria-describedby]="cepErro() !== null ? id('cep') + '-error' : null"
               (blur)="aoSairDoCep()"
@@ -122,6 +125,10 @@ interface EnderecoFormControls {
           </span>
           @if (cepErro(); as erro) {
             <span [id]="id('cep') + '-error'" class="field__error" role="alert">{{ erro }}</span>
+          } @else if (cepPendente()) {
+            <span class="field__error" role="alert">
+              Valide o CEP em "Buscar CEP" ou limpe o campo para continuar.
+            </span>
           }
         </div>
 
@@ -139,7 +146,9 @@ interface EnderecoFormControls {
             />
             <select
               class="select"
-              [attr.aria-label]="'Selecionar cidade'"
+              aria-label="Selecionar cidade"
+              [attr.aria-invalid]="erroExterno() ? 'true' : null"
+              [attr.aria-describedby]="erroExterno() ? id('erro') : null"
               (change)="selecionarCidade($event)"
             >
               <option value="">
@@ -151,6 +160,14 @@ interface EnderecoFormControls {
                 </option>
               }
             </select>
+            @if (cidadesErro()) {
+              <span class="field__error" role="alert">
+                Não foi possível carregar as cidades.
+                <button type="button" class="cfg-link-button" (click)="recarregarCidades()">
+                  Tentar novamente
+                </button>
+              </span>
+            }
             @if (cidade(); as c) {
               <span class="field__hint">Cidade selecionada: {{ c.nome }} — {{ c.uf }}</span>
             }
@@ -164,6 +181,9 @@ interface EnderecoFormControls {
           </div>
         }
 
+        <!-- Detalhes do endereço só quando há CEP resolvido: sem resolução o
+             backend não persiste endereço estruturado (só a cidade). #412 -->
+        @if (mostrarDetalheEndereco()) {
         <div class="field field--full">
           <label [for]="id('logradouro')" class="field__label">Logradouro</label>
           <input
@@ -234,10 +254,11 @@ interface EnderecoFormControls {
             <span class="field__hint">Preenchido pelo CEP.</span>
           }
         </div>
+        }
       </div>
 
       @if (erroExterno(); as erro) {
-        <p class="field__error" role="alert">{{ erro }}</p>
+        <p [id]="id('erro')" class="field__error" role="alert">{{ erro }}</p>
       }
     </fieldset>
   `,
@@ -247,9 +268,14 @@ interface EnderecoFormControls {
       useExisting: forwardRef(() => EnderecoFormComponent),
       multi: true,
     },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => EnderecoFormComponent),
+      multi: true,
+    },
   ],
 })
-export class EnderecoFormComponent implements ControlValueAccessor {
+export class EnderecoFormComponent implements ControlValueAccessor, Validator {
   private readonly geo = inject(GeoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -269,6 +295,8 @@ export class EnderecoFormComponent implements ControlValueAccessor {
   protected readonly buscaCidade = signal('');
   protected readonly cidadeOpcoes = signal<readonly CidadeResumoDto[]>([]);
   protected readonly buscandoCidades = signal(false);
+  /** Falha na busca de cidades — distingue "sem resultado" de "não carregou" (retry inline). */
+  protected readonly cidadesErro = signal(false);
 
   /** Gatilho reativo da busca de cidade: modo manual + termo digitado. */
   private readonly buscaParams = computed(() => ({
@@ -278,6 +306,14 @@ export class EnderecoFormComponent implements ControlValueAccessor {
 
   /** Nível de resolução vigente — governa os campos ancorados (read-only). */
   private readonly nivel = signal<NivelResolucao | null>(null);
+  /**
+   * Mostra os campos de logradouro/número/complemento/bairro/distrito apenas
+   * quando há um CEP **resolvido** (`nivel !== null`). Sem resolução — formulário
+   * inicial, após 404, ou no fluxo "sem CEP" — esses campos não persistem (o
+   * backend exige CEP no endereço), então exibi-los editáveis descartaria a
+   * digitação em silêncio. #412.
+   */
+  protected readonly mostrarDetalheEndereco = computed(() => this.nivel() !== null);
   /** Proveniência do endereço (`geo-api` quando do CEP, `manual` sem CEP). */
   private readonly origem = signal<string | null>(null);
   /**
@@ -302,8 +338,27 @@ export class EnderecoFormComponent implements ControlValueAccessor {
 
   private onChange: (value: EnderecoEstruturado | null) => void = () => undefined;
   private onTouched: () => void = () => undefined;
-  /** Último CEP (8 dígitos) resolvido — evita refazer a busca no blur sem mudança. */
-  private cepResolvido = '';
+  private onValidatorChange: () => void = () => undefined;
+  /** Último CEP (8 dígitos) resolvido pelo Geo — âncora para validação e blur. */
+  private readonly cepResolvido = signal('');
+  /** Dígitos do CEP atualmente no campo (sincronizado em `emitir()`). */
+  private readonly cepAtual = signal('');
+  /** Texto cru (trim) do campo CEP — pega entradas sem dígito (ex.: "abc"). */
+  private readonly cepTextoAtual = signal('');
+  /**
+   * Há um CEP digitado que ainda não foi resolvido pelo Geo (formato inválido,
+   * sem dígitos, 404, ou ainda sem "Buscar"). Bloqueia o save mesmo em endereço
+   * opcional — senão a tentativa de CEP seria descartada em silêncio (#412).
+   * Considera o texto cru: qualquer valor não-vazio que não seja exatamente o
+   * CEP resolvido (8 dígitos) é pendente.
+   */
+  protected readonly cepPendente = computed(() => {
+    if (this.cepTextoAtual().length === 0) {
+      return false;
+    }
+    const resolvido = this.cepResolvido();
+    return !(resolvido.length === 8 && this.cepAtual() === resolvido);
+  });
 
   constructor() {
     // Mudanças no formulário propagam o valor montado ao FormControl do parent.
@@ -326,10 +381,23 @@ export class EnderecoFormComponent implements ControlValueAccessor {
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((result) => {
-        this.buscandoCidades.set(false);
-        this.cidadeOpcoes.set(result.ok ? result.data : []);
-      });
+      .subscribe((result) => this.aplicarResultadoCidades(result));
+  }
+
+  private aplicarResultadoCidades(result: ApiResult<readonly CidadeResumoDto[]>): void {
+    this.buscandoCidades.set(false);
+    this.cidadesErro.set(!result.ok);
+    this.cidadeOpcoes.set(result.ok ? result.data : []);
+  }
+
+  /** Refaz a busca de cidades após falha (retry inline do fluxo "sem CEP"). */
+  protected recarregarCidades(): void {
+    const termo = this.buscaCidade().trim();
+    this.buscandoCidades.set(true);
+    this.geo
+      .listarCidades(termo.length > 0 ? { q: termo, limit: CIDADES_LIMIT } : { limit: CIDADES_LIMIT })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => this.aplicarResultadoCidades(result));
   }
 
   writeValue(value: EnderecoEstruturado | null): void {
@@ -343,7 +411,9 @@ export class EnderecoFormComponent implements ControlValueAccessor {
       this.origem.set(null);
       this.modoManual.set(false);
       this.cepErro.set(null);
-      this.cepResolvido = '';
+      this.cepResolvido.set('');
+      this.cepAtual.set('');
+      this.cepTextoAtual.set('');
       return;
     }
 
@@ -364,7 +434,10 @@ export class EnderecoFormComponent implements ControlValueAccessor {
     const nivel = normalizarNivel(value.nivelResolucao);
     this.nivel.set(nivel);
     this.origem.set(value.origem);
-    this.cepResolvido = (value.cep ?? '').replace(/\D/g, '');
+    const cepDigitos = (value.cep ?? '').replace(/\D/g, '');
+    this.cepResolvido.set(cepDigitos);
+    this.cepAtual.set(cepDigitos);
+    this.cepTextoAtual.set((value.cep ?? '').trim());
     // Endereço gravado manualmente reabre em modo manual (tudo editável).
     this.modoManual.set(value.origem === ORIGEM_MANUAL);
     this.cepErro.set(null);
@@ -376,6 +449,19 @@ export class EnderecoFormComponent implements ControlValueAccessor {
 
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
+  }
+
+  registerOnValidatorChange(fn: () => void): void {
+    this.onValidatorChange = fn;
+  }
+
+  /**
+   * Inválido enquanto houver um CEP digitado que não foi resolvido pelo Geo —
+   * bloqueia o save mesmo quando o endereço é opcional (Instituição), para a
+   * tentativa de CEP não ser descartada em silêncio (#412).
+   */
+  validate(): ValidationErrors | null {
+    return this.cepPendente() ? { cepNaoResolvido: true } : null;
   }
 
   setDisabledState(isDisabled: boolean): void {
@@ -403,7 +489,7 @@ export class EnderecoFormComponent implements ControlValueAccessor {
   protected aoSairDoCep(): void {
     this.onTouched();
     const digitos = this.form.controls.cep.value.replace(/\D/g, '');
-    if (digitos.length === 8 && digitos !== this.cepResolvido) {
+    if (digitos.length === 8 && digitos !== this.cepResolvido()) {
       this.resolverCep();
     }
   }
@@ -425,6 +511,11 @@ export class EnderecoFormComponent implements ControlValueAccessor {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.resolvendoCep.set(false);
+        // Resposta obsoleta: o usuário alterou o CEP enquanto o lookup estava em
+        // voo — ignora para não sobrescrever o formulário com um CEP antigo. #412.
+        if (this.form.controls.cep.value.replace(/\D/g, '') !== digitos) {
+          return;
+        }
         if (result.ok) {
           this.aplicarCepResolvido(result.data, digitos);
           return;
@@ -445,7 +536,7 @@ export class EnderecoFormComponent implements ControlValueAccessor {
 
   private aplicarCepResolvido(dto: CepResolvidoDto, digitos: string): void {
     this.modoManual.set(false);
-    this.cepResolvido = digitos;
+    this.cepResolvido.set(digitos);
     this.cidade.set({ codigoIbge: dto.codigoIbge, nome: dto.cidade, uf: dto.uf });
     this.nivel.set(normalizarNivel(dto.nivelResolucao));
     this.origem.set(dto.origem ?? ORIGEM_GEO);
@@ -453,6 +544,7 @@ export class EnderecoFormComponent implements ControlValueAccessor {
       {
         cep: dto.cep,
         logradouro: dto.logradouro ?? '',
+        complemento: dto.complemento ?? '',
         bairro: dto.bairro ?? '',
         distrito: dto.distrito ?? '',
         latitude: textoDeCoordenada(dto.latitude),
@@ -472,6 +564,23 @@ export class EnderecoFormComponent implements ControlValueAccessor {
       // Entrada manual: libera todos os campos (nada ancorado) e marca a origem.
       this.nivel.set(null);
       this.origem.set(ORIGEM_MANUAL);
+      // Fluxo "sem CEP" persiste só a cidade (o `endereco` do backend exige CEP).
+      // Limpa CEP + os campos derivados do CEP: senão valores resolvidos antes
+      // ficariam visíveis e seriam descartados silenciosamente no save. #412.
+      this.form.reset(
+        {
+          cep: '',
+          logradouro: '',
+          numero: '',
+          complemento: '',
+          bairro: '',
+          distrito: '',
+          latitude: '',
+          longitude: '',
+        },
+        { emitEvent: false },
+      );
+      this.cepResolvido.set('');
       if (this.cidadeOpcoes().length === 0) {
         this.buscaCidade.set('');
       }
@@ -493,9 +602,23 @@ export class EnderecoFormComponent implements ControlValueAccessor {
   private emitir(): void {
     const raw = this.form.getRawValue();
     const cidade = this.cidade();
+    // Só um CEP efetivamente resolvido pelo Geo entra no valor. Um CEP digitado
+    // mas não resolvido (ex.: lookup 404, ou ainda sem "Buscar") NÃO deve virar
+    // `endereco`: o mapeamento trataria os 8 dígitos como endereço válido e
+    // submeteria um CEP que o usuário não conseguiu validar. #412.
+    const cepDigitos = raw.cep.replace(/\D/g, '');
+    this.cepAtual.set(cepDigitos);
+    this.cepTextoAtual.set(raw.cep.trim());
+    this.onValidatorChange();
+    const cepResolvidoNoValor =
+      cepDigitos.length > 0 && cepDigitos === this.cepResolvido() ? vazioParaNulo(raw.cep) : null;
+
     const algumPreenchido =
       cidade !== null ||
-      Object.values(raw).some((v) => v.trim().length > 0);
+      cepResolvidoNoValor !== null ||
+      [raw.logradouro, raw.numero, raw.complemento, raw.bairro, raw.distrito].some(
+        (v) => v.trim().length > 0,
+      );
 
     if (!algumPreenchido) {
       this.onChange(null);
@@ -503,7 +626,7 @@ export class EnderecoFormComponent implements ControlValueAccessor {
     }
 
     this.onChange({
-      cep: vazioParaNulo(raw.cep),
+      cep: cepResolvidoNoValor,
       logradouro: vazioParaNulo(raw.logradouro),
       numero: vazioParaNulo(raw.numero),
       complemento: vazioParaNulo(raw.complemento),
