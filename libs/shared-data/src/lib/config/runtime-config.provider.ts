@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { AUTH_CONFIG, AuthService } from '@uniplus/shared-auth/bootstrap';
 import type { AuthConfig } from '@uniplus/shared-auth/bootstrap';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { INGRESSO_BASE_PATH } from '@uniplus/shared-data/ingresso';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
@@ -35,7 +36,7 @@ export const RUNTIME_CONFIG_PATH = '/assets/runtime-config.json';
  *      URLs reais já carregadas.
  *
  * `AUTH_CONFIG`, `SELECAO_BASE_PATH`, `INGRESSO_BASE_PATH`,
- * `ORGANIZACAO_BASE_PATH` e `CONFIGURACAO_BASE_PATH` continuam
+ * `ORGANIZACAO_BASE_PATH`, `CONFIGURACAO_BASE_PATH` e `GEO_BASE_PATH` continuam
  * provedidos como factories síncronas que leem do store. São injetados
  * lazy (ex.: `tokenInterceptor` lê `AUTH_ALLOWED_URLS` no primeiro HTTP
  * request, que ocorre post-bootstrap, quando store já está populado).
@@ -84,6 +85,11 @@ export function provideRuntimeConfig(): EnvironmentProviders {
     },
     {
       provide: CONFIGURACAO_BASE_PATH,
+      useFactory: (store: AppConfigService) => store.get().apiUrl,
+      deps: [AppConfigService],
+    },
+    {
+      provide: GEO_BASE_PATH,
       useFactory: (store: AppConfigService) => store.get().apiUrl,
       deps: [AppConfigService],
     },
