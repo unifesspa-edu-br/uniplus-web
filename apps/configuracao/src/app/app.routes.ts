@@ -25,6 +25,19 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/instituicao/instituicao.routes').then((m) => m.INSTITUICAO_ROUTES),
       },
+      {
+        path: 'campi',
+        data: { breadcrumb: 'Campus' },
+        loadChildren: () => import('./features/campi/campi.routes').then((m) => m.CAMPI_ROUTES),
+      },
+      {
+        path: 'locais-oferta',
+        data: { breadcrumb: 'Local de oferta' },
+        loadChildren: () =>
+          import('./features/locais-oferta/locais-oferta.routes').then(
+            (m) => m.LOCAIS_OFERTA_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -455,8 +455,8 @@ export class EnderecoFormComponent implements ControlValueAccessor {
         logradouro: dto.logradouro ?? '',
         bairro: dto.bairro ?? '',
         distrito: dto.distrito ?? '',
-        latitude: dto.latitude ?? '',
-        longitude: dto.longitude ?? '',
+        latitude: textoDeCoordenada(dto.latitude),
+        longitude: textoDeCoordenada(dto.longitude),
       },
       { emitEvent: false },
     );
@@ -521,4 +521,9 @@ export class EnderecoFormComponent implements ControlValueAccessor {
 function vazioParaNulo(value: string): string | null {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Coordenada do DTO (`string | number | null`) → texto do form control. */
+function textoDeCoordenada(valor: string | number | null | undefined): string {
+  return valor === null || valor === undefined ? '' : String(valor);
 }
