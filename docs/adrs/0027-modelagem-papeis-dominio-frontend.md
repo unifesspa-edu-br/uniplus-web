@@ -62,7 +62,9 @@ Como a Opção A coincide com o estado já implementado pelo PR #411, **não há
 
 ## Confirmação
 
-`UserRole`, `DOMAIN_ROLES` e `ROLE_LABELS` devem ser referenciados **apenas** por código de apresentação (header, sidebar e afins), nunca por guards, interceptors ou decisões de política de acesso. Verificação por inspeção/fitness test: nenhum arquivo em `libs/shared-auth/src/lib/guards/` ou `.../interceptors/` deve importar `DOMAIN_ROLES`/`ROLE_LABELS`; decisões de acesso usam `AuthService.roles()`/`hasRole`.
+As **tabelas de display** `DOMAIN_ROLES` e `ROLE_LABELS` devem ser referenciadas **apenas** por código de apresentação (header, sidebar e afins), nunca por guards, interceptors ou decisões de política de acesso. O **union `UserRole`** é um tipo, não uma tabela de exibição: além do código de apresentação, pode também restringir a tipagem de helpers de checagem de papel (ex.: `UserContextService.hasRole(role: UserRole)` / `hasAnyRole(...roles: UserRole[])`), que apenas delegam a `AuthService.hasRole` — isso constrange o argumento ao conjunto de papéis _conhecidos_, não modela política de acesso, e portanto é uso permitido.
+
+Verificação por inspeção/fitness test: nenhum arquivo em `libs/shared-auth/src/lib/guards/` ou `.../interceptors/` deve importar `DOMAIN_ROLES`/`ROLE_LABELS`; as decisões de acesso (quem pode quê) usam `AuthService.roles()`/`hasRole` lendo os papéis crus do realm, sem consultar `DOMAIN_ROLES`/`ROLE_LABELS`.
 
 ## Mais informações
 
