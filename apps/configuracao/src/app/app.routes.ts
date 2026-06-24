@@ -38,6 +38,14 @@ export const appRoutes: Routes = [
             (m) => m.LOCAIS_OFERTA_ROUTES,
           ),
       },
+      {
+        path: 'reserva-demografica',
+        data: { breadcrumb: 'Reserva Demográfica' },
+        loadChildren: () =>
+          import('./features/reserva-demografica/reserva-demografica.routes').then(
+            (m) => m.RESERVA_DEMOGRAFICA_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

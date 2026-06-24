@@ -7,6 +7,13 @@ export {
   type CriarCampusCommand,
 } from './campi.api';
 export {
+  ReservaDemograficaApi,
+  type AtualizarReferenciaReservaDemograficaCommand,
+  type CriarReferenciaReservaDemograficaCommand,
+  type ReferenciaReservaDemograficaDto,
+  type ReservaDemograficaQuery,
+} from './reserva-demografica.api';
+export {
   LocaisOfertaApi,
   TIPOS_LOCAL_OFERTA,
   TipoLocalOferta,

@@ -252,7 +252,12 @@ export class LayoutComponent {
         { label: 'Tipo de Deficiência', icon: 'pi-eye' },
         { label: 'Fase Canônica', icon: 'pi-star' },
         { label: 'Tipo de Banca', icon: 'pi-shield' },
-        { label: 'Reserva Demográfica', icon: 'pi-chart-bar' },
+        {
+          label: 'Reserva Demográfica',
+          icon: 'pi-chart-bar',
+          routerLink: '/reserva-demografica',
+          exact: true,
+        },
         { label: 'Peso ENEM', icon: 'pi-sliders-h' },
       ],
     },
