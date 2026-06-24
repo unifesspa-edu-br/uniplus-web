@@ -72,20 +72,31 @@ describe('UserHeaderInfoComponent', () => {
     expect(username?.textContent).toContain('@candidato');
   });
 
-  it('exibe roles do realm', () => {
+  it('exibe rótulos pt-BR das roles do realm', () => {
     const { fixture } = setup();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('candidato');
+    expect(el.textContent).toContain('Candidato');
   });
 
-  it('exibe múltiplas roles separadas por vírgula', () => {
+  it('exibe rótulo pt-BR legível para a role plataforma-admin', () => {
+    const plataformaAdminProfile: UserProfile = {
+      ...profileData,
+      roles: ['plataforma-admin'],
+    };
+    const { fixture } = setup(plataformaAdminProfile);
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Administrador da Plataforma');
+    expect(el.textContent).not.toContain('plataforma-admin');
+  });
+
+  it('exibe múltiplos rótulos de roles separados por vírgula', () => {
     const multiRoleProfile: UserProfile = {
       ...profileData,
       roles: ['admin', 'gestor'],
     };
     const { fixture } = setup(multiRoleProfile);
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('admin, gestor');
+    expect(el.textContent).toContain('Administrador, Gestor');
   });
 
   it('exibe apenas o primeiro nome civil quando nome social é vazio', () => {
@@ -183,7 +194,7 @@ describe('UserHeaderInfoComponent', () => {
     };
     const { fixture } = setup(rolesInternas);
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('candidato');
+    expect(el.textContent).toContain('Candidato');
     expect(el.textContent).not.toContain('offline_access');
     expect(el.textContent).not.toContain('uma_authorization');
   });

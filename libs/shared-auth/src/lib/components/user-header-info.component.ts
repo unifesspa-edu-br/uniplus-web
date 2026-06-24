@@ -8,7 +8,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { createDisclosureController } from '@uniplus/shared-core/dom';
-import { AuthService, UserContextService, DOMAIN_ROLES } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  UserContextService,
+  DOMAIN_ROLES,
+  ROLE_LABELS,
+} from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Bloco de identificação do usuário autenticado para uso em headers.
@@ -121,7 +126,7 @@ export class UserHeaderInfoComponent {
   protected readonly menuId = `auth-user-menu-${UserHeaderInfoComponent.idSeed}`;
 
   protected domainRoles(roles: string[]): string[] {
-    return roles.filter((r) => DOMAIN_ROLES.has(r));
+    return roles.filter((r) => DOMAIN_ROLES.has(r)).map((r) => ROLE_LABELS[r] ?? r);
   }
 
   protected initials(name: string): string {

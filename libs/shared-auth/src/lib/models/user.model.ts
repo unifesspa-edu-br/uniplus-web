@@ -8,14 +8,14 @@ export interface UserProfile {
   roles: string[];
 }
 
-export type UserRole = 'admin' | 'gestor' | 'avaliador' | 'candidato' |  'plataforma-admin';
+export type UserRole = 'admin' | 'gestor' | 'avaliador' | 'candidato' | 'plataforma-admin';
 
 export const DOMAIN_ROLES = new Set<string>([
   'admin',
   'gestor',
   'avaliador',
   'candidato',
-  'plataforma-admin'
+  'plataforma-admin',
 ] satisfies UserRole[]);
 
 export const ROLE_LABELS: Record<string, string> = {
@@ -23,5 +23,5 @@ export const ROLE_LABELS: Record<string, string> = {
   gestor: 'Gestor',
   avaliador: 'Avaliador',
   candidato: 'Candidato',
-  'plataforma-admin': 'Administrador da Plataforma'
+  'plataforma-admin': 'Administrador da Plataforma',
 };
