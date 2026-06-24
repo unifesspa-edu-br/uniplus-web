@@ -55,6 +55,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0024](0024-uso-seletivo-primeng-wrappers-ui.md) | Uso seletivo de PrimeNG em wrappers `ui-*` | accepted | 2026-05-31 |
 | [0025](0025-autoria-css-scss-no-angular.md) | Autoria CSS/SCSS nos componentes Angular | accepted | 2026-05-31 |
 | [0026](0026-navegacao-lista-prev-next-cursor-bidirecional.md) | Navegação de lista por prev/next sobre cursor bidirecional | accepted | 2026-06-16 |
+| [0027](0027-modelagem-papeis-dominio-frontend.md) | Modelagem de papéis de domínio no frontend — `UserRole` como contrato de display | accepted | 2026-06-24 |
 
 ## Como adicionar um novo ADR
 
