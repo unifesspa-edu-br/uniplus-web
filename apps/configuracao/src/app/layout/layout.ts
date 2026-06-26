@@ -249,7 +249,7 @@ export class LayoutComponent {
           routerLink: '/reserva-demografica',
           exact: true,
         },
-        { label: 'Peso ENEM', icon: 'pi-sliders-h' },
+        { label: 'Peso ENEM', icon: 'pi-sliders-h', routerLink: '/peso-enem', exact: true },
       ],
     },
   ];

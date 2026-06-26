@@ -46,6 +46,14 @@ export const appRoutes: Routes = [
             (m) => m.RESERVA_DEMOGRAFICA_ROUTES,
           ),
       },
+      {
+        path: 'peso-enem',
+        data: { breadcrumb: 'Peso ENEM' },
+        loadChildren: () =>
+          import('./features/peso-enem/peso-enem.routes').then(
+            (m) => m.PESO_ENEM_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

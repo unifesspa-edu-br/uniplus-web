@@ -23,3 +23,9 @@ export {
   type LocalOfertaDto,
   type TipoLocalOfertaOption,
 } from './locais-oferta.api';
+export {
+  PesoEnemApi,
+  type PesoAreaEnemDto,
+  type CriarPesoAreaEnemCommand,
+  type AtualizarPesoAreaEnemCommand,
+} from './peso-enem.api';

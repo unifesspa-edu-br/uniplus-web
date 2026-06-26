@@ -402,7 +402,8 @@ cfg-root {
 }
 
 cfg-unidades-page,
-cfg-instituicao-page {
+cfg-instituicao-page,
+cfg-peso-enem-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-7);
@@ -739,4 +740,164 @@ cfg-instituicao-page {
     width: 100%;
     justify-content: flex-end;
   }
+}
+
+/* Grade numérica genérica */
+.num-grid {
+  display: grid;
+  gap: 0;
+}
+
+.num-grid__header {
+  display: grid;
+  gap: 0;
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.num-grid__row {
+  display: grid;
+  gap: 0;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.num-grid__row:last-child {
+  border-bottom: none;
+}
+
+.num-grid__row:hover {
+  background: var(--surface-subtle);
+}
+
+/* Pesos ENEM — mobile-first: cartão empilhado; ≥1024px vira 7 colunas */
+.pe-grid .num-grid__header {
+  display: none;
+}
+
+.pe-grid .num-grid__row {
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+}
+
+.pe-grid .num-grid__row> :first-child {
+  grid-column: 1 / -1;
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 1024px) {
+  .pe-grid .num-grid__header {
+    display: grid;
+  }
+
+  .pe-grid .num-grid__header,
+  .pe-grid .num-grid__row {
+    grid-template-columns: minmax(180px, 2.5fr) repeat(5, 1fr) 1fr;
+    gap: 0;
+  }
+
+  .pe-grid .num-grid__row {
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .pe-grid .num-grid__row> :first-child {
+    grid-column: auto;
+    font-weight: var(--weight-medium);
+  }
+}
+
+.num-cell {
+  padding: 0 var(--space-2);
+}
+
+.num-cell--head {
+  text-align: right;
+}
+
+.num-val {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.num-val--highlight {
+  color: var(--color-primary);
+  font-weight: var(--weight-bold);
+}
+
+/* Célula editável — em leitura fica como texto à direita; em edição vira input */
+.num-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  min-height: var(--touch-min);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.num-input[readonly] {
+  cursor: default;
+}
+
+/* Em modo edição (linha .is-editing) os inputs ganham moldura e foco */
+.num-grid.is-editing .num-input {
+  border-color: var(--border-default);
+  background: var(--surface-page);
+}
+
+.num-grid.is-editing .num-input:hover {
+  border-color: var(--color-primary);
+}
+
+.num-input:focus {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-color: var(--color-primary);
+  background: var(--surface-page);
+}
+
+.cell-label--group-num {
+  color:var(--text-secondary);
+  font-size:var(--text-xs);
+}
+
+.cell-label--group-label {
+  font-size:var(--text-sm);
+}
+
+/* Barra de ações de edição da grade (revelada por JS) */
+.grid-editbar {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 480px) {
+  .grid-editbar {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.grid-note {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-subtle);
+  margin: 0;
 }
