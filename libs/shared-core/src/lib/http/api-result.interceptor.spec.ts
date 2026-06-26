@@ -60,10 +60,10 @@ describe('apiResultInterceptor', () => {
       const body: Edital = { id: 'edt-1', numero: 42 };
       let received: ApiResult<Edital> | undefined;
 
-      http.get<ApiResult<Edital>>('/api/editais/edt-1').subscribe((res) => (received = res));
+      http.get<ApiResult<Edital>>('/api/selecao/editais/edt-1').subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais/edt-1')
+        .expectOne('/api/selecao/editais/edt-1')
         .flush(body, { status: 200, statusText: 'OK', headers: { 'X-Page-Size': '20' } });
 
       expect(received).toBeDefined();
@@ -77,10 +77,10 @@ describe('apiResultInterceptor', () => {
     it('201 (created) também é envelopado como ApiResult.ok', () => {
       let received: ApiResult<Edital> | undefined;
 
-      http.post<ApiResult<Edital>>('/api/editais', {}).subscribe((res) => (received = res));
+      http.post<ApiResult<Edital>>('/api/selecao/editais', {}).subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais')
+        .expectOne('/api/selecao/editais')
         .flush({ id: 'edt-9', numero: 9 }, { status: 201, statusText: 'Created' });
 
       expect(isApiOk(received as ApiResult<Edital>)).toBe(true);
@@ -91,11 +91,11 @@ describe('apiResultInterceptor', () => {
       let received: ApiResult<null> | undefined;
 
       http
-        .post<ApiResult<null>>('/api/editais/edt-1/publicar', {})
+        .post<ApiResult<null>>('/api/selecao/editais/edt-1/publicar', {})
         .subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais/edt-1/publicar')
+        .expectOne('/api/selecao/editais/edt-1/publicar')
         .flush(null, { status: 204, statusText: 'No Content' });
 
       expect(isApiOk(received as ApiResult<null>)).toBe(true);
@@ -107,10 +107,10 @@ describe('apiResultInterceptor', () => {
     it('404 emite ApiResult.fail com ProblemDetails parseado', () => {
       let received: ApiResult<Edital> | undefined;
 
-      http.get<ApiResult<Edital>>('/api/editais/missing').subscribe((res) => (received = res));
+      http.get<ApiResult<Edital>>('/api/selecao/editais/missing').subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais/missing')
+        .expectOne('/api/selecao/editais/missing')
         .flush(baseProblem, { status: 404, statusText: 'Not Found', headers: PROBLEM_HEADERS });
 
       expect(isApiFailure(received as ApiResult<Edital>)).toBe(true);
@@ -134,10 +134,10 @@ describe('apiResultInterceptor', () => {
       };
       let received: ApiResult<unknown> | undefined;
 
-      http.post<ApiResult<unknown>>('/api/editais', {}).subscribe((res) => (received = res));
+      http.post<ApiResult<unknown>>('/api/selecao/editais', {}).subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais')
+        .expectOne('/api/selecao/editais')
         .flush(problem, { status: 422, statusText: 'Unprocessable', headers: PROBLEM_HEADERS });
 
       const fail = received as ApiFailure;
@@ -152,9 +152,9 @@ describe('apiResultInterceptor', () => {
     it('401 (ADR-0034) é envelopado igualmente como ApiResult.fail', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.get<ApiResult<unknown>>('/api/editais').subscribe((res) => (received = res));
+      http.get<ApiResult<unknown>>('/api/selecao/editais').subscribe((res) => (received = res));
 
-      controller.expectOne('/api/editais').flush(
+      controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
           type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.auth.unauthorized',
@@ -178,10 +178,10 @@ describe('apiResultInterceptor', () => {
       let received: ApiResult<unknown> | undefined;
 
       http
-        .get<ApiResult<unknown>>('/api/editais', { context: withVendorMime('edital', 99) })
+        .get<ApiResult<unknown>>('/api/selecao/editais', { context: withVendorMime('edital', 99) })
         .subscribe((res) => (received = res));
 
-      controller.expectOne('/api/editais').flush(
+      controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
           type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.contract.versao_nao_suportada',
@@ -201,9 +201,9 @@ describe('apiResultInterceptor', () => {
     it('500 emite ApiResult.fail preservando code do backend', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.get<ApiResult<unknown>>('/api/editais').subscribe((res) => (received = res));
+      http.get<ApiResult<unknown>>('/api/selecao/editais').subscribe((res) => (received = res));
 
-      controller.expectOne('/api/editais').flush(
+      controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
           type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.servidor.indisponivel',
@@ -222,10 +222,10 @@ describe('apiResultInterceptor', () => {
     it('quando o body chega como string JSON, ainda parseia corretamente', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.get<ApiResult<unknown>>('/api/editais/x').subscribe((res) => (received = res));
+      http.get<ApiResult<unknown>>('/api/selecao/editais/x').subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais/x')
+        .expectOne('/api/selecao/editais/x')
         .flush(JSON.stringify(baseProblem), {
           status: 404,
           statusText: 'Not Found',
@@ -241,9 +241,9 @@ describe('apiResultInterceptor', () => {
     it('status 0 sintetiza ProblemDetails com code uniplus.client.network_error', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.get<ApiResult<unknown>>('/api/editais').subscribe((res) => (received = res));
+      http.get<ApiResult<unknown>>('/api/selecao/editais').subscribe((res) => (received = res));
 
-      controller.expectOne('/api/editais').error(new ProgressEvent('error'), {
+      controller.expectOne('/api/selecao/editais').error(new ProgressEvent('error'), {
         status: 0,
         statusText: 'Unknown',
       });
@@ -257,9 +257,9 @@ describe('apiResultInterceptor', () => {
     it('500 sem application/problem+json sintetiza unexpected_response', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.get<ApiResult<unknown>>('/api/editais').subscribe((res) => (received = res));
+      http.get<ApiResult<unknown>>('/api/selecao/editais').subscribe((res) => (received = res));
 
-      controller.expectOne('/api/editais').flush('<html>Erro</html>', {
+      controller.expectOne('/api/selecao/editais').flush('<html>Erro</html>', {
         status: 500,
         statusText: 'Internal Server Error',
         headers: { 'Content-Type': 'text/html' },
@@ -273,9 +273,9 @@ describe('apiResultInterceptor', () => {
     it('422 com errors:[] (array vazio) é normalizado como ausência de errors', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.post<ApiResult<unknown>>('/api/editais', {}).subscribe((res) => (received = res));
+      http.post<ApiResult<unknown>>('/api/selecao/editais', {}).subscribe((res) => (received = res));
 
-      controller.expectOne('/api/editais').flush(
+      controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
           status: 422,
@@ -293,10 +293,10 @@ describe('apiResultInterceptor', () => {
     it('400 com body application/problem+json mas shape incompleto vira unexpected_response', () => {
       let received: ApiResult<unknown> | undefined;
 
-      http.get<ApiResult<unknown>>('/api/editais').subscribe((res) => (received = res));
+      http.get<ApiResult<unknown>>('/api/selecao/editais').subscribe((res) => (received = res));
 
       controller
-        .expectOne('/api/editais')
+        .expectOne('/api/selecao/editais')
         .flush({ message: 'apenas message' }, {
           status: 400,
           statusText: 'Bad Request',
@@ -311,20 +311,20 @@ describe('apiResultInterceptor', () => {
   describe('vendor MIME injection (ADR-0028)', () => {
     it('quando withVendorMime é usado, request anexa Accept correto', () => {
       http
-        .get<ApiResult<Edital>>('/api/editais/edt-1', {
+        .get<ApiResult<Edital>>('/api/selecao/editais/edt-1', {
           context: withVendorMime('edital', 1),
         })
         .subscribe();
 
-      const req = controller.expectOne('/api/editais/edt-1');
+      const req = controller.expectOne('/api/selecao/editais/edt-1');
       expect(req.request.headers.get('Accept')).toBe('application/vnd.uniplus.edital.v1+json');
       req.flush({ id: 'edt-1', numero: 1 });
     });
 
     it('sem withVendorMime, request não recebe Accept vendor (default Angular preserva)', () => {
-      http.get<ApiResult<Edital>>('/api/editais', { context: new HttpContext() }).subscribe();
+      http.get<ApiResult<Edital>>('/api/selecao/editais', { context: new HttpContext() }).subscribe();
 
-      const req = controller.expectOne('/api/editais');
+      const req = controller.expectOne('/api/selecao/editais');
       const accept = req.request.headers.get('Accept');
       expect(accept ?? '').not.toContain('vnd.uniplus');
       req.flush([]);
@@ -336,12 +336,12 @@ describe('apiResultInterceptor', () => {
       const explicitKey = idempotencyKey.create();
 
       http
-        .post<ApiResult<Edital>>('/api/editais', { titulo: 'X' }, {
+        .post<ApiResult<Edital>>('/api/selecao/editais', { titulo: 'X' }, {
           context: withIdempotencyKey(explicitKey),
         })
         .subscribe();
 
-      const req = controller.expectOne('/api/editais');
+      const req = controller.expectOne('/api/selecao/editais');
       expect(req.request.headers.get('Idempotency-Key')).toBe(explicitKey);
       req.flush({ id: 'edt-9', numero: 9 }, { status: 201, statusText: 'Created' });
     });
@@ -353,19 +353,19 @@ describe('apiResultInterceptor', () => {
       );
 
       http
-        .post<ApiResult<Edital>>('/api/editais', { titulo: 'X' }, { context: composed })
+        .post<ApiResult<Edital>>('/api/selecao/editais', { titulo: 'X' }, { context: composed })
         .subscribe();
 
-      const req = controller.expectOne('/api/editais');
+      const req = controller.expectOne('/api/selecao/editais');
       expect(req.request.headers.get('Accept')).toBe('application/vnd.uniplus.edital.v1+json');
       expect(req.request.headers.get('Idempotency-Key')).not.toBeNull();
       req.flush({ id: 'edt-1', numero: 1 }, { status: 201, statusText: 'Created' });
     });
 
     it('sem withIdempotencyKey, request não recebe header Idempotency-Key', () => {
-      http.get<ApiResult<Edital>>('/api/editais').subscribe();
+      http.get<ApiResult<Edital>>('/api/selecao/editais').subscribe();
 
-      const req = controller.expectOne('/api/editais');
+      const req = controller.expectOne('/api/selecao/editais');
       expect(req.request.headers.get('Idempotency-Key')).toBeNull();
       req.flush([]);
     });

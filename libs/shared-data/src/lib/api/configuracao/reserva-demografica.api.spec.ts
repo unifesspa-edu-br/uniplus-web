@@ -58,7 +58,7 @@ describe('ReservaDemograficaApi', () => {
 
   it('listar() faz GET com limit e Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 50 }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/referencias-reserva-demografica`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/referencias-reserva-demografica`);
     expect(req.request.params.get('limit')).toBe('50');
     expect(req.request.headers.get('Accept')).toBe(
       buildVendorMimeAccept('referencia-reserva-demografica', 1),
@@ -70,7 +70,7 @@ describe('ReservaDemograficaApi', () => {
 
   it('listar() com cursor envia cursor + direction e omite limit', async () => {
     const promise = firstValueFrom(api.listar({ cursor: 'abc', direction: 'prev' }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/referencias-reserva-demografica`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/referencias-reserva-demografica`);
     expect(req.request.params.get('cursor')).toBe('abc');
     expect(req.request.params.get('direction')).toBe('prev');
     expect(req.request.params.has('limit')).toBe(false);
@@ -80,7 +80,7 @@ describe('ReservaDemograficaApi', () => {
 
   it('criar() faz POST admin com Idempotency-Key e Accept JSON', async () => {
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/admin/referencias-reserva-demografica`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/referencias-reserva-demografica`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     expect(req.request.headers.get('Accept')).toBe('application/json');
@@ -93,7 +93,7 @@ describe('ReservaDemograficaApi', () => {
     const promise = firstValueFrom(
       api.atualizar(ID, { ...criarCommand, id: ID }, withIdempotencyKey('k2')),
     );
-    const req = controller.expectOne(`${BASE}/api/admin/referencias-reserva-demografica/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/referencias-reserva-demografica/${ID}`);
     expect(req.request.method).toBe('PUT');
     req.flush(null, { status: 204, statusText: 'No Content' });
     expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
@@ -101,7 +101,7 @@ describe('ReservaDemograficaApi', () => {
 
   it('remover() faz DELETE admin/{id} (soft-delete)', async () => {
     const promise = firstValueFrom(api.remover(ID));
-    const req = controller.expectOne(`${BASE}/api/admin/referencias-reserva-demografica/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/referencias-reserva-demografica/${ID}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);

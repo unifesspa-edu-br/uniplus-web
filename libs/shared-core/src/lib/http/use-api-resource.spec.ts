@@ -74,7 +74,7 @@ describe('useApiResource', () => {
   afterEach(() => env.controller.verify());
 
   it('carga inicial com URL string dispara GET e popula data() em 200', async () => {
-    const resource = env.create<Edital>(() => '/api/editais/edt-1');
+    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
     env.tickEffects();
 
     expect(resource.isLoading()).toBe(true);
@@ -82,7 +82,7 @@ describe('useApiResource', () => {
 
     const seed: Edital = { id: 'edt-1', numero: 42 };
     env.controller
-      .expectOne('/api/editais/edt-1')
+      .expectOne('/api/selecao/editais/edt-1')
       .flush(seed, { status: 200, statusText: 'OK' });
     await env.stable();
 
@@ -96,10 +96,10 @@ describe('useApiResource', () => {
 
   it('mudança reativa do URL cancela request anterior e dispara nova (race-cancellation nativa)', async () => {
     const id = signal('edt-1');
-    const resource = env.create<Edital>(() => `/api/editais/${id()}`);
+    const resource = env.create<Edital>(() => `/api/selecao/editais/${id()}`);
     env.tickEffects();
 
-    const reqAntiga = env.controller.expectOne('/api/editais/edt-1');
+    const reqAntiga = env.controller.expectOne('/api/selecao/editais/edt-1');
     expect(reqAntiga.cancelled).toBe(false);
 
     id.set('edt-2');
@@ -109,7 +109,7 @@ describe('useApiResource', () => {
     // reativas mudam — substitui o race guard manual ("if (this.id() !== id) return").
     expect(reqAntiga.cancelled).toBe(true);
 
-    const reqNova = env.controller.expectOne('/api/editais/edt-2');
+    const reqNova = env.controller.expectOne('/api/selecao/editais/edt-2');
     reqNova.flush({ id: 'edt-2', numero: 99 }, { status: 200, statusText: 'OK' });
     await env.stable();
 
@@ -117,11 +117,11 @@ describe('useApiResource', () => {
   });
 
   it('404 problem+json popula problem() e mantém data()=null', async () => {
-    const resource = env.create<Edital>(() => '/api/editais/missing');
+    const resource = env.create<Edital>(() => '/api/selecao/editais/missing');
     env.tickEffects();
 
     env.controller
-      .expectOne('/api/editais/missing')
+      .expectOne('/api/selecao/editais/missing')
       .flush(baseProblem, { status: 404, statusText: 'Not Found', headers: PROBLEM_HEADERS });
     await env.stable();
 
@@ -138,11 +138,11 @@ describe('useApiResource', () => {
   });
 
   it('network error (status 0) é envelopado como ApiFailure com code uniplus.client.network_error', async () => {
-    const resource = env.create<Edital>(() => '/api/editais/edt-1');
+    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
     env.tickEffects();
 
     env.controller
-      .expectOne('/api/editais/edt-1')
+      .expectOne('/api/selecao/editais/edt-1')
       .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
     await env.stable();
 
@@ -152,11 +152,11 @@ describe('useApiResource', () => {
   });
 
   it('reload() refaz a request preservando dependências reativas atuais', async () => {
-    const resource = env.create<Edital>(() => '/api/editais/edt-1');
+    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
     env.tickEffects();
 
     env.controller
-      .expectOne('/api/editais/edt-1')
+      .expectOne('/api/selecao/editais/edt-1')
       .flush({ id: 'edt-1', numero: 1 }, { status: 200, statusText: 'OK' });
     await env.stable();
 
@@ -166,7 +166,7 @@ describe('useApiResource', () => {
     env.tickEffects();
 
     env.controller
-      .expectOne('/api/editais/edt-1')
+      .expectOne('/api/selecao/editais/edt-1')
       .flush({ id: 'edt-1', numero: 2 }, { status: 200, statusText: 'OK' });
     await env.stable();
 
@@ -176,7 +176,7 @@ describe('useApiResource', () => {
   it('request() retorna undefined => nenhum GET disparado, status=idle', async () => {
     const ativo = signal(false);
     const resource = env.create<Edital>(() =>
-      ativo() ? '/api/editais/edt-1' : undefined,
+      ativo() ? '/api/selecao/editais/edt-1' : undefined,
     );
     env.tickEffects();
 
@@ -189,7 +189,7 @@ describe('useApiResource', () => {
     env.tickEffects();
 
     env.controller
-      .expectOne('/api/editais/edt-1')
+      .expectOne('/api/selecao/editais/edt-1')
       .flush({ id: 'edt-1', numero: 7 }, { status: 200, statusText: 'OK' });
     await env.stable();
 
@@ -198,12 +198,12 @@ describe('useApiResource', () => {
 
   it('aceita HttpResourceRequest com context (compõe withVendorMime no Accept)', async () => {
     const resource = env.create<Edital>(() => ({
-      url: '/api/editais/edt-1',
+      url: '/api/selecao/editais/edt-1',
       context: withVendorMime('edital', 1),
     }));
     env.tickEffects();
 
-    const req = env.controller.expectOne('/api/editais/edt-1');
+    const req = env.controller.expectOne('/api/selecao/editais/edt-1');
     expect(req.request.headers.get('Accept')).toBe('application/vnd.uniplus.edital.v1+json');
 
     req.flush({ id: 'edt-1', numero: 42 }, { status: 200, statusText: 'OK' });
@@ -217,12 +217,12 @@ describe('useApiResource', () => {
     // qualquer HttpContext do caller é propagado intacto pelo httpResource.
     const FLAG_TOKEN = new HttpContextToken<boolean>(() => false);
     const resource = env.create<Edital>(() => ({
-      url: '/api/editais/edt-1',
+      url: '/api/selecao/editais/edt-1',
       context: new HttpContext().set(FLAG_TOKEN, true),
     }));
     env.tickEffects();
 
-    const req = env.controller.expectOne('/api/editais/edt-1');
+    const req = env.controller.expectOne('/api/selecao/editais/edt-1');
     expect(req.request.context.get(FLAG_TOKEN)).toBe(true);
     req.flush({ id: 'edt-1', numero: 1 }, { status: 200, statusText: 'OK' });
     await env.stable();
@@ -231,30 +231,30 @@ describe('useApiResource', () => {
   });
 
   it('headers() expõe response headers (ex.: Link rel="next" para cursor pagination)', async () => {
-    const resource = env.create<readonly Edital[]>(() => '/api/editais');
+    const resource = env.create<readonly Edital[]>(() => '/api/selecao/editais');
     env.tickEffects();
 
-    env.controller.expectOne('/api/editais').flush(
+    env.controller.expectOne('/api/selecao/editais').flush(
       [{ id: 'edt-1', numero: 1 }],
       {
         status: 200,
         statusText: 'OK',
-        headers: { Link: '</api/editais?cursor=ABC>; rel="next"' },
+        headers: { Link: '</api/selecao/editais?cursor=ABC>; rel="next"' },
       },
     );
     await env.stable();
 
-    expect(resource.headers()?.get('Link')).toBe('</api/editais?cursor=ABC>; rel="next"');
+    expect(resource.headers()?.get('Link')).toBe('</api/selecao/editais?cursor=ABC>; rel="next"');
   });
 
   it('hasValue() reflete presença de envelope (loading=false e value definido)', async () => {
-    const resource = env.create<Edital>(() => '/api/editais/edt-1');
+    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
     env.tickEffects();
 
     expect(resource.hasValue()).toBe(false);
 
     env.controller
-      .expectOne('/api/editais/edt-1')
+      .expectOne('/api/selecao/editais/edt-1')
       .flush({ id: 'edt-1', numero: 5 }, { status: 200, statusText: 'OK' });
     await env.stable();
 
@@ -262,10 +262,10 @@ describe('useApiResource', () => {
   });
 
   it('422 com errors[] de validação preserva o array no problem()', async () => {
-    const resource = env.create<Edital>(() => '/api/editais');
+    const resource = env.create<Edital>(() => '/api/selecao/editais');
     env.tickEffects();
 
-    env.controller.expectOne('/api/editais').flush(
+    env.controller.expectOne('/api/selecao/editais').flush(
       {
         ...baseProblem,
         type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
@@ -320,7 +320,7 @@ describe('useApiResource — guarda contra Resource.value() throw em status erro
     const appRef = TestBed.inject(ApplicationRef);
     const injector = TestBed.inject(Injector);
     const resource = TestBed.runInInjectionContext(() =>
-      useApiResource<Edital>(() => '/api/editais/edt-1', { injector }),
+      useApiResource<Edital>(() => '/api/selecao/editais/edt-1', { injector }),
     );
     appRef.tick();
     await appRef.whenStable();

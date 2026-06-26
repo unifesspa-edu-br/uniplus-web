@@ -70,18 +70,18 @@ describe('LocaisOfertaApi', () => {
     ]);
   });
 
-  it('listar() faz GET /api/locais-oferta com Accept versionado', async () => {
+  it('listar() faz GET /api/configuracao/locais-oferta com Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 25 }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/locais-oferta`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`);
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('local-oferta', 1));
     req.flush([localSeed]);
     const result = (await promise) as ApiResult<readonly LocalOfertaDto[]>;
     expect(isApiOk(result)).toBe(true);
   });
 
-  it('criar() faz POST /api/admin/locais-oferta com Idempotency-Key', async () => {
+  it('criar() faz POST /api/configuracao/admin/locais-oferta com Idempotency-Key', async () => {
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/admin/locais-oferta`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(ID, { status: 201, statusText: 'Created' });
@@ -89,11 +89,11 @@ describe('LocaisOfertaApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
-  it('atualizar() faz PUT /api/admin/locais-oferta/{id}', async () => {
+  it('atualizar() faz PUT /api/configuracao/admin/locais-oferta/{id}', async () => {
     const promise = firstValueFrom(
       api.atualizar(ID, { ...criarCommand, id: ID }, withIdempotencyKey('k2')),
     );
-    const req = controller.expectOne(`${BASE}/api/admin/locais-oferta/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta/${ID}`);
     expect(req.request.method).toBe('PUT');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

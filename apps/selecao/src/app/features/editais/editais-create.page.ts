@@ -34,7 +34,7 @@ interface CriarEditalForm {
 }
 
 /**
- * Container (ADR-0017) da feature Editais — criação via POST `/api/editais`.
+ * Container (ADR-0017) da feature Editais — criação via POST `/api/selecao/editais`.
  *
  * **Form-scoped Idempotency-Key (ADR-0014):** a key é gerada uma vez na
  * inicialização do form (signal) e reusada em retries enquanto o submit

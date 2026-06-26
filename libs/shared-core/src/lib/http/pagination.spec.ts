@@ -42,7 +42,7 @@ describe('Cursor branded type (ADR-0015)', () => {
 describe('extractNextCursor — header Link → próximo cursor opaco', () => {
   describe('caminhos felizes', () => {
     it('rel="next" com cursor= no query string retorna Cursor', () => {
-      const linkHeader = '<https://api.uniplus.unifesspa.edu.br/api/editais?cursor=ABC123>; rel="next"';
+      const linkHeader = '<https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123>; rel="next"';
       expect(extractRequiredNextCursor(linkHeader)).toBe('ABC123');
     });
 
@@ -62,7 +62,7 @@ describe('extractNextCursor — header Link → próximo cursor opaco', () => {
     });
 
     it('preserva URI relativa quando servidor não emite host (RFC 5988 §5.4)', () => {
-      const linkHeader = '</api/editais?cursor=REL>; rel="next"';
+      const linkHeader = '</api/selecao/editais?cursor=REL>; rel="next"';
       expect(extractRequiredNextCursor(linkHeader)).toBe('REL');
     });
 
@@ -137,7 +137,7 @@ describe('extractPrevCursor — header Link → cursor da página anterior (ADR-
 
     it('extrai cursor de prev preservando os filtros na URI (q/tipo)', () => {
       const linkHeader =
-        '<https://api/unidades?q=ceps&tipo=3&cursor=PREV2&direction=prev>; rel="prev"';
+        '<https://api/organizacao/unidades?q=ceps&tipo=3&cursor=PREV2&direction=prev>; rel="prev"';
       expect(extractRequiredPrevCursor(linkHeader)).toBe('PREV2');
     });
 

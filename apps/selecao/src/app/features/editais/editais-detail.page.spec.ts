@@ -60,10 +60,10 @@ describe('EditaisDetailPage', () => {
     appRef.tick();
   };
 
-  it('carga inicial dispara GET /api/editais/{id} e popula data() do resource', async () => {
+  it('carga inicial dispara GET /api/selecao/editais/{id} e popula data() do resource', async () => {
     fixture.detectChanges();
 
-    const req = controller.expectOne(`${BASE}/api/editais/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/selecao/editais/${ID}`);
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe('application/vnd.uniplus.edital.v1+json');
     req.flush(editalSeed());
@@ -81,7 +81,7 @@ describe('EditaisDetailPage', () => {
   it('404 problem+json popula errorMessage via problem-i18n e mantém edital=null', async () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(
       {
         type: 'about:blank',
         title: 'Edital não encontrado',
@@ -103,7 +103,7 @@ describe('EditaisDetailPage', () => {
 
   it('podePublicar=true quando status === "Rascunho" (única transição permitida)', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
 
     expect(component['podePublicar']()).toBe(true);
@@ -111,7 +111,7 @@ describe('EditaisDetailPage', () => {
 
   it('podePublicar=false quando status diferente de "Rascunho"', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
     await propagate();
 
     expect(component['podePublicar']()).toBe(false);
@@ -121,12 +121,12 @@ describe('EditaisDetailPage', () => {
     fixture.detectChanges();
     // Cenário hipotético defensivo: backend (incorretamente) emite _links.publicar.
     // Frontend deve ignorar — gating é exclusivamente por status do recurso.
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush({
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush({
       ...editalSeed({ status: 'Publicado' }),
       _links: {
-        self: `/api/editais/${ID}`,
-        collection: '/api/editais',
-        publicar: `/api/editais/${ID}/publicar`,
+        self: `/api/selecao/editais/${ID}`,
+        collection: '/api/selecao/editais',
+        publicar: `/api/selecao/editais/${ID}/publicar`,
       },
     } as never);
     await propagate();
@@ -136,37 +136,37 @@ describe('EditaisDetailPage', () => {
 
   it('_links navigation (self/collection) presente em recurso single per ADR-0029', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush({
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush({
       ...editalSeed({ status: 'Rascunho' }),
       _links: {
-        self: `/api/editais/${ID}`,
-        collection: '/api/editais',
+        self: `/api/selecao/editais/${ID}`,
+        collection: '/api/selecao/editais',
       },
     });
     await propagate();
 
-    expect(component.edital()?._links?.['self']).toBe(`/api/editais/${ID}`);
-    expect(component.edital()?._links?.['collection']).toBe('/api/editais');
+    expect(component.edital()?._links?.['self']).toBe(`/api/selecao/editais/${ID}`);
+    expect(component.edital()?._links?.['collection']).toBe('/api/selecao/editais');
     // Action links nunca aparecem em _links (descobertos via OpenAPI).
     expect(component.edital()?._links?.['publicar']).toBeUndefined();
   });
 
   it('confirmarPublicacao envia POST com Idempotency-Key, recebe 204 e refetcha o edital', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
 
     component['confirmarPublicacao']();
     expect(component.submitting()).toBe(true);
 
-    const reqPublicar = controller.expectOne(`${BASE}/api/editais/${ID}/publicar`);
+    const reqPublicar = controller.expectOne(`${BASE}/api/selecao/editais/${ID}/publicar`);
     expect(reqPublicar.request.method).toBe('POST');
     expect(reqPublicar.request.headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/);
     reqPublicar.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
     // Refetch via editalResource.reload() — dispara novo GET preservando URL atual.
-    const reqRefetch = controller.expectOne(`${BASE}/api/editais/${ID}`);
+    const reqRefetch = controller.expectOne(`${BASE}/api/selecao/editais/${ID}`);
     reqRefetch.flush(editalSeed({ status: 'Publicado' }));
     await propagate();
 
@@ -177,11 +177,11 @@ describe('EditaisDetailPage', () => {
 
   it('confirmarPublicacao com 422 ja_publicado popula errorMessage e NÃO refetcha', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
 
     component['confirmarPublicacao']();
-    controller.expectOne(`${BASE}/api/editais/${ID}/publicar`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}/publicar`).flush(
       {
         type: 'about:blank',
         title: 'Edital já publicado',
@@ -204,7 +204,7 @@ describe('EditaisDetailPage', () => {
 
   it('botão Publicar aparece quando podePublicar=true e dispara dialog', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
     fixture.detectChanges();
 
@@ -218,7 +218,7 @@ describe('EditaisDetailPage', () => {
 
   it('botão Publicar NÃO aparece quando podePublicar=false', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
     await propagate();
     fixture.detectChanges();
 
@@ -228,7 +228,7 @@ describe('EditaisDetailPage', () => {
 
   it('mudança no input editalId cancela GET stale e dispara nova request (httpResource race-cancellation nativa)', async () => {
     fixture.detectChanges();
-    const reqId1 = controller.expectOne(`${BASE}/api/editais/${ID}`);
+    const reqId1 = controller.expectOne(`${BASE}/api/selecao/editais/${ID}`);
     expect(reqId1.cancelled).toBe(false);
 
     // Usuário navega antes do id1 retornar — Angular reusa a instância do componente.
@@ -244,7 +244,7 @@ describe('EditaisDetailPage', () => {
     // dependências reativas mudam.
     expect(reqId1.cancelled).toBe(true);
 
-    const reqId2 = controller.expectOne(`${BASE}/api/editais/${ID_NOVO}`);
+    const reqId2 = controller.expectOne(`${BASE}/api/selecao/editais/${ID_NOVO}`);
     reqId2.flush(editalSeed({ id: ID_NOVO, titulo: 'PSE 2027' }));
     await propagate();
 
@@ -254,7 +254,7 @@ describe('EditaisDetailPage', () => {
 
   it('confirmarPublicacao ignora chamada dupla enquanto submitting=true (guard de double-submit)', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
 
     component['confirmarPublicacao']();
@@ -264,11 +264,11 @@ describe('EditaisDetailPage', () => {
     // Deve haver exatamente 1 POST em voo, não 2 — caso contrário o
     // expectOne lançaria "Match URL ... found 2 requests" e o teste falharia.
     controller
-      .expectOne(`${BASE}/api/editais/${ID}/publicar`)
+      .expectOne(`${BASE}/api/selecao/editais/${ID}/publicar`)
       .flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
     await propagate();
 
     expect(component.submitting()).toBe(false);
@@ -277,16 +277,16 @@ describe('EditaisDetailPage', () => {
 
   it('mudança no input editalId zera mensagemSucesso e errorMessage do publish anterior', async () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Rascunho' }));
     await propagate();
 
     // Simula publish bem-sucedido — popula mensagemSucesso.
     component['confirmarPublicacao']();
     controller
-      .expectOne(`${BASE}/api/editais/${ID}/publicar`)
+      .expectOne(`${BASE}/api/selecao/editais/${ID}/publicar`)
       .flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
-    controller.expectOne(`${BASE}/api/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
+    controller.expectOne(`${BASE}/api/selecao/editais/${ID}`).flush(editalSeed({ status: 'Publicado' }));
     await propagate();
     expect(component.mensagemSucesso()).toBe('Edital publicado com sucesso.');
 
@@ -301,7 +301,7 @@ describe('EditaisDetailPage', () => {
     expect(component.loading()).toBe(true);
 
     controller
-      .expectOne(`${BASE}/api/editais/${ID_NOVO}`)
+      .expectOne(`${BASE}/api/selecao/editais/${ID_NOVO}`)
       .flush(editalSeed({ id: ID_NOVO, titulo: 'PSE 2027' }));
     await propagate();
     expect(component.edital()?.titulo).toBe('PSE 2027');

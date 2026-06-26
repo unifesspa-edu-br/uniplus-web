@@ -45,11 +45,11 @@ describe('EditaisApi', () => {
 
   afterEach(() => controller.verify());
 
-  it('listar() sem cursor faz GET /api/editais sem query params, com vendor MIME v1', async () => {
+  it('listar() sem cursor faz GET /api/selecao/editais sem query params, com vendor MIME v1', async () => {
     const promise = firstValueFrom(api.listar());
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.keys().length === 0,
+      (request) => request.url === `${BASE}/api/selecao/editais` && request.params.keys().length === 0,
     );
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
@@ -71,7 +71,7 @@ describe('EditaisApi', () => {
     const promise = firstValueFrom(api.listar(cursor));
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
+      (request) => request.url === `${BASE}/api/selecao/editais` && request.params.has('cursor'),
     );
     expect(req.request.params.get('cursor')).toBe('opaque-cursor-AES-GCM-blob');
     expect(req.request.params.has('limit')).toBe(false);
@@ -87,7 +87,7 @@ describe('EditaisApi', () => {
     const promise = firstValueFrom(api.listar(cursor, 'next'));
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
+      (request) => request.url === `${BASE}/api/selecao/editais` && request.params.has('cursor'),
     );
     expect(req.request.params.get('cursor')).toBe('next-page-cursor');
     expect(req.request.params.get('direction')).toBe('next');
@@ -103,7 +103,7 @@ describe('EditaisApi', () => {
     const promise = firstValueFrom(api.listar(cursor, 'prev'));
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.has('cursor'),
+      (request) => request.url === `${BASE}/api/selecao/editais` && request.params.has('cursor'),
     );
     expect(req.request.params.get('cursor')).toBe('prev-page-cursor');
     expect(req.request.params.get('direction')).toBe('prev');
@@ -116,7 +116,7 @@ describe('EditaisApi', () => {
     const promise = firstValueFrom(api.listar(undefined, 'next'));
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && request.params.keys().length === 0,
+      (request) => request.url === `${BASE}/api/selecao/editais` && request.params.keys().length === 0,
     );
     expect(req.request.params.has('cursor')).toBe(false);
     expect(req.request.params.has('direction')).toBe(false);
@@ -125,12 +125,12 @@ describe('EditaisApi', () => {
     await promise;
   });
 
-  it('obter() faz GET /api/editais/{id} com encoding seguro do path param', async () => {
+  it('obter() faz GET /api/selecao/editais/{id} com encoding seguro do path param', async () => {
     const id = 'edt with space/01';
 
     const promise = firstValueFrom(api.obter(id));
 
-    const req = controller.expectOne(`${BASE}/api/editais/${encodeURIComponent(id)}`);
+    const req = controller.expectOne(`${BASE}/api/selecao/editais/${encodeURIComponent(id)}`);
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('edital', 1));
     req.flush(editalSeed);
@@ -145,7 +145,7 @@ describe('EditaisApi', () => {
   it('obter() entrega ApiFailure quando o backend devolve 404 problem+json', async () => {
     const promise = firstValueFrom(api.obter('inexistente'));
 
-    controller.expectOne(`${BASE}/api/editais/inexistente`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais/inexistente`).flush(
       {
         type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.selecao.edital.nao_encontrado',
         title: 'Edital não encontrado',
@@ -177,11 +177,11 @@ describe('EditaisApi', () => {
       maximoOpcoesCurso: 2,
     };
 
-    it('faz POST /api/editais com Idempotency-Key + Accept: application/json e devolve 201 com o ID', async () => {
+    it('faz POST /api/selecao/editais com Idempotency-Key + Accept: application/json e devolve 201 com o ID', async () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a8057';
       const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
 
-      const req = controller.expectOne(`${BASE}/api/editais`);
+      const req = controller.expectOne(`${BASE}/api/selecao/editais`);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('Idempotency-Key')).toBe(key);
       // Accept fixado evita que backend devolva text/plain (que quebraria
@@ -191,7 +191,7 @@ describe('EditaisApi', () => {
       req.flush('01960000-0000-7000-0000-000000000099', {
         status: 201,
         statusText: 'Created',
-        headers: { Location: '/api/editais/01960000-0000-7000-0000-000000000099' },
+        headers: { Location: '/api/selecao/editais/01960000-0000-7000-0000-000000000099' },
       });
 
       const result = (await promise) as ApiResult<string>;
@@ -199,7 +199,7 @@ describe('EditaisApi', () => {
       if (result.ok) {
         expect(result.data).toBe('01960000-0000-7000-0000-000000000099');
         expect(result.headers.get('Location')).toBe(
-          '/api/editais/01960000-0000-7000-0000-000000000099',
+          '/api/selecao/editais/01960000-0000-7000-0000-000000000099',
         );
       }
     });
@@ -208,7 +208,7 @@ describe('EditaisApi', () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a8058';
       const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
 
-      controller.expectOne(`${BASE}/api/editais`).flush(
+      controller.expectOne(`${BASE}/api/selecao/editais`).flush(
         {
           type: 'about:blank',
           title: 'Falha de validação',
@@ -241,7 +241,7 @@ describe('EditaisApi', () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a8059';
       const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
 
-      controller.expectOne(`${BASE}/api/editais`).flush(
+      controller.expectOne(`${BASE}/api/selecao/editais`).flush(
         {
           type: 'about:blank',
           title: 'Edital já existente',
@@ -269,7 +269,7 @@ describe('EditaisApi', () => {
 
       const promise = firstValueFrom(api.criar(comando, withIdempotencyKey(key)));
 
-      const req = controller.expectOne(`${BASE}/api/editais`);
+      const req = controller.expectOne(`${BASE}/api/selecao/editais`);
       expect(req.request.headers.get('Idempotency-Key')).toBe(key);
       req.flush('01960000-0000-7000-0000-000000000099', {
         status: 201,
@@ -288,11 +288,11 @@ describe('EditaisApi', () => {
   describe('publicar()', () => {
     const ID = '01960000-0000-7000-0000-000000000099';
 
-    it('faz POST /api/editais/{id}/publicar com Idempotency-Key + vendor MIME v1 e devolve 204 ApiResult.ok', async () => {
+    it('faz POST /api/selecao/editais/{id}/publicar com Idempotency-Key + vendor MIME v1 e devolve 204 ApiResult.ok', async () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a805b';
       const promise = firstValueFrom(api.publicar(ID, withIdempotencyKey(key)));
 
-      const req = controller.expectOne(`${BASE}/api/editais/${ID}/publicar`);
+      const req = controller.expectOne(`${BASE}/api/selecao/editais/${ID}/publicar`);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('Idempotency-Key')).toBe(key);
       // Vendor MIME mantido por simetria com obter()/listar() (ADR-0028).
@@ -311,7 +311,7 @@ describe('EditaisApi', () => {
       const key = '01890a5d-ac96-774b-bcce-b302099a805c';
       const promise = firstValueFrom(api.publicar(ID, withIdempotencyKey(key)));
 
-      controller.expectOne(`${BASE}/api/editais/${ID}/publicar`).flush(
+      controller.expectOne(`${BASE}/api/selecao/editais/${ID}/publicar`).flush(
         {
           type: 'about:blank',
           title: 'Edital já publicado',
@@ -339,7 +339,7 @@ describe('EditaisApi', () => {
       firstValueFrom(api.publicar(idComEspaco, withIdempotencyKey(key)));
 
       const req = controller.expectOne(
-        `${BASE}/api/editais/${encodeURIComponent(idComEspaco)}/publicar`,
+        `${BASE}/api/selecao/editais/${encodeURIComponent(idComEspaco)}/publicar`,
       );
       req.flush(null, { status: 204, statusText: 'No Content' });
     });

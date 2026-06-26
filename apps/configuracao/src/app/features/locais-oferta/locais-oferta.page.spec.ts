@@ -68,14 +68,14 @@ describe('LocaisOfertaPage', () => {
   };
 
   async function flushLista(itens: readonly LocalOfertaDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/locais-oferta`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`);
     req.flush(itens);
     await propagate();
   }
 
   async function flushCampiLookup(): Promise<void> {
     await propagate();
-    controller.expectOne((r) => r.url === `${BASE}/api/campi`).flush([]);
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`).flush([]);
     await propagate();
   }
 
@@ -101,7 +101,7 @@ describe('LocaisOfertaPage', () => {
 
     component['salvar']();
 
-    const post = controller.expectOne(`${BASE}/api/admin/locais-oferta`);
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toMatchObject({
       tipo: 'poloEad',
@@ -119,7 +119,7 @@ describe('LocaisOfertaPage', () => {
     const localVinculado: LocalOfertaDto = { ...localSeed, campusResponsavelId: 'cmp1' };
     await flushLista([localVinculado]);
     await propagate();
-    controller.expectOne((r) => r.url === `${BASE}/api/campi`).flush([
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`).flush([
       {
         id: 'cmp1',
         sigla: 'MAB',
@@ -140,7 +140,7 @@ describe('LocaisOfertaPage', () => {
     await flushCampiLookup();
     // sem tipo nem cidade
     component['salvar']();
-    controller.expectNone(`${BASE}/api/admin/locais-oferta`);
+    controller.expectNone(`${BASE}/api/configuracao/admin/locais-oferta`);
     expect(component['enderecoErro']()).toContain('cidade');
   });
 });

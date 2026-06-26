@@ -297,7 +297,7 @@ export class CampiPage {
   >(undefined);
 
   private readonly lista = useApiResource<readonly CampusDto[]>(() => ({
-    url: `${this.basePath}/api/campi`,
+    url: `${this.basePath}/api/configuracao/campi`,
     params: this.montarParams(),
     context: withVendorMime('campus', 1),
   }));

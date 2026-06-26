@@ -197,7 +197,7 @@ async function mockUnidadesApi(page: Page): Promise<void> {
   };
   let firstCreateKey: string | undefined;
 
-  await page.route(/\/api\/admin\/unidades$/, async (route, request) => {
+  await page.route(/\/api\/organizacao\/admin\/unidades$/, async (route, request) => {
     if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: corsHeaders });
       return;
@@ -256,7 +256,7 @@ async function mockUnidadesApi(page: Page): Promise<void> {
     });
   });
 
-  await page.route(/\/api\/unidades(\?.*)?$/, async (route, request) => {
+  await page.route(/\/api\/organizacao\/unidades(\?.*)?$/, async (route, request) => {
     if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: corsHeaders });
       return;

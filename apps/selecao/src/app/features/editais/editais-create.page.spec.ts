@@ -58,7 +58,7 @@ describe('EditaisCreatePage', () => {
   it('form invalid não dispara POST e marca controls como touched', () => {
     component['enviar']();
 
-    controller.expectNone(`${BASE}/api/editais`);
+    controller.expectNone(`${BASE}/api/selecao/editais`);
     expect(component.form.controls.titulo.touched).toBe(true);
     expect(component.form.controls.numeroEdital.touched).toBe(true);
   });
@@ -72,7 +72,7 @@ describe('EditaisCreatePage', () => {
 
     expect(component.submitting()).toBe(true);
 
-    const req = controller.expectOne(`${BASE}/api/editais`);
+    const req = controller.expectOne(`${BASE}/api/selecao/editais`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe(keyOriginal);
     expect(req.request.body).toEqual(COMANDO_VALIDO);
@@ -92,7 +92,7 @@ describe('EditaisCreatePage', () => {
 
     component['enviar']();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Falha de validação',
@@ -127,7 +127,7 @@ describe('EditaisCreatePage', () => {
     preencherFormComValido();
     component['enviar']();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Falha de validação',
@@ -150,7 +150,7 @@ describe('EditaisCreatePage', () => {
     preencherFormComValido();
     component['enviar']();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Edital já existente',
@@ -174,7 +174,7 @@ describe('EditaisCreatePage', () => {
     const keyOriginal = component.idempotencyKeyAtual();
 
     component['enviar']();
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Falha de validação',
@@ -203,7 +203,7 @@ describe('EditaisCreatePage', () => {
 
     // Segundo submit: form-scoped key preservada — backend reconhece como replay legítimo.
     component['enviar']();
-    const reqRetry = controller.expectOne(`${BASE}/api/editais`);
+    const reqRetry = controller.expectOne(`${BASE}/api/selecao/editais`);
     expect(reqRetry.request.headers.get('Idempotency-Key')).toBe(keyOriginal);
     reqRetry.flush('id-novo-pos-correcao', { status: 201, statusText: 'Created' });
 
@@ -215,7 +215,7 @@ describe('EditaisCreatePage', () => {
     const keyOriginal = component.idempotencyKeyAtual();
 
     component['enviar']();
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Edital já existente',
@@ -234,7 +234,7 @@ describe('EditaisCreatePage', () => {
 
     // Retry: mesma key viaja de novo
     component['enviar']();
-    const reqRetry = controller.expectOne(`${BASE}/api/editais`);
+    const reqRetry = controller.expectOne(`${BASE}/api/selecao/editais`);
     expect(reqRetry.request.headers.get('Idempotency-Key')).toBe(keyOriginal);
     reqRetry.flush('id-novo', { status: 201, statusText: 'Created' });
   });
@@ -247,7 +247,7 @@ describe('EditaisCreatePage', () => {
     const botao = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
     expect(botao.disabled).toBe(true);
 
-    controller.expectOne(`${BASE}/api/editais`).flush('id', { status: 201, statusText: 'Created' });
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush('id', { status: 201, statusText: 'Created' });
   });
 
   // Cobre o caminho real do usuário: preencher inputs via DOM (input event)
@@ -282,7 +282,7 @@ describe('EditaisCreatePage', () => {
 
     component['enviar']();
 
-    const req = controller.expectOne(`${BASE}/api/editais`);
+    const req = controller.expectOne(`${BASE}/api/selecao/editais`);
     expect(req.request.body).toEqual({
       numeroEdital: 42,
       anoEdital: 2026,

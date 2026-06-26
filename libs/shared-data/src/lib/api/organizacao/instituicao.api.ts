@@ -22,7 +22,7 @@ export type CidadeReferenciaInput = components['schemas']['CidadeReferenciaInput
  * Cliente Angular standalone do recurso Instituição (módulo Organização
  * Institucional). A Instituição é **singleton** (ADR-0055): não há listagem nem
  * seletor — há a Instituição, criada uma vez e editada ao longo do tempo. Por
- * isso `obter()` não recebe `id` (lê `GET /api/instituicao`) e devolve 404
+ * isso `obter()` não recebe `id` (lê `GET /api/organizacao/instituicao`) e devolve 404
  * quando nenhuma foi cadastrada ainda.
  *
  * API thin (ADR-0013): tipos vêm do `schema.ts` gerado, a resposta é envelopada
@@ -37,19 +37,19 @@ export class InstituicaoApi {
   private readonly basePath = inject(ORGANIZACAO_BASE_PATH);
 
   /**
-   * GET `/api/instituicao` — obtém o cabeçalho institucional (singleton). O
+   * GET `/api/organizacao/instituicao` — obtém o cabeçalho institucional (singleton). O
    * `apiResultInterceptor` envelopa o 404 (nenhuma Instituição viva) como
    * `ApiFailure` com `status: 404` — não lança; o caller decide o modo de tela
    * (leitura vs criação) lendo `result.status`.
    */
   obter(): Observable<ApiResult<InstituicaoDto>> {
-    return this.http.get<ApiResult<InstituicaoDto>>(`${this.basePath}/api/instituicao`, {
+    return this.http.get<ApiResult<InstituicaoDto>>(`${this.basePath}/api/organizacao/instituicao`, {
       context: withVendorMime('instituicao', 1),
     });
   }
 
   /**
-   * POST `/api/admin/instituicao` — cria a Instituição. Restrito a
+   * POST `/api/organizacao/admin/instituicao` — cria a Instituição. Restrito a
    * `plataforma-admin`. Idempotency-Key obrigatório (ADR-0027) — declarado via
    * `withIdempotencyKey(key)` no `context`. Retorna 409
    * (`uniplus.organizacao.instituicao.ja_existe`) se já existe uma viva
@@ -57,14 +57,14 @@ export class InstituicaoApi {
    * em `application/json` porque o contrato também declara `text/plain` para 201.
    */
   criar(command: CriarInstituicaoCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/admin/instituicao`, command, {
+    return this.http.post<ApiResult<string>>(`${this.basePath}/api/organizacao/admin/instituicao`, command, {
       context,
       headers: new HttpHeaders({ Accept: 'application/json' }),
     });
   }
 
   /**
-   * PUT `/api/admin/instituicao/{id}` — atualiza a Instituição existente.
+   * PUT `/api/organizacao/admin/instituicao/{id}` — atualiza a Instituição existente.
    * Restrito a `plataforma-admin`. Idempotency-Key obrigatório (ADR-0027).
    * Resposta 204 No Content em sucesso.
    */
@@ -74,21 +74,21 @@ export class InstituicaoApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/admin/instituicao/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/organizacao/admin/instituicao/${encodeURIComponent(id)}`,
       command,
       { context },
     );
   }
 
   /**
-   * DELETE `/api/admin/instituicao/{id}` — remoção lógica (soft-delete) da
+   * DELETE `/api/organizacao/admin/instituicao/{id}` — remoção lógica (soft-delete) da
    * Instituição. Restrito a `plataforma-admin`. Sem Idempotency-Key (o backend
    * não exige o header). Resposta 204 No Content; libera o cadastro de uma nova
    * Instituição.
    */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/admin/instituicao/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/organizacao/admin/instituicao/${encodeURIComponent(id)}`,
     );
   }
 }
