@@ -50,7 +50,7 @@ export class LocaisOfertaApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  /** GET `/api/locais-oferta` — lista paginada por cursor (ADR-0026). */
+  /** GET `/api/configuracao/locais-oferta` — lista paginada por cursor (ADR-0026). */
   listar(query: LocaisOfertaQuery = {}): Observable<ApiResult<readonly LocalOfertaDto[]>> {
     let params = new HttpParams();
     if (query.cursor !== undefined) {
@@ -59,44 +59,44 @@ export class LocaisOfertaApi {
       params = params.set('limit', String(query.limit ?? 100));
     }
     return this.http.get<ApiResult<readonly LocalOfertaDto[]>>(
-      `${this.basePath}/api/locais-oferta`,
+      `${this.basePath}/api/configuracao/locais-oferta`,
       { params, context: withVendorMime('local-oferta', 1) },
     );
   }
 
-  /** GET `/api/locais-oferta/{id}` — detalhe de um Local de Oferta. */
+  /** GET `/api/configuracao/locais-oferta/{id}` — detalhe de um Local de Oferta. */
   obter(id: string): Observable<ApiResult<LocalOfertaDto>> {
     return this.http.get<ApiResult<LocalOfertaDto>>(
-      `${this.basePath}/api/locais-oferta/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/locais-oferta/${encodeURIComponent(id)}`,
       { context: withVendorMime('local-oferta', 1) },
     );
   }
 
-  /** POST `/api/admin/locais-oferta` — cria. Idempotency-Key obrigatório (ADR-0027). */
+  /** POST `/api/configuracao/admin/locais-oferta` — cria. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarLocalOfertaCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/admin/locais-oferta`, command, {
+    return this.http.post<ApiResult<string>>(`${this.basePath}/api/configuracao/admin/locais-oferta`, command, {
       context,
       headers: new HttpHeaders({ Accept: 'application/json' }),
     });
   }
 
-  /** PUT `/api/admin/locais-oferta/{id}` — atualiza. */
+  /** PUT `/api/configuracao/admin/locais-oferta/{id}` — atualiza. */
   atualizar(
     id: string,
     command: AtualizarLocalOfertaCommand,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/admin/locais-oferta/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/locais-oferta/${encodeURIComponent(id)}`,
       command,
       { context },
     );
   }
 
-  /** DELETE `/api/admin/locais-oferta/{id}` — remoção lógica (soft-delete). */
+  /** DELETE `/api/configuracao/admin/locais-oferta/{id}` — remoção lógica (soft-delete). */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/admin/locais-oferta/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/locais-oferta/${encodeURIComponent(id)}`,
     );
   }
 }

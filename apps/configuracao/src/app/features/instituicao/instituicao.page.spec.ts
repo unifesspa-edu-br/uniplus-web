@@ -99,7 +99,7 @@ describe('InstituicaoPage', () => {
   };
 
   function expectObter(): TestRequest {
-    const req = controller.expectOne(`${BASE}/api/instituicao`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/instituicao`);
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('instituicao', 1));
     return req;
@@ -108,7 +108,7 @@ describe('InstituicaoPage', () => {
   function expectReitorias(): TestRequest {
     return controller.expectOne(
       (r: HttpRequest<unknown>) =>
-        r.url === `${BASE}/api/unidades` && r.method === 'GET' && r.params.get('tipo') === '1',
+        r.url === `${BASE}/api/organizacao/unidades` && r.method === 'GET' && r.params.get('tipo') === '1',
     );
   }
 
@@ -184,7 +184,7 @@ describe('InstituicaoPage', () => {
     await propagate();
 
     // Nenhuma request de POST disparada (form inválido).
-    controller.expectNone(`${BASE}/api/admin/instituicao`);
+    controller.expectNone(`${BASE}/api/organizacao/admin/instituicao`);
     expect(component.erroDoCampo('nome')).toBe('Campo obrigatório.');
     expect(component.erroDoCampo('codigoEmec')).toBe('Campo obrigatório.');
     expect(component.drawerAberto()).toBe(true);
@@ -197,7 +197,7 @@ describe('InstituicaoPage', () => {
     component.salvar();
     await propagate();
 
-    const req = controller.expectOne(`${BASE}/api/admin/instituicao`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
     expect(req.request.method).toBe('POST');
     req.flush(
       problem(409, 'uniplus.organizacao.instituicao.ja_existe', 'Já existe'),
@@ -216,7 +216,7 @@ describe('InstituicaoPage', () => {
     component.salvar();
     await propagate();
 
-    const req = controller.expectOne(`${BASE}/api/admin/instituicao/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
     expect(req.request.method).toBe('PUT');
     req.flush(
       problem(
@@ -245,7 +245,7 @@ describe('InstituicaoPage', () => {
     component.salvar();
     await propagate();
 
-    const req = controller.expectOne(`${BASE}/api/admin/instituicao`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe(chave);
     expect(req.request.body).toMatchObject({
@@ -277,7 +277,7 @@ describe('InstituicaoPage', () => {
     component.removerConfirmado();
     await propagate();
 
-    const req = controller.expectOne(`${BASE}/api/admin/instituicao/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
@@ -295,7 +295,7 @@ describe('InstituicaoPage', () => {
     await propagate();
 
     // DELETE em voo (não flushado): removendo() = true.
-    const del = controller.expectOne(`${BASE}/api/admin/instituicao/${ID}`);
+    const del = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
     expect(del.request.method).toBe('DELETE');
 
     // Tentar salvar nessa janela é no-op (guard de corrida): retorna antes de
@@ -317,7 +317,7 @@ describe('InstituicaoPage', () => {
     component.salvar();
     await propagate();
 
-    const req = controller.expectOne(`${BASE}/api/admin/instituicao`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
     req.flush(
       JSON.stringify({
         type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',

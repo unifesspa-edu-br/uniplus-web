@@ -34,7 +34,7 @@ export class ReservaDemograficaApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  /** GET `/api/referencias-reserva-demografica` — lista (ativas) por cursor. */
+  /** GET `/api/configuracao/referencias-reserva-demografica` — lista (ativas) por cursor. */
   listar(
     query: ReservaDemograficaQuery = {},
   ): Observable<ApiResult<readonly ReferenciaReservaDemograficaDto[]>> {
@@ -45,48 +45,48 @@ export class ReservaDemograficaApi {
       params = params.set('limit', String(query.limit ?? 100));
     }
     return this.http.get<ApiResult<readonly ReferenciaReservaDemograficaDto[]>>(
-      `${this.basePath}/api/referencias-reserva-demografica`,
+      `${this.basePath}/api/configuracao/referencias-reserva-demografica`,
       { params, context: withVendorMime('referencia-reserva-demografica', 1) },
     );
   }
 
-  /** GET `/api/referencias-reserva-demografica/{id}` — detalhe. */
+  /** GET `/api/configuracao/referencias-reserva-demografica/{id}` — detalhe. */
   obter(id: string): Observable<ApiResult<ReferenciaReservaDemograficaDto>> {
     return this.http.get<ApiResult<ReferenciaReservaDemograficaDto>>(
-      `${this.basePath}/api/referencias-reserva-demografica/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/referencias-reserva-demografica/${encodeURIComponent(id)}`,
       { context: withVendorMime('referencia-reserva-demografica', 1) },
     );
   }
 
-  /** POST `/api/admin/referencias-reserva-demografica` — cria. Idempotency-Key (ADR-0027). */
+  /** POST `/api/configuracao/admin/referencias-reserva-demografica` — cria. Idempotency-Key (ADR-0027). */
   criar(
     command: CriarReferenciaReservaDemograficaCommand,
     context: HttpContext,
   ): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(
-      `${this.basePath}/api/admin/referencias-reserva-demografica`,
+      `${this.basePath}/api/configuracao/admin/referencias-reserva-demografica`,
       command,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 
-  /** PUT `/api/admin/referencias-reserva-demografica/{id}` — atualiza. */
+  /** PUT `/api/configuracao/admin/referencias-reserva-demografica/{id}` — atualiza. */
   atualizar(
     id: string,
     command: AtualizarReferenciaReservaDemograficaCommand,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/admin/referencias-reserva-demografica/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/referencias-reserva-demografica/${encodeURIComponent(id)}`,
       command,
       { context },
     );
   }
 
-  /** DELETE `/api/admin/referencias-reserva-demografica/{id}` — soft-delete. */
+  /** DELETE `/api/configuracao/admin/referencias-reserva-demografica/{id}` — soft-delete. */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/admin/referencias-reserva-demografica/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/referencias-reserva-demografica/${encodeURIComponent(id)}`,
     );
   }
 }

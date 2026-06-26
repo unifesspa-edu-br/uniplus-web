@@ -21,8 +21,8 @@ const EDITAIS = [
     bonusRegionalHabilitado: false,
     criadoEm: '2026-05-30T00:00:00Z',
     _links: {
-      self: { href: '/api/editais/01960000-0000-7000-0000-000000000377' },
-      collection: { href: '/api/editais' },
+      self: { href: '/api/selecao/editais/01960000-0000-7000-0000-000000000377' },
+      collection: { href: '/api/selecao/editais' },
     },
   },
 ] as const;
@@ -32,7 +32,7 @@ test.describe('Seleção — gate AAA aplicável @aaa', () => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
     await installA11yPreference(page, theme, fontMode);
 
-    await page.route(/\/api\/editais(\?.*)?$/, async (route, request) => {
+    await page.route(/\/api\/selecao\/editais(\?.*)?$/, async (route, request) => {
       if (request.method() !== 'GET') {
         await route.continue();
         return;

@@ -27,7 +27,7 @@ export type EditalDto = components['schemas']['EditalDto'];
 export type CriarEditalCommand = components['schemas']['CriarEditalCommand'];
 
 /**
- * Cliente Angular standalone do recurso `/api/editais` (módulo Seleção).
+ * Cliente Angular standalone do recurso `/api/selecao/editais` (módulo Seleção).
  * API thin (ADR-0013): tipos vêm do `schema.ts` gerado, response é
  * envelopada em `ApiResult<T>` pelo `apiResultInterceptor` upstream
  * (ADR-0011), Bearer é injetado pelo `tokenInterceptor` (ADR-0009),
@@ -43,7 +43,7 @@ export class EditaisApi {
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
-   * GET `/api/editais` — lista paginada por cursor opaco bidirecional
+   * GET `/api/selecao/editais` — lista paginada por cursor opaco bidirecional
    * (ADR-0026 + ADR-0031 + ADR-0089 do `uniplus-api`; consumer client-side
    * via ADR-0015).
    *
@@ -72,22 +72,22 @@ export class EditaisApi {
         params = params.set('direction', direction);
       }
     }
-    return this.http.get<ApiResult<readonly EditalDto[]>>(`${this.basePath}/api/editais`, {
+    return this.http.get<ApiResult<readonly EditalDto[]>>(`${this.basePath}/api/selecao/editais`, {
       context: withVendorMime('edital', 1),
       params,
     });
   }
 
-  /** GET `/api/editais/{id}` — detalhe de um edital. */
+  /** GET `/api/selecao/editais/{id}` — detalhe de um edital. */
   obter(id: string): Observable<ApiResult<EditalDto>> {
     return this.http.get<ApiResult<EditalDto>>(
-      `${this.basePath}/api/editais/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/selecao/editais/${encodeURIComponent(id)}`,
       { context: withVendorMime('edital', 1) },
     );
   }
 
   /**
-   * POST `/api/editais` — cria um novo edital.
+   * POST `/api/selecao/editais` — cria um novo edital.
    *
    * **Header obrigatório:** `Idempotency-Key` (ADR-0027 do `uniplus-api`,
    * ADR-0014 do consumer). O caller declara via `withIdempotencyKey(key)` ou
@@ -107,14 +107,14 @@ export class EditaisApi {
    * chega como `string` JSON-decodificada.
    */
   criar(command: CriarEditalCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/editais`, command, {
+    return this.http.post<ApiResult<string>>(`${this.basePath}/api/selecao/editais`, command, {
       context,
       headers: new HttpHeaders({ Accept: 'application/json' }),
     });
   }
 
   /**
-   * POST `/api/editais/{id}/publicar` — publica um edital em rascunho.
+   * POST `/api/selecao/editais/{id}/publicar` — publica um edital em rascunho.
    *
    * **Header obrigatório:** `Idempotency-Key` (ADR-0027 do `uniplus-api`).
    * O caller declara via `withIdempotencyKey(key)` no `HttpContext`; este
@@ -130,7 +130,7 @@ export class EditaisApi {
     const idempotencyKeyValue = context.get(IDEMPOTENCY_KEY_TOKEN);
     const ctxComposto = withVendorMime('edital', 1).set(IDEMPOTENCY_KEY_TOKEN, idempotencyKeyValue);
     return this.http.post<ApiResult<void>>(
-      `${this.basePath}/api/editais/${encodeURIComponent(id)}/publicar`,
+      `${this.basePath}/api/selecao/editais/${encodeURIComponent(id)}/publicar`,
       null,
       { context: ctxComposto },
     );

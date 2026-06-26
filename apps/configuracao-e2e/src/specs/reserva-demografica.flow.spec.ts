@@ -41,13 +41,13 @@ async function mockApi(
   capturado: { post?: unknown; deleted?: boolean },
   lista: readonly unknown[],
 ): Promise<void> {
-  await page.route(/\/api\/admin\/referencias-reserva-demografica\/[^/]+$/, async (route) => {
+  await page.route(/\/api\/configuracao\/admin\/referencias-reserva-demografica\/[^/]+$/, async (route) => {
     if (route.request().method() === 'DELETE') {
       capturado.deleted = true;
     }
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
   });
-  await page.route(/\/api\/admin\/referencias-reserva-demografica$/, async (route) => {
+  await page.route(/\/api\/configuracao\/admin\/referencias-reserva-demografica$/, async (route) => {
     if (route.request().method() === 'POST') {
       capturado.post = route.request().postDataJSON();
     }
@@ -58,7 +58,7 @@ async function mockApi(
       body: '"new-id"',
     });
   });
-  await page.route(/\/api\/referencias-reserva-demografica(\?.*)?$/, (route) =>
+  await page.route(/\/api\/configuracao\/referencias-reserva-demografica(\?.*)?$/, (route) =>
     jsonRoute(route, lista),
   );
 }

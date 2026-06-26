@@ -41,7 +41,7 @@ const EDITAL_OK = {
   bonusRegionalHabilitado: false,
   criadoEm: '2026-05-10T00:00:00Z',
   _links: {
-    self: { href: '/api/editais/01960000-0000-7000-0000-000000000111' },
+    self: { href: '/api/selecao/editais/01960000-0000-7000-0000-000000000111' },
   },
 } as const;
 
@@ -50,9 +50,9 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
     test('mostra toast com trace-id, banner inline com mesma mensagem; retry recarrega para 200', async ({
       page,
     }) => {
-      // 1ª chamada GET /api/editais → 503 (problem+json); 2ª → 200 com 1 edital.
+      // 1ª chamada GET /api/selecao/editais → 503 (problem+json); 2ª → 200 com 1 edital.
       let getListCalls = 0;
-      await page.route(/\/api\/editais(\?[^/]*)?$/, async (route, request) => {
+      await page.route(/\/api\/selecao\/editais(\?[^/]*)?$/, async (route, request) => {
         if (request.method() !== 'GET') {
           await route.continue();
           return;
@@ -121,7 +121,7 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
       // chromium-only (config), então grantPermissions é seguro aqui.
       await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-      await page.route(/\/api\/editais(\?[^/]*)?$/, async (route, request) => {
+      await page.route(/\/api\/selecao\/editais(\?[^/]*)?$/, async (route, request) => {
         if (request.method() !== 'GET') {
           await route.continue();
           return;
@@ -152,11 +152,11 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
     });
   });
 
-  test.describe('CA-08.2 POST /api/editais 503 → toast persistente + banner inline simultâneos', () => {
+  test.describe('CA-08.2 POST /api/selecao/editais 503 → toast persistente + banner inline simultâneos', () => {
     test('submit valido com 503 dispara toast e mantém role=alert no form', async ({
       page,
     }) => {
-      await page.route(/\/api\/editais$/, async (route, request) => {
+      await page.route(/\/api\/selecao\/editais$/, async (route, request) => {
         if (request.method() !== 'POST') {
           await route.continue();
           return;
@@ -199,13 +199,13 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
     });
   });
 
-  test.describe('CA-08.3 GET /api/editais/{id} 503 → effect dispara toast', () => {
+  test.describe('CA-08.3 GET /api/selecao/editais/{id} 503 → effect dispara toast', () => {
     test('detalhe com 503 mantém role=alert na page e dispara toast persistente via effect()', async ({
       page,
     }) => {
       const detailId = '01960000-0000-7000-0000-0000000005ff';
       await page.route(
-        new RegExp(`/api/editais/${detailId}$`),
+        new RegExp(`/api/selecao/editais/${detailId}$`),
         async (route, request) => {
           if (request.method() !== 'GET') {
             await route.continue();
@@ -239,7 +239,7 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
     test('listagem em estado de erro (banner DataTable + toast aberto) sem violations WCAG A/AA', async ({
       page,
     }) => {
-      await page.route(/\/api\/editais(\?[^/]*)?$/, async (route, request) => {
+      await page.route(/\/api\/selecao\/editais(\?[^/]*)?$/, async (route, request) => {
         if (request.method() !== 'GET') {
           await route.continue();
           return;

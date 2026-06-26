@@ -316,7 +316,7 @@ export class LocaisOfertaPage {
   >(undefined);
 
   private readonly lista = useApiResource<readonly LocalOfertaDto[]>(() => ({
-    url: `${this.basePath}/api/locais-oferta`,
+    url: `${this.basePath}/api/configuracao/locais-oferta`,
     params: this.montarParams(),
     context: withVendorMime('local-oferta', 1),
   }));
@@ -330,7 +330,7 @@ export class LocaisOfertaPage {
       return undefined;
     }
     return {
-      url: `${this.basePath}/api/campi`,
+      url: `${this.basePath}/api/configuracao/campi`,
       params: new HttpParams().set('limit', String(CAMPI_LOOKUP_LIMIT)),
       context: withVendorMime('campus', 1),
     };

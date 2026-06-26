@@ -5,6 +5,6 @@ test('serve runtime config do app Configuração', async ({ page }) => {
 
   expect(response?.ok()).toBe(true);
   await expect(page.locator('body')).toContainText('configuracao-web');
-  await expect(page.locator('body')).toContainText('http://localhost:5263');
+  await expect(page.locator('body')).toContainText('http://localhost:5000');
   await expect(page.locator('body')).toContainText('unifesspa');
 });

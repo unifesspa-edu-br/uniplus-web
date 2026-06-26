@@ -48,13 +48,13 @@ export class UnidadesApi {
 
   obter(id: string): Observable<ApiResult<UnidadeDto>> {
     return this.http.get<ApiResult<UnidadeDto>>(
-      `${this.basePath}/api/unidades/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/organizacao/unidades/${encodeURIComponent(id)}`,
       { context: withVendorMime('unidade', 1) },
     );
   }
 
   criar(command: CriarUnidadeCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/admin/unidades`, command, {
+    return this.http.post<ApiResult<string>>(`${this.basePath}/api/organizacao/admin/unidades`, command, {
       context,
       headers: new HttpHeaders({ Accept: 'application/json' }),
     });
@@ -66,7 +66,7 @@ export class UnidadesApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/admin/unidades/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/organizacao/admin/unidades/${encodeURIComponent(id)}`,
       command,
       { context },
     );
@@ -74,7 +74,7 @@ export class UnidadesApi {
 
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/admin/unidades/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/organizacao/admin/unidades/${encodeURIComponent(id)}`,
     );
   }
 }

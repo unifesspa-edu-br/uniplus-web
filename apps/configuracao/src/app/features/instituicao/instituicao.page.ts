@@ -615,7 +615,7 @@ export class InstituicaoPage {
    * página (fitness `no-direct-http-in-pages`). Filtro `?tipo=1` (Reitoria).
    */
   private readonly reitoriasResource = useApiResource<readonly UnidadeDto[]>(() => ({
-    url: `${this.basePath}/api/unidades`,
+    url: `${this.basePath}/api/organizacao/unidades`,
     params: new HttpParams().set('tipo', TIPO_REITORIA).set('limit', String(PAGE_SIZE)),
     context: withVendorMime('unidade', 1),
   }));

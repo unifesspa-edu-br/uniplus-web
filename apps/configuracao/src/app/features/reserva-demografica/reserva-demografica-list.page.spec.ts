@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ReservaDemograficaListPage } from './reserva-demografica-list.page';
 
 const BASE = 'http://localhost:5000';
-const URL = `${BASE}/api/referencias-reserva-demografica`;
+const URL = `${BASE}/api/configuracao/referencias-reserva-demografica`;
 
 const seed: ReferenciaReservaDemograficaDto = {
   id: '01960000-0000-7000-0000-0000000000e1',
@@ -89,7 +89,7 @@ describe('ReservaDemograficaListPage', () => {
     });
     component['salvar']();
 
-    const post = controller.expectOne(`${BASE}/api/admin/referencias-reserva-demografica`);
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/referencias-reserva-demografica`);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual({
       censoReferencia: '2022',
@@ -112,7 +112,7 @@ describe('ReservaDemograficaListPage', () => {
 
     expect(component['form'].controls.censoReferencia.hasError('duplicado')).toBe(true);
     component['salvar']();
-    controller.expectNone(`${BASE}/api/admin/referencias-reserva-demografica`);
+    controller.expectNone(`${BASE}/api/configuracao/admin/referencias-reserva-demografica`);
   });
 
   it('CA-04: percentual fora de [0,100] é inválido; limites são aceitos', async () => {
@@ -138,7 +138,7 @@ describe('ReservaDemograficaListPage', () => {
     await flushLista([seed]);
     component['pedirRemocao'](seed);
     component['removerConfirmado']();
-    const req = controller.expectOne(`${BASE}/api/admin/referencias-reserva-demografica/${seed.id}`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/referencias-reserva-demografica/${seed.id}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();

@@ -195,7 +195,7 @@ test.describe('Instituição — cobertura visual DS', () => {
 });
 
 async function mockReitoriasApi(page: Page): Promise<void> {
-  await page.route(/\/api\/unidades(\?.*)?$/, async (route, request) => {
+  await page.route(/\/api\/organizacao\/unidades(\?.*)?$/, async (route, request) => {
     if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
       return;
@@ -215,8 +215,8 @@ async function mockReitoriasApi(page: Page): Promise<void> {
 async function mockInstituicaoApi(page: Page, options: { existe: boolean }): Promise<void> {
   let existe = options.existe;
 
-  // GET /api/instituicao (singleton): 200 quando existe, 404 quando não.
-  await page.route(/\/api\/instituicao$/, async (route, request) => {
+  // GET /api/organizacao/instituicao (singleton): 200 quando existe, 404 quando não.
+  await page.route(/\/api\/organizacao\/instituicao$/, async (route, request) => {
     if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
       return;
@@ -236,8 +236,8 @@ async function mockInstituicaoApi(page: Page, options: { existe: boolean }): Pro
     }
   });
 
-  // POST /api/admin/instituicao: cria e liga o flag para a ficha aparecer.
-  await page.route(/\/api\/admin\/instituicao$/, async (route, request) => {
+  // POST /api/organizacao/admin/instituicao: cria e liga o flag para a ficha aparecer.
+  await page.route(/\/api\/organizacao\/admin\/instituicao$/, async (route, request) => {
     if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
       return;

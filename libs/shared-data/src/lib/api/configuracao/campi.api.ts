@@ -30,7 +30,7 @@ export class CampiApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  /** GET `/api/campi` — lista paginada por cursor (ADR-0026). */
+  /** GET `/api/configuracao/campi` — lista paginada por cursor (ADR-0026). */
   listar(query: CampiQuery = {}): Observable<ApiResult<readonly CampusDto[]>> {
     let params = new HttpParams();
     if (query.cursor !== undefined) {
@@ -38,45 +38,45 @@ export class CampiApi {
     } else {
       params = params.set('limit', String(query.limit ?? 100));
     }
-    return this.http.get<ApiResult<readonly CampusDto[]>>(`${this.basePath}/api/campi`, {
+    return this.http.get<ApiResult<readonly CampusDto[]>>(`${this.basePath}/api/configuracao/campi`, {
       params,
       context: withVendorMime('campus', 1),
     });
   }
 
-  /** GET `/api/campi/{id}` — detalhe de um Campus. */
+  /** GET `/api/configuracao/campi/{id}` — detalhe de um Campus. */
   obter(id: string): Observable<ApiResult<CampusDto>> {
     return this.http.get<ApiResult<CampusDto>>(
-      `${this.basePath}/api/campi/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/campi/${encodeURIComponent(id)}`,
       { context: withVendorMime('campus', 1) },
     );
   }
 
-  /** POST `/api/admin/campi` — cria um Campus. Idempotency-Key obrigatório (ADR-0027). */
+  /** POST `/api/configuracao/admin/campi` — cria um Campus. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarCampusCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/admin/campi`, command, {
+    return this.http.post<ApiResult<string>>(`${this.basePath}/api/configuracao/admin/campi`, command, {
       context,
       headers: new HttpHeaders({ Accept: 'application/json' }),
     });
   }
 
-  /** PUT `/api/admin/campi/{id}` — atualiza um Campus. */
+  /** PUT `/api/configuracao/admin/campi/{id}` — atualiza um Campus. */
   atualizar(
     id: string,
     command: AtualizarCampusCommand,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/admin/campi/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/campi/${encodeURIComponent(id)}`,
       command,
       { context },
     );
   }
 
-  /** DELETE `/api/admin/campi/{id}` — remoção lógica (soft-delete). */
+  /** DELETE `/api/configuracao/admin/campi/{id}` — remoção lógica (soft-delete). */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/admin/campi/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/campi/${encodeURIComponent(id)}`,
     );
   }
 }

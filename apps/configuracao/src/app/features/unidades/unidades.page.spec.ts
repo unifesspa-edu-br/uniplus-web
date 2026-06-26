@@ -89,7 +89,7 @@ describe('UnidadesPage', () => {
   function expectListGet(matcher?: (request: HttpRequest<unknown>) => boolean): TestRequest {
     const req = controller.expectOne(
       (request) =>
-        request.url === `${BASE}/api/unidades` &&
+        request.url === `${BASE}/api/organizacao/unidades` &&
         request.method === 'GET' &&
         (matcher ? matcher(request) : true),
     );
@@ -143,7 +143,7 @@ describe('UnidadesPage', () => {
     appRef.tick();
     // Antes do debounce, nenhuma request com q (não dispara por tecla).
     controller.expectNone(
-      (request) => request.url === `${BASE}/api/unidades` && request.params.has('q'),
+      (request) => request.url === `${BASE}/api/organizacao/unidades` && request.params.has('q'),
     );
 
     await sleep(DEBOUNCE_FOLGA_MS);
@@ -177,7 +177,7 @@ describe('UnidadesPage', () => {
 
   it('navega Próximo/Anterior por substituição, com direction casado e sem limit (ADR-0089)', async () => {
     await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/unidades?cursor=pagina-2&direction=next>; rel="next"`,
+      Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
     });
 
     expect(component['unidades']()).toHaveLength(1);
@@ -195,7 +195,7 @@ describe('UnidadesPage', () => {
         !r.params.has('limit'),
     );
     reqNext.flush([unidadesSeed[1]], {
-      headers: { Link: `<${BASE}/api/unidades?cursor=pagina-1&direction=prev>; rel="prev"` },
+      headers: { Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-1&direction=prev>; rel="prev"` },
     });
     await propagate();
 
@@ -224,7 +224,7 @@ describe('UnidadesPage', () => {
 
   it('mudar o filtro reseta a paginação para a primeira página e substitui a lista', async () => {
     await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/unidades?cursor=pagina-2&direction=next>; rel="next"`,
+      Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
     });
     component['proximaPagina']();
     await propagate();
@@ -272,7 +272,7 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const post = controller.expectOne(`${BASE}/api/admin/unidades`);
+    const post = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
     expect(post.request.method).toBe('POST');
     expect(post.request.headers.get('Idempotency-Key')).toBe(key);
     expect(post.request.body).toMatchObject({
@@ -314,7 +314,7 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const req1 = controller.expectOne(`${BASE}/api/admin/unidades`);
+    const req1 = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
     expect(req1.request.method).toBe('POST');
     expect(req1.request.headers.get('Idempotency-Key')).toBe(primeiraChave);
     expect(req1.request.body).toMatchObject({
@@ -361,7 +361,7 @@ describe('UnidadesPage', () => {
     component['form'].controls.vigenciaFim.setValue('2026-06-10');
     component['salvar']();
 
-    const retry = controller.expectOne(`${BASE}/api/admin/unidades`);
+    const retry = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
     expect(retry.request.headers.get('Idempotency-Key')).toBe(segundaChave);
     expect(retry.request.body).toMatchObject({
       vigenciaInicio: '2026-06-10',
@@ -400,7 +400,7 @@ describe('UnidadesPage', () => {
     const primeiraChave = component['idempotencyKeyAtual']();
     component['salvar']();
 
-    controller.expectOne(`${BASE}/api/admin/unidades`).flush(
+    controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
       {
         type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.idempotency.body_mismatch',
         title: 'Mesma Idempotency-Key reusada com body diferente',
@@ -444,7 +444,7 @@ describe('UnidadesPage', () => {
     const primeiraChave = component['idempotencyKeyAtual']();
     component['salvar']();
 
-    controller.expectOne(`${BASE}/api/admin/unidades`).flush(
+    controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
       {
         type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.unidade.sigla_duplicada',
         title: 'Sigla já utilizada por outra unidade viva',
@@ -480,7 +480,7 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const put = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
     expect(put.request.method).toBe('PUT');
     expect(put.request.headers.get('Idempotency-Key')).toBe(key);
     expect(put.request.body).not.toHaveProperty('vigenciaInicio');
@@ -508,7 +508,7 @@ describe('UnidadesPage', () => {
 
     component['salvar']();
 
-    const put = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toMatchObject({
       id: INSTITUTO_ID,
@@ -563,7 +563,7 @@ describe('UnidadesPage', () => {
 
     component['removerConfirmado']();
 
-    const del = controller.expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`);
+    const del = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
     expect(del.request.method).toBe('DELETE');
     expect(del.request.headers.has('Idempotency-Key')).toBe(false);
     del.flush(null, { status: 204, statusText: 'No Content' });
@@ -595,7 +595,7 @@ describe('UnidadesPage', () => {
 
   it('permite tentar novamente quando a navegação falha, preservando a página atual', async () => {
     await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/unidades?cursor=pagina-2&direction=next>; rel="next"`,
+      Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
     });
     expect(component['unidades']()).toHaveLength(1);
 
@@ -636,7 +636,7 @@ describe('UnidadesPage', () => {
     component['pedirRemocao'](unidadesSeed[1]);
     component['removerConfirmado']();
     controller
-      .expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`)
+      .expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`)
       .flush(null, { status: 204, statusText: 'No Content' });
 
     await propagate();
@@ -687,7 +687,7 @@ describe('UnidadesPage', () => {
     component['pedirRemocao'](unidadesSeed[1]);
     component['removerConfirmado']();
     controller
-      .expectOne(`${BASE}/api/admin/unidades/${INSTITUTO_ID}`)
+      .expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`)
       .flush(null, { status: 204, statusText: 'No Content' });
 
     await propagate();

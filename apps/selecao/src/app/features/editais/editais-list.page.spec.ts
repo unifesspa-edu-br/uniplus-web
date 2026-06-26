@@ -52,13 +52,13 @@ describe('EditaisListPage', () => {
 
   afterEach(() => controller.verify());
 
-  it('carga inicial dispara GET /api/editais sem cursor e popula a lista', () => {
+  it('carga inicial dispara GET /api/selecao/editais sem cursor e popula a lista', () => {
     fixture.detectChanges();
 
     expect(component.loading()).toBe(true);
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && !request.params.has('cursor'),
+      (request) => request.url === `${BASE}/api/selecao/editais` && !request.params.has('cursor'),
     );
     expect(req.request.headers.get('Accept')).toBe(ACCEPT);
     req.flush([editalSeed('41'), editalSeed('42')]);
@@ -71,12 +71,12 @@ describe('EditaisListPage', () => {
   it('extrai prev/next cursors do header Link da resposta de sucesso', () => {
     fixture.detectChanges();
 
-    const req = controller.expectOne(`${BASE}/api/editais`);
+    const req = controller.expectOne(`${BASE}/api/selecao/editais`);
     req.flush([editalSeed('40')], {
       headers: {
         Link:
-          '<https://api/editais?cursor=opaque-prev&direction=prev>; rel="prev", ' +
-          '<https://api/editais?cursor=opaque-next-page&direction=next>; rel="next"',
+          '<https://api/selecao/editais?cursor=opaque-prev&direction=prev>; rel="prev", ' +
+          '<https://api/selecao/editais?cursor=opaque-next-page&direction=next>; rel="next"',
       },
     });
 
@@ -87,9 +87,9 @@ describe('EditaisListPage', () => {
   it('navegação "Próximo" substitui a página, envia direction=next e atualiza cursores', () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush([editalSeed('40')], {
       headers: {
-        Link: '<https://api/editais?cursor=cursor-pagina-2&direction=next>; rel="next"',
+        Link: '<https://api/selecao/editais?cursor=cursor-pagina-2&direction=next>; rel="next"',
       },
     });
 
@@ -103,15 +103,15 @@ describe('EditaisListPage', () => {
 
     const req = controller.expectOne(
       (request) =>
-        request.url === `${BASE}/api/editais` &&
+        request.url === `${BASE}/api/selecao/editais` &&
         request.params.get('cursor') === 'cursor-pagina-2' &&
         request.params.get('direction') === 'next',
     );
     req.flush([editalSeed('41'), editalSeed('42')], {
       headers: {
         Link:
-          '<https://api/editais?cursor=cursor-pagina-1&direction=prev>; rel="prev", ' +
-          '<https://api/editais?cursor=cursor-pagina-3&direction=next>; rel="next"',
+          '<https://api/selecao/editais?cursor=cursor-pagina-1&direction=prev>; rel="prev", ' +
+          '<https://api/selecao/editais?cursor=cursor-pagina-3&direction=next>; rel="next"',
       },
     });
 
@@ -127,9 +127,9 @@ describe('EditaisListPage', () => {
     fixture.detectChanges();
 
     // 1ª página com next disponível
-    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('43')], {
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush([editalSeed('43')], {
       headers: {
-        Link: '<https://api/editais?cursor=c2&direction=next>; rel="next"',
+        Link: '<https://api/selecao/editais?cursor=c2&direction=next>; rel="next"',
       },
     });
     const cursorProximo = component.nextCursor();
@@ -141,7 +141,7 @@ describe('EditaisListPage', () => {
       .expectOne((request) => request.params.get('cursor') === 'c2')
       .flush([editalSeed('44')], {
         headers: {
-          Link: '<https://api/editais?cursor=c1&direction=prev>; rel="prev"',
+          Link: '<https://api/selecao/editais?cursor=c1&direction=prev>; rel="prev"',
         },
       });
 
@@ -166,7 +166,7 @@ describe('EditaisListPage', () => {
     fixture.detectChanges();
 
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/editais` && !request.params.has('cursor'),
+      (request) => request.url === `${BASE}/api/selecao/editais` && !request.params.has('cursor'),
     );
     expect(req.request.params.has('direction')).toBe(false);
     req.flush([editalSeed('40')]);
@@ -175,9 +175,9 @@ describe('EditaisListPage', () => {
   it('última página (sem rel="prev"/"next") zera os cursores', () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush([editalSeed('40')], {
       headers: {
-        Link: '<https://api/editais>; rel="self"',
+        Link: '<https://api/selecao/editais>; rel="self"',
       },
     });
 
@@ -188,7 +188,7 @@ describe('EditaisListPage', () => {
   it('falha 4xx na carga inicial popula errorMessage; cursor permanece null', () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Token de acesso inválido',
@@ -213,9 +213,9 @@ describe('EditaisListPage', () => {
     fixture.detectChanges();
 
     // 1ª página OK: ganha cursor para a próxima
-    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')], {
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush([editalSeed('40')], {
       headers: {
-        Link: '<https://api/editais?cursor=cursor-retry&direction=next>; rel="next"',
+        Link: '<https://api/selecao/editais?cursor=cursor-retry&direction=next>; rel="next"',
       },
     });
 
@@ -265,7 +265,7 @@ describe('EditaisListPage', () => {
 
   it('renderiza ui-data-table com dados e header correto após carga inicial', () => {
     fixture.detectChanges();
-    controller.expectOne(`${BASE}/api/editais`).flush([editalSeed('40')]);
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush([editalSeed('40')]);
     fixture.detectChanges();
 
     const heading = fixture.debugElement.query(By.css('h1.page-header__title'))
@@ -281,7 +281,7 @@ describe('EditaisListPage', () => {
   it('5xx dispara toast persistente via NotificationService (CA-04)', () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Falha temporária do servidor',
@@ -307,7 +307,7 @@ describe('EditaisListPage', () => {
   it('4xx NÃO dispara toast — apenas banner inline (CA-04)', () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Token inválido',
@@ -329,7 +329,7 @@ describe('EditaisListPage', () => {
   it('errorTraceId é propagado ao DataTable em falha 5xx', () => {
     fixture.detectChanges();
 
-    controller.expectOne(`${BASE}/api/editais`).flush(
+    controller.expectOne(`${BASE}/api/selecao/editais`).flush(
       {
         type: 'about:blank',
         title: 'Falha do servidor',

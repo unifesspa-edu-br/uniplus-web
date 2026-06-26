@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 
 const CONFIGURACAO_E2E_RUNTIME_CONFIG = {
-  apiUrl: 'http://localhost:5263',
+  apiUrl: 'http://localhost:5000',
   oidc: {
     issuerUrl: `${keycloakUrl()}/realms/unifesspa`,
     clientId: 'configuracao-web',

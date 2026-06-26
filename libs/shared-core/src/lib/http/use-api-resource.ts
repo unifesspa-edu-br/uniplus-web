@@ -102,13 +102,13 @@ export interface UseApiResourceRef<T> {
  *
  * - **String reativa** — quando só a URL muda:
  *   ```ts
- *   const r = useApiResource<EditalDto>(() => `/api/editais/${this.id()}`);
+ *   const r = useApiResource<EditalDto>(() => `/api/selecao/editais/${this.id()}`);
  *   ```
  * - **`HttpResourceRequest` reativo** — quando precisa de `params`/`headers`/
  *   `context` (vendor MIME, etc.):
  *   ```ts
  *   const r = useApiResource<EditalDto>(() => ({
- *     url: `/api/editais/${this.id()}`,
+ *     url: `/api/selecao/editais/${this.id()}`,
  *     context: withVendorMime('edital', 1),
  *   }));
  *   ```

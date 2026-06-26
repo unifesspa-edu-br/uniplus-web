@@ -381,7 +381,7 @@ export class ReservaDemograficaListPage {
   >(undefined);
 
   private readonly lista = useApiResource<readonly ReferenciaReservaDemograficaDto[]>(() => ({
-    url: `${this.basePath}/api/referencias-reserva-demografica`,
+    url: `${this.basePath}/api/configuracao/referencias-reserva-demografica`,
     params: this.montarParams(),
     context: withVendorMime('referencia-reserva-demografica', 1),
   }));

@@ -156,13 +156,13 @@ export class EditaisDetailPage {
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
-   * Resource reativo do GET `/api/editais/{editalId}`. Re-dispara automaticamente
+   * Resource reativo do GET `/api/selecao/editais/{editalId}`. Re-dispara automaticamente
    * quando `editalId()` muda; a request anterior é cancelada nativamente pelo
    * `httpResource` (race-cancellation). Vendor MIME `edital v1` declarado no `HttpContext`
    * (ADR-0028 backend, ADR-0016 cliente).
    */
   private readonly editalResource = useApiResource<EditalDto>(() => ({
-    url: `${this.basePath}/api/editais/${encodeURIComponent(this.editalId())}`,
+    url: `${this.basePath}/api/selecao/editais/${encodeURIComponent(this.editalId())}`,
     context: withVendorMime('edital', 1),
   }));
 

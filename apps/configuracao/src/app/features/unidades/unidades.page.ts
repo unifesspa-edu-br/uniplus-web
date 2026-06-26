@@ -716,12 +716,12 @@ export class UnidadesPage {
   });
 
   /**
-   * GET reativo de `/api/unidades`. Re-dispara quando filtro (`q`/`tipo`) ou
+   * GET reativo de `/api/organizacao/unidades`. Re-dispara quando filtro (`q`/`tipo`) ou
    * `cursor` mudam; `httpResource` cancela a request anterior nativamente — sem
    * `unsubscribe`/guarda manual. Vendor MIME `unidade v1` no HttpContext.
    */
   private readonly lista = useApiResource<readonly UnidadeDto[]>(() => ({
-    url: `${this.basePath}/api/unidades`,
+    url: `${this.basePath}/api/organizacao/unidades`,
     params: this.montarParams(),
     context: withVendorMime('unidade', 1),
   }));
@@ -847,7 +847,7 @@ export class UnidadesPage {
       params = params.set('q', q);
     }
     return {
-      url: `${this.basePath}/api/unidades`,
+      url: `${this.basePath}/api/organizacao/unidades`,
       params,
       context: withVendorMime('unidade', 1),
     };

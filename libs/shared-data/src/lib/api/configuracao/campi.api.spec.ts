@@ -54,9 +54,9 @@ describe('CampiApi', () => {
 
   afterEach(() => controller.verify());
 
-  it('listar() faz GET /api/campi com limit e Accept versionado', async () => {
+  it('listar() faz GET /api/configuracao/campi com limit e Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 50 }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/campi`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`);
     expect(req.request.params.get('limit')).toBe('50');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('campus', 1));
     req.flush([campusSeed]);
@@ -66,7 +66,7 @@ describe('CampiApi', () => {
 
   it('listar() com cursor envia cursor + direction e omite limit', async () => {
     const promise = firstValueFrom(api.listar({ cursor: 'abc', direction: 'prev' }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/campi`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`);
     expect(req.request.params.get('cursor')).toBe('abc');
     expect(req.request.params.get('direction')).toBe('prev');
     expect(req.request.params.has('limit')).toBe(false);
@@ -74,9 +74,9 @@ describe('CampiApi', () => {
     await promise;
   });
 
-  it('criar() faz POST /api/admin/campi com Idempotency-Key e Accept JSON', async () => {
+  it('criar() faz POST /api/configuracao/admin/campi com Idempotency-Key e Accept JSON', async () => {
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/admin/campi`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/campi`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     expect(req.request.headers.get('Accept')).toBe('application/json');
@@ -85,9 +85,9 @@ describe('CampiApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
-  it('remover() faz DELETE /api/admin/campi/{id}', async () => {
+  it('remover() faz DELETE /api/configuracao/admin/campi/{id}', async () => {
     const promise = firstValueFrom(api.remover(ID));
-    const req = controller.expectOne(`${BASE}/api/admin/campi/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/campi/${ID}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

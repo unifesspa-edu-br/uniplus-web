@@ -68,7 +68,7 @@ describe('CampiPage', () => {
   };
 
   async function flushLista(itens: readonly CampusDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/campi`);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`);
     expect(req.request.params.get('limit')).toBe('50');
     req.flush(itens);
     await propagate();
@@ -96,7 +96,7 @@ describe('CampiPage', () => {
 
     component['salvar']();
 
-    const post = controller.expectOne(`${BASE}/api/admin/campi`);
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/campi`);
     expect(post.request.method).toBe('POST');
     expect(post.request.headers.get('Idempotency-Key')).toBe(key);
     expect(post.request.body).toMatchObject({
@@ -128,7 +128,7 @@ describe('CampiPage', () => {
 
     component['salvar']();
 
-    controller.expectNone(`${BASE}/api/admin/campi`);
+    controller.expectNone(`${BASE}/api/configuracao/admin/campi`);
     expect(component['enderecoErro']()).toContain('cidade');
   });
 
@@ -137,7 +137,7 @@ describe('CampiPage', () => {
     component['pedirRemocao'](campusSeed);
     component['removerConfirmado']();
 
-    const req = controller.expectOne(`${BASE}/api/admin/campi/${campusSeed.id}`);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/campi/${campusSeed.id}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();

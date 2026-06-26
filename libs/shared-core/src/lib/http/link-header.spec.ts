@@ -23,11 +23,11 @@ describe('parseLink — RFC 5988/8288 (ADR-0015)', () => {
   describe('header com 1 link-value', () => {
     it('parseia rel="next" único e expõe URI completa', () => {
       const links = parseLink(
-        '<https://api.uniplus.unifesspa.edu.br/api/editais?cursor=ABC123>; rel="next"',
+        '<https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123>; rel="next"',
       );
       expect(links.size).toBe(1);
       const next = links.get('next');
-      expect(next?.uri).toBe('https://api.uniplus.unifesspa.edu.br/api/editais?cursor=ABC123');
+      expect(next?.uri).toBe('https://api.uniplus.unifesspa.edu.br/api/selecao/editais?cursor=ABC123');
       expect(next?.params['rel']).toBe('next');
     });
 

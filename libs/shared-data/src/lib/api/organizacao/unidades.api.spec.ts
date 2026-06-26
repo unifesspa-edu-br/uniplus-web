@@ -84,11 +84,11 @@ describe('UnidadesApi', () => {
 
   afterEach(() => controller.verify());
 
-  it('obter() faz GET /api/unidades/{id} com encoding seguro', async () => {
+  it('obter() faz GET /api/organizacao/unidades/{id} com encoding seguro', async () => {
     const id = 'id com espaço/01';
     const promise = firstValueFrom(api.obter(id));
 
-    const req = controller.expectOne(`${BASE}/api/unidades/${encodeURIComponent(id)}`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/unidades/${encodeURIComponent(id)}`);
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('unidade', 1));
     req.flush(unidadeSeed);
@@ -96,11 +96,11 @@ describe('UnidadesApi', () => {
     await promise;
   });
 
-  it('criar() faz POST /api/admin/unidades com Idempotency-Key e Accept JSON', async () => {
+  it('criar() faz POST /api/organizacao/admin/unidades com Idempotency-Key e Accept JSON', async () => {
     const key = 'unidade-create-key';
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey(key)));
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe(key);
     expect(req.request.headers.get('Accept')).toBe('application/json');
@@ -125,11 +125,11 @@ describe('UnidadesApi', () => {
     );
   });
 
-  it('atualizar() faz PUT /api/admin/unidades/{id} com Idempotency-Key', async () => {
+  it('atualizar() faz PUT /api/organizacao/admin/unidades/{id} com Idempotency-Key', async () => {
     const key = 'unidade-update-key';
     const promise = firstValueFrom(api.atualizar(ID, atualizarCommand, withIdempotencyKey(key)));
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${ID}`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.headers.get('Idempotency-Key')).toBe(key);
     expect(req.request.body).toEqual(atualizarCommand);
@@ -142,7 +142,7 @@ describe('UnidadesApi', () => {
   it('remover() faz DELETE sem Idempotency-Key porque o backend não exige o header', async () => {
     const promise = firstValueFrom(api.remover(ID));
 
-    const req = controller.expectOne(`${BASE}/api/admin/unidades/${ID}`);
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${ID}`);
     expect(req.request.method).toBe('DELETE');
     expect(req.request.headers.has('Idempotency-Key')).toBe(false);
     req.flush(null, { status: 204, statusText: 'No Content' });
