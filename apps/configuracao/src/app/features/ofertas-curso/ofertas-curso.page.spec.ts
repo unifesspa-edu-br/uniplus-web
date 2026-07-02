@@ -158,6 +158,26 @@ describe('OfertasCursoPage', () => {
     expect(component['form'].controls.baseLegal.hasError('required')).toBe(false);
   });
 
+  it('voltar para REGULAR limpa baseLegal/atoAutorizacaoMec (evita maxlength oculto travando o submit)', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].controls.programaDeOferta.setValue('PARFOR');
+    await propagate();
+    component['form'].controls.baseLegal.setValue('X'.repeat(600));
+    component['form'].controls.atoAutorizacaoMec.setValue('Y'.repeat(400));
+    expect(component['form'].controls.baseLegal.hasError('maxlength')).toBe(true);
+
+    component['form'].controls.programaDeOferta.setValue('REGULAR');
+    await propagate();
+
+    expect(component['form'].controls.baseLegal.value).toBe('');
+    expect(component['form'].controls.atoAutorizacaoMec.value).toBe('');
+    expect(component['form'].controls.baseLegal.valid).toBe(true);
+    expect(component['form'].controls.atoAutorizacaoMec.valid).toBe(true);
+  });
+
   it('CA-04: cria oferta enviando unidadeOfertanteOrigemId (não o id do DTO de leitura)', async () => {
     await flushCargaInicial([]);
     component['abrirCadastro']();
