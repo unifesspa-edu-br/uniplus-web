@@ -126,7 +126,12 @@ type EstadoOperacao = 'ok' | 'erro';
       </div>
       @if (!isLoading() && resolucoes().length === 0) {
         <div class="page-header__actions">
-          <button type="button" class="btn btn--primary" (click)="abrirDrawerCriacao()">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="submitting()"
+            (click)="abrirDrawerCriacao()"
+          >
             <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
             Cadastrar nova resolução
           </button>
@@ -180,6 +185,7 @@ type EstadoOperacao = 'ok' | 'erro';
               <button
                 class="btn btn--secondary btn--sm"
                 type="button"
+                [disabled]="submitting()"
                 (click)="abrirDrawerCriacao()"
               >
                 Cadastrar nova resolução
@@ -190,6 +196,7 @@ type EstadoOperacao = 'ok' | 'erro';
               type="button"
               [id]="'pe-editar-' + slug(resolucao)"
               [attr.aria-expanded]="editandoResolucao() === resolucao"
+              [disabled]="salvandoEdicao()"
               (click)="clicarEditarParametros(resolucao)"
             >
               <i aria-hidden="true" class="pi pi-pen-to-square btn__icon"></i>
@@ -472,7 +479,12 @@ type EstadoOperacao = 'ok' | 'erro';
           heading="Nenhuma resolução cadastrada"
           description="Cadastre a primeira resolução de pesos do ENEM por grupo de curso."
         >
-          <button type="button" class="btn btn--primary" (click)="abrirDrawerCriacao()">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="submitting()"
+            (click)="abrirDrawerCriacao()"
+          >
             Cadastrar nova resolução
           </button>
         </ui-empty-state>
@@ -494,6 +506,7 @@ type EstadoOperacao = 'ok' | 'erro';
       heading="Cadastrar nova resolução"
       ariaLabel="Formulário de nova resolução de pesos do ENEM"
       position="right"
+      (closed)="aoFecharDrawerCriacao()"
     >
       @if (submitError()) {
         <ui-alert variant="danger" heading="Não foi possível salvar">
@@ -656,7 +669,7 @@ type EstadoOperacao = 'ok' | 'erro';
         </div>
       </form>
       <div class="cfg-form-footer">
-        <button type="button" class="btn btn--secondary" (click)="cancelarDrawerCriacao()">
+        <button type="button" class="btn btn--secondary" (click)="drawerAberto.set(false)">
           Cancelar
         </button>
         <button
@@ -708,6 +721,10 @@ export class PesosEnemPage {
   protected readonly salvandoEdicao = signal(false);
   protected readonly estadoLinhasEdicao = signal<ReadonlyMap<string, EstadoOperacao>>(new Map());
   private readonly idempotencyKeysEdicao = signal<ReadonlyMap<string, string>>(new Map());
+  /** Último corpo (JSON) efetivamente enviado por linha — usado para
+   *  decidir se a Idempotency-Key pode ser reaproveitada num retry (só
+   *  quando o corpo não mudou desde a última tentativa). */
+  private readonly ultimoPayloadEdicao = signal<ReadonlyMap<string, string>>(new Map());
 
   // --- Drawer de criação --------------------------------------------------
   protected readonly drawerAberto = signal(false);
@@ -715,6 +732,10 @@ export class PesosEnemPage {
   protected readonly submitError = signal<string | null>(null);
   protected readonly estadoGruposCriacao = signal<ReadonlyMap<number, EstadoOperacao>>(new Map());
   private readonly idempotencyKeysCriacao = signal<ReadonlyMap<number, string>>(new Map());
+  /** Último corpo (JSON) efetivamente enviado por grupo — usado para
+   *  decidir se a Idempotency-Key pode ser reaproveitada num retry (só
+   *  quando o corpo não mudou desde a última tentativa). */
+  private readonly ultimoPayloadCriacao = signal<ReadonlyMap<number, string>>(new Map());
 
   protected readonly pesoLoteForm: FormGroup<PesoLoteForm> = new FormGroup<PesoLoteForm>({
     resolucao: new FormControl('', {
@@ -746,11 +767,18 @@ export class PesosEnemPage {
     this.pesoLoteForm.controls.baseLegalGlobal.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((valor) => {
-        for (const grupo of this.pesoLoteForm.controls.grupos.controls) {
+        this.pesoLoteForm.controls.grupos.controls.forEach((grupo, index) => {
+          // Pula grupo já criado ('ok', desabilitado): ele não entra mais no
+          // próximo POST, então propagar o valor global faria o card
+          // "Criado" mostrar uma base legal que nunca foi enviada ao
+          // backend — a linha real fica com o valor antigo.
+          if (this.estadoGruposCriacao().get(index) === 'ok') {
+            return;
+          }
           if (grupo.controls.baseLegal.pristine) {
             grupo.controls.baseLegal.setValue(valor, { emitEvent: false });
           }
-        }
+        });
       });
     this.carregar();
   }
@@ -772,17 +800,34 @@ export class PesosEnemPage {
   // --- Edição in-line -----------------------------------------------------
 
   protected clicarEditarParametros(resolucao: string): void {
+    // Enquanto salvandoEdicao() é true, o forkJoin da sessão atual ainda vai
+    // resolver e seu subscribe reaplica editForm()/estadoLinhasEdicao() e
+    // pode chamar cancelarEdicao() — se abrirEdicao() já tiver trocado a
+    // sessão para outra resolução nesse meio-tempo, essa resposta tardia
+    // fecharia/corromperia a sessão nova que o usuário acabou de abrir.
+    // Trocar de sessão só é seguro após o envio atual terminar.
+    if (this.salvandoEdicao()) {
+      return;
+    }
     const atual = this.editandoResolucao();
     if (atual === resolucao) {
       return;
     }
-    if (atual !== null && (this.editForm()?.dirty ?? false)) {
-      const prosseguir = globalThis.confirm(
-        'Há alterações não salvas nesta resolução. Deseja descartá-las e editar outra?',
-      );
-      if (!prosseguir) {
-        return;
+    if (atual !== null) {
+      if (this.editForm()?.dirty ?? false) {
+        const prosseguir = globalThis.confirm(
+          'Há alterações não salvas nesta resolução. Deseja descartá-las e editar outra?',
+        );
+        if (!prosseguir) {
+          return;
+        }
       }
+      // Fecha a sessão atual pelo mesmo caminho do botão Cancelar/Esc — se
+      // ela teve sucesso parcial (linhas 'ok' antes da falha/desistência),
+      // cancelarEdicao() aplica essas linhas em registros() antes de
+      // trocar. Ir direto para abrirEdicao() sem passar por aqui deixaria
+      // esses valores já persistidos visíveis só após um reload manual.
+      this.cancelarEdicao();
     }
     this.abrirEdicao(resolucao);
   }
@@ -794,6 +839,7 @@ export class PesosEnemPage {
     this.editErro.set(null);
     this.estadoLinhasEdicao.set(new Map());
     this.idempotencyKeysEdicao.set(new Map(linhas.map((linha) => [linha.id, idempotencyKey.create()])));
+    this.ultimoPayloadEdicao.set(new Map());
     this.editandoResolucao.set(resolucao);
     queueMicrotask(() => {
       document.getElementById(`pe-${slug(resolucao)}-g0-ling`)?.focus();
@@ -801,6 +847,19 @@ export class PesosEnemPage {
   }
 
   protected cancelarEdicao(): void {
+    // O botão Cancelar já fica [disabled] durante o envio, mas o atalho Esc
+    // (ligado incondicionalmente a editandoResolucao() === resolucao) não
+    // tinha essa trava — Esc durante o envio limpava editForm()/
+    // estadoLinhasEdicao() ANTES do forkJoin de salvarEdicao() resolver.
+    // Quando a resposta chegasse depois, aplicarLinhasAtualizadas() não
+    // teria mais form/estado para aplicar, e os valores salvos ficariam
+    // invisíveis até um reload manual. Este guard bloqueia qualquer
+    // chamador externo (Esc, clique) durante o envio; a chamada interna de
+    // salvarEdicao() no sucesso roda DEPOIS de salvandoEdicao.set(false),
+    // então não é afetada.
+    if (this.salvandoEdicao()) {
+      return;
+    }
     const resolucao = this.editandoResolucao();
     const form = this.editForm();
     // Se a sessão teve sucesso parcial (algumas linhas já persistidas antes
@@ -846,10 +905,16 @@ export class PesosEnemPage {
 
     this.salvandoEdicao.set(true);
     this.editErro.set(null);
+    // Trava as linhas pendentes DURANTE o envio (issue §5.5: "disabled em
+    // todos os inputs enquanto submit está em curso"). Sem isso havia uma
+    // janela de corrida: o usuário editava um valor depois do snapshot já
+    // enviado ao backend, mas antes do PUT resolver, e
+    // aplicarLinhasAtualizadas() gravava em registros() esse valor nunca
+    // persistido.
+    pendentes.forEach((grupo) => grupo.disable());
 
     const chamadas = pendentes.map((grupo) => {
       const raw = grupo.getRawValue();
-      const chave = this.idempotencyKeysEdicao().get(raw.id) ?? idempotencyKey.create();
       const command: AtualizarPesoAreaEnemCommand = {
         id: raw.id,
         pesoLinguagens: raw.pesoLinguagens,
@@ -860,9 +925,24 @@ export class PesosEnemPage {
         corteRedacao: raw.corteRedacao,
         baseLegal: raw.baseLegal.trim(),
       };
+      // Reusa a Idempotency-Key SOMENTE se o corpo é idêntico ao da última
+      // tentativa dessa linha. A maioria dos 422 de peso/corte é rejeitada
+      // por exceção do FluentValidation ANTES do handler — nesse caminho a
+      // reserva de idempotência é descartada, então reenviar com corpo
+      // corrigido sob a mesma key funciona normalmente. Mas há um caminho
+      // de erro de domínio (retornado como Result, não lançado) que É
+      // cacheado pelo idempotency store — reenviar corpo diferente sob a
+      // mesma key nesse caso conflitaria como corpo divergente. Comparar o
+      // payload evita ter que distinguir os dois caminhos: só reusa quando
+      // o usuário não mudou nada (retry idêntico), renova quando mudou.
+      const payloadAtual = JSON.stringify(command);
+      const chave =
+        this.ultimoPayloadEdicao().get(raw.id) === payloadAtual
+          ? (this.idempotencyKeysEdicao().get(raw.id) ?? idempotencyKey.create())
+          : idempotencyKey.create();
       return this.api
         .atualizar(raw.id, command, withIdempotencyKey(chave))
-        .pipe(map((result) => ({ id: raw.id, grupo, result })));
+        .pipe(map((result) => ({ id: raw.id, grupo, result, chave, payloadAtual })));
     });
 
     forkJoin(chamadas)
@@ -870,9 +950,13 @@ export class PesosEnemPage {
       .subscribe((resultados) => {
         this.salvandoEdicao.set(false);
         const novoEstado = new Map(this.estadoLinhasEdicao());
+        const novasChaves = new Map(this.idempotencyKeysEdicao());
+        const novosPayloads = new Map(this.ultimoPayloadEdicao());
         let ultimoProblema: ProblemDetails | null = null;
 
-        for (const { id, grupo, result } of resultados) {
+        for (const { id, grupo, result, chave, payloadAtual } of resultados) {
+          novasChaves.set(id, chave);
+          novosPayloads.set(id, payloadAtual);
           if (result.ok) {
             novoEstado.set(id, 'ok');
             // Trava a linha salva: sem isso, o usuário poderia editá-la de
@@ -882,16 +966,18 @@ export class PesosEnemPage {
             grupo.disable();
             continue;
           }
-          // Idempotency-Key é PRESERVADA em retry após 422 (§5.2/§9.1 da issue
-          // #395) — diferente do fluxo de criação: o corpo de uma correção de
-          // peso pode até mudar, mas a chave só é renovada ao abrir uma NOVA
-          // sessão de edição (abrirEdicao) ou após sucesso (cancelarEdicao).
           ultimoProblema = result.problem;
           novoEstado.set(id, 'erro');
+          // Reabilita só a linha que falhou, para o usuário corrigir e
+          // reenviar — as demais (ok/pendente-de-outra-rodada) permanecem
+          // como estavam.
+          grupo.enable();
           this.aplicarErroGrupo(grupo, result.problem);
         }
 
         this.estadoLinhasEdicao.set(novoEstado);
+        this.idempotencyKeysEdicao.set(novasChaves);
+        this.ultimoPayloadEdicao.set(novosPayloads);
 
         const falhas = resultados.filter((r) => !r.result.ok);
         if (falhas.length > 0) {
@@ -949,6 +1035,15 @@ export class PesosEnemPage {
   // --- Drawer de criação ----------------------------------------------
 
   protected abrirDrawerCriacao(): void {
+    // pesoLoteForm é uma única instância reaproveitada entre sessões (não
+    // recriada a cada abertura) — reabrir enquanto submitting() é true
+    // resetaria/reabilitaria os MESMOS FormGroups que o forkJoin da sessão
+    // anterior ainda referencia. Quando essa resposta tardia chegasse,
+    // grupo.disable()/setErrors() mexeriam nos campos da sessão nova que o
+    // usuário já está preenchendo.
+    if (this.submitting()) {
+      return;
+    }
     this.pesoLoteForm.controls.resolucao.enable();
     this.pesoLoteForm.reset({ resolucao: '', baseLegalGlobal: '' });
     this.pesoLoteForm.controls.grupos.controls.forEach((grupo, index) => {
@@ -969,18 +1064,33 @@ export class PesosEnemPage {
     this.idempotencyKeysCriacao.set(
       new Map(GRUPOS_CURSO.map((_, index) => [index, idempotencyKey.create()])),
     );
+    this.ultimoPayloadCriacao.set(new Map());
     this.drawerAberto.set(true);
   }
 
-  protected cancelarDrawerCriacao(): void {
-    // Se algum grupo já foi criado antes de o usuário desistir do restante,
-    // os dados ficariam invisíveis em registros() até um reload manual — e
-    // uma nova tentativa para a mesma resolução poderia parecer "duplicada"
-    // sem o usuário enxergar as linhas já existentes.
+  /** Ligado a `(closed)` do `ui-drawer` — dispara em QUALQUER caminho de
+   *  fechamento (botão Cancelar, X, Esc, ou `drawerAberto.set(false)`
+   *  programático), não só no clique explícito do botão Cancelar. Sem isso,
+   *  fechar pelo X/Esc depois de um sucesso parcial deixava os grupos já
+   *  criados invisíveis em `registros()` até um reload manual, e uma nova
+   *  tentativa para a mesma resolução podia colidir com linhas que o
+   *  usuário não enxergava. */
+  protected aoFecharDrawerCriacao(): void {
+    if (this.submitting()) {
+      // Um envio (criação inicial ou retry de grupos pendentes) ainda está
+      // em voo — o próprio subscribe de criarResolucao() decide se
+      // recarrega quando resolver (sucesso total sempre recarrega; falha
+      // parcial recarrega se o drawer já estiver fechado e algo tiver sido
+      // criado). Recarregar aqui TAMBÉM criaria uma corrida: esta chamada
+      // prematura veria só o estado 'ok' de ANTES do envio atual, e o
+      // reload legítimo de depois seria descartado pelo guard de
+      // isLoading() em carregar() — publicando a lista sem o grupo que
+      // ainda estava sendo (re)criado.
+      return;
+    }
     const houveSucessoParcial = [...this.estadoGruposCriacao().values()].some(
       (estado) => estado === 'ok',
     );
-    this.drawerAberto.set(false);
     if (houveSucessoParcial) {
       this.carregar();
     }
@@ -1015,10 +1125,15 @@ export class PesosEnemPage {
 
     this.submitting.set(true);
     this.submitError.set(null);
+    // Trava os grupos pendentes DURANTE o envio — mesma corrida do modo
+    // edição: sem isso, o usuário podia editar um valor depois do snapshot
+    // já enviado ao POST, mas antes da resposta chegar, e o sucesso
+    // posterior desabilitaria o MESMO FormGroup marcando "Criado" com um
+    // valor diferente do que o backend realmente recebeu.
+    pendentes.forEach(({ grupo }) => grupo.disable());
 
     const chamadas = pendentes.map(({ grupo, index }) => {
       const raw = grupo.getRawValue();
-      const chave = this.idempotencyKeysCriacao().get(index) ?? idempotencyKey.create();
       const command: CriarPesoAreaEnemCommand = {
         resolucao,
         grupoCurso: raw.grupoCurso,
@@ -1030,9 +1145,22 @@ export class PesosEnemPage {
         corteRedacao: raw.corteRedacao,
         baseLegal: raw.baseLegal.trim(),
       };
+      // Reusa a Idempotency-Key SOMENTE se o corpo é idêntico ao da última
+      // tentativa desse grupo — só assim é seguro assumir que uma falha
+      // transitória (rede/5xx) pode ter processado o POST no servidor
+      // mesmo com a resposta perdida. Se o usuário alterou qualquer campo
+      // entre tentativas (inclusive após uma falha transitória, que deixa
+      // o grupo editável), o corpo mudou e reusar a key arriscaria um
+      // conflito de idempotência (corpo divergente) no backend — gera uma
+      // key nova nesse caso.
+      const payloadAtual = JSON.stringify(command);
+      const chave =
+        this.ultimoPayloadCriacao().get(index) === payloadAtual
+          ? (this.idempotencyKeysCriacao().get(index) ?? idempotencyKey.create())
+          : idempotencyKey.create();
       return this.api
         .criar(command, withIdempotencyKey(chave))
-        .pipe(map((result) => ({ index, grupo, result })));
+        .pipe(map((result) => ({ index, grupo, result, chave, payloadAtual })));
     });
 
     forkJoin(chamadas)
@@ -1041,10 +1169,13 @@ export class PesosEnemPage {
         this.submitting.set(false);
         const novoEstado = new Map(this.estadoGruposCriacao());
         const novasChaves = new Map(this.idempotencyKeysCriacao());
+        const novosPayloads = new Map(this.ultimoPayloadCriacao());
         let duplicidade = false;
         let ultimoProblema: ProblemDetails | null = null;
 
-        for (const { index, grupo, result } of resultados) {
+        for (const { index, grupo, result, chave, payloadAtual } of resultados) {
+          novasChaves.set(index, chave);
+          novosPayloads.set(index, payloadAtual);
           if (result.ok) {
             novoEstado.set(index, 'ok');
             grupo.disable();
@@ -1052,14 +1183,10 @@ export class PesosEnemPage {
           }
           ultimoProblema = result.problem;
           novoEstado.set(index, 'erro');
-          // Só renova a key quando o corpo vai mudar (usuário precisa
-          // corrigir algo). Falha transitória (rede/5xx) preserva a key —
-          // o POST pode ter sido processado no servidor mesmo com a
-          // resposta perdida; renovar aqui trocaria um retry idempotente
-          // seguro por uma criação duplicada.
-          if (ehFalhaAcionavelPeloUsuario(result.problem)) {
-            novasChaves.set(index, idempotencyKey.create());
-          }
+          // Reabilita só o grupo que falhou, para o usuário corrigir e
+          // reenviar — os demais (ok/pendente-de-outra-rodada) permanecem
+          // como estavam.
+          grupo.enable();
           if (result.problem.code === PAR_JA_EXISTE_CODE) {
             duplicidade = true;
           } else {
@@ -1069,12 +1196,14 @@ export class PesosEnemPage {
 
         this.estadoGruposCriacao.set(novoEstado);
         this.idempotencyKeysCriacao.set(novasChaves);
+        this.ultimoPayloadCriacao.set(novosPayloads);
 
         // Trava a resolução assim que QUALQUER grupo for criado: os grupos já
         // criados ficam presos a esse identificador no backend — mudar
         // `resolucao` depois de um sucesso parcial faria os grupos pendentes
         // serem recriados sob uma resolução diferente da dos já criados.
-        if ([...novoEstado.values()].some((estado) => estado === 'ok')) {
+        const algumSucesso = [...novoEstado.values()].some((estado) => estado === 'ok');
+        if (algumSucesso) {
           this.pesoLoteForm.controls.resolucao.disable();
         }
 
@@ -1091,6 +1220,14 @@ export class PesosEnemPage {
 
         const falhas = resultados.filter((r) => !r.result.ok);
         if (falhas.length > 0) {
+          // Se o usuário já fechou o drawer (X/Esc) enquanto os POSTs ainda
+          // estavam em voo, aoFecharDrawerCriacao() rodou antes de qualquer
+          // resultado chegar e não viu sucesso para recarregar. O banner de
+          // erro também ficaria invisível com o drawer fechado — a única
+          // forma de refletir os grupos já criados é recarregar agora.
+          if (!this.drawerAberto() && algumSucesso) {
+            this.carregar();
+          }
           if (!duplicidade) {
             this.submitError.set(
               `${falhas.length} de ${resultados.length} grupo(s) não foram criados. Corrija e tente novamente.`,
@@ -1103,6 +1240,11 @@ export class PesosEnemPage {
         }
 
         this.notifications.success('Resolução criada', resolucao);
+        // Zera o estado ANTES de fechar: aoFecharDrawerCriacao() (ligado a
+        // (closed)) também checa sucesso parcial e recarregaria de novo se
+        // ainda visse grupos 'ok' aqui — o carregar() explícito abaixo já
+        // cobre esse caso de sucesso total.
+        this.estadoGruposCriacao.set(new Map());
         this.drawerAberto.set(false);
         this.carregar();
       });
@@ -1124,6 +1266,20 @@ export class PesosEnemPage {
     const linhas = this.porResolucao().get(resolucao) ?? [];
     if (linhas.length === 0) {
       return;
+    }
+    if (this.editandoResolucao() === resolucao) {
+      // O identificador pode ser reaproveitado após inativação (§5.3 da
+      // issue #395) — um novo cadastro com o MESMO texto de resolução gera
+      // ids novos. Sem limpar aqui, o panel novo renderizaria "já em
+      // edição" usando o editForm() antigo (ligado aos ids agora
+      // deletados), e Salvar tentaria PUT em linhas que não existem mais.
+      // Reset direto (não cancelarEdicao(), que teria efeito colateral de
+      // tentar aplicar valores de linhas que estão prestes a deixar de
+      // existir).
+      this.editandoResolucao.set(null);
+      this.editForm.set(null);
+      this.editErro.set(null);
+      this.estadoLinhasEdicao.set(new Map());
     }
     forkJoin(linhas.map((linha) => this.api.remover(linha.id)))
       .pipe(takeUntilDestroyed(this.destroyRef))
