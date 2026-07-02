@@ -949,6 +949,36 @@ describe('PesosEnemPage', () => {
     expect(component.drawerAberto()).toBe(true);
   });
 
+  it('PesosEnemPage_DuplicidadeComSucessoParcial_NaoInstruiTrocarCampoTravado', async () => {
+    // Regressão: quando 3 de 4 grupos são criados e o 4º retorna
+    // par_ja_existe (ex.: uma tentativa anterior criou aquele grupo
+    // silenciosamente e a resposta se perdeu), resolucao já está travada
+    // pelo sucesso dos outros — pedir "informe um identificador diferente"
+    // num campo desabilitado é uma instrução impossível de seguir. Nesse
+    // caso o aviso vai só para o banner geral, sem pinar erro no campo.
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests).toHaveLength(4);
+    requests[0]?.flush('novo-id-0', { status: 201, statusText: 'Created' });
+    requests[1]?.flush(
+      problem(409, 'uniplus.configuracao.peso_area_enem.par_ja_existe', 'Já existe'),
+      { status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
+    requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
+    await propagate();
+
+    expect(component.pesoLoteForm.controls.resolucao.disabled).toBe(true);
+    expect(component.erroDoCampoLote('resolucao')).toBeNull();
+    expect(component.submitError()).toContain('já criados foram salvos');
+    expect(component.drawerAberto()).toBe(true);
+  });
+
   it('PesosEnemPage_SucessoParcialNaCriacao_TravaResolucaoContraMistura', async () => {
     // Regressão: se o usuário mudasse `resolucao` após um sucesso parcial, o
     // reenvio dos grupos pendentes criaria uma resolução distinta da dos

@@ -1207,7 +1207,12 @@ export class PesosEnemPage {
           this.pesoLoteForm.controls.resolucao.disable();
         }
 
-        if (duplicidade) {
+        // "Informe um identificador diferente" só é uma instrução que o
+        // usuário consegue seguir quando o campo resolução ainda está
+        // editável. Com sucesso parcial ele já está travado (acima) — pinar
+        // essa mensagem ali pediria uma ação impossível. Nesse caso o aviso
+        // vai só para o banner geral.
+        if (duplicidade && !algumSucesso) {
           const control = this.pesoLoteForm.controls.resolucao;
           control.setErrors({
             backend: {
@@ -1228,7 +1233,11 @@ export class PesosEnemPage {
           if (!this.drawerAberto() && algumSucesso) {
             this.carregar();
           }
-          if (!duplicidade) {
+          if (duplicidade && algumSucesso) {
+            this.submitError.set(
+              'Um dos grupos pendentes já existe com esse identificador. Os grupos já criados foram salvos — confira os dados existentes antes de tentar novamente.',
+            );
+          } else if (!duplicidade) {
             this.submitError.set(
               `${falhas.length} de ${resultados.length} grupo(s) não foram criados. Corrija e tente novamente.`,
             );
