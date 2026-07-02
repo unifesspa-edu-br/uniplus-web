@@ -188,6 +188,21 @@ describe('PesosEnemPage', () => {
     expect(barra).not.toBeNull();
   });
 
+  it('PesosEnemPage_EnterEdit_OrdenaPeloRosterMesmoComApiForaDeOrdem', async () => {
+    // Regressão: a API pode devolver as 4 linhas em qualquer ordem (ex.: id de
+    // inserção); o modo edição deve seguir a MESMA ordem do modo leitura
+    // (roster canônico), não a ordem crua da resposta.
+    const foraDeOrdem = [linhas805[3], linhas805[1], linhas805[0], linhas805[2]].filter(
+      (l): l is PesoAreaEnemDto => l !== undefined,
+    );
+    await carregarUmaPagina(foraDeOrdem);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+
+    const ordemObtida = component.editForm()?.controls.map((g) => g.controls.grupoCurso.value);
+    expect(ordemObtida).toEqual(['Tecnológica', 'Humanística I', 'Humanística II', 'Saúde e Biológicas']);
+  });
+
   it('PesosEnemPage_Cancelar_ReverteSemChamarApiEDevolveFoco', async () => {
     await carregarUmaPagina([...linhas805]);
     component.clicarEditarParametros(RES_805);
@@ -275,6 +290,28 @@ describe('PesosEnemPage', () => {
     expect(component.erroDoCampo(grupo, 'corteRedacao')).toBe('O corte de redação não pode ser negativo.');
   });
 
+  it('PesosEnemPage_CorteRedacaoVazioNaEdicao_InvalidaFormEBloqueiaSubmit', async () => {
+    // Regressão (achado do Codex): `AtualizarPesoAreaEnemCommand.corteRedacao`
+    // não é opcional no schema — limpar o input não pode resultar em `null`
+    // enviado ao backend silenciosamente (min/max ignoram valor vazio).
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+
+    const grupo = component.editForm()?.controls[0];
+    expect(grupo).toBeDefined();
+    if (!grupo) throw new Error('form de edição não inicializado');
+    grupo.controls.corteRedacao.setValue(null as unknown as number);
+    grupo.controls.corteRedacao.markAsTouched();
+
+    expect(grupo.controls.corteRedacao.valid).toBe(false);
+    expect(component.erroDoCampo(grupo, 'corteRedacao')).toBe('Campo obrigatório.');
+
+    component.salvarEdicao();
+    await propagate();
+    controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
+  });
+
   it('PesosEnemPage_IdempotencyKey_PreservadaEmRetryApos422', async () => {
     await carregarUmaPagina([...linhas805]);
     component.clicarEditarParametros(RES_805);
@@ -312,6 +349,100 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     expect(component.editandoResolucao()).toBeNull();
+  });
+
+  it('PesosEnemPage_FalhaTransitoria_NaoTravaFormNemImpedeRetryImediato', async () => {
+    // Regressão (achado do Codex): status 0/5xx é transitório — não pode
+    // pinar um erro sintético em pesoLinguagens que invalida o form e
+    // bloqueia o retry até o usuário editar algum campo só para limpá-lo.
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests[1]?.flush(null, { status: 204, statusText: 'No Content' });
+    requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
+    requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+
+    const grupoFalho = component.editForm()?.controls[0];
+    expect(grupoFalho?.controls.pesoLinguagens.errors).toBeNull();
+    expect(component.editForm()?.invalid).toBe(false);
+
+    // Retry imediato, sem editar nada — deve disparar o PUT de novo.
+    component.salvarEdicao();
+    await propagate();
+    const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
+    retry.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    expect(component.editandoResolucao()).toBeNull();
+  });
+
+  it('PesosEnemPage_LinhaSalvaEmRodadaParcial_FicaTravadaENaoSofreDriftLocal', async () => {
+    // Regressão: numa falha parcial, a linha que já teve sucesso não pode
+    // continuar editável — senão uma edição local não reenviada seria
+    // gravada em `registros` como se estivesse persistida (ver revisão do PR).
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(null, { status: 204, statusText: 'No Content' });
+    requests[1]?.flush(
+      problem(422, 'PesoAreaEnem.PesoExcedeMaximo', 'Peso excede o máximo'),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
+    requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+
+    const grupoSalvo = component.editForm()?.controls[0];
+    expect(grupoSalvo?.disabled).toBe(true);
+    expect(component.estadoLinhasEdicao().get(linhas805[0]?.id ?? '')).toBe('ok');
+  });
+
+  it('PesosEnemPage_CancelarAposSucessoParcial_AplicaLinhasJaPersistidas', async () => {
+    // Regressão (achado do Codex no PR #424): se 1 de 4 PUTs falha e o
+    // usuário cancela em vez de reenviar o pendente, o modo leitura não pode
+    // voltar a mostrar o valor pré-edição das 3 linhas que JÁ foram salvas —
+    // isso ficaria desatualizado até um reload manual da página.
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+
+    component.editForm()?.controls[0]?.controls.pesoMatematica.setValue(3.0);
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(null, { status: 204, statusText: 'No Content' });
+    requests[1]?.flush(
+      problem(422, 'PesoAreaEnem.PesoExcedeMaximo', 'Peso excede o máximo'),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests[2]?.flush(null, { status: 204, statusText: 'No Content' });
+    requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+
+    component.cancelarEdicao();
+    await propagate();
+
+    expect(component.editandoResolucao()).toBeNull();
+    expect(component.registros().find((l) => l.id === linhas805[0]?.id)?.pesoMatematica).toBe(3.0);
   });
 
   // --- Drawer de criação ----------------------------------------------
@@ -369,6 +500,80 @@ describe('PesosEnemPage', () => {
     await propagate();
   });
 
+  it('PesosEnemPage_FalhaTransitoriaNaCriacao_PreservaIdempotencyKey', async () => {
+    // Regressão (achado do Codex): renovar a key numa falha transitória
+    // (rede/5xx) trocaria um retry idempotente seguro por uma criação
+    // duplicada — o POST original pode ter sido processado no servidor
+    // mesmo com a resposta perdida.
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests1 = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests1).toHaveLength(4);
+    const chaveOriginal = requests1[0]?.request.headers.get('Idempotency-Key');
+    requests1[0]?.flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests1.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+
+    expect(component.pesoLoteForm.controls.grupos.controls[0]?.controls.pesoLinguagens.errors).toBeNull();
+
+    component.criarResolucao();
+    await propagate();
+    const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(retry.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
+    retry.flush('novo-id-3', { status: 201, statusText: 'Created' });
+    await propagate();
+    expect(component.drawerAberto()).toBe(false);
+    expectListagem().flush([]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_CancelarDrawerAposSucessoParcial_RecarregaLista', async () => {
+    // Regressão (achado do Codex): se 1+ grupos já foram criados antes de o
+    // usuário desistir do restante, cancelar sem recarregar deixaria esses
+    // grupos invisíveis em registros() até um reload manual.
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests).toHaveLength(4);
+    requests[0]?.flush('novo-id-0', { status: 201, statusText: 'Created' });
+    requests[1]?.flush(
+      problem(422, 'PesoAreaEnem.PesoExcedeMaximo', 'Peso excede o máximo'),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
+    requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
+    await propagate();
+
+    component.cancelarDrawerCriacao();
+    await propagate();
+
+    expect(component.drawerAberto()).toBe(false);
+    // A recarga da lista é disparada — sem ela, este GET não seria esperado.
+    expectListagem().flush([]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_CancelarDrawerSemSucessoParcial_NaoRecarrega', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.cancelarDrawerCriacao();
+    await propagate();
+
+    expect(component.drawerAberto()).toBe(false);
+    controller.expectNone((r) => r.url === LIST_URL);
+  });
+
   it('PesosEnemPage_ResolucaoDuplicada_MapeiaErroNoCampo', async () => {
     await carregarUmaPagina([...linhas805]);
     component.abrirDrawerCriacao();
@@ -390,6 +595,33 @@ describe('PesosEnemPage', () => {
       'Resolução já cadastrada. Informe um identificador diferente.',
     );
     expect(component.drawerAberto()).toBe(true);
+  });
+
+  it('PesosEnemPage_SucessoParcialNaCriacao_TravaResolucaoContraMistura', async () => {
+    // Regressão: se o usuário mudasse `resolucao` após um sucesso parcial, o
+    // reenvio dos grupos pendentes criaria uma resolução distinta da dos
+    // grupos já persistidos — misturando duas resoluções na mesma sessão.
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests).toHaveLength(4);
+    requests[0]?.flush('novo-id-0', { status: 201, statusText: 'Created' });
+    requests[1]?.flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests[2]?.flush('novo-id-2', { status: 201, statusText: 'Created' });
+    requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
+    await propagate();
+
+    expect(component.pesoLoteForm.controls.resolucao.disabled).toBe(true);
+
+    component.abrirDrawerCriacao();
+    expect(component.pesoLoteForm.controls.resolucao.disabled).toBe(false);
   });
 
   it('PesosEnemPage_BaseLegalGlobal_PrePreencheGruposPristine', async () => {
