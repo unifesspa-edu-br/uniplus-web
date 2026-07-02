@@ -158,7 +158,7 @@ describe('OfertasCursoPage', () => {
     expect(component['form'].controls.baseLegal.hasError('required')).toBe(false);
   });
 
-  it('voltar para REGULAR limpa baseLegal/atoAutorizacaoMec (evita maxlength oculto travando o submit)', async () => {
+  it('voltar para REGULAR limpa baseLegal (evita maxlength oculto travando o submit), mas preserva atoAutorizacaoMec', async () => {
     await flushCargaInicial([]);
     component['abrirCadastro']();
     await flushUnidades();
@@ -166,16 +166,43 @@ describe('OfertasCursoPage', () => {
     component['form'].controls.programaDeOferta.setValue('PARFOR');
     await propagate();
     component['form'].controls.baseLegal.setValue('X'.repeat(600));
-    component['form'].controls.atoAutorizacaoMec.setValue('Y'.repeat(400));
+    component['form'].controls.atoAutorizacaoMec.setValue('Portaria SERES/MEC nº 270/2021');
     expect(component['form'].controls.baseLegal.hasError('maxlength')).toBe(true);
 
     component['form'].controls.programaDeOferta.setValue('REGULAR');
     await propagate();
 
     expect(component['form'].controls.baseLegal.value).toBe('');
-    expect(component['form'].controls.atoAutorizacaoMec.value).toBe('');
     expect(component['form'].controls.baseLegal.valid).toBe(true);
-    expect(component['form'].controls.atoAutorizacaoMec.valid).toBe(true);
+    // atoAutorizacaoMec é dado factual independente do programa (a API não o
+    // vincula a REGULAR) — não deve ser apagado pela troca de programa.
+    expect(component['form'].controls.atoAutorizacaoMec.value).toBe(
+      'Portaria SERES/MEC nº 270/2021',
+    );
+  });
+
+  it('edição de oferta REGULAR com atoAutorizacaoMec preexistente preserva o valor no payload', async () => {
+    const ofertaRegularComAto: OfertaCursoDto = {
+      ...ofertaSeed,
+      programaDeOferta: 'REGULAR',
+      baseLegal: null,
+      atoAutorizacaoMec: 'Portaria SERES/MEC nº 270/2021',
+    };
+    await flushCargaInicial([ofertaRegularComAto]);
+    component['abrirEdicao'](ofertaRegularComAto);
+    await propagate();
+
+    expect(component['form'].controls.atoAutorizacaoMec.value).toBe(
+      'Portaria SERES/MEC nº 270/2021',
+    );
+
+    component['form'].controls.eMecCodigo.setValue('999999');
+    component['salvar']();
+
+    const put = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
+    expect(put.request.body.atoAutorizacaoMec).toBe('Portaria SERES/MEC nº 270/2021');
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([ofertaRegularComAto]);
   });
 
   it('CA-04: cria oferta enviando unidadeOfertanteOrigemId (não o id do DTO de leitura)', async () => {
