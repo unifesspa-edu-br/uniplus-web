@@ -2,14 +2,14 @@ import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
-import type { components } from './schema';
+import { OrigemUnidade, TipoUnidade } from './schema';
 import { ORGANIZACAO_BASE_PATH } from './tokens';
+import type { components } from './schema';
 
 export type UnidadeDto = components['schemas']['UnidadeDto'];
 export type CriarUnidadeCommand = components['schemas']['CriarUnidadeCommand'];
 export type AtualizarUnidadeCommand = components['schemas']['AtualizarUnidadeCommand'];
-export type TipoUnidade = components['schemas']['TipoUnidade'];
-export type OrigemUnidade = components['schemas']['OrigemUnidade'];
+export { OrigemUnidade, TipoUnidade };
 
 export interface UnidadeTipoOption {
   readonly value: TipoUnidade;
@@ -22,23 +22,23 @@ export interface UnidadeOrigemOption {
 }
 
 export const TIPOS_UNIDADE: readonly UnidadeTipoOption[] = [
-  { value: 1, label: 'Reitoria' },
-  { value: 2, label: 'Pró-Reitoria' },
-  { value: 3, label: 'Centro' },
-  { value: 4, label: 'Instituto' },
-  { value: 5, label: 'Faculdade' },
-  { value: 6, label: 'Departamento' },
-  { value: 7, label: 'Coordenação' },
-  { value: 8, label: 'Diretoria' },
-  { value: 9, label: 'Divisão' },
-  { value: 10, label: 'Núcleo' },
-  { value: 11, label: 'Outro' },
+  { value: TipoUnidade.reitoria, label: 'Reitoria' },
+  { value: TipoUnidade.proReitoria, label: 'Pró-Reitoria' },
+  { value: TipoUnidade.centro, label: 'Centro' },
+  { value: TipoUnidade.instituto, label: 'Instituto' },
+  { value: TipoUnidade.faculdade, label: 'Faculdade' },
+  { value: TipoUnidade.departamento, label: 'Departamento' },
+  { value: TipoUnidade.coordenacao, label: 'Coordenação' },
+  { value: TipoUnidade.diretoria, label: 'Diretoria' },
+  { value: TipoUnidade.divisao, label: 'Divisão' },
+  { value: TipoUnidade.nucleo, label: 'Núcleo' },
+  { value: TipoUnidade.outro, label: 'Outro' },
 ] as const;
 
 export const ORIGENS_UNIDADE: readonly UnidadeOrigemOption[] = [
-  { value: 1, label: 'Legado COC' },
-  { value: 2, label: 'Criado no Uni+' },
-  { value: 3, label: 'Importado SIORG' },
+  { value: OrigemUnidade.legadoCoc, label: 'Legado COC' },
+  { value: OrigemUnidade.criadoNoUniPlus, label: 'Criado no Uni+' },
+  { value: OrigemUnidade.importadoSiorg, label: 'Importado SIORG' },
 ] as const;
 
 @Injectable({ providedIn: 'root' })
