@@ -403,7 +403,7 @@ cfg-root {
 
 cfg-unidades-page,
 cfg-instituicao-page,
-cfg-peso-enem-page {
+cfg-pesos-enem-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-7);

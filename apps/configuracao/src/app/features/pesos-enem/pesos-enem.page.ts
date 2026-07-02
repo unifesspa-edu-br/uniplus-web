@@ -656,7 +656,7 @@ type EstadoOperacao = 'ok' | 'erro';
         </div>
       </form>
       <div class="cfg-form-footer">
-        <button type="button" class="btn btn--secondary" (click)="drawerAberto.set(false)">
+        <button type="button" class="btn btn--secondary" (click)="cancelarDrawerCriacao()">
           Cancelar
         </button>
         <button
@@ -788,7 +788,7 @@ export class PesosEnemPage {
   }
 
   private abrirEdicao(resolucao: string): void {
-    const linhas = this.porResolucao().get(resolucao) ?? [];
+    const linhas = ordenarPorRoster(this.porResolucao().get(resolucao) ?? []);
     const form = new FormArray(linhas.map((linha) => criarPesoEdicaoGrupoForm(linha)));
     this.editForm.set(form);
     this.editErro.set(null);
@@ -802,6 +802,15 @@ export class PesosEnemPage {
 
   protected cancelarEdicao(): void {
     const resolucao = this.editandoResolucao();
+    const form = this.editForm();
+    // Se a sessão teve sucesso parcial (algumas linhas já persistidas antes
+    // de uma falha ou de o usuário desistir do restante), aplica essas
+    // linhas em `registros` antes de descartar — senão o modo leitura
+    // voltaria a mostrar o valor pré-edição para uma linha que já foi salva
+    // no backend, ficando desatualizado até um reload manual.
+    if (form !== null && [...this.estadoLinhasEdicao().values()].some((estado) => estado === 'ok')) {
+      this.aplicarLinhasAtualizadas(form);
+    }
     this.editandoResolucao.set(null);
     this.editForm.set(null);
     this.editErro.set(null);
@@ -866,6 +875,11 @@ export class PesosEnemPage {
         for (const { id, grupo, result } of resultados) {
           if (result.ok) {
             novoEstado.set(id, 'ok');
+            // Trava a linha salva: sem isso, o usuário poderia editá-la de
+            // novo sem reenviar (ela não entra em `pendentes` no próximo
+            // Salvar) e `aplicarLinhasAtualizadas` gravaria em `registros`
+            // um valor nunca persistido no backend.
+            grupo.disable();
             continue;
           }
           // Idempotency-Key é PRESERVADA em retry após 422 (§5.2/§9.1 da issue
@@ -890,18 +904,27 @@ export class PesosEnemPage {
           return;
         }
 
-        this.aplicarLinhasAtualizadas(form);
         this.notifications.success('Pesos salvos', resolucao);
+        // cancelarEdicao() aplica as linhas 'ok' em registros() antes de
+        // fechar a sessão — mesma lógica usada num cancelamento após sucesso
+        // parcial, sem duplicar a aplicação aqui.
         this.cancelarEdicao();
       });
   }
 
   private aplicarLinhasAtualizadas(form: FormArray<FormGroup<PesoEdicaoGrupoForm>>): void {
+    // Só aplica linhas confirmadas 'ok' pelo backend — chamado tanto após
+    // sucesso total quanto ao cancelar uma sessão com sucesso parcial, então
+    // nunca deve copiar valores de linhas que falharam ou nunca chegaram a
+    // ser reenviadas.
+    const estado = this.estadoLinhasEdicao();
     const atualizadas = new Map(
-      form.controls.map((grupo) => {
-        const raw = grupo.getRawValue();
-        return [raw.id, raw] as const;
-      }),
+      form.controls
+        .filter((grupo) => estado.get(grupo.controls.id.value) === 'ok')
+        .map((grupo) => {
+          const raw = grupo.getRawValue();
+          return [raw.id, raw] as const;
+        }),
     );
     this.registros.update((atual) =>
       atual.map((linha) => {
@@ -926,6 +949,7 @@ export class PesosEnemPage {
   // --- Drawer de criação ----------------------------------------------
 
   protected abrirDrawerCriacao(): void {
+    this.pesoLoteForm.controls.resolucao.enable();
     this.pesoLoteForm.reset({ resolucao: '', baseLegalGlobal: '' });
     this.pesoLoteForm.controls.grupos.controls.forEach((grupo, index) => {
       grupo.enable();
@@ -946,6 +970,20 @@ export class PesosEnemPage {
       new Map(GRUPOS_CURSO.map((_, index) => [index, idempotencyKey.create()])),
     );
     this.drawerAberto.set(true);
+  }
+
+  protected cancelarDrawerCriacao(): void {
+    // Se algum grupo já foi criado antes de o usuário desistir do restante,
+    // os dados ficariam invisíveis em registros() até um reload manual — e
+    // uma nova tentativa para a mesma resolução poderia parecer "duplicada"
+    // sem o usuário enxergar as linhas já existentes.
+    const houveSucessoParcial = [...this.estadoGruposCriacao().values()].some(
+      (estado) => estado === 'ok',
+    );
+    this.drawerAberto.set(false);
+    if (houveSucessoParcial) {
+      this.carregar();
+    }
   }
 
   protected erroDoCampoLote(nome: keyof Pick<PesoLoteForm, 'resolucao' | 'baseLegalGlobal'>): string | null {
@@ -1014,7 +1052,14 @@ export class PesosEnemPage {
           }
           ultimoProblema = result.problem;
           novoEstado.set(index, 'erro');
-          novasChaves.set(index, idempotencyKey.create());
+          // Só renova a key quando o corpo vai mudar (usuário precisa
+          // corrigir algo). Falha transitória (rede/5xx) preserva a key —
+          // o POST pode ter sido processado no servidor mesmo com a
+          // resposta perdida; renovar aqui trocaria um retry idempotente
+          // seguro por uma criação duplicada.
+          if (ehFalhaAcionavelPeloUsuario(result.problem)) {
+            novasChaves.set(index, idempotencyKey.create());
+          }
           if (result.problem.code === PAR_JA_EXISTE_CODE) {
             duplicidade = true;
           } else {
@@ -1024,6 +1069,14 @@ export class PesosEnemPage {
 
         this.estadoGruposCriacao.set(novoEstado);
         this.idempotencyKeysCriacao.set(novasChaves);
+
+        // Trava a resolução assim que QUALQUER grupo for criado: os grupos já
+        // criados ficam presos a esse identificador no backend — mudar
+        // `resolucao` depois de um sucesso parcial faria os grupos pendentes
+        // serem recriados sob uma resolução diferente da dos já criados.
+        if ([...novoEstado.values()].some((estado) => estado === 'ok')) {
+          this.pesoLoteForm.controls.resolucao.disable();
+        }
 
         if (duplicidade) {
           const control = this.pesoLoteForm.controls.resolucao;
@@ -1191,10 +1244,18 @@ export class PesosEnemPage {
         return;
       }
     }
-    controls.pesoLinguagens.setErrors({
-      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-    });
-    controls.pesoLinguagens.markAsTouched();
+    // Fallback (erro de domínio 4xx sem `errors[]` granular) só trava o
+    // campo quando a falha é acionável pelo usuário (algo no request precisa
+    // mudar). Falha transitória (rede/status 0, 5xx) NÃO pina erro aqui —
+    // isso invalidaria o form permanentemente e bloquearia retry do mesmo
+    // payload até o usuário editar algum campo só para limpar o erro
+    // sintético. O banner (editErro/submitError) já comunica a falha geral.
+    if (ehFalhaAcionavelPeloUsuario(problem)) {
+      controls.pesoLinguagens.setErrors({
+        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
+      });
+      controls.pesoLinguagens.markAsTouched();
+    }
   }
 }
 
@@ -1213,6 +1274,15 @@ function agruparPorResolucao(pesos: readonly PesoAreaEnemDto[]): Map<string, Pes
 
 function maxCriadoEm(linhas: readonly PesoAreaEnemDto[]): number {
   return linhas.reduce((max, linha) => Math.max(max, Date.parse(linha.criadoEm)), 0);
+}
+
+/** Ordena pela ordem canônica do roster (GRUPOS_CURSO) — a mesma ordem usada
+ *  no modo leitura, para que entrar em edição não reordene visualmente as
+ *  linhas mesmo que a API as devolva em outra ordem (ex.: ordem de inserção). */
+function ordenarPorRoster(linhas: readonly PesoAreaEnemDto[]): readonly PesoAreaEnemDto[] {
+  return [...linhas].sort(
+    (a, b) => GRUPOS_CURSO.indexOf(a.grupoCurso) - GRUPOS_CURSO.indexOf(b.grupoCurso),
+  );
 }
 
 function toNumber(valor: number | string): number {
@@ -1278,14 +1348,29 @@ function criarPesoEdicaoGrupoForm(linha: PesoAreaEnemDto): FormGroup<PesoEdicaoG
       validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
     }),
     corteRedacao: new FormControl(toNumber(linha.corteRedacao), {
+      // Required só na edição: `AtualizarPesoAreaEnemCommand.corteRedacao`
+      // não é opcional no schema (diferente de criar, que aceita null e
+      // assume o padrão 400 no backend). Sem isso, limpar o input só
+      // deixaria a validação de min/max passar (elas ignoram valor vazio) e
+      // o NumberValueAccessor escreveria `null` no controle mesmo com
+      // `nonNullable: true` — que é garantia só de tipo, não de runtime — e
+      // o command seria enviado com corteRedacao inválido para o contrato.
       nonNullable: true,
-      validators: [Validators.min(0), Validators.max(CORTE_MAXIMO)],
+      validators: [Validators.required, Validators.min(0), Validators.max(CORTE_MAXIMO)],
     }),
     baseLegal: new FormControl(linha.baseLegal, {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
     }),
   });
+}
+
+/** 4xx = algo no pedido precisa mudar antes do retry (domínio/validação);
+ *  0/5xx = falha transitória (rede, servidor) — o mesmo payload pode ter
+ *  sucesso num novo envio, então não deve travar form nem consumir a
+ *  Idempotency-Key original. */
+function ehFalhaAcionavelPeloUsuario(problem: ProblemDetails): boolean {
+  return problem.status >= 400 && problem.status < 500;
 }
 
 const PESO_CONTROL_NAMES: ReadonlySet<string> = new Set<PesoCampoComum>([
