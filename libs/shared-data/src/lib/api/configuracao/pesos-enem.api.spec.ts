@@ -14,8 +14,8 @@ import {
   AtualizarPesoAreaEnemCommand,
   CriarPesoAreaEnemCommand,
   PesoAreaEnemDto,
-  PesoEnemApi,
-} from './peso-enem.api';
+  PesosEnemApi,
+} from './pesos-enem.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -58,8 +58,8 @@ const atualizarCommand: AtualizarPesoAreaEnemCommand = {
   baseLegal: 'Res. 805/2024 Anexo I',
 };
 
-describe('PesoEnemApi', () => {
-  let api: PesoEnemApi;
+describe('PesosEnemApi', () => {
+  let api: PesosEnemApi;
   let controller: HttpTestingController;
 
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('PesoEnemApi', () => {
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
       ],
     });
-    api = TestBed.inject(PesoEnemApi);
+    api = TestBed.inject(PesosEnemApi);
     controller = TestBed.inject(HttpTestingController);
   });
 

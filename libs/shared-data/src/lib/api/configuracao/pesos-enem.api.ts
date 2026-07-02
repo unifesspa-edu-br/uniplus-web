@@ -29,7 +29,7 @@ export interface PesosAreaEnemQuery {
  * admin (role `plataforma-admin`).
  */
 @Injectable({ providedIn: 'root' })
-export class PesoEnemApi {
+export class PesosEnemApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
