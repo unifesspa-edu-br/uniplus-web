@@ -164,10 +164,13 @@ describe('CursosPage', () => {
     expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
   });
 
-  it('CA-08: remoção bloqueada por oferta viva (409) mantém o modal aberto com toast de erro', async () => {
+  it('CA-08: remoção bloqueada por oferta viva (409) reabre o modal com a mensagem de erro', async () => {
     await flushLista([cursoSeed]);
     component['pedirRemocao'](cursoSeed);
     component['removerConfirmado']();
+    // Reproduz o fechamento síncrono que o `ui-confirm-dialog` real faz ao
+    // emitir `confirmed` — antes desta resposta HTTP assíncrona chegar.
+    component['confirmOpen'].set(false);
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${cursoSeed.id}`);
     req.flush(
@@ -187,6 +190,9 @@ describe('CursosPage', () => {
     await propagate();
 
     expect(component['confirmOpen']()).toBe(true);
+    expect(component['confirmMessage']()).toBe(
+      'Não é possível remover um curso referenciado por uma oferta de curso ativa',
+    );
   });
 
   it('remove um curso sem oferta viva após confirmação', async () => {

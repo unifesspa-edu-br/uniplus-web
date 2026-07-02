@@ -143,7 +143,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await expect(page.locator('#cfg-curso-form')).toBeVisible();
   });
 
-  test('CA-08: remoção bloqueada por oferta viva exibe erro sem fechar o modal', async ({
+  test('CA-08: remoção bloqueada por oferta viva reabre o modal com a mensagem de erro', async ({
     page,
   }) => {
     const capturado = novoCapturado();
@@ -159,13 +159,17 @@ test.describe('Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Remover' }).first().click();
-    await page
-      .locator('dialog.uni-dialog')
-      .getByRole('button', { name: 'Remover' })
-      .click();
+    const dialog = page.locator('dialog.uni-dialog');
+    await dialog.getByRole('button', { name: 'Remover' }).click();
 
+    // O ui-confirm-dialog fecha a si mesmo de forma síncrona ao confirmar,
+    // antes da resposta HTTP chegar — a asserção real precisa ser que o
+    // modal REABRE com a mensagem de erro, não apenas que a mensagem exista
+    // em algum lugar da página (um toast, por exemplo, também satisfaria
+    // isso sem provar que o modal permaneceu no fluxo).
+    await expect(dialog).toBeVisible();
     await expect(
-      page.getByText('Não é possível remover um curso referenciado por uma oferta de curso ativa'),
+      dialog.getByText('Não é possível remover um curso referenciado por uma oferta de curso ativa'),
     ).toBeVisible();
   });
 
