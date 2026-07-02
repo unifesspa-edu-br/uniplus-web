@@ -343,6 +343,7 @@ export class CursosPage {
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly cursoEmEdicaoId = signal<string | null>(null);
   protected readonly cursoParaRemover = signal<CursoDto | null>(null);
+  protected readonly confirmError = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
 
@@ -425,6 +426,10 @@ export class CursosPage {
   );
 
   protected readonly confirmMessage = computed(() => {
+    const erro = this.confirmError();
+    if (erro !== null) {
+      return erro;
+    }
     const curso = this.cursoParaRemover();
     return curso
       ? `Deseja remover ${curso.codigo} — ${curso.nome}? A remoção é lógica (soft-delete) e preserva o histórico. Se o curso for a matriz de uma oferta de curso ativa, a remoção será bloqueada.`
@@ -507,6 +512,7 @@ export class CursosPage {
 
   protected pedirRemocao(curso: CursoDto): void {
     this.cursoParaRemover.set(curso);
+    this.confirmError.set(null);
     this.confirmOpen.set(true);
   }
 
@@ -528,9 +534,16 @@ export class CursosPage {
           this.recarregar();
           return;
         }
-        this.notifications.errorFromProblem(result.problem, {
-          title: this.problemI18n.resolve(result.problem).title,
-        });
+        // `ui-confirm-dialog` fecha a si mesmo de forma síncrona ao emitir
+        // `confirmed` (antes desta resposta HTTP assíncrona chegar) — reabrir
+        // explicitamente com a mensagem de erro é o único jeito de manter o
+        // fluxo de bloqueio visível para o operador (CA-08).
+        const titulo = this.problemI18n.resolve(result.problem).title;
+        this.confirmError.set(titulo);
+        this.confirmOpen.set(true);
+        if (result.problem.status >= 500) {
+          this.notifications.errorFromProblem(result.problem, { title: titulo });
+        }
       });
   }
 
