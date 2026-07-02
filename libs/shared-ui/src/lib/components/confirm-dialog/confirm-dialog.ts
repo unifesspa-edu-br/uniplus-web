@@ -115,6 +115,15 @@ export class ConfirmDialogComponent {
   }
 
   protected onNativeClose(): void {
+    // O evento nativo `close` do <dialog> é assíncrono o bastante para chegar
+    // depois de um fechar+reabrir rápido (ex.: reabrir o mesmo dialog com uma
+    // mensagem de erro após uma falha assíncrona). Se o elemento já está
+    // `open` de novo quando este handler roda, o evento se refere a um
+    // fechamento anterior já superado — sincronizar `visible=false` aqui
+    // fecharia incorretamente um dialog que acabou de reabrir.
+    if (this.dialogRef()?.nativeElement.open) {
+      return;
+    }
     if (this.visible()) {
       this.visible.set(false);
     }
