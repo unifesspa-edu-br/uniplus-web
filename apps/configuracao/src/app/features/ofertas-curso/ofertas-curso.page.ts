@@ -392,6 +392,23 @@ interface OfertaCursoForm {
               }
             </label>
           </div>
+          <div class="form-grid form-grid--1col">
+            <label class="field" [class.is-error]="erroDoCampo('atoAutorizacaoMec')">
+              <span class="field__label">Ato de autorização (e-MEC)</span>
+              <input
+                class="input"
+                type="text"
+                placeholder="Ex.: Portaria SERES/MEC nº 270/2021"
+                formControlName="atoAutorizacaoMec"
+              />
+              <span class="field__hint">
+                Independente do programa — vale para qualquer oferta, inclusive Regular.
+              </span>
+              @if (erroDoCampo('atoAutorizacaoMec')) {
+                <span class="field__error">{{ erroDoCampo('atoAutorizacaoMec') }}</span>
+              }
+            </label>
+          </div>
         </section>
 
         @if (exigeBaseLegal()) {
@@ -402,7 +419,7 @@ interface OfertaCursoForm {
             aria-labelledby="cfg-oferta-base-legal"
           >
             <legend id="cfg-oferta-base-legal" class="form-section__title">
-              Base legal e ato autorizativo
+              Base legal
               <span class="tag tag--warning">Base legal obrigatória</span>
             </legend>
             <div class="form-grid form-grid--1col">
@@ -417,18 +434,6 @@ interface OfertaCursoForm {
                 <span class="field__hint">Norma do programa-mãe: tipo + número + ano.</span>
                 @if (erroDoCampo('baseLegal')) {
                   <span class="field__error">{{ erroDoCampo('baseLegal') }}</span>
-                }
-              </label>
-              <label class="field" [class.is-error]="erroDoCampo('atoAutorizacaoMec')">
-                <span class="field__label">Ato de autorização (e-MEC)</span>
-                <input
-                  class="input"
-                  type="text"
-                  placeholder="Ex.: Portaria SERES/MEC nº 270/2021"
-                  formControlName="atoAutorizacaoMec"
-                />
-                @if (erroDoCampo('atoAutorizacaoMec')) {
-                  <span class="field__error">{{ erroDoCampo('atoAutorizacaoMec') }}</span>
                 }
               </label>
             </div>
