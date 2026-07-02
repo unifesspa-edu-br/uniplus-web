@@ -16,7 +16,7 @@ const editalSeed = (overrides: Partial<EditalDto> = {}): EditalDto => ({
   id: ID,
   numeroEdital: '042/2026',
   titulo: 'PSE 2026',
-  tipoProcesso: 'PSE',
+  tipoEditalId: null,
   status: 'Rascunho',
   maximoOpcoesCurso: 2,
   bonusRegionalHabilitado: false,

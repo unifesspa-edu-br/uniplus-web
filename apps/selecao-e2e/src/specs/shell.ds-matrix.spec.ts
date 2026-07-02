@@ -9,7 +9,7 @@ const EDITAIS = [
     numeroEdital: '037/2026',
     anoEdital: 2026,
     titulo: 'Processo seletivo de teste DS',
-    tipoProcesso: 'PSE',
+    tipoEditalId: null,
     status: 'Rascunho',
     maximoOpcoesCurso: 2,
     bonusRegionalHabilitado: false,

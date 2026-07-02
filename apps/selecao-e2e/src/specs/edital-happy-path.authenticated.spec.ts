@@ -13,9 +13,9 @@ import { test, expect } from '../fixtures/auth.fixture';
  * - cancelar do form de criação volta para a lista.
  *
  * **Não-escopo:** validar criação real de edital ponta-a-ponta. O fluxo de
- * POST `/api/selecao/editais` depende de premissas de backend (TipoProcesso enum
- * válido, RBAC do admin, validators FluentValidation) que evoluem
- * independente do frontend e tornariam o smoke flaky.
+ * POST `/api/selecao/editais` depende de premissas de backend (RBAC do
+ * admin, validators FluentValidation) que evoluem independente do frontend
+ * e tornariam o smoke flaky.
  */
 test.describe('Editais — smoke autenticado', () => {
   test('storageState carrega admin sem login UI e renderiza lista de editais', async ({

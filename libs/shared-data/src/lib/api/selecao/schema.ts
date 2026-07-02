@@ -44,7 +44,67 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/editais": {
+    readonly "/api/_smoke/storage/upload": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /**
+         * Smoke E2E — Storage upload
+         * @description Faz upload de um arquivo no bucket configurado para validar conectividade + credentials do MinIO. Restrito a usuários com role admin.
+         */
+        readonly post: operations["smokeStorageUpload"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/_smoke/cache/{key}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Smoke E2E — Cache probe
+         * @description Faz SET/GET de uma chave temporária no Redis com TTL 5min para validar conectividade. Restrito a usuários com role admin.
+         */
+        readonly get: operations["smokeCacheProbe"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/_smoke/messaging/publish": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /**
+         * Smoke E2E — Messaging publish
+         * @description Publica um SmokePingMessage via Wolverine outbox para validar persistência + transport (PG queue ou Kafka). O handler em Infrastructure.Core registra log do round-trip. Restrito a usuários com role admin.
+         */
+        readonly post: operations["smokeMessagingPublish"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/editais": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -58,6 +118,8 @@ export interface paths {
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                     readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiSelecaoEditaisGetParametersQueryDirection;
                 };
                 readonly header?: never;
                 readonly path?: never;
@@ -68,7 +130,7 @@ export interface paths {
                 /** @description OK */
                 readonly 200: {
                     headers: {
-                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="next" só quando há próxima página. Cada link carrega o cursor opaco no parâmetro `cursor` (ADR-0026). */
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
                         readonly Link?: string;
                         /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
                         readonly "X-Page-Size"?: number;
@@ -183,7 +245,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/editais/{id}": {
+    readonly "/api/selecao/editais/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -240,7 +302,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/editais/{id}/publicar": {
+    readonly "/api/selecao/editais/{id}/publicar": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -314,10 +376,519 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/editais/{id}/conformidade": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["ConformidadeDto"];
+                        readonly "application/json": components["schemas"]["ConformidadeDto"];
+                        readonly "text/json": components["schemas"]["ConformidadeDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/editais/{id}/conformidade-historica": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["ConformidadeDto"];
+                        readonly "application/json": components["schemas"]["ConformidadeDto"];
+                        readonly "text/json": components["schemas"]["ConformidadeDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/obrigatoriedades-legais": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    readonly tipoEdital?: string;
+                    readonly categoria?: components["schemas"]["CategoriaObrigatoriedade"];
+                    readonly vigentes?: boolean;
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiSelecaoObrigatoriedadesLegaisGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["ObrigatoriedadeLegalDto"][];
+                        readonly "application/json": readonly components["schemas"]["ObrigatoriedadeLegalDto"][];
+                        readonly "text/json": readonly components["schemas"]["ObrigatoriedadeLegalDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/obrigatoriedades-legais/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["ObrigatoriedadeLegalDto"];
+                        readonly "application/json": components["schemas"]["ObrigatoriedadeLegalDto"];
+                        readonly "text/json": components["schemas"]["ObrigatoriedadeLegalDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/admin/obrigatoriedades-legais": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["CriarObrigatoriedadeLegalCommand"];
+                    readonly "text/json": components["schemas"]["CriarObrigatoriedadeLegalCommand"];
+                    readonly "application/*+json": components["schemas"]["CriarObrigatoriedadeLegalCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": string;
+                        readonly "application/json": string;
+                        readonly "text/json": string;
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/admin/obrigatoriedades-legais/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AtualizarObrigatoriedadeLegalCommand"];
+                    readonly "text/json": components["schemas"]["AtualizarObrigatoriedadeLegalCommand"];
+                    readonly "application/*+json": components["schemas"]["AtualizarObrigatoriedadeLegalCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        readonly AtualizarObrigatoriedadeLegalCommand: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly tipoEditalCodigo: string;
+            readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
+            readonly regraCodigo: string;
+            readonly predicado: components["schemas"]["PredicadoObrigatoriedade"];
+            readonly descricaoHumana: string;
+            readonly baseLegal: string;
+            /** Format: date */
+            readonly vigenciaInicio: string;
+            /** Format: date */
+            readonly vigenciaFim: null | string;
+            readonly atoNormativoUrl: null | string;
+            readonly portariaInternaCodigo: null | string;
+        };
         readonly AuthenticatedUserResponse: {
             readonly userId: null | string;
             readonly name: null | string;
@@ -326,25 +897,51 @@ export interface components {
             /** Format: date-time */
             readonly timestamp: string;
         };
+        /** @enum {string} */
+        readonly CategoriaObrigatoriedade: CategoriaObrigatoriedade;
+        readonly ConformidadeDto: {
+            /** Format: uuid */
+            readonly editalId: string;
+            readonly regras: readonly components["schemas"]["RegraAvaliadaDto"][];
+            readonly _links?: null | {
+                readonly [key: string]: string;
+            };
+        };
         readonly CriarEditalCommand: {
             /** Format: int32 */
             readonly numeroEdital: number | string;
             /** Format: int32 */
             readonly anoEdital: number | string;
             readonly titulo: string;
-            readonly tipoProcesso: components["schemas"]["TipoProcesso"];
+            /** Format: uuid */
+            readonly tipoEditalId?: null | string;
             /**
              * Format: int32
              * @default 1
              */
             readonly maximoOpcoesCurso: number | string;
         };
+        readonly CriarObrigatoriedadeLegalCommand: {
+            readonly tipoEditalCodigo: string;
+            readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
+            readonly regraCodigo: string;
+            readonly predicado: components["schemas"]["PredicadoObrigatoriedade"];
+            readonly descricaoHumana: string;
+            readonly baseLegal: string;
+            /** Format: date */
+            readonly vigenciaInicio: string;
+            /** Format: date */
+            readonly vigenciaFim: null | string;
+            readonly atoNormativoUrl: null | string;
+            readonly portariaInternaCodigo: null | string;
+        };
         readonly EditalDto: {
             /** Format: uuid */
             readonly id: string;
             readonly numeroEdital: string;
             readonly titulo: string;
-            readonly tipoProcesso: string;
+            /** Format: uuid */
+            readonly tipoEditalId: null | string;
             readonly status: string;
             /** Format: int32 */
             readonly maximoOpcoesCurso: number | string;
@@ -355,6 +952,71 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        /** Format: binary */
+        readonly IFormFile: string;
+        readonly JsonElement: unknown;
+        readonly ObrigatoriedadeLegalDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly tipoEditalCodigo: string;
+            readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
+            readonly regraCodigo: string;
+            readonly predicado: components["schemas"]["PredicadoObrigatoriedade"];
+            readonly descricaoHumana: string;
+            readonly baseLegal: string;
+            readonly atoNormativoUrl: null | string;
+            readonly portariaInternaCodigo: null | string;
+            /** Format: date */
+            readonly vigenciaInicio: string;
+            /** Format: date */
+            readonly vigenciaFim: null | string;
+            readonly hash: string;
+            readonly isDeleted: boolean;
+            readonly _links?: null | {
+                readonly [key: string]: string;
+            };
+        };
+        readonly PredicadoObrigatoriedade: components["schemas"]["PredicadoObrigatoriedadeEtapaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeModalidadesMinimas"] | components["schemas"]["PredicadoObrigatoriedadeDesempateDeveIncluir"] | components["schemas"]["PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade"] | components["schemas"]["PredicadoObrigatoriedadeBonusObrigatorio"] | components["schemas"]["PredicadoObrigatoriedadeAtendimentoDisponivel"] | components["schemas"]["PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeCustomizado"];
+        readonly PredicadoObrigatoriedadeAtendimentoDisponivel: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeAtendimentoDisponivel$tipo;
+            readonly necessidades: readonly string[];
+        };
+        readonly PredicadoObrigatoriedadeBonusObrigatorio: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeBonusObrigatorio$tipo;
+            readonly modalidadesAplicaveis: readonly string[];
+        };
+        readonly PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria$tipo;
+        };
+        readonly PredicadoObrigatoriedadeCustomizado: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeCustomizado$tipo;
+            readonly parametros: components["schemas"]["JsonElement"];
+        };
+        readonly PredicadoObrigatoriedadeDesempateDeveIncluir: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeDesempateDeveIncluir$tipo;
+            readonly criterio: string;
+        };
+        readonly PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade$tipo;
+            readonly modalidade: string;
+            readonly tipoDocumento: string;
+        };
+        readonly PredicadoObrigatoriedadeEtapaObrigatoria: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeEtapaObrigatoria$tipo;
+            readonly tipoEtapaCodigo: string;
+        };
+        readonly PredicadoObrigatoriedadeModalidadesMinimas: {
+            /** @enum {string} */
+            readonly $tipo?: PredicadoObrigatoriedadeModalidadesMinimas$tipo;
+            readonly codigos: readonly string[];
+        };
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -363,12 +1025,26 @@ export interface components {
             readonly detail?: null | string;
             readonly instance?: null | string;
         };
-        readonly TipoProcesso: number;
+        readonly RegraAvaliadaDto: {
+            /** Format: uuid */
+            readonly regraId: string;
+            readonly regraCodigo: string;
+            readonly aprovada: boolean;
+            readonly baseLegal: string;
+            readonly portariaInternaCodigo: null | string;
+            readonly atoNormativoUrl: null | string;
+            readonly descricaoHumana: string;
+            readonly hash: string;
+            /** Format: date */
+            readonly vigenciaInicio: string;
+            /** Format: date */
+            readonly vigenciaFim: null | string;
+        };
         readonly UserProfileResponse: {
             readonly userId: null | string;
             readonly name: null | string;
             readonly email: null | string;
-            /** @description CPF (apenas dígitos, sem formatação). PII — sempre mascarar em logs ('***.***.***-XX', ADR-0011). */
+            /** @description CPF (apenas dígitos, sem formatação). PII — sempre mascarar em logs ('***.999.999-**', ADR-0011). */
             readonly cpf: null | string;
             readonly nomeSocial: null | string;
             readonly roles: readonly string[];
@@ -442,4 +1118,108 @@ export interface operations {
             };
         };
     };
+    readonly smokeStorageUpload: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "multipart/form-data": {
+                    readonly file: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    readonly smokeCacheProbe: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly key: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    readonly smokeMessagingPublish: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+}
+export enum PathsApiSelecaoEditaisGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum PathsApiSelecaoObrigatoriedadesLegaisGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum CategoriaObrigatoriedade {
+    nenhuma = "nenhuma",
+    etapa = "etapa",
+    modalidade = "modalidade",
+    desempate = "desempate",
+    documento = "documento",
+    bonus = "bonus",
+    atendimento = "atendimento",
+    outros = "outros"
+}
+export enum PredicadoObrigatoriedadeAtendimentoDisponivel$tipo {
+    atendimentoDisponivel = "atendimentoDisponivel"
+}
+export enum PredicadoObrigatoriedadeBonusObrigatorio$tipo {
+    bonusObrigatorio = "bonusObrigatorio"
+}
+export enum PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria$tipo {
+    concorrenciaDuplaObrigatoria = "concorrenciaDuplaObrigatoria"
+}
+export enum PredicadoObrigatoriedadeCustomizado$tipo {
+    customizado = "customizado"
+}
+export enum PredicadoObrigatoriedadeDesempateDeveIncluir$tipo {
+    desempateDeveIncluir = "desempateDeveIncluir"
+}
+export enum PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade$tipo {
+    documentoObrigatorioParaModalidade = "documentoObrigatorioParaModalidade"
+}
+export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
+    etapaObrigatoria = "etapaObrigatoria"
+}
+export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
+    modalidadesMinimas = "modalidadesMinimas"
 }

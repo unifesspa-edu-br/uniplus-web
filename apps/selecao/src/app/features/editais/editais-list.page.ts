@@ -86,7 +86,6 @@ export class EditaisListPage {
   protected readonly colunas: UiDataTableColumn[] = [
     { field: 'numeroEdital', header: 'Número', width: '12rem', primary: true },
     { field: 'titulo', header: 'Título' },
-    { field: 'tipoProcesso', header: 'Tipo', width: '8rem' },
     { field: 'status', header: 'Status', width: '10rem' },
   ];
 

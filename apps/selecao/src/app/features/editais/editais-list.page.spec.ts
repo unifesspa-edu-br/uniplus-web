@@ -19,7 +19,7 @@ const editalSeed = (
   id,
   numeroEdital: `0${numero}/2026`,
   titulo: `Edital ${numero}`,
-  tipoProcesso: 'PSE',
+  tipoEditalId: null,
   status: 'Rascunho',
   maximoOpcoesCurso: 2,
   bonusRegionalHabilitado: false,
