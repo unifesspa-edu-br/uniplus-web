@@ -104,7 +104,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/instituicao": {
+    readonly "/api/organizacao/instituicao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -159,7 +159,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/admin/instituicao": {
+    readonly "/api/organizacao/admin/instituicao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -250,7 +250,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/admin/instituicao/{id}": {
+    readonly "/api/organizacao/admin/instituicao/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -385,7 +385,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/unidades": {
+    readonly "/api/organizacao/unidades": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -402,7 +402,7 @@ export interface paths {
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
                     readonly limit?: number;
                     /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
-                    readonly direction?: PathsApiUnidadesGetParametersQueryDirection;
+                    readonly direction?: PathsApiOrganizacaoUnidadesGetParametersQueryDirection;
                 };
                 readonly header?: never;
                 readonly path?: never;
@@ -471,7 +471,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/unidades/{id}": {
+    readonly "/api/organizacao/unidades/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -528,7 +528,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/admin/unidades": {
+    readonly "/api/organizacao/admin/unidades": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -619,7 +619,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/admin/unidades/{id}": {
+    readonly "/api/organizacao/admin/unidades/{id}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -936,7 +936,8 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly OrigemUnidade: number;
+        /** @enum {string} */
+        readonly OrigemUnidade: OrigemUnidade;
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -945,7 +946,8 @@ export interface components {
             readonly detail?: null | string;
             readonly instance?: null | string;
         };
-        readonly TipoUnidade: number;
+        /** @enum {string} */
+        readonly TipoUnidade: TipoUnidade;
         readonly UnidadeDto: {
             /** Format: uuid */
             readonly id: string;
@@ -1110,7 +1112,27 @@ export interface operations {
         };
     };
 }
-export enum PathsApiUnidadesGetParametersQueryDirection {
+export enum PathsApiOrganizacaoUnidadesGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum OrigemUnidade {
+    nenhum = "nenhum",
+    legadoCoc = "legadoCoc",
+    criadoNoUniPlus = "criadoNoUniPlus",
+    importadoSiorg = "importadoSiorg"
+}
+export enum TipoUnidade {
+    nenhum = "nenhum",
+    reitoria = "reitoria",
+    proReitoria = "proReitoria",
+    centro = "centro",
+    instituto = "instituto",
+    faculdade = "faculdade",
+    departamento = "departamento",
+    coordenacao = "coordenacao",
+    diretoria = "diretoria",
+    divisao = "divisao",
+    nucleo = "nucleo",
+    outro = "outro"
 }

@@ -13,7 +13,9 @@ import {
 import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
+  OrigemUnidade,
   TIPOS_UNIDADE,
+  TipoUnidade,
   UnidadeDto,
   UnidadesApi,
 } from './unidades.api';
@@ -45,11 +47,11 @@ const criarCommand: CriarUnidadeCommand = {
   sigla: unidadeSeed.sigla,
   codigo: unidadeSeed.codigo,
   unidadeSuperiorId: null,
-  tipo: 4,
+  tipo: TipoUnidade.instituto,
   unidadeAcademica: true,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
-  origem: 2,
+  origem: OrigemUnidade.criadoNoUniPlus,
 };
 
 const atualizarCommand: AtualizarUnidadeCommand = {
@@ -60,7 +62,7 @@ const atualizarCommand: AtualizarUnidadeCommand = {
   sigla: unidadeSeed.sigla,
   codigo: unidadeSeed.codigo,
   unidadeSuperiorId: null,
-  tipo: 4,
+  tipo: TipoUnidade.instituto,
   unidadeAcademica: true,
   vigenciaFim: null,
   motivoMudancaIdentificador: null,
@@ -117,10 +119,10 @@ describe('UnidadesApi', () => {
   it('expõe labels acentuados para tipos de unidade na UI', () => {
     expect(TIPOS_UNIDADE).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ value: 2, label: 'Pró-Reitoria' }),
-        expect.objectContaining({ value: 7, label: 'Coordenação' }),
-        expect.objectContaining({ value: 9, label: 'Divisão' }),
-        expect.objectContaining({ value: 10, label: 'Núcleo' }),
+        expect.objectContaining({ value: TipoUnidade.proReitoria, label: 'Pró-Reitoria' }),
+        expect.objectContaining({ value: TipoUnidade.coordenacao, label: 'Coordenação' }),
+        expect.objectContaining({ value: TipoUnidade.divisao, label: 'Divisão' }),
+        expect.objectContaining({ value: TipoUnidade.nucleo, label: 'Núcleo' }),
       ]),
     );
   });

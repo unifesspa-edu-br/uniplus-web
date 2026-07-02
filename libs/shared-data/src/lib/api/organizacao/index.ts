@@ -11,12 +11,12 @@ export {
 } from './instituicao.api';
 export {
   ORIGENS_UNIDADE,
+  OrigemUnidade,
   TIPOS_UNIDADE,
+  TipoUnidade,
   UnidadesApi,
   type AtualizarUnidadeCommand,
   type CriarUnidadeCommand,
-  type OrigemUnidade,
-  type TipoUnidade,
   type UnidadeDto,
   type UnidadeOrigemOption,
   type UnidadeTipoOption,

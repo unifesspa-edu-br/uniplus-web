@@ -8,7 +8,12 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
+import {
+  ORGANIZACAO_BASE_PATH,
+  OrigemUnidade,
+  TipoUnidade,
+  UnidadeDto,
+} from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { UnidadesPage } from './unidades.page';
 
@@ -261,11 +266,11 @@ describe('UnidadesPage', () => {
       sigla: 'FACOM',
       codigo: 'FACOM',
       unidadeSuperiorId: INSTITUTO_ID,
-      tipo: '5',
+      tipo: TipoUnidade.faculdade,
       unidadeAcademica: true,
       vigenciaInicio: '2026-02-01',
       vigenciaFim: '',
-      origem: '2',
+      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
     const key = component['idempotencyKeyAtual']();
@@ -279,8 +284,8 @@ describe('UnidadesPage', () => {
       nome: 'Faculdade de Computação',
       alias: null,
       unidadeSuperiorId: INSTITUTO_ID,
-      tipo: 5,
-      origem: 2,
+      tipo: TipoUnidade.faculdade,
+      origem: OrigemUnidade.criadoNoUniPlus,
     });
     post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
     expect(component['formOpen']()).toBe(false);
@@ -301,11 +306,11 @@ describe('UnidadesPage', () => {
       sigla: 'FACOM',
       codigo: 'FACOM',
       unidadeSuperiorId: INSTITUTO_ID,
-      tipo: '5',
+      tipo: TipoUnidade.faculdade,
       unidadeAcademica: true,
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-02',
-      origem: '2',
+      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
 
@@ -389,11 +394,11 @@ describe('UnidadesPage', () => {
       sigla: 'FACOM',
       codigo: 'FACOM',
       unidadeSuperiorId: INSTITUTO_ID,
-      tipo: '5',
+      tipo: TipoUnidade.faculdade,
       unidadeAcademica: true,
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-10',
-      origem: '2',
+      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
 
@@ -433,11 +438,11 @@ describe('UnidadesPage', () => {
       sigla: 'FACOM',
       codigo: 'FACOM',
       unidadeSuperiorId: INSTITUTO_ID,
-      tipo: '5',
+      tipo: TipoUnidade.faculdade,
       unidadeAcademica: true,
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-10',
-      origem: '2',
+      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
 
@@ -475,7 +480,7 @@ describe('UnidadesPage', () => {
     const key = component['idempotencyKeyAtual']();
 
     expect(component['form'].controls.origem.disabled).toBe(true);
-    expect(component['form'].controls.origem.value).toBe('3');
+    expect(component['form'].controls.origem.value).toBe(OrigemUnidade.importadoSiorg);
     expect(component['origemEmEdicaoLabel']()).toBe('Importado SIORG');
 
     component['salvar']();
@@ -488,7 +493,7 @@ describe('UnidadesPage', () => {
     expect(put.request.body).toMatchObject({
       id: INSTITUTO_ID,
       nome: 'Instituto Renomeado',
-      tipo: 4,
+      tipo: TipoUnidade.instituto,
     });
     put.flush(null, { status: 204, statusText: 'No Content' });
     expect(component['formOpen']()).toBe(false);
@@ -504,7 +509,7 @@ describe('UnidadesPage', () => {
     await flushOpcoesSuperior();
     component['form'].controls.nome.setValue('Pró-Reitoria Renomeada');
 
-    expect(component['form'].controls.tipo.value).toBe('2');
+    expect(component['form'].controls.tipo.value).toBe(TipoUnidade.proReitoria);
 
     component['salvar']();
 
@@ -513,7 +518,7 @@ describe('UnidadesPage', () => {
     expect(put.request.body).toMatchObject({
       id: INSTITUTO_ID,
       nome: 'Pró-Reitoria Renomeada',
-      tipo: 2,
+      tipo: TipoUnidade.proReitoria,
     });
     put.flush(null, { status: 204, statusText: 'No Content' });
     expect(component['formOpen']()).toBe(false);
@@ -534,7 +539,7 @@ describe('UnidadesPage', () => {
     expect(component['form'].controls.tipo.valid).toBe(false);
 
     // Escolher um tipo válido limpa o estado de "não reconhecido".
-    component['form'].controls.tipo.setValue('5');
+    component['form'].controls.tipo.setValue(TipoUnidade.faculdade);
     expect(component['tipoNaoReconhecido']()).toBe(false);
     expect(component['form'].controls.tipo.valid).toBe(true);
   });
@@ -553,7 +558,7 @@ describe('UnidadesPage', () => {
     await flushOpcoesSuperior();
 
     expect(component['form'].controls.origem.enabled).toBe(true);
-    expect(component['form'].controls.origem.value).toBe('2');
+    expect(component['form'].controls.origem.value).toBe(OrigemUnidade.criadoNoUniPlus);
     expect(component['origemEmEdicaoLabel']()).toBe('');
   });
 

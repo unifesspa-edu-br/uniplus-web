@@ -62,6 +62,29 @@ const PAGE_SIZE = 100;
  */
 const BUSCA_DEBOUNCE_MS = 300;
 
+/**
+ * Ordinal numérico do enum `TipoUnidade` no backend (`TipoUnidade.cs`) —
+ * usado só pelo filtro `?tipo=` da listagem. Esse query param é bindado pelo
+ * controller como `int[]` bruto (`UnidadesController.Listar`), independente
+ * do enum string (`JsonStringEnumConverter` camelCase) que o corpo JSON de
+ * `Criar/AtualizarUnidadeCommand` usa — não decorre de `TIPOS_UNIDADE.value`
+ * porque o enum string não expõe ordinal em runtime.
+ */
+const TIPO_UNIDADE_FILTRO_ORDINAL: Readonly<Record<TipoUnidade, number>> = {
+  [TipoUnidade.nenhum]: 0,
+  [TipoUnidade.reitoria]: 1,
+  [TipoUnidade.proReitoria]: 2,
+  [TipoUnidade.centro]: 3,
+  [TipoUnidade.instituto]: 4,
+  [TipoUnidade.faculdade]: 5,
+  [TipoUnidade.departamento]: 6,
+  [TipoUnidade.coordenacao]: 7,
+  [TipoUnidade.diretoria]: 8,
+  [TipoUnidade.divisao]: 9,
+  [TipoUnidade.nucleo]: 10,
+  [TipoUnidade.outro]: 11,
+};
+
 interface UnidadeForm {
   nome: FormControl<string>;
   alias: FormControl<string>;
@@ -894,22 +917,28 @@ export class UnidadesPage {
   });
 
   protected readonly tipoOptions = TIPOS_UNIDADE.map((tipo) => ({
-    value: String(tipo.value),
+    value: tipo.value,
     label: tipo.label,
   }));
   protected readonly origemOptions = ORIGENS_UNIDADE.map((origem) => ({
-    value: String(origem.value),
+    value: origem.value,
     label: origem.label,
   }));
 
   /**
-   * Chips de tipo a partir do roster fechado `TIPOS_UNIDADE` (11 tipos, valor
-   * numérico). Estático — não derivado da página: com filtro server-side a
-   * contagem por tipo exigiria facetas que o backend não expõe, então sem count.
+   * Chips de tipo a partir do roster fechado `TIPOS_UNIDADE` (11 tipos).
+   * Estático — não derivado da página: com filtro server-side a contagem por
+   * tipo exigiria facetas que o backend não expõe, então sem count. O `value`
+   * do chip é o ordinal numérico (`TIPO_UNIDADE_FILTRO_ORDINAL`), não o enum
+   * string — vira `tipoFiltro`/`montarParams`, que alimentam o query param
+   * `?tipo=` bindado como `int[]` pelo backend.
    */
   protected readonly tipoChips: readonly UiFilterChipOption[] = [
     { value: '', label: 'Todas' },
-    ...TIPOS_UNIDADE.map((tipo) => ({ value: String(tipo.value), label: tipo.label })),
+    ...TIPOS_UNIDADE.map((tipo) => ({
+      value: String(TIPO_UNIDADE_FILTRO_ORDINAL[tipo.value]),
+      label: tipo.label,
+    })),
   ];
 
   // A árvore reflete o conjunto carregado/filtrado. Com filtro ativo, nós cujo
@@ -945,14 +974,20 @@ export class UnidadesPage {
       validators: [Validators.required, Validators.maxLength(50)],
     }),
     unidadeSuperiorId: new FormControl('', { nonNullable: true }),
-    tipo: new FormControl('4', { nonNullable: true, validators: [Validators.required] }),
+    tipo: new FormControl(TipoUnidade.instituto, {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     unidadeAcademica: new FormControl(false, { nonNullable: true }),
     vigenciaInicio: new FormControl(dataAtualIso(), {
       nonNullable: true,
       validators: [Validators.required],
     }),
     vigenciaFim: new FormControl('', { nonNullable: true }),
-    origem: new FormControl('2', { nonNullable: true, validators: [Validators.required] }),
+    origem: new FormControl(OrigemUnidade.criadoNoUniPlus, {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     motivoMudancaIdentificador: new FormControl('', { nonNullable: true }),
   });
 
@@ -1074,11 +1109,11 @@ export class UnidadesPage {
       sigla: '',
       codigo: '',
       unidadeSuperiorId: '',
-      tipo: '4',
+      tipo: TipoUnidade.instituto,
       unidadeAcademica: false,
       vigenciaInicio: dataAtualIso(),
       vigenciaFim: '',
-      origem: '2',
+      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
     this.formError.set(null);
@@ -1293,11 +1328,11 @@ export class UnidadesPage {
       sigla: raw.sigla.trim(),
       codigo: raw.codigo.trim(),
       unidadeSuperiorId: nullIfBlank(raw.unidadeSuperiorId),
-      tipo: Number(raw.tipo) as TipoUnidade,
+      tipo: raw.tipo as TipoUnidade,
       unidadeAcademica: raw.unidadeAcademica,
       vigenciaInicio: raw.vigenciaInicio,
       vigenciaFim: nullIfBlank(raw.vigenciaFim),
-      origem: Number(raw.origem) as OrigemUnidade,
+      origem: raw.origem as OrigemUnidade,
     };
   }
 
@@ -1311,7 +1346,7 @@ export class UnidadesPage {
       sigla: raw.sigla.trim(),
       codigo: raw.codigo.trim(),
       unidadeSuperiorId: nullIfBlank(raw.unidadeSuperiorId),
-      tipo: Number(raw.tipo) as TipoUnidade,
+      tipo: raw.tipo as TipoUnidade,
       unidadeAcademica: raw.unidadeAcademica,
       vigenciaFim: nullIfBlank(raw.vigenciaFim),
       motivoMudancaIdentificador: nullIfBlank(raw.motivoMudancaIdentificador),
@@ -1405,14 +1440,14 @@ function tipoValueFromLabel(label: string): string {
   );
   // Sem casamento: devolve vazio (controle inválido) em vez de assumir "Outro" —
   // editar+salvar não deve reclassificar a unidade silenciosamente.
-  return option === undefined ? '' : String(option.value);
+  return option === undefined ? '' : option.value;
 }
 
 function origemValueFromLabel(label: string): string {
   const option = ORIGENS_UNIDADE.find(
     (origem) => normalizarEnumLabel(origem.label) === normalizarEnumLabel(label),
   );
-  return option === undefined ? '' : String(option.value);
+  return option === undefined ? '' : option.value;
 }
 
 function origemDisplayLabel(label: string | null): string {
