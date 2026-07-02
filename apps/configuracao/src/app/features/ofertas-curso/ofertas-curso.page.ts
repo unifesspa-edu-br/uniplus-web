@@ -697,7 +697,13 @@ export class OfertasCursoPage {
         if (exige) {
           control.addValidators(Validators.required);
         } else {
+          // O fieldset (§ template) oculta baseLegal/atoAutorizacaoMec quando o
+          // programa é REGULAR — limpar os dois evita que um valor inválido
+          // (ex.: acima do maxLength, digitado enquanto outro programa estava
+          // selecionado) bloqueie o submit sem nenhum campo visível para corrigir.
           control.removeValidators(Validators.required);
+          control.setValue('');
+          this.form.controls.atoAutorizacaoMec.setValue('');
         }
         control.updateValueAndValidity({ emitEvent: false });
       });
