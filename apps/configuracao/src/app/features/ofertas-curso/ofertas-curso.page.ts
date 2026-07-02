@@ -697,13 +697,15 @@ export class OfertasCursoPage {
         if (exige) {
           control.addValidators(Validators.required);
         } else {
-          // O fieldset (§ template) oculta baseLegal/atoAutorizacaoMec quando o
-          // programa é REGULAR — limpar os dois evita que um valor inválido
-          // (ex.: acima do maxLength, digitado enquanto outro programa estava
-          // selecionado) bloqueie o submit sem nenhum campo visível para corrigir.
+          // Diferente de `atoAutorizacaoMec` (dado factual independente do
+          // programa — a API o expõe sem vínculo com REGULAR, e uma oferta
+          // Regular pode legitimamente ter um ato de autorização registrado),
+          // `baseLegal` só faz sentido para programas não-Regular; limpá-lo ao
+          // voltar para REGULAR evita que um valor inválido (ex.: acima do
+          // maxLength, digitado enquanto outro programa estava selecionado)
+          // bloqueie o submit sem nenhum campo visível para corrigir.
           control.removeValidators(Validators.required);
           control.setValue('');
-          this.form.controls.atoAutorizacaoMec.setValue('');
         }
         control.updateValueAndValidity({ emitEvent: false });
       });
