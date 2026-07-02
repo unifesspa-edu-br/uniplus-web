@@ -54,7 +54,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/profile/me": {
@@ -86,40 +91,12 @@
               }
             }
           }
-        }
-      }
-    },
-    "/api/_smoke/storage/upload": {
-      "post": {
-        "tags": [
-          "_smoke"
-        ],
-        "summary": "Smoke E2E \u2014 Storage upload",
-        "description": "Faz upload de um arquivo no bucket configurado para validar conectividade \u002B credentials do MinIO. Restrito a usu\u00E1rios com role admin.",
-        "operationId": "smokeStorageUpload",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "required": [
-                  "file"
-                ],
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "$ref": "#/components/schemas/IFormFile"
-                  }
-                }
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "OK"
+        "security": [
+          {
+            "Bearer": []
           }
-        }
+        ]
       }
     },
     "/api/_smoke/cache/{key}": {
@@ -143,8 +120,33 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/_smoke/messaging/publish": {
@@ -153,13 +155,38 @@
           "_smoke"
         ],
         "summary": "Smoke E2E \u2014 Messaging publish",
-        "description": "Publica um SmokePingMessage via Wolverine outbox para validar persist\u00EAncia \u002B transport (PG queue ou Kafka). O handler em Infrastructure.Core registra log do round-trip. Restrito a usu\u00E1rios com role admin.",
+        "description": "Publica um SmokePingMessage via Wolverine outbox para validar persist\u00EAncia \u002B transport (PG queue dur\u00E1vel). O handler em Infrastructure.Core registra log do round-trip. Restrito a usu\u00E1rios com role admin.",
         "operationId": "smokeMessagingPublish",
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/cep/{cep}": {
@@ -227,8 +254,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/cidades/{codigoIbge}/distritos": {
@@ -370,8 +412,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "x-uniplus-paginated": true
       }
     },
@@ -521,8 +578,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "x-uniplus-paginated": true
       }
     },
@@ -672,8 +744,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "x-uniplus-paginated": true
       }
     },
@@ -812,8 +899,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "x-uniplus-paginated": true
       }
     },
@@ -882,8 +984,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/estados": {
@@ -1007,8 +1124,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "x-uniplus-paginated": true
       }
     },
@@ -1077,8 +1209,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/admin/geo/importacoes": {
@@ -1197,7 +1344,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/admin/geo/importacoes/{id}": {
@@ -1267,7 +1419,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/cidades/proximas": {
@@ -1377,8 +1534,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     },
     "/api/logradouros/proximos": {
@@ -1488,8 +1660,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
       }
     }
   },
@@ -2083,10 +2270,6 @@
           }
         }
       },
-      "IFormFile": {
-        "type": "string",
-        "format": "binary"
-      },
       "ImportacaoGeoDto": {
         "required": [
           "id",
@@ -2573,6 +2756,14 @@
             "format": "date-time"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Token JWT emitido pelo issuer/realm OIDC configurado para a Geo API.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },
