@@ -1,21 +1,85 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  model,
-  signal,
-} from '@angular/core';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, expand, forkJoin, map } from 'rxjs';
 
-import { AlertComponent, DrawerComponent, SpinnerComponent, DialogComponent, PageHeaderComponent, TagComponent } from '@uniplus/shared-ui/components';
 import {
-  PesosEnemApi,
-  PesoAreaEnemDto,
-} from '@uniplus/shared-data/configuracao';
+  ApiResult,
+  ProblemDetails,
+  ProblemI18nService,
+  cursorToString,
+  extractNextCursor,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { idempotencyKey } from '@uniplus/shared-core/http';
+import {
+  AtualizarPesoAreaEnemCommand,
+  CriarPesoAreaEnemCommand,
+  PesoAreaEnemDto,
+  PesosEnemApi,
+} from '@uniplus/shared-data/configuracao';
+import {
+  AlertComponent,
+  ConfirmDialogComponent,
+  DrawerComponent,
+  EmptyStateComponent,
+  SkeletonComponent,
+  SpinnerComponent,
+  TagComponent,
+} from '@uniplus/shared-ui/components';
+
+/** Domínio fechado dos 4 grupos de área do ENEM (Res. INEP 805/2024, Anexo I).
+ *  Espelha `GrupoCurso` do backend (Configuracao.Domain.ValueObjects) — o
+ *  schema expõe `grupoCurso` como `string` livre, então o roster é declarado
+ *  no cliente na ordem exibida na tela DS. */
+const GRUPOS_CURSO: readonly string[] = [
+  'Tecnológica',
+  'Humanística I',
+  'Humanística II',
+  'Saúde e Biológicas',
+];
+
+/** Tetos espelhando `PesoAreaEnem.PesoMaximo`/`CorteRedacaoMaximo` no backend —
+ *  evita 422 surpresa por overflow das colunas `numeric(4,2)`/`numeric(7,3)`. */
+const PESO_MAXIMO = 99.99;
+const CORTE_MAXIMO = 1000;
+const CORTE_REDACAO_PADRAO = 400;
+
+/** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
+const PAGE_SIZE = 100;
+/** Teto defensivo de páginas seguidas via `Link: rel="next"` — evita loop
+ *  infinito caso o backend devolva um cursor que nunca esgota. */
+const MAX_PAGINAS = 50;
+
+const PAR_JA_EXISTE_CODE = 'uniplus.configuracao.peso_area_enem.par_ja_existe';
+
+type PesoCampoComum =
+  | 'pesoLinguagens'
+  | 'pesoCienciasHumanas'
+  | 'pesoCienciasNatureza'
+  | 'pesoMatematica'
+  | 'pesoRedacao'
+  | 'corteRedacao'
+  | 'baseLegal';
+
+interface PesoGrupoForm {
+  grupoCurso: FormControl<string>;
+  pesoLinguagens: FormControl<number>;
+  pesoCienciasHumanas: FormControl<number>;
+  pesoCienciasNatureza: FormControl<number>;
+  pesoMatematica: FormControl<number>;
+  pesoRedacao: FormControl<number>;
+  corteRedacao: FormControl<number>;
+  baseLegal: FormControl<string>;
+}
 
 interface PesoLoteForm {
   resolucao: FormControl<string>;
@@ -23,242 +87,412 @@ interface PesoLoteForm {
   grupos: FormArray<FormGroup<PesoGrupoForm>>;
 }
 
-interface PesoGrupoForm {
-  grupoCurso: FormControl<string>; // readonly — valor fixo
+interface PesoEdicaoGrupoForm {
+  id: FormControl<string>;
+  grupoCurso: FormControl<string>;
   pesoLinguagens: FormControl<number>;
   pesoCienciasHumanas: FormControl<number>;
   pesoCienciasNatureza: FormControl<number>;
   pesoMatematica: FormControl<number>;
   pesoRedacao: FormControl<number>;
-  corteRedacao: FormControl<number | null>;
+  corteRedacao: FormControl<number>;
   baseLegal: FormControl<string>;
 }
+
+type EstadoOperacao = 'ok' | 'erro';
 
 @Component({
   selector: 'cfg-pesos-enem-page',
   standalone: true,
   imports: [
     AlertComponent,
+    ConfirmDialogComponent,
     DrawerComponent,
+    EmptyStateComponent,
     ReactiveFormsModule,
+    SkeletonComponent,
     SpinnerComponent,
-    DialogComponent,
-    PageHeaderComponent,
-    TagComponent
-],
+    TagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui-page-header
-      heading="Peso ENEM por grupo de curso"
-      description="Pesos das áreas do ENEM por grupo de curso"
-    />
-    @if (errorMessage()) {
-      <ui-alert variant="danger" heading="Não foi possível criar o edital">
-        {{ errorMessage() }}
-      </ui-alert>
-    }
-    <ui-alert variant="info" heading="Chave composta: resolução + grupo de curso" [dynamic]="false">
+    <div class="page-header">
+      <div class="page-header__content">
+        <h1 class="page-header__title">Peso ENEM por grupo de curso</h1>
+        <p class="page-header__desc">
+          Pesos das cinco áreas do ENEM por grupo de curso, versionados por resolução INEP ·
+          UNI-REQ-0066.
+        </p>
+      </div>
+      @if (!isLoading() && resolucoes().length === 0) {
+        <div class="page-header__actions">
+          <button type="button" class="btn btn--primary" (click)="abrirDrawerCriacao()">
+            <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+            Cadastrar nova resolução
+          </button>
+        </div>
+      }
+    </div>
+
+    <ui-alert
+      variant="info"
+      heading="Chave composta: resolução + grupo de curso"
+      [dynamic]="false"
+    >
       Cada linha representa um dos 4 grupos de curso de uma resolução INEP. Os pesos das áreas são
       definidos pela instituição em cada edital — não há soma fixa; o sistema registra os valores
       informados sem bloquear. O corte de redação é a nota mínima exigida na redação (padrão 400;
-      não entra em cálculo de soma). Resolução vigente: '{{ 'resolucao-vigente  '}}' . Estes parâmetros
-      também são congelados por edital (RN08).
+      não entra em cálculo de soma). Estes parâmetros também são congelados por edital (RN08).
     </ui-alert>
 
-    @for(resolucao of resolucoes(); track resolucao; let first = $first) {
-      <section class="panel" aria-labelledby="cfg-unidades-list-title">
-      <div class="panel-head">
-        <div class="panel-head__title">
-          <h2>Pesos — {{ resolucao }}</h2>
-          <ui-tag [variant]="first ? 'success' : 'warning'">
-            {{ first ? 'Vigente' : 'Anterior'}}
-          </ui-tag>
-        </div>
-        <div class="button-actions">
+    @if (errorMessage()) {
+      <ui-alert variant="danger" heading="Não foi possível carregar os pesos do ENEM">
+        {{ errorMessage() }}
+        <div class="cfg-pesos-enem__retry">
           <button
+            type="button"
             class="btn btn--secondary btn--sm"
-            type="button"
-            data-drawer-trigger="drawer-resolucao"
-            aria-haspopup="dialog"
-            aria-expanded="false"
-            (click)="this.drawerAberto.set(true)"
+            [disabled]="isLoading()"
+            (click)="tentarNovamente()"
           >
-            Cadastrar nova resolução
-          </button>
-          <button
-            class="btn btn--primary btn--sm"
-            type="button"
-            data-grid-edit="grid-pe"
-            aria-expanded="false"
-          >
-            <i aria-hidden="true" class="pi pi-pen-to-square btn__icon"></i>
-            Editar parâmetros
-          </button>
-          <button
-            class="btn btn--tertiary btn--sm"
-            type="button"
-            data-dialog-trigger="dialog-inativar-resolucao"
-            aria-haspopup="dialog"
-            aria-expanded="false"
-            [aria-label]="'Inativar ' + resolucao"
-            (click)="dialogVisivel.set(true)"
-          >
-            Inativar resolução
+            Tentar novamente
           </button>
         </div>
-      </div>
-      <div class="num-grid pe-grid" id="grid-pe" aria-label="Pesos do ENEM por grupo de curso">
-        <div class="num-grid__header" aria-hidden="true">
-          <div class="num-cell">Grupo de curso</div>
-          <div class="num-cell num-cell--head">Linguagens</div>
-          <div class="num-cell num-cell--head">Humanas</div>
-          <div class="num-cell num-cell--head">Natureza</div>
-          <div class="num-cell num-cell--head">Matemática</div>
-          <div class="num-cell num-cell--head">Redação</div>
-          <div class="num-cell num-cell--head">Corte de redação</div>
-        </div>
-        <div class="num-grid__row">
-          <div>
-            <strong class="cell-label--group-label ">Grupo 1</strong>
-            <span class="cell-label--group-num"> — Tecnológica </span>
+      </ui-alert>
+    }
+
+    @if (isLoading() && resolucoes().length === 0) {
+      <ui-skeleton skeletonKind="card" blockSize="10rem" />
+      <ui-skeleton skeletonKind="card" blockSize="10rem" />
+    }
+
+    @for (resolucao of resolucoes(); track resolucao; let first = $first) {
+      <section class="panel" [attr.aria-labelledby]="'cfg-pesos-enem-title-' + slug(resolucao)">
+        <div class="panel-head">
+          <div class="panel-head__title">
+            <h2 [id]="'cfg-pesos-enem-title-' + slug(resolucao)">Pesos — {{ resolucao }}</h2>
+            <ui-tag [variant]="first ? 'success' : 'neutral'">
+              {{ first ? 'Vigente' : 'Anterior' }}
+            </ui-tag>
           </div>
-          <div class="num-cell">
-            <label class="sr-only" for="pe-g1-ling">G1 — Linguagens</label>
-            <input
-              id="pe-g1-ling"
-              class="num-input"
-              type="number"
-              value="1.0"
-              min="0"
-              step="0.05"
-              readonly
-            />
+          <div class="button-actions">
+            @if (first) {
+              <button
+                class="btn btn--secondary btn--sm"
+                type="button"
+                (click)="abrirDrawerCriacao()"
+              >
+                Cadastrar nova resolução
+              </button>
+            }
+            <button
+              class="btn btn--primary btn--sm"
+              type="button"
+              [id]="'pe-editar-' + slug(resolucao)"
+              [attr.aria-expanded]="editandoResolucao() === resolucao"
+              (click)="clicarEditarParametros(resolucao)"
+            >
+              <i aria-hidden="true" class="pi pi-pen-to-square btn__icon"></i>
+              Editar parâmetros
+            </button>
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              [attr.aria-label]="'Inativar ' + resolucao"
+              (click)="pedirInativacao(resolucao)"
+            >
+              Inativar resolução
+            </button>
           </div>
-          <div class="num-cell">
-            <label class="sr-only" for="pe-g1-hum"> G1 — Humanas </label>
-            <input
-              class="num-input"
-              id="pe-g1-hum"
-              type="number"
-              value="1.0"
-              min="0"
-              step="0.05"
-              readonly
-            />
-          </div>
-          <div class="num-cell">
-            <label class="sr-only" for="pe-g1-nat">G1 — Natureza</label
-            ><input
-              class="num-input"
-              id="pe-g1-nat"
-              type="number"
-              value="1.5"
-              min="0"
-              step="0.05"
-              readonly
-            />
-          </div>
-          <div class="num-cell">
-            <label class="sr-only" for="pe-g1-mat">G1 — Matemática</label
-            ><input
-              class="num-input"
-              id="pe-g1-mat"
-              type="number"
-              value="2.5"
-              min="0"
-              step="0.05"
-              readonly
-            />
-          </div>
-          <div class="num-cell">
-            <label class="sr-only" for="pe-g1-red">G1 — Redação</label
-            ><input
-              class="num-input"
-              id="pe-g1-red"
-              type="number"
-              value="1.5"
-              min="0"
-              step="0.05"
-              readonly
-            />
-          </div>
-          <div class="num-cell">
-            <label class="sr-only" for="pe-g1-corte">G1 — Corte de redação (padrão 400)</label
-            ><input
-              class="num-input"
-              id="pe-g1-corte"
-              type="number"
-              value="400"
-              placeholder="400"
-              min="0"
-              max="1000"
-              step="10"
-              readonly
-              data-no-sum
-            />
-          </div>
-        </div>
-        <div [hidden]="!editandoResolucao()" class="grid-editbar" id="grid-pe-bar">
-          <button class="btn btn--secondary" type="button" data-grid-cancel="grid-pe">
-            Cancelar
-          </button>
-          <button
-            class="btn btn--primary"
-            type="button"
-            data-grid-save="grid-pe"
-            data-toast-title="Pesos salvos"
-          >
-            Salvar
-          </button>
         </div>
 
-        <p class="grid-note">
-          Os pesos das áreas são definidos pela instituição em cada edital — não há soma fixa; o
-          sistema registra os valores informados sem bloquear. O corte de redação é a nota mínima
-          exigida na redação (valor padrão 400; não entra em cálculo de soma). Fonte: Resolução INEP
-          805/2024.
-        </p>
-      </div>
-    </section>
-    <ui-dialog [visible]="dialogVisivel()" heading="Inativar resolução?" [hasFooter]="true" (closed)="dialogVisivel.set(false)">
-      <p>
-        Você está prestes a inativar a <strong><code>Resolução INEP 805/2024</code></strong> e os
-        pesos dos seus 4 grupos de curso. A inativação é uma
-        <strong>remoção lógica</strong> (soft-delete): o registro permanece para auditoria e a chave
-        composta (resolução + grupo) continua reservada.
-      </p>
-      <ui-alert variant="info" heading="Registro único" [dynamic]="false">
-        Cada instância da plataforma atende uma única instituição. Não é possível criar nem listar
-        várias — apenas editar a Instituição existente. A remoção é lógica e só ocorre em
-        recadastramento institucional.
-      </ui-alert>
-      <ng-container uiDialogFooter>
-        <button
-          class="btn btn--secondary"
-          type="button"
-          data-dialog-close=""
-          (click)="dialogVisivel.set(false)"
+        <div
+          class="num-grid pe-grid"
+          tabindex="-1"
+          [class.is-editing]="editandoResolucao() === resolucao"
+          [attr.aria-label]="'Pesos do ENEM — ' + resolucao"
+          (keydown.escape)="editandoResolucao() === resolucao && cancelarEdicao()"
         >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="btn btn--danger"
-          data-confirm-toast=""
-          data-toast-title="Resolução inativada"
-          data-toast-message="A resolução não estará disponível para novos editais (exemplo do kit — sem persistência real)."
-          (click)="inativarResolucao()"
+          <div class="num-grid__header" aria-hidden="true">
+            <div class="num-cell">Grupo de curso</div>
+            <div class="num-cell num-cell--head">Linguagens</div>
+            <div class="num-cell num-cell--head">Humanas</div>
+            <div class="num-cell num-cell--head">Natureza</div>
+            <div class="num-cell num-cell--head">Matemática</div>
+            <div class="num-cell num-cell--head">Redação</div>
+            <div class="num-cell num-cell--head">Corte de redação</div>
+          </div>
+
+          @if (editandoResolucao() === resolucao && editForm(); as form) {
+            @for (grupo of form.controls; track grupo.controls.id.value; let gi = $index) {
+              <div class="num-grid__row" [formGroup]="grupo">
+                <div>
+                  <strong class="cell-label--group-label">{{ grupo.controls.grupoCurso.value }}</strong>
+                  <span class="field__hint">Chave composta — não editável</span>
+                  @if (estadoLinhasEdicao().get(grupo.controls.id.value) === 'ok') {
+                    <ui-tag variant="success">Salvo</ui-tag>
+                  }
+                </div>
+                <div class="num-cell">
+                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'">
+                    {{ grupo.controls.grupoCurso.value }} — Linguagens
+                  </label>
+                  <input
+                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'"
+                    class="num-input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoLinguagens"
+                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoLinguagens') ? 'true' : null"
+                  />
+                  @if (erroDoCampo(grupo, 'pesoLinguagens'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </div>
+                <div class="num-cell">
+                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'">
+                    {{ grupo.controls.grupoCurso.value }} — Ciências humanas
+                  </label>
+                  <input
+                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'"
+                    class="num-input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoCienciasHumanas"
+                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoCienciasHumanas') ? 'true' : null"
+                  />
+                  @if (erroDoCampo(grupo, 'pesoCienciasHumanas'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </div>
+                <div class="num-cell">
+                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'">
+                    {{ grupo.controls.grupoCurso.value }} — Ciências da natureza
+                  </label>
+                  <input
+                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'"
+                    class="num-input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoCienciasNatureza"
+                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoCienciasNatureza') ? 'true' : null"
+                  />
+                  @if (erroDoCampo(grupo, 'pesoCienciasNatureza'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </div>
+                <div class="num-cell">
+                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'">
+                    {{ grupo.controls.grupoCurso.value }} — Matemática
+                  </label>
+                  <input
+                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'"
+                    class="num-input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoMatematica"
+                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoMatematica') ? 'true' : null"
+                  />
+                  @if (erroDoCampo(grupo, 'pesoMatematica'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </div>
+                <div class="num-cell">
+                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-red'">
+                    {{ grupo.controls.grupoCurso.value }} — Redação
+                  </label>
+                  <input
+                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-red'"
+                    class="num-input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoRedacao"
+                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoRedacao') ? 'true' : null"
+                  />
+                  @if (erroDoCampo(grupo, 'pesoRedacao'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </div>
+                <div class="num-cell">
+                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'">
+                    {{ grupo.controls.grupoCurso.value }} — Corte de redação (padrão 400)
+                  </label>
+                  <input
+                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'"
+                    class="num-input"
+                    type="number"
+                    min="0"
+                    [attr.max]="CORTE_MAXIMO"
+                    step="10"
+                    placeholder="400"
+                    formControlName="corteRedacao"
+                    data-no-sum
+                    [attr.aria-invalid]="erroDoCampo(grupo, 'corteRedacao') ? 'true' : null"
+                  />
+                  @if (erroDoCampo(grupo, 'corteRedacao'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </div>
+              </div>
+            }
+            <div class="grid-editbar" id="grid-pe-bar">
+              @if (editErro()) {
+                <ui-alert variant="danger" heading="Não foi possível salvar todos os grupos" [dynamic]="false">
+                  {{ editErro() }}
+                </ui-alert>
+              }
+              <button
+                class="btn btn--secondary"
+                type="button"
+                [disabled]="salvandoEdicao()"
+                (click)="cancelarEdicao()"
+              >
+                Cancelar
+              </button>
+              <button
+                class="btn btn--primary"
+                type="button"
+                [disabled]="salvandoEdicao()"
+                (click)="salvarEdicao()"
+              >
+                @if (salvandoEdicao()) {
+                  <ui-spinner size="sm" />
+                  Salvando...
+                } @else {
+                  Salvar
+                }
+              </button>
+            </div>
+          } @else {
+            @for (grupo of gruposCurso; track grupo; let gi = $index) {
+              @if (linhaDoGrupo(resolucao, grupo); as linha) {
+                <div class="num-grid__row">
+                  <div>
+                    <strong class="cell-label--group-label">{{ grupo }}</strong>
+                  </div>
+                  <div class="num-cell">
+                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'">
+                      {{ grupo }} — Linguagens
+                    </label>
+                    <input
+                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'"
+                      class="num-input"
+                      type="number"
+                      [value]="linha.pesoLinguagens"
+                      readonly
+                    />
+                  </div>
+                  <div class="num-cell">
+                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'">
+                      {{ grupo }} — Ciências humanas
+                    </label>
+                    <input
+                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'"
+                      class="num-input"
+                      type="number"
+                      [value]="linha.pesoCienciasHumanas"
+                      readonly
+                    />
+                  </div>
+                  <div class="num-cell">
+                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'">
+                      {{ grupo }} — Ciências da natureza
+                    </label>
+                    <input
+                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'"
+                      class="num-input"
+                      type="number"
+                      [value]="linha.pesoCienciasNatureza"
+                      readonly
+                    />
+                  </div>
+                  <div class="num-cell">
+                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'">
+                      {{ grupo }} — Matemática
+                    </label>
+                    <input
+                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'"
+                      class="num-input"
+                      type="number"
+                      [value]="linha.pesoMatematica"
+                      readonly
+                    />
+                  </div>
+                  <div class="num-cell">
+                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-red'">
+                      {{ grupo }} — Redação
+                    </label>
+                    <input
+                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-red'"
+                      class="num-input"
+                      type="number"
+                      [value]="linha.pesoRedacao"
+                      readonly
+                    />
+                  </div>
+                  <div class="num-cell">
+                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'">
+                      {{ grupo }} — Corte de redação (padrão 400)
+                    </label>
+                    <input
+                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'"
+                      class="num-input"
+                      type="number"
+                      [value]="linha.corteRedacao"
+                      placeholder="400"
+                      readonly
+                      data-no-sum
+                    />
+                  </div>
+                </div>
+              }
+            }
+          }
+
+          <p class="grid-note">
+            Os pesos das áreas são definidos pela instituição em cada edital — não há soma fixa; o
+            sistema registra os valores informados sem bloquear. O corte de redação é a nota mínima
+            exigida na redação (valor padrão 400; não entra em cálculo de soma).
+          </p>
+        </div>
+      </section>
+    } @empty {
+      @if (!isLoading() && !errorMessage()) {
+        <ui-empty-state
+          heading="Nenhuma resolução cadastrada"
+          description="Cadastre a primeira resolução de pesos do ENEM por grupo de curso."
         >
-          Confirmar inativação
-        </button>
-      </ng-container>
-    </ui-dialog>
+          <button type="button" class="btn btn--primary" (click)="abrirDrawerCriacao()">
+            Cadastrar nova resolução
+          </button>
+        </ui-empty-state>
+      }
     }
+
+    <ui-confirm-dialog
+      [(visible)]="confirmInativarAberto"
+      heading="Inativar resolução?"
+      [message]="confirmInativarMensagem()"
+      confirmLabel="Confirmar inativação"
+      confirmVariant="danger"
+      (confirmed)="confirmarInativacao()"
+    />
+
     <ui-drawer
       class="cfg-form-drawer"
       [(visible)]="drawerAberto"
       heading="Cadastrar nova resolução"
-      ariaLabel="Formulário da instituição"
+      ariaLabel="Formulário de nova resolução de pesos do ENEM"
       position="right"
     >
       @if (submitError()) {
@@ -269,45 +503,156 @@ interface PesoGrupoForm {
 
       <form
         [formGroup]="pesoLoteForm"
-        id="cfg-instituicao-form"
+        id="cfg-pesos-enem-form"
+        (ngSubmit)="criarResolucao()"
         novalidate
         class="cfg-form"
       >
         <div class="form-grid">
-          <label class="field field--full" [class.is-error]="erroDoCampo('resolucao')">
+          <label class="field field--full" [class.is-error]="erroDoCampoLote('resolucao')">
             <span class="field__label is-required">Número/ano da resolução</span>
             <input
               class="input"
               type="text"
-              placeholder="Ex.: Resolução INEP 805/2024"
+              placeholder="Ex.: Res. 805/2024"
               formControlName="resolucao"
-              [attr.aria-invalid]="erroDoCampo('resolucao') ? 'true' : null"
+              [attr.aria-invalid]="erroDoCampoLote('resolucao') ? 'true' : null"
             />
-            <span class="field__hint"
-              >Identificador da resolução INEP. Parte da chave composta — não pode ser alterado após
-              a criação.</span
-            >
-            @if (erroDoCampo('resolucao')) {
-              <span class="field__error">{{ erroDoCampo('resolucao') }}</span>
+            <span class="field__hint">
+              Identificador da resolução INEP. Parte da chave composta — não pode ser alterado
+              após a criação.
+            </span>
+            @if (erroDoCampoLote('resolucao')) {
+              <span class="field__error" role="alert">{{ erroDoCampoLote('resolucao') }}</span>
             }
           </label>
-          <label class="field field--full" [class.is-error]="erroDoCampo('baseLegalGlobal')">
-            <span class="field__label is-required">Base legal</span>
+          <label class="field field--full" [class.is-error]="erroDoCampoLote('baseLegalGlobal')">
+            <span class="field__label is-required">Base legal (padrão para os 4 grupos)</span>
             <input
               class="input"
               type="text"
               placeholder="Ex.: Res. 805/2024 Anexo I"
               formControlName="baseLegalGlobal"
-              [attr.aria-invalid]="erroDoCampo('baseLegalGlobal') ? 'true' : null"
+              [attr.aria-invalid]="erroDoCampoLote('baseLegalGlobal') ? 'true' : null"
             />
-            <span class="field__hint"
-              >Dispositivo exato (resolução + anexo) que fundamenta os pesos. Obrigatório — não se
-              cadastra peso sem a base legal.</span
-            >
-            @if (erroDoCampo('baseLegalGlobal')) {
-              <span class="field__error">{{ erroDoCampo('baseLegalGlobal') }}</span>
+            <span class="field__hint">
+              Aplicada aos 4 grupos como valor pré-preenchido — cada grupo permanece editável.
+            </span>
+            @if (erroDoCampoLote('baseLegalGlobal')) {
+              <span class="field__error" role="alert">{{ erroDoCampoLote('baseLegalGlobal') }}</span>
             }
           </label>
+        </div>
+
+        <div formArrayName="grupos">
+          @for (grupo of pesoLoteForm.controls.grupos.controls; track grupo; let gi = $index) {
+            <fieldset
+              [formGroupName]="gi"
+              class="pe-drawer-grupo"
+              [disabled]="estadoGruposCriacao().get(gi) === 'ok'"
+            >
+              <legend>
+                {{ gruposCurso[gi] }}
+                @if (estadoGruposCriacao().get(gi) === 'ok') {
+                  <ui-tag variant="success">Criado</ui-tag>
+                }
+              </legend>
+              <div class="form-grid">
+                <label class="field">
+                  <span class="field__label is-required">Linguagens</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoLinguagens"
+                  />
+                  @if (erroDoCampoGrupo(gi, 'pesoLinguagens'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+                <label class="field">
+                  <span class="field__label is-required">Ciências humanas</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoCienciasHumanas"
+                  />
+                  @if (erroDoCampoGrupo(gi, 'pesoCienciasHumanas'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+                <label class="field">
+                  <span class="field__label is-required">Ciências da natureza</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoCienciasNatureza"
+                  />
+                  @if (erroDoCampoGrupo(gi, 'pesoCienciasNatureza'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+                <label class="field">
+                  <span class="field__label is-required">Matemática</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoMatematica"
+                  />
+                  @if (erroDoCampoGrupo(gi, 'pesoMatematica'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+                <label class="field">
+                  <span class="field__label is-required">Redação</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="pesoRedacao"
+                  />
+                  @if (erroDoCampoGrupo(gi, 'pesoRedacao'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+                <label class="field">
+                  <span class="field__label">Corte de redação</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="CORTE_MAXIMO"
+                    step="10"
+                    placeholder="400"
+                    formControlName="corteRedacao"
+                  />
+                  @if (erroDoCampoGrupo(gi, 'corteRedacao'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+                <label class="field field--full">
+                  <span class="field__label is-required">Base legal</span>
+                  <input class="input" type="text" formControlName="baseLegal" />
+                  @if (erroDoCampoGrupo(gi, 'baseLegal'); as erro) {
+                    <span class="field__error" role="alert">{{ erro }}</span>
+                  }
+                </label>
+              </div>
+            </fieldset>
+          }
         </div>
       </form>
       <div class="cfg-form-footer">
@@ -316,9 +661,9 @@ interface PesoGrupoForm {
         </button>
         <button
           type="submit"
-          form="cfg-instituicao-form"
+          form="cfg-pesos-enem-form"
           class="btn btn--primary"
-          [disabled]="submitting() || pesoLoteForm.invalid"
+          [disabled]="submitting()"
         >
           @if (submitting()) {
             <ui-spinner size="sm" />
@@ -333,94 +678,472 @@ interface PesoGrupoForm {
   styles: '.button-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }',
 })
 export class PesosEnemPage {
-  readonly registros = signal<PesoAreaEnemDto[]>([]);
-  readonly isLoading = signal(false);
-  readonly errorMessage = signal<string | null>(null);
-  readonly pesos = signal<{ id: string }[]>([{ id: '1' }]);
-  readonly pesoEnemApi = inject(PesosEnemApi);
-  protected readonly submitError = signal<string | null>(null);
-  readonly dialogVisivel = model(false);
-  private readonly notificationService = inject(NotificationService);
-  private readonly destroyRef = inject(DestroyRef);
-  protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  readonly porResolucao = computed(
-    () => this.agruparPorResolucao(this.registros()),
-  );
-  readonly resolucoes = computed(
-    () => [...this.porResolucao().keys()],
-  );
-  readonly editandoResolucao = signal<string | null>(null);
-  readonly submitting = signal(false);
-  readonly editFormGroup = signal<FormGroup | null>(null);
-  readonly drawerAberto = signal(false);
+  protected readonly gruposCurso = GRUPOS_CURSO;
+  protected readonly PESO_MAXIMO = PESO_MAXIMO;
+  protected readonly CORTE_MAXIMO = CORTE_MAXIMO;
 
-  protected readonly pesoGrupoForm: FormGroup<PesoGrupoForm> = new FormGroup<PesoGrupoForm>({
-    grupoCurso: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(1)],
-    }),
-    pesoLinguagens: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    pesoCienciasHumanas: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    pesoCienciasNatureza: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    pesoMatematica: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    pesoRedacao: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    corteRedacao: new FormControl(0, {
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    baseLegal: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(1)],
-    }),
-  });
+  private readonly api = inject(PesosEnemApi);
+  private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly registros = signal<readonly PesoAreaEnemDto[]>([]);
+  protected readonly isLoading = signal(false);
+  protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly porResolucao = computed(() => agruparPorResolucao(this.registros()));
+  protected readonly resolucoes = computed(() =>
+    [...this.porResolucao().entries()]
+      .sort(([resolucaoA, linhasA], [resolucaoB, linhasB]) => {
+        const diff = maxCriadoEm(linhasB) - maxCriadoEm(linhasA);
+        return diff !== 0 ? diff : resolucaoB.localeCompare(resolucaoA, 'pt-BR');
+      })
+      .map(([resolucao]) => resolucao),
+  );
+
+  // --- Edição in-line ---------------------------------------------------
+  protected readonly editandoResolucao = signal<string | null>(null);
+  protected readonly editForm = signal<FormArray<FormGroup<PesoEdicaoGrupoForm>> | null>(null);
+  protected readonly editErro = signal<string | null>(null);
+  protected readonly salvandoEdicao = signal(false);
+  protected readonly estadoLinhasEdicao = signal<ReadonlyMap<string, EstadoOperacao>>(new Map());
+  private readonly idempotencyKeysEdicao = signal<ReadonlyMap<string, string>>(new Map());
+
+  // --- Drawer de criação --------------------------------------------------
+  protected readonly drawerAberto = signal(false);
+  protected readonly submitting = signal(false);
+  protected readonly submitError = signal<string | null>(null);
+  protected readonly estadoGruposCriacao = signal<ReadonlyMap<number, EstadoOperacao>>(new Map());
+  private readonly idempotencyKeysCriacao = signal<ReadonlyMap<number, string>>(new Map());
 
   protected readonly pesoLoteForm: FormGroup<PesoLoteForm> = new FormGroup<PesoLoteForm>({
     resolucao: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(1), Validators.maxLength(255)],
+      validators: [Validators.required, Validators.minLength(1), Validators.maxLength(40)],
     }),
     baseLegalGlobal: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(1), Validators.maxLength(255)],
+      validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
     }),
-    grupos: new FormArray([
-      this.pesoGrupoForm,
-      this.pesoGrupoForm,
-      this.pesoGrupoForm,
-      this.pesoGrupoForm,
-    ]),
+    grupos: new FormArray(GRUPOS_CURSO.map((grupo) => criarPesoGrupoForm(grupo))),
   });
 
-  agruparPorResolucao(pesos: PesoAreaEnemDto[]): Map<string, PesoAreaEnemDto[]> {
-    const map: Map<string, PesoAreaEnemDto[]> = new Map();
-    pesos.forEach(peso => {
-      if(!map.has(peso.resolucao)) {
-        map.set(peso.resolucao, [peso]);
-      }
-      else {
-        const result = map.get(peso.resolucao) as PesoAreaEnemDto[];
-        map.set(peso.resolucao, [...result, peso]);
-      }
-    });
-    return map;
+  // --- Inativação -----------------------------------------------------
+  protected readonly confirmInativarAberto = signal(false);
+  protected readonly resolucaoParaInativar = signal<string | null>(null);
+  protected readonly confirmInativarMensagem = computed(() => {
+    const resolucao = this.resolucaoParaInativar();
+    return resolucao === null
+      ? 'Deseja inativar esta resolução?'
+      : `Você está prestes a inativar a resolução "${resolucao}" e os pesos dos seus 4 grupos ` +
+          'de curso. A inativação é uma remoção lógica (soft-delete): o registro permanece para ' +
+          'auditoria e o identificador pode ser reutilizado. Editais publicados congelam os ' +
+          'pesos por valor no snapshot de classificação — a inativação não altera o que já foi ' +
+          'congelado nem é bloqueada por processos que a referenciaram.';
+  });
+
+  constructor() {
+    this.pesoLoteForm.controls.baseLegalGlobal.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((valor) => {
+        for (const grupo of this.pesoLoteForm.controls.grupos.controls) {
+          if (grupo.controls.baseLegal.pristine) {
+            grupo.controls.baseLegal.setValue(valor, { emitEvent: false });
+          }
+        }
+      });
+    this.carregar();
   }
 
-  protected erroDoCampo(nome: keyof PesoLoteForm): string | null {
-    const control = this.pesoLoteForm.controls[nome];
+  protected slug(valor: string): string {
+    return slug(valor);
+  }
+
+  protected linhaDoGrupo(resolucao: string, grupo: string): PesoAreaEnemDto | undefined {
+    return this.porResolucao().get(resolucao)?.find((linha) => linha.grupoCurso === grupo);
+  }
+
+  protected tentarNovamente(): void {
+    if (!this.isLoading()) {
+      this.carregar();
+    }
+  }
+
+  // --- Edição in-line -----------------------------------------------------
+
+  protected clicarEditarParametros(resolucao: string): void {
+    const atual = this.editandoResolucao();
+    if (atual === resolucao) {
+      return;
+    }
+    if (atual !== null && (this.editForm()?.dirty ?? false)) {
+      const prosseguir = globalThis.confirm(
+        'Há alterações não salvas nesta resolução. Deseja descartá-las e editar outra?',
+      );
+      if (!prosseguir) {
+        return;
+      }
+    }
+    this.abrirEdicao(resolucao);
+  }
+
+  private abrirEdicao(resolucao: string): void {
+    const linhas = this.porResolucao().get(resolucao) ?? [];
+    const form = new FormArray(linhas.map((linha) => criarPesoEdicaoGrupoForm(linha)));
+    this.editForm.set(form);
+    this.editErro.set(null);
+    this.estadoLinhasEdicao.set(new Map());
+    this.idempotencyKeysEdicao.set(new Map(linhas.map((linha) => [linha.id, idempotencyKey.create()])));
+    this.editandoResolucao.set(resolucao);
+    queueMicrotask(() => {
+      document.getElementById(`pe-${slug(resolucao)}-g0-ling`)?.focus();
+    });
+  }
+
+  protected cancelarEdicao(): void {
+    const resolucao = this.editandoResolucao();
+    this.editandoResolucao.set(null);
+    this.editForm.set(null);
+    this.editErro.set(null);
+    this.estadoLinhasEdicao.set(new Map());
+    if (resolucao !== null) {
+      queueMicrotask(() => {
+        document.getElementById(`pe-editar-${slug(resolucao)}`)?.focus();
+      });
+    }
+  }
+
+  protected erroDoCampo(grupo: FormGroup<PesoEdicaoGrupoForm>, nome: PesoCampoComum): string | null {
+    return this.erroDeControle(grupo.controls[nome], nome);
+  }
+
+  protected salvarEdicao(): void {
+    const form = this.editForm();
+    const resolucao = this.editandoResolucao();
+    if (form === null || resolucao === null || this.salvandoEdicao()) {
+      return;
+    }
+    form.markAllAsTouched();
+    if (form.invalid) {
+      return;
+    }
+
+    const pendentes = form.controls.filter(
+      (grupo) => this.estadoLinhasEdicao().get(grupo.controls.id.value) !== 'ok',
+    );
+    if (pendentes.length === 0) {
+      return;
+    }
+
+    this.salvandoEdicao.set(true);
+    this.editErro.set(null);
+
+    const chamadas = pendentes.map((grupo) => {
+      const raw = grupo.getRawValue();
+      const chave = this.idempotencyKeysEdicao().get(raw.id) ?? idempotencyKey.create();
+      const command: AtualizarPesoAreaEnemCommand = {
+        id: raw.id,
+        pesoLinguagens: raw.pesoLinguagens,
+        pesoCienciasHumanas: raw.pesoCienciasHumanas,
+        pesoCienciasNatureza: raw.pesoCienciasNatureza,
+        pesoMatematica: raw.pesoMatematica,
+        pesoRedacao: raw.pesoRedacao,
+        corteRedacao: raw.corteRedacao,
+        baseLegal: raw.baseLegal.trim(),
+      };
+      return this.api
+        .atualizar(raw.id, command, withIdempotencyKey(chave))
+        .pipe(map((result) => ({ id: raw.id, grupo, result })));
+    });
+
+    forkJoin(chamadas)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultados) => {
+        this.salvandoEdicao.set(false);
+        const novoEstado = new Map(this.estadoLinhasEdicao());
+        let ultimoProblema: ProblemDetails | null = null;
+
+        for (const { id, grupo, result } of resultados) {
+          if (result.ok) {
+            novoEstado.set(id, 'ok');
+            continue;
+          }
+          // Idempotency-Key é PRESERVADA em retry após 422 (§5.2/§9.1 da issue
+          // #395) — diferente do fluxo de criação: o corpo de uma correção de
+          // peso pode até mudar, mas a chave só é renovada ao abrir uma NOVA
+          // sessão de edição (abrirEdicao) ou após sucesso (cancelarEdicao).
+          ultimoProblema = result.problem;
+          novoEstado.set(id, 'erro');
+          this.aplicarErroGrupo(grupo, result.problem);
+        }
+
+        this.estadoLinhasEdicao.set(novoEstado);
+
+        const falhas = resultados.filter((r) => !r.result.ok);
+        if (falhas.length > 0) {
+          this.editErro.set(
+            `${falhas.length} de ${resultados.length} grupo(s) não foram salvos. Corrija e tente novamente.`,
+          );
+          if (ultimoProblema && ultimoProblema.status >= 500) {
+            this.notifications.errorFromProblem(ultimoProblema);
+          }
+          return;
+        }
+
+        this.aplicarLinhasAtualizadas(form);
+        this.notifications.success('Pesos salvos', resolucao);
+        this.cancelarEdicao();
+      });
+  }
+
+  private aplicarLinhasAtualizadas(form: FormArray<FormGroup<PesoEdicaoGrupoForm>>): void {
+    const atualizadas = new Map(
+      form.controls.map((grupo) => {
+        const raw = grupo.getRawValue();
+        return [raw.id, raw] as const;
+      }),
+    );
+    this.registros.update((atual) =>
+      atual.map((linha) => {
+        const nova = atualizadas.get(linha.id);
+        if (nova === undefined) {
+          return linha;
+        }
+        return {
+          ...linha,
+          pesoLinguagens: nova.pesoLinguagens,
+          pesoCienciasHumanas: nova.pesoCienciasHumanas,
+          pesoCienciasNatureza: nova.pesoCienciasNatureza,
+          pesoMatematica: nova.pesoMatematica,
+          pesoRedacao: nova.pesoRedacao,
+          corteRedacao: nova.corteRedacao,
+          baseLegal: nova.baseLegal,
+        };
+      }),
+    );
+  }
+
+  // --- Drawer de criação ----------------------------------------------
+
+  protected abrirDrawerCriacao(): void {
+    this.pesoLoteForm.reset({ resolucao: '', baseLegalGlobal: '' });
+    this.pesoLoteForm.controls.grupos.controls.forEach((grupo, index) => {
+      grupo.enable();
+      grupo.reset({
+        grupoCurso: GRUPOS_CURSO[index],
+        pesoLinguagens: 0,
+        pesoCienciasHumanas: 0,
+        pesoCienciasNatureza: 0,
+        pesoMatematica: 0,
+        pesoRedacao: 0,
+        corteRedacao: CORTE_REDACAO_PADRAO,
+        baseLegal: '',
+      });
+    });
+    this.submitError.set(null);
+    this.estadoGruposCriacao.set(new Map());
+    this.idempotencyKeysCriacao.set(
+      new Map(GRUPOS_CURSO.map((_, index) => [index, idempotencyKey.create()])),
+    );
+    this.drawerAberto.set(true);
+  }
+
+  protected erroDoCampoLote(nome: keyof Pick<PesoLoteForm, 'resolucao' | 'baseLegalGlobal'>): string | null {
+    return this.erroDeControle(this.pesoLoteForm.controls[nome], nome);
+  }
+
+  protected erroDoCampoGrupo(index: number, nome: PesoCampoComum): string | null {
+    const grupo = this.pesoLoteForm.controls.grupos.at(index);
+    return this.erroDeControle(grupo.controls[nome], nome);
+  }
+
+  protected criarResolucao(): void {
+    if (this.submitting()) {
+      return;
+    }
+    this.pesoLoteForm.markAllAsTouched();
+    if (this.pesoLoteForm.invalid) {
+      return;
+    }
+
+    const resolucao = this.pesoLoteForm.controls.resolucao.value.trim();
+    const grupos = this.pesoLoteForm.controls.grupos.controls;
+    const pendentes = grupos
+      .map((grupo, index) => ({ grupo, index }))
+      .filter(({ index }) => this.estadoGruposCriacao().get(index) !== 'ok');
+    if (pendentes.length === 0) {
+      return;
+    }
+
+    this.submitting.set(true);
+    this.submitError.set(null);
+
+    const chamadas = pendentes.map(({ grupo, index }) => {
+      const raw = grupo.getRawValue();
+      const chave = this.idempotencyKeysCriacao().get(index) ?? idempotencyKey.create();
+      const command: CriarPesoAreaEnemCommand = {
+        resolucao,
+        grupoCurso: raw.grupoCurso,
+        pesoLinguagens: raw.pesoLinguagens,
+        pesoCienciasHumanas: raw.pesoCienciasHumanas,
+        pesoCienciasNatureza: raw.pesoCienciasNatureza,
+        pesoMatematica: raw.pesoMatematica,
+        pesoRedacao: raw.pesoRedacao,
+        corteRedacao: raw.corteRedacao,
+        baseLegal: raw.baseLegal.trim(),
+      };
+      return this.api
+        .criar(command, withIdempotencyKey(chave))
+        .pipe(map((result) => ({ index, grupo, result })));
+    });
+
+    forkJoin(chamadas)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultados) => {
+        this.submitting.set(false);
+        const novoEstado = new Map(this.estadoGruposCriacao());
+        const novasChaves = new Map(this.idempotencyKeysCriacao());
+        let duplicidade = false;
+        let ultimoProblema: ProblemDetails | null = null;
+
+        for (const { index, grupo, result } of resultados) {
+          if (result.ok) {
+            novoEstado.set(index, 'ok');
+            grupo.disable();
+            continue;
+          }
+          ultimoProblema = result.problem;
+          novoEstado.set(index, 'erro');
+          novasChaves.set(index, idempotencyKey.create());
+          if (result.problem.code === PAR_JA_EXISTE_CODE) {
+            duplicidade = true;
+          } else {
+            this.aplicarErroGrupo(grupo, result.problem);
+          }
+        }
+
+        this.estadoGruposCriacao.set(novoEstado);
+        this.idempotencyKeysCriacao.set(novasChaves);
+
+        if (duplicidade) {
+          const control = this.pesoLoteForm.controls.resolucao;
+          control.setErrors({
+            backend: {
+              code: PAR_JA_EXISTE_CODE,
+              message: 'Resolução já cadastrada. Informe um identificador diferente.',
+            },
+          });
+          control.markAsTouched();
+        }
+
+        const falhas = resultados.filter((r) => !r.result.ok);
+        if (falhas.length > 0) {
+          if (!duplicidade) {
+            this.submitError.set(
+              `${falhas.length} de ${resultados.length} grupo(s) não foram criados. Corrija e tente novamente.`,
+            );
+          }
+          if (ultimoProblema && ultimoProblema.status >= 500) {
+            this.notifications.errorFromProblem(ultimoProblema);
+          }
+          return;
+        }
+
+        this.notifications.success('Resolução criada', resolucao);
+        this.drawerAberto.set(false);
+        this.carregar();
+      });
+  }
+
+  // --- Inativação -------------------------------------------------------
+
+  protected pedirInativacao(resolucao: string): void {
+    this.resolucaoParaInativar.set(resolucao);
+    this.confirmInativarAberto.set(true);
+  }
+
+  protected confirmarInativacao(): void {
+    const resolucao = this.resolucaoParaInativar();
+    this.resolucaoParaInativar.set(null);
+    if (resolucao === null) {
+      return;
+    }
+    const linhas = this.porResolucao().get(resolucao) ?? [];
+    if (linhas.length === 0) {
+      return;
+    }
+    forkJoin(linhas.map((linha) => this.api.remover(linha.id)))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultados) => {
+        const falhas = resultados.filter((r) => !r.ok);
+        if (falhas.length === 0) {
+          this.notifications.success('Resolução inativada', resolucao);
+        } else if (falhas.length === resultados.length) {
+          this.notifications.errorFromProblem(falhas[0].problem, {
+            title: this.problemI18n.resolve(falhas[0].problem).title,
+          });
+        } else {
+          this.notifications.warning(
+            'Inativação parcial',
+            `${resultados.length - falhas.length} de ${resultados.length} grupos foram ` +
+              'inativados. A lista foi atualizada com o estado atual.',
+          );
+        }
+        this.carregar();
+      });
+  }
+
+  // --- Carregamento (exaustão de cursor, ADR-0015/0026) ------------------
+
+  private carregar(): void {
+    if (this.isLoading()) {
+      return;
+    }
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    let acumulado: PesoAreaEnemDto[] = [];
+    let falhou: ProblemDetails | null = null;
+    let paginas = 0;
+
+    this.api
+      .listar({ limit: PAGE_SIZE })
+      .pipe(
+        expand((result: ApiResult<readonly PesoAreaEnemDto[]>) => {
+          paginas += 1;
+          if (!result.ok || paginas >= MAX_PAGINAS) {
+            return EMPTY;
+          }
+          const proximo = extractNextCursor(result.headers.get('Link'));
+          return proximo === null
+            ? EMPTY
+            : this.api.listar({ cursor: cursorToString(proximo), direction: 'next' });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (result) => {
+          if (!result.ok) {
+            falhou ??= result.problem;
+            return;
+          }
+          acumulado = [...acumulado, ...result.data];
+        },
+        complete: () => {
+          this.isLoading.set(false);
+          if (falhou !== null) {
+            this.errorMessage.set(this.problemI18n.resolve(falhou).title);
+            if (falhou.status >= 500) {
+              this.notifications.errorFromProblem(falhou);
+            }
+            return;
+          }
+          this.registros.set(acumulado);
+        },
+      });
+  }
+
+  private erroDeControle(control: AbstractControl, nome: string): string | null {
     const shouldShowError = control.touched || control.dirty;
     if (!shouldShowError || control.errors === null) {
       return null;
@@ -429,16 +1152,166 @@ export class PesosEnemPage {
       const backend = control.errors['backend'] as { code: string; message: string };
       return backend.message;
     }
-    if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
+    if (control.errors['required']) {
+      return 'Campo obrigatório.';
+    }
+    if (control.errors['min']) {
+      return nome === 'corteRedacao'
+        ? 'O corte de redação não pode ser negativo.'
+        : 'O peso não pode ser negativo.';
+    }
+    if (control.errors['max']) {
+      return nome === 'corteRedacao'
+        ? `Corte de redação não pode exceder ${CORTE_MAXIMO}.`
+        : `Peso não pode exceder ${PESO_MAXIMO}.`;
+    }
+    if (control.errors['maxlength']) {
+      return 'Valor acima do tamanho permitido.';
+    }
     return 'Valor inválido.';
   }
 
-  protected inativarResolucao(): void {
-    this.dialogVisivel.set(false);
-    this.notificationService.success(
-      'Resolução inativada',
-      'A resolução não estará disponível para novos editais (exemplo do kit — sem persistência real).',
-    );
+  private aplicarErroGrupo(
+    grupo: FormGroup<PesoGrupoForm> | FormGroup<PesoEdicaoGrupoForm>,
+    problem: ProblemDetails,
+  ): void {
+    const controls = grupo.controls as unknown as Record<PesoCampoComum, AbstractControl>;
+    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+      let aplicouAlgum = false;
+      for (const erro of problem.errors) {
+        const nome = controlNameFromBackendField(erro.field);
+        if (nome === null) {
+          continue;
+        }
+        controls[nome].setErrors({ backend: { code: erro.code, message: erro.message } });
+        controls[nome].markAsTouched();
+        aplicouAlgum = true;
+      }
+      if (aplicouAlgum) {
+        return;
+      }
+    }
+    controls.pesoLinguagens.setErrors({
+      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
+    });
+    controls.pesoLinguagens.markAsTouched();
   }
+}
+
+function agruparPorResolucao(pesos: readonly PesoAreaEnemDto[]): Map<string, PesoAreaEnemDto[]> {
+  const mapa = new Map<string, PesoAreaEnemDto[]>();
+  for (const peso of pesos) {
+    const grupo = mapa.get(peso.resolucao);
+    if (grupo) {
+      grupo.push(peso);
+    } else {
+      mapa.set(peso.resolucao, [peso]);
+    }
+  }
+  return mapa;
+}
+
+function maxCriadoEm(linhas: readonly PesoAreaEnemDto[]): number {
+  return linhas.reduce((max, linha) => Math.max(max, Date.parse(linha.criadoEm)), 0);
+}
+
+function toNumber(valor: number | string): number {
+  return typeof valor === 'number' ? valor : Number(valor);
+}
+
+function criarPesoGrupoForm(grupoCurso: string): FormGroup<PesoGrupoForm> {
+  return new FormGroup<PesoGrupoForm>({
+    grupoCurso: new FormControl(grupoCurso, { nonNullable: true }),
+    pesoLinguagens: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoCienciasHumanas: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoCienciasNatureza: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoMatematica: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoRedacao: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    corteRedacao: new FormControl(CORTE_REDACAO_PADRAO, {
+      nonNullable: true,
+      validators: [Validators.min(0), Validators.max(CORTE_MAXIMO)],
+    }),
+    baseLegal: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
+    }),
+  });
+}
+
+function criarPesoEdicaoGrupoForm(linha: PesoAreaEnemDto): FormGroup<PesoEdicaoGrupoForm> {
+  return new FormGroup<PesoEdicaoGrupoForm>({
+    id: new FormControl(linha.id, { nonNullable: true }),
+    grupoCurso: new FormControl(linha.grupoCurso, { nonNullable: true }),
+    pesoLinguagens: new FormControl(toNumber(linha.pesoLinguagens), {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoCienciasHumanas: new FormControl(toNumber(linha.pesoCienciasHumanas), {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoCienciasNatureza: new FormControl(toNumber(linha.pesoCienciasNatureza), {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoMatematica: new FormControl(toNumber(linha.pesoMatematica), {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    pesoRedacao: new FormControl(toNumber(linha.pesoRedacao), {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
+    }),
+    corteRedacao: new FormControl(toNumber(linha.corteRedacao), {
+      nonNullable: true,
+      validators: [Validators.min(0), Validators.max(CORTE_MAXIMO)],
+    }),
+    baseLegal: new FormControl(linha.baseLegal, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
+    }),
+  });
+}
+
+const PESO_CONTROL_NAMES: ReadonlySet<string> = new Set<PesoCampoComum>([
+  'pesoLinguagens',
+  'pesoCienciasHumanas',
+  'pesoCienciasNatureza',
+  'pesoMatematica',
+  'pesoRedacao',
+  'corteRedacao',
+  'baseLegal',
+]);
+
+function controlNameFromBackendField(field: string): PesoCampoComum | null {
+  const normalized =
+    field
+      .split('.')
+      .at(-1)
+      ?.replace(/\[\d+\]$/u, '') ?? field;
+  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
+  return PESO_CONTROL_NAMES.has(camelCase) ? (camelCase as PesoCampoComum) : null;
+}
+
+function slug(valor: string): string {
+  return valor
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/gu, '')
+    .replace(/[^a-zA-Z0-9]+/gu, '-')
+    .toLowerCase();
 }
