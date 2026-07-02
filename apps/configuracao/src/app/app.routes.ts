@@ -54,6 +54,19 @@ export const appRoutes: Routes = [
             (m) => m.PESOS_ENEM_ROUTES,
           ),
       },
+      {
+        path: 'cursos',
+        data: { breadcrumb: 'Curso' },
+        loadChildren: () => import('./features/cursos/cursos.routes').then((m) => m.CURSOS_ROUTES),
+      },
+      {
+        path: 'ofertas-curso',
+        data: { breadcrumb: 'Oferta de curso' },
+        loadChildren: () =>
+          import('./features/ofertas-curso/ofertas-curso.routes').then(
+            (m) => m.OFERTAS_CURSO_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
