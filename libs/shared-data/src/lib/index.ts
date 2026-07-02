@@ -12,11 +12,10 @@ export * from './models/resultado.model';
 // API clients gerados (ADR-0013) — types via openapi-typescript em schema.ts;
 // services Angular standalone manuais consumindo `withVendorMime` + `ApiResult`.
 //
-// `TipoProcesso` do schema gerado (que é um inteiro do .NET enum) NÃO é
-// re-exportado para evitar colisão com a string union já exposta por
-// `models/edital.model.ts`. O campo `EditalDto.tipoProcesso` já é `string`
-// no próprio DTO; quando precisarmos do enum gerado, importamos diretamente
-// de `./api/selecao/schema`.
+// O enum `TipoProcesso` foi removido do contrato (Story #455 do `uniplus-api`
+// — promovido a FK preparatória `tipoEditalId` para a futura entidade
+// `TipoEdital`); `models/edital.model.ts` mantém a string union homônima como
+// modelo local não vinculado ao DTO gerado.
 export { SELECAO_BASE_PATH } from './api/selecao/tokens';
 export { INGRESSO_BASE_PATH } from './api/ingresso/tokens';
 export { CONFIGURACAO_BASE_PATH } from './api/configuracao/tokens';

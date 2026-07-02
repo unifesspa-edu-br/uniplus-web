@@ -13,7 +13,6 @@ const COMANDO_VALIDO = {
   numeroEdital: 42,
   anoEdital: 2026,
   titulo: 'PSE 2026',
-  tipoProcesso: 1,
   maximoOpcoesCurso: 2,
 };
 
@@ -254,16 +253,15 @@ describe('EditaisCreatePage', () => {
   // em vez de form.setValue(...). O setValue() bypassa ControlValueAccessor
   // e mascara o bug runtime — esse teste falha sem o fix em FormFieldComponent
   // (ramo estatico type="number" para ativar NumberValueAccessor). Sem fix,
-  // tipoProcesso/numeroEdital/anoEdital sairiam no body como string e o
-  // backend retornaria 400 (issue #374, validado via Playwright real).
+  // numeroEdital/anoEdital sairiam no body como string e o backend
+  // retornaria 400 (issue #374, validado via Playwright real).
   it('submit via DOM (NumberValueAccessor): body envia campos numericos como number, nao string', () => {
     const numericInputs = fixture.nativeElement.querySelectorAll(
       'input[type="number"]',
     ) as NodeListOf<HTMLInputElement>;
-    expect(numericInputs.length).toBe(4);
+    expect(numericInputs.length).toBe(3);
 
-    const [numeroEditalInput, anoEditalInput, tipoProcessoInput, maximoOpcoesInput] =
-      Array.from(numericInputs);
+    const [numeroEditalInput, anoEditalInput, maximoOpcoesInput] = Array.from(numericInputs);
     const tituloInput = fixture.nativeElement.querySelector(
       'input[type="text"]',
     ) as HTMLInputElement;
@@ -274,8 +272,6 @@ describe('EditaisCreatePage', () => {
     anoEditalInput.dispatchEvent(new Event('input'));
     tituloInput.value = 'PSE 2026';
     tituloInput.dispatchEvent(new Event('input'));
-    tipoProcessoInput.value = '1';
-    tipoProcessoInput.dispatchEvent(new Event('input'));
     maximoOpcoesInput.value = '2';
     maximoOpcoesInput.dispatchEvent(new Event('input'));
     fixture.detectChanges();
@@ -287,7 +283,6 @@ describe('EditaisCreatePage', () => {
       numeroEdital: 42,
       anoEdital: 2026,
       titulo: 'PSE 2026',
-      tipoProcesso: 1,
       maximoOpcoesCurso: 2,
     });
     // Strict type check explícito: cada campo numerico tem que ser number,
@@ -295,7 +290,6 @@ describe('EditaisCreatePage', () => {
     // coergiu via FormFieldComponent (issue #374).
     expect(typeof req.request.body.numeroEdital).toBe('number');
     expect(typeof req.request.body.anoEdital).toBe('number');
-    expect(typeof req.request.body.tipoProcesso).toBe('number');
     expect(typeof req.request.body.maximoOpcoesCurso).toBe('number');
 
     req.flush('019e1a15-c374-7ae4-8f21-91e782f8f910', { status: 201, statusText: 'Created' });

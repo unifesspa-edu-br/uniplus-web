@@ -20,16 +20,17 @@ import {
 /**
  * Form Reactive tipado para criação de edital.
  *
- * Os tipos batem 1:1 com `CriarEditalCommand` do contrato V1, com a ressalva
- * de que `tipoProcesso` é `integer` no schema sem enum exposto — usado como
- * `number` no form com input numérico provisório enquanto o gap de contrato
- * (issue follow-up no `uniplus-api`) não é fechado.
+ * Os tipos batem 1:1 com `CriarEditalCommand` do contrato V1. O enum
+ * `TipoProcesso` foi removido do contrato (Story #455 do `uniplus-api`,
+ * promovido a FK preparatória `tipoEditalId` para a futura entidade
+ * `TipoEdital`, ainda sem cadastro) — o form não coleta esse campo; o
+ * comando viaja com `tipoEditalId` implicitamente `null` até existir um
+ * seletor de `TipoEdital`.
  */
 interface CriarEditalForm {
   numeroEdital: FormControl<number | null>;
   anoEdital: FormControl<number | null>;
   titulo: FormControl<string>;
-  tipoProcesso: FormControl<number | null>;
   maximoOpcoesCurso: FormControl<number>;
 }
 
@@ -91,14 +92,6 @@ interface CriarEditalForm {
       />
 
       <ui-form-field
-        fieldLabel="Tipo de processo (código numérico)"
-        inputType="number"
-        [isRequired]="true"
-        [fieldControl]="form.controls.tipoProcesso"
-        [errorMessage]="erroDoCampo('tipoProcesso')"
-      />
-
-      <ui-form-field
         fieldLabel="Máximo de opções de curso"
         inputType="number"
         [isRequired]="true"
@@ -148,9 +141,6 @@ export class EditaisCreatePage {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(3)],
     }),
-    tipoProcesso: new FormControl<number | null>(null, {
-      validators: [Validators.required, Validators.min(1)],
-    }),
     maximoOpcoesCurso: new FormControl<number>(1, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(1), Validators.max(2)],
@@ -171,7 +161,6 @@ export class EditaisCreatePage {
       numeroEdital: valor.numeroEdital ?? 0,
       anoEdital: valor.anoEdital ?? 0,
       titulo: valor.titulo,
-      tipoProcesso: valor.tipoProcesso ?? 0,
       maximoOpcoesCurso: valor.maximoOpcoesCurso,
     };
 

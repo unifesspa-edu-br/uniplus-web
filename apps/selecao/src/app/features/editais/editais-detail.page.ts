@@ -99,9 +99,6 @@ import {
           <dt>Título</dt>
           <dd>{{ e.titulo }}</dd>
 
-          <dt>Tipo de processo</dt>
-          <dd>{{ e.tipoProcesso }}</dd>
-
           <dt>Status</dt>
           <dd data-testid="edital-status">{{ e.status }}</dd>
 

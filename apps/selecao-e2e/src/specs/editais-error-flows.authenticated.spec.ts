@@ -35,7 +35,7 @@ const EDITAL_OK = {
   numeroEdital: 1,
   anoEdital: 2026,
   titulo: 'Edital de teste apos retry',
-  tipoProcesso: 1,
+  tipoEditalId: null,
   status: 'Rascunho',
   maximoOpcoesCurso: 2,
   bonusRegionalHabilitado: false,
@@ -176,7 +176,6 @@ test.describe('Editais — fluxos 5xx (CA-08 da Story #171)', () => {
       await page.getByLabel('Número do edital').fill('1');
       await page.getByLabel('Ano').fill('2026');
       await page.getByLabel('Título').fill('Edital de teste E2E');
-      await page.getByLabel('Tipo de processo (código numérico)').fill('1');
       // Máximo de opções de curso default = 1 (válido), não precisa preencher.
 
       const submitBtn = page.getByRole('button', { name: 'Criar edital' });

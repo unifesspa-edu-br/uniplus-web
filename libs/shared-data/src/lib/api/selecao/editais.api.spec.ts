@@ -20,7 +20,7 @@ const editalSeed: EditalDto = {
   id: '01960000-0000-7000-0000-000000000001',
   numeroEdital: '042/2026',
   titulo: 'PSE 2026',
-  tipoProcesso: 'PSE',
+  tipoEditalId: null,
   status: 'Rascunho',
   maximoOpcoesCurso: 2,
   bonusRegionalHabilitado: true,
@@ -173,7 +173,6 @@ describe('EditaisApi', () => {
       numeroEdital: 42,
       anoEdital: 2026,
       titulo: 'PSE 2026',
-      tipoProcesso: 1,
       maximoOpcoesCurso: 2,
     };
 
