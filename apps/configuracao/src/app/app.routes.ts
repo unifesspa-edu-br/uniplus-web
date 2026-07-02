@@ -47,11 +47,11 @@ export const appRoutes: Routes = [
           ),
       },
       {
-        path: 'peso-enem',
+        path: 'pesos-enem',
         data: { breadcrumb: 'Peso ENEM' },
         loadChildren: () =>
-          import('./features/peso-enem/peso-enem.routes').then(
-            (m) => m.PESO_ENEM_ROUTES,
+          import('./features/pesos-enem/pesos-enem.routes').then(
+            (m) => m.PESOS_ENEM_ROUTES,
           ),
       },
     ],

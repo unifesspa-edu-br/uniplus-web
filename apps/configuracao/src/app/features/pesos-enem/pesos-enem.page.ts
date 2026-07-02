@@ -11,7 +11,7 @@ import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } fr
 
 import { AlertComponent, DrawerComponent, SpinnerComponent, DialogComponent, PageHeaderComponent, TagComponent } from '@uniplus/shared-ui/components';
 import {
-  PesoEnemApi,
+  PesosEnemApi,
   PesoAreaEnemDto,
 } from '@uniplus/shared-data/configuracao';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -35,7 +35,7 @@ interface PesoGrupoForm {
 }
 
 @Component({
-  selector: 'cfg-peso-enem-page',
+  selector: 'cfg-pesos-enem-page',
   standalone: true,
   imports: [
     AlertComponent,
@@ -332,12 +332,12 @@ interface PesoGrupoForm {
   `,
   styles: '.button-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }',
 })
-export class PesoEnemPage {
+export class PesosEnemPage {
   readonly registros = signal<PesoAreaEnemDto[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly pesos = signal<{ id: string }[]>([{ id: '1' }]);
-  readonly pesoEnemApi = inject(PesoEnemApi);
+  readonly pesoEnemApi = inject(PesosEnemApi);
   protected readonly submitError = signal<string | null>(null);
   readonly dialogVisivel = model(false);
   private readonly notificationService = inject(NotificationService);

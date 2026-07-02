@@ -5,18 +5,18 @@ import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { PesoEnemPage } from './peso-enem.page';
+import { PesosEnemPage } from './pesos-enem.page';
 
 const BASE = 'http://localhost:5000';
 
-describe('PesoEnemPage', () => {
-  let fixture: ComponentFixture<PesoEnemPage>;
-  let component: PesoEnemPage;
+describe('PesosEnemPage', () => {
+  let fixture: ComponentFixture<PesosEnemPage>;
+  let component: PesosEnemPage;
   let controller: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [PesoEnemPage],
+      imports: [PesosEnemPage],
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -24,7 +24,7 @@ describe('PesoEnemPage', () => {
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
       ],
     });
-    fixture = TestBed.createComponent(PesoEnemPage);
+    fixture = TestBed.createComponent(PesosEnemPage);
     component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
