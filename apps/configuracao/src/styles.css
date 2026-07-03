@@ -717,6 +717,12 @@ cfg-pesos-enem-page {
   }
 }
 
+/* Vocabulários fechados (Fase canônica, Tipo de banca): formulário compacto
+   com poucos campos — mantém 1 coluna mesmo em telas largas (issue #393). */
+.cfg-form-drawer .form-grid--1col {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 767px) {
   .cfg-topbar-actions auth-user-header-info {
     display: none;
