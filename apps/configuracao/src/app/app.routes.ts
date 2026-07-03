@@ -81,6 +81,14 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/tipos-banca/tipos-banca.routes').then((m) => m.TIPOS_BANCA_ROUTES),
       },
+      {
+        path: 'tipos-documento',
+        data: { breadcrumb: 'Tipo de Documento' },
+        loadChildren: () =>
+          import('./features/tipos-documento/tipos-documento.routes').then(
+            (m) => m.TIPOS_DOCUMENTO_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
