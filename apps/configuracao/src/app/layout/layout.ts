@@ -246,8 +246,18 @@ export class LayoutComponent {
         { label: 'Condição de Atendimento', icon: 'pi-heart' },
         { label: 'Recurso de Acessibilidade', icon: 'pi-universal-access' },
         { label: 'Tipo de Deficiência', icon: 'pi-eye' },
-        { label: 'Fase Canônica', icon: 'pi-star' },
-        { label: 'Tipo de Banca', icon: 'pi-shield' },
+        {
+          label: 'Fase Canônica',
+          icon: 'pi-star',
+          routerLink: '/fases-canonicas',
+          exact: true,
+        },
+        {
+          label: 'Tipo de Banca',
+          icon: 'pi-shield',
+          routerLink: '/tipos-banca',
+          exact: true,
+        },
         {
           label: 'Reserva Demográfica',
           icon: 'pi-chart-bar',

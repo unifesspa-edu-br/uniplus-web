@@ -67,6 +67,20 @@ export const appRoutes: Routes = [
             (m) => m.OFERTAS_CURSO_ROUTES,
           ),
       },
+      {
+        path: 'fases-canonicas',
+        data: { breadcrumb: 'Fase Canônica' },
+        loadChildren: () =>
+          import('./features/fases-canonicas/fases-canonicas.routes').then(
+            (m) => m.FASES_CANONICAS_ROUTES,
+          ),
+      },
+      {
+        path: 'tipos-banca',
+        data: { breadcrumb: 'Tipo de Banca' },
+        loadChildren: () =>
+          import('./features/tipos-banca/tipos-banca.routes').then((m) => m.TIPOS_BANCA_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
