@@ -241,7 +241,7 @@ export class LayoutComponent {
           routerLink: '/ofertas-curso',
           exact: true,
         },
-        { label: 'Modalidade', icon: 'pi-users' },
+        { label: 'Modalidade', icon: 'pi-users', routerLink: '/modalidades' },
         {
           label: 'Tipo de Documento',
           icon: 'pi-id-card',
