@@ -53,3 +53,22 @@ export {
   type TurnoOfertaOption,
   type UnidadeOfertanteDto,
 } from './ofertas-curso.api';
+export {
+  FasesCanonicasApi,
+  CODIGOS_FASE_CANONICA,
+  DONOS_TIPICOS_FASE,
+  type AtualizarFaseCanonicaCommand,
+  type CodigoFaseCanonica,
+  type CriarFaseCanonicaCommand,
+  type FaseCanonicaDto,
+  type FasesCanonicasQuery,
+} from './fases-canonicas.api';
+export {
+  TiposBancaApi,
+  CODIGOS_TIPO_BANCA,
+  type AtualizarTipoBancaCommand,
+  type CodigoTipoBanca,
+  type CriarTipoBancaCommand,
+  type TipoBancaDto,
+  type TiposBancaQuery,
+} from './tipos-banca.api';
