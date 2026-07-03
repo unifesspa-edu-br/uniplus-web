@@ -81,3 +81,22 @@ export {
   type TipoDocumentoDto,
   type TiposDocumentoQuery,
 } from './tipos-documento.api';
+export {
+  ModalidadesApi,
+  ACOES_QUANDO_INDEFERIDO,
+  COMPOSICAO_RETIRA_DE,
+  COMPOSICAO_VAGAS_DEFAULT,
+  COMPOSICOES_VAGAS,
+  NATUREZA_LEGAL_DEFAULT,
+  NATUREZAS_LEGAIS,
+  REGRAS_REMANEJAMENTO,
+  type AcaoQuandoIndeferidoToken,
+  type AtualizarModalidadeCommand,
+  type ComposicaoVagasToken,
+  type CriarModalidadeCommand,
+  type DominioOption,
+  type ModalidadeDto,
+  type ModalidadesQuery,
+  type NaturezaLegalToken,
+  type RegraRemanejamentoToken,
+} from './modalidades.api';
