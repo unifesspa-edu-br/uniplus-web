@@ -102,7 +102,10 @@ test.describe('Tipo de banca — CRUD (#393)', () => {
     await mockApi(page, novoCapturado(), [bancaSeed]);
     await abrirPagina(page);
 
-    await expect(page.getByText('BANCA_ENTREVISTA')).toBeVisible();
+    // Escopado à tabela: o código também aparece como <option> no select
+    // (fechado) do drawer de criação, sempre presente no DOM (modo() inicia
+    // em 'criar'), o que tornaria `page.getByText('BANCA_ENTREVISTA')` ambíguo.
+    await expect(page.locator('table').getByText('BANCA_ENTREVISTA')).toBeVisible();
     await expect(page.getByText('Código imutável após criação')).toBeVisible();
   });
 
