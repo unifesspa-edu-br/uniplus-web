@@ -107,6 +107,18 @@ async function abrirPagina(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Tipo de Documento', level: 1 })).toBeVisible();
 }
 
+/**
+ * Locator de um chip de categoria pelo rótulo. `ui-filter-chips` sempre
+ * inclui o contador como texto visível dentro do próprio botão (ex.: "Saúde
+ * 1", "Todas 2") — o nome acessível nunca é só o rótulo isolado. A regex
+ * ancorada no início casa o rótulo seguido do contador sem colidir com
+ * outros botões da página que contenham o mesmo texto.
+ */
+function chipLocator(page: Page, rotulo: string) {
+  const escapado = rotulo.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  return page.getByRole('button', { name: new RegExp(`^${escapado}\\b`, 'u') });
+}
+
 test.describe('Tipo de Documento — CRUD (#392)', () => {
   test.beforeEach(async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
@@ -122,17 +134,14 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await expect(page.getByText('RG')).toBeVisible();
     await expect(page.getByText('Laudo médico — PcD')).toBeVisible();
 
-    // Filtro por categoria (chip "Saúde")
-    await page.getByRole('button', { name: 'Saúde', exact: true }).click();
+    // Filtro por categoria (chip "Saúde 1" — ui-filter-chips inclui o contador no nome acessível)
+    await chipLocator(page, 'Saúde').click();
     await expect(page.locator('table tbody tr')).toHaveCount(1);
     await expect(page.getByText('Laudo médico — PcD')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Saúde', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(chipLocator(page, 'Saúde')).toHaveAttribute('aria-pressed', 'true');
 
-    // Volta para "Todas"
-    await page.getByRole('button', { name: 'Todas', exact: true }).click();
+    // Volta para "Todas 2"
+    await chipLocator(page, 'Todas').click();
     await expect(page.locator('table tbody tr')).toHaveCount(2);
 
     // Criar
