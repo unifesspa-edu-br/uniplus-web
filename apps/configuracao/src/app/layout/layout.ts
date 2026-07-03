@@ -242,7 +242,12 @@ export class LayoutComponent {
           exact: true,
         },
         { label: 'Modalidade', icon: 'pi-users' },
-        { label: 'Tipo de Documento', icon: 'pi-id-card' },
+        {
+          label: 'Tipo de Documento',
+          icon: 'pi-id-card',
+          routerLink: '/tipos-documento',
+          exact: true,
+        },
         { label: 'Condição de Atendimento', icon: 'pi-heart' },
         { label: 'Recurso de Acessibilidade', icon: 'pi-universal-access' },
         { label: 'Tipo de Deficiência', icon: 'pi-eye' },
