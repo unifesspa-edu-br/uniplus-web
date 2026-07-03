@@ -84,6 +84,27 @@ describe('OfertasCursoApi', () => {
     await promise;
   });
 
+  it('listar({ cursoId }) inclui o filtro cursoId na 1ª página (api#755)', async () => {
+    const promise = firstValueFrom(api.listar({ cursoId: CURSO_ID, limit: 50 }));
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(req.request.params.get('cursoId')).toBe(CURSO_ID);
+    expect(req.request.params.get('limit')).toBe('50');
+    req.flush([ofertaSeed]);
+    await promise;
+  });
+
+  it('listar({ cursoId, cursor }) reanexa cursoId junto do cursor', async () => {
+    const promise = firstValueFrom(
+      api.listar({ cursoId: CURSO_ID, cursor: 'abc', direction: 'next' }),
+    );
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(req.request.params.get('cursoId')).toBe(CURSO_ID);
+    expect(req.request.params.get('cursor')).toBe('abc');
+    expect(req.request.params.get('direction')).toBe('next');
+    req.flush([ofertaSeed]);
+    await promise;
+  });
+
   it('obter() faz GET /api/configuracao/ofertas-curso/{id}', async () => {
     const promise = firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/ofertas-curso/${ID}`);

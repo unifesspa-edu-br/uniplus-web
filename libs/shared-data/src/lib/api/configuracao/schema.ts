@@ -2379,6 +2379,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
+                    readonly cursoId?: string;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */

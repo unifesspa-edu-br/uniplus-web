@@ -25,6 +25,27 @@ const cursoSeed = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
+const ofertaSeed = {
+  id: '01960000-0000-7000-0000-0000000000f1',
+  cursoId: CURSO_ID,
+  localOfertaId: '01960000-0000-7000-0000-0000000000d1',
+  unidadeOfertante: {
+    origemId: '01960000-0000-7000-0000-0000000000e1',
+    sigla: 'IGE',
+    nome: 'Instituto de Geociências e Engenharias',
+    tipo: 'Instituto',
+  },
+  programaDeOferta: 'REGULAR',
+  formatoPedagogico: 'PRESENCIAL',
+  turno: 'MATUTINO',
+  eMecCodigo: '123456',
+  codigoSga: null,
+  vagasAnuaisAutorizadas: 40,
+  baseLegal: null,
+  atoAutorizacaoMec: null,
+  criadoEm: '2026-06-10T12:00:00Z',
+};
+
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -41,17 +62,24 @@ async function jsonRoute(route: Route, body: unknown, status = 200): Promise<voi
 interface Capturado {
   readonly posts: unknown[];
   readonly deletedIds: string[];
+  readonly ofertaCursoIds: string[];
 }
 
 function novoCapturado(): Capturado {
-  return { posts: [], deletedIds: [] };
+  return { posts: [], deletedIds: [], ofertaCursoIds: [] };
 }
 
 async function mockApi(
   page: Page,
   capturado: Capturado,
   lista: readonly unknown[],
-  opcoes: { readonly criarStatus?: number; readonly criarBody?: unknown; readonly deleteStatus?: number; readonly deleteBody?: unknown } = {},
+  opcoes: {
+    readonly criarStatus?: number;
+    readonly criarBody?: unknown;
+    readonly deleteStatus?: number;
+    readonly deleteBody?: unknown;
+    readonly ofertas?: readonly unknown[];
+  } = {},
 ): Promise<void> {
   await page.route(/\/api\/configuracao\/admin\/cursos\/[^/?]+$/, async (route) => {
     if (route.request().method() === 'DELETE') {
@@ -80,6 +108,13 @@ async function mockApi(
       return;
     }
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
+  });
+  await page.route(/\/api\/configuracao\/ofertas-curso(\?.*)?$/, async (route) => {
+    const cursoId = new URL(route.request().url()).searchParams.get('cursoId');
+    if (cursoId !== null) {
+      capturado.ofertaCursoIds.push(cursoId);
+    }
+    await jsonRoute(route, opcoes.ofertas ?? []);
   });
   await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => jsonRoute(route, lista));
 }
@@ -143,7 +178,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await expect(page.locator('#cfg-curso-form')).toBeVisible();
   });
 
-  test('CA-08: remoção bloqueada por oferta viva reabre o modal com a mensagem de erro', async ({
+  test('CA-08/#435: remoção bloqueada (409) abre o drawer de Ofertas com o preview do bloqueio', async ({
     page,
   }) => {
     const capturado = novoCapturado();
@@ -155,22 +190,40 @@ test.describe('Curso — CRUD (#389)', () => {
         status: 409,
         code: 'uniplus.configuracao.curso.remocao_bloqueada_por_oferta_curso',
       },
+      ofertas: [ofertaSeed],
     });
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Remover' }).first().click();
-    const dialog = page.locator('dialog.uni-dialog');
-    await dialog.getByRole('button', { name: 'Remover' }).click();
+    const confirm = page.locator('dialog.uni-dialog');
+    await confirm.getByRole('button', { name: 'Remover' }).click();
 
-    // O ui-confirm-dialog fecha a si mesmo de forma síncrona ao confirmar,
-    // antes da resposta HTTP chegar — a asserção real precisa ser que o
-    // modal REABRE com a mensagem de erro, não apenas que a mensagem exista
-    // em algum lugar da página (um toast, por exemplo, também satisfaria
-    // isso sem provar que o modal permaneceu no fluxo).
-    await expect(dialog).toBeVisible();
+    // Em vez de reabrir o confirm, o fluxo abre o drawer de Ofertas com a
+    // mensagem que a API retornou e lista a oferta que bloqueia a remoção — o
+    // operador vê exatamente o que impede a exclusão (#435, CA2).
+    const drawer = page.locator('dialog.uni-drawer');
+    await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG-CIV' })).toBeVisible();
+    await expect(drawer.getByText('Remoção bloqueada')).toBeVisible();
     await expect(
-      dialog.getByText('Não é possível remover um curso referenciado por uma oferta de curso ativa'),
+      drawer.getByText('Não é possível remover um curso referenciado por uma oferta de curso ativa'),
     ).toBeVisible();
+    await expect(drawer.getByText('Instituto de Geociências e Engenharias')).toBeVisible();
+    await expect.poll(() => capturado.ofertaCursoIds).toContain(CURSO_ID);
+  });
+
+  test('#435: ação "Ofertas" abre o drawer e lista as ofertas vivas do curso via cursoId', async ({
+    page,
+  }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, [cursoSeed], { ofertas: [ofertaSeed] });
+    await abrirPagina(page);
+
+    await page.getByRole('button', { name: 'Ofertas' }).first().click();
+
+    const drawer = page.locator('dialog.uni-drawer');
+    await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG-CIV' })).toBeVisible();
+    await expect(drawer.getByText('Instituto de Geociências e Engenharias')).toBeVisible();
+    await expect.poll(() => capturado.ofertaCursoIds).toContain(CURSO_ID);
   });
 
   test('remove um curso sem oferta viva após confirmação', async ({ page }) => {

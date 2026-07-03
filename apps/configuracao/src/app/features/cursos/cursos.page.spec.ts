@@ -4,11 +4,16 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  CursoDto,
+  OfertaCursoDto,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CursosPage } from './cursos.page';
 
 const BASE = 'http://localhost:5000';
+const OFERTAS_URL = `${BASE}/api/configuracao/ofertas-curso`;
 
 const cursoSeed: CursoDto = {
   id: '01960000-0000-7000-0000-0000000000c1',
@@ -17,6 +22,27 @@ const cursoSeed: CursoDto = {
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
   grupoAreaEnem: 'Tecnológica',
+  criadoEm: '2026-06-10T12:00:00Z',
+};
+
+const ofertaSeed: OfertaCursoDto = {
+  id: '01960000-0000-7000-0000-0000000000f1',
+  cursoId: cursoSeed.id,
+  localOfertaId: '01960000-0000-7000-0000-0000000000d1',
+  unidadeOfertante: {
+    origemId: '01960000-0000-7000-0000-0000000000e1',
+    sigla: 'IGE',
+    nome: 'Instituto de Geociências e Engenharias',
+    tipo: 'Instituto',
+  },
+  programaDeOferta: 'REGULAR',
+  formatoPedagogico: 'PRESENCIAL',
+  turno: 'MATUTINO',
+  eMecCodigo: '123456',
+  codigoSga: null,
+  vagasAnuaisAutorizadas: 40,
+  baseLegal: null,
+  atoAutorizacaoMec: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -164,7 +190,7 @@ describe('CursosPage', () => {
     expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
   });
 
-  it('CA-08: remoção bloqueada por oferta viva (409) reabre o modal com a mensagem de erro', async () => {
+  it('CA-08/CA2: remoção bloqueada (409) fecha o confirm e abre o drawer de Ofertas com o preview do bloqueio', async () => {
     await flushLista([cursoSeed]);
     component['pedirRemocao'](cursoSeed);
     component['removerConfirmado']();
@@ -189,10 +215,107 @@ describe('CursosPage', () => {
     );
     await propagate();
 
-    expect(component['confirmOpen']()).toBe(true);
-    expect(component['confirmMessage']()).toBe(
+    // O confirm não reabre; abre o drawer de Ofertas com a mensagem que a API
+    // devolveu (sem acoplar a UI ao vendor code — ramifica por status 409).
+    expect(component['confirmOpen']()).toBe(false);
+    expect(component['ofertasOpen']()).toBe(true);
+    expect(component['ofertasBloqueio']()).toBe(
       'Não é possível remover um curso referenciado por uma oferta de curso ativa',
     );
+
+    // E consulta as ofertas do curso via ?cursoId para o preview do bloqueio.
+    const ofertas = controller.expectOne((r) => r.url === OFERTAS_URL);
+    expect(ofertas.request.params.get('cursoId')).toBe(cursoSeed.id);
+    ofertas.flush([ofertaSeed]);
+    await propagate();
+    expect(component['ofertas']()).toHaveLength(1);
+  });
+
+  it('CA1: abrir "Ofertas" lista as ofertas do curso filtrando por cursoId', async () => {
+    await flushLista([cursoSeed]);
+
+    component['abrirOfertas'](cursoSeed);
+    await propagate();
+
+    const req = controller.expectOne((r) => r.url === OFERTAS_URL);
+    expect(req.request.params.get('cursoId')).toBe(cursoSeed.id);
+    expect(req.request.params.get('limit')).toBe('50');
+    req.flush([ofertaSeed]);
+    await propagate();
+
+    expect(component['ofertasOpen']()).toBe(true);
+    expect(component['ofertas']()).toHaveLength(1);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('IGE');
+    expect(fixture.nativeElement.textContent).toContain('Regular');
+  });
+
+  it('CA1: drawer mostra empty-state quando o curso não tem ofertas vivas', async () => {
+    await flushLista([cursoSeed]);
+
+    component['abrirOfertas'](cursoSeed);
+    await propagate();
+    controller.expectOne((r) => r.url === OFERTAS_URL).flush([]);
+    await propagate();
+
+    expect(component['ofertas']()).toHaveLength(0);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Nenhuma oferta ativa');
+  });
+
+  it('CA1: trocar de curso não vaza as ofertas do curso anterior enquanto o novo GET não resolve', async () => {
+    const cursoB: CursoDto = {
+      ...cursoSeed,
+      id: '01960000-0000-7000-0000-0000000000c2',
+      codigo: 'ADM',
+      nome: 'Administração',
+    };
+    await flushLista([cursoSeed, cursoB]);
+
+    component['abrirOfertas'](cursoSeed);
+    await propagate();
+    controller.expectOne((r) => r.url === OFERTAS_URL).flush([ofertaSeed]);
+    await propagate();
+    expect(component['ofertas']()).toHaveLength(1);
+
+    // Fecha A e abre B: a lista precisa zerar de imediato (antes do GET de B),
+    // senão o drawer mostraria a oferta de A sob o cabeçalho de B.
+    component['aoFecharOfertas']();
+    component['abrirOfertas'](cursoB);
+    expect(component['ofertas']()).toHaveLength(0);
+    expect(component['ofertasNextCursor']()).toBeNull();
+
+    await propagate();
+    const reqB = controller.expectOne((r) => r.url === OFERTAS_URL);
+    expect(reqB.request.params.get('cursoId')).toBe(cursoB.id);
+    reqB.flush([]);
+    await propagate();
+    expect(component['ofertas']()).toHaveLength(0);
+  });
+
+  it('CA3: navegar para a próxima página reanexa cursoId e envia cursor/direction sem limit', async () => {
+    await flushLista([cursoSeed]);
+
+    component['abrirOfertas'](cursoSeed);
+    await propagate();
+
+    const p1 = controller.expectOne((r) => r.url === OFERTAS_URL);
+    p1.flush([ofertaSeed], {
+      headers: { Link: `<${OFERTAS_URL}?cursor=pagina-2&direction=next>; rel="next"` },
+    });
+    await propagate();
+    expect(component['ofertasNextCursor']()).not.toBeNull();
+
+    component['proximaPaginaOfertas']();
+    await propagate();
+
+    const p2 = controller.expectOne((r) => r.url === OFERTAS_URL);
+    expect(p2.request.params.get('cursoId')).toBe(cursoSeed.id);
+    expect(p2.request.params.get('cursor')).toBe('pagina-2');
+    expect(p2.request.params.get('direction')).toBe('next');
+    expect(p2.request.params.has('limit')).toBe(false);
+    p2.flush([{ ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000f2' }]);
+    await propagate();
   });
 
   it('remove um curso sem oferta viva após confirmação', async () => {

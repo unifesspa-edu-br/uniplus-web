@@ -58,11 +58,16 @@ export const TURNOS_OFERTA: readonly TurnoOfertaOption[] = [
   { value: 'INTEGRAL', label: 'Integral' },
 ] as const;
 
-/** Filtro de listagem de Ofertas de Curso (cursor pagination, ADR-0026). Sem filtro por `cursoId` no contrato atual. */
+/**
+ * Filtro de listagem de Ofertas de Curso (cursor pagination, ADR-0026).
+ * `cursoId` (opcional, api#755) restringe às ofertas vivas de um curso; viaja
+ * como query param e combina com o cursor — reanexado a cada página.
+ */
 export interface OfertasCursoQuery {
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
+  readonly cursoId?: string;
 }
 
 /**
@@ -89,6 +94,9 @@ export class OfertasCursoApi {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
     } else {
       params = params.set('limit', String(query.limit ?? 100));
+    }
+    if (query.cursoId !== undefined) {
+      params = params.set('cursoId', query.cursoId);
     }
     return this.http.get<ApiResult<readonly OfertaCursoDto[]>>(
       `${this.basePath}/api/configuracao/ofertas-curso`,
