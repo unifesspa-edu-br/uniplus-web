@@ -35,6 +35,9 @@ import {
   CursoDto,
   CursosApi,
   GRUPOS_AREA_ENEM,
+  OfertaCursoDto,
+  PROGRAMAS_DE_OFERTA,
+  TURNOS_OFERTA,
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
@@ -50,6 +53,10 @@ const PAGE_SIZE = 50;
 
 /** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
+
+/** Rótulos dos tokens de programa/turno da oferta (domínios fechados, ofertas-curso.api). */
+const PROGRAMA_LABELS = new Map(PROGRAMAS_DE_OFERTA.map((opcao) => [opcao.value, opcao.label]));
+const TURNO_LABELS = new Map(TURNOS_OFERTA.map((opcao) => [opcao.value, opcao.label]));
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -152,6 +159,14 @@ interface CursoForm {
                   <td data-label="Nível">{{ curso.nivelEnsino }}</td>
                   <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
+                    <button
+                      type="button"
+                      class="btn btn--tertiary btn--sm btn--rect"
+                      [disabled]="loading()"
+                      (click)="abrirOfertas(curso)"
+                    >
+                      Ofertas
+                    </button>
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
@@ -325,6 +340,79 @@ interface CursoForm {
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
     />
+
+    <ui-drawer
+      class="cfg-ofertas-drawer"
+      [(visible)]="ofertasOpen"
+      [heading]="ofertasHeading()"
+      ariaLabel="Ofertas de curso do curso selecionado"
+      position="right"
+      (closed)="aoFecharOfertas()"
+    >
+      @if (ofertasBloqueio()) {
+        <ui-alert variant="danger" heading="Remoção bloqueada">
+          {{ ofertasBloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
+        </ui-alert>
+      } @else {
+        <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
+          Instâncias regulatórias (Oferta de curso) que referenciam este curso. Enquanto houver
+          ofertas ativas, a remoção do curso é bloqueada.
+        </ui-alert>
+      }
+
+      @if (ofertasErrorMessage()) {
+        <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
+          {{ ofertasErrorMessage() }}
+          <div class="cfg-ofertas__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [disabled]="ofertasLoading()"
+              (click)="recarregarOfertas()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
+
+      @if (ofertasLoading()) {
+        <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
+      }
+
+      @if (ofertas().length > 0) {
+        <ul class="cfg-ofertas-list">
+          @for (oferta of ofertas(); track oferta.id) {
+            <li class="cfg-ofertas-list__item">
+              <p class="cfg-ofertas-list__unidade">
+                {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
+              </p>
+              <p class="cfg-ofertas-list__meta">
+                <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
+                <span>{{ turnoLabel(oferta.turno) }}</span>
+              </p>
+            </li>
+          }
+        </ul>
+      } @else if (!ofertasLoading() && !ofertasErrorMessage()) {
+        <ui-empty-state
+          heading="Nenhuma oferta ativa"
+          description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
+        />
+      }
+
+      @if (ofertasPrevCursor() !== null || ofertasNextCursor() !== null) {
+        <ui-pager
+          statusText="Navegação por páginas"
+          navigationLabel="Paginação de ofertas do curso"
+          [hasPrevious]="ofertasPrevCursor() !== null"
+          [hasNext]="ofertasNextCursor() !== null"
+          [isDisabled]="ofertasLoading()"
+          (previous)="paginaAnteriorOfertas()"
+          (next)="proximaPaginaOfertas()"
+        />
+      }
+    </ui-drawer>
   `,
 })
 export class CursosPage {
@@ -346,6 +434,15 @@ export class CursosPage {
   protected readonly confirmError = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
+
+  // Drawer "Ofertas do curso" — inspeção sob demanda das ofertas vivas de um
+  // curso via filtro `?cursoId` (api#755, issue #435).
+  protected readonly ofertasOpen = signal(false);
+  protected readonly cursoParaOfertas = signal<CursoDto | null>(null);
+  protected readonly ofertasBloqueio = signal<string | null>(null);
+  private readonly ofertasPagina = signal<
+    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
+  >(undefined);
 
   private readonly pagina = signal<
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
@@ -397,6 +494,76 @@ export class CursosPage {
       }
       return [...envelope.data];
     },
+  });
+
+  // Ofertas vivas do curso selecionado — só dispara quando o drawer tem um
+  // curso (request fn `undefined` = sem fetch). Filtro `?cursoId` reanexado a
+  // cada página; prev/next lidos do header Link (ADR-0026 web + api#755).
+  private readonly listaOfertas = useApiResource<readonly OfertaCursoDto[]>(() => {
+    const curso = this.cursoParaOfertas();
+    if (curso === null) {
+      return undefined;
+    }
+    return {
+      url: `${this.basePath}/api/configuracao/ofertas-curso`,
+      params: this.montarParamsOfertas(curso.id),
+      context: withVendorMime('oferta-curso', 1),
+    };
+  });
+
+  protected readonly ofertasLoading = this.listaOfertas.isLoading;
+
+  private readonly ofertasCursores = linkedSignal<
+    ApiResult<readonly OfertaCursoDto[]> | undefined,
+    { readonly prev: Cursor | null; readonly next: Cursor | null }
+  >({
+    source: () => this.listaOfertas.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? { prev: null, next: null };
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.ofertasPagina() === undefined);
+      if (!envelope.ok) {
+        return primeiraPagina ? { prev: null, next: null } : atual;
+      }
+      const link = untracked(() => this.listaOfertas.headers()?.get('Link') ?? null);
+      return { prev: extractPrevCursor(link), next: extractNextCursor(link) };
+    },
+  });
+
+  protected readonly ofertasPrevCursor = computed(() => this.ofertasCursores().prev);
+  protected readonly ofertasNextCursor = computed(() => this.ofertasCursores().next);
+
+  protected readonly ofertas = linkedSignal<
+    ApiResult<readonly OfertaCursoDto[]> | undefined,
+    readonly OfertaCursoDto[]
+  >({
+    source: () => this.listaOfertas.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? [];
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.ofertasPagina() === undefined);
+      if (!envelope.ok) {
+        return primeiraPagina ? [] : atual;
+      }
+      return [...envelope.data];
+    },
+  });
+
+  protected readonly ofertasErrorMessage = computed<string | null>(() => {
+    const problem = this.listaOfertas.problem();
+    if (problem) {
+      return this.problemI18n.resolve(problem).title;
+    }
+    return this.listaOfertas.error() ? 'Erro inesperado ao carregar as ofertas do curso.' : null;
+  });
+
+  protected readonly ofertasHeading = computed(() => {
+    const curso = this.cursoParaOfertas();
+    return curso ? `Ofertas de ${curso.codigo}` : 'Ofertas do curso';
   });
 
   // Busca client-side sobre a página carregada: o backend (api#588) só pagina
@@ -480,6 +647,67 @@ export class CursosPage {
     }
   }
 
+  /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
+  protected abrirOfertas(curso: CursoDto): void {
+    this.ofertasBloqueio.set(null);
+    this.exibirOfertas(curso);
+  }
+
+  private exibirOfertas(curso: CursoDto): void {
+    // Zera lista e cursores ANTES de trocar o curso: os linkedSignals preservam
+    // o valor anterior enquanto o envelope é `undefined` (loading), então sem
+    // este reset o drawer exibiria as ofertas do curso anterior sob o cabeçalho
+    // do novo até o GET resolver (cabeçalho ≠ corpo).
+    this.limparOfertas();
+    this.ofertasPagina.set(undefined);
+    this.cursoParaOfertas.set(curso);
+    this.ofertasOpen.set(true);
+  }
+
+  protected aoFecharOfertas(): void {
+    // Limpa o curso (a request fn passa a retornar `undefined`) para que a
+    // próxima abertura refaça a busca do zero, sempre com dados frescos.
+    this.cursoParaOfertas.set(null);
+    this.ofertasBloqueio.set(null);
+    this.limparOfertas();
+  }
+
+  private limparOfertas(): void {
+    this.ofertas.set([]);
+    this.ofertasCursores.set({ prev: null, next: null });
+  }
+
+  protected recarregarOfertas(): void {
+    if (!this.ofertasLoading()) {
+      this.listaOfertas.reload();
+    }
+  }
+
+  protected proximaPaginaOfertas(): void {
+    const proximo = this.ofertasNextCursor();
+    if (proximo !== null && !this.ofertasLoading()) {
+      this.ofertasPagina.set({ cursor: proximo, direction: 'next' });
+    }
+  }
+
+  protected paginaAnteriorOfertas(): void {
+    const anterior = this.ofertasPrevCursor();
+    if (anterior !== null && !this.ofertasLoading()) {
+      this.ofertasPagina.set({ cursor: anterior, direction: 'prev' });
+    }
+  }
+
+  protected programaLabel(token: string): string {
+    return PROGRAMA_LABELS.get(token) ?? token;
+  }
+
+  protected turnoLabel(token: string | null): string {
+    if (token === null) {
+      return '—';
+    }
+    return TURNO_LABELS.get(token) ?? token;
+  }
+
   protected tentarNovamente(): void {
     if (!this.loading()) {
       this.lista.reload();
@@ -534,11 +762,23 @@ export class CursosPage {
           this.recarregar();
           return;
         }
-        // `ui-confirm-dialog` fecha a si mesmo de forma síncrona ao emitir
-        // `confirmed` (antes desta resposta HTTP assíncrona chegar) — reabrir
-        // explicitamente com a mensagem de erro é o único jeito de manter o
-        // fluxo de bloqueio visível para o operador (CA-08).
+        // A mensagem exibida é a que a API já devolve no ProblemDetails (title),
+        // sem acoplar a UI ao vendor code do erro.
         const titulo = this.problemI18n.resolve(result.problem).title;
+        // 409 é o único conflito possível no DELETE do curso: referenciado por
+        // oferta viva. Em vez de só reexibir o texto, fecha o confirm e abre o
+        // drawer de Ofertas com o preview das ofertas que bloqueiam a remoção
+        // (issue #435, CA2) — o operador vê exatamente o que impede a exclusão.
+        if (result.problem.status === 409) {
+          this.confirmOpen.set(false);
+          this.cursoParaRemover.set(null);
+          this.ofertasBloqueio.set(titulo);
+          this.exibirOfertas(curso);
+          return;
+        }
+        // Demais falhas (5xx, rede): mantém o confirm aberto com a mensagem. O
+        // `ui-confirm-dialog` fecha a si mesmo de forma síncrona ao emitir
+        // `confirmed`; reabrir explicitamente mantém o erro visível ao operador.
         this.confirmError.set(titulo);
         this.confirmOpen.set(true);
         if (result.problem.status >= 500) {
@@ -599,6 +839,18 @@ export class CursosPage {
     return new HttpParams()
       .set('cursor', cursorToString(pagina.cursor))
       .set('direction', pagina.direction);
+  }
+
+  /** Params da listagem de ofertas do curso — `cursoId` reanexado em toda página (api#755). */
+  private montarParamsOfertas(cursoId: string): HttpParams {
+    const pagina = this.ofertasPagina();
+    if (pagina === undefined) {
+      return new HttpParams().set('limit', String(PAGE_SIZE)).set('cursoId', cursoId);
+    }
+    return new HttpParams()
+      .set('cursor', cursorToString(pagina.cursor))
+      .set('direction', pagina.direction)
+      .set('cursoId', cursoId);
   }
 
   private recarregar(): void {
