@@ -68,6 +68,14 @@ export const appRoutes: Routes = [
           ),
       },
       {
+        path: 'modalidades',
+        data: { breadcrumb: 'Modalidade' },
+        loadChildren: () =>
+          import('./features/modalidades/modalidades.routes').then(
+            (m) => m.MODALIDADES_ROUTES,
+          ),
+      },
+      {
         path: 'fases-canonicas',
         data: { breadcrumb: 'Fase Canônica' },
         loadChildren: () =>

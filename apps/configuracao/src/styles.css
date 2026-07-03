@@ -920,3 +920,173 @@ cfg-pesos-enem-page {
   border-top: 1px solid var(--border-subtle);
   margin: 0;
 }
+
+/* ── Modalidade de concorrência (Piloto B — lista + tela dedicada) ────────── */
+
+.cfg-modalidades-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cfg-modalidades-filtro-grupo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.cfg-filtro-legenda {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.cfg-meta {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.cfg-refs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.cfg-ref-chip {
+  font-size: var(--text-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.cfg-refs-lista {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+}
+
+.cfg-list__retry {
+  margin-top: var(--space-3);
+}
+
+.cfg-list__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* Tela dedicada de formulário */
+
+.page-header--form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cfg-voltar {
+  align-self: flex-start;
+}
+
+.form-section {
+  margin-bottom: var(--space-6);
+}
+
+.cfg-form__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-secondary);
+}
+
+/* Entrada de critérios cumulativos (chips) */
+
+.cfg-chips-input {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.cfg-chips-input .input {
+  flex: 1 1 auto;
+}
+
+.cfg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+.cfg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 6px 2px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+}
+
+.cfg-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.cfg-chip__remove:hover {
+  color: var(--color-danger);
+}
+
+.cfg-chip__remove:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Mapa de condicionais — reflete o efeito das escolhas ao operador */
+
+.cond-diagram {
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.cond-diagram__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.cond-diagram__list {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cond-diagram__item {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
