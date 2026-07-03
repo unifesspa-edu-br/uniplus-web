@@ -72,3 +72,12 @@ export {
   type TipoBancaDto,
   type TiposBancaQuery,
 } from './tipos-banca.api';
+export {
+  TiposDocumentoApi,
+  CATEGORIAS_DOCUMENTO,
+  type AtualizarTipoDocumentoCommand,
+  type CategoriaDocumentoOption,
+  type CriarTipoDocumentoCommand,
+  type TipoDocumentoDto,
+  type TiposDocumentoQuery,
+} from './tipos-documento.api';
