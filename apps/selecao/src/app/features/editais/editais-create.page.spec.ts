@@ -28,7 +28,9 @@ describe('EditaisCreatePage', () => {
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
-        provideRouter([]),
+        // Registra a rota de destino para que a navegação de sucesso resolva
+        // no TestBed; sem ela a navegação rejeita com NG04002 (rota não casada).
+        provideRouter([{ path: 'editais', children: [] }]),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
       ],
     });
