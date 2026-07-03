@@ -185,16 +185,19 @@ export async function expectUserInHeader(
   // Verificar presença do componente de user info no DOM (sem scoping ao <header>,
   // porque Angular custom elements podem criar fronteiras inesperadas para locators)
   const userInfo = page.locator('auth-user-header-info');
+  // Chip do topbar: apenas primeiro nome + avatar.
   await expect(userInfo.getByTestId('auth-user-display-name')).toHaveText(
     firstNameFrom(expectedName),
     { timeout: 5_000 },
   );
-  await expect(userInfo.getByTestId('auth-user-username')).toContainText(`@${expectedUsername}`);
   const trigger = userInfo.getByRole('button', {
     name: new RegExp(`^Abrir menu da conta de ${escapeRegExp(expectedName)}$`),
   });
   await expect(trigger).toBeVisible();
   await trigger.click();
+  // Identidade completa (nome completo + @username · perfil) aparece só ao abrir o menu.
+  await expect(userInfo.getByTestId('auth-user-full-name')).toHaveText(expectedName);
+  await expect(userInfo.getByTestId('auth-user-username')).toContainText(`@${expectedUsername}`);
   await expect(page.getByRole('menuitem', { name: 'Sair' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');

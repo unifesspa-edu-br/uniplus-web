@@ -1490,6 +1490,39 @@ ui-vlibras-loader {
   color: var(--text-muted);
 }
 
+/* Cabeçalho de identidade no topo de um menu de conta. O chip do topbar mostra
+ * apenas avatar + primeiro nome; a identidade completa (nome completo + @username
+ * · perfil) aparece só ao abrir o menu, ocupando a área que antes trazia o eyebrow
+ * "Conta". O nome trunca em uma linha; a linha secundária pode quebrar para
+ * preservar o perfil por extenso. O avatar não se repete aqui — ele já identifica
+ * a conta no chip que abriu o menu. */
+.menu:has(.menu__account) {
+  min-width: 240px;
+  max-width: min(340px, calc(100vw - var(--space-6)));
+}
+.menu__account {
+  padding: var(--space-3);
+}
+.menu__account-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.menu__account-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  line-height: var(--leading-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu__account-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
 /* ============================================================================
  * EMPTY STATE
  * Spec (briefing-ux.md §8): primeira tela quando o candidato logou e ainda

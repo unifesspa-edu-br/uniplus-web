@@ -54,22 +54,49 @@ describe('UserHeaderInfoComponent', () => {
     return { fixture, logout };
   }
 
-  it('exibe apenas o primeiro nome social do usuário autenticado', () => {
+  it('exibe apenas o primeiro nome social + avatar no chip (sem username/perfil)', () => {
     const { fixture } = setup();
-    const name = fixture.nativeElement.querySelector<HTMLElement>(
-      '[data-testid="auth-user-display-name"]',
-    );
-    const avatar = fixture.nativeElement.querySelector<HTMLElement>('.user-chip__avatar');
+    const chip = fixture.nativeElement.querySelector<HTMLElement>('button.user-chip');
+    const name = chip.querySelector<HTMLElement>('[data-testid="auth-user-display-name"]');
+    const avatar = chip.querySelector<HTMLElement>('.user-chip__avatar');
     expect(name?.textContent?.trim()).toBe('Candidato');
     expect(avatar?.textContent?.trim()).toBe('C');
+    // O chip não repete username nem nome completo — a identidade completa vive no dropdown.
+    expect(chip.textContent).not.toContain('@');
+    expect(chip.textContent).not.toContain('Candidato Teste');
   });
 
-  it('exibe username com prefixo @', () => {
+  it('exibe username com prefixo @ no dropdown, não no chip', () => {
     const { fixture } = setup();
     const username = fixture.nativeElement.querySelector<HTMLElement>(
       '[data-testid="auth-user-username"]',
     );
     expect(username?.textContent).toContain('@candidato');
+    // A linha de identidade pertence ao menu de conta, não ao chip do topbar.
+    expect(username?.closest('.menu')).toBeTruthy();
+    expect(username?.closest('.user-chip')).toBeNull();
+  });
+
+  it('exibe o nome completo no cabeçalho de identidade do dropdown', () => {
+    const { fixture } = setup();
+    const fullName = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="auth-user-full-name"]',
+    );
+    expect(fullName?.textContent?.trim()).toBe('Candidato Teste');
+    expect(fullName?.closest('.menu__account')).toBeTruthy();
+  });
+
+  it('menu de conta expõe aria-label e o cabeçalho é role=presentation', () => {
+    const { fixture } = setup();
+    const menu = fixture.nativeElement.querySelector<HTMLElement>('.menu');
+    expect(menu?.getAttribute('role')).toBe('menu');
+    expect(menu?.getAttribute('aria-label')).toBe('Conta');
+    const account = fixture.nativeElement.querySelector<HTMLElement>('.menu__account');
+    expect(account?.getAttribute('role')).toBe('presentation');
+    // O cabeçalho de identidade não é navegável — o único menuitem é "Sair".
+    const items = fixture.nativeElement.querySelectorAll('[role="menuitem"]');
+    expect(items.length).toBe(1);
+    expect(items[0].textContent).toContain('Sair');
   });
 
   it('exibe rótulos pt-BR das roles do realm', () => {
