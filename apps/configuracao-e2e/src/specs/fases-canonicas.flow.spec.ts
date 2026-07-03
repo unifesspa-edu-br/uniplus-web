@@ -101,7 +101,10 @@ test.describe('Fase canônica — CRUD (#393)', () => {
     await mockApi(page, novoCapturado(), [faseSeed]);
     await abrirPagina(page);
 
-    await expect(page.getByText('AVALIACAO')).toBeVisible();
+    // Escopado à tabela: o código também aparece como <option> no select
+    // (fechado) do drawer de criação, sempre presente no DOM (modo() inicia
+    // em 'criar'), o que tornaria `page.getByText('AVALIACAO')` ambíguo.
+    await expect(page.locator('table').getByText('AVALIACAO')).toBeVisible();
     await expect(page.getByText('Código imutável após criação')).toBeVisible();
   });
 
