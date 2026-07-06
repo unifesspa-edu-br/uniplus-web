@@ -550,8 +550,15 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
           return;
         }
         if (result.status === 404) {
-          // CEP não encontrado: mantém os campos editáveis para entrada manual.
-          this.nivel.set(null);
+          // CEP não encontrado. Sem resolução anterior, mantém os campos
+          // editáveis para entrada manual. Em correção de um CEP já resolvido
+          // (editandoCep), preserva a última resolução válida em vez de
+          // descartá-la — do contrário, retornar ao CEP original sem uma nova
+          // busca reaprovaria o formulário com `nivelResolucao` nulo enquanto
+          // os campos de detalhe ainda carregam os dados da resolução antiga. #438.
+          if (this.cepResolvido().length === 0) {
+            this.nivel.set(null);
+          }
           this.cepErro.set('CEP não encontrado. Verifique ou preencha o endereço manualmente.');
           return;
         }
