@@ -30,7 +30,7 @@ class HostComponent {
 
 const cepLogradouro = {
   cep: '68507590',
-  tipo: 'logradouro',
+  tipo: 'Rua',
   logradouro: 'Folha 31, Quadra 7',
   complemento: null,
   bairro: 'Nova Marabá',
@@ -235,7 +235,7 @@ describe('EnderecoFormComponent', () => {
 
     expect(host.ctrl.value).toMatchObject({
       cep: '68507590',
-      logradouro: 'Folha 31, Quadra 7',
+      logradouro: 'Rua Folha 31, Quadra 7',
       bairro: 'Nova Marabá',
       cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
       nivelResolucao: 'logradouro',
@@ -265,9 +265,9 @@ describe('EnderecoFormComponent', () => {
     expect(cep.value).toBe('68507590');
     expect(() => botaoPorTexto(fixture, 'Trocar CEP')).toThrow();
     expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement).value).toBe(
-      'Folha 31, Quadra 7',
+      'Rua Folha 31, Quadra 7',
     );
-    expect(host.ctrl.value).toMatchObject({ logradouro: 'Folha 31, Quadra 7' });
+    expect(host.ctrl.value).toMatchObject({ logradouro: 'Rua Folha 31, Quadra 7' });
   });
 
   it('CA-01: corrige o CEP após "Trocar CEP" e re-ancora com o novo endereço resolvido — #438', () => {
@@ -320,7 +320,7 @@ describe('EnderecoFormComponent', () => {
 
     // A resolução anterior não é descartada por uma tentativa de correção que falhou.
     expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement)?.value).toBe(
-      'Folha 31, Quadra 7',
+      'Rua Folha 31, Quadra 7',
     );
     expect((fixture.nativeElement.querySelector('#t-cep-error') as HTMLElement).textContent).toContain(
       'CEP não encontrado',
@@ -333,7 +333,7 @@ describe('EnderecoFormComponent', () => {
     expect(host.ctrl.valid).toBe(true);
     expect(host.ctrl.value).toMatchObject({
       cep: '68507590',
-      logradouro: 'Folha 31, Quadra 7',
+      logradouro: 'Rua Folha 31, Quadra 7',
       nivelResolucao: 'logradouro',
     });
     expect(fixture.nativeElement.querySelector('#t-cep-error')).toBeNull();
@@ -423,7 +423,7 @@ describe('EnderecoFormComponent', () => {
 
     expect(host.ctrl.invalid).toBe(true);
     expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement)?.value).toBe(
-      'Folha 31, Quadra 7',
+      'Rua Folha 31, Quadra 7',
     );
 
     // Corrigir para o CEP original (sem nova busca) reaprova o formulário.
@@ -448,6 +448,51 @@ describe('EnderecoFormComponent', () => {
     expect(logradouro.readOnly).toBe(false);
     const bairro = fixture.nativeElement.querySelector('#t-bairro') as HTMLInputElement;
     expect(bairro.readOnly).toBe(true);
+  });
+
+  it('CA-01: concatena tipo e logradouro do Geo ao aplicar CEP resolvido — #439', () => {
+    setInput(fixture, 't-cep', '71720022');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/71720022`).flush({
+      ...cepLogradouro,
+      cep: '71720022',
+      tipo: 'Terceira',
+      logradouro: 'Avenida Bloco 1740',
+    });
+    fixture.detectChanges();
+
+    expect(host.ctrl.value).toMatchObject({ logradouro: 'Terceira Avenida Bloco 1740' });
+    expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement).value).toBe(
+      'Terceira Avenida Bloco 1740',
+    );
+  });
+
+  it('CA-01: reproduz o segundo caso relatado na issue (Rua "8") — #439', () => {
+    setInput(fixture, 't-cep', '68508714');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68508714`).flush({
+      ...cepLogradouro,
+      cep: '68508714',
+      tipo: 'Rua',
+      logradouro: '8',
+    });
+    fixture.detectChanges();
+
+    expect(host.ctrl.value).toMatchObject({ logradouro: 'Rua 8' });
+  });
+
+  it('CA-01: tipo nulo mantém apenas o logradouro, sem prefixo — #439', () => {
+    setInput(fixture, 't-cep', '68500123');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68500123`).flush({
+      ...cepLogradouro,
+      cep: '68500123',
+      tipo: null,
+      logradouro: 'Travessa Sem Tipo',
+    });
+    fixture.detectChanges();
+
+    expect(host.ctrl.value).toMatchObject({ logradouro: 'Travessa Sem Tipo' });
   });
 
   it('CA-06: CEP inexistente (404) exibe erro inline e não exibe campos de endereço', () => {
@@ -577,7 +622,7 @@ describe('EnderecoFormComponent', () => {
     controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
     fixture.detectChanges();
     expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement).value).toBe(
-      'Folha 31, Quadra 7',
+      'Rua Folha 31, Quadra 7',
     );
 
     botaoPorTexto(fixture, 'preencher sem CEP').click();
