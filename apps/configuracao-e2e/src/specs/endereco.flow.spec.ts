@@ -18,7 +18,7 @@ const CORS_HEADERS = {
 
 const CEP_LOGRADOURO = {
   cep: '68507590',
-  tipo: 'logradouro',
+  tipo: 'Rua',
   logradouro: 'Folha 31, Quadra 7',
   complemento: null,
   bairro: 'Nova Marabá',
@@ -85,7 +85,7 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await page.locator('#campus-endereco-cep').fill('68507590');
     await page.getByRole('button', { name: 'Buscar CEP' }).click();
 
-    await expect(page.locator('#campus-endereco-logradouro')).toHaveValue('Folha 31, Quadra 7');
+    await expect(page.locator('#campus-endereco-logradouro')).toHaveValue('Rua Folha 31, Quadra 7');
     await expect(page.locator('#campus-endereco-logradouro')).toHaveAttribute('readonly', '');
     await expect(page.locator('#campus-endereco-numero')).not.toHaveAttribute('readonly', '');
     await expect(page.getByText('Marabá — PA')).toBeVisible();
