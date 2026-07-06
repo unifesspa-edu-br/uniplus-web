@@ -344,6 +344,8 @@ describe('EnderecoFormComponent', () => {
     botaoPorTexto(fixture, 'Buscar CEP').click();
     controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
     fixture.detectChanges();
+    setInput(fixture, 't-numero', '123');
+    fixture.detectChanges();
 
     botaoPorTexto(fixture, 'Trocar CEP').click();
     fixture.detectChanges();
@@ -353,13 +355,27 @@ describe('EnderecoFormComponent', () => {
 
     // Nada fica visível mas fora do que seria submetido: os campos de detalhe
     // (derivados da resolução anterior) somem junto com o CEP, não continuam
-    // na tela para um valor que não seria mais enviado.
+    // na tela para um valor que não seria mais enviado. numero também é
+    // limpo — do contrário, vazaria para o próximo CEP resolvido (endereço
+    // potencialmente diferente).
     expect(fixture.nativeElement.querySelector('#t-logradouro')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Marabá');
     expect(host.ctrl.valid).toBe(true);
     expect(host.ctrl.value).toBeNull();
     expect(enderecoParaCommand(host.ctrl.value).endereco).toBeNull();
     expect(enderecoParaCommand(host.ctrl.value).cidadeCodigoIbge).toBeNull();
+
+    // Resolver um novo CEP não ressuscita o número do endereço abandonado.
+    setInput(fixture, 't-cep', '68500000');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68500000`).flush({
+      ...cepLogradouro,
+      cep: '68500000',
+      bairro: 'Novo Bairro',
+      nivelResolucao: 'bairro',
+    });
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('#t-numero') as HTMLInputElement).value).toBe('');
   });
 
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
