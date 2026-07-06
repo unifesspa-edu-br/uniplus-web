@@ -638,13 +638,31 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
   }
 
   private emitir(): void {
-    const raw = this.form.getRawValue();
+    let raw = this.form.getRawValue();
+    const cepDigitos = raw.cep.replace(/\D/g, '');
+
+    if (cepDigitos.length === 0 && this.nivel() !== null) {
+      // Correção via "Trocar CEP" abandonada (campo esvaziado por completo)
+      // enquanto havia uma resolução preservada — descarta a resolução antiga
+      // e os campos derivados dela em vez de deixá-los visíveis mas fora do
+      // que é submetido (`enderecoParaCommand` só monta `endereco` com CEP de
+      // 8 dígitos; sem cidade, a cidade top-level também some). #438.
+      this.nivel.set(null);
+      this.cidade.set(null);
+      this.origem.set(null);
+      this.cepResolvido.set('');
+      this.form.patchValue(
+        { logradouro: '', complemento: '', bairro: '', distrito: '', latitude: '', longitude: '' },
+        { emitEvent: false },
+      );
+      raw = this.form.getRawValue();
+    }
+
     const cidade = this.cidade();
     // Só um CEP efetivamente resolvido pelo Geo entra no valor. Um CEP digitado
     // mas não resolvido (ex.: lookup 404, ou ainda sem "Buscar") NÃO deve virar
     // `endereco`: o mapeamento trataria os 8 dígitos como endereço válido e
     // submeteria um CEP que o usuário não conseguiu validar. #412.
-    const cepDigitos = raw.cep.replace(/\D/g, '');
     this.cepAtual.set(cepDigitos);
     this.cepTextoAtual.set(raw.cep.trim());
     const cepCorrespondeAoResolvido = cepDigitos.length > 0 && cepDigitos === this.cepResolvido();
