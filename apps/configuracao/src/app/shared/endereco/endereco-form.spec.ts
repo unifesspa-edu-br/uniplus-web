@@ -301,6 +301,40 @@ describe('EnderecoFormComponent', () => {
     expect(() => botaoPorTexto(fixture, 'Buscar CEP')).toThrow();
   });
 
+  it('CA-01: falha ao corrigir CEP preserva a última resolução válida em vez de descartá-la — #438', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+
+    setInput(fixture, 't-cep', '00000000');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/00000000`).flush(null, {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    fixture.detectChanges();
+
+    // A resolução anterior não é descartada por uma tentativa de correção que falhou.
+    expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement)?.value).toBe(
+      'Folha 31, Quadra 7',
+    );
+
+    // Voltar ao CEP original (sem nova busca) reaprova o formulário com nivelResolucao consistente.
+    setInput(fixture, 't-cep', '68507590');
+    fixture.detectChanges();
+
+    expect(host.ctrl.valid).toBe(true);
+    expect(host.ctrl.value).toMatchObject({
+      cep: '68507590',
+      logradouro: 'Folha 31, Quadra 7',
+      nivelResolucao: 'logradouro',
+    });
+  });
+
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
     setInput(fixture, 't-cep', '68500000');
     botaoPorTexto(fixture, 'Buscar CEP').click();
