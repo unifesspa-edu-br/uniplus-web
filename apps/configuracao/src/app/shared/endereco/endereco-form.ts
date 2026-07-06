@@ -647,9 +647,16 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     const cepDigitos = raw.cep.replace(/\D/g, '');
     this.cepAtual.set(cepDigitos);
     this.cepTextoAtual.set(raw.cep.trim());
+    const cepCorrespondeAoResolvido = cepDigitos.length > 0 && cepDigitos === this.cepResolvido();
+    if (cepCorrespondeAoResolvido) {
+      // O usuário voltou ao CEP já resolvido (ex.: desistiu de uma correção que
+      // falhou) sem disparar nova busca — limpa um eventual erro de tentativa
+      // anterior, que do contrário ficaria preso na tela mesmo com o formulário
+      // válido outra vez. #438.
+      this.cepErro.set(null);
+    }
     this.onValidatorChange();
-    const cepResolvidoNoValor =
-      cepDigitos.length > 0 && cepDigitos === this.cepResolvido() ? vazioParaNulo(raw.cep) : null;
+    const cepResolvidoNoValor = cepCorrespondeAoResolvido ? vazioParaNulo(raw.cep) : null;
 
     const algumPreenchido =
       cidade !== null ||

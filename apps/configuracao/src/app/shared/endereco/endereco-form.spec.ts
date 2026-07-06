@@ -322,8 +322,11 @@ describe('EnderecoFormComponent', () => {
     expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement)?.value).toBe(
       'Folha 31, Quadra 7',
     );
+    expect((fixture.nativeElement.querySelector('#t-cep-error') as HTMLElement).textContent).toContain(
+      'CEP não encontrado',
+    );
 
-    // Voltar ao CEP original (sem nova busca) reaprova o formulário com nivelResolucao consistente.
+    // Voltar ao CEP original (sem nova busca) reaprova o formulário e limpa o erro obsoleto.
     setInput(fixture, 't-cep', '68507590');
     fixture.detectChanges();
 
@@ -333,6 +336,7 @@ describe('EnderecoFormComponent', () => {
       logradouro: 'Folha 31, Quadra 7',
       nivelResolucao: 'logradouro',
     });
+    expect(fixture.nativeElement.querySelector('#t-cep-error')).toBeNull();
   });
 
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
