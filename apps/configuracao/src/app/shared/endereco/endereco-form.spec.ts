@@ -378,6 +378,35 @@ describe('EnderecoFormComponent', () => {
     expect((fixture.nativeElement.querySelector('#t-numero') as HTMLInputElement).value).toBe('');
   });
 
+  it('CA-01: abandonar a correção (esvaziar CEP após falha) limpa o erro obsoleto — #438', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+
+    setInput(fixture, 't-cep', '00000000');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/00000000`).flush(null, {
+      status: 404,
+      statusText: 'Not Found',
+    });
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('#t-cep-error') as HTMLElement).textContent).toContain(
+      'CEP não encontrado',
+    );
+
+    // Desiste da correção esvaziando o campo por completo — endereço vazio é
+    // válido (opcional), então o erro da tentativa anterior não pode persistir.
+    setInput(fixture, 't-cep', '');
+    fixture.detectChanges();
+
+    expect(host.ctrl.valid).toBe(true);
+    expect(fixture.nativeElement.querySelector('#t-cep-error')).toBeNull();
+  });
+
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
     setInput(fixture, 't-cep', '68500000');
     botaoPorTexto(fixture, 'Buscar CEP').click();

@@ -651,6 +651,10 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
       this.cidade.set(null);
       this.origem.set(null);
       this.cepResolvido.set('');
+      // Descartar a resolução preservada torna o CEP vazio válido de novo
+      // (endereço é opcional); um erro de uma tentativa de correção anterior
+      // (404, formato) não pode continuar na tela contradizendo isso.
+      this.cepErro.set(null);
       // numero também é limpo aqui: embora seja "dado próprio" (nunca
       // ancorado pelo DNE), ele descreve um imóvel específico do endereço
       // abandonado — mantê-lo faria o número vazar para o próximo CEP
