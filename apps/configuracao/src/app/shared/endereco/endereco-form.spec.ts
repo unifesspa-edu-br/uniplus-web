@@ -339,6 +339,29 @@ describe('EnderecoFormComponent', () => {
     expect(fixture.nativeElement.querySelector('#t-cep-error')).toBeNull();
   });
 
+  it('CA-01: esvaziar o CEP durante a correção descarta a resolução preservada — #438', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+
+    setInput(fixture, 't-cep', '');
+    fixture.detectChanges();
+
+    // Nada fica visível mas fora do que seria submetido: os campos de detalhe
+    // (derivados da resolução anterior) somem junto com o CEP, não continuam
+    // na tela para um valor que não seria mais enviado.
+    expect(fixture.nativeElement.querySelector('#t-logradouro')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Marabá');
+    expect(host.ctrl.valid).toBe(true);
+    expect(host.ctrl.value).toBeNull();
+    expect(enderecoParaCommand(host.ctrl.value).endereco).toBeNull();
+    expect(enderecoParaCommand(host.ctrl.value).cidadeCodigoIbge).toBeNull();
+  });
+
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
     setInput(fixture, 't-cep', '68500000');
     botaoPorTexto(fixture, 'Buscar CEP').click();
