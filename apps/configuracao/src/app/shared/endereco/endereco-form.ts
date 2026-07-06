@@ -70,6 +70,10 @@ interface EnderecoFormControls {
  * - **Fallback manual / sem CEP** (CA-02): o usuário escolhe a cidade pelo
  *   seletor (`GET /api/cidades`) e digita o endereço manualmente.
  *
+ * Um CEP já resolvido pode ser corrigido via botão "Trocar CEP" — reabre só o
+ * campo CEP (`iniciarEdicaoCep`) sem descartar o restante do endereço já
+ * preenchido; uma nova resolução bem-sucedida re-ancora o campo. #438.
+ *
  * Erros de CEP (formato/404) são exibidos inline (CA-06); o erro de coerência
  * cidade↔CEP (422) do backend chega via `erroExterno` do parent. Acessibilidade
  * WCAG 2.1 AA / e-MAG (CA-05): `fieldset/legend`, labels associadas,
@@ -97,24 +101,35 @@ interface EnderecoFormControls {
               placeholder="00000-000"
               maxlength="9"
               [formControl]="form.controls.cep"
-              [readonly]="ehAncorado('cep') || resolvendoCep()"
-              [attr.aria-readonly]="ehAncorado('cep') || resolvendoCep() ? 'true' : null"
+              [readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep()"
+              [attr.aria-readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep() ? 'true' : null"
               [attr.aria-invalid]="cepErro() !== null ? 'true' : null"
               [attr.aria-describedby]="cepErro() !== null ? id('cep') + '-error' : null"
               (blur)="aoSairDoCep()"
             />
-            <button
-              type="button"
-              class="btn btn--secondary btn--rect"
-              [disabled]="disabled() || resolvendoCep() || ehAncorado('cep')"
-              [attr.aria-busy]="resolvendoCep() ? 'true' : null"
-              (click)="resolverCep()"
-            >
-              @if (resolvendoCep()) {
-                <ui-spinner size="sm" />
-              }
-              Buscar CEP
-            </button>
+            @if (ehAncorado('cep') && !editandoCep()) {
+              <button
+                type="button"
+                class="btn btn--secondary btn--rect"
+                [disabled]="disabled()"
+                (click)="iniciarEdicaoCep()"
+              >
+                Trocar CEP
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="btn btn--secondary btn--rect"
+                [disabled]="disabled() || resolvendoCep()"
+                [attr.aria-busy]="resolvendoCep() ? 'true' : null"
+                (click)="resolverCep()"
+              >
+                @if (resolvendoCep()) {
+                  <ui-spinner size="sm" />
+                }
+                Buscar CEP
+              </button>
+            }
           </div>
           <span class="field__hint">
             Informe o CEP para preencher o endereço automaticamente, ou
@@ -290,6 +305,8 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
   protected readonly disabled = signal(false);
   protected readonly resolvendoCep = signal(false);
   protected readonly cepErro = signal<string | null>(null);
+  /** CEP ancorado reaberto para correção via "Trocar CEP" — ver `iniciarEdicaoCep`. */
+  protected readonly editandoCep = signal(false);
   protected readonly modoManual = signal(false);
   protected readonly cidade = signal<CidadeRef | null>(null);
   protected readonly buscaCidade = signal('');
@@ -411,6 +428,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
       this.origem.set(null);
       this.modoManual.set(false);
       this.cepErro.set(null);
+      this.editandoCep.set(false);
       this.cepResolvido.set('');
       this.cepAtual.set('');
       this.cepTextoAtual.set('');
@@ -441,6 +459,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     // Endereço gravado manualmente reabre em modo manual (tudo editável).
     this.modoManual.set(value.origem === ORIGEM_MANUAL);
     this.cepErro.set(null);
+    this.editandoCep.set(false);
   }
 
   registerOnChange(fn: (value: EnderecoEstruturado | null) => void): void {
@@ -494,6 +513,16 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     }
   }
 
+  /**
+   * Reabre o campo CEP para correção sem descartar o restante do endereço já
+   * resolvido — antes disso, a única forma de corrigir um CEP ancorado era o
+   * fluxo "sem CEP", que zera CEP e campos derivados como efeito colateral. #438.
+   */
+  protected iniciarEdicaoCep(): void {
+    this.editandoCep.set(true);
+    this.cepErro.set(null);
+  }
+
   protected resolverCep(): void {
     if (this.resolvendoCep() || this.disabled()) {
       return;
@@ -536,6 +565,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
 
   private aplicarCepResolvido(dto: CepResolvidoDto, digitos: string): void {
     this.modoManual.set(false);
+    this.editandoCep.set(false);
     this.cepResolvido.set(digitos);
     this.cidade.set({ codigoIbge: dto.codigoIbge, nome: dto.cidade, uf: dto.uf });
     this.nivel.set(normalizarNivel(dto.nivelResolucao));
@@ -560,6 +590,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     const manual = !this.modoManual();
     this.modoManual.set(manual);
     this.cepErro.set(null);
+    this.editandoCep.set(false);
     if (manual) {
       // Entrada manual: libera todos os campos (nada ancorado) e marca a origem.
       this.nivel.set(null);

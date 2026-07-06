@@ -248,6 +248,59 @@ describe('EnderecoFormComponent', () => {
     expect(numero.readOnly).toBe(false);
   });
 
+  it('CA-01: "Trocar CEP" destrava o campo sem descartar o restante do endereço resolvido — #438', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    const cep = fixture.nativeElement.querySelector('#t-cep') as HTMLInputElement;
+    expect(cep.readOnly).toBe(true);
+    expect(() => botaoPorTexto(fixture, 'Buscar CEP')).toThrow();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+
+    expect(cep.readOnly).toBe(false);
+    expect(cep.value).toBe('68507590');
+    expect(() => botaoPorTexto(fixture, 'Trocar CEP')).toThrow();
+    expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement).value).toBe(
+      'Folha 31, Quadra 7',
+    );
+    expect(host.ctrl.value).toMatchObject({ logradouro: 'Folha 31, Quadra 7' });
+  });
+
+  it('CA-01: corrige o CEP após "Trocar CEP" e re-ancora com o novo endereço resolvido — #438', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+
+    setInput(fixture, 't-cep', '68500000');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68500000`).flush({
+      ...cepLogradouro,
+      cep: '68500000',
+      logradouro: null,
+      bairro: 'Novo Bairro',
+      nivelResolucao: 'bairro',
+    });
+    fixture.detectChanges();
+
+    expect(host.ctrl.value).toMatchObject({
+      cep: '68500000',
+      bairro: 'Novo Bairro',
+      nivelResolucao: 'bairro',
+    });
+    const cep = fixture.nativeElement.querySelector('#t-cep') as HTMLInputElement;
+    expect(cep.readOnly).toBe(true);
+    expect(() => botaoPorTexto(fixture, 'Trocar CEP')).not.toThrow();
+    expect(() => botaoPorTexto(fixture, 'Buscar CEP')).toThrow();
+  });
+
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
     setInput(fixture, 't-cep', '68500000');
     botaoPorTexto(fixture, 'Buscar CEP').click();
