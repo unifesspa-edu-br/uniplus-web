@@ -651,8 +651,12 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
       this.cidade.set(null);
       this.origem.set(null);
       this.cepResolvido.set('');
+      // numero também é limpo aqui: embora seja "dado próprio" (nunca
+      // ancorado pelo DNE), ele descreve um imóvel específico do endereço
+      // abandonado — mantê-lo faria o número vazar para o próximo CEP
+      // resolvido, que pode ser uma rua/cidade completamente diferente.
       this.form.patchValue(
-        { logradouro: '', complemento: '', bairro: '', distrito: '', latitude: '', longitude: '' },
+        { logradouro: '', numero: '', complemento: '', bairro: '', distrito: '', latitude: '', longitude: '' },
         { emitEvent: false },
       );
       raw = this.form.getRawValue();
