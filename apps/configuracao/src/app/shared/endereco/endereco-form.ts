@@ -580,7 +580,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     this.form.patchValue(
       {
         cep: dto.cep,
-        logradouro: dto.logradouro ?? '',
+        logradouro: logradouroCompleto(dto.tipo, dto.logradouro),
         complemento: dto.complemento ?? '',
         bairro: dto.bairro ?? '',
         distrito: dto.distrito ?? '',
@@ -722,4 +722,17 @@ function vazioParaNulo(value: string): string | null {
 /** Coordenada do DTO (`string | number | null`) → texto do form control. */
 function textoDeCoordenada(valor: string | number | null | undefined): string {
   return valor === null || valor === undefined ? '' : String(valor);
+}
+
+/**
+ * Nome completo do logradouro para exibição — o Geo devolve `tipo` (ex.
+ * "Rua", "Avenida", "Terceira") separado de `logradouro` porque a API não
+ * expõe um campo agregado; a concatenação precisa ser feita no client para
+ * refletir o nome real do DNE (ex. "Terceira Avenida Bloco 1740"). #439.
+ */
+function logradouroCompleto(tipo: string | null, logradouro: string | null): string {
+  if (logradouro === null || logradouro.length === 0) {
+    return '';
+  }
+  return tipo !== null && tipo.length > 0 ? `${tipo} ${logradouro}` : logradouro;
 }
