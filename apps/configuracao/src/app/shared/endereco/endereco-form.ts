@@ -641,12 +641,14 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     let raw = this.form.getRawValue();
     const cepDigitos = raw.cep.replace(/\D/g, '');
 
-    if (cepDigitos.length === 0 && this.nivel() !== null) {
-      // Correção via "Trocar CEP" abandonada (campo esvaziado por completo)
-      // enquanto havia uma resolução preservada — descarta a resolução antiga
-      // e os campos derivados dela em vez de deixá-los visíveis mas fora do
-      // que é submetido (`enderecoParaCommand` só monta `endereco` com CEP de
-      // 8 dígitos; sem cidade, a cidade top-level também some). #438.
+    if (raw.cep.trim().length === 0 && this.nivel() !== null) {
+      // Correção via "Trocar CEP" abandonada (campo esvaziado por completo —
+      // texto bruto vazio, não só sem dígitos: um valor tipo "abc" não conta
+      // como abandono, e sim como formato pendente, ver cepPendente) enquanto
+      // havia uma resolução preservada — descarta a resolução antiga e os
+      // campos derivados dela em vez de deixá-los visíveis mas fora do que é
+      // submetido (`enderecoParaCommand` só monta `endereco` com CEP de 8
+      // dígitos; sem cidade, a cidade top-level também some). #438.
       this.nivel.set(null);
       this.cidade.set(null);
       this.origem.set(null);

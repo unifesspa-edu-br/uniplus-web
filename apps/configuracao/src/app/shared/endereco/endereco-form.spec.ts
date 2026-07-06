@@ -407,6 +407,32 @@ describe('EnderecoFormComponent', () => {
     expect(fixture.nativeElement.querySelector('#t-cep-error')).toBeNull();
   });
 
+  it('CA-01: texto sem dígitos (ex.: "abc") durante a correção não descarta a resolução preservada — #438', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+
+    // "abc" não tem dígitos, mas o campo não está vazio — é formato pendente
+    // (CA-06), não abandono da correção. A resolução preservada continua ali.
+    setInput(fixture, 't-cep', 'abc');
+    fixture.detectChanges();
+
+    expect(host.ctrl.invalid).toBe(true);
+    expect((fixture.nativeElement.querySelector('#t-logradouro') as HTMLInputElement)?.value).toBe(
+      'Folha 31, Quadra 7',
+    );
+
+    // Corrigir para o CEP original (sem nova busca) reaprova o formulário.
+    setInput(fixture, 't-cep', '68507590');
+    fixture.detectChanges();
+    expect(host.ctrl.valid).toBe(true);
+    expect(host.ctrl.value).toMatchObject({ cep: '68507590', nivelResolucao: 'logradouro' });
+  });
+
   it('CA-01: nível bairro deixa logradouro editável e número sempre editável', () => {
     setInput(fixture, 't-cep', '68500000');
     botaoPorTexto(fixture, 'Buscar CEP').click();
