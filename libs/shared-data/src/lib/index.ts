@@ -1,9 +1,6 @@
 // Models
-export * from './models/edital.model';
-export * from './models/inscricao.model';
 export * from './models/candidato.model';
 export * from './models/cota.model';
-export * from './models/resultado.model';
 
 // HTTP — `ProblemDetails` (RFC 9457) e `ApiResult<T>` vivem em
 // `@uniplus/shared-core/http` desde a ADR-0012. O antigo
@@ -11,18 +8,11 @@ export * from './models/resultado.model';
 
 // API clients gerados (ADR-0013) — types via openapi-typescript em schema.ts;
 // services Angular standalone manuais consumindo `withVendorMime` + `ApiResult`.
-//
-// O enum `TipoProcesso` foi removido do contrato (Story #455 do `uniplus-api`
-// — promovido a FK preparatória `tipoEditalId` para a futura entidade
-// `TipoEdital`); `models/edital.model.ts` mantém a string union homônima como
-// modelo local não vinculado ao DTO gerado.
 export { SELECAO_BASE_PATH } from './api/selecao/tokens';
 export { INGRESSO_BASE_PATH } from './api/ingresso/tokens';
 export { CONFIGURACAO_BASE_PATH } from './api/configuracao/tokens';
 export { ORGANIZACAO_BASE_PATH } from './api/organizacao/tokens';
 export { GEO_BASE_PATH } from './api/geo/tokens';
-export { EditaisApi } from './api/selecao/editais.api';
-export type { EditalDto, CriarEditalCommand } from './api/selecao/editais.api';
 export {
   ORIGENS_UNIDADE,
   OrigemUnidade,
