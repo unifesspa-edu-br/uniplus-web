@@ -23,12 +23,6 @@ export const appRoutes: Routes = [
           import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
-        path: 'editais',
-        canActivate: [roleGuard('admin', 'gestor')],
-        loadChildren: () =>
-          import('./features/editais/editais.routes').then((m) => m.EDITAIS_ROUTES),
-      },
-      {
         path: 'inscricoes',
         canActivate: [roleGuard('admin', 'gestor')],
         loadChildren: () =>

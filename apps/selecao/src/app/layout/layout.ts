@@ -23,7 +23,6 @@ import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell
 export class LayoutComponent {
   protected readonly navItems: readonly UiShellNavItem[] = [
     { label: 'Dashboard', routerLink: '/dashboard', exact: true },
-    { label: 'Editais', routerLink: '/editais' },
     { label: 'Inscrições', routerLink: '/inscricoes' },
     { label: 'Homologação', routerLink: '/homologacao' },
     { label: 'Notas', routerLink: '/notas' },
