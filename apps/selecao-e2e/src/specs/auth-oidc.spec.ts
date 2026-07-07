@@ -42,12 +42,12 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await expectUserInHeader(page, user.displayName, user.username, user.roles);
     });
 
-    test('gestor consegue autenticar e acessar editais', async ({ page }) => {
+    test('gestor consegue autenticar e acessar inscrições', async ({ page }) => {
       const user = USERS.gestor;
-      await page.goto('/editais');
+      await page.goto('/inscricoes');
       await keycloakLogin(page, user.username, user.password);
 
-      await expect(page).toHaveURL(/editais/);
+      await expect(page).toHaveURL(/inscricoes/);
       await expectUserInHeader(page, user.displayName, user.username, user.roles);
     });
   });
