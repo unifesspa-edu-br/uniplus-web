@@ -97,6 +97,14 @@ export const appRoutes: Routes = [
             (m) => m.TIPOS_DOCUMENTO_ROUTES,
           ),
       },
+      {
+        path: 'condicoes-atendimento',
+        data: { breadcrumb: 'Condições de Atendimento' },
+        loadChildren: () =>
+          import('./features/condicoes-atendimento/condicoes-atendimento.routes').then(
+            (m) => m.CONDICOES_ATENDIMENTO,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

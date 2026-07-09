@@ -248,9 +248,9 @@ export class LayoutComponent {
           routerLink: '/tipos-documento',
           exact: true,
         },
-        { label: 'Condição de Atendimento', icon: 'pi-heart' },
-        { label: 'Recurso de Acessibilidade', icon: 'pi-universal-access' },
-        { label: 'Tipo de Deficiência', icon: 'pi-eye' },
+        { label: 'Condição de Atendimento', icon: 'pi-heart', routerLink: '/condicoes-atendimento' },
+        { label: 'Recurso de Acessibilidade', icon: 'pi-wrench' },
+        { label: 'Tipo de Deficiência', icon: 'pi-stop' },
         {
           label: 'Fase Canônica',
           icon: 'pi-star',
