@@ -409,6 +409,12 @@ cfg-pesos-enem-page {
   gap: var(--space-7);
 }
 
+.cfg-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
 .cfg-unidades-scope {
   display: flex;
   flex-direction: column;

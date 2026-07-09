@@ -100,3 +100,10 @@ export {
   type NaturezaLegalToken,
   type RegraRemanejamentoToken,
 } from './modalidades.api';
+
+export {
+  CondicoesAtendimentoApi,
+  type CondicaoAtendimentoDto,
+  type CriarCondicaoAtendimentoCommand,
+  type AtualizarCondicaoAtendimentoCommand,
+} from './condicoes-atendimento.api';
