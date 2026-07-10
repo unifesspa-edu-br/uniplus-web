@@ -107,3 +107,10 @@ export {
   type CriarCondicaoAtendimentoCommand,
   type AtualizarCondicaoAtendimentoCommand,
 } from './condicoes-atendimento.api';
+
+export {
+  RecursoAcessibilidadeApi,
+  type RecursoAcessibilidadeDto,
+  type CriarRecursoAcessibilidadeCommand,
+  type AtualizarRecursoAcessibilidadeCommand,
+} from './recurso-acessibilidade.api';
