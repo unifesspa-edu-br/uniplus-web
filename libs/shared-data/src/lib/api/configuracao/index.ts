@@ -114,3 +114,10 @@ export {
   type CriarRecursoAcessibilidadeCommand,
   type AtualizarRecursoAcessibilidadeCommand,
 } from './recurso-acessibilidade.api';
+
+export {
+  TipoDeficienciaApi,
+  type TipoDeficienciaDto,
+  type CriarTipoDeficienciaCommand,
+  type AtualizarTipoDeficienciaCommand,
+} from './tipo-deficiencia.api';

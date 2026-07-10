@@ -250,7 +250,7 @@ export class LayoutComponent {
         },
         { label: 'Condição de Atendimento', icon: 'pi-heart', routerLink: '/condicoes-atendimento' },
         { label: 'Recurso de Acessibilidade', icon: 'pi-wrench', routerLink: '/recurso-acessibilidade' },
-        { label: 'Tipo de Deficiência', icon: 'pi-stop', },
+        { label: 'Tipo de Deficiência', icon: 'pi-stop', routerLink: '/tipos-deficiencia' },
         {
           label: 'Fase Canônica',
           icon: 'pi-star',

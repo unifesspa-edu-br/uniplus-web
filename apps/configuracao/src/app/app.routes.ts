@@ -113,6 +113,14 @@ export const appRoutes: Routes = [
             (m) => m.RECURSO_ACESSIBILIDADE,
         ),
       },
+      {
+        path: 'tipos-deficiencia',
+        data: { breadcrumb: 'Tipos de Deficiência' },
+        loadChildren: () =>
+          import('./features/tipos-deficiencia/tipos-deficiencia.route').then(
+            (m) => m.TIPOS_DEFICIENCIA_ROUTES,
+        ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
