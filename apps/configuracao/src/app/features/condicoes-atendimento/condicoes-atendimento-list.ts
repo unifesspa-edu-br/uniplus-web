@@ -35,7 +35,7 @@ type PaginaProps = {
 const PAGE_SIZE = 50;
 
 /** Vendor code do DomainError `FaseCanonica.CodigoJaExiste` (uniplus-api, 409 Conflict). */
-const FASE_CANONICA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.fase_canonica.codigo_ja_existe';
+const CONDICAO_ATENDIMENTO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.condicao_atendimento.codigo_ja_existe';
 
 const CONDICOES_ATENDIMENTO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof CondicaoAtendimentoForm>([
   'codigo',
@@ -146,7 +146,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         <div class="panel-head">
           <div class="panel-head__title">
             <h2 id="cfg-unidades-list-title">Condições de atendimento</h2>
-            <span class="list-count" aria-label="Total de unidades carregadas">
+            <span class="list-count" aria-label="Total de condições carregadas">
               {{ condicoesFiltradas().length }}
             </span>
           </div>
@@ -245,7 +245,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         @if (prevCursor() !== null || nextCursor() !== null) {
           <ui-pager
             statusText="Navegação por páginas"
-            navigationLabel="Paginação de campi"
+            navigationLabel="Paginação das condições de atendimento"
             [hasPrevious]="prevCursor() !== null"
             [hasNext]="nextCursor() !== null"
             [isDisabled]="loading()"
@@ -260,7 +260,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
       class="cfg-form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
-      ariaLabel="Formulário de unidade"
+      ariaLabel="Formulário da condição de atendimento"
       position="right"
     >
       @if (formError()) {
@@ -369,7 +369,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         </button>
       </div>
     </ui-dialog>
-
   `,
   host: { class: 'cfg-page' },
 })
@@ -482,7 +481,7 @@ export class CondicoesAtendimentoListPage {
         validators: [
           Validators.required,
           Validators.minLength(2),
-          Validators.maxLength(256),
+          Validators.maxLength(255),
           Validators.pattern('^[A-Z][A-Z0-9_]{1,49}$'),
         ],
       }),
@@ -615,10 +614,10 @@ export class CondicoesAtendimentoListPage {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
-    // FaseCanonica.CodigoJaExiste é um DomainError único (409, sem `errors[]`
+
     // — esse array só existe no pipeline FluentValidation/422); mapeado ao
     // campo manualmente para exibir o erro inline exigido pelo CA-07.
-    if (problem.code === FASE_CANONICA_CODIGO_JA_EXISTE_CODE) {
+    if (problem.code === CONDICAO_ATENDIMENTO_CODIGO_JA_EXISTE_CODE) {
       this.renovarIdempotencyKey();
       this.form.controls.codigo.setErrors({
         backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
