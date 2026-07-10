@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, linkedSignal, OnInit, signal, untracked } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -283,6 +283,8 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
               <input
                 class="input"
                 type="text"
+                style="text-transform: uppercase;"
+                inputmode="text"
                 placeholder="Ex.: DISLEXIA"
                 formControlName="codigo"
                 [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
@@ -372,7 +374,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
   `,
   host: { class: 'cfg-page' },
 })
-export class CondicoesAtendimentoListPage {
+export class CondicoesAtendimentoListPage implements OnInit {
   protected readonly api = inject(CondicoesAtendimentoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
@@ -516,6 +518,15 @@ export class CondicoesAtendimentoListPage {
         const titulo = this.problemI18n.resolve(problem).title;
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
+    });
+  }
+
+  ngOnInit(): void {
+    this.form.get('codigo')?.valueChanges.subscribe(val => {
+      this.form.get('codigo')?.setValue(val.toUpperCase(), {
+        emitEvent: false,
+        emitModelToViewChange: false
+      });
     });
   }
 
