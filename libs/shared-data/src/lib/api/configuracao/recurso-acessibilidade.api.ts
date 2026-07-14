@@ -69,7 +69,7 @@ export class RecursoAcessibilidadeApi {
   /** DELETE `/api/configuracao/recursos-acessibilidade{/{id}` — soft-delete. */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/configuracao/admin/recursos-acessibilidade/{${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/recursos-acessibilidade/${encodeURIComponent(id)}`,
     );
   }
 }

@@ -69,7 +69,7 @@ export class TipoDeficienciaApi {
   /** DELETE `/api/configuracao/tipos-deficiencia{/{id}` — soft-delete. */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/configuracao/admin/tipos-deficiencia/{${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/admin/tipos-deficiencia/${encodeURIComponent(id)}`,
     );
   }
 }
