@@ -55,7 +55,7 @@ function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm |
 }
 
 /** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 50;
 
 @Component({
   selector: 'cfg-tipos-deficiencia-list',
@@ -152,7 +152,7 @@ const PAGE_SIZE = 100;
           </button>
         </div>
 
-        @if (registros().length > 0) {
+        @if (tiposDeficienciaFiltrados().length > 0) {
           <div class="table-responsive">
             <table>
               <thead>
@@ -164,15 +164,15 @@ const PAGE_SIZE = 100;
                 </tr>
               </thead>
               <tbody>
-                @for (registro of tiposDeficienciaFiltrados(); track registro) {
+                @for (tipoDeficiencia of tiposDeficienciaFiltrados(); track tipoDeficiencia.id) {
                   <tr>
                     <td data-label="Nome">
                       <div class="table-responsive__primary">
-                        {{ registro.nome }}
+                        {{ tipoDeficiencia.nome }}
                       </div>
                     </td>
                     <td data-label="Descrição">
-                      {{ registro.descricao }}
+                      {{ tipoDeficiencia.descricao }}
                     </td>
                     <td data-label="Status">
                       <ui-tag variant="success">Ativa</ui-tag>
@@ -182,7 +182,7 @@ const PAGE_SIZE = 100;
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
-                        (click)="abrirEdicao(registro)"
+                        (click)="abrirEdicao(tipoDeficiencia)"
                       >
                         Editar
                       </button>
@@ -191,7 +191,7 @@ const PAGE_SIZE = 100;
                           class="btn btn--tertiary btn--sm btn--rect"
                           [disabled]="loading()"
                           [disabled]="submitting()"
-                          (click)="abrirInativarTipoDeficiencia(registro)"
+                          (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
                         >
                           Inativar
                         </button>
@@ -433,7 +433,6 @@ export class TiposDeficienciaListPage {
   protected readonly busca = signal('');
 
   constructor() {
-    this.carregar();
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
