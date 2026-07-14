@@ -152,15 +152,15 @@ const PAGE_SIZE = 50;
                 </tr>
               </thead>
               <tbody>
-                @for (registro of recursosFiltrados(); track registro) {
+                @for (recursoAcessibilidade of recursosFiltrados(); track recursoAcessibilidade.id) {
                   <tr>
                     <td data-label="Nome">
                       <div class="table-responsive__primary">
-                        {{ registro.nome }}
+                        {{ recursoAcessibilidade.nome }}
                       </div>
                     </td>
                     <td data-label="Descrição">
-                      {{ registro.descricao }}
+                      {{ recursoAcessibilidade.descricao }}
                     </td>
                     <td data-label="Status">
                       <ui-tag variant="success">Ativa</ui-tag>
@@ -170,7 +170,7 @@ const PAGE_SIZE = 50;
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
-                        (click)="abrirEdicao(registro)"
+                        (click)="abrirEdicao(recursoAcessibilidade)"
                       >
                         Editar
                       </button>
@@ -179,7 +179,7 @@ const PAGE_SIZE = 50;
                           class="btn btn--tertiary btn--sm btn--rect"
                           [disabled]="isLoading()"
                           [disabled]="submitting()"
-                          (click)="abrirInativarRecurso(registro)"
+                          (click)="abrirInativarRecurso(recursoAcessibilidade)"
                         >
                           Inativar
                         </button>
@@ -424,7 +424,6 @@ export class RecursoAcessibilidadeListPage {
   );
 
   constructor() {
-    this.carregar();
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
