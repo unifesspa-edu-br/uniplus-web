@@ -13,7 +13,6 @@
         "outputPath": "dist/apps/configuracao",
         "browser": "apps/configuracao/src/main.ts",
         "tsConfig": "apps/configuracao/tsconfig.app.json",
-        "baseHref": "./",
         "inlineStyleLanguage": "css",
         "assets": [
           {
