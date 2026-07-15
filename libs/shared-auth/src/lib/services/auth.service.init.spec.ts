@@ -104,6 +104,41 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
     expect(service.initError()).toBe('cannot reach');
   });
 
+  it('resolve silentCheckSsoRedirectUri relativo a document.baseURI (Story #446/#453)', async () => {
+    const initSpy = vi.fn(async () => false);
+    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
+      .mockReturnValue(stubKeycloak({ init: initSpy }));
+
+    await service.init(config);
+
+    expect(initSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        silentCheckSsoRedirectUri: new URL('assets/silent-check-sso.html', document.baseURI).toString(),
+      }),
+    );
+  });
+
+  it('resolve silentCheckSsoRedirectUri sob o mount point quando servido sob subpath', async () => {
+    const base = document.createElement('base');
+    base.href = 'http://localhost:3000/portal/';
+    document.head.appendChild(base);
+    try {
+      const initSpy = vi.fn(async () => false);
+      vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
+        .mockReturnValue(stubKeycloak({ init: initSpy }));
+
+      await service.init(config);
+
+      expect(initSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          silentCheckSsoRedirectUri: 'http://localhost:3000/portal/assets/silent-check-sso.html',
+        }),
+      );
+    } finally {
+      base.remove();
+    }
+  });
+
   it('registra callback onTokenExpired que dispara refreshToken()', async () => {
     let capturedCallback: (() => void) | undefined;
     const kc = stubKeycloak({ init: async () => true });
