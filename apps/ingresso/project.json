@@ -13,6 +13,7 @@
         "outputPath": "dist/apps/ingresso",
         "browser": "apps/ingresso/src/main.ts",
         "tsConfig": "apps/ingresso/tsconfig.app.json",
+        "baseHref": "./",
         "assets": [
           {
             "glob": "**/*",
