@@ -13,6 +13,7 @@
         "outputPath": "dist/apps/selecao",
         "browser": "apps/selecao/src/main.ts",
         "tsConfig": "apps/selecao/tsconfig.app.json",
+        "baseHref": "./",
         "assets": [
           {
             "glob": "**/*",
