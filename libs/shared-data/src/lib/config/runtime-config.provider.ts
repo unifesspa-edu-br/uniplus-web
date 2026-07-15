@@ -15,8 +15,15 @@ import { resolveOidcConfig, type AppConfig } from './app-config.model';
  * Path canônico do runtime-config (ADR-0021). nginx serve este arquivo
  * (presente como placeholder na imagem; sobrescrito por ConfigMap K8s
  * em produção) com `Cache-Control: no-store`.
+ *
+ * Resolvido relativo a `document.baseURI` (não fixo em `/assets/...`) para
+ * respeitar o `<base href>` quando o app é servido sob subpath (Feature
+ * #444) — o mesmo `baseHref: "./"` que já faz o Angular resolver assets e
+ * rotas corretamente sob `/portal/`, `/selecao/` etc.
  */
-export const RUNTIME_CONFIG_PATH = '/assets/runtime-config.json';
+export function resolveRuntimeConfigPath(): string {
+  return new URL('assets/runtime-config.json', document.baseURI).toString();
+}
 
 /**
  * Bootstrap completo de runtime-config + autenticação num **único**
@@ -55,7 +62,7 @@ export function provideRuntimeConfig(): EnvironmentProviders {
           // nenhum interceptor — necessário porque o pipeline padrão
           // depende de tokens que ainda não estão prontos neste momento.
           const http = new HttpClient(backend);
-          const cfg = await firstValueFrom(http.get<AppConfig>(RUNTIME_CONFIG_PATH));
+          const cfg = await firstValueFrom(http.get<AppConfig>(resolveRuntimeConfigPath()));
           assertNaoEhPlaceholder(cfg);
           store.load(cfg);
           await auth.init(toAuthConfig(cfg));
@@ -125,7 +132,7 @@ function assertNaoEhPlaceholder(cfg: AppConfig): void {
     if (serializado.includes(marca)) {
       throw new Error(
         `runtime-config.json contém placeholder '${marca}'. ConfigMap K8s ` +
-          `provavelmente não está montado em /assets/runtime-config.json (ADR-0021). ` +
+          `provavelmente não está montado em ${resolveRuntimeConfigPath()} (ADR-0021). ` +
           `Bootstrap abortado para evitar app subir em estado inconsistente.`,
       );
     }
