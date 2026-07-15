@@ -14,6 +14,16 @@ declare global {
   }
 }
 
+/**
+ * Resolve um asset self-hosted relativo ao `<base href>` do documento —
+ * respeita subpath (Feature #444) sem depender do `DOCUMENT` injetado do
+ * componente, que só fica disponível depois dos campos de `input()` na
+ * ordem de inicialização da classe.
+ */
+function resolveAssetPath(relativePath: string): string {
+  return new URL(relativePath, document.baseURI).toString();
+}
+
 @Component({
   selector: 'ui-vlibras-loader',
   standalone: true,
@@ -28,10 +38,10 @@ declare global {
   `,
 })
 export class VlibrasLoaderComponent {
-  readonly stylesheetHref = input<string>('/assets/shared-ui/vlibras/vlibras.css');
-  readonly scriptSrc = input<string>('/assets/shared-ui/vlibras/vlibras-plugin.js');
-  readonly rootPath = input<string | undefined>('/assets/shared-ui/vlibras');
-  readonly assetMirrorSrc = input<string>('/assets/shared-ui/vlibras/assets/');
+  readonly stylesheetHref = input<string>(resolveAssetPath('assets/shared-ui/vlibras/vlibras.css'));
+  readonly scriptSrc = input<string>(resolveAssetPath('assets/shared-ui/vlibras/vlibras-plugin.js'));
+  readonly rootPath = input<string | undefined>(resolveAssetPath('assets/shared-ui/vlibras'));
+  readonly assetMirrorSrc = input<string>(resolveAssetPath('assets/shared-ui/vlibras/assets/'));
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private initialized = false;
