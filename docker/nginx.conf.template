@@ -32,7 +32,9 @@ server {
     # Mantém a URL canônica com barra final. `APP_BASE_PATH` é derivado pelo
     # entrypoint a partir de APP_BASE_HREF e fica em um path inócuo na raiz.
     location = ${APP_BASE_PATH} {
-        return 308 ${APP_BASE_HREF};
+        # `$is_args$args` evita perder parâmetros de deep links, inclusive
+        # callbacks OIDC que chegam sem a barra final.
+        return 308 ${APP_BASE_HREF}$is_args$args;
     }
 
     # Healthcheck estático (smoke pós-build via docker run + curl). O probe
