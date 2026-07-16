@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -eu
+
+# O valor é interpolado no template Nginx antes do processo iniciar. Aceitar
+# somente raiz ou segmentos URL seguros evita configuração malformada e garante
+# que toda base não-raiz comece e termine com barra.
+if ! printf '%s' "${APP_BASE_HREF:-}" | grep -Eq '^/([A-Za-z0-9_-]+/)*$'; then
+  echo "APP_BASE_HREF inválido: use / ou /segmento/subsegmento/." >&2
+  exit 1
+fi
+
+# A location exata só é necessária para subpaths. Nginx não aceita uma
+# location vazia; na raiz usamos um path reservado que nunca é publicado.
+if [ "$APP_BASE_HREF" = / ]; then
+  export APP_BASE_PATH=/__uniplus-root-base-href__
+else
+  export APP_BASE_PATH="${APP_BASE_HREF%/}"
+fi
