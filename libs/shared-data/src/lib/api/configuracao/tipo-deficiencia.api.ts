@@ -39,7 +39,7 @@ export class TipoDeficienciaApi {
   /** GET `/api/configuracao/tipos-deficiencia{id}` — detalhe. */
   obter(id: string): Observable<ApiResult<TipoDeficienciaDto>> {
     return this.http.get<ApiResult<TipoDeficienciaDto>>(
-      `${this.basePath}/api/configuracao//tipos-deficiencia/${encodeURIComponent(id)}`,
+      `${this.basePath}/api/configuracao/tipos-deficiencia/${encodeURIComponent(id)}`,
       { context: withVendorMime('tipo-deficiencia', 1) },
     );
   }

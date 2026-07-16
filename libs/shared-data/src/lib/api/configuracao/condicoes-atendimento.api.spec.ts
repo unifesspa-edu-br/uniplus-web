@@ -102,6 +102,15 @@ describe('CondicoesAtendimentoApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
+  it('obter() faz GET /api/configuracao/admin/condicoes-atendimento/{id}>', async () => {
+    const promise = firstValueFrom(api.obter(CONDICAO_ATENDIMENTO_ID));
+    const req = controller.expectOne(`${BASE}/api/configuracao/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
+    expect(req.request.method).toBe('GET');
+    req.flush(CONDICAO_ATENDIMENTO_ID, { status: 200, statusText: 'Ok' });
+    const result = (await promise) as ApiResult<string>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
   it('remover() faz DELETE /api/configuracao/admin/condicoes-atendimento/{id}', async () => {
     const promise = firstValueFrom(api.remover(CONDICAO_ATENDIMENTO_ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
