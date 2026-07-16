@@ -91,7 +91,9 @@ jobs:
               - 'eslint.config.mjs'
               - 'vitest.workspace.ts'
               - 'playwright.config.ts'
+              - 'docker/**'
               - 'tools/e2e-docker/**'
+              - 'tools/test-nginx-base-href.sh'
               - '.github/workflows/ci.yml'
 
       - id: gate
@@ -144,6 +146,10 @@ jobs:
 
       - if: steps.gate.outputs.run == 'true'
         run: npm ci
+
+      - name: Validar base href sob subpath
+        if: steps.gate.outputs.run == 'true'
+        run: bash tools/test-nginx-base-href.sh
 
       - name: Extrair versão do Playwright
         id: pw-version

@@ -13,7 +13,6 @@
         "outputPath": "dist/apps/portal",
         "browser": "apps/portal/src/main.ts",
         "tsConfig": "apps/portal/tsconfig.app.json",
-        "baseHref": "./",
         "assets": [
           {
             "glob": "**/*",

@@ -2,6 +2,11 @@
 # Imagem base é `nginxinc/nginx-unprivileged` (#4 hardening) — escuta em :8080
 # como UID 101, sem CAP_NET_BIND_SERVICE.
 #
+# APP_BASE_HREF é configurado no runtime do container. A imagem continua única
+# por app: `/` atende standalone-compact/lab; `/portal/`, `/selecao/` e
+# `/ingresso/` atendem o HML path-based sem rebuild. O Traefik não remove o
+# prefixo, por isso as locations abaixo o removem antes de buscar o arquivo.
+#
 # Headers de segurança e CSP cobrem o requisito da #4. Runtime config (#84)
 # vive em /assets/runtime-config.json, servido aqui mas montado por ConfigMap
 # em produção — `connect-src` precisa permitir URLs externas que o ConfigMap
@@ -14,8 +19,25 @@ server {
     index index.html;
 
     server_tokens off;
+    # O redirect para a barra final precisa manter host e porta originais do
+    # cliente (especialmente atrás do Traefik), não expor localhost:8080.
+    absolute_redirect off;
 
-    # Healthcheck estático (smoke pós-build via docker run + curl).
+    # A tag <base> é compilada como raiz e substituída pelo mount point em
+    # runtime. Diferentemente de `./`, um caminho absoluto permanece correto
+    # após hard reload em uma rota com múltiplos segmentos.
+    sub_filter_once on;
+    sub_filter '<base href="/">' '<base href="${APP_BASE_HREF}">';
+
+    # Mantém a URL canônica com barra final. `APP_BASE_PATH` é derivado pelo
+    # entrypoint a partir de APP_BASE_HREF e fica em um path inócuo na raiz.
+    location = ${APP_BASE_PATH} {
+        return 308 ${APP_BASE_HREF};
+    }
+
+    # Healthcheck estático (smoke pós-build via docker run + curl). O probe
+    # do Kubernetes chega diretamente ao Pod, portanto fica deliberadamente
+    # na raiz mesmo quando a app é exposta por subpath no Traefik.
     location = /health.json {
         access_log off;
         default_type application/json;
@@ -26,7 +48,8 @@ server {
     # Runtime config (ADR-0020 + #84) — sobrescrito por ConfigMap em produção.
     # `no-store` garante que o navegador sempre busca a versão atual ao carregar
     # a app, mesmo após bump de ConfigMap sem rolling restart.
-    location = /assets/runtime-config.json {
+    location = ${APP_BASE_HREF}assets/runtime-config.json {
+        rewrite ^${APP_BASE_HREF}(.*)$ /$1 break;
         add_header Cache-Control "no-store" always;
         try_files $uri =404;
     }
@@ -37,7 +60,8 @@ server {
     # Esta location explicita a CSP relaxada SOMENTE para esse arquivo —
     # nginx requer redeclarar TODOS os add_header desejados quando algum é
     # definido na location (regra de override do `add_header`).
-    location = /assets/silent-check-sso.html {
+    location = ${APP_BASE_HREF}assets/silent-check-sso.html {
+        rewrite ^${APP_BASE_HREF}(.*)$ /$1 break;
         add_header Cache-Control "no-store" always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
         add_header X-Frame-Options "SAMEORIGIN" always;
@@ -56,13 +80,22 @@ server {
         try_files $uri =404;
     }
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|unityweb)$ {
+    # Arquivos versionados precisam ser servidos pelo mount point, mas existem
+    # fisicamente na raiz do artefato. A reescrita é interna: a URL visível e
+    # o base href continuam com o prefixo configurado.
+    location ~* ^${APP_BASE_HREF}.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|unityweb)$ {
+        rewrite ^${APP_BASE_HREF}(.*)$ /$1 break;
+        try_files $uri =404;
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+
+    # Toda rota da SPA, inclusive deep links, perde o prefixo apenas para o
+    # lookup local. Sem isso `/selecao/foo/bar` procuraria um arquivo físico em
+    # `/usr/share/nginx/html/selecao/foo/bar`.
+    location ${APP_BASE_HREF} {
+        rewrite ^${APP_BASE_HREF}(.*)$ /$1 break;
+        try_files $uri $uri/ /index.html;
     }
 
     # Headers de segurança (#4). HSTS aplicado pelo gateway TLS em produção
