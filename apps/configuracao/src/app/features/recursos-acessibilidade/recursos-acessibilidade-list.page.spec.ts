@@ -9,7 +9,7 @@ import {
   RecursoAcessibilidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { RecursoAcessibilidadeListPage } from './recursos-acessibilidade-list.page.ts';
+import { RecursosAcessibilidadeListPage } from './recursos-acessibilidade-list.page.js';
 
 const BASE = 'http://localhost:5000';
 const RECURSO_ACESSIBILIDADE_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -20,15 +20,15 @@ const recurso_acessibilidade_seed: RecursoAcessibilidadeDto = {
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
 };
 
-describe('RecursoAcessibilidadeListPage', () => {
-  let fixture: ComponentFixture<RecursoAcessibilidadeListPage>;
-  let component: RecursoAcessibilidadeListPage;
+describe('RecursosAcessibilidadeListPage', () => {
+  let fixture: ComponentFixture<RecursosAcessibilidadeListPage>;
+  let component: RecursosAcessibilidadeListPage;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [RecursoAcessibilidadeListPage],
+      imports: [RecursosAcessibilidadeListPage],
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -36,7 +36,7 @@ describe('RecursoAcessibilidadeListPage', () => {
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
       ],
     });
-    fixture = TestBed.createComponent(RecursoAcessibilidadeListPage);
+    fixture = TestBed.createComponent(RecursosAcessibilidadeListPage);
     component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
@@ -141,13 +141,13 @@ describe('RecursoAcessibilidadeListPage', () => {
       descricao: ''
     });
     component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento`);
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/recursos-acessibilidade`);
       post.flush(
         JSON.stringify({
           type: 'https://uniplus.dev/erros/uniplus.configuracao.recurso_acessibilidade.nome_ja_existe',
           title: 'Já existe um recurso de acessibilidade ativo com este nome',
           status: 409,
-          code: 'uniplus.configuracao.condicao_atendimento.codigo_ja_existe',
+          code: 'uniplus.configuracao.recurso_acessibilidade.nome_ja_existe',
           traceId: 'test-trace',
         }),
         {

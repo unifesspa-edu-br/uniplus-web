@@ -1,12 +1,51 @@
-import { Component, computed, DestroyRef, effect, inject, linkedSignal, OnInit, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  linkedSignal,
+  OnInit,
+  signal,
+  untracked
+} from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { Cursor, ProblemI18nService, ProblemDetails, idempotencyKey, ApiResult, ProblemValidationError, withIdempotencyKey, PaginationDirection, useApiResource, cursorToString, withVendorMime, extractPrevCursor, extractNextCursor } from '@uniplus/shared-core/http';
-import { NotificationService } from '@uniplus/shared-core/notifications';
-import { AtualizarCondicaoAtendimentoCommand, CondicaoAtendimentoDto, CondicoesAtendimentoApi, CONFIGURACAO_BASE_PATH, CriarCondicaoAtendimentoCommand } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, FilterChipsComponent, SkeletonComponent, UiFilterChipOption, EmptyStateComponent, SpinnerComponent, DrawerComponent, TagComponent, DialogComponent, PagerComponent } from "@uniplus/shared-ui/components";
+import {
+  Cursor,
+  ProblemI18nService,
+  ProblemDetails,
+  idempotencyKey,
+  ApiResult,
+  ProblemValidationError,
+  withIdempotencyKey,
+  PaginationDirection,
+  useApiResource,
+  cursorToString,
+  withVendorMime,
+  extractPrevCursor,
+  extractNextCursor,
+} from '@uniplus/shared-core/http';
+import {NotificationService } from '@uniplus/shared-core/notifications';
+import {
+  AtualizarCondicaoAtendimentoCommand,
+  CondicaoAtendimentoDto,
+  CondicoesAtendimentoApi,
+  CONFIGURACAO_BASE_PATH,
+  CriarCondicaoAtendimentoCommand
+} from '@uniplus/shared-data/configuracao';
+import {
+  AlertComponent,
+  SkeletonComponent,
+  EmptyStateComponent,
+  SpinnerComponent,
+  DrawerComponent,
+  TagComponent,
+  DialogComponent,
+  PagerComponent
+} from "@uniplus/shared-ui/components";
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -21,11 +60,6 @@ export interface CondicaoAtendimentoTipoOption {
   readonly label: string;
 }
 
-export const CONDICAO_ATENDIMENTO_TIPO: readonly CondicaoAtendimentoTipoOption[] = [
-  { value: 'ATIVAS', label: 'Ativas' },
-  { value: 'INATIVAS', label: 'Inativas' },
-] as const;
-
 type PaginaProps = {
   readonly cursor: Cursor;
   readonly direction: PaginationDirection
@@ -34,7 +68,7 @@ type PaginaProps = {
 /** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
 const PAGE_SIZE = 50;
 
-/** Vendor code do DomainError `FaseCanonica.CodigoJaExiste` (uniplus-api, 409 Conflict). */
+/** Vendor code do DomainError `CondicaoAtendimento.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CONDICAO_ATENDIMENTO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.condicao_atendimento.codigo_ja_existe';
 
 const CONDICOES_ATENDIMENTO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof CondicaoAtendimentoForm>([
@@ -63,7 +97,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
   imports: [
     AlertComponent,
     SkeletonComponent,
-    FilterChipsComponent,
     EmptyStateComponent,
     SpinnerComponent,
     DrawerComponent,
@@ -130,15 +163,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
           >
             Limpar
           </button>
-        </div>
-        <div class="filter-bar__group">
-          <span class="u-eyebrow">Tipo</span>
-          <ui-filter-chips
-            [options]="tipoChips()"
-            [selected]="tipoFiltro()"
-            (selectedChange)="tipoFiltro.set($event ?? '')"
-            ariaLabel="Filtrar por tipo"
-          />
         </div>
       </div>
 
@@ -438,7 +462,13 @@ export class CondicoesAtendimentoListPage implements OnInit {
   });
   readonly registros = signal<CondicaoAtendimentoDto[]>([]);
   readonly isLoading = signal(false);
-  readonly errorMessage = signal<string | null>(null);
+  protected readonly errorMessage = computed<string | null>(() => {
+    const problem = this.lista.problem();
+    if (problem) {
+      return this.problemI18n.resolve(problem).title;
+    }
+    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+  });
   protected readonly formOpen = signal(false);
   protected readonly saving = signal(false);
   readonly drawerOpen = signal(false);
@@ -459,22 +489,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
     'a cópia por valor de cada processo permanece íntegra.'
   });
   readonly condicaoEmEdicaoId = signal<string | null>(null);
-  /**
-   * Chips de categoria com contador dinâmico sobre o conjunto já filtrado por
-   * busca textual (CA-01) — refletem quantos registros de cada categoria
-   * casam com o termo digitado, antes de aplicar o próprio filtro de chip.
-   */
-  protected readonly tipoChips = computed<readonly UiFilterChipOption[]>(() => {
-    return [
-      { value: '', label: 'Todas', count: this.condicoes().length },
-      ...CONDICAO_ATENDIMENTO_TIPO.map((condicaoTipo) => ({
-        value: condicaoTipo.value,
-        label: condicaoTipo.label,
-        count: 0,
-      })),
-    ];
-  });
-
   protected readonly termoBusca = signal('');
   protected readonly form: FormGroup<CondicaoAtendimentoForm> =
     new FormGroup<CondicaoAtendimentoForm>({
@@ -661,6 +675,19 @@ export class CondicoesAtendimentoListPage implements OnInit {
     this.aplicarFalha(result.problem);
   }
 
+  private handleRemoverResult(result: ApiResult<void>): void {
+    this.saving.set(false);
+    if (result.ok) {
+      this.formOpen.set(false);
+      this.notifications.success('Condição de atendimento inativada');
+      this.confirmOpen.set(false);
+      this.condicaoParaInativar.set(null);
+      this.recarregar();
+      return;
+    }
+    this.aplicarFalha(result.problem);
+  }
+
   protected salvar(): void {
     if (this.saving()) {
       return;
@@ -699,7 +726,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
 
   limparFiltros() {
     this.limparFiltroBusca();
-    this.tipoFiltro.set('');
   }
 
   protected erroDoCampo(nome: keyof CondicaoAtendimentoForm): string | null {
@@ -715,7 +741,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
     if (control.errors['required']) return 'Campo obrigatório.';
     if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    if (control.errors['pattern']) return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: DISLEXIA, TDAH).'
+    if (control.errors['pattern'])
+      return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: DISLEXIA, TDAH).';
     return 'Valor inválido.';
   }
 
@@ -724,11 +751,9 @@ export class CondicoesAtendimentoListPage implements OnInit {
       return;
     }
     this.isLoading.set(true);
-    this.errorMessage.set(null);
 
     let acumulado: CondicaoAtendimentoDto[] = [];
     let falhou: ProblemDetails | null = null;
-    //let paginas = 0;
 
     this.api
       .listar({ limit: PAGE_SIZE })
@@ -744,7 +769,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
         complete: () => {
           this.isLoading.set(false);
           if (falhou !== null) {
-            this.errorMessage.set(this.problemI18n.resolve(falhou).title);
             if (falhou.status >= 500) {
               this.notifications.errorFromProblem(falhou);
             }
@@ -761,11 +785,10 @@ export class CondicoesAtendimentoListPage implements OnInit {
       return;
     }
     this.saving.set(true);
-    this.notifications.success('Condição de atendimento inativado');
-    this.confirmOpen.set(false);
-    this.condicaoParaInativar.set(null);
-    this.recarregar();
-    this.saving.set(false);
+    this.api
+      .remover(condicao.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => this.handleRemoverResult(result));
   }
 
   abrirInativarCondicao(condicao: CondicaoAtendimentoDto): void {

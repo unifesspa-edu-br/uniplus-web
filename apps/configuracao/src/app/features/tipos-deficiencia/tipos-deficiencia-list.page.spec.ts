@@ -129,7 +129,7 @@ describe('TiposDeficienciaListPage', () => {
     component['salvar']();
 
     expect(submit.disabled).toBe(true);
-    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-acessibilidade`);
+    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
     expect(component['modo']()).toBe('criar');
   });
 
