@@ -106,11 +106,11 @@ export const appRoutes: Routes = [
         ),
       },
       {
-        path: 'recurso-acessibilidade',
-        data: { breadcrumb: 'Recurso de Acessibilidade' },
+        path: 'recursos-acessibilidade',
+        data: { breadcrumb: 'Recursos de Acessibilidade' },
         loadChildren: () =>
-          import('./features/recurso-acessibilidade/recurso-acessibilidade.routes').then(
-            (m) => m.RECURSO_ACESSIBILIDADE,
+          import('./features/recursos-acessibilidade/recurso-acessibilidade.routes').then(
+            (m) => m.RECURSOS_ACESSIBILIDADE,
         ),
       },
       {

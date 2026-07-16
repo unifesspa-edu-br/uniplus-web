@@ -1,12 +1,50 @@
 import { HttpParams } from "@angular/common/http";
-import { Component, computed, DestroyRef, effect, inject, linkedSignal, signal, untracked } from "@angular/core";
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 
-import { ApiResult, Cursor, cursorToString, extractNextCursor, extractPrevCursor, idempotencyKey, PaginationDirection, ProblemDetails, ProblemI18nService, ProblemValidationError, useApiResource, withIdempotencyKey, withVendorMime } from "@uniplus/shared-core/http";
-import { NotificationService } from "@uniplus/shared-core/notifications";
-import { AtualizarTipoDeficienciaCommand, CONFIGURACAO_BASE_PATH, CriarTipoDeficienciaCommand, TipoDeficienciaApi, TipoDeficienciaDto } from "@uniplus/shared-data/configuracao";
-import { AlertComponent, SkeletonComponent, FilterChipsComponent, UiFilterChipOption, TagComponent, EmptyStateComponent, DrawerComponent, SpinnerComponent, DialogComponent, PagerComponent } from "@uniplus/shared-ui/components";
+import {
+  ApiResult,
+  Cursor,
+  cursorToString,
+  extractNextCursor,
+  extractPrevCursor,
+  idempotencyKey,
+  PaginationDirection,
+  ProblemDetails,
+  ProblemI18nService,
+  ProblemValidationError,
+  useApiResource,
+  withIdempotencyKey,
+  withVendorMime,
+} from "@uniplus/shared-core/http";
+import {NotificationService } from "@uniplus/shared-core/notifications";
+import {
+  AtualizarTipoDeficienciaCommand,
+  CONFIGURACAO_BASE_PATH,
+  CriarTipoDeficienciaCommand,
+  TipoDeficienciaApi,
+  TipoDeficienciaDto,
+} from "@uniplus/shared-data/configuracao";
+import {
+  AlertComponent,
+  SkeletonComponent,
+  TagComponent,
+  EmptyStateComponent,
+  DrawerComponent,
+  SpinnerComponent,
+  DialogComponent,
+  PagerComponent,
+} from "@uniplus/shared-ui/components";
 
 type ModoFormulario = "criar" | "editar";
 
@@ -26,12 +64,7 @@ export interface TipoDeficienciaOption {
   readonly label: string;
 }
 
-export const TIPO_DEFICIENCIA_TIPO: readonly TipoDeficienciaOption[] = [
-  { value: 'ATIVAS', label: 'Ativas' },
-  { value: 'INATIVAS', label: 'Inativas' },
-] as const;
-
-/** Vendor code do DomainError `FaseCanonica.CodigoJaExiste` (uniplus-api, 409 Conflict). */
+/** Vendor code do DomainError `TipoDeficienciaNomeJaExiste` (uniplus-api, 409 Conflict). */
 const TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe';
 
 function nullIfBlank(value: string): string | null {
@@ -59,7 +92,17 @@ const PAGE_SIZE = 50;
 
 @Component({
   selector: 'cfg-tipos-deficiencia-list',
-  imports: [AlertComponent, SkeletonComponent, FilterChipsComponent, TagComponent, EmptyStateComponent, EmptyStateComponent, DrawerComponent, SpinnerComponent, ReactiveFormsModule, DialogComponent, PagerComponent],
+  imports: [
+    AlertComponent,
+    SkeletonComponent,
+    TagComponent,
+    EmptyStateComponent,
+    DrawerComponent,
+    SpinnerComponent,
+    ReactiveFormsModule,
+    DialogComponent,
+    PagerComponent,
+  ],
   template: `
     <div class="page-header">
       <div class="page-header__content">
@@ -70,7 +113,6 @@ const PAGE_SIZE = 50;
         </p>
       </div>
     </div>
-
     <ui-alert
       variant="info"
       heading="Cadastro independente"
@@ -126,15 +168,6 @@ const PAGE_SIZE = 50;
           >
             Limpar
           </button>
-        </div>
-        <div class="filter-bar__group">
-          <span class="u-eyebrow">Tipo</span>
-          <ui-filter-chips
-            [options]="tipoChips()"
-            [selected]="tipoFiltro()"
-            (selectedChange)="tipoFiltro.set($event ?? '')"
-            ariaLabel="Filtrar por tipo"
-          />
         </div>
       </div>
 
@@ -394,18 +427,16 @@ export class TiposDeficienciaListPage {
       (tiposDeficiencia) => tiposDeficiencia.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
-  protected readonly tipoChips = computed<readonly UiFilterChipOption[]>(() => ([
-    { value: '', label: 'Todas', count: this.tiposDeficiencia().length },
-    ...TIPO_DEFICIENCIA_TIPO.map((tipoDefiencia) => ({
-        value: tipoDefiencia.value,
-        label: tipoDefiencia.label,
-        count: 0,
-      })),
-  ]));
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Novo tipo de deficiência' : 'Editar tipo de deficiência',
   );
-  readonly errorMessage = signal<string | null>(null);
+  protected readonly errorMessage = computed<string | null>(() => {
+    const problem = this.lista.problem();
+    if (problem) {
+      return this.problemI18n.resolve(problem).title;
+    }
+    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+  });
   readonly isLoading = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   protected readonly formOpen = signal(false);
@@ -427,7 +458,6 @@ export class TiposDeficienciaListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  protected readonly tipoFiltro = signal('');
   readonly temFiltro = signal(false);
   readonly registros = signal<TipoDeficienciaDto[]>([]);
   protected readonly busca = signal('');
@@ -457,12 +487,8 @@ export class TiposDeficienciaListPage {
       return;
     }
     this.isLoading.set(true);
-    this.errorMessage.set(null);
-
     let acumulado: TipoDeficienciaDto[] = [];
     let falhou: ProblemDetails | null = null;
-    //let paginas = 0;
-
     this.api
       .listar({ limit: PAGE_SIZE })
       .pipe(
@@ -479,7 +505,6 @@ export class TiposDeficienciaListPage {
         complete: () => {
           this.isLoading.set(false);
           if (falhou !== null) {
-            this.errorMessage.set(this.problemI18n.resolve(falhou).title);
             if (falhou.status >= 500) {
               this.notifications.errorFromProblem(falhou);
             }
@@ -506,7 +531,6 @@ export class TiposDeficienciaListPage {
 
   limparFiltros(): void {
     this.limparFiltroBusca();
-    this.tipoFiltro.set('');
   }
 
   abrirDrawerCriacao() {
@@ -585,7 +609,7 @@ export class TiposDeficienciaListPage {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength']) return 'Informe ao menos 2 caracteres.';
+    if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     return 'Valor inválido.';
   }
@@ -670,6 +694,19 @@ export class TiposDeficienciaListPage {
     this.aplicarFalha(result.problem);
   }
 
+  private handleRemoverResult(result: ApiResult<void>): void {
+    this.saving.set(false);
+    if (result.ok) {
+      this.notifications.success('Tipo de deficiência inativado');
+      this.formOpen.set(false);
+      this.confirmOpen.set(false);
+      this.tipoDeficienciaParaInativar.set(null);
+      this.recarregar();
+      return;
+    }
+    this.aplicarFalha(result.problem);
+  }
+
   protected proximaPagina(): void {
     const proximo = this.nextCursor();
     if (proximo !== null && !this.loading()) {
@@ -689,11 +726,10 @@ export class TiposDeficienciaListPage {
     if (tipoDeficiencia === null || this.saving()) {
       return;
     }
-    this.saving.set(true);
-    this.notifications.success('Tipo de deficiência inativado');
-    this.confirmOpen.set(false);
-    this.tipoDeficienciaParaInativar.set(null);
-    this.recarregar();
-    this.saving.set(false);
+
+    this.api
+      .remover(tipoDeficiencia.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => this.handleRemoverResult(result));
   }
 }

@@ -1,12 +1,55 @@
 import { HttpParams } from "@angular/common/http";
-import { Component, computed, DestroyRef, effect, inject, linkedSignal, signal, untracked } from "@angular/core";
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
-
-import { ApiResult, Cursor, cursorToString, extractNextCursor, extractPrevCursor, idempotencyKey, PaginationDirection, ProblemDetails, ProblemI18nService, ProblemValidationError, useApiResource, withIdempotencyKey, withVendorMime } from "@uniplus/shared-core/http";
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import {
+  ApiResult,
+  Cursor,
+  cursorToString,
+  extractNextCursor,
+  extractPrevCursor,
+  idempotencyKey,
+  PaginationDirection,
+  ProblemDetails,
+  ProblemI18nService,
+  ProblemValidationError,
+  useApiResource,
+  withIdempotencyKey,
+  withVendorMime,
+} from "@uniplus/shared-core/http";
 import { NotificationService } from "@uniplus/shared-core/notifications";
-import { AtualizarRecursoAcessibilidadeCommand, CONFIGURACAO_BASE_PATH, CriarRecursoAcessibilidadeCommand, RecursoAcessibilidadeApi, RecursoAcessibilidadeDto } from "@uniplus/shared-data/configuracao";
-import { AlertComponent, SkeletonComponent, FilterChipsComponent, UiFilterChipOption, TagComponent, EmptyStateComponent, DrawerComponent, SpinnerComponent, PagerComponent, DialogComponent } from "@uniplus/shared-ui/components";
+import {
+  AtualizarRecursoAcessibilidadeCommand,
+  CONFIGURACAO_BASE_PATH,
+  CriarRecursoAcessibilidadeCommand,
+  RecursoAcessibilidadeApi,
+  RecursoAcessibilidadeDto,
+} from "@uniplus/shared-data/configuracao";
+import {
+  AlertComponent,
+  SkeletonComponent,
+  UiFilterChipOption,
+  TagComponent,
+  EmptyStateComponent,
+  DrawerComponent,
+  SpinnerComponent,
+  PagerComponent,
+  DialogComponent,
+} from "@uniplus/shared-ui/components";
 
 type ModoFormulario = "criar" | "editar";
 
@@ -30,7 +73,7 @@ export const RECURSO_ACESSIBILIDADE_TIPO: readonly CondicaoAtendimentoTipoOption
   { value: 'INATIVAS', label: 'Inativas' },
 ] as const;
 
-/** Vendor code do DomainError `FaseCanonica.CodigoJaExiste` (uniplus-api, 409 Conflict). */
+/** Vendor code do DomainError `RecursoAcessibilidade.NomeJaExiste` (uniplus-api, 409 Conflict). */
 const RECURSO_ACESSIBILIDADE_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.recurso_acessibilidade.nome_ja_existe';
 
 function nullIfBlank(value: string): string | null {
@@ -58,7 +101,17 @@ const PAGE_SIZE = 50;
 
 @Component({
   selector: 'cfg-recurso-acessibilidade-list',
-  imports: [AlertComponent, SkeletonComponent, FilterChipsComponent, TagComponent, EmptyStateComponent, EmptyStateComponent, DrawerComponent, SpinnerComponent, ReactiveFormsModule, PagerComponent, DialogComponent],
+  imports: [
+    AlertComponent,
+    SkeletonComponent,
+    TagComponent,
+    EmptyStateComponent,
+    DrawerComponent,
+    SpinnerComponent,
+    ReactiveFormsModule,
+    PagerComponent,
+    DialogComponent,
+  ],
   template: `
     <div class="page-header">
       <div class="page-header__content">
@@ -114,15 +167,6 @@ const PAGE_SIZE = 50;
           >
             Limpar
           </button>
-        </div>
-        <div class="filter-bar__group">
-          <span class="u-eyebrow">Tipo</span>
-          <ui-filter-chips
-            [options]="tipoChips()"
-            [selected]="tipoFiltro()"
-            (selectedChange)="tipoFiltro.set($event ?? '')"
-            ariaLabel="Filtrar por tipo"
-          />
         </div>
       </div>
 
@@ -320,7 +364,7 @@ const PAGE_SIZE = 50;
   `,
   host: { 'class': 'cfg-page' },
 })
-export class RecursoAcessibilidadeListPage {
+export class RecursosAcessibilidadeListPage {
   private readonly api = inject(RecursoAcessibilidadeApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
@@ -384,7 +428,13 @@ export class RecursoAcessibilidadeListPage {
   });
   readonly registros = signal<RecursoAcessibilidadeDto[]>([]);
   protected readonly busca = signal('');
-  readonly errorMessage = signal<string | null>(null);
+  protected readonly errorMessage = computed<string | null>(() => {
+    const problem = this.lista.problem();
+    if (problem) {
+      return this.problemI18n.resolve(problem).title;
+    }
+    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+  });
   readonly isLoading = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   protected readonly formOpen = signal(false);
@@ -407,7 +457,6 @@ export class RecursoAcessibilidadeListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly condicaoEmEdicaoId = signal<string | null>(null);
-  protected readonly tipoFiltro = signal('');
   readonly temFiltro = signal(false);
 
   protected readonly tipoChips = computed<readonly UiFilterChipOption[]>(() => ([
@@ -448,11 +497,9 @@ export class RecursoAcessibilidadeListPage {
       return;
     }
     this.isLoading.set(true);
-    this.errorMessage.set(null);
 
     let acumulado: RecursoAcessibilidadeDto[] = [];
     let falhou: ProblemDetails | null = null;
-    //let paginas = 0;
 
     this.api
       .listar({ limit: PAGE_SIZE })
@@ -470,7 +517,6 @@ export class RecursoAcessibilidadeListPage {
         complete: () => {
           this.isLoading.set(false);
           if (falhou !== null) {
-            this.errorMessage.set(this.problemI18n.resolve(falhou).title);
             if (falhou.status >= 500) {
               this.notifications.errorFromProblem(falhou);
             }
@@ -498,7 +544,6 @@ export class RecursoAcessibilidadeListPage {
 
   limparFiltros() {
     this.limparFiltroBusca();
-    this.tipoFiltro.set('');
   }
 
   abrirDrawerCriacao() {
@@ -540,7 +585,7 @@ export class RecursoAcessibilidadeListPage {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength']) return 'Informe ao menos 2 caracteres.';
+    if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     return 'Valor inválido.';
   }
@@ -659,6 +704,20 @@ export class RecursoAcessibilidadeListPage {
     }
     this.aplicarFalha(result.problem);
   }
+
+  private handleRemoverResult(result: ApiResult<void>): void {
+    this.saving.set(false);
+    if (result.ok) {
+      this.notifications.success('Recurso de acessibilidade inativado');
+      this.formOpen.set(false);
+      this.confirmOpen.set(false);
+      this.recursoParaInativar.set(null);
+      this.recarregar();
+      return;
+    }
+    this.aplicarFalha(result.problem);
+  }
+
   protected proximaPagina(): void {
     const proximo = this.nextCursor();
     if (proximo !== null && !this.loading()) {
@@ -679,10 +738,9 @@ export class RecursoAcessibilidadeListPage {
       return;
     }
     this.saving.set(true);
-    this.notifications.success('Recurso de acessibilidade inativado');
-    this.confirmOpen.set(false);
-    this.recursoParaInativar.set(null);
-    this.recarregar();
-    this.saving.set(false);
+    this.api
+      .remover(recurso.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => this.handleRemoverResult(result));
   }
 }
