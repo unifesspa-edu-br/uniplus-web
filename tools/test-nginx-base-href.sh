@@ -74,6 +74,14 @@ run_case() {
   fi
   grep -Fq "<base href=\"$base_href\">" <<<"$html"
   if [[ "$base_href" != / ]]; then
+    # A canonicalização sem a barra final não pode descartar parâmetros de
+    # callback/deep link (por exemplo, code e state enviados pelo OIDC).
+    if ! curl --silent --show-error --dump-header - --output /dev/null \
+      "http://127.0.0.1:$host_port${base_href%/}?code=authorization-code&state=opaque-state" \
+      | grep -Fq "Location: ${base_href}?code=authorization-code&state=opaque-state"; then
+      docker logs "$container" >&2 || true
+      exit 1
+    fi
     if ! curl --fail --silent --show-error --location "http://127.0.0.1:$host_port${base_href%/}" \
       | grep -Fq "<base href=\"$base_href\">"; then
       docker logs "$container" >&2 || true
