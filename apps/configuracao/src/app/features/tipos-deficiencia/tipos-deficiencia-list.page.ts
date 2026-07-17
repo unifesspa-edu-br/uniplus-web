@@ -453,7 +453,7 @@ export class TiposDeficienciaListPage {
     }),
     descricao: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(255)]
+      validators: [Validators.maxLength(1000)]
     }),
   });
   protected readonly formError = signal<string | null>(null);
@@ -518,6 +518,7 @@ export class TiposDeficienciaListPage {
   tentarNovamente(): void {
     if (!this.isLoading()) {
       this.carregar();
+      this.lista.reload();
     }
   }
 
@@ -654,12 +655,14 @@ export class TiposDeficienciaListPage {
 
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+      this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
 
     if (problem.code === TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE) {
+      this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
       this.form.controls.nome.setErrors({
         backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
@@ -669,6 +672,7 @@ export class TiposDeficienciaListPage {
     }
 
     if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+      this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
     }
 
