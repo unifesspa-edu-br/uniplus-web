@@ -531,6 +531,7 @@ export class RecursosAcessibilidadeListPage {
   tentarNovamente(): void {
     if (!this.isLoading()) {
       this.carregar();
+      this.lista.reload();
     }
   }
 
@@ -667,6 +668,7 @@ export class RecursosAcessibilidadeListPage {
 
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+      this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -678,9 +680,11 @@ export class RecursosAcessibilidadeListPage {
         backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
       });
       this.form.controls.nome.markAsTouched();
+      this.notifications.errorFromProblem(problem);
       return;
     }
     if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+      this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);
