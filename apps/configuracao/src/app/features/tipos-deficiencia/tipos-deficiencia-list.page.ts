@@ -58,12 +58,6 @@ type PaginaProps = {
  readonly direction: PaginationDirection
 } | undefined;
 
-
-export interface TipoDeficienciaOption {
-  readonly value: string;
-  readonly label: string;
-}
-
 /** Vendor code do DomainError `TipoDeficienciaNomeJaExiste` (uniplus-api, 409 Conflict). */
 const TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe';
 
@@ -108,20 +102,16 @@ const PAGE_SIZE = 50;
       <div class="page-header__content">
         <h1 class="page-header__title">Tipo de Deficiência</h1>
         <p class="page-header__desc">
-          Tipos de deficiência reconhecidos —
-          cadastro independente, identificado pelo nome · UNI-REQ-0012.
+          Tipos de deficiência reconhecidos — cadastro independente, identificado pelo nome ·
+          UNI-REQ-0012.
         </p>
       </div>
     </div>
-    <ui-alert
-      variant="info"
-      heading="Cadastro independente"
-      [dynamic]="false"
-    >
-      Aqui o tipo de deficiência é um cadastro <strong>simples e independente</strong> —
-      não há vínculo com condições ou recursos. A regra de que um tipo de deficiência
-      só é ofertado sob a condição <strong>PCD</strong> vale apenas no momento em que
-      um processo seletivo oferta o atendimento (Módulo Seleção), não neste cadastro.
+    <ui-alert variant="info" heading="Cadastro independente" [dynamic]="false">
+      Aqui o tipo de deficiência é um cadastro <strong>simples e independente</strong> — não há
+      vínculo com condições ou recursos. A regra de que um tipo de deficiência só é ofertado sob a
+      condição <strong>PCD</strong> vale apenas no momento em que um processo seletivo oferta o
+      atendimento (Módulo Seleção), não neste cadastro.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -219,15 +209,14 @@ const PAGE_SIZE = 50;
                       >
                         Editar
                       </button>
-                        <button
-                          type="button"
-                          class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="loading()"
-                          [disabled]="submitting()"
-                          (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
-                        >
-                          Inativar
-                        </button>
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [disabled]="loading() || submitting()"
+                        (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
+                      >
+                        Inativar
+                      </button>
                     </td>
                   </tr>
                 }
@@ -300,8 +289,8 @@ const PAGE_SIZE = 50;
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
               />
               <span class="field__hint">
-                Identificador do tipo de deficiência —
-                único entre os tipos ativos. Impede duplicatas como dois "Visual".
+                Identificador do tipo de deficiência — único entre os tipos ativos. Impede
+                duplicatas como dois "Visual".
               </span>
               @if (erroDoCampo('nome')) {
                 <span class="field__error">{{ erroDoCampo('nome') }}</span>
@@ -347,10 +336,12 @@ const PAGE_SIZE = 50;
       (closed)="confirmOpen.set(false)"
     >
       <p>
-        Você está prestes a inativar o tipo de deficiência <strong>{{ tipoDeficienciaParaInativar()?.nome }}.</strong>
+        Você está prestes a inativar o tipo de deficiência
+        <strong>{{ tipoDeficienciaParaInativar()?.nome }}.</strong>
       </p>
       <p>
-        A inativação impede novos editais de utilizá-lo, mas <strong>não altera ofertas já congeladas</strong>
+        A inativação impede novos editais de utilizá-lo, mas
+        <strong>não altera ofertas já congeladas</strong>
         — a cópia por valor de cada processo permanece íntegra.
       </p>
       <div uiDialogFooter>
@@ -363,7 +354,7 @@ const PAGE_SIZE = 50;
       </div>
     </ui-dialog>
   `,
-  host: { 'class': 'cfg-page' },
+  host: { class: 'cfg-page' },
 })
 export class TiposDeficienciaListPage {
   private readonly api = inject(TipoDeficienciaApi);
@@ -402,29 +393,29 @@ export class TiposDeficienciaListPage {
   protected readonly prevCursor = computed(() => this.cursores().prev);
   protected readonly nextCursor = computed(() => this.cursores().next);
   protected readonly tiposDeficiencia = linkedSignal<
-      ApiResult<readonly TipoDeficienciaDto[]> | undefined,
-      readonly TipoDeficienciaDto[]
-    >({
-      source: () => this.lista.value(),
-      computation: (envelope, previous) => {
-        const atual = previous?.value ?? [];
-        if (envelope === undefined) {
-          return atual;
-        }
-        const primeiraPagina = untracked(() => this.pagina() === undefined);
-        if (!envelope.ok) {
-          return primeiraPagina ? [] : atual;
-        }
-        return [...envelope.data];
-      },
+    ApiResult<readonly TipoDeficienciaDto[]> | undefined,
+    readonly TipoDeficienciaDto[]
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? [];
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.pagina() === undefined);
+      if (!envelope.ok) {
+        return primeiraPagina ? [] : atual;
+      }
+      return [...envelope.data];
+    },
   });
   protected readonly tiposDeficienciaFiltrados = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     if (termo.length === 0) {
       return this.tiposDeficiencia();
     }
-    return this.tiposDeficiencia().filter(
-      (tiposDeficiencia) => tiposDeficiencia.nome.toLocaleLowerCase('pt-BR').includes(termo),
+    return this.tiposDeficiencia().filter((tiposDeficiencia) =>
+      tiposDeficiencia.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
   protected readonly formHeading = computed(() =>
@@ -442,18 +433,17 @@ export class TiposDeficienciaListPage {
   protected readonly formOpen = signal(false);
   protected readonly saving = signal(false);
   readonly drawerOpen = signal(false);
-  readonly editTarget = signal<unknown | null>(null);
   readonly submitting = signal(false);
   readonly tipoDeficienciaParaInativar = signal<TipoDeficienciaDto | null>(null);
   readonly confirmOpen = signal(false);
   readonly form = new FormGroup<TipoDeficienciaForm>({
     nome: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)]
+      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
     }),
     descricao: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(1000)]
+      validators: [Validators.maxLength(1000)],
     }),
   });
   protected readonly formError = signal<string | null>(null);
@@ -475,11 +465,11 @@ export class TiposDeficienciaListPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-    return new HttpParams().set('limit', String(PAGE_SIZE));
+      return new HttpParams().set('limit', String(PAGE_SIZE));
     }
     return new HttpParams()
-    .set('cursor', cursorToString(pagina.cursor))
-    .set('direction', pagina.direction);
+      .set('cursor', cursorToString(pagina.cursor))
+      .set('direction', pagina.direction);
   }
 
   carregar(): void {
@@ -491,9 +481,7 @@ export class TiposDeficienciaListPage {
     let falhou: ProblemDetails | null = null;
     this.api
       .listar({ limit: PAGE_SIZE })
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
           if (!result.ok) {
@@ -545,11 +533,12 @@ export class TiposDeficienciaListPage {
     this.formOpen.set(true);
   }
 
-  protected abrirEdicao(tipoDeficiencia: TipoDeficienciaDto): void {this.modo.set('editar');
+  protected abrirEdicao(tipoDeficiencia: TipoDeficienciaDto): void {
+    this.modo.set('editar');
     this.tipoDeficienciaEmEdicaoId.set(tipoDeficiencia.id);
     this.form.reset({
       nome: tipoDeficiencia.nome,
-      descricao: tipoDeficiencia.descricao ?? ''
+      descricao: tipoDeficiencia.descricao ?? '',
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -576,10 +565,7 @@ export class TiposDeficienciaListPage {
 
     if (this.modo() === 'criar') {
       this.api
-        .criar(
-          this.criarCommand(),
-          withIdempotencyKey(this.idempotencyKeyAtual())
-        )
+        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((result) => this.handleSalvarResult(result));
       return;
@@ -610,7 +596,8 @@ export class TiposDeficienciaListPage {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
+    if (control.errors['minlength'])
+      return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     return 'Valor inválido.';
   }
@@ -686,9 +673,7 @@ export class TiposDeficienciaListPage {
     this.saving.set(false);
     if (result.ok) {
       this.notifications.success(
-        this.modo() === 'criar'
-        ? 'Tipo de deficiência criado'
-        : 'Tipo de deficiência atualizado',
+        this.modo() === 'criar' ? 'Tipo de deficiência criado' : 'Tipo de deficiência atualizado',
       );
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
