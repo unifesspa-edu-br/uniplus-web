@@ -42,7 +42,6 @@ import {
 import {
   AlertComponent,
   SkeletonComponent,
-  UiFilterChipOption,
   TagComponent,
   EmptyStateComponent,
   DrawerComponent,
@@ -67,11 +66,6 @@ export interface CondicaoAtendimentoTipoOption {
   readonly value: string;
   readonly label: string;
 }
-
-export const RECURSO_ACESSIBILIDADE_TIPO: readonly CondicaoAtendimentoTipoOption[] = [
-  { value: 'ATIVAS', label: 'Ativas' },
-  { value: 'INATIVAS', label: 'Inativas' },
-] as const;
 
 /** Vendor code do DomainError `RecursoAcessibilidade.NomeJaExiste` (uniplus-api, 409 Conflict). */
 const RECURSO_ACESSIBILIDADE_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.recurso_acessibilidade.nome_ja_existe';
@@ -458,15 +452,6 @@ export class RecursosAcessibilidadeListPage {
   protected readonly formError = signal<string | null>(null);
   readonly condicaoEmEdicaoId = signal<string | null>(null);
   readonly temFiltro = signal(false);
-
-  protected readonly tipoChips = computed<readonly UiFilterChipOption[]>(() => ([
-    { value: '', label: 'Todas', count: this.recursos().length },
-    ...RECURSO_ACESSIBILIDADE_TIPO.map((recursoTipo) => ({
-        value: recursoTipo.value,
-        label: recursoTipo.label,
-        count: 0,
-      })),
-  ]));
 
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Novo recurso de acessibilidade' : 'Editar recurso de acessibilidade',
