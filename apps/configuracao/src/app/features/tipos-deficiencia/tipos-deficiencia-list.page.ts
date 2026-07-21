@@ -227,7 +227,7 @@ const PAGE_SIZE = 50;
           @if (temFiltro()) {
             <ui-empty-state
               heading="Nenhum tipo de deficiência encontrado"
-              description="Ajuste a busca ou o filtro de tipo para ver resultados."
+              description="Ajuste a busca para ver resultados."
             >
               <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
                 Limpar filtros
@@ -448,7 +448,7 @@ export class TiposDeficienciaListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  readonly temFiltro = signal(false);
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   readonly registros = signal<TipoDeficienciaDto[]>([]);
   protected readonly busca = signal('');
 

@@ -248,7 +248,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
           @if (temFiltro()) {
             <ui-empty-state
               heading="Nenhuma condição de atendimento encontrada"
-              description="Ajuste a busca ou o filtro de tipo para ver resultados."
+              description="Ajuste a busca para ver resultados."
             >
               <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
                 Limpar filtros
@@ -477,7 +477,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
   readonly confirmOpen = signal(false);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  readonly temFiltro = signal(false);
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova condição de atendimento' : 'Editar condição de atendimento',
   );

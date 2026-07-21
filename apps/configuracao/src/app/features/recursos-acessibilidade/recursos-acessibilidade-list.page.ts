@@ -231,7 +231,7 @@ const PAGE_SIZE = 50;
           @if (temFiltro()) {
             <ui-empty-state
               heading="Nenhum recurso de acessibilidade encontrado"
-              description="Ajuste a busca ou o filtro de tipo para ver resultados."
+              description="Ajuste a busca para ver resultados."
             >
               <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
                 Limpar filtros
@@ -451,7 +451,7 @@ export class RecursosAcessibilidadeListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly condicaoEmEdicaoId = signal<string | null>(null);
-  readonly temFiltro = signal(false);
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Novo recurso de acessibilidade' : 'Editar recurso de acessibilidade',
