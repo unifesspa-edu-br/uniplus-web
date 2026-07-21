@@ -55,11 +55,6 @@ interface CondicaoAtendimentoForm {
   descricao: FormControl<string>;
 }
 
-export interface CondicaoAtendimentoTipoOption {
-  readonly value: string;
-  readonly label: string;
-}
-
 type PaginaProps = {
   readonly cursor: Cursor;
   readonly direction: PaginationDirection
@@ -510,19 +505,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
       }),
   });
   protected readonly formError = signal<string | null>(null);
-  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
-  // por cursor, sem filtro de texto/código/nome no contrato.
-  protected readonly registrosFiltrados = computed(() => {
-    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
-    if (termo.length === 0) {
-      return this.registros();
-    }
-    return this.registros().filter(
-      (registro) =>
-        registro.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
-        registro.nome.toLocaleLowerCase('pt-BR').includes(termo),
-    );
-  });
 
   constructor() {
     effect(() => {

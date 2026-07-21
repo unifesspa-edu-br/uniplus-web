@@ -62,11 +62,6 @@ interface RecursoAcessibilidadeForm {
   descricao: FormControl<string>;
 }
 
-export interface CondicaoAtendimentoTipoOption {
-  readonly value: string;
-  readonly label: string;
-}
-
 /** Vendor code do DomainError `RecursoAcessibilidade.NomeJaExiste` (uniplus-api, 409 Conflict). */
 const RECURSO_ACESSIBILIDADE_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.recurso_acessibilidade.nome_ja_existe';
 
@@ -215,8 +210,7 @@ const PAGE_SIZE = 50;
                         <button
                           type="button"
                           class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="isLoading()"
-                          [disabled]="submitting()"
+                          [disabled]="isLoading() || submitting()"
                           (click)="abrirInativarRecurso(recursoAcessibilidade)"
                         >
                           Inativar
@@ -434,7 +428,6 @@ export class RecursosAcessibilidadeListPage {
   protected readonly formOpen = signal(false);
   protected readonly saving = signal(false);
   readonly drawerOpen = signal(false);
-  readonly editTarget = signal<unknown | null>(null);
   readonly submitting = signal(false);
   readonly recursoParaInativar = signal<RecursoAcessibilidadeDto | null>(null);
   readonly confirmOpen = signal(false);
