@@ -84,6 +84,18 @@ describe('TiposDeficienciaListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Nenhum tipo de deficiência carregado');
   });
 
+  it('busca sem resultado mostra o empty-state de filtro, não o de lista vazia', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+
+    component['termoBusca'].set('tipo-deficiencia-inexistente');
+    fixture.detectChanges();
+
+    expect(component['tiposDeficienciaFiltrados']()).toHaveLength(0);
+    expect(fixture.nativeElement.textContent).toContain('Nenhum tipo de deficiência encontrado');
+    expect(fixture.nativeElement.textContent).toContain('Ajuste a busca para ver resultados.');
+    expect(fixture.nativeElement.textContent).not.toContain('Nenhum tipo de deficiência carregado');
+  });
+
   it('renderiza a lista de tipos de deficiência', async () => {
     await flushLista([tipoDeficienciaSeed]);
     expect(component['tiposDeficiencia']()).toHaveLength(1);

@@ -83,6 +83,18 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Nenhum recurso de acessibilidade carregado');
   });
 
+  it('busca sem resultado mostra o empty-state de filtro, não o de lista vazia', async () => {
+    await flushLista([recurso_acessibilidade_seed]);
+
+    component['termoBusca'].set('recurso-inexistente');
+    fixture.detectChanges();
+
+    expect(component['recursosFiltrados']()).toHaveLength(0);
+    expect(fixture.nativeElement.textContent).toContain('Nenhum recurso de acessibilidade encontrado');
+    expect(fixture.nativeElement.textContent).toContain('Ajuste a busca para ver resultados.');
+    expect(fixture.nativeElement.textContent).not.toContain('Nenhum recurso de acessibilidade carregado');
+  });
+
   it('renderiza a lista de recursos de acessibilidade', async () => {
     await flushLista([recurso_acessibilidade_seed]);
     expect(component['recursos']()).toHaveLength(1);
