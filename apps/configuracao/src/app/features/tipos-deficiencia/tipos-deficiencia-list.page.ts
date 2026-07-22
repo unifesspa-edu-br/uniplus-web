@@ -213,6 +213,7 @@ const PAGE_SIZE = 50;
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
+                        [aria-disabled]="loading() || submitting()"
                         (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
                       >
                         Inativar
