@@ -210,7 +210,8 @@ const PAGE_SIZE = 50;
                         <button
                           type="button"
                           class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="isLoading() || submitting()"
+                          [disabled]="loading() || submitting()"
+                          [aria-disabled]="loading() || submitting()"
                           (click)="abrirInativarRecurso(recursoAcessibilidade)"
                         >
                           Inativar
