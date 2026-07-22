@@ -85,6 +85,18 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Nenhuma condição de atendimento carregada');
   });
 
+  it('busca sem resultado mostra o empty-state de filtro, não o de lista vazia', async () => {
+    await flushLista([condicao_atendimento_seed]);
+
+    component['termoBusca'].set('condicao-inexistente');
+    fixture.detectChanges();
+
+    expect(component['condicoesFiltradas']()).toHaveLength(0);
+    expect(fixture.nativeElement.textContent).toContain('Nenhuma condição de atendimento encontrada');
+    expect(fixture.nativeElement.textContent).toContain('Ajuste a busca para ver resultados.');
+    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma condição de atendimento carregada');
+  });
+
   it('renderiza a lista de condições de atendimento', async () => {
     await flushLista([condicao_atendimento_seed]);
     expect(component['condicoes']()).toHaveLength(1);
