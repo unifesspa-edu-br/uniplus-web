@@ -449,7 +449,7 @@ export class TiposDeficienciaListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   readonly registros = signal<TipoDeficienciaDto[]>([]);
   protected readonly busca = signal('');
 

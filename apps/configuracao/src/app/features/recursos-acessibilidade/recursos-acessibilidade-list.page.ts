@@ -445,7 +445,7 @@ export class RecursosAcessibilidadeListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly condicaoEmEdicaoId = signal<string | null>(null);
-  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Novo recurso de acessibilidade' : 'Editar recurso de acessibilidade',
