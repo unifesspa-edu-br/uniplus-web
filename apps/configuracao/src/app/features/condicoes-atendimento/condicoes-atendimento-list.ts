@@ -444,6 +444,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
       return [...envelope.data];
     },
   });
+  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
+  // por cursor, sem filtro de texto/código/nome no contrato.
   protected readonly condicoesFiltradas = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     if (termo.length === 0) {
@@ -455,8 +457,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
         condicao.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
-  readonly registros = signal<CondicaoAtendimentoDto[]>([]);
-  readonly isLoading = signal(false);
   protected readonly errorMessage = computed<string | null>(() => {
     const problem = this.lista.problem();
     if (problem) {
@@ -476,12 +476,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova condição de atendimento' : 'Editar condição de atendimento',
   );
-  protected readonly inativarMensagem = computed(() => {
-    return 'Você está prestes a inativar a condição ' +
-    this.condicaoParaInativar()?.codigo +
-    ' A inativação impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — '+
-    'a cópia por valor de cada processo permanece íntegra.'
-  });
   readonly condicaoEmEdicaoId = signal<string | null>(null);
   protected readonly termoBusca = signal('');
   protected readonly form: FormGroup<CondicaoAtendimentoForm> =
@@ -553,8 +547,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
   }
 
   tentarNovamente(): void {
-    if (!this.isLoading()) {
-      this.carregar();
+    if (!this.loading()) {
       this.lista.reload();
     }
   }
@@ -729,39 +722,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
     if (control.errors['pattern'])
       return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: DISLEXIA, TDAH).';
     return 'Valor inválido.';
-  }
-
-  private carregar(): void {
-    if (this.isLoading()) {
-      return;
-    }
-    this.isLoading.set(true);
-
-    let acumulado: CondicaoAtendimentoDto[] = [];
-    let falhou: ProblemDetails | null = null;
-
-    this.api
-      .listar({ limit: PAGE_SIZE })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          if (!result.ok) {
-            falhou ??= result.problem;
-            return;
-          }
-          acumulado = [...acumulado, ...result.data];
-        },
-        complete: () => {
-          this.isLoading.set(false);
-          if (falhou !== null) {
-            if (falhou.status >= 500) {
-              this.notifications.errorFromProblem(falhou);
-            }
-            return;
-          }
-          this.registros.set(acumulado);
-        },
-      });
   }
 
   protected inativarConfirmado(): void {

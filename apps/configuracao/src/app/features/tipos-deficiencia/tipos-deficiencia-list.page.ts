@@ -130,7 +130,7 @@ const PAGE_SIZE = 50;
       </ui-alert>
     }
 
-    @if (loading() && registros().length === 0) {
+    @if (loading() && tiposDeficiencia().length === 0) {
       <ui-skeleton skeletonKind="card" blockSize="10rem" />
       <ui-skeleton skeletonKind="card" blockSize="10rem" />
     }
@@ -410,6 +410,8 @@ export class TiposDeficienciaListPage {
       return [...envelope.data];
     },
   });
+  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
+  // por cursor, sem filtro de texto/código/nome no contrato.
   protected readonly tiposDeficienciaFiltrados = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     if (termo.length === 0) {
@@ -429,7 +431,6 @@ export class TiposDeficienciaListPage {
     }
     return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
   });
-  readonly isLoading = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   protected readonly formOpen = signal(false);
   protected readonly saving = signal(false);
@@ -449,9 +450,7 @@ export class TiposDeficienciaListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
-  readonly registros = signal<TipoDeficienciaDto[]>([]);
-  protected readonly busca = signal('');
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   constructor() {
     effect(() => {
@@ -473,40 +472,8 @@ export class TiposDeficienciaListPage {
       .set('direction', pagina.direction);
   }
 
-  carregar(): void {
-    if (this.isLoading()) {
-      return;
-    }
-    this.isLoading.set(true);
-    let acumulado: TipoDeficienciaDto[] = [];
-    let falhou: ProblemDetails | null = null;
-    this.api
-      .listar({ limit: PAGE_SIZE })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          if (!result.ok) {
-            falhou ??= result.problem;
-            return;
-          }
-          acumulado = [...acumulado, ...result.data];
-        },
-        complete: () => {
-          this.isLoading.set(false);
-          if (falhou !== null) {
-            if (falhou.status >= 500) {
-              this.notifications.errorFromProblem(falhou);
-            }
-            return;
-          }
-          this.registros.set(acumulado);
-        },
-      });
-  }
-
   tentarNovamente(): void {
-    if (!this.isLoading()) {
-      this.carregar();
+    if (!this.loading()) {
       this.lista.reload();
     }
   }
