@@ -132,6 +132,21 @@ describe('TiposDeficienciaListPage', () => {
       await flushLista([tipoDeficienciaSeed]);
   });
 
+  it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
+    req.flush(null, { status: 500, statusText: 'Error' });
+    await propagate();
+    const tentarNovamenteButtonEl = fixture.nativeElement.querySelector(
+      '.cfg-campi__retry > button',
+    ) as HTMLButtonElement;
+    expect(tentarNovamenteButtonEl).toBeTruthy();
+
+    tentarNovamenteButtonEl.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+    await flushRecarregarLista([tipoDeficienciaSeed]);
+    expect(component['tiposDeficiencia']()).toHaveLength(1);
+  });
+
   it('bloqueia botão de salvar quando os campos obrigatórios estão vazios', async () => {
     await flushLista([]);
     component['abrirDrawerCriacao']();
