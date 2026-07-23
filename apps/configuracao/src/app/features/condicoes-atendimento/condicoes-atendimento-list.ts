@@ -227,7 +227,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                           type="button"
                           class="btn btn--tertiary btn--sm btn--rect"
                           [disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
-                          [aria-disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
                           [title]="condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''"
                           (click)="abrirInativarCondicao(condicao)"
                         >
