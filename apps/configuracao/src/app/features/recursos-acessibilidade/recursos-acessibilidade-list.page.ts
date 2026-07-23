@@ -421,7 +421,7 @@ export class RecursosAcessibilidadeListPage {
     if (problem) {
       return this.problemI18n.resolve(problem).title;
     }
-    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+    return this.lista.error() ? 'Erro inesperado ao carregar recursos de acessibilidade.' : null;
   });
   readonly isLoading = signal(false);
   readonly modo = signal<ModoFormulario>('criar');

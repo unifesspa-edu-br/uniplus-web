@@ -426,7 +426,7 @@ export class TiposDeficienciaListPage {
     if (problem) {
       return this.problemI18n.resolve(problem).title;
     }
-    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+    return this.lista.error() ? 'Erro inesperado ao carregar tipos de deficiência.' : null;
   });
   readonly isLoading = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
