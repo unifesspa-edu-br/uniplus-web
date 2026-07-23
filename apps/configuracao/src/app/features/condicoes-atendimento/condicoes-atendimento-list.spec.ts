@@ -193,6 +193,21 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(inativarButtonEl.disabled).toBe(true);
   });
 
+  it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+    req.flush(null, { status: 500, statusText: 'Error' });
+    await propagate();
+    const tentarNovamenteButtonEl = fixture.nativeElement.querySelector(
+      '.cfg-campi__retry > button',
+    ) as HTMLButtonElement;
+    expect(tentarNovamenteButtonEl).toBeTruthy();
+
+    tentarNovamenteButtonEl.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+    await flushRecarregarLista([condicao_atendimento_seed,]);
+    expect(component['condicoes']()).toHaveLength(1);
+  });
+
   it('exibe tag com valor "Protegido" quando o código é "PCD"', async () => {
     await flushLista([condicao_atendimento_seed]);
     fixture.detectChanges();

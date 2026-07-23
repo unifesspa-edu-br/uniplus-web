@@ -95,6 +95,23 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Nenhum recurso de acessibilidade carregado');
   });
 
+  it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`,
+    );
+    req.flush(null, { status: 500, statusText: 'Error' });
+    await propagate();
+    const tentarNovamenteButtonEl = fixture.nativeElement.querySelector(
+      '.cfg-campi__retry > button',
+    ) as HTMLButtonElement;
+    expect(tentarNovamenteButtonEl).toBeTruthy();
+
+    tentarNovamenteButtonEl.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+    await flushRecarregarLista([recurso_acessibilidade_seed]);
+    expect(component['recursos']()).toHaveLength(1);
+  });
+
   it('renderiza a lista de recursos de acessibilidade', async () => {
     await flushLista([recurso_acessibilidade_seed]);
     expect(component['recursos']()).toHaveLength(1);
