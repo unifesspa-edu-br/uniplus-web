@@ -472,7 +472,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
   readonly confirmOpen = signal(false);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova condição de atendimento' : 'Editar condição de atendimento',
   );
