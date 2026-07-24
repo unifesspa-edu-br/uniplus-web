@@ -27,6 +27,7 @@ export interface paths {
     readonly "/api/profile/me": {
         readonly parameters: {
             readonly query?: never;
+            readonly name?: never;
             readonly header?: never;
             readonly path?: never;
             readonly cookie?: never;
