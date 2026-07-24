@@ -85,7 +85,7 @@ function controlNameFromBackendField(field: string): keyof RecursoAcessibilidade
   return RECURSO_ACESSIBILIDADE_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof RecursoAcessibilidadeForm) : null;
 }
 
-/** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
+/** Tamanho de página ao esgotar o cursor (ADR-0015/0026) */
 const PAGE_SIZE = 50;
 
 @Component({
@@ -211,7 +211,6 @@ const PAGE_SIZE = 50;
                           type="button"
                           class="btn btn--tertiary btn--sm btn--rect"
                           [disabled]="loading() || submitting()"
-                          [aria-disabled]="loading() || submitting()"
                           (click)="abrirInativarRecurso(recursoAcessibilidade)"
                         >
                           Inativar
@@ -422,7 +421,7 @@ export class RecursosAcessibilidadeListPage {
     if (problem) {
       return this.problemI18n.resolve(problem).title;
     }
-    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+    return this.lista.error() ? 'Erro inesperado ao carregar recursos de acessibilidade' : null;
   });
   readonly modo = signal<ModoFormulario>('criar');
   protected readonly formOpen = signal(false);
@@ -443,7 +442,7 @@ export class RecursosAcessibilidadeListPage {
     }),
   });
   protected readonly formError = signal<string | null>(null);
-  readonly condicaoEmEdicaoId = signal<string | null>(null);
+  readonly recursosAcessibilidadeEmEdicaoId = signal<string | null>(null);
   protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   protected readonly formHeading = computed(() =>
@@ -505,7 +504,7 @@ export class RecursosAcessibilidadeListPage {
   }
 
   protected abrirEdicao(recurso: RecursoAcessibilidadeDto): void {this.modo.set('editar');
-    this.condicaoEmEdicaoId.set(recurso.id);
+    this.recursosAcessibilidadeEmEdicaoId.set(recurso.id);
     this.form.reset({
       nome: recurso.nome,
       descricao: recurso.descricao ?? ''
@@ -565,7 +564,7 @@ export class RecursosAcessibilidadeListPage {
 
     this.api
       .atualizar(
-        this.condicaoEmEdicaoId() ?? '',
+        this.recursosAcessibilidadeEmEdicaoId() ?? '',
         this.atualizarCommand(),
         withIdempotencyKey(this.idempotencyKeyAtual()),
       )
@@ -582,7 +581,7 @@ export class RecursosAcessibilidadeListPage {
   }
 
   private atualizarCommand(): AtualizarRecursoAcessibilidadeCommand {
-    return { id: this.condicaoEmEdicaoId() ?? '', ...this.criarCommand() };
+    return { id: this.recursosAcessibilidadeEmEdicaoId() ?? '', ...this.criarCommand() };
   }
 
   private renovarIdempotencyKey(): void {

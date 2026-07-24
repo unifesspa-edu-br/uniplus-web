@@ -60,7 +60,7 @@ type PaginaProps = {
   readonly direction: PaginationDirection
 } | undefined;
 
-/** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
+/** Tamanho de página ao esgotar o cursor (ADR-0015/0026). */
 const PAGE_SIZE = 50;
 
 /** Vendor code do DomainError `CondicaoAtendimento.CodigoJaExiste` (uniplus-api, 409 Conflict). */
@@ -227,7 +227,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                           type="button"
                           class="btn btn--tertiary btn--sm btn--rect"
                           [disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
-                          [aria-disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
                           [title]="condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''"
                           (click)="abrirInativarCondicao(condicao)"
                         >
@@ -472,7 +471,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
   readonly confirmOpen = signal(false);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova condição de atendimento' : 'Editar condição de atendimento',
   );
