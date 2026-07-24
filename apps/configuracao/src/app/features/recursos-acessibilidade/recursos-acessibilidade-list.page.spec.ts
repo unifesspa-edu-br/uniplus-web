@@ -64,11 +64,15 @@ describe('RecursosAcessibilidadeListPage', () => {
   }
 
   function getInativarButtonEl(): HTMLButtonElement {
-    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:last-child') as HTMLButtonElement;
+    return fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
-    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:first-child') as HTMLButtonElement;
+    return fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
   }
 
   // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
@@ -237,25 +241,26 @@ describe('RecursosAcessibilidadeListPage', () => {
     await flushRecarregarLista([recurso_acessibilidade]);
   });
 
-  it('desabilita o botão de inativação quando está carregando a lista', async () => {
-    component['recursos'].set([recurso_acessibilidade_seed]);
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`);
-    req.flush([recurso_acessibilidade_seed]);
-    expect(component['loading']()).toBe(true);
+  it('desabilita as ações da linha (Editar e Inativar) durante a recarga da lista', async () => {
+    // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
+    await flushLista([recurso_acessibilidade_seed]);
     fixture.detectChanges();
-    const inativarButtonEl = getInativarButtonEl();
-    expect(inativarButtonEl).toBeTruthy();
-    expect(inativarButtonEl.disabled).toBe(true);
-  });
+    expect(component['loading']()).toBe(false);
+    expect(getEditarButtonEl().disabled).toBe(false);
+    expect(getInativarButtonEl().disabled).toBe(false);
 
-  it('desabilita o botão de edição quando está carregando a lista', async () => {
-    component['recursos'].set([recurso_acessibilidade_seed]);
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`);
-    req.flush([recurso_acessibilidade_seed]);
-    expect(component['loading']()).toBe(true);
+    // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
+    component['tentarNovamente']();
+    await propagate();
     fixture.detectChanges();
-    const editarButtonEl = getEditarButtonEl();
-    expect(editarButtonEl).toBeTruthy();
-    expect(editarButtonEl.disabled).toBe(true);
+    expect(component['loading']()).toBe(true);
+    expect(getEditarButtonEl().disabled).toBe(true);
+    expect(getInativarButtonEl().disabled).toBe(true);
+
+    // Encerra o GET pendente para o controller.verify() do afterEach.
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`)
+      .flush([recurso_acessibilidade_seed]);
+    await propagate();
   });
 });
