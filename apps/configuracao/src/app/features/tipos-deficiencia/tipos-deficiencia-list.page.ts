@@ -81,7 +81,7 @@ function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm |
   return TIPO_DEFICIENCIA_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof TipoDeficienciaForm) : null;
 }
 
-/** Tamanho de página ao esgotar o cursor (ADR-0015/0026). **/
+/** Tamanho de página ao esgotar o cursor (ADR-0015/0026). */
 const PAGE_SIZE = 50;
 
 @Component({
