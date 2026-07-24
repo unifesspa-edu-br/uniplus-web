@@ -85,7 +85,7 @@ function controlNameFromBackendField(field: string): keyof RecursoAcessibilidade
   return RECURSO_ACESSIBILIDADE_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof RecursoAcessibilidadeForm) : null;
 }
 
-/** Tamanho de página ao esgotar o cursor (ADR-0015/0026) */
+/** Tamanho de página ao esgotar o cursor (ADR-0015/0026). */
 const PAGE_SIZE = 50;
 
 @Component({
@@ -421,7 +421,7 @@ export class RecursosAcessibilidadeListPage {
     if (problem) {
       return this.problemI18n.resolve(problem).title;
     }
-    return this.lista.error() ? 'Erro inesperado ao carregar recursos de acessibilidade' : null;
+    return this.lista.error() ? 'Erro inesperado ao carregar recursos de acessibilidade.' : null;
   });
   readonly modo = signal<ModoFormulario>('criar');
   protected readonly formOpen = signal(false);
