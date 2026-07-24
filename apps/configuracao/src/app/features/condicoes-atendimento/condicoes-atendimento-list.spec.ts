@@ -65,6 +65,14 @@ describe('CondicoesAtendimentoListPage', () => {
     ) as HTMLButtonElement;
   }
 
+  function getInativarButtonEl(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:last-child') as HTMLButtonElement;
+  }
+
+  function getEditarButtonEl(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:first-child') as HTMLButtonElement;
+  }
+
   // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
     // os lookups de Curso/Local de oferta já estão em cache e não recarregam.
     async function flushRecarregarLista(items: readonly CondicaoAtendimentoDto[]): Promise<void> {
@@ -281,5 +289,27 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(put.request.body.descricao).toBe(NOVA_DESCRICAO_PCD);
     put.flush(null, { status: 204, statusText: 'No Content' });
     await flushRecarregarLista([condicao_atendimento]);
+  });
+
+  it('desabilita o botão de inativação quando está carregando a lista', async () => {
+      component['condicoes'].set([condicao_atendimento_seed]);
+      const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+      req.flush([condicao_atendimento_seed]);
+      expect(component['loading']()).toBe(true);
+      fixture.detectChanges();
+      const inativarButtonEl = getInativarButtonEl();
+      expect(inativarButtonEl).toBeTruthy();
+      expect(inativarButtonEl.disabled).toBe(true);
+    });
+
+  it('desabilita o botão de edição quando está carregando a lista', async () => {
+    component['condicoes'].set([condicao_atendimento_seed]);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+    req.flush([condicao_atendimento_seed]);
+    expect(component['loading']()).toBe(true);
+    fixture.detectChanges();
+    const editarButtonEl = getEditarButtonEl();
+    expect(editarButtonEl).toBeTruthy();
+    expect(editarButtonEl.disabled).toBe(true);
   });
 });
