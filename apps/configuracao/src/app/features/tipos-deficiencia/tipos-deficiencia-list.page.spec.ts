@@ -74,6 +74,14 @@ describe('TiposDeficienciaListPage', () => {
     ) as HTMLButtonElement;
   }
 
+  function getInativarButtonEl(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:last-child') as HTMLButtonElement;
+  }
+
+  function getEditarButtonEl(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:first-child') as HTMLButtonElement;
+  }
+
   it('drawer mostra empty-state quando tipos de deficiência não tem ofertas vivas', async () => {
     await flushLista([]);
 
@@ -226,4 +234,25 @@ describe('TiposDeficienciaListPage', () => {
       put.flush(null, { status: 204, statusText: 'No Content' });
       await flushRecarregarLista([tipo_deficiencia]);
     });
+  it('desabilita o botão de inativação quando está carregando a lista', async () => {
+        component['tiposDeficiencia'].set([tipoDeficienciaSeed]);
+        const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
+        req.flush([tipoDeficienciaSeed]);
+        expect(component['loading']()).toBe(true);
+        fixture.detectChanges();
+        const inativarButtonEl = getInativarButtonEl();
+        expect(inativarButtonEl).toBeTruthy();
+        expect(inativarButtonEl.disabled).toBe(true);
+      });
+
+  it('desabilita o botão de edição quando está carregando a lista', async () => {
+    component['tiposDeficiencia'].set([tipoDeficienciaSeed]);
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
+    req.flush([tipoDeficienciaSeed]);
+    expect(component['loading']()).toBe(true);
+    fixture.detectChanges();
+    const editarButtonEl = getEditarButtonEl();
+    expect(editarButtonEl).toBeTruthy();
+    expect(editarButtonEl.disabled).toBe(true);
+  });
 });
