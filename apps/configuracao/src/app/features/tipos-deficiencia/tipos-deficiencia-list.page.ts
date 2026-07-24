@@ -81,7 +81,7 @@ function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm |
   return TIPO_DEFICIENCIA_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof TipoDeficienciaForm) : null;
 }
 
-/** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
+/** Tamanho de página ao esgotar o cursor (ADR-0015/0026). **/
 const PAGE_SIZE = 50;
 
 @Component({
@@ -213,7 +213,6 @@ const PAGE_SIZE = 50;
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
-                        [aria-disabled]="loading() || submitting()"
                         (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
                       >
                         Inativar
@@ -429,7 +428,7 @@ export class TiposDeficienciaListPage {
     if (problem) {
       return this.problemI18n.resolve(problem).title;
     }
-    return this.lista.error() ? 'Erro inesperado ao carregar condições de atendimento.' : null;
+    return this.lista.error() ? 'Erro inesperado ao carregar tipos de deficiência.' : null;
   });
   readonly modo = signal<ModoFormulario>('criar');
   protected readonly formOpen = signal(false);
@@ -450,7 +449,7 @@ export class TiposDeficienciaListPage {
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   constructor() {
     effect(() => {
