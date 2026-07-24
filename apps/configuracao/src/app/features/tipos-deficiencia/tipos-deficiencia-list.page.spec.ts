@@ -6,7 +6,6 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import {
   CONFIGURACAO_BASE_PATH,
-  RecursoAcessibilidadeDto,
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
@@ -14,7 +13,7 @@ import { TiposDeficienciaListPage } from './tipos-deficiencia-list.page';
 
 const BASE = 'http://localhost:5000';
 const TIPO_DEFICIENCIA_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
-const tipoDeficienciaSeed: RecursoAcessibilidadeDto = {
+const tipoDeficienciaSeed: TipoDeficienciaDto = {
   'id': TIPO_DEFICIENCIA_ID,
   nome: 'Visual',
   descricao: 'Inclui baixa visão e cegueira',
@@ -51,7 +50,7 @@ describe('TiposDeficienciaListPage', () => {
     appRef.tick();
   };
 
-  async function flushLista(items: readonly RecursoAcessibilidadeDto[]): Promise<void> {
+  async function flushLista(items: readonly TipoDeficienciaDto[]): Promise<void> {
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
     expect(req.request.params.get('limit')).toBe('50');
     req.flush(items);
@@ -60,7 +59,7 @@ describe('TiposDeficienciaListPage', () => {
 
   // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
   // os lookups de Tipos de Deficiência já estão em cache e não recarregam.
-  async function flushRecarregarLista(items: readonly RecursoAcessibilidadeDto[]): Promise<void> {
+  async function flushRecarregarLista(items: readonly TipoDeficienciaDto[]): Promise<void> {
     await propagate();
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
@@ -75,11 +74,15 @@ describe('TiposDeficienciaListPage', () => {
   }
 
   function getInativarButtonEl(): HTMLButtonElement {
-    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:last-child') as HTMLButtonElement;
+    return fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
-    return fixture.nativeElement.querySelector('td[class="table-responsive__actions"] > button:first-child') as HTMLButtonElement;
+    return fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
   }
 
   it('drawer mostra empty-state quando tipos de deficiência não tem ofertas vivas', async () => {
@@ -234,25 +237,26 @@ describe('TiposDeficienciaListPage', () => {
       put.flush(null, { status: 204, statusText: 'No Content' });
       await flushRecarregarLista([tipo_deficiencia]);
     });
-  it('desabilita o botão de inativação quando está carregando a lista', async () => {
-        component['tiposDeficiencia'].set([tipoDeficienciaSeed]);
-        const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
-        req.flush([tipoDeficienciaSeed]);
-        expect(component['loading']()).toBe(true);
-        fixture.detectChanges();
-        const inativarButtonEl = getInativarButtonEl();
-        expect(inativarButtonEl).toBeTruthy();
-        expect(inativarButtonEl.disabled).toBe(true);
-      });
-
-  it('desabilita o botão de edição quando está carregando a lista', async () => {
-    component['tiposDeficiencia'].set([tipoDeficienciaSeed]);
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
-    req.flush([tipoDeficienciaSeed]);
-    expect(component['loading']()).toBe(true);
+  it('desabilita as ações da linha (Editar e Inativar) durante a recarga da lista', async () => {
+    // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
+    await flushLista([tipoDeficienciaSeed]);
     fixture.detectChanges();
-    const editarButtonEl = getEditarButtonEl();
-    expect(editarButtonEl).toBeTruthy();
-    expect(editarButtonEl.disabled).toBe(true);
+    expect(component['loading']()).toBe(false);
+    expect(getEditarButtonEl().disabled).toBe(false);
+    expect(getInativarButtonEl().disabled).toBe(false);
+
+    // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
+    component['tentarNovamente']();
+    await propagate();
+    fixture.detectChanges();
+    expect(component['loading']()).toBe(true);
+    expect(getEditarButtonEl().disabled).toBe(true);
+    expect(getInativarButtonEl().disabled).toBe(true);
+
+    // Encerra o GET pendente para o controller.verify() do afterEach.
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
+      .flush([tipoDeficienciaSeed]);
+    await propagate();
   });
 });
