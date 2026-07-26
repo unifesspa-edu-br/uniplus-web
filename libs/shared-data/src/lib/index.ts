@@ -14,15 +14,12 @@ export { CONFIGURACAO_BASE_PATH } from './api/configuracao/tokens';
 export { ORGANIZACAO_BASE_PATH } from './api/organizacao/tokens';
 export { GEO_BASE_PATH } from './api/geo/tokens';
 export {
-  ORIGENS_UNIDADE,
-  OrigemUnidade,
   TIPOS_UNIDADE,
   TipoUnidade,
   UnidadesApi,
   type AtualizarUnidadeCommand,
   type CriarUnidadeCommand,
   type UnidadeDto,
-  type UnidadeOrigemOption,
   type UnidadeTipoOption,
 } from './api/organizacao/unidades.api';
 

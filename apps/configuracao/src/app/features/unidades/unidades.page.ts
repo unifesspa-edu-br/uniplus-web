@@ -34,9 +34,7 @@ import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
   ORGANIZACAO_BASE_PATH,
-  ORIGENS_UNIDADE,
   TIPOS_UNIDADE,
-  OrigemUnidade,
   TipoUnidade,
   UnidadeDto,
   UnidadesApi,
@@ -96,7 +94,6 @@ interface UnidadeForm {
   unidadeAcademica: FormControl<boolean>;
   vigenciaInicio: FormControl<string>;
   vigenciaFim: FormControl<string>;
-  origem: FormControl<string>;
   motivoMudancaIdentificador: FormControl<string>;
 }
 
@@ -114,7 +111,6 @@ const BACKEND_FIELD_TO_CONTROL = {
   MotivoMudancaIdentificador: 'motivoMudancaIdentificador',
   MotivoMudançaIdentificador: 'motivoMudancaIdentificador',
   Nome: 'nome',
-  Origem: 'origem',
   Sigla: 'sigla',
   Slug: 'slug',
   Tipo: 'tipo',
@@ -414,8 +410,6 @@ const BACKEND_FIELD_TO_CONTROL = {
           <dd>{{ unidadeSuperiorLabel(unidade.unidadeSuperiorId) }}</dd>
           <dt>Unidade acadêmica</dt>
           <dd>{{ unidade.unidadeAcademica ? 'Sim' : 'Não' }}</dd>
-          <dt>Origem</dt>
-          <dd>{{ unidade.origem }}</dd>
           <dt>Vigência</dt>
           <dd>{{ vigenciaLabel(unidade) }}</dd>
         </dl>
@@ -607,7 +601,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         </section>
 
         <section aria-labelledby="cfg-form-vigencia">
-          <h3 id="cfg-form-vigencia" class="form-section__title">Vigência e origem</h3>
+          <h3 id="cfg-form-vigencia" class="form-section__title">Vigência</h3>
           <div class="form-grid">
             <label class="field" [class.is-error]="erroDoCampo('vigenciaInicio')">
               <span class="field__label is-required">Início de vigência</span>
@@ -635,21 +629,6 @@ const BACKEND_FIELD_TO_CONTROL = {
                 <span class="field__error">{{ erroDoCampo('vigenciaFim') }}</span>
               }
             </label>
-            @if (modo() === 'criar') {
-              <label class="field field--full">
-                <span class="field__label is-required">Origem do registro</span>
-                <select class="select" formControlName="origem">
-                  @for (origem of origemOptions; track origem.value) {
-                    <option [value]="origem.value">{{ origem.label }}</option>
-                  }
-                </select>
-              </label>
-            } @else {
-              <div class="field field--full">
-                <span class="field__label">Origem do registro</span>
-                <span class="field__readonly">{{ origemEmEdicaoLabel() }}</span>
-              </div>
-            }
             @if (modo() === 'editar') {
               <label class="field field--full">
                 <span class="field__label">Motivo da mudança de identificador</span>
@@ -706,7 +685,6 @@ export class UnidadesPage {
   protected readonly unidadeParaRemover = signal<UnidadeDto | null>(null);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly unidadeEmEdicaoId = signal<string | null>(null);
-  protected readonly origemEmEdicao = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
   // Termo de busca aplicado — debounced (uma request por rajada, não por tecla).
@@ -920,10 +898,6 @@ export class UnidadesPage {
     value: tipo.value,
     label: tipo.label,
   }));
-  protected readonly origemOptions = ORIGENS_UNIDADE.map((origem) => ({
-    value: origem.value,
-    label: origem.label,
-  }));
 
   /**
    * Chips de tipo a partir do roster fechado `TIPOS_UNIDADE` (11 tipos).
@@ -947,9 +921,6 @@ export class UnidadesPage {
   protected readonly arvore = computed(() => montarArvore(this.unidades()));
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Nova unidade' : 'Editar unidade',
-  );
-  protected readonly origemEmEdicaoLabel = computed(() =>
-    origemDisplayLabel(this.origemEmEdicao()),
   );
   protected readonly confirmMessage = computed(() => {
     const unidade = this.unidadeParaRemover();
@@ -984,10 +955,6 @@ export class UnidadesPage {
       validators: [Validators.required],
     }),
     vigenciaFim: new FormControl('', { nonNullable: true }),
-    origem: new FormControl(OrigemUnidade.criadoNoUniPlus, {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
     motivoMudancaIdentificador: new FormControl('', { nonNullable: true }),
   });
 
@@ -1100,8 +1067,6 @@ export class UnidadesPage {
   protected abrirCadastro(): void {
     this.modo.set('criar');
     this.unidadeEmEdicaoId.set(null);
-    this.origemEmEdicao.set(null);
-    this.form.controls.origem.enable({ emitEvent: false });
     this.form.reset({
       nome: '',
       alias: '',
@@ -1113,7 +1078,6 @@ export class UnidadesPage {
       unidadeAcademica: false,
       vigenciaInicio: dataAtualIso(),
       vigenciaFim: '',
-      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
     this.formError.set(null);
@@ -1125,8 +1089,6 @@ export class UnidadesPage {
   protected abrirEdicao(unidade: UnidadeDto): void {
     this.modo.set('editar');
     this.unidadeEmEdicaoId.set(unidade.id);
-    this.origemEmEdicao.set(unidade.origem);
-    this.form.controls.origem.disable({ emitEvent: false });
     this.form.reset({
       nome: unidade.nome,
       alias: unidade.alias ?? '',
@@ -1138,7 +1100,6 @@ export class UnidadesPage {
       unidadeAcademica: unidade.unidadeAcademica,
       vigenciaInicio: unidade.vigenciaInicio,
       vigenciaFim: unidade.vigenciaFim ?? '',
-      origem: origemValueFromLabel(unidade.origem),
       motivoMudancaIdentificador: '',
     });
     this.formError.set(null);
@@ -1332,7 +1293,6 @@ export class UnidadesPage {
       unidadeAcademica: raw.unidadeAcademica,
       vigenciaInicio: raw.vigenciaInicio,
       vigenciaFim: nullIfBlank(raw.vigenciaFim),
-      origem: raw.origem as OrigemUnidade,
     };
   }
 
@@ -1405,7 +1365,6 @@ function isUnidadeControlName(value: string): value is keyof UnidadeForm {
     'codigo',
     'motivoMudancaIdentificador',
     'nome',
-    'origem',
     'sigla',
     'slug',
     'tipo',
@@ -1441,24 +1400,6 @@ function tipoValueFromLabel(label: string): string {
   // Sem casamento: devolve vazio (controle inválido) em vez de assumir "Outro" —
   // editar+salvar não deve reclassificar a unidade silenciosamente.
   return option === undefined ? '' : option.value;
-}
-
-function origemValueFromLabel(label: string): string {
-  const option = ORIGENS_UNIDADE.find(
-    (origem) => normalizarEnumLabel(origem.label) === normalizarEnumLabel(label),
-  );
-  return option === undefined ? '' : option.value;
-}
-
-function origemDisplayLabel(label: string | null): string {
-  if (label === null || label.trim().length === 0) {
-    return '';
-  }
-
-  const option = ORIGENS_UNIDADE.find(
-    (origem) => normalizarEnumLabel(origem.label) === normalizarEnumLabel(label),
-  );
-  return option?.label ?? label;
 }
 
 function normalizarEnumLabel(value: string): string {

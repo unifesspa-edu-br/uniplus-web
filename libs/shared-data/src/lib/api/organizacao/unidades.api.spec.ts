@@ -13,7 +13,6 @@ import {
 import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
-  OrigemUnidade,
   TIPOS_UNIDADE,
   TipoUnidade,
   UnidadeDto,
@@ -36,7 +35,6 @@ const unidadeSeed: UnidadeDto = {
   unidadeAcademica: true,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
-  origem: 'CriadoNoUniPlus',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -51,7 +49,6 @@ const criarCommand: CriarUnidadeCommand = {
   unidadeAcademica: true,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
-  origem: OrigemUnidade.criadoNoUniPlus,
 };
 
 const atualizarCommand: AtualizarUnidadeCommand = {

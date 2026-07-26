@@ -8,12 +8,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import {
-  ORGANIZACAO_BASE_PATH,
-  OrigemUnidade,
-  TipoUnidade,
-  UnidadeDto,
-} from '@uniplus/shared-data/organizacao';
+import { ORGANIZACAO_BASE_PATH, TipoUnidade, UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { UnidadesPage } from './unidades.page';
 
@@ -37,7 +32,6 @@ const unidadesSeed: readonly UnidadeDto[] = [
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
     criadoEm: '2026-06-10T12:00:00Z',
   },
   {
@@ -52,7 +46,6 @@ const unidadesSeed: readonly UnidadeDto[] = [
     unidadeAcademica: true,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
     criadoEm: '2026-06-10T12:01:00Z',
   },
 ];
@@ -270,7 +263,6 @@ describe('UnidadesPage', () => {
       unidadeAcademica: true,
       vigenciaInicio: '2026-02-01',
       vigenciaFim: '',
-      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
     const key = component['idempotencyKeyAtual']();
@@ -285,7 +277,6 @@ describe('UnidadesPage', () => {
       alias: null,
       unidadeSuperiorId: INSTITUTO_ID,
       tipo: TipoUnidade.faculdade,
-      origem: OrigemUnidade.criadoNoUniPlus,
     });
     post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
     expect(component['formOpen']()).toBe(false);
@@ -310,7 +301,6 @@ describe('UnidadesPage', () => {
       unidadeAcademica: true,
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-02',
-      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
 
@@ -398,7 +388,6 @@ describe('UnidadesPage', () => {
       unidadeAcademica: true,
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-10',
-      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
 
@@ -442,7 +431,6 @@ describe('UnidadesPage', () => {
       unidadeAcademica: true,
       vigenciaInicio: '2026-06-10',
       vigenciaFim: '2026-06-10',
-      origem: OrigemUnidade.criadoNoUniPlus,
       motivoMudancaIdentificador: '',
     });
 
@@ -474,14 +462,10 @@ describe('UnidadesPage', () => {
 
   it('atualiza unidade sem enviar vigenciaInicio no command de update', async () => {
     await flushInicial();
-    component['abrirEdicao']({ ...unidadesSeed[1], origem: 'ImportadoSIORG' });
+    component['abrirEdicao'](unidadesSeed[1]);
     await flushOpcoesSuperior();
     component['form'].controls.nome.setValue('Instituto Renomeado');
     const key = component['idempotencyKeyAtual']();
-
-    expect(component['form'].controls.origem.disabled).toBe(true);
-    expect(component['form'].controls.origem.value).toBe(OrigemUnidade.importadoSiorg);
-    expect(component['origemEmEdicaoLabel']()).toBe('Importado SIORG');
 
     component['salvar']();
 
@@ -489,7 +473,6 @@ describe('UnidadesPage', () => {
     expect(put.request.method).toBe('PUT');
     expect(put.request.headers.get('Idempotency-Key')).toBe(key);
     expect(put.request.body).not.toHaveProperty('vigenciaInicio');
-    expect(put.request.body).not.toHaveProperty('origem');
     expect(put.request.body).toMatchObject({
       id: INSTITUTO_ID,
       nome: 'Instituto Renomeado',
@@ -542,24 +525,6 @@ describe('UnidadesPage', () => {
     component['form'].controls.tipo.setValue(TipoUnidade.faculdade);
     expect(component['tipoNaoReconhecido']()).toBe(false);
     expect(component['form'].controls.tipo.valid).toBe(true);
-  });
-
-  it('preserva origem desconhecida ao editar e reabilita o campo ao criar', async () => {
-    await flushInicial();
-
-    component['abrirEdicao']({ ...unidadesSeed[1], origem: 'OrigemExterna' });
-    await flushOpcoesSuperior();
-
-    expect(component['form'].controls.origem.disabled).toBe(true);
-    expect(component['form'].controls.origem.value).toBe('');
-    expect(component['origemEmEdicaoLabel']()).toBe('OrigemExterna');
-
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    expect(component['form'].controls.origem.enabled).toBe(true);
-    expect(component['form'].controls.origem.value).toBe(OrigemUnidade.criadoNoUniPlus);
-    expect(component['origemEmEdicaoLabel']()).toBe('');
   });
 
   it('remove unidade sem Idempotency-Key porque o endpoint DELETE não exige o header', async () => {
