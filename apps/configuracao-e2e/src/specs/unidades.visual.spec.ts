@@ -17,7 +17,6 @@ const UNIDADES = [
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
     criadoEm: '2026-06-10T12:00:00Z',
   },
   {
@@ -32,7 +31,6 @@ const UNIDADES = [
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
     criadoEm: '2026-06-10T12:01:00Z',
   },
   {
@@ -47,7 +45,6 @@ const UNIDADES = [
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
     criadoEm: '2026-06-10T12:02:00Z',
   },
   {
@@ -62,7 +59,6 @@ const UNIDADES = [
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
     criadoEm: '2026-06-10T12:03:00Z',
   },
 ] as const;
@@ -136,7 +132,7 @@ test.describe('Unidade — cobertura visual DS', () => {
     await expect(drawer.getByRole('heading', { name: 'Nova unidade' })).toBeVisible();
     await expect(drawer.getByText('Identificadores')).toBeVisible();
     await expect(drawer.getByText('Classificação e hierarquia')).toBeVisible();
-    await expect(drawer.getByText('Vigência e origem')).toBeVisible();
+    await expect(drawer.getByText('Vigência', { exact: true })).toBeVisible();
 
     const footer = drawer.locator('.cfg-form-footer');
     await expect(footer.getByRole('button', { name: 'Cancelar' })).toBeVisible();
