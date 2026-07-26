@@ -233,6 +233,13 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
                 /** @description Unprocessable Entity */
                 readonly 422: {
                     headers: {
@@ -320,6 +327,20 @@ export interface paths {
                     content: {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
@@ -602,6 +623,13 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
                 /** @description Unprocessable Entity */
                 readonly 422: {
                     headers: {
@@ -698,6 +726,13 @@ export interface paths {
                     content: {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
@@ -873,7 +908,6 @@ export interface components {
             readonly vigenciaInicio: string;
             /** Format: date */
             readonly vigenciaFim: null | string;
-            readonly origem: components["schemas"]["OrigemUnidade"];
         };
         readonly EnderecoGeoDto: {
             readonly cep: string;
@@ -936,8 +970,6 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        /** @enum {string} */
-        readonly OrigemUnidade: OrigemUnidade;
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -964,7 +996,6 @@ export interface components {
             readonly vigenciaInicio: string;
             /** Format: date */
             readonly vigenciaFim: null | string;
-            readonly origem: string;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
@@ -1115,12 +1146,6 @@ export interface operations {
 export enum PathsApiOrganizacaoUnidadesGetParametersQueryDirection {
     next = "next",
     prev = "prev"
-}
-export enum OrigemUnidade {
-    nenhum = "nenhum",
-    legadoCoc = "legadoCoc",
-    criadoNoUniPlus = "criadoNoUniPlus",
-    importadoSiorg = "importadoSiorg"
 }
 export enum TipoUnidade {
     nenhum = "nenhum",

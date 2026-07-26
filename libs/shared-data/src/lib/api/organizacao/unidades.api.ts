@@ -2,22 +2,17 @@ import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
-import { OrigemUnidade, TipoUnidade } from './schema';
+import { TipoUnidade } from './schema';
 import { ORGANIZACAO_BASE_PATH } from './tokens';
 import type { components } from './schema';
 
 export type UnidadeDto = components['schemas']['UnidadeDto'];
 export type CriarUnidadeCommand = components['schemas']['CriarUnidadeCommand'];
 export type AtualizarUnidadeCommand = components['schemas']['AtualizarUnidadeCommand'];
-export { OrigemUnidade, TipoUnidade };
+export { TipoUnidade };
 
 export interface UnidadeTipoOption {
   readonly value: TipoUnidade;
-  readonly label: string;
-}
-
-export interface UnidadeOrigemOption {
-  readonly value: OrigemUnidade;
   readonly label: string;
 }
 
@@ -33,12 +28,6 @@ export const TIPOS_UNIDADE: readonly UnidadeTipoOption[] = [
   { value: TipoUnidade.divisao, label: 'Divisão' },
   { value: TipoUnidade.nucleo, label: 'Núcleo' },
   { value: TipoUnidade.outro, label: 'Outro' },
-] as const;
-
-export const ORIGENS_UNIDADE: readonly UnidadeOrigemOption[] = [
-  { value: OrigemUnidade.legadoCoc, label: 'Legado COC' },
-  { value: OrigemUnidade.criadoNoUniPlus, label: 'Criado no Uni+' },
-  { value: OrigemUnidade.importadoSiorg, label: 'Importado SIORG' },
 ] as const;
 
 @Injectable({ providedIn: 'root' })
