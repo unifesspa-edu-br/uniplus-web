@@ -200,9 +200,9 @@ export class LayoutComponent {
       label: 'Painéis',
       items: [
         { label: 'Painel de processos', icon: 'pi-table', routerLink: '/dashboard' },
-        { label: 'Processo seletivos', icon: 'pi-file', },
-        { label: 'Inscrições', icon: 'pi-user' },
-        { label: 'Homologação', icon: 'pi-sitemap' },
+        { label: 'Processo seletivo', icon: 'pi-file', routerLink: '/processo-seletivo' },
+        { label: 'Inscrições', icon: 'pi-user', routerLink: '/inscricoes' },
+        { label: 'Homologação', icon: 'pi-sitemap', routerLink: '/homologacao' },
       ],
     },
   ];
