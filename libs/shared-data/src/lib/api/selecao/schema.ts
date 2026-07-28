@@ -44,66 +44,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/_smoke/storage/upload": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        /**
-         * Smoke E2E — Storage upload
-         * @description Faz upload de um arquivo no bucket configurado para validar conectividade + credentials do MinIO. Restrito a usuários com role admin.
-         */
-        readonly post: operations["smokeStorageUpload"];
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/_smoke/cache/{key}": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Smoke E2E — Cache probe
-         * @description Faz SET/GET de uma chave temporária no Redis com TTL 5min para validar conectividade. Restrito a usuários com role admin.
-         */
-        readonly get: operations["smokeCacheProbe"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/_smoke/messaging/publish": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        /**
-         * Smoke E2E — Messaging publish
-         * @description Publica um SmokePingMessage via Wolverine outbox para validar persistência + transport (PG queue ou Kafka). O handler em Infrastructure.Core registra log do round-trip. Restrito a usuários com role admin.
-         */
-        readonly post: operations["smokeMessagingPublish"];
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/selecao/obrigatoriedades-legais": {
         readonly parameters: {
             readonly query?: never;
@@ -527,8 +467,6 @@ export interface components {
             readonly atoNormativoUrl: null | string;
             readonly portariaInternaCodigo: null | string;
         };
-        /** Format: binary */
-        readonly IFormFile: string;
         readonly JsonElement: unknown;
         readonly ObrigatoriedadeLegalDto: {
             /** Format: uuid */
@@ -675,68 +613,6 @@ export interface operations {
                 content: {
                     readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
-            };
-        };
-    };
-    readonly smokeStorageUpload: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody: {
-            readonly content: {
-                readonly "multipart/form-data": {
-                    readonly file: components["schemas"]["IFormFile"];
-                };
-            };
-        };
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    readonly smokeCacheProbe: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path: {
-                readonly key: string;
-            };
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    readonly smokeMessagingPublish: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
