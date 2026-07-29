@@ -2,7 +2,8 @@
 
 ## Visao geral
 
-Frontend do Uni+ (S2U) (UniPlus) da Unifesspa. Monorepo Nx com 3 aplicacoes Angular e 3 bibliotecas compartilhadas.
+Frontend do Uni+ (S2U) da Unifesspa. Monorepo Nx com 4 aplicacoes Angular e
+bibliotecas compartilhadas.
 
 ## Stack e versões
 
@@ -11,7 +12,7 @@ Frontend do Uni+ (S2U) (UniPlus) da Unifesspa. Monorepo Nx com 3 aplicacoes Angu
 - **Uni+ DS** CSS-only (tokens semanticos, temas e anatomia HTML)
 - **PrimeNG** 21.x (uso legado/complexo encapsulado quando necessário)
 - **Tailwind CSS** 4.x (estilização utility-first com @theme)
-- **OIDC** (autenticação; adapter atual via keycloak-angular)
+- **OIDC Keycloak** (autenticação via `keycloak-js` e `keycloak-angular`)
 - **Playwright** (testes E2E)
 - **Vitest** (testes unitários via @analogjs/vitest-angular)
 - **TypeScript** 5.9.x (strict mode)
@@ -26,11 +27,16 @@ apps/
   ingresso-e2e/   → Testes E2E do ingresso
   portal/         → Portal público do candidato (inscrição, acompanhamento, documentos, recursos)
   portal-e2e/     → Testes E2E do portal
+  configuracao/   → Cadastros base e organização institucional
+  configuracao-e2e/ → Testes E2E da configuracao
 
 libs/
   shared-ui/      → Componentes reutilizáveis (cpf-input, data-table, file-upload, status-badge, etc.)
-  shared-auth/    → Autenticação OIDC (auth.service, guards, interceptor, providers)
-  shared-data/    → DTOs, API clients, utilitários (cpf.util, date.util, api-error-handler)
+  shared-auth/    → Autenticação OIDC (serviço, guards, interceptor e providers)
+  shared-core/    → HTTP, interceptors, DOM e notificações transversais
+  shared-data/    → Runtime config, DTOs e clientes API gerados por OpenAPI
+  shared-e2e/     → Fixtures, setup e utilitários compartilhados de Playwright
+  shared-utils/   → Utilitários sem dependência de domínio
 
 docs/referencias/
   poc-primeng/    → Código histórico da POC (read-only, fora do workspace Nx) — ADR-0022
@@ -67,19 +73,22 @@ uniplus-ds CSS-only
 
 ### Arquivos de referência
 
-| Arquivo | O que contém |
-|---------|-------------|
-| `libs/shared-ui/src/styles/tokens.css` | Tokens semanticos do Uni+ DS |
-| `libs/shared-ui/src/styles/base.css` | Reset, tipografia, foco, skip link e utilitarios base |
-| `libs/shared-ui/src/styles/components.css` | Classes canonicas de componentes CSS-only |
-| `apps/<app>/src/styles.css` | Imports da foundation + `@source` + `@theme inline` |
-| `docs/referencias/poc-primeng/` | POC historica read-only; nao governa novas implementacoes |
+| Arquivo                                    | O que contém                                              |
+| ------------------------------------------ | --------------------------------------------------------- |
+| `libs/shared-ui/src/styles/tokens.css`     | Tokens semanticos do Uni+ DS                              |
+| `libs/shared-ui/src/styles/base.css`       | Reset, tipografia, foco, skip link e utilitarios base     |
+| `libs/shared-ui/src/styles/components.css` | Classes canonicas de componentes CSS-only                 |
+| `apps/<app>/src/styles.css`                | Imports da foundation + `@source` + `@theme inline`       |
+| `docs/referencias/poc-primeng/`            | POC historica read-only; nao governa novas implementacoes |
 
 ## Path aliases
 
 - `@uniplus/shared-ui` → `libs/shared-ui/src/index.ts`
 - `@uniplus/shared-auth` → `libs/shared-auth/src/index.ts`
+- `@uniplus/shared-core` → `libs/shared-core/src/index.ts`
 - `@uniplus/shared-data` → `libs/shared-data/src/index.ts`
+- `@uniplus/shared-utils` → `libs/shared-utils/src/index.ts`
+- `@uniplus/shared-e2e` → `libs/shared-e2e/src/index.ts`
 
 ## Padroes de componentes
 
@@ -90,6 +99,15 @@ uniplus-ds CSS-only
 - **Lazy loading** para todas as feature routes
 - Reactive Forms com tipagem forte
 - Strings user-facing em pt-BR
+
+## Runtime config e autenticacao
+
+- Cada app carrega `assets/runtime-config.json` por `provideRuntimeConfig()`.
+  Em `app.config.ts`, esse provider deve vir **antes** de `provideAuth()`.
+- `shared-auth` concentra a integração OIDC, o interceptor e a renovação de
+  token. Não duplicar refresh em apps ou componentes.
+- Tokens JWT permanecem em memória: nunca usar `localStorage` ou
+  `sessionStorage` para persistência de credenciais.
 
 ## Comandos uteis
 
@@ -113,7 +131,7 @@ npx nx lint selecao
 npx nx run-many --target=lint --all
 
 # Testes E2E
-npx nx e2e selecao-e2e
+npx nx e2e <app>-e2e
 
 # Grafo de dependencias
 npx nx graph
@@ -129,10 +147,19 @@ npx nx affected --target=vite:test
 ### Testar um app contra o backend real (local)
 
 Para exercitar um app contra as APIs do `uniplus-api` (login Keycloak + dados
-reais), o backend precisa validar o realm `unifesspa` — suba o `uniplus-api` com
-o override `frontend-test`, senão **toda mutação responde 401 + loop de re-login**
-(o GET de lista é `[AllowAnonymous]` e mascara). Passo a passo, credenciais e
-sintomas: [`docs/guia-testar-frontend-com-backend-local.md`](docs/guia-testar-frontend-com-backend-local.md).
+reais), suba a infraestrutura, as APIs e o Traefik pelo override atual, sem
+iniciar os serviços `*-web`; assim, as portas 4200–4203 ficam livres para o Nx.
+Os apps usam o gateway `http://localhost:5000` e o realm `unifesspa`.
+
+```bash
+# No repositório irmão uniplus-api
+docker compose -f docker/docker-compose.yml \
+  -f docker/docker-compose.override.yml \
+  up -d --build postgres redis kafka minio apicurio keycloak \
+    uniplus-api geo-api portal-api traefik
+```
+
+Passo a passo, credenciais e sintomas: [`docs/guia-testar-frontend-com-backend-local.md`](docs/guia-testar-frontend-com-backend-local.md).
 
 ## Localização do repositório
 
