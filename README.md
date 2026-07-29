@@ -4,33 +4,49 @@ Frontend do Uni+ (S2U) da Unifesspa, construido como monorepo Nx com Angular 21.
 
 ## Aplicações
 
-| App | Descrição | Porta |
-|-----|-----------|-------|
-| **selecao** | Gestão de processos seletivos (editais, inscrições, homologação, notas, classificação) | 4200 |
-| **ingresso** | Gestão de ingresso (chamadas, convocações, matrículas) | 4201 |
-| **portal** | Portal público do candidato (inscrição, acompanhamento, documentos, recursos) | 4202 |
+| App              | Descrição                                                                              | Porta | Client OIDC        |
+| ---------------- | -------------------------------------------------------------------------------------- | ----- | ------------------ |
+| **selecao**      | Gestão de processos seletivos (editais, inscrições, homologação, notas, classificação) | 4200  | `selecao-web`      |
+| **ingresso**     | Gestão de ingresso (chamadas, convocações, matrículas)                                 | 4201  | `ingresso-web`     |
+| **portal**       | Portal público do candidato (inscrição, acompanhamento, documentos, recursos)          | 4202  | `portal-web`       |
+| **configuracao** | Painel administrativo de cadastros base e organização institucional                    | 4203  | `configuracao-web` |
 
 ## Bibliotecas compartilhadas
 
-| Lib | Descricao |
-|-----|-----------|
-| **shared-ui** | Wrappers Angular reutilizaveis do Uni+ DS (CSS-only), shells, forms, dados e overlays |
-| **shared-auth** | Autenticacao OIDC (services, guards, interceptors) |
-| **shared-data** | DTOs, API clients OpenAPI, utilitarios |
+| Lib             | Descricao                                                                             |
+| --------------- | ------------------------------------------------------------------------------------- |
+| **shared-ui**   | Wrappers Angular reutilizaveis do Uni+ DS (CSS-only), shells, forms, dados e overlays |
+| **shared-auth** | Autenticacao OIDC (services, guards, interceptors)                                    |
+| **shared-data** | DTOs, API clients OpenAPI, utilitarios                                                |
 
 ## Pre-requisitos
 
 - Node.js 22.x LTS
 - npm 10.x+
-- Docker (para build de producao)
+- Docker Compose v2 (para rodar contra o backend local ou para build de produção)
 
-## Inicio rapido
+## Início rápido com backend local
+
+O desenvolvimento diário usa dois repositórios irmãos: o `uniplus-api` sobe a
+infra, as APIs e o gateway por Docker; o `uniplus-web` roda a app escolhida com
+hot reload via Nx. O guia completo, incluindo login e testes, está em
+[`docs/tutorial-rodar-e-testar-a-aplicacao.md`](docs/tutorial-rodar-e-testar-a-aplicacao.md).
 
 ```bash
-# Instalar dependencias (requer Node 22.x — veja CONTRIBUTING.md para setup com nvm)
-nvm use && npm install
+# Em uniplus-api (uma vez por clone)
+cp docker/.env.example docker/.env
+cp docker/docker-compose.override.example.yml docker/docker-compose.override.yml
 
-# Servir a aplicacao selecao
+# Infra, APIs e gateway; não inicia os containers *-web, deixando 4200-4203 livres.
+docker compose -f docker/docker-compose.yml \
+  -f docker/docker-compose.override.yml \
+  up -d --build postgres redis kafka minio apicurio keycloak \
+    uniplus-api geo-api portal-api traefik
+
+# Em uniplus-web (requer Node 22.x — veja CONTRIBUTING.md para setup com nvm)
+nvm use && npm ci
+
+# Servir uma das aplicações com hot reload
 npx nx serve selecao
 
 # Abrir no navegador
@@ -44,6 +60,7 @@ open http://localhost:4200
 npx nx serve selecao
 npx nx serve ingresso
 npx nx serve portal
+npx nx serve configuracao
 
 # Build
 npx nx run-many --target=build --all
