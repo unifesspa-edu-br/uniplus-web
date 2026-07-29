@@ -4,38 +4,38 @@ Como rodar um app do `uniplus-web` (`selecao`, `configuracao`, `ingresso`,
 `portal`) contra as APIs reais do `uniplus-api` conteinerizadas — autenticando no
 Keycloak de desenvolvimento e persistindo dados de verdade.
 
-## 1. Suba o backend com o override `frontend-test`
+## 1. Suba infraestrutura, APIs e gateway
 
-No repositório `uniplus-api`, copie o template do override (gitignored) e suba a
-stack com os **três** arquivos compose:
+No repositório `uniplus-api`, copie os arquivos locais na primeira execução e
+suba apenas a infraestrutura, as APIs e o gateway. O
+`docker-compose.override.yml` já contém o realm `unifesspa` consumido pelos
+frontends e o Traefik em `:5000`.
 
 ```bash
-cd repositories/uniplus-api/docker
-cp docker-compose.override.example.yml docker-compose.override.yml   # 1ª vez
+cd repositories/uniplus-api
+cp docker/.env.example docker/.env                                    # 1ª vez
+cp docker/docker-compose.override.example.yml docker/docker-compose.override.yml   # 1ª vez
 
-docker compose -f docker-compose.yml \
-               -f docker-compose.override.yml \
-               -f docker-compose.frontend-test.yml up -d --build --wait
+docker compose -f docker/docker-compose.yml \
+               -f docker/docker-compose.override.yml \
+               up -d --build postgres redis kafka minio apicurio keycloak \
+                 uniplus-api geo-api portal-api traefik
 ```
 
 Isso sobe a infra (Postgres/Redis/Kafka/MinIO/Apicurio/Keycloak) + as **3 APIs**
 (`uniplus-api` na :5200 — o monólito com os 4 módulos internos; `geo-api` na :5400;
 `portal-api` na :5302) + um **gateway Traefik na :5000**.
 
-> **Por que o `frontend-test.yml`?** Ele faz duas coisas obrigatórias:
-> 1. **Realinha o `Auth__Authority`** das APIs ao realm **`unifesspa`** — o realm em
->    que os frontends autenticam (clients `*-web`). O override base usa
->    `unifesspa-dev-local`, e sem o realinhamento **toda mutação** (POST/PUT/DELETE)
->    responde **401** e o app entra em loop de re-login (o GET de lista é
->    `[AllowAnonymous]` e mascara o problema).
-> 2. **Sobe o gateway na :5000**, que separa o tráfego: `/api/{cidades,estados,cep,
->    logradouros}` → `geo-api`; todo o resto de `/api/` → monólito. É o `apiUrl`
->    único que os apps consomem (espelha o ingress de HML/PROD no uniplus-infra).
+> **Importante:** não execute o `up` sem a lista de serviços quando for usar
+> `nx serve`. O override completo também sobe os containers `selecao-web`,
+> `ingresso-web`, `portal-web` e `configuracao-web`, que ocupam as portas
+> 4200–4203 usadas pelo hot reload.
 
 ## 2. Sirva o app
 
 ```bash
 cd repositories/uniplus-web
+npm ci                            # primeira vez ou após alteração do lockfile
 npx nx serve selecao        # http://localhost:4200  (client selecao-web)
 npx nx serve ingresso       # http://localhost:4201  (client ingresso-web)
 npx nx serve portal         # http://localhost:4202  (client portal-web)
@@ -56,22 +56,22 @@ há reescrita de path** (o shim legado `/api/editais` foi removido).
 Usuários do realm `unifesspa` (senha inicial **temporária** — o Keycloak pede para
 trocar no primeiro login; basta repetir a mesma senha):
 
-| Usuário | Senha inicial | Papel |
-|---|---|---|
-| `admin` | `Changeme!123` | `plataforma-admin` (painel admin completo) |
-| `gestor` | `Changeme!123` | gestor |
-| `avaliador` | `Changeme!123` | avaliador |
-| `candidato` | `Changeme!123` | candidato (portal) |
+| Usuário     | Senha inicial  | Papel                                      |
+| ----------- | -------------- | ------------------------------------------ |
+| `admin`     | `Changeme!123` | `plataforma-admin` (painel admin completo) |
+| `gestor`    | `Changeme!123` | gestor                                     |
+| `avaliador` | `Changeme!123` | avaliador                                  |
+| `candidato` | `Changeme!123` | candidato (portal)                         |
 
 ## Sintomas comuns
 
-| Sintoma | Causa | Correção |
-|---|---|---|
-| Listas carregam, mas salvar dá erro e volta pro login | Realm desalinhado (API em `unifesspa-dev-local`) | Suba com o `frontend-test.yml` (passo 1) |
-| `404` em `/api/cidades` ou `/api/cep` | `geo-api` fora do ar ou gateway sem rota geo | Confirme `geo-api` healthy e o `frontend-test.yml` (gateway) no `up` |
-| `404` em `/api/{modulo}/...` | Gateway fora do ar (subiu sem o `frontend-test.yml`) | Inclua o `frontend-test.yml` no `up` |
-| `ERR_CONNECTION_REFUSED` em :420x | Dev server caiu | `npx nx serve <app>` |
-| Redireciona ao Keycloak no meio de uma ação longa | `accessTokenLifespan` curto (300s) | Ampliar para 1800s (opcional — ver CONTRIBUTING do `uniplus-api`) |
+| Sintoma                                               | Causa                                                              | Correção                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Listas carregam, mas salvar dá erro e volta pro login | APIs não foram iniciadas com o override atual do realm `unifesspa` | Refaça o passo 1 com os dois arquivos compose e a lista de serviços    |
+| `404` em `/api/cidades` ou `/api/cep`                 | `geo-api` ou Traefik fora do ar                                    | Confirme ambos os serviços healthy no Compose do passo 1               |
+| `404` em `/api/{modulo}/...`                          | Monólito, portal-api ou gateway fora do ar                         | Confirme `uniplus-api`, `portal-api` e `traefik` no Compose do passo 1 |
+| `ERR_CONNECTION_REFUSED` em :420x                     | Dev server caiu                                                    | `npx nx serve <app>`                                                   |
+| Redireciona ao Keycloak no meio de uma ação longa     | `accessTokenLifespan` curto (300s)                                 | Ampliar para 1800s (opcional — ver CONTRIBUTING do `uniplus-api`)      |
 
 ## E2E automatizado
 

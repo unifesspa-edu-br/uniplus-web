@@ -5,10 +5,10 @@ aplicação, **logar nela** e executar os testes (unitários e E2E).
 
 A plataforma tem dois repositórios que sobem juntos:
 
-| Repositório | Papel | O que você roda |
-|---|---|---|
+| Repositório   | Papel                                                        | O que você roda            |
+| ------------- | ------------------------------------------------------------ | -------------------------- |
 | `uniplus-api` | Backend .NET + infra (PostgreSQL, Keycloak, etc. via Docker) | `docker compose ... up -d` |
-| `uniplus-web` | Frontend Angular (Nx) | `npx nx serve <app>` |
+| `uniplus-web` | Frontend Angular (Nx)                                        | `npx nx serve <app>`       |
 
 > **Atalho:** se você já tem os repositórios e a infra de pé, use a referência
 > rápida em [`guia-testar-frontend-com-backend-local.md`](guia-testar-frontend-com-backend-local.md).
@@ -18,15 +18,15 @@ A plataforma tem dois repositórios que sobem juntos:
 
 ## Pré-requisitos
 
-| Ferramenta | Versão | Verificação |
-|---|---|---|
-| Docker | 24+ | `docker --version` |
-| Docker Compose | 2.20+ | `docker compose version` |
-| .NET SDK | 10.0 | `dotnet --version` |
-| Node.js | **22** (ver `.nvmrc`) | `node --version` |
-| Python 3 | 3.8+ (para os snippets do Keycloak Admin API) | `python3 --version` |
-| Git | 2.40+ | `git --version` |
-| GitHub CLI (opcional) | 2.50+ | `gh --version` |
+| Ferramenta            | Versão                                        | Verificação              |
+| --------------------- | --------------------------------------------- | ------------------------ |
+| Docker                | 24+                                           | `docker --version`       |
+| Docker Compose        | 2.20+                                         | `docker compose version` |
+| .NET SDK              | 10.0                                          | `dotnet --version`       |
+| Node.js               | **22** (ver `.nvmrc`)                         | `node --version`         |
+| Python 3              | 3.8+ (para os snippets do Keycloak Admin API) | `python3 --version`      |
+| Git                   | 2.40+                                         | `git --version`          |
+| GitHub CLI (opcional) | 2.50+                                         | `gh --version`           |
 
 > O frontend exige **Node 22** — se você usa `nvm`, rode `nvm use 22` dentro de
 > `uniplus-web` (há um `.nvmrc`). Node 24 (default de algumas máquinas) quebra o build.
@@ -48,32 +48,36 @@ git clone https://github.com/unifesspa-edu-br/uniplus-web.git
 ## Passo 2 — Subir o backend (APIs + infra + Keycloak)
 
 Num clone fresco, `docker/.env` e `docker/docker-compose.override.yml` **não
-existem** (são gitignored) — copie-os dos `.example` primeiro. Depois suba a
-stack com os **três** arquivos compose; o terceiro (`frontend-test.yml`) é
-**obrigatório** para testar o frontend — ele realinha a autenticação de todas as
-APIs ao realm `unifesspa` (ver "Solução de problemas").
+existem** (são gitignored) — copie-os dos `.example` primeiro. Depois suba
+somente a infraestrutura, as APIs e o gateway. O override atual já configura as
+APIs para o realm `unifesspa` e inclui o Traefik que atende o `apiUrl` local.
 
 ```bash
 cd uniplus-api
 cp docker/.env.example docker/.env
 cp docker/docker-compose.override.example.yml docker/docker-compose.override.yml
 
-cd docker
-docker compose -f docker-compose.yml \
-               -f docker-compose.override.yml \
-               -f docker-compose.frontend-test.yml up -d
+docker compose -f docker/docker-compose.yml \
+               -f docker/docker-compose.override.yml \
+               up -d --build postgres redis kafka minio apicurio keycloak \
+                 uniplus-api geo-api portal-api traefik
 ```
 
 > Setup canônico do backend (mais detalhes): `uniplus-api/docs/setup-ambiente-local.md`.
 
 Isso sobe PostgreSQL, Redis, Kafka, MinIO, **Keycloak** (que importa o realm
-`unifesspa` automaticamente) e as APIs de módulo (`organizacao-api` em `:5263`,
-`selecao-api`, etc.).
+`unifesspa` automaticamente), as três APIs (`uniplus-api` em :5200, `geo-api`
+em :5400 e `portal-api` em :5302) e o gateway Traefik em :5000.
+
+> **Não suba o override completo** quando quiser hot reload. Ele também inicia
+> os containers `selecao-web`, `ingresso-web`, `portal-web` e
+> `configuracao-web`, que ocupam 4200–4203. O comando acima deixa essas portas
+> livres para o Nx.
 
 Aguarde tudo ficar **healthy**:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.frontend-test.yml ps
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml ps
 ```
 
 > Se as APIs ficarem `unhealthy`, normalmente é o **Keycloak ainda subindo** (o
@@ -92,14 +96,16 @@ npm ci                # instala dependências (primeira vez)
 npx nx serve configuracao   # painel administrativo  -> http://localhost:4203
 ```
 
-Cada app lê o backend e o Keycloak do seu `runtime-config.json`. O
-`configuracao` fala **direto** com a `organizacao-api` (`:5263`) — é o caminho
-testado neste tutorial.
+Cada app lê o backend e o Keycloak do seu `runtime-config.json`. Todas usam o
+gateway `http://localhost:5000` e o issuer
+`http://localhost:8080/realms/unifesspa`.
 
-> `npx nx serve selecao` (`:4200`) funciona via gateway Traefik `:5000`. Os apps
-> `ingresso` (`:4201`) e `portal` (`:4202`) sobem, mas o Traefik de dev hoje só
-> roteia as rotas de Seleção (`/api/editais`, `/api/selecao/*`) — testá-los
-> contra o backend local ainda exige rotas adicionais no `traefik/dynamic.yml`.
+| App          | Comando                     | URL                   | Client OIDC        |
+| ------------ | --------------------------- | --------------------- | ------------------ |
+| Seleção      | `npx nx serve selecao`      | http://localhost:4200 | `selecao-web`      |
+| Ingresso     | `npx nx serve ingresso`     | http://localhost:4201 | `ingresso-web`     |
+| Portal       | `npx nx serve portal`       | http://localhost:4202 | `portal-web`       |
+| Configuração | `npx nx serve configuracao` | http://localhost:4203 | `configuracao-web` |
 
 ---
 
@@ -131,11 +137,11 @@ curl -s -X PUT "$KC/admin/realms/unifesspa/users/$ADMIN_ID/reset-password" \
 
 Credenciais de login:
 
-| Campo | Valor |
-|---|---|
-| Usuário | `admin` |
-| Senha | `E2eTest!123` (após o reset acima) |
-| Realm | `unifesspa` (já configurado no app) |
+| Campo   | Valor                               |
+| ------- | ----------------------------------- |
+| Usuário | `admin`                             |
+| Senha   | `E2eTest!123` (após o reset acima)  |
+| Realm   | `unifesspa` (já configurado no app) |
 
 > O admin do **Keycloak** (console em `:8080`) é `admin` / `admin` no realm
 > `master` — não confundir com o usuário `admin` da aplicação no realm `unifesspa`.
@@ -159,7 +165,7 @@ npx nx run-many --target=vite:test --all
 ### Frontend — E2E (Playwright)
 
 As specs visuais **mockam a API** via `page.route` — não exigem as APIs de pé,
-só o **Keycloak** (o *setup project* `auth-setup` reseta a senha do usuário de
+só o **Keycloak** (o _setup project_ `auth-setup` reseta a senha do usuário de
 teste e faz login real). Como o Keycloak já subiu no Passo 2, basta:
 
 ```bash
@@ -205,11 +211,11 @@ curl -s -X PUT http://localhost:8080/admin/realms/unifesspa \
 ## Comandos úteis
 
 ```bash
-# Servir aplicações (uniplus-web)
-npx nx serve selecao          # http://localhost:4200 (via gateway Traefik :5000)
+# Servir aplicações (uniplus-web; todas usam o gateway Traefik :5000)
+npx nx serve selecao          # http://localhost:4200
 npx nx serve ingresso         # http://localhost:4201
 npx nx serve portal           # http://localhost:4202
-npx nx serve configuracao     # http://localhost:4203 (direto na organizacao-api :5263)
+npx nx serve configuracao     # http://localhost:4203
 
 # Build
 npx nx build configuracao
@@ -237,7 +243,8 @@ npx nx affected --target=build
 npx nx affected --target=vite:test
 
 # Backend (uniplus-api) — a partir da raiz do repositório uniplus-api
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml -f docker/docker-compose.frontend-test.yml up -d   # subir stack p/ testar frontend
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml \
+  up -d --build postgres redis kafka minio apicurio keycloak uniplus-api geo-api portal-api traefik
 dotnet test UniPlus.slnx                          # todos os testes
 dotnet test --filter "Category!=Integration"      # só unitários (sem Docker)
 ```
@@ -246,15 +253,15 @@ dotnet test --filter "Category!=Integration"      # só unitários (sem Docker)
 
 ## Solução de problemas
 
-| Sintoma | Causa | Correção |
-|---|---|---|
-| Listas carregam, mas **salvar dá erro e volta pro login** | Realm desalinhado: as APIs validam `unifesspa-dev-local`, o app autentica em `unifesspa`. O GET de lista é anônimo e mascara; só a mutação dá **401** | Suba o backend **com** `docker-compose.frontend-test.yml` (Passo 2) |
-| `ERR_CONNECTION_REFUSED` em `:4203` | Dev server não está rodando | `npx nx serve configuracao` |
-| APIs `unhealthy` | Keycloak ainda subindo / parado | Aguardar; conferir `docker compose ps` do `docker-keycloak-1` |
-| Keycloak pede troca de senha no login | Senha semeada é temporária (`Changeme!123`) | Resetar para `E2eTest!123` (Passo 4) |
-| Build do frontend quebra | Node ≠ 22 | `nvm use 22` |
-| E2E falha em `auth-setup` (`KEYCLOAK_ADMIN_PASSWORD não definido`) | Variável ausente | Prefixar o comando com `KEYCLOAK_ADMIN_PASSWORD=admin` |
-| Redireciona ao Keycloak no meio de uma ação | `accessTokenLifespan` curto | Ampliar para 1800s (Passo 6) |
+| Sintoma                                                            | Causa                                                              | Correção                                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Listas carregam, mas **salvar dá erro e volta pro login**          | APIs não foram iniciadas com o override atual do realm `unifesspa` | Refaça o Passo 2 com os dois arquivos compose e a lista de serviços |
+| `ERR_CONNECTION_REFUSED` em `:4203`                                | Dev server não está rodando                                        | `npx nx serve configuracao`                                         |
+| APIs `unhealthy`                                                   | Keycloak ainda subindo / parado                                    | Aguardar; conferir `docker compose ps` do `docker-keycloak-1`       |
+| Keycloak pede troca de senha no login                              | Senha semeada é temporária (`Changeme!123`)                        | Resetar para `E2eTest!123` (Passo 4)                                |
+| Build do frontend quebra                                           | Node ≠ 22                                                          | `nvm use 22`                                                        |
+| E2E falha em `auth-setup` (`KEYCLOAK_ADMIN_PASSWORD não definido`) | Variável ausente                                                   | Prefixar o comando com `KEYCLOAK_ADMIN_PASSWORD=admin`              |
+| Redireciona ao Keycloak no meio de uma ação                        | `accessTokenLifespan` curto                                        | Ampliar para 1800s (Passo 6)                                        |
 
 ---
 
