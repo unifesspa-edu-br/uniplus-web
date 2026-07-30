@@ -1,0 +1,28 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 1</span>
+  <h1 tabindex="-1">Passo 1: Tipo do processo</h1>
+  <p>Escolha o tipo de processo seletivo.</p>
+</div>
+<div class="type-search">
+  <div class="input-group">
+    <span class="input-group__addon"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-width="2" viewBox="0 0 24 24" width="16"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg></span>
+    <input class="input" type="search" aria-label="Buscar tipos de editais" placeholder="Buscar por nome..." [value]="query()" (input)="query.set($any($event.target).value)">
+  </div>
+</div>
+<fieldset class="type-grid">
+  <legend class="sr-only">Tipo de edital</legend>
+  @for (option of filteredOptions(); track option.value) {
+    <label class="type-card" [class.is-selected]="store.draft().tipoProcesso.selected === option.value">
+      <input class="sr-only" type="radio" name="tipo-edital" [value]="option.value" [checked]="store.draft().tipoProcesso.selected === option.value" (change)="select(option.value)">
+      <div class="type-card__head">
+        <span class="type-card__name">{{ option.name }}</span>
+        <svg aria-hidden="true" class="type-card__check" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewBox="0 0 24 24" width="20"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <p class="type-card__desc">{{ option.description }}</p>
+      @if (option.tags.length) {
+        <div class="type-card__tags">@for (tag of option.tags; track tag) { <span class="type-card__tag">{{ tag }}</span> }</div>
+      }
+      <span class="type-card__legal">{{ option.legal }}</span>
+    </label>
+  }
+</fieldset>

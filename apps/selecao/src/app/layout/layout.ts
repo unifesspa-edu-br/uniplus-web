@@ -1,7 +1,26 @@
-import { Component, ChangeDetectionStrategy, inject, DestroyRef, signal, computed } from '@angular/core';
-import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  DestroyRef,
+  signal,
+  computed,
+} from '@angular/core';
+import {
+  ActivatedRouteSnapshot,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
-import { A11yMenuComponent, InstitutionalBarComponent, SkipLinkComponent, VlibrasLoaderComponent } from '@uniplus/shared-ui';
+import {
+  A11yMenuComponent,
+  InstitutionalBarComponent,
+  SkipLinkComponent,
+  VlibrasLoaderComponent,
+} from '@uniplus/shared-ui';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import {
