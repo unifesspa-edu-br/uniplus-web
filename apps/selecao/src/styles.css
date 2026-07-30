@@ -484,6 +484,13 @@ cfg-pesos-enem-page {
   flex-wrap: wrap;
 }
 
+.panel-head__link {
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
 .panel-head h2 {
   margin: 0;
   color: var(--text-heading);
@@ -1229,6 +1236,22 @@ cfg-pesos-enem-page {
   background: var(--color-primary);
   margin-top: 6px;
   flex-shrink: 0;
+}
+
+.tline__bullet--info {
+  background: var(--color-primary);
+}
+
+.tline__bullet--danger {
+  background: var(--color-danger-500);
+}
+
+.tline__bullet--success {
+  background: var(--color-success-600);
+}
+
+.tline__bullet--warning {
+  background: var(--color-warning-600);
 }
 
 .tline__body {
