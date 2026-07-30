@@ -13,7 +13,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
 
 @Component({
-  selector: 'app-step-04-vagas',
+  selector: 'sel-step-04-vagas',
   standalone: true,
   templateUrl: './step-04-vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,7 +60,7 @@ export class Step04VagasComponent {
     this.closeModal();
   }
 
-  onBackdrop(event: MouseEvent): void {
+  onBackdrop(event: Event): void {
     if (event.target === this.dialog?.nativeElement) this.closeModal();
   }
 

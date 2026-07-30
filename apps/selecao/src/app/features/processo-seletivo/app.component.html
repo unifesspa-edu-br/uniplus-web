@@ -23,47 +23,47 @@
           aria-label="Fechar lista de etapas" (click)="closeStepsOverlay()"><svg width="18" height="18"
             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M18 6L6 18M6 6l12 12" />
-          </svg></button></div><app-wizard-stepper [mobile]="true"
-        (stepSelected)="closeStepsOverlay()"></app-wizard-stepper>
+          </svg></button></div><sel-wizard-stepper [mobile]="true"
+        (stepSelected)="closeStepsOverlay()"></sel-wizard-stepper>
     </div>
 
     <main id="main" class="page1 page1--wizard" tabindex="-1" [attr.inert]="stepsOverlayOpen() ? '' : null">
-      <nav class="wiz-nav" aria-label="Etapas do cadastro"><app-wizard-stepper></app-wizard-stepper></nav>
+      <nav class="wiz-nav" aria-label="Etapas do cadastro"><sel-wizard-stepper></sel-wizard-stepper></nav>
       <div class="wiz-body">
         <div class="wiz-content">
           <div aria-live="polite" aria-atomic="true">
             <section class="step-pane" [hidden]="store.currentStep() !== 0">
-              <app-step-01-tipo-processo></app-step-01-tipo-processo>
+              <sel-step-01-tipo-processo></sel-step-01-tipo-processo>
             </section>
             <section class="step-pane" [hidden]="store.currentStep() !== 1">
-              <app-step-02-identificacao></app-step-02-identificacao>
+              <sel-step-02-identificacao></sel-step-02-identificacao>
             </section>
             <section class="step-pane" [hidden]="store.currentStep() !== 2">
-              <app-step-03-modalidades></app-step-03-modalidades>
+              <sel-step-03-modalidades></sel-step-03-modalidades>
             </section>
-            <section class="step-pane" [hidden]="store.currentStep() !== 3"><app-step-04-vagas></app-step-04-vagas>
+            <section class="step-pane" [hidden]="store.currentStep() !== 3"><sel-step-04-vagas></sel-step-04-vagas>
             </section>
-            <section class="step-pane" [hidden]="store.currentStep() !== 4"><app-step-05-etapas></app-step-05-etapas>
+            <section class="step-pane" [hidden]="store.currentStep() !== 4"><sel-step-05-etapas></sel-step-05-etapas>
             </section>
-            <section class="step-pane" [hidden]="store.currentStep() !== 5"><app-step-06-formula></app-step-06-formula>
+            <section class="step-pane" [hidden]="store.currentStep() !== 5"><sel-step-06-formula></sel-step-06-formula>
             </section>
-            <section class="step-pane" [hidden]="store.currentStep() !== 6"><app-step-07-bonus></app-step-07-bonus>
+            <section class="step-pane" [hidden]="store.currentStep() !== 6"><sel-step-07-bonus></sel-step-07-bonus>
             </section>
             <section class="step-pane" [hidden]="store.currentStep() !== 7">
-              <app-step-08-desempate></app-step-08-desempate>
+              <sel-step-08-desempate></sel-step-08-desempate>
             </section>
             <section class="step-pane" [hidden]="store.currentStep() !== 8">
-              <app-step-09-eliminacao></app-step-09-eliminacao>
+              <sel-step-09-eliminacao></sel-step-09-eliminacao>
             </section>
             <section class="step-pane" [hidden]="store.currentStep() !== 9">
-              <app-step-10-documentos></app-step-10-documentos>
+              <sel-step-10-documentos></sel-step-10-documentos>
             </section>
-            <section class="step-pane" [hidden]="store.currentStep() !== 10"><app-step-11-polos></app-step-11-polos>
+            <section class="step-pane" [hidden]="store.currentStep() !== 10"><sel-step-11-polos></sel-step-11-polos>
             </section>
             <section class="step-pane" [hidden]="store.currentStep() !== 11">
-              <app-step-12-atendimento></app-step-12-atendimento>
+              <sel-step-12-atendimento></sel-step-12-atendimento>
             </section>
-            <section class="step-pane" [hidden]="store.currentStep() !== 12"><app-step-13-revisao></app-step-13-revisao>
+            <section class="step-pane" [hidden]="store.currentStep() !== 12"><sel-step-13-revisao></sel-step-13-revisao>
             </section>
           </div>
         </div>

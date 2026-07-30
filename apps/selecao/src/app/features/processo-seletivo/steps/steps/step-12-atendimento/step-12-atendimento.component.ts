@@ -1,8 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ATENDIMENTO_CONDICOES, ATENDIMENTO_RECURSOS, PCD_TIPOS } from '../../processo-seletivo.data';
+import {
+  ATENDIMENTO_CONDICOES,
+  ATENDIMENTO_RECURSOS,
+  PCD_TIPOS,
+} from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
-@Component({ selector: 'app-step-12-atendimento', standalone: true, templateUrl: './step-12-atendimento.component.html', changeDetection: ChangeDetectionStrategy.OnPush })
+@Component({
+  selector: 'sel-step-12-atendimento',
+  standalone: true,
+  templateUrl: './step-12-atendimento.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
 export class Step12AtendimentoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly conditions = ATENDIMENTO_CONDICOES;

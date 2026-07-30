@@ -1,8 +1,15 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 
 @Component({
-  selector: 'app-wizard-stepper',
+  selector: 'sel-wizard-stepper',
   standalone: true,
   templateUrl: './wizard-stepper.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
