@@ -285,6 +285,25 @@
 [data-theme="contrast"] .tag--solid { color: var(--text-on-primary); }
 
 /* ============================================================================
+ * BULLET
+ * variant: primary, success, warning, danger, neutral
+ * ========================================================================== */
+.bullet {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.bullet--primary { background: var(--color-primary); }
+.bullet--success { background: var(--color-success-600); }
+.bullet--warning { background: var(--color-warning-600); }
+.bullet--neutral { background: var(--color-neutral-100); }
+.bullet--danger { background: var(--color-danger-500); }
+
+/* ============================================================================
  * CARD
  * ========================================================================== */
 .card {
