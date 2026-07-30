@@ -1,0 +1,21 @@
+<div class="step-head"><span class="step-head__badge">Passo 10</span><h1 tabindex="-1">Passo 10: Documentos por modalidade</h1><p>Marque quais documentos cada modalidade exige. Mesmo documento pode ser obrigatório para algumas modalidades e opcional para outras.</p></div>
+<fieldset class="scroll-tabela">
+  <div>
+    @for (group of groups; track group.label) {
+      <div class="docs-group"><h2 class="docs-group__label">{{ group.label }}</h2>
+        @for (doc of group.docs; track doc.id) {
+          <div class="doc-item">
+            <div class="doc-item__row"><input class="doc-checkbox" type="checkbox" [id]="'doc-' + doc.id" [checked]="config(doc.id).included" (change)="patch(doc.id, { included: $any($event.target).checked })"><div class="doc-item__info"><label class="doc-item__name" [for]="'doc-' + doc.id">{{ doc.nome }}</label><span class="doc-item__desc">{{ doc.desc }}</span></div><span class="doc-item__badge" [class.doc-item__badge--included]="config(doc.id).included">{{ config(doc.id).included ? 'Incluído' : 'Não faz parte do edital' }}</span></div>
+            @if (config(doc.id).included) {
+              <div class="doc-expand"><strong class="doc-expand__q">Em quais etapas é obrigatório?</strong><p class="doc-expand__hint">Marque "Todas as etapas" para exigir o documento desde a inscrição até o resultado final, ou escolha apenas as etapas específicas.</p>
+                <label class="doc-expand__all"><input class="doc-all-chk" type="checkbox" [checked]="config(doc.id).todasEtapas" (change)="toggleTodasEtapas(doc.id, $any($event.target).checked)"><span>Todas as etapas do edital</span></label>
+                <div class="doc-expand__etapas">@for (etapa of etapas; track etapa.cod) { <label class="doc-etapa-item"><input class="doc-etapa-chk" type="checkbox" [checked]="config(doc.id).etapas.includes(etapa.cod)" [disabled]="config(doc.id).todasEtapas" (change)="toggleEtapa(doc.id, etapa.cod, $any($event.target).checked)"><span><span class="doc-etapa-num">{{ etapa.num }} —</span><br>{{ etapa.cod }}</span></label> }</div>
+                <strong class="doc-expand__q">Modalidades que devem entregar</strong><div class="doc-expand__mods">@for (code of modalidades; track code) { <label class="doc-mod-item"><input type="checkbox" [checked]="config(doc.id).modalidades.includes(code)" (change)="toggleModalidade(doc.id, code, $any($event.target).checked)"><span>{{ code }}</span></label> }</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</fieldset>

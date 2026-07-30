@@ -1,4 +1,10 @@
-import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  signal,
+  computed,
+  ViewEncapsulation,
+} from '@angular/core';
 import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui';
 import { DecimalPipe } from '@angular/common';
 
@@ -8,6 +14,8 @@ import { DecimalPipe } from '@angular/common';
   imports: [TagComponent, EmptyStateComponent, DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'sel-page' },
+  styleUrl: './dashboard.page.css',
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div class="page-header">
       <div class="page-header__content">
@@ -104,11 +112,7 @@ import { DecimalPipe } from '@angular/common';
       <div class="panel">
         <div class="panel-head">
           <h2>Próximos prazos</h2>
-          <a
-            href="#"
-            style="font-size:var(--text-sm);color:var(--color-primary);font-weight:500;text-decoration:none"
-            >Ver agenda</a
-          >
+          <a href="#">Ver agenda</a>
         </div>
         <div class="timeline">
           <div class="tline">
@@ -148,11 +152,7 @@ import { DecimalPipe } from '@angular/common';
       <div class="panel">
         <div class="panel-head">
           <h2>Atividade recente</h2>
-          <a
-            href="#"
-            style="font-size:var(--text-sm);color:var(--color-primary);font-weight:500;text-decoration:none"
-            >Ver tudo</a
-          >
+          <a href="#">Ver tudo</a>
         </div>
         <div class="timeline">
           <div class="tline">
@@ -201,7 +201,7 @@ interface ProcessoSeletivoDTO {
   id: number;
   titulo: string;
   subtitulo: string;
-  modalidade: 'Graduação' | 'Pós-graduação'  | 'Mestrado' | 'Doutorado';
+  modalidade: 'Graduação' | 'Pós-graduação' | 'Mestrado' | 'Doutorado';
   numeroInscritos: number;
   numeroVagas: number;
   dataPrazo: Date;
