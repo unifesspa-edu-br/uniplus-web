@@ -3,7 +3,7 @@ import { EtapaEdital } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
 @Component({
-  selector: 'app-step-05-etapas',
+  selector: 'sel-step-05-etapas',
   standalone: true,
   templateUrl: './step-05-etapas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -15,14 +15,22 @@ export class Step05EtapasComponent {
   add(): void {
     const etapa: EtapaEdital = {
       id: `etapa-${this.nextId++}`,
-      tipo: '', inicio: '2026-01-01', fim: '2026-01-30', nomeCustomizado: '',
-      permiteRecurso: false, tagNumeroAtiva: false, administrativa: false,
+      tipo: '',
+      inicio: '2026-01-01',
+      fim: '2026-01-30',
+      nomeCustomizado: '',
+      permiteRecurso: false,
+      tagNumeroAtiva: false,
+      administrativa: false,
     };
     this.store.patchSection('etapas', [...this.store.draft().etapas, etapa]);
   }
 
   update(id: string, patch: Partial<EtapaEdital>): void {
-    this.store.patchSection('etapas', this.store.draft().etapas.map((item) => item.id === id ? { ...item, ...patch } : item));
+    this.store.patchSection(
+      'etapas',
+      this.store.draft().etapas.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
   }
 
   move(index: number, delta: number): void {
@@ -34,10 +42,17 @@ export class Step05EtapasComponent {
   }
 
   remove(id: string): void {
-    this.store.patchSection('etapas', this.store.draft().etapas.filter((item) => item.id !== id));
+    this.store.patchSection(
+      'etapas',
+      this.store.draft().etapas.filter((item) => item.id !== id),
+    );
   }
 
   openPicker(input: HTMLInputElement): void {
-    try { input.showPicker(); } catch { input.focus(); }
+    try {
+      input.showPicker();
+    } catch {
+      input.focus();
+    }
   }
 }

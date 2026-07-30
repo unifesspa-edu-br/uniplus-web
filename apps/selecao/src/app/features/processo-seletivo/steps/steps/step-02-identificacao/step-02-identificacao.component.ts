@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { UploadItem } from '../../processo-seletivo.models';
 
 @Component({
-  selector: 'app-step-02-identificacao',
+  selector: 'sel-step-02-identificacao',
   standalone: true,
   templateUrl: './step-02-identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,12 +27,19 @@ export class Step02IdentificacaoComponent {
     this.destroyRef.onDestroy(() => this.timers.forEach((timer) => clearInterval(timer)));
   }
 
-  patch(field: 'numero' | 'ano' | 'data' | 'orgao' | 'periodo' | 'nome', value: string | number): void {
+  patch(
+    field: 'numero' | 'ano' | 'data' | 'orgao' | 'periodo' | 'nome',
+    value: string | number,
+  ): void {
     this.store.patchObjectSection('identificacao', { [field]: value });
   }
 
   openDatePicker(input: HTMLInputElement): void {
-    try { input.showPicker(); } catch { input.focus(); }
+    try {
+      input.showPicker();
+    } catch {
+      input.focus();
+    }
   }
 
   chooseFiles(): void {
@@ -77,7 +92,7 @@ export class Step02IdentificacaoComponent {
       }
       const progress = Math.min(item.progress + Math.random() * 18 + 7, 100);
       this.store.patchObjectSection('identificacao', {
-        uploads: uploads.map((upload) => upload.id === id ? { ...upload, progress } : upload),
+        uploads: uploads.map((upload) => (upload.id === id ? { ...upload, progress } : upload)),
       });
       if (progress >= 100) {
         clearInterval(timer);

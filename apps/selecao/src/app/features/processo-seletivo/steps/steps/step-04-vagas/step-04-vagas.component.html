@@ -1,67 +1,137 @@
-<div class="step-head"><span class="step-head__badge">Passo 4</span><h1 tabindex="-1">Passo: 4 Vagas</h1><p>Quadro de vagas (Anexo I)</p></div>
+<div class="step-head"><span class="step-head__badge">Passo 4</span>
+  <h1 tabindex="-1">Passo: 4 Vagas</h1>
+  <p>Quadro de vagas (Anexo I)</p>
+</div>
 <div class="step-section">
-  <p class="step-section__desc" style="font-size:var(--text-sm);color:var(--text-secondary);margin:0 0 var(--space-4)">Curso, campus, turno e vagas totais. Distribuição por modalidade pode ser configurada por edital ou seguir percentuais legais (Lei 12.711/2012).</p>
+  <p class="step-section__desc" style="font-size:var(--text-sm);color:var(--text-secondary);margin:0 0 var(--space-4)">
+    Curso, campus, turno e vagas totais. Distribuição por modalidade pode ser configurada por edital ou seguir
+    percentuais legais (Lei 12.711/2012).</p>
   <div class="vagas-toolbar">
-    <button #addButton class="btn btn--outline btn--sm" type="button" (click)="openModal()"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewBox="0 0 24 24" width="16"><path d="M12 5v14M5 12h14"/></svg>Adicionar curso</button>
+    <button #addButton class="btn btn--outline btn--sm" type="button" (click)="openModal()"><svg aria-hidden="true"
+        fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewBox="0 0 24 24"
+        width="16">
+        <path d="M12 5v14M5 12h14" />
+      </svg>Adicionar curso</button>
   </div>
   <div class="vagas-section-wrap">
     <div class="vagas-table-wrap">
       <table aria-label="Quadro de vagas" class="vagas-table">
-        <thead><tr><th>Curso</th><th>Campus</th><th class="vagas-table__turno">Turno</th><th class="vagas-table__vagas">Vagas</th><th>Ações</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Curso</th>
+            <th>Campus</th>
+            <th class="vagas-table__turno">Turno</th>
+            <th class="vagas-table__vagas">Vagas</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
         <tbody>
           @for (oferta of ofertas(); track oferta.id) {
-            <tr>
-              <td><div class="vagas-table__curso-nome">{{ oferta.nome }}</div><div class="vagas-table__curso-grau">{{ oferta.grau }}</div></td>
-              <td><div>{{ oferta.campus }}</div><div class="vagas-table__campus-un">{{ oferta.unidade }}</div></td>
-              <td class="vagas-table__turno">
-                <select class="vagas-table__select" aria-label="Turno" [value]="oferta.turno" (change)="update(oferta.id, { turno: $any($event.target).value })">
-                  <option value="">Selecione</option><option value="matutino">Matutino</option><option value="vespertino">Vespertino</option><option value="noturno">Noturno</option>
-                </select>
-              </td>
-              <td class="vagas-table__vagas">
-                <div class="vagas-counter"><button class="vagas-counter__btn" type="button" aria-label="Diminuir" (click)="increment(oferta.id, -1)">−</button><input class="vagas-counter__input" type="number" min="0" max="9999" aria-label="Vagas" [value]="oferta.vagas" (change)="changeVagas(oferta.id, +$any($event.target).value)"><button class="vagas-counter__btn" type="button" aria-label="Aumentar" (click)="increment(oferta.id, 1)">+</button></div>
-              </td>
-              <td style="text-align:center"><button class="vagas-del" type="button" [attr.aria-label]="'Remover ' + oferta.nome" (click)="remove(oferta.id)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></td>
-            </tr>
+          <tr>
+            <td>
+              <div class="vagas-table__curso-nome">{{ oferta.nome }}</div>
+              <div class="vagas-table__curso-grau">{{ oferta.grau }}</div>
+            </td>
+            <td>
+              <div>{{ oferta.campus }}</div>
+              <div class="vagas-table__campus-un">{{ oferta.unidade }}</div>
+            </td>
+            <td class="vagas-table__turno">
+              <select class="vagas-table__select" aria-label="Turno" [value]="oferta.turno"
+                (change)="update(oferta.id, { turno: $any($event.target).value })">
+                <option value="">Selecione</option>
+                <option value="matutino">Matutino</option>
+                <option value="vespertino">Vespertino</option>
+                <option value="noturno">Noturno</option>
+              </select>
+            </td>
+            <td class="vagas-table__vagas">
+              <div class="vagas-counter"><button class="vagas-counter__btn" type="button" aria-label="Diminuir"
+                  (click)="increment(oferta.id, -1)">−</button><input class="vagas-counter__input" type="number" min="0"
+                  max="9999" aria-label="Vagas" [value]="oferta.vagas"
+                  (change)="changeVagas(oferta.id, +$any($event.target).value)"><button class="vagas-counter__btn"
+                  type="button" aria-label="Aumentar" (click)="increment(oferta.id, 1)">+</button></div>
+            </td>
+            <td style="text-align:center"><button class="vagas-del" type="button"
+                [attr.aria-label]="'Remover ' + oferta.nome" (click)="remove(oferta.id)"><svg width="16" height="16"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  aria-hidden="true">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                </svg></button></td>
+          </tr>
           }
         </tbody>
       </table>
     </div>
     @if (ofertas().length) {
-      <div class="vagas-cards-wrap">
-        <div class="vagas-cards-header">Oferta de curso</div>
-        @for (oferta of ofertas(); track oferta.id) {
-          <div class="vagas-card-item">
-            <div class="vagas-card-item__curso">{{ oferta.nome }} — {{ oferta.grau }}</div>
-            <div class="vagas-card-item__campus">{{ oferta.campus }} — {{ oferta.unidade }}</div>
-            <div class="vagas-card-item__fields">
-              <div><div class="vagas-card-item__lbl">Turno</div><select class="vagas-table__select" aria-label="Turno" [value]="oferta.turno" (change)="update(oferta.id, { turno: $any($event.target).value })"><option value="">Selecione</option><option value="matutino">Matutino</option><option value="vespertino">Vespertino</option><option value="noturno">Noturno</option></select></div>
-              <div><div class="vagas-card-item__lbl">Vagas</div><div class="vagas-counter"><button class="vagas-counter__btn" type="button" aria-label="Diminuir" (click)="increment(oferta.id, -1)">−</button><input class="vagas-counter__input" type="number" min="0" max="9999" aria-label="Vagas" [value]="oferta.vagas" (change)="changeVagas(oferta.id, +$any($event.target).value)"><button class="vagas-counter__btn" type="button" aria-label="Aumentar" (click)="increment(oferta.id, 1)">+</button></div></div>
-              <div><button class="vagas-del" type="button" [attr.aria-label]="'Remover ' + oferta.nome" (click)="remove(oferta.id)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>
-            </div>
+    <div class="vagas-cards-wrap">
+      <div class="vagas-cards-header">Oferta de curso</div>
+      @for (oferta of ofertas(); track oferta.id) {
+      <div class="vagas-card-item">
+        <div class="vagas-card-item__curso">{{ oferta.nome }} — {{ oferta.grau }}</div>
+        <div class="vagas-card-item__campus">{{ oferta.campus }} — {{ oferta.unidade }}</div>
+        <div class="vagas-card-item__fields">
+          <div>
+            <div class="vagas-card-item__lbl">Turno</div><select class="vagas-table__select" aria-label="Turno"
+              [value]="oferta.turno" (change)="update(oferta.id, { turno: $any($event.target).value })">
+              <option value="">Selecione</option>
+              <option value="matutino">Matutino</option>
+              <option value="vespertino">Vespertino</option>
+              <option value="noturno">Noturno</option>
+            </select>
           </div>
-        }
+          <div>
+            <div class="vagas-card-item__lbl">Vagas</div>
+            <div class="vagas-counter"><button class="vagas-counter__btn" type="button" aria-label="Diminuir"
+                (click)="increment(oferta.id, -1)">−</button><input class="vagas-counter__input" type="number" min="0"
+                max="9999" aria-label="Vagas" [value]="oferta.vagas"
+                (change)="changeVagas(oferta.id, +$any($event.target).value)"><button class="vagas-counter__btn"
+                type="button" aria-label="Aumentar" (click)="increment(oferta.id, 1)">+</button></div>
+          </div>
+          <div><button class="vagas-del" type="button" [attr.aria-label]="'Remover ' + oferta.nome"
+              (click)="remove(oferta.id)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+              </svg></button></div>
+        </div>
       </div>
+      }
+    </div>
     } @else {
-      <div class="vagas-empty-state desktop-only">Nenhum curso adicionado. Clique em "+ Adicionar curso" para começar.</div>
+    <div class="vagas-empty-state desktop-only">Nenhum curso adicionado. Clique em "+ Adicionar curso" para começar.
+    </div>
     }
     <div class="vagas-total-bar">Total de vagas: <span>{{ total() }}</span></div>
   </div>
 </div>
-<dialog #vagasDialog aria-labelledby="vagas-modal-title" class="vagas-modal" (click)="onBackdrop($event)" (cancel)="onCancel($event)">
+<dialog #vagasDialog aria-labelledby="vagas-modal-title" class="vagas-modal" tabindex="-1" (click)="onBackdrop($event)"
+  (keydown)="onBackdrop($event)" (cancel)="onCancel($event)">
   <div class="vagas-modal__panel">
-    <div class="vagas-modal__header"><h2 class="vagas-modal__title" id="vagas-modal-title">Adicionar cursos</h2><button aria-label="Fechar modal" class="vagas-modal__close" type="button" (click)="closeModal()"><svg aria-hidden="true" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewBox="0 0 24 24" width="20"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="vagas-modal__header">
+      <h2 class="vagas-modal__title" id="vagas-modal-title">Adicionar cursos</h2><button aria-label="Fechar modal"
+        class="vagas-modal__close" type="button" (click)="closeModal()"><svg aria-hidden="true" fill="none" height="20"
+          stroke="currentColor" stroke-linecap="round" stroke-width="2.5" viewBox="0 0 24 24" width="20">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg></button>
+    </div>
     <div class="vagas-modal__body">
-      <div class="vagas-modal__item vagas-modal__item--all"><input id="vagas-modal-marcar-todos" type="checkbox" [checked]="modalAll()" [indeterminate]="modalIndeterminate()" (change)="toggleAll($any($event.target).checked)"><label for="vagas-modal-marcar-todos"><strong>Marcar todos</strong></label></div>
+      <div class="vagas-modal__item vagas-modal__item--all"><input id="vagas-modal-marcar-todos" type="checkbox"
+          [checked]="modalAll()" [indeterminate]="modalIndeterminate()"
+          (change)="toggleAll($any($event.target).checked)"><label for="vagas-modal-marcar-todos"><strong>Marcar
+            todos</strong></label></div>
       <ul aria-labelledby="vagas-modal-title" class="vagas-modal__list" role="group">
         @for (curso of cursos; track curso.id) {
-          <li class="vagas-modal__item" [class.is-added]="courseAdded(curso)">
-            <input [id]="'mc-' + curso.id" type="checkbox" [checked]="courseAdded(curso) || pendingIds().has(curso.id)" [disabled]="courseAdded(curso)" (change)="togglePending(curso.id, $any($event.target).checked)">
-            <label [for]="'mc-' + curso.id"><span class="vagas-modal__item__nome">{{ curso.nome }} — {{ curso.grau }}</span><span class="vagas-modal__item__info">{{ curso.campus }} — {{ curso.unidade }}</span></label>
-          </li>
+        <li class="vagas-modal__item" [class.is-added]="courseAdded(curso)">
+          <input [id]="'mc-' + curso.id" type="checkbox" [checked]="courseAdded(curso) || pendingIds().has(curso.id)"
+            [disabled]="courseAdded(curso)" (change)="togglePending(curso.id, $any($event.target).checked)">
+          <label [for]="'mc-' + curso.id"><span class="vagas-modal__item__nome">{{ curso.nome }} — {{ curso.grau
+              }}</span><span class="vagas-modal__item__info">{{ curso.campus }} — {{ curso.unidade }}</span></label>
+        </li>
         }
       </ul>
     </div>
-    <div class="vagas-modal__footer"><button class="btn btn--ghost" type="button" (click)="closeModal()">Cancelar</button><button class="btn btn--primary" type="button" (click)="confirmSelection()">Confirmar seleção</button></div>
+    <div class="vagas-modal__footer"><button class="btn btn--ghost" type="button"
+        (click)="closeModal()">Cancelar</button><button class="btn btn--primary" type="button"
+        (click)="confirmSelection()">Confirmar seleção</button></div>
   </div>
 </dialog>

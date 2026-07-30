@@ -12,7 +12,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
 
 @Component({
-  selector: 'app-step-08-desempate',
+  selector: 'sel-step-08-desempate',
   standalone: true,
   templateUrl: './step-08-desempate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,7 +50,7 @@ export class Step08DesempateComponent {
     event.preventDefault();
     this.close();
   }
-  backdrop(event: MouseEvent): void {
+  backdrop(event: Event): void {
     if (event.target === this.dialog?.nativeElement) this.close();
   }
 
