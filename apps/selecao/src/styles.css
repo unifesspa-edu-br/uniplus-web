@@ -405,39 +405,12 @@ sel-layout {
   margin-left: auto;
 }
 
-/* .page {
+#cfg-main {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-default) transparent;
 }
-
-.page::-webkit-scrollbar {
-  width: 6px;
-}
-
-.page::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.page::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--text-muted) 40%, transparent);
-  border-radius: 999px;
-}
-
-.page::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--text-muted) 60%, transparent);
-}
-
-@media (min-width: 768px) {
-  .page {
-    padding: var(--space-7);
-  }
-} */
 
 cfg-unidades-page,
 cfg-instituicao-page,
@@ -455,22 +428,19 @@ cfg-pesos-enem-page {
   overflow: hidden;
 }
 
-/* O admin-shell do processo seletivo não tem sidebar (a navegação é via
-   wizard stepper), então convertemos para flex column e o .page--wizard
-   dentro dele faz o layout row (stepper + conteúdo lado a lado). */
 .sel-processo .admin-shell {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   height: auto;
 }
 
-/* Reaplicamos as regras do wizard pois styles.css vem depois do kit.css
-   na cascade. O HTML usa a classe page1--wizard. */
 .page1--wizard {
   display: flex !important;
   flex-direction: row !important;
   flex: 1;
+  min-height: 0;
 }
 .page1 {
   display: flex !important;

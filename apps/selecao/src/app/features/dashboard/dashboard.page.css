@@ -6,6 +6,7 @@
   gap: var(--space-6);
   padding: var(--space-6);
   min-height: 0;
+  overflow-y: auto;
 }
 
 @media (min-width: 768px) {
