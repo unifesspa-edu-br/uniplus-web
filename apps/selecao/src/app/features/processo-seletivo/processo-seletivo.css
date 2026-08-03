@@ -138,6 +138,12 @@ body.has-sidebar-open {
   background: color-mix(in srgb, var(--text-on-inverse) 10%, transparent);
 }
 
+/* Chrome, Edge, Opera */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (min-width: 1024px) {
   .sidebar__close {
     display: none;

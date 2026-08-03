@@ -1,0 +1,11 @@
+/* O host <sel-type-card> é item direto do .type-grid (grid). Para que o
+   label .type-card interno ocupe toda a célula com a mesma altura dos
+   irmãos, o host precisa ser flex e o label esticar via flex: 1. */
+:host {
+  display: flex;
+}
+
+:host > .type-card {
+  flex: 1;
+  width: 100%;
+}
