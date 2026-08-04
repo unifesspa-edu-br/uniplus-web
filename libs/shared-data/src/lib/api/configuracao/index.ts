@@ -66,6 +66,13 @@ export {
   type OrigemDataFase,
 } from './fases-canonicas.api';
 export {
+  PrecedenciasFaseApi,
+  type AtualizarPrecedenciaFaseCommand,
+  type CriarPrecedenciaFaseCommand,
+  type PrecedenciaFaseDto,
+  type PrecedenciasFaseQuery,
+} from './precedencias-fase.api';
+export {
   TiposBancaApi,
   CODIGOS_TIPO_BANCA,
   type AtualizarTipoBancaCommand,
