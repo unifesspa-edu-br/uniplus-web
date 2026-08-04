@@ -264,6 +264,12 @@ export class LayoutComponent {
           exact: true,
         },
         {
+          label: 'Precedência de Fase',
+          icon: 'pi-sort-alt',
+          routerLink: '/precedencias-fase',
+          exact: true,
+        },
+        {
           label: 'Reserva Demográfica',
           icon: 'pi-chart-bar',
           routerLink: '/reserva-demografica',
