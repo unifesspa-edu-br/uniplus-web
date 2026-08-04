@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { CURSOS } from '../../processo-seletivo.data';
-import { Curso, OfertaCurso, Turno } from '../../processo-seletivo.models';
+import { Curso, OfertaCurso, StepValidation, Turno } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
 
@@ -117,5 +117,19 @@ export class Step04VagasComponent {
 
   courseAdded(course: Curso): boolean {
     return this.ofertas().some((item) => item.id === course.id);
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    if (!this.ofertas().length) {
+      return { valid: false, message: 'Adicione ao menos um curso ao quadro de vagas.' };
+    }
+    if (this.ofertas().some((item) => item.vagas <= 0)) {
+      return { valid: false, message: 'Todos os cursos devem ter pelo menos 1 vaga.' };
+    }
+    if (this.ofertas().some((item) => !item.turno)) {
+      return { valid: false, message: 'Informe o turno de cada curso.' };
+    }
+    return { valid: true };
   }
 }

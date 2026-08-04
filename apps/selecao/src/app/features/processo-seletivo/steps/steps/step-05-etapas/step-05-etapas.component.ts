@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { EtapaEdital } from '../../processo-seletivo.models';
+import { EtapaEdital, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
 @Component({
@@ -54,5 +54,22 @@ export class Step05EtapasComponent {
     } catch {
       input.focus();
     }
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    if (!this.store.draft().etapas.length) {
+      return { valid: false, message: 'Adicione ao menos uma etapa ao processo seletivo.' };
+    }
+    if (this.store.draft().etapas.some((item) => !item.tipo)) {
+      return { valid: false, message: 'Selecione o tipo de todas as etapas.' };
+    }
+    if (this.store.draft().etapas.some((item) => !item.inicio || !item.fim)) {
+      return { valid: false, message: 'Informe início e fim de todas as etapas.' };
+    }
+    if (this.store.draft().etapas.some((item) => item.fim.localeCompare(item.inicio) < 0)) {
+      return { valid: false, message: 'A data de fim não pode ser anterior à de início.' };
+    }
+    return { valid: true };
   }
 }

@@ -44,6 +44,7 @@
       <label class="label" for="f-periodo">Período de ingresso</label>
       <select class="input" id="f-periodo" [value]="store.draft().identificacao.periodo"
         (change)="patch('periodo', $any($event.target).value)">
+        <option value="">Selecione</option>
         <option>1º semestre</option>
         <option>2º semestre</option>
         <option>Anual</option>

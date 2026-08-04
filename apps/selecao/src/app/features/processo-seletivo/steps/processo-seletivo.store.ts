@@ -1,5 +1,10 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { DOC_ETAPAS, DOCUMENTO_GRUPOS, MODALIDADES_CANONICAS, STEP_LABELS } from './processo-seletivo.data';
+import {
+  DOC_ETAPAS,
+  DOCUMENTO_GRUPOS,
+  MODALIDADES_CANONICAS,
+  STEP_LABELS,
+} from './processo-seletivo.data';
 import { DocumentoConfig, EtapaEdital, StepStatus, WizardDraft } from './processo-seletivo.models';
 
 function initialDocumentos(): Record<string, DocumentoConfig> {
@@ -30,10 +35,17 @@ function initialEtapa(): EtapaEdital {
 }
 
 const INITIAL_DRAFT: WizardDraft = {
-  tipoProcesso: { selected: 'sisu' },
+  // Desmarcado por padrão — o usuário DEVE escolher um tipo no step-01.
+  tipoProcesso: { selected: '' },
+  // Todos os campos do Passo 2 começam vazios para obrigar o preenchimento.
   identificacao: {
-    numero: '2026', ano: 2026, data: '', orgao: 'CEPS/UNIFESSPA',
-    periodo: '1º semestre', nome: '', uploads: [],
+    numero: '',
+    ano: null,
+    data: '',
+    orgao: '',
+    periodo: '',
+    nome: '',
+    uploads: [],
   },
   modalidades: { selected: [], concorrenciaDupla: false },
   vagas: { cursos: [] },
@@ -63,6 +75,8 @@ export class ProcessoSeletivoStore {
   readonly visitedSteps = signal<ReadonlySet<number>>(new Set([0]));
   readonly completedSteps = signal<ReadonlySet<number>>(new Set());
   readonly draft = signal<WizardDraft>(structuredClone(INITIAL_DRAFT));
+  /** Mensagem de validação do step ativo. `null` indica sem erro. */
+  readonly stepError = signal<string | null>(null);
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
   readonly currentMeta = computed(() => {
@@ -80,11 +94,17 @@ export class ProcessoSeletivoStore {
   }
 
   next(): boolean {
+    if (this.stepError()) return false;
     const current = this.currentStep();
     if (current >= this.totalSteps - 1) return false;
     this.completedSteps.update((steps) => new Set(steps).add(current));
     this.goTo(current + 1);
     return true;
+  }
+
+  /** Define a mensagem de erro do step ativo (null limpa). */
+  setStepError(message: string | null): void {
+    this.stepError.set(message);
   }
 
   previous(): void {
@@ -102,7 +122,10 @@ export class ProcessoSeletivoStore {
     this.draft.update((draft) => ({ ...draft, [section]: value }));
   }
 
-  patchObjectSection<K extends keyof WizardDraft>(section: K, patch: Partial<WizardDraft[K]>): void {
+  patchObjectSection<K extends keyof WizardDraft>(
+    section: K,
+    patch: Partial<WizardDraft[K]>,
+  ): void {
     const current = this.draft()[section];
     if (Array.isArray(current) || typeof current !== 'object' || current === null) {
       throw new Error(`A seção ${String(section)} não aceita patch de objeto.`);
@@ -118,5 +141,6 @@ export class ProcessoSeletivoStore {
     this.visitedSteps.set(new Set([0]));
     this.completedSteps.set(new Set());
     this.draft.set(structuredClone(INITIAL_DRAFT));
+    this.stepError.set(null);
   }
 }

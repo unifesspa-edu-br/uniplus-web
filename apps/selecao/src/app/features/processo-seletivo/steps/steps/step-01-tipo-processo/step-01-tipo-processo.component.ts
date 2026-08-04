@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { TipoProcessoOption } from '../../processo-seletivo.models';
+import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
 import tiposProcesso from './tipos-processo.json';
 
 @Component({
@@ -25,5 +25,12 @@ export class Step01TipoProcessoComponent {
 
   select(value: string): void {
     this.store.patchObjectSection('tipoProcesso', { selected: value });
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    return this.store.draft().tipoProcesso.selected
+      ? { valid: true }
+      : { valid: false, message: 'Selecione um tipo de edital para continuar.' };
   }
 }

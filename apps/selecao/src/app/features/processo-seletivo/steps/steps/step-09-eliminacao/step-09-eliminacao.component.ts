@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-09-eliminacao',
@@ -36,5 +37,14 @@ export class Step09EliminacaoComponent {
     this.store.patchObjectSection('eliminacao', {
       clausulas: checked ? [...current, value] : current.filter((item) => item !== value),
     });
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    const notas = Object.values(this.store.draft().eliminacao.notasMinimas);
+    if (notas.some((value) => value !== null && value < 0)) {
+      return { valid: false, message: 'Notas mínimas não podem ser negativas.' };
+    }
+    return { valid: true };
   }
 }

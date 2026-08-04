@@ -1,5 +1,17 @@
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
 
+/**
+ * Resultado da validação declarativa de um step. Steps de domínio
+ * (seleção, grids, upload custom) implementam `validate(): StepValidation`;
+ * steps de formulário clássico usam Reactive Forms e traduzem o estado
+ * do form para esta mesma interface na hora de avançar.
+ */
+export interface StepValidation {
+  valid: boolean;
+  /** Mensagem central exibida com role="alert" quando `valid === false`. */
+  message?: string;
+}
+
 export interface TipoProcessoOption {
   value: string;
   name: string;
@@ -90,7 +102,7 @@ export interface WizardDraft {
   };
   identificacao: {
     numero: string;
-    ano: number;
+    ano: number | null;
     data: string;
     orgao: string;
     periodo: string;
