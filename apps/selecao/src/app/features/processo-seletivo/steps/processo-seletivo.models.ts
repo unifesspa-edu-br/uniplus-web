@@ -8,7 +8,12 @@ export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
  */
 export interface StepValidation {
   valid: boolean;
-  /** Mensagem central exibida com role="alert" quando `valid === false`. */
+  /** Lista de mensagens exibida com role="alert" quando `valid === false`. */
+  messages?: string[];
+  /**
+   * Mensagem única (forma simples). Normalizada para `messages` pela page.
+   * @deprecated Prefira `messages` para coletar todos os erros de uma vez.
+   */
   message?: string;
 }
 
@@ -23,7 +28,7 @@ export interface TipoProcessoOption {
 export interface UploadItem {
   id: string;
   name: string;
-  extension: 'pdf' | 'png';
+  extension: 'pdf' | 'png' | 'jpeg' | 'jpg' | 'docx';
   progress: number;
 }
 

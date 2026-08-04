@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 
@@ -10,6 +10,8 @@ import { StepValidation } from '../../processo-seletivo.models';
 })
 export class Step06FormulaComponent {
   readonly store = inject(ProcessoSeletivoStore);
+  /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
+  readonly invalidFields = signal<ReadonlySet<string>>(new Set());
   readonly preview = computed(() => {
     switch (this.store.draft().formula.agregacao) {
       case 'SOMA_PONDERADA_COM_FATOR':
@@ -25,9 +27,20 @@ export class Step06FormulaComponent {
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
-    if (!this.store.draft().formula.agregacao || !this.store.draft().formula.precisao) {
-      return { valid: false, message: 'Selecione a fórmula de classificação e a precisão.' };
+    const formula = this.store.draft().formula;
+    const messages: string[] = [];
+    const invalid = new Set<string>();
+
+    if (!formula.agregacao) {
+      messages.push('Selecione a fórmula de agregação.');
+      invalid.add('agregacao');
     }
-    return { valid: true };
+    if (!formula.precisao) {
+      messages.push('Selecione a regra de precisão.');
+      invalid.add('precisao');
+    }
+
+    this.invalidFields.set(invalid);
+    return messages.length ? { valid: false, messages } : { valid: true };
   }
 }

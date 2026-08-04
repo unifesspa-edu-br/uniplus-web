@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { EtapaEdital, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
@@ -10,6 +10,8 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 })
 export class Step05EtapasComponent {
   readonly store = inject(ProcessoSeletivoStore);
+  /** Campos inválidos detectados na última validação (chave `tipo|inicio|fim-{id}`). */
+  readonly invalidFields = signal<ReadonlySet<string>>(new Set());
   private nextId = 2;
 
   add(): void {
@@ -58,18 +60,41 @@ export class Step05EtapasComponent {
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
-    if (!this.store.draft().etapas.length) {
-      return { valid: false, message: 'Adicione ao menos uma etapa ao processo seletivo.' };
+    const etapas = this.store.draft().etapas;
+    const messages: string[] = [];
+    const invalid = new Set<string>();
+
+    if (!etapas.length) {
+      messages.push('Adicione ao menos uma etapa ao processo seletivo.');
     }
-    if (this.store.draft().etapas.some((item) => !item.tipo)) {
-      return { valid: false, message: 'Selecione o tipo de todas as etapas.' };
-    }
-    if (this.store.draft().etapas.some((item) => !item.inicio || !item.fim)) {
-      return { valid: false, message: 'Informe início e fim de todas as etapas.' };
-    }
-    if (this.store.draft().etapas.some((item) => item.fim.localeCompare(item.inicio) < 0)) {
-      return { valid: false, message: 'A data de fim não pode ser anterior à de início.' };
-    }
-    return { valid: true };
+
+    etapas.forEach((etapa) => {
+      if (!etapa.tipo) {
+        messages.push(
+          `Selecione o tipo da etapa "${etapa.nomeCustomizado || 'etapa'}" (${String(etapa.id)}).`,
+        );
+        invalid.add(`tipo-${etapa.id}`);
+      }
+      if (!etapa.inicio) {
+        messages.push(
+          `Informe o início da etapa "${etapa.nomeCustomizado || 'etapa'}" (${String(etapa.id)}).`,
+        );
+        invalid.add(`inicio-${etapa.id}`);
+      }
+      if (!etapa.fim) {
+        messages.push(
+          `Informe o fim da etapa "${etapa.nomeCustomizado || 'etapa'}" (${String(etapa.id)}).`,
+        );
+        invalid.add(`fim-${etapa.id}`);
+      } else if (etapa.inicio && etapa.fim.localeCompare(etapa.inicio) < 0) {
+        messages.push(
+          `A data de fim da etapa "${etapa.nomeCustomizado || 'etapa'}" (${String(etapa.id)}) é anterior ao início.`,
+        );
+        invalid.add(`fim-${etapa.id}`);
+      }
+    });
+
+    this.invalidFields.set(invalid);
+    return messages.length ? { valid: false, messages } : { valid: true };
   }
 }

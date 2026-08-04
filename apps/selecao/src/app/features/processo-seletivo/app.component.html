@@ -32,11 +32,24 @@
       <div class="wiz-body">
         <div class="wiz-content">
           <div aria-live="polite" aria-atomic="true">
-            @if (store.stepError(); as error) {
-            <p class="step-error" role="alert">
+            @if (store.stepError(); as errors) {
+            <div class="step-error" role="alert">
               <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-              {{ error }}
-            </p>
+              <div class="step-error__content">
+                <strong class="step-error__summary">
+                  @if (errors.length === 1) {
+                  Há 1 erro no formulário
+                  } @else {
+                  Há {{ errors.length }} erros no formulário
+                  }
+                </strong>
+                <ul class="step-error__list">
+                  @for (error of errors; track error) {
+                  <li>{{ error }}</li>
+                  }
+                </ul>
+              </div>
+            </div>
             }
             <section class="step-pane" [hidden]="store.currentStep() !== 0">
               <sel-step-01-tipo-processo #step01></sel-step-01-tipo-processo>
