@@ -25,8 +25,9 @@ function initialEtapa(): EtapaEdital {
   return {
     id: 'etapa-1',
     tipo: '',
-    inicio: '2026-01-01',
-    fim: '2026-01-30',
+    // Datas vazias — o usuário DEVE preencher início e fim no passo 5.
+    inicio: '',
+    fim: '',
     nomeCustomizado: '',
     permiteRecurso: false,
     tagNumeroAtiva: false,
@@ -50,7 +51,8 @@ const INITIAL_DRAFT: WizardDraft = {
   modalidades: { selected: [], concorrenciaDupla: false },
   vagas: { cursos: [] },
   etapas: [initialEtapa()],
-  formula: { agregacao: 'MEDIA_PONDERADA', precisao: 'MEDIA_PONDERADA' },
+  // Fórmula e precisão começam vazios — o usuário DEVE escolher no passo 6.
+  formula: { agregacao: '', precisao: '' },
   bonus: { ativo: false, tipo: '', valor: null, criterio: '', modalidades: [] },
   desempate: [],
   eliminacao: {
@@ -75,8 +77,8 @@ export class ProcessoSeletivoStore {
   readonly visitedSteps = signal<ReadonlySet<number>>(new Set([0]));
   readonly completedSteps = signal<ReadonlySet<number>>(new Set());
   readonly draft = signal<WizardDraft>(structuredClone(INITIAL_DRAFT));
-  /** Mensagem de validação do step ativo. `null` indica sem erro. */
-  readonly stepError = signal<string | null>(null);
+  /** Mensagens de validação do step ativo. `null` indica sem erro. */
+  readonly stepError = signal<string[] | null>(null);
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
   readonly currentMeta = computed(() => {
@@ -102,9 +104,9 @@ export class ProcessoSeletivoStore {
     return true;
   }
 
-  /** Define a mensagem de erro do step ativo (null limpa). */
-  setStepError(message: string | null): void {
-    this.stepError.set(message);
+  /** Define as mensagens de erro do step ativo (null limpa). */
+  setStepError(messages: string[] | null): void {
+    this.stepError.set(messages);
   }
 
   previous(): void {

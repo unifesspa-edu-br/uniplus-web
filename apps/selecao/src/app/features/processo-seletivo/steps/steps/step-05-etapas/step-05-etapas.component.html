@@ -36,7 +36,8 @@
       <div class="etapa-block__body">
         <div class="etapa-grid">
           <div class="etapa-grid__tipo form-field"><label class="label" [for]="'et-tipo-' + etapa.id">Tipo de
-              etapa</label><select [id]="'et-tipo-' + etapa.id" class="input" [value]="etapa.tipo"
+              etapa</label><select [id]="'et-tipo-' + etapa.id" class="input"
+              [class.is-invalid]="invalidFields().has('tipo-' + etapa.id)" [value]="etapa.tipo"
               (change)="update(etapa.id, { tipo: $any($event.target).value })">
               <option value="">Selecione</option>
               <option value="INSCRICAO_CANDIDATOS">INSCRICAO_CANDIDATOS - inscrição candidatos</option>
@@ -47,7 +48,7 @@
           <div class="etapa-grid__inicio form-field"><label class="label" [for]="'et-inicio-' + etapa.id">Início da
               jornada</label>
             <div class="input-icon-wrap"><input #inicio [id]="'et-inicio-' + etapa.id" class="input etapa-date"
-                type="date" [value]="etapa.inicio"
+                type="date" [class.is-invalid]="invalidFields().has('inicio-' + etapa.id)" [value]="etapa.inicio"
                 (input)="update(etapa.id, { inicio: $any($event.target).value })"><button type="button"
                 class="input-icon-wrap__btn" aria-label="Abrir calendário" (click)="openPicker(inicio)"><svg width="16"
                   height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -63,10 +64,11 @@
           <div class="etapa-grid__fim-wrap">
             <div class="form-field"><label class="label" [for]="'et-fim-' + etapa.id">Fim da janela</label>
               <div class="input-icon-wrap"><input #fim [id]="'et-fim-' + etapa.id" class="input etapa-date" type="date"
-                  [value]="etapa.fim" (input)="update(etapa.id, { fim: $any($event.target).value })"><button
-                  type="button" class="input-icon-wrap__btn" aria-label="Abrir calendário"
-                  (click)="openPicker(fim)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  [class.is-invalid]="invalidFields().has('fim-' + etapa.id)" [value]="etapa.fim"
+                  (input)="update(etapa.id, { fim: $any($event.target).value })"><button type="button"
+                  class="input-icon-wrap__btn" aria-label="Abrir calendário" (click)="openPicker(fim)"><svg width="16"
+                    height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" />
                     <path d="M16 2v4M8 2v4M3 10h18" />
                   </svg></button></div>

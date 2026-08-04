@@ -713,23 +713,46 @@ sel-processo.page1 {
   }
 }
 
-/* Mensagem de validação do step ativo (role="alert") */
+/* Mensagens de validação do step ativo (role="alert") */
 .step-error {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   margin: 0 0 var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-danger-400);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-danger-500) 8%, var(--surface-card));
   color: var(--color-danger-700);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  background: var(--color-danger-50);
+  border: 1px solid var(--color-danger-500);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
 }
 
 .step-error i {
   flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-error__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.step-error__summary {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.step-error__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
 }
 
 /* Step header */
@@ -1147,6 +1170,18 @@ sel-processo.page1 {
   margin: 0 0 var(--space-5);
 }
 
+/* Campo inválido — borda vermelha para ajudar a identificar o item vazio */
+.input.is-invalid,
+select.input.is-invalid,
+.upload-zone.is-invalid {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}
+
+.upload-zone.is-invalid {
+  background: color-mix(in srgb, var(--color-danger-500) 6%, var(--surface-subtle));
+}
+
 /* Step 3: chips de modalidades selecionadas */
 .modal-chips {
   display: flex;
@@ -1300,6 +1335,26 @@ sel-processo.page1 {
   cursor: pointer;
 }
 
+/* Erro de formato no upload */
+.upload-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger-500);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-50);
+  color: var(--color-danger-700);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.upload-error i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 .file-list-empty {
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -1345,6 +1400,14 @@ sel-processo.page1 {
   background: color-mix(in srgb, var(--color-warning-500) 12%, var(--surface-card));
 }
 
+.file-badge--jpeg,
+.file-badge--jpg,
+.file-badge--docx {
+  color: var(--color-info-700);
+  border-color: color-mix(in srgb, var(--color-info-600) 50%, transparent);
+  background: color-mix(in srgb, var(--color-info-600) 12%, var(--surface-card));
+}
+
 .file-info {
   flex: 1;
   min-width: 0;
@@ -1354,6 +1417,8 @@ sel-processo.page1 {
 }
 
 .file-name {
+  min-width: 0;
+  max-width: 100%;
   font-size: var(--text-sm);
   color: var(--text-primary);
   white-space: nowrap;
@@ -1371,6 +1436,12 @@ sel-processo.page1 {
 .file-progress__bar {
   height: 100%;
   border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  transition: width var(--duration-fast) var(--ease-standard);
+}
+
+.file-progress__bar.is-complete {
+  background: var(--color-success-600);
 }
 
 .file-delete {
@@ -1721,6 +1792,15 @@ dialog.vagas-modal {
   background: transparent;
   max-width: none;
   overflow: visible;
+}
+
+/* Centraliza apenas quando está aberto (showModal). Não forçamos display —
+   o browser controla `display: none` (fechado) vs `block` (aberto). */
+dialog.vagas-modal[open] {
+  margin: auto;
+  inset: 0;
+  width: fit-content;
+  height: fit-content;
 }
 
 dialog.vagas-modal::backdrop {

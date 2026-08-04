@@ -214,7 +214,12 @@ export class ProcessoSeletivoPage {
     const result = validator?.validate();
 
     if (result && !result.valid) {
-      this.store.setStepError(result.message ?? 'Preencha os campos obrigatórios para continuar.');
+      // Normaliza `message` (simples) e `messages` (lista) para `string[]`.
+      const list =
+        result.messages && result.messages.length > 0
+          ? result.messages
+          : [result.message ?? 'Preencha os campos obrigatórios para continuar.'];
+      this.store.setStepError(list);
       return;
     }
 
