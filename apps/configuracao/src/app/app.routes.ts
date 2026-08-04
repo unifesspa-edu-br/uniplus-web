@@ -84,6 +84,14 @@ export const appRoutes: Routes = [
           ),
       },
       {
+        path: 'precedencias-fase',
+        data: { breadcrumb: 'Precedência de Fase' },
+        loadChildren: () =>
+          import('./features/precedencias-fase/precedencias-fase.routes').then(
+            (m) => m.PRECEDENCIAS_FASE_ROUTES,
+          ),
+      },
+      {
         path: 'tipos-banca',
         data: { breadcrumb: 'Tipo de Banca' },
         loadChildren: () =>
