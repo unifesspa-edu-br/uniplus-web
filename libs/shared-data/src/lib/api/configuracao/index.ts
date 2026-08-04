@@ -57,11 +57,13 @@ export {
   FasesCanonicasApi,
   CODIGOS_FASE_CANONICA,
   DONOS_TIPICOS_FASE,
+  ORIGENS_DATA_FASE,
   type AtualizarFaseCanonicaCommand,
   type CodigoFaseCanonica,
   type CriarFaseCanonicaCommand,
   type FaseCanonicaDto,
   type FasesCanonicasQuery,
+  type OrigemDataFase,
 } from './fases-canonicas.api';
 export {
   TiposBancaApi,

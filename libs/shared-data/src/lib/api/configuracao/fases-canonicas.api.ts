@@ -44,6 +44,16 @@ export type CodigoFaseCanonica = (typeof CODIGOS_FASE_CANONICA)[number];
 export const DONOS_TIPICOS_FASE = ['CEPS', 'CRCA', 'MEC', 'CONSEPE'] as const;
 
 /**
+ * Origem da data da fase (UNI-REQ-0064). Domínio fechado de dois tokens, com
+ * allowlist textual no backend e CHECK em `fase_canonica.origem_data`:
+ * `PROPRIA` é data definida pela própria instituição; `DELEGADA` é data
+ * definida por terceiro (ex.: cronograma SiSU/MEC).
+ */
+export const ORIGENS_DATA_FASE = ['PROPRIA', 'DELEGADA'] as const;
+
+export type OrigemDataFase = (typeof ORIGENS_DATA_FASE)[number];
+
+/**
  * Cliente Angular standalone do recurso Fase canônica (módulo Configuração).
  * Vocabulário fechado de cronograma — código imutável após a criação
  * (`Atualizar*Command` não aceita `codigo`).

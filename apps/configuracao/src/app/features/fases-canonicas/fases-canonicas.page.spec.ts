@@ -19,6 +19,10 @@ const faseAvaliacaoSeed: FaseCanonicaDto = {
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
+  produzResultado: false,
+  resultadoDefinitivo: false,
+  coletaInscricao: false,
+  origemData: 'PROPRIA',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -129,6 +133,10 @@ describe('FasesCanonicasPage', () => {
       baseLegal: '',
       agrupaEtapas: true, // valor "vazado" de uma seleção anterior — não deve ser enviado
       permiteComplementacao: true,
+      origemData: 'PROPRIA',
+      produzResultado: false,
+      resultadoDefinitivo: false,
+      coletaInscricao: false,
     });
 
     component['salvar']();
@@ -138,6 +146,10 @@ describe('FasesCanonicasPage', () => {
       codigo: 'MATRICULA',
       agrupaEtapas: false,
       permiteComplementacao: false,
+      origemData: 'PROPRIA',
+      produzResultado: false,
+      resultadoDefinitivo: false,
+      coletaInscricao: false,
     });
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
@@ -179,6 +191,10 @@ describe('FasesCanonicasPage', () => {
       baseLegal: '',
       agrupaEtapas: false,
       permiteComplementacao: false,
+      origemData: 'PROPRIA',
+      produzResultado: false,
+      resultadoDefinitivo: false,
+      coletaInscricao: false,
     });
 
     component['salvar']();
@@ -200,6 +216,137 @@ describe('FasesCanonicasPage', () => {
       'Já existe uma fase canônica ativa com este código',
     );
     expect(component['formError']()).toBeNull();
+  });
+
+  it('origem da data é obrigatória e viaja no payload de criação', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].setValue({
+      codigo: 'MATRICULA',
+      donoTipico: 'CRCA',
+      nome: 'Matrícula',
+      descricao: '',
+      baseLegal: '',
+      agrupaEtapas: false,
+      permiteComplementacao: false,
+      origemData: '',
+      produzResultado: false,
+      resultadoDefinitivo: false,
+      coletaInscricao: false,
+    });
+
+    // O backend exige `origemData`; sem o campo no formulário, toda criação
+    // era recusada com 422 (#501).
+    component['salvar']();
+    controller.expectNone(`${BASE}/api/configuracao/admin/fases-canonicas`);
+
+    component['form'].controls.origemData.setValue('DELEGADA');
+    component['salvar']();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
+    expect(post.request.body).toMatchObject({ origemData: 'DELEGADA' });
+    post.flush('novo-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
+  it('resultado definitivo sem produção de resultado é barrado e não vaza no payload', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].setValue({
+      codigo: 'RESULTADO_FINAL',
+      donoTipico: 'CEPS',
+      nome: 'Resultado final',
+      descricao: '',
+      baseLegal: '',
+      agrupaEtapas: false,
+      permiteComplementacao: false,
+      origemData: 'PROPRIA',
+      produzResultado: false,
+      resultadoDefinitivo: true,
+      coletaInscricao: false,
+    });
+
+    // Mesma regra do backend: definitivo exige produzir resultado.
+    expect(component['form'].hasError('resultadoDefinitivoSemProducao')).toBe(true);
+    component['salvar']();
+    controller.expectNone(`${BASE}/api/configuracao/admin/fases-canonicas`);
+
+    component['form'].controls.produzResultado.setValue(true);
+    component['salvar']();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
+    expect(post.request.body).toMatchObject({
+      produzResultado: true,
+      resultadoDefinitivo: true,
+    });
+    post.flush('novo-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
+  it('desmarcar "produz resultado" zera o definitivo e não trava o envio', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].setValue({
+      codigo: 'RESULTADO_PRELIMINAR',
+      donoTipico: 'CEPS',
+      nome: 'Resultado preliminar',
+      descricao: '',
+      baseLegal: '',
+      agrupaEtapas: false,
+      permiteComplementacao: false,
+      origemData: 'PROPRIA',
+      produzResultado: true,
+      resultadoDefinitivo: true,
+      coletaInscricao: false,
+    });
+
+    // Voltar atrás esconde o controle de resultado definitivo; se o valor
+    // sobrevivesse, o validador do grupo barraria o envio sem exibir erro
+    // algum — o campo culpado já não está na tela.
+    component['form'].controls.produzResultado.setValue(false);
+    expect(component['showResultadoDefinitivo']()).toBe(false);
+    expect(component['form'].controls.resultadoDefinitivo.value).toBe(false);
+    expect(component['form'].valid).toBe(true);
+
+    component['salvar']();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
+    expect(post.request.body).toMatchObject({
+      produzResultado: false,
+      resultadoDefinitivo: false,
+    });
+    post.flush('novo-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
+  it('edição carrega os sinalizadores do DTO e os devolve na atualização', async () => {
+    const faseComResultado: FaseCanonicaDto = {
+      ...faseAvaliacaoSeed,
+      produzResultado: true,
+      resultadoDefinitivo: true,
+      coletaInscricao: false,
+      origemData: 'DELEGADA',
+    };
+    await flushLista([faseComResultado]);
+
+    component['abrirEdicao'](faseComResultado);
+    expect(component['form'].controls.origemData.value).toBe('DELEGADA');
+    expect(component['form'].controls.produzResultado.value).toBe(true);
+    expect(component['form'].controls.resultadoDefinitivo.value).toBe(true);
+
+    component['salvar']();
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/fases-canonicas/${faseComResultado.id}`,
+    );
+    expect(put.request.body).toMatchObject({
+      origemData: 'DELEGADA',
+      produzResultado: true,
+      resultadoDefinitivo: true,
+      coletaInscricao: false,
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([faseComResultado]);
   });
 
   it('CA-08: inativa uma fase canônica após confirmação', async () => {
