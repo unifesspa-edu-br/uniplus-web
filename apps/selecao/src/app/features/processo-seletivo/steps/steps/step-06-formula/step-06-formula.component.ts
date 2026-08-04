@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-06-formula',
@@ -21,4 +22,12 @@ export class Step06FormulaComponent {
         return 'NOTA_FINAL = ((N1×1) + (N2×1) + (N3×1) + (N4×1) + (N5×1)) / 5';
     }
   });
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    if (!this.store.draft().formula.agregacao || !this.store.draft().formula.precisao) {
+      return { valid: false, message: 'Selecione a fórmula de classificação e a precisão.' };
+    }
+    return { valid: true };
+  }
 }

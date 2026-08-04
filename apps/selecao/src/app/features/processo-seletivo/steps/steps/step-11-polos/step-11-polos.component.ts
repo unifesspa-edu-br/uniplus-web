@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { POLOS } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-11-polos',
@@ -22,5 +23,20 @@ export class Step11PolosComponent {
       ...this.store.draft().polos,
       [city]: { selected, capacidade },
     });
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    const selected = Object.entries(this.store.draft().polos).filter(
+      ([, config]) => config.selected,
+    );
+    if (!selected.length) return { valid: true };
+    const semCapacidade = selected.some(
+      ([, config]) => !config.capacidade || config.capacidade <= 0,
+    );
+    if (semCapacidade) {
+      return { valid: false, message: 'Informe a capacidade dos polos selecionados.' };
+    }
+    return { valid: true };
   }
 }

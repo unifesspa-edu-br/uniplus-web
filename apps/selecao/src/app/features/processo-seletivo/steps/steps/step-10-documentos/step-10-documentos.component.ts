@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DOC_ETAPAS, DOCUMENTO_GRUPOS, MODALIDADES_CANONICAS } from '../../processo-seletivo.data';
-import { DocumentoConfig } from '../../processo-seletivo.models';
+import { DocumentoConfig, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
 @Component({
@@ -41,5 +41,16 @@ export class Step10DocumentosComponent {
     this.patch(id, {
       modalidades: checked ? [...current, code] : current.filter((item) => item !== code),
     });
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    const semEtapa = Object.values(this.store.draft().documentos).some(
+      (config) => config.included && config.etapas.length === 0,
+    );
+    if (semEtapa) {
+      return { valid: false, message: 'Todo documento incluído deve ter ao menos uma etapa.' };
+    }
+    return { valid: true };
   }
 }

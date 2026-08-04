@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { REVIEW_NAMES } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-13-revisao',
@@ -18,5 +19,10 @@ export class Step13RevisaoComponent {
   readonly pending = computed(() => this.names.length - this.completed());
   stepNumber(index: number): string {
     return String(index + 1).padStart(2, '0');
+  }
+
+  /** Último passo — sempre válido (a publicação valida o rascunho completo). */
+  validate(): StepValidation {
+    return { valid: true };
   }
 }

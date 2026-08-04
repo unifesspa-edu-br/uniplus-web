@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MODALIDADES } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-03-modalidades',
@@ -30,5 +31,12 @@ export class Step03ModalidadesComponent {
     this.store.patchObjectSection('modalidades', {
       selected: checked ? [...selected, id] : selected.filter((item) => item !== id),
     });
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    return this.store.draft().modalidades.selected.length > 0
+      ? { valid: true }
+      : { valid: false, message: 'Selecione ao menos uma modalidade de concorrência.' };
   }
 }

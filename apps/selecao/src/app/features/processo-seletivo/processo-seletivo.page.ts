@@ -9,8 +9,10 @@ import {
   effect,
   inject,
   signal,
+  viewChildren,
 } from '@angular/core';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
+import { StepValidation } from './steps/processo-seletivo.models';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
 import { Step01TipoProcessoComponent } from './steps/steps/step-01-tipo-processo/step-01-tipo-processo.component';
@@ -58,6 +60,41 @@ export class ProcessoSeletivoPage {
   private readonly document = inject<Document>(DOCUMENT);
   private readonly root = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly overlayScroll = inject(OverlayScrollService);
+
+  /** Steps do wizard — cada um expõe validate(): StepValidation. */
+  private readonly step01 = viewChildren(Step01TipoProcessoComponent);
+  private readonly step02 = viewChildren(Step02IdentificacaoComponent);
+  private readonly step03 = viewChildren(Step03ModalidadesComponent);
+  private readonly step04 = viewChildren(Step04VagasComponent);
+  private readonly step05 = viewChildren(Step05EtapasComponent);
+  private readonly step06 = viewChildren(Step06FormulaComponent);
+  private readonly step07 = viewChildren(Step07BonusComponent);
+  private readonly step08 = viewChildren(Step08DesempateComponent);
+  private readonly step09 = viewChildren(Step09EliminacaoComponent);
+  private readonly step10 = viewChildren(Step10DocumentosComponent);
+  private readonly step11 = viewChildren(Step11PolosComponent);
+  private readonly step12 = viewChildren(Step12AtendimentoComponent);
+  private readonly step13 = viewChildren(Step13RevisaoComponent);
+
+  /** Retorna o componente do step ativo, se estiver instanciado. */
+  private stepValidatorAt(index: number): { validate(): StepValidation } | undefined {
+    const steps = [
+      this.step01()[0],
+      this.step02()[0],
+      this.step03()[0],
+      this.step04()[0],
+      this.step05()[0],
+      this.step06()[0],
+      this.step07()[0],
+      this.step08()[0],
+      this.step09()[0],
+      this.step10()[0],
+      this.step11()[0],
+      this.step12()[0],
+      this.step13()[0],
+    ] as const;
+    return steps[index];
+  }
 
   readonly sidebarMobileOpen = signal(false);
   readonly sidebarCollapsed = signal(false);
@@ -165,14 +202,24 @@ export class ProcessoSeletivoPage {
   }
 
   nextOrPublish(): void {
-    if (!this.store.isLast()) {
-      this.store.next();
+    if (this.store.isLast()) {
+      this.publicationMessage.set(
+        'Rascunho pronto para envio. Conecte publish() ao endpoint da sua API.',
+      );
+      console.warn('Payload do processo seletivo:', structuredClone(this.store.draft()));
       return;
     }
-    this.publicationMessage.set(
-      'Rascunho pronto para envio. Conecte publish() ao endpoint da sua API.',
-    );
-    console.warn('Payload do processo seletivo:', structuredClone(this.store.draft()));
+
+    const validator = this.stepValidatorAt(this.store.currentStep());
+    const result = validator?.validate();
+
+    if (result && !result.valid) {
+      this.store.setStepError(result.message ?? 'Preencha os campos obrigatórios para continuar.');
+      return;
+    }
+
+    this.store.setStepError(null);
+    this.store.next();
   }
 
   setTheme(value: 'light' | 'dark' | 'auto'): void {

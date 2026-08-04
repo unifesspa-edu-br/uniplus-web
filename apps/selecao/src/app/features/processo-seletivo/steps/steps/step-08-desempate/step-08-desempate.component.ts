@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CRITERIOS_DESEMPATE } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
 
 @Component({
@@ -88,5 +89,12 @@ export class Step08DesempateComponent {
       ),
     );
     this.close();
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    return this.store.draft().desempate.length > 0
+      ? { valid: true }
+      : { valid: false, message: 'Adicione ao menos um critério de desempate.' };
   }
 }

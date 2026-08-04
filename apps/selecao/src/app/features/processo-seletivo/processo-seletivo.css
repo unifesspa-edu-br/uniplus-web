@@ -713,6 +713,25 @@ sel-processo.page1 {
   }
 }
 
+/* Mensagem de validação do step ativo (role="alert") */
+.step-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger-400);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger-500) 8%, var(--surface-card));
+  color: var(--color-danger-700);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.step-error i {
+  flex-shrink: 0;
+}
+
 /* Step header */
 .step-head {
   margin-bottom: var(--space-6);

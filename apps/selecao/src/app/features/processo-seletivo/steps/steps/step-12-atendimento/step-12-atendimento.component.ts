@@ -5,6 +5,7 @@ import {
   PCD_TIPOS,
 } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { StepValidation } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-12-atendimento',
@@ -24,5 +25,14 @@ export class Step12AtendimentoComponent {
     const patch = { [field]: next };
     if (field === 'condicoes' && id === 'pcd' && !checked) Object.assign(patch, { tiposPcd: [] });
     this.store.patchObjectSection('atendimento', patch);
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    const atendimento = this.store.draft().atendimento;
+    if (atendimento.condicoes.includes('pcd') && !atendimento.tiposPcd.length) {
+      return { valid: false, message: 'Informe o tipo de deficiência para a condição PcD.' };
+    }
+    return { valid: true };
   }
 }

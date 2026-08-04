@@ -8,7 +8,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { UploadItem } from '../../processo-seletivo.models';
+import { StepValidation, UploadItem } from '../../processo-seletivo.models';
 
 @Component({
   selector: 'sel-step-02-identificacao',
@@ -29,8 +29,11 @@ export class Step02IdentificacaoComponent {
 
   patch(
     field: 'numero' | 'ano' | 'data' | 'orgao' | 'periodo' | 'nome',
-    value: string | number,
+    value: string | number | null,
   ): void {
+    if (field === 'ano' && typeof value === 'number' && !Number.isFinite(value)) {
+      value = null; // input numérico vazio
+    }
     this.store.patchObjectSection('identificacao', { [field]: value });
   }
 
@@ -79,6 +82,24 @@ export class Step02IdentificacaoComponent {
       uploads: [...this.store.draft().identificacao.uploads, ...accepted],
     });
     accepted.forEach((item) => this.animate(item.id));
+  }
+
+  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  validate(): StepValidation {
+    const id = this.store.draft().identificacao;
+    if (!id.numero.trim()) return { valid: false, message: 'Informe o número do edital.' };
+    if (!id.ano || id.ano < 2000) return { valid: false, message: 'Informe o ano do edital.' };
+    if (!id.data) return { valid: false, message: 'Informe a data do processo.' };
+    if (!id.orgao.trim()) return { valid: false, message: 'Informe a sigla do órgão expedidor.' };
+    if (!id.periodo.trim()) return { valid: false, message: 'Informe o período de ingresso.' };
+    if (!id.nome.trim()) return { valid: false, message: 'Informe o nome do processo seletivo.' };
+    if (!id.uploads.length) {
+      return { valid: false, message: 'Anexe o edital em PDF (obrigatório para auditoria).' };
+    }
+    if (id.uploads.some((file) => file.progress < 100)) {
+      return { valid: false, message: 'Aguarde o upload do edital concluir.' };
+    }
+    return { valid: true };
   }
 
   private animate(id: string): void {
