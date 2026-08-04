@@ -11,7 +11,14 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import {
   ApiResult,
   Cursor,
@@ -32,6 +39,7 @@ import {
   CODIGOS_FASE_CANONICA,
   CONFIGURACAO_BASE_PATH,
   DONOS_TIPICOS_FASE,
+  ORIGENS_DATA_FASE,
   FaseCanonicaDto,
   FasesCanonicasApi,
   type AtualizarFaseCanonicaCommand,
@@ -52,6 +60,16 @@ const PAGE_SIZE = 50;
 /** Vendor code do DomainError `FaseCanonica.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const FASE_CANONICA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.fase_canonica.codigo_ja_existe';
 
+/**
+ * Espelha a regra do backend: uma fase só pode ter resultado definitivo se
+ * também produzir resultado.
+ */
+function resultadoDefinitivoValidator(grupo: AbstractControl): ValidationErrors | null {
+  const produz = grupo.get('produzResultado')?.value === true;
+  const definitivo = grupo.get('resultadoDefinitivo')?.value === true;
+  return definitivo && !produz ? { resultadoDefinitivoSemProducao: true } : null;
+}
+
 type ModoFormulario = 'criar' | 'editar';
 
 interface FaseForm {
@@ -62,6 +80,10 @@ interface FaseForm {
   baseLegal: FormControl<string>;
   agrupaEtapas: FormControl<boolean>;
   permiteComplementacao: FormControl<boolean>;
+  origemData: FormControl<string>;
+  produzResultado: FormControl<boolean>;
+  resultadoDefinitivo: FormControl<boolean>;
+  coletaInscricao: FormControl<boolean>;
 }
 
 const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
@@ -72,6 +94,10 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
   'baseLegal',
   'agrupaEtapas',
   'permiteComplementacao',
+  'origemData',
+  'produzResultado',
+  'resultadoDefinitivo',
+  'coletaInscricao',
 ]);
 
 @Component({
@@ -338,6 +364,26 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
               <span class="field__label">Descrição</span>
               <textarea class="textarea" formControlName="descricao"></textarea>
             </label>
+            <label class="field" [class.is-error]="erroDoCampo('origemData')">
+              <span class="field__label is-required">Origem da data</span>
+              <select
+                class="select"
+                formControlName="origemData"
+                [attr.aria-invalid]="erroDoCampo('origemData') ? 'true' : null"
+              >
+                <option value="" disabled>Selecione a origem da data</option>
+                @for (origem of origensData; track origem) {
+                  <option [value]="origem">{{ origem }}</option>
+                }
+              </select>
+              <span class="field__hint">
+                PROPRIA = data definida pela instituição; DELEGADA = data definida por terceiro,
+                como o cronograma do SiSU.
+              </span>
+              @if (erroDoCampo('origemData')) {
+                <span class="field__error">{{ erroDoCampo('origemData') }}</span>
+              }
+            </label>
             <label class="field">
               <span class="field__label">Base legal</span>
               <input class="input" type="text" formControlName="baseLegal" placeholder="Ex.: Lei 9.784/1999, art. 56" />
@@ -345,6 +391,40 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
             </label>
           </div>
         </section>
+
+        <fieldset class="form-section">
+          <legend class="form-section__title">Resultado e inscrição</legend>
+          <div class="form-grid form-grid--1col">
+            <label class="field">
+              <span class="field__label">Produz resultado</span>
+              <select class="select" formControlName="produzResultado">
+                <option [ngValue]="true">Sim</option>
+                <option [ngValue]="false">Não</option>
+              </select>
+              <span class="field__hint">A fase gera um resultado divulgável.</span>
+            </label>
+            @if (showResultadoDefinitivo()) {
+              <label class="field" aria-live="polite">
+                <span class="field__label">Resultado definitivo</span>
+                <select class="select" formControlName="resultadoDefinitivo">
+                  <option [ngValue]="true">Sim</option>
+                  <option [ngValue]="false">Não</option>
+                </select>
+                <span class="field__hint">
+                  Encerra a cadeia recursal da fase. Só se aplica quando a fase produz resultado.
+                </span>
+              </label>
+            }
+            <label class="field">
+              <span class="field__label">Coleta inscrição</span>
+              <select class="select" formControlName="coletaInscricao">
+                <option [ngValue]="true">Sim</option>
+                <option [ngValue]="false">Não</option>
+              </select>
+              <span class="field__hint">A fase recebe inscrições de candidatos.</span>
+            </label>
+          </div>
+        </fieldset>
 
         @if (showGrupoAgrupa()) {
           <fieldset
@@ -422,6 +502,7 @@ export class FasesCanonicasPage {
 
   protected readonly codigosFase = CODIGOS_FASE_CANONICA;
   protected readonly donosTipicos = DONOS_TIPICOS_FASE;
+  protected readonly origensData = ORIGENS_DATA_FASE;
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
@@ -536,7 +617,11 @@ export class FasesCanonicasPage {
     baseLegal: new FormControl('', { nonNullable: true }),
     agrupaEtapas: new FormControl(false, { nonNullable: true }),
     permiteComplementacao: new FormControl(false, { nonNullable: true }),
-  });
+    origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    produzResultado: new FormControl(false, { nonNullable: true }),
+    resultadoDefinitivo: new FormControl(false, { nonNullable: true }),
+    coletaInscricao: new FormControl(false, { nonNullable: true }),
+  }, { validators: resultadoDefinitivoValidator });
 
   // Código selecionado atual — reage tanto ao `select` de criação quanto ao
   // `form.reset()` da edição, para controlar a visibilidade dos grupos
@@ -546,6 +631,14 @@ export class FasesCanonicasPage {
   });
 
   protected readonly showGrupoAgrupa = computed(() => this.codigoAtual() === 'AVALIACAO');
+  private readonly produzResultadoAtual = toSignal(
+    this.form.controls.produzResultado.valueChanges,
+    { initialValue: this.form.controls.produzResultado.value },
+  );
+
+  /** Resultado definitivo só faz sentido quando a fase produz resultado. */
+  protected readonly showResultadoDefinitivo = computed(() => this.produzResultadoAtual() === true);
+
   protected readonly showGrupoCompl = computed(
     () => this.codigoAtual() === 'HOMOLOGACAO' || this.codigoAtual() === 'RECURSOS',
   );
@@ -558,6 +651,18 @@ export class FasesCanonicasPage {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+
+    // Deixar de produzir resultado zera o resultado definitivo. Sem isso o
+    // valor sobrevive escondido, o validador do grupo invalida o formulário e
+    // o envio é barrado sem nenhuma mensagem visível — o campo que causou a
+    // invalidez não está mais na tela.
+    this.form.controls.produzResultado.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((produz) => {
+        if (!produz && this.form.controls.resultadoDefinitivo.value) {
+          this.form.controls.resultadoDefinitivo.setValue(false);
+        }
+      });
   }
 
   protected proximaPagina(): void {
@@ -596,6 +701,10 @@ export class FasesCanonicasPage {
       baseLegal: '',
       agrupaEtapas: false,
       permiteComplementacao: false,
+      origemData: '',
+      produzResultado: false,
+      resultadoDefinitivo: false,
+      coletaInscricao: false,
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -613,6 +722,10 @@ export class FasesCanonicasPage {
       baseLegal: fase.baseLegal ?? '',
       agrupaEtapas: fase.agrupaEtapas,
       permiteComplementacao: fase.permiteComplementacao,
+      origemData: fase.origemData,
+      produzResultado: fase.produzResultado,
+      resultadoDefinitivo: fase.resultadoDefinitivo,
+      coletaInscricao: fase.coletaInscricao,
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -783,6 +896,12 @@ export class FasesCanonicasPage {
       permiteComplementacao:
         raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS' ? raw.permiteComplementacao : false,
       baseLegal: nullIfBlank(raw.baseLegal),
+      origemData: raw.origemData,
+      produzResultado: raw.produzResultado,
+      // O backend recusa resultado definitivo sem produção de resultado; a UI
+      // já esconde o controle nesse caso, então o valor residual não vaza.
+      resultadoDefinitivo: raw.produzResultado && raw.resultadoDefinitivo,
+      coletaInscricao: raw.coletaInscricao,
     };
   }
 
@@ -797,6 +916,12 @@ export class FasesCanonicasPage {
       permiteComplementacao:
         raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS' ? raw.permiteComplementacao : false,
       baseLegal: nullIfBlank(raw.baseLegal),
+      origemData: raw.origemData,
+      produzResultado: raw.produzResultado,
+      // O backend recusa resultado definitivo sem produção de resultado; a UI
+      // já esconde o controle nesse caso, então o valor residual não vaza.
+      resultadoDefinitivo: raw.produzResultado && raw.resultadoDefinitivo,
+      coletaInscricao: raw.coletaInscricao,
     };
   }
 }

@@ -24,6 +24,10 @@ const faseSeed = {
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
+  produzResultado: false,
+  resultadoDefinitivo: false,
+  coletaInscricao: false,
+  origemData: 'PROPRIA',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -117,10 +121,15 @@ test.describe('Fase canônica — CRUD (#393)', () => {
     await page.locator('[formControlName="codigo"]').selectOption('CLASSIFICACAO');
     await page.locator('[formControlName="nome"]').fill('Classificação');
     await page.locator('[formControlName="donoTipico"]').selectOption('CEPS');
+    await page.locator('[formControlName="origemData"]').selectOption('PROPRIA');
     await page.getByRole('button', { name: 'Criar fase canônica' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
-    expect(capturado.posts[0]).toMatchObject({ codigo: 'CLASSIFICACAO', nome: 'Classificação' });
+    expect(capturado.posts[0]).toMatchObject({
+      codigo: 'CLASSIFICACAO',
+      nome: 'Classificação',
+      origemData: 'PROPRIA',
+    });
   });
 
   test('CA-05: grupos condicionais aparecem e somem conforme o código selecionado', async ({
@@ -182,6 +191,7 @@ test.describe('Fase canônica — CRUD (#393)', () => {
     await page.locator('[formControlName="codigo"]').selectOption('AVALIACAO');
     await page.locator('[formControlName="nome"]').fill('Avaliação (dup)');
     await page.locator('[formControlName="donoTipico"]').selectOption('CEPS');
+    await page.locator('[formControlName="origemData"]').selectOption('PROPRIA');
     await page.getByRole('button', { name: 'Criar fase canônica' }).click();
 
     const codigoField = page.locator('[formControlName="codigo"]').locator('..');

@@ -61,11 +61,6 @@ type PaginaProps = {
 /** Vendor code do DomainError `TipoDeficienciaNomeJaExiste` (uniplus-api, 409 Conflict). */
 const TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe';
 
-function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 const TIPO_DEFICIENCIA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDeficienciaForm>([
   'nome',
   'descricao',
@@ -297,11 +292,11 @@ const PAGE_SIZE = 50;
               }
             </label>
             <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
-              <span class="field__label">Descrição</span>
+              <span class="field__label is-required">Descrição</span>
               <textarea
                 class="input"
                 type="text"
-                placeholder="Texto opcional — ex.: abrangência ou base legal (TEA: Lei 12.764/2012)."
+                placeholder="Ex.: abrangência ou base legal (TEA: Lei 12.764/2012)."
                 formControlName="descricao"
                 [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
               ></textarea>
@@ -444,7 +439,10 @@ export class TiposDeficienciaListPage {
     }),
     descricao: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(1000)],
+      // `Validators.required` aceita uma string só de espaços, que o `trim()`
+      // do payload reduziria a vazio e o backend recusaria com 422; o padrão
+      // exige ao menos um caractere significativo.
+      validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)],
     }),
   });
   protected readonly formError = signal<string | null>(null);
@@ -581,7 +579,7 @@ export class TiposDeficienciaListPage {
     const raw = this.form.getRawValue();
     return {
       nome: raw.nome.trim(),
-      descricao: nullIfBlank(raw.descricao),
+      descricao: raw.descricao.trim(),
     };
   }
 

@@ -116,6 +116,26 @@ describe('TiposDeficienciaListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Inclui baixa visão e cegueira');
   });
 
+  it('descrição em branco barra o envio e não vira null no payload', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({ nome: 'Visual', descricao: '   ' });
+
+    // O contrato passou a exigir descrição não vazia; antes o formulário
+    // enviava `null` e o backend recusava com 422.
+    component['salvar']();
+    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+
+    component['form'].controls.descricao.setValue('Inclui baixa visão e cegueira');
+    component['salvar']();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    expect(post.request.body).toMatchObject({ descricao: 'Inclui baixa visão e cegueira' });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('cria tipo de deficiência com nome único, descrição válidos', async () => {
       await flushLista([]);
 
@@ -177,7 +197,9 @@ describe('TiposDeficienciaListPage', () => {
     component['abrirDrawerCriacao']();
     component['form'].setValue({
       nome: 'Visual',
-      descricao: ''
+      // Descrição passou a ser obrigatória no contrato: sem valor, o submit
+      // nem chegaria a disparar a request que este teste inspeciona.
+      descricao: 'Inclui baixa visão e cegueira',
     });
     component['salvar']();
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
