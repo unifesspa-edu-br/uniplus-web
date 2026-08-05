@@ -6,12 +6,13 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui/components';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'sel-dashboard',
   standalone: true,
-  imports: [TagComponent, EmptyStateComponent, DecimalPipe],
+  imports: [TagComponent, EmptyStateComponent, DecimalPipe, DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'sel-page' },
   styleUrl: './dashboard.page.css',
@@ -22,10 +23,10 @@ import { DecimalPipe } from '@angular/common';
         <h1 class="page-header__title">Painel de Processos</h1>
         <p class="page-header__desc">Visão geral dos editais, inscrições e prazos.</p>
       </div>
-      <button class="btn btn--primary" type="button" aria-haspopup="dialog" aria-expanded="false">
-        <i class="pi pi-plus"></i>
+      <a class="btn btn--primary" routerLink="/processo-seletivo">
+        <i class="pi pi-plus" aria-hidden="true"></i>
         Novo Processo
-      </button>
+      </a>
     </div>
     <div class="kpis">
       <div class="kpi">
@@ -45,7 +46,7 @@ import { DecimalPipe } from '@angular/common';
         ><span class="kpi__delta">↓ 4 vs. semana</span>
       </div>
     </div>
-    <section class="panel" aria-labelledby="cfg-unidades-list-title">
+    <section class="panel" aria-labelledby="sel-editais-andamento-title">
       <div class="panel-head">
         <div class="panel-head__title">
           <h2 id="sel-editais-andamento-title">Editais em andamento</h2>
@@ -80,13 +81,10 @@ import { DecimalPipe } from '@angular/common';
                   <td data-label="Inscritos">
                     {{ processo.numeroInscritos | number }}
                   </td>
-                  <td data-label="Ações">
-                    {{ processo.subtitulo }}
-                    <div class="table-responsive__meta">
-                      {{ processo.subtitulo }}
-                    </div>
+                  <td data-label="Prazo">
+                    {{ processo.dataPrazo | date: 'dd/MM/yyyy' }}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     @if (processo.status === 'aberto') {
                       <ui-tag variant="success">Aberto</ui-tag>
                     } @else if (processo.status === 'analise') {
@@ -112,7 +110,7 @@ import { DecimalPipe } from '@angular/common';
       <div class="panel">
         <div class="panel-head">
           <h2>Próximos prazos</h2>
-          <a href="#">Ver agenda</a>
+          <span class="panel-head__aviso">Agenda indisponível</span>
         </div>
         <div class="timeline">
           <div class="tline">
@@ -152,7 +150,7 @@ import { DecimalPipe } from '@angular/common';
       <div class="panel">
         <div class="panel-head">
           <h2>Atividade recente</h2>
-          <a href="#">Ver tudo</a>
+          <span class="panel-head__aviso">Histórico indisponível</span>
         </div>
         <div class="timeline">
           <div class="tline">
