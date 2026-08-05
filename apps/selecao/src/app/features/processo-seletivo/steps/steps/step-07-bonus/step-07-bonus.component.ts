@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MODALIDADES_CANONICAS } from '../../processo-seletivo.data';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
 
 @Component({
   selector: 'sel-step-07-bonus',
@@ -11,9 +11,10 @@ import { StepValidation } from '../../processo-seletivo.models';
 })
 export class Step07BonusComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly modalidades = MODALIDADES_CANONICAS;
+  /** Só as modalidades aceitas no passo 3 podem receber bônus. */
+  readonly modalidades = computed(() => this.store.draft().modalidades.selected);
 
-  toggleModalidade(code: string, checked: boolean): void {
+  toggleModalidade(code: ModalidadeConcorrencia, checked: boolean): void {
     const current = this.store.draft().bonus.modalidades;
     this.store.patchObjectSection('bonus', {
       modalidades: checked ? [...current, code] : current.filter((item) => item !== code),

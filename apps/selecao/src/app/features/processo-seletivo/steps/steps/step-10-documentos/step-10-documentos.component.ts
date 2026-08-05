@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DOC_ETAPAS, DOCUMENTO_GRUPOS, MODALIDADES_CANONICAS } from '../../processo-seletivo.data';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { DOC_ETAPAS, DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
+import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
 import { DocumentoConfig, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
@@ -13,7 +14,8 @@ export class Step10DocumentosComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly groups = DOCUMENTO_GRUPOS;
   readonly etapas = DOC_ETAPAS;
-  readonly modalidades = MODALIDADES_CANONICAS;
+  /** Só as modalidades aceitas no passo 3 podem exigir documento. */
+  readonly modalidades = computed(() => this.store.draft().modalidades.selected);
 
   config(id: string): DocumentoConfig {
     return this.store.draft().documentos[id];
@@ -36,7 +38,7 @@ export class Step10DocumentosComponent {
       etapas: checked ? [...current, code] : current.filter((item) => item !== code),
     });
   }
-  toggleModalidade(id: string, code: string, checked: boolean): void {
+  toggleModalidade(id: string, code: ModalidadeConcorrencia, checked: boolean): void {
     const current = this.config(id).modalidades;
     this.patch(id, {
       modalidades: checked ? [...current, code] : current.filter((item) => item !== code),

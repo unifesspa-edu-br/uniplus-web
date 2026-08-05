@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { MODALIDADES } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
 
 @Component({
   selector: 'sel-step-03-modalidades',
@@ -21,16 +22,38 @@ export class Step03ModalidadesComponent {
   });
 
   toggleAll(checked: boolean): void {
-    this.store.patchObjectSection('modalidades', {
-      selected: checked ? this.modalidades.map((item) => item.id) : [],
-    });
+    const selected = checked ? this.modalidades.map((item) => item.code) : [];
+    this.store.patchObjectSection('modalidades', { selected });
+    this.descartarOrfas(selected);
   }
 
-  toggle(id: string, checked: boolean): void {
-    const selected = this.store.draft().modalidades.selected;
-    this.store.patchObjectSection('modalidades', {
-      selected: checked ? [...selected, id] : selected.filter((item) => item !== id),
+  toggle(code: ModalidadeConcorrencia, checked: boolean): void {
+    const atual = this.store.draft().modalidades.selected;
+    const selected = checked ? [...atual, code] : atual.filter((item) => item !== code);
+    this.store.patchObjectSection('modalidades', { selected });
+    this.descartarOrfas(selected);
+  }
+
+  /**
+   * Desmarcar uma modalidade aqui precisa removê-la também do bônus e dos
+   * documentos: só esconder a opção deixaria o rascunho com bônus ou exigência
+   * para uma modalidade que o processo não aceita.
+   */
+  private descartarOrfas(selected: readonly ModalidadeConcorrencia[]): void {
+    const aceitas = new Set(selected);
+    const draft = this.store.draft();
+
+    this.store.patchObjectSection('bonus', {
+      modalidades: draft.bonus.modalidades.filter((code) => aceitas.has(code)),
     });
+
+    const documentos = Object.fromEntries(
+      Object.entries(draft.documentos).map(([id, config]) => [
+        id,
+        { ...config, modalidades: config.modalidades.filter((code) => aceitas.has(code)) },
+      ]),
+    );
+    this.store.patchSection('documentos', documentos);
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
