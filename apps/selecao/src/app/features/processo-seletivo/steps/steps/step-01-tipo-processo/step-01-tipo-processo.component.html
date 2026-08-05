@@ -5,19 +5,37 @@
 </div>
 <div class="type-search">
   <div class="input-group">
-    <span class="input-group__addon"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor"
-        stroke-linecap="round" stroke-width="2" viewBox="0 0 24 24" width="16">
+    <span class="input-group__addon"
+      ><svg
+        aria-hidden="true"
+        fill="none"
+        height="16"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="16"
+      >
         <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.5-4.5" />
-      </svg></span>
-    <input class="input" type="search" aria-label="Buscar tipos de editais" placeholder="Buscar por nome..."
-      [value]="query()" (input)="query.set($any($event.target).value)">
+        <path d="M21 21l-4.5-4.5" /></svg
+    ></span>
+    <input
+      class="input"
+      type="search"
+      aria-label="Buscar tipos de editais"
+      placeholder="Buscar por nome..."
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+    />
   </div>
 </div>
 <fieldset class="type-grid">
   <legend class="sr-only">Tipo de edital</legend>
   @for (option of filteredOptions(); track option.value) {
-  <sel-type-card [option]="option" [selected]="store.draft().tipoProcesso.selected === option.value"
-    (selectChange)="select($event)" />
+    <sel-type-card
+      [option]="option"
+      [selected]="store.draft().tipoProcesso.selected === option.value"
+      (selectChange)="select($event)"
+    />
   }
 </fieldset>

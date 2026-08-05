@@ -1,3 +1,5 @@
+import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
+
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
 
 /**
@@ -79,7 +81,7 @@ export interface DocumentoConfig {
   included: boolean;
   todasEtapas: boolean;
   etapas: string[];
-  modalidades: string[];
+  modalidades: ModalidadeConcorrencia[];
 }
 
 export interface PoloConfig {
@@ -115,7 +117,7 @@ export interface WizardDraft {
     uploads: UploadItem[];
   };
   modalidades: {
-    selected: string[];
+    selected: ModalidadeConcorrencia[];
     concorrenciaDupla: boolean;
   };
   vagas: {
@@ -131,7 +133,7 @@ export interface WizardDraft {
     tipo: string;
     valor: number | null;
     criterio: string;
-    modalidades: string[];
+    modalidades: ModalidadeConcorrencia[];
   };
   desempate: number[];
   eliminacao: {
