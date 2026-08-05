@@ -52,7 +52,7 @@
       </svg>
     </button>
   </div>
-  <sel-wizard-stepper [mobile]="true" (stepSelected)="closeStepsOverlay()"></sel-wizard-stepper>
+  <sel-wizard-stepper (stepSelected)="closeStepsOverlay()"></sel-wizard-stepper>
 </dialog>
 
 <div class="wiz-shell">
@@ -60,7 +60,7 @@
     <sel-wizard-stepper></sel-wizard-stepper>
   </nav>
   <div class="wiz-body">
-    <div class="wiz-content">
+    <div class="wiz-content" #wizContent (scroll)="onContentScroll($event)">
       <div aria-live="polite" aria-atomic="true">
         @if (store.stepError(); as errors) {
           <div class="step-error" role="alert">
