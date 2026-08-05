@@ -455,44 +455,20 @@
   margin-bottom: var(--space-4);
 }
 
-@media (min-width: 1100px) {
-  .type-search {
-    max-width: 400px;
-  }
+/* Campo de busca não precisa acompanhar a largura da tela. */
+.type-search .input-group {
+  max-width: 400px;
 }
 
-/* Type cards */
+/* Type cards — a grade se ajusta sozinha da tela de 320 px à de TV, sem
+   escalonar colunas por breakpoint. */
 .type-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: var(--space-4);
   border: 0;
   margin: 0;
   padding: var(--space-1);
-}
-
-@media (max-width: 767px) {
-  .type-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1099px) {
-  .type-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1100px) and (max-width: 1440px) {
-  .type-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 1441px) {
-  .type-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
 .scroll-tabela {
@@ -712,14 +688,8 @@
 /* Checkbox grid */
 .checkbox-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
   gap: var(--space-3) var(--space-6);
-}
-
-@media (max-width: 767px) {
-  .checkbox-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* Check item (reutilizável em outros passos) */
@@ -2352,7 +2322,7 @@ dialog.vagas-modal::backdrop {
 
 .atend-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: var(--space-2);
 }
 
