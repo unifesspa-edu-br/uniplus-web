@@ -50,7 +50,8 @@ body {
   background: var(--surface-page);
 }
 
-body.uni-drawer-open {
+body.uni-drawer-open,
+body.sel-overlay-open {
   overflow: hidden;
 }
 

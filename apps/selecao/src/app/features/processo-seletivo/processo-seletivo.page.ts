@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   ViewChild,
@@ -57,6 +58,7 @@ export class ProcessoSeletivoPage {
   private readonly document = inject<Document>(DOCUMENT);
   private readonly root = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly overlayScroll = inject(OverlayScrollService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
   private readonly step01 = viewChildren(Step01TipoProcessoComponent);
@@ -127,6 +129,13 @@ export class ProcessoSeletivoPage {
   @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
 
   constructor() {
+    // Navegar com o overlay ou a sidebar abertos destruía a página sem liberar
+    // o lock, e a rota seguinte ficava sem scroll.
+    this.destroyRef.onDestroy(() => {
+      if (this.stepsOverlayOpen()) this.overlayScroll.unlock();
+      if (this.sidebarMobileOpen()) this.overlayScroll.unlock();
+    });
+
     effect(() => {
       this.store.currentStep();
       queueMicrotask(() => {
