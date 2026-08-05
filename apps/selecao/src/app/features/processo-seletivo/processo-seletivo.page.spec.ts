@@ -43,6 +43,57 @@ describe('ProcessoSeletivoPage — estrutura', () => {
   });
 });
 
+describe('ProcessoSeletivoPage — lista de etapas', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+    }).compileComponents();
+  });
+
+  function montar() {
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const dialog = host.querySelector<HTMLDialogElement>('dialog.steps-overlay');
+    if (dialog === null) {
+      throw new Error('A lista de etapas precisa ser um <dialog> para conter o foco.');
+    }
+    return { fixture, page: fixture.componentInstance, dialog };
+  }
+
+  /** jsdom não implementa a API de diálogo modal; instrumentamos o elemento. */
+  function instrumentar(dialog: HTMLDialogElement) {
+    const showModal = vi.fn();
+    dialog.showModal = showModal;
+    dialog.close = vi.fn(() => dialog.dispatchEvent(new Event('close')));
+    return showModal;
+  }
+
+  /**
+   * Só `showModal()` põe o elemento no top layer e faz o navegador conter o
+   * foco. Com o overlay como `<div>`, o Tab escapava para a topbar e a sidebar
+   * do layout, que não são descendentes desta rota e não recebiam `inert`.
+   */
+  it('abre a lista de etapas como diálogo modal', () => {
+    const { page, dialog } = montar();
+    const showModal = instrumentar(dialog);
+    page.openStepsOverlay();
+
+    expect(showModal).toHaveBeenCalledTimes(1);
+    expect(page.stepsOverlayOpen()).toBe(true);
+  });
+
+  it('sincroniza o estado quando o diálogo fecha', () => {
+    const { page, dialog } = montar();
+    instrumentar(dialog);
+
+    page.openStepsOverlay();
+    page.closeStepsOverlay();
+
+    expect(page.stepsOverlayOpen()).toBe(false);
+  });
+});
+
 describe('ProcessoSeletivoPage — publicação', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
