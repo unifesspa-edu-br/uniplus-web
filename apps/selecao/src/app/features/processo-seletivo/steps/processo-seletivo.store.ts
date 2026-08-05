@@ -109,6 +109,16 @@ export class ProcessoSeletivoStore {
     this.stepError.set(messages);
   }
 
+  /**
+   * Substitui o conjunto de passos concluídos pelo resultado de uma validação
+   * completa do rascunho. Como a navegação é livre, um passo pode ter sido
+   * concluído e depois invalidado — ou preenchido sem nunca passar por
+   * "Próximo" —, e só a validação de todos reconcilia o progresso exibido.
+   */
+  syncCompleted(completed: Iterable<number>): void {
+    this.completedSteps.set(new Set(completed));
+  }
+
   previous(): void {
     this.goTo(this.currentStep() - 1);
   }

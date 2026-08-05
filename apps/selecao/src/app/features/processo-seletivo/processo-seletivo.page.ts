@@ -200,10 +200,7 @@ export class ProcessoSeletivoPage {
 
   nextOrPublish(): void {
     if (this.store.isLast()) {
-      this.publicationMessage.set(
-        'Rascunho pronto para envio. Conecte publish() ao endpoint da sua API.',
-      );
-      console.warn('Payload do processo seletivo:', structuredClone(this.store.draft()));
+      this.publicar();
       return;
     }
 
@@ -211,17 +208,58 @@ export class ProcessoSeletivoPage {
     const result = validator?.validate();
 
     if (result && !result.valid) {
-      // Normaliza `message` (simples) e `messages` (lista) para `string[]`.
-      const list =
-        result.messages && result.messages.length > 0
-          ? result.messages
-          : [result.message ?? 'Preencha os campos obrigatórios para continuar.'];
-      this.store.setStepError(list);
+      this.store.setStepError(mensagensDe(result));
       return;
     }
 
     this.store.setStepError(null);
     this.store.next();
+  }
+
+  /**
+   * Publica só com o rascunho inteiro válido. Como a navegação entre passos é
+   * livre, chegar ao último passo não significa ter preenchido os anteriores:
+   * sem esta checagem dá para saltar direto para a revisão e publicar um
+   * rascunho vazio, ou invalidar um passo já concluído e voltar para cá.
+   */
+  private publicar(): void {
+    const pendentes = this.validarRascunho();
+
+    if (pendentes.length > 0) {
+      this.publicationMessage.set('');
+      this.store.setStepError(pendentes);
+      return;
+    }
+
+    this.store.setStepError(null);
+    this.publicationMessage.set(
+      'Rascunho validado. A publicação será habilitada quando a integração com a API estiver disponível.',
+    );
+  }
+
+  /**
+   * Roda `validate()` de todos os passos, reconcilia o progresso exibido e
+   * devolve uma mensagem por pendência, identificada pelo passo de origem.
+   * Todos os passos ficam montados (`[hidden]`), então todos respondem.
+   */
+  private validarRascunho(): string[] {
+    const pendencias: string[] = [];
+    const concluidos = new Set<number>();
+
+    for (let index = 0; index < this.store.totalSteps; index += 1) {
+      const resultado = this.stepValidatorAt(index)?.validate();
+
+      if (resultado && !resultado.valid) {
+        const detalhe = mensagensDe(resultado).join(' ');
+        pendencias.push(`Passo ${index + 1} — ${this.store.labels[index]}: ${detalhe}`);
+        continue;
+      }
+
+      concluidos.add(index);
+    }
+
+    this.store.syncCompleted(concluidos);
+    return pendencias;
   }
 
   setTheme(value: 'light' | 'dark' | 'auto'): void {
@@ -242,4 +280,10 @@ export class ProcessoSeletivoPage {
   scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
+
+/** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */
+function mensagensDe(resultado: StepValidation): string[] {
+  if (resultado.messages && resultado.messages.length > 0) return resultado.messages;
+  return [resultado.message ?? 'Preencha os campos obrigatórios para continuar.'];
 }
