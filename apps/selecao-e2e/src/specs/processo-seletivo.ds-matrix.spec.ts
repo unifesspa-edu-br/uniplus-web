@@ -1,0 +1,117 @@
+import { test, expect, type Page } from '@playwright/test';
+
+type DsTheme = 'light' | 'dark' | 'contrast';
+
+/**
+ * Matriz do Uni+ DS para o cadastro de processo seletivo: 320 px, 768 px e
+ * desktop, nos temas claro, escuro e de contraste. Cobre o que o teste
+ * unitário não alcança — layout real, scroll, contenção de foco e ausência de
+ * transbordo horizontal.
+ */
+test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+    await page.goto('/processo-seletivo');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  test('mantém um único landmark main', async ({ page }) => {
+    await expect(page.getByRole('main')).toHaveCount(1);
+  });
+
+  test('não transborda horizontalmente', async ({ page }) => {
+    const transbordo = await page.evaluate(() => {
+      const documento = document.documentElement;
+      const excedeDocumento = documento.scrollWidth > documento.clientWidth + 1;
+
+      const scroller = document.querySelector('.wiz-content');
+      const excedeScroller =
+        scroller instanceof HTMLElement && scroller.scrollWidth > scroller.clientWidth + 1;
+
+      return { excedeDocumento, excedeScroller };
+    });
+
+    expect(transbordo.excedeDocumento).toBe(false);
+    expect(transbordo.excedeScroller).toBe(false);
+  });
+
+  test('limita a largura do conteúdo em telas grandes', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('tv'), 'Teto só é observável acima de 1200 px.');
+
+    const largura = await page.evaluate(() => {
+      const conteudo = document.querySelector('.wiz-content');
+      return conteudo instanceof HTMLElement ? conteudo.clientWidth : Number.MAX_SAFE_INTEGER;
+    });
+
+    expect(largura).toBeLessThanOrEqual(1920);
+  });
+
+  test('avança e volta entre os passos', async ({ page }) => {
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Passo 1');
+
+    await page.getByRole('button', { name: 'Próximo' }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('tipo de processo seletivo');
+
+    // O radio é `sr-only`; quem recebe o clique é o cartão que o envolve.
+    await page.locator('.type-card').first().click();
+    await expect(page.getByRole('radio').first()).toBeChecked();
+    await page.getByRole('button', { name: 'Próximo' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Passo 2');
+
+    await page.getByRole('button', { name: 'Anterior' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Passo 1');
+  });
+
+  test('recusa publicar rascunho incompleto', async ({ page }, testInfo) => {
+    const stepper = navegacaoDePassos(page, testInfo.project.name);
+    await stepper();
+
+    await page.getByRole('button', { name: 'Publicar' }).click();
+
+    const alerta = page.getByRole('alert');
+    await expect(alerta).toBeVisible();
+    await expect(alerta).toContainText('Passo 1');
+    await expect(page.locator('.publication-message')).toHaveCount(0);
+  });
+});
+
+/**
+ * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo;
+ * 768 px é a própria fronteira do DS e já mostra a navegação lateral.
+ */
+function navegacaoDePassos(page: Page, projectName: string): () => Promise<void> {
+  const compacto = projectName.includes('-320-');
+
+  if (!compacto) {
+    return async () => {
+      await page.getByRole('button', { name: 'Revisão e publicação' }).click();
+    };
+  }
+
+  return async () => {
+    await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Revisão e publicação' }).click();
+    await expect(dialogo).toBeHidden();
+  };
+}
+
+async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
+  await page.addInitScript((dsTheme) => {
+    window.localStorage.setItem(
+      'uniplus.a11y',
+      JSON.stringify({
+        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
+        contrast: dsTheme === 'contrast',
+        fontMode: 'default',
+      }),
+    );
+  }, theme);
+}
+
+function temaDoProject(projectName: string): DsTheme {
+  const parte = projectName.split('-').at(-1);
+  return parte === 'dark' || parte === 'contrast' ? parte : 'light';
+}
