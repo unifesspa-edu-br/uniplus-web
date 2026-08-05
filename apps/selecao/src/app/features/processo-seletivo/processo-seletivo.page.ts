@@ -124,6 +124,7 @@ export class ProcessoSeletivoPage {
 
   @ViewChild('stepBarButton') private stepBarButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlayClose') private stepsOverlayClose?: ElementRef<HTMLButtonElement>;
+  @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
 
   constructor() {
     effect(() => {
@@ -179,15 +180,36 @@ export class ProcessoSeletivoPage {
     this.sidebarMobileOpen.set(false);
     this.overlayScroll.unlock();
   }
+  /**
+   * Abre a lista de etapas como diálogo modal. `showModal()` põe o elemento no
+   * top layer e o navegador contém o foco; com um `<div>` sob `inert` parcial,
+   * o Tab escapava para a topbar e a sidebar do layout, que não são
+   * descendentes desta rota.
+   */
   openStepsOverlay(): void {
     if (this.stepsOverlayOpen()) return;
     if (this.sidebarMobileOpen()) this.closeMobileSidebar();
+
+    this.stepsOverlay?.nativeElement.showModal();
     this.stepsOverlayOpen.set(true);
     this.overlayScroll.lock();
     queueMicrotask(() => this.stepsOverlayClose?.nativeElement.focus());
   }
 
   closeStepsOverlay(): void {
+    if (!this.stepsOverlayOpen()) return;
+    // O estado é sincronizado em `onStepsOverlayClose`, que também atende ao
+    // fechamento por Esc — tratado pelo próprio elemento.
+    this.stepsOverlay?.nativeElement.close();
+  }
+
+  /** Esc no diálogo: deixa o elemento fechar e sincroniza pelo evento `close`. */
+  onStepsOverlayCancel(event: Event): void {
+    event.preventDefault();
+    this.stepsOverlay?.nativeElement.close();
+  }
+
+  onStepsOverlayClose(): void {
     if (!this.stepsOverlayOpen()) return;
     this.stepsOverlayOpen.set(false);
     this.overlayScroll.unlock();

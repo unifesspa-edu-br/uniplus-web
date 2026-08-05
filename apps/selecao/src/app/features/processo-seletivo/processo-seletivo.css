@@ -88,23 +88,31 @@
   transform: rotate(180deg);
 }
 
-/* Mobile steps overlay */
+/* Mobile steps overlay — `<dialog>` aberto por `showModal()`: fica no top
+   layer (dispensa z-index) e o navegador contém o foco. Os estilos abaixo
+   apenas desfazem o padrão do elemento, que vem centrado e com borda. */
 .steps-overlay {
   position: fixed;
   inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  margin: 0;
+  color: var(--text-on-inverse);
   background: var(--surface-inverse);
-  z-index: 25;
   overflow-y: auto;
   padding: calc(56px + var(--space-5)) var(--space-5) var(--space-8);
 }
 
-.steps-overlay[hidden] {
-  display: none;
+.steps-overlay::backdrop {
+  background: var(--surface-overlay);
 }
 
 @media (min-width: 768px) {
   .steps-overlay {
-    display: none !important;
+    display: none;
   }
 }
 

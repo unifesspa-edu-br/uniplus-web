@@ -1,7 +1,6 @@
 <button
   #stepBarButton
   class="step-bar"
-  [attr.inert]="stepsOverlayOpen() ? '' : null"
   type="button"
   [attr.aria-expanded]="stepsOverlayOpen()"
   aria-controls="steps-overlay"
@@ -25,13 +24,13 @@
     <path d="M19 9l-7 7-7-7" />
   </svg>
 </button>
-<div
+<dialog
+  #stepsOverlay
   class="steps-overlay"
   id="steps-overlay"
-  role="dialog"
   aria-label="Etapas do cadastro"
-  aria-modal="true"
-  [hidden]="!stepsOverlayOpen()"
+  (cancel)="onStepsOverlayCancel($event)"
+  (close)="onStepsOverlayClose()"
 >
   <div class="steps-overlay__header">
     <button
@@ -54,9 +53,9 @@
     </button>
   </div>
   <sel-wizard-stepper [mobile]="true" (stepSelected)="closeStepsOverlay()"></sel-wizard-stepper>
-</div>
+</dialog>
 
-<div class="wiz-shell" [attr.inert]="stepsOverlayOpen() ? '' : null">
+<div class="wiz-shell">
   <nav class="wiz-nav" aria-label="Etapas do cadastro">
     <sel-wizard-stepper></sel-wizard-stepper>
   </nav>
