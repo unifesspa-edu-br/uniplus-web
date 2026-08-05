@@ -12,7 +12,7 @@
       type="checkbox"
       [checked]="store.draft().bonus.ativo"
       (change)="store.patchObjectSection('bonus', { ativo: $any($event.target).checked })"
-    /><span>Aplicar bônus neste edital?</span></label
+    /><span>Aplicar bônus neste processo seletivo?</span></label
   >
   @if (!store.draft().bonus.ativo) {
     <div class="bonus-info">
