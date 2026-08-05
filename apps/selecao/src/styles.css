@@ -4,6 +4,7 @@
 @import '../../../libs/shared-auth/src/styles/components.css';
 @import 'primeicons/primeicons.css';
 @import 'tailwindcss';
+@import './app/features/processo-seletivo/processo-seletivo.css';
 
 @source './app/**/*.{ts,html}';
 @source '../../../libs/shared-ui/src/lib/**/*.{ts,html}';
@@ -696,12 +697,6 @@ cfg-pesos-enem-page {
 /* O gap acima já separa o título; zera a margem para não dobrar o espaço. */
 .cfg-form > section > .form-section__title {
   margin-bottom: 0;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
 }
 
 .form-grid .field--full {

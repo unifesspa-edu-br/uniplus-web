@@ -2209,12 +2209,6 @@ dialog.vagas-modal::backdrop {
   gap: var(--space-4);
 }
 
-.bonus-config .form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
-}
-
 @media (max-width: 767px) {
   .bonus-config .form-grid {
     grid-template-columns: 1fr;
