@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   ViewChild,
   computed,
@@ -21,6 +22,7 @@ import { OverlayScrollService } from '../../shared/overlay-scroll.service';
 export class Step08DesempateComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly overlay = inject(OverlayScrollService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly criteria = CRITERIOS_DESEMPATE;
   readonly pending = signal<ReadonlySet<number>>(new Set());
   readonly ordered = computed(() =>
@@ -30,6 +32,14 @@ export class Step08DesempateComponent {
       .filter((item) => item !== undefined),
   );
   private modalOpen = false;
+
+  constructor() {
+    // Sair da rota com o modal aberto deixava o scroll travado na próxima.
+    this.destroyRef.onDestroy(() => {
+      if (this.modalOpen) this.overlay.unlock();
+    });
+  }
+
   @ViewChild('criteriaDialog') private dialog?: ElementRef<HTMLDialogElement>;
   @ViewChild('addCriterion') private addButton?: ElementRef<HTMLButtonElement>;
 

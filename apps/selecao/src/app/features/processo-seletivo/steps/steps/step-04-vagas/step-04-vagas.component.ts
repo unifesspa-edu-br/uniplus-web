@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   ViewChild,
   computed,
@@ -21,6 +22,7 @@ import { OverlayScrollService } from '../../shared/overlay-scroll.service';
 export class Step04VagasComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly overlayScroll = inject(OverlayScrollService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly cursos = CURSOS;
   readonly pendingIds = signal<ReadonlySet<number>>(new Set());
   readonly ofertas = computed(() => this.store.draft().vagas.cursos);
@@ -36,6 +38,14 @@ export class Step04VagasComponent {
   readonly modalIndeterminate = computed(() => this.pendingIds().size > 0 && !this.modalAll());
 
   private modalOpen = false;
+
+  constructor() {
+    // Sair da rota com o modal aberto deixava o scroll travado na próxima.
+    this.destroyRef.onDestroy(() => {
+      if (this.modalOpen) this.overlayScroll.unlock();
+    });
+  }
+
   @ViewChild('vagasDialog') private dialog?: ElementRef<HTMLDialogElement>;
   @ViewChild('addButton') private addButton?: ElementRef<HTMLButtonElement>;
 

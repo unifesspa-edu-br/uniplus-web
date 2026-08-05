@@ -94,6 +94,34 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   });
 });
 
+describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+    }).compileComponents();
+  });
+
+  /**
+   * Navegar pelo histórico com o overlay aberto destruía a página sem liberar
+   * o lock, e a rota seguinte carregava com o `body` travado.
+   */
+  it('libera o bloqueio de scroll ao destruir a página com overlay aberto', () => {
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const dialog = host.querySelector<HTMLDialogElement>('dialog.steps-overlay');
+    if (dialog === null) throw new Error('Diálogo de etapas ausente.');
+    dialog.showModal = vi.fn();
+
+    fixture.componentInstance.openStepsOverlay();
+    expect(document.body.classList.contains('sel-overlay-open')).toBe(true);
+
+    fixture.destroy();
+    expect(document.body.classList.contains('sel-overlay-open')).toBe(false);
+  });
+});
+
 describe('ProcessoSeletivoPage — publicação', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
