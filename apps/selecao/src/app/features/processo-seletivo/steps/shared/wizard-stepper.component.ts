@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 
 @Component({
@@ -16,8 +9,7 @@ import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 })
 export class WizardStepperComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  @Input() mobile = false;
-  @Output() stepSelected = new EventEmitter<number>();
+  readonly stepSelected = output<number>();
 
   select(index: number): void {
     this.store.goTo(index);
