@@ -21,7 +21,7 @@ import { RouterLink } from '@angular/router';
     <div class="page-header">
       <div class="page-header__content">
         <h1 class="page-header__title">Painel de Processos</h1>
-        <p class="page-header__desc">Visão geral dos editais, inscrições e prazos.</p>
+        <p class="page-header__desc">Visão geral dos processos seletivos, inscrições e prazos.</p>
       </div>
       <a class="btn btn--primary" routerLink="/processo-seletivo">
         <i class="pi pi-plus" aria-hidden="true"></i>
@@ -30,7 +30,7 @@ import { RouterLink } from '@angular/router';
     </div>
     <div class="kpis">
       <div class="kpi">
-        <span class="kpi__label">Editais ativos</span><span class="kpi__num">12</span
+        <span class="kpi__label">Processos ativos</span><span class="kpi__num">12</span
         ><span class="kpi__delta">↑ 2 vs. mês passado</span>
       </div>
       <div class="kpi">
@@ -49,7 +49,7 @@ import { RouterLink } from '@angular/router';
     <section class="panel" aria-labelledby="sel-editais-andamento-title">
       <div class="panel-head">
         <div class="panel-head__title">
-          <h2 id="sel-editais-andamento-title">Editais em andamento</h2>
+          <h2 id="sel-editais-andamento-title">Processos em andamento</h2>
         </div>
       </div>
       @if (processos().length > 0) {
@@ -57,7 +57,7 @@ import { RouterLink } from '@angular/router';
           <table>
             <thead>
               <tr>
-                <th scope="col">Edital</th>
+                <th scope="col">Processo</th>
                 <th scope="col">Modalidade</th>
                 <th scope="col">Inscritos</th>
                 <th scope="col">Prazo</th>
@@ -67,7 +67,7 @@ import { RouterLink } from '@angular/router';
             <tbody>
               @for (processo of processos(); track processo.id) {
                 <tr>
-                  <td data-label="Edital">
+                  <td data-label="Processo">
                     <div class="table-responsive__primary">
                       {{ processo.titulo }}
                     </div>

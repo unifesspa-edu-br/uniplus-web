@@ -9,7 +9,7 @@ import {
 } from './processo-seletivo.models';
 
 export const STEP_LABELS = [
-  'Tipo edital',
+  'Tipo do processo',
   'Identificação',
   'Modalidades',
   'Vagas',
@@ -25,7 +25,7 @@ export const STEP_LABELS = [
 ] as const;
 
 export const REVIEW_NAMES = [
-  'Tipo do edital',
+  'Tipo do processo seletivo',
   'Identificação',
   'Modalidades',
   'Vagas',

@@ -22,7 +22,7 @@
     <input
       class="input"
       type="search"
-      aria-label="Buscar tipos de editais"
+      aria-label="Buscar tipos de processo seletivo"
       placeholder="Buscar por nome..."
       [value]="query()"
       (input)="query.set($any($event.target).value)"
@@ -30,7 +30,7 @@
   </div>
 </div>
 <fieldset class="type-grid">
-  <legend class="sr-only">Tipo de edital</legend>
+  <legend class="sr-only">Tipo do processo seletivo</legend>
   @for (option of filteredOptions(); track option.value) {
     <sel-type-card
       [option]="option"

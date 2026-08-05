@@ -31,6 +31,6 @@ export class Step01TipoProcessoComponent {
   validate(): StepValidation {
     return this.store.draft().tipoProcesso.selected
       ? { valid: true }
-      : { valid: false, message: 'Selecione um tipo de edital para continuar.' };
+      : { valid: false, message: 'Selecione um tipo de processo seletivo para continuar.' };
   }
 }
