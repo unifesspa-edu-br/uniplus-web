@@ -165,3 +165,9 @@
 .sel-page .panel-head a:hover {
   text-decoration: underline;
 }
+
+/* Aviso no lugar do atalho ainda não implementado — texto, não controle. */
+.sel-page .panel-head__aviso {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
