@@ -5,7 +5,6 @@ import {
   ElementRef,
   HostListener,
   ViewChild,
-  ViewEncapsulation,
   effect,
   inject,
   signal,
@@ -51,8 +50,6 @@ import { Step13RevisaoComponent } from './steps/steps/step-13-revisao/step-13-re
   ],
   providers: [ProcessoSeletivoStore],
   templateUrl: './app.component.html',
-  styleUrl: './processo-seletivo.css',
-  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProcessoSeletivoPage {
