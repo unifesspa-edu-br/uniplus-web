@@ -1,3 +1,80 @@
-<div class="step-head"><span class="step-head__badge">Passo 13</span><h1 tabindex="-1">Passo 13: Revisão e publicação</h1><p>Confira cada passo antes de publicar. Passos não visitados aparecem como pendentes.</p></div>
-<div class="revisao-summary" [class.revisao-summary--done]="completed() === names.length"><div class="revisao-summary__info"><span class="revisao-summary__count">{{ completed() }} <small style="font-size:.9rem;font-weight:var(--weight-normal);color:var(--text-secondary)">/ 12</small></span><span class="revisao-summary__detail">{{ completed() === names.length ? 'Tudo pronto para publicar!' : pending() + ' passo' + (pending() > 1 ? 's pendentes' : ' pendente') }}</span></div><div class="revisao-progress"><div class="revisao-progress__bar" [style.width.%]="percent()"></div></div><span class="revisao-summary__pct">{{ percent() }}%</span></div>
-<fieldset class="scroll-tabela"><div class="revisao-list">@for (name of names; track name; let index = $index) { @let done = store.completedSteps().has(index); <div class="revisao-item" [class.revisao-item--ok]="done" [class.revisao-item--pending]="!done"><div class="revisao-item__icon">@if (done) { <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> } @else { <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 12h8"/></svg> }</div><div class="revisao-item__meta"><span class="revisao-item__num">Passo {{ stepNumber(index) }}</span><span class="revisao-item__name">{{ name }}</span></div><span class="revisao-chip" [class.revisao-chip--ok]="done" [class.revisao-chip--pending]="!done">{{ done ? 'Concluído' : 'Pendente' }}</span><button class="btn btn--sm btn--ghost revisao-item__go" type="button" (click)="store.goTo(index)">Ir para</button></div> }</div></fieldset>
+<div class="step-head">
+  <span class="step-head__badge">Passo 13</span>
+  <h1 tabindex="-1">Passo 13: Revisão e publicação</h1>
+  <p>Confira cada passo antes de publicar. Passos não visitados aparecem como pendentes.</p>
+</div>
+<div class="revisao-summary" [class.revisao-summary--done]="completed() === names.length">
+  <div class="revisao-summary__info">
+    <span class="revisao-summary__count"
+      >{{ completed() }}
+      <small
+        style="font-size: 0.9rem; font-weight: var(--weight-normal); color: var(--text-secondary)"
+        >/ 12</small
+      ></span
+    ><span class="revisao-summary__detail">{{
+      completed() === names.length
+        ? 'Tudo pronto para publicar!'
+        : pending() + ' passo' + (pending() > 1 ? 's pendentes' : ' pendente')
+    }}</span>
+  </div>
+  <div class="revisao-progress">
+    <div class="revisao-progress__bar" [style.width.%]="percent()"></div>
+  </div>
+  <span class="revisao-summary__pct">{{ percent() }}%</span>
+</div>
+<fieldset class="scroll-tabela">
+  <div class="revisao-list">
+    @for (name of names; track name; let index = $index) {
+      @let done = store.completedSteps().has(index);
+      <div
+        class="revisao-item"
+        [class.revisao-item--ok]="done"
+        [class.revisao-item--pending]="!done"
+      >
+        <div class="revisao-item__icon">
+          @if (done) {
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          } @else {
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            >
+              <path d="M8 12h8" />
+            </svg>
+          }
+        </div>
+        <div class="revisao-item__meta">
+          <span class="revisao-item__num">Passo {{ stepNumber(index) }}</span
+          ><span class="revisao-item__name">{{ name }}</span>
+        </div>
+        <span
+          class="revisao-chip"
+          [class.revisao-chip--ok]="done"
+          [class.revisao-chip--pending]="!done"
+          >{{ done ? 'Concluído' : 'Pendente' }}</span
+        ><button
+          class="btn btn--sm btn--ghost revisao-item__go"
+          type="button"
+          (click)="store.goTo(index)"
+        >
+          Ir para
+        </button>
+      </div>
+    }
+  </div>
+</fieldset>

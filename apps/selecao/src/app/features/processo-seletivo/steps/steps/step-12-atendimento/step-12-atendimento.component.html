@@ -1,8 +1,83 @@
-<div class="step-head"><span class="step-head__badge">Passo 12</span><h1 tabindex="-1">Passo 12: Atendimento especializado</h1></div>
-<p class="step-atend-intro">Configure a <strong>oferta de atendimento especializado</strong> deste edital, no vocabulário canônico do INEP (Edital ENEM 52/2025). Selecione as <strong>condições aceitas</strong> (item 4.2.1) — ao marcar PcD, especifique os <strong>tipos de deficiência reconhecidos</strong> (LBI) — e os <strong>recursos de acessibilidade</strong> oferecidos durante a aplicação da prova (item 4.2.2).</p>
+<div class="step-head">
+  <span class="step-head__badge">Passo 12</span>
+  <h1 tabindex="-1">Passo 12: Atendimento especializado</h1>
+</div>
+<p class="step-atend-intro">
+  Configure a <strong>oferta de atendimento especializado</strong> deste edital, no vocabulário
+  canônico do INEP (Edital ENEM 52/2025). Selecione as <strong>condições aceitas</strong> (item
+  4.2.1) — ao marcar PcD, especifique os <strong>tipos de deficiência reconhecidos</strong> (LBI) —
+  e os <strong>recursos de acessibilidade</strong> oferecidos durante a aplicação da prova (item
+  4.2.2).
+</p>
 <fieldset class="scroll-tabela">
-  <div class="atend-section"><strong class="atend-section__title">Condições aceitas (item 4.2.1)</strong><p class="atend-section__desc">Categorias de candidato que o edital reconhece para fins de atendimento especializado.</p><div class="atend-grid">@for (condition of conditions; track condition.id) { <label class="atend-card"><input type="checkbox" [id]="'cond-' + condition.id" [checked]="store.draft().atendimento.condicoes.includes(condition.id)" (change)="toggle('condicoes', condition.id, $any($event.target).checked)"><div class="atend-card__body"><span class="atend-card__name">{{ condition.nome }}</span>@if (condition.laudo) { <span class="atend-badge atend-badge--laudo">Exige laudo</span> }</div></label> }</div>
-  @if (store.draft().atendimento.condicoes.includes('pcd')) { <div class="pcd-subblock"><strong class="pcd-subblock__title">Tipos de deficiência reconhecidos pelo edital (LBI)</strong><p class="pcd-subblock__desc">Especifique quais categorias o edital reconhece.</p><div class="atend-grid">@for (type of pcdTypes; track type; let index = $index) { <label class="atend-card"><input type="checkbox" [id]="'pcd-tipo-' + index" [checked]="store.draft().atendimento.tiposPcd.includes(type)" (change)="toggle('tiposPcd', type, $any($event.target).checked)"><div class="atend-card__body"><span class="atend-card__name">{{ type }}</span></div></label> }</div></div> }
+  <div class="atend-section">
+    <strong class="atend-section__title">Condições aceitas (item 4.2.1)</strong>
+    <p class="atend-section__desc">
+      Categorias de candidato que o edital reconhece para fins de atendimento especializado.
+    </p>
+    <div class="atend-grid">
+      @for (condition of conditions; track condition.id) {
+        <label class="atend-card"
+          ><input
+            type="checkbox"
+            [id]="'cond-' + condition.id"
+            [checked]="store.draft().atendimento.condicoes.includes(condition.id)"
+            (change)="toggle('condicoes', condition.id, $any($event.target).checked)"
+          />
+          <div class="atend-card__body">
+            <span class="atend-card__name">{{ condition.nome }}</span>
+            @if (condition.laudo) {
+              <span class="atend-badge atend-badge--laudo">Exige laudo</span>
+            }
+          </div></label
+        >
+      }
+    </div>
+    @if (store.draft().atendimento.condicoes.includes('pcd')) {
+      <div class="pcd-subblock">
+        <strong class="pcd-subblock__title"
+          >Tipos de deficiência reconhecidos pelo edital (LBI)</strong
+        >
+        <p class="pcd-subblock__desc">Especifique quais categorias o edital reconhece.</p>
+        <div class="atend-grid">
+          @for (type of pcdTypes; track type; let index = $index) {
+            <label class="atend-card"
+              ><input
+                type="checkbox"
+                [id]="'pcd-tipo-' + index"
+                [checked]="store.draft().atendimento.tiposPcd.includes(type)"
+                (change)="toggle('tiposPcd', type, $any($event.target).checked)"
+              />
+              <div class="atend-card__body">
+                <span class="atend-card__name">{{ type }}</span>
+              </div></label
+            >
+          }
+        </div>
+      </div>
+    }
   </div>
-  <div class="atend-section"><strong class="atend-section__title">Recursos de acessibilidade oferecidos (item 4.2.2)</strong><p class="atend-section__desc">Adaptações disponíveis para a aplicação da prova.</p><div class="atend-grid">@for (resource of resources; track resource.id) { <label class="atend-card"><input type="checkbox" [id]="'rec-' + resource.id" [checked]="store.draft().atendimento.recursos.includes(resource.id)" (change)="toggle('recursos', resource.id, $any($event.target).checked)"><div class="atend-card__body"><span class="atend-card__name">{{ resource.nome }}</span>@if (resource.ext) { <span class="atend-badge atend-badge--ext">Extensão local</span> }<span class="atend-card__desc">{{ resource.desc }}</span></div></label> }</div></div>
+  <div class="atend-section">
+    <strong class="atend-section__title">Recursos de acessibilidade oferecidos (item 4.2.2)</strong>
+    <p class="atend-section__desc">Adaptações disponíveis para a aplicação da prova.</p>
+    <div class="atend-grid">
+      @for (resource of resources; track resource.id) {
+        <label class="atend-card"
+          ><input
+            type="checkbox"
+            [id]="'rec-' + resource.id"
+            [checked]="store.draft().atendimento.recursos.includes(resource.id)"
+            (change)="toggle('recursos', resource.id, $any($event.target).checked)"
+          />
+          <div class="atend-card__body">
+            <span class="atend-card__name">{{ resource.nome }}</span>
+            @if (resource.ext) {
+              <span class="atend-badge atend-badge--ext">Extensão local</span>
+            }
+            <span class="atend-card__desc">{{ resource.desc }}</span>
+          </div></label
+        >
+      }
+    </div>
+  </div>
 </fieldset>
