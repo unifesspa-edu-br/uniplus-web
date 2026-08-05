@@ -18,8 +18,10 @@ export class Step05EtapasComponent {
     const etapa: EtapaEdital = {
       id: `etapa-${this.nextId++}`,
       tipo: '',
-      inicio: '2026-01-01',
-      fim: '2026-01-30',
+      // Vazias de propósito: datas predefinidas passariam na validação sem o
+      // operador confirmar, e envelhecem a cada ciclo.
+      inicio: '',
+      fim: '',
       nomeCustomizado: '',
       permiteRecurso: false,
       tagNumeroAtiva: false,
