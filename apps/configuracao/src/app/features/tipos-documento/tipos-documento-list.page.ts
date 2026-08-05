@@ -47,6 +47,7 @@ import {
   SpinnerComponent,
   TagComponent,
   type UiFilterChipOption,
+  FilterBarComponent
 } from '@uniplus/shared-ui/components';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -106,7 +107,8 @@ interface TipoDocumentoForm {
     PagerComponent,
     SpinnerComponent,
     TagComponent,
-  ],
+    FilterBarComponent
+],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-header">
@@ -137,32 +139,30 @@ interface TipoDocumentoForm {
       </ui-alert>
     }
 
-    <div class="filter-bar" role="search" aria-label="Filtrar tipos de documento">
-      <div class="filter-bar__row">
-        <div class="input-group">
-          <span class="input-group__addon" aria-hidden="true">
-            <i class="pi pi-search"></i>
-          </span>
-          <input
-            type="search"
-            class="input"
-            placeholder="Buscar por código ou nome…"
-            aria-label="Buscar tipo de documento"
-            [value]="termoBusca()"
-            (input)="termoBusca.set(inputValue($event))"
-          />
-        </div>
-      </div>
-      <div class="filter-bar__group">
+    <ui-filter-bar
+      ariaLabel="Filtrar tipos de documento"
+      searchPlaceholder="Buscar por código ou nome…"
+      searchAriaLabel="Buscar tipo de documento"
+      [(searchValue)]="termoBusca"
+    >
+      <button
+        uiFilterBarActions
+        type="button"
+        class="btn btn--tertiary btn--sm btn--rect"
+        (click)="limparFiltros()"
+      >
+        Limpar
+      </button>
+      <ng-container uiFilterBarSecondary>
         <span class="u-eyebrow">Categoria</span>
         <ui-filter-chips
           [options]="categoriaChips()"
-          [selected]="filtroCategoria()"
+          [(selected)]="filtroCategoria"
           (selectedChange)="filtroCategoria.set($event ?? '')"
           ariaLabel="Filtrar por categoria"
         />
-      </div>
-    </div>
+      </ng-container>
+    </ui-filter-bar>
 
     <section class="panel" aria-labelledby="cfg-tipos-documento-list-title">
       <div class="panel-head">
