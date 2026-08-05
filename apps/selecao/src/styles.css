@@ -57,12 +57,9 @@ body.uni-drawer-open {
 sel-root,
 sel-layout {
   display: flex;
-  height: 100vh;
-  min-height: 0;
+  min-height: 100vh;
   flex-direction: column;
 }
-
-/* COPY FROM CPG BELOW */
 
 .institutional-bar {
   background: var(--color-primary-900);
@@ -72,9 +69,7 @@ sel-layout {
 .admin-shell {
   display: grid;
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
-  overflow: hidden;
 }
 
 @media (min-width: 1024px) {
@@ -370,10 +365,9 @@ sel-layout {
 .admin-main {
   display: flex;
   min-width: 0;
-  min-height: 0; /* faltava */
+  min-height: 0;
   flex: 1;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .admin-topbar {
@@ -421,31 +415,37 @@ cfg-pesos-enem-page {
   gap: var(--space-7);
 }
 
+/* Conteúdo das rotas. Teto de largura para não esticar a linha de leitura em
+   telas grandes; `width: 100%` preserva o stretch dentro do flex do shell. */
+.page {
+  display: flex;
+  width: 100%;
+  max-width: var(--content-max);
+  flex-direction: column;
+  gap: var(--space-7);
+  padding: var(--space-5);
+  margin-inline: auto;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: var(--space-7);
+  }
+}
+
+/* O wizard ocupa a área útil inteira e administra o próprio scroll interno,
+   então dispensa o padding e o teto de largura da rota. */
+.page:has(> .sel-processo) {
+  max-width: none;
+  padding: 0;
+  gap: 0;
+}
+
 .sel-processo {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
-}
-
-.sel-processo .admin-shell {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  height: auto;
-}
-
-.page1--wizard {
-  display: flex !important;
-  flex-direction: row !important;
-  flex: 1;
-  min-height: 0;
-}
-.page1 {
-  display: flex !important;
-  flex-direction: row !important;
 }
 
 .cfg-unidades-scope {
@@ -840,7 +840,7 @@ cfg-pesos-enem-page {
   padding: var(--space-4) var(--space-5);
 }
 
-.pe-grid .num-grid__row> :first-child {
+.pe-grid .num-grid__row > :first-child {
   grid-column: 1 / -1;
   font-weight: var(--weight-semibold);
 }
@@ -860,7 +860,7 @@ cfg-pesos-enem-page {
     padding: var(--space-3) var(--space-5);
   }
 
-  .pe-grid .num-grid__row> :first-child {
+  .pe-grid .num-grid__row > :first-child {
     grid-column: auto;
     font-weight: var(--weight-medium);
   }
@@ -922,12 +922,12 @@ cfg-pesos-enem-page {
 }
 
 .cell-label--group-num {
-  color:var(--text-secondary);
-  font-size:var(--text-xs);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
 }
 
 .cell-label--group-label {
-  font-size:var(--text-sm);
+  font-size: var(--text-sm);
 }
 
 /* Barra de ações de edição da grade (revelada por JS) */
@@ -1123,4 +1123,3 @@ cfg-pesos-enem-page {
   font-size: var(--text-sm);
   color: var(--text-primary);
 }
-
