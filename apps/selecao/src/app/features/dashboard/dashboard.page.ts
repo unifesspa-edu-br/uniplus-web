@@ -5,7 +5,7 @@ import {
   computed,
   ViewEncapsulation,
 } from '@angular/core';
-import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui';
+import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui/components';
 import { DecimalPipe } from '@angular/common';
 
 @Component({
