@@ -20,7 +20,7 @@ import {
   InstitutionalBarComponent,
   SkipLinkComponent,
   VlibrasLoaderComponent,
-} from '@uniplus/shared-ui';
+} from '@uniplus/shared-ui/components';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import {
