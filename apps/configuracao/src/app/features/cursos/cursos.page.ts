@@ -44,6 +44,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -77,6 +78,7 @@ interface CursoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -122,20 +124,21 @@ interface CursoForm {
         </button>
       </div>
 
-      <div class="filter-bar" role="search">
-        <div class="filter-bar__group">
-          <label class="field field--search">
-            <span class="field__label sr-only">Buscar por código ou nome</span>
-            <input
-              class="input"
-              type="search"
-              placeholder="Buscar por código ou nome…"
-              [value]="termoBusca()"
-              (input)="termoBusca.set($any($event.target).value)"
-            />
-          </label>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar cursos"
+        searchPlaceholder="Buscar por código ou nome..."
+        searchAriaLabel="Buscar curso"
+        [(searchValue)]="termoBusca"
+      >
+        <button
+          uiFilterBarActions
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
+          (click)="limparFiltros()"
+        >
+          Limpar
+        </button>
+      </ui-filter-bar>
 
       @if (cursosFiltrados().length > 0) {
         <div class="table-responsive">
@@ -645,6 +648,10 @@ export class CursosPage {
     if (anterior !== null && !this.loading()) {
       this.pagina.set({ cursor: anterior, direction: 'prev' });
     }
+  }
+
+  protected limparFiltros(): void {
+    this.termoBusca.set('');
   }
 
   /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
