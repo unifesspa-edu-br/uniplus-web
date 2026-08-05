@@ -1,18 +1,11 @@
 /* ── Dashboard layout ────────────────────────────────────────────── */
 
+/* O espaçamento e o teto de largura vêm de `.page`, no shell da rota. */
 .sel-page {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-6);
   min-height: 0;
-  overflow-y: auto;
-}
-
-@media (min-width: 768px) {
-  .sel-page {
-    padding: var(--space-7);
-  }
 }
 
 /* ── Page header ─────────────────────────────────────────────────── */
