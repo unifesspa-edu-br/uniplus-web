@@ -50,6 +50,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -133,6 +134,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -184,20 +186,12 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
         </button>
       </div>
 
-      <div class="filter-bar" role="search" aria-label="Filtrar arestas de precedência">
-        <div class="filter-bar__group">
-          <label class="field field--search">
-            <span class="field__label sr-only">Buscar por fase antecessora ou sucessora</span>
-            <input
-              class="input"
-              type="search"
-              placeholder="Buscar por fase antecessora ou sucessora…"
-              [value]="termoBusca()"
-              (input)="atualizarBusca($event)"
-            />
-          </label>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar arestas de precedência"
+        searchPlaceholder="Buscar por fase antecessora ou sucessora…"
+        searchAriaLabel="Buscar por fase antecessora ou sucessora"
+        [(searchValue)]="termoBusca"
+      />
 
       @if (arestasFiltradas().length > 0) {
         <div class="table-responsive">
@@ -663,17 +657,6 @@ export class PrecedenciasFasePage {
 
   protected limparFiltros(): void {
     this.termoBusca.set('');
-  }
-
-  /**
-   * Estreita o alvo do evento em vez de passar por `$any` no template: o cast
-   * no template escapa da checagem de tipos e o repositório veda `any` em
-   * componentes.
-   */
-  protected atualizarBusca(evento: Event): void {
-    if (evento.target instanceof HTMLInputElement) {
-      this.termoBusca.set(evento.target.value);
-    }
   }
 
   protected fecharFormulario(): void {
