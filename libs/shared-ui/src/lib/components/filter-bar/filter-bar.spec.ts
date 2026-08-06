@@ -90,6 +90,15 @@ describe('FilterBarComponent', () => {
 
     expect(component.searchValue()).toBe('marabá');
   });
+
+  it('deixa .filter-bar__group sem nenhum nó-filho quando nada é projetado em uiFilterBarSecondary (pré-condição do CSS .filter-bar__group:empty)', () => {
+    const { fixture } = setup();
+    fixture.componentRef.setInput('ariaLabel', 'Filtrar unidades');
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.css('.filter-bar__group')).nativeElement as HTMLElement;
+    expect(group.childNodes.length).toBe(0);
+  });
 });
 
 @Component({
