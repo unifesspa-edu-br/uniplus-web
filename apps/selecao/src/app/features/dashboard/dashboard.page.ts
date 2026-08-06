@@ -1,10 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  signal,
-  computed,
-  ViewEncapsulation,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui/components';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -14,9 +8,7 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [TagComponent, EmptyStateComponent, DecimalPipe, DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'sel-page' },
   styleUrl: './dashboard.page.css',
-  encapsulation: ViewEncapsulation.None,
   template: `
     <div class="page-header">
       <div class="page-header__content">
