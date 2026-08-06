@@ -82,6 +82,13 @@ export interface DocumentoConfig {
   todasEtapas: boolean;
   etapas: string[];
   modalidades: ModalidadeConcorrencia[];
+  /**
+   * `false` enquanto o documento acompanha as modalidades aceitas pelo
+   * processo; `true` depois que o operador recorta a lista no passo 10.
+   * Registrar o estado evita confundir um recorte que por acaso coincide com
+   * as aceitas — depois de uma remoção no passo 3 — com o padrão.
+   */
+  modalidadesRecortadas: boolean;
 }
 
 export interface PoloConfig {

@@ -22,17 +22,16 @@ export class Step03ModalidadesComponent {
   });
 
   toggleAll(checked: boolean): void {
-    const anteriores = this.store.draft().modalidades.selected;
     const selected = checked ? this.modalidades.map((item) => item.code) : [];
     this.store.patchObjectSection('modalidades', { selected });
-    this.sincronizarModalidades(anteriores, selected);
+    this.sincronizarModalidades(selected);
   }
 
   toggle(code: ModalidadeConcorrencia, checked: boolean): void {
-    const anteriores = this.store.draft().modalidades.selected;
-    const selected = checked ? [...anteriores, code] : anteriores.filter((item) => item !== code);
+    const atual = this.store.draft().modalidades.selected;
+    const selected = checked ? [...atual, code] : atual.filter((item) => item !== code);
     this.store.patchObjectSection('modalidades', { selected });
-    this.sincronizarModalidades(anteriores, selected);
+    this.sincronizarModalidades(selected);
   }
 
   /**
@@ -42,15 +41,12 @@ export class Step03ModalidadesComponent {
    * O bônus é escolha explícita do operador no passo 7: dele apenas removemos
    * o que deixou de ser aceito.
    *
-   * Nos documentos há dois casos. Quem ainda está no padrão — exigido de todas
-   * as modalidades aceitas — acompanha a nova seleção, senão ficaria preso à
-   * primeira modalidade escolhida. Quem foi restringido no passo 10 mantém o
-   * recorte do operador, perdendo apenas o que deixou de ser aceito.
+   * Nos documentos há dois casos, distinguidos por `modalidadesRecortadas`.
+   * Quem ainda acompanha o processo recebe a nova seleção, senão ficaria preso
+   * à primeira modalidade escolhida. Quem foi recortado no passo 10 mantém a
+   * escolha do operador, perdendo apenas o que deixou de ser aceito.
    */
-  private sincronizarModalidades(
-    anteriores: readonly ModalidadeConcorrencia[],
-    selected: readonly ModalidadeConcorrencia[],
-  ): void {
+  private sincronizarModalidades(selected: readonly ModalidadeConcorrencia[]): void {
     const aceitas = new Set(selected);
     const draft = this.store.draft();
 
@@ -63,9 +59,9 @@ export class Step03ModalidadesComponent {
         id,
         {
           ...config,
-          modalidades: estaNoPadrao(config.modalidades, anteriores)
-            ? [...selected]
-            : config.modalidades.filter((code) => aceitas.has(code)),
+          modalidades: config.modalidadesRecortadas
+            ? config.modalidades.filter((code) => aceitas.has(code))
+            : [...selected],
         },
       ]),
     );
@@ -80,12 +76,3 @@ export class Step03ModalidadesComponent {
   }
 }
 
-/** O documento está no padrão quando cobre exatamente as modalidades aceitas. */
-function estaNoPadrao(
-  configuradas: readonly ModalidadeConcorrencia[],
-  aceitas: readonly ModalidadeConcorrencia[],
-): boolean {
-  if (configuradas.length !== aceitas.length) return false;
-  const conjunto = new Set(configuradas);
-  return aceitas.every((code) => conjunto.has(code));
-}

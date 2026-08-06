@@ -42,6 +42,8 @@ export class Step10DocumentosComponent {
     const current = this.config(id).modalidades;
     this.patch(id, {
       modalidades: checked ? [...current, code] : current.filter((item) => item !== code),
+      // A partir daqui o documento deixa de acompanhar o passo 3.
+      modalidadesRecortadas: true,
     });
   }
 
