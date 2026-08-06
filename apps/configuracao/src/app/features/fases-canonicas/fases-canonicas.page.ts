@@ -50,6 +50,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -109,6 +110,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -160,18 +162,13 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         </button>
       </div>
 
-      <div class="filter-bar" role="search" aria-label="Filtrar fases canônicas">
-        <div class="filter-bar__group">
-          <label class="field field--search">
-            <span class="field__label sr-only">Buscar por código ou nome</span>
-            <input
-              class="input"
-              type="search"
-              placeholder="Buscar por código ou nome…"
-              [value]="termoBusca()"
-              (input)="termoBusca.set($any($event.target).value)"
-            />
-          </label>
+      <ui-filter-bar
+        ariaLabel="Filtrar fases canônicas"
+        searchPlaceholder="Buscar por código ou nome…"
+        searchAriaLabel="Buscar fase canônica"
+        [(searchValue)]="termoBusca"
+      >
+        <ng-container uiFilterBarSecondary>
           <label class="field">
             <span class="field__label sr-only">Filtrar por dono típico</span>
             <select class="select" [value]="donoTipicoFiltro()" (change)="donoTipicoFiltro.set($any($event.target).value)">
@@ -181,8 +178,8 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
               }
             </select>
           </label>
-        </div>
-      </div>
+        </ng-container>
+      </ui-filter-bar>
 
       @if (fasesFiltradas().length > 0) {
         <div class="table-responsive">
