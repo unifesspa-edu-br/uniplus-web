@@ -48,6 +48,7 @@ import {
   SpinnerComponent,
   PagerComponent,
   DialogComponent,
+  FilterBarComponent,
 } from "@uniplus/shared-ui/components";
 
 type ModoFormulario = "criar" | "editar";
@@ -100,6 +101,7 @@ const PAGE_SIZE = 50;
     ReactiveFormsModule,
     PagerComponent,
     DialogComponent,
+    FilterBarComponent,
   ],
   template: `
     <div class="page-header">
@@ -134,30 +136,21 @@ const PAGE_SIZE = 50;
     }
 
     <div data-scope class="cfg-unidades-scope">
-      <div class="filter-bar" role="search" aria-label="Filtrar recursos de acessibilidade">
-        <div class="filter-bar__row">
-          <div class="input-group">
-            <span class="input-group__addon" aria-hidden="true">
-              <i class="pi pi-search"></i>
-            </span>
-            <input
-              type="search"
-              class="input"
-              placeholder="Buscar por nome..."
-              aria-label="Buscar recursos de acessibilidade"
-              [value]="termoBusca()"
-              (input)="termoBusca.set(inputValue($event))"
-            />
-          </div>
-          <button
-            type="button"
-            class="btn btn--tertiary btn--sm btn--rect"
-            (click)="limparFiltros()"
-          >
-            Limpar
-          </button>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar recursos de acessibilidade"
+        searchPlaceholder="Buscar por código ou nome..."
+        searchAriaLabel="Buscar recursos de acessibilidade"
+        [(searchValue)]="termoBusca"
+      >
+        <button
+          uiFilterBarActions
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
+          (click)="limparFiltros()"
+        >
+          Limpar
+        </button>
+      </ui-filter-bar>
 
       <section class="panel" aria-labelledby="cfg-unidades-list-title">
         <div class="panel-head">
