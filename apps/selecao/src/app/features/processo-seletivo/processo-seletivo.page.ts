@@ -230,6 +230,7 @@ export class ProcessoSeletivoPage {
     if (pendentes.length > 0) {
       this.publicationMessage.set('');
       this.store.setStepError(pendentes);
+      this.revelarErro();
       return;
     }
 
@@ -237,6 +238,25 @@ export class ProcessoSeletivoPage {
     this.publicationMessage.set(
       'Rascunho validado. A publicação será habilitada quando a integração com a API estiver disponível.',
     );
+  }
+
+  /**
+   * Traz o aviso de pendências para a vista e o entrega ao leitor de tela. O
+   * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
+   * publica a partir do rodapé com a lista rolada não recebe retorno visível.
+   */
+  private revelarErro(): void {
+    // `setTimeout` e não `queueMicrotask`: o aviso só existe no DOM depois que
+    // o Angular processa a mudança do signal, o que ocorre após a fila de
+    // microtarefas.
+    setTimeout(() => {
+      const alerta = this.root.nativeElement.querySelector<HTMLElement>('.step-error');
+      if (alerta === null) return;
+
+      alerta.setAttribute('tabindex', '-1');
+      alerta.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      alerta.focus({ preventScroll: true });
+    });
   }
 
   /**
