@@ -35,15 +35,28 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     expect(transbordo.excedeScroller).toBe(false);
   });
 
-  test('limita a largura do conteúdo em telas grandes', async ({ page }, testInfo) => {
+  /**
+   * O wizard ocupa a largura inteira de propósito — stepper lateral e conteúdo
+   * dividem a área útil. Quem tem teto é o conteúdo das demais rotas, para a
+   * linha de leitura não esticar numa TV.
+   */
+  test('limita a largura do conteúdo das rotas em telas grandes', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.includes('tv'), 'Teto só é observável acima de 1200 px.');
 
-    const largura = await page.evaluate(() => {
-      const conteudo = document.querySelector('.wiz-content');
-      return conteudo instanceof HTMLElement ? conteudo.clientWidth : Number.MAX_SAFE_INTEGER;
+    await page.goto('/dashboard');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const medida = await page.evaluate(() => {
+      const conteudo = document.querySelector('main.page');
+      if (!(conteudo instanceof HTMLElement)) return null;
+      const teto = getComputedStyle(document.documentElement).getPropertyValue('--content-max');
+      return { largura: conteudo.clientWidth, teto: teto.trim() };
     });
 
-    expect(largura).toBeLessThanOrEqual(1920);
+    expect(medida).not.toBeNull();
+    expect(medida?.teto).toBe('75rem');
+    // 75rem = 1200 px, com folga para o padding lateral da rota.
+    expect(medida?.largura).toBeLessThanOrEqual(1200);
   });
 
   test('avança e volta entre os passos', async ({ page }) => {
