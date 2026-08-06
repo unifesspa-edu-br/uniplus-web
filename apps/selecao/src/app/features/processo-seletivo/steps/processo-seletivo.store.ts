@@ -16,6 +16,7 @@ function initialDocumentos(): Record<string, DocumentoConfig> {
         todasEtapas: true,
         etapas: DOC_ETAPAS.map((item) => item.cod),
         modalidades: [...MODALIDADES_CANONICAS],
+        modalidadesRecortadas: false,
       },
     ]),
   );
