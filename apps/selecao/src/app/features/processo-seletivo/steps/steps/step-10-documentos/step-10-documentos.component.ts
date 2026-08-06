@@ -47,14 +47,35 @@ export class Step10DocumentosComponent {
     });
   }
 
+  /**
+   * Modalidades que valem para o documento: a interseção do recorte com o que
+   * o processo aceita. O recorte guardado permanece intacto, então voltar a
+   * aceitar uma modalidade no passo 3 a traz de volta aqui.
+   */
+  modalidadesEfetivas(id: string): ModalidadeConcorrencia[] {
+    const aceitas = new Set(this.modalidades());
+    return this.config(id).modalidades.filter((code) => aceitas.has(code));
+  }
+
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
-    const semEtapa = Object.values(this.store.draft().documentos).some(
-      (config) => config.included && config.etapas.length === 0,
-    );
+    const documentos = Object.entries(this.store.draft().documentos);
+
+    const semEtapa = documentos.some(([, config]) => config.included && config.etapas.length === 0);
     if (semEtapa) {
       return { valid: false, message: 'Todo documento incluído deve ter ao menos uma etapa.' };
     }
+
+    const semModalidade = documentos.some(
+      ([id, config]) => config.included && this.modalidadesEfetivas(id).length === 0,
+    );
+    if (semModalidade) {
+      return {
+        valid: false,
+        message: 'Todo documento incluído deve valer para ao menos uma modalidade aceita.',
+      };
+    }
+
     return { valid: true };
   }
 }

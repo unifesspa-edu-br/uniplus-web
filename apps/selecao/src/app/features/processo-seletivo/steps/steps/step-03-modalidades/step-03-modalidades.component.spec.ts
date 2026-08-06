@@ -78,7 +78,12 @@ describe('Step03ModalidadesComponent', () => {
     expect(documentos[outroId].modalidades).toEqual(['AC', 'LB_Q', 'LB_PPI']);
   });
 
-  it('remove do recorte explícito a modalidade que deixou de ser aceita', () => {
+  /**
+   * O recorte guarda a intenção do operador e não é podado: o que vale é a
+   * interseção com as aceitas, calculada no passo 10. Podar aqui faria
+   * desmarcar e remarcar a mesma modalidade esvaziar o recorte para sempre.
+   */
+  it('preserva o recorte quando a modalidade sai e volta a ser aceita', () => {
     componente.toggle('AC', true);
     componente.toggle('LB_Q', true);
 
@@ -93,8 +98,10 @@ describe('Step03ModalidadesComponent', () => {
     });
 
     componente.toggle('LB_Q', false);
+    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['LB_Q']);
 
-    expect(store.draft().documentos[primeiroId].modalidades).toEqual([]);
+    componente.toggle('LB_Q', true);
+    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['LB_Q']);
   });
 
   /**

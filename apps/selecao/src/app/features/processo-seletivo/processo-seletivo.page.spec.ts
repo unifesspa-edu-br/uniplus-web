@@ -181,6 +181,26 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(erros?.[0]).toContain('Passo 1');
   });
 
+  /**
+   * O resumo do último passo rola em 320 px e com zoom alto. Sem trazer o aviso
+   * para a vista e dar-lhe foco, quem publica a partir do rodapé não recebe
+   * retorno visível nenhum.
+   */
+  it('traz o aviso de pendências para a vista e para o foco', async () => {
+    const { fixture, page, store } = montar();
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    page.nextOrPublish();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('.step-error');
+    expect(alerta).not.toBeNull();
+    expect(alerta?.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(alerta);
+  });
+
   it('identifica cada pendência pelo passo de origem', () => {
     const { fixture, page, store } = montar();
 

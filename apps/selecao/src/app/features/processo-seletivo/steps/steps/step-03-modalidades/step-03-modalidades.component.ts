@@ -43,12 +43,16 @@ export class Step03ModalidadesComponent {
    *
    * Nos documentos há dois casos, distinguidos por `modalidadesRecortadas`.
    * Quem ainda acompanha o processo recebe a nova seleção, senão ficaria preso
-   * à primeira modalidade escolhida. Quem foi recortado no passo 10 mantém a
-   * escolha do operador, perdendo apenas o que deixou de ser aceito.
+   * à primeira modalidade escolhida.
+   *
+   * Quem foi recortado no passo 10 guarda a escolha do operador **intacta**:
+   * o que vale na prática é a interseção com as aceitas, calculada na leitura.
+   * Podar aqui destruiria a intenção — desmarcar e remarcar a mesma modalidade
+   * no passo 3 esvaziaria o recorte para sempre.
    */
   private sincronizarModalidades(selected: readonly ModalidadeConcorrencia[]): void {
-    const aceitas = new Set(selected);
     const draft = this.store.draft();
+    const aceitas = new Set(selected);
 
     this.store.patchObjectSection('bonus', {
       modalidades: draft.bonus.modalidades.filter((code) => aceitas.has(code)),
@@ -59,9 +63,7 @@ export class Step03ModalidadesComponent {
         id,
         {
           ...config,
-          modalidades: config.modalidadesRecortadas
-            ? config.modalidades.filter((code) => aceitas.has(code))
-            : [...selected],
+          modalidades: config.modalidadesRecortadas ? config.modalidades : [...selected],
         },
       ]),
     );

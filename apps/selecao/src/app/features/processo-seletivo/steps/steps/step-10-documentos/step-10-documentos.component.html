@@ -69,7 +69,7 @@
                     <label class="doc-mod-item"
                       ><input
                         type="checkbox"
-                        [checked]="config(doc.id).modalidades.includes(code)"
+                        [checked]="modalidadesEfetivas(doc.id).includes(code)"
                         (change)="toggleModalidade(doc.id, code, $any($event.target).checked)"
                       /><span>{{ code }}</span></label
                     >
