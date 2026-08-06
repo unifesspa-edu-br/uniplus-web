@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
-import tiposProcesso from './tipos-processo.json';
+import { TIPO_PROCESSO_OPTIONS } from '../../processo-seletivo.data';
 
 @Component({
   selector: 'sel-step-01-tipo-processo',
@@ -13,8 +13,8 @@ import tiposProcesso from './tipos-processo.json';
 })
 export class Step01TipoProcessoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  /** Mock local até a API de tipos de edital ser integrada. */
-  readonly options: TipoProcessoOption[] = tiposProcesso.tipos;
+  /** Lista local até a API de tipos de processo seletivo ser integrada. */
+  readonly options: TipoProcessoOption[] = TIPO_PROCESSO_OPTIONS;
   readonly query = signal('');
   readonly filteredOptions = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('pt-BR');
