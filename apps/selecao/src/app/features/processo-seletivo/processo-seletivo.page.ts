@@ -101,17 +101,6 @@ export class ProcessoSeletivoPage {
   @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
   @ViewChild('wizContent') private wizContent?: ElementRef<HTMLElement>;
 
-  /**
-   * A lista de etapas só existe abaixo de 768 px; acima disso o CSS a esconde.
-   * Se a viewport cruzar essa fronteira com o diálogo aberto — rotação de tela
-   * ou mudança de zoom —, ele sumiria da tela sem fechar, mantendo o bloqueio
-   * de scroll ativo e sem controle visível para desfazer.
-   */
-  private readonly larguraDeDesktop =
-    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia('(min-width: 768px)')
-      : null;
-
   constructor() {
     // Navegar com o overlay ou a sidebar abertos destruía a página sem liberar
     // o lock, e a rota seguinte ficava sem scroll.
@@ -119,16 +108,6 @@ export class ProcessoSeletivoPage {
       if (this.stepsOverlayOpen()) this.overlayScroll.unlock();
     });
 
-    if (this.larguraDeDesktop !== null) {
-      const aoCruzarFronteira = (evento: MediaQueryListEvent): void => {
-        if (evento.matches) this.closeStepsOverlay();
-      };
-
-      this.larguraDeDesktop.addEventListener('change', aoCruzarFronteira);
-      this.destroyRef.onDestroy(() => {
-        this.larguraDeDesktop?.removeEventListener('change', aoCruzarFronteira);
-      });
-    }
 
     effect(() => {
       this.store.currentStep();

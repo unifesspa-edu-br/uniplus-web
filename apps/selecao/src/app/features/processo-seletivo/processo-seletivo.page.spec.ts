@@ -83,35 +83,6 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     expect(page.stepsOverlayOpen()).toBe(true);
   });
 
-  /**
-   * Acima de 768 px o CSS esconde a lista de etapas. Cruzar essa fronteira com
-   * o diálogo aberto — rotação de tela ou zoom — o tiraria da tela sem fechar,
-   * deixando o bloqueio de scroll ativo e sem controle para desfazer.
-   */
-  it('fecha o diálogo ao alcançar a largura de desktop', () => {
-    // jsdom não implementa `matchMedia`; instalamos um duplo controlável.
-    const ouvintes: ((evento: MediaQueryListEvent) => void)[] = [];
-    const original = window.matchMedia;
-    window.matchMedia = (() => ({
-      matches: false,
-      addEventListener: (_: string, ouvinte: (evento: MediaQueryListEvent) => void) =>
-        ouvintes.push(ouvinte),
-      removeEventListener: () => undefined,
-    })) as unknown as typeof window.matchMedia;
-
-    const { page, dialog } = montar();
-    instrumentar(dialog);
-    page.openStepsOverlay();
-    expect(page.stepsOverlayOpen()).toBe(true);
-
-    ouvintes.forEach((ouvinte) => ouvinte({ matches: true } as MediaQueryListEvent));
-
-    expect(page.stepsOverlayOpen()).toBe(false);
-    expect(document.body.classList.contains('sel-overlay-open')).toBe(false);
-
-    window.matchMedia = original;
-  });
-
   it('sincroniza o estado quando o diálogo fecha', () => {
     const { page, dialog } = montar();
     instrumentar(dialog);
