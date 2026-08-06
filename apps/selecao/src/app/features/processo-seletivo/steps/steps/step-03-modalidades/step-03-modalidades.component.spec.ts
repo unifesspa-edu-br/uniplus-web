@@ -37,9 +37,33 @@ describe('Step03ModalidadesComponent', () => {
   });
 
   /**
-   * Sem o descarte, desmarcar aqui deixava a modalidade configurada no bônus e
-   * nos documentos — rascunho com exigência para modalidade que o processo não
-   * aceita.
+   * Marcar uma modalidade de cada vez não pode deixar os documentos presos à
+   * primeira: como o padrão é o documento valer para todas as aceitas, ele
+   * precisa acompanhar a seleção nos dois sentidos.
+   */
+  it('mantém os documentos alinhados à seleção conforme ela cresce', () => {
+    componente.toggle('AC', true);
+    componente.toggle('LB_Q', true);
+    componente.toggle('LB_PPI', true);
+
+    const documentos = Object.values(store.draft().documentos);
+    expect(documentos.every((config) => config.modalidades.includes('LB_Q'))).toBe(true);
+    expect(documentos.every((config) => config.modalidades.includes('LB_PPI'))).toBe(true);
+    expect(documentos.every((config) => config.modalidades.length === 3)).toBe(true);
+  });
+
+  it('esvazia os documentos quando nada está selecionado', () => {
+    componente.toggle('AC', true);
+    componente.toggle('AC', false);
+
+    const documentos = Object.values(store.draft().documentos);
+    expect(documentos.every((config) => config.modalidades.length === 0)).toBe(true);
+  });
+
+  /**
+   * Sem a sincronização, desmarcar aqui deixava a modalidade configurada no
+   * bônus e nos documentos — rascunho com exigência para modalidade que o
+   * processo não aceita.
    */
   it('remove do bônus e dos documentos a modalidade desmarcada', () => {
     componente.toggle('LB_Q', true);

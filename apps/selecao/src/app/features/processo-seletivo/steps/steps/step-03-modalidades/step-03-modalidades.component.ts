@@ -24,22 +24,27 @@ export class Step03ModalidadesComponent {
   toggleAll(checked: boolean): void {
     const selected = checked ? this.modalidades.map((item) => item.code) : [];
     this.store.patchObjectSection('modalidades', { selected });
-    this.descartarOrfas(selected);
+    this.sincronizarModalidades(selected);
   }
 
   toggle(code: ModalidadeConcorrencia, checked: boolean): void {
     const atual = this.store.draft().modalidades.selected;
     const selected = checked ? [...atual, code] : atual.filter((item) => item !== code);
     this.store.patchObjectSection('modalidades', { selected });
-    this.descartarOrfas(selected);
+    this.sincronizarModalidades(selected);
   }
 
   /**
-   * Desmarcar uma modalidade aqui precisa removê-la também do bônus e dos
-   * documentos: só esconder a opção deixaria o rascunho com bônus ou exigência
-   * para uma modalidade que o processo não aceita.
+   * Mudar a seleção aqui repercute no bônus e nos documentos, que só podem
+   * citar modalidades que o processo aceita.
+   *
+   * O bônus é escolha explícita do operador no passo 7: dele apenas removemos
+   * o que deixou de ser aceito. Já o documento vale, por padrão, para todas as
+   * modalidades aceitas — então ele acompanha a seleção nos dois sentidos.
+   * Só remover levaria a documento preso à primeira modalidade escolhida,
+   * porque marcar as seguintes nunca as traria de volta.
    */
-  private descartarOrfas(selected: readonly ModalidadeConcorrencia[]): void {
+  private sincronizarModalidades(selected: readonly ModalidadeConcorrencia[]): void {
     const aceitas = new Set(selected);
     const draft = this.store.draft();
 
@@ -48,10 +53,7 @@ export class Step03ModalidadesComponent {
     });
 
     const documentos = Object.fromEntries(
-      Object.entries(draft.documentos).map(([id, config]) => [
-        id,
-        { ...config, modalidades: config.modalidades.filter((code) => aceitas.has(code)) },
-      ]),
+      Object.entries(draft.documentos).map(([id, config]) => [id, { ...config, modalidades: [...selected] }]),
     );
     this.store.patchSection('documentos', documentos);
   }
