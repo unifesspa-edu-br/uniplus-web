@@ -1,7 +1,7 @@
 /* ── Dashboard layout ────────────────────────────────────────────── */
 
 /* O espaçamento e o teto de largura vêm de `.page`, no shell da rota. */
-.sel-page {
+:host {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -145,23 +145,23 @@
 
 /* ── Panel overrides inside dashboard ────────────────────────────── */
 
-.sel-page .panel {
+:host .panel {
   overflow: visible;
 }
 
-.sel-page .panel-head a {
+.panel-head a {
   font-size: var(--text-sm);
   color: var(--color-primary);
   font-weight: var(--weight-medium);
   text-decoration: none;
 }
 
-.sel-page .panel-head a:hover {
+.panel-head a:hover {
   text-decoration: underline;
 }
 
 /* Aviso no lugar do atalho ainda não implementado — texto, não controle. */
-.sel-page .panel-head__aviso {
+.panel-head__aviso {
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
