@@ -19,6 +19,34 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     await expect(page.getByRole('main')).toHaveCount(1);
   });
 
+  /**
+   * Percorre todos os passos: medir só o passo ativo esconde transbordo nos
+   * demais, que ficam montados mas ocultos por `[hidden]`.
+   */
+  test('não transborda horizontalmente em nenhum passo', async ({ page }) => {
+    const total = await page.locator('li.steps__item').count();
+
+    for (let passo = 0; passo < total; passo += 1) {
+      await page.evaluate((indice) => {
+        const botoes = document.querySelectorAll<HTMLButtonElement>('li.steps__item button');
+        botoes[indice]?.click();
+      }, passo);
+
+      const medida = await page.evaluate(() => {
+        const documento = document.documentElement;
+        const scroller = document.querySelector('.wiz-content');
+        return {
+          documento: documento.scrollWidth - documento.clientWidth,
+          scroller:
+            scroller instanceof HTMLElement ? scroller.scrollWidth - scroller.clientWidth : 0,
+        };
+      });
+
+      expect(medida.documento, `documento no passo ${passo + 1}`).toBeLessThanOrEqual(1);
+      expect(medida.scroller, `scroller no passo ${passo + 1}`).toBeLessThanOrEqual(1);
+    }
+  });
+
   test('não transborda horizontalmente', async ({ page }) => {
     const transbordo = await page.evaluate(() => {
       const documento = document.documentElement;
