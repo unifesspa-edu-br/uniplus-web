@@ -464,7 +464,7 @@
    escalonar colunas por breakpoint. */
 .type-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
   gap: var(--space-4);
   border: 0;
   margin: 0;
@@ -474,6 +474,14 @@
 .scroll-tabela {
   padding: var(--space-1);
   border: none;
+  /* O navegador dá a `<fieldset>` um `min-inline-size: min-content`, que o
+     impede de encolher e produz scroll horizontal em telas estreitas. */
+  min-inline-size: 0;
+}
+
+/* Mesma razão para o agrupamento de tipos do passo 1. */
+.type-grid {
+  min-inline-size: 0;
 }
 
 .type-card {
@@ -688,7 +696,7 @@
 /* Checkbox grid */
 .checkbox-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
   gap: var(--space-3) var(--space-6);
 }
 
@@ -2322,7 +2330,7 @@ dialog.vagas-modal::backdrop {
 
 .atend-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
   gap: var(--space-2);
 }
 
