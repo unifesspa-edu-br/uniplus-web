@@ -42,6 +42,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -77,6 +78,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -128,20 +130,12 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
         </button>
       </div>
 
-      <div class="filter-bar" role="search" aria-label="Filtrar tipos de banca">
-        <div class="filter-bar__group">
-          <label class="field field--search">
-            <span class="field__label sr-only">Buscar por código ou nome</span>
-            <input
-              class="input"
-              type="search"
-              placeholder="Buscar por código ou nome…"
-              [value]="termoBusca()"
-              (input)="termoBusca.set($any($event.target).value)"
-            />
-          </label>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar tipos de banca"
+        searchPlaceholder="Buscar por código ou nome…"
+        searchAriaLabel="Buscar tipos de banca"
+        [(searchValue)]="termoBusca"
+      />
 
       @if (bancasFiltradas().length > 0) {
         <div class="table-responsive">
