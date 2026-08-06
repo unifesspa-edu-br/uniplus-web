@@ -145,14 +145,6 @@ interface TipoDocumentoForm {
       searchAriaLabel="Buscar tipo de documento"
       [(searchValue)]="termoBusca"
     >
-      <button
-        uiFilterBarActions
-        type="button"
-        class="btn btn--tertiary btn--sm btn--rect"
-        (click)="limparFiltros()"
-      >
-        Limpar
-      </button>
       <ng-container uiFilterBarSecondary>
         <span class="u-eyebrow">Categoria</span>
         <ui-filter-chips
