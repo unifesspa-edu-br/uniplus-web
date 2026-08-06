@@ -87,6 +87,30 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     expect(medida?.largura).toBeLessThanOrEqual(1200);
   });
 
+  /**
+   * Girar o aparelho ou mudar o zoom com a lista de etapas aberta não pode
+   * deixar o diálogo fora da tela com o scroll travado: ele precisa continuar
+   * visível e fechável na largura nova.
+   */
+  test('mantém a lista de etapas utilizável ao alargar a viewport', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('-320-'), 'A lista só é aberta abaixo de 768 px.');
+
+    await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
+    await expect(dialogo).toBeVisible();
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Fechar lista de etapas' }).click();
+    await expect(dialogo).toBeHidden();
+
+    // O bloqueio é liberado no evento `close`, que chega depois do clique.
+    await expect
+      .poll(() => page.evaluate(() => document.body.classList.contains('sel-overlay-open')))
+      .toBe(false);
+  });
+
   test('avança e volta entre os passos', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Passo 1');
 

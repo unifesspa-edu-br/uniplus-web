@@ -110,11 +110,9 @@
   background: var(--surface-overlay);
 }
 
-@media (min-width: 768px) {
-  .steps-overlay {
-    display: none;
-  }
-}
+/* Nenhuma regra esconde este diálogo por largura: `<dialog>` sem `open` já é
+   `display: none`. Escondê-lo por media query só teria efeito com ele aberto —
+   e faria o conteúdo sumir da tela sem fechar, mantendo o scroll travado. */
 
 /* Stepper nav (desktop) */
 .wiz-nav {
