@@ -129,16 +129,7 @@ interface CursoForm {
         searchPlaceholder="Buscar por código ou nome..."
         searchAriaLabel="Buscar curso"
         [(searchValue)]="termoBusca"
-      >
-        <button
-          uiFilterBarActions
-          type="button"
-          class="btn btn--tertiary btn--sm btn--rect"
-          (click)="limparFiltros()"
-        >
-          Limpar
-        </button>
-      </ui-filter-bar>
+      />
 
       @if (cursosFiltrados().length > 0) {
         <div class="table-responsive">
@@ -648,10 +639,6 @@ export class CursosPage {
     if (anterior !== null && !this.loading()) {
       this.pagina.set({ cursor: anterior, direction: 'prev' });
     }
-  }
-
-  protected limparFiltros(): void {
-    this.termoBusca.set('');
   }
 
   /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
