@@ -52,6 +52,43 @@ describe('Step03ModalidadesComponent', () => {
     expect(documentos.every((config) => config.modalidades.length === 3)).toBe(true);
   });
 
+  /**
+   * Restringir um documento no passo 10 é decisão do operador: mexer no passo 3
+   * depois não pode devolver o documento ao conjunto inteiro.
+   */
+  it('preserva o recorte feito por documento no passo 10', () => {
+    componente.toggle('AC', true);
+    componente.toggle('LB_Q', true);
+
+    const [primeiroId] = Object.keys(store.draft().documentos);
+    store.patchSection('documentos', {
+      ...store.draft().documentos,
+      [primeiroId]: { ...store.draft().documentos[primeiroId], modalidades: ['AC'] },
+    });
+
+    componente.toggle('LB_PPI', true);
+
+    const documentos = store.draft().documentos;
+    expect(documentos[primeiroId].modalidades).toEqual(['AC']);
+    const outroId = Object.keys(documentos).find((id) => id !== primeiroId) ?? '';
+    expect(documentos[outroId].modalidades).toEqual(['AC', 'LB_Q', 'LB_PPI']);
+  });
+
+  it('remove do recorte explícito a modalidade que deixou de ser aceita', () => {
+    componente.toggle('AC', true);
+    componente.toggle('LB_Q', true);
+
+    const [primeiroId] = Object.keys(store.draft().documentos);
+    store.patchSection('documentos', {
+      ...store.draft().documentos,
+      [primeiroId]: { ...store.draft().documentos[primeiroId], modalidades: ['LB_Q'] },
+    });
+
+    componente.toggle('LB_Q', false);
+
+    expect(store.draft().documentos[primeiroId].modalidades).toEqual([]);
+  });
+
   it('esvazia os documentos quando nada está selecionado', () => {
     componente.toggle('AC', true);
     componente.toggle('AC', false);

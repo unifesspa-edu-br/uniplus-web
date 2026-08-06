@@ -22,16 +22,17 @@ export class Step03ModalidadesComponent {
   });
 
   toggleAll(checked: boolean): void {
+    const anteriores = this.store.draft().modalidades.selected;
     const selected = checked ? this.modalidades.map((item) => item.code) : [];
     this.store.patchObjectSection('modalidades', { selected });
-    this.sincronizarModalidades(selected);
+    this.sincronizarModalidades(anteriores, selected);
   }
 
   toggle(code: ModalidadeConcorrencia, checked: boolean): void {
-    const atual = this.store.draft().modalidades.selected;
-    const selected = checked ? [...atual, code] : atual.filter((item) => item !== code);
+    const anteriores = this.store.draft().modalidades.selected;
+    const selected = checked ? [...anteriores, code] : anteriores.filter((item) => item !== code);
     this.store.patchObjectSection('modalidades', { selected });
-    this.sincronizarModalidades(selected);
+    this.sincronizarModalidades(anteriores, selected);
   }
 
   /**
@@ -39,12 +40,17 @@ export class Step03ModalidadesComponent {
    * citar modalidades que o processo aceita.
    *
    * O bônus é escolha explícita do operador no passo 7: dele apenas removemos
-   * o que deixou de ser aceito. Já o documento vale, por padrão, para todas as
-   * modalidades aceitas — então ele acompanha a seleção nos dois sentidos.
-   * Só remover levaria a documento preso à primeira modalidade escolhida,
-   * porque marcar as seguintes nunca as traria de volta.
+   * o que deixou de ser aceito.
+   *
+   * Nos documentos há dois casos. Quem ainda está no padrão — exigido de todas
+   * as modalidades aceitas — acompanha a nova seleção, senão ficaria preso à
+   * primeira modalidade escolhida. Quem foi restringido no passo 10 mantém o
+   * recorte do operador, perdendo apenas o que deixou de ser aceito.
    */
-  private sincronizarModalidades(selected: readonly ModalidadeConcorrencia[]): void {
+  private sincronizarModalidades(
+    anteriores: readonly ModalidadeConcorrencia[],
+    selected: readonly ModalidadeConcorrencia[],
+  ): void {
     const aceitas = new Set(selected);
     const draft = this.store.draft();
 
@@ -53,7 +59,15 @@ export class Step03ModalidadesComponent {
     });
 
     const documentos = Object.fromEntries(
-      Object.entries(draft.documentos).map(([id, config]) => [id, { ...config, modalidades: [...selected] }]),
+      Object.entries(draft.documentos).map(([id, config]) => [
+        id,
+        {
+          ...config,
+          modalidades: estaNoPadrao(config.modalidades, anteriores)
+            ? [...selected]
+            : config.modalidades.filter((code) => aceitas.has(code)),
+        },
+      ]),
     );
     this.store.patchSection('documentos', documentos);
   }
@@ -64,4 +78,14 @@ export class Step03ModalidadesComponent {
       ? { valid: true }
       : { valid: false, message: 'Selecione ao menos uma modalidade de concorrência.' };
   }
+}
+
+/** O documento está no padrão quando cobre exatamente as modalidades aceitas. */
+function estaNoPadrao(
+  configuradas: readonly ModalidadeConcorrencia[],
+  aceitas: readonly ModalidadeConcorrencia[],
+): boolean {
+  if (configuradas.length !== aceitas.length) return false;
+  const conjunto = new Set(configuradas);
+  return aceitas.every((code) => conjunto.has(code));
 }
