@@ -49,7 +49,7 @@ import { Step13RevisaoComponent } from './steps/steps/step-13-revisao/step-13-re
     Step13RevisaoComponent,
   ],
   providers: [ProcessoSeletivoStore],
-  templateUrl: './app.component.html',
+  templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProcessoSeletivoPage {
