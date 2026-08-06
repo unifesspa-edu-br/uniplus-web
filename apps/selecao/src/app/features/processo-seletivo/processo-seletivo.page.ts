@@ -119,10 +119,20 @@ export class ProcessoSeletivoPage {
     });
   }
 
-  /** O scroller do wizard é `.wiz-content`, não a janela. */
+  /**
+   * O scroller do wizard costuma ser `.wiz-content`, mas em telas baixas — ou
+   * com zoom alto — o conteúdo ultrapassa a viewport e quem rola é o documento.
+   * O botão precisa reagir aos dois, senão fica invisível justamente onde é
+   * mais útil.
+   */
   onContentScroll(event: Event): void {
     const scroller = event.target as HTMLElement;
-    this.showBackToTop.set(scroller.scrollTop > 500);
+    this.showBackToTop.set(scroller.scrollTop > 500 || window.scrollY > 500);
+  }
+
+  @HostListener('window:scroll') onDocumentScroll(): void {
+    const scroller = this.wizContent?.nativeElement;
+    this.showBackToTop.set(window.scrollY > 500 || (scroller?.scrollTop ?? 0) > 500);
   }
 
   @HostListener('document:keydown.escape') onEscape(): void {
@@ -234,6 +244,7 @@ export class ProcessoSeletivoPage {
 
   scrollToTop(): void {
     this.wizContent?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
