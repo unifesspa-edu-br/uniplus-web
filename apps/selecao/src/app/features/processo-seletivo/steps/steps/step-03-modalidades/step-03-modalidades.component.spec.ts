@@ -63,7 +63,11 @@ describe('Step03ModalidadesComponent', () => {
     const [primeiroId] = Object.keys(store.draft().documentos);
     store.patchSection('documentos', {
       ...store.draft().documentos,
-      [primeiroId]: { ...store.draft().documentos[primeiroId], modalidades: ['AC'] },
+      [primeiroId]: {
+        ...store.draft().documentos[primeiroId],
+        modalidades: ['AC'],
+        modalidadesRecortadas: true,
+      },
     });
 
     componente.toggle('LB_PPI', true);
@@ -81,12 +85,42 @@ describe('Step03ModalidadesComponent', () => {
     const [primeiroId] = Object.keys(store.draft().documentos);
     store.patchSection('documentos', {
       ...store.draft().documentos,
-      [primeiroId]: { ...store.draft().documentos[primeiroId], modalidades: ['LB_Q'] },
+      [primeiroId]: {
+        ...store.draft().documentos[primeiroId],
+        modalidades: ['LB_Q'],
+        modalidadesRecortadas: true,
+      },
     });
 
     componente.toggle('LB_Q', false);
 
     expect(store.draft().documentos[primeiroId].modalidades).toEqual([]);
+  });
+
+  /**
+   * O recorte precisa sobreviver a remover e recolocar a modalidade no passo 3.
+   * Inferir o estado comparando as listas confundia um recorte que coincidia
+   * com as aceitas — depois da remoção — com o padrão, e a recolocação
+   * devolvia o documento ao conjunto inteiro.
+   */
+  it('preserva o recorte ao remover e recolocar uma modalidade', () => {
+    componente.toggle('AC', true);
+    componente.toggle('LB_Q', true);
+
+    const [primeiroId] = Object.keys(store.draft().documentos);
+    store.patchSection('documentos', {
+      ...store.draft().documentos,
+      [primeiroId]: {
+        ...store.draft().documentos[primeiroId],
+        modalidades: ['AC'],
+        modalidadesRecortadas: true,
+      },
+    });
+
+    componente.toggle('LB_Q', false);
+    componente.toggle('LB_Q', true);
+
+    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['AC']);
   });
 
   it('esvazia os documentos quando nada está selecionado', () => {
