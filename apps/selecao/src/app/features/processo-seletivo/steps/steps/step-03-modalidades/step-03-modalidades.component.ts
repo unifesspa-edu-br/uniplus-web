@@ -38,8 +38,10 @@ export class Step03ModalidadesComponent {
    * Mudar a seleção aqui repercute no bônus e nos documentos, que só podem
    * citar modalidades que o processo aceita.
    *
-   * O bônus é escolha explícita do operador no passo 7: dele apenas removemos
-   * o que deixou de ser aceito.
+   * Nem o bônus nem os documentos são podados: os dois guardam a escolha do
+   * operador, e o que vale é a interseção com as modalidades aceitas, calculada
+   * na leitura de cada passo. Podar aqui apagaria a intenção — desmarcar e
+   * remarcar a mesma modalidade no passo 3 a perderia para sempre.
    *
    * Nos documentos há dois casos, distinguidos por `modalidadesRecortadas`.
    * Quem ainda acompanha o processo recebe a nova seleção, senão ficaria preso
@@ -52,11 +54,6 @@ export class Step03ModalidadesComponent {
    */
   private sincronizarModalidades(selected: readonly ModalidadeConcorrencia[]): void {
     const draft = this.store.draft();
-    const aceitas = new Set(selected);
-
-    this.store.patchObjectSection('bonus', {
-      modalidades: draft.bonus.modalidades.filter((code) => aceitas.has(code)),
-    });
 
     const documentos = Object.fromEntries(
       Object.entries(draft.documentos).map(([id, config]) => [

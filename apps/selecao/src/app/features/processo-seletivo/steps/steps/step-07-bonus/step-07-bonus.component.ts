@@ -14,6 +14,16 @@ export class Step07BonusComponent {
   /** Só as modalidades aceitas no passo 3 podem receber bônus. */
   readonly modalidades = computed(() => this.store.draft().modalidades.selected);
 
+  /**
+   * O que vale de fato: a escolha do operador cruzada com as aceitas. A escolha
+   * é guardada intacta, então voltar a aceitar uma modalidade no passo 3 a traz
+   * de volta ao bônus.
+   */
+  readonly modalidadesEfetivas = computed(() => {
+    const aceitas = new Set(this.modalidades());
+    return this.store.draft().bonus.modalidades.filter((code) => aceitas.has(code));
+  });
+
   toggleModalidade(code: ModalidadeConcorrencia, checked: boolean): void {
     const current = this.store.draft().bonus.modalidades;
     this.store.patchObjectSection('bonus', {
@@ -30,8 +40,11 @@ export class Step07BonusComponent {
       return { valid: false, message: 'Informe o valor do bônus.' };
     }
     if (!bonus.criterio) return { valid: false, message: 'Selecione o critério do bônus.' };
-    if (!bonus.modalidades.length) {
-      return { valid: false, message: 'Selecione ao menos uma modalidade do bônus.' };
+    if (!this.modalidadesEfetivas().length) {
+      return {
+        valid: false,
+        message: 'Selecione ao menos uma modalidade aceita para o bônus.',
+      };
     }
     return { valid: true };
   }

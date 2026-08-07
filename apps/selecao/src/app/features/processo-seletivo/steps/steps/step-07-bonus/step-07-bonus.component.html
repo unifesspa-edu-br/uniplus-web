@@ -79,7 +79,7 @@
             <label class="check-item"
               ><input
                 type="checkbox"
-                [checked]="store.draft().bonus.modalidades.includes(code)"
+                [checked]="modalidadesEfetivas().includes(code)"
                 (change)="toggleModalidade(code, $any($event.target).checked)"
               /><span>{{ code }}</span></label
             >
