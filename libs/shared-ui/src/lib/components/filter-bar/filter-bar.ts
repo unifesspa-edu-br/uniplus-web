@@ -22,8 +22,14 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
         </div>
         <ng-content select="[uiFilterBarActions]" />
       </div>
-      <div class="filter-bar__group">
-        <ng-content select="[uiFilterBarSecondary]" />
+      <div
+        class="filter-bar__group"
+        [attr.role]="secondaryRole() || null"
+        [attr.aria-label]="secondaryAriaLabel() || null"
+      >
+        <ng-content
+          select="[uiFilterBarSecondary]"
+        />
       </div>
     </div>
   `,
@@ -33,4 +39,7 @@ export class FilterBarComponent {
   readonly searchPlaceholder = input<string>('Buscar...');
   readonly searchAriaLabel = input<string>('');
   readonly searchValue = model<string>('');
+  
+  readonly secondaryRole = input<string>();
+  readonly secondaryAriaLabel = input<string>();
 }
