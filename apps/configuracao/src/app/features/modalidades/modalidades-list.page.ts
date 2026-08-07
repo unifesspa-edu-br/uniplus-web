@@ -117,6 +117,8 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
         searchPlaceholder="Buscar por código ou descrição..."
         searchAriaLabel="Buscar modalidade"
         [(searchValue)]="busca"
+        secondaryRole="group"
+        secondaryAriaLabel="Filtrar por natureza legal"
       >
         <button
           uiFilterBarActions
@@ -131,7 +133,6 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
           <ui-filter-chips
             [options]="chipsNatureza()"
             [(selected)]="naturezaSelecionada"
-            (selectedChange)="naturezaSelecionada.set($event ?? '')"
             ariaLabel="Filtrar por natureza"
           />
         </ng-container>
