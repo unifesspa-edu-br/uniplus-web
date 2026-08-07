@@ -2,7 +2,6 @@ import {
   Component,
   ChangeDetectionStrategy,
   inject,
-  DestroyRef,
   signal,
   computed,
 } from '@angular/core';
@@ -68,8 +67,6 @@ interface ConfigNavGroup {
         class="sidebar"
         id="cfg-admin-sidebar"
         aria-label="Painel administrativo"
-        [attr.aria-hidden]="sidebarHidden() ? 'true' : null"
-        [attr.inert]="sidebarHidden() ? '' : null"
       >
         <div class="sidebar__brand">
           <div class="sidebar__mark" aria-hidden="true">U+</div>
@@ -137,11 +134,22 @@ interface ConfigNavGroup {
         <header class="admin-topbar" role="banner">
           <button
             type="button"
-            class="sidebar-toggle"
-            [attr.aria-label]="sidebarToggleLabel()"
+            class="sidebar-toggle sidebar-toggle--compacto"
+            [attr.aria-label]="sidebarMobileOpen() ? 'Fechar menu lateral' : 'Abrir menu lateral'"
             aria-controls="cfg-admin-sidebar"
-            [attr.aria-expanded]="sidebarExpanded() ? 'true' : 'false'"
-            (click)="toggleSidebar()"
+            [attr.aria-expanded]="sidebarMobileOpen() ? 'true' : 'false'"
+            (click)="alternarSidebarCompacta()"
+          >
+            <i class="pi pi-bars" aria-hidden="true"></i>
+          </button>
+
+          <button
+            type="button"
+            class="sidebar-toggle sidebar-toggle--amplo"
+            [attr.aria-label]="sidebarDesktopOpen() ? 'Recolher menu lateral' : 'Expandir menu lateral'"
+            aria-controls="cfg-admin-sidebar"
+            [attr.aria-expanded]="sidebarDesktopOpen() ? 'true' : 'false'"
+            (click)="alternarSidebarAmpla()"
           >
             <i class="pi pi-bars" aria-hidden="true"></i>
           </button>
@@ -175,7 +183,6 @@ interface ConfigNavGroup {
   `,
 })
 export class LayoutComponent {
-  private readonly destroyRef = inject(DestroyRef);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   protected readonly userContext = inject(UserContextService);
@@ -193,21 +200,14 @@ export class LayoutComponent {
     ),
     { initialValue: this.breadcrumbDaRotaAtiva() },
   );
-  private readonly desktopMedia =
-    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia('(min-width: 1024px)')
-      : null;
-
-  protected readonly isDesktop = signal(this.desktopMedia?.matches ?? false);
+  /**
+   * Dois estados independentes, um por largura: a gaveta das telas estreitas
+   * nasce fechada, a lateral das largas nasce expandida. Cada um pertence ao
+   * seu botão, e o CSS decide qual botão aparece — assim o breakpoint vive só
+   * na folha de estilo, sem cópia em TypeScript para sair de sincronia.
+   */
   protected readonly sidebarMobileOpen = signal(false);
   protected readonly sidebarDesktopOpen = signal(true);
-  protected readonly sidebarExpanded = computed(() =>
-    this.isDesktop() ? this.sidebarDesktopOpen() : this.sidebarMobileOpen(),
-  );
-  protected readonly sidebarHidden = computed(() => !this.isDesktop() && !this.sidebarMobileOpen());
-  protected readonly sidebarToggleLabel = computed(() =>
-    this.sidebarExpanded() ? 'Fechar menu lateral' : 'Abrir menu lateral',
-  );
   protected readonly sidebarUserInitials = computed(() => initials(this.userContext.displayName()));
   protected readonly sidebarUserRole = computed(() => {
     const role = this.authService.roles().find((value) => DOMAIN_ROLES.has(value));
@@ -226,28 +226,12 @@ export class LayoutComponent {
     },
   ];
 
-  constructor() {
-    if (this.desktopMedia === null) return;
-
-    const syncDesktop = (event?: MediaQueryListEvent): void => {
-      this.isDesktop.set(event?.matches ?? this.desktopMedia?.matches ?? false);
-      this.sidebarMobileOpen.set(false);
-    };
-
-    syncDesktop();
-    this.desktopMedia.addEventListener('change', syncDesktop);
-    this.destroyRef.onDestroy(() => {
-      this.desktopMedia?.removeEventListener('change', syncDesktop);
-    });
+  protected alternarSidebarCompacta(): void {
+    this.sidebarMobileOpen.update((aberta) => !aberta);
   }
 
-  protected toggleSidebar(): void {
-    if (this.isDesktop()) {
-      this.sidebarDesktopOpen.update((open) => !open);
-      return;
-    }
-
-    this.sidebarMobileOpen.update((open) => !open);
+  protected alternarSidebarAmpla(): void {
+    this.sidebarDesktopOpen.update((aberta) => !aberta);
   }
 
   protected closeSidebar(): void {
