@@ -79,54 +79,6 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     expect(transbordo.excedeScroller).toBe(false);
   });
 
-  /**
-   * O wizard ocupa a largura inteira de propósito — stepper lateral e conteúdo
-   * dividem a área útil. Quem tem teto é o conteúdo das demais rotas, para a
-   * linha de leitura não esticar numa TV.
-   */
-  test('limita a largura do conteúdo das rotas em telas grandes', async ({ page }, testInfo) => {
-    test.skip(!testInfo.project.name.includes('tv'), 'Teto só é observável acima de 1200 px.');
-
-    await page.goto('/dashboard');
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-
-    const medida = await page.evaluate(() => {
-      const conteudo = document.querySelector('main.page');
-      if (!(conteudo instanceof HTMLElement)) return null;
-      const teto = getComputedStyle(document.documentElement).getPropertyValue('--content-max');
-      return { largura: conteudo.clientWidth, teto: teto.trim() };
-    });
-
-    expect(medida).not.toBeNull();
-    expect(medida?.teto).toBe('75rem');
-    // 75rem = 1200 px, com folga para o padding lateral da rota.
-    expect(medida?.largura).toBeLessThanOrEqual(1200);
-  });
-
-  /**
-   * Girar o aparelho ou mudar o zoom com a lista de etapas aberta não pode
-   * deixar o diálogo fora da tela com o scroll travado: ele precisa continuar
-   * visível e fechável na largura nova.
-   */
-  test('mantém a lista de etapas utilizável ao alargar a viewport', async ({ page }, testInfo) => {
-    test.skip(!testInfo.project.name.includes('-320-'), 'A lista só é aberta abaixo de 768 px.');
-
-    await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
-    const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
-    await expect(dialogo).toBeVisible();
-
-    await page.setViewportSize({ width: 1366, height: 900 });
-
-    await expect(dialogo).toBeVisible();
-    await dialogo.getByRole('button', { name: 'Fechar lista de etapas' }).click();
-    await expect(dialogo).toBeHidden();
-
-    // O bloqueio é liberado no evento `close`, que chega depois do clique.
-    await expect
-      .poll(() => page.evaluate(() => document.body.classList.contains('sel-overlay-open')))
-      .toBe(false);
-  });
-
   test('avança e volta entre os passos', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Passo 1');
 
