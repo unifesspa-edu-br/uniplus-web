@@ -139,20 +139,21 @@ describe('Step03ModalidadesComponent', () => {
   });
 
   /**
-   * Sem a sincronização, desmarcar aqui deixava a modalidade configurada no
-   * bônus e nos documentos — rascunho com exigência para modalidade que o
-   * processo não aceita.
+   * A escolha do bônus é guardada intacta; o que vale é a interseção com as
+   * aceitas, calculada no passo 7. Podar aqui faria desmarcar e remarcar a
+   * mesma modalidade apagá-la do bônus para sempre, com a validação ainda
+   * passando por causa das demais.
    */
-  it('remove do bônus e dos documentos a modalidade desmarcada', () => {
+  it('preserva a escolha do bônus quando a modalidade sai e volta', () => {
     componente.toggle('LB_Q', true);
     componente.toggle('AC', true);
     store.patchObjectSection('bonus', { modalidades: ['LB_Q', 'AC'] });
 
     componente.toggle('LB_Q', false);
+    expect(store.draft().bonus.modalidades).toEqual(['LB_Q', 'AC']);
 
-    expect(store.draft().bonus.modalidades).toEqual(['AC']);
-    const documentos = Object.values(store.draft().documentos);
-    expect(documentos.every((config) => !config.modalidades.includes('LB_Q'))).toBe(true);
+    componente.toggle('LB_Q', true);
+    expect(store.draft().bonus.modalidades).toEqual(['LB_Q', 'AC']);
   });
 
   it('exige ao menos uma modalidade para avançar', () => {
