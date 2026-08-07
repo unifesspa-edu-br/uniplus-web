@@ -394,6 +394,21 @@ sel-layout {
   cursor: pointer;
 }
 
+/* Cada botão de menu pertence a uma largura, e o breakpoint fica só aqui. */
+.sidebar-toggle--amplo {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .sidebar-toggle--compacto {
+    display: none;
+  }
+
+  .sidebar-toggle--amplo {
+    display: inline-flex;
+  }
+}
+
 .cfg-topbar-actions {
   display: flex;
   align-items: center;

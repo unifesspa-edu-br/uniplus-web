@@ -15,6 +15,22 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
+  /**
+   * O controle do menu lateral é escolhido por CSS, um botão por largura, sem
+   * consultar a viewport em JavaScript: assim o breakpoint vive só na folha de
+   * estilo. Cada botão reporta o próprio estado em `aria-expanded`.
+   */
+  test('expõe um único controle de menu, coerente com a largura', async ({ page }, testInfo) => {
+    const menu = controleDeMenu(testInfo.project.name);
+
+    await expect(page.locator(menu.visivel)).toBeVisible();
+    await expect(page.locator(menu.oculto)).toBeHidden();
+    await expect(page.locator(menu.visivel)).toHaveAttribute('aria-expanded', menu.inicial);
+
+    await page.locator(menu.visivel).click();
+    await expect(page.locator(menu.visivel)).toHaveAttribute('aria-expanded', menu.alternado);
+  });
+
   test('mantém um único landmark main', async ({ page }) => {
     await expect(page.getByRole('main')).toHaveCount(1);
   });
@@ -140,6 +156,33 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     await expect(page.locator('.publication-message')).toHaveCount(0);
   });
 });
+
+/**
+ * O menu lateral tem fronteira própria em 1024 px: 768 px ainda usa a gaveta.
+ * A lateral das telas largas nasce expandida; a gaveta das estreitas, fechada.
+ */
+function controleDeMenu(projectName: string): {
+  visivel: string;
+  oculto: string;
+  inicial: string;
+  alternado: string;
+} {
+  const amplo = projectName.includes('desktop') || projectName.includes('-tv-');
+
+  return amplo
+    ? {
+        visivel: '.sidebar-toggle--amplo',
+        oculto: '.sidebar-toggle--compacto',
+        inicial: 'true',
+        alternado: 'false',
+      }
+    : {
+        visivel: '.sidebar-toggle--compacto',
+        oculto: '.sidebar-toggle--amplo',
+        inicial: 'false',
+        alternado: 'true',
+      };
+}
 
 /**
  * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo;
