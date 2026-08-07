@@ -135,7 +135,7 @@ const PAGE_SIZE = 50;
     <div data-scope class="cfg-unidades-scope">
       <ui-filter-bar
         ariaLabel="Filtrar tipos de deficiência"
-        searchPlaceholder="Buscar por código ou nome..."
+        searchPlaceholder="Buscar por nome..."
         searchAriaLabel="Buscar tipos de deficiência"
         [(searchValue)]="termoBusca"
       >

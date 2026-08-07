@@ -138,7 +138,7 @@ const PAGE_SIZE = 50;
     <div data-scope class="cfg-unidades-scope">
       <ui-filter-bar
         ariaLabel="Filtrar recursos de acessibilidade"
-        searchPlaceholder="Buscar por código ou nome..."
+        searchPlaceholder="Buscar por nome..."
         searchAriaLabel="Buscar recursos de acessibilidade"
         [(searchValue)]="termoBusca"
       >
