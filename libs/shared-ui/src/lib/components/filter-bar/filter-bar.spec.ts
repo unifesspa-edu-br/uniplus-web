@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Component, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
+import { FilterBarComponent as PublicFilterBarComponent } from '../../index';
 import { FilterBarComponent } from './filter-bar';
 
 describe('FilterBarComponent', () => {
@@ -24,6 +27,10 @@ describe('FilterBarComponent', () => {
   it('lança erro se detectChanges rodar sem ariaLabel informado (input obrigatório)', () => {
     const { fixture } = setup();
     expect(() => fixture.detectChanges()).toThrow();
+  });
+
+  it('é publicado pelo entrypoint primário de shared-ui', () => {
+    expect(PublicFilterBarComponent).toBe(FilterBarComponent);
   });
 
   it('renderiza role="search" e o aria-label recebido no wrapper', () => {
@@ -98,6 +105,17 @@ describe('FilterBarComponent', () => {
 
     const group = fixture.debugElement.query(By.css('.filter-bar__group')).nativeElement as HTMLElement;
     expect(group.childNodes.length).toBe(0);
+  });
+
+  it('mantém o layout do grupo secundário no stylesheet compartilhado', () => {
+    const styles = readFileSync(resolve(__dirname, '../../../styles/components.css'), 'utf-8');
+    const groupRule = styles.match(/\.filter-bar__group\s*\{(?<declarations>[^}]*)\}/u)?.groups?.[
+      'declarations'
+    ];
+
+    expect(groupRule).toContain('display: flex;');
+    expect(groupRule).toContain('flex-direction: column;');
+    expect(groupRule).toContain('gap: var(--space-2);');
   });
 });
 
