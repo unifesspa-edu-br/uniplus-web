@@ -135,3 +135,14 @@ export {
   type CriarTipoDeficienciaCommand,
   type AtualizarTipoDeficienciaCommand,
 } from './tipo-deficiencia.api';
+
+export {
+  TermosConsentimentoApi,
+  FORMAS_ACEITE,
+  type CriarTermoConsentimentoCommand,
+  type EditarRascunhoTermoConsentimentoCommand,
+  type FormaAceiteOption,
+  type TermoConsentimentoDto,
+  type TermoConsentimentoResumoDto,
+  type TermoConsentimentoVersaoDto,
+} from './termos-consentimento.api';

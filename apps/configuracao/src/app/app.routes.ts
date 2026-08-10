@@ -50,9 +50,7 @@ export const appRoutes: Routes = [
         path: 'pesos-enem',
         data: { breadcrumb: 'Peso ENEM' },
         loadChildren: () =>
-          import('./features/pesos-enem/pesos-enem.routes').then(
-            (m) => m.PESOS_ENEM_ROUTES,
-          ),
+          import('./features/pesos-enem/pesos-enem.routes').then((m) => m.PESOS_ENEM_ROUTES),
       },
       {
         path: 'cursos',
@@ -71,9 +69,7 @@ export const appRoutes: Routes = [
         path: 'modalidades',
         data: { breadcrumb: 'Modalidade' },
         loadChildren: () =>
-          import('./features/modalidades/modalidades.routes').then(
-            (m) => m.MODALIDADES_ROUTES,
-          ),
+          import('./features/modalidades/modalidades.routes').then((m) => m.MODALIDADES_ROUTES),
       },
       {
         path: 'fases-canonicas',
@@ -111,7 +107,7 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/condicoes-atendimento/condicoes-atendimento.routes').then(
             (m) => m.CONDICOES_ATENDIMENTO,
-        ),
+          ),
       },
       {
         path: 'recursos-acessibilidade',
@@ -119,7 +115,7 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/recursos-acessibilidade/recurso-acessibilidade.routes').then(
             (m) => m.RECURSOS_ACESSIBILIDADE,
-        ),
+          ),
       },
       {
         path: 'tipos-deficiencia',
@@ -127,7 +123,15 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/tipos-deficiencia/tipos-deficiencia.route').then(
             (m) => m.TIPOS_DEFICIENCIA_ROUTES,
-        ),
+          ),
+      },
+      {
+        path: 'termos-consentimento',
+        data: { breadcrumb: 'Termos de Consentimento' },
+        loadChildren: () =>
+          import('./features/termos-consentimento/termos-consentimento.routes').then(
+            (m) => m.TERMOS_CONSENTIMENTO_ROUTES,
+          ),
       },
     ],
   },
