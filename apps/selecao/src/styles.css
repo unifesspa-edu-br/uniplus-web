@@ -43,6 +43,7 @@ html,
 body {
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
@@ -58,7 +59,7 @@ body.sel-overlay-open {
 sel-root,
 sel-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   flex-direction: column;
 }
 
