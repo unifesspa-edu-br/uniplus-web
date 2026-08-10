@@ -341,6 +341,7 @@
   min-height: 0;
   overflow-y: hidden;
   overflow-x: hidden;
+  scrollbar-width: thin;
 }
 
 .wiz-content {
@@ -348,12 +349,28 @@
   min-height: 0;
   padding: var(--space-8);
   overflow-y: auto;
+
+   /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
-@media (max-width: 767px) {
-  .wiz-content {
-    padding: var(--space-5) var(--space-4);
-  }
+/* Chrome, Edge e Safari */
+.wiz-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.wiz-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wiz-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.wiz-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Mensagens de validação do step ativo (role="alert") */
