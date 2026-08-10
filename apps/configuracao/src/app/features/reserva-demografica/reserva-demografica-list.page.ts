@@ -40,6 +40,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -68,6 +69,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -108,24 +110,20 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     }
 
     <div data-scope class="cfg-reserva-scope">
-      <div class="filter-bar" role="search" aria-label="Filtrar referências demográficas">
-        <div class="filter-bar__row">
-          <div class="input-group">
-            <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
-            <input
-              type="search"
-              class="input"
-              placeholder="Buscar por Censo..."
-              aria-label="Buscar por Censo"
-              [value]="busca()"
-              (input)="busca.set(inputValue($event))"
-            />
-          </div>
-          <button type="button" class="btn btn--tertiary btn--sm btn--rect" (click)="busca.set('')">
-            Limpar
-          </button>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar referências demográficas"
+        searchPlaceholder="Buscar por Censo..."
+        searchAriaLabel="Buscar censo"
+        [(searchValue)]="busca"
+      >
+        <button
+          uiFilterBarActions
+          type="button" class="btn btn--tertiary btn--sm btn--rect"
+          (click)="busca.set('')"
+        >
+        Limpar
+        </button>
+      </ui-filter-bar>
 
       <section class="panel" aria-labelledby="cfg-reserva-list-title">
         <div class="panel-head">

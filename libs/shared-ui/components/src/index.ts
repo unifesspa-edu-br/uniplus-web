@@ -20,6 +20,7 @@ export { DialogComponent } from '../../src/lib/components/dialog/dialog';
 export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
 export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
+export { FilterBarComponent } from '../../src/lib/components/filter-bar/filter-bar';
 export {
   FilterChipsComponent,
   type UiFilterChipOption,

@@ -44,7 +44,8 @@ import {
   DrawerComponent,
   TagComponent,
   DialogComponent,
-  PagerComponent
+  PagerComponent,
+  FilterBarComponent
 } from "@uniplus/shared-ui/components";
 
 type ModoFormulario = 'criar' | 'editar';
@@ -99,6 +100,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
     TagComponent,
     DialogComponent,
     PagerComponent,
+    FilterBarComponent,
   ],
   template: `
     <div class="page-header">
@@ -136,30 +138,21 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
       <ui-skeleton skeletonKind="card" blockSize="10rem" />
     }
     <div data-scope class="cfg-unidades-scope">
-      <div class="filter-bar" role="search" aria-label="Filtrar condições de atendimento">
-        <div class="filter-bar__row">
-          <div class="input-group">
-            <span class="input-group__addon" aria-hidden="true">
-              <i class="pi pi-search"></i>
-            </span>
-            <input
-              type="search"
-              class="input"
-              placeholder="Buscar por código ou nome..."
-              aria-label="Buscar condições de atendimento"
-              [value]="termoBusca()"
-              (input)="termoBusca.set(inputValue($event))"
-            />
-          </div>
-          <button
-            type="button"
-            class="btn btn--tertiary btn--sm btn--rect"
-            (click)="limparFiltroBusca()"
-          >
-            Limpar
-          </button>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar condições de atendimento"
+        searchPlaceholder="Buscar por código ou nome…"
+        searchAriaLabel="Buscar condições de atendimento"
+        [(searchValue)]="termoBusca"
+      >
+        <button
+          uiFilterBarActions
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
+          (click)="limparFiltroBusca()"
+        >
+          Limpar
+        </button>
+      </ui-filter-bar>
 
       <section class="panel" aria-labelledby="cfg-unidades-list-title">
         <div class="panel-head">
