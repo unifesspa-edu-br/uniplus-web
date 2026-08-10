@@ -133,6 +133,14 @@ export const appRoutes: Routes = [
             (m) => m.TERMOS_CONSENTIMENTO_ROUTES,
           ),
       },
+      {
+        path: 'calendario-dias-uteis',
+        data: { breadcrumb: 'Calendário Dias Úteis' },
+        loadChildren: () =>
+          import('./features/calendario-dias-uteis/calendario-dias-uteis.routes').then(
+            (m) => m.CALENDARIO_DIAS_UTEIS_ROUTES,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

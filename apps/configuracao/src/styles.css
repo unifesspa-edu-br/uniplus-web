@@ -1097,3 +1097,22 @@ cfg-pesos-enem-page {
   font-size: var(--text-sm);
   color: var(--text-primary);
 }
+
+.dias-nao-util-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) 40px;
+  grid-template-rows: 1fr;
+  gap: var(--space-4);
+}
+
+.dias-nao-util-form-grid--4col {
+  grid-template-columns: repeat(4, 1fr) 40px;
+}
+
+@media (min-width: 600px) {
+  .page-header {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+}

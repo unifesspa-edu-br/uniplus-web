@@ -146,3 +146,15 @@ export {
   type TermoConsentimentoResumoDto,
   type TermoConsentimentoVersaoDto,
 } from './termos-consentimento.api';
+
+export {
+  CalendarioDiasUteisApi,
+  type DiaNaoUtilCommandItem,
+  type DiaNaoUtilDto,
+  type CalendarioDiasUteisDto,
+  type CalendarioDiasUteisResumoDto,
+  type CriarCalendarioDiasUteisCommand,
+  ABRANGENCIAS,
+  UNIDADES_FEDERATIVAS,
+  type AbrangenciasToken,
+} from './calendario-dias-uteis.api';
