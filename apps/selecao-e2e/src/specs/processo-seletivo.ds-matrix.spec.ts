@@ -1,6 +1,23 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
+
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-headers': 'authorization, accept',
+};
+
+const TIPOS_PROCESSO = [
+  {
+    id: '01960000-0000-7000-0000-000000000515',
+    codigo: 'SISU',
+    nome: 'SISU',
+    descricao: 'Seleção unificada pelo ENEM.',
+    ativo: true,
+    criadoEm: '2026-08-11T00:00:00Z',
+  },
+] as const;
 
 /**
  * Matriz do Uni+ DS para o cadastro de processo seletivo: 320 px, 768 px e
@@ -10,9 +27,11 @@ type DsTheme = 'light' | 'dark' | 'contrast';
  */
 test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
+    await mockTiposProcesso(page);
     await instalarPreferencia(page, temaDoProject(testInfo.project.name));
     await page.goto('/processo-seletivo');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('radio').first()).toBeVisible();
   });
 
   /**
@@ -174,4 +193,29 @@ async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
 function temaDoProject(projectName: string): DsTheme {
   const parte = projectName.split('-').at(-1);
   return parte === 'dark' || parte === 'contrast' ? parte : 'light';
+}
+
+/**
+ * O CI do frontend sobe Keycloak, mas não a API. O catálogo configurável é
+ * contrato do passo 1, portanto a matriz DS o materializa por rota para manter
+ * o fluxo determinístico e não voltar a depender de opções hardcoded.
+ */
+async function mockTiposProcesso(page: Page): Promise<void> {
+  await page.route(/\/api\/configuracao\/tipos-processo(\?.*)?$/, async (route: Route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+
+    expect(request.method()).toBe('GET');
+    expect(request.headers()['accept']).toBe('application/vnd.uniplus.tipo-processo.v1+json');
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/vnd.uniplus.tipo-processo.v1+json',
+      headers: CORS_HEADERS,
+      body: JSON.stringify(TIPOS_PROCESSO),
+    });
+  });
 }
