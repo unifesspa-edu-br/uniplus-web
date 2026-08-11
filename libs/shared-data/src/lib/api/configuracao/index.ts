@@ -130,3 +130,11 @@ export {
   type CriarTipoDeficienciaCommand,
   type AtualizarTipoDeficienciaCommand,
 } from './tipo-deficiencia.api';
+
+export {
+  TiposProcessoApi,
+  type AtualizarTipoProcessoCommand,
+  type CriarTipoProcessoCommand,
+  type TipoProcessoDto,
+  type TiposProcessoQuery,
+} from './tipos-processo.api';

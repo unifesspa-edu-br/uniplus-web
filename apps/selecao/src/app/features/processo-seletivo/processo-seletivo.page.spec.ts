@@ -1,12 +1,28 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
+const BASE = 'http://localhost:5000';
+
+function buildTestBed() {
+  return TestBed.configureTestingModule({
+    imports: [ProcessoSeletivoPage],
+    providers: [
+      provideHttpClient(withInterceptors([apiResultInterceptor])),
+      provideHttpClientTesting(),
+      { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ProcessoSeletivoStore,
+    ],
+  });
+}
+
 describe('ProcessoSeletivoPage — estrutura', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ProcessoSeletivoPage],
-    }).compileComponents();
+    await buildTestBed().compileComponents();
   });
 
   /**
@@ -45,9 +61,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
 
 describe('ProcessoSeletivoPage — lista de etapas', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ProcessoSeletivoPage],
-    }).compileComponents();
+    await buildTestBed().compileComponents();
   });
 
   function montar() {
@@ -96,9 +110,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
 
 describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ProcessoSeletivoPage],
-    }).compileComponents();
+    await buildTestBed().compileComponents();
   });
 
   /**
@@ -124,9 +136,7 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
 
 describe('ProcessoSeletivoPage — publicação', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ProcessoSeletivoPage],
-    }).compileComponents();
+    await buildTestBed().compileComponents();
   });
 
   function montar() {

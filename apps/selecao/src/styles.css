@@ -94,7 +94,7 @@ sel-layout {
   flex-direction: column;
   gap: var(--space-1);
   overflow: hidden;
-  padding: var(--space-5) 0;
+  padding: var(--space-4) 0;
   color: var(--text-on-inverse);
   background: var(--surface-inverse);
   box-shadow: var(--shadow-3);

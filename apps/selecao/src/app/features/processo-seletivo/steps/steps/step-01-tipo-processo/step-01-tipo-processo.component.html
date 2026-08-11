@@ -5,37 +5,35 @@
 </div>
 <div class="type-search">
   <div class="input-group">
-    <span class="input-group__addon"
-      ><svg
-        aria-hidden="true"
-        fill="none"
-        height="16"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="16"
-      >
+    <span class="input-group__addon"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor"
+        stroke-linecap="round" stroke-width="2" viewBox="0 0 24 24" width="16">
         <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.5-4.5" /></svg
-    ></span>
-    <input
-      class="input"
-      type="search"
-      aria-label="Buscar tipos de processo seletivo"
-      placeholder="Buscar por nome..."
-      [value]="query()"
-      (input)="query.set($any($event.target).value)"
-    />
+        <path d="M21 21l-4.5-4.5" />
+      </svg></span>
+    <input class="input" type="search" aria-label="Buscar tipos de processo seletivo" placeholder="Buscar por nome..."
+      [disabled]="loading() || loadError()" [value]="query()" (input)="query.set($any($event.target).value)" />
   </div>
 </div>
+@if (loading()) {
+<p class="step-status" role="status">Carregando tipos de processo seletivo…</p>
+} @else if (loadError()) {
+<div class="step-error" role="alert">
+  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+  <div class="step-error__content">
+    <strong class="step-error__summary">Não foi possível carregar os tipos de processo seletivo.</strong>
+    <button type="button" class="btn btn--secondary btn--sm" (click)="tentarNovamente()">
+      Tentar novamente
+    </button>
+  </div>
+</div>
+} @else if (filteredOptions().length === 0) {
+<p class="step-status" role="status">Nenhum tipo de processo seletivo encontrado.</p>
+} @else {
 <fieldset class="type-grid">
   <legend class="sr-only">Tipo do processo seletivo</legend>
   @for (option of filteredOptions(); track option.value) {
-    <sel-type-card
-      [option]="option"
-      [selected]="store.draft().tipoProcesso.selected === option.value"
-      (selectChange)="select($event)"
-    />
+  <sel-type-card [option]="option" [selected]="store.draft().tipoProcesso.selected === option.value"
+    (selectChange)="select($event)" />
   }
 </fieldset>
+}

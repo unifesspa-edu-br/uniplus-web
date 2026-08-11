@@ -31,7 +31,9 @@ import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
           <path d="M20 6L9 17l-5-5" />
         </svg>
       </div>
-      <p class="type-card__desc">{{ option().description }}</p>
+      @if (option().description) {
+        <p class="type-card__desc">{{ option().description }}</p>
+      }
       @if (option().tags.length) {
         <div class="type-card__tags">
           @for (tag of option().tags; track tag) {
@@ -39,7 +41,9 @@ import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
           }
         </div>
       }
-      <span class="type-card__legal">{{ option().legal }}</span>
+      @if (option().legal) {
+        <span class="type-card__legal">{{ option().legal }}</span>
+      }
     </label>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

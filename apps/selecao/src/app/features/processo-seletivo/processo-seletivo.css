@@ -415,6 +415,12 @@
   font-weight: var(--weight-normal);
 }
 
+/* Botão de retry dentro do bloco de erro do passo 1. */
+.step-error__content .btn {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
 /* Step header */
 .step-head {
   margin-bottom: var(--space-6);
@@ -473,6 +479,20 @@
 /* Campo de busca não precisa acompanhar a largura da tela. */
 .type-search .input-group {
   max-width: 400px;
+}
+
+/* Status de carregamento/vazio do passo 1 (role="status" anunciado por SR). */
+.step-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-4);
 }
 
 /* Type cards — a grade se ajusta sozinha da tela de 320 px à de TV, sem
