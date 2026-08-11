@@ -105,13 +105,16 @@ function ultimaChaveDoCaminho(field: string): string {
       <div class="cfg-form__loading" role="status">
         <ui-spinner size="md" /> Carregando termo...
       </div>
+    } @else if (erroCarregar(); as erro) {
+      <ui-alert variant="danger" heading="Não foi possível carregar o termo">
+        {{ erro }}
+        <div class="cfg-termo-consentimento__retry">
+          <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarTermo()">
+            Tentar novamente
+          </button>
+        </div>
+      </ui-alert>
     } @else {
-      @if (erroCarregar()) {
-        <ui-alert variant="danger" heading="Não foi possível carregar o termo">
-          {{ erroCarregar() }}
-        </ui-alert>
-      }
-
       @if (acaoErro()) {
         <ui-alert variant="danger" heading="Não foi possível concluir a ação">
           {{ acaoErro() }}
@@ -572,7 +575,7 @@ export class TermosConsentimentoDetailPage {
 
   protected salvarRascunho(): void {
     const id = this.id();
-    if (id === null || this.processando()) return;
+    if (id === null || this.termo() === null || this.processando()) return;
     this.tentouSalvar.set(true);
     if (this.rascunhoForm.invalid) {
       this.rascunhoForm.markAllAsTouched();
@@ -648,6 +651,7 @@ export class TermosConsentimentoDetailPage {
     const id = this.id();
     if (id === null) return;
     this.acaoErro.set(null);
+    this.erroCarregar.set(null);
     this.carregarTermo(id);
   }
 
@@ -664,6 +668,7 @@ export class TermosConsentimentoDetailPage {
           this.erroCarregar.set(this.problemI18n.resolve(result.problem).title);
           return;
         }
+        this.erroCarregar.set(null);
         this.termo.set(result.data);
         this.rascunhoForm.patchValue(
           {
