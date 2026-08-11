@@ -5,6 +5,7 @@ import {
   ElementRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -262,13 +263,10 @@ function ultimaChaveDoCaminho(field: string): string {
               <button
                 type="button"
                 class="btn btn--secondary btn--rect"
-                [disabled]="processando() || !podeRevisar()"
+                [style.opacity]="processando() || !podeRevisar() ? 0.5 : null"
+                [style.cursor]="processando() || !podeRevisar() ? 'not-allowed' : null"
                 [attr.aria-disabled]="processando() || !podeRevisar() ? 'true' : null"
-                [title]="
-                  podeRevisar()
-                    ? ''
-                    : 'Preencha texto e base legal do rascunho salvo antes de marcar como revisado.'
-                "
+                [attr.aria-describedby]="!podeRevisar() ? 'cfg-termo-motivo-revisar' : null"
                 (click)="marcarRevisado()"
               >
                 @if (acaoEmAndamento() === 'revisar') {
@@ -279,9 +277,10 @@ function ultimaChaveDoCaminho(field: string): string {
               <button
                 type="button"
                 class="btn btn--secondary btn--rect"
-                [disabled]="processando() || !podePromover()"
+                [style.opacity]="processando() || !podePromover() ? 0.5 : null"
+                [style.cursor]="processando() || !podePromover() ? 'not-allowed' : null"
                 [attr.aria-disabled]="processando() || !podePromover() ? 'true' : null"
-                [title]="podePromover() ? '' : 'Marque o rascunho como revisado antes de promover.'"
+                [attr.aria-describedby]="!podePromover() ? 'cfg-termo-motivo-promover' : null"
                 (click)="promoverVersao()"
               >
                 @if (acaoEmAndamento() === 'promover') {
@@ -294,6 +293,16 @@ function ultimaChaveDoCaminho(field: string): string {
               "Marcar como revisado" e "Promover a versão" agem sobre o rascunho já salvo no
               servidor — se você editou os campos acima, salve antes.
             </p>
+            @if (!podeRevisar()) {
+              <p id="cfg-termo-motivo-revisar" class="field__hint">
+                Preencha texto e base legal do rascunho salvo antes de marcar como revisado.
+              </p>
+            }
+            @if (!podePromover()) {
+              <p id="cfg-termo-motivo-promover" class="field__hint">
+                Marque o rascunho como revisado antes de promover.
+              </p>
+            }
           </form>
         </section>
 
@@ -332,17 +341,20 @@ function ultimaChaveDoCaminho(field: string): string {
           <button
             type="button"
             class="btn btn--danger btn--rect"
-            [disabled]="processando() || !podeRemover()"
+            [style.opacity]="processando() || !podeRemover() ? 0.5 : null"
+            [style.cursor]="processando() || !podeRemover() ? 'not-allowed' : null"
             [attr.aria-disabled]="processando() || !podeRemover() ? 'true' : null"
-            [title]="
-              podeRemover()
-                ? ''
-                : 'Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova versão.'
-            "
+            [attr.aria-describedby]="!podeRemover() ? 'cfg-termo-motivo-remover' : null"
             (click)="pedirRemocao()"
           >
             Remover
           </button>
+          @if (!podeRemover()) {
+            <p id="cfg-termo-motivo-remover" class="field__hint">
+              Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova
+              versão.
+            </p>
+          }
         </section>
 
         <ui-confirm-dialog
@@ -443,6 +455,20 @@ export class TermosConsentimentoDetailPage {
     if (this.id() !== null) {
       this.carregarTermo(this.id() as string);
     }
+    effect(() => {
+      if (this.processando()) {
+        this.rascunhoForm.disable({ emitEvent: false });
+      } else {
+        this.rascunhoForm.enable({ emitEvent: false });
+      }
+    });
+    effect(() => {
+      if (this.criando()) {
+        this.criarForm.disable({ emitEvent: false });
+      } else {
+        this.criarForm.enable({ emitEvent: false });
+      }
+    });
   }
 
   protected formatarData(value: string): string {
@@ -539,7 +565,7 @@ export class TermosConsentimentoDetailPage {
   }
 
   protected pedirRemocao(): void {
-    if (!this.podeRemover()) return;
+    if (this.processando() || !this.podeRemover()) return;
     this.confirmRemoverAberto.set(true);
   }
 
@@ -634,13 +660,10 @@ export class TermosConsentimentoDetailPage {
   }
 
   private aplicarFalhaCriacao(problem: ProblemDetails): void {
+    this.renovarIdempotencyKeySeNecessario(problem);
     if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
-      this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
-    }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
-      this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
@@ -659,12 +682,20 @@ export class TermosConsentimentoDetailPage {
    * code (e não só por status), me passem os slugs exatos que eu especializo.
    */
   private aplicarFalhaMutacao(problem: ProblemDetails): void {
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
-      this.renovarIdempotencyKey();
-    }
+    this.renovarIdempotencyKeySeNecessario(problem);
     this.acaoErro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
+    }
+  }
+
+  private renovarIdempotencyKeySeNecessario(problem: ProblemDetails): void {
+    if (
+      problem.status === 409 ||
+      problem.status === 422 ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
+      this.renovarIdempotencyKey();
     }
   }
 
