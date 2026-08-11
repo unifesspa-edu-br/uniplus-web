@@ -153,6 +153,24 @@
   color: var(--text-disabled);
   cursor: not-allowed;
 }
+.textarea[disabled], .textarea:disabled {
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  resize: none;
+}
+
+.select[disabled], .select:disabled {
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.select[aria-invalid="true"], .field.is-error .select {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}
+
+
 .input[aria-invalid="true"], .field.is-error .input {
   border-color: var(--color-danger-500);
   background: var(--color-danger-50);
@@ -163,6 +181,10 @@
 
 .textarea { min-height: 96px; resize: vertical; line-height: var(--leading-normal); }
 
+.textarea[aria-invalid="true"], .field.is-error .textarea {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}
 /* Input-affix (icon + input) */
 .input-group {
   display: flex; align-items: stretch;
