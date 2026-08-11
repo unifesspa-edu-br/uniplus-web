@@ -214,44 +214,50 @@ function ultimaChaveDoCaminho(field: string): string {
             novalidate
             class="cfg-form"
           >
-            <div class="form-grid">
-              <label
-                class="field field--full"
-                [class.is-error]="erroDoCampo(rascunhoForm.controls.texto)"
-              >
-                <span class="field__label">Texto</span>
-                <textarea class="textarea" rows="8" formControlName="texto"></textarea>
-                <span class="field__hint">Até {{ textoMax }} caracteres.</span>
-                @if (erroDoCampo(rascunhoForm.controls.texto)) {
-                  <span class="field__error">{{ erroDoCampo(rascunhoForm.controls.texto) }}</span>
-                }
-              </label>
-
-              <label class="field" [class.is-error]="erroDoCampo(rascunhoForm.controls.baseLegal)">
-                <span class="field__label">Base legal</span>
-                <input class="input" type="text" formControlName="baseLegal" />
-                @if (erroDoCampo(rascunhoForm.controls.baseLegal)) {
-                  <span class="field__error">{{
-                    erroDoCampo(rascunhoForm.controls.baseLegal)
-                  }}</span>
-                }
-              </label>
-
-              <label class="field">
-                <span class="field__label">Forma de aceite</span>
-                <select class="select" formControlName="formaAceite">
-                  @for (opcao of formasAceite; track opcao.value) {
-                    <option [value]="opcao.value">{{ opcao.label }}</option>
-                  }
-                </select>
-                <span
-                  class="field__hint"
-                  title="A recusa por forma não resolvida é regra de publicação do processo, não deste cadastro."
+            <fieldset class="cfg-termo-consentimento__campos" [disabled]="processando()">
+              <legend class="sr-only">Campos do rascunho</legend>
+              <div class="form-grid">
+                <label
+                  class="field field--full"
+                  [class.is-error]="erroDoCampo(rascunhoForm.controls.texto)"
                 >
-                  &quot;A definir&quot; é válido até a promoção final do processo.
-                </span>
-              </label>
-            </div>
+                  <span class="field__label">Texto</span>
+                  <textarea class="textarea" rows="8" formControlName="texto"></textarea>
+                  <span class="field__hint">Até {{ textoMax }} caracteres.</span>
+                  @if (erroDoCampo(rascunhoForm.controls.texto)) {
+                    <span class="field__error">{{ erroDoCampo(rascunhoForm.controls.texto) }}</span>
+                  }
+                </label>
+
+                <label
+                  class="field"
+                  [class.is-error]="erroDoCampo(rascunhoForm.controls.baseLegal)"
+                >
+                  <span class="field__label">Base legal</span>
+                  <input class="input" type="text" formControlName="baseLegal" />
+                  @if (erroDoCampo(rascunhoForm.controls.baseLegal)) {
+                    <span class="field__error">{{
+                      erroDoCampo(rascunhoForm.controls.baseLegal)
+                    }}</span>
+                  }
+                </label>
+
+                <label class="field">
+                  <span class="field__label">Forma de aceite</span>
+                  <select class="select" formControlName="formaAceite">
+                    @for (opcao of formasAceite; track opcao.value) {
+                      <option [value]="opcao.value">{{ opcao.label }}</option>
+                    }
+                  </select>
+                  <span
+                    class="field__hint"
+                    title="A recusa por forma não resolvida é regra de publicação do processo, não deste cadastro."
+                  >
+                    &quot;A definir&quot; é válido até a promoção final do processo.
+                  </span>
+                </label>
+              </div>
+            </fieldset>
 
             <div class="cfg-form-footer">
               <button type="submit" class="btn btn--primary" [disabled]="processando()">
@@ -260,49 +266,73 @@ function ultimaChaveDoCaminho(field: string): string {
                 }
                 {{ acaoEmAndamento() === 'rascunho' ? 'Salvando...' : 'Salvar rascunho' }}
               </button>
-              <button
-                type="button"
-                class="btn btn--secondary btn--rect"
-                [style.opacity]="processando() || !podeRevisar() ? 0.5 : null"
-                [style.cursor]="processando() || !podeRevisar() ? 'not-allowed' : null"
-                [attr.aria-disabled]="processando() || !podeRevisar() ? 'true' : null"
-                [attr.aria-describedby]="!podeRevisar() ? 'cfg-termo-motivo-revisar' : null"
-                (click)="marcarRevisado()"
+              <span
+                [attr.role]="motivoRevisaoIndisponivel() === null ? null : 'group'"
+                [attr.tabindex]="motivoRevisaoIndisponivel() === null ? null : 0"
+                [attr.aria-label]="
+                  motivoRevisaoIndisponivel() === null ? null : 'Marcar como revisado indisponível'
+                "
+                [attr.aria-describedby]="
+                  motivoRevisaoIndisponivel() === null
+                    ? null
+                    : 'cfg-termo-consentimento-motivo-revisao'
+                "
+                [attr.data-tooltip]="motivoRevisaoIndisponivel()"
               >
-                @if (acaoEmAndamento() === 'revisar') {
-                  <ui-spinner size="sm" />
-                }
-                {{ acaoEmAndamento() === 'revisar' ? 'Marcando...' : 'Marcar como revisado' }}
-              </button>
-              <button
-                type="button"
-                class="btn btn--secondary btn--rect"
-                [style.opacity]="processando() || !podePromover() ? 0.5 : null"
-                [style.cursor]="processando() || !podePromover() ? 'not-allowed' : null"
-                [attr.aria-disabled]="processando() || !podePromover() ? 'true' : null"
-                [attr.aria-describedby]="!podePromover() ? 'cfg-termo-motivo-promover' : null"
-                (click)="promoverVersao()"
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--rect"
+                  [disabled]="processando() || !podeRevisar()"
+                  [attr.aria-disabled]="processando() || !podeRevisar() ? 'true' : null"
+                  (click)="marcarRevisado()"
+                >
+                  @if (acaoEmAndamento() === 'revisar') {
+                    <ui-spinner size="sm" />
+                  }
+                  {{ acaoEmAndamento() === 'revisar' ? 'Marcando...' : 'Marcar como revisado' }}
+                </button>
+              </span>
+              @if (motivoRevisaoIndisponivel(); as motivo) {
+                <span id="cfg-termo-consentimento-motivo-revisao" class="sr-only">{{
+                  motivo
+                }}</span>
+              }
+              <span
+                [attr.role]="motivoPromocaoIndisponivel() === null ? null : 'group'"
+                [attr.tabindex]="motivoPromocaoIndisponivel() === null ? null : 0"
+                [attr.aria-label]="
+                  motivoPromocaoIndisponivel() === null ? null : 'Promover a versão indisponível'
+                "
+                [attr.aria-describedby]="
+                  motivoPromocaoIndisponivel() === null
+                    ? null
+                    : 'cfg-termo-consentimento-motivo-promocao'
+                "
+                [attr.data-tooltip]="motivoPromocaoIndisponivel()"
               >
-                @if (acaoEmAndamento() === 'promover') {
-                  <ui-spinner size="sm" />
-                }
-                {{ acaoEmAndamento() === 'promover' ? 'Promovendo...' : 'Promover a versão' }}
-              </button>
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--rect"
+                  [disabled]="processando() || !podePromover()"
+                  [attr.aria-disabled]="processando() || !podePromover() ? 'true' : null"
+                  (click)="promoverVersao()"
+                >
+                  @if (acaoEmAndamento() === 'promover') {
+                    <ui-spinner size="sm" />
+                  }
+                  {{ acaoEmAndamento() === 'promover' ? 'Promovendo...' : 'Promover a versão' }}
+                </button>
+              </span>
+              @if (motivoPromocaoIndisponivel(); as motivo) {
+                <span id="cfg-termo-consentimento-motivo-promocao" class="sr-only">{{
+                  motivo
+                }}</span>
+              }
             </div>
             <p class="field__hint">
               "Marcar como revisado" e "Promover a versão" agem sobre o rascunho já salvo no
               servidor — se você editou os campos acima, salve antes.
             </p>
-            @if (!podeRevisar()) {
-              <p id="cfg-termo-motivo-revisar" class="field__hint">
-                Preencha texto e base legal do rascunho salvo antes de marcar como revisado.
-              </p>
-            }
-            @if (!podePromover()) {
-              <p id="cfg-termo-motivo-promover" class="field__hint">
-                Marque o rascunho como revisado antes de promover.
-              </p>
-            }
           </form>
         </section>
 
@@ -338,22 +368,29 @@ function ultimaChaveDoCaminho(field: string): string {
 
         <section aria-labelledby="cfg-termo-remocao" class="form-section">
           <h2 id="cfg-termo-remocao" class="form-section__title">Remover termo</h2>
-          <button
-            type="button"
-            class="btn btn--danger btn--rect"
-            [style.opacity]="processando() || !podeRemover() ? 0.5 : null"
-            [style.cursor]="processando() || !podeRemover() ? 'not-allowed' : null"
-            [attr.aria-disabled]="processando() || !podeRemover() ? 'true' : null"
-            [attr.aria-describedby]="!podeRemover() ? 'cfg-termo-motivo-remover' : null"
-            (click)="pedirRemocao()"
+          <span
+            [attr.role]="motivoRemocaoIndisponivel() === null ? null : 'group'"
+            [attr.tabindex]="motivoRemocaoIndisponivel() === null ? null : 0"
+            [attr.aria-label]="
+              motivoRemocaoIndisponivel() === null ? null : 'Remover termo indisponível'
+            "
+            [attr.aria-describedby]="
+              motivoRemocaoIndisponivel() === null ? null : 'cfg-termo-consentimento-motivo-remocao'
+            "
+            [attr.data-tooltip]="motivoRemocaoIndisponivel()"
           >
-            Remover
-          </button>
-          @if (!podeRemover()) {
-            <p id="cfg-termo-motivo-remover" class="field__hint">
-              Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova
-              versão.
-            </p>
+            <button
+              type="button"
+              class="btn btn--danger btn--rect"
+              [disabled]="processando() || !podeRemover()"
+              [attr.aria-disabled]="processando() || !podeRemover() ? 'true' : null"
+              (click)="pedirRemocao()"
+            >
+              Remover
+            </button>
+          </span>
+          @if (motivoRemocaoIndisponivel(); as motivo) {
+            <span id="cfg-termo-consentimento-motivo-remocao" class="sr-only">{{ motivo }}</span>
           }
         </section>
 
@@ -408,6 +445,7 @@ export class TermosConsentimentoDetailPage {
   protected readonly processando = computed(() => this.acaoEmAndamento() !== null);
   protected readonly confirmRemoverAberto = signal(false);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
+  private sequenciaLeituraTermo = 0;
 
   protected readonly podeRevisar = computed(() => {
     const t = this.termo();
@@ -420,6 +458,19 @@ export class TermosConsentimentoDetailPage {
   protected readonly podePromover = computed(() => this.termo()?.revisado === true);
   protected readonly podeRemover = computed(
     () => this.termo() !== null && this.termo()?.versoes.length === 0,
+  );
+  protected readonly motivoRevisaoIndisponivel = computed(() =>
+    this.podeRevisar()
+      ? null
+      : 'Preencha texto e base legal do rascunho salvo antes de marcar como revisado.',
+  );
+  protected readonly motivoPromocaoIndisponivel = computed(() =>
+    this.podePromover() ? null : 'Marque o rascunho como revisado antes de promover.',
+  );
+  protected readonly motivoRemocaoIndisponivel = computed(() =>
+    this.podeRemover()
+      ? null
+      : 'Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova versão.',
   );
 
   protected readonly criarForm: FormGroup<CriarForm> = new FormGroup<CriarForm>({
@@ -527,6 +578,7 @@ export class TermosConsentimentoDetailPage {
       this.rascunhoForm.markAllAsTouched();
       return;
     }
+    this.invalidarLeiturasDoTermo();
     this.acaoEmAndamento.set('rascunho');
     this.acaoErro.set(null);
     const raw = this.rascunhoForm.getRawValue();
@@ -545,6 +597,7 @@ export class TermosConsentimentoDetailPage {
   protected marcarRevisado(): void {
     const id = this.id();
     if (id === null || this.processando() || !this.podeRevisar()) return;
+    this.invalidarLeiturasDoTermo();
     this.acaoEmAndamento.set('revisar');
     this.acaoErro.set(null);
     this.api
@@ -556,6 +609,7 @@ export class TermosConsentimentoDetailPage {
   protected promoverVersao(): void {
     const id = this.id();
     if (id === null || this.processando() || !this.podePromover()) return;
+    this.invalidarLeiturasDoTermo();
     this.acaoEmAndamento.set('promover');
     this.acaoErro.set(null);
     this.api
@@ -572,6 +626,7 @@ export class TermosConsentimentoDetailPage {
   protected removerConfirmado(): void {
     const id = this.id();
     if (id === null || this.processando() || !this.podeRemover()) return;
+    this.invalidarLeiturasDoTermo();
     this.acaoEmAndamento.set('remover');
     this.acaoErro.set(null);
     this.api
@@ -597,11 +652,13 @@ export class TermosConsentimentoDetailPage {
   }
 
   private carregarTermo(id: string): void {
+    const sequencia = ++this.sequenciaLeituraTermo;
     this.carregando.set(true);
     this.api
       .obter(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        if (sequencia !== this.sequenciaLeituraTermo) return;
         this.carregando.set(false);
         if (!result.ok) {
           this.erroCarregar.set(this.problemI18n.resolve(result.problem).title);
@@ -624,11 +681,12 @@ export class TermosConsentimentoDetailPage {
   private atualizarTermoSemTocarNoForm(): void {
     const id = this.id();
     if (id === null) return;
+    const sequencia = ++this.sequenciaLeituraTermo;
     this.api
       .obter(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
-        if (result.ok) {
+        if (sequencia === this.sequenciaLeituraTermo && result.ok) {
           this.termo.set(result.data);
         }
       });
@@ -701,6 +759,10 @@ export class TermosConsentimentoDetailPage {
 
   private renovarIdempotencyKey(): void {
     this.idempotencyKeyAtual.set(idempotencyKey.create());
+  }
+
+  private invalidarLeiturasDoTermo(): void {
+    this.sequenciaLeituraTermo += 1;
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {

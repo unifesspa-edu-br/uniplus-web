@@ -670,6 +670,13 @@ cfg-pesos-enem-page {
   grid-column: 1 / -1;
 }
 
+.cfg-termo-consentimento__campos {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 /* Realce visual (não normativo) para campos de código curto — o valor
    digitado não é forçado a maiúsculas, só exibido assim (Tipo de Documento,
    issue #392 §3.1). */
