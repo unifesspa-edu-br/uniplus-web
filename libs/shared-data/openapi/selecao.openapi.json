@@ -2270,6 +2270,167 @@
         "x-uniplus-idempotent": true
       }
     },
+    "/api/selecao/processos-seletivos/{id}/divulgacao": {
+      "put": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirConfiguracaoDivulgacaoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirConfiguracaoDivulgacaoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirConfiguracaoDivulgacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {
+              "ETag": {
+                "description": "ETag forte da sess\u00E3o editorial de retifica\u00E7\u00E3o, no formato \u0022{idDaSessao}:{revisao}\u0022. Devolva-o no If-Match da pr\u00F3xima muta\u00E7\u00E3o. Toda muta\u00E7\u00E3o aceita INCREMENTA a revis\u00E3o e emite o tag novo aqui \u2014 o cliente encadeia sem um GET no meio. Ausente quando n\u00E3o h\u00E1 sess\u00E3o em curso (o processo em rascunho n\u00E3o tem precondi\u00E7\u00E3o a satisfazer).",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "Precondition Required",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Requisi\u00E7\u00E3o concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois \u2014 a opera\u00E7\u00E3o anterior ainda n\u00E3o concluiu.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/selecao/processos-seletivos/{id}/cascata-remanejamento": {
       "put": {
         "tags": [
@@ -5438,6 +5599,27 @@
           }
         }
       },
+      "ConfiguracaoDivulgacaoDto": {
+        "required": [
+          "camposPublicos",
+          "justificativa"
+        ],
+        "type": "object",
+        "properties": {
+          "camposPublicos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "justificativa": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ConformidadeLegalProcessoSeletivoDto": {
         "required": [
           "processoSeletivoId",
@@ -5549,7 +5731,7 @@
       "CriarProcessoSeletivoCommand": {
         "required": [
           "nome",
-          "tipo",
+          "tipoProcessoOrigemId",
           "origemCandidatos",
           "unidadeAdministradoraOrigemId"
         ],
@@ -5558,8 +5740,9 @@
           "nome": {
             "type": "string"
           },
-          "tipo": {
-            "$ref": "#/components/schemas/TipoProcesso"
+          "tipoProcessoOrigemId": {
+            "type": "string",
+            "format": "uuid"
           },
           "origemCandidatos": {
             "$ref": "#/components/schemas/OrigemCandidatos"
@@ -5891,6 +6074,30 @@
           },
           "baseadoEmEnem": {
             "type": "boolean"
+          }
+        }
+      },
+      "DefinirConfiguracaoDivulgacaoRequest": {
+        "required": [
+          "camposPublicos",
+          "justificativa"
+        ],
+        "type": "object",
+        "properties": {
+          "camposPublicos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "justificativa": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -6522,6 +6729,61 @@
           }
         }
       },
+      "FatoFormularioRenderizavelDto": {
+        "required": [
+          "fatoCodigo",
+          "ordem",
+          "rotulo",
+          "tipoRenderizacao",
+          "obrigatorio",
+          "precondicao",
+          "valoresSelecionaveis"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "tipoRenderizacao": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "precondicao": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoDto"
+              }
+            }
+          },
+          "valoresSelecionaveis": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ValorSelecionavelDto"
+            }
+          }
+        }
+      },
       "FecharRetificacaoRequest": {
         "required": [
           "numero",
@@ -6578,7 +6840,7 @@
           "fatosColetados": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FatoColetadoDto"
+              "$ref": "#/components/schemas/FatoFormularioRenderizavelDto"
             }
           }
         }
@@ -7451,7 +7713,7 @@
         "required": [
           "id",
           "nome",
-          "tipo",
+          "tipoProcesso",
           "status",
           "origemCandidatos",
           "unidadeAdministradora",
@@ -7470,6 +7732,7 @@
           "regrasDerivacao",
           "formularioTitulo",
           "formularioTermoAceiteTexto",
+          "configuracaoDivulgacao",
           "criadoEm"
         ],
         "type": "object",
@@ -7481,8 +7744,8 @@
           "nome": {
             "type": "string"
           },
-          "tipo": {
-            "type": "string"
+          "tipoProcesso": {
+            "$ref": "#/components/schemas/TipoProcessoSnapshotDto"
           },
           "status": {
             "type": "string"
@@ -7603,6 +7866,16 @@
               "string"
             ]
           },
+          "configuracaoDivulgacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConfiguracaoDivulgacaoDto"
+              }
+            ]
+          },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
@@ -7622,7 +7895,7 @@
         "required": [
           "id",
           "nome",
-          "tipo",
+          "tipoProcesso",
           "status",
           "criadoEm"
         ],
@@ -7635,8 +7908,8 @@
           "nome": {
             "type": "string"
           },
-          "tipo": {
-            "type": "string"
+          "tipoProcesso": {
+            "$ref": "#/components/schemas/TipoProcessoSnapshotDto"
           },
           "status": {
             "type": "string"
@@ -8250,19 +8523,25 @@
           }
         }
       },
-      "TipoProcesso": {
-        "enum": [
-          "nenhum",
-          "siSU",
-          "psiq",
-          "pseCampo",
-          "psvr",
-          "transferenciaInterna",
-          "transferenciaExterna",
-          "portadorDiploma",
-          "reopcao"
+      "TipoProcessoSnapshotDto": {
+        "required": [
+          "origemId",
+          "codigo",
+          "nome"
         ],
-        "type": "string"
+        "type": "object",
+        "properties": {
+          "origemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
       },
       "UnidadeAdministradoraSnapshotDto": {
         "required": [
@@ -8378,6 +8657,33 @@
             "type": "string"
           },
           "quantidade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ValorSelecionavelDto": {
+        "required": [
+          "codigo",
+          "descricao",
+          "ordem"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ordem": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
