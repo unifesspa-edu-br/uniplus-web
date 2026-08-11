@@ -1747,6 +1747,134 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{id}/divulgacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DefinirConfiguracaoDivulgacaoRequest"];
+                    readonly "text/json": components["schemas"]["DefinirConfiguracaoDivulgacaoRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirConfiguracaoDivulgacaoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{id}/cascata-remanejamento": {
         readonly parameters: {
             readonly query?: never;
@@ -3810,6 +3938,10 @@ export interface components {
             readonly modalidadeIds: readonly string[];
             readonly quadro: readonly components["schemas"]["QuantidadeVagaInput"][];
         };
+        readonly ConfiguracaoDivulgacaoDto: {
+            readonly camposPublicos: readonly string[];
+            readonly justificativa: null | string;
+        };
         readonly ConformidadeLegalProcessoSeletivoDto: {
             /** Format: uuid */
             readonly processoSeletivoId: string;
@@ -3839,7 +3971,8 @@ export interface components {
         };
         readonly CriarProcessoSeletivoCommand: {
             readonly nome: string;
-            readonly tipo: components["schemas"]["TipoProcesso"];
+            /** Format: uuid */
+            readonly tipoProcessoOrigemId: string;
             readonly origemCandidatos: components["schemas"]["OrigemCandidatos"];
             /** Format: uuid */
             readonly unidadeAdministradoraOrigemId: string;
@@ -3910,6 +4043,10 @@ export interface components {
             readonly nOpcoesAlocacao: number | string;
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoInput"][];
             readonly baseadoEmEnem: boolean;
+        };
+        readonly DefinirConfiguracaoDivulgacaoRequest: {
+            readonly camposPublicos: null | readonly string[];
+            readonly justificativa: null | string;
         };
         readonly DefinirFormularioRequest: {
             readonly titulo: null | string;
@@ -4054,6 +4191,16 @@ export interface components {
             readonly obrigatorio: boolean;
             readonly precondicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
         };
+        readonly FatoFormularioRenderizavelDto: {
+            readonly fatoCodigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly rotulo: string;
+            readonly tipoRenderizacao: string;
+            readonly obrigatorio: boolean;
+            readonly precondicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavelDto"][];
+        };
         readonly FecharRetificacaoRequest: {
             readonly numero: null | string;
             /** Format: date */
@@ -4067,7 +4214,7 @@ export interface components {
         readonly FormularioRenderizavelDto: {
             readonly titulo: null | string;
             readonly termoAceiteTexto: null | string;
-            readonly fatosColetados: readonly components["schemas"]["FatoColetadoDto"][];
+            readonly fatosColetados: readonly components["schemas"]["FatoFormularioRenderizavelDto"][];
         };
         readonly IdadeMaximaEmissaoDto: {
             /** Format: int32 */
@@ -4269,7 +4416,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly nome: string;
-            readonly tipo: string;
+            readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
             readonly status: string;
             readonly origemCandidatos: string;
             readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraSnapshotDto"];
@@ -4288,6 +4435,7 @@ export interface components {
             readonly regrasDerivacao: readonly components["schemas"]["ConfiguracaoDerivacaoDto"][];
             readonly formularioTitulo: null | string;
             readonly formularioTermoAceiteTexto: null | string;
+            readonly configuracaoDivulgacao: null | components["schemas"]["ConfiguracaoDivulgacaoDto"];
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
@@ -4298,7 +4446,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly nome: string;
-            readonly tipo: string;
+            readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
             readonly status: string;
             /** Format: date-time */
             readonly criadoEm: string;
@@ -4454,8 +4602,12 @@ export interface components {
             readonly hashEdital: string;
             readonly configuracao: components["schemas"]["JsonNode"];
         };
-        /** @enum {string} */
-        readonly TipoProcesso: TipoProcesso;
+        readonly TipoProcessoSnapshotDto: {
+            /** Format: uuid */
+            readonly origemId: string;
+            readonly codigo: string;
+            readonly nome: string;
+        };
         readonly UnidadeAdministradoraSnapshotDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -4485,6 +4637,12 @@ export interface components {
             readonly modalidadeCodigo: string;
             /** Format: int32 */
             readonly quantidade: number | string;
+        };
+        readonly ValorSelecionavelDto: {
+            readonly codigo: string;
+            readonly descricao: null | string;
+            /** Format: int32 */
+            readonly ordem: number | string;
         };
     };
     responses: never;
@@ -4603,17 +4761,6 @@ export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
 }
 export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
     modalidadesMinimas = "modalidadesMinimas"
-}
-export enum TipoProcesso {
-    nenhum = "nenhum",
-    siSU = "siSU",
-    psiq = "psiq",
-    pseCampo = "pseCampo",
-    psvr = "psvr",
-    transferenciaInterna = "transferenciaInterna",
-    transferenciaExterna = "transferenciaExterna",
-    portadorDiploma = "portadorDiploma",
-    reopcao = "reopcao"
 }
 export enum UnidadePrazo {
     nenhuma = "nenhuma",

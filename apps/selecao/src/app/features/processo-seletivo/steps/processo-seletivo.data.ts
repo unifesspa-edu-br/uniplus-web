@@ -5,7 +5,6 @@ import {
   CriterioDesempate,
   Curso,
   DocumentoGrupo,
-  TipoProcessoOption,
 } from './processo-seletivo.models';
 
 export const STEP_LABELS = [
@@ -38,73 +37,6 @@ export const REVIEW_NAMES = [
   'Locais de prova',
   'Atendimento especializado',
 ] as const;
-
-export const TIPO_PROCESSO_OPTIONS: TipoProcessoOption[] = [
-  {
-    value: 'sisu',
-    name: 'SiSU',
-    description:
-      'Sistema de Seleção Unificada — utiliza notas do ENEM para classificação. Notas obtidas via integração com INEP, sem prova local.',
-    tags: ['2 opções'],
-    legal: 'Portaria MEC 21/2012; Lei 12.711/2012 atualizada pela Lei 14.723/2023',
-  },
-  {
-    value: 'psiq',
-    name: 'PSIQ — Indígena e Quilombola',
-    description:
-      'Processo Seletivo Especial para candidatos indígenas e quilombolas, com vagas suplementares e prova presencial em 3 polos.',
-    tags: ['2 opções', 'Presencial', 'Suplementares'],
-    legal: 'Resolução Unifesspa 532/2021',
-  },
-  {
-    value: 'pse',
-    name: 'PSE — Educação do Campo',
-    description:
-      'Processo Seletivo Especial para Licenciatura em Educação do Campo. Exige declaração de pertencimento territorial e entrevista.',
-    tags: ['Presencial'],
-    legal: 'Resolução Unifesspa 805/2024',
-  },
-  {
-    value: 'psvr',
-    name: 'PSVR — Vestibular Remanescente',
-    description:
-      'Processo Seletivo para vagas remanescentes após SiSU. Utiliza prova presencial objetiva + redação.',
-    tags: ['Presencial'],
-    legal: 'Portaria MEC 18/2012; Resolução CONSEPE Unifesspa',
-  },
-  {
-    value: 'ps-convenios',
-    name: 'PS Convênios',
-    description:
-      'Processo Seletivo de cursos por convênio com municípios. Aplica bônus regional configurável (padrão 20% sobre AC).',
-    tags: ['Presencial'],
-    legal: 'PN MEC 2.027/2023; Resolução Unifesspa do convênio específico',
-  },
-  {
-    value: 'mobin',
-    name: 'Transferência Interna (MOBIN)',
-    description:
-      'Mobilidade interna entre cursos da Unifesspa. Análise de histórico e carta de intenção.',
-    tags: [],
-    legal: 'Resolução Unifesspa 414/2020',
-  },
-  {
-    value: 'mobex',
-    name: 'Transferência Externa (MOBEX)',
-    description:
-      'Mobilidade externa de outras IFES para a Unifesspa. Análise de histórico e carta de intenção.',
-    tags: [],
-    legal: 'Resolução Unifesspa 414/2020',
-  },
-  {
-    value: 'portador-diploma',
-    name: 'Portador de Diploma',
-    description:
-      'Ingresso para portadores de diploma de curso superior. Análise de histórico de graduação anterior.',
-    tags: [],
-    legal: 'Resolução Unifesspa 414/2020',
-  },
-];
 
 /**
  * Modalidades de concorrência do processo seletivo, no vocabulário canônico

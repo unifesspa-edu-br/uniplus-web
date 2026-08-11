@@ -24,7 +24,7 @@ export interface TipoProcessoOption {
   name: string;
   description: string;
   tags: string[];
-  legal: string;
+  legal?: string;
 }
 
 export interface UploadItem {

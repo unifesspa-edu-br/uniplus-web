@@ -1,8 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
+import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
-import { TIPO_PROCESSO_OPTIONS } from '../../processo-seletivo.data';
 
 @Component({
   selector: 'sel-step-01-tipo-processo',
@@ -13,15 +22,59 @@ import { TIPO_PROCESSO_OPTIONS } from '../../processo-seletivo.data';
 })
 export class Step01TipoProcessoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  /** Lista local até a API de tipos de processo seletivo ser integrada. */
-  readonly options: TipoProcessoOption[] = TIPO_PROCESSO_OPTIONS;
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly tiposProcessoApi = inject(TiposProcessoApi);
+
+  /** Tipos ativos retornados pelo catálogo de Configuração (ADR-0122). */
+  readonly options = signal<readonly TipoProcessoOption[]>([]);
+  readonly loading = signal(true);
+  readonly errorMessage = signal<string | null>(null);
   readonly query = signal('');
   readonly filteredOptions = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('pt-BR');
+    const options = this.options();
     return query
-      ? this.options.filter((item) => item.name.toLocaleLowerCase('pt-BR').includes(query))
-      : this.options;
+      ? options.filter((item) => item.name.toLocaleLowerCase('pt-BR').includes(query))
+      : options;
   });
+
+  constructor() {
+    this.carregar();
+  }
+
+  carregar(): void {
+    this.loading.set(true);
+    this.errorMessage.set(null);
+
+    this.carregarPagina();
+  }
+
+  private carregarPagina(cursor?: string, acumulados: readonly TipoProcessoOption[] = []): void {
+    const consulta =
+      cursor === undefined
+        ? this.tiposProcessoApi.listar()
+        : this.tiposProcessoApi.listar({ cursor, direction: 'next' });
+
+    consulta.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => {
+        if (!isApiOk(result)) {
+          this.exibirErro();
+          return;
+        }
+
+        const tipos = [...acumulados, ...result.data.map((tipo) => this.toOption(tipo))];
+        const proximoCursor = extractNextCursor(result.headers.get('Link'));
+        if (proximoCursor !== null) {
+          this.carregarPagina(proximoCursor, tipos);
+          return;
+        }
+
+        this.options.set(tipos);
+        this.loading.set(false);
+      },
+      error: () => this.exibirErro(),
+    });
+  }
 
   select(value: string): void {
     this.store.patchObjectSection('tipoProcesso', { selected: value });
@@ -32,5 +85,19 @@ export class Step01TipoProcessoComponent {
     return this.store.draft().tipoProcesso.selected
       ? { valid: true }
       : { valid: false, message: 'Selecione um tipo de processo seletivo para continuar.' };
+  }
+
+  private toOption(tipo: TipoProcessoDto): TipoProcessoOption {
+    return {
+      value: tipo.id,
+      name: tipo.nome,
+      description: tipo.descricao ?? `Código: ${tipo.codigo}`,
+      tags: [tipo.codigo],
+    };
+  }
+
+  private exibirErro(): void {
+    this.loading.set(false);
+    this.errorMessage.set('Não foi possível carregar os tipos de processo. Tente novamente.');
   }
 }
