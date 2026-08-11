@@ -8,9 +8,7 @@
 } @else if (errorMessage(); as error) {
   <div role="alert">
     <p>{{ error }}</p>
-    <button class="button button--secondary" type="button" (click)="carregar()">
-      Tentar novamente
-    </button>
+    <button class="btn btn--secondary" type="button" (click)="carregar()">Tentar novamente</button>
   </div>
 } @else if (options().length === 0) {
   <p role="status">Não há tipos de processo ativos disponíveis no momento.</p>

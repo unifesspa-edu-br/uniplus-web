@@ -149,6 +149,7 @@ describe('Step01TipoProcessoComponent', () => {
 
     const retry = host.querySelector<HTMLButtonElement>('button');
     if (retry === null) throw new Error('Ação de nova tentativa ausente.');
+    expect(retry.className).toBe('btn btn--secondary');
     retry.click();
     fixture.detectChanges();
 
