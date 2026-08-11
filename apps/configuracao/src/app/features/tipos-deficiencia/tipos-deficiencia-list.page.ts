@@ -43,6 +43,7 @@ import {
   DrawerComponent,
   SpinnerComponent,
   DialogComponent,
+  FilterBarComponent,
   PagerComponent,
 } from "@uniplus/shared-ui/components";
 
@@ -90,6 +91,7 @@ const PAGE_SIZE = 50;
     SpinnerComponent,
     ReactiveFormsModule,
     DialogComponent,
+    FilterBarComponent,
     PagerComponent,
   ],
   template: `
@@ -131,30 +133,21 @@ const PAGE_SIZE = 50;
     }
 
     <div data-scope class="cfg-unidades-scope">
-      <div class="filter-bar" role="search" aria-label="Filtrar tipos de deficiência">
-        <div class="filter-bar__row">
-          <div class="input-group">
-            <span class="input-group__addon" aria-hidden="true">
-              <i class="pi pi-search"></i>
-            </span>
-            <input
-              type="search"
-              class="input"
-              placeholder="Buscar por nome..."
-              aria-label="Buscar tipos de deficiência"
-              [value]="termoBusca()"
-              (input)="termoBusca.set(inputValue($event))"
-            />
-          </div>
-          <button
-            type="button"
-            class="btn btn--tertiary btn--sm btn--rect"
-            (click)="limparFiltros()"
-          >
-            Limpar
-          </button>
-        </div>
-      </div>
+      <ui-filter-bar
+        ariaLabel="Filtrar tipos de deficiência"
+        searchPlaceholder="Buscar por nome..."
+        searchAriaLabel="Buscar tipos de deficiência"
+        [(searchValue)]="termoBusca"
+      >
+        <button
+          uiFilterBarActions
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
+          (click)="limparFiltros()"
+        >
+          Limpar
+        </button>
+      </ui-filter-bar>
 
       <section class="panel" aria-labelledby="cfg-unidades-list-title">
         <div class="panel-head">

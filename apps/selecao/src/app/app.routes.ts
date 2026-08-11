@@ -23,6 +23,11 @@ export const appRoutes: Routes = [
           import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
+        path: 'processo-seletivo',
+        loadChildren: () =>
+          import('./features/processo-seletivo/processo-seletivo.routes').then((m) => m.PROCESSO_SELETIVO_ROUTES),
+      },
+      {
         path: 'inscricoes',
         canActivate: [roleGuard('admin', 'gestor')],
         loadChildren: () =>

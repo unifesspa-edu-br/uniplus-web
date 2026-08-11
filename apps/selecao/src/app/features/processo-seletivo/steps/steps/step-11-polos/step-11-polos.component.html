@@ -1,0 +1,45 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 11</span>
+  <h1 tabindex="-1">Passo 11: Locais de prova</h1>
+  <p>
+    Polos onde o processo seletivo aplica prova. Marque os locais usados e ajuste capacidade/sessões por local.
+  </p>
+</div>
+<fieldset class="scroll-tabela">
+  <div class="polo-list">
+    @for (city of polos; track city; let index = $index) {
+      <div class="polo-item">
+        <label class="polo-item__row"
+          ><input
+            class="polo-checkbox"
+            type="checkbox"
+            [id]="'polo-' + index"
+            [checked]="selected(city)"
+            (change)="patch(city, $any($event.target).checked)"
+          /><span class="polo-item__name">{{ city }}</span></label
+        >
+        @if (selected(city)) {
+          <div class="polo-item__expand">
+            <span class="polo-expand__label">Capacidade máxima de inscritos:</span
+            ><input
+              type="number"
+              class="input polo-expand__cap"
+              placeholder="sem limite"
+              min="1"
+              [value]="capacidade(city) ?? ''"
+              (input)="
+                patch(
+                  city,
+                  true,
+                  $any($event.target).value === '' ? null : +$any($event.target).value
+                )
+              "
+            /><span class="polo-expand__hint"
+              >Vazio = sem limite (o que pode estourar a capacidade real do local).</span
+            >
+          </div>
+        }
+      </div>
+    }
+  </div>
+</fieldset>

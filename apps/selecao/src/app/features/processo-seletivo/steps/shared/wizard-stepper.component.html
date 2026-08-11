@@ -1,0 +1,42 @@
+<ol class="steps">
+  @for (label of store.labels; track $index) {
+    <li
+      class="steps__item"
+      [class.is-active]="store.status($index) === 'active'"
+      [class.is-done]="store.status($index) === 'done'"
+      [class.is-pending]="store.status($index) === 'pending'"
+      [attr.aria-current]="store.status($index) === 'active' ? 'step' : null"
+    >
+      <button class="steps__botao" type="button" (click)="select($index)">
+        <span class="steps__num" aria-hidden="true">
+          <span class="num-text">{{ $index + 1 }}</span>
+          <svg
+            class="num-icon num-check"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <svg
+            class="num-icon num-hourglass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"
+            />
+          </svg>
+        </span>
+        <span class="steps__label">{{ label }}</span>
+      </button>
+    </li>
+  }
+</ol>

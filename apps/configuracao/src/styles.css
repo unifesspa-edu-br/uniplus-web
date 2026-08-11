@@ -462,12 +462,6 @@ cfg-pesos-enem-page {
   font-variant-numeric: tabular-nums;
 }
 
-.filter-bar__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .cfg-unidades__loading {
   display: inline-flex;
   align-items: center;

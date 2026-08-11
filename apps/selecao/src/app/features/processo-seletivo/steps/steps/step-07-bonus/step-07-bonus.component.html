@@ -1,0 +1,91 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 7</span>
+  <h1 tabindex="-1">Passo 7: Bônus (opcional)</h1>
+</div>
+<p class="step-subtitle">
+  Bônus regional (opcional). Comum em PS Convênios. Quando habilitado, aplicado conforme tipo
+  escolhido sobre as modalidades selecionadas.
+</p>
+<div class="step-card">
+  <label class="check-item"
+    ><input
+      type="checkbox"
+      [checked]="store.draft().bonus.ativo"
+      (change)="store.patchObjectSection('bonus', { ativo: $any($event.target).checked })"
+    /><span>Aplicar bônus neste processo seletivo?</span></label
+  >
+  @if (!store.draft().bonus.ativo) {
+    <div class="bonus-info">
+      Bônus desabilitado — passo será marcado como concluído sem ação adicional.
+    </div>
+  }
+  @if (store.draft().bonus.ativo) {
+    <div class="bonus-config">
+      <div class="form-grid form-grid--3">
+        <div class="form-field">
+          <label class="label" for="f-bonus-tipo">Tipo de bônus</label
+          ><select
+            class="input"
+            id="f-bonus-tipo"
+            [value]="store.draft().bonus.tipo"
+            (change)="store.patchObjectSection('bonus', { tipo: $any($event.target).value })"
+          >
+            <option value="">— escolher —</option>
+            <option value="ADITIVO">Aditivo — nota + (valor × nota)</option>
+            <option value="MULTIPLICATIVO">Multiplicativo — nota × (1 + valor)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="label" for="f-bonus-valor">Valor (decimal)</label
+          ><input
+            class="input"
+            id="f-bonus-valor"
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            placeholder="0.20"
+            [value]="store.draft().bonus.valor ?? ''"
+            (input)="
+              store.patchObjectSection('bonus', {
+                valor: $any($event.target).value === '' ? null : +$any($event.target).value,
+              })
+            "
+          /><span class="field-hint">Ex.: 0.20 = 20%</span>
+        </div>
+        <div class="form-field">
+          <label class="label" for="f-bonus-criterio">Critério de elegibilidade</label
+          ><select
+            class="input"
+            id="f-bonus-criterio"
+            [value]="store.draft().bonus.criterio"
+            (change)="store.patchObjectSection('bonus', { criterio: $any($event.target).value })"
+          >
+            <option value="">— escolher —</option>
+            <option value="RESIDENCIA_MUNICIPIO_CONVENIO">
+              Residência no município do convênio
+            </option>
+            <option value="MATRICULA_ESCOLAR_MUNICIPIO">
+              Matrícula escolar no município do convênio
+            </option>
+            <option value="OUTRO">Outro critério (descrever)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field" style="margin-top: var(--space-5)">
+        <span class="label">Modalidades aplicáveis</span>
+        <div class="checkbox-grid checkbox-grid--5">
+          @for (code of modalidades(); track code) {
+            <label class="check-item"
+              ><input
+                type="checkbox"
+                [checked]="modalidadesEfetivas().includes(code)"
+                (change)="toggleModalidade(code, $any($event.target).checked)"
+              /><span>{{ code }}</span></label
+            >
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

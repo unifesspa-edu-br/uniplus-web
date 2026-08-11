@@ -36,6 +36,7 @@ import {
   AlertComponent,
   DialogComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   FilterChipsComponent,
   PagerComponent,
   SpinnerComponent,
@@ -69,6 +70,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     AlertComponent,
     DialogComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     FilterChipsComponent,
     PagerComponent,
     SpinnerComponent,
@@ -110,32 +112,31 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     }
 
     <div data-scope class="cfg-modalidades-scope">
-      <div class="filter-bar" role="search" aria-label="Filtrar modalidades">
-        <div class="filter-bar__row">
-          <div class="input-group">
-            <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
-            <input
-              type="search"
-              class="input"
-              placeholder="Buscar por código ou descrição..."
-              aria-label="Buscar por código ou descrição"
-              [value]="busca()"
-              (input)="busca.set(inputValue($event))"
-            />
-          </div>
-          <button type="button" class="btn btn--tertiary btn--sm btn--rect" (click)="limparFiltros()">
-            Limpar
-          </button>
-        </div>
-        <div class="cfg-modalidades-filtro-grupo" role="group" aria-label="Filtrar por natureza legal">
-          <span class="cfg-filtro-legenda">Natureza</span>
+      <ui-filter-bar
+        ariaLabel="Filtrar modalidades"
+        searchPlaceholder="Buscar por código ou descrição..."
+        searchAriaLabel="Buscar modalidade"
+        [(searchValue)]="busca"
+        secondaryRole="group"
+        secondaryAriaLabel="Filtrar por natureza legal"
+      >
+        <button
+          uiFilterBarActions
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
+          (click)="limparFiltros()"
+        >
+          Limpar
+        </button>
+        <ng-container uiFilterBarSecondary>
+          <span class="u-eyebrow">Natureza</span>
           <ui-filter-chips
             [options]="chipsNatureza()"
             [(selected)]="naturezaSelecionada"
-            ariaLabel="Natureza legal"
+            ariaLabel="Filtrar por natureza"
           />
-        </div>
-      </div>
+        </ng-container>
+      </ui-filter-bar>
 
       <section class="panel" aria-labelledby="cfg-modalidades-title">
         <div class="panel-head">

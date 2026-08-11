@@ -44,6 +44,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   FilterChipsComponent,
   PagerComponent,
   SpinnerComponent,
@@ -132,6 +133,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     FilterChipsComponent,
     NgTemplateOutlet,
     PagerComponent,
@@ -177,30 +179,21 @@ const BACKEND_FIELD_TO_CONTROL = {
     }
 
     <div data-scope class="cfg-unidades-scope">
-      <div class="filter-bar" role="search" aria-label="Filtrar unidades">
-        <div class="filter-bar__row">
-          <div class="input-group">
-            <span class="input-group__addon" aria-hidden="true">
-              <i class="pi pi-search"></i>
-            </span>
-            <input
-              type="search"
-              class="input"
-              placeholder="Buscar por sigla ou nome..."
-              aria-label="Buscar unidade"
-              [value]="busca()"
-              (input)="busca.set(inputValue($event))"
-            />
-          </div>
-          <button
-            type="button"
-            class="btn btn--tertiary btn--sm btn--rect"
-            (click)="limparFiltros()"
-          >
-            Limpar
-          </button>
-        </div>
-        <div class="filter-bar__group">
+      <ui-filter-bar
+        ariaLabel="Filtrar unidades"
+        searchPlaceholder="Buscar por sigla ou nome..."
+        searchAriaLabel="Buscar unidade"
+        [(searchValue)]="busca"
+      >
+        <button
+          uiFilterBarActions
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
+          (click)="limparFiltros()"
+        >
+          Limpar
+        </button>
+        <ng-container uiFilterBarSecondary>
           <span class="u-eyebrow">Tipo</span>
           <ui-filter-chips
             [options]="tipoChips"
@@ -208,8 +201,8 @@ const BACKEND_FIELD_TO_CONTROL = {
             (selectedChange)="tipoFiltro.set($event ?? '')"
             ariaLabel="Filtrar por tipo"
           />
-        </div>
-      </div>
+        </ng-container>
+      </ui-filter-bar>
 
       <section class="panel" aria-labelledby="cfg-unidades-tree-title">
         <div class="panel-head">

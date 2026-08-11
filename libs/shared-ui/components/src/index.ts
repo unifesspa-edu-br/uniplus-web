@@ -20,6 +20,7 @@ export { DialogComponent } from '../../src/lib/components/dialog/dialog';
 export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
 export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
+export { FilterBarComponent } from '../../src/lib/components/filter-bar/filter-bar';
 export {
   FilterChipsComponent,
   type UiFilterChipOption,
@@ -47,3 +48,4 @@ export { TagComponent, type UiTagVariant } from '../../src/lib/components/tag/ta
 export { TextInputComponent } from '../../src/lib/components/text-input/text-input';
 export { TextareaComponent } from '../../src/lib/components/textarea/textarea';
 export { VlibrasLoaderComponent } from '../../src/lib/components/vlibras-loader/vlibras-loader';
+export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';

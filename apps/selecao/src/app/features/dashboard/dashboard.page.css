@@ -1,0 +1,167 @@
+/* ── Dashboard layout ────────────────────────────────────────────── */
+
+/* O espaçamento e o teto de largura vêm de `.page`, no shell da rota. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+}
+
+/* ── Page header ─────────────────────────────────────────────────── */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.page-header__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  line-height: 1.2;
+}
+
+.page-header__desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── KPI grid ────────────────────────────────────────────────────── */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.kpi__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.kpi__num {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.kpi__delta {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-success-600);
+}
+
+.kpi__delta.is-down {
+  color: var(--color-danger-500);
+}
+
+/* ── Lower section (two panels side by side) ─────────────────────── */
+
+.lower {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--space-6);
+}
+
+/* ── Timeline (used inside panels) ───────────────────────────────── */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+}
+
+.tline {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  position: relative;
+}
+
+.tline + .tline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(var(--space-5) + 5px);
+  width: 2px;
+  height: var(--space-3);
+  background: var(--border-subtle);
+}
+
+.tline__bullet {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border-default);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.tline__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tline__what {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.tline__when {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ── Panel overrides inside dashboard ────────────────────────────── */
+
+:host .panel {
+  overflow: visible;
+}
+
+.panel-head a {
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.panel-head a:hover {
+  text-decoration: underline;
+}
+
+/* Aviso no lugar do atalho ainda não implementado — texto, não controle. */
+.panel-head__aviso {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}

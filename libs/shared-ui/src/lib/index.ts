@@ -11,6 +11,7 @@ export { DialogComponent } from './components/dialog/dialog';
 export { DrawerComponent } from './components/drawer/drawer';
 export { EmptyStateComponent } from './components/empty-state/empty-state';
 export { FileUploadComponent } from './components/file-upload/file-upload';
+export { FilterBarComponent } from './components/filter-bar/filter-bar';
 export { FilterChipsComponent, type UiFilterChipOption } from './components/filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from './components/form-field/form-field';
@@ -30,6 +31,7 @@ export { TagComponent, type UiTagVariant } from './components/tag/tag';
 export { TextInputComponent } from './components/text-input/text-input';
 export { TextareaComponent } from './components/textarea/textarea';
 export { VlibrasLoaderComponent } from './components/vlibras-loader/vlibras-loader';
+export { BulletComponent, type UiBulletVariant } from './components/bullet/bullet';
 
 // Pipes
 export { CpfPipe } from './pipes/cpf.pipe';
