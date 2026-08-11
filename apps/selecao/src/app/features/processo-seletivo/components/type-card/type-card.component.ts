@@ -10,7 +10,7 @@ import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
       <input
         class="sr-only"
         type="radio"
-        name="tipo-edital"
+        name="tipo-processo"
         [value]="option().value"
         [checked]="selected()"
         (change)="selectChange.emit(option().value)"
@@ -39,7 +39,9 @@ import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
           }
         </div>
       }
-      <span class="type-card__legal">{{ option().legal }}</span>
+      @if (option().legal; as legal) {
+        <span class="type-card__legal">{{ legal }}</span>
+      }
     </label>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

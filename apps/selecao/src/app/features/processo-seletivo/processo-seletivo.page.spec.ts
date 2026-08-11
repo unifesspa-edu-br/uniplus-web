@@ -1,11 +1,20 @@
+import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { apiOk } from '@uniplus/shared-core/http';
+import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
+
+const tiposProcessoApiStub = {
+  listar: () => of(apiOk<readonly TipoProcessoDto[]>([], 200, new HttpHeaders())),
+};
 
 describe('ProcessoSeletivoPage — estrutura', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
+      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
     }).compileComponents();
   });
 
@@ -47,6 +56,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
+      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
     }).compileComponents();
   });
 
@@ -98,6 +108,7 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
+      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
     }).compileComponents();
   });
 
@@ -126,6 +137,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
+      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
     }).compileComponents();
   });
 
