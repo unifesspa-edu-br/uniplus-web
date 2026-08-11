@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isApiOk } from '@uniplus/shared-core/http';
+import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -46,24 +46,34 @@ export class Step01TipoProcessoComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.tiposProcessoApi
-      .listar()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          this.loading.set(false);
-          if (isApiOk(result)) {
-            this.options.set(result.data.map((tipo) => this.toOption(tipo)));
-            return;
-          }
+    this.carregarPagina();
+  }
 
-          this.errorMessage.set('Não foi possível carregar os tipos de processo. Tente novamente.');
-        },
-        error: () => {
-          this.loading.set(false);
-          this.errorMessage.set('Não foi possível carregar os tipos de processo. Tente novamente.');
-        },
-      });
+  private carregarPagina(cursor?: string, acumulados: readonly TipoProcessoOption[] = []): void {
+    const consulta =
+      cursor === undefined
+        ? this.tiposProcessoApi.listar()
+        : this.tiposProcessoApi.listar({ cursor, direction: 'next' });
+
+    consulta.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => {
+        if (!isApiOk(result)) {
+          this.exibirErro();
+          return;
+        }
+
+        const tipos = [...acumulados, ...result.data.map((tipo) => this.toOption(tipo))];
+        const proximoCursor = extractNextCursor(result.headers.get('Link'));
+        if (proximoCursor !== null) {
+          this.carregarPagina(proximoCursor, tipos);
+          return;
+        }
+
+        this.options.set(tipos);
+        this.loading.set(false);
+      },
+      error: () => this.exibirErro(),
+    });
   }
 
   select(value: string): void {
@@ -84,5 +94,10 @@ export class Step01TipoProcessoComponent {
       description: tipo.descricao ?? `Código: ${tipo.codigo}`,
       tags: [tipo.codigo],
     };
+  }
+
+  private exibirErro(): void {
+    this.loading.set(false);
+    this.errorMessage.set('Não foi possível carregar os tipos de processo. Tente novamente.');
   }
 }

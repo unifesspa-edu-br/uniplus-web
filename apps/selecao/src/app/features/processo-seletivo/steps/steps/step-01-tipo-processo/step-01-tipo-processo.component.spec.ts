@@ -3,7 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
-import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
+import {
+  TipoProcessoDto,
+  TiposProcessoApi,
+  TiposProcessoQuery,
+} from '@uniplus/shared-data/configuracao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { Step01TipoProcessoComponent } from './step-01-tipo-processo.component';
 
@@ -32,7 +36,7 @@ const tiposSeed: readonly TipoProcessoDto[] = [
 
 describe('Step01TipoProcessoComponent', () => {
   let fixture: ComponentFixture<Step01TipoProcessoComponent>;
-  let listar: () => Observable<ApiResult<readonly TipoProcessoDto[]>>;
+  let listar: (query?: TiposProcessoQuery) => Observable<ApiResult<readonly TipoProcessoDto[]>>;
 
   beforeEach(async () => {
     listar = () => of(apiOk(tiposSeed, 200, headers));
@@ -40,7 +44,10 @@ describe('Step01TipoProcessoComponent', () => {
       imports: [Step01TipoProcessoComponent],
       providers: [
         ProcessoSeletivoStore,
-        { provide: TiposProcessoApi, useValue: { listar: () => listar() } },
+        {
+          provide: TiposProcessoApi,
+          useValue: { listar: (query?: TiposProcessoQuery) => listar(query) },
+        },
       ],
     }).compileComponents();
   });
@@ -67,6 +74,26 @@ describe('Step01TipoProcessoComponent', () => {
     fixture.detectChanges();
 
     expect(component.store.draft().tipoProcesso.selected).toBe(ID_SISU);
+  });
+
+  it('percorre todos os cursores next do catálogo antes de exibir os tipos', () => {
+    const consultas: Array<TiposProcessoQuery | undefined> = [];
+    const headersComProximaPagina = new HttpHeaders({
+      Link: '</api/configuracao/tipos-processo?cursor=proxima%2Bpagina&direction=next>; rel="next"',
+    });
+    listar = (query) => {
+      consultas.push(query);
+      return consultas.length === 1
+        ? of(apiOk([tiposSeed[0]], 200, headersComProximaPagina))
+        : of(apiOk([tiposSeed[1]], 200, headers));
+    };
+
+    montar();
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(consultas).toEqual([undefined, { cursor: 'proxima+pagina', direction: 'next' }]);
+    expect(host.textContent).toContain('SiSU');
+    expect(host.textContent).toContain('Medicina');
   });
 
   it('filtra pelo nome dos tipos retornados pela API', () => {
