@@ -81,6 +81,35 @@ describe('TermosConsentimentoDetailPage', () => {
     await propagate();
   }
 
+  it('não exibe nem salva o rascunho se o carregamento inicial falhar', async () => {
+    controller.expectOne(DETALHE_PATH).flush(
+      {
+        type: 'https://uniplus.dev/erros/indisponivel',
+        title: 'Serviço indisponível',
+        status: 503,
+        code: 'uniplus.indisponivel',
+      },
+      { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_HEADERS },
+    );
+    await propagate();
+
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+
+    component['salvarRascunho']();
+    controller.expectNone(
+      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`,
+    );
+
+    const tentarNovamente = fixture.nativeElement.querySelector<HTMLButtonElement>('button');
+    expect(tentarNovamente?.textContent).toContain('Tentar novamente');
+    tentarNovamente?.click();
+
+    controller.expectOne(DETALHE_PATH).flush(termo());
+    await propagate();
+
+    expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
+  });
+
   it('desabilita os campos enquanto o rascunho está sendo salvo', async () => {
     await carregarTermo();
 

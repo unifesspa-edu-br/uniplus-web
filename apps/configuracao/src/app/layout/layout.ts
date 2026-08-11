@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   ActivatedRouteSnapshot,
@@ -189,9 +196,10 @@ export class LayoutComponent {
     ),
     { initialValue: this.breadcrumbDaRotaAtiva() },
   );
-  private readonly desktopMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(min-width: 1024px)')
-    : null;
+  private readonly desktopMedia =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(min-width: 1024px)')
+      : null;
 
   protected readonly isDesktop = signal(this.desktopMedia?.matches ?? false);
   protected readonly sidebarMobileOpen = signal(false);
@@ -206,7 +214,7 @@ export class LayoutComponent {
   protected readonly sidebarUserInitials = computed(() => initials(this.userContext.displayName()));
   protected readonly sidebarUserRole = computed(() => {
     const role = this.authService.roles().find((value) => DOMAIN_ROLES.has(value));
-    return role ? ROLE_LABELS[role] ?? role : '';
+    return role ? (ROLE_LABELS[role] ?? role) : '';
   });
 
   protected readonly navGroups: readonly ConfigNavGroup[] = [
@@ -248,8 +256,22 @@ export class LayoutComponent {
           routerLink: '/tipos-documento',
           exact: true,
         },
-        { label: 'Condição de Atendimento', icon: 'pi-heart', routerLink: '/condicoes-atendimento' },
-        { label: 'Recurso de Acessibilidade', icon: 'pi-wrench', routerLink: '/recursos-acessibilidade' },
+        {
+          label: 'Termo de Consentimento',
+          icon: 'pi-file-edit',
+          routerLink: '/termos-consentimento',
+          exact: true,
+        },
+        {
+          label: 'Condição de Atendimento',
+          icon: 'pi-heart',
+          routerLink: '/condicoes-atendimento',
+        },
+        {
+          label: 'Recurso de Acessibilidade',
+          icon: 'pi-wrench',
+          routerLink: '/recursos-acessibilidade',
+        },
         { label: 'Tipo de Deficiência', icon: 'pi-stop', routerLink: '/tipos-deficiencia' },
         {
           label: 'Fase Canônica',
