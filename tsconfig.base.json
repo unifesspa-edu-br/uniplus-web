@@ -29,6 +29,7 @@
       "@uniplus/shared-ui/shell": ["libs/shared-ui/shell/src/index.ts"],
       "@uniplus/shared-ui/notifications": ["libs/shared-ui/notifications/src/index.ts"],
       "@uniplus/shared-ui/components": ["libs/shared-ui/components/src/index.ts"],
+      "@uniplus/shared-ui/pipes": ["libs/shared-ui/pipes/src/index.ts"],
       "@uniplus/shared-auth/bootstrap": ["libs/shared-auth/bootstrap/src/index.ts"],
       "@uniplus/shared-auth/guards": ["libs/shared-auth/guards/src/index.ts"],
       "@uniplus/shared-auth/components": ["libs/shared-auth/components/src/index.ts"],
