@@ -33,6 +33,8 @@ import {
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026/0089). */
 const PAGE_SIZE = 50;
@@ -99,8 +101,9 @@ const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
             class="input"
             placeholder="Buscar por nome..."
             aria-label="Buscar por nome"
+            maxlength="200"
             [value]="busca()"
-            (input)="busca.set(inputValue($event))"
+            (input)="alterarBusca(inputValue($event))"
           />
         </div>
         <button type="button" class="btn btn--tertiary btn--sm btn--rect" (click)="limparFiltros()">
@@ -202,22 +205,36 @@ const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
       }
     </section>
   `,
-  host: { class: 'cfg-page' }
+  host: { class: 'cfg-page' },
 })
 export class TermosConsentimentoListPage {
   private readonly api = inject(TermosConsentimentoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
+  private requisicaoAtual = 0;
 
   protected readonly busca = signal('');
+  protected alterarBusca(valor: string): void {
+    this.busca.set(valor);
+    this.buscaAlterada$.next(valor);
+  }
+
+  private readonly filtroAplicado = signal('');
+  private readonly buscaAlterada$ = new Subject<string>();
+  private aplicarNovoFiltro(filtro: string): void {
+    this.filtroAplicado.set(filtro);
+    this.pagina.set(undefined);
+    this.lista.set(undefined);
+    this.carregarPagina();
+  }
 
   private readonly pagina = signal<
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
 
-  private readonly lista = signal<
-    ApiResult<readonly TermoConsentimentoResumoDto[]> | undefined
-  >(undefined);
+  private readonly lista = signal<ApiResult<readonly TermoConsentimentoResumoDto[]> | undefined>(
+    undefined,
+  );
 
   protected readonly loading = signal(false);
 
@@ -242,21 +259,9 @@ export class TermosConsentimentoListPage {
     return resultado.data;
   });
 
-  protected readonly termosFiltrados = computed(() => {
-    const termo = this.busca().trim().toLocaleLowerCase('pt-BR');
+  protected readonly termosFiltrados = computed(() => this.termos());
 
-    if (termo.length === 0) {
-      return this.termos();
-    }
-
-    return this.termos().filter((t) =>
-      t.nome.toLocaleLowerCase('pt-BR').includes(termo),
-    );
-  });
-
-  protected readonly temFiltroAtivo = computed(
-    () => this.busca().trim().length > 0,
-  );
+  protected readonly temFiltroAtivo = computed(() => this.filtroAplicado().length > 0);
 
   protected readonly errorMessage = computed<string | null>(() => {
     const resultado = this.lista();
@@ -270,10 +275,24 @@ export class TermosConsentimentoListPage {
 
   constructor() {
     this.carregarPagina();
+
+    this.buscaAlterada$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((busca) => {
+        const filtro = busca.trim();
+
+        if (filtro === this.filtroAplicado() && this.pagina() === undefined) {
+          return;
+        }
+
+        this.aplicarNovoFiltro(filtro);
+      });
   }
 
   private carregarPagina(): void {
+    const requisicao = ++this.requisicaoAtual;
     const pagina = this.pagina();
+    const q = this.filtroAplicado();
 
     this.loading.set(true);
 
@@ -282,9 +301,15 @@ export class TermosConsentimentoListPage {
         cursor: pagina ? cursorToString(pagina.cursor) : undefined,
         direction: pagina?.direction,
         limit: PAGE_SIZE,
+        q: q.length > 0 ? q : undefined,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
+
       .subscribe((result) => {
+        if (requisicao !== this.requisicaoAtual) {
+          return;
+        }
+
         this.loading.set(false);
         this.lista.set(result);
 
@@ -334,9 +359,7 @@ export class TermosConsentimentoListPage {
   }
 
   protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement
-      ? event.target.value
-      : '';
+    return event.target instanceof HTMLInputElement ? event.target.value : '';
   }
 
   protected formaAceiteLabel(token: string): string {
@@ -348,6 +371,10 @@ export class TermosConsentimentoListPage {
   }
 
   protected limparFiltros(): void {
+    if (!this.busca() && !this.filtroAplicado()) {
+      return;
+    }
     this.busca.set('');
+    this.aplicarNovoFiltro('');
   }
 }

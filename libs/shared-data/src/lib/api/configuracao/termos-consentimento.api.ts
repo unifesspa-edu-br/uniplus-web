@@ -31,6 +31,7 @@ export interface TermosConsentimentoQuery {
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
+  readonly q?: string;
 }
 /**
  * Cliente Angular standalone do recurso Termo de Consentimento
@@ -67,6 +68,12 @@ export class TermosConsentimentoApi {
     query: TermosConsentimentoQuery = {},
   ): Observable<ApiResult<readonly TermoConsentimentoResumoDto[]>> {
     let params = new HttpParams();
+
+    const q = query.q?.trim();
+
+    if (q) {
+      params = params.set('q', q);
+    }
 
     if (query.cursor !== undefined) {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
