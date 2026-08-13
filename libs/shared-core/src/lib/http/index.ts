@@ -36,6 +36,8 @@ export type {
   ProblemValidationError,
 } from './problem-details';
 
+export { SignedUploadClient } from './signed-upload';
+
 export { ProblemI18nService } from './problem-i18n.service';
 export type {
   ProblemAction,
