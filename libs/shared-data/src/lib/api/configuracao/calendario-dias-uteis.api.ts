@@ -1,6 +1,6 @@
-import { Observable } from 'rxjs';
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
@@ -10,7 +10,8 @@ export type DiaNaoUtilCommandItem = components['schemas']['DiaNaoUtilCommandItem
 export type DiaNaoUtilDto = components['schemas']['DiaNaoUtilDto'];
 export type CalendarioDiasUteisDto = components['schemas']['CalendarioDiasUteisDto'];
 export type CalendarioDiasUteisResumoDto = components['schemas']['CalendarioDiasUteisResumoDto'];
-export type CriarCalendarioDiasUteisCommand = components['schemas']['CriarCalendarioDiasUteisCommand'];
+export type CriarCalendarioDiasUteisCommand =
+  components['schemas']['CriarCalendarioDiasUteisCommand'];
 
 /** Filtro de listagem de CalendárioDiasUteis (cursor pagination, ADR-0026). */
 export interface PaginacaoQuery {
@@ -32,8 +33,6 @@ export interface DominioOption<T extends string = string> {
   readonly value: T;
   readonly label: string;
 }
-
-export type CriarTermoConsentimentoCommand = components['schemas']['CriarTermoConsentimentoCommand'];
 
 export type AbrangenciasToken = 'INSTITUCIONAL' | 'MUNICIPAL' | 'ESTADUAL' | 'NACIONAL';
 
@@ -86,15 +85,7 @@ export const ABRANGENCIAS: readonly DominioOption<AbrangenciasToken>[] = [
   { value: 'NACIONAL', label: 'Nacional' },
 ] as const;
 
-/**
- * Cliente Angular standalone do recurso Campus (módulo Configuração). Os Campi
- * têm endereço estruturado como referência ao Geo (`endereco` aninhado + `cidade`
- * aninhada, ADR-0096).
- *
- * API thin (ADR-0013): tipos do `schema.ts` gerado; resposta envelopada em
- * `ApiResult<T>` (ADR-0011); versionamento por vendor MIME `campus v1`
- * (ADR-0016/0028). Espelha `InstituicaoApi`/`UnidadesApi`.
- */
+/** Cliente HTTP do cadastro de calendários de dias úteis. */
 @Injectable({ providedIn: 'root' })
 export class CalendarioDiasUteisApi {
   private readonly http = inject(HttpClient);
@@ -114,7 +105,7 @@ export class CalendarioDiasUteisApi {
       `${this.basePath}/api/configuracao/calendarios-dias-uteis`,
       {
         params,
-        context: withVendorMime('calendario-dia-util', 1),
+        context: withVendorMime('calendario-dias-uteis', 1),
       },
     );
   }
@@ -123,7 +114,7 @@ export class CalendarioDiasUteisApi {
   obter(id: string): Observable<ApiResult<CalendarioDiasUteisDto>> {
     return this.http.get<ApiResult<CalendarioDiasUteisDto>>(
       `${this.basePath}/api/configuracao/calendarios-dias-uteis/${encodeURIComponent(id)}`,
-      { context: withVendorMime('calendario-dia-util', 1) },
+      { context: withVendorMime('calendario-dias-uteis', 1) },
     );
   }
 
@@ -142,18 +133,13 @@ export class CalendarioDiasUteisApi {
     );
   }
 
-  /** POST `/api/configuracao/admin/calendarios-dias-uteis/{id}/vigente` — cria um calendários de dias úteis. Idempotency-Key obrigatório (ADR-0027). */
-  criarVigente(
-    id: string,
-    command: CriarCalendarioDiasUteisCommand,
-    context: HttpContext,
-  ): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(
+  /** POST `/api/configuracao/admin/calendarios-dias-uteis/{id}/vigente` — torna o dataset vigente. */
+  marcarVigente(id: string, context: HttpContext): Observable<ApiResult<void>> {
+    return this.http.post<ApiResult<void>>(
       `${this.basePath}/api/configuracao/admin/calendarios-dias-uteis/${encodeURIComponent(id)}/vigente`,
-      command,
+      null,
       {
         context,
-        headers: new HttpHeaders({ Accept: 'application/json' }),
       },
     );
   }

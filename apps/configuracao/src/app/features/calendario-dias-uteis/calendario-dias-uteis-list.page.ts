@@ -4,35 +4,35 @@ import {
   computed,
   DestroyRef,
   inject,
-  linkedSignal,
   signal,
-  untracked,
 } from '@angular/core';
-import { HttpParams } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 
 import {
   ApiResult,
   Cursor,
-  cursorToString,
-  idempotencyKey,
-  NotificationService,
-  PaginationDirection, ProblemDetails,
+  PaginationDirection,
+  ProblemDetails,
   ProblemI18nService,
-  useApiResource, withIdempotencyKey,
-  withVendorMime,
-} from '@uniplus/shared-core';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data';
+  cursorToString,
+  extractNextCursor,
+  extractPrevCursor,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CalendarioDiasUteisApi,
-  CalendarioDiasUteisDto
+  CalendarioDiasUteisResumoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
-  DateBrPipe, DialogComponent,
+  DialogComponent,
   EmptyStateComponent,
+  PagerComponent,
   SpinnerComponent,
-} from '@uniplus/shared-ui';
+} from '@uniplus/shared-ui/components';
+import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -47,6 +47,7 @@ const PAGE_SIZE = 50;
     RouterLink,
     DateBrPipe,
     DialogComponent,
+    PagerComponent,
   ],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -127,7 +128,7 @@ const PAGE_SIZE = 50;
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
                       [title]="calendario.vigente ? 'Marque outro dataset como vigente' : ''"
-                      [disabled]="loading() || calendario.vigente"
+                      [disabled]="loading() || saving() || calendario.vigente"
                       [attr.aria-label]="'Marcar vigente'"
                       (click)="solicitarVigenteConfirmado(calendario)"
                     >
@@ -141,7 +142,7 @@ const PAGE_SIZE = 50;
                           ? 'Marque outro dataset como vigente antes de remover este'
                           : ''
                       "
-                      [disabled]="loading() || calendario.vigente"
+                      [disabled]="loading() || saving() || calendario.vigente"
                       [attr.aria-label]="'Remover o calendário'"
                       (click)="abrirRemoverCalendario(calendario)"
                     >
@@ -153,7 +154,7 @@ const PAGE_SIZE = 50;
             </tbody>
           </table>
         </div>
-      } @else {
+      } @else if (!loading() && !errorMessage()) {
         <ui-empty-state
           heading="Nenhum calendário encontrado"
           description="Cadastre o primeiro calendário de dias úteis."
@@ -163,6 +164,17 @@ const PAGE_SIZE = 50;
             Novo dataset
           </a>
         </ui-empty-state>
+      }
+      @if (prevCursor() !== null || nextCursor() !== null) {
+        <ui-pager
+          statusText="Navegação por páginas"
+          navigationLabel="Paginação de calendários de dias úteis"
+          [hasPrevious]="prevCursor() !== null"
+          [hasNext]="nextCursor() !== null"
+          [isDisabled]="loading() || saving()"
+          (previous)="paginaAnterior()"
+          (next)="proximaPagina()"
+        />
       }
     </section>
     <ui-dialog
@@ -179,7 +191,12 @@ const PAGE_SIZE = 50;
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
+        <button
+          type="button"
+          class="btn btn--danger"
+          [disabled]="saving()"
+          (click)="removerConfirmado()"
+        >
           Confirmar remoção
         </button>
       </div>
@@ -192,83 +209,103 @@ export class CalendarioDiasUteisListPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
-
-  protected readonly errorMessage = computed<string | null>(() => {
-    const problem = this.lista.problem();
-    if (problem) {
-      return this.problemI18n.resolve(problem).title;
-    }
-    return this.lista.error() ? 'Erro inesperado ao carregar calendários.' : null;
-  });
-
-  private readonly lista = useApiResource<readonly CalendarioDiasUteisDto[]>(() => ({
-    url: `${this.basePath}/api/configuracao/calendarios-dias-uteis`,
-    params: this.montarParams(),
-    context: withVendorMime('calendario-dias-uteis', 1),
-  }));
-
-  protected readonly loading = this.lista.isLoading;
   private readonly pagina = signal<
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
-
-  protected readonly calendarios = linkedSignal<
-    ApiResult<readonly CalendarioDiasUteisDto[]> | undefined,
-    readonly CalendarioDiasUteisDto[]
-  >({
-    source: () => this.lista.value(),
-    computation: (envelope, previous) => {
-      const atual = previous?.value ?? [];
-      if (envelope === undefined) {
-        return atual;
-      }
-      const primeiraPagina = untracked(() => this.pagina() === undefined);
-      if (!envelope.ok) {
-        return primeiraPagina ? [] : atual;
-      }
-      return [...envelope.data];
-    },
+  private readonly lista = signal<ApiResult<readonly CalendarioDiasUteisResumoDto[]> | undefined>(
+    undefined,
+  );
+  private readonly cursores = signal<{
+    readonly prev: Cursor | null;
+    readonly next: Cursor | null;
+  }>({ prev: null, next: null });
+  protected readonly loading = signal(false);
+  protected readonly calendarios = computed(() => {
+    const resultado = this.lista();
+    return resultado?.ok ? resultado.data : [];
+  });
+  protected readonly prevCursor = computed(() => this.cursores().prev);
+  protected readonly nextCursor = computed(() => this.cursores().next);
+  protected readonly errorMessage = computed<string | null>(() => {
+    const resultado = this.lista();
+    return resultado && !resultado.ok ? this.problemI18n.resolve(resultado.problem).title : null;
   });
 
-  readonly calendarioParaRemover = signal<CalendarioDiasUteisDto | null>(null);
+  readonly calendarioParaRemover = signal<CalendarioDiasUteisResumoDto | null>(null);
   readonly confirmOpen = signal(false);
   protected readonly saving = signal(false);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
+  constructor() {
+    this.carregarPagina();
+  }
+
   protected tentarNovamente(): void {
     if (!this.loading()) {
-      this.lista.reload();
+      this.carregarPagina();
     }
   }
 
   private recarregar(): void {
     if (this.pagina() === undefined) {
-      this.lista.reload();
+      this.carregarPagina();
     } else {
       this.pagina.set(undefined);
+      this.carregarPagina();
     }
   }
 
-  private montarParams(): HttpParams {
+  private carregarPagina(): void {
     const pagina = this.pagina();
-    if (pagina === undefined) {
-      return new HttpParams().set('limit', String(PAGE_SIZE));
-    }
-    return new HttpParams()
-      .set('cursor', cursorToString(pagina.cursor))
-      .set('direction', pagina.direction);
+    this.loading.set(true);
+    this.api
+      .listar({
+        cursor: pagina ? cursorToString(pagina.cursor) : undefined,
+        direction: pagina?.direction,
+        limit: PAGE_SIZE,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.loading.set(false);
+        this.lista.set(result);
+        if (!result.ok) {
+          return;
+        }
+        const link = result.headers?.get('Link') ?? null;
+        this.cursores.set({
+          prev: extractPrevCursor(link),
+          next: extractNextCursor(link),
+        });
+      });
   }
 
-  solicitarVigenteConfirmado(calendario: CalendarioDiasUteisDto): void {
+  protected proximaPagina(): void {
+    const cursor = this.nextCursor();
+    if (cursor !== null && !this.loading()) {
+      this.pagina.set({ cursor, direction: 'next' });
+      this.carregarPagina();
+    }
+  }
+
+  protected paginaAnterior(): void {
+    const cursor = this.prevCursor();
+    if (cursor !== null && !this.loading()) {
+      this.pagina.set({ cursor, direction: 'prev' });
+      this.carregarPagina();
+    }
+  }
+
+  solicitarVigenteConfirmado(calendario: CalendarioDiasUteisResumoDto): void {
     if (this.loading() || this.saving()) {
       return;
     }
     this.saving.set(true);
     this.api
-      .criarVigente(calendario.id, calendario, withIdempotencyKey(this.idempotencyKeyAtual()))
+      .marcarVigente(calendario.id, withIdempotencyKey(this.idempotencyKeyAtual()))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        this.saving.set(false);
+        this.renovarIdempotencyKey();
         if (result.ok) {
           this.notifications.success('Vigência de calendário atualizada');
           this.recarregar();
@@ -278,7 +315,7 @@ export class CalendarioDiasUteisListPage {
       });
   }
 
-  abrirRemoverCalendario(calendario: CalendarioDiasUteisDto): void {
+  abrirRemoverCalendario(calendario: CalendarioDiasUteisResumoDto): void {
     this.calendarioParaRemover.set(calendario);
     this.confirmOpen.set(true);
   }
@@ -312,10 +349,6 @@ export class CalendarioDiasUteisListPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
-      this.notifications.errorFromProblem(problem);
-      this.renovarIdempotencyKey();
-      return;
-    }
+    this.notifications.errorFromProblem(problem);
   }
 }
