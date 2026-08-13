@@ -1,6 +1,16 @@
-import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
+import { ModalidadeConcorrencia, OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
+
+/**
+ * Origem dos candidatos no rascunho: `''` representa "ainda não escolhida".
+ * `OrigemCandidatos.nenhuma` existe no contrato mas é recusada pela criação do
+ * processo, então não é oferecida como opção.
+ */
+export type OrigemCandidatosSelecionada =
+  | ''
+  | OrigemCandidatos.inscricaoPropria
+  | OrigemCandidatos.importacaoExterna;
 
 /**
  * Resultado da validação declarativa de um step. Steps de domínio
@@ -27,11 +37,41 @@ export interface TipoProcessoOption {
   legal?: string;
 }
 
+/**
+ * Fase do anexo do edital, na ordem em que a API a executa: o registro é
+ * criado com a URL pré-assinada (`iniciando`), o arquivo vai direto ao storage
+ * (`enviando`), e a API lê o objeto para validar e selar (`confirmando`).
+ * Guardar a fase é o que permite retomar do ponto certo depois de uma falha —
+ * repetir a confirmação não muda um objeto que nunca chegou ao storage.
+ */
+export type FaseUpload = 'iniciando' | 'enviando' | 'confirmando' | 'confirmado' | 'erro';
+
 export interface UploadItem {
   id: string;
   name: string;
-  extension: 'pdf' | 'png' | 'jpeg' | 'jpg' | 'docx';
+  /** O contrato do documento do edital aceita somente PDF. */
+  extension: 'pdf';
   progress: number;
+  fase: FaseUpload;
+  /** Id do registro criado na iniciação — necessário para confirmar. */
+  documentoEditalId?: string;
+  /** Instante em que a URL pré-assinada deixa de valer. */
+  expiraEm?: string;
+  /**
+   * O arquivo já chegou ao storage. Distingue "falhou antes de subir" de
+   * "subiu e a confirmação não concluiu": no segundo caso, repetir o PUT é
+   * desperdício e pode até esbarrar na URL já expirada, enquanto repetir só a
+   * confirmação recupera o replay do comando anterior.
+   */
+  enviado?: boolean;
+  /**
+   * A confirmação ficou sem resposta definitiva. O documento pode já estar
+   * selado — imutável — no servidor, então trocar o arquivo criaria um segundo
+   * edital e perderia a referência do primeiro: só a retentativa da mesma
+   * confirmação resolve.
+   */
+  confirmacaoIndefinida?: boolean;
+  mensagemErro?: string;
 }
 
 export interface Curso {
@@ -121,6 +161,16 @@ export interface WizardDraft {
     orgao: string;
     periodo: string;
     nome: string;
+    /**
+     * Unidade que administra o certame, escolhida no catálogo de Organização
+     * Institucional. Obrigatória na criação e imutável depois dela.
+     */
+    unidadeAdministradoraId: string;
+    /**
+     * De onde vêm os candidatos. Atributo declarado — não se deriva do tipo do
+     * processo, e é ele que define o piso mínimo do cronograma de fases.
+     */
+    origemCandidatos: OrigemCandidatosSelecionada;
     uploads: UploadItem[];
   };
   modalidades: {

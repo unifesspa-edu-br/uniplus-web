@@ -761,6 +761,47 @@
   grid-column: 1 / -1;
 }
 
+/*
+ * Item de grid tem `min-width: auto`, então o conteúdo intrínseco decide o piso
+ * da largura: um `<select>` com opção longa — nome de unidade, rótulo de origem
+ * dos candidatos — esticava a coluna e o passo transbordava na horizontal em
+ * 320 px. O piso zero devolve a decisão à coluna; o campo então respeita a
+ * largura disponível qualquer que seja a fonte em uso.
+ */
+.sel-processo .form-grid > * {
+  min-width: 0;
+}
+
+.sel-processo .form-field .input,
+.sel-processo .form-field select.input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Rótulo comprido de opção não deve vazar o campo enquanto fechado. */
+.sel-processo .form-field select.input {
+  text-overflow: ellipsis;
+}
+
+/*
+ * Recusa de carregamento com ação de repetir: texto e botão em blocos, nunca
+ * lado a lado. Em 320 px o botão inline não quebra linha e leva o passo inteiro
+ * a transbordar na horizontal — mesmo arranjo já usado no passo 1.
+ */
+.sel-processo .field__erro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+  color: var(--color-danger-fg, currentColor);
+}
+
+.sel-processo .field__erro p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 479px) {
   .sel-processo .form-grid {
     grid-template-columns: 1fr;

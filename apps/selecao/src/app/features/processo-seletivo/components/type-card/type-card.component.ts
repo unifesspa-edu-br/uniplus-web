@@ -6,13 +6,14 @@ import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
   standalone: true,
   styleUrl: './type-card.component.css',
   template: `
-    <label class="type-card" [class.is-selected]="selected()">
+    <label class="type-card" [class.is-selected]="selected()" [class.is-disabled]="disabled()">
       <input
         class="sr-only"
         type="radio"
         name="tipo-processo"
         [value]="option().value"
         [checked]="selected()"
+        [disabled]="disabled()"
         (change)="selectChange.emit(option().value)"
       />
       <div class="type-card__head">
@@ -49,5 +50,7 @@ import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
 export class TypeCardComponent {
   readonly option = input.required<TipoProcessoOption>();
   readonly selected = input(false);
+  /** Escolha travada — o tipo entrou no comando que criou o processo. */
+  readonly disabled = input(false);
   readonly selectChange = output<string>();
 }
