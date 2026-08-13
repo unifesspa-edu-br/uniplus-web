@@ -26,7 +26,16 @@ const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
  * Adicionar novos sufixos especiais à alternation; demais projects herdam
  * automaticamente. Reduz drift quando 3º+ sufixo surgir (ex.: `.smoke`).
  */
-const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.(authenticated|ds-matrix|aaa)\.spec\.ts|auth\.setup\.ts)$/;
+const EXCLUDED_FROM_UI_LOGIN_PROJECTS =
+  /(.*\.(authenticated|ds-matrix|aaa|backend)\.spec\.ts|auth\.setup\.ts)$/;
+
+/**
+ * Specs `*.backend.spec.ts` exercitam a API, o Keycloak e o storage de verdade
+ * — criam registros e sobem arquivos. O CI só provisiona o Keycloak, então o
+ * project fica atrás de `E2E_BACKEND_REAL=1` e roda sob demanda, com a stack do
+ * `uniplus-api` no ar. Ver `docs/guia-testar-frontend-com-backend-local.md`.
+ */
+const RODAR_CONTRA_BACKEND_REAL = process.env['E2E_BACKEND_REAL'] === '1';
 
 const DS_MATRIX_VIEWPORTS = [
   { name: '320', viewport: { width: 320, height: 720 }, isMobile: true, hasTouch: true },
@@ -131,6 +140,20 @@ export default defineConfig({
         storageState: storageStateAdmin,
       },
     },
+
+    ...(RODAR_CONTRA_BACKEND_REAL
+      ? [
+          {
+            name: 'selecao-backend-real',
+            testMatch: /.*\.backend\.spec\.ts/,
+            dependencies: ['auth-setup'],
+            use: {
+              ...devices['Desktop Chrome'],
+              storageState: storageStateAdmin,
+            },
+          },
+        ]
+      : []),
 
     ...DS_MATRIX_PROJECTS,
     ...AAA_PROJECTS,
