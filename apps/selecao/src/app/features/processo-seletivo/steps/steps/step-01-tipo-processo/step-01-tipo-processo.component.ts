@@ -77,6 +77,8 @@ export class Step01TipoProcessoComponent {
   }
 
   select(value: string): void {
+    // O tipo compõe o comando de criação e não é atualizável depois dele.
+    if (this.store.cadastroInicialCongelado()) return;
     this.store.patchObjectSection('tipoProcesso', { selected: value });
   }
 

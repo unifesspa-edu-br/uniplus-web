@@ -126,6 +126,7 @@
       <button
         class="btn btn--tertiary"
         type="button"
+        [disabled]="store.salvando()"
         [hidden]="store.isFirst()"
         (click)="previous()"
       >
@@ -138,9 +139,19 @@
         >
           <path d="M19 12H5M12 19l-7-7 7-7" /></svg
         >Anterior</button
-      ><button class="btn btn--primary" type="button" (click)="nextOrPublish()">
-        {{ store.isLast() ? 'Publicar' : 'Próximo' }}
-        @if (!store.isLast()) {
+      ><button
+        class="btn btn--primary"
+        type="button"
+        [attr.aria-busy]="store.salvando() || null"
+        [disabled]="store.salvando()"
+        (click)="nextOrPublish()"
+      >
+        @if (store.salvando()) {
+          Salvando…
+        } @else {
+          {{ store.isLast() ? 'Publicar' : 'Próximo' }}
+        }
+        @if (!store.isLast() && !store.salvando()) {
           <svg
             class="btn__icon"
             viewBox="0 0 24 24"
