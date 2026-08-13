@@ -99,6 +99,21 @@ describe('TermosConsentimentoApi', () => {
     await promise;
   });
 
+  it('listar() normaliza q e o preserva com o cursor', async () => {
+    const promise = firstValueFrom(
+      api.listar({ cursor: 'abc', direction: 'next', q: '  privacidade  ' }),
+    );
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/termos-consentimento`,
+    );
+    expect(req.request.params.get('q')).toBe('privacidade');
+    expect(req.request.params.get('cursor')).toBe('abc');
+    expect(req.request.params.get('direction')).toBe('next');
+    expect(req.request.params.has('limit')).toBe(false);
+    req.flush([termoResumoSeed]);
+    await promise;
+  });
+
   it('obter() faz GET /api/configuracao/termos-consentimento/{id} com Accept versionado', async () => {
     const promise = firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/termos-consentimento/${ID}`);

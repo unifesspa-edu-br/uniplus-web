@@ -281,12 +281,11 @@ export class TermosConsentimentoListPage {
     this.buscaAlterada$
       .pipe(
         map((valor) => valor.trim()),
-        debounceTime(300),
         distinctUntilChanged(),
+        debounceTime(300),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((filtro) => {
-        // 2. Neutraliza emissão pendente caso o input tenha sido alterado/limpo durante os 300ms (resolve o ponto 1)
         if (filtro !== this.busca().trim()) {
           return;
         }
@@ -385,6 +384,7 @@ export class TermosConsentimentoListPage {
       return;
     }
     this.busca.set('');
+    this.buscaAlterada$.next('');
     this.aplicarNovoFiltro('');
   }
 }

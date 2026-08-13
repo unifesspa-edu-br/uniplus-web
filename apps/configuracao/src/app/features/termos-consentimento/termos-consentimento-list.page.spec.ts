@@ -83,7 +83,7 @@ describe('TermosConsentimentoListPage', () => {
     expect(component['termosFiltrados']().length).toBe(1);
   });
 
-  it('limpa filtros e cancela requisicao pendente do debounce', () => {
+  it('limpa filtros, cancela o debounce pendente e permite repetir o mesmo termo', () => {
     vi.useFakeTimers();
     montar();
 
@@ -98,9 +98,14 @@ describe('TermosConsentimentoListPage', () => {
     vi.advanceTimersByTime(150);
     controller.expectNone((r) => r.url === URL && r.params.get('q') === 'lgpd');
     expect(component['busca']()).toBe('');
+
+    component['alterarBusca']('lgpd');
+    vi.advanceTimersByTime(300);
+
+    controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd').flush([LGPD]);
   });
 
-  it('ignora disparos se o termo normalizado for identico', () => {
+  it('ignora disparos se o termo normalizado for idêntico', () => {
     vi.useFakeTimers();
     montar();
 
@@ -127,7 +132,7 @@ describe('TermosConsentimentoListPage', () => {
     req.flush([LGPD]);
   });
 
-  it('navega pelas paginas utilizando cursores obtidos do header Link', () => {
+  it('navega pelas páginas utilizando cursores obtidos do header Link', () => {
     const linkHeader =
       '<http://localhost:5000/api/configuracao/termos-consentimento?cursor=next-123&direction=next>; rel="next"';
     montar([LGPD], { Link: linkHeader });
@@ -150,6 +155,51 @@ describe('TermosConsentimentoListPage', () => {
     expect(component['prevCursor']()).toBe('prev-456');
   });
 
+  it('preserva o filtro ao navegar para a próxima página', () => {
+    vi.useFakeTimers();
+    montar();
+
+    component['alterarBusca']('lgpd');
+    vi.advanceTimersByTime(300);
+    controller
+      .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd')
+      .flush([LGPD], {
+        headers: {
+          Link: '<http://localhost:5000/api/configuracao/termos-consentimento?cursor=next-filtered&direction=next>; rel="next"',
+        },
+      });
+
+    component['proximaPagina']();
+
+    controller
+      .expectOne(
+        (r) =>
+          r.url === URL &&
+          r.params.get('q') === 'lgpd' &&
+          r.params.get('cursor') === 'next-filtered' &&
+          r.params.get('direction') === 'next',
+      )
+      .flush([]);
+  });
+
+  it('ignora resposta atrasada de um filtro anterior', () => {
+    vi.useFakeTimers();
+    montar();
+
+    component['alterarBusca']('lgpd');
+    vi.advanceTimersByTime(300);
+    const reqAnterior = controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd');
+
+    component['alterarBusca']('imagem');
+    vi.advanceTimersByTime(300);
+    const reqAtual = controller.expectOne((r) => r.url === URL && r.params.get('q') === 'imagem');
+
+    reqAtual.flush([USO_IMAGEM]);
+    reqAnterior.flush([LGPD]);
+
+    expect(component['termosFiltrados']()).toEqual([USO_IMAGEM]);
+  });
+
   it('exibe erro ao falhar carregamento e permite tentar novamente', () => {
     fixture = TestBed.createComponent(TermosConsentimentoListPage);
     component = fixture.componentInstance;
@@ -158,7 +208,7 @@ describe('TermosConsentimentoListPage', () => {
 
     const req1 = controller.expectOne((r) => r.url === URL);
     req1.flush(
-      { type: 'https://uniplus.dev/erros/500', title: 'Erro de conexao', status: 500 },
+      { type: 'https://uniplus.dev/erros/500', title: 'Erro de conexão', status: 500 },
       {
         status: 500,
         statusText: 'Internal Server Error',
