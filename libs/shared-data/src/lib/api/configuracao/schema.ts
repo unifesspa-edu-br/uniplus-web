@@ -77,9 +77,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["CalendarioDiasUteisResumoDto"][];
-                        readonly "application/json": readonly components["schemas"]["CalendarioDiasUteisResumoDto"][];
-                        readonly "text/json": readonly components["schemas"]["CalendarioDiasUteisResumoDto"][];
+                        readonly "application/vnd.uniplus.calendario-dias-uteis.v1+json": readonly components["schemas"]["CalendarioDiasUteisResumoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -152,9 +150,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["CalendarioDiasUteisDto"];
-                        readonly "application/json": components["schemas"]["CalendarioDiasUteisDto"];
-                        readonly "text/json": components["schemas"]["CalendarioDiasUteisDto"];
+                        readonly "application/vnd.uniplus.calendario-dias-uteis.v1+json": components["schemas"]["CalendarioDiasUteisDto"];
                     };
                 };
                 /** @description Not Found */
@@ -486,9 +482,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["CampusDto"][];
-                        readonly "application/json": readonly components["schemas"]["CampusDto"][];
-                        readonly "text/json": readonly components["schemas"]["CampusDto"][];
+                        readonly "application/vnd.uniplus.campus.v1+json": readonly components["schemas"]["CampusDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -561,9 +555,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["CampusDto"];
-                        readonly "application/json": components["schemas"]["CampusDto"];
-                        readonly "text/json": components["schemas"]["CampusDto"];
+                        readonly "application/vnd.uniplus.campus.v1+json": components["schemas"]["CampusDto"];
                     };
                 };
                 /** @description Not Found */
@@ -889,9 +881,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["CondicaoAtendimentoDto"][];
-                        readonly "application/json": readonly components["schemas"]["CondicaoAtendimentoDto"][];
-                        readonly "text/json": readonly components["schemas"]["CondicaoAtendimentoDto"][];
+                        readonly "application/vnd.uniplus.condicao-atendimento.v1+json": readonly components["schemas"]["CondicaoAtendimentoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -964,9 +954,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["CondicaoAtendimentoDto"];
-                        readonly "application/json": components["schemas"]["CondicaoAtendimentoDto"];
-                        readonly "text/json": components["schemas"]["CondicaoAtendimentoDto"];
+                        readonly "application/vnd.uniplus.condicao-atendimento.v1+json": components["schemas"]["CondicaoAtendimentoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -1292,9 +1280,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["CursoDto"][];
-                        readonly "application/json": readonly components["schemas"]["CursoDto"][];
-                        readonly "text/json": readonly components["schemas"]["CursoDto"][];
+                        readonly "application/vnd.uniplus.curso.v1+json": readonly components["schemas"]["CursoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -1367,9 +1353,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["CursoDto"];
-                        readonly "application/json": components["schemas"]["CursoDto"];
-                        readonly "text/json": components["schemas"]["CursoDto"];
+                        readonly "application/vnd.uniplus.curso.v1+json": components["schemas"]["CursoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -1695,9 +1679,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["FaseCanonicaDto"][];
-                        readonly "application/json": readonly components["schemas"]["FaseCanonicaDto"][];
-                        readonly "text/json": readonly components["schemas"]["FaseCanonicaDto"][];
+                        readonly "application/vnd.uniplus.fase-canonica.v1+json": readonly components["schemas"]["FaseCanonicaDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -1770,9 +1752,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["FaseCanonicaDto"];
-                        readonly "application/json": components["schemas"]["FaseCanonicaDto"];
-                        readonly "text/json": components["schemas"]["FaseCanonicaDto"];
+                        readonly "application/vnd.uniplus.fase-canonica.v1+json": components["schemas"]["FaseCanonicaDto"];
                     };
                 };
                 /** @description Not Found */
@@ -2078,9 +2058,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["FatoCandidatoView"][];
-                        readonly "application/json": readonly components["schemas"]["FatoCandidatoView"][];
-                        readonly "text/json": readonly components["schemas"]["FatoCandidatoView"][];
+                        readonly "application/vnd.uniplus.fato-candidato.v1+json": readonly components["schemas"]["FatoCandidatoView"][];
                     };
                 };
                 /** @description Not Acceptable */
@@ -2126,9 +2104,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["FatoCandidatoView"];
-                        readonly "application/json": components["schemas"]["FatoCandidatoView"];
-                        readonly "text/json": components["schemas"]["FatoCandidatoView"];
+                        readonly "application/vnd.uniplus.fato-candidato.v1+json": components["schemas"]["FatoCandidatoView"];
                     };
                 };
                 /** @description Not Found */
@@ -2192,9 +2168,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["LocalOfertaDto"][];
-                        readonly "application/json": readonly components["schemas"]["LocalOfertaDto"][];
-                        readonly "text/json": readonly components["schemas"]["LocalOfertaDto"][];
+                        readonly "application/vnd.uniplus.local-oferta.v1+json": readonly components["schemas"]["LocalOfertaDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -2267,9 +2241,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["LocalOfertaDto"];
-                        readonly "application/json": components["schemas"]["LocalOfertaDto"];
-                        readonly "text/json": components["schemas"]["LocalOfertaDto"];
+                        readonly "application/vnd.uniplus.local-oferta.v1+json": components["schemas"]["LocalOfertaDto"];
                     };
                 };
                 /** @description Not Found */
@@ -2595,9 +2567,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["ModalidadeDto"][];
-                        readonly "application/json": readonly components["schemas"]["ModalidadeDto"][];
-                        readonly "text/json": readonly components["schemas"]["ModalidadeDto"][];
+                        readonly "application/vnd.uniplus.modalidade.v1+json": readonly components["schemas"]["ModalidadeDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -2670,9 +2640,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["ModalidadeDto"];
-                        readonly "application/json": components["schemas"]["ModalidadeDto"];
-                        readonly "text/json": components["schemas"]["ModalidadeDto"];
+                        readonly "application/vnd.uniplus.modalidade.v1+json": components["schemas"]["ModalidadeDto"];
                     };
                 };
                 /** @description Not Found */
@@ -2999,9 +2967,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["OfertaCursoDto"][];
-                        readonly "application/json": readonly components["schemas"]["OfertaCursoDto"][];
-                        readonly "text/json": readonly components["schemas"]["OfertaCursoDto"][];
+                        readonly "application/vnd.uniplus.oferta-curso.v1+json": readonly components["schemas"]["OfertaCursoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -3074,9 +3040,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["OfertaCursoDto"];
-                        readonly "application/json": components["schemas"]["OfertaCursoDto"];
-                        readonly "text/json": components["schemas"]["OfertaCursoDto"];
+                        readonly "application/vnd.uniplus.oferta-curso.v1+json": components["schemas"]["OfertaCursoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -3393,9 +3357,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["PesoAreaEnemDto"][];
-                        readonly "application/json": readonly components["schemas"]["PesoAreaEnemDto"][];
-                        readonly "text/json": readonly components["schemas"]["PesoAreaEnemDto"][];
+                        readonly "application/vnd.uniplus.peso-area-enem.v1+json": readonly components["schemas"]["PesoAreaEnemDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -3468,9 +3430,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["PesoAreaEnemDto"];
-                        readonly "application/json": components["schemas"]["PesoAreaEnemDto"];
-                        readonly "text/json": components["schemas"]["PesoAreaEnemDto"];
+                        readonly "application/vnd.uniplus.peso-area-enem.v1+json": components["schemas"]["PesoAreaEnemDto"];
                     };
                 };
                 /** @description Not Found */
@@ -3787,9 +3747,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["PrecedenciaFaseDto"][];
-                        readonly "application/json": readonly components["schemas"]["PrecedenciaFaseDto"][];
-                        readonly "text/json": readonly components["schemas"]["PrecedenciaFaseDto"][];
+                        readonly "application/vnd.uniplus.precedencia-fase.v1+json": readonly components["schemas"]["PrecedenciaFaseDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -3862,9 +3820,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["PrecedenciaFaseDto"];
-                        readonly "application/json": components["schemas"]["PrecedenciaFaseDto"];
-                        readonly "text/json": components["schemas"]["PrecedenciaFaseDto"];
+                        readonly "application/vnd.uniplus.precedencia-fase.v1+json": components["schemas"]["PrecedenciaFaseDto"];
                     };
                 };
                 /** @description Not Found */
@@ -4181,9 +4137,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["RecursoAcessibilidadeDto"][];
-                        readonly "application/json": readonly components["schemas"]["RecursoAcessibilidadeDto"][];
-                        readonly "text/json": readonly components["schemas"]["RecursoAcessibilidadeDto"][];
+                        readonly "application/vnd.uniplus.recurso-acessibilidade.v1+json": readonly components["schemas"]["RecursoAcessibilidadeDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -4256,9 +4210,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["RecursoAcessibilidadeDto"];
-                        readonly "application/json": components["schemas"]["RecursoAcessibilidadeDto"];
-                        readonly "text/json": components["schemas"]["RecursoAcessibilidadeDto"];
+                        readonly "application/vnd.uniplus.recurso-acessibilidade.v1+json": components["schemas"]["RecursoAcessibilidadeDto"];
                     };
                 };
                 /** @description Not Found */
@@ -4575,9 +4527,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
-                        readonly "application/json": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
-                        readonly "text/json": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
+                        readonly "application/vnd.uniplus.referencia-reserva-demografica.v1+json": readonly components["schemas"]["ReferenciaReservaDemograficaDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -4650,9 +4600,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["ReferenciaReservaDemograficaDto"];
-                        readonly "application/json": components["schemas"]["ReferenciaReservaDemograficaDto"];
-                        readonly "text/json": components["schemas"]["ReferenciaReservaDemograficaDto"];
+                        readonly "application/vnd.uniplus.referencia-reserva-demografica.v1+json": components["schemas"]["ReferenciaReservaDemograficaDto"];
                     };
                 };
                 /** @description Not Found */
@@ -4946,6 +4894,8 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
+                    /** @description Termo de busca livre (caixa-insensível) sobre o Nome do termo de consentimento; ausente/vazio = sem filtro. Mantenha fixo ao navegar prev/next (o cursor não vincula o filtro). */
+                    readonly q?: string;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
@@ -4969,9 +4919,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["TermoConsentimentoResumoDto"][];
-                        readonly "application/json": readonly components["schemas"]["TermoConsentimentoResumoDto"][];
-                        readonly "text/json": readonly components["schemas"]["TermoConsentimentoResumoDto"][];
+                        readonly "application/vnd.uniplus.termo-consentimento.v1+json": readonly components["schemas"]["TermoConsentimentoResumoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -5044,9 +4992,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["TermoConsentimentoDto"];
-                        readonly "application/json": components["schemas"]["TermoConsentimentoDto"];
-                        readonly "text/json": components["schemas"]["TermoConsentimentoDto"];
+                        readonly "application/vnd.uniplus.termo-consentimento.v1+json": components["schemas"]["TermoConsentimentoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -5586,9 +5532,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["TipoBancaDto"][];
-                        readonly "application/json": readonly components["schemas"]["TipoBancaDto"][];
-                        readonly "text/json": readonly components["schemas"]["TipoBancaDto"][];
+                        readonly "application/vnd.uniplus.tipo-banca.v1+json": readonly components["schemas"]["TipoBancaDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -5661,9 +5605,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["TipoBancaDto"];
-                        readonly "application/json": components["schemas"]["TipoBancaDto"];
-                        readonly "text/json": components["schemas"]["TipoBancaDto"];
+                        readonly "application/vnd.uniplus.tipo-banca.v1+json": components["schemas"]["TipoBancaDto"];
                     };
                 };
                 /** @description Not Found */
@@ -5980,9 +5922,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["TipoDeficienciaDto"][];
-                        readonly "application/json": readonly components["schemas"]["TipoDeficienciaDto"][];
-                        readonly "text/json": readonly components["schemas"]["TipoDeficienciaDto"][];
+                        readonly "application/vnd.uniplus.tipo-deficiencia.v1+json": readonly components["schemas"]["TipoDeficienciaDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -6055,9 +5995,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["TipoDeficienciaDto"];
-                        readonly "application/json": components["schemas"]["TipoDeficienciaDto"];
-                        readonly "text/json": components["schemas"]["TipoDeficienciaDto"];
+                        readonly "application/vnd.uniplus.tipo-deficiencia.v1+json": components["schemas"]["TipoDeficienciaDto"];
                     };
                 };
                 /** @description Not Found */
@@ -6374,9 +6312,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["TipoDocumentoDto"][];
-                        readonly "application/json": readonly components["schemas"]["TipoDocumentoDto"][];
-                        readonly "text/json": readonly components["schemas"]["TipoDocumentoDto"][];
+                        readonly "application/vnd.uniplus.tipo-documento.v1+json": readonly components["schemas"]["TipoDocumentoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -6449,9 +6385,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["TipoDocumentoDto"];
-                        readonly "application/json": components["schemas"]["TipoDocumentoDto"];
-                        readonly "text/json": components["schemas"]["TipoDocumentoDto"];
+                        readonly "application/vnd.uniplus.tipo-documento.v1+json": components["schemas"]["TipoDocumentoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -6735,6 +6669,405 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/tipos-etapa": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiConfiguracaoTiposEtapaGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.tipo-etapa.v1+json": readonly components["schemas"]["TipoEtapaDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/tipos-etapa/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.tipo-etapa.v1+json": components["schemas"]["TipoEtapaDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/tipos-etapa": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["CriarTipoEtapaCommand"];
+                    readonly "text/json": components["schemas"]["CriarTipoEtapaCommand"];
+                    readonly "application/*+json": components["schemas"]["CriarTipoEtapaCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": string;
+                        readonly "application/json": string;
+                        readonly "text/json": string;
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/tipos-etapa/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AtualizarTipoEtapaCommand"];
+                    readonly "text/json": components["schemas"]["AtualizarTipoEtapaCommand"];
+                    readonly "application/*+json": components["schemas"]["AtualizarTipoEtapaCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/tipos-processo": {
         readonly parameters: {
             readonly query?: never;
@@ -6768,9 +7101,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["TipoProcessoDto"][];
-                        readonly "application/json": readonly components["schemas"]["TipoProcessoDto"][];
-                        readonly "text/json": readonly components["schemas"]["TipoProcessoDto"][];
+                        readonly "application/vnd.uniplus.tipo-processo.v1+json": readonly components["schemas"]["TipoProcessoDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -6843,9 +7174,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["TipoProcessoDto"];
-                        readonly "application/json": components["schemas"]["TipoProcessoDto"];
-                        readonly "text/json": components["schemas"]["TipoProcessoDto"];
+                        readonly "application/vnd.uniplus.tipo-processo.v1+json": components["schemas"]["TipoProcessoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -7294,6 +7623,12 @@ export interface components {
             readonly tamanhoMaximoMb?: null | number | string;
             readonly tipoEquivalente?: null | string;
         };
+        readonly AtualizarTipoEtapaCommand: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly nome: string;
+            readonly descricao?: null | string;
+        };
         readonly AtualizarTipoProcessoCommand: {
             /** Format: uuid */
             readonly id: string;
@@ -7517,6 +7852,11 @@ export interface components {
             /** Format: int32 */
             readonly tamanhoMaximoMb?: null | number | string;
             readonly tipoEquivalente?: null | string;
+        };
+        readonly CriarTipoEtapaCommand: {
+            readonly codigo: string;
+            readonly nome: string;
+            readonly descricao?: null | string;
         };
         readonly CriarTipoProcessoCommand: {
             readonly codigo: string;
@@ -7847,6 +8187,19 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly TipoEtapaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly codigo: string;
+            readonly nome: string;
+            readonly descricao: null | string;
+            readonly ativo: boolean;
+            /** Format: date-time */
+            readonly criadoEm: string;
+            readonly _links?: null | {
+                readonly [key: string]: string;
+            };
+        };
         /** @enum {string} */
         readonly TipoLocalOferta: TipoLocalOferta;
         readonly TipoProcessoDto: {
@@ -8009,6 +8362,10 @@ export enum PathsApiConfiguracaoTiposDeficienciaGetParametersQueryDirection {
     prev = "prev"
 }
 export enum PathsApiConfiguracaoTiposDocumentoGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum PathsApiConfiguracaoTiposEtapaGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }
