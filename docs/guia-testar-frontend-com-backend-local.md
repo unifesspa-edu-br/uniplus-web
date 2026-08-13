@@ -68,6 +68,8 @@ trocar no primeiro login; basta repetir a mesma senha):
 | Sintoma                                               | Causa                                                              | Correção                                                               |
 | ----------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | Listas carregam, mas salvar dá erro e volta pro login | APIs não foram iniciadas com o override atual do realm `unifesspa` | Refaça o passo 1 com os dois arquivos compose e a lista de serviços    |
+| Catálogos carregam, mas toda escrita responde `401`   | API subida com `docker-compose.smoke.yml`, que valida o realm `unifesspa-dev-local` — leitura de reference data é pública e mascara o problema | `docker inspect docker-uniplus-api-1 ... \| grep -i authority` e recrie a API sem o override de smoke |
+| Escrita responde `403` e cai em `/acesso-negado`      | O papel exigido pela rota não está no scope mapping do client no Keycloak, então não chega ao token | Confira `clients/<id>/scope-mappings/realm` na API admin do Keycloak  |
 | `404` em `/api/cidades` ou `/api/cep`                 | `geo-api` ou Traefik fora do ar                                    | Confirme ambos os serviços healthy no Compose do passo 1               |
 | `404` em `/api/{modulo}/...`                          | Monólito, portal-api ou gateway fora do ar                         | Confirme `uniplus-api`, `portal-api` e `traefik` no Compose do passo 1 |
 | `ERR_CONNECTION_REFUSED` em :420x                     | Dev server caiu                                                    | `npx nx serve <app>`                                                   |
@@ -77,4 +79,28 @@ trocar no primeiro login; basta repetir a mesma senha):
 
 As specs visuais (`apps/<app>-e2e/src/specs/*.visual.spec.ts`) **mockam** a API via
 `page.route` e não dependem do backend real — rodam com `npx nx e2e <app>-e2e`.
-Este guia cobre o teste **manual/exploratório** contra o backend de verdade.
+
+### Specs contra o backend real
+
+Specs `*.backend.spec.ts` exercitam API, Keycloak e storage de verdade — criam registros e
+sobem arquivos. Ficam atrás de `E2E_BACKEND_REAL=1`: sem a variável, o project Playwright
+nem é declarado, porque o CI provisiona apenas o Keycloak.
+
+```bash
+# 1. Stack do uniplus-api no ar (passo 1 deste guia)
+# 2. Libere a porta do redirect do app — o container serve o build antigo nela
+docker stop docker-selecao-web-1
+npx nx serve selecao --port 4200
+
+# 3. Rode as specs
+export KEYCLOAK_ADMIN_PASSWORD=<senha do Keycloak>
+E2E_BACKEND_REAL=1 npx nx e2e selecao-e2e -- --project=selecao-backend-real
+
+# 4. Devolva o container ao terminar
+docker start docker-selecao-web-1
+```
+
+A porta importa: o redirect do client OIDC é fixo por app (`selecao-web` → `:4200`), então
+servir em outra porta quebra o login.
+
+Este guia cobre também o teste **manual/exploratório** contra o backend de verdade.
