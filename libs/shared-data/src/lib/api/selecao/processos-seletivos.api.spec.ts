@@ -12,6 +12,8 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   CriarProcessoSeletivoCommand,
+  DocumentoEditalDto,
+  IniciarUploadDocumentoEditalDto,
   ProcessoSeletivoDto,
   ProcessoSeletivoResumoDto,
   ProcessosSeletivosApi,
@@ -23,6 +25,9 @@ import { SELECAO_BASE_PATH } from './tokens';
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-000000000515';
 const TIPO_ID = '01960000-0000-7000-0000-000000000516';
+const DOCUMENTO_ID = '01960000-0000-7000-0000-000000000518';
+const URL_ASSINADA =
+  'http://localhost:9000/uniplus-selecao/editais/documento.pdf?X-Amz-Signature=abc';
 
 const tipoProcesso: TipoProcessoSnapshotDto = {
   origemId: TIPO_ID,
@@ -36,6 +41,22 @@ const resumoSeed: ProcessoSeletivoResumoDto = {
   tipoProcesso,
   status: 'rascunho',
   criadoEm: '2026-08-11T12:00:00Z',
+};
+
+const iniciacaoSeed: IniciarUploadDocumentoEditalDto = {
+  documentoEditalId: DOCUMENTO_ID,
+  urlUpload: URL_ASSINADA,
+  contentTypeExigido: 'application/pdf',
+  expiraEm: '2026-08-13T12:15:00Z',
+};
+
+const documentoSeed: DocumentoEditalDto = {
+  id: DOCUMENTO_ID,
+  processoSeletivoId: ID,
+  status: 'Confirmado',
+  tamanhoBytes: 2048,
+  hashSha256: 'a'.repeat(64),
+  confirmadoEm: '2026-08-13T12:05:00Z',
 };
 
 const criarCommand: CriarProcessoSeletivoCommand = {
@@ -105,4 +126,41 @@ describe('ProcessosSeletivosApi', () => {
     const result = (await promise) as ApiResult<string>;
     expect(isApiOk(result)).toBe(true);
   });
+
+  it('iniciarUploadDocumentoEdital() posta sem corpo e devolve a URL assinada', async () => {
+    const promise = firstValueFrom(
+      api.iniciarUploadDocumentoEdital(ID, withIdempotencyKey('documento-init-key')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital`,
+    );
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    expect(req.request.headers.get('Idempotency-Key')).toBe('documento-init-key');
+    req.flush(iniciacaoSeed, { status: 201, statusText: 'Created' });
+
+    const result = (await promise) as ApiResult<IniciarUploadDocumentoEditalDto>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) expect(result.data.contentTypeExigido).toBe('application/pdf');
+  });
+
+  it('confirmarUploadDocumentoEdital() usa os dois ids na rota de confirmação', async () => {
+    const promise = firstValueFrom(
+      api.confirmarUploadDocumentoEdital(ID, DOCUMENTO_ID, withIdempotencyKey('documento-conf-key')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
+    );
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    expect(req.request.headers.get('Idempotency-Key')).toBe('documento-conf-key');
+    req.flush(documentoSeed);
+
+    const result = (await promise) as ApiResult<DocumentoEditalDto>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) expect(result.data.status).toBe('Confirmado');
+  });
+
 });

@@ -2,6 +2,8 @@ export { SELECAO_BASE_PATH } from './tokens';
 export {
   ProcessosSeletivosApi,
   type CriarProcessoSeletivoCommand,
+  type DocumentoEditalDto,
+  type IniciarUploadDocumentoEditalDto,
   type ProcessoSeletivoDto,
   type ProcessoSeletivoResumoDto,
   type ProcessosSeletivosQuery,
