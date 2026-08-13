@@ -33,7 +33,7 @@ import {
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, map } from 'rxjs';
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026/0089). */
@@ -225,6 +225,8 @@ export class TermosConsentimentoListPage {
     this.filtroAplicado.set(filtro);
     this.pagina.set(undefined);
     this.lista.set(undefined);
+    this.cursores.set({ prev: null, next: null });
+
     this.carregarPagina();
   }
 
@@ -277,9 +279,17 @@ export class TermosConsentimentoListPage {
     this.carregarPagina();
 
     this.buscaAlterada$
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe((busca) => {
-        const filtro = busca.trim();
+      .pipe(
+        map((valor) => valor.trim()),
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((filtro) => {
+        // 2. Neutraliza emissão pendente caso o input tenha sido alterado/limpo durante os 300ms (resolve o ponto 1)
+        if (filtro !== this.busca().trim()) {
+          return;
+        }
 
         if (filtro === this.filtroAplicado() && this.pagina() === undefined) {
           return;
