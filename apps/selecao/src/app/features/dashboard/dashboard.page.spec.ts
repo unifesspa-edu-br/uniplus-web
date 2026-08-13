@@ -1,12 +1,18 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { DashboardPage } from './dashboard.page';
+
+/** Papéis de quem está autenticado — o atalho de cadastro depende deles. */
+const papeis = signal<readonly string[]>(['plataforma-admin']);
+const authServiceStub = { roles: papeis };
 
 describe('DashboardPage — acessibilidade', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DashboardPage],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: AuthService, useValue: authServiceStub }],
     }).compileComponents();
   });
 
@@ -60,11 +66,27 @@ describe('DashboardPage — acessibilidade', () => {
   });
 
   it('leva ao cadastro pelo atalho de novo processo', () => {
+    papeis.set(['plataforma-admin']);
     const host = montar();
     const atalho = [...host.querySelectorAll('a')].find((a) =>
       a.textContent?.includes('Novo Processo'),
     );
 
     expect(atalho?.getAttribute('href')).toBe('/processo-seletivo');
+  });
+
+  /**
+   * O cadastro do certame é restrito a `plataforma-admin` na rota e na API.
+   * Oferecer o atalho a quem não tem o papel levaria direto ao acesso negado.
+   */
+  it('esconde o atalho de novo processo de quem não administra a plataforma', () => {
+    papeis.set(['gestor']);
+    const host = montar();
+    const atalho = [...host.querySelectorAll('a')].find((a) =>
+      a.textContent?.includes('Novo Processo'),
+    );
+
+    expect(atalho).toBeUndefined();
+    papeis.set(['plataforma-admin']);
   });
 });

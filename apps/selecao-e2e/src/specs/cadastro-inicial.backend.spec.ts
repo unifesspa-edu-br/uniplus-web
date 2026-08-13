@@ -18,6 +18,10 @@ import { expect, test } from '../fixtures/auth.fixture';
  * Duas dependências do ambiente, ambas verificáveis no seed:
  * a unidade administradora escolhida precisa ter cidade cadastrada, e o papel
  * administrativo precisa chegar no token do client `selecao-web`.
+ *
+ * O conteúdo exercitado é o do certame de Medicina 2027 do CEPS — o mesmo que a
+ * coleção Newman de cadastro monta chamando a API direto. Aqui ele passa pela
+ * interface, que é o que a coleção não cobre.
  */
 
 /** PDF mínimo válido: a API confere a assinatura `%PDF-` do conteúdo. */
@@ -43,18 +47,20 @@ test.describe('Cadastro inicial do processo seletivo', () => {
     await expect(primeiroTipo).toHaveClass(/is-selected/);
     await page.getByRole('button', { name: 'Próximo' }).click();
 
-    // Passo 2 — identificação.
+    // Passo 2 — identificação, com o conteúdo do certame de Medicina: o mesmo
+    // que a coleção Newman de cadastro monta pela API, aqui percorrido pela
+    // interface.
     await expect(page.getByRole('heading', { level: 1, name: /Identificação/i })).toBeVisible();
-    await page.locator('#f-num').fill(`E2E-${sufixo}`);
-    await page.locator('#f-ano').fill('2027');
-    await page.locator('#f-data').fill('2027-03-01');
+    await page.locator('#f-num').fill(`${sufixo.slice(-3)}/2026`);
+    await page.locator('#f-ano').fill('2026');
+    await page.locator('#f-data').fill('2026-09-23');
     await page.locator('#f-orgao').fill('CEPS');
     await page.locator('#f-periodo').selectOption('1º semestre');
-    await page.locator('#f-nome').fill(`Processo Seletivo E2E ${sufixo}`);
+    await page.locator('#f-nome').fill(`Medicina 2027 — CEPS — E2E ${sufixo}`);
 
     // A unidade precisa ter cidade cadastrada: a API recusa a criação sem ela
-    // (`ProcessoSeletivo.UnidadeAdministradoraSemCidade`). No seed local, a
-    // Pró-Reitoria de Ensino de Graduação é a que tem cidade.
+    // (`ProcessoSeletivo.UnidadeAdministradoraSemCidade`). A Pró-Reitoria de
+    // Ensino de Graduação, em Marabá, é a administradora do certame.
     const unidade = page.locator('#f-unidade');
     const opcaoComCidade = unidade.locator('option', { hasText: 'PROEG' });
     await expect(opcaoComCidade).toHaveCount(1, { timeout: 15_000 });

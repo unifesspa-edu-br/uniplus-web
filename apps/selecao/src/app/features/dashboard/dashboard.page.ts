@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui/components';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -15,10 +16,12 @@ import { RouterLink } from '@angular/router';
         <h1 class="page-header__title">Painel de Processos</h1>
         <p class="page-header__desc">Visão geral dos processos seletivos, inscrições e prazos.</p>
       </div>
-      <a class="btn btn--primary" routerLink="/processo-seletivo">
-        <i class="pi pi-plus" aria-hidden="true"></i>
-        Novo Processo
-      </a>
+      @if (podeCadastrarProcesso()) {
+        <a class="btn btn--primary" routerLink="/processo-seletivo">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Novo Processo
+        </a>
+      }
     </div>
     <div class="kpis">
       <div class="kpi">
@@ -181,10 +184,18 @@ import { RouterLink } from '@angular/router';
   `,
 })
 export class DashboardPage {
+  private readonly authService = inject(AuthService);
   protected readonly loading = signal(false);
   protected readonly errorMessage = computed<string | null>(() => null);
   protected readonly processos = signal(PROCESSO_SELETIVOS_DTO);
   protected readonly temFiltro = signal(false);
+  /**
+   * O atalho só aparece para quem a rota admite — sem isso, um gestor clicaria
+   * em "Novo Processo" para cair em `/acesso-negado`.
+   */
+  protected readonly podeCadastrarProcesso = computed(() =>
+    this.authService.roles().includes('plataforma-admin'),
+  );
 }
 
 interface ProcessoSeletivoDTO {

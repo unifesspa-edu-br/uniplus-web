@@ -34,6 +34,13 @@ interface ConfigNavItem {
   readonly icon: string;
   readonly routerLink?: string;
   readonly exact?: boolean;
+  /**
+   * Papéis que abrem o destino, espelhando o `roleGuard` da rota. Ausente
+   * significa disponível para quem já entrou no backoffice. Sem isso, o item
+   * apareceria para quem o guard recusa, e o clique terminaria em
+   * `/acesso-negado`.
+   */
+  readonly roles?: readonly string[];
 }
 
 interface ConfigNavGroup {
@@ -85,7 +92,7 @@ interface ConfigNavGroup {
         </div>
 
         <nav aria-label="Navegação administrativa">
-          @for (group of navGroups; track group.label) {
+          @for (group of navGroups(); track group.label) {
             <div class="sidebar__label">{{ group.label }}</div>
             @for (item of group.items; track item.label) {
               @if (item.routerLink) {
@@ -214,17 +221,49 @@ export class LayoutComponent {
     return role ? (ROLE_LABELS[role] ?? role) : '';
   });
 
-  protected readonly navGroups: readonly ConfigNavGroup[] = [
+  /** Navegação declarada, com os papéis que cada destino exige na rota. */
+  private readonly navGroupsDeclarados: readonly ConfigNavGroup[] = [
     {
       label: 'Painéis',
       items: [
         { label: 'Painel de processos', icon: 'pi-table', routerLink: '/dashboard' },
-        { label: 'Processo seletivo', icon: 'pi-file', routerLink: '/processo-seletivo' },
-        { label: 'Inscrições', icon: 'pi-user', routerLink: '/inscricoes' },
-        { label: 'Homologação', icon: 'pi-sitemap', routerLink: '/homologacao' },
+        {
+          label: 'Processo seletivo',
+          icon: 'pi-file',
+          routerLink: '/processo-seletivo',
+          roles: ['plataforma-admin'],
+        },
+        {
+          label: 'Inscrições',
+          icon: 'pi-user',
+          routerLink: '/inscricoes',
+          roles: ['admin', 'gestor'],
+        },
+        {
+          label: 'Homologação',
+          icon: 'pi-sitemap',
+          routerLink: '/homologacao',
+          roles: ['admin', 'gestor', 'avaliador'],
+        },
       ],
     },
   ];
+
+  /**
+   * Só os destinos que o papel de quem está autenticado consegue abrir. Grupo
+   * que fica sem item algum desaparece, em vez de virar um cabeçalho vazio.
+   */
+  protected readonly navGroups = computed<readonly ConfigNavGroup[]>(() => {
+    const papeis = new Set(this.authService.roles());
+    return this.navGroupsDeclarados
+      .map((grupo) => ({
+        ...grupo,
+        items: grupo.items.filter(
+          (item) => item.roles === undefined || item.roles.some((papel) => papeis.has(papel)),
+        ),
+      }))
+      .filter((grupo) => grupo.items.length > 0);
+  });
 
   protected alternarSidebarCompacta(): void {
     this.sidebarMobileOpen.update((aberta) => !aberta);
