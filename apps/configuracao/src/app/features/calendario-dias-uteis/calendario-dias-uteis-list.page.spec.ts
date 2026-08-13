@@ -5,31 +5,22 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import {
-  CalendarioDiasUteisDto,
+  CalendarioDiasUteisResumoDto,
   CONFIGURACAO_BASE_PATH,
 } from '@uniplus/shared-data/configuracao';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 
 import { CalendarioDiasUteisListPage } from './calendario-dias-uteis-list.page';
 
 const BASE = 'http://localhost:5000';
 
 const CALENDARIO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
-const CALENDARIO_DIAS_UTEIS: CalendarioDiasUteisDto = {
+const CALENDARIO_DIAS_UTEIS: CalendarioDiasUteisResumoDto = {
   id: CALENDARIO_ID,
   versaoDataset: '2026.2',
   vigente: false,
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
-  diasNaoUteis: [
-    {
-      id: '019f41cf-69fd-759a-ac6d-09acabc1b027',
-      abrangencia: 'MUNICIPAL',
-      municipioIbge: '1504208',
-      descricao: 'Feriado',
-      data: '2026-07-07',
-      uf: null,
-    },
-  ],
 };
 
 describe('CalendarioDiasUteisListPage', async () => {
@@ -62,18 +53,23 @@ describe('CalendarioDiasUteisListPage', async () => {
     appRef.tick();
   };
 
-  async function flushLista(items: readonly CalendarioDiasUteisDto[]): Promise<void> {
+  async function flushLista(
+    items: readonly CalendarioDiasUteisResumoDto[],
+    link?: string,
+  ): Promise<void> {
     const req = controller.expectOne(
       (r) => r.url === `${BASE}/api/configuracao/calendarios-dias-uteis`,
     );
     expect(req.request.params.get('limit')).toBe('50');
-    req.flush(items);
+    req.flush(items, { headers: link ? { Link: link } : undefined });
     await propagate();
   }
 
   // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
   // os lookups de Curso/Local de oferta já estão em cache e não recarregam.
-  async function flushRecarregarLista(items: readonly CalendarioDiasUteisDto[]): Promise<void> {
+  async function flushRecarregarLista(
+    items: readonly CalendarioDiasUteisResumoDto[],
+  ): Promise<void> {
     await propagate();
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/calendarios-dias-uteis`)
@@ -155,7 +151,57 @@ describe('CalendarioDiasUteisListPage', async () => {
     req.flush({}, { status: 204, statusText: 'Not Content' });
     await propagate();
     expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    expect(component['saving']()).toBe(false);
     await flushRecarregarLista([{ ...CALENDARIO_DIAS_UTEIS, vigente: true }]);
+  });
+
+  it('navega para a próxima página usando o cursor do header Link', async () => {
+    await flushLista(
+      [CALENDARIO_DIAS_UTEIS],
+      `<${BASE}/api/configuracao/calendarios-dias-uteis?cursor=pagina-2&direction=next>; rel="next"`,
+    );
+
+    const nextButton = fixture.nativeElement.querySelector(
+      '[data-pager="next"]',
+    ) as HTMLButtonElement;
+    nextButton.click();
+    fixture.detectChanges();
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/configuracao/calendarios-dias-uteis`,
+    );
+    expect(req.request.params.get('cursor')).toBe('pagina-2');
+    expect(req.request.params.get('direction')).toBe('next');
+    req.flush([]);
+    await propagate();
+  });
+
+  it('libera as ações e apresenta erro de concorrência ao falhar a vigência', async () => {
+    await flushLista([CALENDARIO_DIAS_UTEIS]);
+    getMarcarVigenteButtonEl().click();
+
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/calendarios-dias-uteis/${CALENDARIO_ID}/vigente`,
+    );
+    req.flush(
+      mockProblemDetails({
+        status: 409,
+        title: 'Conflito de concorrência',
+        code: 'uniplus.configuracao.calendario_dias_uteis.conflito_de_concorrencia',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['saving']()).toBe(false);
+    expect(TestBed.inject(NotificationService).notifications()[0]?.title).toBe(
+      'Conflito de concorrência',
+    );
   });
 
   it('remove um calendário não vigente', async () => {
@@ -165,7 +211,9 @@ describe('CalendarioDiasUteisListPage', async () => {
     removerButtonEl.dispatchEvent(new Event('click'));
     fixture.detectChanges();
 
-    const confirmarRemocaoButtonEl = fixture.nativeElement.querySelector('.btn.btn--danger') as HTMLButtonElement;
+    const confirmarRemocaoButtonEl = fixture.nativeElement.querySelector(
+      '.btn.btn--danger',
+    ) as HTMLButtonElement;
     confirmarRemocaoButtonEl.dispatchEvent(new Event('click'));
     fixture.detectChanges();
 

@@ -1,44 +1,36 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import {
   CalendarioDiasUteisApi,
   CriarCalendarioDiasUteisCommand,
-  NATUREZAS_LEGAIS,
+  ABRANGENCIAS,
+  UNIDADES_FEDERATIVAS,
 } from '@uniplus/shared-data/configuracao';
 import {
   ApiResult,
   idempotencyKey,
-  NotificationService,
   ProblemDetails,
-  ProblemI18nService,
   withIdempotencyKey,
-} from '@uniplus/shared-core';
-import {
-  ABRANGENCIAS,
-  UNIDADES_FEDERATIVAS,
-} from '@uniplus/shared-data/configuracao';
+} from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 
-type DiaNaoUtilFormGroupCampoNome =
-  | 'codigoMunicipio'
-  | 'uf'
-  | 'abrangencia'
-  | 'descricao'
-  | 'data';
+type DiaNaoUtilFormGroupCampoNome = 'codigoMunicipio' | 'uf' | 'abrangencia' | 'descricao' | 'data';
 
 interface DiaNaoUtilFormGroup {
   uf: FormControl<string | null>;
   codigoMunicipio: FormControl<string | null>;
   abrangencia: FormControl<string>;
-  data: FormControl<Date | null>;
+  data: FormControl<string>;
   descricao: FormControl<string>;
 }
 
@@ -47,8 +39,10 @@ interface CalendarioDiaUtilFormGroup {
   diasNaoUteis: FormArray<FormGroup<DiaNaoUtilFormGroup>>;
 }
 
-export const DATA_DUPLICADA_DATASET_CODE = 'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset';
-export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_uteis.municipio_ibge_formato_invalido';
+export const DATA_DUPLICADA_DATASET_CODE =
+  'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset';
+export const MUNICIPIO_CODE_INVALID =
+  'uniplus.configuracao.calendario_dias_uteis.municipio_ibge_formato_invalido';
 
 @Component({
   selector: 'cfg-calendario-dias-uteis-novo',
@@ -69,7 +63,12 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
         <p class="page-header__desc"></p>
       </div>
     </div>
-    <form [formGroup]="form" class="cfg-form">
+    <form
+      id="cfg-calendario-dias-uteis-form"
+      [formGroup]="form"
+      class="cfg-form"
+      (ngSubmit)="salvar()"
+    >
       <section class="form-section" aria-labelledby="cfg-sec-dados-gerais">
         <h2 id="cfg-sec-dados-gerais" class="form-section__title">Dados Gerais</h2>
         <div class="form-grid">
@@ -92,7 +91,7 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
         <div style="display: flex; justify-content: space-between;">
           <h2 id="cfg-mod-dias-nao-uteis" class="form-section__title">Dias não úteis</h2>
           <button type="button" class="btn" (click)="adicionaNovoDiaNaoUtilFormGroup()">
-            <i class="pi pi-plus"></i>
+            <i class="pi pi-plus" aria-hidden="true"></i>
             Adicionar dia
           </button>
         </div>
@@ -105,15 +104,20 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
                 diaNaoUtil?.get('abrangencia')?.value === 'ESTADUAL'
               "
               [formGroupName]="index"
+              role="group"
+              [attr.aria-labelledby]="'cfg-dia-nao-util-' + index"
             >
+              <h3 [id]="'cfg-dia-nao-util-' + index" class="sr-only">
+                Dia não útil {{ index + 1 }}
+              </h3>
               <label
                 class="field"
                 [class.is-error]="erroDoCampoDiasNaoUteis('abrangencia', index)"
-                for="abrangencia"
+                [attr.for]="'abrangencia-' + index"
               >
                 <span class="field__label is-required">Abrangência</span>
                 <select
-                  id="abrangencia"
+                  [id]="'abrangencia-' + index"
                   class="select"
                   [attr.aria-invalid]="
                     erroDoCampoDiasNaoUteis('abrangencia', index) ? 'true' : null
@@ -140,7 +144,13 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
                   [class.is-error]="erroDoCampoDiasNaoUteis('codigoMunicipio', index)"
                 >
                   <span class="field__label is-required">Município (Código IBGE)</span>
-                  <input type="text" class="input" formControlName="codigoMunicipio" />
+                  <input
+                    [id]="'codigo-municipio-' + index"
+                    type="text"
+                    inputmode="numeric"
+                    class="input"
+                    formControlName="codigoMunicipio"
+                  />
                   @if (erroDoCampoDiasNaoUteis('codigoMunicipio', index)) {
                     <span class="field__error">{{
                       erroDoCampoDiasNaoUteis('codigoMunicipio', index)
@@ -152,6 +162,7 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
                 <label class="field" [class.is-error]="erroDoCampoDiasNaoUteis('uf', index)">
                   <span class="field__label is-required">Unidade Federativa (UF)</span>
                   <select
+                    [id]="'uf-' + index"
                     class="select"
                     [attr.aria-invalid]="erroDoCampoDiasNaoUteis('uf', index) ? 'true' : null"
                     formControlName="uf"
@@ -169,7 +180,7 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
               }
               <label class="field" [class.is-error]="erroDoCampoDiasNaoUteis('data', index)">
                 <span class="field__label is-required">Data</span>
-                <input class="input" type="date" formControlName="data" />
+                <input [id]="'data-' + index" class="input" type="date" formControlName="data" />
                 <span class="field__hint">
                   Não se pode repetir para a mesma combinação de abrangência/região dentro do mesmo
                   dataset.
@@ -183,7 +194,11 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
                 [class.is-error]="erroDoCampoDiasNaoUteis('descricao', index)"
               >
                 <span class="field__label is-required">Descrição</span>
-                <textarea class="textarea" formControlName="descricao"></textarea>
+                <textarea
+                  [id]="'descricao-' + index"
+                  class="textarea"
+                  formControlName="descricao"
+                ></textarea>
                 <span class="field__hint">Obrigatório. Até 200 caracteres.</span>
                 @if (erroDoCampoDiasNaoUteis('descricao', index)) {
                   <span class="field__error">{{
@@ -197,8 +212,9 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
                   class="btn btn--tertiary btn--sm"
                   (click)="removerLinhaPeloIndice(index)"
                   [disabled]="saving()"
+                  [attr.aria-label]="'Remover dia não útil ' + (index + 1)"
                 >
-                  <i class="pi pi-trash"></i>
+                  <i class="pi pi-trash" aria-hidden="true"></i>
                 </button>
               </div>
             </div>
@@ -210,9 +226,8 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
       <a [routerLink]="['/calendario-dias-uteis']" class="btn btn--tertiary btn--rect">Cancelar</a>
       <button
         type="submit"
-        form="cfg-modalidade-form"
+        form="cfg-calendario-dias-uteis-form"
         class="btn btn--primary"
-        (click)="salvar()"
         [disabled]="saving() || form.invalid"
       >
         Criar calendário
@@ -223,7 +238,6 @@ export const MUNICIPIO_CODE_INVALID = 'uniplus.configuracao.calendario_dias_utei
 })
 export class CalendarioDiasUteisNovoPage {
   private readonly api = inject(CalendarioDiasUteisApi);
-  private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -263,10 +277,10 @@ export class CalendarioDiasUteisNovoPage {
       diasNaoUteis: this.form.controls.diasNaoUteis.controls.map((control) => {
         return {
           abrangencia: control.controls.abrangencia.value,
-          data: control.controls.data.value?.toString() || '',
-          uf: control.controls.uf.value || '',
-          municipioIbge: control.controls.codigoMunicipio.value || '',
-          descricao: control.controls.descricao.value || '',
+          data: control.controls.data.value,
+          uf: control.controls.uf.value || null,
+          municipioIbge: control.controls.codigoMunicipio.value || null,
+          descricao: control.controls.descricao.value.trim(),
         };
       }),
     };
@@ -282,26 +296,23 @@ export class CalendarioDiasUteisNovoPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
-      this.notifications.errorFromProblem(problem);
-      this.renovarIdempotencyKey();
-      return;
-    }
-
     if (problem.status === 422 && problem.code === DATA_DUPLICADA_DATASET_CODE) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
+      this.aplicarErroNaData(
+        problem,
+        'Esta data está duplicada para a mesma abrangência e região.',
+      );
       return;
     }
 
     if (problem.status === 422 && problem.code === MUNICIPIO_CODE_INVALID) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
-      const pattern = /(\d+)-(\d+)-(\d+)/g;
-      const dataRaw = (problem.detail ?? '').match(pattern);
-      if (dataRaw) {
+      const data = this.extrairData(problem);
+      if (data) {
         const controlIndex = this.form.controls.diasNaoUteis.controls.findIndex(
-          (control) => (control.get('data') as FormControl).value === (dataRaw[0] ?? ''),
+          (control) => control.controls.data.value === data,
         );
         const control = this.diasNaoUteis.at(controlIndex);
         if (control && problem.detail) {
@@ -313,6 +324,28 @@ export class CalendarioDiasUteisNovoPage {
         return;
       }
     }
+
+    this.notifications.errorFromProblem(problem);
+    if (problem.status === 422) {
+      this.renovarIdempotencyKey();
+    }
+  }
+
+  private aplicarErroNaData(problem: ProblemDetails, message: string): void {
+    const data = this.extrairData(problem);
+    if (!data) {
+      return;
+    }
+    for (const control of this.diasNaoUteis.controls) {
+      if (control.controls.data.value === data) {
+        control.controls.data.setErrors({ backend: { code: problem.code, message } });
+        control.controls.data.markAsTouched();
+      }
+    }
+  }
+
+  private extrairData(problem: ProblemDetails): string | null {
+    return problem.detail?.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? null;
   }
 
   private handleSalvarResult(result: ApiResult<string | void>): void {
@@ -367,23 +400,23 @@ export class CalendarioDiasUteisNovoPage {
     if (!control) {
       return;
     }
-    const abrangenciaControl = control.controls.abrangencia;
-    if (abrangenciaControl && abrangenciaControl.value === 'MUNICIPAL') {
-      control.controls.codigoMunicipio = new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.minLength(7), Validators.maxLength(7)],
-      });
-      control.controls.uf = new FormControl('', { nonNullable: false });
+    const abrangencia = control.controls.abrangencia.value;
+    const municipio = control.controls.codigoMunicipio;
+    const uf = control.controls.uf;
+
+    municipio.reset('');
+    uf.reset('');
+    municipio.clearValidators();
+    uf.clearValidators();
+
+    if (abrangencia === 'MUNICIPAL') {
+      municipio.setValidators([Validators.required, Validators.pattern(/^\d{7}$/)]);
+    } else if (abrangencia === 'ESTADUAL') {
+      uf.setValidators([Validators.required, Validators.pattern(/^[A-Z]{2}$/)]);
     }
 
-    if (abrangenciaControl && abrangenciaControl.value === 'ESTADUAL') {
-      control.controls.uf = new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.minLength(2), Validators.maxLength(2)],
-      });
-      control.controls.codigoMunicipio = new FormControl('', { nonNullable: false });
-      return;
-    }
+    municipio.updateValueAndValidity();
+    uf.updateValueAndValidity();
   }
 
   private criaDiaNaoUtilFormGroup(): FormGroup<DiaNaoUtilFormGroup> {
@@ -400,7 +433,7 @@ export class CalendarioDiasUteisNovoPage {
         nonNullable: false,
         validators: [],
       }),
-      data: new FormControl<Date | null>(null, {
+      data: new FormControl('', {
         nonNullable: true,
         validators: [Validators.required],
       }),
@@ -411,7 +444,7 @@ export class CalendarioDiasUteisNovoPage {
     });
   }
 
-  protected get diasNaoUteis(): FormArray {
+  protected get diasNaoUteis(): FormArray<FormGroup<DiaNaoUtilFormGroup>> {
     return this.form.controls.diasNaoUteis;
   }
 
@@ -423,7 +456,6 @@ export class CalendarioDiasUteisNovoPage {
     this.form.controls.diasNaoUteis.push(this.criaDiaNaoUtilFormGroup());
   }
 
-  protected readonly naturezas = NATUREZAS_LEGAIS;
   protected erroDoCampoDiaNaoUtil(
     index: number,
     nome: DiaNaoUtilFormGroupCampoNome,

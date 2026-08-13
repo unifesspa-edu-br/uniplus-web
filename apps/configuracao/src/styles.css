@@ -1100,13 +1100,22 @@ cfg-pesos-enem-page {
 
 .dias-nao-util-form-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) 40px;
-  grid-template-rows: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
 .dias-nao-util-form-grid--4col {
-  grid-template-columns: repeat(4, 1fr) 40px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .dias-nao-util-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
+  }
+
+  .dias-nao-util-form-grid--4col {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) 40px;
+  }
 }
 
 @media (min-width: 600px) {
