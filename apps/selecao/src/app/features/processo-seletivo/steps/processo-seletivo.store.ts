@@ -47,6 +47,8 @@ const INITIAL_DRAFT: WizardDraft = {
     orgao: '',
     periodo: '',
     nome: '',
+    unidadeAdministradoraId: '',
+    origemCandidatos: '',
     uploads: [],
   },
   modalidades: { selected: [], concorrenciaDupla: false },
@@ -80,6 +82,30 @@ export class ProcessoSeletivoStore {
   readonly draft = signal<WizardDraft>(structuredClone(INITIAL_DRAFT));
   /** Mensagens de validação do step ativo. `null` indica sem erro. */
   readonly stepError = signal<string[] | null>(null);
+  /**
+   * Id do Processo Seletivo já criado na API. `null` enquanto o cadastro
+   * inicial não foi persistido.
+   */
+  readonly processoSeletivoId = signal<string | null>(null);
+  /** Mutação em curso — usado para impedir disparo duplo e travar a navegação. */
+  readonly salvando = signal(false);
+  /**
+   * Uma criação ficou sem resposta definitiva (rede ou 5xx): o servidor pode
+   * tê-la executado. A retentativa repete o mesmo comando, então alterar o
+   * rascunho agora só faria a tela divergir do que existe no servidor.
+   */
+  readonly criacaoIndefinida = signal(false);
+
+  /**
+   * Depois de criado, os dados que compuseram o comando de criação não podem
+   * mais ser alterados: o contrato não expõe atualização de identificação e a
+   * unidade administradora é imutável no agregado por definição. Vale também
+   * enquanto uma criação inconclusiva aguarda retentativa — inclusive para o
+   * tipo, escolhido no passo 1.
+   */
+  readonly cadastroInicialCongelado = computed(
+    () => this.processoSeletivoId() !== null || this.salvando() || this.criacaoIndefinida(),
+  );
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
   readonly currentMeta = computed(() => {
@@ -155,5 +181,8 @@ export class ProcessoSeletivoStore {
     this.completedSteps.set(new Set());
     this.draft.set(structuredClone(INITIAL_DRAFT));
     this.stepError.set(null);
+    this.processoSeletivoId.set(null);
+    this.salvando.set(false);
+    this.criacaoIndefinida.set(false);
   }
 }

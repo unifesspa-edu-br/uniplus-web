@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
+import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
 import { Step01TipoProcessoComponent } from './steps/steps/step-01-tipo-processo/step-01-tipo-processo.component';
@@ -48,7 +49,7 @@ import { Step13RevisaoComponent } from './steps/steps/step-13-revisao/step-13-re
     Step12AtendimentoComponent,
     Step13RevisaoComponent,
   ],
-  providers: [ProcessoSeletivoStore],
+  providers: [ProcessoSeletivoStore, CadastroInicialService],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -176,10 +177,15 @@ export class ProcessoSeletivoPage {
   }
 
   previous(): void {
+    if (this.store.salvando()) return;
     this.store.previous();
   }
 
-  nextOrPublish(): void {
+  async nextOrPublish(): Promise<void> {
+    // Single-flight: o passo 2 grava na API, e um duplo clique criaria dois
+    // processos com chaves de idempotência diferentes.
+    if (this.store.salvando()) return;
+
     if (this.store.isLast()) {
       this.publicar();
       return;
@@ -190,7 +196,24 @@ export class ProcessoSeletivoPage {
 
     if (result && !result.valid) {
       this.store.setStepError(mensagensDe(result));
+      this.revelarErro();
       return;
+    }
+
+    // Passos que persistem expõem `persistir()`; os demais avançam direto.
+    const persistivel = validator as Partial<StepCommit> | undefined;
+    if (persistivel?.persistir) {
+      const commit = await persistivel.persistir().catch(
+        (): StepValidation => ({
+          valid: false,
+          messages: ['Não foi possível concluir a operação. Tente novamente.'],
+        }),
+      );
+      if (!commit.valid) {
+        this.store.setStepError(mensagensDe(commit));
+        this.revelarErro();
+        return;
+      }
     }
 
     this.store.setStepError(null);
@@ -267,6 +290,15 @@ export class ProcessoSeletivoPage {
     this.wizContent?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
+
+/**
+ * Passo que grava na API antes de liberar o avanço. `validate()` continua
+ * síncrono e responde pela consistência do rascunho; `persistir()` responde
+ * pelo efeito remoto.
+ */
+interface StepCommit {
+  persistir(): Promise<StepValidation>;
 }
 
 /** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */

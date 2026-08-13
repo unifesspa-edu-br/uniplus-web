@@ -11,10 +11,11 @@ export const appRoutes: Routes = [
   },
   {
     // Backoffice Seleção: todas as rotas exigem autenticação.
-    // Roles elegíveis nesta SPA: admin, gestor, avaliador.
+    // Roles elegíveis nesta SPA: admin, gestor, avaliador e plataforma-admin —
+    // este último para a administração do certame, restrita por rota abaixo.
     path: '',
     loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
-    canActivate: [authGuard, roleGuard('admin', 'gestor', 'avaliador')],
+    canActivate: [authGuard, roleGuard('admin', 'gestor', 'avaliador', 'plataforma-admin')],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
@@ -23,7 +24,12 @@ export const appRoutes: Routes = [
           import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
+        // Cadastro e configuração do certame são administração de plataforma:
+        // as rotas correspondentes da API exigem `plataforma-admin`, e sem o
+        // mesmo papel aqui um gestor entraria na tela só para receber 403 na
+        // primeira gravação.
         path: 'processo-seletivo',
+        canActivate: [roleGuard('plataforma-admin')],
         loadChildren: () =>
           import('./features/processo-seletivo/processo-seletivo.routes').then((m) => m.PROCESSO_SELETIVO_ROUTES),
       },

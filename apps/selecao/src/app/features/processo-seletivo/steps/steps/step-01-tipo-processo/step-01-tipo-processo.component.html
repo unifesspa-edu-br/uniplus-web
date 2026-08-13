@@ -39,12 +39,19 @@
       />
     </div>
   </div>
-  <fieldset class="type-grid">
+  @if (store.cadastroInicialCongelado()) {
+    <p class="alert alert--info" role="status">
+      O cadastro inicial já foi criado com este tipo. Para usar outro tipo, cadastre um novo
+      processo seletivo.
+    </p>
+  }
+  <fieldset class="type-grid" [disabled]="store.cadastroInicialCongelado()">
     <legend class="sr-only">Tipo do processo seletivo</legend>
     @for (option of filteredOptions(); track option.value) {
       <sel-type-card
         [option]="option"
         [selected]="store.draft().tipoProcesso.selected === option.value"
+        [disabled]="store.cadastroInicialCongelado()"
         (selectChange)="select($event)"
       />
     }

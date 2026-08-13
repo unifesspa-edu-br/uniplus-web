@@ -16,5 +16,6 @@ export {
   type AtualizarUnidadeCommand,
   type CriarUnidadeCommand,
   type UnidadeDto,
+  type UnidadesQuery,
   type UnidadeTipoOption,
 } from './unidades.api';

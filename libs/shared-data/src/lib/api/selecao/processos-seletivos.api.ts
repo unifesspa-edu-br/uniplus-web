@@ -9,6 +9,9 @@ export type CriarProcessoSeletivoCommand = components['schemas']['CriarProcessoS
 export type ProcessoSeletivoDto = components['schemas']['ProcessoSeletivoDto'];
 export type ProcessoSeletivoResumoDto = components['schemas']['ProcessoSeletivoResumoDto'];
 export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapshotDto'];
+export type IniciarUploadDocumentoEditalDto =
+  components['schemas']['IniciarUploadDocumentoEditalDto'];
+export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -62,6 +65,43 @@ export class ProcessosSeletivosApi {
     return this.http.post<ApiResult<string>>(
       `${this.basePath}/api/selecao/processos-seletivos`,
       command,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/documentos-edital` — primeiro
+   * dos três passos do anexo do edital: cria o registro pendente e devolve a
+   * URL pré-assinada de PUT, o content type que a assinatura exige e o
+   * instante em que ela expira. O endpoint não recebe corpo.
+   */
+  iniciarUploadDocumentoEdital(
+    processoSeletivoId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<IniciarUploadDocumentoEditalDto>> {
+    return this.http.post<ApiResult<IniciarUploadDocumentoEditalDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital`,
+      null,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * Terceiro passo: a API lê o objeto no storage, confere content type,
+   * tamanho e assinatura de arquivo, calcula o hash e sela o documento como
+   * imutável. Também não recebe corpo.
+   *
+   * O segundo passo — o PUT na URL pré-assinada — não é rota do Uni+ e não
+   * devolve `ApiResult`: fica no `SignedUploadClient` de `shared-core/http`.
+   */
+  confirmarUploadDocumentoEdital(
+    processoSeletivoId: string,
+    documentoEditalId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<DocumentoEditalDto>> {
+    return this.http.post<ApiResult<DocumentoEditalDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital/${encodeURIComponent(documentoEditalId)}/confirmacao`,
+      null,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }

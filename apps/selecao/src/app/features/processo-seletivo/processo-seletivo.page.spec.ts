@@ -3,6 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
+import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
@@ -10,11 +12,26 @@ const tiposProcessoApiStub = {
   listar: () => of(apiOk<readonly TipoProcessoDto[]>([], 200, new HttpHeaders())),
 };
 
+const unidadesApiStub = {
+  listar: () => of(apiOk<readonly UnidadeDto[]>([], 200, new HttpHeaders())),
+};
+
+/**
+ * A page provê `CadastroInicialService`, que injeta o client de Processo
+ * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
+ * grafo de injeção fechar sem `HttpClient` real.
+ */
+const processosSeletivosApiStub = {};
+
 describe('ProcessoSeletivoPage — estrutura', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
+      providers: [
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+      ],
     }).compileComponents();
   });
 
@@ -56,7 +73,11 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
+      providers: [
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+      ],
     }).compileComponents();
   });
 
@@ -108,7 +129,11 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
+      providers: [
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+      ],
     }).compileComponents();
   });
 
@@ -137,7 +162,11 @@ describe('ProcessoSeletivoPage — publicação', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [{ provide: TiposProcessoApi, useValue: tiposProcessoApiStub }],
+      providers: [
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+      ],
     }).compileComponents();
   });
 
