@@ -83,6 +83,31 @@ describe('UnidadesApi', () => {
 
   afterEach(() => controller.verify());
 
+  it('listar() faz GET /api/organizacao/unidades com limite default e vendor MIME', async () => {
+    const promise = firstValueFrom(api.listar());
+
+    const req = controller.expectOne(`${BASE}/api/organizacao/unidades?limit=100`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('unidade', 1));
+    req.flush([unidadeSeed]);
+
+    const result = (await promise) as ApiResult<readonly UnidadeDto[]>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) expect(result.data[0].sigla).toBe('IEDAR');
+  });
+
+  it('listar() com cursor troca o limite pelo par cursor/direction', async () => {
+    const promise = firstValueFrom(api.listar({ cursor: 'cur-1', direction: 'prev', q: 'iedar' }));
+
+    const req = controller.expectOne(
+      `${BASE}/api/organizacao/unidades?q=iedar&cursor=cur-1&direction=prev`,
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([unidadeSeed]);
+
+    await promise;
+  });
+
   it('obter() faz GET /api/organizacao/unidades/{id} com encoding seguro', async () => {
     const id = 'id com espaço/01';
     const promise = firstValueFrom(api.obter(id));

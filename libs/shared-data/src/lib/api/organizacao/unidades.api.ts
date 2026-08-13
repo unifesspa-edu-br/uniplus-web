@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
@@ -10,6 +10,15 @@ export type UnidadeDto = components['schemas']['UnidadeDto'];
 export type CriarUnidadeCommand = components['schemas']['CriarUnidadeCommand'];
 export type AtualizarUnidadeCommand = components['schemas']['AtualizarUnidadeCommand'];
 export { TipoUnidade };
+
+/** Filtro da listagem paginada de unidades (cursor opaco, ADR-0026). */
+export interface UnidadesQuery {
+  /** Busca textual por nome, sigla ou código. */
+  readonly q?: string;
+  readonly cursor?: string;
+  readonly direction?: 'next' | 'prev';
+  readonly limit?: number;
+}
 
 export interface UnidadeTipoOption {
   readonly value: TipoUnidade;
@@ -34,6 +43,24 @@ export const TIPOS_UNIDADE: readonly UnidadeTipoOption[] = [
 export class UnidadesApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(ORGANIZACAO_BASE_PATH);
+
+  /** GET `/api/organizacao/unidades` — paginação por cursor opaco. */
+  listar(query: UnidadesQuery = {}): Observable<ApiResult<readonly UnidadeDto[]>> {
+    let params = new HttpParams();
+    if (query.q !== undefined) {
+      params = params.set('q', query.q);
+    }
+    if (query.cursor !== undefined) {
+      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
+    } else {
+      params = params.set('limit', String(query.limit ?? 100));
+    }
+
+    return this.http.get<ApiResult<readonly UnidadeDto[]>>(
+      `${this.basePath}/api/organizacao/unidades`,
+      { params, context: withVendorMime('unidade', 1) },
+    );
+  }
 
   obter(id: string): Observable<ApiResult<UnidadeDto>> {
     return this.http.get<ApiResult<UnidadeDto>>(
