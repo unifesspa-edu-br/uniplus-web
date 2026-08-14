@@ -160,6 +160,10 @@ export class Step02IdentificacaoComponent {
 
     this.municipiosCarregando.set(true);
     this.municipiosErro.set(null);
+    // Resultado da busca anterior sai de cena ao começar a nova: enquanto a
+    // requisição corre, uma opção do termo antigo continuaria clicável, e numa
+    // conexão lenta o operador gravaria o município que já não procurava.
+    this.municipios.set([]);
     this.geo
       .listarCidades({ q: busca, limit: MUNICIPIOS_LIMIT })
       .pipe(takeUntilDestroyed(this.destroyRef))

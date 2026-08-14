@@ -678,4 +678,25 @@ describe('Step02IdentificacaoComponent', () => {
     expect(componente.municipiosCarregando()).toBe(false);
     expect(componente.municipios()).toEqual([]);
   });
+  it('descarta o resultado anterior ao iniciar uma busca nova', async () => {
+    componente.buscarMunicipios('mar');
+    controller
+      .expectOne((r) => r.url.includes('/api/cidades'))
+      .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
+    await tick();
+    expect(componente.municipios()).toHaveLength(1);
+
+    // Enquanto a busca nova corre, a opção antiga não pode seguir clicável: numa
+    // conexão lenta o operador gravaria o município que já não procurava.
+    componente.buscarMunicipios('bel');
+    expect(componente.municipios()).toEqual([]);
+
+    controller
+      .expectOne((r) => r.url.includes('/api/cidades'))
+      .flush([{ id: 'y', codigoIbge: '1501402', nome: 'Belém', uf: 'PA', ddd: '91' }]);
+    await tick();
+
+    expect(componente.municipios()).toHaveLength(1);
+    expect(componente.municipios()[0].nome).toBe('Belém');
+  });
 });
