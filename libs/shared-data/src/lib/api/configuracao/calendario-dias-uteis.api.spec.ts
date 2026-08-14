@@ -22,6 +22,7 @@ import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
 const CALENDARIO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
+const IDEMPOTENCY_KEY = '019f41cf-69fd-759a-ac6d-09acabc1b0ff';
 
 /**
  * Âncoras de contrato: os literais abaixo são tipados pelos aliases do
@@ -66,6 +67,22 @@ describe('CalendarioDiasUteisApi', () => {
   });
 
   afterEach(() => controller.verify());
+
+  it('listar() faz GET com paginação e Accept versionado', async () => {
+    const promise = firstValueFrom(api.listar({ limit: 50 }));
+
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/calendarios-dias-uteis?limit=50`,
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('calendario-dias-uteis', 1),
+    );
+    req.flush([]);
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(true);
+  });
 
   it('deriva o item e o DTO do contrato que exige o snapshot municipal', () => {
     const baseline = JSON.parse(
@@ -120,11 +137,12 @@ describe('CalendarioDiasUteisApi', () => {
   });
 
   it('criar() envia o comando com o snapshot municipal e a Idempotency-Key', async () => {
-    const promise = firstValueFrom(
-      api.criar(comandoValido, withIdempotencyKey('019f41cf-69fd-759a-ac6d-09acabc1b0ff')),
-    );
+    const promise = firstValueFrom(api.criar(comandoValido, withIdempotencyKey(IDEMPOTENCY_KEY)));
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/calendarios-dias-uteis`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Accept')).toBe('application/json');
+    expect(req.request.headers.get('Idempotency-Key')).toBe(IDEMPOTENCY_KEY);
     expect(req.request.body.diasNaoUteis[0]).toMatchObject({
       municipioIbge: '1504208',
       municipioNome: 'Marabá',
@@ -135,4 +153,20 @@ describe('CalendarioDiasUteisApi', () => {
     await promise;
   });
 
+  it('marcarVigente() faz POST sem command e preserva a Idempotency-Key', async () => {
+    const promise = firstValueFrom(
+      api.marcarVigente(CALENDARIO_ID, withIdempotencyKey(IDEMPOTENCY_KEY)),
+    );
+
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/calendarios-dias-uteis/${CALENDARIO_ID}/vigente`,
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe(IDEMPOTENCY_KEY);
+    expect(req.request.body).toBeNull();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(true);
+  });
 });
