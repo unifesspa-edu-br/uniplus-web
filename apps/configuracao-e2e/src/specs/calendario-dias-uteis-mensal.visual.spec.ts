@@ -232,6 +232,33 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await assertNoHorizontalOverflow(page);
   });
 
+  test('versão do dataset longa sem espaços não força rolagem horizontal no resumo (CA-02/CA-12)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    // Até 60 caracteres aceitos pelo formulário de criação, num único token.
+    const versaoLonga = 'V'.repeat(60);
+    await page.route(/\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/, async (route, request) => {
+      if (request.method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      if (request.method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+        body: JSON.stringify({ ...CALENDARIO, versaoDataset: versaoLonga }),
+      });
+    });
+
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+    await expect(page.getByText(versaoLonga)).toBeVisible();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test('sem violações serious/critical, com o drawer fechado e aberto (CA-13)', async ({ page }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();

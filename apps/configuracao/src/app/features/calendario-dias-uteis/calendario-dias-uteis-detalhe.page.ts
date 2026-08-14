@@ -192,6 +192,7 @@ const DIAS_SEMANA = [
       display: flex;
       flex-direction: column;
       gap: var(--space-1);
+      min-width: 0;
     }
 
     .cfg-calendario-resumo__item dt {
@@ -204,6 +205,7 @@ const DIAS_SEMANA = [
       font-size: var(--text-base);
       font-weight: var(--weight-bold);
       color: var(--text-heading);
+      overflow-wrap: anywhere;
     }
 
     .cfg-calendario-mensal__lista {
