@@ -1,4 +1,5 @@
 import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
+import { formatIsoDateLong } from '@uniplus/shared-data/utils';
 import { describe, expect, it } from 'vitest';
 import {
   agruparPorMes,
@@ -97,10 +98,24 @@ describe('agruparPorMes()', () => {
       // remapeado para 1901 (comportamento legado de Date.UTC(ano, …) para
       // ano 0-99), a data cairia num sábado, com 6 paddings em vez de 5.
       const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '0001-06-15' })]);
-      expect(mes.chave).toBe('1-06');
+      expect(mes.chave).toBe('0001-06');
       expect(mes.ano).toBe(1);
       expect(mes.semanas[0].slice(0, 5)).toEqual([null, null, null, null, null]);
       expect(mes.semanas[0][5]?.dia).toBe(1);
+    });
+
+    it('data da célula com ano < 1000 continua YYYY-MM-DD válido (round-trip por parseIsoDate)', () => {
+      // getUTCFullYear() devolve ano sem zeros à esquerda — sem padStart na
+      // chave, a data da célula vira "1-06-15" em vez de "0001-06-15", e
+      // formatIsoDateLong/formatIsoDateBr (usados no título do drawer e no
+      // campo Data) rejeitam esse formato, mostrando "—" mesmo com o
+      // feriado corretamente posicionado na grade.
+      const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '0001-06-15' })]);
+      const celulaDoDia15 = mes.semanas.flat().find((celula) => celula?.dia === 15);
+      expect(celulaDoDia15?.data).toBe('0001-06-15');
+      // O mesmo valor que o drawer usaria para o título — precisa formatar,
+      // não cair no placeholder "—" de entrada inválida.
+      expect(formatIsoDateLong(celulaDoDia15?.data ?? '')).toBe('15 de junho de 1');
     });
 
     it('fevereiro de ano bissexto (2028) tem 29 dias mapeados', () => {
