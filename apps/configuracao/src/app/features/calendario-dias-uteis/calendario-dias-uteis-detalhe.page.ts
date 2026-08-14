@@ -338,6 +338,14 @@ const DIAS_SEMANA = [
       transform: none;
     }
 
+    /* .uni-drawer__body (DS compartilhado) só tem padding vertical — foi
+       desenhado para .uni-drawer__nav a, que traz o próprio padding
+       horizontal. Conteúdo genérico projetado aqui precisa da margem lateral
+       explicitamente, ou cola nas bordas do painel. */
+    .cfg-calendario-mensal__ocorrencia {
+      padding: 0 var(--space-5);
+    }
+
     .cfg-calendario-mensal__ocorrencia + .cfg-calendario-mensal__ocorrencia {
       margin-top: var(--space-5);
       padding-top: var(--space-5);
@@ -366,6 +374,13 @@ const DIAS_SEMANA = [
     .cfg-calendario-mensal__ocorrencia dd {
       margin: 0;
       color: var(--text-secondary);
+    }
+
+    /* Angular remove o espaço em branco insignificante entre os dois <span>
+       do template (preserveWhitespaces: false) — sem isto, o hint de
+       Código IBGE cola visualmente no nome do município. */
+    .cfg-calendario-mensal__ocorrencia dd .field__hint {
+      margin-left: var(--space-1);
     }
   `,
   host: { class: 'cfg-page' },
