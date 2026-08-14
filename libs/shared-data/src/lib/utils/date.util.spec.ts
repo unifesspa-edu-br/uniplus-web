@@ -101,29 +101,33 @@ describe('Date Util', () => {
   describe('parseIsoDate()', () => {
     describe('entradas válidas', () => {
       it.each([
-        { input: '2025-02-14', expected: new Date(2025, 1, 14), descricao: 'data comum' },
-        { input: '2026-01-01', expected: new Date(2026, 0, 1), descricao: 'primeiro do ano' },
-        { input: '2026-12-31', expected: new Date(2026, 11, 31), descricao: 'último do ano' },
-        { input: '2028-02-29', expected: new Date(2028, 1, 29), descricao: 'ano bissexto' },
-        { input: '2000-02-29', expected: new Date(2000, 1, 29), descricao: 'ano secular bissexto (múltiplo de 400)' },
+        { input: '2025-02-14', expected: new Date(Date.UTC(2025, 1, 14)), descricao: 'data comum' },
+        { input: '2026-01-01', expected: new Date(Date.UTC(2026, 0, 1)), descricao: 'primeiro do ano' },
+        { input: '2026-12-31', expected: new Date(Date.UTC(2026, 11, 31)), descricao: 'último do ano' },
+        { input: '2028-02-29', expected: new Date(Date.UTC(2028, 1, 29)), descricao: 'ano bissexto' },
+        {
+          input: '2000-02-29',
+          expected: new Date(Date.UTC(2000, 1, 29)),
+          descricao: 'ano secular bissexto (múltiplo de 400)',
+        },
       ])('parseia "$input" — $descricao', ({ input, expected }) => {
         expect(parseIsoDate(input)).toEqual(expected);
       });
 
       it('tolera espaços nas bordas', () => {
-        expect(parseIsoDate('  2025-02-14  ')).toEqual(new Date(2025, 1, 14));
+        expect(parseIsoDate('  2025-02-14  ')).toEqual(new Date(Date.UTC(2025, 1, 14)));
       });
 
       it('limites do intervalo de ano são aceitos (1900 e 2100)', () => {
-        expect(parseIsoDate('1900-01-01')).toEqual(new Date(1900, 0, 1));
-        expect(parseIsoDate('2100-12-31')).toEqual(new Date(2100, 11, 31));
+        expect(parseIsoDate('1900-01-01')).toEqual(new Date(Date.UTC(1900, 0, 1)));
+        expect(parseIsoDate('2100-12-31')).toEqual(new Date(Date.UTC(2100, 11, 31)));
       });
 
-      it('componentes locais lidos de volta batem com a entrada, em qualquer fuso do host', () => {
+      it('componentes UTC lidos de volta batem com a entrada, em qualquer fuso do host', () => {
         const date = parseIsoDate('2026-04-05');
-        expect(date?.getFullYear()).toBe(2026);
-        expect(date?.getMonth()).toBe(3);
-        expect(date?.getDate()).toBe(5);
+        expect(date?.getUTCFullYear()).toBe(2026);
+        expect(date?.getUTCMonth()).toBe(3);
+        expect(date?.getUTCDate()).toBe(5);
       });
     });
 
@@ -160,9 +164,15 @@ describe('Date Util', () => {
         else process.env['TZ'] = TZ_ORIGINAL;
       });
 
-      it('não rejeita 2011-12-30 sob TZ=Pacific/Apia (fuso que suprimiu esse dia civil ao mudar de offset)', () => {
+      it('preserva o dia civil exato de 2011-12-30 sob TZ=Pacific/Apia, não só retorna não-nulo', () => {
         process.env['TZ'] = 'Pacific/Apia';
-        expect(parseIsoDate('2011-12-30')).not.toBeNull();
+        const date = parseIsoDate('2011-12-30');
+        // Construção/leitura por componentes locais normalizaria para 31 —
+        // é exatamente o que este teste garante que não acontece mais.
+        expect(date?.getUTCFullYear()).toBe(2011);
+        expect(date?.getUTCMonth()).toBe(11);
+        expect(date?.getUTCDate()).toBe(30);
+        expect(formatIsoDateBr('2011-12-30')).toBe('30/12/2011');
       });
     });
   });

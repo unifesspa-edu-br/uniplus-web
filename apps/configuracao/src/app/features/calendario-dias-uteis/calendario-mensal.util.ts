@@ -51,11 +51,11 @@ export function agruparPorMes(dias: readonly DiaNaoUtilDto[]): MesCalendarioMens
     const parsed = parseIsoDate(dia.data);
     if (!parsed) continue;
 
-    const chave = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}`;
+    const chave = `${parsed.getUTCFullYear()}-${String(parsed.getUTCMonth() + 1).padStart(2, '0')}`;
     const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
     porMes.set(chave, porDiaDoMes);
 
-    const diaDoMes = parsed.getDate();
+    const diaDoMes = parsed.getUTCDate();
     const ocorrencias = porDiaDoMes.get(diaDoMes) ?? [];
     ocorrencias.push(dia);
     porDiaDoMes.set(diaDoMes, ocorrencias);
@@ -71,8 +71,11 @@ function construirMes(chave: string, porDiaDoMes: Map<number, DiaNaoUtilDto[]>):
   const ano = Number(anoStr);
   const mes = Number(mesStr);
 
-  const primeiroDiaSemana = new Date(ano, mes - 1, 1).getDay(); // 0=dom..6=sáb
-  const totalDias = new Date(ano, mes, 0).getDate();
+  // Date.UTC evita o mesmo risco de normalização silenciosa que motivou
+  // parseIsoDate: nenhuma linha do tempo além de UTC garante não pular dia
+  // civil numa transição de offset.
+  const primeiroDiaSemana = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay(); // 0=dom..6=sáb
+  const totalDias = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
 
   const celulas: (CelulaCalendarioMensal | null)[] = [
     ...Array.from({ length: primeiroDiaSemana }, () => null),
