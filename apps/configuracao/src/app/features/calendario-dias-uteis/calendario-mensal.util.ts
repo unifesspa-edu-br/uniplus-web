@@ -51,7 +51,13 @@ export function agruparPorMes(dias: readonly DiaNaoUtilDto[]): MesCalendarioMens
     const parsed = parseIsoDate(dia.data);
     if (!parsed) continue;
 
-    const chave = `${parsed.getUTCFullYear()}-${String(parsed.getUTCMonth() + 1).padStart(2, '0')}`;
+    // padStart(4, '0'): getUTCFullYear() devolve ano < 1000 sem zeros à
+    // esquerda (ex.: 1). Sem isto, a chave vira "1-06" — construirMes monta
+    // a data de cada célula a partir dela, e "1-06-15" não bate com o
+    // formato YYYY-MM-DD que parseIsoDate exige: o feriado apareceria na
+    // grade, mas o título do drawer e o campo Data mostrariam "—".
+    const ano = String(parsed.getUTCFullYear()).padStart(4, '0');
+    const chave = `${ano}-${String(parsed.getUTCMonth() + 1).padStart(2, '0')}`;
     const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
     porMes.set(chave, porDiaDoMes);
 
