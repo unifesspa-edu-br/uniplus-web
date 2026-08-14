@@ -154,8 +154,72 @@
         }
       </select>
       <p class="field__hint" id="f-unidade-hint">
-        Unidade responsável pela administração do certame. Define a localidade que governa a
-        contagem de prazos em dias úteis.
+        Unidade responsável pela administração do certame. O município que rege os prazos é
+        declarado abaixo, e não decorre dela.
+      </p>
+    </div>
+    <div class="form-field form-grid__full">
+      <label class="label" for="f-localidade">Município que rege os prazos</label>
+      @if (store.draft().identificacao.localidade; as localidade) {
+        <div class="localidade-escolhida">
+          <p class="localidade-escolhida__valor" id="f-localidade-valor">
+            {{ localidade.nome }} — {{ localidade.uf }}
+          </p>
+          <button
+            class="btn btn--tertiary"
+            type="button"
+            aria-describedby="f-localidade-valor"
+            (click)="limparLocalidade()"
+          >
+            Trocar município
+          </button>
+        </div>
+      } @else {
+        <input
+          class="input"
+          id="f-localidade"
+          type="search"
+          autocomplete="off"
+          placeholder="Digite ao menos 3 letras do município"
+          aria-describedby="f-localidade-hint"
+          [attr.aria-busy]="municipiosCarregando() || null"
+          [attr.aria-invalid]="invalidFields().has('localidade') || null"
+          [class.is-invalid]="invalidFields().has('localidade')"
+          [value]="buscaMunicipio()"
+          (input)="buscarMunicipios($any($event.target).value)"
+        />
+        @if (municipiosCarregando()) {
+          <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
+        }
+        @if (municipiosErro(); as erro) {
+          <div class="field__erro" role="alert"><p>{{ erro }}</p></div>
+        }
+        @if (municipios().length > 0) {
+          <ul class="localidade-opcoes" role="listbox" aria-label="Municípios encontrados">
+            @for (municipio of municipios(); track municipio.codigoIbge) {
+              <li role="option" [attr.aria-selected]="false">
+                <button
+                  class="btn btn--tertiary"
+                  type="button"
+                  (click)="
+                    selecionarLocalidade({
+                      codigoIbge: municipio.codigoIbge,
+                      nome: municipio.nome,
+                      uf: municipio.uf,
+                    })
+                  "
+                >
+                  {{ municipio.nome }} — {{ municipio.uf }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      }
+      <p class="field__hint" id="f-localidade-hint">
+        Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.
+        Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode
+        correr sob o calendário de outro município.
       </p>
     </div>
     <div class="form-field form-grid__full">

@@ -5,6 +5,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { Step02IdentificacaoComponent } from './step-02-identificacao.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -14,6 +15,7 @@ const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
 const TIPO_ID = '01960000-0000-7000-0000-0000000005bb';
 const UNIDADE_ID = '01960000-0000-7000-0000-0000000005cc';
 const DOCUMENTO_ID = '01960000-0000-7000-0000-0000000005dd';
+const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' } as const;
 const URL_ASSINADA = 'http://localhost:9000/uniplus-selecao/editais/edital.pdf?X-Amz-Signature=abc';
 
 const unidadeSeed = {
@@ -86,6 +88,7 @@ describe('Step02IdentificacaoComponent', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
+        { provide: GEO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -107,6 +110,7 @@ describe('Step02IdentificacaoComponent', () => {
       nome: 'Processo Seletivo 2027',
       unidadeAdministradoraId: UNIDADE_ID,
       origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      localidade: MARABA,
     });
   }
 
@@ -181,6 +185,9 @@ describe('Step02IdentificacaoComponent', () => {
       tipoProcessoOrigemId: TIPO_ID,
       origemCandidatos: OrigemCandidatos.inscricaoPropria,
       unidadeAdministradoraOrigemId: UNIDADE_ID,
+      localidadeCodigoIbge: '1504208',
+      localidadeNome: 'Marabá',
+      localidadeUf: 'PA',
     });
     expect(criacao.request.headers.get('Idempotency-Key')).toBeTruthy();
     criacao.flush(PROCESSO_ID, { status: 201, statusText: 'Created' });
@@ -579,5 +586,82 @@ describe('Step02IdentificacaoComponent', () => {
     componente.removeUpload();
 
     expect(componente.anexo()).toBeDefined();
+  });
+  it('exige a localidade para avançar', () => {
+    store.patchObjectSection('identificacao', {
+      numero: '12/2026',
+      ano: 2026,
+      data: '2026-09-01',
+      orgao: 'CEPS',
+      periodo: '1º semestre',
+      nome: 'Processo Seletivo 2027',
+      unidadeAdministradoraId: UNIDADE_ID,
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    });
+
+    const resultado = componente.validate();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages).toContain(
+      'Informe o município cujo calendário rege os prazos do processo.',
+    );
+  });
+
+  it('barra o anexo antes da requisição quando falta a localidade', async () => {
+    store.patchObjectSection('tipoProcesso', { selected: TIPO_ID });
+    store.patchObjectSection('identificacao', {
+      nome: 'Processo Seletivo 2027',
+      unidadeAdministradoraId: UNIDADE_ID,
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    });
+
+    await componente['anexar'](pdf());
+
+    // controller.verify() no afterEach prova que nenhuma requisição saiu.
+    expect(componente.uploadError()).toContain('município que rege os prazos');
+  });
+
+  it('envia o trio da localidade escolhida no cadastro inicial', async () => {
+    preencherCamposDoComando();
+
+    const anexo = componente['anexar'](pdf());
+    await tick();
+
+    const criacao = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
+    expect(criacao.request.body).toMatchObject({
+      localidadeCodigoIbge: '1504208',
+      localidadeNome: 'Marabá',
+      localidadeUf: 'PA',
+    });
+    criacao.flush(PROCESSO_ID);
+    await tick();
+    controller.match(() => true).forEach((r) => r.flush({}, { status: 500, statusText: 'x' }));
+    await anexo.catch(() => undefined);
+  });
+
+  it('busca municípios na Geo a partir de três letras e grava o trio da opção', async () => {
+    componente.buscarMunicipios('ma');
+    controller.expectNone(() => true);
+
+    componente.buscarMunicipios('mar');
+    const busca = controller.expectOne((r) => r.url.includes('/api/cidades'));
+    expect(busca.request.params.get('q')).toBe('mar');
+    busca.flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
+    await tick();
+
+    expect(componente.municipios()).toHaveLength(1);
+
+    componente.selecionarLocalidade({ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' });
+
+    expect(store.draft().identificacao.localidade).toEqual(MARABA);
+    expect(componente.municipios()).toEqual([]);
+  });
+
+  it('limpar a localidade devolve o campo à busca', () => {
+    store.patchObjectSection('identificacao', { localidade: MARABA });
+
+    componente.limparLocalidade();
+
+    expect(store.draft().identificacao.localidade).toBeNull();
   });
 });

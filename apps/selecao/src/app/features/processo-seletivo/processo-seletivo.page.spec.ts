@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { GeoApi } from '@uniplus/shared-data/geo';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
@@ -14,6 +15,11 @@ const tiposProcessoApiStub = {
 
 const unidadesApiStub = {
   listar: () => of(apiOk<readonly UnidadeDto[]>([], 200, new HttpHeaders())),
+};
+
+/** O passo 2 injeta a Geo para o seletor de município; esta suíte não busca nada. */
+const geoApiStub = {
+  listarCidades: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
 };
 
 /**
@@ -30,6 +36,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
       providers: [
         { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
         { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
         { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
       ],
     }).compileComponents();
@@ -76,6 +83,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
       providers: [
         { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
         { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
         { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
       ],
     }).compileComponents();
@@ -132,6 +140,7 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
       providers: [
         { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
         { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
         { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
       ],
     }).compileComponents();
@@ -165,6 +174,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       providers: [
         { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
         { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
         { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
       ],
     }).compileComponents();

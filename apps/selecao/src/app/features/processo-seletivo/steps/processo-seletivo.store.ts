@@ -49,6 +49,7 @@ const INITIAL_DRAFT: WizardDraft = {
     nome: '',
     unidadeAdministradoraId: '',
     origemCandidatos: '',
+    localidade: null,
     uploads: [],
   },
   modalidades: { selected: [], concorrenciaDupla: false },
