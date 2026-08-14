@@ -169,6 +169,7 @@
             class="btn btn--tertiary"
             type="button"
             aria-describedby="f-localidade-valor"
+            [disabled]="camposDoComandoBloqueados()"
             (click)="limparLocalidade()"
           >
             Trocar município
@@ -185,6 +186,7 @@
           [attr.aria-busy]="municipiosCarregando() || null"
           [attr.aria-invalid]="invalidFields().has('localidade') || null"
           [class.is-invalid]="invalidFields().has('localidade')"
+          [disabled]="camposDoComandoBloqueados()"
           [value]="buscaMunicipio()"
           (input)="buscarMunicipios($any($event.target).value)"
         />
@@ -195,9 +197,9 @@
           <div class="field__erro" role="alert"><p>{{ erro }}</p></div>
         }
         @if (municipios().length > 0) {
-          <ul class="localidade-opcoes" role="listbox" aria-label="Municípios encontrados">
+          <ul class="localidade-opcoes" aria-label="Municípios encontrados">
             @for (municipio of municipios(); track municipio.codigoIbge) {
-              <li role="option" [attr.aria-selected]="false">
+              <li>
                 <button
                   class="btn btn--tertiary"
                   type="button"
@@ -215,6 +217,12 @@
             }
           </ul>
         }
+      }
+      @if (camposDoComandoBloqueados()) {
+        <p class="alert alert--info" role="status">
+          O cadastro inicial já foi criado com este município. A alteração da localidade ainda não
+          está disponível nesta tela.
+        </p>
       }
       <p class="field__hint" id="f-localidade-hint">
         Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.

@@ -150,6 +150,11 @@ export class Step02IdentificacaoComponent {
     if (busca.length < 3) {
       this.municipios.set([]);
       this.municipiosErro.set(null);
+      // Uma busca em voo pode ter começado com termo mais longo: a resposta dela
+      // será descartada pela guarda de termo obsoleto, então é aqui que o estado
+      // de carregamento precisa voltar — senão o campo fica anunciando consulta
+      // que ninguém mais vai concluir.
+      this.municipiosCarregando.set(false);
       return;
     }
 
