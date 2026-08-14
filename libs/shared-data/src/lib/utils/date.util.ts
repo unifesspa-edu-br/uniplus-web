@@ -96,10 +96,16 @@ function isValidGregorianDate(year: number, month: number, day: number): boolean
  * para outro dia. UTC nunca pula dia civil, então é a única linha do tempo
  * segura para representar essa data já validada — quem consome o retorno
  * deve ler com métodos `getUTC*`/`toLocaleDateString(..., { timeZone: 'UTC' })`,
- * nunca os locais. Retorna `null` para entradas malformadas, fora do
- * intervalo de ano do domínio Uni+ ([1900, 2100]) ou que representem data de
- * calendário inexistente (ex.: 2026-02-30, 2026-04-31, 2026-02-29 em ano não
- * bissexto).
+ * nunca os locais. Retorna `null` para entradas malformadas ou que
+ * representem data de calendário inexistente (ex.: 2026-02-30, 2026-04-31,
+ * 2026-02-29 em ano não bissexto).
+ *
+ * Sem o corte de ano [1900, 2100] de `parseDate`, de propósito: esta função
+ * lê valor já persistido pela API para exibição, não texto livre digitado
+ * por usuário. A validação de intervalo de ano de um "dia não útil" é regra
+ * de negócio e vive no backend (`CriarCalendarioDiasUteisCommandValidator`);
+ * repeti-la aqui descartaria silenciosamente dado real que a API já aceitou,
+ * em vez de refletir o que ela de fato retorna.
  */
 export function parseIsoDate(dateStr: string): Date | null {
   const match = ISO_DATE_FORMAT_REGEX.exec(dateStr.trim());
@@ -110,7 +116,6 @@ export function parseIsoDate(dateStr: string): Date | null {
   const month = Number(monthStr); // 1-based no input
   const day = Number(dayStr);
 
-  if (year < MIN_YEAR || year > MAX_YEAR) return null;
   if (!isValidGregorianDate(year, month, day)) return null;
 
   return new Date(Date.UTC(year, month - 1, day));
