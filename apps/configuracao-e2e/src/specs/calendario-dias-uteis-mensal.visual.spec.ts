@@ -63,6 +63,19 @@ const CALENDARIO = {
       data: '2027-01-01',
       descricao: 'Confraternização Universal',
     },
+    {
+      id: '019ff7ee-3c00-7976-860c-eb2f61c9b305',
+      abrangencia: 'INSTITUCIONAL',
+      municipioIbge: null,
+      municipioNome: null,
+      municipioUf: null,
+      uf: null,
+      data: '2026-06-17',
+      // Token único sem espaço, até o limite de 200 caracteres aceito pelo
+      // formulário de criação — prova que a prévia quebra a linha em vez de
+      // vazar do max-width (CA-06/CA-12).
+      descricao: 'A'.repeat(180),
+    },
   ],
 } as const;
 
@@ -87,7 +100,12 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const titulos = page.locator('.cfg-calendario-mensal__titulo');
-    await expect(titulos).toHaveText(['Abril de 2026', 'Novembro de 2026', 'Janeiro de 2027']);
+    await expect(titulos).toHaveText([
+      'Abril de 2026',
+      'Junho de 2026',
+      'Novembro de 2026',
+      'Janeiro de 2027',
+    ]);
   });
 
   test('abre por clique, fecha pelo botão e restaura o foco no dia exato (CA-07/CA-08)', async ({ page }) => {
@@ -189,6 +207,23 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',
     });
+  });
+
+  test('descrição longa sem espaços quebra linha na prévia em vez de vazar do max-width (CA-06/CA-12)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+
+    const botaoDia = page.getByRole('button', { name: /17 de junho de 2026/ });
+    await botaoDia.focus();
+    const preview = page.locator('.cfg-calendario-mensal__preview');
+    await expect(preview).toBeVisible();
+
+    const caixa = await preview.boundingBox();
+    expect(caixa?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((caixa?.x ?? 0) + (caixa?.width ?? 9999)).toBeLessThanOrEqual(320);
+    await assertNoHorizontalOverflow(page);
   });
 
   test('sem violações serious/critical, com o drawer fechado e aberto (CA-13)', async ({ page }) => {

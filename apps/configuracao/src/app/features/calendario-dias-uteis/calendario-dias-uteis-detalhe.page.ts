@@ -315,6 +315,7 @@ const DIAS_SEMANA = [
       font-size: var(--text-xs);
       font-weight: var(--weight-regular);
       white-space: normal;
+      overflow-wrap: anywhere;
       border-radius: var(--radius-md);
       z-index: 10;
     }
