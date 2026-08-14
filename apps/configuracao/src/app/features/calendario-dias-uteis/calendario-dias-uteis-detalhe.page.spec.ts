@@ -36,6 +36,17 @@ const DIA_ESTADUAL = {
   descricao: 'Adesão do Grão-Pará à Independência',
 };
 
+const DIA_NACIONAL_JANEIRO = {
+  id: '019f41cf-69fd-759a-ac6d-09acabc1b102',
+  abrangencia: 'NACIONAL',
+  municipioIbge: null,
+  municipioNome: null,
+  municipioUf: null,
+  uf: null,
+  data: '2027-01-01',
+  descricao: 'Confraternização Universal',
+};
+
 describe('CalendarioDiasUteisDetalhePage', () => {
   let fixture: ComponentFixture<CalendarioDiasUteisDetalhePage>;
   let controller: HttpTestingController;
@@ -74,15 +85,23 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     appRef.tick();
   };
 
-  const carregar = async (diasNaoUteis: readonly unknown[]): Promise<void> => {
+  const carregar = async (diasNaoUteis: readonly unknown[], vigente = false): Promise<void> => {
     controller.expectOne(URL).flush({
       id: CALENDARIO_ID,
       versaoDataset: '2026.1',
-      vigente: false,
+      vigente,
       criadoEm: '2026-08-13T00:00:00Z',
       diasNaoUteis,
     });
     await propagate();
+  };
+
+  const botaoDoDia = (data: string): HTMLButtonElement => {
+    const botao = (fixture.nativeElement as HTMLElement).querySelector(
+      `button[aria-label*="${data.split('-')[2].replace(/^0/, '')} de "]`,
+    );
+    if (!botao) throw new Error(`Nenhum botão de dia encontrado para ${data}`);
+    return botao as HTMLButtonElement;
   };
 
   it('exibe erro de carregamento e permite tentar novamente', async () => {
@@ -96,7 +115,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     await propagate();
 
     expect(fixture.nativeElement.textContent).toContain('Calendário não encontrado');
-    expect(fixture.nativeElement.querySelector('section.form-section')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.cfg-calendario-resumo')).toBeNull();
 
     const retry = fixture.nativeElement.querySelector(
       '.cfg-calendario-dias-uteis__retry button',
@@ -106,13 +125,84 @@ describe('CalendarioDiasUteisDetalhePage', () => {
 
     await carregar([]);
 
-    expect((fixture.nativeElement.querySelector('input') as HTMLInputElement).value).toBe('2026.1');
+    expect(fixture.nativeElement.textContent).toContain('2026.1');
+  });
+
+  it('não renderiza controles de formulário para o dataset (CA-01)', async () => {
+    await carregar([DIA_MUNICIPAL, DIA_ESTADUAL]);
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelectorAll('input')).toHaveLength(0);
+    expect(raiz.querySelectorAll('select')).toHaveLength(0);
+    expect(raiz.querySelectorAll('textarea')).toHaveLength(0);
+  });
+
+  it('apresenta versão, situação de vigência e total de dias não úteis no resumo (CA-02)', async () => {
+    await carregar([DIA_MUNICIPAL, DIA_ESTADUAL], true);
+
+    const texto = fixture.nativeElement.textContent as string;
+    expect(texto).toContain('2026.1');
+    expect(texto).toContain('Vigente');
+  });
+
+  it('conta datas civis únicas no resumo, não ocorrências (CA-02)', async () => {
+    const segunda_ocorrencia_mesmo_dia = { ...DIA_MUNICIPAL, id: 'outro-id', abrangencia: 'INSTITUCIONAL' };
+    await carregar([DIA_MUNICIPAL, segunda_ocorrencia_mesmo_dia, DIA_ESTADUAL]);
+
+    const resumo = fixture.nativeElement.querySelector('.cfg-calendario-resumo') as HTMLElement;
+    expect(resumo.textContent).toContain('2');
+    expect(resumo.textContent).not.toContain('3');
+  });
+
+  it('exibe só os meses com feriado, em ordem cronológica, mesmo atravessando anos (CA-03)', async () => {
+    await carregar([DIA_ESTADUAL, DIA_NACIONAL_JANEIRO]);
+
+    const titulos = [...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo')].map(
+      (elemento: Element) => elemento.textContent?.trim(),
+    );
+    expect(titulos).toEqual(['Agosto de 2026', 'Janeiro de 2027']);
+  });
+
+  it('abre o drawer com heading e conteúdo do dia ao ativar o botão (CA-07)', async () => {
+    await carregar([DIA_MUNICIPAL]);
+
+    botaoDoDia(DIA_MUNICIPAL.data).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.drawerVisivel()).toBe(true);
+    const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
+    expect(dialogo.getAttribute('aria-label')).toBe('5 de abril de 2026');
+    expect(dialogo.textContent).toContain('Aniversário de Marabá');
+  });
+
+  it('lista todas as ocorrências quando há mais de um feriado na mesma data (CA-09)', async () => {
+    const segunda_ocorrencia = {
+      ...DIA_MUNICIPAL,
+      id: 'segunda-ocorrencia',
+      abrangencia: 'INSTITUCIONAL',
+      descricao: 'Aniversário da Unifesspa',
+    };
+    await carregar([DIA_MUNICIPAL, segunda_ocorrencia]);
+
+    const botao = botaoDoDia(DIA_MUNICIPAL.data);
+    expect(botao.textContent).toContain('×2');
+
+    botao.click();
+    fixture.detectChanges();
+
+    const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
+    expect(dialogo.querySelectorAll('.cfg-calendario-mensal__ocorrencia')).toHaveLength(2);
+    expect(dialogo.textContent).toContain('Aniversário de Marabá');
+    expect(dialogo.textContent).toContain('Aniversário da Unifesspa');
   });
 
   it('apresenta o município pelo snapshot persistido, com o código IBGE como apoio', async () => {
     await carregar([DIA_MUNICIPAL]);
 
-    const texto = fixture.nativeElement.textContent as string;
+    botaoDoDia(DIA_MUNICIPAL.data).click();
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
     expect(texto).toContain('Marabá — PA');
     expect(texto).toContain('Código IBGE: 1504208');
     // Nenhuma requisição à Geo: `controller.verify()` no afterEach falharia.
@@ -122,7 +212,10 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   it('não escreve "null" quando o dia municipal é anterior ao snapshot', async () => {
     await carregar([{ ...DIA_MUNICIPAL, municipioNome: null, municipioUf: null }]);
 
-    const texto = fixture.nativeElement.textContent as string;
+    botaoDoDia(DIA_MUNICIPAL.data).click();
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
     expect(texto).not.toContain('null');
     expect(texto).toContain('Código IBGE: 1504208');
   });
@@ -130,14 +223,43 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   it('apresenta a abrangência estadual com a UF por extenso', async () => {
     await carregar([DIA_ESTADUAL]);
 
-    expect(fixture.nativeElement.textContent).toContain('Pará — PA');
+    botaoDoDia(DIA_ESTADUAL.data).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('dialog')?.textContent).toContain('Pará — PA');
   });
 
-  it('não usa controles de formulário para exibir a localidade', async () => {
-    await carregar([DIA_MUNICIPAL, DIA_ESTADUAL]);
+  it('fecha a prévia junto com o drawer, evitando que a restauração de foco a reabra (CA-06/CA-08)', async () => {
+    await carregar([DIA_MUNICIPAL]);
 
-    const saidas = fixture.nativeElement.querySelectorAll('output.field__readonly');
-    expect(saidas).toHaveLength(2);
-    expect(fixture.nativeElement.querySelectorAll('input[type="text"]')).toHaveLength(1);
+    const botao = botaoDoDia(DIA_MUNICIPAL.data);
+    botao.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.drawerVisivel()).toBe(true);
+
+    // O clique também foca o botão (evento nativo do navegador), então a
+    // prévia liga junto com a abertura — não é o cenário deste teste.
+    fixture.componentInstance.mostrarPreview(DIA_MUNICIPAL.data);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.diaEmPreview()).toBe(DIA_MUNICIPAL.data);
+
+    const botaoFechar = fixture.nativeElement.querySelector(
+      '.uni-drawer__header button',
+    ) as HTMLButtonElement;
+    botaoFechar.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.diaEmPreview()).toBeNull();
+  });
+
+  it('não expõe abrangência como token técnico cru (CA-10)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    botaoDoDia(DIA_ESTADUAL.data).click();
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
+    expect(texto).toContain('Estadual');
+    expect(texto).not.toContain('ESTADUAL');
   });
 });
