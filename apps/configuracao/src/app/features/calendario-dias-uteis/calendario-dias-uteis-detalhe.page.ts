@@ -11,7 +11,12 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
-import { CalendarioDiasUteisDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import {
+  CalendarioDiasUteisDto,
+  CONFIGURACAO_BASE_PATH,
+  DiaNaoUtilDto,
+  UNIDADES_FEDERATIVAS,
+} from '@uniplus/shared-data/configuracao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { tap } from 'rxjs';
 
@@ -88,25 +93,21 @@ import { tap } from 'rxjs';
                 </select>
               </label>
               @if (diaNaoUtil.abrangencia === 'MUNICIPAL') {
-                <label class="field">
-                  <span class="field__label is-required">Município (Código IBGE)</span>
-                  <input
-                    type="text"
-                    class="input"
-                    [value]="diaNaoUtil.municipioIbge"
-                    [disabled]="true"
-                  />
-                </label>
+                <div class="field">
+                  <span class="field__label">Município</span>
+                  <output class="field__readonly" aria-label="Município do dia não útil">{{
+                    municipioLegivel(diaNaoUtil)
+                  }}</output>
+                  <span class="field__hint">Código IBGE: {{ diaNaoUtil.municipioIbge }}</span>
+                </div>
               }
               @if (diaNaoUtil.abrangencia === 'ESTADUAL') {
-                <label class="field">
-                  <span class="field__label is-required">Unidade Federativa (UF)</span>
-                  <select class="select" [disabled]="true">
-                    <option>
-                      {{ diaNaoUtil.uf }}
-                    </option>
-                  </select>
-                </label>
+                <div class="field">
+                  <span class="field__label">Unidade Federativa (UF)</span>
+                  <output class="field__readonly" aria-label="Unidade federativa do dia não útil">{{
+                    ufLegivel(diaNaoUtil.uf)
+                  }}</output>
+                </div>
               }
               <label class="field">
                 <span class="field__label">Data</span>
@@ -162,5 +163,22 @@ export class CalendarioDiasUteisDetalhePage {
     if (!this.calendarioResource.isLoading()) {
       this.calendarioResource.reload();
     }
+  }
+
+  /**
+   * Nome e UF do município vêm do snapshot persistido no dataset (ADR-0090) —
+   * a tela não consulta a Geo para resolver localidade já gravada. Registros
+   * anteriores ao snapshot ficam sem nome e sem UF; não há fallback para eles
+   * (a base de desenvolvimento é recriada), mas o que falta some da tela em vez
+   * de virar a palavra "null" ao lado do código IBGE.
+   */
+  protected municipioLegivel(diaNaoUtil: DiaNaoUtilDto): string {
+    return [diaNaoUtil.municipioNome, diaNaoUtil.municipioUf].filter(Boolean).join(' — ');
+  }
+
+  /** UF por extenso mais a sigla, ex.: `Pará — PA`. */
+  protected ufLegivel(uf: string | null): string {
+    const unidade = UNIDADES_FEDERATIVAS.find((candidata) => candidata.sigla === uf);
+    return unidade ? `${unidade.nome} — ${unidade.sigla}` : (uf ?? '');
   }
 }
