@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
@@ -10,6 +10,8 @@ import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/h
 import { CalendarioDiasUteisNovoPage } from './calendario-dias-uteis-novo.page';
 
 const BASE = 'http://localhost:5000';
+const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' } as const;
+const PARAUAPEBAS = { codigoIbge: '1505536', nome: 'Parauapebas', uf: 'PA' } as const;
 
 describe('CalendarioDiasUteisNovoPage', async () => {
   let fixture: ComponentFixture<CalendarioDiasUteisNovoPage>;
@@ -22,7 +24,8 @@ describe('CalendarioDiasUteisNovoPage', async () => {
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
-        provideRouter([]),
+        // A rota da lista existe para que o redirect pós-criação resolva.
+        provideRouter([{ path: 'calendario-dias-uteis', children: [] }]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
         { provide: GEO_BASE_PATH, useValue: BASE },
       ],
@@ -47,6 +50,29 @@ describe('CalendarioDiasUteisNovoPage', async () => {
     return index;
   }
 
+  /**
+   * Percorre o caminho real de seleção: busca na Geo, resposta do serviço e
+   * escolha da opção no `<select>`. É o único caminho que grava o snapshot.
+   */
+  async function selecionarMunicipioViaGeo(
+    index: number,
+    municipio: { codigoIbge: string; nome: string; uf: string } = MARABA,
+  ): Promise<void> {
+    component['buscarMunicipios'](index, municipio.nome);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    controller
+      .expectOne((request) => request.url === `${BASE}/api/cidades`)
+      .flush([{ id: `cidade-${municipio.codigoIbge}`, ddd: '94', ...municipio }]);
+    fixture.detectChanges();
+
+    component['form'].controls.diasNaoUteis
+      .at(index)
+      .controls.codigoMunicipio.setValue(municipio.codigoIbge);
+    component['selecionarMunicipio'](index);
+    fixture.detectChanges();
+  }
+
   it('valida client-side quando tenta salvar sem dia não util', async () => {
     component['form'].controls.versaoDataset.setValue('2026.1');
     component['salvar']();
@@ -54,7 +80,7 @@ describe('CalendarioDiasUteisNovoPage', async () => {
     controller.expectNone(`${BASE}/api/configuracao/admin/calendarios-dias-uteis`);
   });
 
-  it('inicia nova linha como estadual com Pará e municipal com Marabá', () => {
+  it('inicia nova linha como estadual com Pará e sem município escolhido', () => {
     component['adicionaNovoDiaNaoUtilFormGroup']();
     const grupo = component['form'].controls.diasNaoUteis.at(0);
 
@@ -64,83 +90,135 @@ describe('CalendarioDiasUteisNovoPage', async () => {
     grupo.controls.abrangencia.setValue('MUNICIPAL');
     component['mudaAbrangencia'](0);
 
-    expect(grupo.controls.uf.value).toBe('PA');
-    expect(grupo.controls.codigoMunicipio.value).toBe('1504208');
-    expect(grupo.controls.buscaMunicipio.value).toBe('Marabá');
-    expect(component['municipioSelecionado'](0)).toMatchObject({
-      codigoIbge: '1504208',
-      nome: 'Marabá',
-      uf: 'PA',
-    });
+    // Nenhuma referência municipal nasce de constante do código (ADR-0090): o
+    // snapshot só existe depois de uma escolha na Geo.
+    expect(grupo.controls.codigoMunicipio.value).toBe('');
+    expect(grupo.controls.municipioNome.value).toBeNull();
+    expect(grupo.controls.municipioUf.value).toBeNull();
+    expect(grupo.controls.buscaMunicipio.value).toBe('');
+    expect(component['municipioSelecionado'](0)).toBeNull();
+    expect(component['estadoBuscaMunicipio'](0).opcoes).toEqual([]);
   });
 
-  it('mantém o formulário inválido quando a seleção municipal é removida', () => {
+  it('envia o snapshot da opção escolhida na Geo', async () => {
     component['form'].controls.versaoDataset.setValue('2026.1');
-    adicionarDia('MUNICIPAL');
+    const index = adicionarDia('MUNICIPAL', '2026-04-05');
+    await selecionarMunicipioViaGeo(index);
 
-    const municipio = component['form'].controls.diasNaoUteis.at(0).controls.codigoMunicipio;
-    municipio.setValue('');
+    expect(component['form'].valid).toBe(true);
+    component['salvar']();
 
-    expect(municipio.invalid).toBe(true);
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/calendarios-dias-uteis`);
+    expect(req.request.body.diasNaoUteis[0]).toMatchObject({
+      abrangencia: 'MUNICIPAL',
+      municipioIbge: '1504208',
+      municipioNome: 'Marabá',
+      municipioUf: 'PA',
+      uf: null,
+    });
+    req.flush('019f41cf-69fd-759a-ac6d-09acabc1b027');
+    await fixture.whenStable();
+
+    expect(TestBed.inject(Router).url).toBe('/calendario-dias-uteis');
+  });
+
+  it('impede o envio municipal enquanto não houver opção da Geo escolhida', () => {
+    component['form'].controls.versaoDataset.setValue('2026.1');
+    const index = adicionarDia('MUNICIPAL');
+
+    const grupo = component['form'].controls.diasNaoUteis.at(index);
+    expect(grupo.errors?.['snapshotMunicipal']).toBe(true);
+    expect(component['form'].invalid).toBe(true);
+
+    component['salvar']();
+
+    controller.expectNone(`${BASE}/api/configuracao/admin/calendarios-dias-uteis`);
+    expect(component['erroDoCampoDiasNaoUteis']('codigoMunicipio', index)).toBe(
+      'Selecione um município na busca.',
+    );
+  });
+
+  it('recusa snapshot cuja UF não corresponde ao prefixo do código IBGE', async () => {
+    component['form'].controls.versaoDataset.setValue('2026.1');
+    const index = adicionarDia('MUNICIPAL');
+    await selecionarMunicipioViaGeo(index);
+    const grupo = component['form'].controls.diasNaoUteis.at(index);
+    expect(grupo.errors).toBeNull();
+
+    grupo.controls.municipioUf.setValue('SP');
+
+    expect(grupo.errors?.['snapshotMunicipal']).toBe(true);
     expect(component['form'].invalid).toBe(true);
   });
 
-  it('rejeita código municipal cujo prefixo não corresponde a uma UF', () => {
-    component['form'].controls.versaoDataset.setValue('2026.1');
-    adicionarDia('MUNICIPAL');
+  it('descarta o snapshot inteiro quando a busca deixa de casar com o selecionado', async () => {
+    const index = adicionarDia('MUNICIPAL');
+    await selecionarMunicipioViaGeo(index);
+    const grupo = component['form'].controls.diasNaoUteis.at(index);
 
-    const municipio = component['form'].controls.diasNaoUteis.at(0).controls.codigoMunicipio;
-    municipio.setValue('9904208');
-    expect(municipio.invalid).toBe(true);
-
-    municipio.setValue('1504208');
-    expect(municipio.valid).toBe(true);
-  });
-
-  it('limpa os campos regionais ao mudar para abrangência nacional', () => {
-    adicionarDia('MUNICIPAL');
-    const grupo = component['form'].controls.diasNaoUteis.at(0);
-    grupo.controls.codigoMunicipio.setValue('1504208');
-
-    grupo.controls.abrangencia.setValue('NACIONAL');
-    component['mudaAbrangencia'](0);
+    component['buscarMunicipios'](index, 'Belé');
 
     expect(grupo.controls.codigoMunicipio.value).toBe('');
+    expect(grupo.controls.municipioNome.value).toBeNull();
+    expect(grupo.controls.municipioUf.value).toBeNull();
+    expect(component['municipioSelecionado'](index)).toBeNull();
+  });
+
+  it('descarta o snapshot ao trocar o estado usado na busca', async () => {
+    const index = adicionarDia('MUNICIPAL');
+    await selecionarMunicipioViaGeo(index);
+    const grupo = component['form'].controls.diasNaoUteis.at(index);
+
+    grupo.controls.uf.setValue('SP');
+    component['mudaUf'](index);
+
+    expect(grupo.controls.codigoMunicipio.value).toBe('');
+    expect(grupo.controls.municipioNome.value).toBeNull();
+    expect(grupo.controls.municipioUf.value).toBeNull();
+    expect(grupo.controls.buscaMunicipio.value).toBe('');
+  });
+
+  it('limpa os campos regionais ao mudar para abrangência nacional', async () => {
+    const index = adicionarDia('MUNICIPAL');
+    await selecionarMunicipioViaGeo(index);
+    const grupo = component['form'].controls.diasNaoUteis.at(index);
+
+    grupo.controls.abrangencia.setValue('NACIONAL');
+    component['mudaAbrangencia'](index);
+
+    expect(grupo.controls.codigoMunicipio.value).toBe('');
+    expect(grupo.controls.municipioNome.value).toBeNull();
+    expect(grupo.controls.municipioUf.value).toBeNull();
     expect(grupo.controls.uf.value).toBe('');
     expect(grupo.controls.buscaMunicipio.value).toBe('');
     expect(grupo.controls.codigoMunicipio.validator).toBeNull();
+    expect(grupo.errors).toBeNull();
   });
 
   it('pesquisa municípios pelo nome e pela UF usando a API Geo', async () => {
-    adicionarDia('MUNICIPAL');
-    const grupo = component['form'].controls.diasNaoUteis.at(0);
+    const index = adicionarDia('MUNICIPAL');
+    const grupo = component['form'].controls.diasNaoUteis.at(index);
 
-    component['buscarMunicipios'](0, 'Parauapebas');
+    component['buscarMunicipios'](index, PARAUAPEBAS.nome);
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const req = controller.expectOne((request) => request.url === `${BASE}/api/cidades`);
     expect(req.request.params.get('uf')).toBe('PA');
     expect(req.request.params.get('q')).toBe('Parauapebas');
     expect(req.request.params.get('limit')).toBe('20');
-    req.flush([
-      {
-        id: 'cidade-parauapebas',
-        codigoIbge: '1505536',
-        nome: 'Parauapebas',
-        uf: 'PA',
-        ddd: '94',
-      },
-    ]);
+    req.flush([{ id: 'cidade-parauapebas', ddd: '94', ...PARAUAPEBAS }]);
     fixture.detectChanges();
 
-    expect(component['estadoBuscaMunicipio'](0).opcoes).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ codigoIbge: '1505536', nome: 'Parauapebas', uf: 'PA' }),
-      ]),
+    expect(component['estadoBuscaMunicipio'](index).opcoes).toEqual(
+      expect.arrayContaining([expect.objectContaining(PARAUAPEBAS)]),
     );
-    grupo.controls.codigoMunicipio.setValue('1505536');
-    component['selecionarMunicipio'](0);
+
+    grupo.controls.codigoMunicipio.setValue(PARAUAPEBAS.codigoIbge);
+    component['selecionarMunicipio'](index);
+
     expect(grupo.controls.buscaMunicipio.value).toBe('Parauapebas');
+    expect(grupo.controls.municipioNome.value).toBe('Parauapebas');
+    expect(grupo.controls.municipioUf.value).toBe('PA');
   });
 
   it('envia nulo nos campos regionais que não se aplicam', () => {
@@ -152,24 +230,8 @@ describe('CalendarioDiasUteisNovoPage', async () => {
     expect(req.request.body.diasNaoUteis[0]).toMatchObject({
       data: '2026-09-07',
       municipioIbge: null,
-      uf: null,
-    });
-    req.flush(mockProblemDetails({ status: 422, code: 'uniplus.test.validation' }), {
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      headers: { 'Content-Type': 'application/problem+json' },
-    });
-  });
-
-  it('envia somente o código IBGE selecionado na abrangência municipal', () => {
-    component['form'].controls.versaoDataset.setValue('2026.1');
-    adicionarDia('MUNICIPAL');
-    component['salvar']();
-
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/calendarios-dias-uteis`);
-    expect(req.request.body.diasNaoUteis[0]).toMatchObject({
-      abrangencia: 'MUNICIPAL',
-      municipioIbge: '1504208',
+      municipioNome: null,
+      municipioUf: null,
       uf: null,
     });
     req.flush(mockProblemDetails({ status: 422, code: 'uniplus.test.validation' }), {
@@ -211,22 +273,20 @@ describe('CalendarioDiasUteisNovoPage', async () => {
     expect(component['form'].valid).toBe(true);
   });
 
-  it('associa erro de município à linha municipal com a mesma data', async () => {
+  it('associa o erro da referência de cidade à única linha municipal', async () => {
     component['form'].controls.versaoDataset.setValue('2026.1');
     adicionarDia('NACIONAL');
     const municipalIndex = adicionarDia('MUNICIPAL');
-    component['form'].controls.diasNaoUteis
-      .at(municipalIndex)
-      .controls.codigoMunicipio.setValue('1504208');
+    await selecionarMunicipioViaGeo(municipalIndex);
     component['salvar']();
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/calendarios-dias-uteis`);
     req.flush(
       mockProblemDetails({
         status: 422,
-        code: 'uniplus.configuracao.calendario_dias_uteis.municipio_ibge_formato_invalido',
-        title: 'Código IBGE inválido',
-        detail: 'Código IBGE inválido (data 2026-09-07)',
+        code: 'uniplus.cidade_referencia.uf_incoerente',
+        title: 'UF informada incompatível com o prefixo do código IBGE',
+        detail: "O prefixo do código IBGE ('15') corresponde à UF 'PA', incompatível com 'SP'.",
       }),
       {
         status: 422,
@@ -235,10 +295,11 @@ describe('CalendarioDiasUteisNovoPage', async () => {
       },
     );
     await Promise.resolve();
+
     const dias = component['form'].controls.diasNaoUteis;
     expect(dias.at(0).controls.codigoMunicipio.errors?.['backend']).toBeUndefined();
     expect(dias.at(municipalIndex).controls.codigoMunicipio.errors?.['backend']).toMatchObject({
-      code: 'uniplus.configuracao.calendario_dias_uteis.municipio_ibge_formato_invalido',
+      code: 'uniplus.cidade_referencia.uf_incoerente',
     });
   });
 

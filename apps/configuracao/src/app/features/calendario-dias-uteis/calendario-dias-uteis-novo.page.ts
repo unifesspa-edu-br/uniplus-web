@@ -33,12 +33,19 @@ type DiaNaoUtilFormGroupCampoNome = 'codigoMunicipio' | 'uf' | 'abrangencia' | '
 interface DiaNaoUtilFormGroup {
   uf: FormControl<string | null>;
   codigoMunicipio: FormControl<string | null>;
+  municipioNome: FormControl<string | null>;
+  municipioUf: FormControl<string | null>;
   buscaMunicipio: FormControl<string>;
   abrangencia: FormControl<string>;
   data: FormControl<string>;
   descricao: FormControl<string>;
 }
 
+/**
+ * Snapshot municipal da ADR-0090 tal como o formulário o mantém: código IBGE,
+ * nome e UF chegam juntos da API Geo e são gravados juntos — nenhum dos três
+ * nasce de digitação livre nem de constante do código.
+ */
 interface MunicipioOpcao {
   readonly codigoIbge: string;
   readonly nome: string;
@@ -64,19 +71,55 @@ interface CalendarioDiaUtilFormGroup {
 
 export const DATA_DUPLICADA_DATASET_CODE =
   'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset';
-export const MUNICIPIO_CODE_INVALID =
-  'uniplus.configuracao.calendario_dias_uteis.municipio_ibge_formato_invalido';
+/**
+ * Prefixo dos erros que o backend devolve ao validar a referência de cidade do
+ * Geo (`uniplus.cidade_referencia.*`, ADR-0090): código obrigatório/inválido,
+ * nome obrigatório/longo demais, UF obrigatória/incoerente com o prefixo. É
+ * prefixo, e não uma lista fechada, porque o registro cresce no backend.
+ */
+export const CIDADE_REFERENCIA_CODE_PREFIX = 'uniplus.cidade_referencia.';
 
 const CODIGO_MUNICIPIO_PATTERN = /^(?:1[1-7]|2[1-9]|3[1-35]|4[1-3]|5[0-3])\d{5}$/;
+/**
+ * Prefixo do código IBGE (dois primeiros dígitos) de cada UF — a mesma
+ * correspondência que `ReferenciaCidadeGeo` cobra no backend. Fica nesta página
+ * (chunk lazy) em vez do roster compartilhado, que é carregado no bundle
+ * inicial do painel.
+ */
+const PREFIXO_IBGE_POR_UF: Readonly<Record<string, string>> = {
+  RO: '11',
+  AC: '12',
+  AM: '13',
+  RR: '14',
+  PA: '15',
+  AP: '16',
+  TO: '17',
+  MA: '21',
+  PI: '22',
+  CE: '23',
+  RN: '24',
+  PB: '25',
+  PE: '26',
+  AL: '27',
+  SE: '28',
+  BA: '29',
+  MG: '31',
+  ES: '32',
+  RJ: '33',
+  SP: '35',
+  PR: '41',
+  SC: '42',
+  RS: '43',
+  MS: '50',
+  MT: '51',
+  GO: '52',
+  DF: '53',
+};
 const DATA_DUPLICADA_MESSAGE = 'Esta data está duplicada para a mesma abrangência e região.';
+const MUNICIPIO_OBRIGATORIO_MESSAGE = 'Selecione um município na busca.';
 const PARA_SIGLA = 'PA';
 const MUNICIPIOS_LIMIT = 20;
 const MUNICIPIO_BUSCA_DEBOUNCE_MS = 300;
-const MARABA: MunicipioOpcao = {
-  codigoIbge: '1504208',
-  nome: 'Marabá',
-  uf: PARA_SIGLA,
-};
 const MUNICIPIO_BUSCA_VAZIA: MunicipioBuscaState = {
   opcoes: [],
   carregando: false,
@@ -111,6 +154,28 @@ function chaveDuplicidade(grupo: FormGroup<DiaNaoUtilFormGroup>): string | null 
     return uf ? `${data}|${abrangencia}|${uf}` : null;
   }
   return `${data}|${abrangencia}`;
+}
+
+/**
+ * Exige, na linha municipal, o snapshot inteiro da opção escolhida na Geo:
+ * código IBGE de 7 dígitos, nome e UF cujo prefixo IBGE bate com o código. É a
+ * mesma coerência que `ReferenciaCidadeGeo.Validar` cobra no backend — validada
+ * aqui para que uma tripla incompleta não vire 422.
+ */
+function snapshotMunicipalCoerente(control: AbstractControl): ValidationErrors | null {
+  const grupo = control as FormGroup<DiaNaoUtilFormGroup>;
+  if (grupo.controls.abrangencia.value !== 'MUNICIPAL') {
+    return null;
+  }
+
+  const codigo = grupo.controls.codigoMunicipio.value?.trim() ?? '';
+  const nome = grupo.controls.municipioNome.value?.trim() ?? '';
+  const uf = grupo.controls.municipioUf.value?.trim().toUpperCase() ?? '';
+  if (!CODIGO_MUNICIPIO_PATTERN.test(codigo) || nome.length === 0) {
+    return { snapshotMunicipal: true };
+  }
+
+  return PREFIXO_IBGE_POR_UF[uf] === codigo.slice(0, 2) ? null : { snapshotMunicipal: true };
 }
 
 function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors | null {
@@ -666,14 +731,18 @@ export class CalendarioDiasUteisNovoPage {
     this.saving.set(true);
     const command: CriarCalendarioDiasUteisCommand = {
       versaoDataset: this.form.controls.versaoDataset.value.trim(),
-      diasNaoUteis: this.form.controls.diasNaoUteis.controls.map((control) => {
+      diasNaoUteis: this.form.controls.diasNaoUteis.controls.map((control, index) => {
         const abrangencia = control.controls.abrangencia.value;
+        // Snapshot da ADR-0090: os três campos saem juntos da opção da Geo e só
+        // existem em MUNICIPAL — o backend recusa qualquer um deles fora dela.
+        const municipio = abrangencia === 'MUNICIPAL' ? this.municipioSelecionado(index) : null;
         return {
           abrangencia,
           data: control.controls.data.value,
           uf: abrangencia === 'ESTADUAL' ? control.controls.uf.value || null : null,
-          municipioIbge:
-            abrangencia === 'MUNICIPAL' ? control.controls.codigoMunicipio.value || null : null,
+          municipioIbge: municipio?.codigoIbge ?? null,
+          municipioNome: municipio?.nome ?? null,
+          municipioUf: municipio?.uf ?? null,
           descricao: control.controls.descricao.value.trim(),
         };
       }),
@@ -697,32 +766,23 @@ export class CalendarioDiasUteisNovoPage {
       return;
     }
 
-    if (problem.status === 422 && problem.code === MUNICIPIO_CODE_INVALID) {
+    if (problem.status === 422 && problem.code?.startsWith(CIDADE_REFERENCIA_CODE_PREFIX)) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
-      const data = this.extrairData(problem);
-      if (data) {
-        const candidatos = this.diasNaoUteis.controls.filter(
-          (control) =>
-            control.controls.data.value === data &&
-            control.controls.abrangencia.value === 'MUNICIPAL',
-        );
-        const control =
-          candidatos.find(
-            (candidato) =>
-              !CODIGO_MUNICIPIO_PATTERN.test(candidato.controls.codigoMunicipio.value ?? ''),
-          ) ?? candidatos[0];
-        if (control && problem.detail) {
-          const message = problem.detail.replace(/\s*\(data \d{4}-\d{2}-\d{2}\)/, '');
-          const municipio = control.controls.codigoMunicipio;
-          municipio.setErrors({
-            ...municipio.errors,
-            backend: { code: problem.code, message },
-          });
-          municipio.markAsTouched();
-        }
-        return;
+      // O erro da referência de cidade não carrega a data no `detail`, então só
+      // dá para apontar a linha quando existe uma única municipal no dataset.
+      const municipais = this.diasNaoUteis.controls.filter(
+        (control) => control.controls.abrangencia.value === 'MUNICIPAL',
+      );
+      if (municipais.length === 1 && problem.detail) {
+        const municipio = municipais[0].controls.codigoMunicipio;
+        municipio.setErrors({
+          ...municipio.errors,
+          backend: { code: problem.code, message: problem.detail },
+        });
+        municipio.markAsTouched();
       }
+      return;
     }
 
     this.notifications.errorFromProblem(problem);
@@ -758,7 +818,8 @@ export class CalendarioDiasUteisNovoPage {
   }
 
   protected erroDoCampoDiasNaoUteis(nome: keyof DiaNaoUtilFormGroup, index: number): string | null {
-    const control = this.diasNaoUteis.controls[index].get(nome);
+    const grupo = this.diasNaoUteis.controls[index];
+    const control = grupo.get(nome);
     if (!control) {
       return null;
     }
@@ -768,6 +829,11 @@ export class CalendarioDiasUteisNovoPage {
     }
     if (nome === 'data' && this.linhaDuplicada(index)) {
       return DATA_DUPLICADA_MESSAGE;
+    }
+    // O snapshot incompleto é erro do grupo (nome e UF não têm campo próprio na
+    // tela), mas quem o resolve é a seleção no campo Município.
+    if (nome === 'codigoMunicipio' && grupo.errors?.['snapshotMunicipal']) {
+      return MUNICIPIO_OBRIGATORIO_MESSAGE;
     }
     if (control.errors === null) {
       return null;
@@ -812,26 +878,21 @@ export class CalendarioDiasUteisNovoPage {
 
     municipio.clearValidators();
     uf.clearValidators();
+    this.limparSnapshotMunicipal(control);
 
     if (abrangencia === 'MUNICIPAL') {
+      // A UF aqui é só o filtro da busca na Geo — não é persistida (o backend
+      // recusa `uf` fora de ESTADUAL); a UF do município vem no snapshot.
       uf.setValue(PARA_SIGLA);
-      municipio.setValue(MARABA.codigoIbge);
-      buscaMunicipio.setValue(MARABA.nome);
       uf.setValidators([Validators.required, Validators.pattern(/^[A-Z]{2}$/)]);
       municipio.setValidators([Validators.required, Validators.pattern(CODIGO_MUNICIPIO_PATTERN)]);
-      this.atualizarEstadoMunicipio(index, {
-        opcoes: [MARABA],
-        carregando: false,
-        erro: false,
-      });
+      this.atualizarEstadoMunicipio(index, MUNICIPIO_BUSCA_VAZIA);
     } else if (abrangencia === 'ESTADUAL') {
       uf.setValue(PARA_SIGLA);
-      municipio.reset('');
       buscaMunicipio.reset('');
       uf.setValidators([Validators.required, Validators.pattern(/^[A-Z]{2}$/)]);
       this.atualizarEstadoMunicipio(index, MUNICIPIO_BUSCA_VAZIA);
     } else {
-      municipio.reset('');
       uf.reset('');
       buscaMunicipio.reset('');
       this.atualizarEstadoMunicipio(index, MUNICIPIO_BUSCA_VAZIA);
@@ -841,25 +902,26 @@ export class CalendarioDiasUteisNovoPage {
     uf.updateValueAndValidity();
   }
 
+  /**
+   * Descarta a tripla inteira — código, nome e UF andam juntos, sob pena de
+   * sobrar um display cache de um município que não é mais o selecionado.
+   */
+  private limparSnapshotMunicipal(grupo: FormGroup<DiaNaoUtilFormGroup>): void {
+    grupo.controls.codigoMunicipio.reset('');
+    grupo.controls.municipioNome.reset(null);
+    grupo.controls.municipioUf.reset(null);
+  }
+
   protected mudaUf(index: number): void {
     const grupo = this.diasNaoUteis.at(index);
     if (!grupo || grupo.controls.abrangencia.value !== 'MUNICIPAL') {
       return;
     }
 
-    if (grupo.controls.uf.value === PARA_SIGLA) {
-      grupo.controls.codigoMunicipio.setValue(MARABA.codigoIbge);
-      grupo.controls.buscaMunicipio.setValue(MARABA.nome);
-      this.atualizarEstadoMunicipio(index, {
-        opcoes: [MARABA],
-        carregando: false,
-        erro: false,
-      });
-    } else {
-      grupo.controls.codigoMunicipio.reset('');
-      grupo.controls.buscaMunicipio.reset('');
-      this.atualizarEstadoMunicipio(index, MUNICIPIO_BUSCA_VAZIA);
-    }
+    // Trocar o estado da busca invalida o município escolhido no estado anterior.
+    this.limparSnapshotMunicipal(grupo);
+    grupo.controls.buscaMunicipio.reset('');
+    this.atualizarEstadoMunicipio(index, MUNICIPIO_BUSCA_VAZIA);
     grupo.controls.codigoMunicipio.updateValueAndValidity();
   }
 
@@ -877,7 +939,7 @@ export class CalendarioDiasUteisNovoPage {
       selecionado &&
       normalizado.localeCompare(selecionado.nome, 'pt-BR', { sensitivity: 'base' }) !== 0
     ) {
-      grupo.controls.codigoMunicipio.reset('');
+      this.limparSnapshotMunicipal(grupo);
     }
     if (normalizado.length < 2 || uf.length !== 2) {
       this.atualizarEstadoMunicipio(index, {
@@ -914,25 +976,39 @@ export class CalendarioDiasUteisNovoPage {
     this.buscaMunicipioRequests.next({ grupo, termo, uf });
   }
 
+  /**
+   * Grava a tripla da opção escolhida no `<select>` alimentado pela Geo. É o
+   * único ponto que escreve o snapshot: nome e UF nunca vêm do que foi digitado.
+   */
   protected selecionarMunicipio(index: number): void {
     const grupo = this.diasNaoUteis.at(index);
-    const selecionado = this.municipioSelecionado(index);
-    if (!grupo || !selecionado) {
+    if (!grupo) {
       return;
     }
-    grupo.controls.buscaMunicipio.setValue(selecionado.nome, { emitEvent: false });
+    const codigo = grupo.controls.codigoMunicipio.value;
+    const opcao = this.estadoBuscaMunicipio(index).opcoes.find(
+      (candidata) => candidata.codigoIbge === codigo,
+    );
+    if (!opcao) {
+      this.limparSnapshotMunicipal(grupo);
+      return;
+    }
+    grupo.controls.municipioNome.setValue(opcao.nome);
+    grupo.controls.municipioUf.setValue(opcao.uf);
+    grupo.controls.buscaMunicipio.setValue(opcao.nome, { emitEvent: false });
   }
 
   protected estadoBuscaMunicipio(index: number): MunicipioBuscaState {
     return this.estadosBuscaMunicipio()[index] ?? MUNICIPIO_BUSCA_VAZIA;
   }
 
+  /** Snapshot já gravado na linha — independe da lista de busca vigente. */
   protected municipioSelecionado(index: number): MunicipioOpcao | null {
     const grupo = this.diasNaoUteis.at(index);
-    const codigo = grupo?.controls.codigoMunicipio.value;
-    return (
-      this.estadoBuscaMunicipio(index).opcoes.find((opcao) => opcao.codigoIbge === codigo) ?? null
-    );
+    const codigoIbge = grupo?.controls.codigoMunicipio.value?.trim();
+    const nome = grupo?.controls.municipioNome.value?.trim();
+    const uf = grupo?.controls.municipioUf.value?.trim();
+    return codigoIbge && nome && uf ? { codigoIbge, nome, uf } : null;
   }
 
   protected buscaSemResultado(index: number): boolean {
@@ -965,9 +1041,7 @@ export class CalendarioDiasUteisNovoPage {
     }
 
     const state = this.estadoBuscaMunicipio(index);
-    const selecionado = state.opcoes.find(
-      (opcao) => opcao.codigoIbge === request.grupo.controls.codigoMunicipio.value,
-    );
+    const selecionado = this.municipioSelecionado(index);
     const opcoes: MunicipioOpcao[] = result.ok ? [...result.data] : [...state.opcoes];
     if (selecionado && !opcoes.some((opcao) => opcao.codigoIbge === selecionado.codigoIbge)) {
       opcoes.unshift(selecionado);
@@ -998,31 +1072,36 @@ export class CalendarioDiasUteisNovoPage {
   }
 
   private criaDiaNaoUtilFormGroup(): FormGroup<DiaNaoUtilFormGroup> {
-    return new FormGroup<DiaNaoUtilFormGroup>({
-      abrangencia: new FormControl('ESTADUAL', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-      codigoMunicipio: new FormControl('', {
-        nonNullable: false,
-        validators: [],
-      }),
-      buscaMunicipio: new FormControl('', {
-        nonNullable: true,
-      }),
-      uf: new FormControl(PARA_SIGLA, {
-        nonNullable: false,
-        validators: [Validators.required, Validators.pattern(/^[A-Z]{2}$/)],
-      }),
-      data: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
-      descricao: new FormControl('', {
-        nonNullable: true,
-        validators: [textoNormalizado(200)],
-      }),
-    });
+    return new FormGroup<DiaNaoUtilFormGroup>(
+      {
+        abrangencia: new FormControl('ESTADUAL', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+        codigoMunicipio: new FormControl('', {
+          nonNullable: false,
+          validators: [],
+        }),
+        municipioNome: new FormControl(null, { nonNullable: false }),
+        municipioUf: new FormControl(null, { nonNullable: false }),
+        buscaMunicipio: new FormControl('', {
+          nonNullable: true,
+        }),
+        uf: new FormControl(PARA_SIGLA, {
+          nonNullable: false,
+          validators: [Validators.required, Validators.pattern(/^[A-Z]{2}$/)],
+        }),
+        data: new FormControl('', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+        descricao: new FormControl('', {
+          nonNullable: true,
+          validators: [textoNormalizado(200)],
+        }),
+      },
+      { validators: [snapshotMunicipalCoerente] },
+    );
   }
 
   protected get diasNaoUteis(): FormArray<FormGroup<DiaNaoUtilFormGroup>> {
