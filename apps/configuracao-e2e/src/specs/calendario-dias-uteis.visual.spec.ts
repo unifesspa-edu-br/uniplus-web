@@ -72,32 +72,44 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await mockCalendarioApi(page);
   });
 
-  test('exibe a localidade legível sem consultar a Geo', async ({ page }, testInfo) => {
+  test('exibe a localidade legível no drawer sem consultar a Geo', async ({ page }, testInfo) => {
     const chamadasGeo = await rastrearChamadasGeo(page);
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', metadataTheme(testInfo));
     await expect(page.getByRole('heading', { name: 'Detalhes', level: 1 })).toBeVisible();
 
-    await expect(page.getByText('Marabá — PA', { exact: true })).toBeVisible();
-    await expect(page.getByText('Código IBGE: 1504208', { exact: true })).toBeVisible();
-    await expect(page.getByText('Pará — PA', { exact: true })).toBeVisible();
+    // Localidade é conteúdo do drawer (#525), não mais texto direto na página
+    // nem controle de formulário desabilitado.
+    await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
+    const drawerMunicipal = page.getByRole('dialog', { name: '5 de abril de 2026' });
+    await expect(drawerMunicipal).toBeVisible();
+    await expect(drawerMunicipal.getByText('Marabá — PA', { exact: true })).toBeVisible();
+    await expect(drawerMunicipal.getByText('Código IBGE: 1504208', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(drawerMunicipal).toBeHidden();
 
-    // Localidade é conteúdo, não controle desabilitado.
-    await expect(page.locator('output.field__readonly')).toHaveCount(2);
+    await page.getByRole('button', { name: /15 de agosto de 2026/ }).click();
+    const drawerEstadual = page.getByRole('dialog', { name: '15 de agosto de 2026' });
+    await expect(drawerEstadual).toBeVisible();
+    await expect(drawerEstadual.getByText('Pará — PA', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(drawerEstadual).toBeHidden();
 
     expect(chamadasGeo).toEqual([]);
 
-    await assertNoHorizontalOverflow(page);
     await testInfo.attach(`${testInfo.project.name}-calendario-detalhe`, {
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',
     });
 
     // 320 px é o piso de largura exigido pelo e-MAG/WCAG para reflow.
+    // A ausência de rolagem horizontal em 320 px, com o drawer aberto, é
+    // coberta em calendario-dias-uteis-mensal.visual.spec.ts (#525) —
+    // aqui bastaria duplicar a asserção sem cobertura adicional.
     await page.setViewportSize({ width: 320, height: 720 });
-    await expect(page.getByText('Marabá — PA', { exact: true })).toBeVisible();
-    await assertNoHorizontalOverflow(page);
+    await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
+    await expect(page.getByRole('dialog', { name: '5 de abril de 2026' })).toBeVisible();
     await testInfo.attach(`${testInfo.project.name}-calendario-detalhe-320`, {
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',
@@ -106,7 +118,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
 
   test('detalhe não tem violações serious/critical', async ({ page }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
-    await expect(page.getByText('Marabá — PA', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
 
     const resultado = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
@@ -148,14 +160,6 @@ async function rastrearChamadasGeo(page: Page): Promise<string[]> {
     });
   });
   return chamadas;
-}
-
-async function assertNoHorizontalOverflow(page: Page): Promise<void> {
-  const viewport = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
 }
 
 function metadataTheme(testInfo: TestInfo): VisualTheme {
