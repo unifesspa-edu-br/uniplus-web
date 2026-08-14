@@ -224,6 +224,12 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     expect(caixa?.x ?? -1).toBeGreaterThanOrEqual(0);
     expect((caixa?.x ?? 0) + (caixa?.width ?? 9999)).toBeLessThanOrEqual(320);
     await assertNoHorizontalOverflow(page);
+
+    // O título da ocorrência no drawer usa o mesmo texto sem espaço —
+    // precisa quebrar linha em vez de forçar rolagem horizontal do drawer.
+    await botaoDia.click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await assertNoHorizontalOverflow(page);
   });
 
   test('sem violações serious/critical, com o drawer fechado e aberto (CA-13)', async ({ page }) => {

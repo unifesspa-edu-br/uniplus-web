@@ -346,6 +346,7 @@ const DIAS_SEMANA = [
       margin: 0 0 var(--space-2);
       font-size: var(--text-base);
       color: var(--text-heading);
+      overflow-wrap: anywhere;
     }
 
     .cfg-calendario-mensal__ocorrencia dl {
