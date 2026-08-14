@@ -75,14 +75,20 @@ function isValidGregorianDate(year: number, month: number, day: number): boolean
 /**
  * Parse uma string `YYYY-MM-DD` (date-only, sem hora/fuso) para `Date`.
  *
- * Constrói a data com os componentes locais (`new Date(ano, mes - 1, dia)`),
- * nunca `new Date(string)` — o construtor de string ISO date-only é
- * interpretado como meia-noite UTC pelo padrão ECMAScript e desloca um dia
- * para trás em fusos negativos (ex.: America/Belem, UTC-3) ao ser lido de
- * volta com métodos locais. Retorna `null` para entradas malformadas, fora
- * do intervalo de ano do domínio Uni+ ([1900, 2100]) ou que representem data
- * de calendário inexistente (ex.: 2026-02-30, 2026-04-31, 2026-02-29 em ano
- * não bissexto).
+ * Constrói a data com `Date.UTC(ano, mes - 1, dia)`, nunca `new Date(string)`
+ * nem componentes locais. A validação por aritmética já garante que
+ * ano/mês/dia formam um calendário gregoriano real, mas o `Date` retornado
+ * ainda precisaria ser lido com getters locais em algum ponto — e alguns
+ * fusos *suprimem* um dia civil numa transição de offset (ex.: `Pacific/Apia`
+ * pulou 2011-12-30 ao cruzar a linha internacional de data): construir com
+ * componentes locais nesse fuso normalizaria silenciosamente a data validada
+ * para outro dia. UTC nunca pula dia civil, então é a única linha do tempo
+ * segura para representar essa data já validada — quem consome o retorno
+ * deve ler com métodos `getUTC*`/`toLocaleDateString(..., { timeZone: 'UTC' })`,
+ * nunca os locais. Retorna `null` para entradas malformadas, fora do
+ * intervalo de ano do domínio Uni+ ([1900, 2100]) ou que representem data de
+ * calendário inexistente (ex.: 2026-02-30, 2026-04-31, 2026-02-29 em ano não
+ * bissexto).
  */
 export function parseIsoDate(dateStr: string): Date | null {
   const match = ISO_DATE_FORMAT_REGEX.exec(dateStr.trim());
@@ -96,18 +102,18 @@ export function parseIsoDate(dateStr: string): Date | null {
   if (year < MIN_YEAR || year > MAX_YEAR) return null;
   if (!isValidGregorianDate(year, month, day)) return null;
 
-  return new Date(year, month - 1, day);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 /** Formata `YYYY-MM-DD` (date-only) como `dd/MM/aaaa`. Retorna `'—'` para entrada inválida. */
 export function formatIsoDateBr(dateStr: string): string {
   const date = parseIsoDate(dateStr);
-  return date ? date.toLocaleDateString('pt-BR') : '—';
+  return date ? date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—';
 }
 
 /** Formata `YYYY-MM-DD` (date-only) por extenso, ex.: `5 de abril de 2026`. Retorna `'—'` para entrada inválida. */
 export function formatIsoDateLong(dateStr: string): string {
   const date = parseIsoDate(dateStr);
   if (!date) return '—';
-  return `${date.getDate()} de ${MESES_POR_EXTENSO[date.getMonth()]} de ${date.getFullYear()}`;
+  return `${date.getUTCDate()} de ${MESES_POR_EXTENSO[date.getUTCMonth()]} de ${date.getUTCFullYear()}`;
 }
