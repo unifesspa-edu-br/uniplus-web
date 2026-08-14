@@ -129,6 +129,18 @@ describe('Date Util', () => {
         expect(parseIsoDate('2101-01-01')).toEqual(new Date(Date.UTC(2101, 0, 1)));
       });
 
+      it('preserva ano de 1 a 3 dígitos sem o remapeamento legado de Date.UTC para 1900-1999', () => {
+        // Date.UTC(1, 5, 15) retornaria ano 1901, não 1 — exatamente o bug
+        // que motiva parseIsoDate usar setUTCFullYear em vez de Date.UTC.
+        const anoUm = parseIsoDate('0001-06-15');
+        expect(anoUm?.getUTCFullYear()).toBe(1);
+        expect(anoUm?.getUTCMonth()).toBe(5);
+        expect(anoUm?.getUTCDate()).toBe(15);
+
+        expect(parseIsoDate('0099-12-31')?.getUTCFullYear()).toBe(99);
+        expect(formatIsoDateLong('0001-06-15')).toBe('15 de junho de 1');
+      });
+
       it('componentes UTC lidos de volta batem com a entrada, em qualquer fuso do host', () => {
         const date = parseIsoDate('2026-04-05');
         expect(date?.getUTCFullYear()).toBe(2026);

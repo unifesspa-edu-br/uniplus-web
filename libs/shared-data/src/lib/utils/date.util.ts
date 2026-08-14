@@ -86,8 +86,13 @@ function isValidGregorianDate(year: number, month: number, day: number): boolean
 /**
  * Parse uma string `YYYY-MM-DD` (date-only, sem hora/fuso) para `Date`.
  *
- * Constrói a data com `Date.UTC(ano, mes - 1, dia)`, nunca `new Date(string)`
- * nem componentes locais. A validação por aritmética já garante que
+ * Constrói a data com `setUTCFullYear`, nunca `new Date(string)`, componentes
+ * locais, nem `Date.UTC(ano, ...)` direto — `Date.UTC`/o construtor numérico
+ * de `Date` remapeiam ano de 0-99 para 1900-1999 (regra legada do ECMAScript
+ * para compatibilidade com ano de 2 dígitos); sem o corte de ano abaixo,
+ * `Date.UTC(1, 0, 1)` silenciosamente viraria 1901. `setUTCFullYear` nunca
+ * aplica esse remapeamento, seja qual for o valor. A validação por
+ * aritmética já garante que
  * ano/mês/dia formam um calendário gregoriano real, mas o `Date` retornado
  * ainda precisaria ser lido com getters locais em algum ponto — e alguns
  * fusos *suprimem* um dia civil numa transição de offset (ex.: `Pacific/Apia`
@@ -118,7 +123,9 @@ export function parseIsoDate(dateStr: string): Date | null {
 
   if (!isValidGregorianDate(year, month, day)) return null;
 
-  return new Date(Date.UTC(year, month - 1, day));
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  return date;
 }
 
 /** Formata `YYYY-MM-DD` (date-only) como `dd/MM/aaaa`. Retorna `'—'` para entrada inválida. */

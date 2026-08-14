@@ -71,11 +71,19 @@ function construirMes(chave: string, porDiaDoMes: Map<number, DiaNaoUtilDto[]>):
   const ano = Number(anoStr);
   const mes = Number(mesStr);
 
-  // Date.UTC evita o mesmo risco de normalização silenciosa que motivou
+  // UTC evita o mesmo risco de normalização silenciosa que motivou
   // parseIsoDate: nenhuma linha do tempo além de UTC garante não pular dia
-  // civil numa transição de offset.
-  const primeiroDiaSemana = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay(); // 0=dom..6=sáb
-  const totalDias = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  // civil numa transição de offset. setUTCFullYear em vez de Date.UTC(ano, …)
+  // direto pelo mesmo motivo do parseIsoDate: Date.UTC remapeia ano 0-99
+  // para 1900-1999 (regra legada do ECMAScript), o que corromperia a grade
+  // de um calendário com ano de 1 a 3 dígitos.
+  const primeiroDia = new Date(0);
+  primeiroDia.setUTCFullYear(ano, mes - 1, 1);
+  const primeiroDiaSemana = primeiroDia.getUTCDay(); // 0=dom..6=sáb
+
+  const ultimoDiaDoMes = new Date(0);
+  ultimoDiaDoMes.setUTCFullYear(ano, mes, 0);
+  const totalDias = ultimoDiaDoMes.getUTCDate();
 
   const celulas: (CelulaCalendarioMensal | null)[] = [
     ...Array.from({ length: primeiroDiaSemana }, () => null),
