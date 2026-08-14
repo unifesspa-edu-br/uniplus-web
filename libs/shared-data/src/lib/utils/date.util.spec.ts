@@ -124,9 +124,9 @@ describe('Date Util', () => {
         expect(parseIsoDate('  2025-02-14  ')).toEqual(new Date(Date.UTC(2025, 1, 14)));
       });
 
-      it('limites do intervalo de ano são aceitos (1900 e 2100)', () => {
-        expect(parseIsoDate('1900-01-01')).toEqual(new Date(Date.UTC(1900, 0, 1)));
-        expect(parseIsoDate('2100-12-31')).toEqual(new Date(Date.UTC(2100, 11, 31)));
+      it('não limita por intervalo de ano — quem valida isso é a API na criação', () => {
+        expect(parseIsoDate('1899-01-01')).toEqual(new Date(Date.UTC(1899, 0, 1)));
+        expect(parseIsoDate('2101-01-01')).toEqual(new Date(Date.UTC(2101, 0, 1)));
       });
 
       it('componentes UTC lidos de volta batem com a entrada, em qualquer fuso do host', () => {
@@ -155,8 +155,6 @@ describe('Date Util', () => {
         { input: '2026-04-31', descricao: '31 de abril nunca existe' },
         { input: '2026-02-29', descricao: '29/02 em ano não bissexto' },
         { input: '1900-02-29', descricao: '29/02 em ano secular não bissexto (não múltiplo de 400)' },
-        { input: '1899-01-01', descricao: 'ano anterior a 1900 (fora do domínio Uni+)' },
-        { input: '2101-01-01', descricao: 'ano posterior a 2100 (fora do domínio Uni+)' },
       ])('retorna null para "$input" — $descricao', ({ input }) => {
         expect(parseIsoDate(input)).toBeNull();
       });
