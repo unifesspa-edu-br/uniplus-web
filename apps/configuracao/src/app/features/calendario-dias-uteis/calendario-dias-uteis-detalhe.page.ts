@@ -212,7 +212,9 @@ const DIAS_SEMANA = [
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
       gap: var(--space-6);
-      align-items: start;
+      /* stretch (padrão do grid) em vez de start: meses com menos semanas
+         esticam para a altura do mais alto da mesma linha, alinhando as
+         bordas inferiores dos cards em vez de deixá-las escalonadas. */
     }
 
     .cfg-calendario-mensal {
