@@ -185,6 +185,45 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
+  test('mouse sair do botão que continua focado não esconde a prévia (CA-06)', async ({ page }) => {
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+
+    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const previewDoBotao = botaoDia.locator('.cfg-calendario-mensal__preview');
+
+    await botaoDia.focus();
+    await botaoDia.hover();
+    await expect(previewDoBotao).toBeVisible();
+
+    // Mouse sai do botão que continua com foco de teclado: sem o guard, o
+    // mouseleave incondicional esconderia a prévia mesmo com o foco ali, e
+    // só voltaria se o usuário tabulasse para longe e de volta.
+    await page.mouse.move(0, 0);
+    await expect(botaoDia).toBeFocused();
+    await expect(previewDoBotao).toBeVisible();
+
+    // Escape ainda dispensa normalmente, sem depender do guard.
+    await page.keyboard.press('Escape');
+    await expect(previewDoBotao).toBeHidden();
+  });
+
+  test('foco sair do botão que o mouse ainda ocupa não esconde a prévia (CA-06)', async ({ page }) => {
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+
+    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const previewDoBotao = botaoDia.locator('.cfg-calendario-mensal__preview');
+
+    await botaoDia.hover();
+    await botaoDia.focus();
+    await expect(previewDoBotao).toBeVisible();
+
+    // Foco sai para um elemento sem handler de prévia própria, mas o mouse
+    // continua sobre o botão original: sem o guard, o blur incondicional
+    // esconderia a prévia mesmo com o cursor ali.
+    await page.getByRole('link', { name: 'Voltar à lista' }).focus();
+    await expect(previewDoBotao).toBeVisible();
+  });
+
   test('320 px sem rolagem horizontal, inclusive com a prévia aberta (CA-12)', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 320, height: 720 });
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
