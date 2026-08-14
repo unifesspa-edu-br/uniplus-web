@@ -53,22 +53,36 @@ describe('Date Util', () => {
   describe('parseDate()', () => {
     describe('entradas válidas', () => {
       it.each([
-        { input: '14/02/2025', expected: new Date(2025, 1, 14), descricao: 'dia/mês com 2 dígitos' },
-        { input: '01/01/2026', expected: new Date(2026, 0, 1), descricao: 'primeiro do ano' },
-        { input: '31/12/2026', expected: new Date(2026, 11, 31), descricao: 'último do ano' },
-        { input: '29/02/2024', expected: new Date(2024, 1, 29), descricao: 'ano bissexto' },
-        { input: '1/2/2025', expected: new Date(2025, 1, 1), descricao: 'dia/mês com 1 dígito' },
+        { input: '14/02/2025', expected: new Date(Date.UTC(2025, 1, 14)), descricao: 'dia/mês com 2 dígitos' },
+        { input: '01/01/2026', expected: new Date(Date.UTC(2026, 0, 1)), descricao: 'primeiro do ano' },
+        { input: '31/12/2026', expected: new Date(Date.UTC(2026, 11, 31)), descricao: 'último do ano' },
+        { input: '29/02/2024', expected: new Date(Date.UTC(2024, 1, 29)), descricao: 'ano bissexto' },
+        { input: '1/2/2025', expected: new Date(Date.UTC(2025, 1, 1)), descricao: 'dia/mês com 1 dígito' },
       ])('parseia "$input" — $descricao', ({ input, expected }) => {
         expect(parseDate(input)).toEqual(expected);
       });
 
       it('tolera espaços nas bordas', () => {
-        expect(parseDate('  14/02/2025  ')).toEqual(new Date(2025, 1, 14));
+        expect(parseDate('  14/02/2025  ')).toEqual(new Date(Date.UTC(2025, 1, 14)));
       });
 
       it('limites do intervalo de ano são aceitos (1900 e 2100)', () => {
-        expect(parseDate('01/01/1900')).toEqual(new Date(1900, 0, 1));
-        expect(parseDate('31/12/2100')).toEqual(new Date(2100, 11, 31));
+        expect(parseDate('01/01/1900')).toEqual(new Date(Date.UTC(1900, 0, 1)));
+        expect(parseDate('31/12/2100')).toEqual(new Date(Date.UTC(2100, 11, 31)));
+      });
+
+      it('preserva o dia civil exato sob TZ=Pacific/Apia (mesmo risco de normalização do parseIsoDate)', () => {
+        const TZ_ORIGINAL = process.env['TZ'];
+        try {
+          process.env['TZ'] = 'Pacific/Apia';
+          const date = parseDate('30/12/2011');
+          expect(date?.getUTCFullYear()).toBe(2011);
+          expect(date?.getUTCMonth()).toBe(11);
+          expect(date?.getUTCDate()).toBe(30);
+        } finally {
+          if (TZ_ORIGINAL === undefined) delete process.env['TZ'];
+          else process.env['TZ'] = TZ_ORIGINAL;
+        }
       });
     });
 

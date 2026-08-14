@@ -28,9 +28,14 @@ export function formatDateTimeBr(date: Date | string): string {
 }
 
 /**
- * Parse uma string no formato `dd/mm/yyyy` para `Date`.
+ * Parse uma string no formato `dd/mm/yyyy` (date-only, sem hora) para `Date`.
  *
- * Tolera espaços nas bordas. Aceita dia/mês com 1 ou 2 dígitos. Retorna
+ * Tolera espaços nas bordas. Aceita dia/mês com 1 ou 2 dígitos. Constrói a
+ * data com `Date.UTC(ano, mes - 1, dia)` — como `parseIsoDate`, nunca com
+ * componentes locais, porque alguns fusos suprimem um dia civil numa
+ * transição de offset e normalizariam silenciosamente a data já validada
+ * para outra. Quem consome o retorno deve ler com métodos `getUTC*`/
+ * `toLocaleDateString(..., { timeZone: 'UTC' })`, nunca os locais. Retorna
  * `null` para entradas que:
  * - não casem com o formato esperado (separador, dígitos, ano com 4 dígitos);
  * - tenham ano fora do intervalo permitido pelo domínio Uni+ ([1900, 2100]);
@@ -49,7 +54,7 @@ export function parseDate(dateStr: string): Date | null {
   if (year < MIN_YEAR || year > MAX_YEAR) return null;
   if (!isValidGregorianDate(year, month, day)) return null;
 
-  return new Date(year, month - 1, day);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 const DIAS_POR_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
