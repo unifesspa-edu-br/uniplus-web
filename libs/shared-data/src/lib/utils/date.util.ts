@@ -1,6 +1,21 @@
 const DATE_FORMAT_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+const ISO_DATE_FORMAT_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MIN_YEAR = 1900;
 const MAX_YEAR = 2100;
+const MESES_POR_EXTENSO = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+] as const;
 
 export function formatDateBr(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -32,15 +47,67 @@ export function parseDate(dateStr: string): Date | null {
   const year = Number(yearStr);
 
   if (year < MIN_YEAR || year > MAX_YEAR) return null;
+  if (!isValidGregorianDate(year, month, day)) return null;
 
-  const date = new Date(year, month - 1, day);
-  return isExactCalendarDate(date, day, month, year) ? date : null;
+  return new Date(year, month - 1, day);
 }
 
-function isExactCalendarDate(date: Date, day: number, month: number, year: number): boolean {
-  return (
-    date.getDate() === day &&
-    date.getMonth() === month - 1 &&
-    date.getFullYear() === year
-  );
+const DIAS_POR_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function isBissexto(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/**
+ * Valida ano/mês/dia por aritmética pura de calendário gregoriano — sem
+ * construir nem ler `Date`. Um round-trip via `new Date(...)` mais getters
+ * locais (a abordagem anterior) falha em fusos que suprimem um dia civil
+ * numa transição de offset (ex.: `Pacific/Apia` pulou 2011-12-30 ao cruzar
+ * a linha internacional de data): a validação rejeitaria uma data
+ * gregoriana real dependendo do fuso do processo que a executa.
+ */
+function isValidGregorianDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12) return false;
+  const diasNoMes = month === 2 && isBissexto(year) ? 29 : DIAS_POR_MES[month - 1];
+  return day >= 1 && day <= diasNoMes;
+}
+
+/**
+ * Parse uma string `YYYY-MM-DD` (date-only, sem hora/fuso) para `Date`.
+ *
+ * Constrói a data com os componentes locais (`new Date(ano, mes - 1, dia)`),
+ * nunca `new Date(string)` — o construtor de string ISO date-only é
+ * interpretado como meia-noite UTC pelo padrão ECMAScript e desloca um dia
+ * para trás em fusos negativos (ex.: America/Belem, UTC-3) ao ser lido de
+ * volta com métodos locais. Retorna `null` para entradas malformadas, fora
+ * do intervalo de ano do domínio Uni+ ([1900, 2100]) ou que representem data
+ * de calendário inexistente (ex.: 2026-02-30, 2026-04-31, 2026-02-29 em ano
+ * não bissexto).
+ */
+export function parseIsoDate(dateStr: string): Date | null {
+  const match = ISO_DATE_FORMAT_REGEX.exec(dateStr.trim());
+  if (!match) return null;
+
+  const [, yearStr, monthStr, dayStr] = match;
+  const year = Number(yearStr);
+  const month = Number(monthStr); // 1-based no input
+  const day = Number(dayStr);
+
+  if (year < MIN_YEAR || year > MAX_YEAR) return null;
+  if (!isValidGregorianDate(year, month, day)) return null;
+
+  return new Date(year, month - 1, day);
+}
+
+/** Formata `YYYY-MM-DD` (date-only) como `dd/MM/aaaa`. Retorna `'—'` para entrada inválida. */
+export function formatIsoDateBr(dateStr: string): string {
+  const date = parseIsoDate(dateStr);
+  return date ? date.toLocaleDateString('pt-BR') : '—';
+}
+
+/** Formata `YYYY-MM-DD` (date-only) por extenso, ex.: `5 de abril de 2026`. Retorna `'—'` para entrada inválida. */
+export function formatIsoDateLong(dateStr: string): string {
+  const date = parseIsoDate(dateStr);
+  if (!date) return '—';
+  return `${date.getDate()} de ${MESES_POR_EXTENSO[date.getMonth()]} de ${date.getFullYear()}`;
 }

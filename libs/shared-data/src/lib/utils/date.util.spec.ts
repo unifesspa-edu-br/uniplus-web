@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { formatDateBr, formatDateTimeBr, parseDate } from './date.util';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  formatDateBr,
+  formatDateTimeBr,
+  formatIsoDateBr,
+  formatIsoDateLong,
+  parseDate,
+  parseIsoDate,
+} from './date.util';
 
 describe('Date Util', () => {
   const VALID_RAW_DATE = '2026-02-14T12:00:00';
@@ -88,6 +95,99 @@ describe('Date Util', () => {
       ])('retorna null para "$input" — $descricao', ({ input }) => {
         expect(parseDate(input)).toBeNull();
       });
+    });
+  });
+
+  describe('parseIsoDate()', () => {
+    describe('entradas válidas', () => {
+      it.each([
+        { input: '2025-02-14', expected: new Date(2025, 1, 14), descricao: 'data comum' },
+        { input: '2026-01-01', expected: new Date(2026, 0, 1), descricao: 'primeiro do ano' },
+        { input: '2026-12-31', expected: new Date(2026, 11, 31), descricao: 'último do ano' },
+        { input: '2028-02-29', expected: new Date(2028, 1, 29), descricao: 'ano bissexto' },
+        { input: '2000-02-29', expected: new Date(2000, 1, 29), descricao: 'ano secular bissexto (múltiplo de 400)' },
+      ])('parseia "$input" — $descricao', ({ input, expected }) => {
+        expect(parseIsoDate(input)).toEqual(expected);
+      });
+
+      it('tolera espaços nas bordas', () => {
+        expect(parseIsoDate('  2025-02-14  ')).toEqual(new Date(2025, 1, 14));
+      });
+
+      it('limites do intervalo de ano são aceitos (1900 e 2100)', () => {
+        expect(parseIsoDate('1900-01-01')).toEqual(new Date(1900, 0, 1));
+        expect(parseIsoDate('2100-12-31')).toEqual(new Date(2100, 11, 31));
+      });
+
+      it('componentes locais lidos de volta batem com a entrada, em qualquer fuso do host', () => {
+        const date = parseIsoDate('2026-04-05');
+        expect(date?.getFullYear()).toBe(2026);
+        expect(date?.getMonth()).toBe(3);
+        expect(date?.getDate()).toBe(5);
+      });
+    });
+
+    describe('entradas inválidas (retorna null)', () => {
+      it.each([
+        { input: '', descricao: 'string vazia' },
+        { input: '   ', descricao: 'apenas espaços' },
+        { input: '2026/02/14', descricao: 'separador diferente de "-"' },
+        { input: '14-02-2026', descricao: 'ordem dd-mm-yyyy em vez de yyyy-mm-dd' },
+        { input: '2026-02-14T00:00:00', descricao: 'com componente de hora' },
+        { input: '2026-14-02', descricao: 'mês 14 fora do intervalo' },
+        { input: '2026-00-01', descricao: 'mês 0 fora do intervalo' },
+        { input: '2026-13-01', descricao: 'mês 13 fora do intervalo' },
+        { input: '2026-01-32', descricao: 'dia 32 fora do intervalo' },
+        { input: '2026-01-00', descricao: 'dia 0 fora do intervalo' },
+        { input: '26-01-01', descricao: 'ano com 2 dígitos' },
+        { input: 'cccc-bb-aa', descricao: 'caracteres não-numéricos' },
+        { input: '2026-02-30', descricao: '30 de fevereiro nunca existe' },
+        { input: '2026-04-31', descricao: '31 de abril nunca existe' },
+        { input: '2026-02-29', descricao: '29/02 em ano não bissexto' },
+        { input: '1900-02-29', descricao: '29/02 em ano secular não bissexto (não múltiplo de 400)' },
+        { input: '1899-01-01', descricao: 'ano anterior a 1900 (fora do domínio Uni+)' },
+        { input: '2101-01-01', descricao: 'ano posterior a 2100 (fora do domínio Uni+)' },
+      ])('retorna null para "$input" — $descricao', ({ input }) => {
+        expect(parseIsoDate(input)).toBeNull();
+      });
+    });
+
+    describe('validação independe do fuso do processo', () => {
+      const TZ_ORIGINAL = process.env['TZ'];
+
+      afterEach(() => {
+        if (TZ_ORIGINAL === undefined) delete process.env['TZ'];
+        else process.env['TZ'] = TZ_ORIGINAL;
+      });
+
+      it('não rejeita 2011-12-30 sob TZ=Pacific/Apia (fuso que suprimiu esse dia civil ao mudar de offset)', () => {
+        process.env['TZ'] = 'Pacific/Apia';
+        expect(parseIsoDate('2011-12-30')).not.toBeNull();
+      });
+    });
+  });
+
+  describe('formatIsoDateBr()', () => {
+    it('formata uma data date-only para dd/MM/aaaa', () => {
+      expect(formatIsoDateBr('2026-04-05')).toBe('05/04/2026');
+    });
+
+    it('retorna "—" para entrada inválida', () => {
+      expect(formatIsoDateBr('2026-02-30')).toBe(PLACEHOLDER_DATA_INVALIDA);
+    });
+  });
+
+  describe('formatIsoDateLong()', () => {
+    it('formata por extenso sem zero à esquerda no dia', () => {
+      expect(formatIsoDateLong('2026-04-05')).toBe('5 de abril de 2026');
+    });
+
+    it('formata o exemplo canônico da issue #525', () => {
+      expect(formatIsoDateLong('2027-12-25')).toBe('25 de dezembro de 2027');
+    });
+
+    it('retorna "—" para entrada inválida', () => {
+      expect(formatIsoDateLong('2026-04-31')).toBe(PLACEHOLDER_DATA_INVALIDA);
     });
   });
 });

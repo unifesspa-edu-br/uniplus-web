@@ -33,6 +33,7 @@ const ENTRYPOINTS = {
   '@uniplus/shared-data/ingresso': 'libs/shared-data/ingresso',
   '@uniplus/shared-data/organizacao': 'libs/shared-data/organizacao',
   '@uniplus/shared-data/selecao': 'libs/shared-data/selecao',
+  '@uniplus/shared-data/utils': 'libs/shared-data/utils',
   '@uniplus/shared-core/dom': 'libs/shared-core/dom',
   '@uniplus/shared-core/http': 'libs/shared-core/http',
   '@uniplus/shared-core/interceptors': 'libs/shared-core/interceptors',
