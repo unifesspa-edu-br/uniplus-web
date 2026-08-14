@@ -1,10 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import {
-  DOC_ETAPAS,
-  DOCUMENTO_GRUPOS,
-  MODALIDADES_CANONICAS,
-  STEP_LABELS,
-} from './processo-seletivo.data';
+import { DOC_ETAPAS, DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.data';
 import { DocumentoConfig, EtapaEdital, StepStatus, WizardDraft } from './processo-seletivo.models';
 
 function initialDocumentos(): Record<string, DocumentoConfig> {
@@ -15,7 +10,9 @@ function initialDocumentos(): Record<string, DocumentoConfig> {
         included: false,
         todasEtapas: true,
         etapas: DOC_ETAPAS.map((item) => item.cod),
-        modalidades: [...MODALIDADES_CANONICAS],
+        // Documentos acompanham a seleção de modalidades do passo 3 —
+        // preenchidos em `sincronizarModalidades` conforme o operador marca.
+        modalidades: [],
         modalidadesRecortadas: false,
       },
     ]),

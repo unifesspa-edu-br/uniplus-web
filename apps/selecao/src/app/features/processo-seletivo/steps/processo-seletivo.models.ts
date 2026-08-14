@@ -1,4 +1,4 @@
-import { ModalidadeConcorrencia, OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
 
@@ -121,7 +121,8 @@ export interface DocumentoConfig {
   included: boolean;
   todasEtapas: boolean;
   etapas: string[];
-  modalidades: ModalidadeConcorrencia[];
+  /** Código do contrato — a API é a fonte de verdade do vocabulário. */
+  modalidades: string[];
   /**
    * `false` enquanto o documento acompanha as modalidades aceitas pelo
    * processo; `true` depois que o operador recorta a lista no passo 10.
@@ -195,7 +196,8 @@ export interface WizardDraft {
     uploads: UploadItem[];
   };
   modalidades: {
-    selected: ModalidadeConcorrencia[];
+    /** Código do contrato — a API é a fonte de verdade do vocabulário. */
+    selected: string[];
     concorrenciaDupla: boolean;
   };
   vagas: {
@@ -211,7 +213,8 @@ export interface WizardDraft {
     tipo: string;
     valor: number | null;
     criterio: string;
-    modalidades: ModalidadeConcorrencia[];
+    /** Código do contrato — a API é a fonte de verdade do vocabulário. */
+    modalidades: string[];
   };
   desempate: number[];
   eliminacao: {
