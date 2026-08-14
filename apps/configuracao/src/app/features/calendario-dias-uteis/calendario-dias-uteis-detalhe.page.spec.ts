@@ -268,9 +268,12 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   it('reseta o drawer ao trocar de rota :id sem passar pela lista (reaproveitamento de componente pelo Router)', async () => {
     await carregar([DIA_MUNICIPAL]);
 
-    botaoDoDia(DIA_MUNICIPAL.data).click();
+    const botao = botaoDoDia(DIA_MUNICIPAL.data);
+    botao.click();
+    fixture.componentInstance.mostrarPreview(DIA_MUNICIPAL.data);
     fixture.detectChanges();
     expect(fixture.componentInstance.drawerVisivel()).toBe(true);
+    expect(fixture.componentInstance.diaEmPreview()).toBe(DIA_MUNICIPAL.data);
 
     const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b999';
     routeParams$.next({ id: OUTRO_ID });
@@ -278,6 +281,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
 
     expect(fixture.componentInstance.drawerVisivel()).toBe(false);
     expect(fixture.componentInstance.diaSelecionado()).toBeNull();
+    expect(fixture.componentInstance.diaEmPreview()).toBeNull();
 
     controller.expectOne(`${BASE}/api/configuracao/calendarios-dias-uteis/${OUTRO_ID}`).flush({
       id: OUTRO_ID,

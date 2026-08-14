@@ -391,9 +391,13 @@ export class CalendarioDiasUteisDetalhePage {
           // O Angular Router reaproveita esta instância ao navegar entre duas
           // rotas :id sem passar pela lista — sem isto, o drawer reabriria
           // sozinho com o dia selecionado do calendário anterior assim que o
-          // novo carregasse.
+          // novo carregasse, e a prévia reapareceria sem hover/foco se o novo
+          // calendário tivesse feriado na mesma data (comum em datas
+          // nacionais), sem o Escape do botão disponível para dispensá-la
+          // porque o foco já se perdeu com a grade antiga.
           this.drawerVisivel.set(false);
           this.diaSelecionado.set(null);
+          this.diaEmPreview.set(null);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
