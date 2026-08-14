@@ -105,9 +105,9 @@ const DIAS_SEMANA = [
                               [attr.aria-label]="ariaLabelDia(celula)"
                               (click)="abrirDrawer(celula)"
                               (mouseenter)="mostrarPreview(celula.data)"
-                              (mouseleave)="ocultarPreview()"
+                              (mouseleave)="ocultarPreviewSeSemFoco($event)"
                               (focus)="mostrarPreview(celula.data)"
-                              (blur)="ocultarPreview()"
+                              (blur)="ocultarPreviewSeSemHover($event)"
                               (keydown.escape)="ocultarPreview()"
                             >
                               <span aria-hidden="true">{{ celula.dia }}</span>
@@ -465,6 +465,22 @@ export class CalendarioDiasUteisDetalhePage {
 
   protected ocultarPreview(): void {
     this.diaEmPreview.set(null);
+  }
+
+  // Mouse sai do botão que segue com foco de teclado (cursor pousado nele
+  // ao tabular, ou o usuário usa mouse e teclado juntos): sem este guard, a
+  // prévia some e só volta se o usuário tabular para longe e de volta.
+  protected ocultarPreviewSeSemFoco(event: MouseEvent): void {
+    if (document.activeElement !== event.currentTarget) {
+      this.ocultarPreview();
+    }
+  }
+
+  protected ocultarPreviewSeSemHover(event: FocusEvent): void {
+    const alvo = event.target as HTMLElement;
+    if (!alvo.matches(':hover')) {
+      this.ocultarPreview();
+    }
   }
 
   protected abrirDrawer(celula: CelulaCalendarioMensal): void {
