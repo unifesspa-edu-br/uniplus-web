@@ -11,8 +11,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import { IniciarUploadDocumentoEditalDto, OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import {
   OrigemCandidatosSelecionada,
   StepValidation,
@@ -28,6 +30,9 @@ interface UnidadeOption {
   readonly id: string;
   readonly rotulo: string;
 }
+
+/** Janela do seletor de municípios, igual à do calendário de dias úteis. */
+const MUNICIPIOS_LIMIT = 20;
 
 /**
  * Rótulos curtos de propósito: em 320 px, a largura intrínseca da opção mais
@@ -52,6 +57,7 @@ export class Step02IdentificacaoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly unidadesApi = inject(UnidadesApi);
+  private readonly geo = inject(GeoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -61,6 +67,12 @@ export class Step02IdentificacaoComponent {
   /** Mensagem de recusa do anexo, antes de qualquer requisição. `null` = sem erro. */
   readonly uploadError = signal<string | null>(null);
   readonly origens = ORIGENS_CANDIDATOS;
+  /** Resultado corrente da busca de município na Geo. */
+  readonly municipios = signal<readonly CidadeResumoDto[]>([]);
+  readonly municipiosCarregando = signal(false);
+  readonly municipiosErro = signal<string | null>(null);
+  /** Termo digitado no seletor; não é persistido no rascunho. */
+  readonly buscaMunicipio = signal('');
 
   readonly unidades = signal<readonly UnidadeOption[]>([]);
   readonly unidadesCarregando = signal(true);
@@ -119,6 +131,47 @@ export class Step02IdentificacaoComponent {
       value = null; // input numérico vazio
     }
     this.store.patchObjectSection('identificacao', { [field]: value });
+  }
+
+  /** Grava o trio inteiro vindo da opção escolhida — nunca campo a campo. */
+  selecionarLocalidade(localidade: LocalidadeSelecionada): void {
+    this.store.patchObjectSection('identificacao', { localidade });
+    this.buscaMunicipio.set('');
+    this.municipios.set([]);
+  }
+
+  limparLocalidade(): void {
+    this.store.patchObjectSection('identificacao', { localidade: null });
+  }
+
+  buscarMunicipios(termo: string): void {
+    this.buscaMunicipio.set(termo);
+    const busca = termo.trim();
+    if (busca.length < 3) {
+      this.municipios.set([]);
+      this.municipiosErro.set(null);
+      return;
+    }
+
+    this.municipiosCarregando.set(true);
+    this.municipiosErro.set(null);
+    this.geo
+      .listarCidades({ q: busca, limit: MUNICIPIOS_LIMIT })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        // Resposta de busca anterior chegando depois da atual: descartar, senão a
+        // lista exibiria resultado de um termo que o operador já trocou.
+        if (this.buscaMunicipio().trim() !== busca) {
+          return;
+        }
+        this.municipiosCarregando.set(false);
+        if (!isApiOk(result)) {
+          this.municipios.set([]);
+          this.municipiosErro.set(this.problemI18n.resolve(result.problem).title);
+          return;
+        }
+        this.municipios.set(result.data);
+      });
   }
 
   carregarUnidades(): void {
@@ -317,6 +370,9 @@ export class Step02IdentificacaoComponent {
         tipoProcessoOrigemId,
         origemCandidatos: identificacao.origemCandidatos as OrigemCandidatos,
         unidadeAdministradoraOrigemId: identificacao.unidadeAdministradoraId,
+        localidadeCodigoIbge: identificacao.localidade?.codigoIbge ?? null,
+        localidadeNome: identificacao.localidade?.nome ?? null,
+        localidadeUf: identificacao.localidade?.uf ?? null,
       });
 
       if (!resultado.ok) {
@@ -345,6 +401,7 @@ export class Step02IdentificacaoComponent {
     if (!identificacao.nome.trim()) faltando.push('nome do processo seletivo');
     if (!identificacao.unidadeAdministradoraId) faltando.push('unidade administradora');
     if (!identificacao.origemCandidatos) faltando.push('origem dos candidatos');
+    if (identificacao.localidade === null) faltando.push('município que rege os prazos');
     return faltando;
   }
 
@@ -525,6 +582,10 @@ export class Step02IdentificacaoComponent {
     if (!id.origemCandidatos) {
       messages.push('Informe a origem dos candidatos.');
       invalid.add('origemCandidatos');
+    }
+    if (id.localidade === null) {
+      messages.push('Informe o município cujo calendário rege os prazos do processo.');
+      invalid.add('localidade');
     }
     const anexo = id.uploads[0];
     if (anexo === undefined) {

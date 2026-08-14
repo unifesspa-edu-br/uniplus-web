@@ -150,6 +150,18 @@ export interface AtendimentoRecurso {
   ext?: boolean;
 }
 
+/**
+ * Snapshot da cidade escolhida no seletor da Geo. Os três campos viajam juntos
+ * porque o backend valida a coerência do trio (sete dígitos, prefixo compatível
+ * com a UF, nome não vazio); `nome` e `uf` são cache de exibição e não entram em
+ * cálculo de prazo.
+ */
+export interface LocalidadeSelecionada {
+  readonly codigoIbge: string;
+  readonly nome: string;
+  readonly uf: string;
+}
+
 export interface WizardDraft {
   tipoProcesso: {
     selected: string;
@@ -171,6 +183,15 @@ export interface WizardDraft {
      * processo, e é ele que define o piso mínimo do cronograma de fases.
      */
     origemCandidatos: OrigemCandidatosSelecionada;
+    /**
+     * Município cujo calendário rege a contagem dos prazos do certame
+     * (`UNI-REQ-0111`). Obrigatório na criação, e declarado: a interface sugere a
+     * cidade da unidade administradora escolhida, mas quem confirma é o operador —
+     * o servidor recusa a criação sem ele em vez de deduzi-lo de qualquer cadastro.
+     * O trio vem inteiro da opção da Geo; montá-lo a mão dessincronizaria nome e
+     * código, e é o código que decide quais feriados incidem no prazo.
+     */
+    localidade: LocalidadeSelecionada | null;
     uploads: UploadItem[];
   };
   modalidades: {
