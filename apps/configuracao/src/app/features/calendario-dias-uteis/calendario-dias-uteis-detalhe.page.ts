@@ -275,8 +275,15 @@ const DIAS_SEMANA = [
       background: var(--color-primary-100);
     }
 
+    /* Não usar --color-primary-200 aqui: no tema contraste ela colapsa para o
+       mesmo #ffff00 de --color-primary (texto do botão), texto some sobre o
+       próprio fundo no hover. --color-primary-50 + --text-on-primary-tint é o
+       par semântico do DS para fundo tintado + texto legível, já
+       contrast-safe nos três temas (mesmo par usado em .uni-drawer__nav
+       a.is-active). */
     .cfg-calendario-mensal__dia--feriado:hover {
-      background: var(--color-primary-200);
+      background: var(--color-primary-50);
+      color: var(--text-on-primary-tint);
     }
 
     .cfg-calendario-mensal__dia--feriado:focus-visible {
