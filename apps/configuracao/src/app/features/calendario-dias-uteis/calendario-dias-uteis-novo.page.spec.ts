@@ -221,6 +221,58 @@ describe('CalendarioDiasUteisNovoPage', async () => {
     expect(grupo.controls.municipioUf.value).toBe('PA');
   });
 
+  it('busca em linhas municipais diferentes sem uma cancelar a outra', async () => {
+    const primeira = adicionarDia('MUNICIPAL', '2026-04-05');
+    const segunda = adicionarDia('MUNICIPAL', '2026-06-12');
+
+    component['buscarMunicipios'](primeira, MARABA.nome);
+    component['buscarMunicipios'](segunda, PARAUAPEBAS.nome);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    const requisicoes = controller.match((request) => request.url === `${BASE}/api/cidades`);
+    expect(requisicoes).toHaveLength(2);
+    for (const requisicao of requisicoes) {
+      const termo = requisicao.request.params.get('q');
+      const municipio = termo === MARABA.nome ? MARABA : PARAUAPEBAS;
+      requisicao.flush([{ id: `cidade-${municipio.codigoIbge}`, ddd: '94', ...municipio }]);
+    }
+    fixture.detectChanges();
+
+    // Nenhuma linha fica presa em "Buscando…" sem opções.
+    for (const [index, esperado] of [
+      [primeira, MARABA],
+      [segunda, PARAUAPEBAS],
+    ] as const) {
+      const estado = component['estadoBuscaMunicipio'](index);
+      expect(estado.carregando).toBe(false);
+      expect(estado.opcoes).toEqual(expect.arrayContaining([expect.objectContaining(esperado)]));
+    }
+  });
+
+  it('cancela a busca anterior da mesma linha em vez de aceitar duas respostas', async () => {
+    const index = adicionarDia('MUNICIPAL');
+
+    component['buscarMunicipios'](index, 'Marab');
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const primeira = controller.expectOne((request) => request.url === `${BASE}/api/cidades`);
+
+    component['buscarMunicipios'](index, 'Parauapebas');
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const segunda = controller.expectOne((request) => request.url === `${BASE}/api/cidades`);
+
+    // Sem cancelamento contínuo na linha, a resposta antiga ainda chegaria e
+    // sobrescreveria a recente (ou marcaria erro depois de um sucesso).
+    expect(primeira.cancelled).toBe(true);
+
+    segunda.flush([{ id: 'cidade-parauapebas', ddd: '94', ...PARAUAPEBAS }]);
+    fixture.detectChanges();
+
+    expect(component['estadoBuscaMunicipio'](index).opcoes).toEqual(
+      expect.arrayContaining([expect.objectContaining(PARAUAPEBAS)]),
+    );
+    expect(component['estadoBuscaMunicipio'](index).erro).toBe(false);
+  });
+
   it('envia nulo nos campos regionais que não se aplicam', () => {
     component['form'].controls.versaoDataset.setValue('2026.1');
     adicionarDia();

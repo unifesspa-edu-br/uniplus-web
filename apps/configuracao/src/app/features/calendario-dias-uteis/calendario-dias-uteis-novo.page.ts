@@ -11,7 +11,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { debounceTime, map, Subject, switchMap } from 'rxjs';
+import { debounceTime, groupBy, map, mergeMap, Subject, switchMap } from 'rxjs';
 
 import {
   CalendarioDiasUteisApi,
@@ -700,11 +700,27 @@ export class CalendarioDiasUteisNovoPage {
   constructor() {
     this.buscaMunicipioRequests
       .pipe(
-        debounceTime(MUNICIPIO_BUSCA_DEBOUNCE_MS),
-        switchMap((request) =>
-          this.geo
-            .listarCidades({ uf: request.uf, q: request.termo, limit: MUNICIPIOS_LIMIT })
-            .pipe(map((result) => ({ request, result }))),
+        // Debounce e cancelamento são por linha: com um fluxo único, digitar
+        // numa segunda linha municipal descartava a busca da primeira, que
+        // ficava em "Buscando…" para sempre — e sem snapshot não há como salvar.
+        //
+        // O grupo de cada linha vive enquanto a página viver (encerrado em bloco
+        // pelo `takeUntilDestroyed`). Expirá-lo por inatividade quebraria o
+        // cancelamento: uma requisição ainda em voo sobreviveria ao grupo, e a
+        // busca seguinte nasceria noutro `switchMap`, sem cancelá-la — duas
+        // respostas para a mesma linha, com a antiga podendo chegar por último.
+        // O preço é reter o grupo de uma linha removida, que é irrisório perto
+        // de aceitar resultado obsoleto.
+        groupBy((request) => request.grupo),
+        mergeMap((linha) =>
+          linha.pipe(
+            debounceTime(MUNICIPIO_BUSCA_DEBOUNCE_MS),
+            switchMap((request) =>
+              this.geo
+                .listarCidades({ uf: request.uf, q: request.termo, limit: MUNICIPIOS_LIMIT })
+                .pipe(map((result) => ({ request, result }))),
+            ),
+          ),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
