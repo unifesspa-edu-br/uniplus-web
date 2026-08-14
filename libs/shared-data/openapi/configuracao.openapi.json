@@ -10052,13 +10052,26 @@
         }
       },
       "DiaNaoUtilCommandItem": {
-        "required": ["abrangencia", "municipioIbge", "data", "descricao"],
+        "required": [
+          "abrangencia",
+          "municipioIbge",
+          "municipioNome",
+          "municipioUf",
+          "data",
+          "descricao"
+        ],
         "type": "object",
         "properties": {
           "abrangencia": {
             "type": "string"
           },
           "municipioIbge": {
+            "type": ["null", "string"]
+          },
+          "municipioNome": {
+            "type": ["null", "string"]
+          },
+          "municipioUf": {
             "type": ["null", "string"]
           },
           "data": {
@@ -10074,7 +10087,16 @@
         }
       },
       "DiaNaoUtilDto": {
-        "required": ["id", "abrangencia", "municipioIbge", "uf", "data", "descricao"],
+        "required": [
+          "id",
+          "abrangencia",
+          "municipioIbge",
+          "municipioNome",
+          "municipioUf",
+          "uf",
+          "data",
+          "descricao"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10085,6 +10107,12 @@
             "type": "string"
           },
           "municipioIbge": {
+            "type": ["null", "string"]
+          },
+          "municipioNome": {
+            "type": ["null", "string"]
+          },
+          "municipioUf": {
             "type": ["null", "string"]
           },
           "uf": {
