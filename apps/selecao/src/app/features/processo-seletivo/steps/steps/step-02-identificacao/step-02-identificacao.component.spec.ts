@@ -664,4 +664,18 @@ describe('Step02IdentificacaoComponent', () => {
 
     expect(store.draft().identificacao.localidade).toBeNull();
   });
+  it('libera o estado de consulta quando o termo encolhe abaixo de três letras', async () => {
+    componente.buscarMunicipios('mar');
+    const busca = controller.expectOne((r) => r.url.includes('/api/cidades'));
+
+    // O operador apaga antes de a resposta chegar: a guarda de termo obsoleto
+    // descarta o resultado, então quem precisa devolver o campo ao normal é o
+    // caminho curto — senão o aria-busy fica preso.
+    componente.buscarMunicipios('ma');
+    busca.flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
+    await tick();
+
+    expect(componente.municipiosCarregando()).toBe(false);
+    expect(componente.municipios()).toEqual([]);
+  });
 });
