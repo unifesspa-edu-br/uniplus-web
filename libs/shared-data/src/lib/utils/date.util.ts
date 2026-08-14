@@ -28,15 +28,21 @@ export function formatDateTimeBr(date: Date | string): string {
 }
 
 /**
- * Parse uma string no formato `dd/mm/yyyy` (date-only, sem hora) para `Date`.
+ * Parse uma string no formato `dd/mm/yyyy` para `Date` local.
  *
  * Tolera espaços nas bordas. Aceita dia/mês com 1 ou 2 dígitos. Constrói a
- * data com `Date.UTC(ano, mes - 1, dia)` — como `parseIsoDate`, nunca com
- * componentes locais, porque alguns fusos suprimem um dia civil numa
- * transição de offset e normalizariam silenciosamente a data já validada
- * para outra. Quem consome o retorno deve ler com métodos `getUTC*`/
- * `toLocaleDateString(..., { timeZone: 'UTC' })`, nunca os locais. Retorna
- * `null` para entradas que:
+ * data com componentes locais (`new Date(ano, mes - 1, dia)`) — de propósito
+ * **diferente** de `parseIsoDate`: `formatDateBr`/`formatDateTimeBr`, os
+ * formatadores já estabelecidos deste módulo, leem com métodos locais
+ * (`toLocaleDateString('pt-BR')`, sem `timeZone: 'UTC'`), então ancorar
+ * `parseDate` em UTC quebraria a composição `formatDateBr(parseDate(...))`
+ * para qualquer consumidor futuro — a data voltaria um dia em fusos
+ * negativos (ex.: America/Sao_Paulo). A troca é aceita conscientemente:
+ * `parseDate` mantém o mesmo risco teórico de normalização que
+ * `isValidGregorianDate` não cobre sozinho (fusos que suprimem um dia civil
+ * numa transição de offset, ex.: `Pacific/Apia` sobre 30/12/2011) — extremo
+ * o bastante para não existir no Brasil, e secundário a preservar o
+ * contrato local já testado. Retorna `null` para entradas que:
  * - não casem com o formato esperado (separador, dígitos, ano com 4 dígitos);
  * - tenham ano fora do intervalo permitido pelo domínio Uni+ ([1900, 2100]);
  * - representem data de calendário inexistente (ex.: 30/02, 31/04, 29/02
@@ -54,7 +60,7 @@ export function parseDate(dateStr: string): Date | null {
   if (year < MIN_YEAR || year > MAX_YEAR) return null;
   if (!isValidGregorianDate(year, month, day)) return null;
 
-  return new Date(Date.UTC(year, month - 1, day));
+  return new Date(year, month - 1, day);
 }
 
 const DIAS_POR_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
