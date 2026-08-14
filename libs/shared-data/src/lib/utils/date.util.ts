@@ -86,31 +86,16 @@ function isValidGregorianDate(year: number, month: number, day: number): boolean
 /**
  * Parse uma string `YYYY-MM-DD` (date-only, sem hora/fuso) para `Date`.
  *
- * Constrói a data com `setUTCFullYear`, nunca `new Date(string)`, componentes
- * locais, nem `Date.UTC(ano, ...)` direto — `Date.UTC`/o construtor numérico
- * de `Date` remapeiam ano de 0-99 para 1900-1999 (regra legada do ECMAScript
- * para compatibilidade com ano de 2 dígitos); sem o corte de ano abaixo,
- * `Date.UTC(1, 0, 1)` silenciosamente viraria 1901. `setUTCFullYear` nunca
- * aplica esse remapeamento, seja qual for o valor. A validação por
- * aritmética já garante que
- * ano/mês/dia formam um calendário gregoriano real, mas o `Date` retornado
- * ainda precisaria ser lido com getters locais em algum ponto — e alguns
- * fusos *suprimem* um dia civil numa transição de offset (ex.: `Pacific/Apia`
- * pulou 2011-12-30 ao cruzar a linha internacional de data): construir com
- * componentes locais nesse fuso normalizaria silenciosamente a data validada
- * para outro dia. UTC nunca pula dia civil, então é a única linha do tempo
- * segura para representar essa data já validada — quem consome o retorno
- * deve ler com métodos `getUTC*`/`toLocaleDateString(..., { timeZone: 'UTC' })`,
- * nunca os locais. Retorna `null` para entradas malformadas ou que
- * representem data de calendário inexistente (ex.: 2026-02-30, 2026-04-31,
- * 2026-02-29 em ano não bissexto).
+ * Constrói via `setUTCFullYear` (nunca `new Date(string)`, componentes
+ * locais, nem `Date.UTC` direto) e lê exclusivamente por `getUTC*` — UTC
+ * nunca pula dia civil numa transição de offset, ao contrário de alguns
+ * fusos locais. Retorna `null` para entradas malformadas ou que representem
+ * data de calendário inexistente (ex.: 2026-02-30, 29/02 em ano não
+ * bissexto).
  *
  * Sem o corte de ano [1900, 2100] de `parseDate`, de propósito: esta função
- * lê valor já persistido pela API para exibição, não texto livre digitado
- * por usuário. A validação de intervalo de ano de um "dia não útil" é regra
- * de negócio e vive no backend (`CriarCalendarioDiasUteisCommandValidator`);
- * repeti-la aqui descartaria silenciosamente dado real que a API já aceitou,
- * em vez de refletir o que ela de fato retorna.
+ * lê valor já persistido pela API para exibição — validar intervalo de ano
+ * na criação é regra de negócio do backend (`CriarCalendarioDiasUteisCommandValidator`).
  */
 export function parseIsoDate(dateStr: string): Date | null {
   const match = ISO_DATE_FORMAT_REGEX.exec(dateStr.trim());

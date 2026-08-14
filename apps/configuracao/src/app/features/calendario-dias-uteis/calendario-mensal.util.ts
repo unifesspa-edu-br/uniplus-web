@@ -51,12 +51,7 @@ export function agruparPorMes(dias: readonly DiaNaoUtilDto[]): MesCalendarioMens
     const parsed = parseIsoDate(dia.data);
     if (!parsed) continue;
 
-    // padStart(4, '0'): getUTCFullYear() devolve ano < 1000 sem zeros à
-    // esquerda (ex.: 1). Sem isto, a chave vira "1-06" — construirMes monta
-    // a data de cada célula a partir dela, e "1-06-15" não bate com o
-    // formato YYYY-MM-DD que parseIsoDate exige: o feriado apareceria na
-    // grade, mas o título do drawer e o campo Data mostrariam "—".
-    const ano = String(parsed.getUTCFullYear()).padStart(4, '0');
+    const ano = String(parsed.getUTCFullYear()).padStart(4, '0'); // getUTCFullYear() não zero-preenche
     const chave = `${ano}-${String(parsed.getUTCMonth() + 1).padStart(2, '0')}`;
     const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
     porMes.set(chave, porDiaDoMes);
@@ -77,12 +72,8 @@ function construirMes(chave: string, porDiaDoMes: Map<number, DiaNaoUtilDto[]>):
   const ano = Number(anoStr);
   const mes = Number(mesStr);
 
-  // UTC evita o mesmo risco de normalização silenciosa que motivou
-  // parseIsoDate: nenhuma linha do tempo além de UTC garante não pular dia
-  // civil numa transição de offset. setUTCFullYear em vez de Date.UTC(ano, …)
-  // direto pelo mesmo motivo do parseIsoDate: Date.UTC remapeia ano 0-99
-  // para 1900-1999 (regra legada do ECMAScript), o que corromperia a grade
-  // de um calendário com ano de 1 a 3 dígitos.
+  // setUTCFullYear em vez de Date.UTC(ano, …) direto pelo mesmo motivo do
+  // parseIsoDate: UTC não pula dia civil numa transição de offset.
   const primeiroDia = new Date(0);
   primeiroDia.setUTCFullYear(ano, mes - 1, 1);
   const primeiroDiaSemana = primeiroDia.getUTCDay(); // 0=dom..6=sáb
