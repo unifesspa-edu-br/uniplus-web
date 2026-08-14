@@ -2,7 +2,12 @@ import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
-import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
+import {
+  ModalidadeDto,
+  ModalidadesApi,
+  TipoProcessoDto,
+  TiposProcessoApi,
+} from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
@@ -22,6 +27,10 @@ const geoApiStub = {
   listarCidades: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
 };
 
+const modalidadesApiStub = {
+  listar: () => of(apiOk<readonly ModalidadeDto[]>([], 200, new HttpHeaders())),
+};
+
 /**
  * A page provê `CadastroInicialService`, que injeta o client de Processo
  * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
@@ -29,24 +38,22 @@ const geoApiStub = {
  */
 const processosSeletivosApiStub = {};
 
+const PAGE_PROVIDERS = [
+  { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+  { provide: UnidadesApi, useValue: unidadesApiStub },
+  { provide: GeoApi, useValue: geoApiStub },
+  { provide: ModalidadesApi, useValue: modalidadesApiStub },
+  { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+];
+
 describe('ProcessoSeletivoPage — estrutura', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
-      ],
+      providers: PAGE_PROVIDERS,
     }).compileComponents();
   });
 
-  /**
-   * O wizard é renderizado dentro do `<main>` do layout, via `router-outlet`.
-   * Se ele trouxer o próprio `<main>`, a página passa a ter dois landmarks
-   * aninhados — violação de WCAG 2.1 (1.3.1) e do e-MAG.
-   */
   it('não declara landmark main próprio', () => {
     const fixture = TestBed.createComponent(ProcessoSeletivoPage);
     fixture.detectChanges();
@@ -55,7 +62,6 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     expect(host.querySelectorAll('main').length).toBe(0);
   });
 
-  /** O shell (sidebar, topbar, backdrop) pertence ao layout, não à rota. */
   it('não recria o shell da aplicação', () => {
     const fixture = TestBed.createComponent(ProcessoSeletivoPage);
     fixture.detectChanges();
@@ -80,12 +86,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
-      ],
+      providers: PAGE_PROVIDERS,
     }).compileComponents();
   });
 
@@ -100,7 +101,6 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     return { fixture, page: fixture.componentInstance, dialog };
   }
 
-  /** jsdom não implementa a API de diálogo modal; instrumentamos o elemento. */
   function instrumentar(dialog: HTMLDialogElement) {
     const showModal = vi.fn();
     dialog.showModal = showModal;
@@ -108,11 +108,6 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     return showModal;
   }
 
-  /**
-   * Só `showModal()` põe o elemento no top layer e faz o navegador conter o
-   * foco. Com o overlay como `<div>`, o Tab escapava para a topbar e a sidebar
-   * do layout, que não são descendentes desta rota e não recebiam `inert`.
-   */
   it('abre a lista de etapas como diálogo modal', () => {
     const { page, dialog } = montar();
     const showModal = instrumentar(dialog);
@@ -137,19 +132,10 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
-      ],
+      providers: PAGE_PROVIDERS,
     }).compileComponents();
   });
 
-  /**
-   * Navegar pelo histórico com o overlay aberto destruía a página sem liberar
-   * o lock, e a rota seguinte carregava com o `body` travado.
-   */
   it('libera o bloqueio de scroll ao destruir a página com overlay aberto', () => {
     const fixture = TestBed.createComponent(ProcessoSeletivoPage);
     fixture.detectChanges();
@@ -171,12 +157,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
-      providers: [
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
-      ],
+      providers: PAGE_PROVIDERS,
     }).compileComponents();
   });
 
@@ -187,7 +168,6 @@ describe('ProcessoSeletivoPage — publicação', () => {
     return { fixture, page, store: page.store };
   }
 
-  /** A navegação entre passos é livre: dá para saltar direto para a revisão. */
   it('recusa publicar rascunho vazio alcançado por salto de passo', () => {
     const { fixture, page, store } = montar();
 
@@ -203,11 +183,6 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(erros?.[0]).toContain('Passo 1');
   });
 
-  /**
-   * O resumo do último passo rola em 320 px e com zoom alto. Sem trazer o aviso
-   * para a vista e dar-lhe foco, quem publica a partir do rodapé não recebe
-   * retorno visível nenhum.
-   */
   it('traz o aviso de pendências para a vista e para o foco', async () => {
     const { fixture, page, store } = montar();
 
@@ -234,10 +209,6 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(erros.some((erro) => erro.startsWith('Passo 2 — Identificação'))).toBe(true);
   });
 
-  /**
-   * Sem reconciliar `completedSteps`, um passo concluído e depois invalidado
-   * continuaria contando como concluído no resumo do passo 13.
-   */
   it('reconcilia o progresso ao validar o rascunho inteiro', () => {
     const { fixture, page, store } = montar();
 
