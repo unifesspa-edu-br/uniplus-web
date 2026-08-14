@@ -92,6 +92,17 @@ describe('agruparPorMes()', () => {
       }
     });
 
+    it('ano de 1 dígito não é remapeado para 1900+ano (bug legado de Date.UTC)', () => {
+      // 0001-06-15 é sexta-feira no calendário proléptico — se o ano 1 fosse
+      // remapeado para 1901 (comportamento legado de Date.UTC(ano, …) para
+      // ano 0-99), a data cairia num sábado, com 6 paddings em vez de 5.
+      const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '0001-06-15' })]);
+      expect(mes.chave).toBe('1-06');
+      expect(mes.ano).toBe(1);
+      expect(mes.semanas[0].slice(0, 5)).toEqual([null, null, null, null, null]);
+      expect(mes.semanas[0][5]?.dia).toBe(1);
+    });
+
     it('fevereiro de ano bissexto (2028) tem 29 dias mapeados', () => {
       const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '2028-02-29', descricao: 'Bissexto' })]);
       const dias = mes.semanas.flat().filter((celula): celula is CelulaCalendarioMensal => celula !== null);
