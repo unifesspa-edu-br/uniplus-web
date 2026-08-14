@@ -7880,6 +7880,8 @@ export interface components {
         readonly DiaNaoUtilCommandItem: {
             readonly abrangencia: string;
             readonly municipioIbge: null | string;
+            readonly municipioNome: null | string;
+            readonly municipioUf: null | string;
             /** Format: date */
             readonly data: string;
             readonly descricao: string;
@@ -7890,6 +7892,8 @@ export interface components {
             readonly id: string;
             readonly abrangencia: string;
             readonly municipioIbge: null | string;
+            readonly municipioNome: null | string;
+            readonly municipioUf: null | string;
             readonly uf: null | string;
             /** Format: date */
             readonly data: string;

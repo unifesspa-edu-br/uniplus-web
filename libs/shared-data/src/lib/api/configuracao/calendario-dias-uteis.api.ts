@@ -36,12 +36,6 @@ export interface DominioOption<T extends string = string> {
 
 export type AbrangenciasToken = 'INSTITUCIONAL' | 'MUNICIPAL' | 'ESTADUAL' | 'NACIONAL';
 
-export interface Cidade {
-  id: string;
-  nome: string;
-  uf: string;
-}
-
 export interface UnidadeFederativa {
   id: number;
   nome: string;
