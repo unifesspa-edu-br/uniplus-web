@@ -386,7 +386,15 @@ export class CalendarioDiasUteisDetalhePage {
   constructor() {
     this.route.params
       .pipe(
-        tap((params) => this.calendarioDiaUtilId.set(params['id'] ?? '')),
+        tap((params) => {
+          this.calendarioDiaUtilId.set(params['id'] ?? '');
+          // O Angular Router reaproveita esta instância ao navegar entre duas
+          // rotas :id sem passar pela lista — sem isto, o drawer reabriria
+          // sozinho com o dia selecionado do calendário anterior assim que o
+          // novo carregasse.
+          this.drawerVisivel.set(false);
+          this.diaSelecionado.set(null);
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

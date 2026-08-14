@@ -6,7 +6,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { of } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { CalendarioDiasUteisDetalhePage } from './calendario-dias-uteis-detalhe.page';
 
@@ -51,8 +51,10 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   let fixture: ComponentFixture<CalendarioDiasUteisDetalhePage>;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
+  let routeParams$: Subject<{ id: string }>;
 
   beforeEach(() => {
+    routeParams$ = new Subject<{ id: string }>();
     TestBed.configureTestingModule({
       imports: [CalendarioDiasUteisDetalhePage],
       providers: [
@@ -64,7 +66,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: { paramMap: convertToParamMap({ id: CALENDARIO_ID }) },
-            params: of({ id: CALENDARIO_ID }),
+            params: routeParams$,
           },
         },
       ],
@@ -261,5 +263,33 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
     expect(texto).toContain('Estadual');
     expect(texto).not.toContain('ESTADUAL');
+  });
+
+  it('reseta o drawer ao trocar de rota :id sem passar pela lista (reaproveitamento de componente pelo Router)', async () => {
+    await carregar([DIA_MUNICIPAL]);
+
+    botaoDoDia(DIA_MUNICIPAL.data).click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.drawerVisivel()).toBe(true);
+
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b999';
+    routeParams$.next({ id: OUTRO_ID });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.drawerVisivel()).toBe(false);
+    expect(fixture.componentInstance.diaSelecionado()).toBeNull();
+
+    controller.expectOne(`${BASE}/api/configuracao/calendarios-dias-uteis/${OUTRO_ID}`).flush({
+      id: OUTRO_ID,
+      versaoDataset: '2027.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+
+    // O drawer não reabre sozinho com o dia do calendário anterior.
+    expect(fixture.componentInstance.drawerVisivel()).toBe(false);
+    expect(fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
   });
 });
