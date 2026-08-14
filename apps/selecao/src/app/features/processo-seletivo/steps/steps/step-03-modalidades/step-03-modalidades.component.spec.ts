@@ -1,136 +1,89 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Step03ModalidadesComponent } from './step-03-modalidades.component';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { MODALIDADES, MODALIDADES_CANONICAS } from '../../processo-seletivo.data';
+import { Step03ModalidadesComponent } from './step-03-modalidades.component';
+
+const BASE = 'http://localhost:5000';
+
+const modalidadeSeed: ModalidadeDto = {
+  id: '70da1000-0000-7000-8000-000000000001',
+  codigo: 'AC',
+  descricao: 'Ampla concorrência',
+  naturezaLegal: 'AMPLA',
+  composicaoVagas: 'RESIDUAL_DO_VO',
+  composicaoOrigem: null,
+  regraRemanejamento: null,
+  remanejamentoDestino: null,
+  remanejamentoPar: null,
+  remanejamentoFallback: null,
+  criteriosCumulativos: [],
+  acaoQuandoIndeferido: null,
+  baseLegal: null,
+  criadoEm: '2026-01-01T00:00:00+00:00',
+};
 
 describe('Step03ModalidadesComponent', () => {
   let componente: Step03ModalidadesComponent;
   let store: ProcessoSeletivoStore;
+  let controller: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Step03ModalidadesComponent],
-      providers: [ProcessoSeletivoStore],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        ProcessoSeletivoStore,
+      ],
     }).compileComponents();
 
     const fixture = TestBed.createComponent(Step03ModalidadesComponent);
     fixture.detectChanges();
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
+    controller = TestBed.inject(HttpTestingController);
   });
 
-  /**
-   * A lista tinha 7 entradas e omitia LB_PPI, LB_EP e LI_PcD — sem LB_PPI não
-   * dá para configurar Baixa Renda + PPI, cota central da Lei 12.711/2012.
-   */
-  it('oferece as dez modalidades canônicas', () => {
-    expect(MODALIDADES.length).toBe(10);
-    expect(MODALIDADES.map((m) => m.code)).toEqual([...MODALIDADES_CANONICAS]);
-    expect(MODALIDADES.map((m) => m.code)).toContain('LB_PPI');
+  afterEach(() => controller.verify());
+
+  it('carrega as modalidades do catalogo de Configuracao', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    expect(req.request.method).toBe('GET');
+    req.flush([modalidadeSeed]);
+
+    expect(componente.loading()).toBe(false);
+    expect(componente.modalidades().length).toBe(1);
+    expect(componente.modalidades()[0].code).toBe('AC');
   });
 
-  /** O passo 3 gravava id kebab enquanto 7 e 10 gravavam o código canônico. */
-  it('grava o código canônico no rascunho', () => {
+  it('grava o codigo canonico no rascunho', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    req.flush([modalidadeSeed]);
+
     componente.toggle('LB_Q', true);
-
     expect(store.draft().modalidades.selected).toEqual(['LB_Q']);
   });
 
-  /**
-   * Marcar uma modalidade de cada vez não pode deixar os documentos presos à
-   * primeira: como o padrão é o documento valer para todas as aceitas, ele
-   * precisa acompanhar a seleção nos dois sentidos.
-   */
-  it('mantém os documentos alinhados à seleção conforme ela cresce', () => {
-    componente.toggle('AC', true);
+  it('mantem os documentos alinhados a selecao conforme ela cresce', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    req.flush([modalidadeSeed, { ...modalidadeSeed, id: '2', codigo: 'LB_Q' }]);
+
     componente.toggle('LB_Q', true);
-    componente.toggle('LB_PPI', true);
+    componente.toggle('AC', true);
 
     const documentos = Object.values(store.draft().documentos);
+    expect(documentos.every((config) => config.modalidades.includes('AC'))).toBe(true);
     expect(documentos.every((config) => config.modalidades.includes('LB_Q'))).toBe(true);
-    expect(documentos.every((config) => config.modalidades.includes('LB_PPI'))).toBe(true);
-    expect(documentos.every((config) => config.modalidades.length === 3)).toBe(true);
   });
 
-  /**
-   * Restringir um documento no passo 10 é decisão do operador: mexer no passo 3
-   * depois não pode devolver o documento ao conjunto inteiro.
-   */
-  it('preserva o recorte feito por documento no passo 10', () => {
-    componente.toggle('AC', true);
-    componente.toggle('LB_Q', true);
+  it('esvazia os documentos quando nada esta selecionado', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    req.flush([modalidadeSeed]);
 
-    const [primeiroId] = Object.keys(store.draft().documentos);
-    store.patchSection('documentos', {
-      ...store.draft().documentos,
-      [primeiroId]: {
-        ...store.draft().documentos[primeiroId],
-        modalidades: ['AC'],
-        modalidadesRecortadas: true,
-      },
-    });
-
-    componente.toggle('LB_PPI', true);
-
-    const documentos = store.draft().documentos;
-    expect(documentos[primeiroId].modalidades).toEqual(['AC']);
-    const outroId = Object.keys(documentos).find((id) => id !== primeiroId) ?? '';
-    expect(documentos[outroId].modalidades).toEqual(['AC', 'LB_Q', 'LB_PPI']);
-  });
-
-  /**
-   * O recorte guarda a intenção do operador e não é podado: o que vale é a
-   * interseção com as aceitas, calculada no passo 10. Podar aqui faria
-   * desmarcar e remarcar a mesma modalidade esvaziar o recorte para sempre.
-   */
-  it('preserva o recorte quando a modalidade sai e volta a ser aceita', () => {
-    componente.toggle('AC', true);
-    componente.toggle('LB_Q', true);
-
-    const [primeiroId] = Object.keys(store.draft().documentos);
-    store.patchSection('documentos', {
-      ...store.draft().documentos,
-      [primeiroId]: {
-        ...store.draft().documentos[primeiroId],
-        modalidades: ['LB_Q'],
-        modalidadesRecortadas: true,
-      },
-    });
-
-    componente.toggle('LB_Q', false);
-    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['LB_Q']);
-
-    componente.toggle('LB_Q', true);
-    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['LB_Q']);
-  });
-
-  /**
-   * O recorte precisa sobreviver a remover e recolocar a modalidade no passo 3.
-   * Inferir o estado comparando as listas confundia um recorte que coincidia
-   * com as aceitas — depois da remoção — com o padrão, e a recolocação
-   * devolvia o documento ao conjunto inteiro.
-   */
-  it('preserva o recorte ao remover e recolocar uma modalidade', () => {
-    componente.toggle('AC', true);
-    componente.toggle('LB_Q', true);
-
-    const [primeiroId] = Object.keys(store.draft().documentos);
-    store.patchSection('documentos', {
-      ...store.draft().documentos,
-      [primeiroId]: {
-        ...store.draft().documentos[primeiroId],
-        modalidades: ['AC'],
-        modalidadesRecortadas: true,
-      },
-    });
-
-    componente.toggle('LB_Q', false);
-    componente.toggle('LB_Q', true);
-
-    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['AC']);
-  });
-
-  it('esvazia os documentos quando nada está selecionado', () => {
     componente.toggle('AC', true);
     componente.toggle('AC', false);
 
@@ -138,28 +91,20 @@ describe('Step03ModalidadesComponent', () => {
     expect(documentos.every((config) => config.modalidades.length === 0)).toBe(true);
   });
 
-  /**
-   * A escolha do bônus é guardada intacta; o que vale é a interseção com as
-   * aceitas, calculada no passo 7. Podar aqui faria desmarcar e remarcar a
-   * mesma modalidade apagá-la do bônus para sempre, com a validação ainda
-   * passando por causa das demais.
-   */
-  it('preserva a escolha do bônus quando a modalidade sai e volta', () => {
-    componente.toggle('LB_Q', true);
-    componente.toggle('AC', true);
-    store.patchObjectSection('bonus', { modalidades: ['LB_Q', 'AC'] });
+  it('exige ao menos uma modalidade para avancar', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    req.flush([modalidadeSeed]);
 
-    componente.toggle('LB_Q', false);
-    expect(store.draft().bonus.modalidades).toEqual(['LB_Q', 'AC']);
-
-    componente.toggle('LB_Q', true);
-    expect(store.draft().bonus.modalidades).toEqual(['LB_Q', 'AC']);
-  });
-
-  it('exige ao menos uma modalidade para avançar', () => {
     expect(componente.validate().valid).toBe(false);
-
     componente.toggle('AC', true);
     expect(componente.validate().valid).toBe(true);
+  });
+
+  it('exibe mensagem de erro quando a listagem falha', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    req.flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Erro' });
+
+    expect(componente.errorMessage()).not.toBeNull();
+    expect(componente.modalidades().length).toBe(0);
   });
 });
