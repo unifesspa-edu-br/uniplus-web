@@ -1,4 +1,3 @@
-import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
 import {
   AtendimentoCondicao,
   AtendimentoRecurso,
@@ -37,29 +36,6 @@ export const REVIEW_NAMES = [
   'Locais de prova',
   'Atendimento especializado',
 ] as const;
-
-/**
- * Modalidades de concorrência do processo seletivo, no vocabulário canônico
- * de `ModalidadeConcorrencia` (shared-data). O código é a chave gravada no
- * rascunho — não usar rótulo nem identificador próprio.
- */
-export const MODALIDADES: readonly { code: ModalidadeConcorrencia; label: string }[] = [
-  { code: 'AC', label: 'Ampla Concorrência' },
-  { code: 'V', label: 'Pessoa com Deficiência (Ampla Concorrência)' },
-  { code: 'LB_PPI', label: 'Baixa Renda + PPI (Pretos, Pardos ou Indígenas)' },
-  { code: 'LB_Q', label: 'Baixa Renda + Quilombola' },
-  { code: 'LB_PcD', label: 'Baixa Renda + Pessoa com Deficiência' },
-  { code: 'LB_EP', label: 'Baixa Renda — Demais (Escola Pública)' },
-  { code: 'LI_PPI', label: 'Independente de Renda + PPI (Pretos, Pardos ou Indígenas)' },
-  { code: 'LI_Q', label: 'Independente de Renda + Quilombola' },
-  { code: 'LI_PcD', label: 'Independente de Renda + Pessoa com Deficiência' },
-  { code: 'LI_EP', label: 'Independente de Renda — Demais (Escola Pública)' },
-];
-
-/** Derivada de `MODALIDADES` para não haver duas listas a manter em sincronia. */
-export const MODALIDADES_CANONICAS: readonly ModalidadeConcorrencia[] = MODALIDADES.map(
-  (modalidade) => modalidade.code,
-);
 
 export const CURSOS: Curso[] = [
   {

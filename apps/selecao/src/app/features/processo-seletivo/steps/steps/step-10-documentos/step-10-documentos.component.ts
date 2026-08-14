@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DOC_ETAPAS, DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
-import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
 import { DocumentoConfig, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
@@ -38,7 +37,7 @@ export class Step10DocumentosComponent {
       etapas: checked ? [...current, code] : current.filter((item) => item !== code),
     });
   }
-  toggleModalidade(id: string, code: ModalidadeConcorrencia, checked: boolean): void {
+  toggleModalidade(id: string, code: string, checked: boolean): void {
     const current = this.config(id).modalidades;
     this.patch(id, {
       modalidades: checked ? [...current, code] : current.filter((item) => item !== code),
@@ -52,7 +51,7 @@ export class Step10DocumentosComponent {
    * o processo aceita. O recorte guardado permanece intacto, então voltar a
    * aceitar uma modalidade no passo 3 a traz de volta aqui.
    */
-  modalidadesEfetivas(id: string): ModalidadeConcorrencia[] {
+  modalidadesEfetivas(id: string): string[] {
     const aceitas = new Set(this.modalidades());
     return this.config(id).modalidades.filter((code) => aceitas.has(code));
   }

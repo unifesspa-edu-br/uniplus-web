@@ -9,32 +9,14 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { ModalidadeDto, ModalidadesApi } from '@uniplus/shared-data/configuracao';
-import { ModalidadeConcorrencia } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 
 /** Opção de modalidade exibida no passo 3, mapeada do catálogo da API. */
 export interface ModalidadeOption {
-  readonly code: ModalidadeConcorrencia;
+  /** Código do contrato — única fonte de verdade do vocabulário. */
+  readonly code: string;
   readonly label: string;
-}
-
-/** Códigos canônicos de `ModalidadeConcorrencia` aceitos pelo rascunho. */
-const MODALIDADES_CANONICAS_SAFE: ReadonlySet<string> = new Set<string>([
-  'AC',
-  'V',
-  'LB_PPI',
-  'LB_Q',
-  'LB_PcD',
-  'LB_EP',
-  'LI_PPI',
-  'LI_Q',
-  'LI_PcD',
-  'LI_EP',
-]);
-
-function isModalidadeConcorrencia(codigo: string): codigo is ModalidadeConcorrencia {
-  return MODALIDADES_CANONICAS_SAFE.has(codigo);
 }
 
 @Component({
@@ -87,9 +69,7 @@ export class Step03ModalidadesComponent {
         }
         const modalidades = [
           ...acumuladas,
-          ...result.data
-            .map((modalidade) => this.toOption(modalidade))
-            .filter((item): item is ModalidadeOption => item !== null),
+          ...result.data.map((modalidade) => this.toOption(modalidade)),
         ];
         const proximoCursor = extractNextCursor(result.headers.get('Link'));
         if (proximoCursor !== null) {
@@ -109,7 +89,7 @@ export class Step03ModalidadesComponent {
     this.sincronizarModalidades(selected);
   }
 
-  toggle(code: ModalidadeConcorrencia, checked: boolean): void {
+  toggle(code: string, checked: boolean): void {
     const atual = this.store.draft().modalidades.selected;
     const selected = checked ? [...atual, code] : atual.filter((item) => item !== code);
     this.store.patchObjectSection('modalidades', { selected });
@@ -123,7 +103,7 @@ export class Step03ModalidadesComponent {
    * calculada na leitura de cada passo. Quem foi recortado no passo 10 guarda a
    * escolha intacta (distinguido por `modalidadesRecortadas`).
    */
-  private sincronizarModalidades(selected: readonly ModalidadeConcorrencia[]): void {
+  private sincronizarModalidades(selected: readonly string[]): void {
     const draft = this.store.draft();
     const documentos = Object.fromEntries(
       Object.entries(draft.documentos).map(([id, config]) => [
@@ -144,8 +124,7 @@ export class Step03ModalidadesComponent {
       : { valid: false, message: 'Selecione ao menos uma modalidade de concorrência.' };
   }
 
-  private toOption(modalidade: ModalidadeDto): ModalidadeOption | null {
-    if (!isModalidadeConcorrencia(modalidade.codigo)) return null;
+  private toOption(modalidade: ModalidadeDto): ModalidadeOption {
     return {
       code: modalidade.codigo,
       label: modalidade.descricao ?? modalidade.codigo,

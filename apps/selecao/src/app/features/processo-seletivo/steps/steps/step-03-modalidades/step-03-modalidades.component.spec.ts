@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
@@ -8,22 +8,24 @@ import { Step03ModalidadesComponent } from './step-03-modalidades.component';
 
 const BASE = 'http://localhost:5000';
 
-const modalidadeSeed: ModalidadeDto = {
-  id: '70da1000-0000-7000-8000-000000000001',
-  codigo: 'AC',
-  descricao: 'Ampla concorrência',
-  naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESIDUAL_DO_VO',
-  composicaoOrigem: null,
-  regraRemanejamento: null,
-  remanejamentoDestino: null,
-  remanejamentoPar: null,
-  remanejamentoFallback: null,
-  criteriosCumulativos: [],
-  acaoQuandoIndeferido: null,
-  baseLegal: null,
-  criadoEm: '2026-01-01T00:00:00+00:00',
-};
+function modalidade(id: string, codigo: string): ModalidadeDto {
+  return {
+    id,
+    codigo,
+    descricao: `Descricao de ${codigo}`,
+    naturezaLegal: 'AMPLA',
+    composicaoVagas: 'RESIDUAL_DO_VO',
+    composicaoOrigem: null,
+    regraRemanejamento: null,
+    remanejamentoDestino: null,
+    remanejamentoPar: null,
+    remanejamentoFallback: null,
+    criteriosCumulativos: [],
+    acaoQuandoIndeferido: null,
+    baseLegal: null,
+    criadoEm: '2026-01-01T00:00:00+00:00',
+  };
+}
 
 describe('Step03ModalidadesComponent', () => {
   let componente: Step03ModalidadesComponent;
@@ -40,7 +42,6 @@ describe('Step03ModalidadesComponent', () => {
         ProcessoSeletivoStore,
       ],
     }).compileComponents();
-
     const fixture = TestBed.createComponent(Step03ModalidadesComponent);
     fixture.detectChanges();
     componente = fixture.componentInstance;
@@ -50,61 +51,99 @@ describe('Step03ModalidadesComponent', () => {
 
   afterEach(() => controller.verify());
 
-  it('carrega as modalidades do catalogo de Configuracao', () => {
+  it('exibe todas as modalidades retornadas pela API e as torna selecionaveis', () => {
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
-    expect(req.request.method).toBe('GET');
-    req.flush([modalidadeSeed]);
+    req.flush([
+      modalidade('1', 'AC'),
+      modalidade('2', 'AC_PCD'),
+      modalidade('3', 'LB_PCD'),
+      modalidade('4', 'LI_PCD'),
+    ]);
+    expect(componente.modalidades().map((m) => m.code)).toEqual([
+      'AC',
+      'AC_PCD',
+      'LB_PCD',
+      'LI_PCD',
+    ]);
+    componente.toggle('AC_PCD', true);
+    expect(store.draft().modalidades.selected).toContain('AC_PCD');
+  });
 
+  it('mantem loading true antes da resposta e false depois', () => {
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
+    expect(componente.loading()).toBe(true);
+    req.flush([modalidade('1', 'AC')]);
     expect(componente.loading()).toBe(false);
+  });
+
+  it('acumula paginas seguindo o cursor do header Link', () => {
+    const links = new HttpHeaders({
+      Link: `<${BASE}/api/configuracao/modalidades?cursor=abc&direction=next>; rel="next"`,
+    });
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`)
+      .flush([modalidade('1', 'AC')], { headers: links });
+    controller
+      .expectOne(
+        (r) =>
+          r.url === `${BASE}/api/configuracao/modalidades` &&
+          r.params.get('cursor') === 'abc' &&
+          r.params.get('direction') === 'next',
+      )
+      .flush([modalidade('2', 'LB_PPI')]);
+    expect(componente.modalidades().map((m) => m.code)).toEqual(['AC', 'LB_PPI']);
+  });
+
+  it('exibe erro e permite retry que limpa o erro e recarrega', () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`)
+      .flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Erro' });
+    expect(componente.errorMessage()).not.toBeNull();
+    expect(componente.modalidades().length).toBe(0);
+
+    componente.carregar();
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`)
+      .flush([modalidade('1', 'AC')]);
+    expect(componente.errorMessage()).toBeNull();
     expect(componente.modalidades().length).toBe(1);
-    expect(componente.modalidades()[0].code).toBe('AC');
   });
 
-  it('grava o codigo canonico no rascunho', () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
-    req.flush([modalidadeSeed]);
-
-    componente.toggle('LB_Q', true);
-    expect(store.draft().modalidades.selected).toEqual(['LB_Q']);
-  });
-
-  it('mantem os documentos alinhados a selecao conforme ela cresce', () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
-    req.flush([modalidadeSeed, { ...modalidadeSeed, id: '2', codigo: 'LB_Q' }]);
-
-    componente.toggle('LB_Q', true);
+  it('preserva recorte de documento do passo 10', () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`)
+      .flush([modalidade('1', 'AC'), modalidade('2', 'LB_PPI')]);
     componente.toggle('AC', true);
-
-    const documentos = Object.values(store.draft().documentos);
-    expect(documentos.every((config) => config.modalidades.includes('AC'))).toBe(true);
-    expect(documentos.every((config) => config.modalidades.includes('LB_Q'))).toBe(true);
+    const [primeiroId] = Object.keys(store.draft().documentos);
+    store.patchSection('documentos', {
+      ...store.draft().documentos,
+      [primeiroId]: {
+        ...store.draft().documentos[primeiroId],
+        modalidades: ['AC'],
+        modalidadesRecortadas: true,
+      },
+    });
+    componente.toggle('LB_PPI', true);
+    expect(store.draft().documentos[primeiroId].modalidades).toEqual(['AC']);
   });
 
-  it('esvazia os documentos quando nada esta selecionado', () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
-    req.flush([modalidadeSeed]);
-
-    componente.toggle('AC', true);
+  it('preserva escolha de bonus quando a modalidade sai e volta', () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`)
+      .flush([modalidade('1', 'AC')]);
+    store.patchObjectSection('bonus', { modalidades: ['AC'] });
     componente.toggle('AC', false);
-
-    const documentos = Object.values(store.draft().documentos);
-    expect(documentos.every((config) => config.modalidades.length === 0)).toBe(true);
+    expect(store.draft().bonus.modalidades).toEqual(['AC']);
+    componente.toggle('AC', true);
+    expect(store.draft().bonus.modalidades).toEqual(['AC']);
   });
 
   it('exige ao menos uma modalidade para avancar', () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
-    req.flush([modalidadeSeed]);
-
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`)
+      .flush([modalidade('1', 'AC')]);
     expect(componente.validate().valid).toBe(false);
     componente.toggle('AC', true);
     expect(componente.validate().valid).toBe(true);
-  });
-
-  it('exibe mensagem de erro quando a listagem falha', () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/modalidades`);
-    req.flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Erro' });
-
-    expect(componente.errorMessage()).not.toBeNull();
-    expect(componente.modalidades().length).toBe(0);
   });
 });
