@@ -11,32 +11,39 @@
       </p>
     </div>
     @if (loading()) {
-    <p class="step-status" role="status">Carregando modalidades de concorrência…</p>
+      <p class="step-status" role="status">Carregando modalidades de concorrência…</p>
     } @else if (errorMessage(); as erro) {
-    <div class="step-error" role="alert">
-      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-      <div class="step-error__content">
-        <strong class="step-error__summary">{{ erro }}</strong>
-        <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
-          Tentar novamente
-        </button>
+      <div class="step-error" role="alert">
+        <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+        <div class="step-error__content">
+          <strong class="step-error__summary">{{ erro }}</strong>
+          <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
+            Tentar novamente
+          </button>
+        </div>
       </div>
-    </div>
     } @else {
-    <label class="check-item" style="margin-bottom: var(--space-3)">
-      <input type="checkbox" [checked]="allSelected()" [indeterminate]="indeterminate()"
-        (change)="toggleAll($any($event.target).checked)" />
-      <span><strong>Marcar todos</strong></span>
-    </label>
-    <div class="checkbox-grid">
-      @for (modalidade of modalidades(); track modalidade.code) {
-      <label class="check-item" [attr.data-id]="modalidade.code">
-        <input type="checkbox" [checked]="store.draft().modalidades.selected.includes(modalidade.code)"
-          (change)="toggle(modalidade.code, $any($event.target).checked)" />
-        <span>{{ modalidade.code }} — {{ modalidade.label }}</span>
+      <label class="check-item" style="margin-bottom: var(--space-3)">
+        <input
+          type="checkbox"
+          [checked]="allSelected()"
+          [indeterminate]="indeterminate()"
+          (change)="toggleAll($any($event.target).checked)"
+        />
+        <span><strong>Marcar todos</strong></span>
       </label>
-      }
-    </div>
+      <div class="checkbox-grid">
+        @for (modalidade of modalidades(); track modalidade.code) {
+          <label class="check-item" [attr.data-id]="modalidade.code">
+            <input
+              type="checkbox"
+              [checked]="store.draft().modalidades.selected.includes(modalidade.code)"
+              (change)="toggle(modalidade.code, $any($event.target).checked)"
+            />
+            <span>{{ modalidade.code }} — {{ modalidade.label }}</span>
+          </label>
+        }
+      </div>
     }
   </div>
 </section>
@@ -46,10 +53,18 @@
   </h2>
   <div class="step-card dupla-card">
     <span class="dupla-lei">Lei 14.723/2023</span>
-    <label class="check-item"><input type="checkbox" [checked]="store.draft().modalidades.concorrenciaDupla" (change)="
+    <label class="check-item"
+      ><input
+        type="checkbox"
+        [checked]="store.draft().modalidades.concorrenciaDupla"
+        (change)="
           store.patchObjectSection('modalidades', {
             concorrenciaDupla: $any($event.target).checked,
           })
-        " /><span>Aplicar concorrência dupla — cotista que atinge nota de AC ocupa vaga de AC</span></label>
+        "
+      /><span
+        >Aplicar concorrência dupla — cotista que atinge nota de AC ocupa vaga de AC</span
+      ></label
+    >
   </div>
 </section>
