@@ -318,7 +318,7 @@ describe('UnidadesPage', () => {
     });
     req1.flush(
       {
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
         title: 'Erro de validação',
         status: 422,
         code: 'uniplus.validacao',
@@ -396,7 +396,7 @@ describe('UnidadesPage', () => {
 
     controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
       {
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.idempotency.body_mismatch',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.idempotency.body_mismatch',
         title: 'Mesma Idempotency-Key reusada com body diferente',
         status: 422,
         detail: 'Mesma Idempotency-Key reusada com body diferente.',
@@ -439,7 +439,7 @@ describe('UnidadesPage', () => {
 
     controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
       {
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.unidade.sigla_duplicada',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.unidade.sigla_duplicada',
         title: 'Sigla já utilizada por outra unidade viva',
         status: 409,
         detail: 'A sigla FACOM já pertence a uma unidade vigente.',

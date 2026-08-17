@@ -166,7 +166,7 @@ describe('Step01TipoProcessoComponent', () => {
         ? of(
             apiFailure(
               {
-                type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.internal.unexpected',
+                type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.internal.unexpected',
                 title: 'Erro interno do servidor',
                 status: 500,
                 code: 'uniplus.internal.unexpected',

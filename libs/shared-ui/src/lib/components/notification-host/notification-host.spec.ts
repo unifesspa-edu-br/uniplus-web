@@ -7,7 +7,7 @@ import { NotificationHostComponent } from './notification-host';
 
 function montarProblem(overrides: Partial<ProblemDetails> = {}): ProblemDetails {
   return {
-    type: 'https://uniplus.unifesspa.edu.br/erros/exemplo',
+    type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/exemplo',
     title: 'Recurso não encontrado',
     status: 404,
     detail: 'Edital com id 42 não existe.',
