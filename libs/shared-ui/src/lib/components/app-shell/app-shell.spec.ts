@@ -13,11 +13,9 @@ const groups: readonly UiShellNavGroup[] = [
   },
 ];
 
-const SHELL_IMPORTS = [AppShellComponent];
-
 @Component({
   standalone: true,
-  imports: SHELL_IMPORTS,
+  imports: [AppShellComponent],
   template:
     '<ui-app-shell appName="Uni+"><div uiShellActions>acao</div><div uiShellUser>usuario</div></ui-app-shell>',
 })
@@ -25,7 +23,7 @@ class HostComponent {}
 
 async function montarShell() {
   await TestBed.configureTestingModule({
-    imports: SHELL_IMPORTS,
+    imports: [AppShellComponent],
     providers: [provideRouter([])],
   }).compileComponents();
   const fixture = TestBed.createComponent(AppShellComponent);
