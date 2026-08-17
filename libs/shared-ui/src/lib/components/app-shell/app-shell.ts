@@ -2,12 +2,12 @@ import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
+  HostListener,
+  computed,
   effect,
   inject,
   input,
   signal,
-  viewChild,
 } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { A11yMenuComponent } from '../a11y-menu/a11y-menu';
@@ -17,8 +17,20 @@ import { VlibrasLoaderComponent } from '../vlibras-loader/vlibras-loader';
 
 export interface UiShellNavItem {
   label: string;
-  routerLink: string | readonly unknown[];
+  icon?: string;
+  routerLink?: string | readonly unknown[];
   exact?: boolean;
+  disabled?: boolean;
+}
+
+export interface UiShellNavGroup {
+  label: string;
+  items: readonly UiShellNavItem[];
+}
+
+export interface UiShellBreadcrumbItem {
+  label: string;
+  routerLink?: string | readonly unknown[];
 }
 
 let shellIdSeed = 0;
@@ -36,7 +48,7 @@ let shellIdSeed = 0;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="ui-app-shell">
+    <div class="ui-shell">
       <ui-skip-link [targetId]="mainId" />
       <ui-institutional-bar
         [organization]="organization()"
@@ -44,90 +56,123 @@ let shellIdSeed = 0;
         [accessibilityHref]="accessibilityHref()"
         [privacyHref]="privacyHref()"
       />
-
-      <header class="topbar" role="banner">
-        <button
-          type="button"
-          class="topbar__menu-btn"
-          aria-label="Abrir menu"
-          [attr.aria-expanded]="drawerOpen() ? 'true' : 'false'"
-          [attr.aria-controls]="drawerId"
-          (click)="openDrawer()"
-        >
-          ☰
-        </button>
-        <div class="topbar__brand">
-          <span class="topbar__mark" aria-hidden="true">U+</span>
-          <div class="topbar__titles">
-            <div class="topbar__title">{{ appName() }}</div>
-            @if (subtitle()) {
-              <div class="topbar__subtitle">{{ subtitle() }}</div>
-            }
-          </div>
-        </div>
-        <nav class="topbar__nav" aria-label="Navegação principal">
-          @for (item of navItems(); track item.label) {
-            <a
-              [routerLink]="item.routerLink"
-              routerLinkActive="is-active"
-              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-              ariaCurrentWhenActive="page"
-            >
-              {{ item.label }}
-            </a>
-          }
-        </nav>
-        <div class="topbar__actions">
-          <ui-a11y-menu />
-          <ng-content select="[uiShellActions]" />
-        </div>
-      </header>
-
-      <dialog
-        #drawer
-        class="uni-drawer"
-        [id]="drawerId"
-        aria-label="Menu principal"
-        (cancel)="closeDrawer($event)"
-        (close)="drawerOpen.set(false)"
+      <div
+        class="admin-shell"
+        [attr.data-sidebar-mobile]="sidebarMobileOpen() ? 'open' : null"
+        [attr.data-sidebar-desktop]="sidebarDesktopOpen() ? 'open' : 'closed'"
       >
-        <div class="uni-drawer__panel">
-          <div class="uni-drawer__header">
-            <p class="uni-drawer__title">Menu</p>
-            <button type="button" class="btn btn--tertiary btn--icon-only btn--rect" aria-label="Fechar menu" (click)="closeDrawer()">
-              ×
+        <aside
+          class="sidebar"
+          [id]="sidebarId"
+          aria-label="Painel administrativo"
+          [attr.aria-hidden]="sidebarHidden() ? 'true' : null"
+          [attr.inert]="sidebarHidden() ? '' : null"
+        >
+          <div class="sidebar__brand">
+            <div class="sidebar__mark" aria-hidden="true">U+</div>
+            <div class="sidebar__brand-copy">
+              <div class="sidebar__brand-title">{{ appName() }}</div>
+              @if (subtitle()) {
+                <div class="sidebar__brand-sub">{{ subtitle() }}</div>
+              }
+            </div>
+            <button
+              type="button"
+              class="sidebar__close"
+              aria-label="Fechar menu lateral"
+              (click)="closeSidebar()"
+            >
+              <i class="pi pi-times" aria-hidden="true"></i>
             </button>
           </div>
-          <div class="uni-drawer__body">
-            <nav aria-label="Navegação principal">
-              <ul class="uni-drawer__nav">
-                @for (item of navItems(); track item.label) {
-                  <li>
-                    <a
-                      [routerLink]="item.routerLink"
-                      routerLinkActive="is-active"
-                      [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-                      ariaCurrentWhenActive="page"
-                      (click)="closeDrawer()"
-                    >
-                      {{ item.label }}
-                    </a>
+          <nav aria-label="Navegação administrativa">
+            @for (group of navGroups(); track group.label) {
+              <div class="sidebar__label">{{ group.label }}</div>
+              @for (item of group.items; track item.label) {
+                @if (item.routerLink && !item.disabled) {
+                  <a
+                    [routerLink]="item.routerLink"
+                    routerLinkActive="is-active"
+                    [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+                    ariaCurrentWhenActive="page"
+                    (click)="closeSidebarIfMobile()"
+                  >
+                    @if (item.icon) {
+                      <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
+                    }
+                    <span>{{ item.label }}</span>
+                  </a>
+                } @else {
+                  <span class="sidebar__link is-disabled" aria-disabled="true">
+                    <i [class]="'pi ' + (item.icon ?? 'pi-circle')" aria-hidden="true"></i>
+                    <span>{{ item.label }}</span>
+                  </span>
+                }
+              }
+            }
+          </nav>
+          <footer class="sidebar__bottom" aria-label="Usuário autenticado">
+            <ng-content select="[uiShellUser]" />
+          </footer>
+        </aside>
+        <button
+          type="button"
+          class="sidebar-backdrop"
+          aria-hidden="true"
+          tabindex="-1"
+          (click)="closeSidebar()"
+        ></button>
+        <div class="admin-main">
+          <header class="admin-topbar" role="banner">
+            <button
+              type="button"
+              class="sidebar-toggle sidebar-toggle--compacto"
+              [attr.aria-label]="sidebarMobileOpen() ? 'Fechar menu lateral' : 'Abrir menu lateral'"
+              [attr.aria-controls]="sidebarId"
+              [attr.aria-expanded]="sidebarMobileOpen() ? 'true' : 'false'"
+              (click)="toggleMobileSidebar()"
+            >
+              <i class="pi pi-bars" aria-hidden="true"></i>
+            </button>
+            <button
+              type="button"
+              class="sidebar-toggle sidebar-toggle--amplo"
+              [attr.aria-label]="
+                sidebarDesktopOpen() ? 'Recolher menu lateral' : 'Expandir menu lateral'
+              "
+              [attr.aria-controls]="sidebarId"
+              [attr.aria-expanded]="sidebarDesktopOpen() ? 'true' : 'false'"
+              (click)="toggleDesktopSidebar()"
+            >
+              <i class="pi pi-bars" aria-hidden="true"></i>
+            </button>
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+              <ol class="breadcrumb__list">
+                @for (item of breadcrumb(); track $index; let last = $last) {
+                  <li class="breadcrumb__item">
+                    @if (item.routerLink && !last) {
+                      <a class="breadcrumb__link" [routerLink]="item.routerLink">
+                        {{ item.label }}
+                      </a>
+                    } @else {
+                      <span class="breadcrumb__current" aria-current="page">
+                        {{ item.label }}
+                      </span>
+                    }
                   </li>
                 }
-              </ul>
+              </ol>
             </nav>
-          </div>
+            <div class="shell-topbar-actions">
+              <ui-a11y-menu />
+              <ng-content select="[uiShellActions]" />
+            </div>
+          </header>
+          <main class="page" [id]="mainId" tabindex="-1">
+            <ng-content />
+          </main>
         </div>
-      </dialog>
-
-      <main class="ui-app-shell__main" [id]="mainId" tabindex="-1">
-        <ng-content />
-      </main>
-
-      <footer class="ui-app-shell__footer">
-        {{ footerLabel() }} &copy; {{ currentYear }}
-      </footer>
-
+      </div>
       <ui-vlibras-loader />
     </div>
   `,
@@ -139,59 +184,51 @@ export class AppShellComponent {
   readonly siteMapHref = input<string | null>(null);
   readonly accessibilityHref = input<string | null>(null);
   readonly privacyHref = input<string | null>(null);
-  readonly footerLabel = input<string>('Uni+ — Unifesspa');
-  readonly navItems = input<readonly UiShellNavItem[]>([]);
+  readonly navGroups = input<readonly UiShellNavGroup[]>([]);
+  readonly breadcrumb = input<readonly UiShellBreadcrumbItem[]>([]);
 
-  protected readonly currentYear = new Date().getFullYear();
-  protected readonly drawerOpen = signal(false);
-  protected readonly drawerRef = viewChild<ElementRef<HTMLDialogElement>>('drawer');
-  protected readonly drawerId = `ui-shell-drawer-${++shellIdSeed}`;
-  protected readonly mainId = `ui-shell-main-${shellIdSeed}`;
+  protected readonly sidebarMobileOpen = signal(false);
+  protected readonly sidebarDesktopOpen = signal(true);
+  protected readonly sidebarExpanded = computed(
+    () => this.sidebarMobileOpen() || this.sidebarDesktopOpen(),
+  );
+  protected readonly sidebarHidden = computed(() => !this.sidebarExpanded());
+  protected readonly shellId = `ui-shell-${++shellIdSeed}`;
+  protected readonly sidebarId = `${this.shellId}-sidebar`;
+  protected readonly mainId = `${this.shellId}-main`;
+
   private readonly document = inject(DOCUMENT);
   private lastFocusedElement: HTMLElement | null = null;
 
   constructor() {
     effect(() => {
-      const drawer = this.drawerRef()?.nativeElement;
-      if (!drawer) return;
-
-      if (this.drawerOpen()) {
-        this.showDrawer(drawer);
-      } else {
-        this.hideDrawer(drawer);
+      if (this.sidebarMobileOpen()) {
+        this.lastFocusedElement =
+          this.document.activeElement instanceof HTMLElement ? this.document.activeElement : null;
+        return;
+      }
+      if (this.lastFocusedElement !== null) {
+        this.lastFocusedElement.focus();
+        this.lastFocusedElement = null;
       }
     });
   }
 
-  protected openDrawer(): void {
-    this.drawerOpen.set(true);
+  protected closeSidebarIfMobile(): void {
+    if (this.sidebarMobileOpen()) this.sidebarMobileOpen.set(false);
+  }
+  protected toggleMobileSidebar(): void {
+    this.sidebarMobileOpen.update((open) => !open);
+  }
+  protected toggleDesktopSidebar(): void {
+    this.sidebarDesktopOpen.update((open) => !open);
+  }
+  protected closeSidebar(): void {
+    this.sidebarMobileOpen.set(false);
   }
 
-  protected closeDrawer(event?: Event): void {
-    event?.preventDefault();
-    this.drawerOpen.set(false);
-  }
-
-  private showDrawer(drawer: HTMLDialogElement): void {
-    if (drawer.open) return;
-    this.lastFocusedElement = this.document.activeElement instanceof HTMLElement
-      ? this.document.activeElement
-      : null;
-    if (typeof drawer.showModal === 'function') {
-      drawer.showModal();
-    } else {
-      drawer.setAttribute('open', '');
-    }
-  }
-
-  private hideDrawer(drawer: HTMLDialogElement): void {
-    if (!drawer.open) return;
-    if (typeof drawer.close === 'function') {
-      drawer.close();
-    } else {
-      drawer.removeAttribute('open');
-    }
-    this.lastFocusedElement?.focus();
-    this.lastFocusedElement = null;
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.sidebarMobileOpen()) this.sidebarMobileOpen.set(false);
   }
 }
