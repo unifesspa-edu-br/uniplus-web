@@ -48,7 +48,7 @@ let shellIdSeed = 0;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="ui-shell">
+    <div class="ui-app-shell">
       <ui-skip-link [targetId]="mainId" />
       <ui-institutional-bar
         [organization]="organization()"
