@@ -59,7 +59,7 @@ const instituicaoSeed: InstituicaoDto = {
 
 function problem(status: number, code: string, title: string): string {
   return JSON.stringify({
-    type: `https://uniplus.unifesspa.edu.br/errors/${code}`,
+    type: `https://unifesspa-edu-br.github.io/uniplus-developers/erros/${code}`,
     title,
     status,
     code,
@@ -320,7 +320,7 @@ describe('InstituicaoPage', () => {
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
     req.flush(
       JSON.stringify({
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
         title: 'Erro de validação',
         status: 422,
         code: 'uniplus.validacao',

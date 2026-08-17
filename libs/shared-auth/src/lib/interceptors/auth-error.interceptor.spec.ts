@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth.service';
 const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
 
 const baseProblem: ProblemDetails = {
-  type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.auth.unauthorized',
+  type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.auth.unauthorized',
   title: 'Não autenticado',
   status: 401,
   code: 'uniplus.auth.unauthorized',

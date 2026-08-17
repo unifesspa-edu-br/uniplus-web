@@ -16,7 +16,7 @@ export function errorResult(
 
 export function mockProblemDetails(overrides: Partial<ProblemDetails> = {}): ProblemDetails {
   return {
-    type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.test.fake',
+    type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.test.fake',
     title: 'Erro simulado para teste',
     status: 500,
     code: 'uniplus.test.fake',
