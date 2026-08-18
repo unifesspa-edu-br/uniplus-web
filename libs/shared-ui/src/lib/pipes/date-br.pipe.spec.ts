@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { DateBrPipe } from './date-br.pipe';
 
-const DATA_VALIDA_RAW = '2026-06-05T15:30:00';
+const DATA_VALIDA_RAW = '2026-06-05T15:30:00Z';
 const DATA_VALIDA = new Date(DATA_VALIDA_RAW);
 
 describe('DateBrPipe', () => {
@@ -24,8 +24,8 @@ describe('DateBrPipe', () => {
   });
 
   it('formata uma data válida no formato "datetime"', () => {
-    expect(pipe.transform(DATA_VALIDA_RAW, 'datetime')).toBe('05/06/2026, 15:30');
-    expect(pipe.transform(DATA_VALIDA, 'datetime')).toBe('05/06/2026, 15:30');
+    expect(pipe.transform(DATA_VALIDA_RAW, 'datetime')).toBe('05/06/2026, 12:30');
+    expect(pipe.transform(DATA_VALIDA, 'datetime')).toBe('05/06/2026, 12:30');
   });
 
   it('formata uma data válida no formato "long"', () => {
@@ -52,5 +52,18 @@ describe('DateBrPipe', () => {
     expect(pipe.transform(dataInexistente, 'datetime')).toBe('');
     expect(pipe.transform(dataInexistente, 'shortMonth')).toBe('');
     expect(pipe.transform(dataInexistente, 'long')).toBe('');
+  });
+
+  it('preserva o instante quando a entrada traz fuso explícito', () => {
+    // 00:00Z = 21:00 do dia anterior em America/Belem (UTC−3)
+    expect(pipe.transform('2026-08-11T00:00:00Z', 'datetime')).toBe('10/08/2026, 21:00');
+  });
+
+  it('não desloca o dia em data pura', () => {
+    expect(pipe.transform('2026-06-05', 'short')).toBe('05/06/2026');
+  });
+
+  it('exibe texto vazio para Date inválido', () => {
+    expect(pipe.transform(new Date('data-invalida'))).toBe('');
   });
 });

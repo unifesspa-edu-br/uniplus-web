@@ -3,15 +3,12 @@ import { Pipe, PipeTransform } from '@angular/core';
 export type DateBrPipeFormat = 'short' | 'long' | 'datetime' | 'shortMonth';
 export type DateBrPipeInput = Date | string | null | undefined;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const timeFormats: ['short', 'long', 'datetime', 'shortMonth'] = [
-  'short',
-  'long',
-  'datetime',
-  'shortMonth',
-] as const;
+/** Data-hora com designador de zona explícito (`Z` ou `±hh:mm`). */
+const ZONED_DATETIME = /T.*([Zz]|[+-]\d{2}:?\d{2})$/;
 
-type DateTimeFormat = { [K in (typeof timeFormats)[number]]: Intl.DateTimeFormat };
+type DateTimeFormat = Record<DateBrPipeFormat, Intl.DateTimeFormat>;
+
+const DIAS_POR_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 const DATE_OPTIONS: DateTimeFormat = {
   short: new Intl.DateTimeFormat('pt-BR', {
@@ -46,42 +43,26 @@ const DATE_OPTIONS: DateTimeFormat = {
 export class DateBrPipe implements PipeTransform {
   transform(input: DateBrPipeInput, format: DateBrPipeFormat = 'short'): string {
     if (!input) return '';
-    let date: Date | null;
-    if (input instanceof Date) {
-      date = input;
-    } else {
-      date = this.parse(input);
-    }
-    if (!date) return '';
-    if (format === 'short') {
-      return DATE_OPTIONS.short.format(date);
-    } else if (format === 'long') {
-      return DATE_OPTIONS.long.format(date);
-    } else if (format === 'datetime') {
-      return DATE_OPTIONS.datetime.format(date);
-    } else if (format === 'shortMonth') {
-      const texto = DATE_OPTIONS.shortMonth.format(date);
-      const resultado = texto.match(/\b(\d{2}) de (\w{3})\.? de (\d{4})\b/);
-      return resultado ? `${resultado[1]} ${resultado[2]} ${resultado[3]}` : '';
-    } else {
-      return '';
-    }
+    const date = input instanceof Date ? input : this.parse(input);
+    if (!date || Number.isNaN(date.getTime())) return '';
+    return format === 'shortMonth'
+      ? this.formatShortMonth(date)
+      : DATE_OPTIONS[format].format(date);
   }
 
   private parse(input: string | null): Date | null {
     if (!input) return null;
-    let year,
-      month,
-      day,
-      hour = 0,
-      minute = 0;
-    // YYYY-MM-DDTHH:mm
+    if (ZONED_DATETIME.test(input)) {
+      const instante = new Date(input);
+      return Number.isNaN(instante.getTime()) ? null : instante;
+    }
+    let year, month, day, hour = 0, minute = 0;
+    // DD-MM-YYYY
     if (input.includes('T')) {
       const [datePart, timePart] = input.split('T');
       [year, month, day] = datePart.split('-');
       [hour, minute] = timePart.split(':').map(Number);
     }
-    // DD-MM-YYYY
     else if (/^\d{2}-\d{2}-\d{4}$/.test(input)) {
       [day, month, year] = input.split('-');
     }
@@ -92,12 +73,33 @@ export class DateBrPipe implements PipeTransform {
       return null;
     }
     const dataInstanciada = new Date(Number(year), Number(month) - 1, Number(day), hour, minute);
-    return this.isExactCalendarDate(dataInstanciada, Number(day), Number(month), Number(year))
+    return this.isValidGregorianDate(Number(year), Number(month), Number(day))
       ? dataInstanciada
       : null;
   }
 
-  private isExactCalendarDate(date: Date, day: number, month: number, year: number): boolean {
-    return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+  /**
+   * Valida ano/mês/dia por aritmética pura de calendário gregoriano — sem
+   * construir nem ler `Date`. Um round-trip via `new Date(...)` mais getters
+   * locais (a abordagem anterior) falha em fusos que suprimem um dia civil
+   * numa transição de offset (ex.: `Pacific/Apia` pulou 2011-12-30 ao cruzar
+   * a linha internacional de data): a validação rejeitaria uma data
+   * gregoriana real dependendo do fuso do processo que a executa.
+   */
+  private isValidGregorianDate(year: number, month: number, day: number): boolean {
+    if (month < 1 || month > 12) return false;
+    const diasNoMes = month === 2 && this.isBissexto(year) ? 29 : DIAS_POR_MES[month - 1];
+    return day >= 1 && day <= diasNoMes;
+  }
+
+  private isBissexto(year: number): boolean {
+    return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  }
+
+  private formatShortMonth(date: Date): string {
+    const partes = DATE_OPTIONS.shortMonth.formatToParts(date);
+    const parte = (tipo: Intl.DateTimeFormatPartTypes) =>
+      partes.find((p) => p.type === tipo)?.value ?? '';
+    return `${parte('day')} ${parte('month').replace('.', '')} ${parte('year')}`;
   }
 }
