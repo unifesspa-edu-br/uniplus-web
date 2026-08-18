@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
-import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell';
+import { AppShellComponent, type UiShellNavGroup } from '@uniplus/shared-ui/shell';
 
 @Component({
   selector: 'ptl-layout',
@@ -13,7 +13,7 @@ import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell
       appName="Portal do Candidato — Unifesspa"
       subtitle="Acompanhamento de processos e inscrições"
       footerLabel="Uni+ — Unifesspa"
-      [navItems]="navItems"
+      [navGroups]="navGroups"
     >
       <auth-user-header-info uiShellActions />
       <router-outlet />
@@ -21,10 +21,15 @@ import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell
   `,
 })
 export class LayoutComponent {
-  protected readonly navItems: readonly UiShellNavItem[] = [
-    { label: 'Processos', routerLink: '/processos' },
-    { label: 'Acompanhamento', routerLink: '/acompanhamento' },
-    { label: 'Documentos', routerLink: '/documentos' },
-    { label: 'Meu Perfil', routerLink: '/perfil' },
+  protected readonly navGroups: readonly UiShellNavGroup[] = [
+    {
+      label: 'Navegação',
+      items: [
+        { label: 'Processos', routerLink: '/processos' },
+        { label: 'Acompanhamento', routerLink: '/acompanhamento' },
+        { label: 'Documentos', routerLink: '/documentos' },
+        { label: 'Meu Perfil', routerLink: '/perfil' },
+      ],
+    },
   ];
 }

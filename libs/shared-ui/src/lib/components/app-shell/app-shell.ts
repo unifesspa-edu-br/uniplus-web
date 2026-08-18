@@ -112,6 +112,7 @@ let shellIdSeed = 0;
             }
           </nav>
           <footer class="sidebar__bottom" aria-label="Usuário autenticado">
+            @if (footerLabel()) { <span class="ui-app-shell__footer-label">{{ footerLabel() }}</span> }
             <ng-content select="[uiShellUser]" />
           </footer>
         </aside>
@@ -186,6 +187,7 @@ export class AppShellComponent {
   readonly privacyHref = input<string | null>(null);
   readonly navGroups = input<readonly UiShellNavGroup[]>([]);
   readonly breadcrumb = input<readonly UiShellBreadcrumbItem[]>([]);
+  readonly footerLabel = input<string>('');
 
   protected readonly sidebarMobileOpen = signal(false);
   protected readonly sidebarDesktopOpen = signal(true);

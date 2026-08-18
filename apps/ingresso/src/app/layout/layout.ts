@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
-import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell';
+import { AppShellComponent, type UiShellNavGroup } from '@uniplus/shared-ui/shell';
 
 @Component({
   selector: 'ing-layout',
@@ -13,7 +13,7 @@ import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell
       appName="Ingresso — Uni+"
       subtitle="Chamadas, convocações e matrículas"
       footerLabel="CRCA — Unifesspa"
-      [navItems]="navItems"
+      [navGroups]="navGroups"
     >
       <auth-user-header-info uiShellActions />
       <router-outlet />
@@ -21,10 +21,15 @@ import { AppShellComponent, type UiShellNavItem } from '@uniplus/shared-ui/shell
   `,
 })
 export class LayoutComponent {
-  protected readonly navItems: readonly UiShellNavItem[] = [
-    { label: 'Dashboard', routerLink: '/dashboard', exact: true },
-    { label: 'Chamadas', routerLink: '/chamadas' },
-    { label: 'Convocações', routerLink: '/convocacoes' },
-    { label: 'Matrículas', routerLink: '/matriculas' },
+  protected readonly navGroups: readonly UiShellNavGroup[] = [
+    {
+      label: 'Navegação',
+      items: [
+        { label: 'Dashboard', routerLink: '/dashboard', exact: true },
+        { label: 'Chamadas', routerLink: '/chamadas' },
+        { label: 'Convocações', routerLink: '/convocacoes' },
+        { label: 'Matrículas', routerLink: '/matriculas' },
+      ],
+    },
   ];
 }
