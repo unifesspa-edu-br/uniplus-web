@@ -109,7 +109,6 @@ export class ProcessoSeletivoPage {
       if (this.stepsOverlayOpen()) this.overlayScroll.unlock();
     });
 
-
     effect(() => {
       this.store.currentStep();
       queueMicrotask(() => {
@@ -256,7 +255,23 @@ export class ProcessoSeletivoPage {
       if (alerta === null) return;
 
       alerta.setAttribute('tabindex', '-1');
-      alerta.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      // O scroll do wizard vive em `.wiz-content` — rolar o documento com
+      // `scrollIntoView` empurraria a institutional-bar/header/sidebar para
+      // fora do topo (somem) e deixaria folga embaixo. Rola somente o
+      // container, calculando o offset interno pelo getBoundingClientRect.
+      const scroller = this.wizContent?.nativeElement;
+      if (scroller) {
+        try {
+          const topoAlerta = alerta.getBoundingClientRect().top;
+          const topoScroller = scroller.getBoundingClientRect().top;
+          scroller.scrollTo({
+            top: scroller.scrollTop + (topoAlerta - topoScroller),
+            behavior: 'smooth',
+          });
+        } catch {
+          // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
+        }
+      }
       alerta.focus({ preventScroll: true });
     });
   }
