@@ -686,10 +686,6 @@ export class CondicoesAtendimentoListPage implements OnInit {
       .subscribe((result) => this.handleSalvarResult(result));
   }
 
-  protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
-  }
-
   limparFiltroBusca() {
     this.termoBusca.set('');
   }

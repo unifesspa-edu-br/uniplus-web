@@ -283,6 +283,29 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
   });
 });
 
+// Bloco `axe` escopado: audita só o <ui-filter-bar>, isolado do resto da
+// página, respondendo ao CA-06 da issue #513 (ui-filter-bar #500).
+test.describe('ui-filter-bar — auditoria isolada axe-core (CA-06 da issue #513)', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockConfiguracaoRuntimeConfig(page);
+  });
+
+  test('não tem violações serious/critical isoladamente', async ({ page }) => {
+    await mockApi(page, novoCapturado(), [rgSeed, laudoSeed]);
+    await abrirPagina(page);
+
+    const resultado = await new AxeBuilder({ page })
+      .include('.filter-bar')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    const graves = resultado.violations.filter(
+      (v) => v.impact === 'serious' || v.impact === 'critical',
+    );
+
+    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+  });
+});
+
 // Bloco `keyboard`: navegação por teclado sem mouse (e-MAG 3.1).
 test.describe('Tipo de Documento — navegação por teclado (#392)', () => {
   test.beforeEach(async ({ page }) => {

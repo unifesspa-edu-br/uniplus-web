@@ -464,10 +464,6 @@ export class ModalidadesListPage {
     });
   }
 
-  protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
-  }
-
   protected naturezaLabel(token: string): string {
     return rotulo(NATUREZAS_LEGAIS, token);
   }
