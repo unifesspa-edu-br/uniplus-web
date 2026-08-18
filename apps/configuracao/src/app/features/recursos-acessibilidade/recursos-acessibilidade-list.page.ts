@@ -468,10 +468,6 @@ export class RecursosAcessibilidadeListPage {
     }
   }
 
-  protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
-  }
-
   limparFiltroBusca() {
     this.termoBusca.set('');
   }

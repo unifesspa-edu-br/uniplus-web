@@ -118,7 +118,8 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
       >
         <button
           uiFilterBarActions
-          type="button" class="btn btn--tertiary btn--sm btn--rect"
+          type="button"
+          class="btn btn--tertiary btn--sm btn--rect"
           (click)="busca.set('')"
         >
         Limpar
@@ -479,10 +480,6 @@ export class ReservaDemograficaListPage {
   protected pct(valor: number | string): string {
     const numero = typeof valor === 'string' ? Number(valor) : valor;
     return Number.isFinite(numero) ? numero.toFixed(2) : String(valor);
-  }
-
-  protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
   }
 
   protected proximaPagina(): void {

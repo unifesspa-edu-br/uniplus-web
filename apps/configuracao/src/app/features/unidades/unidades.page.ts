@@ -197,8 +197,7 @@ const BACKEND_FIELD_TO_CONTROL = {
           <span class="u-eyebrow">Tipo</span>
           <ui-filter-chips
             [options]="tipoChips"
-            [selected]="tipoFiltro()"
-            (selectedChange)="tipoFiltro.set($event ?? '')"
+            [(selected)]="tipoFiltro"
             ariaLabel="Filtrar por tipo"
           />
         </ng-container>

@@ -103,12 +103,12 @@ interface TipoDocumentoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     FilterChipsComponent,
     PagerComponent,
     SpinnerComponent,
     TagComponent,
-    FilterBarComponent
-],
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-header">
@@ -150,7 +150,6 @@ interface TipoDocumentoForm {
         <ui-filter-chips
           [options]="categoriaChips()"
           [(selected)]="filtroCategoria"
-          (selectedChange)="filtroCategoria.set($event ?? '')"
           ariaLabel="Filtrar por categoria"
         />
       </ng-container>
@@ -638,10 +637,6 @@ export class TiposDocumentoListPage {
         }
       });
     });
-  }
-
-  protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
   }
 
   protected limparFiltros(): void {

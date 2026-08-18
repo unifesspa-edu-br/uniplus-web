@@ -154,13 +154,18 @@ describe('FilterBarComponent (projeção de conteúdo e two-way binding)', () =>
     return { fixture, getInputEl };
   }
 
-  it('projeta o conteúdo do slot uiFilterBarActions dentro de .filter-bar__row', () => {
+  it('projeta o conteúdo do slot uiFilterBarActions dentro de .filter-bar__row e reage ao clique', () => {
     const { fixture } = setupHost();
+    const host = fixture.componentInstance;
     const row = fixture.debugElement.query(By.css('.filter-bar__row'));
     const button = row.query(By.css('button'));
 
     expect(button).toBeTruthy();
     expect((button.nativeElement as HTMLButtonElement).textContent?.trim()).toBe('Limpar');
+
+    expect(host.limparChamado).toBe(false);
+    (button.nativeElement as HTMLButtonElement).click();
+    expect(host.limparChamado).toBe(true);
   });
 
   it('projeta o conteúdo do slot uiFilterBarSecondary dentro de .filter-bar__group', () => {
