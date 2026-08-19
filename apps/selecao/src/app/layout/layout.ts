@@ -86,7 +86,7 @@ export class LayoutComponent {
         {
           label: 'Processo seletivo',
           icon: 'pi-file',
-          routerLink: '/processo-seletivo',
+          routerLink: '/processo-seletivo/novo',
           roles: ['plataforma-admin'],
         },
         {

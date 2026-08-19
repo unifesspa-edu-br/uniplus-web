@@ -1,243 +1,394 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
-import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui/components';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+
+import { AuthService } from '@uniplus/shared-auth/bootstrap';
+
+import {
+  ApiResult,
+  extractNextCursor,
+  extractPrevCursor,
+  ProblemI18nService,
+  type Cursor,
+} from '@uniplus/shared-core/http';
+
+import {
+  ProcessosSeletivosApi,
+  type ProcessoSeletivoResumoDto,
+} from '@uniplus/shared-data/selecao';
+
+import {
+  AlertComponent,
+  EmptyStateComponent,
+  PagerComponent,
+  SpinnerComponent,
+  TagComponent,
+  type UiTagVariant,
+} from '@uniplus/shared-ui/components';
+
+const PAGE_SIZE = 50;
 
 @Component({
   selector: 'sel-dashboard',
   standalone: true,
-  imports: [TagComponent, EmptyStateComponent, DecimalPipe, DatePipe, RouterLink],
+  imports: [
+    RouterLink,
+    DatePipe,
+    AlertComponent,
+    EmptyStateComponent,
+    PagerComponent,
+    SpinnerComponent,
+    TagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './dashboard.page.css',
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title">Painel de Processos</h1>
-        <p class="page-header__desc">Visão geral dos processos seletivos, inscrições e prazos.</p>
+        <h1 class="page-header__title">Processos Seletivos</h1>
+        <p class="page-header__desc">Consulte e retome os processos seletivos cadastrados.</p>
       </div>
+
       @if (podeCadastrarProcesso()) {
-        <a class="btn btn--primary" routerLink="/processo-seletivo">
+        <a class="btn btn--primary" routerLink="/processo-seletivo/novo">
           <i class="pi pi-plus" aria-hidden="true"></i>
           Novo Processo
         </a>
       }
     </div>
+
+    @if (errorMessage()) {
+      <ui-alert variant="danger" heading="Não foi possível carregar os processos seletivos">
+        {{ errorMessage() }}
+
+        <div class="sel-dashboard__retry">
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="loading()"
+            (click)="tentarNovamente()"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </ui-alert>
+    }
+
     <div class="kpis">
       <div class="kpi">
-        <span class="kpi__label">Processos ativos</span><span class="kpi__num">12</span
-        ><span class="kpi__delta">↑ 2 vs. mês passado</span>
+        <span class="kpi__label">Total de processos</span>
+        <span class="kpi__num">{{ totalProcessos() }}</span>
+        <span class="kpi__delta">Processos cadastrados</span>
       </div>
+
       <div class="kpi">
-        <span class="kpi__label">Inscrições no mês</span><span class="kpi__num">23.481</span
-        ><span class="kpi__delta">↑ 14% vs. ciclo anterior</span>
+        <span class="kpi__label">Publicados</span>
+        <span class="kpi__num">{{ processosPublicados() }}</span>
+        <span class="kpi__delta">Processos publicados</span>
       </div>
+
       <div class="kpi">
-        <span class="kpi__label">Aguardando homologação</span><span class="kpi__num">847</span
-        ><span class="kpi__delta is-down">3 vencem hoje</span>
+        <span class="kpi__label">Em elaboração</span>
+        <span class="kpi__num">{{ processosEmElaboracao() }}</span>
+        <span class="kpi__delta">Processos em rascunho</span>
       </div>
+
       <div class="kpi">
-        <span class="kpi__label">Recursos abertos</span><span class="kpi__num">19</span
-        ><span class="kpi__delta">↓ 4 vs. semana</span>
+        <span class="kpi__label">Encerrados</span>
+        <span class="kpi__num">{{ processosEncerrados() }}</span>
+        <span class="kpi__delta is-down">Processos encerrados</span>
       </div>
     </div>
-    <section class="panel" aria-labelledby="sel-editais-andamento-title">
+
+
+    <section class="panel" aria-labelledby="sel-processos-seletivos-title">
       <div class="panel-head">
         <div class="panel-head__title">
-          <h2 id="sel-editais-andamento-title">Processos em andamento</h2>
+          <h2 id="sel-processos-seletivos-title">Processos Seletivos</h2>
+
+          <span class="list-count" aria-label="Total de processos seletivos exibidos">
+            {{ processos().length }}
+          </span>
+
+          @if (loading()) {
+            <span class="sel-dashboard__loading">
+              <ui-spinner size="sm" />
+              Carregando
+            </span>
+          }
         </div>
       </div>
+
       @if (processos().length > 0) {
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
                 <th scope="col">Processo</th>
-                <th scope="col">Modalidade</th>
-                <th scope="col">Inscritos</th>
-                <th scope="col">Prazo</th>
+                <th scope="col">Tipo</th>
                 <th scope="col">Status</th>
+                <th scope="col">Data de criação</th>
+                <th scope="col">
+                  <span class="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
+
             <tbody>
               @for (processo of processos(); track processo.id) {
                 <tr>
                   <td data-label="Processo">
                     <div class="table-responsive__primary">
-                      {{ processo.titulo }}
-                    </div>
-                    <div class="table-responsive__meta">
-                      {{ processo.subtitulo }}
+                      {{ processo.nome }}
                     </div>
                   </td>
-                  <td data-label="Modalidade">
-                    {{ processo.modalidade }}
-                  </td>
-                  <td data-label="Inscritos">
-                    {{ processo.numeroInscritos | number }}
-                  </td>
-                  <td data-label="Prazo">
-                    {{ processo.dataPrazo | date: 'dd/MM/yyyy' }}
-                  </td>
-                  <td data-label="Status">
-                    @if (processo.status === 'aberto') {
-                      <ui-tag variant="success">Aberto</ui-tag>
-                    } @else if (processo.status === 'analise') {
-                      <ui-tag variant="warning">Em análise</ui-tag>
-                    } @else {
-                      <ui-tag variant="neutral">Encerrado</ui-tag>
+
+                  <td data-label="Tipo">
+                    <div class="table-responsive__primary">
+                      {{ processo.tipoProcesso.nome }}
+                    </div>
+
+                    @if (processo.tipoProcesso.codigo) {
+                      <div class="table-responsive__meta">
+                        {{ processo.tipoProcesso.codigo }}
+                      </div>
                     }
+                  </td>
+
+                  <td data-label="Status">
+                    <ui-tag [variant]="statusVariante(processo.status)">
+                      {{ statusLabel(processo.status) }}
+                    </ui-tag>
+                  </td>
+
+                  <td data-label="Data de criação">
+                    {{ processo.criadoEm | date: 'dd/MM/yyyy HH:mm' }}
+                  </td>
+
+                  <td class="table-responsive__actions" data-label="Ações">
+                    <a
+                      class="btn btn--tertiary btn--sm btn--rect"
+                      [routerLink]="['/processo-seletivo', processo.id]"
+                      [attr.aria-label]="'Abrir processo ' + processo.nome"
+                    >
+                      Abrir
+                    </a>
                   </td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
-      } @else {
+      } @else if (!loading() && !errorMessage()) {
         <ui-empty-state
           heading="Nenhum processo seletivo cadastrado"
-          description="Cadastre um processo seletivo para iniciar a estrutura institucional."
+          description="Cadastre um processo seletivo para iniciar sua configuração."
         >
+          @if (podeCadastrarProcesso()) {
+            <a class="btn btn--primary" routerLink="/processo-seletivo/novo"> Novo Processo </a>
+          }
         </ui-empty-state>
       }
+
+      @if (prevCursor() !== null || nextCursor() !== null) {
+        <ui-pager
+          statusText="Navegação por páginas"
+          navigationLabel="Paginação de processos seletivos"
+          [hasPrevious]="prevCursor() !== null"
+          [hasNext]="nextCursor() !== null"
+          [isDisabled]="loading()"
+          (previous)="paginaAnterior()"
+          (next)="proximaPagina()"
+        />
+      }
     </section>
-    <div class="lower">
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Próximos prazos</h2>
-          <span class="panel-head__aviso">Agenda indisponível</span>
-        </div>
-        <div class="timeline">
-          <div class="tline">
-            <span class="tline__bullet" style="background:var(--color-danger-500)"></span>
-            <div class="tline__body">
-              <div class="tline__what"><strong>Homologação SISU 2026.1</strong> — encerra hoje</div>
-              <div class="tline__when">22:00 · 3 inscrições pendentes</div>
-            </div>
-          </div>
-          <div class="tline">
-            <span class="tline__bullet" style="background:var(--color-warning-600)"></span>
-            <div class="tline__body">
-              <div class="tline__what">
-                <strong>Recursos VEST 2025.2</strong> — analisar 7 pedidos
-              </div>
-              <div class="tline__when">amanhã · até 18:00</div>
-            </div>
-          </div>
-          <div class="tline">
-            <span class="tline__bullet"></span>
-            <div class="tline__body">
-              <div class="tline__what">
-                <strong>Publicação resultado parcial</strong> — Pós Educação
-              </div>
-              <div class="tline__when">qua, 12 mar · 14:00</div>
-            </div>
-          </div>
-          <div class="tline">
-            <span class="tline__bullet"></span>
-            <div class="tline__body">
-              <div class="tline__what"><strong>Início matrícula</strong> — Vestibular Indígena</div>
-              <div class="tline__when">seg, 17 mar · 09:00</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Atividade recente</h2>
-          <span class="panel-head__aviso">Histórico indisponível</span>
-        </div>
-        <div class="timeline">
-          <div class="tline">
-            <span class="tline__bullet" style="background:var(--color-success-600)"></span>
-            <div class="tline__body">
-              <div class="tline__what"><strong>Edital SISU 2026.1</strong> publicado</div>
-              <div class="tline__when">Joana A. · há 2 horas</div>
-            </div>
-          </div>
-          <div class="tline">
-            <span class="tline__bullet"></span>
-            <div class="tline__body">
-              <div class="tline__what">
-                12 inscrições homologadas em <strong>PROC 09/2026</strong>
-              </div>
-              <div class="tline__when">Sistema · há 4 horas</div>
-            </div>
-          </div>
-          <div class="tline">
-            <span class="tline__bullet" style="background:var(--color-warning-600)"></span>
-            <div class="tline__body">
-              <div class="tline__what">Recurso pendente em <strong>VEST 2025.2</strong></div>
-              <div class="tline__when">candidato 0823… · há 6 horas</div>
-            </div>
-          </div>
-          <div class="tline">
-            <span class="tline__bullet"></span>
-            <div class="tline__body">
-              <div class="tline__what">Cota PPI atualizada para <strong>VEST IND 2026</strong></div>
-              <div class="tline__when">Jeferson F. · ontem · 17:14</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   `,
+  host: {
+    class: 'cfg-page',
+  },
 })
 export class DashboardPage {
+  private readonly api = inject(ProcessosSeletivosApi);
   private readonly authService = inject(AuthService);
+  private readonly problemI18n = inject(ProblemI18nService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly pagina = signal<
+    | {
+        readonly cursor: Cursor;
+        readonly direction: 'next' | 'prev';
+      }
+    | undefined
+  >(undefined);
+
+  private readonly lista = signal<ApiResult<readonly ProcessoSeletivoResumoDto[]> | undefined>(
+    undefined,
+  );
+
   protected readonly loading = signal(false);
-  protected readonly errorMessage = computed<string | null>(() => null);
-  protected readonly processos = signal(PROCESSO_SELETIVOS_DTO);
-  protected readonly temFiltro = signal(false);
+
+  private readonly cursores = signal<{
+    readonly prev: Cursor | null;
+    readonly next: Cursor | null;
+  }>({
+    prev: null,
+    next: null,
+  });
+
+  protected readonly processos = computed(() => {
+    const resultado = this.lista();
+
+    if (!resultado?.ok) {
+      return [];
+    }
+
+    return resultado.data;
+  });
+
+  protected readonly totalProcessos = computed(() => this.processos().length);
+
+  protected readonly processosPublicados = computed(
+    () => this.processos().filter((processo) => processo.status === 'PUBLICADO').length,
+  );
+
+  protected readonly processosEmElaboracao = computed(
+    () =>
+      this.processos().filter(
+        (processo) => processo.status === 'RASCUNHO' || processo.status === 'EM_ELABORACAO',
+      ).length,
+  );
+
+  protected readonly processosEncerrados = computed(
+    () => this.processos().filter((processo) => processo.status === 'ENCERRADO').length,
+  );
+
   /**
-   * O atalho só aparece para quem a rota admite — sem isso, um gestor clicaria
-   * em "Novo Processo" para cair em `/acesso-negado`.
+   * Processos publicados na página atual.
    */
+  protected readonly prevCursor = computed(() => this.cursores().prev);
+
+  protected readonly nextCursor = computed(() => this.cursores().next);
+
+  protected readonly errorMessage = computed<string | null>(() => {
+    const resultado = this.lista();
+
+    if (resultado && !resultado.ok) {
+      return this.problemI18n.resolve(resultado.problem).title;
+    }
+
+    return null;
+  });
+
   protected readonly podeCadastrarProcesso = computed(() =>
     this.authService.roles().includes('plataforma-admin'),
   );
-}
 
-interface ProcessoSeletivoDTO {
-  id: number;
-  titulo: string;
-  subtitulo: string;
-  modalidade: 'Graduação' | 'Pós-graduação' | 'Mestrado' | 'Doutorado';
-  numeroInscritos: number;
-  numeroVagas: number;
-  dataPrazo: Date;
-  status: 'aberto' | 'analise' | 'encerrado';
-}
+  constructor() {
+    this.carregarPagina();
+  }
 
-const PROCESSO_SELETIVOS_DTO: ProcessoSeletivoDTO[] = [
-  {
-    id: 1,
-    titulo: 'SISU 2026.1',
-    subtitulo: 'Edital 12/2026',
-    numeroVagas: 1234,
-    numeroInscritos: 12483,
-    dataPrazo: new Date(),
-    modalidade: 'Graduação',
-    status: 'aberto',
-  },
-  {
-    id: 2,
-    titulo: 'PROC 09/2026',
-    subtitulo: 'Edital 09/2026',
-    numeroVagas: 47,
-    numeroInscritos: 847,
-    dataPrazo: new Date(),
-    modalidade: 'Pós-graduação',
-    status: 'analise',
-  },
-  {
-    id: 3,
-    titulo: 'VEST IND 2026',
-    subtitulo: 'Edital 04/2026',
-    numeroVagas: 86,
-    numeroInscritos: 2108,
-    dataPrazo: new Date(),
-    modalidade: 'Graduação',
-    status: 'encerrado',
-  },
-];
+  private carregarPagina(): void {
+    const pagina = this.pagina();
+
+    this.loading.set(true);
+
+    this.api
+      .listar({
+        cursor: pagina?.cursor,
+        direction: pagina?.direction,
+        limit: PAGE_SIZE,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.loading.set(false);
+        this.lista.set(result);
+
+        if (!result.ok) {
+          return;
+        }
+
+        const link = result.headers?.get('Link') ?? null;
+
+        this.cursores.set({
+          prev: extractPrevCursor(link),
+          next: extractNextCursor(link),
+        });
+      });
+  }
+
+  protected proximaPagina(): void {
+    const proximo = this.nextCursor();
+
+    if (proximo !== null && !this.loading()) {
+      this.pagina.set({
+        cursor: proximo,
+        direction: 'next',
+      });
+
+      this.carregarPagina();
+    }
+  }
+
+  protected paginaAnterior(): void {
+    const anterior = this.prevCursor();
+
+    if (anterior !== null && !this.loading()) {
+      this.pagina.set({
+        cursor: anterior,
+        direction: 'prev',
+      });
+
+      this.carregarPagina();
+    }
+  }
+
+  protected tentarNovamente(): void {
+    if (!this.loading()) {
+      this.carregarPagina();
+    }
+  }
+
+  protected statusLabel(status: string): string {
+    switch (status) {
+      case 'RASCUNHO':
+        return 'Rascunho';
+
+      case 'EM_ELABORACAO':
+        return 'Em elaboração';
+
+      case 'PUBLICADO':
+        return 'Publicado';
+
+      case 'ENCERRADO':
+        return 'Encerrado';
+
+      default:
+        return status;
+    }
+  }
+
+  protected statusVariante(status: string): UiTagVariant {
+    switch (status) {
+      case 'PUBLICADO':
+        return 'success';
+
+      case 'ENCERRADO':
+        return 'neutral';
+
+      case 'RASCUNHO':
+      case 'EM_ELABORACAO':
+        return 'warning';
+
+      default:
+        return 'neutral';
+    }
+  }
+}
