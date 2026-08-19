@@ -90,9 +90,7 @@ test.describe('Unidade — cobertura visual DS', () => {
     await page.goto('/unidades');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect(page.getByRole('heading', { name: 'Unidade', level: 1 })).toBeVisible();
-    await expect(
-      page.getByRole('region', { name: 'Identificação institucional' }),
-    ).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Identificação institucional' })).toBeVisible();
     await expect(page.locator('.admin-topbar')).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeVisible();
     await expect(page.getByRole('search', { name: 'Filtrar unidades' })).toBeVisible();
@@ -103,14 +101,18 @@ test.describe('Unidade — cobertura visual DS', () => {
 
     await page.getByRole('searchbox', { name: 'Buscar unidade' }).fill('ceps');
     await expect(page.locator('table tbody tr')).toHaveCount(1);
-    await expect(page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ })).toBeVisible();
+    await expect(
+      page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Limpar' }).click();
     // Chips vêm do roster fechado (sem contagem, server-side); nome exato
     // evita colidir com os botões de linha "Centro de …".
     await page.getByRole('button', { name: 'Centro', exact: true }).click();
     await expect(page.locator('table tbody tr')).toHaveCount(2);
-    await expect(page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ })).toBeVisible();
+    await expect(
+      page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ }),
+    ).toBeVisible();
     await expect(
       page.getByRole('row', { name: /CTIC.*Centro de Tecnologia da Informação e Comunicação/ }),
     ).toBeVisible();
@@ -331,18 +333,13 @@ async function assertNoHorizontalOverflow(page: Page): Promise<void> {
 }
 
 async function assertSidebarBehavior(page: Page, viewport: VisualViewport): Promise<void> {
-  const sidebar = page.locator('#cfg-admin-sidebar');
-  const sidebarFooter = sidebar.locator('.sidebar__bottom');
-  const sidebarAvatar = sidebar.locator('.sidebar__avatar');
-  const sidebarUserInfo = sidebar.locator('.sidebar__user-info');
+  const sidebar = page.locator('aside[aria-label="Painel administrativo"]');
+  const drawer = page.locator('dialog.uni-drawer[open]');
 
   if (viewport === 'desktop') {
-    const toggle = page.getByRole('button', { name: 'Fechar menu lateral' });
+    const toggle = page.getByRole('button', { name: 'Recolher menu lateral', exact: true });
     await expect(sidebar).toBeVisible();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(sidebarFooter).toBeVisible();
-    await expect(sidebarAvatar).toBeVisible();
-    await expect(sidebarUserInfo).toBeVisible();
     await assertSidebarGroups(sidebar);
     await expect(sidebar.getByRole('link', { name: 'Unidade' })).toHaveAttribute(
       'aria-current',
@@ -353,44 +350,29 @@ async function assertSidebarBehavior(page: Page, viewport: VisualViewport): Prom
 
     await toggle.click();
     await expect(sidebar).toBeVisible();
-    await expect(sidebar).not.toHaveAttribute('aria-hidden', 'true');
-    await expect(sidebar).not.toHaveAttribute('inert', '');
-    await expect(page.getByRole('button', { name: 'Abrir menu lateral' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
+    await expect(
+      page.getByRole('button', { name: 'Expandir menu lateral', exact: true }),
+    ).toHaveAttribute('aria-expanded', 'false');
     const collapsedBox = await sidebar.boundingBox();
     expect(collapsedBox?.width ?? 0).toBeLessThanOrEqual(96);
-    await expect(sidebar.getByRole('link', { name: 'Unidade' })).toBeVisible();
-    await expect(sidebarFooter).toBeVisible();
-    await expect(sidebarAvatar).toBeVisible();
-    await expect(sidebarUserInfo).toBeHidden();
     await assertNoHorizontalOverflow(page);
-    await page.getByRole('button', { name: 'Abrir menu lateral' }).click();
+    await page.getByRole('button', { name: 'Expandir menu lateral', exact: true }).click();
     await expect(sidebar).toBeVisible();
+
+    await sidebar.evaluate((node) => node.querySelector('nav')?.scrollTo({ top: 10_000 }));
+    await expect(sidebar.getByText('Peso ENEM')).toBeVisible();
   } else {
-    await expect(sidebar).toBeHidden();
-    await page.getByRole('button', { name: 'Abrir menu lateral' }).click();
-    await expect(sidebar).toBeVisible();
-    await expect(sidebarFooter).toBeVisible();
-    await expect(sidebarUserInfo).toBeVisible();
-    await assertSidebarGroups(sidebar);
-    await sidebar.getByRole('link', { name: 'Unidade' }).click();
-    await expect(sidebar).toBeHidden();
-    await page.getByRole('button', { name: 'Abrir menu lateral' }).click();
-  }
-
-  await sidebar.evaluate((node) => node.querySelector('nav')?.scrollTo({ top: 10_000 }));
-  await expect(sidebar.getByText('Peso ENEM')).toBeVisible();
-
-  if (viewport === 'mobile') {
-    await sidebar.getByRole('button', { name: 'Fechar menu lateral' }).click();
-    await expect(sidebar).toBeHidden();
+    await expect(page.getByRole('dialog', { name: 'Menu de navegação' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
+    await expect(drawer).toBeVisible();
+    await assertSidebarGroups(drawer);
+    await drawer.getByRole('link', { name: 'Unidade' }).click();
+    await expect(page.getByRole('dialog', { name: 'Menu de navegação' })).toHaveCount(0);
   }
 }
 
-async function assertSidebarGroups(sidebar: Locator): Promise<void> {
-  const nav = sidebar.getByRole('navigation', { name: 'Navegação administrativa' });
+async function assertSidebarGroups(container: Locator): Promise<void> {
+  const nav = container.getByRole('navigation', { name: 'Navegação principal' });
   await expect(nav.getByText('Painéis', { exact: true })).toBeVisible();
   await expect(nav.getByText('Resultados', { exact: true })).toBeVisible();
   await expect(nav.getByText('Configuração', { exact: true })).toBeVisible();
@@ -398,9 +380,7 @@ async function assertSidebarGroups(sidebar: Locator): Promise<void> {
 
 async function assertClickableHeaderMenus(page: Page, viewport: VisualViewport): Promise<void> {
   await page.getByRole('button', { name: 'Preferências de acessibilidade' }).click();
-  await expect(
-    page.getByRole('region', { name: 'Preferências de acessibilidade' }),
-  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Preferências de acessibilidade' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Claro' })).toBeVisible();
   await page.keyboard.press('Escape');
 
@@ -416,7 +396,7 @@ async function assertClickableHeaderMenus(page: Page, viewport: VisualViewport):
     await expect(page.getByRole('menuitem', { name: 'Sair' })).toBeVisible();
     await page.keyboard.press('Escape');
   } else {
-    await expect(accountMenu).toBeHidden();
+    await expect(accountMenu).toHaveAttribute('aria-expanded', 'false');
   }
 
   await page.getByRole('link', { name: 'Início' }).click();

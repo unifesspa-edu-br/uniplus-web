@@ -59,7 +59,11 @@ let shellIdSeed = 0;
         [privacyHref]="privacyHref()"
       />
 
-      <div class="admin-shell">
+      <div
+        class="admin-shell"
+        [attr.data-sidebar-mobile]="mobileMenuOpen() ? 'open' : null"
+        [attr.data-sidebar-desktop]="sidebarDesktopOpen() ? 'open' : 'closed'"
+      >
         <aside class="sidebar" [id]="sidebarId" aria-label="Painel administrativo">
           <div class="sidebar__brand">
             <div class="sidebar__mark" aria-hidden="true">U+</div>
@@ -173,7 +177,8 @@ let shellIdSeed = 0;
         </div>
       </div>
 
-      <!-- Drawer mobile (contrato DS: <dialog class="uni-drawer">) -->
+      <!-- Drawer mobile (contrato DS: <dialog class="uni-drawer">) — só montado quando aberto
+      para não duplicar dialog.uni-drawer em apps que já usam ui-drawer. -->      @if (mobileMenuOpen()) {
       <ui-drawer
         [visible]="mobileMenuOpen()"
         heading="Menu"
@@ -208,6 +213,7 @@ let shellIdSeed = 0;
           }
         </nav>
       </ui-drawer>
+      }
 
       <ui-vlibras-loader />
     </div>

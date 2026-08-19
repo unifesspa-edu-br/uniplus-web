@@ -159,7 +159,9 @@ test.describe('Instituição — cobertura visual DS', () => {
     await mockInstituicaoApi(page, { existe: false });
     await page.goto('/instituicao');
 
-    await expect(page.getByRole('heading', { name: 'Nenhuma instituição cadastrada' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Nenhuma instituição cadastrada' }),
+    ).toBeVisible();
     await expect(page.getByText('Registro único')).toBeVisible();
     await expect(page.locator('.cfg-instituicao__ficha')).toHaveCount(0);
 
@@ -185,9 +187,7 @@ test.describe('Instituição — cobertura visual DS', () => {
     // Pós-criação o GET passa a devolver 200 → a ficha aparece.
     await expect(drawer).toBeHidden();
     await expect(page.locator('.cfg-instituicao__ficha')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: INSTITUICAO.nome, level: 2 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: INSTITUICAO.nome, level: 2 })).toBeVisible();
 
     await attachScreenshot(page, testInfo, 'instituicao-criacao');
   });
@@ -263,19 +263,24 @@ async function assertNoHorizontalOverflow(page: Page): Promise<void> {
 }
 
 async function assertSidebarInstituicaoAtiva(page: Page, viewport: VisualViewport): Promise<void> {
-  const sidebar = page.locator('#cfg-admin-sidebar');
+  const sidebar = page.locator('aside[aria-label="Painel administrativo"]');
+  const drawer = page.locator("dialog.uni-drawer[open]");
   if (viewport === 'mobile') {
-    await page.getByRole('button', { name: 'Abrir menu lateral' }).click();
-    await expect(sidebar).toBeVisible();
+    await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole('link', { name: 'Instituição' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    return;
   }
+  await expect(sidebar).toBeVisible();
   await expect(sidebar.getByRole('link', { name: 'Instituição' })).toHaveAttribute(
     'aria-current',
     'page',
   );
-  if (viewport === 'mobile') {
-    await sidebar.getByRole('button', { name: 'Fechar menu lateral' }).click();
-    await expect(sidebar).toBeHidden();
-  }
 }
 
 async function attachScreenshot(
