@@ -23,10 +23,7 @@ export const WCAG_A_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as co
  * como baseline regulatório e adiciona `wcag2aaa` apenas como gate visual
  * aplicável, sem declarar conformidade WCAG AAA completa.
  */
-export const WCAG_AAA_APPLICABLE_TAGS = [
-  ...WCAG_A_AA_TAGS,
-  'wcag2aaa',
-] as const;
+export const WCAG_AAA_APPLICABLE_TAGS = [...WCAG_A_AA_TAGS, 'wcag2aaa'] as const;
 
 /**
  * Configuração opcional para customizar a análise por cenário.
@@ -81,13 +78,8 @@ export interface AaaVisualContractOptions {
  * no momento da chamada — elementos lazy-loaded ou em transição podem ser
  * perdidos.
  */
-export async function runAxeWcagAA(
-  page: Page,
-  options: RunAxeOptions = {},
-): Promise<AxeResults> {
-  let builder = new AxeBuilder({ page }).withTags([
-    ...(options.tags ?? WCAG_A_AA_TAGS),
-  ]);
+export async function runAxeWcagAA(page: Page, options: RunAxeOptions = {}): Promise<AxeResults> {
+  let builder = new AxeBuilder({ page }).withTags([...(options.tags ?? WCAG_A_AA_TAGS)]);
 
   if (options.include) {
     builder = builder.include(options.include);
@@ -119,9 +111,11 @@ export async function assertAaaVisualContract(
 ): Promise<void> {
   await waitForFonts(page);
 
-  const expectedFontMode = options.fontMode ?? await page.evaluate(() =>
-    document.documentElement.dataset['fontMode'] === 'legible' ? 'legible' : 'default',
-  );
+  const expectedFontMode =
+    options.fontMode ??
+    (await page.evaluate(() =>
+      document.documentElement.dataset['fontMode'] === 'legible' ? 'legible' : 'default',
+    ));
 
   const fontState = await page.evaluate(() => {
     const bodyFamily = getComputedStyle(document.body).fontFamily;
@@ -234,35 +228,40 @@ export async function assertAaaVisualContract(
       return failures.slice(0, 30);
 
       function isIgnoredTextElement(element: HTMLElement): boolean {
-        return element.matches([
-          'script',
-          'style',
-          'svg',
-          'path',
-          '[aria-hidden="true"]',
-          '[hidden]',
-          '.sr-only',
-        ].join(','));
+        return element.matches(
+          ['script', 'style', 'svg', 'path', '[aria-hidden="true"]', '[hidden]', '.sr-only'].join(
+            ',',
+          ),
+        );
       }
 
       function isVisible(element: HTMLElement): boolean {
         const style = getComputedStyle(element);
         const rect = element.getBoundingClientRect();
-        return style.display !== 'none'
-          && style.visibility !== 'hidden'
-          && Number(style.opacity) !== 0
-          && rect.width > 0
-          && rect.height > 0;
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          Number(style.opacity) !== 0 &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
       }
 
       function isDisabled(element: HTMLElement): boolean {
-        return element.matches('[disabled], [aria-disabled="true"], :disabled')
-          || element.closest('[disabled], [aria-disabled="true"], :disabled') !== null;
+        return (
+          element.matches('[disabled], [aria-disabled="true"], :disabled') ||
+          element.closest('[disabled], [aria-disabled="true"], :disabled') !== null
+        );
       }
 
       function ownText(element: HTMLElement): string {
         if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-          return (element.value || element.placeholder || element.getAttribute('aria-label') || '').trim();
+          return (
+            element.value ||
+            element.placeholder ||
+            element.getAttribute('aria-label') ||
+            ''
+          ).trim();
         }
 
         const directText = Array.from(element.childNodes)
@@ -280,18 +279,20 @@ export async function assertAaaVisualContract(
       }
 
       function isInteractive(element: HTMLElement): boolean {
-        return element.matches([
-          'a[href]',
-          'button',
-          'input',
-          'select',
-          'textarea',
-          'summary',
-          '[role="button"]',
-          '[role="link"]',
-          '[role="menuitem"]',
-          '[tabindex]:not([tabindex="-1"])',
-        ].join(','));
+        return element.matches(
+          [
+            'a[href]',
+            'button',
+            'input',
+            'select',
+            'textarea',
+            'summary',
+            '[role="button"]',
+            '[role="link"]',
+            '[role="menuitem"]',
+            '[tabindex]:not([tabindex="-1"])',
+          ].join(','),
+        );
       }
 
       function isHeading(element: HTMLElement): boolean {
@@ -299,7 +300,11 @@ export async function assertAaaVisualContract(
       }
 
       function minimumFontSize(element: HTMLElement): number {
-        if (element.matches('.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *')) {
+        if (
+          element.matches(
+            '.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *',
+          )
+        ) {
           return 12;
         }
         if (isInteractive(element) || element.matches('th, .u-body-sm, .page-header__desc')) {
@@ -360,7 +365,9 @@ export async function assertAaaVisualContract(
       }
 
       function effectiveBackground(element: HTMLElement): Rgba | null {
-        let color: Rgba = prefersDarkCanvas() ? { r: 0, g: 0, b: 0, a: 1 } : { r: 255, g: 255, b: 255, a: 1 };
+        let color: Rgba = prefersDarkCanvas()
+          ? { r: 0, g: 0, b: 0, a: 1 }
+          : { r: 255, g: 255, b: 255, a: 1 };
         const chain: HTMLElement[] = [];
         let current: HTMLElement | null = element;
         while (current) {
@@ -386,9 +393,15 @@ export async function assertAaaVisualContract(
         const alpha = foreground.a + background.a * (1 - foreground.a);
         if (alpha === 0) return { r: 0, g: 0, b: 0, a: 0 };
         return {
-          r: (foreground.r * foreground.a + background.r * background.a * (1 - foreground.a)) / alpha,
-          g: (foreground.g * foreground.a + background.g * background.a * (1 - foreground.a)) / alpha,
-          b: (foreground.b * foreground.a + background.b * background.a * (1 - foreground.a)) / alpha,
+          r:
+            (foreground.r * foreground.a + background.r * background.a * (1 - foreground.a)) /
+            alpha,
+          g:
+            (foreground.g * foreground.a + background.g * background.a * (1 - foreground.a)) /
+            alpha,
+          b:
+            (foreground.b * foreground.a + background.b * background.a * (1 - foreground.a)) /
+            alpha,
           a: alpha,
         };
       }
@@ -404,9 +417,9 @@ export async function assertAaaVisualContract(
       function relativeLuminance(color: Rgba): number {
         const [r, g, b] = [color.r, color.g, color.b]
           .map((channel) => channel / 255)
-          .map((channel) => channel <= 0.03928
-            ? channel / 12.92
-            : ((channel + 0.055) / 1.055) ** 2.4);
+          .map((channel) =>
+            channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+          );
         return 0.2126 * r + 0.7152 * g + 0.0722 * b;
       }
 
@@ -506,16 +519,18 @@ export async function assertTextSpacingResilience(page: Page): Promise<void> {
       function isVisible(element: HTMLElement): boolean {
         const style = getComputedStyle(element);
         const rect = element.getBoundingClientRect();
-        return style.display !== 'none'
-          && style.visibility !== 'hidden'
-          && Number(style.opacity) !== 0
-          && rect.width > 0
-          && rect.height > 0;
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          Number(style.opacity) !== 0 &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
       }
 
       function hasOwnText(element: HTMLElement): boolean {
-        return Array.from(element.childNodes).some((node) =>
-          node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim().length > 0,
+        return Array.from(element.childNodes).some(
+          (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim().length > 0,
         );
       }
 
@@ -542,7 +557,8 @@ export async function assertReflowContract(page: Page): Promise<void> {
   const overflow = await horizontalOverflow(page);
   expect(overflow).toEqual([]);
 
-  const viewportWidth = page.viewportSize()?.width ?? await page.evaluate(() => window.innerWidth);
+  const viewportWidth =
+    page.viewportSize()?.width ?? (await page.evaluate(() => window.innerWidth));
   if (viewportWidth <= 340) {
     await expect(page.locator('.topbar__nav')).toBeHidden();
     await assertDrawerNavigation(page);
@@ -564,11 +580,13 @@ async function waitForFonts(page: Page): Promise<void> {
   });
 }
 
-async function horizontalOverflow(page: Page): Promise<readonly {
-  selector: string;
-  scrollWidth: number;
-  clientWidth: number;
-}[]> {
+async function horizontalOverflow(page: Page): Promise<
+  readonly {
+    selector: string;
+    scrollWidth: number;
+    clientWidth: number;
+  }[]
+> {
   return page.evaluate(() => {
     const failures = [];
     const root = document.documentElement;
@@ -609,9 +627,11 @@ async function assertDrawerNavigation(page: Page): Promise<void> {
   await expect(menuButton).toBeVisible();
   await menuButton.click();
   await expect(page.locator('dialog.uni-drawer[open]')).toBeVisible();
-  await expect(page.locator('dialog.uni-drawer').getByRole('navigation', {
-    name: 'Navegação principal',
-  })).toBeVisible();
+  await expect(
+    page.locator('dialog.uni-drawer').getByRole('navigation', {
+      name: 'Navegação principal',
+    }),
+  ).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.locator('dialog.uni-drawer')).not.toHaveAttribute('open', '');
+  await expect(page.locator('dialog.uni-drawer')).toHaveCount(0);
 }

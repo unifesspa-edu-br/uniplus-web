@@ -590,7 +590,14 @@ ui-vlibras-loader {
 .topbar__titles { min-width: 0; }
 .topbar__title { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-heading); line-height: var(--leading-snug); }
 .topbar__subtitle { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 2px; }
-.topbar__nav { display: none; align-items: center; gap: var(--space-1); }
+.topbar__nav {
+  display: none;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-1);
+  overflow-x: auto;
+}
 .topbar__nav a {
   text-decoration: none;
   color: var(--text-primary);
@@ -2295,6 +2302,7 @@ ui-vlibras-loader {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
   padding: var(--space-3) var(--space-5);
   background: var(--surface-card);
   border-bottom: 1px solid var(--border-subtle);

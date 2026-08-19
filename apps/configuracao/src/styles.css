@@ -403,10 +403,6 @@ cfg-pesos-enem-page {
     display: none;
   }
 
-  .breadcrumb__item:nth-child(2) {
-    display: none;
-  }
-
   .unit-node__row {
     align-items: flex-start;
     flex-wrap: wrap;
