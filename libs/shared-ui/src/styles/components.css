@@ -2054,39 +2054,25 @@ ui-vlibras-loader {
   .admin-shell[data-sidebar-desktop='closed'] { grid-template-columns: 72px minmax(0, 1fr); }
 }
 
+/* Abaixo de 1024px a navegação mobile é exclusivamente o `<ui-drawer>` — esta
+   sidebar fixa não duplica o menu como um segundo painel. */
 .sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  z-index: var(--z-modal);
-  display: flex;
-  width: min(88vw, 320px);
-  flex-direction: column;
-  gap: var(--space-1);
-  overflow: hidden;
-  padding: var(--space-5) 0;
-  color: var(--text-on-inverse);
-  background: var(--surface-inverse);
-  box-shadow: var(--shadow-3);
-  transform: translateX(-100%);
-  visibility: hidden;
-  pointer-events: none;
-}
-.admin-shell[data-sidebar-mobile='open'] .sidebar {
-  transform: translateX(0);
-  visibility: visible;
-  pointer-events: auto;
+  display: none;
 }
 @media (min-width: 1024px) {
   .sidebar {
     position: sticky;
     top: 0;
+    display: flex;
     align-self: start;
     width: auto;
     min-height: 100%;
-    box-shadow: none;
-    transform: none;
-    visibility: visible;
-    pointer-events: auto;
+    flex-direction: column;
+    gap: var(--space-1);
+    overflow: hidden;
+    padding: var(--space-5) 0;
+    color: var(--text-on-inverse);
+    background: var(--surface-inverse);
   }
   .admin-shell[data-sidebar-desktop='closed'] .sidebar { align-items: stretch; }
 }
@@ -2272,24 +2258,6 @@ ui-vlibras-loader {
   }
   .admin-shell[data-sidebar-desktop='closed'] .sidebar__user-info { display: none; }
 }
-
-.sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: calc(var(--z-modal) - 1);
-  display: block;
-  background: var(--surface-overlay);
-  border: 0;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.admin-shell[data-sidebar-mobile='open'] .sidebar-backdrop {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-@media (min-width: 1024px) { .sidebar-backdrop { display: none; } }
 
 .admin-main {
   display: flex;

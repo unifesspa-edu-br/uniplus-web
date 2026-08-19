@@ -85,4 +85,21 @@ describe('AppShellComponent', () => {
     expect(host.querySelector('main.page')?.id).toBeTruthy();
     expect(host.querySelector('ui-skip-link')).toBeTruthy();
   });
+
+  it('abre um unico drawer mobile, sem duplicar a sidebar fixa como segundo painel', async () => {
+    const { fixture, host } = await montarShell();
+    fixture.componentRef.setInput('navGroups', groups);
+    fixture.detectChanges();
+
+    const botaoAbrirMenu = host.querySelector(
+      '.sidebar-toggle--compacto',
+    ) as HTMLButtonElement | null;
+    botaoAbrirMenu?.click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.admin-shell')?.hasAttribute('data-sidebar-mobile')).toBe(false);
+    const dialog = host.querySelector('dialog.uni-drawer') as HTMLDialogElement | null;
+    expect(dialog?.id).toBeTruthy();
+    expect(dialog?.id).toBe(botaoAbrirMenu?.getAttribute('aria-controls'));
+  });
 });
