@@ -560,13 +560,12 @@ export async function assertReflowContract(page: Page): Promise<void> {
   const viewportWidth =
     page.viewportSize()?.width ?? (await page.evaluate(() => window.innerWidth));
   if (viewportWidth <= 340) {
-    await expect(page.locator('.topbar__nav')).toBeHidden();
     await assertDrawerNavigation(page);
     return;
   }
 
   if (viewportWidth >= 1024) {
-    await expect(page.locator('.topbar__nav')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible();
   }
 }
 

@@ -102,4 +102,11 @@ describe('AppShellComponent', () => {
     expect(dialog?.id).toBeTruthy();
     expect(dialog?.id).toBe(botaoAbrirMenu?.getAttribute('aria-controls'));
   });
+
+  it('nao duplica a navegacao da sidebar numa topbar redundante', async () => {
+    const { fixture, host } = await montarShell();
+    fixture.componentRef.setInput('navGroups', groups);
+    fixture.detectChanges();
+    expect(host.querySelector('.topbar__nav')).toBeNull();
+  });
 });
