@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   OnDestroy,
   effect,
@@ -22,7 +23,7 @@ let openDrawerCount = 0;
       #drawer
       class="uni-drawer"
       [class.uni-drawer--right]="position() === 'right'"
-      [id]="drawerId"
+      [id]="drawerId()"
       [attr.aria-label]="ariaLabel()"
       (cancel)="close($event)"
       (close)="onNativeClose()"
@@ -49,6 +50,7 @@ let openDrawerCount = 0;
 })
 export class DrawerComponent implements OnDestroy {
   readonly visible = model<boolean>(false);
+  readonly id = input<string | null>(null);
   readonly heading = input<string>('Detalhes');
   readonly ariaLabel = input<string>('Painel lateral');
   readonly position = input<'left' | 'right'>('right');
@@ -58,7 +60,8 @@ export class DrawerComponent implements OnDestroy {
   private readonly closeButtonRef = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   private lastFocusedElement: HTMLElement | null = null;
   private bodyScrollLocked = false;
-  protected readonly drawerId = `ui-drawer-${++drawerIdSeed}`;
+  private readonly autoDrawerId = `ui-drawer-${++drawerIdSeed}`;
+  protected readonly drawerId = computed(() => this.id() ?? this.autoDrawerId);
 
   constructor() {
     effect(() => {

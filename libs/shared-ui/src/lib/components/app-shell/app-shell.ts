@@ -61,7 +61,6 @@ let shellIdSeed = 0;
 
       <div
         class="admin-shell"
-        [attr.data-sidebar-mobile]="mobileMenuOpen() ? 'open' : null"
         [attr.data-sidebar-desktop]="sidebarDesktopOpen() ? 'open' : 'closed'"
       >
         <aside class="sidebar" [id]="sidebarId" aria-label="Painel administrativo">
@@ -180,6 +179,7 @@ let shellIdSeed = 0;
       <!-- Drawer mobile (contrato DS: <dialog class="uni-drawer">) — só montado quando aberto
       para não duplicar dialog.uni-drawer em apps que já usam ui-drawer. -->      @if (mobileMenuOpen()) {
       <ui-drawer
+        [id]="mobileDrawerId"
         [visible]="mobileMenuOpen()"
         heading="Menu"
         ariaLabel="Menu de navegação"

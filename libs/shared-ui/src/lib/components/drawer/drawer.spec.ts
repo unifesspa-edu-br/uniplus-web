@@ -45,4 +45,12 @@ describe('DrawerComponent', () => {
     expect(fixture.componentInstance.visible()).toBe(false);
     expect(document.body.classList.contains('uni-drawer-open')).toBe(false);
   });
+
+  it('usa o id informado pelo consumidor em vez do autogerado', () => {
+    fixture.componentRef.setInput('id', 'meu-drawer-fixo');
+    fixture.detectChanges();
+
+    const dialog = fixture.debugElement.query(By.css('dialog')).nativeElement as HTMLDialogElement;
+    expect(dialog.id).toBe('meu-drawer-fixo');
+  });
 });
