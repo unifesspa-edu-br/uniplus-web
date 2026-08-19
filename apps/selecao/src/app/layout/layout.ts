@@ -44,13 +44,15 @@ interface SelNavGroup {
         <auth-user-header-info />
       </ng-container>
       <ng-container ngProjectAs="[uiShellUser]">
-        <div class="avatar avatar--sm sidebar__avatar" aria-hidden="true">
-          {{ sidebarUserInitials() }}
-        </div>
-        <div class="sidebar__user-info">
-          <strong>{{ userContext.displayName() }}</strong>
-          <span>{{ sidebarUserRole() }}</span>
-        </div>
+        @if (userContext.user(); as profile) {
+          <div class="avatar avatar--sm sidebar__avatar" aria-hidden="true">
+            {{ sidebarUserInitials() }}
+          </div>
+          <div class="sidebar__user-info">
+            <strong>{{ userContext.displayName() }}</strong>
+            <span>{{ sidebarUserRole() || '@' + profile.username }}</span>
+          </div>
+        }
       </ng-container>
       <router-outlet />
     </ui-app-shell>
