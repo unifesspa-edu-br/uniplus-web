@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  computed,
   effect,
   inject,
   input,
@@ -106,7 +107,7 @@ let shellIdSeed = 0;
           <header class="admin-topbar" role="banner">
             <button
               type="button"
-              class="sidebar-toggle"
+              class="sidebar-toggle sidebar-toggle--compacto"
               [attr.aria-label]="mobileMenuOpen() ? 'Fechar menu' : 'Abrir menu'"
               [attr.aria-controls]="mobileDrawerId"
               [attr.aria-expanded]="mobileMenuOpen() ? 'true' : 'false'"
@@ -114,6 +115,33 @@ let shellIdSeed = 0;
             >
               <i class="pi pi-bars" aria-hidden="true"></i>
             </button>
+
+            <button
+              type="button"
+              class="sidebar-toggle sidebar-toggle--amplo"
+              [attr.aria-label]="
+                sidebarDesktopOpen() ? 'Recolher menu lateral' : 'Expandir menu lateral'
+              "
+              [attr.aria-expanded]="sidebarDesktopOpen() ? 'true' : 'false'"
+              (click)="toggleDesktopSidebar()"
+            >
+              <i class="pi pi-bars" aria-hidden="true"></i>
+            </button>
+
+            <!-- Navegação da topbar em desktop (contrato compartilhado). -->
+            <nav class="topbar__nav" aria-label="Navegação rápida">
+              @for (item of topbarNav(); track item.label) {
+                @if (item.routerLink) {
+                  <a
+                    [routerLink]="item.routerLink"
+                    routerLinkActive="is-active"
+                    [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+                    ariaCurrentWhenActive="page"
+                    >{{ item.label }}</a
+                  >
+                }
+              }
+            </nav>
 
             <nav class="breadcrumb" aria-label="Breadcrumb">
               <ol class="breadcrumb__list">
@@ -197,6 +225,12 @@ export class AppShellComponent {
   readonly footerLabel = input<string>('');
 
   protected readonly mobileMenuOpen = signal(false);
+  protected readonly sidebarDesktopOpen = signal(true);
+  protected readonly topbarNav = computed(() =>
+    this.navGroups()
+      .flatMap((group) => group.items)
+      .filter((item) => item.routerLink !== undefined),
+  );
   protected readonly shellId = `ui-shell-${++shellIdSeed}`;
   protected readonly sidebarId = `${this.shellId}-sidebar`;
   protected readonly mainId = `${this.shellId}-main`;
@@ -222,6 +256,10 @@ export class AppShellComponent {
 
   protected toggleMobileMenu(): void {
     this.mobileMenuOpen.update((open) => !open);
+  }
+
+  protected toggleDesktopSidebar(): void {
+    this.sidebarDesktopOpen.update((open) => !open);
   }
 
   protected closeMobileMenu(): void {

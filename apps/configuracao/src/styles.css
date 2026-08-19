@@ -54,6 +54,8 @@ cfg-root {
 .institutional-bar {
   background: var(--color-primary-900);
   color: var(--color-neutral-0);
+}
+
 cfg-unidades-page,
 cfg-instituicao-page,
 cfg-pesos-enem-page {
