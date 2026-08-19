@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
-  computed,
   effect,
   inject,
   input,
@@ -131,21 +130,6 @@ let shellIdSeed = 0;
               <i class="pi pi-bars" aria-hidden="true"></i>
             </button>
 
-            <!-- Navegação da topbar em desktop (contrato compartilhado). -->
-            <nav class="topbar__nav" aria-label="Navegação rápida">
-              @for (item of topbarNav(); track item.label) {
-                @if (item.routerLink) {
-                  <a
-                    [routerLink]="item.routerLink"
-                    routerLinkActive="is-active"
-                    [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-                    ariaCurrentWhenActive="page"
-                    >{{ item.label }}</a
-                  >
-                }
-              }
-            </nav>
-
             <nav class="breadcrumb" aria-label="Breadcrumb">
               <ol class="breadcrumb__list">
                 @for (item of breadcrumb(); track $index; let last = $last) {
@@ -232,11 +216,6 @@ export class AppShellComponent {
 
   protected readonly mobileMenuOpen = signal(false);
   protected readonly sidebarDesktopOpen = signal(true);
-  protected readonly topbarNav = computed(() =>
-    this.navGroups()
-      .flatMap((group) => group.items)
-      .filter((item) => item.routerLink !== undefined),
-  );
   protected readonly shellId = `ui-shell-${++shellIdSeed}`;
   protected readonly sidebarId = `${this.shellId}-sidebar`;
   protected readonly mainId = `${this.shellId}-main`;
