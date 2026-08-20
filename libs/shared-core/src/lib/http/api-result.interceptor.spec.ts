@@ -29,7 +29,7 @@ interface Edital {
 const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
 
 const baseProblem: ProblemDetails = {
-  type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.selecao.edital.nao_encontrado',
+  type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.edital.nao_encontrado',
   title: 'Edital não encontrado',
   status: 404,
   code: 'uniplus.selecao.edital.nao_encontrado',
@@ -123,7 +123,7 @@ describe('apiResultInterceptor', () => {
     it('422 carrega errors[] de validação completos (FluentValidation)', () => {
       const problem: ProblemDetails = {
         ...baseProblem,
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
         title: 'Erro de validação',
         status: 422,
         code: 'uniplus.validacao',
@@ -157,7 +157,7 @@ describe('apiResultInterceptor', () => {
       controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
-          type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.auth.unauthorized',
+          type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.auth.unauthorized',
           title: 'Não autenticado',
           status: 401,
           code: 'uniplus.auth.unauthorized',
@@ -184,7 +184,7 @@ describe('apiResultInterceptor', () => {
       controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
-          type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.contract.versao_nao_suportada',
+          type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.contract.versao_nao_suportada',
           title: 'Versão não suportada',
           status: 406,
           code: 'uniplus.contract.versao_nao_suportada',
@@ -206,7 +206,7 @@ describe('apiResultInterceptor', () => {
       controller.expectOne('/api/selecao/editais').flush(
         {
           ...baseProblem,
-          type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.servidor.indisponivel',
+          type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.servidor.indisponivel',
           title: 'Servidor temporariamente indisponível',
           status: 500,
           code: 'uniplus.servidor.indisponivel',

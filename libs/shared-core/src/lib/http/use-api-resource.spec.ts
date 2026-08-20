@@ -25,7 +25,7 @@ interface Edital {
 
 const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
 const baseProblem: ProblemDetails = {
-  type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.selecao.edital.nao_encontrado',
+  type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.edital.nao_encontrado',
   title: 'Edital não encontrado',
   status: 404,
   code: 'uniplus.selecao.edital.nao_encontrado',
@@ -268,13 +268,11 @@ describe('useApiResource', () => {
     env.controller.expectOne('/api/selecao/editais').flush(
       {
         ...baseProblem,
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
         title: 'Erro de validação',
         status: 422,
         code: 'uniplus.validacao',
-        errors: [
-          { field: 'titulo', code: 'Titulo.Vazio', message: 'Título obrigatório' },
-        ],
+        errors: [{ field: 'titulo', code: 'Titulo.Vazio', message: 'Título obrigatório' }],
       },
       { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
     );

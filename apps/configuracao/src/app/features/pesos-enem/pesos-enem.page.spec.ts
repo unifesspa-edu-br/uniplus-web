@@ -64,7 +64,7 @@ const linhas750: readonly PesoAreaEnemDto[] = [
 
 function problem(status: number, code: string, title: string, errors?: readonly { field: string; code: string; message: string }[]): string {
   return JSON.stringify({
-    type: `https://uniplus.unifesspa.edu.br/errors/${code}`,
+    type: `https://unifesspa-edu-br.github.io/uniplus-developers/erros/${code}`,
     title,
     status,
     code,

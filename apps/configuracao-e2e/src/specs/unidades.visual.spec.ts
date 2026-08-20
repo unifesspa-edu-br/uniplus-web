@@ -215,7 +215,7 @@ async function mockUnidadesApi(page: Page): Promise<void> {
         status: 422,
         headers: { ...corsHeaders, 'content-type': 'application/problem+json' },
         body: JSON.stringify({
-          type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.idempotency.body_mismatch',
+          type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.idempotency.body_mismatch',
           title: 'Mesma Idempotency-Key reusada com body diferente',
           status: 422,
           detail: 'Mesma Idempotency-Key reusada com body diferente.',
@@ -238,7 +238,7 @@ async function mockUnidadesApi(page: Page): Promise<void> {
       status: 422,
       headers: { ...corsHeaders, 'content-type': 'application/problem+json' },
       body: JSON.stringify({
-        type: 'https://uniplus.unifesspa.edu.br/errors/uniplus.validacao',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
         title: 'Erro de validação',
         status: 422,
         code: 'uniplus.validacao',
