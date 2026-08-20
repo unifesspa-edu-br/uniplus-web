@@ -26,6 +26,9 @@ describe('DateBrPipe', () => {
   it('formata uma data válida no formato "datetime"', () => {
     expect(pipe.transform(DATA_VALIDA_RAW, 'datetime')).toBe('05/06/2026, 12:30');
     expect(pipe.transform(DATA_VALIDA, 'datetime')).toBe('05/06/2026, 12:30');
+    expect(pipe.transform('2026-07-07T13:23:42.707136+00:00', 'datetime')).toBe(
+      '07/07/2026, 10:23',
+    );
   });
 
   it('formata uma data válida no formato "long"', () => {
