@@ -26,8 +26,16 @@ server {
     # A tag <base> é compilada como raiz e substituída pelo mount point em
     # runtime. Diferentemente de `./`, um caminho absoluto permanece correto
     # após hard reload em uma rota com múltiplos segmentos.
+    #
+    # O build do Angular emite a tag autofechada (`<base href="/"/>`), não
+    # `<base href="/">` — sub_filter não erra nem loga quando o padrão não
+    # casa, só deixa de substituir, então bastava rodar fora da raiz pra
+    # `<base>` continuar apontando pra `/` mesmo sob `/portal/` e quebrar
+    # todo asset/API relativo. Casar as duas formas cobre builds
+    # anteriores/futuros do Angular que possam emitir sem o `/`.
     sub_filter_once on;
     sub_filter '<base href="/">' '<base href="${APP_BASE_HREF}">';
+    sub_filter '<base href="/"/>' '<base href="${APP_BASE_HREF}"/>';
 
     # Mantém a URL canônica com barra final. `APP_BASE_PATH` é derivado pelo
     # entrypoint a partir de APP_BASE_HREF e fica em um path inócuo na raiz.
