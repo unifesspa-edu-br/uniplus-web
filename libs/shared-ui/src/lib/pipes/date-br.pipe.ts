@@ -60,14 +60,17 @@ export class DateBrPipe implements PipeTransform {
       const instante = new Date(input);
       return Number.isNaN(instante.getTime()) ? null : instante;
     }
-    let year, month, day, hour = 0, minute = 0;
+    let year,
+      month,
+      day,
+      hour = 0,
+      minute = 0;
     // DD-MM-YYYY
     if (input.includes('T')) {
       const [datePart, timePart] = input.split('T');
       [year, month, day] = datePart.split('-');
       [hour, minute] = timePart.split(':').map(Number);
-    }
-    else if (/^\d{2}-\d{2}-\d{4}$/.test(input)) {
+    } else if (/^\d{2}-\d{2}-\d{4}$/.test(input)) {
       [day, month, year] = input.split('-');
     }
     // YYYY-MM-DD
@@ -76,7 +79,13 @@ export class DateBrPipe implements PipeTransform {
     } else {
       return null;
     }
-    const dataInstanciada = new Date(Number(year), Number(month) - 1, Number(day), hour, minute);
+    const dataInstanciada = this.toZonedInstant(
+      Number(year),
+      Number(month),
+      Number(day),
+      hour,
+      minute,
+    );
     return this.isValidGregorianDate(Number(year), Number(month), Number(day))
       ? dataInstanciada
       : null;
@@ -105,5 +114,29 @@ export class DateBrPipe implements PipeTransform {
     const parte = (tipo: Intl.DateTimeFormatPartTypes) =>
       partes.find((p) => p.type === tipo)?.value ?? '';
     return `${parte('day')} ${parte('month').replace('.', '')} ${parte('year')}`;
+  }
+
+  private zonedOffsetMillis(utcMillis: number): number {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      timeZoneName: 'longOffset',
+    }).formatToParts(new Date(utcMillis));
+    const offset = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT+00:00';
+    const match = /GMT([+-])(\d{2}):(\d{2})/.exec(offset);
+    if (!match) return 0;
+    const sign = match[1] === '-' ? -1 : 1;
+    return sign * (Number(match[2]) * 60 + Number(match[3])) * 60_000;
+  }
+
+  private toZonedInstant(
+    year: number,
+    month: number,
+    day: number,
+    hour: number,
+    minute: number,
+  ): Date {
+    const provisionalUtc = Date.UTC(year, month - 1, day, hour, minute);
+    const offset = this.zonedOffsetMillis(provisionalUtc);
+    return new Date(provisionalUtc - offset);
   }
 }
