@@ -5,6 +5,7 @@ export type DateBrPipeInput = Date | string | null | undefined;
 
 /** Data-hora com designador de zona explícito (`Z` ou `±hh:mm`). */
 const ZONED_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const LOCAL_DATETIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/;
 
 type DateTimeFormat = Record<DateBrPipeFormat, Intl.DateTimeFormat>;
 
@@ -60,33 +61,33 @@ export class DateBrPipe implements PipeTransform {
       const instante = new Date(input);
       return Number.isNaN(instante.getTime()) ? null : instante;
     }
-    let year,
-      month,
-      day,
-      hour = 0,
-      minute = 0;
-    if (input.includes('T')) {
-      const [datePart, timePart] = input.split('T');
-      [year, month, day] = datePart.split('-');
-      [hour, minute] = timePart.split(':').map(Number);
+    let year: number;
+    let month: number;
+    let day: number;
+    let hour = 0;
+    let minute = 0;
+    let second = 0;
+    const localDateTime = LOCAL_DATETIME.exec(input);
+    if (localDateTime) {
+      const [, yearText, monthText, dayText, hourText, minuteText, secondText] = localDateTime;
+      year = Number(yearText);
+      month = Number(monthText);
+      day = Number(dayText);
+      hour = Number(hourText);
+      minute = Number(minuteText);
+      second = Number(secondText ?? 0);
     } else if (/^\d{2}-\d{2}-\d{4}$/.test(input)) {
-      [day, month, year] = input.split('-');
-    }
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
-      [year, month, day] = input.split('-');
+      [day, month, year] = input.split('-').map(Number);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      [year, month, day] = input.split('-').map(Number);
     } else {
       return null;
     }
-    const dataInstanciada = this.toZonedInstant(
-      Number(year),
-      Number(month),
-      Number(day),
-      hour,
-      minute,
-    );
-    return this.isValidGregorianDate(Number(year), Number(month), Number(day))
-      ? dataInstanciada
-      : null;
+    if (!this.isValidGregorianDate(year, month, day) || !this.isValidTime(hour, minute, second)) {
+      return null;
+    }
+    const dataInstanciada = this.toZonedInstant(year, month, day, hour, minute);
+    return dataInstanciada;
   }
 
   /**
@@ -105,6 +106,10 @@ export class DateBrPipe implements PipeTransform {
 
   private isBissexto(year: number): boolean {
     return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  }
+
+  private isValidTime(hour: number, minute: number, second: number): boolean {
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 && second >= 0 && second <= 59;
   }
 
   private formatShortMonth(date: Date): string {
