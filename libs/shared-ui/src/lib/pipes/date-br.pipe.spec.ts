@@ -57,6 +57,12 @@ describe('DateBrPipe', () => {
     expect(pipe.transform(dataInexistente, 'long')).toBe('');
   });
 
+  it('exibe texto vazio quando a hora, o minuto ou o segundo são inválidos', () => {
+    expect(pipe.transform('2026-06-05T25:00')).toBe('');
+    expect(pipe.transform('2026-06-05T12:99')).toBe('');
+    expect(pipe.transform('2026-06-05T12:30:99')).toBe('');
+  });
+
   it('preserva o instante quando a entrada traz fuso explícito', () => {
     // 00:00Z = 21:00 do dia anterior em America/Belem (UTC−3)
     expect(pipe.transform('2026-08-11T00:00:00Z', 'datetime')).toBe('10/08/2026, 21:00');
