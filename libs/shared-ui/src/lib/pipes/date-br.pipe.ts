@@ -125,10 +125,12 @@ export class DateBrPipe implements PipeTransform {
       timeZoneName: 'longOffset',
     }).formatToParts(new Date(utcMillis));
     const offset = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT+00:00';
-    const match = /GMT([+-])(\d{2}):(\d{2})/.exec(offset);
+    const match = /GMT([+-])(\d{2}):(\d{2})(?::(\d{2}))?/.exec(offset);
     if (!match) return 0;
     const sign = match[1] === '-' ? -1 : 1;
-    return sign * (Number(match[2]) * 60 + Number(match[3])) * 60_000;
+    const offsetMinutes = Number(match[2]) * 60 + Number(match[3]);
+    const offsetSeconds = Number(match[4] ?? 0);
+    return sign * (offsetMinutes * 60 + offsetSeconds) * 1_000;
   }
 
   private toZonedInstant(
@@ -138,7 +140,10 @@ export class DateBrPipe implements PipeTransform {
     hour: number,
     minute: number,
   ): Date {
-    const provisionalUtc = Date.UTC(year, month - 1, day, hour, minute);
+    const provisional = new Date(0);
+    provisional.setUTCFullYear(year, month - 1, day);
+    provisional.setUTCHours(hour, minute, 0, 0);
+    const provisionalUtc = provisional.getTime();
     const offset = this.zonedOffsetMillis(provisionalUtc);
     return new Date(provisionalUtc - offset);
   }

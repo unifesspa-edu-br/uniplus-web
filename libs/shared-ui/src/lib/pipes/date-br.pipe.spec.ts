@@ -72,6 +72,10 @@ describe('DateBrPipe', () => {
     expect(pipe.transform('2026-06-05', 'short')).toBe('05/06/2026');
   });
 
+  it('preserva datas de anos abaixo de 100', () => {
+    expect(pipe.transform('0099-12-31', 'short')).toBe('31/12/99');
+  });
+
   it('exibe texto vazio para Date inválido', () => {
     expect(pipe.transform(new Date('data-invalida'))).toBe('');
   });
