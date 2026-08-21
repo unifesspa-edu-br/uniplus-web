@@ -27,9 +27,18 @@ DOCKERFILE="$SCRIPT_DIR/Dockerfile"
 # quem importa). Drift aqui derruba a suíte inteira com "Executable
 # doesn't exist" / "Please update docker image as well" — achado
 # corrigindo a validação local da Story #449.
-IMAGE_REMOTE="ghcr.io/unifesspa-edu-br/uniplus-e2e-runner:1.61.1"
+PLAYWRIGHT_VERSION="1.61.1"
+IMAGE_REMOTE="ghcr.io/unifesspa-edu-br/uniplus-e2e-runner:${PLAYWRIGHT_VERSION}"
 IMAGE_LOCAL="uniplus-e2e-runner"
-VOLUME_NAME="uniplus-e2e-node-modules"
+# Sufixo de versão é obrigatório: o volume nomeado sobrevive a `docker
+# compose down -v` (só derruba o que o compose gerencia) e a rebuilds da
+# imagem — sem o sufixo, uma máquina que já rodou este script antes de um
+# bump de PLAYWRIGHT_VERSION reusa o volume antigo (node_modules da versão
+# velha), reproduzindo o mesmo "Executable doesn't exist" que o bump
+# deveria corrigir (achado do Codex AI no PR da Story #449). Versões
+# antigas do volume ficam órfãs — `docker volume prune` limpa quando
+# quiser.
+VOLUME_NAME="uniplus-e2e-node-modules-${PLAYWRIGHT_VERSION}"
 
 TARGET="all"
 NO_PULL=false
