@@ -1,9 +1,10 @@
 # CI — publicação das imagens das apps web
 
-Este documento descreve o workflow `publish-images.yml` que publica as 3
+Este documento descreve o workflow `publish-images.yml` que publica as 4
 imagens Docker das apps web (`uniplus-portal`, `uniplus-web-selecao`,
-`uniplus-web-ingresso`) no GitHub Container Registry (GHCR), em conformidade
-com a [ADR-0020](adrs/0020-registry-ghcr-e-tagging.md).
+`uniplus-web-ingresso`, `uniplus-web-configuracao`) no GitHub Container
+Registry (GHCR), em conformidade com a
+[ADR-0020](adrs/0020-registry-ghcr-e-tagging.md).
 
 ## Quando o workflow dispara
 
@@ -74,6 +75,7 @@ Imagens são públicas (espelha a visibilidade do repositório). Pull anônimo:
 docker pull ghcr.io/unifesspa-edu-br/uniplus-portal:v0.1.0
 docker pull ghcr.io/unifesspa-edu-br/uniplus-web-selecao:v0.1.0
 docker pull ghcr.io/unifesspa-edu-br/uniplus-web-ingresso:v0.1.0
+docker pull ghcr.io/unifesspa-edu-br/uniplus-web-configuracao:v0.1.0
 ```
 
 ## Como sair de "imagem publicada" para "rodando em cluster"
@@ -92,7 +94,7 @@ Fluxo completo entre tag e cluster (exemplo concreto `v0.1.2`):
 |---|---|---|---|
 | Tag git semver | `uniplus-web` | dev | < 1 min |
 | Workflow `Publish Images` | `uniplus-web` Actions | CI | ~4 min |
-| 3 imagens em GHCR | `ghcr.io/unifesspa-edu-br/uniplus-{portal,web-selecao,web-ingresso}` | CI | parte do anterior |
+| 4 imagens em GHCR | `ghcr.io/unifesspa-edu-br/uniplus-{portal,web-selecao,web-ingresso,web-configuracao}` | CI | parte do anterior |
 | PR de bump em `values.yaml` | `uniplus-infra/apps/uniplus-web/values.yaml` | dev/agente | ~1 min |
 | Codex AI review + CI | `uniplus-infra` | bot | ~5 min |
 | Merge do PR | `uniplus-infra` | dev | < 1 min |
@@ -103,7 +105,7 @@ Fluxo completo entre tag e cluster (exemplo concreto `v0.1.2`):
 Snippet típico do PR de bump (`uniplus-infra`):
 
 ```diff
-# apps/uniplus-web/values.yaml — repetir em cada um dos 3 apps:
+# apps/uniplus-web/values.yaml — repetir em cada um dos 4 apps:
     portal:
       image: uniplus-portal
 -     tag: v0.1.1
