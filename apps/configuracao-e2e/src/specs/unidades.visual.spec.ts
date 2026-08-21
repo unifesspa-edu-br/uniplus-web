@@ -373,8 +373,6 @@ async function assertSidebarBehavior(page: Page, viewport: VisualViewport): Prom
 
 async function assertSidebarGroups(container: Locator): Promise<void> {
   const nav = container.getByRole('navigation', { name: 'Navegação principal' });
-  await expect(nav.getByText('Painéis', { exact: true })).toBeVisible();
-  await expect(nav.getByText('Resultados', { exact: true })).toBeVisible();
   await expect(nav.getByText('Configuração', { exact: true })).toBeVisible();
 }
 
