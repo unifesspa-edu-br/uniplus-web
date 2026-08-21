@@ -1300,6 +1300,11 @@ ui-vlibras-loader {
 .uni-drawer__title { font-size: var(--text-md); font-weight: var(--weight-bold); color: var(--text-heading); margin: 0; }
 .uni-drawer__body { flex: 1; overflow-y: auto; padding: var(--space-3) 0; }
 .uni-drawer__nav { list-style: none; padding: 0; margin: 0; }
+/* .sidebar__label é escrito para o fundo escuro da sidebar (--text-on-inverse,
+   branco) — reaproveitado dentro do drawer mobile (fundo --surface-card claro),
+   onde branco-sobre-branco fica ilegível. Sobrescreve pro token de texto
+   secundário AAA (7.5:1 vs branco). */
+.uni-drawer .sidebar__label { color: var(--text-muted); }
 .uni-drawer__nav a,
 .uni-drawer__account a {
   display: flex; align-items: center; gap: var(--space-3);

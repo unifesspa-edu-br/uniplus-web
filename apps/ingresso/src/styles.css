@@ -2,6 +2,7 @@
 @import '../../../libs/shared-ui/src/styles/base.css';
 @import '../../../libs/shared-ui/src/styles/components.css';
 @import '../../../libs/shared-auth/src/styles/components.css';
+@import 'primeicons/primeicons.css';
 @import 'tailwindcss';
 
 @source './app/**/*.{ts,html}';

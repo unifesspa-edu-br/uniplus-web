@@ -170,7 +170,7 @@ let shellIdSeed = 0;
         position="left"
         (closed)="closeMobileMenu()"
       >
-        <nav aria-label="Navegação principal">
+        <nav class="uni-drawer__nav" aria-label="Navegação principal">
           @for (group of navGroups(); track group.label) {
             <div class="sidebar__label">{{ group.label }}</div>
             @for (item of group.items; track item.label) {
