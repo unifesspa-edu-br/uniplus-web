@@ -41,10 +41,13 @@ server {
     # nginx (única por request, sem módulo extra), resolvida em runtime —
     # não colide com o envsubst do boot, que só troca APP_BASE_(HREF|PATH)
     # (NGINX_ENVSUBST_FILTER nos Dockerfiles). O mesmo valor vai pro atributo
-    # `ngCspNonce` do <body> (placeholder no index.html de cada app) e pro
-    # `style-src-elem` da CSP abaixo — o Angular lê o atributo via seu próprio
-    # `CSP_NONCE` (default: `document.body.querySelector('[ngCspNonce]')`) e
-    # assina com ele todo <style> que injeta em runtime.
+    # `ngCspNonce` do elemento raiz de cada app (placeholder no index.html,
+    # ex. <sel-root ngCspNonce="...">) e pro `style-src-elem` da CSP abaixo.
+    # O Angular lê o atributo via seu próprio `CSP_NONCE` (default:
+    # `document.body.querySelector('[ngCspNonce]')`) e assina com ele todo
+    # <style> que injeta em runtime — precisa estar num DESCENDENTE de
+    # <body>, nunca no próprio <body> (querySelector nunca casa o elemento
+    # de contexto, só descendentes).
     sub_filter 'ngCspNonce="__CSP_NONCE__"' 'ngCspNonce="$request_id"';
 
     # Mantém a URL canônica com barra final. `APP_BASE_PATH` é derivado pelo
