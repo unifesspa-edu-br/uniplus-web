@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.58.2-noble
+FROM mcr.microsoft.com/playwright:v1.61.1-noble
 LABEL org.opencontainers.image.source="https://github.com/unifesspa-edu-br/uniplus-web"
 LABEL org.opencontainers.image.description="Playwright E2E runner com webkit para Ubuntu (uniplus-web)"
 

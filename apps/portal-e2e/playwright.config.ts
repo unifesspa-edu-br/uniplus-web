@@ -37,7 +37,13 @@ const AAA_PROJECTS = AAA_VIEWPORTS.flatMap((viewport) =>
 );
 
 export default defineConfig({
-  ...nxE2EPreset(__filename, { testDir: './src' }),
+  // `./src/specs` (não `./src`) — exclui `src/specs-subpath/` (Story #449),
+  // que tem baseURL própria (portal servido sob subpath real, porta 4212)
+  // e roda via config dedicada (`playwright.subpath.config.ts`). Sem o
+  // escopo, este config varria `specs-subpath/` também e rodava contra a
+  // porta 4202 (raiz), que não serve `/portal/` — os testes falhariam por
+  // navegar pro host/porta errado, não pelo comportamento sob teste.
+  ...nxE2EPreset(__filename, { testDir: './src/specs' }),
   outputDir: path.join(workspaceRoot, 'tmp/playwright/portal-e2e'),
   reporter: [
     ['html', { outputFolder: path.join(workspaceRoot, 'tmp/playwright/portal-e2e-report') }],

@@ -899,10 +899,12 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "http://localhost:4202/*"
+        "http://localhost:4202/*",
+        "http://localhost:4212/*"
       ],
       "webOrigins": [
-        "http://localhost:4202"
+        "http://localhost:4202",
+        "http://localhost:4212"
       ],
       "notBefore": 0,
       "bearerOnly": false,
