@@ -82,8 +82,17 @@ export class AuthService {
     await this.keycloak?.login();
   }
 
+  /**
+   * Redireciona de volta ao mount point do app (`document.baseURI`), não à
+   * origem do domínio (Story #447). Sob subpath (`/portal`, `/selecao`,
+   * `/ingresso`, PathPrefix sem StripPrefix — nginx.conf parametrizado pela
+   * Story #448), `window.location.origin` aponta pra raiz do host, que não
+   * tem rota própria e cai no 404 do Traefik. Mesma resolução relativa já
+   * usada em `silentCheckSsoRedirectUri` (init acima) — preserva a raiz em
+   * standalone-compact/lab, onde `document.baseURI` já é a própria origem.
+   */
   async logout(): Promise<void> {
-    await this.keycloak?.logout({ redirectUri: window.location.origin });
+    await this.keycloak?.logout({ redirectUri: document.baseURI });
   }
 
   getToken(): string | undefined {
