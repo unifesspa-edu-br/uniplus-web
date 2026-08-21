@@ -98,6 +98,16 @@ test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
       (req) => req.url().includes('/protocol/openid-connect/logout'),
       { timeout: 10_000 },
     );
+    // Espera o round-trip completo (não só o request sair) — sem isso o
+    // `page.goto('perfil')` abaixo pode disparar antes do Keycloak
+    // terminar de processar o logout e aplicar o redirect, cancelando a
+    // navegação em curso e deixando o teste intermitente (achado do Codex
+    // AI: `waitForURL` de escopo largo casava com a própria URL
+    // pré-logout, retornando cedo demais).
+    const logoutResponse = page.waitForResponse(
+      (res) => res.url().includes('/protocol/openid-connect/logout'),
+      { timeout: 10_000 },
+    );
 
     const trigger = page.getByRole('button', { name: /^Abrir menu da conta de / });
     await trigger.click();
@@ -114,7 +124,10 @@ test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
     // no 404 do Traefik.
     expect(redirectParam).toMatch(/localhost:4212\/portal\//);
 
-    await page.waitForURL(/localhost:4212\//, { timeout: 10_000 });
+    await logoutResponse;
+    // Sinal inequívoco de navegação real (não a URL pré-logout, que já
+    // casaria trivialmente com um regex largo tipo /localhost:4212\//).
+    await page.waitForURL((url) => !url.pathname.includes('perfil'), { timeout: 10_000 });
 
     // Sessão de fato encerrada: rota protegida volta a exigir login.
     await page.goto('perfil');
