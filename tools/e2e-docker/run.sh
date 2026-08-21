@@ -64,7 +64,16 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
-for port in 8080 4200 4202 4212; do
+PORTS_TO_CHECK=(8080 4200 4202)
+# 4212 só é usada pelo container do portal sob subpath (seção 3.5), que só
+# sobe para portal-e2e/all — exigi-la livre também pra selecao-e2e bloquearia
+# a run à toa por um serviço não relacionado (achado do Codex AI no PR da
+# Story #449).
+if [[ "$TARGET" == "portal-e2e" || "$TARGET" == "all" ]]; then
+  PORTS_TO_CHECK+=(4212)
+fi
+
+for port in "${PORTS_TO_CHECK[@]}"; do
   if ss -tlnp "sport = :$port" 2>/dev/null | grep -q LISTEN; then
     echo "ERRO: porta $port já está em uso."
     echo "  Pare o serviço antes de rodar o E2E runner."
