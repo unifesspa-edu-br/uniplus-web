@@ -79,22 +79,6 @@ export class LayoutComponent {
 
   private readonly navGroupsDeclarados: readonly CfgNavGroup[] = [
     {
-      label: 'Painéis',
-      items: [
-        { label: 'Painel de processos', icon: 'pi-table', routerLink: '/dashboard' },
-        { label: 'Editais', icon: 'pi-file' },
-        { label: 'Inscrições', icon: 'pi-user' },
-        { label: 'Homologação', icon: 'pi-sitemap' },
-      ],
-    },
-    {
-      label: 'Resultados',
-      items: [
-        { label: 'Classificação', icon: 'pi-chart-line' },
-        { label: 'Recursos', icon: 'pi-check-circle' },
-      ],
-    },
-    {
       label: 'Configuração',
       items: [
         { label: 'Cidade', icon: 'pi-map-marker' },
