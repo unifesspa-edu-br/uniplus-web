@@ -119,10 +119,21 @@ server {
     # `connect-src *` é necessário porque a URL real do provedor OIDC e da API vem do
     # ConfigMap em runtime (não embutida na imagem — ADR-0020); apertar exige
     # build-time substitution que viola o invariante "imagem única por app".
-    # `blob:` e `wasm-unsafe-eval` em `script-src` são necessários somente para
-    # o runtime Unity/WebAssembly do VLibras self-hosted em
-    # `/assets/shared-ui/vlibras/*`; scripts da app e chunks do widget continuam
-    # servidos de `'self'`, sem liberar script inline.
+    # `blob:`, `wasm-unsafe-eval` e `unsafe-eval` em `script-src` são
+    # necessários somente para o runtime Unity/WebAssembly do VLibras
+    # self-hosted em `/assets/shared-ui/vlibras/*`; scripts da app e chunks
+    # do widget continuam servidos de `'self'`, sem liberar script inline.
+    # `unsafe-eval` é o item que mais amplia a superfície de XSS (permite
+    # `eval()`/`new Function()` em QUALQUER script, não só o do VLibras) —
+    # mantido apesar disso porque o player Unity/Emscripten do widget chama
+    # `eval()` de verdade via `_JS_Eval_EvalJS` (interop pra
+    # `Application.ExternalEval`, comum em builds WebGL antigos), não só
+    # `WebAssembly.instantiate` — sem essa entrada o navegador bloqueia com
+    # `EvalError` e o avatar não renderiza (achado ao vivo no HML, issue
+    # uniplus-web#559; a validação anterior de assets do VLibras rodou
+    # contra o dev server do Nx, que não aplica CSP nenhuma, por isso não
+    # pegou). Sem alternativa mais restrita conhecida — o `eval()` vem de
+    # dentro do binário vendorizado, não de código nosso controlável.
     #
     # CSP3 split em `style-src` (#360):
     # - `style-src 'self' 'unsafe-inline'`: legacy fallback para browsers CSP2
@@ -140,5 +151,5 @@ server {
     # Browsers CSP3 (Chrome 75+/Firefox 75+/Safari 15.4+) honram -elem/-attr
     # e ignoram `style-src` legacy → hardening efetivo. Browsers CSP2 caem no
     # legacy → comportamento equivalente ao pré-#360 (funcional, sem hardening).
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-src *; frame-ancestors 'self';" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-src *; frame-ancestors 'self';" always;
 }
