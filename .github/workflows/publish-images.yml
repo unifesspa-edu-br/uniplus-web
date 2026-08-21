@@ -21,6 +21,7 @@ name: Publish Images
 #   - ghcr.io/<owner>/uniplus-portal
 #   - ghcr.io/<owner>/uniplus-web-selecao
 #   - ghcr.io/<owner>/uniplus-web-ingresso
+#   - ghcr.io/<owner>/uniplus-web-configuracao
 
 on:
   push:
@@ -56,6 +57,8 @@ jobs:
             image: uniplus-web-selecao
           - module: ingresso
             image: uniplus-web-ingresso
+          - module: configuracao
+            image: uniplus-web-configuracao
 
     steps:
       - name: Checkout
