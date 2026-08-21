@@ -37,6 +37,16 @@ server {
     sub_filter '<base href="/">' '<base href="${APP_BASE_HREF}">';
     sub_filter '<base href="/"/>' '<base href="${APP_BASE_HREF}"/>';
 
+    # Nonce de CSP por requisição (#565): $request_id é variável nativa do
+    # nginx (única por request, sem módulo extra), resolvida em runtime —
+    # não colide com o envsubst do boot, que só troca APP_BASE_(HREF|PATH)
+    # (NGINX_ENVSUBST_FILTER nos Dockerfiles). O mesmo valor vai pro atributo
+    # `ngCspNonce` do <body> (placeholder no index.html de cada app) e pro
+    # `style-src-elem` da CSP abaixo — o Angular lê o atributo via seu próprio
+    # `CSP_NONCE` (default: `document.body.querySelector('[ngCspNonce]')`) e
+    # assina com ele todo <style> que injeta em runtime.
+    sub_filter 'ngCspNonce="__CSP_NONCE__"' 'ngCspNonce="$request_id"';
+
     # Mantém a URL canônica com barra final. `APP_BASE_PATH` é derivado pelo
     # entrypoint a partir de APP_BASE_HREF e fica em um path inócuo na raiz.
     location = ${APP_BASE_PATH} {
@@ -139,10 +149,15 @@ server {
     # - `style-src 'self' 'unsafe-inline'`: legacy fallback para browsers CSP2
     #   (sem -elem/-attr). Sem ele, esses browsers caem no default-src 'self'
     #   que bloqueia atributos style="..." (Codex P2 PR #362).
-    # - `style-src-elem 'self'`: bloqueia <style> blocks e <link rel=stylesheet>
-    #   externos não-self. Beasties desativado em #358 / v0.1.1 deixou de
-    #   injetar <style> inline. Estilização agora vem de `styles-*.css`
-    #   externo + Tailwind utility classes.
+    # - `style-src-elem 'self' 'nonce-$request_id'`: bloqueia <style> blocks e
+    #   <link rel=stylesheet> externos não-self por padrão, com uma exceção
+    #   assinada por requisição. Beasties desativado em #358 não elimina toda
+    #   injeção de <style> em runtime: o próprio Angular injeta <style> pra
+    #   CSS de `ViewEncapsulation.Emulated` (modo padrão de qualquer
+    #   componente com estilo próprio) via `SharedStylesHost`, achado ao vivo
+    #   em HML na issue #565. O nonce por requisição (ver sub_filter acima)
+    #   libera só esses <style> que o Angular assina sozinho — nenhum
+    #   <style>/<link> de outra origem ganha passe livre.
     # - `style-src-attr 'unsafe-inline'`: permite atributos style="..." em
     #   elementos HTML. Necessário para Angular [style.X] bindings (e.g.,
     #   `data-table.ts:42` tem [style.width]). Risco menor que <style> block
@@ -151,5 +166,5 @@ server {
     # Browsers CSP3 (Chrome 75+/Firefox 75+/Safari 15.4+) honram -elem/-attr
     # e ignoram `style-src` legacy → hardening efetivo. Browsers CSP2 caem no
     # legacy → comportamento equivalente ao pré-#360 (funcional, sem hardening).
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-src *; frame-ancestors 'self';" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; style-src-elem 'self' 'nonce-$request_id'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src *; frame-src *; frame-ancestors 'self';" always;
 }
