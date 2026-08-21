@@ -112,12 +112,21 @@ export function provideRuntimeConfig(): EnvironmentProviders {
   ]);
 }
 
-function toAuthConfig(cfg: AppConfig): AuthConfig {
+export function toAuthConfig(cfg: AppConfig): AuthConfig {
   const oidc = resolveOidcConfig(cfg);
+  // geoApiUrl só entra na allowlist quando difere de apiUrl (host
+  // genuinamente separado, ex. HML) — evita duplicar a mesma origin em
+  // dev local, onde cai no fallback do apiUrl (resolveGeoBasePath).
+  // Sem isso, tokenInterceptor não anexa o Bearer em requests pro
+  // geoApiUrl, e /api/cep e /api/cidades exigem autenticação (401).
+  const urls = [cfg.apiUrl, oidc.issuerUrl];
+  if (cfg.geoApiUrl && cfg.geoApiUrl !== cfg.apiUrl) {
+    urls.push(cfg.geoApiUrl);
+  }
   return {
     issuerUrl: oidc.issuerUrl,
     clientId: oidc.clientId,
-    allowedUrls: Object.freeze([cfg.apiUrl, oidc.issuerUrl]),
+    allowedUrls: Object.freeze(urls),
   };
 }
 

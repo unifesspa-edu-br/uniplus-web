@@ -1,6 +1,7 @@
 import { describe, expect, it, afterEach } from 'vitest';
-import { resolveRuntimeConfigPath, resolveGeoBasePath } from './runtime-config.provider';
+import { resolveRuntimeConfigPath, resolveGeoBasePath, toAuthConfig } from './runtime-config.provider';
 import type { AppConfigService } from './app-config.service';
+import type { AppConfig } from './app-config.model';
 
 describe('resolveRuntimeConfigPath (Story #446/#452)', () => {
   let base: HTMLBaseElement | null = null;
@@ -44,5 +45,43 @@ describe('resolveGeoBasePath (issue #570)', () => {
     const store = storeCom({ apiUrl: 'http://localhost:5000' });
 
     expect(resolveGeoBasePath(store)).toBe('http://localhost:5000');
+  });
+});
+
+describe('toAuthConfig — allowlist do geoApiUrl (Codex PR #571)', () => {
+  function cfgCom(overrides: Partial<AppConfig>): AppConfig {
+    return {
+      apiUrl: 'https://uniplus-api-hml.unifesspa.edu.br',
+      oidc: { issuerUrl: 'https://oidc.example/auth/realms/unifesspa', clientId: 'uniplus-portal' },
+      ...overrides,
+    };
+  }
+
+  it('inclui geoApiUrl na allowlist quando difere do apiUrl — senão tokenInterceptor não anexa o Bearer', () => {
+    const cfg = cfgCom({ geoApiUrl: 'https://geo-api-hml.unifesspa.edu.br' });
+
+    expect(toAuthConfig(cfg).allowedUrls).toEqual([
+      'https://uniplus-api-hml.unifesspa.edu.br',
+      'https://oidc.example/auth/realms/unifesspa',
+      'https://geo-api-hml.unifesspa.edu.br',
+    ]);
+  });
+
+  it('não duplica a origin quando geoApiUrl é ausente (cai no apiUrl)', () => {
+    const cfg = cfgCom({});
+
+    expect(toAuthConfig(cfg).allowedUrls).toEqual([
+      'https://uniplus-api-hml.unifesspa.edu.br',
+      'https://oidc.example/auth/realms/unifesspa',
+    ]);
+  });
+
+  it('não duplica a origin quando geoApiUrl é igual ao apiUrl', () => {
+    const cfg = cfgCom({ geoApiUrl: 'https://uniplus-api-hml.unifesspa.edu.br' });
+
+    expect(toAuthConfig(cfg).allowedUrls).toEqual([
+      'https://uniplus-api-hml.unifesspa.edu.br',
+      'https://oidc.example/auth/realms/unifesspa',
+    ]);
   });
 });
