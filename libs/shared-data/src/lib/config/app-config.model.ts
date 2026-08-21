@@ -13,6 +13,13 @@ export interface OidcRuntimeConfig {
 
 export interface AppConfig {
   readonly apiUrl: string;
+  /**
+   * Origin do backend geo, quando genuinamente separado do `apiUrl` (ex.:
+   * HML, onde `geo-api` é um deployable próprio, host distinto). Opcional:
+   * ausente cai no `apiUrl` (dev local, onde um único gateway proxeia
+   * `uniplus-api` e `geo-api` sob a mesma origin).
+   */
+  readonly geoApiUrl?: string;
   readonly oidc: OidcRuntimeConfig;
 }
 

@@ -26,6 +26,15 @@ export function resolveRuntimeConfigPath(): string {
 }
 
 /**
+ * Origin do backend geo: `geoApiUrl` quando configurado (ambientes onde
+ * `geo-api` é deployable separado, host próprio — ex. HML), senão cai no
+ * mesmo `apiUrl` dos demais módulos (dev local, gateway único).
+ */
+export function resolveGeoBasePath(store: AppConfigService): string {
+  return store.get().geoApiUrl ?? store.get().apiUrl;
+}
+
+/**
  * Bootstrap completo de runtime-config + autenticação num **único**
  * `APP_INITIALIZER` (ADR-0021). Consolidar é necessário porque o
  * Angular dispara initializers em paralelo (não em série), então um
@@ -97,7 +106,7 @@ export function provideRuntimeConfig(): EnvironmentProviders {
     },
     {
       provide: GEO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
+      useFactory: resolveGeoBasePath,
       deps: [AppConfigService],
     },
   ]);
