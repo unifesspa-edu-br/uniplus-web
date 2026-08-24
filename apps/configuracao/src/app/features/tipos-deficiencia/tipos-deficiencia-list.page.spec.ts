@@ -14,8 +14,10 @@ import { TiposDeficienciaListPage } from './tipos-deficiencia-list.page';
 const BASE = 'http://localhost:5000';
 const TIPO_DEFICIENCIA_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 const tipoDeficienciaSeed: TipoDeficienciaDto = {
-  'id': TIPO_DEFICIENCIA_ID,
+  id: TIPO_DEFICIENCIA_ID,
+  codigo: 'VISUAL',
   nome: 'Visual',
+  permanente: null,
   descricao: 'Inclui baixa visão e cegueira',
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
 };
@@ -120,7 +122,7 @@ describe('TiposDeficienciaListPage', () => {
     await flushLista([]);
 
     component['abrirDrawerCriacao']();
-    component['form'].setValue({ nome: 'Visual', descricao: '   ' });
+    component['form'].setValue({ codigo: 'VISUAL', nome: 'Visual', descricao: '   ' });
 
     // O contrato passou a exigir descrição não vazia; antes o formulário
     // enviava `null` e o backend recusava com 422.
@@ -141,6 +143,7 @@ describe('TiposDeficienciaListPage', () => {
 
       component['abrirDrawerCriacao']();
       component['form'].setValue({
+        codigo: 'VISUAL',
         nome: 'Visual',
         descricao: 'Inclui baixa visão e cegueira',
       });
@@ -196,6 +199,7 @@ describe('TiposDeficienciaListPage', () => {
 
     component['abrirDrawerCriacao']();
     component['form'].setValue({
+      codigo: 'VISUAL',
       nome: 'Visual',
       // Descrição passou a ser obrigatória no contrato: sem valor, o submit
       // nem chegaria a disparar a request que este teste inspeciona.
@@ -227,6 +231,7 @@ describe('TiposDeficienciaListPage', () => {
     const outroTipoDeficiencia: TipoDeficienciaDto = {
       ...tipoDeficienciaSeed,
       id: '2',
+      codigo: 'AUDITIVA',
       nome: 'Auditiva',
       descricao: 'inclui surdez e surdocegueira.'
     };
@@ -254,7 +259,8 @@ describe('TiposDeficienciaListPage', () => {
       component['form'].controls.nome.setValue(NOVO_NOME);
       component['salvar']();
 
-      const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`);      expect(put.request.method).toBe('PUT');
+      const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`);
+      expect(put.request.method).toBe('PUT');
       expect(put.request.body.nome).toBe(NOVO_NOME);
       put.flush(null, { status: 204, statusText: 'No Content' });
       await flushRecarregarLista([tipo_deficiencia]);
@@ -280,5 +286,49 @@ describe('TiposDeficienciaListPage', () => {
       .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
       .flush([tipoDeficienciaSeed]);
     await propagate();
+  });
+
+  it('código duplicado (409) é mapeado ao campo código sem fechar o drawer', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({
+      codigo: 'VISUAL',
+      nome: 'Deficiência Visual',
+      descricao: 'Inclui baixa visão e cegueira',
+    });
+    component['salvar']();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    post.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
+        title: 'Já existe um tipo de deficiência ativo com este código',
+        status: 409,
+        code: 'uniplus.configuracao.tipo_deficiencia.codigo_ja_existe',
+        traceId: 'test-trace',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
+  });
+
+  it('previne submeter código inválido sem fechar o drawer', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({
+      codigo: '1VISUAL',
+      nome: 'Deficiência Visual',
+      descricao: 'Inclui baixa visão e cegueira',
+    });
+    component['salvar']();
+    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
   });
 });
