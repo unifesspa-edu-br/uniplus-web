@@ -9287,18 +9287,21 @@
         }
       },
       "AtualizarTipoDeficienciaCommand": {
-        "required": ["id", "nome", "descricao"],
+        "required": ["id", "codigo", "nome", "descricao"],
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
+          "codigo": {
+            "type": ["null", "string"]
+          },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "permanente": {
             "type": ["null", "boolean"]
@@ -10023,14 +10026,17 @@
         }
       },
       "CriarTipoDeficienciaCommand": {
-        "required": ["nome", "descricao"],
+        "required": ["codigo", "nome", "descricao"],
         "type": "object",
         "properties": {
+          "codigo": {
+            "type": ["null", "string"]
+          },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "permanente": {
             "type": ["null", "boolean"]
@@ -11061,12 +11067,15 @@
         }
       },
       "TipoDeficienciaDto": {
-        "required": ["id", "nome", "descricao", "permanente", "criadoEm"],
+        "required": ["id", "codigo", "nome", "descricao", "permanente", "criadoEm"],
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
           },
           "nome": {
             "type": "string"

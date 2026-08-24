@@ -7608,8 +7608,9 @@ export interface components {
         readonly AtualizarTipoDeficienciaCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
-            readonly descricao: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly descricao: null | string;
             readonly permanente?: null | boolean;
         };
         readonly AtualizarTipoDocumentoCommand: {
@@ -7841,8 +7842,9 @@ export interface components {
             readonly descricao?: null | string;
         };
         readonly CriarTipoDeficienciaCommand: {
-            readonly nome: string;
-            readonly descricao: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly descricao: null | string;
             readonly permanente?: null | boolean;
         };
         readonly CriarTipoDocumentoCommand: {
@@ -8168,6 +8170,7 @@ export interface components {
         readonly TipoDeficienciaDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: string;
             readonly nome: string;
             readonly descricao: string;
             readonly permanente: null | boolean;

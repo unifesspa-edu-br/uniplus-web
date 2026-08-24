@@ -8,7 +8,7 @@ import {
   linkedSignal,
   signal,
   untracked,
-} from "@angular/core";
+} from '@angular/core';
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 
@@ -52,6 +52,7 @@ type ModoFormulario = "criar" | "editar";
 interface TipoDeficienciaForm {
   nome: FormControl<string>;
   descricao: FormControl<string>;
+  codigo: FormControl<string>;
 }
 
 type PaginaProps = {
@@ -61,10 +62,19 @@ type PaginaProps = {
 
 /** Vendor code do DomainError `TipoDeficienciaNomeJaExiste` (uniplus-api, 409 Conflict). */
 const TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe';
+/** Vendor code do DomainError `TipoDeficienciaCodigoJaExiste` (uniplus-api, 409 Conflict). */
+const TIPO_DEFICIENCIA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.codigo_ja_existe';
+/** Vendor code do DomainError `TipoDeficienciaCodigoObrigatorio` (uniplus-api, 422 Unprocessable Entity). */
+const TIPO_DEFICIENCIA_CODIGO_OBRIGATORIO_CODE =
+  'uniplus.configuracao.tipo_deficiencia.codigo_obrigatorio';
+/** Vendor code do DomainError `TipoDeficienciaCodigoFormatoInvalido` (uniplus-api, 422 Unprocessable Entity). */
+const TIPO_DEFICIENCIA_CODIGO_FORMATO_INVALIDO_CODE =
+  'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido';
 
 const TIPO_DEFICIENCIA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDeficienciaForm>([
   'nome',
   'descricao',
+  'codigo'
 ]);
 
 function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm | null {
@@ -135,7 +145,7 @@ const PAGE_SIZE = 50;
     <div data-scope class="cfg-unidades-scope">
       <ui-filter-bar
         ariaLabel="Filtrar tipos de deficiência"
-        searchPlaceholder="Buscar por nome..."
+        searchPlaceholder="Buscar por código ou nome..."
         searchAriaLabel="Buscar tipos de deficiência"
         [(searchValue)]="termoBusca"
       >
@@ -167,16 +177,20 @@ const PAGE_SIZE = 50;
           <div class="table-responsive">
             <table>
               <thead>
-                <tr>
-                  <th scope="col">Nome</th>
-                  <th scope="col">Descrição</th>
-                  <th scope="col">Status</th>
-                  <th scope="col"><span class="sr-only">Ações</span></th>
-                </tr>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Descrição</th>
+                <th scope="col">Status</th>
+                <th scope="col"><span class="sr-only">Ações</span></th>
+              </tr>
               </thead>
               <tbody>
                 @for (tipoDeficiencia of tiposDeficienciaFiltrados(); track tipoDeficiencia.id) {
                   <tr>
+                    <td data-label="Código">
+                      <code>{{ tipoDeficiencia.codigo }}</code>
+                    </td>
                     <td data-label="Nome">
                       <div class="table-responsive__primary">
                         {{ tipoDeficiencia.nome }}
@@ -275,6 +289,7 @@ const PAGE_SIZE = 50;
                 placeholder="Ex.: Visual"
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+                (change)="mudaCampoNome($event)"
               />
               <span class="field__hint">
                 Identificador do tipo de deficiência — único entre os tipos ativos. Impede
@@ -282,6 +297,32 @@ const PAGE_SIZE = 50;
               </span>
               @if (erroDoCampo('nome')) {
                 <span class="field__error">{{ erroDoCampo('nome') }}</span>
+              }
+            </label>
+            @let erroCampoCodigo = erroDoCampo('codigo');
+            <label class="field field--full" [class.is-error]="erroCampoCodigo">
+              <span class="field__label is-required">Código</span>
+              <input
+                class="input"
+                type="text"
+                placeholder="Ex.: VISUAL"
+                formControlName="codigo"
+                style="text-transform: uppercase;"
+                [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
+                list="cfg-tipo-deficiencia-sugestoes"
+              />
+              <datalist id="cfg-tipo-deficiencia-sugestoes">
+                @for (tipoDeficienciaCodigoSugestao of tiposDeficienciaCodigoSugestoes();
+                  track $index) {
+                  <option [value]="tipoDeficienciaCodigoSugestao"></option>
+                }
+              </datalist>
+              <span class="field__hint">
+                Caixa alta, iniciando por letra; letras, números e sublinhado (^[A-Z][A-Z0-9_]+$).
+                Único entre os tipos de deficiências ativos. Editável.
+              </span>
+              @if (erroCampoCodigo) {
+                <span class="field__error">{{ erroCampoCodigo }}</span>
               }
             </label>
             <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
@@ -404,8 +445,10 @@ export class TiposDeficienciaListPage {
     if (termo.length === 0) {
       return this.tiposDeficiencia();
     }
-    return this.tiposDeficiencia().filter((tiposDeficiencia) =>
-      tiposDeficiencia.nome.toLocaleLowerCase('pt-BR').includes(termo),
+    return this.tiposDeficiencia().filter(
+      (tiposDeficiencia) =>
+        tiposDeficiencia.nome.toLocaleLowerCase('pt-BR').includes(termo) ||
+        tiposDeficiencia.codigo.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
   protected readonly formHeading = computed(() =>
@@ -437,10 +480,20 @@ export class TiposDeficienciaListPage {
       // exige ao menos um caractere significativo.
       validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)],
     }),
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(50),
+        Validators.pattern('^[A-Z][A-Z0-9_]{1,49}$'),
+      ],
+    }),
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
   protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  protected readonly tiposDeficienciaCodigoSugestoes = signal<string[]>([]);
 
   constructor() {
     effect(() => {
@@ -448,6 +501,14 @@ export class TiposDeficienciaListPage {
       if (problem && problem.status >= 500) {
         const titulo = this.problemI18n.resolve(problem).title;
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
+    this.form.controls.codigo.valueChanges.subscribe((value) => {
+      if (value) {
+        this.form.controls.codigo.setValue(value.toLocaleUpperCase(), {
+          emitEvent: false,
+          emitModelToViewChange: false,
+        });
       }
     });
   }
@@ -481,6 +542,7 @@ export class TiposDeficienciaListPage {
     this.form.reset({
       nome: '',
       descricao: '',
+      codigo: '',
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -491,6 +553,7 @@ export class TiposDeficienciaListPage {
     this.modo.set('editar');
     this.tipoDeficienciaEmEdicaoId.set(tipoDeficiencia.id);
     this.form.reset({
+      codigo: tipoDeficiencia.codigo,
       nome: tipoDeficiencia.nome,
       descricao: tipoDeficiencia.descricao ?? '',
     });
@@ -553,6 +616,8 @@ export class TiposDeficienciaListPage {
     if (control.errors['minlength'])
       return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
+    if (control.errors['pattern'])
+      return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: VISUAL, DEFICIENCIA_VISUAL).';
     return 'Valor inválido.';
   }
 
@@ -567,6 +632,7 @@ export class TiposDeficienciaListPage {
   private criarCommand(): CriarTipoDeficienciaCommand {
     const raw = this.form.getRawValue();
     return {
+      codigo: raw.codigo.trim(),
       nome: raw.nome.trim(),
       descricao: raw.descricao.trim(),
     };
@@ -595,10 +661,18 @@ export class TiposDeficienciaListPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    const codigoErro = [
+      TIPO_DEFICIENCIA_CODIGO_OBRIGATORIO_CODE,
+      TIPO_DEFICIENCIA_CODIGO_FORMATO_INVALIDO_CODE,
+      TIPO_DEFICIENCIA_CODIGO_JA_EXISTE_CODE,
+    ];
+    if (codigoErro.includes(problem.code)) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.form.controls.codigo.setErrors({
+        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
+      });
+      this.form.controls.codigo.markAsTouched();
       return;
     }
 
@@ -674,5 +748,21 @@ export class TiposDeficienciaListPage {
       .remover(tipoDeficiencia.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => this.handleRemoverResult(result));
+  }
+
+  protected mudaCampoNome(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) {
+      const tipoDeficienciaCodigoFormatado = value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toUpperCase();
+      this.tiposDeficienciaCodigoSugestoes.set([tipoDeficienciaCodigoFormatado]);
+      if (!this.form.controls.codigo.value) {
+        this.form.controls.codigo.setValue(tipoDeficienciaCodigoFormatado);
+      }
+    }
   }
 }
