@@ -111,7 +111,7 @@ const PAGE_SIZE = 50;
       <div class="page-header__content">
         <h1 class="page-header__title">Tipo de Deficiência</h1>
         <p class="page-header__desc">
-          Tipos de deficiência reconhecidos — cadastro independente, identificado pelo nome ·
+          Tipos de deficiência reconhecidos — cadastro independente, identificado pelo código ·
           UNI-REQ-0012.
         </p>
       </div>
@@ -293,7 +293,7 @@ const PAGE_SIZE = 50;
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
               />
               <span class="field__hint">
-                Identificador do tipo de deficiência — único entre os tipos ativos. Impede
+                Rótulo legível do tipo de deficiência — único entre os tipos ativos. Impede
                 duplicatas como dois "Visual".
               </span>
               @if (erroDoCampo('nome')) {
@@ -321,8 +321,9 @@ const PAGE_SIZE = 50;
                 }
               </datalist>
               <span class="field__hint">
-                Caixa alta, iniciando por letra; letras, números e sublinhado (^[A-Z][A-Z0-9_]+$).
-                Único entre os tipos de deficiências ativos. Editável.
+                Identidade do cadastro: caixa alta, começando por letra, com letras, números e
+                sublinhado, de 2 a 50 caracteres. Único entre os tipos de deficiência ativos.
+                Sugerido a partir do nome e editável antes de salvar.
               </span>
               @if (erroCampoCodigo) {
                 <span class="field__error">{{ erroCampoCodigo }}</span>
@@ -369,7 +370,8 @@ const PAGE_SIZE = 50;
     >
       <p>
         Você está prestes a inativar o tipo de deficiência
-        <strong>{{ tipoDeficienciaParaInativar()?.nome }}.</strong>
+        <code>{{ tipoDeficienciaParaInativar()?.codigo }}</code>
+        — <strong>{{ tipoDeficienciaParaInativar()?.nome }}.</strong>
       </p>
       <p>
         A inativação impede novos editais de utilizá-lo, mas
