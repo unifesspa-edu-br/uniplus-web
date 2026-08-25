@@ -56,7 +56,7 @@ import {
 const PAGE_SIZE = 50;
 
 /** Janela dos lookups de FK (selects do formulário e resolução de rótulos da lista). */
-const LOOKUP_LIMIT = 200;
+const LOOKUP_LIMIT = 100;
 
 type ModoFormulario = 'criar' | 'editar';
 
