@@ -6,7 +6,6 @@ import {
   effect,
   inject,
   linkedSignal,
-  OnInit,
   signal,
   untracked,
 } from '@angular/core';
@@ -17,8 +16,10 @@ import {
   ApiResult,
   Cursor,
   cursorToString,
+  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
+  IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
   PaginationDirection,
   ProblemDetails,
@@ -47,7 +48,6 @@ import {
   FilterBarComponent,
   PagerComponent,
 } from "@uniplus/shared-ui/components";
-import { debounceTime } from 'rxjs';
 
 type ModoFormulario = "criar" | "editar";
 
@@ -62,22 +62,41 @@ type PaginaProps = {
  readonly direction: PaginationDirection
 } | undefined;
 
-/** Vendor code do DomainError `TipoDeficienciaNomeJaExiste` (uniplus-api, 409 Conflict). */
-const TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe';
-/** Vendor code do DomainError `TipoDeficienciaCodigoJaExiste` (uniplus-api, 409 Conflict). */
-const TIPO_DEFICIENCIA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_deficiencia.codigo_ja_existe';
-/** Vendor code do DomainError `TipoDeficienciaCodigoObrigatorio` (uniplus-api, 422 Unprocessable Entity). */
-const TIPO_DEFICIENCIA_CODIGO_OBRIGATORIO_CODE =
-  'uniplus.configuracao.tipo_deficiencia.codigo_obrigatorio';
-/** Vendor code do DomainError `TipoDeficienciaCodigoFormatoInvalido` (uniplus-api, 422 Unprocessable Entity). */
-const TIPO_DEFICIENCIA_CODIGO_FORMATO_INVALIDO_CODE =
-  'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido';
-
 const TIPO_DEFICIENCIA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDeficienciaForm>([
   'nome',
   'descricao',
-  'codigo'
+  'codigo',
 ]);
+
+/**
+ * Conflitos de unicidade (409) que pertencem a um campo do formulário. Só eles
+ * precisam do vendor code literal: violação de unicidade não é erro de validação
+ * de campo, então o corpo não traz `errors[]` e não há outra chave que diga a
+ * qual campo o conflito se refere. Todo erro que chega em `errors[]` é ancorado
+ * pelo `field` que o próprio contrato manda — sem repetir código aqui.
+ */
+const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof TipoDeficienciaForm> = new Map([
+  ['uniplus.configuracao.tipo_deficiencia.codigo_ja_existe', 'codigo' as const],
+  ['uniplus.configuracao.tipo_deficiencia.nome_ja_existe', 'nome' as const],
+]);
+
+/** Tamanho máximo do código aceito pelo backend (`CodigoTipoDeficiencia`). */
+const CODIGO_TAMANHO_MAXIMO = 50;
+
+/**
+ * Deriva do nome um código no formato fechado que o backend exige: sem
+ * diacríticos, em caixa alta, com não-alfanuméricos colapsados em sublinhado e as
+ * pontas aparadas. Devolve string vazia quando não sobra nada aproveitável.
+ */
+export function sugerirCodigoDeTipoDeficiencia(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .replace(/[^a-zA-Z0-9]+/gu, '_')
+    .replace(/^_+|_+$/gu, '')
+    .toLocaleUpperCase('pt-BR')
+    .slice(0, CODIGO_TAMANHO_MAXIMO);
+}
 
 function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm | null {
   const normalized =
@@ -390,7 +409,7 @@ const PAGE_SIZE = 50;
   `,
   host: { class: 'cfg-page' },
 })
-export class TiposDeficienciaListPage implements OnInit {
+export class TiposDeficienciaListPage {
   private readonly api = inject(TipoDeficienciaApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
@@ -497,6 +516,10 @@ export class TiposDeficienciaListPage implements OnInit {
   });
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
+  /** Classificação de permanência do registro em edição — lida, não editável aqui. */
+  private readonly permanenteEmEdicao = signal<boolean | null>(null);
+  /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
+  private ultimaSugestaoAplicada = '';
   protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   protected readonly tiposDeficienciaCodigoSugestoes = signal<string[]>([]);
 
@@ -508,28 +531,51 @@ export class TiposDeficienciaListPage implements OnInit {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+
+    this.form.controls.nome.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((nome) => this.sincronizarSugestaoDeCodigo(nome));
+
+    this.form.controls.codigo.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
   }
 
-  ngOnInit(): void {
-    this.form.valueChanges.pipe(debounceTime(300)).subscribe(({ codigo, nome }) => {
-      if (nome) {
-        const tipoDeficienciaCodigoFormatado = nome
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-zA-Z0-9]+/g, '_')
-          .replace(/^_+|_+$/g, '')
-          .toUpperCase();
-        this.tiposDeficienciaCodigoSugestoes.set([tipoDeficienciaCodigoFormatado]);
-        if (!this.form.controls.codigo.value && this.form.controls.codigo.pristine) {
-          this.form.controls.codigo.patchValue(tipoDeficienciaCodigoFormatado);
-        }
-      }
-      if (codigo) {
-        this.form.controls.codigo.setValue(codigo.toLocaleUpperCase(), {
-          emitEvent: false,
-          emitModelToViewChange: false,
-        });
-      }
+  /**
+   * Mantém a sugestão de código alinhada ao nome. O campo só é escrito na criação
+   * e enquanto o que está nele é obra da própria sugestão — assim ela acompanha o
+   * nome enquanto ele é digitado, mas para no instante em que o operador troca o
+   * código por outro. Na edição de um tipo já salvo, nunca escreve: o código
+   * vigente é do registro.
+   */
+  private sincronizarSugestaoDeCodigo(nome: string): void {
+    const sugestao = sugerirCodigoDeTipoDeficiencia(nome);
+    this.tiposDeficienciaCodigoSugestoes.set(sugestao === '' ? [] : [sugestao]);
+
+    if (this.modo() !== 'criar') {
+      return;
+    }
+    const codigoAtual = this.form.controls.codigo.value;
+    if (codigoAtual !== '' && codigoAtual !== this.ultimaSugestaoAplicada) {
+      return;
+    }
+    this.ultimaSugestaoAplicada = sugestao;
+    this.form.controls.codigo.setValue(sugestao, { emitEvent: false });
+  }
+
+  /**
+   * O backend só aceita código em caixa alta. O modelo é normalizado sem reescrever
+   * a view (`emitModelToViewChange: false`) para não reposicionar o cursor; a
+   * apresentação em caixa alta fica por conta do `text-transform` do campo.
+   */
+  private normalizarCaixaDoCodigo(codigo: string): void {
+    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
+    if (emCaixaAlta === codigo) {
+      return;
+    }
+    this.form.controls.codigo.setValue(emCaixaAlta, {
+      emitEvent: false,
+      emitModelToViewChange: false,
     });
   }
 
@@ -559,6 +605,8 @@ export class TiposDeficienciaListPage implements OnInit {
 
   abrirDrawerCriacao() {
     this.modo.set('criar');
+    this.ultimaSugestaoAplicada = '';
+    this.tiposDeficienciaCodigoSugestoes.set([]);
     this.form.reset({
       nome: '',
       descricao: '',
@@ -572,6 +620,8 @@ export class TiposDeficienciaListPage implements OnInit {
   protected abrirEdicao(tipoDeficiencia: TipoDeficienciaDto): void {
     this.modo.set('editar');
     this.tipoDeficienciaEmEdicaoId.set(tipoDeficiencia.id);
+    this.permanenteEmEdicao.set(tipoDeficiencia.permanente);
+    this.ultimaSugestaoAplicada = '';
     this.form.reset({
       codigo: tipoDeficiencia.codigo,
       nome: tipoDeficiencia.nome,
@@ -618,8 +668,17 @@ export class TiposDeficienciaListPage implements OnInit {
       .subscribe((result) => this.handleSalvarResult(result));
   }
 
+  /**
+   * O PUT substitui o registro inteiro: campo omitido é campo apagado. Como esta
+   * tela não edita a classificação de permanência, ela reenvia o valor lido para
+   * não zerá-la em toda atualização de nome, código ou descrição.
+   */
   private atualizarCommand(): AtualizarTipoDeficienciaCommand {
-    return { id: this.tipoDeficienciaEmEdicaoId() ?? '', ...this.criarCommand() };
+    return {
+      id: this.tipoDeficienciaEmEdicaoId() ?? '',
+      ...this.criarCommand(),
+      permanente: this.permanenteEmEdicao(),
+    };
   }
 
   protected erroDoCampo(nome: keyof TipoDeficienciaForm): string | null {
@@ -636,8 +695,13 @@ export class TiposDeficienciaListPage implements OnInit {
     if (control.errors['minlength'])
       return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    if (control.errors['pattern'])
-      return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: VISUAL, DEFICIENCIA_VISUAL).';
+    // O `pattern` significa coisas diferentes por campo: formato fechado no código,
+    // "não pode ser só espaços" na descrição.
+    if (control.errors['pattern']) {
+      return nome === 'codigo'
+        ? 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: VISUAL, DEFICIENCIA_VISUAL).'
+        : 'Informe um texto — apenas espaços não valem.';
+    }
     return 'Valor inválido.';
   }
 
@@ -681,34 +745,33 @@ export class TiposDeficienciaListPage implements OnInit {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    const codigoErro = [
-      TIPO_DEFICIENCIA_CODIGO_OBRIGATORIO_CODE,
-      TIPO_DEFICIENCIA_CODIGO_FORMATO_INVALIDO_CODE,
-      TIPO_DEFICIENCIA_CODIGO_JA_EXISTE_CODE,
-    ];
-    if (codigoErro.includes(problem.code)) {
-      this.notifications.errorFromProblem(problem);
+    if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarIdempotencyKey();
-      this.form.controls.codigo.setErrors({
-        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-      });
-      this.form.controls.codigo.markAsTouched();
+    }
+
+    // A validação do backend acumula toda violação de campo em `errors[]` e só
+    // repete a primeira na raiz do problema (ADR-0125). Percorrer o array é o que
+    // ancora cada erro no seu campo; ler apenas `problem.code` marcaria um campo
+    // e deixaria os demais sem indicação.
+    if (problem.errors && problem.errors.length > 0) {
+      this.notifications.errorFromProblem(problem);
+      this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
 
-    if (problem.code === TIPO_DEFICIENCIA_NOME_JA_EXISTE_CODE) {
+    const campoDoConflito = CAMPO_POR_CONFLITO.get(problem.code);
+    if (campoDoConflito) {
       this.notifications.errorFromProblem(problem);
-      this.renovarIdempotencyKey();
-      this.form.controls.nome.setErrors({
+      const control = this.form.controls[campoDoConflito];
+      control.setErrors({
         backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
       });
-      this.form.controls.nome.markAsTouched();
+      control.markAsTouched();
       return;
     }
 
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (problem.status === 409 || problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH) {
       this.notifications.errorFromProblem(problem);
-      this.renovarIdempotencyKey();
     }
 
     this.formError.set(this.problemI18n.resolve(problem).title);

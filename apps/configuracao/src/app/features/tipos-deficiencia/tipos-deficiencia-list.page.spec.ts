@@ -9,7 +9,10 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { TiposDeficienciaListPage } from './tipos-deficiencia-list.page';
+import {
+  sugerirCodigoDeTipoDeficiencia,
+  TiposDeficienciaListPage,
+} from './tipos-deficiencia-list.page';
 
 const BASE = 'http://localhost:5000';
 const TIPO_DEFICIENCIA_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -85,6 +88,18 @@ describe('TiposDeficienciaListPage', () => {
     return fixture.nativeElement.querySelector(
       'td.table-responsive__actions > button:first-child',
     ) as HTMLButtonElement;
+  }
+
+  /**
+   * Escreve num campo como o operador escreveria: um controle por vez, marcado
+   * como sujo. `form.setValue` em bloco não representa digitação — atualiza todos
+   * os controles de uma vez, na ordem das chaves do objeto.
+   */
+  function digitar(campo: 'nome' | 'codigo' | 'descricao', valor: string): void {
+    const control = component['form'].controls[campo];
+    control.setValue(valor);
+    control.markAsDirty();
+    control.markAsTouched();
   }
 
   it('drawer mostra empty-state quando tipos de deficiência não tem ofertas vivas', async () => {
@@ -301,7 +316,7 @@ describe('TiposDeficienciaListPage', () => {
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
     post.flush(
       JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.codigo_ja_existe',
         title: 'Já existe um tipo de deficiência ativo com este código',
         status: 409,
         code: 'uniplus.configuracao.tipo_deficiencia.codigo_ja_existe',
@@ -330,5 +345,186 @@ describe('TiposDeficienciaListPage', () => {
     });
     component['salvar']();
     controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+  });
+
+  it('sugere o código a partir do nome na criação', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+
+    component['abrirDrawerCriacao']();
+    digitar('nome', 'Deficiência visual');
+
+    expect(component['form'].controls.codigo.value).toBe('DEFICIENCIA_VISUAL');
+  });
+
+  it('sugestão acompanha o nome até o operador escrever o próprio código', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+
+    component['abrirDrawerCriacao']();
+    digitar('nome', 'Deficiência');
+    // Enquanto o campo tem apenas o que a sugestão pôs, ela continua acompanhando.
+    digitar('nome', 'Deficiência visual');
+    expect(component['form'].controls.codigo.value).toBe('DEFICIENCIA_VISUAL');
+
+    digitar('codigo', 'DEF_VISUAL');
+    digitar('nome', 'Deficiência visual total');
+
+    expect(component['form'].controls.codigo.value).toBe('DEF_VISUAL');
+  });
+
+  it('edição carrega o código salvo e a sugestão nunca o substitui', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+
+    component['abrirEdicao'](tipoDeficienciaSeed);
+    expect(component['form'].controls.codigo.value).toBe('VISUAL');
+
+    digitar('nome', 'Deficiência visual e auditiva');
+
+    expect(component['form'].controls.codigo.value).toBe('VISUAL');
+  });
+
+  it('envia o código em caixa alta mesmo digitado em caixa baixa', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    digitar('nome', 'Visual');
+    digitar('descricao', 'Inclui baixa visão e cegueira');
+    digitar('codigo', 'def_visual');
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    expect(post.request.body.codigo).toBe('DEF_VISUAL');
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
+  it('422 acumulado ancora um erro em cada campo, não só no primeiro', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    digitar('nome', 'Visual');
+    digitar('descricao', 'Inclui baixa visão e cegueira');
+    digitar('codigo', 'VISUAL');
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    // O backend acumula toda violação em `errors[]` e repete só a primeira na raiz.
+    post.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido',
+        title: 'Código do tipo de deficiência deve iniciar com letra maiúscula',
+        status: 422,
+        code: 'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido',
+        traceId: 'test-trace',
+        errors: [
+          {
+            field: 'codigo',
+            code: 'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido',
+            message: 'Código do tipo de deficiência deve iniciar com letra maiúscula.',
+          },
+          {
+            field: 'descricao',
+            code: 'uniplus.configuracao.tipo_deficiencia.descricao_obrigatoria',
+            message: 'Descrição do tipo de deficiência é obrigatória.',
+          },
+        ],
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
+    expect(component['form'].controls.descricao.errors?.['backend']).toBeTruthy();
+  });
+
+  it('filtra a lista client-side por código', async () => {
+    const outroTipoDeficiencia: TipoDeficienciaDto = {
+      ...tipoDeficienciaSeed,
+      id: '2',
+      codigo: 'AUDITIVA',
+      nome: 'Auditiva',
+    };
+    await flushLista([tipoDeficienciaSeed, outroTipoDeficiencia]);
+
+    component['termoBusca'].set('AUDITIVA');
+    fixture.detectChanges();
+
+    expect(component['tiposDeficienciaFiltrados']()).toHaveLength(1);
+    expect(component['tiposDeficienciaFiltrados']()[0].codigo).toBe('AUDITIVA');
+  });
+
+  it('atualização preserva a classificação de permanência do registro', async () => {
+    const tipoPermanente: TipoDeficienciaDto = { ...tipoDeficienciaSeed, permanente: true };
+    await flushLista([tipoPermanente]);
+
+    component['abrirEdicao'](tipoPermanente);
+    await propagate();
+    digitar('nome', 'Visual e auditiva');
+    component['salvar']();
+
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
+    );
+    // O PUT substitui o registro inteiro: omitir `permanente` apagaria a
+    // classificação a cada edição de nome.
+    expect(put.request.body.permanente).toBe(true);
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([tipoPermanente]);
+  });
+
+  it('conflito de processamento preserva a Idempotency-Key para o retry', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    digitar('nome', 'Visual');
+    digitar('descricao', 'Inclui baixa visão e cegueira');
+    const chave = component['idempotencyKeyAtual']();
+
+    component['salvar']();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    post.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.idempotency.processing_conflict',
+        title: 'Requisição anterior com a mesma chave ainda em processamento',
+        status: 409,
+        code: 'uniplus.idempotency.processing_conflict',
+        traceId: 'test-trace',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    // O backend pede retry do MESMO comando: chave nova viraria um comando novo.
+    expect(component['idempotencyKeyAtual']()).toBe(chave);
+  });
+});
+
+describe('sugerirCodigoDeTipoDeficiencia', () => {
+  it('remove diacríticos e sobe para caixa alta', () => {
+    expect(sugerirCodigoDeTipoDeficiencia('Deficiência visual')).toBe('DEFICIENCIA_VISUAL');
+  });
+
+  it('colapsa pontuação em sublinhado e apara as pontas', () => {
+    expect(sugerirCodigoDeTipoDeficiencia('  Surdez — parcial/total!  ')).toBe(
+      'SURDEZ_PARCIAL_TOTAL',
+    );
+  });
+
+  it('não passa do tamanho aceito pelo backend', () => {
+    expect(sugerirCodigoDeTipoDeficiencia('A'.repeat(80))).toHaveLength(50);
+  });
+
+  it('devolve string vazia quando não sobra nada aproveitável', () => {
+    expect(sugerirCodigoDeTipoDeficiencia('  ---  ')).toBe('');
   });
 });
