@@ -505,6 +505,34 @@ describe('OfertasCursoPage', () => {
     expect([...opcoes].map((o) => o.value)).toContain('ROTATIVO');
   });
 
+  it('turno desconhecido pela versão aparece no grupo, marcado', async () => {
+    const ofertaComTurnoNovo: OfertaCursoDto = {
+      ...ofertaSeed,
+      regimeDeTurno: 'INTEGRAL',
+      turnos: ['MATUTINO', 'MADRUGADA'],
+    };
+    await flushCargaInicial([ofertaComTurnoNovo]);
+    component['abrirEdicao'](ofertaComTurnoNovo);
+    await propagate();
+
+    expect(component['opcoesDeTurno']().map((o) => o.value)).toEqual([
+      'MATUTINO',
+      'VESPERTINO',
+      'NOTURNO',
+      'MADRUGADA',
+    ]);
+    expect(component['turnoMarcado']('MADRUGADA')).toBe(true);
+    expect(component['form'].controls.turnos.value).toContain('MADRUGADA');
+  });
+
+  it('oferta sem turno desconhecido não ganha opção extra no grupo', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    component['abrirEdicao'](ofertaSeed);
+    await propagate();
+
+    expect(component['opcoesDeTurno']()).toHaveLength(3);
+  });
+
   it('regime conhecido não ganha opção de fallback no seletor', async () => {
     await flushCargaInicial([ofertaSeed]);
     component['abrirEdicao'](ofertaSeed);

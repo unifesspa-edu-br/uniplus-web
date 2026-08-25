@@ -50,6 +50,7 @@ import {
   REGIME_DE_TURNO_REGULAR,
   REGIMES_DE_TURNO,
   TURNOS_OFERTA,
+  type TurnoOfertaOption,
   ordenarTurnosCanonicamente,
   turnosExigidosPorRegime,
 } from '@uniplus/shared-data/configuracao';
@@ -383,7 +384,7 @@ interface OfertaCursoForm {
             >
               <legend class="field__label is-required">Turnos</legend>
               <div class="cfg-oferta-turnos__opcoes">
-                @for (opcao of turnoOptions; track opcao.value) {
+                @for (opcao of opcoesDeTurno(); track opcao.value) {
                   <label class="checkbox">
                     <input
                       type="checkbox"
@@ -525,7 +526,6 @@ export class OfertasCursoPage {
 
   protected readonly programaOptions = PROGRAMAS_DE_OFERTA;
   protected readonly formatoOptions = FORMATOS_PEDAGOGICOS;
-  protected readonly turnoOptions = TURNOS_OFERTA;
   protected readonly regimeOptions = REGIMES_DE_TURNO;
 
   protected readonly saving = signal(false);
@@ -771,6 +771,28 @@ export class OfertasCursoPage {
       return null;
     }
     return REGIMES_DE_TURNO.some((r) => r.value === original) ? null : original;
+  });
+
+  /**
+   * As opções do grupo de turnos: os três períodos conhecidos mais, se houver,
+   * os tokens que a oferta em edição traz e este frontend não conhece — de um
+   * backend mais novo. Sem essa segunda parte o token ficaria invisível: o
+   * controle o preservaria, ele satisfaria o validador de cardinalidade e
+   * poderia ser descartado sem o operador enxergar. Baseado na oferta em
+   * edição, não no valor atual, para que desmarcar e remarcar continue possível.
+   */
+  protected readonly opcoesDeTurno = computed<readonly TurnoOfertaOption[]>(() => {
+    const originais = this.ofertaEmEdicao()?.turnos ?? [];
+    const naoReconhecidos = [
+      ...new Set(originais.filter((t) => !TURNOS_OFERTA.some((o) => o.value === t))),
+    ];
+    return [
+      ...TURNOS_OFERTA,
+      ...naoReconhecidos.map((token) => ({
+        value: token,
+        label: `${token} — não reconhecido por esta versão`,
+      })),
+    ];
   });
 
   protected readonly regimeDescricao = computed(() => {
