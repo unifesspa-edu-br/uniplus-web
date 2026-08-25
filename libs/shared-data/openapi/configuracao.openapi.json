@@ -9074,7 +9074,12 @@
         }
       },
       "AtualizarOfertaCursoCommand": {
-        "required": ["id", "programaDeOferta"],
+        "required": [
+          "id",
+          "programaDeOferta",
+          "regimeDeTurno",
+          "turnos"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9082,30 +9087,64 @@
             "format": "uuid"
           },
           "programaDeOferta": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "regimeDeTurno": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "turnos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           },
           "formatoPedagogico": {
-            "type": ["null", "string"]
-          },
-          "turno": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "eMecCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigoSga": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "atoAutorizacaoMec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -9748,7 +9787,14 @@
         }
       },
       "CriarOfertaCursoCommand": {
-        "required": ["cursoId", "localOfertaId", "unidadeOfertanteOrigemId", "programaDeOferta"],
+        "required": [
+          "cursoId",
+          "localOfertaId",
+          "unidadeOfertanteOrigemId",
+          "programaDeOferta",
+          "regimeDeTurno",
+          "turnos"
+        ],
         "type": "object",
         "properties": {
           "cursoId": {
@@ -9764,30 +9810,64 @@
             "format": "uuid"
           },
           "programaDeOferta": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "regimeDeTurno": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "turnos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           },
           "formatoPedagogico": {
-            "type": ["null", "string"]
-          },
-          "turno": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "eMecCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigoSga": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "atoAutorizacaoMec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10546,7 +10626,8 @@
           "unidadeOfertante",
           "programaDeOferta",
           "formatoPedagogico",
-          "turno",
+          "regimeDeTurno",
+          "turnos",
           "eMecCodigo",
           "codigoSga",
           "vagasAnuaisAutorizadas",
@@ -10577,32 +10658,57 @@
           "formatoPedagogico": {
             "type": "string"
           },
-          "turno": {
-            "type": ["null", "string"]
+          "regimeDeTurno": {
+            "type": "string"
+          },
+          "turnos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "eMecCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigoSga": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "atoAutorizacaoMec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
