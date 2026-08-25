@@ -364,6 +364,9 @@ interface OfertaCursoForm {
             <label class="field" [class.is-error]="erroDoCampo('regimeDeTurno')">
               <span class="field__label is-required">Regime de turno</span>
               <select class="select" formControlName="regimeDeTurno">
+                @if (regimeNaoReconhecido(); as token) {
+                  <option [value]="token">{{ token }} — não reconhecido por esta versão</option>
+                }
                 @for (opcao of regimeOptions; track opcao.value) {
                   <option [value]="opcao.value">{{ opcao.label }}</option>
                 }
@@ -755,9 +758,28 @@ export class OfertasCursoPage {
     turnosExigidosPorRegime(this.regimeValue()),
   );
 
-  protected readonly regimeDescricao = computed(
-    () => REGIMES_DE_TURNO.find((r) => r.value === this.regimeValue())?.descricao ?? '',
-  );
+  /**
+   * Token de regime da oferta em edição que este frontend não conhece — de um
+   * backend mais novo. Vira uma opção própria no seletor: sem ela, o `select`
+   * renderiza em branco enquanto o modelo guarda o valor, e o operador salvaria
+   * sem enxergar qual regime está preservando. Mantida enquanto a oferta em
+   * edição for essa, para que trocar de regime seja reversível.
+   */
+  protected readonly regimeNaoReconhecido = computed(() => {
+    const original = this.ofertaEmEdicao()?.regimeDeTurno;
+    if (original === undefined) {
+      return null;
+    }
+    return REGIMES_DE_TURNO.some((r) => r.value === original) ? null : original;
+  });
+
+  protected readonly regimeDescricao = computed(() => {
+    const regime = REGIMES_DE_TURNO.find((r) => r.value === this.regimeValue());
+    if (regime !== undefined) {
+      return regime.descricao;
+    }
+    return 'Regime declarado por uma versão mais nova da API — a validação dos turnos fica com ela.';
+  });
 
   protected readonly turnosHint = computed(() => {
     const exigidos = this.turnosExigidos();
