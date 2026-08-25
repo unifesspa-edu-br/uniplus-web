@@ -16,7 +16,9 @@ export {
 } from './api-result.testing';
 
 export {
+  deveRotacionarIdempotencyKey,
   IDEMPOTENCY_KEY_TOKEN,
+  IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
   isValidIdempotencyKey,
   withIdempotencyKey,

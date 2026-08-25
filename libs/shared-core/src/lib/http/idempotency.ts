@@ -53,6 +53,39 @@ export function withIdempotencyKey(key?: string): HttpContext {
 }
 
 /**
+ * Códigos que o filtro de idempotência da API emite. Ficam aqui, num ponto só,
+ * porque não são erros de nenhum domínio: qualquer tela que envie
+ * `Idempotency-Key` pode recebê-los.
+ */
+export const IDEMPOTENCY_PROBLEM_CODES = {
+  /** Mesma chave, corpo diferente — o comando anterior já ocupou a reserva. */
+  BODY_MISMATCH: 'uniplus.idempotency.body_mismatch',
+  /** Execução anterior ainda em curso; o retry tem de reenviar o mesmo comando. */
+  PROCESSING_CONFLICT: 'uniplus.idempotency.processing_conflict',
+} as const;
+
+/**
+ * Diz se, depois desta falha, o próximo envio precisa de uma `Idempotency-Key`
+ * nova.
+ *
+ * A API guarda a resposta de qualquer status abaixo de 500 associada ao hash do
+ * corpo: reenviar o formulário corrigido com a mesma chave devolveria
+ * `body_mismatch` em vez de processar o comando novo. As duas exceções são
+ * `processing_conflict` — que pede explicitamente retry do **mesmo** comando com
+ * a **mesma** chave — e as falhas em que nada foi gravado (5xx, erro de rede),
+ * onde repetir a chave é o que torna o retry seguro.
+ */
+export function deveRotacionarIdempotencyKey(problem: {
+  readonly status: number;
+  readonly code: string;
+}): boolean {
+  if (problem.code === IDEMPOTENCY_PROBLEM_CODES.PROCESSING_CONFLICT) {
+    return false;
+  }
+  return problem.status >= 400 && problem.status < 500;
+}
+
+/**
  * Type guard exportado para reuso (ex.: validar uma key persistida em
  * sessão). Permite mesmo conjunto de regras do draft IETF.
  */
