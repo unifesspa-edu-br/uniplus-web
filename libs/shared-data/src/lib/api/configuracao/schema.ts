@@ -7547,9 +7547,10 @@ export interface components {
         readonly AtualizarOfertaCursoCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly programaDeOferta: string;
+            readonly programaDeOferta: null | string;
+            readonly regimeDeTurno: null | string;
+            readonly turnos: null | readonly string[];
             readonly formatoPedagogico?: null | string;
-            readonly turno?: null | string;
             readonly eMecCodigo?: null | string;
             readonly codigoSga?: null | string;
             /** Format: int32 */
@@ -7779,9 +7780,10 @@ export interface components {
             readonly localOfertaId: string;
             /** Format: uuid */
             readonly unidadeOfertanteOrigemId: string;
-            readonly programaDeOferta: string;
+            readonly programaDeOferta: null | string;
+            readonly regimeDeTurno: null | string;
+            readonly turnos: null | readonly string[];
             readonly formatoPedagogico?: null | string;
-            readonly turno?: null | string;
             readonly eMecCodigo?: null | string;
             readonly codigoSga?: null | string;
             /** Format: int32 */
@@ -8025,7 +8027,8 @@ export interface components {
             readonly unidadeOfertante: components["schemas"]["UnidadeOfertanteDto"];
             readonly programaDeOferta: string;
             readonly formatoPedagogico: string;
-            readonly turno: null | string;
+            readonly regimeDeTurno: string;
+            readonly turnos: readonly string[];
             readonly eMecCodigo: null | string;
             readonly codigoSga: null | string;
             /** Format: int32 */

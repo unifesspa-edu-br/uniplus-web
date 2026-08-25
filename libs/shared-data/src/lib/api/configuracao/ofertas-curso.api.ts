@@ -11,9 +11,10 @@ export type AtualizarOfertaCursoCommand = components['schemas']['AtualizarOferta
 export type UnidadeOfertanteDto = components['schemas']['UnidadeOfertanteDto'];
 
 /**
- * Rosters dos três domínios fechados de Oferta de Curso — tokens UPPER_SNAKE
+ * Rosters dos quatro domínios fechados de Oferta de Curso — tokens UPPER_SNAKE
  * persistidos e aceitos pelo contrato (ver `ProgramasDeOferta`/`FormatosPedagogicos`/
- * `TurnosOferta` em `Unifesspa.UniPlus.Configuracao.Domain.Enums`, uniplus-api).
+ * `TurnosOferta`/`RegimesDeTurno` em `Unifesspa.UniPlus.Configuracao.Domain.Enums`,
+ * uniplus-api).
  * Não são enums gerados pelo `openapi-typescript` — os campos chegam como `string`
  * no `schema.ts`; os tokens abaixo são copiados 1:1 do código-fonte do backend.
  */
@@ -51,12 +52,65 @@ export interface TurnoOfertaOption {
   readonly label: string;
 }
 
+/**
+ * Períodos do dia em que a oferta funciona, na ordem canônica que a API devolve
+ * (UNI-REQ-0137). `INTEGRAL` não está aqui: deixou de ser turno e virou regime
+ * — ver `REGIMES_DE_TURNO`.
+ */
 export const TURNOS_OFERTA: readonly TurnoOfertaOption[] = [
   { value: 'MATUTINO', label: 'Matutino' },
   { value: 'VESPERTINO', label: 'Vespertino' },
   { value: 'NOTURNO', label: 'Noturno' },
-  { value: 'INTEGRAL', label: 'Integral' },
 ] as const;
+
+export interface RegimeDeTurnoOption {
+  readonly value: string;
+  readonly label: string;
+  /** Quantidade exata de turnos distintos que o regime exige. */
+  readonly turnosExigidos: number;
+  readonly descricao: string;
+}
+
+/**
+ * Regime de turno da oferta (UNI-REQ-0137): declara se o curso funciona num
+ * único turno ou em dois distintos. É declarado pelo operador, nunca inferido
+ * da quantidade marcada — a API recusa a incoerência em vez de promover a
+ * oferta a `INTEGRAL` por conta própria.
+ */
+export const REGIMES_DE_TURNO: readonly RegimeDeTurnoOption[] = [
+  {
+    value: 'REGULAR',
+    label: 'Regular',
+    turnosExigidos: 1,
+    descricao: 'Funciona em um único turno.',
+  },
+  {
+    value: 'INTEGRAL',
+    label: 'Integral',
+    turnosExigidos: 2,
+    descricao: 'Funciona em dois turnos distintos.',
+  },
+] as const;
+
+/** Regime de turno padrão de uma oferta nova — um turno só. */
+export const REGIME_DE_TURNO_REGULAR = 'REGULAR';
+
+/**
+ * Quantos turnos distintos o regime exige, ou `null` quando o token não é um
+ * regime conhecido (a API é a árbitra final nesse caso).
+ */
+export function turnosExigidosPorRegime(regime: string): number | null {
+  return REGIMES_DE_TURNO.find((r) => r.value === regime)?.turnosExigidos ?? null;
+}
+
+/**
+ * Ordena turnos na ordem canônica do dia — matutino, vespertino, noturno —
+ * a mesma que a API devolve, para a exibição não oscilar com a ordem de marcação.
+ */
+export function ordenarTurnosCanonicamente(turnos: readonly string[]): readonly string[] {
+  const ordem = new Map(TURNOS_OFERTA.map((t, indice) => [t.value, indice]));
+  return [...turnos].sort((a, b) => (ordem.get(a) ?? Number.MAX_SAFE_INTEGER) - (ordem.get(b) ?? Number.MAX_SAFE_INTEGER));
+}
 
 /**
  * Filtro de listagem de Ofertas de Curso (cursor pagination, ADR-0026).
