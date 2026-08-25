@@ -374,6 +374,21 @@ cfg-pesos-enem-page {
   align-self: start;
 }
 
+/* Grupo de turnos da Oferta de Curso: fieldset sem a moldura do agente de
+   usuário, com as opções quebrando linha para caber em telas estreitas. */
+.cfg-oferta-turnos {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cfg-oferta-turnos__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
 .cfg-form-footer {
   flex: 0 0 auto;
   justify-content: flex-end;

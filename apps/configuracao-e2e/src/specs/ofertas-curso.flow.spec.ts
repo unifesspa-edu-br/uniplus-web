@@ -64,7 +64,8 @@ const ofertaSeed = {
   },
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
-  turno: 'MATUTINO',
+  regimeDeTurno: 'REGULAR',
+  turnos: ['MATUTINO'],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,
@@ -164,6 +165,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.getByRole('checkbox', { name: 'Matutino' }).check();
     await page.getByRole('button', { name: 'Criar oferta' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
@@ -171,6 +173,8 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
       cursoId: CURSO_ID,
       localOfertaId: LOCAL_ID,
       unidadeOfertanteOrigemId: UNIDADE_ID,
+      regimeDeTurno: 'REGULAR',
+      turnos: ['MATUTINO'],
     });
   });
 
@@ -184,6 +188,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
     await page.locator('[formControlName="programaDeOferta"]').selectOption('PARFOR');
+    await page.getByRole('checkbox', { name: 'Matutino' }).check();
 
     await expect(page.locator('[formControlName="baseLegal"]')).toBeVisible();
 
@@ -195,6 +200,57 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({ baseLegal: 'Convênio Forma Pará nº 004/2020' });
+  });
+
+  test('regime integral exige dois turnos, e o grupo é operável por teclado', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, []);
+    await abrirPagina(page);
+
+    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
+    await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
+    await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.locator('[formControlName="regimeDeTurno"]').selectOption('INTEGRAL');
+
+    // Marcação por teclado: foco no checkbox e barra de espaço — sem clique.
+    const matutino = page.getByRole('checkbox', { name: 'Matutino' });
+    await matutino.focus();
+    await page.keyboard.press('Space');
+    await expect(matutino).toBeChecked();
+
+    await page.getByRole('button', { name: 'Criar oferta' }).click();
+    expect(capturado.posts.length).toBe(0);
+    await expect(page.getByText(/exige exatamente 2 turnos/i)).toBeVisible();
+
+    const vespertino = page.getByRole('checkbox', { name: 'Vespertino' });
+    await vespertino.focus();
+    await page.keyboard.press('Space');
+    await page.getByRole('button', { name: 'Criar oferta' }).click();
+
+    await expect.poll(() => capturado.posts.length).toBe(1);
+    expect(capturado.posts[0]).toMatchObject({
+      regimeDeTurno: 'INTEGRAL',
+      turnos: ['MATUTINO', 'VESPERTINO'],
+    });
+  });
+
+  test('o grupo de turnos tem rótulo acessível e não estoura a largura em 320 px', async ({
+    page,
+  }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, []);
+    await page.setViewportSize({ width: 320, height: 900 });
+    await abrirPagina(page);
+
+    await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+
+    await expect(page.getByRole('group', { name: /turnos/i })).toBeVisible();
+
+    const estouraLargura = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(estouraLargura).toBe(false);
   });
 
   test('edição: os 3 vínculos aparecem como texto (sem select) e o payload não os inclui', async ({

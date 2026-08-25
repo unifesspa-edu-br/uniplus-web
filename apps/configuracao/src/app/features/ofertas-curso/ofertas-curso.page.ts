@@ -11,7 +11,14 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import {
   ApiResult,
   Cursor,
@@ -40,7 +47,11 @@ import {
   PROGRAMAS_DE_OFERTA,
   PROGRAMA_DE_OFERTA_REGULAR,
   TIPOS_LOCAL_OFERTA,
+  REGIME_DE_TURNO_REGULAR,
+  REGIMES_DE_TURNO,
   TURNOS_OFERTA,
+  ordenarTurnosCanonicamente,
+  turnosExigidosPorRegime,
 } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
 import {
@@ -66,7 +77,8 @@ interface OfertaCursoForm {
   unidadeOfertanteOrigemId: FormControl<string>;
   programaDeOferta: FormControl<string>;
   formatoPedagogico: FormControl<string>;
-  turno: FormControl<string>;
+  regimeDeTurno: FormControl<string>;
+  turnos: FormControl<readonly string[]>;
   eMecCodigo: FormControl<string>;
   codigoSga: FormControl<string>;
   vagasAnuaisAutorizadas: FormControl<number | null>;
@@ -93,7 +105,7 @@ interface OfertaCursoForm {
         <h1 class="page-header__title">Oferta de curso</h1>
         <p class="page-header__desc">
           Instância regulatória que liga um Curso a um Local de oferta e à unidade ofertante ·
-          UNI-REQ-0010.
+          UNI-REQ-0010 · UNI-REQ-0137.
         </p>
       </div>
     </div>
@@ -138,7 +150,8 @@ interface OfertaCursoForm {
                 <th scope="col">Unidade ofertante</th>
                 <th scope="col">Programa</th>
                 <th scope="col">Formato</th>
-                <th scope="col">Turno</th>
+                <th scope="col">Regime</th>
+                <th scope="col">Turnos</th>
                 <th scope="col">Vagas e-MEC</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
               </tr>
@@ -155,7 +168,10 @@ interface OfertaCursoForm {
                     <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
                   </td>
                   <td data-label="Formato">{{ formatoLabel(oferta.formatoPedagogico) }}</td>
-                  <td data-label="Turno">{{ turnoLabel(oferta.turno) }}</td>
+                  <td data-label="Regime">
+                    <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
+                  </td>
+                  <td data-label="Turnos">{{ turnosLabel(oferta.turnos) }}</td>
                   <td data-label="Vagas e-MEC">{{ oferta.vagasAnuaisAutorizadas ?? '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <button
@@ -345,18 +361,45 @@ interface OfertaCursoForm {
                 <span class="field__error">{{ erroDoCampo('formatoPedagogico') }}</span>
               }
             </label>
-            <label class="field" [class.is-error]="erroDoCampo('turno')">
-              <span class="field__label">Turno</span>
-              <select class="select" formControlName="turno">
-                <option value="">(Sem turno)</option>
-                @for (opcao of turnoOptions; track opcao.value) {
+            <label class="field" [class.is-error]="erroDoCampo('regimeDeTurno')">
+              <span class="field__label is-required">Regime de turno</span>
+              <select class="select" formControlName="regimeDeTurno">
+                @for (opcao of regimeOptions; track opcao.value) {
                   <option [value]="opcao.value">{{ opcao.label }}</option>
                 }
               </select>
-              @if (erroDoCampo('turno')) {
-                <span class="field__error">{{ erroDoCampo('turno') }}</span>
+              <span class="field__hint">{{ regimeDescricao() }}</span>
+              @if (erroDoCampo('regimeDeTurno')) {
+                <span class="field__error">{{ erroDoCampo('regimeDeTurno') }}</span>
               }
             </label>
+            <fieldset
+              class="field cfg-oferta-turnos"
+              [class.is-error]="erroDoCampo('turnos')"
+              [attr.aria-describedby]="turnosDescribedBy()"
+            >
+              <legend class="field__label is-required">Turnos</legend>
+              <div class="cfg-oferta-turnos__opcoes">
+                @for (opcao of turnoOptions; track opcao.value) {
+                  <label class="checkbox">
+                    <input
+                      type="checkbox"
+                      [value]="opcao.value"
+                      [checked]="turnoMarcado(opcao.value)"
+                      (change)="alternarTurno(opcao.value)"
+                    />
+                    <span class="checkbox__box" aria-hidden="true"></span>
+                    <span>{{ opcao.label }}</span>
+                  </label>
+                }
+              </div>
+              <span class="field__hint" id="cfg-oferta-turnos-hint">{{ turnosHint() }}</span>
+              @if (erroDoCampo('turnos')) {
+                <span class="field__error" id="cfg-oferta-turnos-erro">{{
+                  erroDoCampo('turnos')
+                }}</span>
+              }
+            </fieldset>
             <label class="field" [class.is-error]="erroDoCampo('vagasAnuaisAutorizadas')">
               <span class="field__label">Vagas anuais autorizadas</span>
               <input
@@ -480,6 +523,7 @@ export class OfertasCursoPage {
   protected readonly programaOptions = PROGRAMAS_DE_OFERTA;
   protected readonly formatoOptions = FORMATOS_PEDAGOGICOS;
   protected readonly turnoOptions = TURNOS_OFERTA;
+  protected readonly regimeOptions = REGIMES_DE_TURNO;
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
@@ -633,7 +677,14 @@ export class OfertasCursoPage {
       nonNullable: true,
       validators: [Validators.required],
     }),
-    turno: new FormControl('', { nonNullable: true }),
+    regimeDeTurno: new FormControl(REGIME_DE_TURNO_REGULAR, {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    turnos: new FormControl<readonly string[]>([], {
+      nonNullable: true,
+      validators: [cardinalidadeDeTurnos],
+    }),
     eMecCodigo: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(20)],
@@ -686,6 +737,37 @@ export class OfertasCursoPage {
     () => this.programaValue() !== PROGRAMA_DE_OFERTA_REGULAR,
   );
 
+  // O regime é declarado pelo operador e a API é a árbitra final: o formulário
+  // apenas antecipa a recusa, para o operador não descobrir a incompatibilidade
+  // só depois do 422.
+  private readonly regimeValue = toSignal(this.form.controls.regimeDeTurno.valueChanges, {
+    initialValue: this.form.controls.regimeDeTurno.value,
+  });
+  private readonly turnosValue = toSignal(this.form.controls.turnos.valueChanges, {
+    initialValue: this.form.controls.turnos.value,
+  });
+
+  protected readonly turnosExigidos = computed(
+    () => turnosExigidosPorRegime(this.regimeValue()) ?? 1,
+  );
+
+  protected readonly regimeDescricao = computed(
+    () => REGIMES_DE_TURNO.find((r) => r.value === this.regimeValue())?.descricao ?? '',
+  );
+
+  protected readonly turnosHint = computed(() => {
+    const exigidos = this.turnosExigidos();
+    return exigidos === 1
+      ? 'Marque o turno em que a oferta funciona.'
+      : 'Marque os dois turnos distintos em que a oferta funciona.';
+  });
+
+  protected turnosDescribedBy(): string {
+    return this.erroDoCampo('turnos') === null
+      ? 'cfg-oferta-turnos-hint'
+      : 'cfg-oferta-turnos-hint cfg-oferta-turnos-erro';
+  }
+
   constructor() {
     effect(() => {
       const problem = this.lista.problem();
@@ -715,6 +797,23 @@ export class OfertasCursoPage {
         control.updateValueAndValidity({ emitEvent: false });
       });
     });
+
+    // Trocar o regime muda quantos turnos são exigidos. Reduzir a seleção aqui
+    // evita que o formulário fique num estado que a API recusaria sem o
+    // operador ter tocado nos turnos — pela mesma regra de `alternarTurno`: o
+    // mais antigo sai.
+    effect(() => {
+      const exigidos = this.turnosExigidos();
+      const marcados = this.turnosValue();
+      untracked(() => {
+        const reduzidos = manterOsMaisRecentes(marcados, exigidos);
+        if (reduzidos.length !== marcados.length) {
+          this.form.controls.turnos.setValue(reduzidos);
+          return;
+        }
+        this.form.controls.turnos.updateValueAndValidity({ emitEvent: false });
+      });
+    });
   }
 
   protected programaLabel(token: string): string {
@@ -725,11 +824,42 @@ export class OfertasCursoPage {
     return FORMATOS_PEDAGOGICOS.find((f) => f.value === token)?.label ?? token;
   }
 
-  protected turnoLabel(token: string | null): string {
-    if (token === null) {
+  protected regimeLabel(token: string): string {
+    return REGIMES_DE_TURNO.find((r) => r.value === token)?.label ?? token;
+  }
+
+  protected turnosLabel(tokens: readonly string[]): string {
+    if (tokens.length === 0) {
       return '—';
     }
-    return TURNOS_OFERTA.find((t) => t.value === token)?.label ?? token;
+    return ordenarTurnosCanonicamente(tokens)
+      .map((token) => TURNOS_OFERTA.find((t) => t.value === token)?.label ?? token)
+      .join(' e ');
+  }
+
+  protected turnoMarcado(token: string): boolean {
+    return this.form.controls.turnos.value.includes(token);
+  }
+
+  /**
+   * Marca ou desmarca um turno. O controle guarda a ordem de marcação, não a
+   * canônica: quando a marcação nova excede o que o regime exige, **o turno
+   * mais antigo sai**. É uma regra só, que explica os dois casos — sob REGULAR
+   * marcar outro turno substitui o anterior (quem troca de turno não está
+   * somando um segundo), e sob INTEGRAL um terceiro clique descarta o primeiro
+   * em vez de zerar a seleção inteira. A ordem canônica é aplicada na exibição
+   * e no envio.
+   */
+  protected alternarTurno(token: string): void {
+    const control = this.form.controls.turnos;
+    const atuais = control.value;
+    const proximos = atuais.includes(token)
+      ? atuais.filter((t) => t !== token)
+      : [...atuais, token];
+
+    control.setValue(manterOsMaisRecentes(proximos, this.turnosExigidos()));
+    control.markAsTouched();
+    control.markAsDirty();
   }
 
   protected cursoLabel(cursoId: string): string {
@@ -795,7 +925,8 @@ export class OfertasCursoPage {
       unidadeOfertanteOrigemId: '',
       programaDeOferta: PROGRAMA_DE_OFERTA_REGULAR,
       formatoPedagogico: 'PRESENCIAL',
-      turno: '',
+      regimeDeTurno: REGIME_DE_TURNO_REGULAR,
+      turnos: [],
       eMecCodigo: '',
       codigoSga: '',
       vagasAnuaisAutorizadas: null,
@@ -820,7 +951,8 @@ export class OfertasCursoPage {
       unidadeOfertanteOrigemId: oferta.unidadeOfertante.origemId,
       programaDeOferta: oferta.programaDeOferta,
       formatoPedagogico: oferta.formatoPedagogico,
-      turno: oferta.turno ?? '',
+      regimeDeTurno: oferta.regimeDeTurno,
+      turnos: ordenarTurnosCanonicamente(oferta.turnos),
       eMecCodigo: oferta.eMecCodigo ?? '',
       codigoSga: oferta.codigoSga ?? '',
       vagasAnuaisAutorizadas: normalizarVagas(oferta.vagasAnuaisAutorizadas),
@@ -908,6 +1040,19 @@ export class OfertasCursoPage {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
+    if (control.errors['turnosObrigatorios']) {
+      return 'Marque ao menos um turno — nenhum formato pedagógico dispensa o turno.';
+    }
+    if (control.errors['cardinalidadeTurnos']) {
+      const { regime, exigidos } = control.errors['cardinalidadeTurnos'] as {
+        regime: string;
+        exigidos: number;
+      };
+      return exigidos === 1
+        ? `O regime ${regime} exige exatamente um turno.`
+        : `O regime ${regime} exige exatamente ${exigidos} turnos distintos.`;
+    }
+    if (control.errors['turnoRepetido']) return 'Os turnos devem ser distintos entre si.';
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     if (control.errors['min']) return 'Valor não pode ser negativo.';
     return 'Valor inválido.';
@@ -1002,7 +1147,8 @@ export class OfertasCursoPage {
       unidadeOfertanteOrigemId: raw.unidadeOfertanteOrigemId,
       programaDeOferta: raw.programaDeOferta,
       formatoPedagogico: raw.formatoPedagogico,
-      turno: nullIfBlank(raw.turno),
+      regimeDeTurno: raw.regimeDeTurno,
+      turnos: ordenarTurnosCanonicamente(raw.turnos),
       eMecCodigo: nullIfBlank(raw.eMecCodigo),
       codigoSga: nullIfBlank(raw.codigoSga),
       vagasAnuaisAutorizadas: raw.vagasAnuaisAutorizadas,
@@ -1020,7 +1166,8 @@ export class OfertasCursoPage {
       id,
       programaDeOferta: raw.programaDeOferta,
       formatoPedagogico: raw.formatoPedagogico,
-      turno: nullIfBlank(raw.turno),
+      regimeDeTurno: raw.regimeDeTurno,
+      turnos: ordenarTurnosCanonicamente(raw.turnos),
       eMecCodigo: nullIfBlank(raw.eMecCodigo),
       codigoSga: nullIfBlank(raw.codigoSga),
       vagasAnuaisAutorizadas: raw.vagasAnuaisAutorizadas,
@@ -1030,13 +1177,46 @@ export class OfertasCursoPage {
   }
 }
 
+/** Descarta os turnos marcados há mais tempo até caber no limite do regime. */
+function manterOsMaisRecentes(turnos: readonly string[], limite: number): readonly string[] {
+  return turnos.length <= limite ? turnos : turnos.slice(turnos.length - limite);
+}
+
+/**
+ * Antecipa no formulário a invariante que o agregado aplica (UNI-REQ-0137):
+ * `REGULAR` exige exatamente um turno e `INTEGRAL`, exatamente dois distintos.
+ * O regime é lido do controle irmão — declarado, nunca inferido da quantidade
+ * marcada. A API continua sendo a árbitra final: um regime que o frontend não
+ * conhece não bloqueia o envio.
+ */
+function cardinalidadeDeTurnos(control: AbstractControl): ValidationErrors | null {
+  const turnos = (control.value ?? []) as readonly string[];
+  if (turnos.length === 0) {
+    return { turnosObrigatorios: true };
+  }
+  if (new Set(turnos).size !== turnos.length) {
+    return { turnoRepetido: true };
+  }
+
+  const regime = control.parent?.get('regimeDeTurno')?.value as string | undefined;
+  if (regime === undefined) {
+    return null;
+  }
+  const exigidos = turnosExigidosPorRegime(regime);
+  if (exigidos !== null && turnos.length !== exigidos) {
+    return { cardinalidadeTurnos: { regime, exigidos } };
+  }
+  return null;
+}
+
 const OFERTA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof OfertaCursoForm>([
   'cursoId',
   'localOfertaId',
   'unidadeOfertanteOrigemId',
   'programaDeOferta',
   'formatoPedagogico',
-  'turno',
+  'regimeDeTurno',
+  'turnos',
   'eMecCodigo',
   'codigoSga',
   'vagasAnuaisAutorizadas',
@@ -1052,7 +1232,15 @@ const OFERTA_ERROR_CODE_TO_CONTROL: ReadonlyMap<string, keyof OfertaCursoForm> =
   ['uniplus.configuracao.oferta_curso.unidade_ofertante_inexistente', 'unidadeOfertanteOrigemId'],
   ['uniplus.configuracao.oferta_curso.programa_de_oferta_invalido', 'programaDeOferta'],
   ['uniplus.configuracao.oferta_curso.formato_pedagogico_invalido', 'formatoPedagogico'],
-  ['uniplus.configuracao.oferta_curso.turno_invalido', 'turno'],
+  ['uniplus.configuracao.oferta_curso.turno_invalido', 'turnos'],
+  ['uniplus.configuracao.oferta_curso.regime_de_turno_obrigatorio', 'regimeDeTurno'],
+  ['uniplus.configuracao.oferta_curso.regime_de_turno_invalido', 'regimeDeTurno'],
+  ['uniplus.configuracao.oferta_curso.turnos_obrigatorios', 'turnos'],
+  ['uniplus.configuracao.oferta_curso.turno_repetido', 'turnos'],
+  [
+    'uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime',
+    'turnos',
+  ],
   [
     'uniplus.configuracao.oferta_curso.base_legal_obrigatoria_para_programa_nao_regular',
     'baseLegal',
