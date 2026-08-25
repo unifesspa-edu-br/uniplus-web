@@ -495,6 +495,22 @@ describe('OfertasCursoPage', () => {
     expect(component['turnosExigidos']()).toBeNull();
     expect(component['form'].controls.turnos.value).toEqual(['MATUTINO', 'VESPERTINO']);
     expect(component['form'].controls.turnos.valid).toBe(true);
+
+    // O seletor precisa mostrar o token: sem opção correspondente ele
+    // renderizaria em branco enquanto o modelo guarda o valor.
+    expect(component['regimeNaoReconhecido']()).toBe('ROTATIVO');
+    const opcoes = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>(
+      'select[formControlName="regimeDeTurno"] option',
+    );
+    expect([...opcoes].map((o) => o.value)).toContain('ROTATIVO');
+  });
+
+  it('regime conhecido não ganha opção de fallback no seletor', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    component['abrirEdicao'](ofertaSeed);
+    await propagate();
+
+    expect(component['regimeNaoReconhecido']()).toBeNull();
   });
 
   it('editar uma oferta integral carrega os dois turnos marcados', async () => {
