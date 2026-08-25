@@ -12,6 +12,11 @@ export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapsho
 export type IniciarUploadDocumentoEditalDto =
   components['schemas']['IniciarUploadDocumentoEditalDto'];
 export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
+export type ConfiguracaoDistribuicaoVagasInput =
+  components['schemas']['ConfiguracaoDistribuicaoVagasInput'];
+export type QuantidadeVagaInput = components['schemas']['QuantidadeVagaInput'];
+export type ConfiguracaoDistribuicaoVagasDto =
+  components['schemas']['ConfiguracaoDistribuicaoVagasDto'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -54,6 +59,51 @@ export class ProcessosSeletivosApi {
     return this.http.get<ApiResult<ProcessoSeletivoDto>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}`,
       { context: withVendorMime('processo-seletivo', 1) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/distribuicao-vagas` — substituição
+   * integral da distribuição de vagas (Passo 4). Idempotency-Key obrigatória no
+   * `HttpContext` (ADR-0027) e estável durante retry inconclusivo. Devolve o
+   * quadro de vagas recém-persistido (issue #1283) — o mesmo shape que
+   * `simularDistribuicaoVagas` e o `obter()` do processo retornam.
+   * `ifMatch` só é exigível quando o processo tem sessão editorial de
+   * retificação em curso; ausente no rascunho de criação (não há precondição
+   * a satisfazer).
+   */
+  salvarDistribuicaoVagas(
+    processoSeletivoId: string,
+    command: readonly ConfiguracaoDistribuicaoVagasInput[],
+    context: HttpContext,
+    ifMatch?: string,
+  ): Observable<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>> {
+    return this.http.put<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas`,
+      command,
+      {
+        context,
+        headers: ifMatch !== undefined ? new HttpHeaders({ 'If-Match': ifMatch }) : undefined,
+      },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/distribuicao-vagas/simulacao` —
+   * calcula o quadro de vagas por modalidade sem persistir (issue #1282),
+   * preview para o admin conferir/ajustar VoBase, PR ou modalidades antes de
+   * confirmar com `salvarDistribuicaoVagas`. É leitura (query), por isso não
+   * leva Idempotency-Key nem participa da concorrência otimista do ETag. Ids
+   * do corpo da resposta são efêmeros — não referenciam nenhum recurso real.
+   */
+  simularDistribuicaoVagas(
+    processoSeletivoId: string,
+    command: readonly ConfiguracaoDistribuicaoVagasInput[],
+  ): Observable<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>> {
+    return this.http.post<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas/simulacao`,
+      command,
+      { context: withVendorMime('simulacao-distribuicao-vagas', 1) },
     );
   }
 

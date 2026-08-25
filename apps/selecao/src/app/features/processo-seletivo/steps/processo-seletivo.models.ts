@@ -89,6 +89,21 @@ export interface OfertaCurso extends Curso {
   vagas: number;
 }
 
+/**
+ * Oferta de Curso adicionada ao quadro de vagas (Passo 4). A identidade e o
+ * id UUID da Oferta de Curso (ofertaCursoId) — o que o PUT /distribuicao-vagas
+ * espera. Nao herda de Curso: o catalogo real de ofertas nao embute id numerico.
+ */
+export interface OfertaVaga {
+  ofertaCursoId: string;
+  cursoId: string;
+  nome: string;
+  grau: string;
+  campus: string;
+  unidade: string;
+  turno: Turno;
+  vagas: number;
+}
 export interface EtapaEdital {
   id: string;
   tipo: string;
@@ -201,7 +216,7 @@ export interface WizardDraft {
     concorrenciaDupla: boolean;
   };
   vagas: {
-    cursos: OfertaCurso[];
+    cursos: OfertaVaga[];
   };
   etapas: EtapaEdital[];
   formula: {

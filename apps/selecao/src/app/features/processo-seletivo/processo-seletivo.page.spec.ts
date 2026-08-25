@@ -3,8 +3,10 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
+  CursosApi,
   ModalidadeDto,
   ModalidadesApi,
+  OfertasCursoApi,
   TipoProcessoDto,
   TiposProcessoApi,
 } from '@uniplus/shared-data/configuracao';
@@ -31,6 +33,15 @@ const modalidadesApiStub = {
   listar: () => of(apiOk<readonly ModalidadeDto[]>([], 200, new HttpHeaders())),
 };
 
+/** Passo 4: catálogo de ofertas e cursos (vazio nesta suíte). */
+const ofertasCursoApiStub = {
+  listar: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
+};
+
+const cursosApiStub = {
+  listar: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
+};
+
 /**
  * A page provê `CadastroInicialService`, que injeta o client de Processo
  * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
@@ -43,6 +54,8 @@ const PAGE_PROVIDERS = [
   { provide: UnidadesApi, useValue: unidadesApiStub },
   { provide: GeoApi, useValue: geoApiStub },
   { provide: ModalidadesApi, useValue: modalidadesApiStub },
+  { provide: OfertasCursoApi, useValue: ofertasCursoApiStub },
+  { provide: CursosApi, useValue: cursosApiStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
 ];
 

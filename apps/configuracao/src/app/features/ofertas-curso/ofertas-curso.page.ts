@@ -56,7 +56,7 @@ import {
 const PAGE_SIZE = 50;
 
 /** Janela dos lookups de FK (selects do formulário e resolução de rótulos da lista). */
-const LOOKUP_LIMIT = 200;
+const LOOKUP_LIMIT = 100;
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -263,7 +263,11 @@ interface OfertaCursoForm {
                 @if (locaisOfertaComErro()) {
                   <span class="field__error">
                     Não foi possível carregar os locais de oferta.
-                    <button type="button" class="cfg-link-button" (click)="recarregarLocaisOferta()">
+                    <button
+                      type="button"
+                      class="cfg-link-button"
+                      (click)="recarregarLocaisOferta()"
+                    >
                       Tentar novamente
                     </button>
                   </span>
@@ -284,8 +288,8 @@ interface OfertaCursoForm {
                   <span class="field__hint">{{ unidadeContexto() }}</span>
                 }
                 <span class="field__hint">
-                  Congelada por snapshot-copy ao criar — alterações posteriores na unidade de
-                  origem não afetam a oferta (ADR-0061).
+                  Congelada por snapshot-copy ao criar — alterações posteriores na unidade de origem
+                  não afetam a oferta (ADR-0061).
                 </span>
                 @if (unidadesComErro()) {
                   <span class="field__error">
@@ -302,18 +306,22 @@ interface OfertaCursoForm {
             } @else {
               <div class="field">
                 <span class="field__label">Curso</span>
-                <p class="cfg-readonly-value">{{ cursoContexto() ?? cursoLabel(form.controls.cursoId.value) }}</p>
+                <p class="cfg-readonly-value">
+                  {{ cursoContexto() ?? cursoLabel(form.controls.cursoId.value) }}
+                </p>
               </div>
               <div class="field">
                 <span class="field__label">Local de oferta</span>
-                <p class="cfg-readonly-value">{{ localOfertaLabel(form.controls.localOfertaId.value) }}</p>
+                <p class="cfg-readonly-value">
+                  {{ localOfertaLabel(form.controls.localOfertaId.value) }}
+                </p>
               </div>
               <div class="field">
                 <span class="field__label">Unidade ofertante</span>
                 <p class="cfg-readonly-value">{{ unidadeOfertanteEmEdicaoLabel() }}</p>
                 <span class="field__hint">
-                  Identidade congelada no ato de criação (ADR-0061). Alterações na unidade de
-                  origem não são refletidas aqui.
+                  Identidade congelada no ato de criação (ADR-0061). Alterações na unidade de origem
+                  não são refletidas aqui.
                 </span>
               </div>
             }
@@ -366,7 +374,9 @@ interface OfertaCursoForm {
                 step="1"
                 formControlName="vagasAnuaisAutorizadas"
               />
-              <span class="field__hint">Teto anual autorizado pelo e-MEC — não as vagas do certame.</span>
+              <span class="field__hint"
+                >Teto anual autorizado pelo e-MEC — não as vagas do certame.</span
+              >
               @if (erroDoCampo('vagasAnuaisAutorizadas')) {
                 <span class="field__error">{{ erroDoCampo('vagasAnuaisAutorizadas') }}</span>
               }
@@ -642,7 +652,9 @@ export class OfertasCursoPage {
       nonNullable: true,
       validators: [Validators.maxLength(30)],
     }),
-    vagasAnuaisAutorizadas: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
+    vagasAnuaisAutorizadas: new FormControl<number | null>(null, {
+      validators: [Validators.min(0)],
+    }),
     baseLegal: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
     atoAutorizacaoMec: new FormControl('', {
       nonNullable: true,
