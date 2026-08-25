@@ -480,6 +480,23 @@ describe('OfertasCursoPage', () => {
     expect(component['form'].controls.cursoId.value).toBe(CURSO_ID);
   });
 
+  it('regime desconhecido pelo frontend não trunca os turnos vindos da API', async () => {
+    // Um regime introduzido por um backend mais novo: a UI não conhece a
+    // cardinalidade e não pode reduzir a seleção — a decisão fica com a API.
+    const ofertaComRegimeNovo: OfertaCursoDto = {
+      ...ofertaSeed,
+      regimeDeTurno: 'ROTATIVO',
+      turnos: ['MATUTINO', 'VESPERTINO'],
+    };
+    await flushCargaInicial([ofertaComRegimeNovo]);
+    component['abrirEdicao'](ofertaComRegimeNovo);
+    await propagate();
+
+    expect(component['turnosExigidos']()).toBeNull();
+    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO', 'VESPERTINO']);
+    expect(component['form'].controls.turnos.valid).toBe(true);
+  });
+
   it('editar uma oferta integral carrega os dois turnos marcados', async () => {
     const ofertaIntegral: OfertaCursoDto = {
       ...ofertaSeed,

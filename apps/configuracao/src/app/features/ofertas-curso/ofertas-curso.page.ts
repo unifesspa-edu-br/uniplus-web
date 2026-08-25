@@ -747,8 +747,12 @@ export class OfertasCursoPage {
     initialValue: this.form.controls.turnos.value,
   });
 
-  protected readonly turnosExigidos = computed(
-    () => turnosExigidosPorRegime(this.regimeValue()) ?? 1,
+  // `null` quando o regime não é conhecido por este frontend — um regime que o
+  // backend introduza depois. Nesse caso a UI não impõe cardinalidade alguma e
+  // deixa a decisão com a API, em vez de tratar o desconhecido como se fosse
+  // REGULAR e truncar uma seleção legítima.
+  protected readonly turnosExigidos = computed(() =>
+    turnosExigidosPorRegime(this.regimeValue()),
   );
 
   protected readonly regimeDescricao = computed(
@@ -757,6 +761,9 @@ export class OfertasCursoPage {
 
   protected readonly turnosHint = computed(() => {
     const exigidos = this.turnosExigidos();
+    if (exigidos === null) {
+      return 'Marque os turnos em que a oferta funciona.';
+    }
     return exigidos === 1
       ? 'Marque o turno em que a oferta funciona.'
       : 'Marque os dois turnos distintos em que a oferta funciona.';
@@ -806,7 +813,8 @@ export class OfertasCursoPage {
       const exigidos = this.turnosExigidos();
       const marcados = this.turnosValue();
       untracked(() => {
-        const reduzidos = manterOsMaisRecentes(marcados, exigidos);
+        const reduzidos =
+          exigidos === null ? marcados : manterOsMaisRecentes(marcados, exigidos);
         if (reduzidos.length !== marcados.length) {
           this.form.controls.turnos.setValue(reduzidos);
           return;
@@ -857,7 +865,8 @@ export class OfertasCursoPage {
       ? atuais.filter((t) => t !== token)
       : [...atuais, token];
 
-    control.setValue(manterOsMaisRecentes(proximos, this.turnosExigidos()));
+    const exigidos = this.turnosExigidos();
+    control.setValue(exigidos === null ? proximos : manterOsMaisRecentes(proximos, exigidos));
     control.markAsTouched();
     control.markAsDirty();
   }
