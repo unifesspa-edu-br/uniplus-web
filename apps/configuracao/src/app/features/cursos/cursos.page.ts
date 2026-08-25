@@ -37,7 +37,9 @@ import {
   GRUPOS_AREA_ENEM,
   OfertaCursoDto,
   PROGRAMAS_DE_OFERTA,
+  REGIMES_DE_TURNO,
   TURNOS_OFERTA,
+  ordenarTurnosCanonicamente,
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
@@ -55,9 +57,10 @@ const PAGE_SIZE = 50;
 /** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
 
-/** Rótulos dos tokens de programa/turno da oferta (domínios fechados, ofertas-curso.api). */
+/** Rótulos dos tokens de programa, regime e turno da oferta (domínios fechados, ofertas-curso.api). */
 const PROGRAMA_LABELS = new Map(PROGRAMAS_DE_OFERTA.map((opcao) => [opcao.value, opcao.label]));
 const TURNO_LABELS = new Map(TURNOS_OFERTA.map((opcao) => [opcao.value, opcao.label]));
+const REGIME_LABELS = new Map(REGIMES_DE_TURNO.map((opcao) => [opcao.value, opcao.label]));
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -219,7 +222,7 @@ interface CursoForm {
       }
 
       <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
-        Código e-MEC, local, unidade ofertante, programa, formato e turno pertencem à Oferta de
+        Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à Oferta de
         Curso, não ao Curso.
       </ui-alert>
 
@@ -383,7 +386,8 @@ interface CursoForm {
               </p>
               <p class="cfg-ofertas-list__meta">
                 <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
-                <span>{{ turnoLabel(oferta.turno) }}</span>
+                <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
+                <span>{{ turnosLabel(oferta.turnos) }}</span>
               </p>
             </li>
           }
@@ -695,11 +699,17 @@ export class CursosPage {
     return PROGRAMA_LABELS.get(token) ?? token;
   }
 
-  protected turnoLabel(token: string | null): string {
-    if (token === null) {
+  protected regimeLabel(token: string): string {
+    return REGIME_LABELS.get(token) ?? token;
+  }
+
+  protected turnosLabel(tokens: readonly string[]): string {
+    if (tokens.length === 0) {
       return '—';
     }
-    return TURNO_LABELS.get(token) ?? token;
+    return ordenarTurnosCanonicamente(tokens)
+      .map((token) => TURNO_LABELS.get(token) ?? token)
+      .join(' e ');
   }
 
   protected tentarNovamente(): void {

@@ -70,7 +70,8 @@ const ofertaSeed: OfertaCursoDto = {
   unidadeOfertante: { origemId: UNIDADE_ID, sigla: 'IGE', nome: 'Instituto de Geociências e Engenharias', tipo: 'Instituto' },
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
-  turno: 'MATUTINO',
+  regimeDeTurno: 'REGULAR',
+  turnos: ['MATUTINO'],
   eMecCodigo: '123456',
   codigoSga: null,
   vagasAnuaisAutorizadas: 40,
@@ -252,7 +253,8 @@ describe('OfertasCursoPage', () => {
       unidadeOfertanteOrigemId: UNIDADE_ID,
       programaDeOferta: 'REGULAR',
       formatoPedagogico: 'PRESENCIAL',
-      turno: 'MATUTINO',
+      regimeDeTurno: 'REGULAR',
+      turnos: ['MATUTINO'],
       vagasAnuaisAutorizadas: 40,
     });
 
@@ -334,5 +336,162 @@ describe('OfertasCursoPage', () => {
     component['form'].controls.localOfertaId.setValue(LOCAL_ID);
     await propagate();
     expect(component['localContexto']()).toContain('Marabá');
+  });
+
+  it('trocar o regime para INTEGRAL passa a exigir dois turnos, e um só não salva', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].patchValue({
+      cursoId: CURSO_ID,
+      localOfertaId: LOCAL_ID,
+      unidadeOfertanteOrigemId: UNIDADE_ID,
+      programaDeOferta: 'REGULAR',
+      formatoPedagogico: 'PRESENCIAL',
+      regimeDeTurno: 'REGULAR',
+    });
+    component['alternarTurno']('MATUTINO');
+    await propagate();
+    expect(component['form'].controls.turnos.valid).toBe(true);
+
+    component['form'].controls.regimeDeTurno.setValue('INTEGRAL');
+    await propagate();
+
+    expect(component['turnosExigidos']()).toBe(2);
+    expect(component['form'].controls.turnos.valid).toBe(false);
+    expect(component['erroDoCampo']('turnos')).toContain('INTEGRAL');
+
+    component['salvar']();
+    controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
+  });
+
+  it('voltar de INTEGRAL para REGULAR mantém o turno marcado por último', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].controls.regimeDeTurno.setValue('INTEGRAL');
+    await propagate();
+    component['alternarTurno']('VESPERTINO');
+    component['alternarTurno']('MATUTINO');
+    await propagate();
+    expect(component['form'].controls.turnos.value).toEqual(['VESPERTINO', 'MATUTINO']);
+
+    component['form'].controls.regimeDeTurno.setValue('REGULAR');
+    await propagate();
+
+    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO']);
+    expect(component['form'].controls.turnos.valid).toBe(true);
+  });
+
+  it('sob INTEGRAL, um terceiro turno descarta o mais antigo em vez de zerar a seleção', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].controls.regimeDeTurno.setValue('INTEGRAL');
+    await propagate();
+    component['alternarTurno']('MATUTINO');
+    component['alternarTurno']('VESPERTINO');
+    component['alternarTurno']('NOTURNO');
+    await propagate();
+
+    expect(component['form'].controls.turnos.value).toEqual(['VESPERTINO', 'NOTURNO']);
+    expect(component['form'].controls.turnos.valid).toBe(true);
+  });
+
+  it('sob REGULAR, marcar outro turno substitui o anterior em vez de somar', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['alternarTurno']('MATUTINO');
+    component['alternarTurno']('NOTURNO');
+    await propagate();
+
+    expect(component['form'].controls.turnos.value).toEqual(['NOTURNO']);
+  });
+
+  it('envia regimeDeTurno e os turnos em ordem canônica, qualquer que seja a ordem de marcação', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].patchValue({
+      cursoId: CURSO_ID,
+      localOfertaId: LOCAL_ID,
+      unidadeOfertanteOrigemId: UNIDADE_ID,
+      programaDeOferta: 'REGULAR',
+      formatoPedagogico: 'PRESENCIAL',
+      regimeDeTurno: 'INTEGRAL',
+    });
+    component['alternarTurno']('NOTURNO');
+    component['alternarTurno']('VESPERTINO');
+    await propagate();
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`);
+    expect(post.request.body).toMatchObject({
+      regimeDeTurno: 'INTEGRAL',
+      turnos: ['VESPERTINO', 'NOTURNO'],
+    });
+    post.flush(OFERTA_ID, { status: 201, statusText: 'Created' });
+    await flushRecarregarLista([ofertaSeed]);
+  });
+
+  it('a recusa de cardinalidade da API aparece junto ao campo de turnos e preserva o formulário', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].patchValue({
+      cursoId: CURSO_ID,
+      localOfertaId: LOCAL_ID,
+      unidadeOfertanteOrigemId: UNIDADE_ID,
+      programaDeOferta: 'REGULAR',
+      formatoPedagogico: 'PRESENCIAL',
+      regimeDeTurno: 'REGULAR',
+    });
+    component['alternarTurno']('MATUTINO');
+    await propagate();
+
+    component['salvar']();
+
+    controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`).flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime',
+        title: 'Quantidade de turnos incompatível com o regime declarado',
+        status: 422,
+        code: 'uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime',
+        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Content',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['erroDoCampo']('turnos')).toBeTruthy();
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.cursoId.value).toBe(CURSO_ID);
+  });
+
+  it('editar uma oferta integral carrega os dois turnos marcados', async () => {
+    const ofertaIntegral: OfertaCursoDto = {
+      ...ofertaSeed,
+      regimeDeTurno: 'INTEGRAL',
+      turnos: ['VESPERTINO', 'MATUTINO'],
+    };
+    await flushCargaInicial([ofertaIntegral]);
+    component['abrirEdicao'](ofertaIntegral);
+    await propagate();
+
+    expect(component['form'].controls.regimeDeTurno.value).toBe('INTEGRAL');
+    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO', 'VESPERTINO']);
+    expect(component['turnoMarcado']('NOTURNO')).toBe(false);
   });
 });
