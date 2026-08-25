@@ -74,6 +74,17 @@ const ofertaSeed = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
+/**
+ * Marca um turno pelo gesto real do operador: o clique no rótulo. O
+ * `input[type=checkbox]` do design system é visualmente oculto
+ * (`opacity: 0; pointer-events: none`) e quem recebe o clique é o `label`,
+ * então `check()` no input esperaria actionability indefinidamente.
+ */
+async function marcarTurno(page: Page, rotulo: string): Promise<void> {
+  await page.locator('label.checkbox', { hasText: rotulo }).click();
+  await expect(page.getByRole('checkbox', { name: rotulo })).toBeChecked();
+}
+
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -165,7 +176,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
-    await page.getByRole('checkbox', { name: 'Matutino' }).check();
+    await marcarTurno(page, 'Matutino');
     await page.getByRole('button', { name: 'Criar oferta' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
@@ -188,7 +199,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
     await page.locator('[formControlName="programaDeOferta"]').selectOption('PARFOR');
-    await page.getByRole('checkbox', { name: 'Matutino' }).check();
+    await marcarTurno(page, 'Matutino');
 
     await expect(page.locator('[formControlName="baseLegal"]')).toBeVisible();
 
