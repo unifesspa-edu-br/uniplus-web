@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   linkedSignal,
+  OnInit,
   signal,
   untracked,
 } from '@angular/core';
@@ -46,6 +47,7 @@ import {
   FilterBarComponent,
   PagerComponent,
 } from "@uniplus/shared-ui/components";
+import { debounceTime } from 'rxjs';
 
 type ModoFormulario = "criar" | "editar";
 
@@ -177,13 +179,13 @@ const PAGE_SIZE = 50;
           <div class="table-responsive">
             <table>
               <thead>
-              <tr>
-                <th scope="col">Código</th>
-                <th scope="col">Nome</th>
-                <th scope="col">Descrição</th>
-                <th scope="col">Status</th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
-              </tr>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col">Status</th>
+                  <th scope="col"><span class="sr-only">Ações</span></th>
+                </tr>
               </thead>
               <tbody>
                 @for (tipoDeficiencia of tiposDeficienciaFiltrados(); track tipoDeficiencia.id) {
@@ -289,7 +291,6 @@ const PAGE_SIZE = 50;
                 placeholder="Ex.: Visual"
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
-                (change)="mudaCampoNome($event)"
               />
               <span class="field__hint">
                 Identificador do tipo de deficiência — único entre os tipos ativos. Impede
@@ -312,8 +313,10 @@ const PAGE_SIZE = 50;
                 list="cfg-tipo-deficiencia-sugestoes"
               />
               <datalist id="cfg-tipo-deficiencia-sugestoes">
-                @for (tipoDeficienciaCodigoSugestao of tiposDeficienciaCodigoSugestoes();
-                  track $index) {
+                @for (
+                  tipoDeficienciaCodigoSugestao of tiposDeficienciaCodigoSugestoes();
+                  track $index
+                ) {
                   <option [value]="tipoDeficienciaCodigoSugestao"></option>
                 }
               </datalist>
@@ -385,7 +388,7 @@ const PAGE_SIZE = 50;
   `,
   host: { class: 'cfg-page' },
 })
-export class TiposDeficienciaListPage {
+export class TiposDeficienciaListPage implements OnInit {
   private readonly api = inject(TipoDeficienciaApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
@@ -503,9 +506,24 @@ export class TiposDeficienciaListPage {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
-    this.form.controls.codigo.valueChanges.subscribe((value) => {
-      if (value) {
-        this.form.controls.codigo.setValue(value.toLocaleUpperCase(), {
+  }
+
+  ngOnInit(): void {
+    this.form.valueChanges.pipe(debounceTime(300)).subscribe(({ codigo, nome }) => {
+      if (nome) {
+        const tipoDeficienciaCodigoFormatado = nome
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .toUpperCase();
+        this.tiposDeficienciaCodigoSugestoes.set([tipoDeficienciaCodigoFormatado]);
+        if (!this.form.controls.codigo.value && this.form.controls.codigo.pristine) {
+          this.form.controls.codigo.patchValue(tipoDeficienciaCodigoFormatado);
+        }
+      }
+      if (codigo) {
+        this.form.controls.codigo.setValue(codigo.toLocaleUpperCase(), {
           emitEvent: false,
           emitModelToViewChange: false,
         });
@@ -748,21 +766,5 @@ export class TiposDeficienciaListPage {
       .remover(tipoDeficiencia.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => this.handleRemoverResult(result));
-  }
-
-  protected mudaCampoNome(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    if (value) {
-      const tipoDeficienciaCodigoFormatado = value
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9]+/g, '_')
-        .replace(/^_+|_+$/g, '')
-        .toUpperCase();
-      this.tiposDeficienciaCodigoSugestoes.set([tipoDeficienciaCodigoFormatado]);
-      if (!this.form.controls.codigo.value) {
-        this.form.controls.codigo.setValue(tipoDeficienciaCodigoFormatado);
-      }
-    }
   }
 }
