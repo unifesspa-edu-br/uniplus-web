@@ -1,7 +1,9 @@
 import { HttpContext } from '@angular/common/http';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  deveRotacionarIdempotencyKey,
   IDEMPOTENCY_KEY_TOKEN,
+  IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
   isValidIdempotencyKey,
   withIdempotencyKey,
@@ -53,6 +55,35 @@ describe('withIdempotencyKey', () => {
   it('IDEMPOTENCY_KEY_TOKEN tem default null para HttpContext sem declaração', () => {
     const empty = new HttpContext();
     expect(empty.get(IDEMPOTENCY_KEY_TOKEN)).toBeNull();
+  });
+});
+
+describe('deveRotacionarIdempotencyKey', () => {
+  it.each([
+    ['422 de validação', 422, 'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido'],
+    ['409 de conflito de domínio', 409, 'uniplus.configuracao.tipo_deficiencia.codigo_ja_existe'],
+    ['corpo divergente para a mesma chave', 422, IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH],
+    ['404', 404, 'uniplus.configuracao.tipo_deficiencia.nao_encontrado'],
+  ])('renova a chave — %s', (_rotulo, status, code) => {
+    expect(deveRotacionarIdempotencyKey({ status, code })).toBe(true);
+  });
+
+  it('preserva a chave em conflito de processamento — o retry é do mesmo comando', () => {
+    expect(
+      deveRotacionarIdempotencyKey({
+        status: 409,
+        code: IDEMPOTENCY_PROBLEM_CODES.PROCESSING_CONFLICT,
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    ['5xx — nada foi gravado, retry seguro', 500],
+    ['erro de rede sintetizado no cliente', 0],
+  ])('preserva a chave — %s', (_rotulo, status) => {
+    expect(deveRotacionarIdempotencyKey({ status, code: 'uniplus.client.network_error' })).toBe(
+      false,
+    );
   });
 });
 
