@@ -1,0 +1,39 @@
+/* ── Listagem de Processos Seletivos ─────────────────────────────── */
+
+/* O espaçamento e o teto de largura vêm de `.page`, no shell da rota. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+}
+
+/* ── Page header ─────────────────────────────────────────────────── */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.page-header__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  line-height: 1.2;
+}
+
+.page-header__desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}

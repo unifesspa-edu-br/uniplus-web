@@ -29,7 +29,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     await mockTiposProcesso(page);
     await instalarPreferencia(page, temaDoProject(testInfo.project.name));
-    await page.goto('/processo-seletivo');
+    await page.goto('/processo-seletivo/novo');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('radio').first()).toBeVisible();
   });
