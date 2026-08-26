@@ -1,10 +1,9 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { ApiResult, withVendorMime, extractNextCursor } from '@uniplus/shared-core/http';
+import { Observable } from 'rxjs';
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
-import { expand, reduce } from 'rxjs/operators';
 
 export type CriarProcessoSeletivoCommand = components['schemas']['CriarProcessoSeletivoCommand'];
 export type ProcessoSeletivoDto = components['schemas']['ProcessoSeletivoDto'];
@@ -13,15 +12,6 @@ export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapsho
 export type IniciarUploadDocumentoEditalDto =
   components['schemas']['IniciarUploadDocumentoEditalDto'];
 export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
-
-/* DTOs dos sub-recursos mapeados do schema OpenAPI */
-export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
-export type DefinirOfertaAtendimentoRequest =
-  components['schemas']['DefinirOfertaAtendimentoRequest'];
-export type ConfiguracaoDistribuicaoVagasInput =
-  components['schemas']['ConfiguracaoDistribuicaoVagasInput'];
-export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
-export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -59,47 +49,6 @@ export class ProcessosSeletivosApi {
     );
   }
 
-  /** GET `/api/selecao/processos-seletivos` — lista todos os processos seletivos percorrendo a paginação por cursor. */
-  listarTodos(): Observable<ApiResult<readonly ProcessoSeletivoResumoDto[]>> {
-    return this.listar({ limit: 100 }).pipe(
-      expand((resultado) => {
-        if (!resultado.ok) {
-          return of();
-        }
-
-        const link = resultado.headers?.get('Link') ?? null;
-        const next = extractNextCursor(link);
-
-        if (next === null) {
-          return of();
-        }
-
-        return this.listar({
-          cursor: next,
-          direction: 'next',
-          limit: 100,
-        });
-      }),
-      reduce<
-        ApiResult<readonly ProcessoSeletivoResumoDto[]>,
-        ApiResult<readonly ProcessoSeletivoResumoDto[]>
-      >((acumulado, resultado) => {
-        if (!resultado.ok) {
-          return resultado;
-        }
-
-        if (!acumulado.ok) {
-          return acumulado;
-        }
-
-        return {
-          ...resultado,
-          data: [...acumulado.data, ...resultado.data],
-        };
-      }),
-    );
-  }
-
   /** GET `/api/selecao/processos-seletivos/{id}` — detalhe e snapshot do tipo. */
   obter(id: string): Observable<ApiResult<ProcessoSeletivoDto>> {
     return this.http.get<ApiResult<ProcessoSeletivoDto>>(
@@ -120,76 +69,12 @@ export class ProcessosSeletivosApi {
     );
   }
 
-  /** PUT `/api/selecao/processos-seletivos/{id}/etapas` */
-  salvarEtapas(
-    id: string,
-    payload: readonly EtapaProcessoInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}/etapas`,
-      payload,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /** PUT `/api/selecao/processos-seletivos/{id}/oferta-atendimento` */
-  salvarOfertaAtendimento(
-    id: string,
-    payload: DefinirOfertaAtendimentoRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}/oferta-atendimento`,
-      payload,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /** PUT `/api/selecao/processos-seletivos/{id}/distribuicao-vagas` */
-  salvarDistribuicaoVagas(
-    id: string,
-    payload: readonly ConfiguracaoDistribuicaoVagasInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}/distribuicao-vagas`,
-      payload,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /** PUT `/api/selecao/processos-seletivos/{id}/criterios-desempate` */
-  salvarCriteriosDesempate(
-    id: string,
-    payload: readonly CriterioDesempateInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}/criterios-desempate`,
-      payload,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /** PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` */
-  salvarBonusRegional(
-    id: string,
-    payload: DefinirBonusRegionalRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}/bonus-regional`,
-      payload,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  // =========================================================================
-  // DOCUMENTOS EDITAL
-  // =========================================================================
-
-  /** POST `/api/selecao/processos-seletivos/{id}/documentos-edital` */
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/documentos-edital` — primeiro
+   * dos três passos do anexo do edital: cria o registro pendente e devolve a
+   * URL pré-assinada de PUT, o content type que a assinatura exige e o
+   * instante em que ela expira. O endpoint não recebe corpo.
+   */
   iniciarUploadDocumentoEdital(
     processoSeletivoId: string,
     context: HttpContext,
@@ -201,7 +86,14 @@ export class ProcessosSeletivosApi {
     );
   }
 
-  /** POST `/api/selecao/processos-seletivos/{id}/documentos-edital/{docId}/confirmacao` */
+  /**
+   * Terceiro passo: a API lê o objeto no storage, confere content type,
+   * tamanho e assinatura de arquivo, calcula o hash e sela o documento como
+   * imutável. Também não recebe corpo.
+   *
+   * O segundo passo — o PUT na URL pré-assinada — não é rota do Uni+ e não
+   * devolve `ApiResult`: fica no `SignedUploadClient` de `shared-core/http`.
+   */
   confirmarUploadDocumentoEdital(
     processoSeletivoId: string,
     documentoEditalId: string,
