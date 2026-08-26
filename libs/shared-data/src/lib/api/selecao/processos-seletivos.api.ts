@@ -70,6 +70,27 @@ export class ProcessosSeletivosApi {
   }
 
   /**
+   * GET `/api/selecao/processos-seletivos/{id}/documentos-edital` — todos os
+   * documentos do edital registrados no processo, pendentes e confirmados.
+   *
+   * É a leitura que permite retomar o anexo depois de um refresh: o cliente
+   * não guarda o `documentoEditalId` nem a URL assinada, então é daqui que o
+   * editor descobre o que já existe. Havendo mais de um documento confirmado,
+   * a escolha do oficial é do administrador — `criadoEm` e `confirmadoEm`
+   * servem para apresentá-los, não para o frontend eleger o mais recente.
+   *
+   * A coleção não é paginada: um processo tem poucos documentos por natureza.
+   */
+  listarDocumentosEdital(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<readonly DocumentoEditalDto[]>> {
+    return this.http.get<ApiResult<readonly DocumentoEditalDto[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital`,
+      { context: withVendorMime('documento-edital', 1) },
+    );
+  }
+
+  /**
    * POST `/api/selecao/processos-seletivos/{id}/documentos-edital` — primeiro
    * dos três passos do anexo do edital: cria o registro pendente e devolve a
    * URL pré-assinada de PUT, o content type que a assinatura exige e o
