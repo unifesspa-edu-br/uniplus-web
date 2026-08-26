@@ -33,7 +33,7 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/com
       heading="Indicadores ainda indisponíveis"
       description="Os números de processos, inscrições, homologações e prazos dependem de endpoints de agregação que ainda não existem. Nada é exibido aqui até que existam."
     >
-      @if (podeCadastrarProcesso()) {
+      @if (administraPlataforma()) {
         <a class="btn btn--secondary" routerLink="/processo-seletivo">
           Ver processos seletivos
         </a>
@@ -48,7 +48,7 @@ export class DashboardPage {
    * O atalho só aparece para quem a rota admite — sem isso, um avaliador
    * clicaria em "Ver processos seletivos" para cair em `/acesso-negado`.
    */
-  protected readonly podeCadastrarProcesso = computed(() =>
+  protected readonly administraPlataforma = computed(() =>
     this.authService.roles().includes('plataforma-admin'),
   );
 }

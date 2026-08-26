@@ -144,6 +144,25 @@ describe('ProcessosSeletivosListaPage', () => {
     );
   });
 
+  /**
+   * O token vem do servidor. Num objeto literal, `constructor` resolveria para
+   * o membro herdado de `Object.prototype` — uma função, que o `??` não trata
+   * como ausência e que a interpolação renderizaria como código-fonte.
+   */
+  it.each(['constructor', 'toString', 'hasOwnProperty'])(
+    'não confunde o status %s com membro herdado de Object',
+    async (status) => {
+      await flushLista([processo({ status })]);
+
+      const tag = host().querySelector('[data-label="Status"] .tag');
+
+      expect(tag?.textContent?.trim()).toBe(status);
+      expect(tag?.textContent).not.toContain('native code');
+      expect(tag?.classList.contains('tag--warning')).toBe(false);
+      expect(tag?.classList.contains('tag--success')).toBe(false);
+    },
+  );
+
   it('anuncia o estado vazio quando a coleção não tem itens', async () => {
     await flushLista([]);
 
