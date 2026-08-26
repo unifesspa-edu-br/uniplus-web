@@ -1,0 +1,59 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 10</span>
+  <h1 tabindex="-1">Passo 10: Eliminação</h1>
+</div>
+<p class="step-subtitle">
+  Critérios que eliminam o candidato do processo. Notas mínimas por etapa são opcionais; cláusulas
+  gerais protegem a integridade do processo.
+</p>
+<section class="step-section">
+  <h2 class="step-section__title">Notas mínimas por etapa</h2>
+  <div class="eliminacao-table-wrap">
+    <table aria-label="Notas mínimas por etapa" class="eliminacao-table">
+      <thead>
+        <tr>
+          <th>Etapa</th>
+          <th>Nota mínima</th>
+          <th>Eliminatória?</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (etapa of etapas; track etapa[0]) {
+          <tr>
+            <td class="eliminacao-etapa">{{ etapa[0] }}</td>
+            <td>
+              <input
+                class="input eliminacao-input"
+                type="number"
+                min="0"
+                max="1000"
+                step="0.01"
+                placeholder="Sem mínima"
+                [attr.aria-label]="'Nota mínima — ' + etapa[1]"
+                [value]="store.draft().eliminacao.notasMinimas[etapa[0]] ?? ''"
+                (input)="setNota(etapa[0], $any($event.target).value)"
+              />
+            </td>
+            <td><span class="eliminacao-badge">Não</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="step-section">
+  <h2 class="step-section__title">Cláusulas gerais de eliminação</h2>
+  <div class="step-card">
+    <div class="checkbox-grid">
+      @for (clausula of clausulas; track clausula) {
+        <label class="check-item"
+          ><input
+            type="checkbox"
+            [checked]="store.draft().eliminacao.clausulas.includes(clausula)"
+            (change)="toggleClausula(clausula, $any($event.target).checked)"
+          /><span>{{ clausula }}</span></label
+        >
+      }
+    </div>
+  </div>
+</section>

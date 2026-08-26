@@ -1,0 +1,70 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 4</span>
+  <h1 tabindex="-1">Passo 4: Modalidades</h1>
+</div>
+<section class="step-section">
+  <h2 class="step-section__title">Modalidades de concorrência</h2>
+  <div class="step-card">
+    <div class="form-field">
+      <p class="label" style="display: block; margin-bottom: var(--space-2)">
+        Selecione as modalidades que este processo seletivo aceita
+      </p>
+    </div>
+    @if (loading()) {
+      <p class="step-status" role="status">Carregando modalidades de concorrência…</p>
+    } @else if (errorMessage(); as erro) {
+      <div class="step-error" role="alert">
+        <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+        <div class="step-error__content">
+          <strong class="step-error__summary">{{ erro }}</strong>
+          <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    } @else {
+      <label class="check-item" style="margin-bottom: var(--space-3)">
+        <input
+          type="checkbox"
+          [checked]="allSelected()"
+          [indeterminate]="indeterminate()"
+          (change)="toggleAll($any($event.target).checked)"
+        />
+        <span><strong>Marcar todos</strong></span>
+      </label>
+      <div class="checkbox-grid">
+        @for (modalidade of modalidades(); track modalidade.code) {
+          <label class="check-item" [attr.data-id]="modalidade.code">
+            <input
+              type="checkbox"
+              [checked]="store.draft().modalidades.selected.includes(modalidade.code)"
+              (change)="toggle(modalidade.code, $any($event.target).checked)"
+            />
+            <span>{{ modalidade.code }} — {{ modalidade.label }}</span>
+          </label>
+        }
+      </div>
+    }
+  </div>
+</section>
+<section class="step-section">
+  <h2 class="step-section__title">
+    Concorrência dupla <span class="title-meta">(Lei 14.723/2023)</span>
+  </h2>
+  <div class="step-card dupla-card">
+    <span class="dupla-lei">Lei 14.723/2023</span>
+    <label class="check-item"
+      ><input
+        type="checkbox"
+        [checked]="store.draft().modalidades.concorrenciaDupla"
+        (change)="
+          store.patchObjectSection('modalidades', {
+            concorrenciaDupla: $any($event.target).checked,
+          })
+        "
+      /><span
+        >Aplicar concorrência dupla — cotista que atinge nota de AC ocupa vaga de AC</span
+      ></label
+    >
+  </div>
+</section>

@@ -1,0 +1,228 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 6</span>
+  <h1 tabindex="-1">Passo 6: Etapas</h1>
+</div>
+<p class="etapas-subtitle">Etapas em ordem cronológica</p>
+<p class="etapas-aceitas">Etapas aceitas.</p>
+<fieldset class="scroll-tabela">
+  <div class="etapas-list">
+    @for (
+      etapa of store.draft().etapas;
+      track etapa.id;
+      let index = $index;
+      let first = $first;
+      let last = $last
+    ) {
+      <div class="etapa-block" [id]="etapa.id">
+        <div class="etapa-block__header">
+          <div class="etapa-block__tags">
+            <button
+              class="etapa-tag etapa-tag--num"
+              type="button"
+              [class.is-active]="etapa.tagNumeroAtiva"
+              (click)="update(etapa.id, { tagNumeroAtiva: !etapa.tagNumeroAtiva })"
+            >
+              Etapas {{ index + 1 }}
+            </button>
+            <button
+              class="etapa-tag"
+              type="button"
+              [class.is-active]="etapa.administrativa"
+              (click)="update(etapa.id, { administrativa: !etapa.administrativa })"
+            >
+              Administrativa
+            </button>
+          </div>
+          <span class="etapa-block__title-wrap">Inscrição de candidatos</span>
+          <div class="etapa-block__actions">
+            <button
+              class="etapa-act-btn"
+              type="button"
+              aria-label="Mover para cima"
+              [disabled]="first"
+              (click)="move(index, -1)"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            </button>
+            <button
+              class="etapa-act-btn"
+              type="button"
+              aria-label="Mover para baixo"
+              [disabled]="last"
+              (click)="move(index, 1)"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <button
+              class="etapa-act-btn etapa-act-btn--remove"
+              type="button"
+              aria-label="Remover etapa"
+              (click)="remove(etapa.id)"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg
+              ><span class="etapa-remover-label">Remover</span>
+            </button>
+          </div>
+        </div>
+        <div class="etapa-block__body">
+          <div class="etapa-grid">
+            <div class="etapa-grid__tipo form-field">
+              <label class="label" [for]="'et-tipo-' + etapa.id">Tipo de etapa</label
+              ><select
+                [id]="'et-tipo-' + etapa.id"
+                class="input"
+                [class.is-invalid]="invalidFields().has('tipo-' + etapa.id)"
+                [value]="etapa.tipo"
+                (change)="update(etapa.id, { tipo: $any($event.target).value })"
+              >
+                <option value="">Selecione</option>
+                <option value="INSCRICAO_CANDIDATOS">
+                  INSCRICAO_CANDIDATOS - inscrição candidatos
+                </option>
+                <option value="HOMOLOGACAO_INSCRICOES">
+                  HOMOLOGACAO_INSCRICOES - homologação de inscrições
+                </option>
+                <option value="DIVULGACAO_RESULTADO_PARCIAL">
+                  DIVULGACAO_RESULTADO_PARCIAL - divulgação do resultado parcial
+                </option>
+              </select>
+            </div>
+            <div class="etapa-grid__inicio form-field">
+              <label class="label" [for]="'et-inicio-' + etapa.id">Início da jornada</label>
+              <div class="input-icon-wrap">
+                <input
+                  #inicio
+                  [id]="'et-inicio-' + etapa.id"
+                  class="input etapa-date"
+                  type="date"
+                  [class.is-invalid]="invalidFields().has('inicio-' + etapa.id)"
+                  [value]="etapa.inicio"
+                  (input)="update(etapa.id, { inicio: $any($event.target).value })"
+                /><button
+                  type="button"
+                  class="input-icon-wrap__btn"
+                  aria-label="Abrir calendário"
+                  (click)="openPicker(inicio)"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="etapa-grid__nome form-field">
+              <label class="label" [for]="'et-nome-' + etapa.id">Nome customizado (opcional)</label
+              ><input
+                [id]="'et-nome-' + etapa.id"
+                class="input"
+                type="text"
+                placeholder="Nome"
+                [value]="etapa.nomeCustomizado"
+                (input)="update(etapa.id, { nomeCustomizado: $any($event.target).value })"
+              />
+            </div>
+            <div class="etapa-grid__fim-wrap">
+              <div class="form-field">
+                <label class="label" [for]="'et-fim-' + etapa.id">Fim da janela</label>
+                <div class="input-icon-wrap">
+                  <input
+                    #fim
+                    [id]="'et-fim-' + etapa.id"
+                    class="input etapa-date"
+                    type="date"
+                    [class.is-invalid]="invalidFields().has('fim-' + etapa.id)"
+                    [value]="etapa.fim"
+                    (input)="update(etapa.id, { fim: $any($event.target).value })"
+                  /><button
+                    type="button"
+                    class="input-icon-wrap__btn"
+                    aria-label="Abrir calendário"
+                    (click)="openPicker(fim)"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <p class="etapa-hint">Pode ser igual ao início se a etapa ocorrer em 1 dia.</p>
+            </div>
+          </div>
+          <label class="check-item"
+            ><input
+              type="checkbox"
+              [checked]="etapa.permiteRecurso"
+              (change)="update(etapa.id, { permiteRecurso: $any($event.target).checked })"
+            /><span>Esta etapa permite recurso?</span></label
+          >
+        </div>
+      </div>
+    }
+  </div>
+</fieldset>
+<div class="etapas-add-wrap">
+  <button class="btn btn--outline" type="button" (click)="add()">
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="16"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-width="2.5"
+      viewBox="0 0 24 24"
+      width="16"
+    >
+      <path d="M12 5v14M5 12h14" /></svg
+    >Adicionar etapa
+  </button>
+</div>
