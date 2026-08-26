@@ -350,7 +350,7 @@
   padding: var(--space-8);
   overflow-y: auto;
 
-   /* Firefox */
+  /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
@@ -724,9 +724,12 @@
   color: var(--text-primary);
   cursor: pointer;
   line-height: 1.45;
+  padding-top: var(--space-4);
+  /* padding-bottom: var(--space-4); */
 }
 
-.check-item input[type='checkbox'] {
+.check-item input[type='checkbox'],
+.check-item input[type='radio'] {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -755,6 +758,8 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4) var(--space-5);
   align-items: start;
+  /* padding-top: var(--space-4); */
+  /* padding-bottom: var(--space-4); */
 }
 
 .sel-processo .form-grid__full {
@@ -770,6 +775,10 @@
  */
 .sel-processo .form-grid > * {
   min-width: 0;
+}
+
+.sel-processo .form-field {
+  padding-bottom: var(--space-5);
 }
 
 .sel-processo .form-field .input,

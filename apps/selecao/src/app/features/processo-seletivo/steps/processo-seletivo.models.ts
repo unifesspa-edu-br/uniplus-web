@@ -204,12 +204,24 @@ export interface WizardDraft {
   pagamento: {
     taxaObrigatoria: boolean;
     valorTaxa: number | null;
+    /** Código do contrato — GRU ou PIX. */
     formasPagamento: string[];
-    dataLimite: string;
+    /**
+     * A isenção é obrigatória sempre que há cobrança de taxa (não é uma
+     * opção do operador) — só o período de solicitação e o prazo de recurso
+     * são configuráveis; as modalidades de isenção em si são fixas
+     * (`CRITERIOS_ISENCAO_OBRIGATORIOS`).
+     */
     isencao: {
-      disponivel: boolean;
-      criterios: string[];
-      prazoSolicitacao: string;
+      /**
+       * Datetime ISO local. Hoje é um campo comum, preenchido manualmente —
+       * a regra de negócio prevê igualá-lo ao início das inscrições gerais
+       * (configurado no passo Etapas), mas essa integração ainda não existe.
+       */
+      inicioSolicitacao: string;
+      /** Datetime ISO local — mínimo de 5 dias corridos após o início. */
+      fimSolicitacao: string;
+      prazoRecursoDiasUteis: number | null;
     };
   };
   modalidades: {

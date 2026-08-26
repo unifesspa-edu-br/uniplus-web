@@ -40,31 +40,35 @@ export const REVIEW_NAMES = [
   'Atendimento especializado',
 ] as const;
 
-export const CRITERIOS_ISENCAO: CriterioIsencao[] = [
+/**
+ * Modalidades de isenção da taxa de inscrição. Fixas e sempre ativas quando
+ * há cobrança — não são uma escolha do operador (por isso não entram no
+ * `WizardDraft`, ao contrário de `CRITERIOS_DESEMPATE`).
+ */
+export const CRITERIOS_ISENCAO_OBRIGATORIOS: CriterioIsencao[] = [
   {
-    id: 'renda-per-capita',
-    nome: 'Renda familiar per capita de até 1,5 salário mínimo',
-    fonte: 'Lei 12.799/2013',
-  },
-  {
-    id: 'ensino-medio-publico',
-    nome: 'Cursou o Ensino Médio em escola pública ou como bolsista integral',
-    fonte: 'Decreto 6.593/2008',
+    id: 'lei-12799-2013',
+    nome: 'Lei nº 12.799/2013',
+    fonte: 'Cursou ensino médio em escola pública + renda per capita de até 1,5 salário mínimo.',
   },
   {
     id: 'cadastro-unico',
-    nome: 'Inscrito no Cadastro Único (CadÚnico)',
-    fonte: 'Decreto 6.593/2008',
+    nome: 'CadÚnico',
+    fonte: 'Comprovação por meio de consulta ao sistema SISTAC.',
   },
-  { id: 'desempregado', nome: 'Desempregado, sem renda formal', fonte: 'Definido por cada edital' },
-  { id: 'doador-sangue', nome: 'Doador de sangue regular', fonte: 'Definido por cada edital' },
+  {
+    id: 'doador-medula-ossea',
+    nome: 'Doador de medula óssea',
+    fonte: 'Comprovação por meio de declaração/carteira do REDOME.',
+  },
 ];
 
 export const FORMAS_PAGAMENTO = [
-  { code: 'BOLETO', label: 'Boleto bancário' },
+  { code: 'GRU', label: 'GRU (Boleto)' },
   { code: 'PIX', label: 'Pix' },
-  { code: 'CARTAO', label: 'Cartão de crédito' },
 ] as const;
+
+export const PRAZOS_RECURSO_ISENCAO_DIAS_UTEIS = [2, 3, 5, 10] as const;
 
 export const CURSOS: Curso[] = [
   {

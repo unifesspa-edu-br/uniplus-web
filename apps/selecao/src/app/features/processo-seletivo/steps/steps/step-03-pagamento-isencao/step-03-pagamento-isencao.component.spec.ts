@@ -18,11 +18,11 @@ describe('Step03PagamentoIsencaoComponent', () => {
     store = TestBed.inject(ProcessoSeletivoStore);
   });
 
-  it('aceita o passo sem taxa de inscrição', () => {
+  it('aceita o passo sem cobrança de taxa', () => {
     expect(componente.validate().valid).toBe(true);
   });
 
-  it('recusa taxa obrigatória sem valor, forma de pagamento ou data limite', () => {
+  it('recusa taxa obrigatória sem nenhum campo preenchido', () => {
     store.patchObjectSection('pagamento', { taxaObrigatoria: true });
 
     const resultado = componente.validate();
@@ -31,16 +31,57 @@ describe('Step03PagamentoIsencaoComponent', () => {
     expect(resultado.messages).toEqual([
       'Informe o valor da taxa de inscrição.',
       'Selecione ao menos uma forma de pagamento.',
-      'Informe a data limite para pagamento.',
+      'Informe o início da solicitação de isenção.',
+      'Informe o encerramento da solicitação de isenção.',
+      'Selecione o prazo para recurso da isenção.',
     ]);
   });
 
-  it('aceita taxa obrigatória com todos os campos preenchidos', () => {
+  it('aceita taxa obrigatória com todos os campos preenchidos corretamente', () => {
     store.patchObjectSection('pagamento', {
       taxaObrigatoria: true,
-      valorTaxa: 80,
+      valorTaxa: 120,
       formasPagamento: ['PIX'],
-      dataLimite: '2026-10-01',
+      isencao: {
+        inicioSolicitacao: '2026-09-01T00:00',
+        fimSolicitacao: '2026-09-06T23:59',
+        prazoRecursoDiasUteis: 2,
+      },
+    });
+
+    expect(componente.validate().valid).toBe(true);
+  });
+
+  it('recusa período de isenção com menos de 5 dias corridos', () => {
+    store.patchObjectSection('pagamento', {
+      taxaObrigatoria: true,
+      valorTaxa: 120,
+      formasPagamento: ['PIX'],
+      isencao: {
+        inicioSolicitacao: '2026-09-01T00:00',
+        fimSolicitacao: '2026-09-04T23:59',
+        prazoRecursoDiasUteis: 2,
+      },
+    });
+
+    const resultado = componente.validate();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages).toEqual([
+      'O período de solicitação de isenção deve ter no mínimo 5 dias corridos.',
+    ]);
+  });
+
+  it('aceita o período de isenção com exatamente 5 dias corridos', () => {
+    store.patchObjectSection('pagamento', {
+      taxaObrigatoria: true,
+      valorTaxa: 120,
+      formasPagamento: ['PIX'],
+      isencao: {
+        inicioSolicitacao: '2026-09-01T00:00',
+        fimSolicitacao: '2026-09-06T00:00',
+        prazoRecursoDiasUteis: 2,
+      },
     });
 
     expect(componente.validate().valid).toBe(true);
@@ -48,49 +89,18 @@ describe('Step03PagamentoIsencaoComponent', () => {
 
   it('alterna forma de pagamento sem duplicar nem perder as demais', () => {
     componente.toggleFormaPagamento('PIX', true);
-    componente.toggleFormaPagamento('BOLETO', true);
-    expect(store.draft().pagamento.formasPagamento).toEqual(['PIX', 'BOLETO']);
+    componente.toggleFormaPagamento('GRU', true);
+    expect(store.draft().pagamento.formasPagamento).toEqual(['PIX', 'GRU']);
 
     componente.toggleFormaPagamento('PIX', false);
-    expect(store.draft().pagamento.formasPagamento).toEqual(['BOLETO']);
+    expect(store.draft().pagamento.formasPagamento).toEqual(['GRU']);
   });
 
-  it('recusa isenção habilitada sem critério ou prazo', () => {
-    store.patchObjectSection('pagamento', {
-      taxaObrigatoria: true,
-      valorTaxa: 80,
-      formasPagamento: ['PIX'],
-      dataLimite: '2026-10-01',
-      isencao: { disponivel: true, criterios: [], prazoSolicitacao: '' },
-    });
-
-    const resultado = componente.validate();
-
-    expect(resultado.valid).toBe(false);
-    expect(resultado.messages).toEqual([
-      'Selecione ao menos um critério de isenção.',
-      'Informe o prazo para solicitação de isenção.',
+  it('expõe as três modalidades de isenção obrigatórias', () => {
+    expect(componente.criteriosIsencao.map((c) => c.id)).toEqual([
+      'lei-12799-2013',
+      'cadastro-unico',
+      'doador-medula-ossea',
     ]);
-  });
-
-  it('aceita isenção habilitada com critério e prazo preenchidos', () => {
-    store.patchObjectSection('pagamento', {
-      taxaObrigatoria: true,
-      valorTaxa: 80,
-      formasPagamento: ['PIX'],
-      dataLimite: '2026-10-01',
-      isencao: { disponivel: true, criterios: ['renda-per-capita'], prazoSolicitacao: '2026-09-15' },
-    });
-
-    expect(componente.validate().valid).toBe(true);
-  });
-
-  it('alterna critério de isenção sem duplicar nem perder os demais', () => {
-    componente.toggleCriterioIsencao('renda-per-capita', true);
-    componente.toggleCriterioIsencao('cadastro-unico', true);
-    expect(store.draft().pagamento.isencao.criterios).toEqual(['renda-per-capita', 'cadastro-unico']);
-
-    componente.toggleCriterioIsencao('renda-per-capita', false);
-    expect(store.draft().pagamento.isencao.criterios).toEqual(['cadastro-unico']);
   });
 });

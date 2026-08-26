@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CRITERIOS_ISENCAO, FORMAS_PAGAMENTO } from '../../processo-seletivo.data';
+import {
+  CRITERIOS_ISENCAO_OBRIGATORIOS,
+  FORMAS_PAGAMENTO,
+  PRAZOS_RECURSO_ISENCAO_DIAS_UTEIS,
+} from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+
+/** Dias corridos mínimos entre o início e o encerramento da solicitação de isenção. */
+const MINIMO_DIAS_CORRIDOS_ISENCAO = 5;
 
 @Component({
   selector: 'sel-step-03-pagamento-isencao',
@@ -11,8 +18,9 @@ import { StepValidation } from '../../processo-seletivo.models';
 })
 export class Step03PagamentoIsencaoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly criterios = CRITERIOS_ISENCAO;
+  readonly criteriosIsencao = CRITERIOS_ISENCAO_OBRIGATORIOS;
   readonly formasPagamento = FORMAS_PAGAMENTO;
+  readonly prazosRecurso = PRAZOS_RECURSO_ISENCAO_DIAS_UTEIS;
   /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
 
@@ -20,17 +28,6 @@ export class Step03PagamentoIsencaoComponent {
     const current = this.store.draft().pagamento.formasPagamento;
     this.store.patchObjectSection('pagamento', {
       formasPagamento: checked ? [...current, code] : current.filter((item) => item !== code),
-    });
-  }
-
-  toggleCriterioIsencao(id: string, checked: boolean): void {
-    const isencao = this.store.draft().pagamento.isencao;
-    const current = isencao.criterios;
-    this.store.patchObjectSection('pagamento', {
-      isencao: {
-        ...isencao,
-        criterios: checked ? [...current, id] : current.filter((item) => item !== id),
-      },
     });
   }
 
@@ -53,22 +50,46 @@ export class Step03PagamentoIsencaoComponent {
       messages.push('Selecione ao menos uma forma de pagamento.');
       invalid.add('formasPagamento');
     }
-    if (!pagamento.dataLimite) {
-      messages.push('Informe a data limite para pagamento.');
-      invalid.add('dataLimite');
+
+    // A isenção é obrigatória sempre que há cobrança — sem esta seção o
+    // processo ficaria sem via de isenção, o que a regra de negócio proíbe.
+    const { inicioSolicitacao, fimSolicitacao, prazoRecursoDiasUteis } = pagamento.isencao;
+    if (!inicioSolicitacao) {
+      messages.push('Informe o início da solicitação de isenção.');
+      invalid.add('inicioSolicitacao');
     }
-    if (pagamento.isencao.disponivel) {
-      if (!pagamento.isencao.criterios.length) {
-        messages.push('Selecione ao menos um critério de isenção.');
-        invalid.add('criteriosIsencao');
+    if (!fimSolicitacao) {
+      messages.push('Informe o encerramento da solicitação de isenção.');
+      invalid.add('fimSolicitacao');
+    }
+    if (inicioSolicitacao && fimSolicitacao) {
+      // Compara por dia de calendário (não por instante exato): o input
+      // `datetime-local` não tem granularidade de segundo, e "5 dias
+      // corridos, dia de abertura excluído" é uma contagem de dias inteiros.
+      const diasCorridos = diferencaEmDiasCorridos(inicioSolicitacao, fimSolicitacao);
+
+      if (diasCorridos < MINIMO_DIAS_CORRIDOS_ISENCAO) {
+        messages.push(
+          `O período de solicitação de isenção deve ter no mínimo ${MINIMO_DIAS_CORRIDOS_ISENCAO} dias corridos.`,
+        );
+        invalid.add('fimSolicitacao');
       }
-      if (!pagamento.isencao.prazoSolicitacao) {
-        messages.push('Informe o prazo para solicitação de isenção.');
-        invalid.add('prazoSolicitacao');
-      }
+    }
+    if (prazoRecursoDiasUteis === null) {
+      messages.push('Selecione o prazo para recurso da isenção.');
+      invalid.add('prazoRecursoDiasUteis');
     }
 
     this.invalidFields.set(invalid);
     return messages.length ? { valid: false, messages } : { valid: true };
   }
+}
+
+/** Diferença em dias de calendário inteiros entre dois datetimes locais. */
+function diferencaEmDiasCorridos(inicioIso: string, fimIso: string): number {
+  const inicio = new Date(inicioIso);
+  const fim = new Date(fimIso);
+  const inicioMeiaNoite = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
+  const fimMeiaNoite = new Date(fim.getFullYear(), fim.getMonth(), fim.getDate());
+  return Math.round((fimMeiaNoite.getTime() - inicioMeiaNoite.getTime()) / 86_400_000);
 }
