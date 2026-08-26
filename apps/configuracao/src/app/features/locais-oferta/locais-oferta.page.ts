@@ -59,7 +59,7 @@ import {
 const PAGE_SIZE = 50;
 
 /** Janela do lookup de campi responsáveis (select do formulário). */
-const CAMPI_LOOKUP_LIMIT = 200;
+const CAMPI_LOOKUP_LIMIT = 100;
 
 type ModoFormulario = 'criar' | 'editar';
 
