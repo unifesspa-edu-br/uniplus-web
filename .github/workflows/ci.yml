@@ -109,7 +109,7 @@ jobs:
 
       - name: Iniciar Keycloak
         if: steps.gate.outputs.run == 'true'
-        # Imagem composta uniplus-keycloak: base quay.io/keycloak/keycloak:26.5.7
+        # Imagem composta uniplus-keycloak: base quay.io/keycloak/keycloak:26.7.2
         # + JAR cpf-matcher embutido. Mesma imagem do uniplus-api e do compose
         # E2E local (tools/e2e-docker/docker-compose.e2e.yml). Patch fixo para
         # reprodutibilidade — bump é PR explícito. Política em
@@ -123,7 +123,7 @@ jobs:
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }} \
             -v $PWD/tools/e2e-docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro \
-            ghcr.io/unifesspa-edu-br/uniplus-keycloak:1.0.2 start-dev --import-realm
+            ghcr.io/unifesspa-edu-br/uniplus-keycloak:26.7.2-0 start-dev --import-realm
 
       - name: Aguardar Keycloak ficar saudável
         if: steps.gate.outputs.run == 'true'
