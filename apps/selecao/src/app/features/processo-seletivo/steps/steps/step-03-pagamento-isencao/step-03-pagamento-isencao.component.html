@@ -1,0 +1,124 @@
+<div class="step-head">
+  <span class="step-head__badge">Passo 3</span>
+  <h1 tabindex="-1">Passo 3: Pagamento e Isenção</h1>
+</div>
+<p class="step-subtitle">
+  Taxa de inscrição (opcional) e regras de isenção para candidatos elegíveis.
+</p>
+<div class="step-card">
+  <label class="check-item"
+    ><input
+      type="checkbox"
+      [checked]="store.draft().pagamento.taxaObrigatoria"
+      (change)="
+        store.patchObjectSection('pagamento', { taxaObrigatoria: $any($event.target).checked })
+      "
+    /><span>Este processo seletivo cobra taxa de inscrição?</span></label
+  >
+  @if (!store.draft().pagamento.taxaObrigatoria) {
+    <p class="alert alert--info" role="status">
+      Sem taxa de inscrição — passo será marcado como concluído sem ação adicional.
+    </p>
+  }
+  @if (store.draft().pagamento.taxaObrigatoria) {
+    <div class="form-grid form-grid--3">
+      <div class="form-field">
+        <label class="label" for="f-pgto-valor">Valor da taxa (R$)</label
+        ><input
+          class="input"
+          id="f-pgto-valor"
+          type="number"
+          min="0"
+          step="0.01"
+          placeholder="80.00"
+          [class.is-invalid]="invalidFields().has('valorTaxa')"
+          [value]="store.draft().pagamento.valorTaxa ?? ''"
+          (input)="
+            store.patchObjectSection('pagamento', {
+              valorTaxa: $any($event.target).value === '' ? null : +$any($event.target).value,
+            })
+          "
+        />
+      </div>
+      <div class="form-field">
+        <label class="label" for="f-pgto-data-limite">Data limite para pagamento</label
+        ><input
+          class="input"
+          id="f-pgto-data-limite"
+          type="date"
+          [class.is-invalid]="invalidFields().has('dataLimite')"
+          [value]="store.draft().pagamento.dataLimite"
+          (change)="
+            store.patchObjectSection('pagamento', { dataLimite: $any($event.target).value })
+          "
+        />
+      </div>
+    </div>
+    <div class="form-field" style="margin-top: var(--space-5)">
+      <span class="label">Formas de pagamento aceitas</span>
+      <div class="checkbox-grid checkbox-grid--5">
+        @for (forma of formasPagamento; track forma.code) {
+          <label class="check-item"
+            ><input
+              type="checkbox"
+              [checked]="store.draft().pagamento.formasPagamento.includes(forma.code)"
+              (change)="toggleFormaPagamento(forma.code, $any($event.target).checked)"
+            /><span>{{ forma.label }}</span></label
+          >
+        }
+      </div>
+    </div>
+  }
+</div>
+@if (store.draft().pagamento.taxaObrigatoria) {
+  <section class="step-section">
+    <h2 class="step-section__title">Isenção da taxa</h2>
+    <div class="step-card">
+      <label class="check-item"
+        ><input
+          type="checkbox"
+          [checked]="store.draft().pagamento.isencao.disponivel"
+          (change)="
+            store.patchObjectSection('pagamento', {
+              isencao: { ...store.draft().pagamento.isencao, disponivel: $any($event.target).checked },
+            })
+          "
+        /><span>Oferecer isenção da taxa de inscrição?</span></label
+      >
+      @if (store.draft().pagamento.isencao.disponivel) {
+        <div class="form-field" style="margin-top: var(--space-4)">
+          <span class="label">Critérios de elegibilidade para isenção</span>
+          <div class="checkbox-grid">
+            @for (criterio of criterios; track criterio.id) {
+              <label class="check-item"
+                ><input
+                  type="checkbox"
+                  [checked]="store.draft().pagamento.isencao.criterios.includes(criterio.id)"
+                  (change)="toggleCriterioIsencao(criterio.id, $any($event.target).checked)"
+                /><span>{{ criterio.nome }} — {{ criterio.fonte }}</span></label
+              >
+            }
+          </div>
+        </div>
+        <div class="form-field" style="margin-top: var(--space-4); max-width: 280px">
+          <label class="label" for="f-pgto-prazo-isencao">Prazo para solicitação</label
+          ><input
+            class="input"
+            id="f-pgto-prazo-isencao"
+            type="date"
+            [class.is-invalid]="invalidFields().has('prazoSolicitacao')"
+            [value]="store.draft().pagamento.isencao.prazoSolicitacao"
+            (change)="
+              store.patchObjectSection('pagamento', {
+                isencao: {
+                  ...store.draft().pagamento.isencao,
+                  prazoSolicitacao: $any($event.target).value,
+                },
+              })
+            "
+          />
+        </div>
+      }
+    </div>
+  </section>
+}

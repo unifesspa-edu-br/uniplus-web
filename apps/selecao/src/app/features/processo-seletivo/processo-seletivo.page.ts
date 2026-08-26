@@ -17,17 +17,18 @@ import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
 import { Step01TipoProcessoComponent } from './steps/steps/step-01-tipo-processo/step-01-tipo-processo.component';
 import { Step02IdentificacaoComponent } from './steps/steps/step-02-identificacao/step-02-identificacao.component';
-import { Step03ModalidadesComponent } from './steps/steps/step-03-modalidades/step-03-modalidades.component';
-import { Step04VagasComponent } from './steps/steps/step-04-vagas/step-04-vagas.component';
-import { Step05EtapasComponent } from './steps/steps/step-05-etapas/step-05-etapas.component';
-import { Step06FormulaComponent } from './steps/steps/step-06-formula/step-06-formula.component';
-import { Step07BonusComponent } from './steps/steps/step-07-bonus/step-07-bonus.component';
-import { Step08DesempateComponent } from './steps/steps/step-08-desempate/step-08-desempate.component';
-import { Step09EliminacaoComponent } from './steps/steps/step-09-eliminacao/step-09-eliminacao.component';
-import { Step10DocumentosComponent } from './steps/steps/step-10-documentos/step-10-documentos.component';
-import { Step11PolosComponent } from './steps/steps/step-11-polos/step-11-polos.component';
-import { Step12AtendimentoComponent } from './steps/steps/step-12-atendimento/step-12-atendimento.component';
-import { Step13RevisaoComponent } from './steps/steps/step-13-revisao/step-13-revisao.component';
+import { Step03PagamentoIsencaoComponent } from './steps/steps/step-03-pagamento-isencao/step-03-pagamento-isencao.component';
+import { Step04ModalidadesComponent } from './steps/steps/step-04-modalidades/step-04-modalidades.component';
+import { Step05VagasComponent } from './steps/steps/step-05-vagas/step-05-vagas.component';
+import { Step06EtapasComponent } from './steps/steps/step-06-etapas/step-06-etapas.component';
+import { Step07FormulaComponent } from './steps/steps/step-07-formula/step-07-formula.component';
+import { Step08BonusComponent } from './steps/steps/step-08-bonus/step-08-bonus.component';
+import { Step09DesempateComponent } from './steps/steps/step-09-desempate/step-09-desempate.component';
+import { Step10EliminacaoComponent } from './steps/steps/step-10-eliminacao/step-10-eliminacao.component';
+import { Step11DocumentosComponent } from './steps/steps/step-11-documentos/step-11-documentos.component';
+import { Step12PolosComponent } from './steps/steps/step-12-polos/step-12-polos.component';
+import { Step13AtendimentoComponent } from './steps/steps/step-13-atendimento/step-13-atendimento.component';
+import { Step14RevisaoComponent } from './steps/steps/step-14-revisao/step-14-revisao.component';
 
 @Component({
   selector: 'sel-processo-seletivo',
@@ -37,17 +38,18 @@ import { Step13RevisaoComponent } from './steps/steps/step-13-revisao/step-13-re
     WizardStepperComponent,
     Step01TipoProcessoComponent,
     Step02IdentificacaoComponent,
-    Step03ModalidadesComponent,
-    Step04VagasComponent,
-    Step05EtapasComponent,
-    Step06FormulaComponent,
-    Step07BonusComponent,
-    Step08DesempateComponent,
-    Step09EliminacaoComponent,
-    Step10DocumentosComponent,
-    Step11PolosComponent,
-    Step12AtendimentoComponent,
-    Step13RevisaoComponent,
+    Step03PagamentoIsencaoComponent,
+    Step04ModalidadesComponent,
+    Step05VagasComponent,
+    Step06EtapasComponent,
+    Step07FormulaComponent,
+    Step08BonusComponent,
+    Step09DesempateComponent,
+    Step10EliminacaoComponent,
+    Step11DocumentosComponent,
+    Step12PolosComponent,
+    Step13AtendimentoComponent,
+    Step14RevisaoComponent,
   ],
   providers: [ProcessoSeletivoStore, CadastroInicialService],
   templateUrl: './processo-seletivo.page.html',
@@ -62,17 +64,18 @@ export class ProcessoSeletivoPage {
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
   private readonly step01 = viewChild(Step01TipoProcessoComponent);
   private readonly step02 = viewChild(Step02IdentificacaoComponent);
-  private readonly step03 = viewChild(Step03ModalidadesComponent);
-  private readonly step04 = viewChild(Step04VagasComponent);
-  private readonly step05 = viewChild(Step05EtapasComponent);
-  private readonly step06 = viewChild(Step06FormulaComponent);
-  private readonly step07 = viewChild(Step07BonusComponent);
-  private readonly step08 = viewChild(Step08DesempateComponent);
-  private readonly step09 = viewChild(Step09EliminacaoComponent);
-  private readonly step10 = viewChild(Step10DocumentosComponent);
-  private readonly step11 = viewChild(Step11PolosComponent);
-  private readonly step12 = viewChild(Step12AtendimentoComponent);
-  private readonly step13 = viewChild(Step13RevisaoComponent);
+  private readonly step03 = viewChild(Step03PagamentoIsencaoComponent);
+  private readonly step04 = viewChild(Step04ModalidadesComponent);
+  private readonly step05 = viewChild(Step05VagasComponent);
+  private readonly step06 = viewChild(Step06EtapasComponent);
+  private readonly step07 = viewChild(Step07FormulaComponent);
+  private readonly step08 = viewChild(Step08BonusComponent);
+  private readonly step09 = viewChild(Step09DesempateComponent);
+  private readonly step10 = viewChild(Step10EliminacaoComponent);
+  private readonly step11 = viewChild(Step11DocumentosComponent);
+  private readonly step12 = viewChild(Step12PolosComponent);
+  private readonly step13 = viewChild(Step13AtendimentoComponent);
+  private readonly step14 = viewChild(Step14RevisaoComponent);
 
   /** Retorna o componente do step ativo, se estiver instanciado. */
   private stepValidatorAt(index: number): { validate(): StepValidation } | undefined {
@@ -90,6 +93,7 @@ export class ProcessoSeletivoPage {
       this.step11(),
       this.step12(),
       this.step13(),
+      this.step14(),
     ] as const;
     return steps[index];
   }

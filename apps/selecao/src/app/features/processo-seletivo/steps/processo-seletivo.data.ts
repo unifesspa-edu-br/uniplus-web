@@ -2,6 +2,7 @@ import {
   AtendimentoCondicao,
   AtendimentoRecurso,
   CriterioDesempate,
+  CriterioIsencao,
   Curso,
   DocumentoGrupo,
 } from './processo-seletivo.models';
@@ -9,6 +10,7 @@ import {
 export const STEP_LABELS = [
   'Tipo do processo',
   'Identificação',
+  'Pagamento e Isenção',
   'Modalidades',
   'Vagas',
   'Etapas',
@@ -25,6 +27,7 @@ export const STEP_LABELS = [
 export const REVIEW_NAMES = [
   'Tipo do processo seletivo',
   'Identificação',
+  'Pagamento e Isenção',
   'Modalidades',
   'Vagas',
   'Etapas',
@@ -35,6 +38,32 @@ export const REVIEW_NAMES = [
   'Documentos por modalidade',
   'Locais de prova',
   'Atendimento especializado',
+] as const;
+
+export const CRITERIOS_ISENCAO: CriterioIsencao[] = [
+  {
+    id: 'renda-per-capita',
+    nome: 'Renda familiar per capita de até 1,5 salário mínimo',
+    fonte: 'Lei 12.799/2013',
+  },
+  {
+    id: 'ensino-medio-publico',
+    nome: 'Cursou o Ensino Médio em escola pública ou como bolsista integral',
+    fonte: 'Decreto 6.593/2008',
+  },
+  {
+    id: 'cadastro-unico',
+    nome: 'Inscrito no Cadastro Único (CadÚnico)',
+    fonte: 'Decreto 6.593/2008',
+  },
+  { id: 'desempregado', nome: 'Desempregado, sem renda formal', fonte: 'Definido por cada edital' },
+  { id: 'doador-sangue', nome: 'Doador de sangue regular', fonte: 'Definido por cada edital' },
+];
+
+export const FORMAS_PAGAMENTO = [
+  { code: 'BOLETO', label: 'Boleto bancário' },
+  { code: 'PIX', label: 'Pix' },
+  { code: 'CARTAO', label: 'Cartão de crédito' },
 ] as const;
 
 export const CURSOS: Curso[] = [

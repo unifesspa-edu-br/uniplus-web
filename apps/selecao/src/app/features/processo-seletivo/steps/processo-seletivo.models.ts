@@ -106,6 +106,12 @@ export interface CriterioDesempate {
   fonte: string;
 }
 
+export interface CriterioIsencao {
+  id: string;
+  nome: string;
+  fonte: string;
+}
+
 export interface DocumentoDefinicao {
   id: string;
   nome: string;
@@ -194,6 +200,17 @@ export interface WizardDraft {
      */
     localidade: LocalidadeSelecionada | null;
     uploads: UploadItem[];
+  };
+  pagamento: {
+    taxaObrigatoria: boolean;
+    valorTaxa: number | null;
+    formasPagamento: string[];
+    dataLimite: string;
+    isencao: {
+      disponivel: boolean;
+      criterios: string[];
+      prazoSolicitacao: string;
+    };
   };
   modalidades: {
     /** Código do contrato — a API é a fonte de verdade do vocabulário. */

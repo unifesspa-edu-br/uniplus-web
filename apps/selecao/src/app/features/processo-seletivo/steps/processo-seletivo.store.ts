@@ -49,6 +49,14 @@ const INITIAL_DRAFT: WizardDraft = {
     localidade: null,
     uploads: [],
   },
+  // Taxa de inscrição desmarcada por padrão — o usuário DEVE decidir no passo 3.
+  pagamento: {
+    taxaObrigatoria: false,
+    valorTaxa: null,
+    formasPagamento: [],
+    dataLimite: '',
+    isencao: { disponivel: false, criterios: [], prazoSolicitacao: '' },
+  },
   modalidades: { selected: [], concorrenciaDupla: false },
   vagas: { cursos: [] },
   etapas: [initialEtapa()],
