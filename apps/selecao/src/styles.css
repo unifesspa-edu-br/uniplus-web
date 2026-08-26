@@ -68,11 +68,7 @@ sel-layout {
   color: var(--color-neutral-0);
 }
 
-
-/* O wizard ocupa a área útil inteira e administra o próprio scroll interno,
-   então dispensa o padding e o teto de largura da rota. */
 .page:has(> .sel-processo) {
-  max-width: none;
   padding: 0;
   gap: 0;
 }

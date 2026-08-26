@@ -31,4 +31,22 @@ test.describe('Seleção — comportamento por largura', () => {
       .poll(() => page.evaluate(() => document.body.classList.contains('sel-overlay-open')))
       .toBe(false);
   });
+
+  test('usa a área útil inteira no shell administrativo em telas grandes', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/dashboard');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const medida = await page.evaluate(() => {
+      const conteudo = document.querySelector('main.page');
+      if (!(conteudo instanceof HTMLElement)) return null;
+      const estilo = getComputedStyle(conteudo);
+      return { teto: estilo.maxWidth, padding: estilo.paddingLeft };
+    });
+
+    expect(medida).not.toBeNull();
+    // Sem teto de leitura na área de trabalho administrativa (#584).
+    expect(medida?.teto).toBe('none');
+    expect(medida?.padding).toBe('32px');
+  });
 });
