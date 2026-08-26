@@ -37,7 +37,7 @@ test.describe('Seleção — comportamento por largura', () => {
    */
   test('mantém a lista de etapas utilizável ao alargar a viewport', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 720 });
-    await page.goto('/processo-seletivo');
+    await page.goto('/processo-seletivo/novo');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
