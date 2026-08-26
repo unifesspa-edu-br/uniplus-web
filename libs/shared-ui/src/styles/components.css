@@ -48,8 +48,8 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--duration-fast) var(--ease-standard),
-              border-color var(--duration-fast) var(--ease-standard),
-              color var(--duration-fast) var(--ease-standard);
+  border-color var(--duration-fast) var(--ease-standard),
+  color var(--duration-fast) var(--ease-standard);
 }
 .btn:hover:not([disabled]):not(:disabled) { background: var(--btn-bg-hover); }
 .btn:active:not([disabled]):not(:disabled) { background: var(--btn-bg-active); }
@@ -222,7 +222,7 @@
   background: var(--surface-card);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background var(--duration-fast) var(--ease-standard),
-              border-color var(--duration-fast) var(--ease-standard);
+  border-color var(--duration-fast) var(--ease-standard);
   flex-shrink: 0;
 }
 .checkbox__box { border-radius: var(--radius-xs); }
@@ -1057,7 +1057,7 @@ ui-vlibras-loader {
   text-align: center;
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-standard),
-              background var(--duration-fast) var(--ease-standard);
+  background var(--duration-fast) var(--ease-standard);
 }
 .uni-uploader__drop:hover,
 .uni-uploader__drop.is-dragging {
@@ -1405,7 +1405,7 @@ ui-vlibras-loader {
   color: var(--text-primary);
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-standard),
-              border-color var(--duration-fast) var(--ease-standard);
+  border-color var(--duration-fast) var(--ease-standard);
 }
 .pager__btn:hover:not(:disabled) { background: var(--surface-subtle); border-color: var(--color-primary); color: var(--color-primary); }
 .pager__btn:disabled {
@@ -1733,7 +1733,7 @@ ui-vlibras-loader {
   opacity: 0;
   transform: translateY(4px);
   transition: opacity var(--duration-fast) var(--ease-standard),
-              transform var(--duration-fast) var(--ease-standard);
+  transform var(--duration-fast) var(--ease-standard);
   box-shadow: var(--shadow-2);
   z-index: var(--z-overlay);
 }
@@ -1798,7 +1798,7 @@ ui-vlibras-loader {
   color: var(--text-secondary);
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-standard),
-              color var(--duration-fast) var(--ease-standard);
+  color var(--duration-fast) var(--ease-standard);
 }
 .segmented__btn:hover { color: var(--text-primary); }
 .segmented__btn[aria-pressed="true"] {
@@ -1821,7 +1821,7 @@ ui-vlibras-loader {
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-5);
   transition: border-color var(--duration-fast) var(--ease-standard),
-              box-shadow var(--duration-fast) var(--ease-standard);
+  box-shadow var(--duration-fast) var(--ease-standard);
 }
 .edital-row:hover { border-color: var(--color-primary); box-shadow: var(--shadow-1); }
 .edital-row:focus-within { border-color: var(--color-primary); box-shadow: var(--focus-ring); }
@@ -1965,7 +1965,7 @@ ui-vlibras-loader {
   color: var(--color-primary);
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-standard),
-              border-color var(--duration-fast) var(--ease-standard);
+  border-color var(--duration-fast) var(--ease-standard);
 }
 .carousel__controls > .carousel__nav:first-child { grid-column: 1; }
 .carousel__controls > .carousel__nav:last-child { grid-column: 3; }
@@ -1991,7 +1991,7 @@ ui-vlibras-loader {
   content: ""; width: 12px; height: 12px; border-radius: 50%;
   background: var(--border-strong);
   transition: background var(--duration-fast) var(--ease-standard),
-              transform var(--duration-fast) var(--ease-standard);
+  transform var(--duration-fast) var(--ease-standard);
 }
 .carousel__dot:hover::after { background: var(--color-primary); }
 .carousel__dot[aria-current="true"]::after {
