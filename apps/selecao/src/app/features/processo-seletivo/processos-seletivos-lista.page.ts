@@ -36,20 +36,24 @@ const PAGE_SIZE = 50;
  * em PascalCase. Um token fora deste conjunto é exibido cru, para que um
  * status introduzido por um backend mais novo apareça ao operador em vez de
  * sumir atrás de um rótulo genérico.
+ *
+ * `Map` e não objeto literal: a chave vem do servidor, e num objeto literal
+ * um token como `constructor` ou `toString` resolveria para o membro herdado
+ * de `Object.prototype` — uma função, que o `??` não trata como ausência.
  */
-const STATUS_LABEL: Readonly<Record<string, string>> = {
-  Rascunho: 'Rascunho',
-  Publicado: 'Publicado',
-  Encerrado: 'Encerrado',
-  Cancelado: 'Cancelado',
-};
+const STATUS_LABEL = new Map<string, string>([
+  ['Rascunho', 'Rascunho'],
+  ['Publicado', 'Publicado'],
+  ['Encerrado', 'Encerrado'],
+  ['Cancelado', 'Cancelado'],
+]);
 
-const STATUS_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
-  Rascunho: 'warning',
-  Publicado: 'success',
-  Encerrado: 'neutral',
-  Cancelado: 'danger',
-};
+const STATUS_VARIANTE = new Map<string, UiTagVariant>([
+  ['Rascunho', 'warning'],
+  ['Publicado', 'success'],
+  ['Encerrado', 'neutral'],
+  ['Cancelado', 'danger'],
+]);
 
 /**
  * Listagem administrativa dos Processos Seletivos (Story #478, CA-01).
@@ -218,7 +222,7 @@ export class ProcessosSeletivosListaPage {
   protected readonly loading = signal(false);
   protected readonly erro = signal<string | null>(null);
 
-  protected readonly processos = computed(() => this.itens());
+  protected readonly processos = this.itens.asReadonly();
   protected readonly prevCursor = computed(() => this.cursores().prev);
   protected readonly nextCursor = computed(() => this.cursores().next);
 
@@ -291,10 +295,10 @@ export class ProcessosSeletivosListaPage {
   }
 
   protected statusLabel(status: string): string {
-    return STATUS_LABEL[status] ?? status;
+    return STATUS_LABEL.get(status) ?? status;
   }
 
   protected statusVariante(status: string): UiTagVariant {
-    return STATUS_VARIANTE[status] ?? 'neutral';
+    return STATUS_VARIANTE.get(status) ?? 'neutral';
   }
 }
