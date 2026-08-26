@@ -2288,13 +2288,22 @@ ui-vlibras-loader {
   flex: 1;
   min-height: 0;
   width: 100%;
-  max-width: var(--content-max);
   flex-direction: column;
   gap: var(--space-7);
   padding: var(--space-5);
   margin-inline: auto;
 }
-@media (min-width: 768px) { .page { padding: var(--space-7); } }
+
+@media (min-width: 1920px) {
+  .page {
+    max-width: 100%;
+    padding: var(--space-5) var(--space-7);
+  }
+
+  .admin-topbar {
+    padding: var(--space-3) var(--space-7);
+  }
+}
 
 .ui-app-shell__footer-label {
   font-size: var(--text-sm);
