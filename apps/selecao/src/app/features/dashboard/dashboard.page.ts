@@ -20,10 +20,7 @@ import {
   type Cursor,
 } from '@uniplus/shared-core/http';
 
-import {
-  ProcessosSeletivosApi,
-  type ProcessoSeletivoResumoDto,
-} from '@uniplus/shared-data/selecao';
+import { ProcessosSeletivosApi, ProcessoSeletivoResumoDto } from '@uniplus/shared-data/selecao';
 
 import {
   AlertComponent,
@@ -100,14 +97,7 @@ const PAGE_SIZE = 50;
         <span class="kpi__num">{{ processosEmElaboracao() }}</span>
         <span class="kpi__delta">Processos em rascunho</span>
       </div>
-
-      <div class="kpi">
-        <span class="kpi__label">Encerrados</span>
-        <span class="kpi__num">{{ processosEncerrados() }}</span>
-        <span class="kpi__delta is-down">Processos encerrados</span>
-      </div>
     </div>
-
 
     <section class="panel" aria-labelledby="sel-processos-seletivos-title">
       <div class="panel-head">
@@ -234,6 +224,7 @@ export class DashboardPage {
   );
 
   protected readonly loading = signal(false);
+  private readonly todosProcessos = signal<readonly ProcessoSeletivoResumoDto[]>([]);
 
   private readonly cursores = signal<{
     readonly prev: Cursor | null;
@@ -243,7 +234,8 @@ export class DashboardPage {
     next: null,
   });
 
-  protected readonly processos = computed(() => {
+  // Declaração do processos() ANTES de ser referenciado na listaBase
+  protected readonly processos = computed<readonly ProcessoSeletivoResumoDto[]>(() => {
     const resultado = this.lista();
 
     if (!resultado?.ok) {
@@ -253,26 +245,36 @@ export class DashboardPage {
     return resultado.data;
   });
 
-  protected readonly totalProcessos = computed(() => this.processos().length);
+  // Lista base tipada com fallback para a lista paginada
+  private readonly listaBase = computed<readonly ProcessoSeletivoResumoDto[]>(() =>
+    this.todosProcessos().length > 0 ? this.todosProcessos() : this.processos(),
+  );
+
+  // KPIs computados a partir da listaBase com tipos explícitos
+  protected readonly totalProcessos = computed(() => this.listaBase().length);
 
   protected readonly processosPublicados = computed(
-    () => this.processos().filter((processo) => processo.status === 'PUBLICADO').length,
+    () =>
+      this.listaBase().filter((processo: ProcessoSeletivoResumoDto) => {
+        const status = processo.status?.toUpperCase().trim();
+        return status === 'PUBLICADO' || status === 'PUBLISHED';
+      }).length,
   );
 
   protected readonly processosEmElaboracao = computed(
     () =>
-      this.processos().filter(
-        (processo) => processo.status === 'RASCUNHO' || processo.status === 'EM_ELABORACAO',
-      ).length,
+      this.listaBase().filter((processo: ProcessoSeletivoResumoDto) => {
+        const status = processo.status?.toUpperCase().trim();
+        return (
+          !status ||
+          status === 'RASCUNHO' ||
+          status === 'EM_ELABORACAO' ||
+          status === 'EM_ELABORAÇÃO' ||
+          status === 'DRAFT'
+        );
+      }).length,
   );
 
-  protected readonly processosEncerrados = computed(
-    () => this.processos().filter((processo) => processo.status === 'ENCERRADO').length,
-  );
-
-  /**
-   * Processos publicados na página atual.
-   */
   protected readonly prevCursor = computed(() => this.cursores().prev);
 
   protected readonly nextCursor = computed(() => this.cursores().next);
@@ -293,6 +295,18 @@ export class DashboardPage {
 
   constructor() {
     this.carregarPagina();
+    this.carregarTodosProcessos();
+  }
+
+  private carregarTodosProcessos(): void {
+    this.api
+      .listarTodos()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (result.ok && Array.isArray(result.data)) {
+          this.todosProcessos.set(result.data);
+        }
+      });
   }
 
   private carregarPagina(): void {
