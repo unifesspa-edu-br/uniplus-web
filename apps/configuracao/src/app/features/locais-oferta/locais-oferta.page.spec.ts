@@ -1,5 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -11,6 +15,10 @@ import { LocaisOfertaPage } from './locais-oferta.page';
 import type { EnderecoEstruturado } from '../../shared/endereco';
 
 const BASE = 'http://localhost:5000';
+// Teto de página aceito pela API (ADR-0026 do uniplus-api): `limit` fora da
+// faixa 1..100 responde 422 `uniplus.cursor.limit_invalido`, e o lookup
+// rejeitado deixa o select vazio e a listagem sem rótulo resolvido.
+const LIMITE_MAXIMO_API = 100;
 
 const localSeed: LocalOfertaDto = {
   id: '01960000-0000-7000-0000-0000000000d1',
@@ -67,6 +75,17 @@ describe('LocaisOfertaPage', () => {
     appRef.tick();
   };
 
+  // Casa a requisição de lookup exigindo `limit` dentro da faixa aceita pela
+  // API. Comparar só `r.url` não basta: a query string não entra nele quando os
+  // parâmetros vêm de `HttpParams`, então um limite inválido passaria batido.
+  const expectLookup = (url: string): TestRequest => {
+    const req = controller.expectOne((r) => r.url === url);
+    const limit = Number(req.request.params.get('limit'));
+    expect(limit).toBeGreaterThanOrEqual(1);
+    expect(limit).toBeLessThanOrEqual(LIMITE_MAXIMO_API);
+    return req;
+  };
+
   async function flushLista(itens: readonly LocalOfertaDto[]): Promise<void> {
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`);
     req.flush(itens);
@@ -75,9 +94,21 @@ describe('LocaisOfertaPage', () => {
 
   async function flushCampiLookup(): Promise<void> {
     await propagate();
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`).flush([]);
+    expectLookup(`${BASE}/api/configuracao/campi`).flush([]);
     await propagate();
   }
+
+  it('pede o máximo de uma página da API no lookup de campi responsáveis', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    await propagate();
+    const campi = expectLookup(`${BASE}/api/configuracao/campi`);
+    campi.flush([]);
+
+    // O valor pedido é o teto da API, não um número escolhido à toa: acima
+    // dele a resposta é 422 e o select fica sem opção.
+    expect(campi.request.params.get('limit')).toBe(String(LIMITE_MAXIMO_API));
+  });
 
   it('renderiza a lista com tipo e cidade', async () => {
     await flushLista([localSeed]);
@@ -119,7 +150,7 @@ describe('LocaisOfertaPage', () => {
     const localVinculado: LocalOfertaDto = { ...localSeed, campusResponsavelId: 'cmp1' };
     await flushLista([localVinculado]);
     await propagate();
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`).flush([
+    expectLookup(`${BASE}/api/configuracao/campi`).flush([
       {
         id: 'cmp1',
         sigla: 'MAB',

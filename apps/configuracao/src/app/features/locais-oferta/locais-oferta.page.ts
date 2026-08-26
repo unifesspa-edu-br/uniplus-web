@@ -58,7 +58,11 @@ import {
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
 
-/** Janela do lookup de campi responsáveis (select do formulário). */
+/**
+ * Janela do lookup de campi responsáveis (select do formulário e resolução do
+ * rótulo da coluna na lista). Teto de página aceito pela API — acima de 100 a
+ * resposta é 422 `uniplus.cursor.limit_invalido` (ADR-0026 do uniplus-api).
+ */
 const CAMPI_LOOKUP_LIMIT = 100;
 
 type ModoFormulario = 'criar' | 'editar';
