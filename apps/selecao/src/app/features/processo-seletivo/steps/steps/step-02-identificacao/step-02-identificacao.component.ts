@@ -2,34 +2,21 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
-  ViewChild,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProblemI18nService, extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
-import {
-  DocumentoEditalDto,
-  IniciarUploadDocumentoEditalDto,
-  OrigemCandidatos,
-} from '@uniplus/shared-data/selecao';
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../../shared/hidratacao';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
-import {
-  OrigemCandidatosSelecionada,
-  StepValidation,
-  UploadItem,
-} from '../../processo-seletivo.models';
+import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-
-/** Limite do documento do edital no domínio: 20 MB. */
-const TAMANHO_MAXIMO_BYTES = 20 * 1024 * 1024;
-const CONTENT_TYPE_PDF = 'application/pdf';
 
 interface UnidadeOption {
   readonly id: string;
@@ -55,6 +42,7 @@ export const ORIGENS_CANDIDATOS: readonly {
 @Component({
   selector: 'sel-step-02-identificacao',
   standalone: true,
+  imports: [ReactiveFormsModule],
   templateUrl: './step-02-identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -63,17 +51,12 @@ export class Step02IdentificacaoComponent {
   private readonly cadastro = inject(CadastroInicialService);
   private readonly unidadesApi = inject(UnidadesApi);
 
-  /** Geração do editor quando o anexo em curso começou. */
-  private geracaoDoAnexo: number | null = null;
   private readonly geo = inject(GeoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly dragging = signal(false);
   /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
-  /** Mensagem de recusa do anexo, antes de qualquer requisição. `null` = sem erro. */
-  readonly uploadError = signal<string | null>(null);
   readonly origens = ORIGENS_CANDIDATOS;
   /** Resultado corrente da busca de município na Geo. */
   readonly municipios = signal<readonly CidadeResumoDto[]>([]);
@@ -119,46 +102,56 @@ export class Step02IdentificacaoComponent {
    * aqui e no passo 1.
    */
   readonly criacaoIndefinida = this.store.criacaoIndefinida;
-  readonly anexo = computed<UploadItem | undefined>(
-    () => this.store.draft().identificacao.uploads[0],
-  );
-  readonly anexoConfirmado = computed(() => this.anexo()?.fase === 'confirmado');
-  readonly anexoEmCurso = computed(() => {
-    const fase = this.anexo()?.fase;
-    return fase === 'iniciando' || fase === 'enviando' || fase === 'confirmando';
-  });
 
-  @ViewChild('fileInput') private fileInput?: ElementRef<HTMLInputElement>;
-  /** Arquivo escolhido, preservado em memória para permitir repetir o envio. */
-  private arquivoSelecionado: File | null = null;
   /**
-   * URL pré-assinada da iniciação corrente. Fica só em memória, nunca no
-   * rascunho: é credencial de escrita no storage, com validade curta.
+   * Formulário tipado dos campos que compõem o comando de criação. A
+   * localidade fica fora: é um trio escolhido inteiro numa busca, não um
+   * controle de texto.
+   *
+   * O store continua sendo a fonte — o formulário é a superfície de edição, e
+   * `valueChanges` alimenta o rascunho.
    */
-  private iniciacaoAtual: IniciarUploadDocumentoEditalDto | null = null;
-  /** Impede que uma segunda escolha de arquivo se atravesse na operação em curso. */
-  private operacaoEmCurso = false;
+  readonly form = new FormGroup({
+    nome: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    unidadeAdministradoraId: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    origemCandidatos: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+  });
 
   constructor() {
     this.carregarUnidades();
-  }
 
-  patch(
-    field:
-      | 'numero'
-      | 'ano'
-      | 'data'
-      | 'orgao'
-      | 'periodo'
-      | 'nome'
-      | 'unidadeAdministradoraId'
-      | 'origemCandidatos',
-    value: string | number | null,
-  ): void {
-    if (field === 'ano' && typeof value === 'number' && !Number.isFinite(value)) {
-      value = null; // input numérico vazio
-    }
-    this.store.patchObjectSection('identificacao', { [field]: value });
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
+      this.store.patchObjectSection('identificacao', {
+        nome: valor.nome ?? '',
+        unidadeAdministradoraId: valor.unidadeAdministradoraId ?? '',
+        origemCandidatos: (valor.origemCandidatos ?? '') as OrigemCandidatosSelecionada,
+      });
+    });
+
+    // A hidratação escreve no store; o formulário reflete sem devolver o eco,
+    // que reabriria o ciclo e marcaria o campo como sujo sem o operador tocar.
+    effect(() => {
+      const identificacao = this.store.draft().identificacao;
+      const congelado = this.store.cadastroInicialCongelado();
+
+      this.form.setValue(
+        {
+          nome: identificacao.nome,
+          unidadeAdministradoraId: identificacao.unidadeAdministradoraId,
+          origemCandidatos: identificacao.origemCandidatos,
+        },
+        { emitEvent: false },
+      );
+
+      if (congelado && this.form.enabled) this.form.disable({ emitEvent: false });
+      if (!congelado && this.form.disabled) this.form.enable({ emitEvent: false });
+    });
   }
 
   /** Grava o trio inteiro vindo da opção escolhida — nunca campo a campo. */
@@ -254,158 +247,19 @@ export class Step02IdentificacaoComponent {
     );
   }
 
-  openDatePicker(input: HTMLInputElement): void {
-    try {
-      input.showPicker();
-    } catch {
-      input.focus();
-    }
-  }
+  /** Recusa da criação, exibida no passo — o anexo tem o erro dele próprio. */
+  readonly erroDeCriacao = signal<string | null>(null);
 
-  /**
-   * O anexo fica indisponível enquanto qualquer gravação está em curso, depois
-   * de confirmado, e também quando a confirmação ficou sem resposta: nesse
-   * último caso o documento pode já estar selado no servidor, e substituí-lo
-   * criaria um segundo edital imutável.
-   */
-  readonly anexoBloqueado = computed(
-    () =>
-      this.anexoEmCurso() ||
-      this.anexoConfirmado() ||
-      this.store.salvando() ||
-      this.anexo()?.confirmacaoIndefinida === true ||
-      // Escolha entre documentos confirmados pendente: enviar outro criaria um
-      // terceiro documento imutável e agravaria a ambiguidade que a escolha
-      // existe para resolver.
-      this.store.documentosParaEscolha().length > 0 ||
-      // Leitura dos documentos falhou: não dá para saber se já há edital
-      // confirmado, e a API aceita um segundo sem recusar. Enquanto a
-      // verificação não passar, anexar é apostar — daí o botão de reverificar.
-      this.store.avisoDocumentos() !== null,
-  );
-
-  chooseFiles(): void {
-    if (this.anexoBloqueado()) return;
-    this.fileInput?.nativeElement.click();
-  }
-
-  /**
-   * O `<input type="file">` é visualmente oculto mas continua focável — quem
-   * navega por teclado chega nele sem passar pela zona de upload. O `disabled`
-   * no template é o que de fato impede a escolha; esta guarda existe para o
-   * caminho não depender só da marcação.
-   */
-  onFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const arquivo = input.files?.[0];
-    input.value = '';
-    if (this.anexoBloqueado()) return;
-    if (arquivo) void this.anexar(arquivo);
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragging.set(false);
-    if (this.anexoBloqueado()) return;
-    const arquivo = event.dataTransfer?.files?.[0];
-    if (arquivo) void this.anexar(arquivo);
-  }
-
-  /**
-   * Anexar o edital exige o processo já criado — a rota do documento é
-   * `/{processoSeletivoId}/documentos-edital`. Por isso o anexo é o gatilho da
-   * criação: sem isso, "Próximo" nunca criaria o processo (a validação barra
-   * antes, exigindo o edital) e o operador ficaria preso.
-   */
-  private async anexar(arquivo: File): Promise<void> {
-    // Sem esta guarda, uma segunda escolha durante a criação trocaria o arquivo
-    // sob os pés do fluxo em andamento: o anexo exibiria o nome do primeiro e o
-    // storage receberia os bytes do segundo — que o backend selaria como
-    // documento imutável.
-    //
-    // A recusa vem **antes** de a geração ser recarimbada: fazê-lo antes
-    // desarmaria a guarda do envio que ainda está correndo, e as respostas dele
-    // passariam a escrever como se fossem do processo atual. E a recusa fala,
-    // em vez de sumir com o arquivo escolhido — em tela o controle pode parecer
-    // livre logo após uma troca de processo.
-    if (this.operacaoEmCurso) {
-      this.uploadError.set(
-        'Há um envio de edital em andamento. Aguarde a conclusão antes de escolher outro arquivo.',
-      );
-      return;
-    }
-
-    this.geracaoDoAnexo = this.store.geracao();
-
-    // O campo de arquivo é alcançável pelo teclado mesmo com a zona de upload
-    // marcada como indisponível, então a recusa precisa estar aqui também:
-    // cada anexo confirmado vira um documento imutável a mais no processo.
-    if (this.anexoConfirmado()) {
-      this.uploadError.set(
-        'O edital já foi anexado e não pode ser substituído. Para trocar o arquivo, cadastre um novo processo seletivo.',
-      );
-      return;
-    }
-    if (this.anexo()?.confirmacaoIndefinida === true) {
-      this.uploadError.set(
-        'A confirmação do edital anterior ficou sem resposta e pode ter sido registrada. Use "Tentar novamente" antes de escolher outro arquivo.',
-      );
-      return;
-    }
-
-    const recusa = recusarArquivo(arquivo);
-    if (recusa !== null) {
-      this.uploadError.set(recusa);
-      return;
-    }
-
-    // Campos do comando conferidos antes de registrar o anexo: faltando algum,
-    // não há operação a retomar e a mensagem tem de apontar o que preencher.
-    const faltando = this.camposFaltantesDoComando();
-    if (faltando.length > 0) {
-      this.uploadError.set(
-        `Antes de anexar o edital, preencha: ${faltando.join(', ')}. O cadastro é criado no sistema neste momento.`,
-      );
-      return;
-    }
-
-    this.uploadError.set(null);
-    this.operacaoEmCurso = true;
-    try {
-      this.arquivoSelecionado = arquivo;
-      this.iniciacaoAtual = null;
-
-      // O anexo é registrado antes da criação para que qualquer falha do fluxo
-      // — inclusive a da própria criação — apareça no mesmo lugar, com o botão
-      // de retomar.
-      this.registrarAnexo(arquivo);
-
-      const processoId = await this.garantirProcessoCriado();
-      if (processoId === null) {
-        this.falharAnexo(this.uploadError() ?? 'Não foi possível criar o cadastro inicial.');
-        return;
-      }
-
-      await this.executarUpload(processoId, arquivo);
-    } finally {
-      this.operacaoEmCurso = false;
-    }
-  }
-
-  /** Retoma da fase que falhou, sem repetir o que já concluiu. */
-  async retomarUpload(): Promise<void> {
-    if (this.operacaoEmCurso) return;
-    const arquivo = this.arquivoSelecionado;
-    if (arquivo === null) return;
-
-    this.operacaoEmCurso = true;
-    try {
-      const processoId = this.store.processoSeletivoId() ?? (await this.garantirProcessoCriado());
-      if (processoId === null) return;
-      await this.executarUpload(processoId, arquivo);
-    } finally {
-      this.operacaoEmCurso = false;
-    }
+  /** Campos que compõem o comando de criação e ainda estão vazios. */
+  private camposFaltantesDoComando(): string[] {
+    const identificacao = this.store.draft().identificacao;
+    const faltando: string[] = [];
+    if (!this.store.draft().tipoProcesso.selected) faltando.push('tipo do processo (passo 1)');
+    if (!identificacao.nome.trim()) faltando.push('nome do processo seletivo');
+    if (!identificacao.unidadeAdministradoraId) faltando.push('unidade administradora');
+    if (!identificacao.origemCandidatos) faltando.push('origem dos candidatos');
+    if (identificacao.localidade === null) faltando.push('município que rege os prazos');
+    return faltando;
   }
 
   /**
@@ -422,9 +276,7 @@ export class Step02IdentificacaoComponent {
     const tipoProcessoOrigemId = this.store.draft().tipoProcesso.selected;
     const faltando = this.camposFaltantesDoComando();
     if (faltando.length > 0) {
-      this.uploadError.set(
-        `Antes de anexar o edital, preencha: ${faltando.join(', ')}. O cadastro é criado no sistema neste momento.`,
-      );
+      this.erroDeCriacao.set(`Para avançar, preencha: ${faltando.join(', ')}.`);
       return null;
     }
 
@@ -447,8 +299,8 @@ export class Step02IdentificacaoComponent {
 
       if (!resultado.ok) {
         this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
-        this.uploadError.set(
-          this.criacaoIndefinida()
+        this.erroDeCriacao.set(
+          this.store.criacaoIndefinida()
             ? `${this.problemI18n.resolve(resultado.problem).title} Não é possível saber se o cadastro chegou a ser criado; use "Tentar novamente" para repetir o mesmo envio.`
             : this.problemI18n.resolve(resultado.problem).title,
         );
@@ -463,193 +315,12 @@ export class Step02IdentificacaoComponent {
     }
   }
 
-  /** Campos que compõem o comando de criação e ainda estão vazios. */
-  private camposFaltantesDoComando(): string[] {
-    const identificacao = this.store.draft().identificacao;
-    const faltando: string[] = [];
-    if (!this.store.draft().tipoProcesso.selected) faltando.push('tipo do processo (passo 1)');
-    if (!identificacao.nome.trim()) faltando.push('nome do processo seletivo');
-    if (!identificacao.unidadeAdministradoraId) faltando.push('unidade administradora');
-    if (!identificacao.origemCandidatos) faltando.push('origem dos candidatos');
-    if (identificacao.localidade === null) faltando.push('município que rege os prazos');
-    return faltando;
-  }
-
-  private registrarAnexo(arquivo: File): void {
-    const item: UploadItem = {
-      id: crypto.randomUUID(),
-      name: arquivo.name,
-      extension: 'pdf',
-      progress: 0,
-      fase: 'iniciando',
-    };
-    this.store.patchObjectSection('identificacao', { uploads: [item] });
-  }
-
-  /**
-   * Percorre as três fases do anexo. Cada falha registra a fase, para que o
-   * retry recomece do ponto certo: repetir a confirmação de um objeto que nunca
-   * chegou ao storage, ou repetir um PUT cuja URL expirou, nunca funciona.
-   */
-  private async executarUpload(processoId: string, arquivo: File): Promise<void> {
-    const atual = this.anexo();
-    if (atual === undefined) return;
-
-    // O arquivo já chegou ao storage numa tentativa anterior: repetir o PUT
-    // seria desperdício e esbarraria numa URL possivelmente expirada. Só a
-    // confirmação falta, e repeti-la com a mesma chave recupera o replay.
-    if (atual.enviado === true && atual.documentoEditalId !== undefined) {
-      await this.confirmar(processoId, atual.documentoEditalId);
-      return;
-    }
-
-    let iniciacao = this.iniciacaoAtual;
-    if (iniciacao === null || iniciacaoExpirada(iniciacao)) {
-      this.atualizarAnexo({ fase: 'iniciando', progress: 0, mensagemErro: undefined });
-      const inicio = await this.cadastro.iniciarUpload(processoId);
-      if (!inicio.ok) {
-        this.falharAnexo(this.problemI18n.resolve(inicio.problem).title);
-        return;
-      }
-      iniciacao = inicio.iniciacao;
-      this.iniciacaoAtual = iniciacao;
-      this.atualizarAnexo({
-        documentoEditalId: iniciacao.documentoEditalId,
-        expiraEm: iniciacao.expiraEm,
-      });
-    }
-
-    this.atualizarAnexo({ fase: 'enviando' });
-    const envio = await this.cadastro.enviarArquivo(iniciacao, arquivo, (pct) =>
-      this.atualizarAnexo({ progress: pct }),
-    );
-    if (!envio.ok) {
-      // A assinatura não volta a valer — nem por expiração, nem por divergência
-      // de content type ou política do bucket. Em todos esses casos o caminho é
-      // pedir outra URL, então a iniciação é descartada.
-      if (envio.expirada) {
-        this.iniciacaoAtual = null;
-        this.atualizarAnexo({ documentoEditalId: undefined, expiraEm: undefined });
-        this.falharAnexo(
-          'O endereço de envio não é mais válido. Tente novamente para obter um novo.',
-        );
-        return;
-      }
-      this.falharAnexo('Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
-      return;
-    }
-
-    this.atualizarAnexo({ enviado: true, progress: 100 });
-    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
-    this.iniciacaoAtual = null;
-    await this.confirmar(processoId, iniciacao.documentoEditalId);
-  }
-
-  private async confirmar(processoId: string, documentoEditalId: string): Promise<void> {
-    this.atualizarAnexo({ fase: 'confirmando', progress: 100 });
-    const confirmacao = await this.cadastro.confirmarUpload(processoId, documentoEditalId);
-    if (!confirmacao.ok) {
-      const indefinida = this.cadastro.temConfirmacaoPendente();
-      this.atualizarAnexo({ confirmacaoIndefinida: indefinida });
-      this.falharAnexo(
-        indefinida
-          ? `${this.problemI18n.resolve(confirmacao.problem).title} Não é possível saber se o edital foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
-          : this.problemI18n.resolve(confirmacao.problem).title,
-      );
-      return;
-    }
-
-    this.atualizarAnexo({
-      fase: 'confirmado',
-      progress: 100,
-      mensagemErro: undefined,
-      confirmacaoIndefinida: false,
-    });
-  }
-
-  /**
-   * Funil de toda escrita do fluxo de anexo — e, por isso, o lugar certo da
-   * guarda: a página do editor sobrevive à troca de endereço, então um envio
-   * disparado para o processo anterior continua respondendo depois que o
-   * editor já trata de outro. Escrever ali vincularia o edital de um processo
-   * ao outro.
-   */
-  private atualizarAnexo(patch: Partial<UploadItem>): void {
-    if (this.geracaoDoAnexo !== null && this.geracaoDoAnexo !== this.store.geracao()) return;
-
-    const atual = this.anexo();
-    if (atual === undefined) return;
-    this.store.patchObjectSection('identificacao', { uploads: [{ ...atual, ...patch }] });
-  }
-
-  private falharAnexo(mensagem: string): void {
-    this.atualizarAnexo({ fase: 'erro', mensagemErro: mensagem });
-  }
-
-  /** Só antes da confirmação: o documento confirmado é imutável no backend. */
-  removeUpload(): void {
-    if (this.anexoBloqueado()) return;
-    this.arquivoSelecionado = null;
-    this.store.patchObjectSection('identificacao', { uploads: [] });
-  }
-
-  /**
-   * Trunca o nome do arquivo preservando a extensão no final.
-   * Ex.: "edital_vestibular_2026_revisado_final_publicado.pdf" →
-   *      "edital_vestibular_2026_revisado...publicado.pdf"
-   */
-  truncateFileName(name: string, maxLength = 36): string {
-    const dotIndex = name.lastIndexOf('.');
-    if (dotIndex <= 1 || name.length <= maxLength) return name;
-    const extension = name.slice(dotIndex); // ".pdf"
-    const base = name.slice(0, dotIndex);
-    const available = maxLength - extension.length - 3; // reserva espaço para "..."
-    if (available < 1) return `...${extension}`;
-    return `${base.slice(0, available)}...${extension}`;
-  }
-
-  /** Rótulo da fase, para o leitor de tela acompanhar o andamento. */
-  descricaoFase(item: UploadItem): string {
-    switch (item.fase) {
-      case 'iniciando':
-        return 'Preparando o envio';
-      case 'enviando':
-        return `Enviando: ${item.progress}%`;
-      case 'confirmando':
-        return 'Validando o arquivo';
-      case 'confirmado':
-        return 'Edital anexado';
-      case 'erro':
-        return item.mensagemErro ?? 'Falha no envio';
-    }
-  }
-
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
     const id = this.store.draft().identificacao;
     const messages: string[] = [];
     const invalid = new Set<string>();
 
-    if (!id.numero.trim()) {
-      messages.push('Informe o número do edital.');
-      invalid.add('numero');
-    }
-    if (!id.ano || id.ano < 2000) {
-      messages.push('Informe o ano do edital.');
-      invalid.add('ano');
-    }
-    if (!id.data) {
-      messages.push('Informe a data do processo.');
-      invalid.add('data');
-    }
-    if (!id.orgao.trim()) {
-      messages.push('Informe a sigla do órgão expedidor.');
-      invalid.add('orgao');
-    }
-    if (!id.periodo.trim()) {
-      messages.push('Informe o período de ingresso.');
-      invalid.add('periodo');
-    }
     if (!id.nome.trim()) {
       messages.push('Informe o nome do processo seletivo.');
       invalid.add('nome');
@@ -666,22 +337,15 @@ export class Step02IdentificacaoComponent {
       messages.push('Informe o município cujo calendário rege os prazos do processo.');
       invalid.add('localidade');
     }
-    const anexo = id.uploads[0];
-    if (anexo === undefined) {
-      messages.push('Anexe o edital em PDF (obrigatório para auditoria).');
-      invalid.add('uploads');
-    } else if (anexo.fase !== 'confirmado') {
-      messages.push('Aguarde a conclusão do envio do edital.');
-      invalid.add('uploads');
-    }
-
     this.invalidFields.set(invalid);
     return messages.length ? { valid: false, messages } : { valid: true };
   }
 
   /**
-   * Commit assíncrono do passo: garante que o cadastro inicial exista antes de
-   * avançar. Em uso normal o processo já foi criado no anexo; isto cobre o caso
+   * Commit assíncrono do passo: cria o cadastro inicial ao concluir a
+   * identificação. É aqui que o processo nasce — antes o gatilho era o anexo do
+   * edital, o que fazia um requisito de publicação decidir o momento de criação
+   * do rascunho. Idempotente: repetir o passo não cria um segundo. O caso
    * de a criação ter falhado e o operador reagir pelo rodapé.
    */
   async persistir(): Promise<StepValidation> {
@@ -692,7 +356,7 @@ export class Step02IdentificacaoComponent {
       return {
         valid: false,
         messages: [
-          this.uploadError() ?? 'Não foi possível criar o cadastro inicial. Tente novamente.',
+          this.erroDeCriacao() ?? 'Não foi possível criar o cadastro inicial. Tente novamente.',
         ],
       };
     }
@@ -704,63 +368,8 @@ export class Step02IdentificacaoComponent {
    * elege sozinho: adotar o mais recente trocaria o edital do certame sem o
    * operador perceber.
    */
-  /** Metadados que distinguem um confirmado do outro na escolha do oficial. */
-  protected descrever(documento: DocumentoEditalDto): string {
-    return descreverDocumento(documento);
-  }
-
-  /** Refaz a leitura que falhou, para o anexo deixar de ser uma aposta. */
-  readonly reverificando = signal(false);
-
-  async reverificarDocumentos(): Promise<void> {
-    const id = this.store.processoSeletivoId();
-    if (id === null || this.reverificando()) return;
-
-    const geracao = this.store.geracao();
-    this.reverificando.set(true);
-    try {
-      const resultado = await this.cadastro.listarDocumentos(id);
-      // O editor pode ter passado a outro processo enquanto a leitura corria.
-      if (geracao !== this.store.geracao() || !isApiOk(resultado)) return;
-
-      const { vinculo, escolha } = classificarDocumentos(resultado.data);
-      if (vinculo !== null) {
-        this.store.patchObjectSection('identificacao', { uploads: [vinculo] });
-      }
-      this.store.documentosParaEscolha.set(escolha);
-      this.store.avisoDocumentos.set(null);
-    } finally {
-      this.reverificando.set(false);
-    }
-  }
-
-  escolherDocumentoConfirmado(documento: DocumentoEditalDto): void {
-    this.store.patchObjectSection('identificacao', { uploads: [uploadItemDe(documento)] });
-    this.store.documentosParaEscolha.set([]);
-  }
 }
 
 function toOption(unidade: UnidadeDto): UnidadeOption {
   return { id: unidade.id, rotulo: `${unidade.sigla} — ${unidade.nome}` };
-}
-
-/** Recusa client-side do que o backend recusaria de todo modo. */
-function recusarArquivo(arquivo: File): string | null {
-  const extensao = arquivo.name.split('.').pop()?.toLowerCase() ?? '';
-  if (extensao !== 'pdf' || (arquivo.type !== '' && arquivo.type !== CONTENT_TYPE_PDF)) {
-    return `Formato não permitido: "${arquivo.name}". O edital deve ser um arquivo PDF.`;
-  }
-  if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
-    return 'O edital excede o tamanho máximo permitido de 20 MB.';
-  }
-  if (arquivo.size === 0) {
-    return 'O arquivo está vazio.';
-  }
-  return null;
-}
-
-/** A URL pré-assinada tem TTL curto; passado o prazo, só uma nova iniciação serve. */
-function iniciacaoExpirada(iniciacao: IniciarUploadDocumentoEditalDto): boolean {
-  const expiraEm = Date.parse(iniciacao.expiraEm);
-  return Number.isNaN(expiraEm) || expiraEm <= Date.now();
 }

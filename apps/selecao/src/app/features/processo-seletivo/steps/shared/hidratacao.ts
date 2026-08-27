@@ -1,3 +1,4 @@
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import { WizardDraft } from '../processo-seletivo.models';
@@ -10,10 +11,6 @@ import { WizardDraft } from '../processo-seletivo.models';
  * têm seção própria e por isso não são mapeadas aqui; nada as descarta, elas
  * simplesmente permanecem fora do rascunho local até a Story que as
  * implementa (`#479–#485`, `#504`, `#534`, `#540`) estender este adaptador.
- *
- * `numero`/`ano`/`data`/`orgao`/`periodo` não têm destino no contrato de
- * criação nem no detalhe (ficam para a publicação, #486) — preservados como
- * estavam no rascunho local, que ao entrar direto pela URL começa vazio.
  */
 export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): WizardDraft {
   return {
@@ -25,7 +22,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       ...draft.identificacao,
       nome: dto.nome,
       unidadeAdministradoraId: dto.unidadeAdministradora.origemId,
-      origemCandidatos: dto.origemCandidatos as OrigemCandidatosSelecionada,
+      origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos),
       localidade: {
         codigoIbge: dto.localidade.codigoIbge,
         nome: dto.localidade.nome,
@@ -33,6 +30,28 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       },
     },
   };
+}
+
+/**
+ * A leitura e a escrita do processo não falam o mesmo vocabulário: a criação
+ * recebe `inscricaoPropria`, mas o `ProcessoSeletivoDto` devolve o nome do
+ * enum de domínio — `InscricaoPropria`. Sem traduzir, a retomada gravaria no
+ * rascunho um valor que nenhuma `<option>` do formulário tem, e o campo
+ * apareceria vazio para um processo que declarou a origem (uniplus-api#1294).
+ *
+ * Valor fora do vocabulário conhecido vira `''`: o formulário mostra
+ * "Selecione" e a validação cobra a escolha, em vez de carregar adiante um
+ * valor que o servidor recusaria.
+ */
+function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
+  const normalizado = valor.charAt(0).toLowerCase() + valor.slice(1);
+  if (normalizado === OrigemCandidatos.inscricaoPropria) {
+    return OrigemCandidatos.inscricaoPropria;
+  }
+  if (normalizado === OrigemCandidatos.importacaoExterna) {
+    return OrigemCandidatos.importacaoExterna;
+  }
+  return '';
 }
 
 /**

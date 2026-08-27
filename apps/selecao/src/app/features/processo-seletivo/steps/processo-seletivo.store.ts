@@ -46,11 +46,6 @@ const INITIAL_DRAFT: WizardDraft = {
   tipoProcesso: { selected: '' },
   // Todos os campos do Passo 2 começam vazios para obrigar o preenchimento.
   identificacao: {
-    numero: '',
-    ano: null,
-    data: '',
-    orgao: '',
-    periodo: '',
     nome: '',
     unidadeAdministradoraId: '',
     origemCandidatos: '',

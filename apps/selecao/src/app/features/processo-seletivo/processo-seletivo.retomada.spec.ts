@@ -21,7 +21,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
-import { Step02IdentificacaoComponent } from './steps/steps/step-02-identificacao/step-02-identificacao.component';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
 
 const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -52,7 +51,9 @@ function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivo
     nome: 'Vestibular 2026.1',
     tipoProcesso: { origemId: TIPO_ORIGEM_ID, codigo: 'VESTIBULAR', nome: 'Vestibular' },
     status: 'Rascunho',
-    origemCandidatos: 'inscricaoPropria',
+    // Como a API emite de fato: a criação recebe `inscricaoPropria`, mas o
+    // detalhe devolve o nome do enum de domínio (uniplus-api#1294).
+    origemCandidatos: 'InscricaoPropria',
     unidadeAdministradora: {
       origemId: UNIDADE_ORIGEM_ID,
       sigla: 'IGE',
@@ -201,6 +202,27 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
       nome: 'Marabá',
       uf: 'PA',
     });
+  });
+
+  /**
+   * O vocabulário da leitura não é o da escrita: aceitar o valor cru deixaria
+   * no rascunho algo que nenhuma `<option>` casa, e o campo apareceria em
+   * branco num processo que declarou a origem.
+   */
+  it('traduz a origem dos candidatos do vocabulário da leitura', async () => {
+    const cenario = montar();
+    await propagar();
+
+    expect(cenario.store.draft().identificacao.origemCandidatos).toBe('inscricaoPropria');
+  });
+
+  it('deixa a origem em branco quando o valor não é do vocabulário conhecido', async () => {
+    const cenario = montar({
+      obter: vi.fn(() => of(okResult(detalhe({ origemCandidatos: 'Nenhuma' })))),
+    });
+    await propagar();
+
+    expect(cenario.store.draft().identificacao.origemCandidatos).toBe('');
   });
 
   /** Retomar equivale a ter criado: o contrato não expõe atualização desses campos. */
@@ -762,15 +784,14 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     await propagar();
 
     cenario.store.goTo(1);
-    cenario.store.patchObjectSection('identificacao', { numero: '012/2026', orgao: 'CEPS' });
+    cenario.store.patchObjectSection('identificacao', { nome: 'Rascunho não salvo' });
 
     paramMap.next({ get: () => PROCESSO_ID });
     await propagar();
     await propagar();
 
     expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID);
-    expect(cenario.store.draft().identificacao.numero).toBe('');
-    expect(cenario.store.draft().identificacao.orgao).toBe('');
+    expect(cenario.store.draft().identificacao.nome).toBe('Vestibular 2026.1');
   });
 
   it('limpa a falha ao voltar para o processo que continua carregado', async () => {
@@ -873,33 +894,57 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
   });
 
   /**
-   * Recarimbar a geração antes da recusa desarmaria a guarda do envio que
-   * ainda corre: as respostas dele passariam a escrever como se fossem do
-   * processo atual. E o operador precisa ouvir a recusa, não ver o arquivo
-   * escolhido sumir.
+   * Fecha #606. Confere o elemento, não o rascunho: com `[value]` num
+   * `<select>` os dois divergem — o dado chega ao estado e não chega à tela.
+   * `formControlName` resolve isso, e é por isso que o teste olha o DOM.
    */
-  it('recusa com aviso um arquivo escolhido durante envio em andamento', async () => {
-    const cenario = montar({ id: null });
+  it('exibe na tela os valores hidratados dos campos de seleção', async () => {
+    const cenario = montar();
     await propagar();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
 
-    const passo = cenario.fixture.debugElement.query(
-      (n) => n.componentInstance instanceof Step02IdentificacaoComponent,
-    )?.componentInstance as Step02IdentificacaoComponent;
-    expect(passo).toBeDefined();
+    const host = cenario.host;
 
-    const passoInterno = passo as unknown as {
-      operacaoEmCurso: boolean;
-      geracaoDoAnexo: number | null;
-      anexar(a: File): Promise<void>;
-      uploadError: { (): string | null };
-    };
-    passoInterno.operacaoEmCurso = true;
-    passoInterno.geracaoDoAnexo = 7;
+    expect(host.querySelector<HTMLInputElement>('#f-nome')?.value).toBe('Vestibular 2026.1');
+    expect(host.querySelector<HTMLSelectElement>('#f-unidade')?.value).toBe(UNIDADE_ORIGEM_ID);
+    expect(host.querySelector<HTMLSelectElement>('#f-origem')?.value).toBe('inscricaoPropria');
+  });
 
-    await passoInterno.anexar(new File(['x'], 'edital.pdf', { type: 'application/pdf' }));
+  /**
+   * O município congelado era um parágrafo solto ao lado de um botão inerte,
+   * enquanto os vizinhos eram campos: quem lê a tela via um dado à deriva no
+   * meio do formulário. Congelado, ele é um campo desabilitado como os outros,
+   * e a ação de trocar — que não faz nada nesse estado — sai da tela.
+   */
+  it('mostra o município congelado como campo, sem ação de troca', async () => {
+    const cenario = montar();
+    await propagar();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
 
-    expect(passoInterno.geracaoDoAnexo).toBe(7);
-    expect(passoInterno.uploadError()).toContain('envio de edital em andamento');
+    const municipio = cenario.host.querySelector<HTMLInputElement>('#f-localidade');
+    expect(municipio?.value).toBe('Marabá — PA');
+    expect(municipio?.disabled).toBe(true);
+    expect(municipio?.classList.contains('input')).toBe(true);
+    expect(cenario.host.textContent).not.toContain('Trocar município');
+  });
+
+  /** Campo congelado precisa mostrar o valor, não só recusar edição. */
+  it('mantém o valor visível nos campos congelados após a retomada', async () => {
+    const cenario = montar();
+    await propagar();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
+
+    const unidade = cenario.host.querySelector<HTMLSelectElement>('#f-unidade');
+
+    expect(unidade?.disabled).toBe(true);
+    expect(unidade?.value).toBe(UNIDADE_ORIGEM_ID);
+    expect(unidade?.selectedOptions[0]?.textContent).toContain('IGE');
   });
 
   it('não lê detalhe algum em /novo', async () => {
@@ -969,15 +1014,14 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     await propagar();
 
     cenario.store.goTo(1);
-    cenario.store.patchObjectSection('identificacao', { numero: '012/2026', orgao: 'CEPS' });
+    cenario.store.patchObjectSection('identificacao', { nome: 'Em edição' });
 
     cenario.store.processoSeletivoId.set(PROCESSO_ID);
     cenario.fixture.detectChanges();
     await propagar();
 
     expect(cenario.store.currentStep()).toBe(1);
-    expect(cenario.store.draft().identificacao.numero).toBe('012/2026');
-    expect(cenario.store.draft().identificacao.orgao).toBe('CEPS');
+    expect(cenario.store.draft().identificacao.nome).toBe('Em edição');
   });
 
   it('não renavega quando o id já veio da própria rota', async () => {
