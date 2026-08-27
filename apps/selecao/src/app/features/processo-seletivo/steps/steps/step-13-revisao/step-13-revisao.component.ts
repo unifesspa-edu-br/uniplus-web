@@ -14,11 +14,26 @@ import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.com
 export class Step13RevisaoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly names = REVIEW_NAMES;
-  readonly completed = computed(
+  readonly passosConcluidos = computed(
     () => this.names.filter((_, index) => this.store.completedSteps().has(index)).length,
   );
-  readonly percent = computed(() => Math.round((this.completed() / this.names.length) * 100));
-  readonly pending = computed(() => this.names.length - this.completed());
+
+  /** O edital selado — o mesmo estado que `validate()` cobra para publicar. */
+  readonly editalConfirmado = computed(
+    () => this.store.draft().identificacao.uploads[0]?.fase === 'confirmado',
+  );
+
+  /**
+   * O edital conta como requisito ao lado dos passos, e não à parte. Contar só
+   * os passos anunciava "tudo pronto para publicar" numa tela que, no clique
+   * seguinte, recusava a publicação por falta do PDF.
+   */
+  readonly totalRequisitos = this.names.length + 1;
+  readonly atendidos = computed(() => this.passosConcluidos() + (this.editalConfirmado() ? 1 : 0));
+  readonly percent = computed(() => Math.round((this.atendidos() / this.totalRequisitos) * 100));
+  readonly pending = computed(() => this.totalRequisitos - this.atendidos());
+  readonly pronto = computed(() => this.pending() === 0);
+
   stepNumber(index: number): string {
     return String(index + 1).padStart(2, '0');
   }
