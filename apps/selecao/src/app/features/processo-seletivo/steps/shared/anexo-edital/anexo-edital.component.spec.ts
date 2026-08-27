@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../cadastro-inicial.service';
@@ -15,6 +15,8 @@ const DOCUMENTO_ID = '01960000-0000-7000-0000-0000000005dd';
 const URL_ASSINADA = 'http://localhost:9000/uniplus-selecao/editais/edital.pdf?X-Amz-Signature=abc';
 
 const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`;
+const URL_LEITURA =
+  'http://localhost:9000/uniplus-selecao/editais/confirmado.pdf?X-Amz-Signature=leitura';
 
 /** Um PDF mínimo: a assinatura importa para a recusa client-side. */
 function pdf(nome = 'edital.pdf', bytes = 2048): File {
@@ -310,5 +312,82 @@ describe('AnexoEditalComponent', () => {
     store.avisoDocumentos.set('Não foi possível verificar se já há edital anexado.');
 
     expect(componente.anexoBloqueado()).toBe(true);
+  });
+
+  /**
+   * A URL só existe entre a resposta e a abertura da aba. Guardá-la no store,
+   * num campo do componente ou num `href` a manteria alcançável depois da
+   * ação — e ela é credencial de acesso ao objeto, não um endereço público.
+   */
+  it('abre o documento sem reter a URL assinada', async () => {
+    await anexarComSucesso();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const promessa = componente.abrirDocumento(DOCUMENTO_ID);
+    await tick();
+
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
+      .flush({ url: URL_LEITURA, expiraEm: '2026-08-27T12:05:00Z' });
+    await promessa;
+
+    expect(abrir).toHaveBeenCalledWith(URL_LEITURA, '_blank', 'noopener');
+    expect(JSON.stringify(store.draft())).not.toContain('X-Amz-Signature');
+    expect(JSON.stringify(componente.anexo() ?? {})).not.toContain('X-Amz-Signature');
+    abrir.mockRestore();
+  });
+
+  it('não pede acesso antes de o processo existir', async () => {
+    store.processoSeletivoId.set(null);
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    await componente.abrirDocumento(DOCUMENTO_ID);
+
+    expect(abrir).not.toHaveBeenCalled();
+    abrir.mockRestore();
+  });
+
+  /** Recusa do servidor precisa aparecer, não sumir com a aba que não abriu. */
+  it('exibe a recusa e não abre aba quando o acesso falha', async () => {
+    await anexarComSucesso();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const promessa = componente.abrirDocumento(DOCUMENTO_ID);
+    await tick();
+
+    const recusa = problema(
+      422,
+      'uniplus.selecao.documento_edital.nao_confirmado',
+      'Documento não confirmado',
+    );
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
+      .flush(recusa.body, recusa.opts);
+    await promessa;
+
+    expect(abrir).not.toHaveBeenCalled();
+    expect(componente.erroDeAbertura()).toBeTruthy();
+    abrir.mockRestore();
+  });
+
+  /**
+   * O editor pode ter passado a outro processo enquanto o acesso era pedido;
+   * abrir então mostraria o edital de um processo que já saiu da tela.
+   */
+  it('descarta o acesso quando o editor trocou de processo', async () => {
+    await anexarComSucesso();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const promessa = componente.abrirDocumento(DOCUMENTO_ID);
+    await tick();
+
+    store.geracao.update((g) => g + 1);
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
+      .flush({ url: URL_LEITURA, expiraEm: '2026-08-27T12:05:00Z' });
+    await promessa;
+
+    expect(abrir).not.toHaveBeenCalled();
+    abrir.mockRestore();
   });
 });

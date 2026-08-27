@@ -48,6 +48,12 @@ export class AnexoEditalComponent {
   readonly uploadError = signal<string | null>(null);
   readonly reverificando = signal(false);
 
+  /** Documento cujo acesso está sendo pedido, para o botão anunciar a espera. */
+  readonly abrindoDocumento = signal<string | null>(null);
+
+  /** Recusa da abertura, exibida junto do documento que falhou. */
+  readonly erroDeAbertura = signal<string | null>(null);
+
   /** Impede que uma segunda escolha atropele o envio em andamento. */
   private operacaoEmCurso = false;
   private arquivoSelecionado: File | null = null;
@@ -342,6 +348,45 @@ export class AnexoEditalComponent {
   }
 
   /** Refaz a leitura que falhou, para o anexo deixar de ser uma aposta. */
+  /**
+   * Abre o PDF de um documento confirmado numa aba nova, pedindo o acesso à
+   * API no clique.
+   *
+   * A URL assinada é credencial de acesso ao objeto: não vai para o store, não
+   * é guardada em campo do componente e não vira `href` de link — o servidor a
+   * emite por pedido justamente para que o prazo comece agora e para que ela
+   * não sobreviva à ação. Sai daqui direto para `window.open` e nada mais a
+   * retém.
+   */
+  async abrirDocumento(documentoEditalId: string): Promise<void> {
+    const processoId = this.store.processoSeletivoId();
+    if (processoId === null || this.abrindoDocumento() !== null) return;
+
+    const geracao = this.store.geracao();
+    this.abrindoDocumento.set(documentoEditalId);
+    this.erroDeAbertura.set(null);
+    try {
+      const resultado = await this.cadastro.obterAcessoAoDocumento(processoId, documentoEditalId);
+
+      // O editor pode ter passado a outro processo enquanto o acesso era
+      // pedido; abrir agora mostraria o edital de um processo que já saiu da
+      // tela.
+      if (geracao !== this.store.geracao()) return;
+
+      if (!isApiOk(resultado)) {
+        this.erroDeAbertura.set(this.problemI18n.resolve(resultado.problem).title);
+        return;
+      }
+
+      // `noopener` evita que a aba aberta alcance esta pelo `window.opener` —
+      // ela carrega um endereço assinado do storage, fora do controle da
+      // aplicação.
+      window.open(resultado.data.url, '_blank', 'noopener');
+    } finally {
+      this.abrindoDocumento.set(null);
+    }
+  }
+
   async reverificarDocumentos(): Promise<void> {
     const id = this.store.processoSeletivoId();
     if (id === null || this.reverificando()) return;

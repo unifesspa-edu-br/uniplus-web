@@ -156,6 +156,19 @@ export class CadastroInicialService {
     return firstValueFrom(this.api.listarDocumentosEdital(processoSeletivoId));
   }
 
+  /**
+   * Acesso de leitura a um documento confirmado, pedido no momento em que o
+   * operador quer conferir o PDF. A URL vem assinada e com validade curta, e
+   * não é guardada: quem a tem abre o arquivo sem passar por autorização de
+   * novo, e é por isso que o servidor a emite por pedido em vez de distribuí-la
+   * na listagem.
+   */
+  obterAcessoAoDocumento(processoSeletivoId: string, documentoEditalId: string) {
+    return firstValueFrom(
+      this.api.obterAcessoDocumentoEdital(processoSeletivoId, documentoEditalId),
+    );
+  }
+
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */
   async iniciarUpload(processoSeletivoId: string): Promise<ResultadoIniciacao> {
     const geracao = this.geracao;

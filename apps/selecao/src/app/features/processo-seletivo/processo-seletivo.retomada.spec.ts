@@ -387,9 +387,11 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const rotulos = [...cenario.host.querySelectorAll('.ps-doc-escolha button')].map((b) =>
-      b.getAttribute('aria-label'),
-    );
+    // Cada documento oferece duas ações — usar e abrir para conferir —, então o
+    // que identifica a opção é o rótulo da escolha, não a contagem de botões.
+    const rotulos = [...cenario.host.querySelectorAll('.ps-doc-escolha button')]
+      .map((b) => b.getAttribute('aria-label'))
+      .filter((rotulo): rotulo is string => rotulo?.startsWith('Usar o documento') ?? false);
 
     expect(rotulos).toHaveLength(2);
     expect(rotulos[0]).not.toBe(rotulos[1]);
