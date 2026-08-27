@@ -168,11 +168,6 @@ export interface WizardDraft {
     selected: string;
   };
   identificacao: {
-    numero: string;
-    ano: number | null;
-    data: string;
-    orgao: string;
-    periodo: string;
     nome: string;
     /**
      * Unidade que administra o certame, escolhida no catálogo de Organização

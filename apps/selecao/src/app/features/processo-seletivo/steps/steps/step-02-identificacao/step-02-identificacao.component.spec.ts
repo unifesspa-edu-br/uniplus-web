@@ -14,9 +14,7 @@ const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
 const TIPO_ID = '01960000-0000-7000-0000-0000000005bb';
 const UNIDADE_ID = '01960000-0000-7000-0000-0000000005cc';
-const DOCUMENTO_ID = '01960000-0000-7000-0000-0000000005dd';
 const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' } as const;
-const URL_ASSINADA = 'http://localhost:9000/uniplus-selecao/editais/edital.pdf?X-Amz-Signature=abc';
 
 const unidadeSeed = {
   id: UNIDADE_ID,
@@ -32,11 +30,6 @@ const unidadeSeed = {
   vigenciaFim: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };
-
-/** Um PDF mínimo: a assinatura importa para a recusa client-side. */
-function pdf(nome = 'edital.pdf', bytes = 2048): File {
-  return new File([new Uint8Array(bytes).fill(37)], nome, { type: 'application/pdf' });
-}
 
 /**
  * Cede o event loop para que a cadeia de `await` do componente avance até a
@@ -64,19 +57,12 @@ function problema(status: number, code: string, title: string) {
   };
 }
 
-function iniciacao(expiraEmMs = Date.now() + 900_000) {
-  return {
-    documentoEditalId: DOCUMENTO_ID,
-    urlUpload: URL_ASSINADA,
-    contentTypeExigido: 'application/pdf',
-    expiraEm: new Date(expiraEmMs).toISOString(),
-  };
-}
-
 describe('Step02IdentificacaoComponent', () => {
   let componente: Step02IdentificacaoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
+  let host: HTMLElement;
+  let detectar: () => void;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -94,6 +80,8 @@ describe('Step02IdentificacaoComponent', () => {
 
     const fixture = TestBed.createComponent(Step02IdentificacaoComponent);
     componente = fixture.componentInstance;
+    host = fixture.nativeElement as HTMLElement;
+    detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
 
@@ -127,7 +115,9 @@ describe('Step02IdentificacaoComponent', () => {
   }
 
   it('carrega as unidades administradoras da API de Organização', () => {
-    expect(componente.unidades()).toEqual([{ id: UNIDADE_ID, rotulo: 'ICE — Instituto de Ciências Exatas' }]);
+    expect(componente.unidades()).toEqual([
+      { id: UNIDADE_ID, rotulo: 'ICE — Instituto de Ciências Exatas' },
+    ]);
     expect(componente.unidadesCarregando()).toBe(false);
   });
 
@@ -148,95 +138,25 @@ describe('Step02IdentificacaoComponent', () => {
     expect(resultado.messages).toContain('Informe a origem dos candidatos.');
   });
 
-  it('recusa arquivo que não é PDF sem chamar a API', () => {
-    preencherCamposDoComando();
-
-    componente['anexar'](new File(['x'], 'edital.docx', { type: 'application/msword' }));
-
-    expect(componente.uploadError()).toContain('deve ser um arquivo PDF');
-    expect(store.processoSeletivoId()).toBeNull();
-  });
-
-  it('recusa PDF acima de 20 MB sem chamar a API', () => {
-    preencherCamposDoComando();
-
-    componente['anexar'](pdf('grande.pdf', 20 * 1024 * 1024 + 1));
-
-    expect(componente.uploadError()).toContain('20 MB');
-    expect(store.processoSeletivoId()).toBeNull();
-  });
-
   it('nomeia os campos que faltam antes de criar o cadastro', async () => {
-    await componente['anexar'](pdf());
+    await componente.persistir();
 
-    expect(componente.uploadError()).toContain('tipo do processo (passo 1)');
-    expect(componente.uploadError()).toContain('unidade administradora');
-    expect(componente.uploadError()).toContain('origem dos candidatos');
+    expect(componente.erroDeCriacao()).toContain('tipo do processo (passo 1)');
+    expect(componente.erroDeCriacao()).toContain('unidade administradora');
+    expect(componente.erroDeCriacao()).toContain('origem dos candidatos');
     expect(store.processoSeletivoId()).toBeNull();
-  });
-
-  it('cria o processo, envia o arquivo e confirma o documento ao anexar', async () => {
-    preencherPassoInteiro();
-    const anexo = componente['anexar'](pdf());
-
-    const criacao = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
-    expect(criacao.request.body).toEqual({
-      nome: 'Processo Seletivo 2027',
-      tipoProcessoOrigemId: TIPO_ID,
-      origemCandidatos: OrigemCandidatos.inscricaoPropria,
-      unidadeAdministradoraOrigemId: UNIDADE_ID,
-      localidadeCodigoIbge: '1504208',
-      localidadeNome: 'Marabá',
-      localidadeUf: 'PA',
-    });
-    expect(criacao.request.headers.get('Idempotency-Key')).toBeTruthy();
-    criacao.flush(PROCESSO_ID, { status: 201, statusText: 'Created' });
-    await tick();
-
-    const inicio = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`,
-    );
-    inicio.flush(iniciacao(), { status: 201, statusText: 'Created' });
-    await tick();
-
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-
-    const confirmacao = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
-    );
-    confirmacao.flush({
-      id: DOCUMENTO_ID,
-      processoSeletivoId: PROCESSO_ID,
-      status: 'Confirmado',
-      tamanhoBytes: 2048,
-      hashSha256: 'a'.repeat(64),
-      confirmadoEm: '2026-08-13T12:00:00Z',
-    });
-    await anexo;
-
-    expect(store.processoSeletivoId()).toBe(PROCESSO_ID);
-    expect(componente.anexo()?.fase).toBe('confirmado');
-    expect(componente.anexo()?.progress).toBe(100);
-    expect(componente.validate().valid).toBe(true);
   });
 
   it('congela os campos do comando depois de criar o processo', async () => {
     preencherCamposDoComando();
-    const anexo = componente['anexar'](pdf());
+    const criado = componente.persistir();
 
     controller
       .expectOne(`${BASE}/api/selecao/processos-seletivos`)
       .flush(PROCESSO_ID, { status: 201, statusText: 'Created' });
     await tick();
+    await criado;
     expect(componente.camposDoComandoBloqueados()).toBe(true);
-
-    // Encerra o fluxo para não deixar requisições pendentes.
-    const falha = problema(422, 'DocumentoEdital.Invalido', 'Documento recusado');
-    controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`)
-      .flush(falha.body, falha.opts);
-    await anexo;
   });
 
   /**
@@ -290,81 +210,6 @@ describe('Step02IdentificacaoComponent', () => {
   });
 
   /**
-   * A URL pré-assinada não volta a valer: repetir o mesmo PUT depois de um 403
-   * do storage é inútil, então o retry precisa pedir outra iniciação.
-   */
-  it('descarta a iniciação quando o storage recusa a URL expirada', async () => {
-    preencherCamposDoComando();
-    store.processoSeletivoId.set(PROCESSO_ID);
-    const anexo = componente['anexar'](pdf());
-    await tick();
-
-    controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`)
-      .flush(iniciacao(), { status: 201, statusText: 'Created' });
-    await tick();
-
-    controller
-      .expectOne(URL_ASSINADA)
-      .flush('<Error><Code>AccessDenied</Code></Error>', { status: 403, statusText: 'Forbidden' });
-    await anexo;
-
-    expect(componente.anexo()?.fase).toBe('erro');
-    expect(componente.anexo()?.mensagemErro).toContain('não é mais válido');
-    expect(componente.anexo()?.documentoEditalId).toBeUndefined();
-    expect(componente.anexo()?.enviado).toBeFalsy();
-
-    const retomada = componente.retomarUpload();
-    await tick();
-    controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`)
-      .flush(iniciacao(), { status: 201, statusText: 'Created' });
-    await tick();
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-    controller
-      .expectOne(
-        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
-      )
-      .flush({
-        id: DOCUMENTO_ID,
-        processoSeletivoId: PROCESSO_ID,
-        status: 'Confirmado',
-        tamanhoBytes: 2048,
-        hashSha256: 'a'.repeat(64),
-        confirmadoEm: '2026-08-13T12:00:00Z',
-      });
-    await retomada;
-
-    expect(componente.anexo()?.fase).toBe('confirmado');
-  });
-
-  /**
-   * A segunda escolha durante a criação trocaria o arquivo sob os pés do fluxo
-   * em curso: o anexo exibiria o nome do primeiro e o storage receberia os
-   * bytes do segundo — que o backend selaria como documento imutável.
-   */
-  it('ignora um segundo arquivo escolhido enquanto a operação está em curso', async () => {
-    preencherPassoInteiro();
-    const primeiro = componente['anexar'](pdf('primeiro.pdf'));
-    await tick();
-
-    await componente['anexar'](pdf('segundo.pdf'));
-
-    const criacao = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
-    criacao.flush(PROCESSO_ID, { status: 201, statusText: 'Created' });
-    await tick();
-
-    expect(componente.anexo()?.name).toBe('primeiro.pdf');
-
-    const falha = problema(422, 'DocumentoEdital.Invalido', 'Documento recusado');
-    controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`)
-      .flush(falha.body, falha.opts);
-    await primeiro;
-  });
-
-  /**
    * Falha de rede na criação não diz se o servidor executou o comando. Repetir
    * com o mesmo corpo e a mesma chave devolve o replay; repetir com o rascunho
    * editado devolveria `body_mismatch` e a correção seguinte criaria um
@@ -394,57 +239,6 @@ describe('Step02IdentificacaoComponent', () => {
   });
 
   /**
-   * Se o arquivo já chegou ao storage, repetir o PUT é desperdício e pode
-   * esbarrar numa URL expirada — só a confirmação falta.
-   */
-  it('retoma direto da confirmação quando o arquivo já foi enviado', async () => {
-    preencherCamposDoComando();
-    store.processoSeletivoId.set(PROCESSO_ID);
-    const anexo = componente['anexar'](pdf());
-    await tick();
-
-    controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`)
-      .flush(iniciacao(), { status: 201, statusText: 'Created' });
-    await tick();
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-
-    const falha = problema(422, 'DocumentoEdital.ObjetoNaoEncontrado', 'Objeto ausente');
-    controller
-      .expectOne(
-        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
-      )
-      .flush(falha.body, falha.opts);
-    await anexo;
-    expect(componente.anexo()?.enviado).toBe(true);
-
-    const retomada = componente.retomarUpload();
-    await tick();
-
-    // Nenhuma nova iniciação e nenhum novo PUT: só a confirmação.
-    controller.expectNone(
-      `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`,
-    );
-    controller.expectNone(URL_ASSINADA);
-    controller
-      .expectOne(
-        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
-      )
-      .flush({
-        id: DOCUMENTO_ID,
-        processoSeletivoId: PROCESSO_ID,
-        status: 'Confirmado',
-        tamanhoBytes: 2048,
-        hashSha256: 'a'.repeat(64),
-        confirmadoEm: '2026-08-13T12:00:00Z',
-      });
-    await retomada;
-
-    expect(componente.anexo()?.fase).toBe('confirmado');
-  });
-
-  /**
    * O tipo é escolhido no passo 1 e entra no comando retido. Deixá-lo editável
    * durante a espera faria o rascunho exibir um tipo diferente do processo que
    * a retentativa vai confirmar no servidor.
@@ -459,20 +253,6 @@ describe('Step02IdentificacaoComponent', () => {
     await primeira;
 
     expect(store.cadastroInicialCongelado()).toBe(true);
-  });
-
-  /** Sem anexo registrado, a falha da criação não teria onde oferecer o retry. */
-  it('registra o anexo em erro quando a criação falha, com retomada disponível', async () => {
-    preencherPassoInteiro();
-    const anexo = componente['anexar'](pdf());
-    await tick();
-
-    const recusa = problema(422, 'ProcessoSeletivo.NomeDuplicado', 'Nome já utilizado');
-    controller.expectOne(`${BASE}/api/selecao/processos-seletivos`).flush(recusa.body, recusa.opts);
-    await anexo;
-
-    expect(componente.anexo()?.fase).toBe('erro');
-    expect(componente.anexo()?.mensagemErro).toContain('Nome já utilizado');
   });
 
   /**
@@ -498,95 +278,6 @@ describe('Step02IdentificacaoComponent', () => {
     await segunda;
   });
 
-  /**
-   * O campo de arquivo continua alcançável pelo teclado mesmo com a zona de
-   * upload marcada como indisponível — e cada anexo confirmado vira um
-   * documento imutável a mais no processo.
-   */
-  it('recusa substituir um edital já confirmado', async () => {
-    preencherPassoInteiro();
-    store.processoSeletivoId.set(PROCESSO_ID);
-    store.patchObjectSection('identificacao', {
-      uploads: [
-        { id: 'a', name: 'edital.pdf', extension: 'pdf', progress: 100, fase: 'confirmado' },
-      ],
-    });
-
-    await componente['anexar'](pdf('outro.pdf'));
-
-    expect(componente.uploadError()).toContain('não pode ser substituído');
-    expect(componente.anexo()?.name).toBe('edital.pdf');
-  });
-
-  /**
-   * Confirmação sem resposta pode ter selado o documento no servidor. Trocar o
-   * arquivo aqui criaria um segundo edital imutável e perderia a referência do
-   * primeiro — só a retentativa da mesma confirmação resolve.
-   */
-  it('não deixa trocar nem remover o anexo com confirmação indefinida', async () => {
-    preencherCamposDoComando();
-    store.processoSeletivoId.set(PROCESSO_ID);
-    const anexo = componente['anexar'](pdf('primeiro.pdf'));
-    await tick();
-
-    controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`)
-      .flush(iniciacao(), { status: 201, statusText: 'Created' });
-    await tick();
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-
-    // Confirmação sem resposta: erro de rede, sem status.
-    controller
-      .expectOne(
-        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
-      )
-      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
-    await anexo;
-
-    expect(componente.anexo()?.confirmacaoIndefinida).toBe(true);
-    expect(componente.anexoBloqueado()).toBe(true);
-
-    await componente['anexar'](pdf('segundo.pdf'));
-    expect(componente.anexo()?.name).toBe('primeiro.pdf');
-    expect(componente.uploadError()).toContain('sem resposta');
-
-    componente.removeUpload();
-    expect(componente.anexo()).toBeDefined();
-
-    // A retentativa repete só a confirmação, com a mesma chave.
-    const retomada = componente.retomarUpload();
-    await tick();
-    controller.expectNone(URL_ASSINADA);
-    controller
-      .expectOne(
-        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
-      )
-      .flush({
-        id: DOCUMENTO_ID,
-        processoSeletivoId: PROCESSO_ID,
-        status: 'Confirmado',
-        tamanhoBytes: 2048,
-        hashSha256: 'a'.repeat(64),
-        confirmadoEm: '2026-08-13T12:00:00Z',
-      });
-    await retomada;
-
-    expect(componente.anexo()?.fase).toBe('confirmado');
-    expect(componente.anexo()?.confirmacaoIndefinida).toBe(false);
-  });
-
-  it('não remove o anexo já confirmado', async () => {
-    preencherCamposDoComando();
-    store.processoSeletivoId.set(PROCESSO_ID);
-    store.patchObjectSection('identificacao', {
-      uploads: [{ id: 'a', name: 'edital.pdf', extension: 'pdf', progress: 100, fase: 'confirmado' }],
-    });
-
-    componente.removeUpload();
-
-    expect(componente.anexo()).toBeDefined();
-  });
   it('exige a localidade para avançar', () => {
     store.patchObjectSection('identificacao', {
       numero: '12/2026',
@@ -607,24 +298,10 @@ describe('Step02IdentificacaoComponent', () => {
     );
   });
 
-  it('barra o anexo antes da requisição quando falta a localidade', async () => {
-    store.patchObjectSection('tipoProcesso', { selected: TIPO_ID });
-    store.patchObjectSection('identificacao', {
-      nome: 'Processo Seletivo 2027',
-      unidadeAdministradoraId: UNIDADE_ID,
-      origemCandidatos: OrigemCandidatos.inscricaoPropria,
-    });
-
-    await componente['anexar'](pdf());
-
-    // controller.verify() no afterEach prova que nenhuma requisição saiu.
-    expect(componente.uploadError()).toContain('município que rege os prazos');
-  });
-
   it('envia o trio da localidade escolhida no cadastro inicial', async () => {
     preencherCamposDoComando();
 
-    const anexo = componente['anexar'](pdf());
+    const criado = componente.persistir();
     await tick();
 
     const criacao = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
@@ -635,8 +312,7 @@ describe('Step02IdentificacaoComponent', () => {
     });
     criacao.flush(PROCESSO_ID);
     await tick();
-    controller.match(() => true).forEach((r) => r.flush({}, { status: 500, statusText: 'x' }));
-    await anexo.catch(() => undefined);
+    await criado;
   });
 
   it('busca municípios na Geo a partir de três letras e grava o trio da opção', async () => {
@@ -698,5 +374,21 @@ describe('Step02IdentificacaoComponent', () => {
 
     expect(componente.municipios()).toHaveLength(1);
     expect(componente.municipios()[0].nome).toBe('Belém');
+  });
+
+  /**
+   * Um aviso por campo repetia a mesma informação ao longo do formulário. O
+   * aviso do topo é o único, e por isso precisa nomear todos os campos que
+   * cobre — inclusive o município, que perdeu o próprio.
+   */
+  it('anuncia o congelamento uma única vez, nomeando o município', () => {
+    preencherCamposDoComando();
+    // O congelamento é derivado: o processo já existir é o que o dispara.
+    store.processoSeletivoId.set('01960000-0000-7000-0000-0000000009aa');
+    detectar();
+
+    const avisos = Array.from(host.querySelectorAll('.alert'));
+    expect(avisos.length).toBe(1);
+    expect(avisos[0]?.textContent).toContain('município');
   });
 });

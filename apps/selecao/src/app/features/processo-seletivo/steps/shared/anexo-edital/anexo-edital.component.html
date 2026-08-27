@@ -1,0 +1,150 @@
+<div class="step-card upload-section">
+  <p class="label">Upload do edital de abertura</p>
+  @if (uploadError(); as error) {
+    <p class="upload-error" role="alert">
+      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+      {{ error }}
+    </p>
+  }
+  <input
+    #fileInput
+    id="f-file"
+    class="sr-only"
+    type="file"
+    accept="application/pdf,.pdf"
+    aria-label="Selecionar o arquivo PDF do edital"
+    [disabled]="anexoBloqueado()"
+    (change)="onFileInput($event)"
+  />
+  @if (store.avisoDocumentos(); as aviso) {
+    <div class="alert alert--warning" role="alert">
+      <div class="alert__body">
+        <p>{{ aviso }}</p>
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [disabled]="reverificando()"
+          (click)="reverificarDocumentos()"
+        >
+          {{ reverificando() ? 'Verificando…' : 'Verificar novamente' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (store.documentosParaEscolha().length > 0) {
+    <div class="alert alert--warning" role="alert">
+      <p>
+        Este processo tem mais de um documento de edital confirmado. Escolha qual é o oficial — a
+        escolha não é feita automaticamente.
+      </p>
+      <ul class="ps-doc-escolha">
+        @for (documento of store.documentosParaEscolha(); track documento.id) {
+          <li>
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [attr.aria-label]="'Usar o documento confirmado em ' + descrever(documento)"
+              (click)="escolherDocumentoConfirmado(documento)"
+            >
+              <span>Usar este documento</span>
+              <span class="ps-doc-escolha__meta">{{ descrever(documento) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="upload-layout">
+    <div
+      class="upload-zone"
+      role="button"
+      tabindex="0"
+      aria-label="Clique ou arraste o PDF do edital aqui"
+      [attr.aria-disabled]="anexoBloqueado() || null"
+      [class.is-dragover]="dragging()"
+      [class.is-invalid]="uploadError() !== null"
+      (click)="chooseFiles()"
+      (keydown.enter)="chooseFiles()"
+      (keydown.space)="chooseFiles(); $event.preventDefault()"
+      (dragover)="$event.preventDefault(); dragging.set(true)"
+      (dragleave)="dragging.set(false)"
+      (drop)="onDrop($event)"
+    >
+      <svg
+        aria-hidden="true"
+        fill="none"
+        height="32"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.5"
+        viewBox="0 0 24 24"
+        width="32"
+      >
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" x2="12" y1="3" y2="15" />
+      </svg>
+      <span>Arraste e solte o arquivo ou <span class="upload-zone__link">Procure</span></span>
+      <span class="upload-zone__hint">Somente PDF, até 20 MB</span>
+    </div>
+    <div class="file-list">
+      @if (anexo(); as file) {
+        <div class="file-item">
+          <span class="file-badge file-badge--pdf">PDF</span>
+          <div class="file-info">
+            <span class="file-name" [title]="file.name">{{ truncateFileName(file.name) }}</span>
+            <div
+              class="file-progress"
+              role="progressbar"
+              aria-label="Progresso do envio do edital"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="file.progress"
+            >
+              <div
+                class="file-progress__bar"
+                [class.is-complete]="file.fase === 'confirmado'"
+                [style.width.%]="file.progress"
+              ></div>
+            </div>
+            <span class="file-status" aria-live="polite">{{ descricaoFase(file) }}</span>
+            @if (file.fase === 'erro') {
+              <button class="btn btn--tertiary" type="button" (click)="retomarUpload()">
+                Tentar novamente
+              </button>
+            }
+          </div>
+          @if (!anexoBloqueado()) {
+            <button
+              class="file-delete"
+              type="button"
+              [attr.aria-label]="'Remover ' + file.name"
+              (click)="$event.stopPropagation(); removeUpload()"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="file-list-empty">Nenhum arquivo adicionado.</p>
+      }
+    </div>
+  </div>
+</div>

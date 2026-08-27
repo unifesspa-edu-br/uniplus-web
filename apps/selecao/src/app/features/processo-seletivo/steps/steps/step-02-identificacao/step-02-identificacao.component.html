@@ -7,124 +7,21 @@
 </p>
 @if (camposDoComandoBloqueados()) {
   <p class="alert alert--info" role="status">
-    O cadastro inicial já foi criado no sistema. Nome, tipo do processo, unidade administradora e
-    origem dos candidatos não podem mais ser alterados por aqui.
+    O cadastro inicial já foi criado no sistema. Nome, tipo do processo, unidade administradora,
+    município e origem dos candidatos não podem mais ser alterados por aqui.
   </p>
 }
 <div class="step-card">
-  <div class="form-grid">
-    <div class="form-field">
-      <label class="label" for="f-num">Número do edital</label>
-      <input
-        class="input"
-        id="f-num"
-        placeholder="Ex.: 12/2026"
-        [attr.aria-invalid]="invalidFields().has('numero') || null"
-        [class.is-invalid]="invalidFields().has('numero')"
-        [value]="store.draft().identificacao.numero"
-        (input)="patch('numero', $any($event.target).value)"
-      />
-    </div>
-    <div class="form-field">
-      <label class="label" for="f-ano">Ano do edital</label>
-      <div class="input-icon-wrap">
-        <input
-          class="input"
-          id="f-ano"
-          type="number"
-          [attr.aria-invalid]="invalidFields().has('ano') || null"
-          [class.is-invalid]="invalidFields().has('ano')"
-          [value]="store.draft().identificacao.ano"
-          (input)="patch('ano', +$any($event.target).value)"
-        />
-        <span class="input-icon-wrap__icon" aria-hidden="true"
-          ><svg
-            fill="none"
-            height="16"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="16"
-          >
-            <rect height="18" rx="2" width="18" x="3" y="4" />
-            <path d="M16 2v4M8 2v4M3 10h18" /></svg
-        ></span>
-      </div>
-    </div>
-    <div class="form-field">
-      <label class="label" for="f-data">Data do processo</label>
-      <div class="input-icon-wrap">
-        <input
-          #dateInput
-          class="input"
-          id="f-data"
-          type="date"
-          [attr.aria-invalid]="invalidFields().has('data') || null"
-          [class.is-invalid]="invalidFields().has('data')"
-          [value]="store.draft().identificacao.data"
-          (input)="patch('data', $any($event.target).value)"
-        />
-        <button
-          aria-label="Abrir calendário"
-          class="input-icon-wrap__btn"
-          type="button"
-          (click)="openDatePicker(dateInput)"
-        >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="16"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="16"
-          >
-            <rect height="18" rx="2" width="18" x="3" y="4" />
-            <path d="M16 2v4M8 2v4M3 10h18" />
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div class="form-field">
-      <label class="label" for="f-orgao">Sigla do órgão expedidor</label>
-      <input
-        class="input"
-        id="f-orgao"
-        [attr.aria-invalid]="invalidFields().has('orgao') || null"
-        [class.is-invalid]="invalidFields().has('orgao')"
-        [value]="store.draft().identificacao.orgao"
-        (input)="patch('orgao', $any($event.target).value)"
-      />
-    </div>
-    <div class="form-field form-grid__full">
-      <label class="label" for="f-periodo">Período de ingresso</label>
-      <select
-        class="input"
-        id="f-periodo"
-        [attr.aria-invalid]="invalidFields().has('periodo') || null"
-        [class.is-invalid]="invalidFields().has('periodo')"
-        [value]="store.draft().identificacao.periodo"
-        (change)="patch('periodo', $any($event.target).value)"
-      >
-        <option value="">Selecione</option>
-        <option>1º semestre</option>
-        <option>2º semestre</option>
-        <option>Anual</option>
-      </select>
-    </div>
+  <form class="form-grid" [formGroup]="form">
     <div class="form-field form-grid__full">
       <label class="label" for="f-nome">Nome do processo seletivo</label>
       <input
         class="input"
         id="f-nome"
         placeholder="Processo Seletivo Seriado"
+        formControlName="nome"
         [attr.aria-invalid]="invalidFields().has('nome') || null"
         [class.is-invalid]="invalidFields().has('nome')"
-        [disabled]="camposDoComandoBloqueados()"
-        [value]="store.draft().identificacao.nome"
-        (input)="patch('nome', $any($event.target).value)"
       />
     </div>
     <div class="form-field form-grid__full">
@@ -141,12 +38,10 @@
         class="input"
         id="f-unidade"
         aria-describedby="f-unidade-hint"
+        formControlName="unidadeAdministradoraId"
         [attr.aria-busy]="unidadesCarregando() || null"
         [attr.aria-invalid]="invalidFields().has('unidadeAdministradoraId') || null"
         [class.is-invalid]="invalidFields().has('unidadeAdministradoraId')"
-        [disabled]="camposDoComandoBloqueados() || unidadesCarregando()"
-        [value]="store.draft().identificacao.unidadeAdministradoraId"
-        (change)="patch('unidadeAdministradoraId', $any($event.target).value)"
       >
         <option value="">{{ unidadesCarregando() ? 'Carregando…' : 'Selecione' }}</option>
         @for (unidade of unidades(); track unidade.id) {
@@ -161,20 +56,28 @@
     <div class="form-field form-grid__full">
       <label class="label" for="f-localidade">Município que rege os prazos</label>
       @if (store.draft().identificacao.localidade; as localidade) {
-        <div class="localidade-escolhida">
-          <p class="localidade-escolhida__valor" id="f-localidade-valor">
-            {{ localidade.nome }} — {{ localidade.uf }}
-          </p>
-          <button
-            class="btn btn--tertiary"
-            type="button"
-            aria-describedby="f-localidade-valor"
-            [disabled]="camposDoComandoBloqueados()"
-            (click)="limparLocalidade()"
-          >
-            Trocar município
-          </button>
-        </div>
+        @if (camposDoComandoBloqueados()) {
+          <input
+            class="input"
+            id="f-localidade"
+            disabled
+            aria-describedby="f-localidade-hint"
+            [value]="localidade.nome + ' — ' + localidade.uf"
+          />
+        } @else {
+          <div class="input-group">
+            <input
+              class="input"
+              id="f-localidade"
+              readonly
+              aria-describedby="f-localidade-hint"
+              [value]="localidade.nome + ' — ' + localidade.uf"
+            />
+            <button class="btn btn--tertiary" type="button" (click)="limparLocalidade()">
+              Trocar município
+            </button>
+          </div>
+        }
       } @else {
         <input
           class="input"
@@ -220,12 +123,6 @@
           </ul>
         }
       }
-      @if (camposDoComandoBloqueados()) {
-        <p class="alert alert--info" role="status">
-          O cadastro inicial já foi criado com este município. A alteração da localidade ainda não
-          está disponível nesta tela.
-        </p>
-      }
       <p class="field__hint" id="f-localidade-hint">
         Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.
         Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode correr
@@ -238,11 +135,9 @@
         class="input"
         id="f-origem"
         aria-describedby="f-origem-hint"
+        formControlName="origemCandidatos"
         [attr.aria-invalid]="invalidFields().has('origemCandidatos') || null"
         [class.is-invalid]="invalidFields().has('origemCandidatos')"
-        [disabled]="camposDoComandoBloqueados()"
-        [value]="store.draft().identificacao.origemCandidatos"
-        (change)="patch('origemCandidatos', $any($event.target).value)"
       >
         <option value="">Selecione</option>
         @for (origem of origens; track origem.value) {
@@ -255,155 +150,5 @@
         candidatos vêm de outra base, como o SiSU/MEC.
       </p>
     </div>
-  </div>
-</div>
-<div class="step-card upload-section">
-  <p class="label">Upload do edital de abertura</p>
-  @if (uploadError(); as error) {
-    <p class="upload-error" role="alert">
-      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-      {{ error }}
-    </p>
-  }
-  <input
-    #fileInput
-    id="f-file"
-    class="sr-only"
-    type="file"
-    accept="application/pdf,.pdf"
-    aria-label="Selecionar o arquivo PDF do edital"
-    [disabled]="anexoBloqueado()"
-    (change)="onFileInput($event)"
-  />
-  @if (store.avisoDocumentos(); as aviso) {
-    <div class="alert alert--warning" role="alert">
-      <div class="alert__body">
-        <p>{{ aviso }}</p>
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [disabled]="reverificando()"
-          (click)="reverificarDocumentos()"
-        >
-          {{ reverificando() ? 'Verificando…' : 'Verificar novamente' }}
-        </button>
-      </div>
-    </div>
-  }
-
-  @if (store.documentosParaEscolha().length > 0) {
-    <div class="alert alert--warning" role="alert">
-      <p>
-        Este processo tem mais de um documento de edital confirmado. Escolha qual é o oficial — a
-        escolha não é feita automaticamente.
-      </p>
-      <ul class="ps-doc-escolha">
-        @for (documento of store.documentosParaEscolha(); track documento.id) {
-          <li>
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-label]="'Usar o documento confirmado em ' + descrever(documento)"
-              (click)="escolherDocumentoConfirmado(documento)"
-            >
-              <span>Usar este documento</span>
-              <span class="ps-doc-escolha__meta">{{ descrever(documento) }}</span>
-            </button>
-          </li>
-        }
-      </ul>
-    </div>
-  }
-
-  <div class="upload-layout">
-    <div
-      class="upload-zone"
-      role="button"
-      tabindex="0"
-      aria-label="Clique ou arraste o PDF do edital aqui"
-      [attr.aria-disabled]="anexoBloqueado() || null"
-      [class.is-dragover]="dragging()"
-      [class.is-invalid]="invalidFields().has('uploads')"
-      (click)="chooseFiles()"
-      (keydown.enter)="chooseFiles()"
-      (keydown.space)="chooseFiles(); $event.preventDefault()"
-      (dragover)="$event.preventDefault(); dragging.set(true)"
-      (dragleave)="dragging.set(false)"
-      (drop)="onDrop($event)"
-    >
-      <svg
-        aria-hidden="true"
-        fill="none"
-        height="32"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="1.5"
-        viewBox="0 0 24 24"
-        width="32"
-      >
-        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-        <polyline points="17 8 12 3 7 8" />
-        <line x1="12" x2="12" y1="3" y2="15" />
-      </svg>
-      <span>Arraste e solte o arquivo ou <span class="upload-zone__link">Procure</span></span>
-      <span class="upload-zone__hint">Somente PDF, até 20 MB</span>
-    </div>
-    <div class="file-list">
-      @if (anexo(); as file) {
-        <div class="file-item">
-          <span class="file-badge file-badge--pdf">PDF</span>
-          <div class="file-info">
-            <span class="file-name" [title]="file.name">{{ truncateFileName(file.name) }}</span>
-            <div
-              class="file-progress"
-              role="progressbar"
-              aria-label="Progresso do envio do edital"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              [attr.aria-valuenow]="file.progress"
-            >
-              <div
-                class="file-progress__bar"
-                [class.is-complete]="file.fase === 'confirmado'"
-                [style.width.%]="file.progress"
-              ></div>
-            </div>
-            <span class="file-status" aria-live="polite">{{ descricaoFase(file) }}</span>
-            @if (file.fase === 'erro') {
-              <button class="btn btn--tertiary" type="button" (click)="retomarUpload()">
-                Tentar novamente
-              </button>
-            }
-          </div>
-          @if (!anexoBloqueado()) {
-            <button
-              class="file-delete"
-              type="button"
-              [attr.aria-label]="'Remover ' + file.name"
-              (click)="$event.stopPropagation(); removeUpload()"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                aria-hidden="true"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6M14 11v6" />
-                <path d="M9 6V4h6v2" />
-              </svg>
-            </button>
-          }
-        </div>
-      } @else {
-        <p class="file-list-empty">Nenhum arquivo adicionado.</p>
-      }
-    </div>
-  </div>
+  </form>
 </div>
