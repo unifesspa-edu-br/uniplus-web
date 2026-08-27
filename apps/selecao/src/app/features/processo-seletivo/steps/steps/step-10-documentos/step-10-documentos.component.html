@@ -1,11 +1,7 @@
-<div class="step-head">
-  <span class="step-head__badge">Passo 10</span>
-  <h1 tabindex="-1">Passo 10: Documentos por modalidade</h1>
-  <p>
-    Marque quais documentos cada modalidade exige. Mesmo documento pode ser obrigatório para algumas
-    modalidades e opcional para outras.
-  </p>
-</div>
+<p class="step-subtitle">
+  Marque quais documentos cada modalidade exige. Mesmo documento pode ser obrigatório para algumas
+  modalidades e opcional para outras.
+</p>
 <fieldset class="scroll-tabela">
   <div>
     @for (group of groups; track group.label) {
@@ -28,7 +24,9 @@
               <span
                 class="doc-item__badge"
                 [class.doc-item__badge--included]="config(doc.id).included"
-                >{{ config(doc.id).included ? 'Incluído' : 'Não faz parte do processo seletivo' }}</span
+                >{{
+                  config(doc.id).included ? 'Incluído' : 'Não faz parte do processo seletivo'
+                }}</span
               >
             </div>
             @if (config(doc.id).included) {

@@ -6,12 +6,14 @@ import {
 } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-12-atendimento',
   standalone: true,
   templateUrl: './step-12-atendimento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step12AtendimentoComponent)],
 })
 export class Step12AtendimentoComponent {
   readonly store = inject(ProcessoSeletivoStore);

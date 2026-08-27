@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-09-eliminacao',
   standalone: true,
   templateUrl: './step-09-eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step09EliminacaoComponent)],
 })
 export class Step09EliminacaoComponent {
   readonly store = inject(ProcessoSeletivoStore);

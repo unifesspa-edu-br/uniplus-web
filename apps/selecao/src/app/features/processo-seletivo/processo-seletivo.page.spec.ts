@@ -508,5 +508,4 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
 
     expect(page.confirmacaoPendente()).not.toBeNull();
   });
-
 });

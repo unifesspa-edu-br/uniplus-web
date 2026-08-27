@@ -12,12 +12,14 @@ import { CURSOS } from '../../processo-seletivo.data';
 import { Curso, OfertaCurso, StepValidation, Turno } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-04-vagas',
   standalone: true,
   templateUrl: './step-04-vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step04VagasComponent)],
 })
 export class Step04VagasComponent {
   readonly store = inject(ProcessoSeletivoStore);

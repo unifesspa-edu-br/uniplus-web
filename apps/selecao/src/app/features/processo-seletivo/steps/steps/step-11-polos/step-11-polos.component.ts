@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { POLOS } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-11-polos',
   standalone: true,
   templateUrl: './step-11-polos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step11PolosComponent)],
 })
 export class Step11PolosComponent {
   readonly store = inject(ProcessoSeletivoStore);

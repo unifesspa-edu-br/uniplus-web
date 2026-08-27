@@ -16,8 +16,9 @@ import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
-import type { ConfirmacaoDeGravacao } from '../../../processo-seletivo.page';
+import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 interface UnidadeOption {
   readonly id: string;
@@ -46,6 +47,7 @@ export const ORIGENS_CANDIDATOS: readonly {
   imports: [ReactiveFormsModule],
   templateUrl: './step-02-identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step02IdentificacaoComponent)],
 })
 export class Step02IdentificacaoComponent {
   readonly store = inject(ProcessoSeletivoStore);

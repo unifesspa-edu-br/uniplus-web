@@ -12,12 +12,14 @@ import { CRITERIOS_DESEMPATE } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-08-desempate',
   standalone: true,
   templateUrl: './step-08-desempate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step08DesempateComponent)],
 })
 export class Step08DesempateComponent {
   readonly store = inject(ProcessoSeletivoStore);

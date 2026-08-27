@@ -11,7 +11,7 @@ import {
   inject,
   signal,
   untracked,
-  viewChild,
+  viewChildren,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -21,6 +21,9 @@ import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
+import { PASSOS } from './steps/processo-seletivo.data';
+import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
+import type { ConfirmacaoDeGravacao } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
@@ -83,6 +86,11 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProcessoSeletivoPage {
+  /** Os passos na ordem em que o template os declara. */
+  private readonly passos = viewChildren(PASSO_DO_WIZARD);
+
+  readonly passoCorrente = computed(() => PASSOS[this.store.currentStep()]);
+
   readonly store = inject(ProcessoSeletivoStore);
   private readonly root = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly overlayScroll = inject(OverlayScrollService);
@@ -94,38 +102,10 @@ export class ProcessoSeletivoPage {
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
-  private readonly step01 = viewChild(Step01TipoProcessoComponent);
-  private readonly step02 = viewChild(Step02IdentificacaoComponent);
-  private readonly step03 = viewChild(Step03ModalidadesComponent);
-  private readonly step04 = viewChild(Step04VagasComponent);
-  private readonly step05 = viewChild(Step05EtapasComponent);
-  private readonly step06 = viewChild(Step06FormulaComponent);
-  private readonly step07 = viewChild(Step07BonusComponent);
-  private readonly step08 = viewChild(Step08DesempateComponent);
-  private readonly step09 = viewChild(Step09EliminacaoComponent);
-  private readonly step10 = viewChild(Step10DocumentosComponent);
-  private readonly step11 = viewChild(Step11PolosComponent);
-  private readonly step12 = viewChild(Step12AtendimentoComponent);
-  private readonly step13 = viewChild(Step13RevisaoComponent);
 
   /** Retorna o componente do step ativo, se estiver instanciado. */
-  private stepValidatorAt(index: number): { validate(): StepValidation } | undefined {
-    const steps = [
-      this.step01(),
-      this.step02(),
-      this.step03(),
-      this.step04(),
-      this.step05(),
-      this.step06(),
-      this.step07(),
-      this.step08(),
-      this.step09(),
-      this.step10(),
-      this.step11(),
-      this.step12(),
-      this.step13(),
-    ] as const;
-    return steps[index];
+  private stepValidatorAt(index: number): PassoDoWizard | undefined {
+    return this.passos()[index];
   }
 
   /** Vez da leitura em curso — respostas de vezes anteriores são descartadas. */
@@ -151,7 +131,7 @@ export class ProcessoSeletivoPage {
    */
   readonly rotuloDeAvanco = computed(() => {
     if (this.store.isLast()) return 'Publicar';
-    const passo = this.stepValidatorAt(this.store.currentStep()) as Partial<StepCommit> | undefined;
+    const passo = this.stepValidatorAt(this.store.currentStep());
     return passo?.rotuloDeAvanco?.() ?? 'Próximo';
   });
 
@@ -451,7 +431,7 @@ export class ProcessoSeletivoPage {
     // A confirmação vem antes de qualquer requisição: é o momento em que o
     // operador ainda pode desistir. Depois de gravado, o cadastro inicial não
     // volta atrás pelo contrato desta tela.
-    const confirmacao = (validator as Partial<StepCommit> | undefined)?.confirmacaoDeGravacao?.();
+    const confirmacao = validator?.confirmacaoDeGravacao?.();
     if (confirmacao) {
       this.restaurarFocoAoFechar.set(true);
       this.confirmacaoPendente.set(confirmacao);
@@ -505,13 +485,10 @@ export class ProcessoSeletivoPage {
    * Conclui o passo depois de a confirmação já ter sido resolvida — seja
    * porque o passo não pedia nenhuma, seja porque o operador confirmou.
    */
-  private async gravarEAvancar(
-    validator: { validate(): StepValidation } | undefined,
-  ): Promise<boolean> {
+  private async gravarEAvancar(validator: PassoDoWizard | undefined): Promise<boolean> {
     // Passos que persistem expõem `persistir()`; os demais avançam direto.
-    const persistivel = validator as Partial<StepCommit> | undefined;
-    if (persistivel?.persistir) {
-      const commit = await persistivel.persistir().catch(
+    if (validator?.persistir) {
+      const commit = await validator.persistir().catch(
         (): StepValidation => ({
           valid: false,
           messages: ['Não foi possível concluir a operação. Tente novamente.'],
@@ -556,12 +533,11 @@ export class ProcessoSeletivoPage {
    * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
    * publica a partir do rodapé com a lista rolada não recebe retorno visível.
    */
-  /** Título do passo visível — o destino de foco a cada troca de passo. */
+  /** Título do passo — o destino de foco a cada troca. */
   private focarTituloDoPasso(): void {
-    const titulo = this.root.nativeElement.querySelector<HTMLElement>(
-      '.step-pane:not([hidden]) h1',
-    );
-    titulo?.focus({ preventScroll: true });
+    this.root.nativeElement.querySelector<HTMLElement>('.step-head h1')?.focus({
+      preventScroll: true,
+    });
   }
 
   private revelarErro(): void {
@@ -623,44 +599,6 @@ export class ProcessoSeletivoPage {
     this.wizContent?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-}
-
-/**
- * Passo que grava na API antes de liberar o avanço. `validate()` continua
- * síncrono e responde pela consistência do rascunho; `persistir()` responde
- * pelo efeito remoto.
- */
-interface StepCommit {
-  persistir(): Promise<StepValidation>;
-
-  /**
-   * Rótulo do botão de avanço enquanto este passo estiver aberto. O shell usa
-   * "Próximo" nos doze passos que só navegam; quem grava diz outra coisa, e
-   * diz por conta própria — cravar isso no shell exigiria que ele soubesse
-   * qual passo é qual.
-   */
-  rotuloDeAvanco?(): string;
-
-  /**
-   * O que confirmar antes de gravar, ou `null` quando não há o que confirmar.
-   * Devolver os dados aqui é o que permite ao operador conferir o que vai ser
-   * gravado — e, no caso do cadastro inicial, o que não poderá ser desfeito.
-   */
-  confirmacaoDeGravacao?(): ConfirmacaoDeGravacao | null;
-}
-
-/** Um campo do resumo de confirmação, com o rótulo que o operador viu. */
-export interface ItemDeConfirmacao {
-  readonly rotulo: string;
-  readonly valor: string;
-}
-
-/** Resumo do que será gravado, exibido antes de qualquer requisição. */
-export interface ConfirmacaoDeGravacao {
-  readonly titulo: string;
-  readonly aviso: string;
-  readonly itens: readonly ItemDeConfirmacao[];
-  readonly rotuloDeConfirmar: string;
 }
 
 /** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */

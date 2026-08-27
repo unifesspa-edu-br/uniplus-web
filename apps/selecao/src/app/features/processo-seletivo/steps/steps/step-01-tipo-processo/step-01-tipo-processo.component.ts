@@ -12,6 +12,7 @@ import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configur
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-01-tipo-processo',
@@ -19,6 +20,7 @@ import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.mode
   imports: [TypeCardComponent],
   templateUrl: './step-01-tipo-processo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step01TipoProcessoComponent)],
 })
 export class Step01TipoProcessoComponent {
   readonly store = inject(ProcessoSeletivoStore);
