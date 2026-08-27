@@ -213,6 +213,7 @@
   [visible]="confirmacaoPendente() !== null"
   [heading]="confirmacaoPendente()?.titulo ?? ''"
   [dismissible]="!store.salvando()"
+  [restoreFocus]="restaurarFocoAoFechar()"
   (closed)="cancelarGravacao()"
 >
   @if (confirmacaoPendente(); as confirmacao) {

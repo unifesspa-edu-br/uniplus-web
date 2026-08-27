@@ -67,4 +67,44 @@ describe('DialogComponent', () => {
 
     expect(elementoDialogo().open).toBe(false);
   });
+
+  it('devolve o foco a quem o abriu ao fechar', () => {
+    const disparador = document.createElement('button');
+    document.body.appendChild(disparador);
+    disparador.focus();
+
+    componente.visible.set(true);
+    fixture.detectChanges();
+    // O foco vai para dentro do diálogo ao abrir; aqui isso é explícito porque
+    // o ambiente de teste não executa o comportamento nativo do `<dialog>`.
+    botaoFechar().focus();
+
+    componente.visible.set(false);
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(disparador);
+    disparador.remove();
+  });
+
+  /**
+   * Quando a tela por trás muda durante a interação, o ponto de partida deixa
+   * de descrever o que está em tela — e devolver o foco a ele levaria a um
+   * lugar que já não é o assunto.
+   */
+  it('não devolve o foco quando restoreFocus está desligado', () => {
+    const disparador = document.createElement('button');
+    document.body.appendChild(disparador);
+    disparador.focus();
+
+    componente.visible.set(true);
+    fixture.detectChanges();
+    botaoFechar().focus();
+
+    fixture.componentRef.setInput('restoreFocus', false);
+    componente.visible.set(false);
+    fixture.detectChanges();
+
+    expect(document.activeElement).not.toBe(disparador);
+    disparador.remove();
+  });
 });

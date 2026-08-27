@@ -65,6 +65,15 @@ export class DialogComponent {
    * pelo `visible`.
    */
   readonly dismissible = input<boolean>(true);
+
+  /**
+   * Se o foco volta, ao fechar, para o elemento que abriu o diálogo. É o certo
+   * quando a tela por trás continua a mesma; `false` para quando ela mudou
+   * durante a interação, e devolver o foco ao ponto de partida levaria a um
+   * lugar que já não descreve o que está em tela. Quem desliga assume dizer
+   * para onde o foco vai.
+   */
+  readonly restoreFocus = input<boolean>(true);
   readonly closed = output<void>();
 
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialog');
@@ -98,7 +107,9 @@ export class DialogComponent {
     if (this.visible()) {
       this.visible.set(false);
     }
-    this.lastFocusedElement?.focus();
+    if (this.restoreFocus()) {
+      this.lastFocusedElement?.focus();
+    }
     this.lastFocusedElement = null;
     this.closed.emit();
   }
