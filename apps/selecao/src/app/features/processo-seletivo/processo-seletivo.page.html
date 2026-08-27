@@ -212,6 +212,7 @@
 <ui-dialog
   [visible]="confirmacaoPendente() !== null"
   [heading]="confirmacaoPendente()?.titulo ?? ''"
+  [dismissible]="!store.salvando()"
   (closed)="cancelarGravacao()"
 >
   @if (confirmacaoPendente(); as confirmacao) {
