@@ -363,29 +363,31 @@ describe('AnexoEditalComponent', () => {
     abrir.mockRestore();
   });
 
-  /** Bloqueio de pop-up precisa ser dito: a URL não vira link na tela. */
-  it('avisa quando o navegador recusa abrir a aba', async () => {
+  /**
+   * Bloqueio de pop-up recusa antes de pedir o acesso: a URL é emitida por
+   * requisição, com o prazo correndo a partir dela, e pedir uma que não será
+   * usada é o que o endpoint sob demanda existe para evitar.
+   */
+  it('avisa o bloqueio sem pedir a URL assinada', async () => {
     await anexarComSucesso();
     const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
 
-    const promessa = componente.abrirDocumento(DOCUMENTO_ID);
-    await tick();
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
-      .flush({ url: URL_LEITURA, expiraEm: '2026-08-27T12:05:00Z' });
-    await promessa;
+    await componente.abrirDocumento(DOCUMENTO_ID);
 
     expect(componente.erroDeAbertura()).toContain('bloqueou a abertura');
+    controller.expectNone(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`);
     abrir.mockRestore();
   });
 
   it('não pede acesso antes de o processo existir', async () => {
     store.processoSeletivoId.set(null);
-    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+    const aba = abaFalsa();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(aba);
 
     await componente.abrirDocumento(DOCUMENTO_ID);
 
     expect(abrir).not.toHaveBeenCalled();
+    controller.expectNone(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`);
     abrir.mockRestore();
   });
 
