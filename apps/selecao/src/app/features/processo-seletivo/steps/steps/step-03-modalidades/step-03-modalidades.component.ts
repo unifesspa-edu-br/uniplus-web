@@ -11,6 +11,7 @@ import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { ModalidadeDto, ModalidadesApi } from '@uniplus/shared-data/configuracao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 /** Opção de modalidade exibida no passo 3, mapeada do catálogo da API. */
 export interface ModalidadeOption {
@@ -24,6 +25,7 @@ export interface ModalidadeOption {
   standalone: true,
   templateUrl: './step-03-modalidades.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step03ModalidadesComponent)],
 })
 export class Step03ModalidadesComponent {
   readonly store = inject(ProcessoSeletivoStore);

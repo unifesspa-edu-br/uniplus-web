@@ -109,45 +109,50 @@
             </ul>
           </div>
         </div>
+        } @if (passoCorrente(); as passo) {
+        <div class="step-head">
+          <span class="step-head__badge">Passo {{ store.currentStep() + 1 }}</span>
+          <h1 tabindex="-1">Passo {{ store.currentStep() + 1 }}: {{ passo.titulo }}</h1>
+        </div>
         }
         <section class="step-pane" [hidden]="store.currentStep() !== 0">
-          <sel-step-01-tipo-processo #step01></sel-step-01-tipo-processo>
+          <sel-step-01-tipo-processo></sel-step-01-tipo-processo>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 1">
-          <sel-step-02-identificacao #step02></sel-step-02-identificacao>
+          <sel-step-02-identificacao></sel-step-02-identificacao>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 2">
-          <sel-step-03-modalidades #step03></sel-step-03-modalidades>
+          <sel-step-03-modalidades></sel-step-03-modalidades>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 3">
-          <sel-step-04-vagas #step04></sel-step-04-vagas>
+          <sel-step-04-vagas></sel-step-04-vagas>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 4">
-          <sel-step-05-etapas #step05></sel-step-05-etapas>
+          <sel-step-05-etapas></sel-step-05-etapas>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 5">
-          <sel-step-06-formula #step06></sel-step-06-formula>
+          <sel-step-06-formula></sel-step-06-formula>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 6">
-          <sel-step-07-bonus #step07></sel-step-07-bonus>
+          <sel-step-07-bonus></sel-step-07-bonus>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 7">
-          <sel-step-08-desempate #step08></sel-step-08-desempate>
+          <sel-step-08-desempate></sel-step-08-desempate>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 8">
-          <sel-step-09-eliminacao #step09></sel-step-09-eliminacao>
+          <sel-step-09-eliminacao></sel-step-09-eliminacao>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 9">
-          <sel-step-10-documentos #step10></sel-step-10-documentos>
+          <sel-step-10-documentos></sel-step-10-documentos>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 10">
-          <sel-step-11-polos #step11></sel-step-11-polos>
+          <sel-step-11-polos></sel-step-11-polos>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 11">
-          <sel-step-12-atendimento #step12></sel-step-12-atendimento>
+          <sel-step-12-atendimento></sel-step-12-atendimento>
         </section>
         <section class="step-pane" [hidden]="store.currentStep() !== 12">
-          <sel-step-13-revisao #step13></sel-step-13-revisao>
+          <sel-step-13-revisao></sel-step-13-revisao>
         </section>
       </div>
     </div>

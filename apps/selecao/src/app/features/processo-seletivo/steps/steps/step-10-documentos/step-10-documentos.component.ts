@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { DOC_ETAPAS, DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
 import { DocumentoConfig, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-10-documentos',
   standalone: true,
   templateUrl: './step-10-documentos.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step10DocumentosComponent)],
 })
 export class Step10DocumentosComponent {
   readonly store = inject(ProcessoSeletivoStore);

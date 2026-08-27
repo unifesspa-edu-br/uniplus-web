@@ -504,7 +504,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     cenario.fixture.detectChanges();
     await new Promise((r) => queueMicrotask(() => r(null)));
 
-    const titulo = cenario.host.querySelector('.step-pane:not([hidden]) h1');
+    const titulo = cenario.host.querySelector('.step-head h1');
     expect(titulo).not.toBeNull();
     expect(document.activeElement).toBe(titulo);
   });

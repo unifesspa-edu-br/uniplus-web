@@ -454,7 +454,11 @@ describe('AnexoEditalComponent', () => {
   it('exibe a recusa da abertura também na escolha entre confirmados', async () => {
     store.documentosParaEscolha.set([
       documentoConfirmado(DOCUMENTO_ID, 'a'.repeat(64), '2026-08-20T12:05:00Z'),
-      documentoConfirmado('01960000-0000-7000-0000-0000000005de', 'b'.repeat(64), '2026-08-20T12:12:00Z'),
+      documentoConfirmado(
+        '01960000-0000-7000-0000-0000000005de',
+        'b'.repeat(64),
+        '2026-08-20T12:12:00Z',
+      ),
     ]);
     detectar();
 

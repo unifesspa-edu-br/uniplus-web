@@ -3,6 +3,7 @@ import { REVIEW_NAMES } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.component';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-13-revisao',
@@ -10,6 +11,7 @@ import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.com
   imports: [AnexoEditalComponent],
   templateUrl: './step-13-revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step13RevisaoComponent)],
 })
 export class Step13RevisaoComponent {
   readonly store = inject(ProcessoSeletivoStore);

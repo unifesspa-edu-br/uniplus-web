@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { EtapaEdital, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
   selector: 'sel-step-05-etapas',
   standalone: true,
   templateUrl: './step-05-etapas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [provePassoDoWizard(Step05EtapasComponent)],
 })
 export class Step05EtapasComponent {
   readonly store = inject(ProcessoSeletivoStore);
