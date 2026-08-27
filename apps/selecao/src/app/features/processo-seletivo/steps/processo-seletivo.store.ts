@@ -1,6 +1,14 @@
 import { computed, Injectable, signal } from '@angular/core';
+import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { DOC_ETAPAS, DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.data';
-import { DocumentoConfig, EtapaEdital, StepStatus, WizardDraft } from './processo-seletivo.models';
+import { hidratarDraft } from './shared/hidratacao';
+import {
+  DocumentoConfig,
+  EtapaEdital,
+  FalhaDeLeitura,
+  StepStatus,
+  WizardDraft,
+} from './processo-seletivo.models';
 
 function initialDocumentos(): Record<string, DocumentoConfig> {
   return Object.fromEntries(
@@ -95,6 +103,56 @@ export class ProcessoSeletivoStore {
   readonly criacaoIndefinida = signal(false);
 
   /**
+   * Detalhe canônico como o servidor o devolveu, preservado **inteiro**
+   * (Story #478, CA-05). O rascunho é buffer de edição e só carrega as
+   * dimensões que já têm tela; as demais — etapas, distribuição de vagas,
+   * cronograma, atendimento e as outras — vivem aqui até a Story que as
+   * implementa estender o adaptador. Guardar só o que o wizard sabe editar
+   * perderia silenciosamente o resto do agregado.
+   */
+  readonly remoteSnapshot = signal<ProcessoSeletivoDto | null>(null);
+
+  /** Leitura do detalhe em curso — a tela não mostra wizard nem erro ainda. */
+  readonly hidratando = signal(false);
+
+  /**
+   * A leitura por URL falhou. `motivo` decide o que a tela oferece: um id que
+   * não corresponde a processo algum não tem retentativa útil, uma falha de
+   * rede tem. Em nenhum caso vira rascunho vazio (CA-08) — abrir um cadastro
+   * novo sob o id de outro processo é pior do que não abrir nada.
+   */
+  readonly falhaDeLeitura = signal<FalhaDeLeitura | null>(null);
+
+  /**
+   * Documentos do edital confirmados quando há mais de um (CA-06). O wizard
+   * não elege o oficial: fica vazio enquanto o administrador não decide, e a
+   * decisão zera a lista.
+   */
+  readonly documentosParaEscolha = signal<readonly DocumentoEditalDto[]>([]);
+
+  /**
+   * A leitura dos documentos falhou, mas o processo foi lido: o editor segue
+   * utilizável. O aviso precisa chegar ao passo de identificação — sem ele, um
+   * controle de upload vazio faz o operador concluir que não há edital anexado
+   * e enviar outro, criando um segundo documento imutável.
+   */
+  readonly avisoDocumentos = signal<string | null>(null);
+
+  /**
+   * Muda sempre que o editor passa a tratar de outro processo — por limpeza ou
+   * por hidratação de um id diferente.
+   *
+   * A página do editor sobrevive à troca de endereço (as duas rotas declaram a
+   * mesma `reuseKey`), e com ela sobrevivem os componentes de passo e as
+   * operações que eles deixaram em voo. Um upload ou uma releitura de
+   * documentos disparados para o processo anterior ainda respondem, e sem esta
+   * marca escreveriam no processo que está em tela agora — vinculando a ele um
+   * edital que é de outro. Quem faz trabalho assíncrono captura a geração antes
+   * e descarta o resultado se ela tiver mudado.
+   */
+  readonly geracao = signal(0);
+
+  /**
    * Depois de criado, os dados que compuseram o comando de criação não podem
    * mais ser alterados: o contrato não expõe atualização de identificação e a
    * unidade administradora é imutável no agregado por definição. Vale também
@@ -182,5 +240,27 @@ export class ProcessoSeletivoStore {
     this.processoSeletivoId.set(null);
     this.salvando.set(false);
     this.criacaoIndefinida.set(false);
+    this.remoteSnapshot.set(null);
+    this.hidratando.set(false);
+    this.falhaDeLeitura.set(null);
+    this.documentosParaEscolha.set([]);
+    this.avisoDocumentos.set(null);
+    this.geracao.update((valor) => valor + 1);
+  }
+
+  /**
+   * Projeta o detalhe canônico sobre o rascunho (CA-05) e marca o processo
+   * como já criado — os campos do comando de identificação ficam bloqueados,
+   * exatamente como ficariam depois de uma criação nesta mesma sessão
+   * (`cadastroInicialCongelado`), porque o contrato não expõe atualização
+   * deles.
+   */
+  hidratar(dto: ProcessoSeletivoDto): void {
+    if (this.processoSeletivoId() !== dto.id) {
+      this.geracao.update((valor) => valor + 1);
+    }
+    this.remoteSnapshot.set(dto);
+    this.processoSeletivoId.set(dto.id);
+    this.draft.update((draft) => hidratarDraft(draft, dto));
   }
 }

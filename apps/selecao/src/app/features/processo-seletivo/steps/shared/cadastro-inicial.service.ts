@@ -21,7 +21,9 @@ export interface FalhaOperacao {
   readonly problem: ProblemDetails;
 }
 
-export type ResultadoCriacao = { readonly ok: true; readonly processoSeletivoId: string } | FalhaOperacao;
+export type ResultadoCriacao =
+  | { readonly ok: true; readonly processoSeletivoId: string }
+  | FalhaOperacao;
 
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
@@ -45,6 +47,20 @@ const PROCESSING_CONFLICT = 'uniplus.idempotency.processing_conflict';
 const NETWORK_ERROR = 'uniplus.client.network_error';
 
 /**
+ * Resposta que chegou depois de o editor passar a outro cadastro. Não descreve
+ * uma recusa do servidor — é o resultado de um comando que já não pertence ao
+ * que está em tela, e por isso não pode virar mensagem para o operador nem
+ * mexer nas chaves do cadastro atual.
+ */
+const SUPERADO: ProblemDetails = {
+  type: 'about:blank',
+  title: 'Operação abandonada ao trocar de processo.',
+  status: 409,
+  code: 'uniplus.client.operacao_superada',
+  traceId: '',
+};
+
+/**
  * Orquestra o cadastro inicial do Processo Seletivo e o anexo do edital,
  * escondendo dos componentes as duas mecânicas que erram fácil: quando a
  * `Idempotency-Key` pode ser reaproveitada e o que significa repetir cada fase
@@ -57,6 +73,15 @@ const NETWORK_ERROR = 'uniplus.client.network_error';
 export class CadastroInicialService {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly upload = inject(SignedUploadClient);
+
+  /**
+   * Muda a cada descarte. Uma iniciação ou confirmação disparada para o
+   * cadastro anterior ainda responde depois que o editor passou a outro, e
+   * escreveria por cima das chaves novas — fazendo a retentativa do cadastro
+   * atual usar uma chave diferente da que o servidor viu, justamente o oposto
+   * da garantia que estas chaves existem para dar.
+   */
+  private geracao = 0;
 
   private chaveCriacao = idempotencyKey.create();
   private chaveIniciacao = idempotencyKey.create();
@@ -77,13 +102,35 @@ export class CadastroInicialService {
   }
 
   /**
+   * Esquece o cadastro que este serviço estava acompanhando.
+   *
+   * A página do editor sobrevive à troca de endereço, e este serviço com ela.
+   * Uma criação que ficou sem resposta definitiva retém o comando **e** a
+   * `Idempotency-Key` para poder repetir o mesmo envio — o que é correto
+   * enquanto o rascunho for o mesmo, e errado assim que o editor passa a
+   * tratar de outro. Sem esquecer, o próximo envio repetiria o comando antigo
+   * com a chave antiga e receberia de volta o id do processo anterior.
+   */
+  descartarCadastroEmAndamento(): void {
+    this.geracao += 1;
+    this.criacaoPendente = null;
+    this.chaveCriacao = idempotencyKey.create();
+    this.chaveIniciacao = idempotencyKey.create();
+    this.chaveConfirmacao = idempotencyKey.create();
+  }
+
+  /**
    * Cria o processo em rascunho. O comando recebido já é um instantâneo do
    * rascunho: quem chama congela os campos antes, para que a resposta nunca
    * descreva um estado diferente do que foi enviado.
    */
   async criar(command: CriarProcessoSeletivoCommand): Promise<ResultadoCriacao> {
+    const geracao = this.geracao;
     const comando = this.criacaoPendente ?? command;
     const result = await firstValueFrom(this.api.criar(comando, contextoCom(this.chaveCriacao)));
+
+    if (geracao !== this.geracao)
+      return { ok: false, problem: result.ok ? SUPERADO : result.problem };
 
     if (isApiOk(result)) {
       this.chaveCriacao = idempotencyKey.create();
@@ -100,11 +147,23 @@ export class CadastroInicialService {
     return { ok: false, problem: result.problem };
   }
 
+  /**
+   * Documentos do edital já registrados no processo. Usado na retomada e na
+   * reverificação depois de uma leitura que falhou — sem ela, o operador não
+   * tem como saber se o processo já tem edital antes de enviar outro.
+   */
+  listarDocumentos(processoSeletivoId: string) {
+    return firstValueFrom(this.api.listarDocumentosEdital(processoSeletivoId));
+  }
+
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */
   async iniciarUpload(processoSeletivoId: string): Promise<ResultadoIniciacao> {
+    const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.iniciarUploadDocumentoEdital(processoSeletivoId, contextoCom(this.chaveIniciacao)),
     );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
 
     if (isApiOk(result)) {
       this.chaveIniciacao = idempotencyKey.create();
@@ -129,23 +188,21 @@ export class CadastroInicialService {
     onProgresso: (percentual: number) => void,
   ): Promise<ResultadoEnvio> {
     return new Promise<ResultadoEnvio>((resolve) => {
-      this.upload
-        .enviar(iniciacao.urlUpload, arquivo, iniciacao.contentTypeExigido)
-        .subscribe({
-          next: (evento) => {
-            if (evento.type === HttpEventType.UploadProgress) {
-              onProgresso(percentualDe(evento.loaded, evento.total));
-            }
-          },
-          error: (erro: unknown) => {
-            const status = statusDe(erro);
-            resolve({ ok: false, status, expirada: status === 403 });
-          },
-          complete: () => {
-            onProgresso(100);
-            resolve({ ok: true });
-          },
-        });
+      this.upload.enviar(iniciacao.urlUpload, arquivo, iniciacao.contentTypeExigido).subscribe({
+        next: (evento) => {
+          if (evento.type === HttpEventType.UploadProgress) {
+            onProgresso(percentualDe(evento.loaded, evento.total));
+          }
+        },
+        error: (erro: unknown) => {
+          const status = statusDe(erro);
+          resolve({ ok: false, status, expirada: status === 403 });
+        },
+        complete: () => {
+          onProgresso(100);
+          resolve({ ok: true });
+        },
+      });
     });
   }
 
@@ -168,6 +225,7 @@ export class CadastroInicialService {
     processoSeletivoId: string,
     documentoEditalId: string,
   ): Promise<ResultadoConfirmacao> {
+    const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.confirmarUploadDocumentoEdital(
         processoSeletivoId,
@@ -175,6 +233,8 @@ export class CadastroInicialService {
         contextoCom(this.chaveConfirmacao),
       ),
     );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
 
     if (isApiOk(result)) {
       this.chaveConfirmacao = idempotencyKey.create();

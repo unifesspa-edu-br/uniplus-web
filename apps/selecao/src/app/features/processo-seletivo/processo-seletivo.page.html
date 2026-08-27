@@ -1,3 +1,35 @@
+@if (store.falhaDeLeitura(); as falha) {
+<div class="panel ps-estado">
+  <ui-alert
+    variant="danger"
+    [heading]="
+        falha.motivo === 'naoEncontrado'
+          ? 'Processo seletivo não encontrado'
+          : falha.motivo === 'idInvalido'
+            ? 'Endereço inválido'
+            : falha.motivo === 'semPermissao'
+              ? 'Sem permissão para abrir este processo'
+              : 'Não foi possível carregar o processo seletivo'
+      "
+  >
+    {{ falha.mensagem }}
+  </ui-alert>
+
+  <div class="ps-estado__acoes">
+    @if (falha.motivo === 'falhaTemporaria') {
+    <button type="button" class="btn btn--secondary" (click)="tentarNovamente()">
+      Tentar novamente
+    </button>
+    }
+    <a class="btn btn--primary" routerLink="/processo-seletivo">Voltar à listagem</a>
+  </div>
+</div>
+} @else if (store.hidratando()) {
+<div class="panel ps-estado" role="status" aria-live="polite">
+  <ui-spinner spinnerSize="md" />
+  <p>Carregando o processo seletivo…</p>
+</div>
+} @else {
 <button
   #stepBarButton
   class="step-bar"
@@ -63,23 +95,20 @@
     <div class="wiz-content" #wizContent (scroll)="onContentScroll($event)">
       <div aria-live="polite" aria-atomic="true">
         @if (store.stepError(); as errors) {
-          <div class="step-error" role="alert">
-            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-            <div class="step-error__content">
-              <strong class="step-error__summary">
-                @if (errors.length === 1) {
-                  Há 1 erro no formulário
-                } @else {
-                  Há {{ errors.length }} erros no formulário
-                }
-              </strong>
-              <ul class="step-error__list">
-                @for (error of errors; track error) {
-                  <li>{{ error }}</li>
-                }
-              </ul>
-            </div>
+        <div class="step-error" role="alert">
+          <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+          <div class="step-error__content">
+            <strong class="step-error__summary">
+              @if (errors.length === 1) { Há 1 erro no formulário } @else { Há {{ errors.length }}
+              erros no formulário }
+            </strong>
+            <ul class="step-error__list">
+              @for (error of errors; track error) {
+              <li>{{ error }}</li>
+              }
+            </ul>
           </div>
+        </div>
         }
         <section class="step-pane" [hidden]="store.currentStep() !== 0">
           <sel-step-01-tipo-processo #step01></sel-step-01-tipo-processo>
@@ -146,26 +175,22 @@
         [disabled]="store.salvando()"
         (click)="nextOrPublish()"
       >
-        @if (store.salvando()) {
-          Salvando…
-        } @else {
-          {{ store.isLast() ? 'Publicar' : 'Próximo' }}
-        }
+        @if (store.salvando()) { Salvando… } @else { {{ store.isLast() ? 'Publicar' : 'Próximo' }} }
         @if (!store.isLast() && !store.salvando()) {
-          <svg
-            class="btn__icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          >
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
+        <svg
+          class="btn__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
         }
       </button>
     </div>
     @if (publicationMessage()) {
-      <p class="publication-message" role="status">{{ publicationMessage() }}</p>
+    <p class="publication-message" role="status">{{ publicationMessage() }}</p>
     }
   </div>
 </div>
@@ -180,3 +205,4 @@
     <path d="M18 15l-6-6-6 6" />
   </svg>
 </button>
+}

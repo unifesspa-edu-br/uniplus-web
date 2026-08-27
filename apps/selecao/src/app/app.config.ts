@@ -1,7 +1,8 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { RouteReuseStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
+import { EditorRouteReuseStrategy } from './editor-route-reuse.strategy';
 import { loadingInterceptor } from '@uniplus/shared-core/interceptors';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { provideRuntimeConfig } from '@uniplus/shared-data/config';
@@ -12,6 +13,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes, withComponentInputBinding()),
+    // Rotas que declaram a mesma `reuseKey` são a mesma tela: a instância
+    // sobrevive à transição entre elas, e o estado do roteador acompanha o
+    // endereço. Ver `editor-route-reuse.strategy.ts`.
+    { provide: RouteReuseStrategy, useClass: EditorRouteReuseStrategy },
     // Ordem dos interceptors (ADR-0011 + ADR-0012):
     // - tokenInterceptor: anexa Bearer e renova token quando próximo do expiry.
     // - loadingInterceptor: liga/desliga o spinner global via `finalize`.

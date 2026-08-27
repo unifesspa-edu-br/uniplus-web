@@ -141,6 +141,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                   <th scope="col">Tipo</th>
                   <th scope="col">Status</th>
                   <th scope="col">Data de criação</th>
+                  <th scope="col"><span class="sr-only">Ações</span></th>
                 </tr>
               </thead>
 
@@ -167,6 +168,16 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
 
                     <td data-label="Data de criação">
                       {{ processo.criadoEm | dateBr: 'datetime' }}
+                    </td>
+
+                    <td class="table-responsive__actions" data-label="Ações">
+                      <a
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [routerLink]="['/processo-seletivo', processo.id]"
+                        [attr.aria-label]="'Abrir ' + processo.nome"
+                      >
+                        Abrir
+                      </a>
                     </td>
                   </tr>
                 }
