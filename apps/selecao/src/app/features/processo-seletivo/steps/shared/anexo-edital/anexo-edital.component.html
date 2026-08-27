@@ -65,6 +65,15 @@
     </div>
   }
 
+  <!-- Acima do bloco de upload porque a abertura parte de dois lugares: do
+       anexo já vinculado e de cada opção da escolha entre confirmados. Dentro
+       do ramo do anexo, a recusa vinda da escolha não teria onde aparecer —
+       ali `anexo()` é indefinido, que é justamente o estado em que a escolha
+       existe. -->
+  @if (erroDeAbertura(); as erro) {
+    <p class="field__erro" role="alert">{{ erro }}</p>
+  }
+
   <div class="upload-layout">
     <div
       class="upload-zone"
@@ -135,9 +144,6 @@
               >
                 {{ abrindoDocumento() === documentoId ? 'Abrindo…' : 'Abrir o edital' }}
               </button>
-            }
-            @if (erroDeAbertura(); as erro) {
-              <p class="field__erro" role="alert">{{ erro }}</p>
             }
           </div>
           @if (!anexoBloqueado()) {

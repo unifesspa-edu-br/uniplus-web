@@ -85,6 +85,8 @@ describe('AnexoEditalComponent', () => {
   let componente: AnexoEditalComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
+  let host: HTMLElement;
+  let detectar: () => void;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -100,6 +102,8 @@ describe('AnexoEditalComponent', () => {
 
     const fixture = TestBed.createComponent(AnexoEditalComponent);
     componente = fixture.componentInstance;
+    host = fixture.nativeElement as HTMLElement;
+    detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -438,6 +442,42 @@ describe('AnexoEditalComponent', () => {
 
     expect(aba.location.href).toBe('');
     expect(aba.fechada).toBe(true);
+    abrir.mockRestore();
+  });
+
+  /**
+   * Com mais de um confirmado não há vínculo, então o bloco do anexo
+   * selecionado não existe — e é exatamente aí que a escolha aparece, com um
+   * botão de abrir por documento. Uma recusa vinda desses botões precisa ter
+   * onde ser lida.
+   */
+  it('exibe a recusa da abertura também na escolha entre confirmados', async () => {
+    store.documentosParaEscolha.set([
+      documentoConfirmado(DOCUMENTO_ID, 'a'.repeat(64), '2026-08-20T12:05:00Z'),
+      documentoConfirmado('01960000-0000-7000-0000-0000000005de', 'b'.repeat(64), '2026-08-20T12:12:00Z'),
+    ]);
+    detectar();
+
+    expect(componente.anexo()).toBeUndefined();
+
+    const aba = abaFalsa();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(aba);
+
+    const promessa = componente.abrirDocumento(DOCUMENTO_ID);
+    await tick();
+
+    const recusa = problema(
+      422,
+      'uniplus.selecao.documento_edital.nao_confirmado',
+      'Documento não confirmado',
+    );
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
+      .flush(recusa.body, recusa.opts);
+    await promessa;
+    detectar();
+
+    expect(host.querySelector('.field__erro')?.textContent).toContain('não confirmado');
     abrir.mockRestore();
   });
 });
