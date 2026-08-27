@@ -17,9 +17,7 @@ const URL_LISTA = `${BASE}/api/selecao/processos-seletivos`;
 const papeis = signal<readonly string[]>(['plataforma-admin']);
 const authServiceStub = { roles: papeis };
 
-function processo(
-  overrides: Partial<ProcessoSeletivoResumoDto> = {},
-): ProcessoSeletivoResumoDto {
+function processo(overrides: Partial<ProcessoSeletivoResumoDto> = {}): ProcessoSeletivoResumoDto {
   return {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b027',
     nome: 'Vestibular 2026.1',
@@ -171,10 +169,7 @@ describe('ProcessosSeletivosListaPage', () => {
   });
 
   it('navega para a próxima página com o cursor do header Link', async () => {
-    await flushLista(
-      [processo()],
-      `<${URL_LISTA}?cursor=pagina-2&direction=next>; rel="next"`,
-    );
+    await flushLista([processo()], `<${URL_LISTA}?cursor=pagina-2&direction=next>; rel="next"`);
 
     (host().querySelector('[data-pager="next"]') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -192,10 +187,7 @@ describe('ProcessosSeletivosListaPage', () => {
   });
 
   it('volta para a página anterior com o cursor rel="prev"', async () => {
-    await flushLista(
-      [processo()],
-      `<${URL_LISTA}?cursor=pagina-0&direction=prev>; rel="prev"`,
-    );
+    await flushLista([processo()], `<${URL_LISTA}?cursor=pagina-0&direction=prev>; rel="prev"`);
 
     (host().querySelector('[data-pager="prev"]') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -221,10 +213,7 @@ describe('ProcessosSeletivosListaPage', () => {
    * estava lendo por causa de uma rede que caiu.
    */
   it('preserva a página atual quando a navegação falha', async () => {
-    await flushLista(
-      [processo()],
-      `<${URL_LISTA}?cursor=pagina-2&direction=next>; rel="next"`,
-    );
+    await flushLista([processo()], `<${URL_LISTA}?cursor=pagina-2&direction=next>; rel="next"`);
 
     (host().querySelector('[data-pager="next"]') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -311,6 +300,21 @@ describe('ProcessosSeletivosListaPage', () => {
     const vazias = [...host().querySelectorAll('a')].filter((a) => a.getAttribute('href') === '#');
 
     expect(vazias).toHaveLength(0);
+  });
+
+  /**
+   * Sem esta ação a rota de retomada só seria alcançável digitando o endereço
+   * à mão — o operador não teria caminho pela interface.
+   */
+  it('oferece o caminho para retomar cada processo da lista', async () => {
+    await flushLista([processo()]);
+
+    const abrir = host().querySelector<HTMLAnchorElement>('tbody tr [data-label="Ações"] a');
+
+    expect(abrir?.getAttribute('href')).toBe(
+      '/processo-seletivo/019f41cf-69fd-759a-ac6d-09acabc1b027',
+    );
+    expect(abrir?.getAttribute('aria-label')).toBe('Abrir Vestibular 2026.1');
   });
 
   it('leva ao cadastro pelo atalho de novo processo', async () => {

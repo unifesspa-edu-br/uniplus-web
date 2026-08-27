@@ -10,6 +10,22 @@
     <p>{{ error }}</p>
     <button class="btn btn--secondary" type="button" (click)="carregar()">Tentar novamente</button>
   </div>
+
+  <!--
+    Num processo retomado, o tipo vem do snapshot e não do catálogo. Esconder a
+    lista junto com o erro deixaria o operador sem saber que tipo o processo
+    usa — e, com o cadastro congelado, sem como descobrir.
+  -->
+  @if (options().length > 0) {
+    <ul class="type-list type-list--snapshot">
+      @for (opcao of options(); track opcao.value) {
+        <li class="type-card is-selected" aria-current="true">
+          <strong>{{ opcao.name }}</strong>
+          <span>{{ opcao.description }}</span>
+        </li>
+      }
+    </ul>
+  }
 } @else if (options().length === 0) {
   <p role="status">Não há tipos de processo ativos disponíveis no momento.</p>
 } @else {
