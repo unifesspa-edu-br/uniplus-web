@@ -459,23 +459,35 @@ export class ProcessoSeletivoPage {
   }
 
   /**
-   * Confirma o resumo: fecha o modal e grava de fato. O passo de destino é
-   * lido de novo aqui, mas não pode ter mudado — o resumo é descartado a cada
-   * troca de passo, justamente para que confirmar signifique sempre o que o
-   * operador leu.
+   * Confirma o resumo e grava. O passo de destino é lido de novo aqui, mas não
+   * pode ter mudado — o resumo é descartado a cada troca de passo, justamente
+   * para que confirmar signifique sempre o que o operador leu.
+   *
+   * O diálogo continua aberto enquanto a requisição corre. Fechá-lo no clique
+   * devolveria o foco ao botão de avanço que `persistir()` acaba de desabilitar,
+   * e o teclado ficaria sem ponto de partida por toda a espera; assim o foco
+   * permanece dentro do diálogo, que anuncia a gravação em curso, e só volta ao
+   * botão quando ele torna a aceitar foco.
    */
   async confirmarGravacao(): Promise<void> {
-    if (this.confirmacaoPendente() === null) return;
-    this.confirmacaoPendente.set(null);
-    await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()));
+    if (this.confirmacaoPendente() === null || this.store.salvando()) return;
+    try {
+      await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()));
+    } finally {
+      this.confirmacaoPendente.set(null);
+    }
   }
 
   /**
    * Desiste da gravação. Nada foi enviado e nada muda no rascunho: o operador
    * volta ao passo com o que digitou, que é o motivo de a confirmação vir
    * antes da requisição e não depois.
+   *
+   * Com a gravação em curso não há mais o que desistir — o comando já saiu — e
+   * fechar aqui só tiraria da tela o aviso de que ela está acontecendo.
    */
   cancelarGravacao(): void {
+    if (this.store.salvando()) return;
     this.confirmacaoPendente.set(null);
   }
 
