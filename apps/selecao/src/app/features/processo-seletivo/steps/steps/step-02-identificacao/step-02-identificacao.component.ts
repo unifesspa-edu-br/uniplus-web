@@ -16,6 +16,7 @@ import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
+import type { ConfirmacaoDeGravacao } from '../../../processo-seletivo.page';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 
 interface UnidadeOption {
@@ -313,6 +314,52 @@ export class Step02IdentificacaoComponent {
     } finally {
       this.store.salvando.set(false);
     }
+  }
+
+  /**
+   * O botão diz o que faz. Concluir este passo cria o Processo Seletivo no
+   * servidor, ao contrário dos demais, onde avançar só muda de tela.
+   */
+  rotuloDeAvanco(): string {
+    return this.store.cadastroInicialCongelado() ? 'Próximo' : 'Gravar e avançar';
+  }
+
+  /**
+   * Resumo do que a criação vai gravar, para conferência antes de qualquer
+   * requisição. Nenhum destes campos é alterável depois — o contrato não expõe
+   * atualização deles — e o aviso que hoje só aparece com o cadastro já criado
+   * chega aqui a tempo de o operador desistir.
+   *
+   * Devolve `null` com o processo já criado: não há o que gravar, e o passo
+   * volta a ser navegação como os outros.
+   */
+  confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
+    if (this.store.cadastroInicialCongelado()) return null;
+
+    const draft = this.store.draft();
+    const identificacao = draft.identificacao;
+    const unidade = this.unidades().find(
+      (item) => item.id === identificacao.unidadeAdministradoraId,
+    );
+    const origem = this.origens.find((item) => item.value === identificacao.origemCandidatos);
+    const localidade = identificacao.localidade;
+
+    return {
+      titulo: 'Confirmar o cadastro do processo seletivo',
+      aviso:
+        'Estes dados não poderão ser alterados depois de gravados. Confira antes de continuar.',
+      rotuloDeConfirmar: 'Gravar processo',
+      itens: [
+        { rotulo: 'Nome do processo seletivo', valor: identificacao.nome },
+        { rotulo: 'Tipo do processo', valor: draft.tipoProcesso.rotulo },
+        { rotulo: 'Unidade administradora', valor: unidade?.rotulo ?? '' },
+        {
+          rotulo: 'Município que rege os prazos',
+          valor: localidade === null ? '' : `${localidade.nome} — ${localidade.uf}`,
+        },
+        { rotulo: 'Origem dos candidatos', valor: origem?.label ?? '' },
+      ],
+    };
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
