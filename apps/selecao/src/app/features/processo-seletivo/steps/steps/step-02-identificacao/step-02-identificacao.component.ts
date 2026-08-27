@@ -26,6 +26,7 @@ import {
   UploadItem,
 } from '../../processo-seletivo.models';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { SelectValorDirective } from '../../shared/select-valor.directive';
 
 /** Limite do documento do edital no domínio: 20 MB. */
 const TAMANHO_MAXIMO_BYTES = 20 * 1024 * 1024;
@@ -55,6 +56,7 @@ export const ORIGENS_CANDIDATOS: readonly {
 @Component({
   selector: 'sel-step-02-identificacao',
   standalone: true,
+  imports: [SelectValorDirective],
   templateUrl: './step-02-identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

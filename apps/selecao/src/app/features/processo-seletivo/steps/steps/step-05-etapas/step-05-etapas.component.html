@@ -104,7 +104,7 @@
                 [id]="'et-tipo-' + etapa.id"
                 class="input"
                 [class.is-invalid]="invalidFields().has('tipo-' + etapa.id)"
-                [value]="etapa.tipo"
+                [selValor]="etapa.tipo"
                 (change)="update(etapa.id, { tipo: $any($event.target).value })"
               >
                 <option value="">Selecione</option>

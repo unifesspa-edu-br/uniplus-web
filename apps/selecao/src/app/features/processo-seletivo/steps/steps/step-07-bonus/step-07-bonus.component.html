@@ -27,7 +27,7 @@
           ><select
             class="input"
             id="f-bonus-tipo"
-            [value]="store.draft().bonus.tipo"
+            [selValor]="store.draft().bonus.tipo"
             (change)="store.patchObjectSection('bonus', { tipo: $any($event.target).value })"
           >
             <option value="">— escolher —</option>
@@ -58,7 +58,7 @@
           ><select
             class="input"
             id="f-bonus-criterio"
-            [value]="store.draft().bonus.criterio"
+            [selValor]="store.draft().bonus.criterio"
             (change)="store.patchObjectSection('bonus', { criterio: $any($event.target).value })"
           >
             <option value="">— escolher —</option>

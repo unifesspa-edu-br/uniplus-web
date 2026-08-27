@@ -105,7 +105,7 @@
         id="f-periodo"
         [attr.aria-invalid]="invalidFields().has('periodo') || null"
         [class.is-invalid]="invalidFields().has('periodo')"
-        [value]="store.draft().identificacao.periodo"
+        [selValor]="store.draft().identificacao.periodo"
         (change)="patch('periodo', $any($event.target).value)"
       >
         <option value="">Selecione</option>
@@ -145,7 +145,7 @@
         [attr.aria-invalid]="invalidFields().has('unidadeAdministradoraId') || null"
         [class.is-invalid]="invalidFields().has('unidadeAdministradoraId')"
         [disabled]="camposDoComandoBloqueados() || unidadesCarregando()"
-        [value]="store.draft().identificacao.unidadeAdministradoraId"
+        [selValor]="store.draft().identificacao.unidadeAdministradoraId"
         (change)="patch('unidadeAdministradoraId', $any($event.target).value)"
       >
         <option value="">{{ unidadesCarregando() ? 'Carregando…' : 'Selecione' }}</option>
@@ -241,7 +241,7 @@
         [attr.aria-invalid]="invalidFields().has('origemCandidatos') || null"
         [class.is-invalid]="invalidFields().has('origemCandidatos')"
         [disabled]="camposDoComandoBloqueados()"
-        [value]="store.draft().identificacao.origemCandidatos"
+        [selValor]="store.draft().identificacao.origemCandidatos"
         (change)="patch('origemCandidatos', $any($event.target).value)"
       >
         <option value="">Selecione</option>

@@ -10,7 +10,7 @@
       class="input"
       id="f-agregacao"
       [class.is-invalid]="invalidFields().has('agregacao')"
-      [value]="store.draft().formula.agregacao"
+      [selValor]="store.draft().formula.agregacao"
       (change)="store.patchObjectSection('formula', { agregacao: $any($event.target).value })"
     >
       <option value="">— escolher —</option>
@@ -30,7 +30,7 @@
       class="input"
       id="f-precisao"
       [class.is-invalid]="invalidFields().has('precisao')"
-      [value]="store.draft().formula.precisao"
+      [selValor]="store.draft().formula.precisao"
       (change)="store.patchObjectSection('formula', { precisao: $any($event.target).value })"
     >
       <option value="">— escolher —</option>

@@ -12,10 +12,12 @@ import { CURSOS } from '../../processo-seletivo.data';
 import { Curso, OfertaCurso, StepValidation, Turno } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OverlayScrollService } from '../../shared/overlay-scroll.service';
+import { SelectValorDirective } from '../../shared/select-valor.directive';
 
 @Component({
   selector: 'sel-step-04-vagas',
   standalone: true,
+  imports: [SelectValorDirective],
   templateUrl: './step-04-vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

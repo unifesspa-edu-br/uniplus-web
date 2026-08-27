@@ -902,6 +902,39 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     expect(passoInterno.uploadError()).toContain('envio de edital em andamento');
   });
 
+  /** Confere o elemento, não o rascunho: num `<select>` os dois divergem. */
+  it('exibe na tela os valores hidratados dos campos de seleção', async () => {
+    const cenario = montar();
+    await propagar();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
+
+    const host = cenario.host;
+    const unidade = host.querySelector<HTMLSelectElement>('#f-unidade');
+    const origem = host.querySelector<HTMLSelectElement>('#f-origem');
+    const nome = host.querySelector<HTMLInputElement>('#f-nome');
+
+    expect(nome?.value).toBe('Vestibular 2026.1');
+    expect(unidade?.value).toBe(UNIDADE_ORIGEM_ID);
+    expect(origem?.value).toBe('inscricaoPropria');
+  });
+
+  /** Campo congelado precisa mostrar o valor, não só recusar edição. */
+  it('mantém o valor visível nos campos congelados após a retomada', async () => {
+    const cenario = montar();
+    await propagar();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
+
+    const unidade = cenario.host.querySelector<HTMLSelectElement>('#f-unidade');
+
+    expect(unidade?.disabled).toBe(true);
+    expect(unidade?.value).toBe(UNIDADE_ORIGEM_ID);
+    expect(unidade?.selectedOptions[0]?.textContent).toContain('IGE');
+  });
+
   it('não lê detalhe algum em /novo', async () => {
     const cenario = montar({ id: null });
     await propagar();

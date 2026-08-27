@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
+import { SelectValorDirective } from '../../shared/select-valor.directive';
 
 @Component({
   selector: 'sel-step-07-bonus',
   standalone: true,
+  imports: [SelectValorDirective],
   templateUrl: './step-07-bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

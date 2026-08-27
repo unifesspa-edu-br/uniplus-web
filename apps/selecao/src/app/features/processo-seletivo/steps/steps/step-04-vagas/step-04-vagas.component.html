@@ -8,8 +8,8 @@
     class="step-section__desc"
     style="font-size: var(--text-sm); color: var(--text-secondary); margin: 0 0 var(--space-4)"
   >
-    Curso, campus, turno e vagas totais. Distribuição por modalidade pode ser configurada por processo seletivo
-    ou seguir percentuais legais (Lei 12.711/2012).
+    Curso, campus, turno e vagas totais. Distribuição por modalidade pode ser configurada por
+    processo seletivo ou seguir percentuais legais (Lei 12.711/2012).
   </p>
   <div class="vagas-toolbar">
     <button #addButton class="btn btn--outline btn--sm" type="button" (click)="openModal()">
@@ -54,7 +54,7 @@
                 <select
                   class="vagas-table__select"
                   aria-label="Turno"
-                  [value]="oferta.turno"
+                  [selValor]="oferta.turno"
                   (change)="update(oferta.id, { turno: $any($event.target).value })"
                 >
                   <option value="">Selecione</option>
@@ -129,7 +129,7 @@
                 <select
                   class="vagas-table__select"
                   aria-label="Turno"
-                  [value]="oferta.turno"
+                  [selValor]="oferta.turno"
                   (change)="update(oferta.id, { turno: $any($event.target).value })"
                 >
                   <option value="">Selecione</option>

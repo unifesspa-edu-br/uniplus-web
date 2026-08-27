@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { EtapaEdital, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { SelectValorDirective } from '../../shared/select-valor.directive';
 
 @Component({
   selector: 'sel-step-05-etapas',
   standalone: true,
+  imports: [SelectValorDirective],
   templateUrl: './step-05-etapas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
