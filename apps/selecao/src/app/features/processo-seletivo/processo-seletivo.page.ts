@@ -27,19 +27,19 @@ import type { ConfirmacaoDeGravacao } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
-import { Step01TipoProcessoComponent } from './steps/steps/step-01-tipo-processo/step-01-tipo-processo.component';
-import { Step02IdentificacaoComponent } from './steps/steps/step-02-identificacao/step-02-identificacao.component';
-import { Step03ModalidadesComponent } from './steps/steps/step-03-modalidades/step-03-modalidades.component';
-import { Step04VagasComponent } from './steps/steps/step-04-vagas/step-04-vagas.component';
-import { Step05EtapasComponent } from './steps/steps/step-05-etapas/step-05-etapas.component';
-import { Step06FormulaComponent } from './steps/steps/step-06-formula/step-06-formula.component';
-import { Step07BonusComponent } from './steps/steps/step-07-bonus/step-07-bonus.component';
-import { Step08DesempateComponent } from './steps/steps/step-08-desempate/step-08-desempate.component';
-import { Step09EliminacaoComponent } from './steps/steps/step-09-eliminacao/step-09-eliminacao.component';
-import { Step10DocumentosComponent } from './steps/steps/step-10-documentos/step-10-documentos.component';
-import { Step11PolosComponent } from './steps/steps/step-11-polos/step-11-polos.component';
-import { Step12AtendimentoComponent } from './steps/steps/step-12-atendimento/step-12-atendimento.component';
-import { Step13RevisaoComponent } from './steps/steps/step-13-revisao/step-13-revisao.component';
+import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
+import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
+import { ModalidadesStepComponent } from './steps/steps/modalidades/modalidades.component';
+import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
+import { EtapasStepComponent } from './steps/steps/etapas/etapas.component';
+import { FormulaStepComponent } from './steps/steps/formula/formula.component';
+import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
+import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
+import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
+import { DocumentosStepComponent } from './steps/steps/documentos/documentos.component';
+import { PolosStepComponent } from './steps/steps/polos/polos.component';
+import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
+import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
 import { classificarDocumentos } from './steps/shared/hidratacao';
 import type { MotivoFalhaDeLeitura } from './steps/processo-seletivo.models';
 
@@ -67,19 +67,19 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     DialogComponent,
     SpinnerComponent,
     WizardStepperComponent,
-    Step01TipoProcessoComponent,
-    Step02IdentificacaoComponent,
-    Step03ModalidadesComponent,
-    Step04VagasComponent,
-    Step05EtapasComponent,
-    Step06FormulaComponent,
-    Step07BonusComponent,
-    Step08DesempateComponent,
-    Step09EliminacaoComponent,
-    Step10DocumentosComponent,
-    Step11PolosComponent,
-    Step12AtendimentoComponent,
-    Step13RevisaoComponent,
+    TipoProcessoStepComponent,
+    IdentificacaoStepComponent,
+    ModalidadesStepComponent,
+    VagasStepComponent,
+    EtapasStepComponent,
+    FormulaStepComponent,
+    BonusStepComponent,
+    DesempateStepComponent,
+    EliminacaoStepComponent,
+    DocumentosStepComponent,
+    PolosStepComponent,
+    AtendimentoStepComponent,
+    RevisaoStepComponent,
   ],
   providers: [ProcessoSeletivoStore, CadastroInicialService],
   templateUrl: './processo-seletivo.page.html',
