@@ -235,11 +235,17 @@
     >
       Voltar e revisar
     </button>
+    <!-- Continua habilitado enquanto grava, e de propósito: é o único controle
+         que resta no diálogo nesse estado, e desabilitá-lo deixaria a janela
+         aberta sem destino de foco nem de Tab. O acionamento repetido é
+         inofensivo — `confirmarGravacao()` sai cedo com a gravação em curso —
+         e `aria-busy` com `aria-disabled` dizem ao leitor de tela que ele está
+         ocupado e não aceita nova ação. -->
     <button
       class="btn btn--primary"
       type="button"
-      [disabled]="store.salvando()"
       [attr.aria-busy]="store.salvando() || null"
+      [attr.aria-disabled]="store.salvando() || null"
       (click)="confirmarGravacao()"
     >
       @if (store.salvando()) { Gravando… } @else { {{ confirmacaoPendente()?.rotuloDeConfirmar }} }
