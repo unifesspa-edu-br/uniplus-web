@@ -362,6 +362,18 @@ export class AnexoEditalComponent {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null || this.abrindoDocumento() !== null) return;
 
+    // A aba nasce aqui, ainda dentro do clique. Abri-la depois do `await`
+    // custaria a ativação do usuário que o navegador exige, e o bloqueador de
+    // pop-ups recusaria a abertura justamente no caminho feliz — sem erro de
+    // API para explicar por que nada aconteceu.
+    //
+    // Sem `noopener` na chamada, e de propósito: com ele `window.open` devolve
+    // `null` por especificação, e é justamente a referência que se precisa
+    // para levar a aba ao endereço quando ele chegar. O desacoplamento vem
+    // depois, zerando `opener` antes de navegar — mesmo efeito, na ordem que
+    // este fluxo permite.
+    const aba = window.open('', '_blank');
+
     const geracao = this.store.geracao();
     this.abrindoDocumento.set(documentoEditalId);
     this.erroDeAbertura.set(null);
@@ -371,17 +383,35 @@ export class AnexoEditalComponent {
       // O editor pode ter passado a outro processo enquanto o acesso era
       // pedido; abrir agora mostraria o edital de um processo que já saiu da
       // tela.
-      if (geracao !== this.store.geracao()) return;
+      if (geracao !== this.store.geracao()) {
+        aba?.close();
+        return;
+      }
 
       if (!isApiOk(resultado)) {
+        aba?.close();
         this.erroDeAbertura.set(this.problemI18n.resolve(resultado.problem).title);
         return;
       }
 
-      // `noopener` evita que a aba aberta alcance esta pelo `window.opener` —
-      // ela carrega um endereço assinado do storage, fora do controle da
-      // aplicação.
-      window.open(resultado.data.url, '_blank', 'noopener');
+      if (aba === null) {
+        // Sem aba, a URL não vai para lugar nenhum: ela não pode virar link
+        // clicável na tela, porque aí deixaria de ser credencial de uso único
+        // e passaria a viver no DOM até alguém reparar.
+        this.erroDeAbertura.set(
+          'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.',
+        );
+        return;
+      }
+
+      // Zerado antes de navegar: a aba passa a carregar um endereço assinado do
+      // storage, fora do controle da aplicação, e não deve alcançar esta
+      // janela pelo `window.opener`.
+      aba.opener = null;
+      aba.location.href = resultado.data.url;
+    } catch (erro) {
+      aba?.close();
+      throw erro;
     } finally {
       this.abrindoDocumento.set(null);
     }
