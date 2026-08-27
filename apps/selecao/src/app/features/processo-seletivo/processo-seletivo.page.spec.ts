@@ -429,6 +429,69 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     expect(store.salvando()).toBe(true);
     expect(page.confirmacaoPendente()).not.toBeNull();
 
+    // Com fechar, cancelar e confirmar todos desabilitados, a janela ficaria
+    // aberta sem destino de foco nem de Tab. O de confirmar permanece
+    // operável pelo teclado, anunciado como ocupado.
+    const host = fixture.nativeElement as HTMLElement;
+    const confirmar = [...host.querySelectorAll('button')].find((b) =>
+      /Gravando/.test(b.textContent ?? ''),
+    );
+    expect(confirmar).toBeDefined();
+    expect(confirmar?.disabled).toBe(false);
+    expect(confirmar?.getAttribute('aria-busy')).toBe('true');
+    expect(confirmar?.getAttribute('aria-disabled')).toBe('true');
+
+    emVoo.complete();
+  });
+
+  /** Acionar de novo enquanto grava não pode disparar uma segunda criação. */
+  it('ignora novo acionamento do confirmar enquanto grava', async () => {
+    let chamadas = 0;
+    const emVoo = new Subject<never>();
+    TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+      providers: [
+        provideRouter([]),
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
+        { provide: ModalidadesApi, useValue: modalidadesApiStub },
+        {
+          provide: ProcessosSeletivosApi,
+          useValue: {
+            criar: () => {
+              chamadas += 1;
+              return emVoo;
+            },
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    const page = fixture.componentInstance;
+    fixture.detectChanges();
+
+    store.patchObjectSection('tipoProcesso', { selected: 'tipo-1', rotulo: 'Vestibular' });
+    store.patchObjectSection('identificacao', {
+      nome: 'Vestibular 2027',
+      unidadeAdministradoraId: 'unidade-1',
+      origemCandidatos: 'inscricaoPropria',
+      localidade: MARABA,
+    });
+    store.goTo(1);
+    fixture.detectChanges();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+
+    void page.confirmarGravacao();
+    await Promise.resolve();
+    void page.confirmarGravacao();
+    await Promise.resolve();
+
+    expect(chamadas).toBe(1);
     emVoo.complete();
   });
 
