@@ -12,6 +12,7 @@ export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapsho
 export type IniciarUploadDocumentoEditalDto =
   components['schemas']['IniciarUploadDocumentoEditalDto'];
 export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
+export type AcessoDocumentoEditalDto = components['schemas']['AcessoDocumentoEditalDto'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -87,6 +88,26 @@ export class ProcessosSeletivosApi {
     return this.http.get<ApiResult<readonly DocumentoEditalDto[]>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital`,
       { context: withVendorMime('documento-edital', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/documentos-edital/{docId}/acesso`
+   * — pede o acesso de leitura a um documento confirmado, para conferir o PDF
+   * anexado.
+   *
+   * A URL vem assinada e com validade curta, e é emitida a cada chamada: o
+   * servidor não a distribui na listagem justamente para que o prazo comece
+   * quando o acesso é pedido. Pelo mesmo motivo ela não é guardada aqui — quem
+   * a tem abre o arquivo sem passar por autorização de novo.
+   */
+  obterAcessoDocumentoEdital(
+    processoSeletivoId: string,
+    documentoEditalId: string,
+  ): Observable<ApiResult<AcessoDocumentoEditalDto>> {
+    return this.http.get<ApiResult<AcessoDocumentoEditalDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital/${encodeURIComponent(documentoEditalId)}/acesso`,
+      { context: withVendorMime('acesso-documento-edital', 1) },
     );
   }
 

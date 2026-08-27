@@ -50,6 +50,15 @@
               <span>Usar este documento</span>
               <span class="ps-doc-escolha__meta">{{ descrever(documento) }}</span>
             </button>
+            <button
+              type="button"
+              class="btn btn--tertiary btn--sm"
+              [attr.aria-label]="'Abrir o documento confirmado em ' + descrever(documento)"
+              [disabled]="abrindoDocumento() !== null"
+              (click)="abrirDocumento(documento.id)"
+            >
+              {{ abrindoDocumento() === documento.id ? 'Abrindo…' : 'Abrir' }}
+            </button>
           </li>
         }
       </ul>
@@ -115,6 +124,20 @@
               <button class="btn btn--tertiary" type="button" (click)="retomarUpload()">
                 Tentar novamente
               </button>
+            }
+            @if (file.fase === 'confirmado' && file.documentoEditalId; as documentoId) {
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [disabled]="abrindoDocumento() !== null"
+                [attr.aria-busy]="abrindoDocumento() === documentoId || null"
+                (click)="abrirDocumento(documentoId)"
+              >
+                {{ abrindoDocumento() === documentoId ? 'Abrindo…' : 'Abrir o edital' }}
+              </button>
+            }
+            @if (erroDeAbertura(); as erro) {
+              <p class="field__erro" role="alert">{{ erro }}</p>
             }
           </div>
           @if (!anexoBloqueado()) {
