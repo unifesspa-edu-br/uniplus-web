@@ -205,8 +205,16 @@
     <path d="M18 15l-6-6-6 6" />
   </svg>
 </button>
-} @if (confirmacaoPendente(); as confirmacao) {
-<ui-dialog [visible]="true" [heading]="confirmacao.titulo" (closed)="cancelarGravacao()">
+}
+<!-- O diálogo permanece no DOM e é a visibilidade que muda. Destruí-lo por um
+     @if pularia o caminho de fechamento do componente, que é quem devolve o
+     foco ao botão que abriu a confirmação. -->
+<ui-dialog
+  [visible]="confirmacaoPendente() !== null"
+  [heading]="confirmacaoPendente()?.titulo ?? ''"
+  (closed)="cancelarGravacao()"
+>
+  @if (confirmacaoPendente(); as confirmacao) {
   <p class="alert alert--info" role="status">{{ confirmacao.aviso }}</p>
   <dl class="confirmacao-lista">
     @for (item of confirmacao.itens; track item.rotulo) {
@@ -216,13 +224,13 @@
     </div>
     }
   </dl>
+  }
   <div uiDialogFooter>
     <button class="btn btn--tertiary" type="button" (click)="cancelarGravacao()">
       Voltar e revisar
     </button>
     <button class="btn btn--primary" type="button" (click)="confirmarGravacao()">
-      {{ confirmacao.rotuloDeConfirmar }}
+      {{ confirmacaoPendente()?.rotuloDeConfirmar }}
     </button>
   </div>
 </ui-dialog>
-}

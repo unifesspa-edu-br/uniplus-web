@@ -163,6 +163,15 @@ export class ProcessoSeletivoPage {
       if (this.stepsOverlayOpen()) this.overlayScroll.unlock();
     });
 
+    // Um resumo aberto vale para o passo que o produziu. Trocar de passo — pelo
+    // stepper, pelo histórico do navegador ou por uma troca de processo, já que
+    // a rota reusa esta página — o torna obsoleto, e confirmá-lo depois
+    // aplicaria a decisão lida numa tela ao efeito de outra.
+    effect(() => {
+      this.store.currentStep();
+      untracked(() => this.confirmacaoPendente.set(null));
+    });
+
     effect(() => {
       this.store.currentStep();
       // Numa entrada por `/:id` o painel só existe depois da leitura; sem
@@ -344,6 +353,12 @@ export class ProcessoSeletivoPage {
   private limparEditor(): void {
     this.store.reset();
     this.cadastro.descartarCadastroEmAndamento();
+
+    // A rota reusa esta página, então um resumo aberto sobrevive à troca de
+    // processo se ninguém o descartar. Confirmá-lo depois resolveria o passo
+    // pelo estado novo enquanto exibia os dados do editor anterior — o resumo
+    // vale para o rascunho que o produziu, e esse rascunho acabou de sumir.
+    this.confirmacaoPendente.set(null);
   }
 
   /** Repete a leitura do endereço atual, para as falhas que admitem retentativa. */
@@ -443,7 +458,12 @@ export class ProcessoSeletivoPage {
     await this.gravarEAvancar(validator);
   }
 
-  /** Confirma o resumo: fecha o modal e grava de fato. */
+  /**
+   * Confirma o resumo: fecha o modal e grava de fato. O passo de destino é
+   * lido de novo aqui, mas não pode ter mudado — o resumo é descartado a cada
+   * troca de passo, justamente para que confirmar signifique sempre o que o
+   * operador leu.
+   */
   async confirmarGravacao(): Promise<void> {
     if (this.confirmacaoPendente() === null) return;
     this.confirmacaoPendente.set(null);

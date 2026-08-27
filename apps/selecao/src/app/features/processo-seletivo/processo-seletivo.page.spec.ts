@@ -343,4 +343,41 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
 
     expect(page.rotuloDeAvanco()).toBe('Gravar e avançar');
   });
+
+  /**
+   * O resumo vale para o passo que o produziu. A rota reusa esta página, então
+   * sem descartá-lo ele sobreviveria a uma troca de processo e confirmar
+   * aplicaria a decisão lida numa tela ao efeito de outra.
+   */
+  it('descarta o resumo quando o passo muda', async () => {
+    const { page, store, fixture } = cenario();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(page.confirmacaoPendente()).not.toBeNull();
+
+    store.goTo(4);
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).toBeNull();
+  });
+
+  /**
+   * O diálogo precisa continuar no DOM para fechar pelo caminho do componente:
+   * destruí-lo pularia a devolução do foco ao botão que o abriu.
+   */
+  it('fecha o diálogo pela visibilidade, sem removê-lo do DOM', async () => {
+    const { page, fixture } = cenario();
+    const host = fixture.nativeElement as HTMLElement;
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(host.querySelector('ui-dialog')).not.toBeNull();
+
+    page.cancelarGravacao();
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).toBeNull();
+    expect(host.querySelector('ui-dialog')).not.toBeNull();
+  });
 });
