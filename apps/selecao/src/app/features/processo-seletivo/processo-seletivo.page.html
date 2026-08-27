@@ -226,11 +226,22 @@
   </dl>
   }
   <div uiDialogFooter>
-    <button class="btn btn--tertiary" type="button" (click)="cancelarGravacao()">
+    <button
+      class="btn btn--tertiary"
+      type="button"
+      [disabled]="store.salvando()"
+      (click)="cancelarGravacao()"
+    >
       Voltar e revisar
     </button>
-    <button class="btn btn--primary" type="button" (click)="confirmarGravacao()">
-      {{ confirmacaoPendente()?.rotuloDeConfirmar }}
+    <button
+      class="btn btn--primary"
+      type="button"
+      [disabled]="store.salvando()"
+      [attr.aria-busy]="store.salvando() || null"
+      (click)="confirmarGravacao()"
+    >
+      @if (store.salvando()) { Gravando… } @else { {{ confirmacaoPendente()?.rotuloDeConfirmar }} }
     </button>
   </div>
 </ui-dialog>

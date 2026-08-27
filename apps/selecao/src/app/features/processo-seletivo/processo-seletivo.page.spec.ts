@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
@@ -379,5 +379,70 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
 
     expect(page.confirmacaoPendente()).toBeNull();
     expect(host.querySelector('ui-dialog')).not.toBeNull();
+  });
+
+  /**
+   * `persistir()` desabilita o botão de avanço enquanto grava. Fechar o
+   * diálogo no clique mandaria o foco de volta para esse botão desabilitado, e
+   * o teclado ficaria fora dos controles da página por toda a requisição.
+   */
+  it('mantém o diálogo aberto enquanto a gravação corre', async () => {
+    // A criação fica em voo: é o intervalo em que o botão que abriu o diálogo
+    // está desabilitado e não pode receber o foco de volta.
+    const emVoo = new Subject<never>();
+    TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+      providers: [
+        provideRouter([]),
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
+        { provide: ModalidadesApi, useValue: modalidadesApiStub },
+        { provide: ProcessosSeletivosApi, useValue: { criar: () => emVoo } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    const page = fixture.componentInstance;
+    fixture.detectChanges();
+
+    store.patchObjectSection('tipoProcesso', { selected: 'tipo-1', rotulo: 'Vestibular' });
+    store.patchObjectSection('identificacao', {
+      nome: 'Vestibular 2027',
+      unidadeAdministradoraId: 'unidade-1',
+      origemCandidatos: 'inscricaoPropria',
+      localidade: MARABA,
+    });
+    store.goTo(1);
+    fixture.detectChanges();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(page.confirmacaoPendente()).not.toBeNull();
+
+    void page.confirmarGravacao();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    // Requisição ainda em voo: o resumo continua na tela.
+    expect(store.salvando()).toBe(true);
+    expect(page.confirmacaoPendente()).not.toBeNull();
+
+    emVoo.complete();
+  });
+
+  /** O comando já saiu: fechar aqui só tiraria da tela o aviso da gravação. */
+  it('não desiste da confirmação com a gravação em curso', async () => {
+    const { page, store, fixture } = cenario();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    store.salvando.set(true);
+
+    page.cancelarGravacao();
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).not.toBeNull();
   });
 });
