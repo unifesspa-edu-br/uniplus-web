@@ -432,4 +432,30 @@ describe('Step02IdentificacaoComponent', () => {
 
     expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');
   });
+
+  /**
+   * A navegação pelo stepper é livre: dá para chegar ao passo 2 sem ter
+   * escolhido o tipo, que é do passo 1. O resumo listaria "Tipo do processo"
+   * em branco e anunciaria um comando pronto que a criação recusaria em
+   * seguida.
+   */
+  it('não abre o resumo com campo do comando ainda por preencher', () => {
+    preencherCamposDoComando();
+    store.patchObjectSection('tipoProcesso', { selected: '', rotulo: '' });
+
+    expect(componente.confirmacaoDeGravacao()).toBeNull();
+  });
+
+  /**
+   * Sem resposta da criação não há id, mas acionar o botão reenvia o comando
+   * retido. "Próximo" descreveria navegação onde há reenvio, e contradiria o
+   * aviso na tela, que pede para tentar de novo.
+   */
+  it('anuncia repetição, não avanço, com a criação em estado indefinido', () => {
+    preencherCamposDoComando();
+    store.criacaoIndefinida.set(true);
+
+    expect(store.processoSeletivoId()).toBeNull();
+    expect(componente.rotuloDeAvanco()).toBe('Repetir a gravação');
+  });
 });

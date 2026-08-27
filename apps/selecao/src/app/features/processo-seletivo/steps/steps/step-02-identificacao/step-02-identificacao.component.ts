@@ -319,9 +319,17 @@ export class Step02IdentificacaoComponent {
   /**
    * O botão diz o que faz. Concluir este passo cria o Processo Seletivo no
    * servidor, ao contrário dos demais, onde avançar só muda de tela.
+   *
+   * São três estados, e não dois. Com o processo criado, avançar é só navegar.
+   * Com a criação em estado indefinido — sem resposta, 5xx, conflito de
+   * processamento — não há id conhecido, mas acionar o botão reenvia o mesmo
+   * comando retido: chamar isso de "Próximo" descreveria navegação onde há
+   * reenvio, e contradiria o aviso na tela, que pede para tentar de novo.
    */
   rotuloDeAvanco(): string {
-    return this.store.cadastroInicialCongelado() ? 'Próximo' : 'Gravar e avançar';
+    if (this.store.processoSeletivoId() !== null) return 'Próximo';
+    if (this.store.criacaoIndefinida()) return 'Repetir a gravação';
+    return 'Gravar e avançar';
   }
 
   /**
@@ -335,6 +343,13 @@ export class Step02IdentificacaoComponent {
    */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
     if (this.store.cadastroInicialCongelado()) return null;
+
+    // A navegação pelo stepper é livre, então dá para chegar aqui com o tipo
+    // do processo — que é do passo 1 — ainda por escolher. O resumo listaria
+    // "Tipo do processo" em branco e prometeria um comando pronto que a
+    // criação recusaria logo depois. Sem confirmação, a recusa de
+    // `persistir()` aparece direto e nomeia o que falta.
+    if (this.camposFaltantesDoComando().length > 0) return null;
 
     const draft = this.store.draft();
     const identificacao = draft.identificacao;
