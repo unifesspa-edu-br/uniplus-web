@@ -43,7 +43,7 @@ function initialEtapa(): EtapaEdital {
 
 const INITIAL_DRAFT: WizardDraft = {
   // Desmarcado por padrão — o usuário DEVE escolher um tipo no step-01.
-  tipoProcesso: { selected: '' },
+  tipoProcesso: { selected: '', rotulo: '' },
   // Todos os campos do Passo 2 começam vazios para obrigar o preenchimento.
   identificacao: {
     nome: '',

@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   ElementRef,
   HostListener,
   ViewChild,
@@ -17,7 +18,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
@@ -60,6 +61,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
   imports: [
     RouterLink,
     AlertComponent,
+    DialogComponent,
     SpinnerComponent,
     WizardStepperComponent,
     Step01TipoProcessoComponent,
@@ -128,6 +130,23 @@ export class ProcessoSeletivoPage {
 
   /** Vez da leitura em curso — respostas de vezes anteriores são descartadas. */
   private leituraEmCurso = 0;
+
+  /**
+   * Resumo aguardando confirmação do operador. Enquanto não é `null`, nada foi
+   * enviado à API — é exatamente esse o ponto do modal.
+   */
+  readonly confirmacaoPendente = signal<ConfirmacaoDeGravacao | null>(null);
+
+  /**
+   * Rótulo do botão de avanço. O passo aberto pode dizer o seu; sem isso, o
+   * shell diz "Próximo" — e "Publicar" no último. Um botão que grava e diz
+   * "Próximo" descreve a navegação e esconde o efeito.
+   */
+  readonly rotuloDeAvanco = computed(() => {
+    if (this.store.isLast()) return 'Publicar';
+    const passo = this.stepValidatorAt(this.store.currentStep()) as Partial<StepCommit> | undefined;
+    return passo?.rotuloDeAvanco?.() ?? 'Próximo';
+  });
 
   readonly stepsOverlayOpen = signal(false);
   readonly showBackToTop = signal(false);
@@ -412,6 +431,41 @@ export class ProcessoSeletivoPage {
       return;
     }
 
+    // A confirmação vem antes de qualquer requisição: é o momento em que o
+    // operador ainda pode desistir. Depois de gravado, o cadastro inicial não
+    // volta atrás pelo contrato desta tela.
+    const confirmacao = (validator as Partial<StepCommit> | undefined)?.confirmacaoDeGravacao?.();
+    if (confirmacao) {
+      this.confirmacaoPendente.set(confirmacao);
+      return;
+    }
+
+    await this.gravarEAvancar(validator);
+  }
+
+  /** Confirma o resumo: fecha o modal e grava de fato. */
+  async confirmarGravacao(): Promise<void> {
+    if (this.confirmacaoPendente() === null) return;
+    this.confirmacaoPendente.set(null);
+    await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()));
+  }
+
+  /**
+   * Desiste da gravação. Nada foi enviado e nada muda no rascunho: o operador
+   * volta ao passo com o que digitou, que é o motivo de a confirmação vir
+   * antes da requisição e não depois.
+   */
+  cancelarGravacao(): void {
+    this.confirmacaoPendente.set(null);
+  }
+
+  /**
+   * Conclui o passo depois de a confirmação já ter sido resolvida — seja
+   * porque o passo não pedia nenhuma, seja porque o operador confirmou.
+   */
+  private async gravarEAvancar(
+    validator: { validate(): StepValidation } | undefined,
+  ): Promise<void> {
     // Passos que persistem expõem `persistir()`; os demais avançam direto.
     const persistivel = validator as Partial<StepCommit> | undefined;
     if (persistivel?.persistir) {
@@ -527,6 +581,35 @@ export class ProcessoSeletivoPage {
  */
 interface StepCommit {
   persistir(): Promise<StepValidation>;
+
+  /**
+   * Rótulo do botão de avanço enquanto este passo estiver aberto. O shell usa
+   * "Próximo" nos doze passos que só navegam; quem grava diz outra coisa, e
+   * diz por conta própria — cravar isso no shell exigiria que ele soubesse
+   * qual passo é qual.
+   */
+  rotuloDeAvanco?(): string;
+
+  /**
+   * O que confirmar antes de gravar, ou `null` quando não há o que confirmar.
+   * Devolver os dados aqui é o que permite ao operador conferir o que vai ser
+   * gravado — e, no caso do cadastro inicial, o que não poderá ser desfeito.
+   */
+  confirmacaoDeGravacao?(): ConfirmacaoDeGravacao | null;
+}
+
+/** Um campo do resumo de confirmação, com o rótulo que o operador viu. */
+export interface ItemDeConfirmacao {
+  readonly rotulo: string;
+  readonly valor: string;
+}
+
+/** Resumo do que será gravado, exibido antes de qualquer requisição. */
+export interface ConfirmacaoDeGravacao {
+  readonly titulo: string;
+  readonly aviso: string;
+  readonly itens: readonly ItemDeConfirmacao[];
+  readonly rotuloDeConfirmar: string;
 }
 
 /** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */

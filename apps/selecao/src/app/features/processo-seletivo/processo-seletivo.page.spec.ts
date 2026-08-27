@@ -253,3 +253,94 @@ describe('ProcessoSeletivoStore — progresso', () => {
     expect([...store.completedSteps()]).toEqual([1]);
   });
 });
+
+describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
+  const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' } as const;
+
+  /**
+   * Um `criar` que registra a chamada. O ponto dos testes abaixo é que ele
+   * **não** seja chamado enquanto o operador não confirma.
+   */
+  function cenario() {
+    const criar = vi.fn(() => of(apiOk({ id: 'x' }, 201, new HttpHeaders())));
+
+    TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+      providers: [
+        provideRouter([]),
+        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
+        { provide: UnidadesApi, useValue: unidadesApiStub },
+        { provide: GeoApi, useValue: geoApiStub },
+        { provide: ModalidadesApi, useValue: modalidadesApiStub },
+        { provide: ProcessosSeletivosApi, useValue: { criar } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    // O store é provido pela própria página, então vem do injector dela.
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    fixture.detectChanges();
+
+    store.patchObjectSection('tipoProcesso', { selected: 'tipo-1', rotulo: 'Vestibular' });
+    store.patchObjectSection('identificacao', {
+      nome: 'Vestibular 2027',
+      unidadeAdministradoraId: 'unidade-1',
+      origemCandidatos: 'inscricaoPropria',
+      localidade: MARABA,
+    });
+    store.goTo(1);
+    fixture.detectChanges();
+
+    return { fixture, store, criar, page: fixture.componentInstance };
+  }
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  /**
+   * O clique que grava precisa parar aqui: depois da criação, nenhum destes
+   * campos volta atrás pelo contrato desta tela.
+   */
+  it('abre a confirmação sem enviar nada à API', async () => {
+    const { page, criar, fixture } = cenario();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).not.toBeNull();
+    expect(criar).not.toHaveBeenCalled();
+  });
+
+  it('desiste sem requisição e mantém o operador no passo', () => {
+    const { page, criar, store, fixture } = cenario();
+
+    void page.nextOrPublish();
+    fixture.detectChanges();
+    page.cancelarGravacao();
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).toBeNull();
+    expect(criar).not.toHaveBeenCalled();
+    expect(store.currentStep()).toBe(1);
+    expect(store.draft().identificacao.nome).toBe('Vestibular 2027');
+  });
+
+  it('exibe na tela os dados que serão gravados', async () => {
+    const { page, fixture } = cenario();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Vestibular 2027');
+    expect(texto).toContain('Vestibular');
+    expect(texto).toContain('Marabá — PA');
+    expect(texto).toContain('não poderão ser alterados');
+  });
+
+  it('anuncia no botão que o avanço grava', async () => {
+    const { page, fixture } = cenario();
+    fixture.detectChanges();
+
+    expect(page.rotuloDeAvanco()).toBe('Gravar e avançar');
+  });
+});

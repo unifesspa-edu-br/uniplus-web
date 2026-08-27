@@ -93,7 +93,7 @@ describe('Step02IdentificacaoComponent', () => {
   afterEach(() => controller.verify());
 
   function preencherCamposDoComando(): void {
-    store.patchObjectSection('tipoProcesso', { selected: TIPO_ID });
+    store.patchObjectSection('tipoProcesso', { selected: TIPO_ID, rotulo: 'Vestibular' });
     store.patchObjectSection('identificacao', {
       nome: 'Processo Seletivo 2027',
       unidadeAdministradoraId: UNIDADE_ID,
@@ -390,5 +390,46 @@ describe('Step02IdentificacaoComponent', () => {
     const avisos = Array.from(host.querySelectorAll('.alert'));
     expect(avisos.length).toBe(1);
     expect(avisos[0]?.textContent).toContain('município');
+  });
+
+  /**
+   * O resumo existe para ser conferido: id de unidade ou código de enum no
+   * lugar do rótulo transformaria a conferência em adivinhação.
+   */
+  it('resume os dados a gravar com os rótulos que o operador viu', () => {
+    preencherCamposDoComando();
+
+    const confirmacao = componente.confirmacaoDeGravacao();
+
+    expect(confirmacao).not.toBeNull();
+    expect(confirmacao?.itens).toEqual([
+      { rotulo: 'Nome do processo seletivo', valor: 'Processo Seletivo 2027' },
+      { rotulo: 'Tipo do processo', valor: 'Vestibular' },
+      { rotulo: 'Unidade administradora', valor: 'ICE — Instituto de Ciências Exatas' },
+      { rotulo: 'Município que rege os prazos', valor: 'Marabá — PA' },
+      { rotulo: 'Origem dos candidatos', valor: 'Inscrição neste sistema' },
+    ]);
+  });
+
+  it('avisa no resumo que os dados não poderão ser alterados', () => {
+    preencherCamposDoComando();
+
+    expect(componente.confirmacaoDeGravacao()?.aviso).toContain('não poderão ser alterados');
+  });
+
+  /** Com o processo criado não há o que gravar: o passo volta a ser navegação. */
+  it('dispensa a confirmação quando o processo já existe', () => {
+    preencherCamposDoComando();
+    store.processoSeletivoId.set(PROCESSO_ID);
+
+    expect(componente.confirmacaoDeGravacao()).toBeNull();
+    expect(componente.rotuloDeAvanco()).toBe('Próximo');
+  });
+
+  /** O botão que grava não pode descrever apenas a navegação. */
+  it('anuncia no botão que o avanço grava', () => {
+    preencherCamposDoComando();
+
+    expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');
   });
 });

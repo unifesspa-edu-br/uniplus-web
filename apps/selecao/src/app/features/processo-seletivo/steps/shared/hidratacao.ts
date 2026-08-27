@@ -17,6 +17,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     ...draft,
     tipoProcesso: {
       selected: dto.tipoProcesso.origemId,
+      rotulo: dto.tipoProcesso.nome,
     },
     identificacao: {
       ...draft.identificacao,

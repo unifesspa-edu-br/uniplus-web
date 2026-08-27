@@ -166,6 +166,14 @@ export interface LocalidadeSelecionada {
 export interface WizardDraft {
   tipoProcesso: {
     selected: string;
+    /**
+     * Nome do tipo como o operador o viu ao escolher. Guardado junto do id
+     * porque o catálogo que traduz um no outro vive no passo 1: sem isto,
+     * qualquer outra tela que precise dizer *qual* tipo foi escolhido teria
+     * de recarregar o catálogo — e na criação não há snapshot remoto de onde
+     * tirar o nome.
+     */
+    rotulo: string;
   };
   identificacao: {
     nome: string;

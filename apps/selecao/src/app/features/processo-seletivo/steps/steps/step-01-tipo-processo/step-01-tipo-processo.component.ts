@@ -106,7 +106,15 @@ export class Step01TipoProcessoComponent {
   select(value: string): void {
     // O tipo compõe o comando de criação e não é atualizável depois dele.
     if (this.store.cadastroInicialCongelado()) return;
-    this.store.patchObjectSection('tipoProcesso', { selected: value });
+
+    // O nome acompanha o id porque o catálogo que os liga só existe aqui: quem
+    // precisar dizer qual tipo foi escolhido não tem outra fonte antes de o
+    // processo existir.
+    const escolhido = this.options().find((opcao) => opcao.value === value);
+    this.store.patchObjectSection('tipoProcesso', {
+      selected: value,
+      rotulo: escolhido?.name ?? '',
+    });
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */

@@ -175,8 +175,8 @@
         [disabled]="store.salvando()"
         (click)="nextOrPublish()"
       >
-        @if (store.salvando()) { Salvando… } @else { {{ store.isLast() ? 'Publicar' : 'Próximo' }} }
-        @if (!store.isLast() && !store.salvando()) {
+        @if (store.salvando()) { Salvando… } @else { {{ rotuloDeAvanco() }} } @if (!store.isLast()
+        && !store.salvando()) {
         <svg
           class="btn__icon"
           viewBox="0 0 24 24"
@@ -205,4 +205,24 @@
     <path d="M18 15l-6-6-6 6" />
   </svg>
 </button>
+} @if (confirmacaoPendente(); as confirmacao) {
+<ui-dialog [visible]="true" [heading]="confirmacao.titulo" (closed)="cancelarGravacao()">
+  <p class="alert alert--info" role="status">{{ confirmacao.aviso }}</p>
+  <dl class="confirmacao-lista">
+    @for (item of confirmacao.itens; track item.rotulo) {
+    <div class="confirmacao-lista__linha">
+      <dt class="confirmacao-lista__rotulo">{{ item.rotulo }}</dt>
+      <dd class="confirmacao-lista__valor">{{ item.valor }}</dd>
+    </div>
+    }
+  </dl>
+  <div uiDialogFooter>
+    <button class="btn btn--tertiary" type="button" (click)="cancelarGravacao()">
+      Voltar e revisar
+    </button>
+    <button class="btn btn--primary" type="button" (click)="confirmarGravacao()">
+      {{ confirmacao.rotuloDeConfirmar }}
+    </button>
+  </div>
+</ui-dialog>
 }
