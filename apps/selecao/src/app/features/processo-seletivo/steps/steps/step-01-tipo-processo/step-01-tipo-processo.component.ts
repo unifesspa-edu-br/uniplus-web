@@ -26,7 +26,34 @@ export class Step01TipoProcessoComponent {
   private readonly tiposProcessoApi = inject(TiposProcessoApi);
 
   /** Tipos ativos retornados pelo catálogo de Configuração (ADR-0122). */
-  readonly options = signal<readonly TipoProcessoOption[]>([]);
+  private readonly catalogo = signal<readonly TipoProcessoOption[]>([]);
+
+  /**
+   * Catálogo vivo mais, quando faltar, o tipo que o processo retomado declara.
+   *
+   * O catálogo lista só tipos ativos; um processo criado antes de o tipo ser
+   * desativado continua apontando para ele. Sem esta opção o passo abriria sem
+   * seleção alguma, e como o cadastro inicial fica congelado o operador não
+   * teria como identificar nem corrigir o que está lá — o snapshot devolvido
+   * por Seleção é a única fonte desse rótulo (ADR-0122).
+   */
+  readonly options = computed<readonly TipoProcessoOption[]>(() => {
+    const catalogo = this.catalogo();
+    const snapshot = this.store.remoteSnapshot()?.tipoProcesso;
+
+    if (snapshot === undefined) return catalogo;
+    if (catalogo.some((opcao) => opcao.value === snapshot.origemId)) return catalogo;
+
+    return [
+      {
+        value: snapshot.origemId,
+        name: snapshot.nome,
+        description: 'Tipo não disponível no catálogo atual — preservado deste processo.',
+        tags: [snapshot.codigo],
+      },
+      ...catalogo,
+    ];
+  });
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly query = signal('');
@@ -69,7 +96,7 @@ export class Step01TipoProcessoComponent {
           return;
         }
 
-        this.options.set(tipos);
+        this.catalogo.set(tipos);
         this.loading.set(false);
       },
       error: () => this.exibirErro(),

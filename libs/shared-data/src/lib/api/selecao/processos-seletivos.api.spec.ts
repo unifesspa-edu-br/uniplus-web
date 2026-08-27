@@ -54,9 +54,22 @@ const documentoSeed: DocumentoEditalDto = {
   id: DOCUMENTO_ID,
   processoSeletivoId: ID,
   status: 'Confirmado',
+  criadoEm: '2026-08-13T12:00:00Z',
+  expiraEm: '2026-08-13T12:15:00Z',
   tamanhoBytes: 2048,
   hashSha256: 'a'.repeat(64),
   confirmadoEm: '2026-08-13T12:05:00Z',
+};
+
+const documentoPendenteSeed: DocumentoEditalDto = {
+  id: '01960000-0000-7000-0000-000000000519',
+  processoSeletivoId: ID,
+  status: 'Pendente',
+  criadoEm: '2026-08-13T12:10:00Z',
+  expiraEm: '2026-08-13T12:25:00Z',
+  tamanhoBytes: null,
+  hashSha256: null,
+  confirmadoEm: null,
 };
 
 const criarCommand: CriarProcessoSeletivoCommand = {
@@ -125,6 +138,49 @@ describe('ProcessosSeletivosApi', () => {
 
     const result = (await promise) as ApiResult<string>;
     expect(isApiOk(result)).toBe(true);
+  });
+
+  it('listarDocumentosEdital() lê a coleção do processo pelo vendor MIME do documento', async () => {
+    const promise = firstValueFrom(api.listarDocumentosEdital(ID));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital`,
+    );
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('documento-edital', 1));
+    req.flush([documentoSeed, documentoPendenteSeed]);
+
+    const result = (await promise) as ApiResult<readonly DocumentoEditalDto[]>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(2);
+      expect(result.data.map((documento) => documento.status)).toEqual(['Confirmado', 'Pendente']);
+    }
+  });
+
+  /**
+   * O id vai na rota; um valor com caractere reservado não pode escapar para o
+   * path sem codificação.
+   */
+  it('listarDocumentosEdital() codifica o id na rota', async () => {
+    const promise = firstValueFrom(api.listarDocumentosEdital('a/b'));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/a%2Fb/documentos-edital`,
+    );
+
+    req.flush([]);
+    await promise;
+  });
+
+  it('listarDocumentosEdital() devolve a coleção vazia de um processo sem anexo', async () => {
+    const promise = firstValueFrom(api.listarDocumentosEdital(ID));
+    controller
+      .expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital`)
+      .flush([]);
+
+    const result = (await promise) as ApiResult<readonly DocumentoEditalDto[]>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) expect(result.data).toEqual([]);
   });
 
   it('iniciarUploadDocumentoEdital() posta sem corpo e devolve a URL assinada', async () => {

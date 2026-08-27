@@ -12,8 +12,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
-import { IniciarUploadDocumentoEditalDto, OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import {
+  DocumentoEditalDto,
+  IniciarUploadDocumentoEditalDto,
+  OrigemCandidatos,
+} from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../../shared/hidratacao';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import {
   OrigemCandidatosSelecionada,
@@ -57,6 +62,9 @@ export class Step02IdentificacaoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly unidadesApi = inject(UnidadesApi);
+
+  /** Geração do editor quando o anexo em curso começou. */
+  private geracaoDoAnexo: number | null = null;
   private readonly geo = inject(GeoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -74,7 +82,27 @@ export class Step02IdentificacaoComponent {
   /** Termo digitado no seletor; não é persistido no rascunho. */
   readonly buscaMunicipio = signal('');
 
-  readonly unidades = signal<readonly UnidadeOption[]>([]);
+  private readonly catalogoUnidades = signal<readonly UnidadeOption[]>([]);
+
+  /**
+   * Catálogo vivo mais, quando faltar, a unidade que o processo retomado
+   * declara.
+   *
+   * A unidade referenciada pode ter saído do catálogo, e a própria leitura do
+   * catálogo pode falhar. Em ambos os casos o campo — congelado depois da
+   * criação — abriria sem valor, e o operador não teria como identificar quem
+   * administra o certame. O snapshot devolvido por Seleção traz sigla e nome,
+   * e é a única fonte desse rótulo nessa situação.
+   */
+  readonly unidades = computed<readonly UnidadeOption[]>(() => {
+    const catalogo = this.catalogoUnidades();
+    const snapshot = this.store.remoteSnapshot()?.unidadeAdministradora;
+
+    if (snapshot === undefined) return catalogo;
+    if (catalogo.some((opcao) => opcao.id === snapshot.origemId)) return catalogo;
+
+    return [{ id: snapshot.origemId, rotulo: `${snapshot.sigla} — ${snapshot.nome}` }, ...catalogo];
+  });
   readonly unidadesCarregando = signal(true);
   readonly unidadesErro = signal<string | null>(null);
 
@@ -212,7 +240,7 @@ export class Step02IdentificacaoComponent {
           return;
         }
 
-        this.unidades.set(unidades);
+        this.catalogoUnidades.set(unidades);
         this.unidadesCarregando.set(false);
       },
       error: () => this.exibirErroDeUnidades(),
@@ -245,7 +273,15 @@ export class Step02IdentificacaoComponent {
       this.anexoEmCurso() ||
       this.anexoConfirmado() ||
       this.store.salvando() ||
-      this.anexo()?.confirmacaoIndefinida === true,
+      this.anexo()?.confirmacaoIndefinida === true ||
+      // Escolha entre documentos confirmados pendente: enviar outro criaria um
+      // terceiro documento imutável e agravaria a ambiguidade que a escolha
+      // existe para resolver.
+      this.store.documentosParaEscolha().length > 0 ||
+      // Leitura dos documentos falhou: não dá para saber se já há edital
+      // confirmado, e a API aceita um segundo sem recusar. Enquanto a
+      // verificação não passar, anexar é apostar — daí o botão de reverificar.
+      this.store.avisoDocumentos() !== null,
   );
 
   chooseFiles(): void {
@@ -253,10 +289,17 @@ export class Step02IdentificacaoComponent {
     this.fileInput?.nativeElement.click();
   }
 
+  /**
+   * O `<input type="file">` é visualmente oculto mas continua focável — quem
+   * navega por teclado chega nele sem passar pela zona de upload. O `disabled`
+   * no template é o que de fato impede a escolha; esta guarda existe para o
+   * caminho não depender só da marcação.
+   */
   onFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const arquivo = input.files?.[0];
     input.value = '';
+    if (this.anexoBloqueado()) return;
     if (arquivo) void this.anexar(arquivo);
   }
 
@@ -279,7 +322,20 @@ export class Step02IdentificacaoComponent {
     // sob os pés do fluxo em andamento: o anexo exibiria o nome do primeiro e o
     // storage receberia os bytes do segundo — que o backend selaria como
     // documento imutável.
-    if (this.operacaoEmCurso) return;
+    //
+    // A recusa vem **antes** de a geração ser recarimbada: fazê-lo antes
+    // desarmaria a guarda do envio que ainda está correndo, e as respostas dele
+    // passariam a escrever como se fossem do processo atual. E a recusa fala,
+    // em vez de sumir com o arquivo escolhido — em tela o controle pode parecer
+    // livre logo após uma troca de processo.
+    if (this.operacaoEmCurso) {
+      this.uploadError.set(
+        'Há um envio de edital em andamento. Aguarde a conclusão antes de escolher outro arquivo.',
+      );
+      return;
+    }
+
+    this.geracaoDoAnexo = this.store.geracao();
 
     // O campo de arquivo é alcançável pelo teclado mesmo com a zona de upload
     // marcada como indisponível, então a recusa precisa estar aqui também:
@@ -372,6 +428,7 @@ export class Step02IdentificacaoComponent {
       return null;
     }
 
+    const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
       const resultado = await this.cadastro.criar({
@@ -383,6 +440,10 @@ export class Step02IdentificacaoComponent {
         localidadeNome: identificacao.localidade?.nome ?? null,
         localidadeUf: identificacao.localidade?.uf ?? null,
       });
+
+      // O editor pode ter passado a outro processo enquanto a criação corria:
+      // registrar o id agora o atribuiria ao processo que está em tela.
+      if (geracao !== this.store.geracao()) return null;
 
       if (!resultado.ok) {
         this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
@@ -506,7 +567,16 @@ export class Step02IdentificacaoComponent {
     });
   }
 
+  /**
+   * Funil de toda escrita do fluxo de anexo — e, por isso, o lugar certo da
+   * guarda: a página do editor sobrevive à troca de endereço, então um envio
+   * disparado para o processo anterior continua respondendo depois que o
+   * editor já trata de outro. Escrever ali vincularia o edital de um processo
+   * ao outro.
+   */
   private atualizarAnexo(patch: Partial<UploadItem>): void {
+    if (this.geracaoDoAnexo !== null && this.geracaoDoAnexo !== this.store.geracao()) return;
+
     const atual = this.anexo();
     if (atual === undefined) return;
     this.store.patchObjectSection('identificacao', { uploads: [{ ...atual, ...patch }] });
@@ -627,6 +697,46 @@ export class Step02IdentificacaoComponent {
       };
     }
     return { valid: true };
+  }
+
+  /**
+   * Decisão explícita entre documentos confirmados (CA-06). O wizard nunca
+   * elege sozinho: adotar o mais recente trocaria o edital do certame sem o
+   * operador perceber.
+   */
+  /** Metadados que distinguem um confirmado do outro na escolha do oficial. */
+  protected descrever(documento: DocumentoEditalDto): string {
+    return descreverDocumento(documento);
+  }
+
+  /** Refaz a leitura que falhou, para o anexo deixar de ser uma aposta. */
+  readonly reverificando = signal(false);
+
+  async reverificarDocumentos(): Promise<void> {
+    const id = this.store.processoSeletivoId();
+    if (id === null || this.reverificando()) return;
+
+    const geracao = this.store.geracao();
+    this.reverificando.set(true);
+    try {
+      const resultado = await this.cadastro.listarDocumentos(id);
+      // O editor pode ter passado a outro processo enquanto a leitura corria.
+      if (geracao !== this.store.geracao() || !isApiOk(resultado)) return;
+
+      const { vinculo, escolha } = classificarDocumentos(resultado.data);
+      if (vinculo !== null) {
+        this.store.patchObjectSection('identificacao', { uploads: [vinculo] });
+      }
+      this.store.documentosParaEscolha.set(escolha);
+      this.store.avisoDocumentos.set(null);
+    } finally {
+      this.reverificando.set(false);
+    }
+  }
+
+  escolherDocumentoConfirmado(documento: DocumentoEditalDto): void {
+    this.store.patchObjectSection('identificacao', { uploads: [uploadItemDe(documento)] });
+    this.store.documentosParaEscolha.set([]);
   }
 }
 

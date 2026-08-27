@@ -1,3 +1,35 @@
+@if (store.falhaDeLeitura(); as falha) {
+<div class="panel ps-estado">
+  <ui-alert
+    variant="danger"
+    [heading]="
+        falha.motivo === 'naoEncontrado'
+          ? 'Processo seletivo não encontrado'
+          : falha.motivo === 'idInvalido'
+            ? 'Endereço inválido'
+            : falha.motivo === 'semPermissao'
+              ? 'Sem permissão para abrir este processo'
+              : 'Não foi possível carregar o processo seletivo'
+      "
+  >
+    {{ falha.mensagem }}
+  </ui-alert>
+
+  <div class="ps-estado__acoes">
+    @if (falha.motivo === 'falhaTemporaria') {
+    <button type="button" class="btn btn--secondary" (click)="tentarNovamente()">
+      Tentar novamente
+    </button>
+    }
+    <a class="btn btn--primary" routerLink="/processo-seletivo">Voltar à listagem</a>
+  </div>
+</div>
+} @else if (store.hidratando()) {
+<div class="panel ps-estado" role="status" aria-live="polite">
+  <ui-spinner spinnerSize="md" />
+  <p>Carregando o processo seletivo…</p>
+</div>
+} @else {
 <button
   #stepBarButton
   class="step-bar"
@@ -176,3 +208,4 @@
     <path d="M18 15l-6-6-6 6" />
   </svg>
 </button>
+}

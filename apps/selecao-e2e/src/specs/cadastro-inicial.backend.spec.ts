@@ -37,7 +37,7 @@ test.describe('Cadastro inicial do processo seletivo', () => {
   test('cria o processo e anexa o edital pelo fluxo real de upload', async ({ page }) => {
     const sufixo = `${Date.now()}`;
 
-    await page.goto('/processo-seletivo');
+    await page.goto('/processo-seletivo/novo');
     await expect(page.getByRole('heading', { level: 1, name: /Tipo do processo/i })).toBeVisible();
 
     // Passo 1 — o tipo vem do catálogo de Configuração; o rascunho guarda o UUID.
@@ -101,7 +101,7 @@ test.describe('Cadastro inicial do processo seletivo', () => {
       }
     });
 
-    await page.goto('/processo-seletivo');
+    await page.goto('/processo-seletivo/novo');
     const primeiroTipo = page.locator('.type-card').first();
     await expect(primeiroTipo).toBeVisible({ timeout: 15_000 });
     await primeiroTipo.click();

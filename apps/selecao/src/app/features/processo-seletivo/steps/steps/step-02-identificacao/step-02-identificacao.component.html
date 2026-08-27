@@ -194,7 +194,9 @@
           <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
         }
         @if (municipiosErro(); as erro) {
-          <div class="field__erro" role="alert"><p>{{ erro }}</p></div>
+          <div class="field__erro" role="alert">
+            <p>{{ erro }}</p>
+          </div>
         }
         @if (municipios().length > 0) {
           <ul class="localidade-opcoes" aria-label="Municípios encontrados">
@@ -226,8 +228,8 @@
       }
       <p class="field__hint" id="f-localidade-hint">
         Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.
-        Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode
-        correr sob o calendário de outro município.
+        Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode correr
+        sob o calendário de outro município.
       </p>
     </div>
     <div class="form-field form-grid__full">
@@ -270,8 +272,49 @@
     type="file"
     accept="application/pdf,.pdf"
     aria-label="Selecionar o arquivo PDF do edital"
+    [disabled]="anexoBloqueado()"
     (change)="onFileInput($event)"
   />
+  @if (store.avisoDocumentos(); as aviso) {
+    <div class="alert alert--warning" role="alert">
+      <div class="alert__body">
+        <p>{{ aviso }}</p>
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [disabled]="reverificando()"
+          (click)="reverificarDocumentos()"
+        >
+          {{ reverificando() ? 'Verificando…' : 'Verificar novamente' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (store.documentosParaEscolha().length > 0) {
+    <div class="alert alert--warning" role="alert">
+      <p>
+        Este processo tem mais de um documento de edital confirmado. Escolha qual é o oficial — a
+        escolha não é feita automaticamente.
+      </p>
+      <ul class="ps-doc-escolha">
+        @for (documento of store.documentosParaEscolha(); track documento.id) {
+          <li>
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [attr.aria-label]="'Usar o documento confirmado em ' + descrever(documento)"
+              (click)="escolherDocumentoConfirmado(documento)"
+            >
+              <span>Usar este documento</span>
+              <span class="ps-doc-escolha__meta">{{ descrever(documento) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
   <div class="upload-layout">
     <div
       class="upload-zone"

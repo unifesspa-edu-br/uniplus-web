@@ -258,3 +258,20 @@ export interface WizardDraft {
     recursos: string[];
   };
 }
+
+/**
+ * Por que a leitura por URL não entregou um processo. O tipo decide a ação
+ * que a tela oferece: `naoEncontrado` e `idInvalido` não têm retentativa útil
+ * — o endereço é que está errado; `semPermissao` e `falhaTemporaria` têm.
+ */
+export type MotivoFalhaDeLeitura =
+  | 'idInvalido'
+  | 'naoEncontrado'
+  | 'semPermissao'
+  | 'falhaTemporaria';
+
+export interface FalhaDeLeitura {
+  readonly motivo: MotivoFalhaDeLeitura;
+  /** Texto já resolvido para exibição — vem do `ProblemDetails` quando há um. */
+  readonly mensagem: string;
+}

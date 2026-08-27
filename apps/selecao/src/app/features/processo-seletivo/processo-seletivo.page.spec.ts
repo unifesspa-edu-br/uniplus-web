@@ -1,5 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
@@ -39,6 +40,7 @@ const modalidadesApiStub = {
 const processosSeletivosApiStub = {};
 
 const PAGE_PROVIDERS = [
+  provideRouter([]),
   { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
   { provide: UnidadesApi, useValue: unidadesApiStub },
   { provide: GeoApi, useValue: geoApiStub },

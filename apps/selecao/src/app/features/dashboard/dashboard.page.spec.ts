@@ -2,91 +2,79 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import { DashboardPage } from './dashboard.page';
 
-/** Papéis de quem está autenticado — o atalho de cadastro depende deles. */
+/** Papéis de quem está autenticado — o atalho da listagem depende deles. */
 const papeis = signal<readonly string[]>(['plataforma-admin']);
 const authServiceStub = { roles: papeis };
 
-describe('DashboardPage — acessibilidade', () => {
+describe('DashboardPage', () => {
   beforeEach(async () => {
+    papeis.set(['plataforma-admin']);
+
     await TestBed.configureTestingModule({
       imports: [DashboardPage],
       providers: [provideRouter([]), { provide: AuthService, useValue: authServiceStub }],
     }).compileComponents();
   });
 
-  function montar() {
+  function montar(): HTMLElement {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
 
   /**
-   * O `aria-labelledby` apontava para um id do módulo Configuração, que não
-   * existe aqui — a seção ficava sem nome acessível.
+   * Os processos, KPIs, prazos e atividades desta tela eram valores escritos no
+   * template — inclusive nomes de pessoas. Nenhum tinha endpoint por trás
+   * (Story #478, CA-02).
    */
-  it('nomeia a seção de processos por um id existente', () => {
+  it('não apresenta processo, número ou atividade sem origem de dados', () => {
     const host = montar();
-    const secao = host.querySelector('section.panel[aria-labelledby]');
-    const id = secao?.getAttribute('aria-labelledby');
 
-    expect(id).toBeTruthy();
-    expect(host.querySelector(`#${id}`)).not.toBeNull();
+    expect(host.querySelector('table')).toBeNull();
+    expect(host.querySelector('.kpi')).toBeNull();
+    expect(host.querySelector('.timeline')).toBeNull();
+    expect(host.textContent).not.toContain('SISU 2026.1');
+    expect(host.textContent).not.toContain('23.481');
   });
 
-  /** No modo responsivo, `data-label` é o cabeçalho lido para cada célula. */
-  it('rotula todas as células com o cabeçalho correspondente', () => {
-    const host = montar();
-    const cabecalhos = [...host.querySelectorAll('thead th')].map((th) => th.textContent?.trim());
-    const primeiraLinha = host.querySelector('tbody tr');
-    const rotulos = [...(primeiraLinha?.querySelectorAll('td') ?? [])].map((td) =>
-      td.getAttribute('data-label'),
+  it('declara que os indicadores ainda não existem', () => {
+    expect(montar().querySelector('.empty-state__title')?.textContent).toContain(
+      'Indicadores ainda indisponíveis',
     );
-
-    expect(rotulos.length).toBe(cabecalhos.length);
-    expect(rotulos).toEqual(cabecalhos);
   });
 
-  it('exibe o prazo na coluna de prazo', () => {
-    const host = montar();
-    const celula = host.querySelector('tbody tr td[data-label="Prazo"]');
-
-    expect(celula?.textContent?.trim()).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
-  });
-
-  /** Controle que não executa a ação anunciada é pior que ausência dele. */
-  it('não expõe âncoras sem destino', () => {
-    const host = montar();
-    const ancorasVazias = [...host.querySelectorAll('a')].filter(
-      (a) => a.getAttribute('href') === '#',
-    );
-
-    expect(ancorasVazias.length).toBe(0);
-  });
-
-  it('leva ao cadastro pelo atalho de novo processo', () => {
-    papeis.set(['plataforma-admin']);
-    const host = montar();
-    const atalho = [...host.querySelectorAll('a')].find((a) =>
-      a.textContent?.includes('Novo Processo'),
+  /**
+   * O painel é acessível a todo o backoffice; a listagem exige
+   * `plataforma-admin` na rota e na API. Oferecer o atalho a quem não tem o
+   * papel levaria direto ao acesso negado.
+   */
+  it('leva à listagem quem administra a plataforma', () => {
+    const atalho = [...montar().querySelectorAll('a')].find((a) =>
+      a.textContent?.includes('Ver processos seletivos'),
     );
 
     expect(atalho?.getAttribute('href')).toBe('/processo-seletivo');
   });
 
-  /**
-   * O cadastro do certame é restrito a `plataforma-admin` na rota e na API.
-   * Oferecer o atalho a quem não tem o papel levaria direto ao acesso negado.
-   */
-  it('esconde o atalho de novo processo de quem não administra a plataforma', () => {
-    papeis.set(['gestor']);
-    const host = montar();
-    const atalho = [...host.querySelectorAll('a')].find((a) =>
-      a.textContent?.includes('Novo Processo'),
+  it('esconde o atalho da listagem de quem não administra a plataforma', () => {
+    papeis.set(['avaliador']);
+
+    const atalho = [...montar().querySelectorAll('a')].find((a) =>
+      a.textContent?.includes('Ver processos seletivos'),
     );
 
     expect(atalho).toBeUndefined();
-    papeis.set(['plataforma-admin']);
+  });
+
+  it('não expõe âncoras sem destino', () => {
+    const vazias = [...montar().querySelectorAll('a')].filter(
+      (a) => a.getAttribute('href') === '#',
+    );
+
+    expect(vazias).toHaveLength(0);
   });
 });
