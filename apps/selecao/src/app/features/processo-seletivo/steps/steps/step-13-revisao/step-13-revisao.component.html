@@ -3,18 +3,18 @@
   <h1 tabindex="-1">Passo 13: Revisão e publicação</h1>
   <p>Confira cada passo antes de publicar. Passos não visitados aparecem como pendentes.</p>
 </div>
-<div class="revisao-summary" [class.revisao-summary--done]="completed() === names.length">
+<div class="revisao-summary" [class.revisao-summary--done]="pronto()">
   <div class="revisao-summary__info">
     <span class="revisao-summary__count"
-      >{{ completed() }}
+      >{{ atendidos() }}
       <small
         style="font-size: 0.9rem; font-weight: var(--weight-normal); color: var(--text-secondary)"
-        >/ 12</small
+        >/ {{ totalRequisitos }}</small
       ></span
     ><span class="revisao-summary__detail">{{
-      completed() === names.length
+      pronto()
         ? 'Tudo pronto para publicar!'
-        : pending() + ' passo' + (pending() > 1 ? 's pendentes' : ' pendente')
+        : pending() + ' item' + (pending() > 1 ? 'ns pendentes' : ' pendente')
     }}</span>
   </div>
   <div class="revisao-progress">
@@ -76,6 +76,53 @@
         </button>
       </div>
     }
+    <!-- O edital fecha a lista porque é requisito de publicação como os passos,
+         e não um anexo à parte: sem ele a publicação é recusada. Não tem "Ir
+         para" — o envio está logo abaixo, nesta mesma tela. -->
+    @let editalOk = editalConfirmado();
+    <div
+      class="revisao-item"
+      [class.revisao-item--ok]="editalOk"
+      [class.revisao-item--pending]="!editalOk"
+    >
+      <div class="revisao-item__icon">
+        @if (editalOk) {
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        } @else {
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
+            <path d="M8 12h8" />
+          </svg>
+        }
+      </div>
+      <div class="revisao-item__meta">
+        <span class="revisao-item__num">Edital</span
+        ><span class="revisao-item__name">Arquivo PDF do edital</span>
+      </div>
+      <span
+        class="revisao-chip"
+        [class.revisao-chip--ok]="editalOk"
+        [class.revisao-chip--pending]="!editalOk"
+        >{{ editalOk ? 'Anexado' : 'Pendente' }}</span
+      >
+    </div>
   </div>
 </fieldset>
 
