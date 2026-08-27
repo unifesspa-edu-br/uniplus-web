@@ -138,6 +138,13 @@ export class ProcessoSeletivoPage {
   readonly confirmacaoPendente = signal<ConfirmacaoDeGravacao | null>(null);
 
   /**
+   * Se o diálogo devolve o foco ao botão que o abriu. Só é desligado quando a
+   * confirmação levou a um avanço de passo — aí a tela por trás mudou, e o
+   * destino certo é o título do passo novo.
+   */
+  readonly restaurarFocoAoFechar = signal(true);
+
+  /**
    * Rótulo do botão de avanço. O passo aberto pode dizer o seu; sem isso, o
    * shell diz "Próximo" — e "Publicar" no último. Um botão que grava e diz
    * "Próximo" descreve a navegação e esconde o efeito.
@@ -177,12 +184,7 @@ export class ProcessoSeletivoPage {
       // Numa entrada por `/:id` o painel só existe depois da leitura; sem
       // observar `hidratando`, o foco ficaria preso no estado de carregamento.
       this.store.hidratando();
-      queueMicrotask(() => {
-        const heading = this.root.nativeElement.querySelector<HTMLElement>(
-          '.step-pane:not([hidden]) h1',
-        );
-        heading?.focus({ preventScroll: true });
-      });
+      queueMicrotask(() => this.focarTituloDoPasso());
     });
 
     // CA-04: assim que a criação — disparada dentro do passo 2 — devolve o id,
@@ -451,6 +453,7 @@ export class ProcessoSeletivoPage {
     // volta atrás pelo contrato desta tela.
     const confirmacao = (validator as Partial<StepCommit> | undefined)?.confirmacaoDeGravacao?.();
     if (confirmacao) {
+      this.restaurarFocoAoFechar.set(true);
       this.confirmacaoPendente.set(confirmacao);
       return;
     }
@@ -472,7 +475,14 @@ export class ProcessoSeletivoPage {
   async confirmarGravacao(): Promise<void> {
     if (this.confirmacaoPendente() === null || this.store.salvando()) return;
     try {
-      await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()));
+      // Avançar troca o passo por baixo do diálogo. Devolver o foco ao botão
+      // que o abriu levaria a um rodapé que já não descreve o que está em
+      // tela; quem passa a mandar no foco é o efeito de troca de passo, que
+      // leva ao título do passo novo. Falhando, a tela é a mesma e a
+      // restauração continua correta.
+      this.restaurarFocoAoFechar.set(
+        !(await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()))),
+      );
     } finally {
       this.confirmacaoPendente.set(null);
     }
@@ -497,7 +507,7 @@ export class ProcessoSeletivoPage {
    */
   private async gravarEAvancar(
     validator: { validate(): StepValidation } | undefined,
-  ): Promise<void> {
+  ): Promise<boolean> {
     // Passos que persistem expõem `persistir()`; os demais avançam direto.
     const persistivel = validator as Partial<StepCommit> | undefined;
     if (persistivel?.persistir) {
@@ -510,12 +520,13 @@ export class ProcessoSeletivoPage {
       if (!commit.valid) {
         this.store.setStepError(mensagensDe(commit));
         this.revelarErro();
-        return;
+        return false;
       }
     }
 
     this.store.setStepError(null);
     this.store.next();
+    return true;
   }
 
   /**
@@ -545,6 +556,14 @@ export class ProcessoSeletivoPage {
    * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
    * publica a partir do rodapé com a lista rolada não recebe retorno visível.
    */
+  /** Título do passo visível — o destino de foco a cada troca de passo. */
+  private focarTituloDoPasso(): void {
+    const titulo = this.root.nativeElement.querySelector<HTMLElement>(
+      '.step-pane:not([hidden]) h1',
+    );
+    titulo?.focus({ preventScroll: true });
+  }
+
   private revelarErro(): void {
     // `setTimeout` e não `queueMicrotask`: o aviso só existe no DOM depois que
     // o Angular processa a mudança do signal, o que ocorre após a fila de
