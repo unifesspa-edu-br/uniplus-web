@@ -18,6 +18,18 @@ const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/
 const URL_LEITURA =
   'http://localhost:9000/uniplus-selecao/editais/confirmado.pdf?X-Amz-Signature=leitura';
 
+/** Aba nova o bastante para o teste: guarda o endereço recebido e o fechamento. */
+function abaFalsa() {
+  return {
+    location: { href: '' },
+    opener: {} as unknown,
+    fechada: false,
+    close(this: { fechada: boolean }) {
+      this.fechada = true;
+    },
+  } as unknown as Window & { location: { href: string }; opener: unknown; fechada: boolean };
+}
+
 /** Um PDF mínimo: a assinatura importa para a recusa client-side. */
 function pdf(nome = 'edital.pdf', bytes = 2048): File {
   return new File([new Uint8Array(bytes).fill(37)], nome, { type: 'application/pdf' });
@@ -319,21 +331,51 @@ describe('AnexoEditalComponent', () => {
    * num campo do componente ou num `href` a manteria alcançável depois da
    * ação — e ela é credencial de acesso ao objeto, não um endereço público.
    */
-  it('abre o documento sem reter a URL assinada', async () => {
+  /**
+   * A aba precisa nascer dentro do clique: aberta depois do `await`, o
+   * navegador a trata como pop-up não solicitado e a bloqueia — falha que só
+   * aparece no caminho feliz, sem erro de API para explicá-la.
+   */
+  it('abre a aba no clique e só depois a leva à URL assinada', async () => {
     await anexarComSucesso();
-    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+    const aba = abaFalsa();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(aba);
 
     const promessa = componente.abrirDocumento(DOCUMENTO_ID);
-    await tick();
 
+    // Antes de qualquer resposta a aba já existe, e ainda em branco.
+    // Sem `noopener` na chamada: com ele o retorno seria `null` e não haveria
+    // referência para navegar a aba quando o endereço chegasse.
+    expect(abrir).toHaveBeenCalledWith('', '_blank');
+    expect(aba.location.href).toBe('');
+
+    await tick();
     controller
       .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
       .flush({ url: URL_LEITURA, expiraEm: '2026-08-27T12:05:00Z' });
     await promessa;
 
-    expect(abrir).toHaveBeenCalledWith(URL_LEITURA, '_blank', 'noopener');
+    expect(aba.location.href).toBe(URL_LEITURA);
+    // O desacoplamento que o `noopener` daria, feito antes de navegar.
+    expect(aba.opener).toBeNull();
     expect(JSON.stringify(store.draft())).not.toContain('X-Amz-Signature');
     expect(JSON.stringify(componente.anexo() ?? {})).not.toContain('X-Amz-Signature');
+    abrir.mockRestore();
+  });
+
+  /** Bloqueio de pop-up precisa ser dito: a URL não vira link na tela. */
+  it('avisa quando o navegador recusa abrir a aba', async () => {
+    await anexarComSucesso();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const promessa = componente.abrirDocumento(DOCUMENTO_ID);
+    await tick();
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/acesso`)
+      .flush({ url: URL_LEITURA, expiraEm: '2026-08-27T12:05:00Z' });
+    await promessa;
+
+    expect(componente.erroDeAbertura()).toContain('bloqueou a abertura');
     abrir.mockRestore();
   });
 
@@ -348,9 +390,10 @@ describe('AnexoEditalComponent', () => {
   });
 
   /** Recusa do servidor precisa aparecer, não sumir com a aba que não abriu. */
-  it('exibe a recusa e não abre aba quando o acesso falha', async () => {
+  it('fecha a aba e exibe a recusa quando o acesso falha', async () => {
     await anexarComSucesso();
-    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+    const aba = abaFalsa();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(aba);
 
     const promessa = componente.abrirDocumento(DOCUMENTO_ID);
     await tick();
@@ -365,7 +408,10 @@ describe('AnexoEditalComponent', () => {
       .flush(recusa.body, recusa.opts);
     await promessa;
 
-    expect(abrir).not.toHaveBeenCalled();
+    // A aba já estava aberta quando a recusa chegou: deixá-la em branco na
+    // barra do navegador faria parecer que algo abriu.
+    expect(aba.location.href).toBe('');
+    expect(aba.fechada).toBe(true);
     expect(componente.erroDeAbertura()).toBeTruthy();
     abrir.mockRestore();
   });
@@ -376,7 +422,8 @@ describe('AnexoEditalComponent', () => {
    */
   it('descarta o acesso quando o editor trocou de processo', async () => {
     await anexarComSucesso();
-    const abrir = vi.spyOn(window, 'open').mockReturnValue(null);
+    const aba = abaFalsa();
+    const abrir = vi.spyOn(window, 'open').mockReturnValue(aba);
 
     const promessa = componente.abrirDocumento(DOCUMENTO_ID);
     await tick();
@@ -387,7 +434,8 @@ describe('AnexoEditalComponent', () => {
       .flush({ url: URL_LEITURA, expiraEm: '2026-08-27T12:05:00Z' });
     await promessa;
 
-    expect(abrir).not.toHaveBeenCalled();
+    expect(aba.location.href).toBe('');
+    expect(aba.fechada).toBe(true);
     abrir.mockRestore();
   });
 });
