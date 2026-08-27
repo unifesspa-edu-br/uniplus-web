@@ -33,6 +33,7 @@ let dialogIdSeed = 0;
             type="button"
             class="btn btn--tertiary btn--icon-only btn--rect"
             aria-label="Fechar"
+            [disabled]="!dismissible()"
             (click)="close()"
           >
             &times;
@@ -54,6 +55,16 @@ export class DialogComponent {
   readonly visible = model<boolean>(false);
   readonly heading = input<string>('Janela');
   readonly hasFooter = input<boolean>(true);
+
+  /**
+   * Se o diálogo pode ser dispensado por quem o vê. `false` fecha os três
+   * caminhos de saída — Esc, o botão de fechar e o clique fora — para as
+   * situações em que sair não é uma opção real: uma operação irreversível já
+   * em curso, por exemplo, em que o diálogo é a única coisa na tela dizendo
+   * que ela está acontecendo. Quem o abre continua responsável por fechá-lo
+   * pelo `visible`.
+   */
+  readonly dismissible = input<boolean>(true);
   readonly closed = output<void>();
 
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('dialog');
@@ -75,7 +86,11 @@ export class DialogComponent {
   }
 
   protected close(event?: Event): void {
+    // `preventDefault` no `cancel` é o que impede o `<dialog>` de fechar
+    // sozinho: sem isso o Esc fecharia no nível do elemento, antes de qualquer
+    // decisão deste componente.
     event?.preventDefault();
+    if (!this.dismissible()) return;
     this.visible.set(false);
   }
 
@@ -90,9 +105,8 @@ export class DialogComponent {
 
   private openDialog(dialog: HTMLDialogElement): void {
     if (dialog.open) return;
-    this.lastFocusedElement = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    this.lastFocusedElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (typeof dialog.showModal === 'function') {
       dialog.showModal();
     } else {
