@@ -373,6 +373,17 @@ export class AnexoEditalComponent {
     // depois, zerando `opener` antes de navegar — mesmo efeito, na ordem que
     // este fluxo permite.
     const aba = window.open('', '_blank');
+    if (aba === null) {
+      // Recusa antes de pedir o acesso: a URL é emitida por requisição, com o
+      // prazo correndo a partir dela, e pedir uma que não será usada é
+      // exatamente o que o endpoint sob demanda existe para evitar. A URL
+      // também não vira link na tela — deixaria de ser credencial de uso único
+      // e passaria a viver no DOM.
+      this.erroDeAbertura.set(
+        'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.',
+      );
+      return;
+    }
 
     const geracao = this.store.geracao();
     this.abrindoDocumento.set(documentoEditalId);
@@ -384,23 +395,13 @@ export class AnexoEditalComponent {
       // pedido; abrir agora mostraria o edital de um processo que já saiu da
       // tela.
       if (geracao !== this.store.geracao()) {
-        aba?.close();
+        aba.close();
         return;
       }
 
       if (!isApiOk(resultado)) {
-        aba?.close();
+        aba.close();
         this.erroDeAbertura.set(this.problemI18n.resolve(resultado.problem).title);
-        return;
-      }
-
-      if (aba === null) {
-        // Sem aba, a URL não vai para lugar nenhum: ela não pode virar link
-        // clicável na tela, porque aí deixaria de ser credencial de uso único
-        // e passaria a viver no DOM até alguém reparar.
-        this.erroDeAbertura.set(
-          'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.',
-        );
         return;
       }
 
@@ -410,7 +411,7 @@ export class AnexoEditalComponent {
       aba.opener = null;
       aba.location.href = resultado.data.url;
     } catch (erro) {
-      aba?.close();
+      aba.close();
       throw erro;
     } finally {
       this.abrindoDocumento.set(null);
