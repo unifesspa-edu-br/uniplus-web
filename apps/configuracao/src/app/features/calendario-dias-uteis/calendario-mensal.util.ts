@@ -67,7 +67,10 @@ export function agruparPorMes(dias: readonly DiaNaoUtilDto[]): MesCalendarioMens
     .map(([chave, porDiaDoMes]) => construirMes(chave, porDiaDoMes));
 }
 
-function construirMes(chave: string, porDiaDoMes: Map<number, DiaNaoUtilDto[]>): MesCalendarioMensal {
+function construirMes(
+  chave: string,
+  porDiaDoMes: Map<number, DiaNaoUtilDto[]>,
+): MesCalendarioMensal {
   const [anoStr, mesStr] = chave.split('-');
   const ano = Number(anoStr);
   const mes = Number(mesStr);
@@ -103,13 +106,4 @@ function construirMes(chave: string, porDiaDoMes: Map<number, DiaNaoUtilDto[]>):
   }
 
   return { chave, ano, mes, rotulo: `${NOMES_MES[mes - 1]} de ${ano}`, semanas };
-}
-
-/** Conta datas civis únicas com pelo menos um dia não útil — não a quantidade de ocorrências (CA-02). */
-export function contarDiasNaoUteisUnicos(meses: readonly MesCalendarioMensal[]): number {
-  return meses
-    .flatMap((mes) => mes.semanas)
-    .flat()
-    .filter((celula): celula is CelulaCalendarioMensal => celula !== null && celula.ocorrencias.length > 0)
-    .length;
 }

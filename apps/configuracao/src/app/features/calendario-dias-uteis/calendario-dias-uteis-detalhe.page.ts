@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -11,10 +18,15 @@ import {
   DiaNaoUtilDto,
   UNIDADES_FEDERATIVAS,
 } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DrawerComponent, SpinnerComponent, TagComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  DrawerComponent,
+  SpinnerComponent,
+  TagComponent,
+} from '@uniplus/shared-ui/components';
 import { tap } from 'rxjs';
 
-import { agruparPorMes, contarDiasNaoUteisUnicos, type CelulaCalendarioMensal } from './calendario-mensal.util';
+import { agruparPorMes, type CelulaCalendarioMensal } from './calendario-mensal.util';
 
 const DIAS_SEMANA = [
   { abrev: 'Dom', nome: 'Domingo' },
@@ -76,12 +88,20 @@ const DIAS_SEMANA = [
 
       <div class="cfg-calendario-mensal__lista">
         @for (mes of meses(); track mes.chave) {
-          <section class="cfg-calendario-mensal" [attr.aria-labelledby]="'cfg-mes-titulo-' + mes.chave">
+          <section
+            class="cfg-calendario-mensal"
+            [attr.aria-labelledby]="'cfg-mes-titulo-' + mes.chave"
+          >
             <h2 [id]="'cfg-mes-titulo-' + mes.chave" class="cfg-calendario-mensal__titulo">
               {{ mes.rotulo }}
             </h2>
             <table class="cfg-calendario-mensal__tabela">
-              <caption class="sr-only">Calendário de {{ mes.rotulo }}</caption>
+              <caption class="sr-only">
+                Calendário de
+                {{
+                  mes.rotulo
+                }}
+              </caption>
               <thead>
                 <tr>
                   @for (diaSemana of diasSemana; track diaSemana.abrev) {
@@ -111,7 +131,10 @@ const DIAS_SEMANA = [
                               (keydown.escape)="ocultarPreview()"
                             >
                               <span aria-hidden="true">{{ celula.dia }}</span>
-                              <span class="cfg-calendario-mensal__marcador" aria-hidden="true"></span>
+                              <span
+                                class="cfg-calendario-mensal__marcador"
+                                aria-hidden="true"
+                              ></span>
                               @if (celula.ocorrencias.length > 1) {
                                 <span class="cfg-calendario-mensal__contador" aria-hidden="true">
                                   ×{{ celula.ocorrencias.length }}
@@ -441,13 +464,23 @@ export class CalendarioDiasUteisDetalhePage {
   });
 
   protected readonly meses = computed(() => agruparPorMes(this.calendario()?.diasNaoUteis ?? []));
-  protected readonly totalDiasNaoUteis = computed(() => contarDiasNaoUteisUnicos(this.meses()));
+  /**
+   * Registros do dataset, não datas do calendário. Duas ocorrências no mesmo
+   * dia — abrangências diferentes, como um feriado municipal que cai num
+   * nacional — são duas entradas próprias, e é por entrada que o dataset é
+   * conferido antes de virar vigente.
+   */
+  protected readonly totalDiasNaoUteis = computed(
+    () => this.calendario()?.diasNaoUteis.length ?? 0,
+  );
 
   protected readonly diaEmPreview = signal<string | null>(null);
   protected readonly drawerVisivel = signal(false);
   protected readonly diaSelecionado = signal<CelulaCalendarioMensal | null>(null);
 
-  protected readonly ocorrenciasSelecionadas = computed(() => this.diaSelecionado()?.ocorrencias ?? []);
+  protected readonly ocorrenciasSelecionadas = computed(
+    () => this.diaSelecionado()?.ocorrencias ?? [],
+  );
   protected readonly tituloDrawer = computed(() => {
     const celula = this.diaSelecionado();
     return celula ? formatIsoDateLong(celula.data) : '';
@@ -496,7 +529,10 @@ export class CalendarioDiasUteisDetalhePage {
       return `${dataPorExtenso}: ${ocorrencia.descricao} (${this.abrangenciaLegivel(ocorrencia.abrangencia)})`;
     }
     const resumo = celula.ocorrencias
-      .map((ocorrencia) => `${ocorrencia.descricao} (${this.abrangenciaLegivel(ocorrencia.abrangencia)})`)
+      .map(
+        (ocorrencia) =>
+          `${ocorrencia.descricao} (${this.abrangenciaLegivel(ocorrencia.abrangencia)})`,
+      )
       .join(', ');
     return `${dataPorExtenso}: ${celula.ocorrencias.length} ocorrências — ${resumo}`;
   }

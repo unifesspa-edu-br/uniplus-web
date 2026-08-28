@@ -147,21 +147,44 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     expect(texto).toContain('Vigente');
   });
 
-  it('conta datas civis únicas no resumo, não ocorrências (CA-02)', async () => {
-    const segunda_ocorrencia_mesmo_dia = { ...DIA_MUNICIPAL, id: 'outro-id', abrangencia: 'INSTITUCIONAL' };
-    await carregar([DIA_MUNICIPAL, segunda_ocorrencia_mesmo_dia, DIA_ESTADUAL]);
+  /**
+   * Cada ocorrência é uma entrada própria do dataset, com abrangência e
+   * descrição próprias, e é por entrada que ele é conferido antes de virar
+   * vigente. Colapsar duas no mesmo dia fazia o conferente procurar registros
+   * que pareciam ter sumido.
+   */
+  it('conta as ocorrências do dataset no resumo, não as datas (CA-02)', async () => {
+    const segundaOcorrenciaNoMesmoDia = {
+      ...DIA_MUNICIPAL,
+      id: 'outro-id',
+      abrangencia: 'INSTITUCIONAL',
+    };
+    await carregar([DIA_MUNICIPAL, segundaOcorrenciaNoMesmoDia, DIA_ESTADUAL]);
 
     const resumo = fixture.nativeElement.querySelector('.cfg-calendario-resumo') as HTMLElement;
-    expect(resumo.textContent).toContain('2');
-    expect(resumo.textContent).not.toContain('3');
+    expect(resumo.textContent).toContain('3');
+  });
+
+  /** A grade continua desenhando um dia só, com as duas ocorrências dentro. */
+  it('mantém uma célula por data mesmo com mais de uma ocorrência', async () => {
+    const segundaOcorrenciaNoMesmoDia = {
+      ...DIA_MUNICIPAL,
+      id: 'outro-id',
+      abrangencia: 'INSTITUCIONAL',
+    };
+    await carregar([DIA_MUNICIPAL, segundaOcorrenciaNoMesmoDia]);
+
+    expect(
+      fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__dia--feriado'),
+    ).toHaveLength(1);
   });
 
   it('exibe só os meses com feriado, em ordem cronológica, mesmo atravessando anos (CA-03)', async () => {
     await carregar([DIA_ESTADUAL, DIA_NACIONAL_JANEIRO]);
 
-    const titulos = [...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo')].map(
-      (elemento: Element) => elemento.textContent?.trim(),
-    );
+    const titulos = [
+      ...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo'),
+    ].map((elemento: Element) => elemento.textContent?.trim());
     expect(titulos).toEqual(['Agosto de 2026', 'Janeiro de 2027']);
   });
 
