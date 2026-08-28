@@ -6,6 +6,10 @@ export const appRoutes: Routes = [
   {
     path: 'acesso-negado',
     component: AccessDeniedComponent,
+    // A raiz do portal leva à consulta pública de processos, alcançável sem
+    // autenticação — aqui existe volta, ao contrário dos apps administrativos,
+    // onde a raiz é protegida pelo mesmo guard que traz o usuário até esta tela.
+    data: { rotaDeVolta: '/processos' },
   },
   {
     path: '',
