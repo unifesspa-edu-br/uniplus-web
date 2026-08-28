@@ -1,4 +1,5 @@
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import { WizardDraft } from '../processo-seletivo.models';
@@ -19,6 +20,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       selected: dto.tipoProcesso.origemId,
       rotulo: dto.tipoProcesso.nome,
     },
+    pagamento: pagamentoDe(dto),
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
@@ -31,6 +33,39 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       },
     },
   };
+}
+
+/**
+ * Projeta a configuração de taxa já gravada. Ausente significa "ainda não
+ * declarado" — que é diferente de declarar que não cobra, e por isso vira
+ * `cobra: null` em vez de `false`: o passo precisa continuar exigindo a
+ * declaração.
+ *
+ * O valor volta como texto porque é o que o campo edita; a vírgula decimal é
+ * a forma que o operador digita e reconhece.
+ */
+function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
+  const config = dto.configuracaoTaxaInscricao;
+  if (config === null || config === undefined) {
+    return { cobra: null, valor: '', fundamentos: [], confirmacaoFundamentos: false };
+  }
+
+  return {
+    cobra: config.cobra,
+    valor: config.valor === null || config.valor === undefined ? '' : String(config.valor).replace('.', ','),
+    fundamentos: [...config.fundamentos].filter(ehFundamentoConhecido),
+    confirmacaoFundamentos: config.confirmacaoFundamentos,
+  };
+}
+
+/**
+ * O detalhe devolve os fundamentos como texto livre, e a gravação aceita
+ * vocabulário fechado. Um código que este cliente não conhece é descartado do
+ * rascunho editável em vez de seguir para um comando que o recusaria.
+ */
+function ehFundamentoConhecido(codigo: string): codigo is FundamentoIsencaoCodigo {
+  const conhecidos: readonly string[] = Object.values(FundamentoIsencao);
+  return conhecidos.includes(codigo);
 }
 
 /**

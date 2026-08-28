@@ -726,7 +726,10 @@
   line-height: 1.45;
 }
 
-.check-item input[type='checkbox'] {
+/* Vale para caixa e rádio: os dois são escolhas do mesmo tipo de lista, e
+   `accent-color` é o que torna o estado marcado visível no tema escuro. */
+.check-item input[type='checkbox'],
+.check-item input[type='radio'] {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -2727,4 +2730,45 @@ dialog.vagas-modal::backdrop {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
   }
+}
+
+/* Fundamentos de isenção: cada item traz a caixa e, abaixo, a descrição que
+   distingue um fundamento do outro — os critérios de renda e de origem escolar
+   diferem entre eles, e é por isso que a descrição não é decorativa. */
+.pagamento-fundamentos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pagamento-fundamentos__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pagamento-fundamentos__nome {
+  font-weight: var(--weight-medium);
+}
+
+.pagamento-fundamentos__item .field__hint {
+  margin: 0;
+  padding-left: calc(var(--space-6) + var(--space-1));
+}
+
+/* A confirmação não é um fundamento: é a declaração de que os assinalados acima
+   são decisão do processo. Encostada na lista ela se lê como um quarto item, e
+   é a linha acima que a separa do que ela confirma. */
+.pagamento-confirmacao {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.pagamento-confirmacao .field__hint {
+  margin: var(--space-1) 0 0;
+  padding-left: calc(var(--space-6) + var(--space-1));
 }

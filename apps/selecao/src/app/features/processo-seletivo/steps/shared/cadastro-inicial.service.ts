@@ -11,6 +11,7 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   CriarProcessoSeletivoCommand,
+  DefinirTaxaInscricaoRequest,
   IniciarUploadDocumentoEditalDto,
   ProcessosSeletivosApi,
 } from '@uniplus/shared-data/selecao';
@@ -24,6 +25,9 @@ export interface FalhaOperacao {
 export type ResultadoCriacao =
   | { readonly ok: true; readonly processoSeletivoId: string }
   | FalhaOperacao;
+
+/** A gravação da taxa responde 204 — não há corpo a devolver. */
+export type ResultadoDefinicaoDeTaxa = { readonly ok: true } | FalhaOperacao;
 
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
@@ -86,6 +90,7 @@ export class CadastroInicialService {
   private chaveCriacao = idempotencyKey.create();
   private chaveIniciacao = idempotencyKey.create();
   private chaveConfirmacao = idempotencyKey.create();
+  private chaveTaxa = idempotencyKey.create();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -117,6 +122,7 @@ export class CadastroInicialService {
     this.chaveCriacao = idempotencyKey.create();
     this.chaveIniciacao = idempotencyKey.create();
     this.chaveConfirmacao = idempotencyKey.create();
+    this.chaveTaxa = idempotencyKey.create();
   }
 
   /**
@@ -167,6 +173,29 @@ export class CadastroInicialService {
     return firstValueFrom(
       this.api.obterAcessoDocumentoEdital(processoSeletivoId, documentoEditalId),
     );
+  }
+
+  /**
+   * Declara a cobrança de taxa e os fundamentos de isenção do processo.
+   */
+  async definirTaxaInscricao(
+    processoSeletivoId: string,
+    request: DefinirTaxaInscricaoRequest,
+  ): Promise<ResultadoDefinicaoDeTaxa> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirTaxaInscricao(processoSeletivoId, request, contextoCom(this.chaveTaxa)),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveTaxa = idempotencyKey.create();
+      return { ok: true };
+    }
+
+    this.chaveTaxa = proximaChave(this.chaveTaxa, result);
+    return { ok: false, problem: result.problem };
   }
 
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */

@@ -2,6 +2,7 @@ import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/commo
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { DefinirTaxaInscricaoRequestFundamentos } from './schema';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -13,6 +14,13 @@ export type IniciarUploadDocumentoEditalDto =
   components['schemas']['IniciarUploadDocumentoEditalDto'];
 export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
 export type AcessoDocumentoEditalDto = components['schemas']['AcessoDocumentoEditalDto'];
+export type ConfiguracaoTaxaInscricaoDto = components['schemas']['ConfiguracaoTaxaInscricaoDto'];
+export type DefinirTaxaInscricaoRequest = components['schemas']['DefinirTaxaInscricaoRequest'];
+export type FundamentoIsencaoDto = components['schemas']['FundamentoIsencaoDto'];
+
+/** Vocabulário fechado dos fundamentos que a configuração pode referenciar. */
+export { DefinirTaxaInscricaoRequestFundamentos as FundamentoIsencao };
+export type FundamentoIsencaoCodigo = DefinirTaxaInscricaoRequestFundamentos;
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -88,6 +96,43 @@ export class ProcessosSeletivosApi {
     return this.http.get<ApiResult<readonly DocumentoEditalDto[]>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital`,
       { context: withVendorMime('documento-edital', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/fundamentos-isencao` — vocabulário fechado dos fundamentos
+   * que a configuração pode referenciar, com nome e descrição para exibição.
+   *
+   * A lista vem da API e não é escrita aqui de propósito: o vocabulário é do
+   * domínio, e uma cópia no cliente ficaria defasada em silêncio a cada
+   * fundamento acrescentado.
+   */
+  listarFundamentosIsencao(): Observable<ApiResult<readonly FundamentoIsencaoDto[]>> {
+    return this.http.get<ApiResult<readonly FundamentoIsencaoDto[]>>(
+      `${this.basePath}/api/selecao/fundamentos-isencao`,
+      { context: withVendorMime('fundamento-isencao', 1) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/taxa-inscricao` — declara se o
+   * processo cobra taxa, quanto, e quais fundamentos de isenção reconhece.
+   *
+   * O `If-Match` não vai aqui: em rascunho não há sessão editorial nem ETag, e
+   * o servidor ignora a precondição. Retificar processo publicado é outro
+   * fluxo, e exigirá o cabeçalho quando existir.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirTaxaInscricao(
+    processoSeletivoId: string,
+    request: DefinirTaxaInscricaoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/taxa-inscricao`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 

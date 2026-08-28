@@ -24,6 +24,7 @@ interface DefinicaoDePasso {
 const DEFINICOES: readonly DefinicaoDePasso[] = [
   { rotulo: 'Tipo do processo', revisao: 'Tipo do processo seletivo' },
   { rotulo: 'Identificação' },
+  { rotulo: 'Pagamento', titulo: 'Taxa de inscrição e isenção', revisao: 'Taxa de inscrição' },
   { rotulo: 'Modalidades' },
   { rotulo: 'Vagas' },
   { rotulo: 'Etapas' },

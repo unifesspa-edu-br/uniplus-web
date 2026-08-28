@@ -1,0 +1,111 @@
+<p class="step-subtitle">
+  Declare se o processo cobra taxa de inscrição. A declaração é obrigatória para publicar — não
+  declarar não equivale a não cobrar.
+</p>
+
+<form [formGroup]="form">
+  <div class="step-card">
+    <div class="form-grid">
+      <fieldset class="form-field form-grid__full">
+        <legend class="label">Cobrança da taxa de inscrição</legend>
+        <div class="checkbox-grid">
+          <label class="check-item">
+            <input type="radio" [value]="true" formControlName="cobra" />
+            <span>Este processo cobra taxa</span>
+          </label>
+          <label class="check-item">
+            <input type="radio" [value]="false" formControlName="cobra" />
+            <span>Este processo é gratuito</span>
+          </label>
+        </div>
+      </fieldset>
+
+      @if (cobra() === true) {
+        <div class="form-field form-grid__full">
+          <label class="label" for="f-valor-taxa">Valor da taxa</label>
+          <input
+            class="input"
+            id="f-valor-taxa"
+            inputmode="decimal"
+            placeholder="0,00"
+            aria-describedby="f-valor-taxa-hint"
+            formControlName="valor"
+          />
+          <p class="field__hint" id="f-valor-taxa-hint">
+            Em reais. O servidor recusa a publicação de processo que declara cobrança sem valor
+            positivo.
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (cobra() === true) {
+    <div class="step-card">
+      <h2 class="form-section__title">Fundamentos de isenção</h2>
+      <p class="field__hint">
+        Quais fundamentos este processo reconhece para isentar candidatos. Nenhum fundamento também
+        é uma configuração válida — a isenção não é obrigatória.
+      </p>
+
+      @if (fundamentosCarregando()) {
+        <p class="field__hint" role="status" aria-live="polite">Carregando fundamentos…</p>
+      }
+
+      @if (fundamentosErro(); as erro) {
+        <div class="field__erro" role="alert">
+          <p>{{ erro }}</p>
+          <button class="btn btn--tertiary" type="button" (click)="carregarFundamentos()">
+            Tentar novamente
+          </button>
+        </div>
+      }
+
+      @if (fundamentosNaoSuportados().length > 0) {
+        <p class="alert alert--warning" role="status">
+          Esta versão do sistema não reconhece
+          {{ fundamentosNaoSuportados().join(', ') }} — atualize a página; se persistir, o sistema
+          precisa ser atualizado para oferecer esse fundamento.
+        </p>
+      }
+
+      <ul class="pagamento-fundamentos">
+        @for (fundamento of fundamentos(); track fundamento.codigo) {
+          <li class="pagamento-fundamentos__item">
+            <label class="check-item">
+              <input
+                type="checkbox"
+                [checked]="estaSelecionado(fundamento.codigo)"
+                [attr.aria-describedby]="'f-desc-' + fundamento.codigo"
+                (change)="alternarFundamento(fundamento.codigo)"
+              />
+              <span class="pagamento-fundamentos__nome">{{ fundamento.nome }}</span>
+            </label>
+            <p class="field__hint" [id]="'f-desc-' + fundamento.codigo">
+              {{ fundamento.descricao }}
+            </p>
+          </li>
+        }
+      </ul>
+
+      @if (exigeConfirmacao()) {
+        <div class="pagamento-confirmacao">
+          <label class="check-item">
+            <input type="checkbox" formControlName="confirmacaoFundamentos" />
+            <span>
+              Confirmo que este processo reconhece os fundamentos de isenção assinalados acima.
+            </span>
+          </label>
+          <p class="field__hint">
+            O servidor exige esta confirmação para gravar fundamentos — referenciar um fundamento é
+            decisão do processo, não consequência de marcar uma caixa.
+          </p>
+        </div>
+      }
+    </div>
+  }
+</form>
+
+@if (erroDeGravacao(); as erro) {
+  <p class="field__erro" role="alert">{{ erro }}</p>
+}
