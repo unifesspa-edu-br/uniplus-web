@@ -1,12 +1,10 @@
 import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
-import {
-  agruparPorMes,
-  contarDiasNaoUteisUnicos,
-  type CelulaCalendarioMensal,
-} from './calendario-mensal.util';
+import { agruparPorMes, type CelulaCalendarioMensal } from './calendario-mensal.util';
 
-function diaNaoUtil(overrides: Partial<DiaNaoUtilDto> & { id: string; data: string }): DiaNaoUtilDto {
+function diaNaoUtil(
+  overrides: Partial<DiaNaoUtilDto> & { id: string; data: string },
+): DiaNaoUtilDto {
   return {
     abrangencia: 'NACIONAL',
     municipioIbge: null,
@@ -22,7 +20,10 @@ function celulasComOcorrencia(meses: ReturnType<typeof agruparPorMes>): CelulaCa
   return meses
     .flatMap((mes) => mes.semanas)
     .flat()
-    .filter((celula): celula is CelulaCalendarioMensal => celula !== null && celula.ocorrencias.length > 0);
+    .filter(
+      (celula): celula is CelulaCalendarioMensal =>
+        celula !== null && celula.ocorrencias.length > 0,
+    );
 }
 
 describe('agruparPorMes()', () => {
@@ -93,8 +94,12 @@ describe('agruparPorMes()', () => {
     });
 
     it('fevereiro de ano bissexto (2028) tem 29 dias mapeados', () => {
-      const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '2028-02-29', descricao: 'Bissexto' })]);
-      const dias = mes.semanas.flat().filter((celula): celula is CelulaCalendarioMensal => celula !== null);
+      const [mes] = agruparPorMes([
+        diaNaoUtil({ id: '1', data: '2028-02-29', descricao: 'Bissexto' }),
+      ]);
+      const dias = mes.semanas
+        .flat()
+        .filter((celula): celula is CelulaCalendarioMensal => celula !== null);
       expect(dias).toHaveLength(29);
       expect(dias.at(-1)?.dia).toBe(29);
       expect(dias.at(-1)?.ocorrencias[0]?.descricao).toBe('Bissexto');
@@ -103,8 +108,18 @@ describe('agruparPorMes()', () => {
 
   it('agrega múltiplas ocorrências na mesma data civil numa única célula', () => {
     const dias = [
-      diaNaoUtil({ id: '1', data: '2026-11-15', abrangencia: 'NACIONAL', descricao: 'Proclamação da República' }),
-      diaNaoUtil({ id: '2', data: '2026-11-15', abrangencia: 'INSTITUCIONAL', descricao: 'Aniversário da UFPA' }),
+      diaNaoUtil({
+        id: '1',
+        data: '2026-11-15',
+        abrangencia: 'NACIONAL',
+        descricao: 'Proclamação da República',
+      }),
+      diaNaoUtil({
+        id: '2',
+        data: '2026-11-15',
+        abrangencia: 'INSTITUCIONAL',
+        descricao: 'Aniversário da UFPA',
+      }),
     ];
 
     const meses = agruparPorMes(dias);
@@ -119,21 +134,5 @@ describe('agruparPorMes()', () => {
     const dia1 = mes.semanas.flat().find((celula) => celula?.dia === 1);
     expect(dia1?.ocorrencias).toEqual([]);
     expect(dia1?.data).toBe('2026-04-01');
-  });
-});
-
-describe('contarDiasNaoUteisUnicos()', () => {
-  it('conta datas civis únicas, não ocorrências', () => {
-    const dias = [
-      diaNaoUtil({ id: '1', data: '2026-11-15' }),
-      diaNaoUtil({ id: '2', data: '2026-11-15' }),
-      diaNaoUtil({ id: '3', data: '2026-12-25' }),
-    ];
-
-    expect(contarDiasNaoUteisUnicos(agruparPorMes(dias))).toBe(2);
-  });
-
-  it('retorna zero para dataset vazio', () => {
-    expect(contarDiasNaoUteisUnicos(agruparPorMes([]))).toBe(0);
   });
 });
