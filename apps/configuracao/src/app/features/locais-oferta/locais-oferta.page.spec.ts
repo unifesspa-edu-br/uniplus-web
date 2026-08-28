@@ -110,6 +110,42 @@ describe('LocaisOfertaPage', () => {
     expect(campi.request.params.get('limit')).toBe(String(LIMITE_MAXIMO_API));
   });
 
+  it('cancela o lookup de campi anterior ao clicar "Tentar novamente" antes da resposta chegar', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    await propagate();
+
+    const primeira = expectLookup(`${BASE}/api/configuracao/campi`);
+
+    component['recarregarCampi']();
+    await propagate();
+
+    // A primeira travessia precisa ter sido cancelada de verdade (não só
+    // ignorada) — senão ela ainda pode ganhar a corrida se responder por
+    // último, sobrescrevendo o resultado da segunda com dado obsoleto.
+    expect(primeira.cancelled).toBe(true);
+
+    const segunda = expectLookup(`${BASE}/api/configuracao/campi`);
+    segunda.flush([
+      {
+        id: 'cmp1',
+        sigla: 'MAB',
+        nome: 'Campus de Marabá',
+        codigoEmec: null,
+        cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+        endereco: null,
+        criadoEm: '2026-06-10T12:00:00Z',
+      },
+    ]);
+    await propagate();
+
+    expect(component['campiOpcoes']()).toHaveLength(1);
+
+    // Se a primeira ainda estivesse "viva", flush aqui explodiria (request já
+    // consumido) ou reabriria uma disputa — confirma que não sobra nada pendente.
+    controller.verify();
+  });
+
   it('renderiza a lista com tipo e cidade', async () => {
     await flushLista([localSeed]);
     expect(component['locais']()).toHaveLength(1);
