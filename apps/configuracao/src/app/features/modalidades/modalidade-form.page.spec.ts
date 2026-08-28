@@ -84,6 +84,26 @@ describe('ModalidadeFormPage', () => {
     component['form'].get(nome)?.setValue(valor);
   };
 
+  it('percorre todas as páginas de modalidades vivas sem truncar', () => {
+    fixture = TestBed.createComponent(ModalidadeFormPage);
+    component = fixture.componentInstance;
+    controller = TestBed.inject(HttpTestingController);
+
+    const pagina1 = controller.expectOne((r) => r.url === URL && r.params.get('limit') === '100');
+    pagina1.flush([AC], {
+      headers: { Link: `<${URL}?cursor=pagina-2&direction=next>; rel="next"` },
+    });
+
+    const pagina2 = controller.expectOne(
+      (r) => r.url === URL && r.params.get('cursor') === 'pagina-2',
+    );
+    expect(pagina2.request.params.get('direction')).toBe('next');
+    pagina2.flush([LB_PPI]);
+
+    expect(component['modalidadesVivas']()).toHaveLength(2);
+    expect(component['modalidadesVivas']().map((m) => m.codigo)).toEqual(['AC', 'LB_PPI']);
+  });
+
   it('ModalidadeForm_Natureza_AmplaOcultaRemanejamento', () => {
     montar();
     setControl('naturezaLegal', 'AMPLA');

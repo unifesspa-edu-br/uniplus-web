@@ -19,10 +19,12 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  coletarPaginas,
   idempotencyKey,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
@@ -774,9 +776,12 @@ export class ModalidadeFormPage {
     }
   }
 
+  // Percorre todas as páginas por cursor em vez de truncar em API_MAX_PAGE_SIZE:
+  // um select de FK não pode esconder opções silenciosamente.
   private carregarModalidadesVivas(): void {
-    this.api
-      .listar({ limit: 100 })
+    coletarPaginas((cursor) =>
+      this.api.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (result.ok) {
