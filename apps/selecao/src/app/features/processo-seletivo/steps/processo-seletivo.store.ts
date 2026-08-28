@@ -169,6 +169,11 @@ export class ProcessoSeletivoStore {
   readonly isLast = computed(() => this.currentStep() === this.totalSteps - 1);
 
   goTo(index: number): void {
+    // Trocar de passo durante a gravação faria o avanço partir do índice novo:
+    // o comando conclui e o `next()` seguinte marca como concluído um passo que
+    // ninguém preencheu.
+    if (this.salvando()) return;
+
     if (index < 0 || index >= this.totalSteps) return;
     this.currentStep.set(index);
     this.visitedSteps.update((current) => new Set(current).add(index));
