@@ -395,6 +395,26 @@ describe('PagamentoStepComponent', () => {
     expect(store.salvando()).toBe(true);
   });
 
+  /**
+   * As caixas de fundamento são inputs nativos fora do formulário, então
+   * `form.disable()` não as alcança: sem `disabled` próprio elas seguem
+   * focáveis e clicáveis, e o clique só não faz nada — o operador tenta e a
+   * tela não explica.
+   */
+  it('desabilita as caixas de fundamento fora de rascunho', async () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '230' });
+    store.remoteSnapshot.set({ status: 'Publicado' } as never);
+    detectar();
+    await tick();
+    detectar();
+
+    const caixas = host.querySelectorAll<HTMLInputElement>(
+      '.pagamento-fundamentos input[type="checkbox"]',
+    );
+    expect(caixas.length).toBeGreaterThan(0);
+    for (const caixa of caixas) expect(caixa.disabled).toBe(true);
+  });
+
   /** O clique grava; dizer "Próximo" descreveria só a navegação. */
   it('anuncia no botão que o avanço grava', () => {
     expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');
