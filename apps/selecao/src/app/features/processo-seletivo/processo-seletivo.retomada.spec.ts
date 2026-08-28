@@ -110,6 +110,7 @@ interface CenarioOpts {
 
 function montar(opts: CenarioOpts = {}) {
   const obter = opts.obter ?? vi.fn(() => of(okResult(detalhe())));
+  const definirTaxaInscricao = vi.fn(() => of(okResult(undefined)));
   const listarDocumentos = opts.listarDocumentos ?? vi.fn(() => of(okResult([])));
   const id = opts.id === undefined ? PROCESSO_ID : opts.id;
 
@@ -137,6 +138,7 @@ function montar(opts: CenarioOpts = {}) {
           obter,
           listarDocumentosEdital: listarDocumentos,
           listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
+          definirTaxaInscricao,
         },
       },
       {
@@ -161,7 +163,9 @@ function montar(opts: CenarioOpts = {}) {
     fixture,
     obter,
     listarDocumentos,
+    definirTaxaInscricao,
     navigate,
+    componente: fixture.componentInstance,
     // O store é provido pela própria página, não pelo injector do TestBed.
     store: fixture.componentInstance.store,
     host: fixture.nativeElement as HTMLElement,
@@ -1074,5 +1078,56 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     await propagar();
 
     expect(cenario.store.draft().pagamento.cobra).toBeNull();
+  });
+
+  /**
+   * O agregado recusa mutação fora de rascunho, e a listagem oferece "Abrir"
+   * para qualquer processo. Sem esta condição o editor monta os mesmos
+   * controles e promete uma gravação que o servidor negaria depois de o
+   * operador preencher a tela.
+   */
+  describe('processo fora de rascunho', () => {
+    const PASSO_PAGAMENTO = 2;
+
+    const publicado = () =>
+      montar({ obter: vi.fn(() => of(okResult(detalhe({ status: 'Publicado' })))) });
+
+    it('não promete gravação no rótulo do avanço', async () => {
+      const cenario = publicado();
+      await propagar();
+
+      cenario.store.goTo(PASSO_PAGAMENTO);
+      cenario.fixture.detectChanges();
+
+      expect(cenario.componente.rotuloDeAvanco()).toBe('Próximo');
+    });
+
+    it('avança sem emitir comando de escrita', async () => {
+      const cenario = publicado();
+      await propagar();
+
+      cenario.store.goTo(PASSO_PAGAMENTO);
+      cenario.fixture.detectChanges();
+      await cenario.componente.nextOrPublish();
+
+      expect(cenario.definirTaxaInscricao).not.toHaveBeenCalled();
+      expect(cenario.store.currentStep()).toBe(PASSO_PAGAMENTO + 1);
+    });
+
+    it('retira o botão de avanço do último passo, onde ele só publicaria', async () => {
+      const cenario = publicado();
+      await propagar();
+
+      cenario.store.goTo(cenario.store.totalSteps - 1);
+      cenario.fixture.detectChanges();
+
+      expect(cenario.componente.ofereceAvanco()).toBe(false);
+    });
+
+    it('mantém a edição liberada enquanto o detalhe não chegou', () => {
+      const cenario = montar();
+
+      expect(cenario.store.edicaoPermitida()).toBe(true);
+    });
   });
 });

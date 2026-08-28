@@ -18,6 +18,8 @@ import {
   type PaginationDirection,
 } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi, ProcessoSeletivoResumoDto } from '@uniplus/shared-data/selecao';
+
+import { STATUS_PROCESSO } from './status-processo';
 import {
   AlertComponent,
   EmptyStateComponent,
@@ -42,17 +44,17 @@ const PAGE_SIZE = 50;
  * de `Object.prototype` — uma função, que o `??` não trata como ausência.
  */
 const STATUS_LABEL = new Map<string, string>([
-  ['Rascunho', 'Rascunho'],
-  ['Publicado', 'Publicado'],
-  ['Encerrado', 'Encerrado'],
-  ['Cancelado', 'Cancelado'],
+  [STATUS_PROCESSO.RASCUNHO, 'Rascunho'],
+  [STATUS_PROCESSO.PUBLICADO, 'Publicado'],
+  [STATUS_PROCESSO.ENCERRADO, 'Encerrado'],
+  [STATUS_PROCESSO.CANCELADO, 'Cancelado'],
 ]);
 
 const STATUS_VARIANTE = new Map<string, UiTagVariant>([
-  ['Rascunho', 'warning'],
-  ['Publicado', 'success'],
-  ['Encerrado', 'neutral'],
-  ['Cancelado', 'danger'],
+  [STATUS_PROCESSO.RASCUNHO, 'warning'],
+  [STATUS_PROCESSO.PUBLICADO, 'success'],
+  [STATUS_PROCESSO.ENCERRADO, 'neutral'],
+  [STATUS_PROCESSO.CANCELADO, 'danger'],
 ]);
 
 /**
