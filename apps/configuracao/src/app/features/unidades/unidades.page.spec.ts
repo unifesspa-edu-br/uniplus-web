@@ -564,6 +564,77 @@ describe('UnidadesPage', () => {
     expect(component['cidadeErro']()).toBe(
       'A UF informada não corresponde à UF do código IBGE informado.',
     );
+
+    // CA-13: a mensagem precisa estar associada ao campo, não só visível —
+    // um leitor de tela precisa anunciá-la ao focar o input, não só quando ela surge.
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector(
+      '#cfg-unidade-cidade-busca',
+    ) as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toContain('cfg-unidade-cidade-erro');
+    const erro = fixture.nativeElement.querySelector('#cfg-unidade-cidade-erro');
+    expect(erro?.textContent).toContain(
+      'A UF informada não corresponde à UF do código IBGE informado.',
+    );
+  });
+
+  it('avisa quando a busca de cidade não encontra nenhum resultado', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    component['buscaCidade'].set('xyz');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    expectCidadesGet((r) => r.params.get('q') === 'xyz').flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(component['cidadeOpcoes']()).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Nenhuma cidade encontrada.');
+  });
+
+  it('trocar de cidade em edição envia o novo trio, sem resíduo do erro/busca anterior', async () => {
+    await flushInicial();
+    component['abrirEdicao'](unidadesSeed[1]); // já tem Marabá — PA selecionada
+    await flushOpcoesSuperior();
+
+    // Uma tentativa de salvar falhou antes de trocar — o erro fica visível...
+    component['cidadeErro'].set('A UF informada não corresponde à UF do código IBGE informado.');
+
+    component['limparCidade']();
+    // ...e some ao trocar, junto com qualquer resíduo de busca (S2).
+    expect(component['cidadeErro']()).toBeNull();
+    expect(component['buscaCidadeErro']()).toBeNull();
+    expect(component['buscaCidade']()).toBe('');
+    expect(component['cidadeOpcoes']()).toEqual([]);
+
+    component['buscaCidade'].set('bel');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    expectCidadesGet((r) => r.params.get('q') === 'bel').flush([cidadesSeed[1]]);
+    await propagate();
+
+    component['selecionarCidade']({
+      codigoIbge: cidadesSeed[1].codigoIbge,
+      nome: cidadesSeed[1].nome,
+      uf: cidadesSeed[1].uf,
+    });
+
+    component['salvar']();
+
+    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
+    expect(put.request.body).toMatchObject({
+      cidadeCodigoIbge: cidadesSeed[1].codigoIbge,
+      cidadeNome: cidadesSeed[1].nome,
+      cidadeUf: cidadesSeed[1].uf,
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
   });
 
   it('submete regra de vigência ao backend e exibe erro 422 inline no campo correspondente', async () => {
