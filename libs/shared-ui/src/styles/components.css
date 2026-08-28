@@ -2095,13 +2095,20 @@ ui-vlibras-loader {
   display: none;
 }
 @media (min-width: 1024px) {
+  /* Acompanha a altura da área de trabalho e limita-se ao viewport: assim a
+     navegação (`.sidebar nav`) rola por dentro em vez de esticar a coluna e
+     empurrar o rodapé (usuário autenticado) para fora da tela. Vale para as
+     cascas travadas no viewport (selecao, configuracao) e para as de rolagem
+     de página (portal, ingresso), onde o `position: sticky` mantém a coluna
+     fixa enquanto o corpo rola. */
   .sidebar {
     position: sticky;
     top: 0;
     display: flex;
-    align-self: start;
+    align-self: stretch;
     width: auto;
-    min-height: 100%;
+    min-height: 0;
+    max-height: 100vh;
     flex-direction: column;
     gap: var(--space-1);
     overflow: hidden;
@@ -2117,6 +2124,40 @@ ui-vlibras-loader {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+/* Chrome / Edge / Safari */
+.sidebar nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar nav::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+/* Mostra quando o mouse está sobre a área */
+.sidebar nav:hover::-webkit-scrollbar-thumb {
+  background: rgba(32, 37, 44, 0.55);
+}
+
+.sidebar nav:hover {
+  scrollbar-color: #20252c transparent;
+}
+
+/* Remove as setinhas */
+.sidebar nav::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .sidebar__brand {
@@ -2343,6 +2384,34 @@ ui-vlibras-loader {
   flex-direction: column;
   gap: var(--space-7);
   padding: var(--space-5);
+  /* Contêiner de rolagem do conteúdo: com a casca do app travada no viewport
+     (root em altura fixa + overflow hidden), só a `.page` rola e a topbar/
+     sidebar ficam fixas. Onde a casca não trava a altura (portal, ingresso),
+     a `.page` tem a altura do conteúdo e isto vira no-op — o `<body>` rola. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Chrome, Edge e Safari */
+.page::-webkit-scrollbar {
+  width: 5px;
+}
+
+.page::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.page::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 @media (min-width: 768px) {
