@@ -187,7 +187,8 @@
 }
 /* Input-affix (icon + input) */
 .input-group {
-  display: flex; align-items: stretch;
+  display: flex;
+  align-items: stretch;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   background: var(--surface-card);

@@ -606,12 +606,16 @@ const BACKEND_FIELD_TO_CONTROL = {
               <label class="field__label" for="cfg-unidade-cidade-busca">Cidade</label>
               @if (cidadeSelecionada(); as cidade) {
                 <div class="input-group">
-                  <output class="field__readonly" aria-label="Cidade selecionada">
-                    {{ cidade.nome }} — {{ cidade.uf }}
-                  </output>
+                  <input
+                    id="cfg-unidade-cidade-busca"
+                    class="input"
+                    readonly
+                    aria-describedby="cfg-unidade-cidade-hint"
+                    [value]="cidade.nome + ' — ' + cidade.uf"
+                  />
                   <button
                     type="button"
-                    class="btn btn--secondary btn--rect"
+                    class="btn btn--tertiary"
                     (click)="limparCidade()"
                   >
                     Trocar cidade
@@ -624,6 +628,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                   type="search"
                   autocomplete="off"
                   placeholder="Digite ao menos 3 letras da cidade"
+                  aria-describedby="cfg-unidade-cidade-hint"
                   [attr.aria-busy]="buscandoCidades() || null"
                   [value]="buscaCidade()"
                   (input)="buscaCidade.set(inputValue($event))"
@@ -658,7 +663,9 @@ const BACKEND_FIELD_TO_CONTROL = {
                   </ul>
                 }
               }
-              <span class="field__hint">Cidade-sede de referência da unidade. Opcional.</span>
+              <span class="field__hint" id="cfg-unidade-cidade-hint">
+                Cidade-sede de referência da unidade. Opcional.
+              </span>
               @if (cidadeErro(); as erro) {
                 <span class="field__error" role="alert">{{ erro }}</span>
               }
