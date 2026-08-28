@@ -1,4 +1,6 @@
 export { SELECAO_BASE_PATH } from './tokens';
+export { RegrasCatalogoApi } from './regras-catalogo.api';
+export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
 export {
   ProcessosSeletivosApi,
   type CriarProcessoSeletivoCommand,
