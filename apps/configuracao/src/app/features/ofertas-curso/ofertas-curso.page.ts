@@ -141,6 +141,17 @@ interface OfertaCursoForm {
         </button>
       </div>
 
+      @if (lookupsComFalha().length > 0) {
+        <ui-alert variant="warning" heading="Rótulos não carregados">
+          As colunas afetadas mostram “Não carregado” até a busca ser refeita.
+          @for (lookup of lookupsComFalha(); track lookup.nome) {
+            <button type="button" class="cfg-link-button" (click)="lookup.recarregar()">
+              Recarregar {{ lookup.nome }}
+            </button>
+          }
+        </ui-alert>
+      }
+
       @if (ofertas().length > 0) {
         <div class="table-responsive">
           <table>
@@ -160,8 +171,20 @@ interface OfertaCursoForm {
             <tbody>
               @for (oferta of ofertas(); track oferta.id) {
                 <tr>
-                  <td data-label="Curso">{{ cursoLabel(oferta.cursoId) }}</td>
-                  <td data-label="Local de oferta">{{ localOfertaLabel(oferta.localOfertaId) }}</td>
+                  <td data-label="Curso">
+                    @if (cursos.comErro()) {
+                      <span class="cfg-lookup-falho">Não carregado</span>
+                    } @else {
+                      {{ cursoLabel(oferta.cursoId) }}
+                    }
+                  </td>
+                  <td data-label="Local de oferta">
+                    @if (locaisOferta.comErro()) {
+                      <span class="cfg-lookup-falho">Não carregado</span>
+                    } @else {
+                      {{ localOfertaLabel(oferta.localOfertaId) }}
+                    }
+                  </td>
                   <td data-label="Unidade ofertante">
                     {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
                   </td>
@@ -280,7 +303,11 @@ interface OfertaCursoForm {
                 @if (locaisOferta.comErro()) {
                   <span class="field__error">
                     Não foi possível carregar os locais de oferta.
-                    <button type="button" class="cfg-link-button" (click)="locaisOferta.recarregar()">
+                    <button
+                      type="button"
+                      class="cfg-link-button"
+                      (click)="locaisOferta.recarregar()"
+                    >
                       Tentar novamente
                     </button>
                   </span>
@@ -301,8 +328,8 @@ interface OfertaCursoForm {
                   <span class="field__hint">{{ unidadeContexto() }}</span>
                 }
                 <span class="field__hint">
-                  Congelada por snapshot-copy ao criar — alterações posteriores na unidade de
-                  origem não afetam a oferta (ADR-0061).
+                  Congelada por snapshot-copy ao criar — alterações posteriores na unidade de origem
+                  não afetam a oferta (ADR-0061).
                 </span>
                 @if (unidades.comErro()) {
                   <span class="field__error">
@@ -319,18 +346,22 @@ interface OfertaCursoForm {
             } @else {
               <div class="field">
                 <span class="field__label">Curso</span>
-                <p class="cfg-readonly-value">{{ cursoContexto() ?? cursoLabel(form.controls.cursoId.value) }}</p>
+                <p class="cfg-readonly-value">
+                  {{ cursoContexto() ?? cursoLabel(form.controls.cursoId.value) }}
+                </p>
               </div>
               <div class="field">
                 <span class="field__label">Local de oferta</span>
-                <p class="cfg-readonly-value">{{ localOfertaLabel(form.controls.localOfertaId.value) }}</p>
+                <p class="cfg-readonly-value">
+                  {{ localOfertaLabel(form.controls.localOfertaId.value) }}
+                </p>
               </div>
               <div class="field">
                 <span class="field__label">Unidade ofertante</span>
                 <p class="cfg-readonly-value">{{ unidadeOfertanteEmEdicaoLabel() }}</p>
                 <span class="field__hint">
-                  Identidade congelada no ato de criação (ADR-0061). Alterações na unidade de
-                  origem não são refletidas aqui.
+                  Identidade congelada no ato de criação (ADR-0061). Alterações na unidade de origem
+                  não são refletidas aqui.
                 </span>
               </div>
             }
@@ -413,7 +444,9 @@ interface OfertaCursoForm {
                 step="1"
                 formControlName="vagasAnuaisAutorizadas"
               />
-              <span class="field__hint">Teto anual autorizado pelo e-MEC — não as vagas do certame.</span>
+              <span class="field__hint"
+                >Teto anual autorizado pelo e-MEC — não as vagas do certame.</span
+              >
               @if (erroDoCampo('vagasAnuaisAutorizadas')) {
                 <span class="field__error">{{ erroDoCampo('vagasAnuaisAutorizadas') }}</span>
               }
@@ -515,6 +548,7 @@ interface OfertaCursoForm {
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class OfertasCursoPage {
   private readonly api = inject(OfertasCursoApi);
@@ -585,6 +619,19 @@ export class OfertasCursoPage {
   );
   private readonly unidadesPorId = computed(
     () => new Map(this.unidades.opcoes().map((unidade) => [unidade.id, unidade] as const)),
+  );
+
+  // Só os catálogos que a listagem precisa resolver: a Unidade ofertante vem
+  // congelada no DTO da oferta e não depende de lookup para exibir o rótulo.
+  private readonly lookupsDaListagem = [
+    { nome: 'cursos', lookup: this.cursos },
+    { nome: 'locais de oferta', lookup: this.locaisOferta },
+  ] as const;
+
+  protected readonly lookupsComFalha = computed(() =>
+    this.lookupsDaListagem
+      .filter(({ lookup }) => lookup.comErro())
+      .map(({ nome, lookup }) => ({ nome, recarregar: () => lookup.recarregar() })),
   );
 
   private readonly cursores = linkedSignal<
@@ -677,7 +724,9 @@ export class OfertasCursoPage {
       nonNullable: true,
       validators: [Validators.maxLength(30)],
     }),
-    vagasAnuaisAutorizadas: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
+    vagasAnuaisAutorizadas: new FormControl<number | null>(null, {
+      validators: [Validators.min(0)],
+    }),
     baseLegal: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
     atoAutorizacaoMec: new FormControl('', {
       nonNullable: true,
@@ -735,9 +784,7 @@ export class OfertasCursoPage {
   // backend introduza depois. Nesse caso a UI não impõe cardinalidade alguma e
   // deixa a decisão com a API, em vez de tratar o desconhecido como se fosse
   // REGULAR e truncar uma seleção legítima.
-  protected readonly turnosExigidos = computed(() =>
-    turnosExigidosPorRegime(this.regimeValue()),
-  );
+  protected readonly turnosExigidos = computed(() => turnosExigidosPorRegime(this.regimeValue()));
 
   /**
    * Token de regime da oferta em edição que este frontend não conhece — de um
@@ -851,8 +898,7 @@ export class OfertasCursoPage {
       const exigidos = this.turnosExigidos();
       const marcados = this.turnosValue();
       untracked(() => {
-        const reduzidos =
-          exigidos === null ? marcados : manterOsMaisRecentes(marcados, exigidos);
+        const reduzidos = exigidos === null ? marcados : manterOsMaisRecentes(marcados, exigidos);
         if (reduzidos.length !== marcados.length) {
           this.form.controls.turnos.setValue(reduzidos);
           return;
@@ -1272,10 +1318,7 @@ const OFERTA_ERROR_CODE_TO_CONTROL: ReadonlyMap<string, keyof OfertaCursoForm> =
   ['uniplus.configuracao.oferta_curso.regime_de_turno_invalido', 'regimeDeTurno'],
   ['uniplus.configuracao.oferta_curso.turnos_obrigatorios', 'turnos'],
   ['uniplus.configuracao.oferta_curso.turno_repetido', 'turnos'],
-  [
-    'uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime',
-    'turnos',
-  ],
+  ['uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime', 'turnos'],
   [
     'uniplus.configuracao.oferta_curso.base_legal_obrigatoria_para_programa_nao_regular',
     'baseLegal',

@@ -235,6 +235,13 @@ cfg-pesos-enem-page {
   font-size: var(--text-sm);
 }
 
+/* Rótulo de chave estrangeira que o lookup não conseguiu resolver. O itálico
+   separa o marcador do dado real para quem não distingue a cor. */
+.cfg-lookup-falho {
+  color: var(--color-danger-500);
+  font-style: italic;
+}
+
 .cfg-detail-list {
   display: grid;
   grid-template-columns: minmax(7rem, 10rem) 1fr;
@@ -480,7 +487,7 @@ cfg-pesos-enem-page {
   padding: var(--space-4) var(--space-5);
 }
 
-.pe-grid .num-grid__row> :first-child {
+.pe-grid .num-grid__row > :first-child {
   grid-column: 1 / -1;
   font-weight: var(--weight-semibold);
 }
@@ -500,7 +507,7 @@ cfg-pesos-enem-page {
     padding: var(--space-3) var(--space-5);
   }
 
-  .pe-grid .num-grid__row> :first-child {
+  .pe-grid .num-grid__row > :first-child {
     grid-column: auto;
     font-weight: var(--weight-medium);
   }
@@ -562,12 +569,12 @@ cfg-pesos-enem-page {
 }
 
 .cell-label--group-num {
-  color:var(--text-secondary);
-  font-size:var(--text-xs);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
 }
 
 .cell-label--group-label {
-  font-size:var(--text-sm);
+  font-size: var(--text-sm);
 }
 
 /* Barra de ações de edição da grade (revelada por JS) */

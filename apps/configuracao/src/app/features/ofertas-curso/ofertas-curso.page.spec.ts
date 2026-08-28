@@ -67,7 +67,12 @@ const ofertaSeed: OfertaCursoDto = {
   id: OFERTA_ID,
   cursoId: CURSO_ID,
   localOfertaId: LOCAL_ID,
-  unidadeOfertante: { origemId: UNIDADE_ID, sigla: 'IGE', nome: 'Instituto de Geociências e Engenharias', tipo: 'Instituto' },
+  unidadeOfertante: {
+    origemId: UNIDADE_ID,
+    sigla: 'IGE',
+    nome: 'Instituto de Geociências e Engenharias',
+    tipo: 'Instituto',
+  },
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
   regimeDeTurno: 'REGULAR',
@@ -123,7 +128,9 @@ describe('OfertasCursoPage', () => {
   };
 
   async function flushCargaInicial(ofertas: readonly OfertaCursoDto[]): Promise<void> {
-    const listaReq = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    const listaReq = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/ofertas-curso`,
+    );
     listaReq.flush(ofertas);
     expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
     expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
@@ -134,9 +141,7 @@ describe('OfertasCursoPage', () => {
   // os lookups de Curso/Local de oferta já estão em cache e não recarregam.
   async function flushRecarregarLista(ofertas: readonly OfertaCursoDto[]): Promise<void> {
     await propagate();
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
-      .flush(ofertas);
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush(ofertas);
     await propagate();
   }
 
@@ -195,7 +200,9 @@ describe('OfertasCursoPage', () => {
 
     const cursosPagina1 = expectLookup(`${BASE}/api/configuracao/cursos`);
     cursosPagina1.flush([cursoSeed], {
-      headers: { Link: `<${BASE}/api/configuracao/cursos?cursor=pagina-2&direction=next>; rel="next"` },
+      headers: {
+        Link: `<${BASE}/api/configuracao/cursos?cursor=pagina-2&direction=next>; rel="next"`,
+      },
     });
     const locaisPagina1 = expectLookup(`${BASE}/api/configuracao/locais-oferta`);
     locaisPagina1.flush([localSeed], {
@@ -276,7 +283,9 @@ describe('OfertasCursoPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('ENG-CIV — Engenharia Civil');
     expect(fixture.nativeElement.textContent).toContain('Marabá');
-    expect(fixture.nativeElement.textContent).toContain('IGE — Instituto de Geociências e Engenharias');
+    expect(fixture.nativeElement.textContent).toContain(
+      'IGE — Instituto de Geociências e Engenharias',
+    );
   });
 
   it('CA-06: programa REGULAR não exige base legal; programa != REGULAR exige', async () => {
@@ -417,9 +426,7 @@ describe('OfertasCursoPage', () => {
     component['pedirRemocao'](ofertaSeed);
     component['removerConfirmado']();
 
-    const req = controller.expectOne(
-      `${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`,
-    );
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await flushRecarregarLista([]);
@@ -656,5 +663,74 @@ describe('OfertasCursoPage', () => {
     expect(component['form'].controls.regimeDeTurno.value).toBe('INTEGRAL');
     expect(component['form'].controls.turnos.value).toEqual(['MATUTINO', 'VESPERTINO']);
     expect(component['turnoMarcado']('NOTURNO')).toBe(false);
+  });
+
+  // O rótulo resolvido e o fallback de lookup falho são indistinguíveis quando
+  // a falha só troca o texto da célula (#579): o teste cobra a diferença.
+  it('lookup de Curso recusado sinaliza a coluna e oferece recarregar só esse catálogo', async () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
+      .flush([ofertaSeed]);
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush(
+      {},
+      { status: 500, statusText: 'Server Error' },
+    );
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    const celulaCurso: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Curso"]');
+    expect(celulaCurso.querySelector('.cfg-lookup-falho')?.textContent?.trim()).toBe(
+      'Não carregado',
+    );
+
+    // A coluna cujo lookup respondeu segue exibindo o rótulo real: a falha de
+    // um catálogo não pode contaminar o outro.
+    expect(
+      fixture.nativeElement.querySelector('td[data-label="Local de oferta"]').textContent,
+    ).toContain('Marabá');
+
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
+    expect(alerta.textContent).toContain('Recarregar cursos');
+    expect(alerta.textContent).not.toContain('Recarregar locais de oferta');
+
+    const botaoRecarregar: HTMLButtonElement = alerta.querySelector('button')!;
+    botaoRecarregar.click();
+    await propagate();
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
+    expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
+      'ENG-CIV — Engenharia Civil',
+    );
+  });
+
+  it('lookup de Local de oferta recusado sinaliza a própria coluna', async () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
+      .flush([ofertaSeed]);
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush(
+      {},
+      { status: 500, statusText: 'Server Error' },
+    );
+    await propagate();
+    fixture.detectChanges();
+
+    const celulaLocal: HTMLElement = fixture.nativeElement.querySelector(
+      'td[data-label="Local de oferta"]',
+    );
+    expect(celulaLocal.querySelector('.cfg-lookup-falho')?.textContent?.trim()).toBe(
+      'Não carregado',
+    );
+    expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
+      'ENG-CIV — Engenharia Civil',
+    );
+
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
+    expect(alerta.textContent).toContain('Recarregar locais de oferta');
+    expect(alerta.textContent).not.toContain('Recarregar cursos');
   });
 });
