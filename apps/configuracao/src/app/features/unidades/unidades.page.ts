@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import {
   ApiResult,
   Cursor,
@@ -626,7 +626,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                   placeholder="Digite ao menos 3 letras da cidade"
                   [attr.aria-busy]="buscandoCidades() || null"
                   [value]="buscaCidade()"
-                  (input)="buscarCidades(inputValue($event))"
+                  (input)="buscaCidade.set(inputValue($event))"
                 />
                 @if (buscandoCidades()) {
                   <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
@@ -1068,6 +1068,42 @@ export class UnidadesPage {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((termo) => this.buscaPaiAplicada.set(termo));
+
+    // Debounce da digitação no campo "Cidade" — uma request por pausa, não
+    // por tecla. Abaixo de 3 letras não busca (mesmo corte do Seleção); a
+    // partir daí, `switchMap` cancela a busca anterior automaticamente se o
+    // termo mudar antes da resposta chegar (não precisa de guarda manual
+    // contra resposta obsoleta).
+    toObservable(this.buscaCidade)
+      .pipe(
+        map((termo) => termo.trim()),
+        debounceTime(BUSCA_DEBOUNCE_MS),
+        distinctUntilChanged(),
+        switchMap((busca) => {
+          if (busca.length < 3) {
+            this.buscandoCidades.set(false);
+            this.buscaCidadeErro.set(null);
+            return of<ApiResult<readonly CidadeResumoDto[]> | null>(null);
+          }
+          this.buscandoCidades.set(true);
+          this.buscaCidadeErro.set(null);
+          return this.geo.listarCidades({ q: busca, limit: CIDADES_LIMIT });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((result) => {
+        if (result === null) {
+          this.cidadeOpcoes.set([]);
+          return;
+        }
+        this.buscandoCidades.set(false);
+        if (!result.ok) {
+          this.cidadeOpcoes.set([]);
+          this.buscaCidadeErro.set(this.problemI18n.resolve(result.problem).title);
+          return;
+        }
+        this.cidadeOpcoes.set(result.data);
+      });
   }
 
   protected proximaPagina(): void {
@@ -1149,36 +1185,6 @@ export class UnidadesPage {
    * explícito) e descarta a resposta se o termo já mudou (guarda contra
    * resposta obsoleta chegando fora de ordem).
    */
-  protected buscarCidades(termo: string): void {
-    this.buscaCidade.set(termo);
-    const busca = termo.trim();
-    if (busca.length < 3) {
-      this.cidadeOpcoes.set([]);
-      this.buscaCidadeErro.set(null);
-      this.buscandoCidades.set(false);
-      return;
-    }
-
-    this.buscandoCidades.set(true);
-    this.buscaCidadeErro.set(null);
-    this.cidadeOpcoes.set([]);
-    this.geo
-      .listarCidades({ q: busca, limit: CIDADES_LIMIT })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (this.buscaCidade().trim() !== busca) {
-          return;
-        }
-        this.buscandoCidades.set(false);
-        if (!result.ok) {
-          this.cidadeOpcoes.set([]);
-          this.buscaCidadeErro.set(this.problemI18n.resolve(result.problem).title);
-          return;
-        }
-        this.cidadeOpcoes.set(result.data);
-      });
-  }
-
   /** Grava o trio inteiro vindo da opção escolhida — nunca campo a campo. */
   protected selecionarCidade(cidade: CidadeRef): void {
     this.cidadeSelecionada.set(cidade);

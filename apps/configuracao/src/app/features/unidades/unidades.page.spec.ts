@@ -345,21 +345,36 @@ describe('UnidadesPage', () => {
     await propagate();
   });
 
-  it('busca cidade a partir de 3 letras (sem preload) e envia o trio inteiro no comando', async () => {
+  it('não busca cidade com menos de 3 letras mesmo após o debounce decorrer', async () => {
     await flushInicial();
     component['abrirCadastro']();
     await flushOpcoesSuperior();
 
-    // Igual ao "município que rege os prazos" do Seleção: abrir o form não
-    // dispara nenhuma requisição de cidade — só a digitação.
-    controller.expectNone(`${BASE}/api/cidades`);
-
-    // Antes de 3 letras, nenhum GET (não dispara por tecla isolada).
-    component['buscarCidades']('ma');
+    component['buscaCidade'].set('ma');
+    await sleep(DEBOUNCE_FOLGA_MS);
     await propagate();
+
+    controller.expectNone(`${BASE}/api/cidades`);
+    expect(component['cidadeOpcoes']()).toEqual([]);
+    expect(component['buscandoCidades']()).toBe(false);
+  });
+
+  it('busca cidade com debounce a partir de 3 letras e envia o trio inteiro no comando', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    // Abrir o form não dispara nenhuma requisição de cidade — só a digitação.
     controller.expectNone(`${BASE}/api/cidades`);
 
-    component['buscarCidades']('mar');
+    // Rajada de digitação: uma única request após o debounce, não uma por tecla.
+    component['buscaCidade'].set('m');
+    component['buscaCidade'].set('ma');
+    component['buscaCidade'].set('mar');
+    appRef.tick();
+    controller.expectNone(`${BASE}/api/cidades`);
+
+    await sleep(DEBOUNCE_FOLGA_MS);
     await propagate();
 
     const request = expectCidadesGet((r) => r.params.get('q') === 'mar');
@@ -413,25 +428,28 @@ describe('UnidadesPage', () => {
     await propagate();
   });
 
-  it('descarta resposta de busca de cidade obsoleta quando o termo já mudou', async () => {
+  it('cancela a busca de cidade anterior ao trocar o termo antes da resposta chegar', async () => {
     await flushInicial();
     component['abrirCadastro']();
     await flushOpcoesSuperior();
 
-    component['buscarCidades']('mar');
+    component['buscaCidade'].set('mar');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
     const primeira = expectCidadesGet((r) => r.params.get('q') === 'mar');
 
-    // Termo muda antes da primeira resposta chegar — dispara uma segunda busca.
-    component['buscarCidades']('bel');
-    const segunda = expectCidadesGet((r) => r.params.get('q') === 'bel');
-
-    // A resposta da busca antiga chega depois: descartada pela guarda de termo.
-    primeira.flush([cidadesSeed[0]]);
+    // Novo termo, já com o debounce decorrido: `switchMap` cancela a busca em
+    // voo por 'mar' antes de abrir a de 'bel' — sem isso a resposta antiga
+    // ainda chegaria e poderia sobrescrever a mais recente.
+    component['buscaCidade'].set('bel');
+    await sleep(DEBOUNCE_FOLGA_MS);
     await propagate();
-    expect(component['cidadeOpcoes']()).toEqual([]);
 
+    expect(primeira.cancelled).toBe(true);
+    const segunda = expectCidadesGet((r) => r.params.get('q') === 'bel');
     segunda.flush([cidadesSeed[1]]);
     await propagate();
+
     expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[1]]);
   });
 
@@ -440,7 +458,9 @@ describe('UnidadesPage', () => {
     component['abrirCadastro']();
     await flushOpcoesSuperior();
 
-    component['buscarCidades']('mar');
+    component['buscaCidade'].set('mar');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
     expectCidadesGet((r) => r.params.get('q') === 'mar').flush(
       { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
       {
