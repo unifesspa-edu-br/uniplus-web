@@ -304,6 +304,72 @@ describe('PagamentoStepComponent', () => {
     expect(componente.form.disabled).toBe(false);
   });
 
+  /**
+   * Erro de rede retém a chave — a execução anterior ainda pode ter chegado ao
+   * servidor. Retida, ela vale para o corpo que a acompanhou: corrigir o valor
+   * e regravar sob a mesma chave devolveria `body_mismatch`, e o operador não
+   * teria como sair disso.
+   */
+  it('renova a chave quando a declaração muda depois de falha retentável', async () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+
+    const primeira = componente.persistir();
+    await tick();
+    const req1 = controller.expectOne(ROTA_TAXA);
+    const chave1 = req1.request.headers.get('Idempotency-Key');
+    req1.error(new ProgressEvent('error'));
+    await primeira;
+
+    store.patchObjectSection('pagamento', { valor: '250' });
+    const segunda = componente.persistir();
+    await tick();
+    const req2 = controller.expectOne(ROTA_TAXA);
+    expect(req2.request.headers.get('Idempotency-Key')).not.toBe(chave1);
+    req2.flush(null, { status: 204, statusText: 'No Content' });
+    await segunda;
+  });
+
+  /** Repetir a mesma declaração é o que a chave retida existe para permitir. */
+  it('mantém a chave ao repetir a mesma declaração após falha retentável', async () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+
+    const primeira = componente.persistir();
+    await tick();
+    const req1 = controller.expectOne(ROTA_TAXA);
+    const chave1 = req1.request.headers.get('Idempotency-Key');
+    req1.error(new ProgressEvent('error'));
+    await primeira;
+
+    const segunda = componente.persistir();
+    await tick();
+    const req2 = controller.expectOne(ROTA_TAXA);
+    expect(req2.request.headers.get('Idempotency-Key')).toBe(chave1);
+    req2.flush(null, { status: 204, statusText: 'No Content' });
+    await segunda;
+  });
+
+  /**
+   * O stepper continua clicável durante o PUT. Sem o bloqueio, a troca de passo
+   * move `currentStep`, e o `next()` que fecha a gravação avança a partir do
+   * índice novo — marcando como concluído um passo que ninguém preencheu.
+   */
+  it('recusa troca de passo enquanto a gravação corre', async () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+    const passoInicial = store.currentStep();
+
+    const promessa = componente.persistir();
+    await tick();
+
+    store.goTo(passoInicial + 3);
+    expect(store.currentStep()).toBe(passoInicial);
+
+    controller.expectOne(ROTA_TAXA).flush(null, { status: 204, statusText: 'No Content' });
+    await promessa;
+
+    store.goTo(passoInicial + 3);
+    expect(store.currentStep()).toBe(passoInicial + 3);
+  });
+
   /** O clique grava; dizer "Próximo" descreveria só a navegação. */
   it('anuncia no botão que o avanço grava', () => {
     expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');

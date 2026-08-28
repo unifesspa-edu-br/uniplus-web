@@ -93,6 +93,15 @@ export class CadastroInicialService {
   private chaveTaxa = idempotencyKey.create();
 
   /**
+   * Declaração que a `chaveTaxa` corrente acompanhou. Uma chave retida vale
+   * para o corpo que o servidor viu; reenviar outro sob ela devolve
+   * `body_mismatch`. Diferente da criação, aqui não é preciso repetir o envio
+   * original — o comando substitui a configuração inteira, então corrigir e
+   * regravar sob chave nova não duplica nada.
+   */
+  private taxaEnviada: string | null = null;
+
+  /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
    * 5xx). O servidor pode tê-la executado, então a retentativa precisa repetir
    * o **mesmo corpo com a mesma chave** para receber o replay em vez de criar
@@ -119,6 +128,7 @@ export class CadastroInicialService {
   descartarCadastroEmAndamento(): void {
     this.geracao += 1;
     this.criacaoPendente = null;
+    this.taxaEnviada = null;
     this.chaveCriacao = idempotencyKey.create();
     this.chaveIniciacao = idempotencyKey.create();
     this.chaveConfirmacao = idempotencyKey.create();
@@ -182,6 +192,13 @@ export class CadastroInicialService {
     processoSeletivoId: string,
     request: DefinirTaxaInscricaoRequest,
   ): Promise<ResultadoDefinicaoDeTaxa> {
+    const declaracao = JSON.stringify(request);
+    if (this.taxaEnviada !== null && this.taxaEnviada !== declaracao) {
+      this.chaveTaxa = idempotencyKey.create();
+    }
+    this.taxaEnviada = declaracao;
+    const chaveUsada = this.chaveTaxa;
+
     const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.definirTaxaInscricao(processoSeletivoId, request, contextoCom(this.chaveTaxa)),
@@ -191,10 +208,12 @@ export class CadastroInicialService {
 
     if (isApiOk(result)) {
       this.chaveTaxa = idempotencyKey.create();
+      this.taxaEnviada = null;
       return { ok: true };
     }
 
     this.chaveTaxa = proximaChave(this.chaveTaxa, result);
+    if (this.chaveTaxa !== chaveUsada) this.taxaEnviada = null;
     return { ok: false, problem: result.problem };
   }
 
