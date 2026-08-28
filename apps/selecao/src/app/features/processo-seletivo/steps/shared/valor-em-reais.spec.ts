@@ -39,6 +39,26 @@ describe('analisarValorEmReais', () => {
     expect(analisarValorEmReais(texto)).toBeNull();
   });
 
+  /**
+   * Acima da faixa que o servidor grava — `numeric(12,2)` —, o próprio
+   * `Number` deixa de representar o inteiro exatamente: `9007199254740993`
+   * volta como `...992`, e valores maiores viram `Infinity`, que o JSON
+   * serializa como `null`. Recusar é o mesmo princípio do resto: nunca
+   * devolver número diferente do escrito.
+   */
+  it.each([
+    ['9.007.199.254.740.993,00'],
+    ['99.999.999.999,99'],
+    ['12345678901'],
+    ['1' + '0'.repeat(400)],
+  ])('recusa %j por exceder o valor gravável', (texto) => {
+    expect(analisarValorEmReais(texto)).toBeNull();
+  });
+
+  it('aceita o maior valor que o servidor grava', () => {
+    expect(analisarValorEmReais('9.999.999.999,99')).toBe(9999999999.99);
+  });
+
   /** `1.000` é mil em pt-BR; era esta leitura que gravava um real. */
   it('lê o separador de milhar como milhar, não como decimal', () => {
     expect(analisarValorEmReais('1.000')).toBe(1000);
