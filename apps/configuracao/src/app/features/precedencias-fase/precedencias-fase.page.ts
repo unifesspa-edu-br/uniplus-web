@@ -21,12 +21,14 @@ import {
 } from '@angular/forms';
 import { finalize, merge } from 'rxjs';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
   PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  coletarPaginas,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
@@ -835,8 +837,9 @@ export class PrecedenciasFasePage {
    * é sinalizada à parte para não se confundir com o erro da lista principal.
    */
   private carregarNomesDasFases(): void {
-    this.fasesApi
-      .listar({ limit: 100 })
+    coletarPaginas((cursor) =>
+      this.fasesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         // O interceptor converte 4xx/5xx em `ApiResult` de falha, sem erro de

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import {
   API_MAX_PAGE_SIZE,
   ApiResult,
@@ -325,12 +326,13 @@ export class LocaisOfertaPage {
   protected readonly loading = this.lista.isLoading;
 
   // Lookup de campi para o select de responsável — lazy (ativado ao abrir o form).
-  // Percorre todas as páginas por cursor em vez de truncar em API_MAX_PAGE_SIZE: 
+  // Percorre todas as páginas por cursor em vez de truncar em API_MAX_PAGE_SIZE:
   // um select de FK não pode esconder opções silenciosamente.
   private readonly carregarCampi = signal(false);
   private campiIniciado = signal(false);
   protected readonly campiOpcoes = signal<readonly CampusDto[]>([]);
   protected readonly campiComErro = signal(false);
+  private campiSubscription?: Subscription;
   private readonly campiPorId = computed(
     () => new Map(this.campiOpcoes().map((campus) => [campus.id, campus] as const)),
   );
@@ -474,8 +476,9 @@ export class LocaisOfertaPage {
   }
 
   private buscarCampi(): void {
+    this.campiSubscription?.unsubscribe();
     this.campiComErro.set(false);
-    coletarPaginas((cursor) =>
+    this.campiSubscription = coletarPaginas((cursor) =>
       this.campiApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     )
       .pipe(takeUntilDestroyed(this.destroyRef))

@@ -11,6 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import {
   AbstractControl,
   FormControl,
@@ -560,12 +561,14 @@ export class OfertasCursoPage {
   // API_MAX_PAGE_SIZE: um select de FK não pode esconder opções silenciosamente.
   protected readonly cursosOpcoes = signal<readonly CursoDto[]>([]);
   protected readonly cursosComErro = signal(false);
+  private cursosSubscription?: Subscription;
   private readonly cursosPorId = computed(
     () => new Map(this.cursosOpcoes().map((curso) => [curso.id, curso] as const)),
   );
 
   protected readonly locaisOfertaOpcoes = signal<readonly LocalOfertaDto[]>([]);
   protected readonly locaisOfertaComErro = signal(false);
+  private locaisOfertaSubscription?: Subscription;
   private readonly locaisOfertaPorId = computed(
     () => new Map(this.locaisOfertaOpcoes().map((local) => [local.id, local] as const)),
   );
@@ -577,6 +580,7 @@ export class OfertasCursoPage {
   private unidadesIniciado = false;
   protected readonly unidadesOpcoes = signal<readonly UnidadeDto[]>([]);
   protected readonly unidadesComErro = signal(false);
+  private unidadesSubscription?: Subscription;
   private readonly unidadesPorId = computed(
     () => new Map(this.unidadesOpcoes().map((unidade) => [unidade.id, unidade] as const)),
   );
@@ -958,8 +962,9 @@ export class OfertasCursoPage {
   }
 
   private buscarCursos(): void {
+    this.cursosSubscription?.unsubscribe();
     this.cursosComErro.set(false);
-    coletarPaginas((cursor) =>
+    this.cursosSubscription = coletarPaginas((cursor) =>
       this.cursosApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -973,8 +978,9 @@ export class OfertasCursoPage {
   }
 
   private buscarLocaisOferta(): void {
+    this.locaisOfertaSubscription?.unsubscribe();
     this.locaisOfertaComErro.set(false);
-    coletarPaginas((cursor) =>
+    this.locaisOfertaSubscription = coletarPaginas((cursor) =>
       this.locaisOfertaApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -988,8 +994,9 @@ export class OfertasCursoPage {
   }
 
   private buscarUnidades(): void {
+    this.unidadesSubscription?.unsubscribe();
     this.unidadesComErro.set(false);
-    coletarPaginas((cursor) =>
+    this.unidadesSubscription = coletarPaginas((cursor) =>
       this.unidadesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     )
       .pipe(takeUntilDestroyed(this.destroyRef))

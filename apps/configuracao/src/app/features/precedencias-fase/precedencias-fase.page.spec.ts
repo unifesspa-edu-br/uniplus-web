@@ -122,6 +122,27 @@ describe('PrecedenciasFasePage', () => {
     expect(texto).toContain('Não');
   });
 
+  it('percorre todas as páginas de fases canônicas sem truncar', async () => {
+    const fasesUrl = `${BASE}/api/configuracao/fases-canonicas`;
+
+    const pagina1 = controller.expectOne((r) => r.url === fasesUrl);
+    pagina1.flush([faseCanonica('INSCRICAO', 'Inscrição')], {
+      headers: { Link: `<${fasesUrl}?cursor=pagina-2&direction=next>; rel="next"` },
+    });
+    await propagate();
+
+    const pagina2 = controller.expectOne(
+      (r) => r.url === fasesUrl && r.params.get('cursor') === 'pagina-2',
+    );
+    pagina2.flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
+    await propagate();
+
+    await flushLista([arestaSeed]);
+
+    expect(component['nomeDaFase']('INSCRICAO')).toBe('Inscrição');
+    expect(component['nomeDaFase']('HOMOLOGACAO')).toBe('Homologação');
+  });
+
   it('CA-01: busca filtra por código e por nome da fase', async () => {
     const outra: PrecedenciaFaseDto = {
       ...arestaSeed,

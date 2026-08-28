@@ -169,6 +169,27 @@ describe('OfertasCursoPage', () => {
     }
   });
 
+  it('cancela o lookup de cursos anterior ao clicar "Tentar novamente" antes da resposta chegar', async () => {
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
+    const primeira = expectLookup(`${BASE}/api/configuracao/cursos`);
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+
+    component['recarregarCursos']();
+    await propagate();
+
+    // A primeira travessia precisa ter sido cancelada de verdade (não só
+    // ignorada) — senão ela ainda pode ganhar a corrida se responder por
+    // último, sobrescrevendo o resultado da segunda com dado obsoleto.
+    expect(primeira.cancelled).toBe(true);
+
+    const segunda = expectLookup(`${BASE}/api/configuracao/cursos`);
+    segunda.flush([cursoSeed]);
+    await propagate();
+
+    expect(component['cursosOpcoes']()).toHaveLength(1);
+    expect(component['cursosOpcoes']()[0].id).toBe(CURSO_ID);
+  });
+
   it('percorre todas as páginas dos lookups de Curso e Local de oferta sem truncar (issue #580)', async () => {
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
 
