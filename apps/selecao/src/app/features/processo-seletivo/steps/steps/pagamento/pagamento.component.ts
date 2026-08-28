@@ -183,6 +183,7 @@ export class PagamentoStepComponent {
     }
 
     const pagamento = this.store.draft().pagamento;
+    const geracao = this.store.geracao();
     this.erroDeGravacao.set(null);
     this.store.salvando.set(true);
     try {
@@ -193,6 +194,11 @@ export class PagamentoStepComponent {
         confirmacaoFundamentos: pagamento.confirmacaoFundamentos,
       });
 
+      // O editor pode ter passado a outro processo enquanto o comando corria.
+      // A resposta descreve o processo anterior: anunciá-la agora contaminaria
+      // a tela nova, e concluir o passo avançaria o rascunho de outro processo.
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+
       if (!resultado.ok) {
         const mensagem = this.problemI18n.resolve(resultado.problem).title;
         this.erroDeGravacao.set(mensagem);
@@ -201,7 +207,9 @@ export class PagamentoStepComponent {
 
       return { valid: true };
     } finally {
-      this.store.salvando.set(false);
+      // Quem destrava é a geração que travou: um editor novo pode ter comando
+      // próprio em curso.
+      if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
   }
 

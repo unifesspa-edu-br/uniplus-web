@@ -370,6 +370,31 @@ describe('PagamentoStepComponent', () => {
     expect(store.currentStep()).toBe(passoInicial + 3);
   });
 
+  /**
+   * O editor sobrevive à troca de endereço. Se o operador vai para outro
+   * processo durante o PUT, a resposta que chega descreve o processo anterior:
+   * anunciá-la poria erro na tela nova, e destravar `salvando` liberaria um
+   * editor que pode ter comando próprio em curso.
+   */
+  it('descarta a resposta quando o editor já passou a outro processo', async () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+
+    const promessa = componente.persistir();
+    await tick();
+
+    store.geracao.update((valor) => valor + 1);
+    store.salvando.set(true);
+
+    const recusa = problema(422, 'qualquer', 'Mensagem do processo anterior');
+    controller.expectOne(ROTA_TAXA).flush(recusa.body, recusa.opts);
+    const resultado = await promessa;
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages).toEqual([]);
+    expect(componente.erroDeGravacao()).toBeNull();
+    expect(store.salvando()).toBe(true);
+  });
+
   /** O clique grava; dizer "Próximo" descreveria só a navegação. */
   it('anuncia no botão que o avanço grava', () => {
     expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');

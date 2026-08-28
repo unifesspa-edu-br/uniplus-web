@@ -497,8 +497,13 @@ export class ProcessoSeletivoPage {
         }),
       );
       if (!commit.valid) {
-        this.store.setStepError(mensagensDe(commit));
-        this.revelarErro();
+        // Lista de mensagens vazia é descarte deliberado: o resultado pertence
+        // a um editor que já não está em tela, e anunciá-lo colocaria erro num
+        // rascunho que ninguém tentou gravar.
+        if (commit.messages?.length !== 0) {
+          this.store.setStepError(mensagensDe(commit));
+          this.revelarErro();
+        }
         return false;
       }
     }
