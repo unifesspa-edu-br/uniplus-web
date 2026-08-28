@@ -14,9 +14,19 @@
  */
 const VALOR_EM_REAIS = /^(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$/;
 
+/**
+ * Dígitos antes da vírgula, limitados pelo que o servidor grava: a coluna é
+ * `numeric(12,2)`, logo dez inteiros e dois centavos. O teto também mantém a
+ * conversão dentro da faixa que o `Number` representa exatamente — sem ele, a
+ * gramática aceitaria dígitos sem fim e devolveria um valor arredondado, que é
+ * o mesmo defeito por outro caminho.
+ */
+const MAXIMO_DIGITOS_INTEIROS = 10;
+
 /** Como o campo espera o valor, para hint e mensagem de recusa. */
 export const FORMATO_VALOR_EM_REAIS =
-  'Use apenas números, com vírgula antes dos centavos — por exemplo, 1.000,50.';
+  'Use apenas números, com vírgula antes dos centavos — por exemplo, 1.000,50. ' +
+  'O maior valor aceito é 9.999.999.999,99.';
 
 /**
  * Valor que o texto representa, ou `null` quando ele não é um valor em reais.
@@ -27,6 +37,8 @@ export function analisarValorEmReais(texto: string): number | null {
   if (partes === null) return null;
 
   const inteiro = partes[1].replaceAll('.', '');
+  if (inteiro.length > MAXIMO_DIGITOS_INTEIROS) return null;
+
   // `,5` são cinquenta centavos, não cinco.
   const centavos = (partes[2] ?? '').padEnd(2, '0');
   return Number(`${inteiro}.${centavos}`);
