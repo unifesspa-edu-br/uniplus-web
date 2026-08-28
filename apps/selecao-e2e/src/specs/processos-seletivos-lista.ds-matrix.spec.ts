@@ -89,6 +89,10 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
    * O axe roda sobre a tabela preenchida e sobre o estado de erro: o alerta
    * tem papel e cor próprios, e é onde uma violação de contraste passaria sem
    * ser vista no tema de contraste.
+   *
+   * A asserção é sobre a coleção inteira. `impact` é severidade do axe, não
+   * nível de conformidade: filtrar por ele deixaria passar violação de WCAG
+   * 2.1 AA classificada como moderada, num teste que promete o contrário.
    */
   test('não viola WCAG 2.1 AA com a tabela preenchida', async ({ page }) => {
     await responderLista(page, PROCESSOS);
@@ -97,7 +101,7 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
 
     const resultado = await runAxeWcagAA(page);
 
-    expect(violacoesSerias(resultado)).toEqual([]);
+    expect(identificadoresDe(resultado)).toEqual([]);
   });
 
   test('não viola WCAG 2.1 AA quando a leitura falha', async ({ page }) => {
@@ -107,7 +111,7 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
 
     const resultado = await runAxeWcagAA(page);
 
-    expect(violacoesSerias(resultado)).toEqual([]);
+    expect(identificadoresDe(resultado)).toEqual([]);
   });
 });
 
@@ -156,10 +160,9 @@ async function transbordo(page: Page): Promise<boolean> {
   });
 }
 
-function violacoesSerias(resultado: AxeResults): string[] {
-  return resultado.violations
-    .filter((violacao) => violacao.impact === 'critical' || violacao.impact === 'serious')
-    .map((violacao) => violacao.id);
+/** Falhar por id diz qual regra caiu; a coleção crua não. */
+function identificadoresDe(resultado: AxeResults): string[] {
+  return resultado.violations.map((violacao) => violacao.id);
 }
 
 async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
