@@ -6253,7 +6253,8 @@ export enum DefinirConfiguracaoDivulgacaoRequestCamposPublicos {
 }
 export enum DefinirTaxaInscricaoRequestFundamentos {
     CADASTRO_UNICO = "CADASTRO_UNICO",
-    DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA"
+    DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
+    CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
 }
 export enum OrigemCandidatos {
     nenhuma = "nenhuma",
