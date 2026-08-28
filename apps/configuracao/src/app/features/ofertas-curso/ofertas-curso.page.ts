@@ -20,12 +20,14 @@ import {
   Validators,
 } from '@angular/forms';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
   PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  coletarPaginas,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
@@ -40,7 +42,9 @@ import {
   CONFIGURACAO_BASE_PATH,
   CriarOfertaCursoCommand,
   CursoDto,
+  CursosApi,
   FORMATOS_PEDAGOGICOS,
+  LocaisOfertaApi,
   LocalOfertaDto,
   OfertaCursoDto,
   OfertasCursoApi,
@@ -54,7 +58,7 @@ import {
   ordenarTurnosCanonicamente,
   turnosExigidosPorRegime,
 } from '@uniplus/shared-data/configuracao';
-import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
+import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   AlertComponent,
   ConfirmDialogComponent,
@@ -66,9 +70,6 @@ import {
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
-
-/** Janela dos lookups de FK (selects do formulário e resolução de rótulos da lista). */
-const LOOKUP_LIMIT = 100;
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -518,11 +519,13 @@ interface OfertaCursoForm {
 })
 export class OfertasCursoPage {
   private readonly api = inject(OfertasCursoApi);
+  private readonly cursosApi = inject(CursosApi);
+  private readonly locaisOfertaApi = inject(LocaisOfertaApi);
+  private readonly unidadesApi = inject(UnidadesApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
-  private readonly organizacaoBasePath = inject(ORGANIZACAO_BASE_PATH);
 
   protected readonly programaOptions = PROGRAMAS_DE_OFERTA;
   protected readonly formatoOptions = FORMATOS_PEDAGOGICOS;
@@ -553,32 +556,16 @@ export class OfertasCursoPage {
   // própria listagem de ofertas precisa resolver os rótulos (o DTO só traz
   // `cursoId`/`localOfertaId`, sem nome aninhado — diferente da Unidade
   // ofertante, que já vem congelada por snapshot-copy no DTO da oferta).
-  private readonly cursosResource = useApiResource<readonly CursoDto[]>(() => ({
-    url: `${this.basePath}/api/configuracao/cursos`,
-    params: new HttpParams().set('limit', String(LOOKUP_LIMIT)),
-    context: withVendorMime('curso', 1),
-  }));
-  protected readonly cursosOpcoes = computed(() => this.cursosResource.data() ?? []);
-  protected readonly cursosComErro = computed(() => {
-    const envelope = this.cursosResource.value();
-    return (envelope !== undefined && !envelope.ok) || this.cursosResource.error() !== undefined;
-  });
+  // Percorrem todas as páginas por cursor em vez de truncar em
+  // API_MAX_PAGE_SIZE: um select de FK não pode esconder opções silenciosamente.
+  protected readonly cursosOpcoes = signal<readonly CursoDto[]>([]);
+  protected readonly cursosComErro = signal(false);
   private readonly cursosPorId = computed(
     () => new Map(this.cursosOpcoes().map((curso) => [curso.id, curso] as const)),
   );
 
-  private readonly locaisOfertaResource = useApiResource<readonly LocalOfertaDto[]>(() => ({
-    url: `${this.basePath}/api/configuracao/locais-oferta`,
-    params: new HttpParams().set('limit', String(LOOKUP_LIMIT)),
-    context: withVendorMime('local-oferta', 1),
-  }));
-  protected readonly locaisOfertaOpcoes = computed(() => this.locaisOfertaResource.data() ?? []);
-  protected readonly locaisOfertaComErro = computed(() => {
-    const envelope = this.locaisOfertaResource.value();
-    return (
-      (envelope !== undefined && !envelope.ok) || this.locaisOfertaResource.error() !== undefined
-    );
-  });
+  protected readonly locaisOfertaOpcoes = signal<readonly LocalOfertaDto[]>([]);
+  protected readonly locaisOfertaComErro = signal(false);
   private readonly locaisOfertaPorId = computed(
     () => new Map(this.locaisOfertaOpcoes().map((local) => [local.id, local] as const)),
   );
@@ -587,21 +574,9 @@ export class OfertasCursoPage {
   // para popular o select de criação; a lista e a edição exibem o snapshot já
   // congelado em `oferta.unidadeOfertante`.
   private readonly carregarUnidades = signal(false);
-  private readonly unidadesResource = useApiResource<readonly UnidadeDto[]>(() => {
-    if (!this.carregarUnidades()) {
-      return undefined;
-    }
-    return {
-      url: `${this.organizacaoBasePath}/api/organizacao/unidades`,
-      params: new HttpParams().set('limit', String(LOOKUP_LIMIT)),
-      context: withVendorMime('unidade', 1),
-    };
-  });
-  protected readonly unidadesOpcoes = computed(() => this.unidadesResource.data() ?? []);
-  protected readonly unidadesComErro = computed(() => {
-    const envelope = this.unidadesResource.value();
-    return (envelope !== undefined && !envelope.ok) || this.unidadesResource.error() !== undefined;
-  });
+  private unidadesIniciado = false;
+  protected readonly unidadesOpcoes = signal<readonly UnidadeDto[]>([]);
+  protected readonly unidadesComErro = signal(false);
   private readonly unidadesPorId = computed(
     () => new Map(this.unidadesOpcoes().map((unidade) => [unidade.id, unidade] as const)),
   );
@@ -828,6 +803,19 @@ export class OfertasCursoPage {
       }
     });
 
+    this.buscarCursos();
+    this.buscarLocaisOferta();
+
+    // `carregarUnidades` só liga o lookup; `unidadesIniciado` evita refazer a
+    // busca a cada reabertura do drawer (abrirCadastro/abrirEdicao religam o
+    // sinal).
+    effect(() => {
+      if (this.carregarUnidades() && !this.unidadesIniciado) {
+        this.unidadesIniciado = true;
+        untracked(() => this.buscarUnidades());
+      }
+    });
+
     effect(() => {
       const exige = this.exigeBaseLegal();
       untracked(() => {
@@ -958,15 +946,60 @@ export class OfertasCursoPage {
   }
 
   protected recarregarCursos(): void {
-    this.cursosResource.reload();
+    this.buscarCursos();
   }
 
   protected recarregarLocaisOferta(): void {
-    this.locaisOfertaResource.reload();
+    this.buscarLocaisOferta();
   }
 
   protected recarregarUnidades(): void {
-    this.unidadesResource.reload();
+    this.buscarUnidades();
+  }
+
+  private buscarCursos(): void {
+    this.cursosComErro.set(false);
+    coletarPaginas((cursor) =>
+      this.cursosApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (!result.ok) {
+          this.cursosComErro.set(true);
+          return;
+        }
+        this.cursosOpcoes.set(result.data);
+      });
+  }
+
+  private buscarLocaisOferta(): void {
+    this.locaisOfertaComErro.set(false);
+    coletarPaginas((cursor) =>
+      this.locaisOfertaApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (!result.ok) {
+          this.locaisOfertaComErro.set(true);
+          return;
+        }
+        this.locaisOfertaOpcoes.set(result.data);
+      });
+  }
+
+  private buscarUnidades(): void {
+    this.unidadesComErro.set(false);
+    coletarPaginas((cursor) =>
+      this.unidadesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (!result.ok) {
+          this.unidadesComErro.set(true);
+          return;
+        }
+        this.unidadesOpcoes.set(result.data);
+      });
   }
 
   protected abrirCadastro(): void {
