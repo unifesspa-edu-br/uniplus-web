@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
+
+import { AuthService } from '../services/auth.service';
 
 /**
  * Página de "Acesso negado" (HTTP 403). Exibida quando um usuário
@@ -8,9 +9,11 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
  * requerida — cenário comum quando a SPA aplica `fullScopeAllowed=false`
  * + `scopeMappings` por client (Story uniplus-api#67 / PR #87).
  *
- * Não redireciona para login automaticamente (diferente de 401):
- * o usuário já está autenticado; precisa de outra conta ou de
- * solicitação de papel.
+ * Não redireciona para login automaticamente (diferente de 401): o usuário já
+ * está autenticado; precisa de outra conta ou de solicitação de papel. Por
+ * isso a única saída oferecida é encerrar a sessão — navegar para a raiz não
+ * serve, porque nos apps ela é protegida pelo mesmo guard que trouxe o
+ * usuário até aqui, e o levaria de volta.
  */
 @Component({
   selector: 'auth-access-denied',
@@ -28,17 +31,35 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
             >.
           </p>
         }
-        <button type="button" class="btn" (click)="voltar()">Voltar ao início</button>
+        <button
+          type="button"
+          class="btn"
+          [disabled]="saindo()"
+          [attr.aria-busy]="saindo() || null"
+          (click)="sair()"
+        >
+          {{ saindo() ? 'Saindo…' : 'Sair' }}
+        </button>
       </div>
     </main>
   `,
 })
 export class AccessDeniedComponent {
-  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private readonly userContext = inject(UserContextService);
+
   protected readonly user = this.userContext.user;
 
-  protected voltar(): void {
-    void this.router.navigate(['/']);
+  /** Encerramento em curso, para não disparar duas vezes no mesmo clique duplo. */
+  protected readonly saindo = signal(false);
+
+  protected async sair(): Promise<void> {
+    if (this.saindo()) return;
+    this.saindo.set(true);
+    try {
+      await this.authService.logout();
+    } finally {
+      this.saindo.set(false);
+    }
   }
 }
