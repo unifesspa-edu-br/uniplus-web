@@ -3,6 +3,7 @@ import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import { WizardDraft } from '../processo-seletivo.models';
+import { formatarValorEmReais } from './valor-em-reais';
 
 /**
  * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável,
@@ -52,10 +53,21 @@ function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
 
   return {
     cobra: config.cobra,
-    valor: config.valor === null || config.valor === undefined ? '' : String(config.valor).replace('.', ','),
+    valor: valorGravadoComoTexto(config.valor),
     fundamentos: [...config.fundamentos].filter(ehFundamentoConhecido),
     confirmacaoFundamentos: config.confirmacaoFundamentos,
   };
+}
+
+/**
+ * O valor gravado chega como número ou como texto no formato do JSON, com
+ * ponto decimal — que é wire format, não a escrita do operador. `Number` é o
+ * leitor certo aqui, ao contrário do campo, onde `1.000` significa mil.
+ */
+function valorGravadoComoTexto(valor: string | number | null | undefined): string {
+  if (valor === null || valor === undefined) return '';
+  const numero = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(numero) ? formatarValorEmReais(numero) : '';
 }
 
 /**
