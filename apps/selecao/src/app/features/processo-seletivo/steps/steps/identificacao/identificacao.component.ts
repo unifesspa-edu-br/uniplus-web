@@ -314,7 +314,9 @@ export class IdentificacaoStepComponent {
       this.store.processoSeletivoId.set(resultado.processoSeletivoId);
       return resultado.processoSeletivoId;
     } finally {
-      this.store.salvando.set(false);
+      // Quem destrava é a geração que travou: um editor novo pode ter comando
+      // próprio em curso.
+      if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
   }
 
