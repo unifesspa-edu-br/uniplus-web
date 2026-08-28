@@ -33,7 +33,9 @@
 
 html,
 body {
-  min-height: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 body {
@@ -45,9 +47,16 @@ body.uni-drawer-open {
   overflow: hidden;
 }
 
-cfg-root {
+/*
+ * Trava a casca no viewport para que só a área de conteúdo (`.page`) role — a
+ * topbar e a sidebar do `ui-app-shell` ficam fixas. O `cfg-layout` precisa
+ * entrar aqui: sem regra, o elemento do componente fica `display: inline` e
+ * quebra a cadeia flex (`flex: 1` / `min-height: 0`) do shell.
+ */
+cfg-root,
+cfg-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   flex-direction: column;
 }
 
