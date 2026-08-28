@@ -433,7 +433,7 @@ export class AnexoEditalComponent {
 
       const { vinculo, escolha } = classificarDocumentos(resultado.data);
       if (vinculo !== null) {
-        this.store.patchObjectSection('identificacao', { uploads: [vinculo] });
+        this.store.projetarSecao('identificacao', { uploads: [vinculo] });
       }
       this.store.documentosParaEscolha.set(escolha);
       this.store.avisoDocumentos.set(null);
@@ -448,7 +448,7 @@ export class AnexoEditalComponent {
    * perceber.
    */
   escolherDocumentoConfirmado(documento: DocumentoEditalDto): void {
-    this.store.patchObjectSection('identificacao', { uploads: [uploadItemDe(documento)] });
+    this.store.projetarSecao('identificacao', { uploads: [uploadItemDe(documento)] });
     this.store.documentosParaEscolha.set([]);
   }
 
