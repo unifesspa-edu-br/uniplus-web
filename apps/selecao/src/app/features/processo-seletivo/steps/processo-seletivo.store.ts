@@ -181,6 +181,24 @@ export class ProcessoSeletivoStore {
    */
   readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.salvando());
 
+  /**
+   * Por que a configuração está apenas para consulta. O texto acompanha o
+   * status: um rascunho cancelado nunca foi publicado e não se corrige por
+   * retificação, então prometer esse caminho mandaria o operador a lugar
+   * nenhum.
+   */
+  readonly motivoDeSomenteLeitura = computed(() => {
+    const status = this.remoteSnapshot()?.status;
+    if (status === undefined || status === STATUS_PROCESSO.RASCUNHO) return null;
+
+    if (status === STATUS_PROCESSO.PUBLICADO) {
+      return 'Este processo já foi publicado. A configuração fica disponível para consulta; alterá-la depende de abrir uma retificação.';
+    }
+
+    const situacao = status === STATUS_PROCESSO.ENCERRADO ? 'encerrado' : 'cancelado';
+    return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;
+  });
+
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
   readonly currentMeta = computed(() => {
     const index = this.currentStep();
@@ -236,14 +254,26 @@ export class ProcessoSeletivoStore {
     return 'unvisited';
   }
 
+  /**
+   * Edição do rascunho pelos passos. Fora de rascunho o servidor recusa
+   * qualquer gravação, e deixar o rascunho local mudar assim mesmo faria a
+   * revisão exibir valores que o avanço descarta — a tela passaria a descrever
+   * um processo que não existe.
+   *
+   * A hidratação não passa por aqui: ela projeta o que o servidor devolveu, e
+   * é o que precisa continuar chegando em qualquer status.
+   */
   patchSection<K extends keyof WizardDraft>(section: K, value: WizardDraft[K]): void {
+    if (!this.edicaoPermitida()) return;
     this.draft.update((draft) => ({ ...draft, [section]: value }));
   }
 
+  /** Ver `patchSection` quanto ao bloqueio fora de rascunho. */
   patchObjectSection<K extends keyof WizardDraft>(
     section: K,
     patch: Partial<WizardDraft[K]>,
   ): void {
+    if (!this.edicaoPermitida()) return;
     const current = this.draft()[section];
     if (Array.isArray(current) || typeof current !== 'object' || current === null) {
       throw new Error(`A seção ${String(section)} não aceita patch de objeto.`);
