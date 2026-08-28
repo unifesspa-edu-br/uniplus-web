@@ -1124,6 +1124,30 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       expect(cenario.componente.ofereceAvanco()).toBe(false);
     });
 
+    it('recusa alterar o rascunho pelos passos que não gravam', async () => {
+      const cenario = publicado();
+      await propagar();
+
+      const antes = cenario.store.draft().modalidades;
+      cenario.store.patchSection('modalidades', { ...antes, selecionadas: ['AC'] } as never);
+
+      expect(cenario.store.draft().modalidades).toEqual(antes);
+    });
+
+    it('explica a consulta conforme o status, sem prometer retificação a quem não a tem', async () => {
+      const cancelado = montar({
+        obter: vi.fn(() => of(okResult(detalhe({ status: 'Cancelado' })))),
+      });
+      await propagar();
+      expect(cancelado.store.motivoDeSomenteLeitura()).toContain('cancelado');
+      expect(cancelado.store.motivoDeSomenteLeitura()).not.toContain('retificação');
+
+      TestBed.resetTestingModule();
+      const publicadoCenario = publicado();
+      await propagar();
+      expect(publicadoCenario.store.motivoDeSomenteLeitura()).toContain('retificação');
+    });
+
     it('mantém a edição liberada enquanto o detalhe não chegou', () => {
       const cenario = montar();
 
