@@ -165,6 +165,55 @@ describe('LocaisOfertaPage', () => {
     expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
   });
 
+  it('percorre todas as páginas do lookup de campi sem truncar', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    await propagate();
+
+    const pagina1 = expectLookup(`${BASE}/api/configuracao/campi`);
+    pagina1.flush(
+      [
+        {
+          id: 'cmp1',
+          sigla: 'MAB',
+          nome: 'Campus de Marabá',
+          codigoEmec: null,
+          cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+          endereco: null,
+          criadoEm: '2026-06-10T12:00:00Z',
+        },
+      ],
+      {
+        headers: {
+          Link: `<${BASE}/api/configuracao/campi?cursor=pagina-2&direction=next>; rel="next"`,
+        },
+      },
+    );
+    await propagate();
+
+    // Segunda página vem só com o cursor — sem `limit`, por contrato do client
+    // gerado — então não reaproveita `expectLookup` (que exige `limit`).
+    const pagina2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`);
+    expect(pagina2.request.params.get('cursor')).toBe('pagina-2');
+    expect(pagina2.request.params.get('direction')).toBe('next');
+    pagina2.flush([
+      {
+        id: 'cmp2',
+        sigla: 'XIN',
+        nome: 'Campus de Xinguara',
+        codigoEmec: null,
+        cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+        endereco: null,
+        criadoEm: '2026-06-10T12:00:00Z',
+      },
+    ]);
+    await propagate();
+
+    expect(component['campiOpcoes']()).toHaveLength(2);
+    expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
+    expect(component['campusLabel']('cmp2')).toBe('XIN — Campus de Xinguara');
+  });
+
   it('exige tipo e cidade — bloqueia salvar inválido', async () => {
     await flushLista([]);
     component['abrirCadastro']();

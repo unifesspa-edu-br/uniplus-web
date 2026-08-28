@@ -13,12 +13,14 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
   PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  coletarPaginas,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
@@ -31,6 +33,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarLocalOfertaCommand,
   CONFIGURACAO_BASE_PATH,
+  CampiApi,
   CampusDto,
   CriarLocalOfertaCommand,
   LocaisOfertaApi,
@@ -57,13 +60,6 @@ import {
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
-
-/**
- * Janela do lookup de campi responsáveis (select do formulário e resolução do
- * rótulo da coluna na lista). Teto de página aceito pela API — acima de 100 a
- * resposta é 422 `uniplus.cursor.limit_invalido` (ADR-0026 do uniplus-api).
- */
-const CAMPI_LOOKUP_LIMIT = 100;
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -298,6 +294,7 @@ interface LocalOfertaForm {
 })
 export class LocaisOfertaPage {
   private readonly api = inject(LocaisOfertaApi);
+  private readonly campiApi = inject(CampiApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -328,22 +325,12 @@ export class LocaisOfertaPage {
   protected readonly loading = this.lista.isLoading;
 
   // Lookup de campi para o select de responsável — lazy (ativado ao abrir o form).
+  // Percorre todas as páginas por cursor em vez de truncar em API_MAX_PAGE_SIZE: 
+  // um select de FK não pode esconder opções silenciosamente.
   private readonly carregarCampi = signal(false);
-  private readonly campiResource = useApiResource<readonly CampusDto[]>(() => {
-    if (!this.carregarCampi()) {
-      return undefined;
-    }
-    return {
-      url: `${this.basePath}/api/configuracao/campi`,
-      params: new HttpParams().set('limit', String(CAMPI_LOOKUP_LIMIT)),
-      context: withVendorMime('campus', 1),
-    };
-  });
-  protected readonly campiOpcoes = computed(() => this.campiResource.data() ?? []);
-  protected readonly campiComErro = computed(() => {
-    const envelope = this.campiResource.value();
-    return (envelope !== undefined && !envelope.ok) || this.campiResource.error() !== undefined;
-  });
+  private campiIniciado = signal(false);
+  protected readonly campiOpcoes = signal<readonly CampusDto[]>([]);
+  protected readonly campiComErro = signal(false);
   private readonly campiPorId = computed(
     () => new Map(this.campiOpcoes().map((campus) => [campus.id, campus] as const)),
   );
@@ -434,6 +421,15 @@ export class LocaisOfertaPage {
         untracked(() => this.carregarCampi.set(true));
       }
     });
+
+    // `carregarCampi` só liga o lookup; `campiIniciado` evita refazer a busca a
+    // cada reabertura do drawer (abrirCadastro/abrirEdicao religam o sinal).
+    effect(() => {
+      if (this.carregarCampi() && !this.campiIniciado()) {
+        this.campiIniciado.set(true);
+        untracked(() => this.buscarCampi());
+      }
+    });
   }
 
   protected tipoLabel(tipo: TipoLocalOferta): string {
@@ -474,7 +470,22 @@ export class LocaisOfertaPage {
   }
 
   protected recarregarCampi(): void {
-    this.campiResource.reload();
+    this.buscarCampi();
+  }
+
+  private buscarCampi(): void {
+    this.campiComErro.set(false);
+    coletarPaginas((cursor) =>
+      this.campiApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (!result.ok) {
+          this.campiComErro.set(true);
+          return;
+        }
+        this.campiOpcoes.set(result.data);
+      });
   }
 
   protected abrirCadastro(): void {
