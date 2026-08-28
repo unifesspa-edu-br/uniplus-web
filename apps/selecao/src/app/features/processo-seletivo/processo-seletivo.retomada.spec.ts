@@ -1062,7 +1062,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
 
     const pagamento = cenario.store.draft().pagamento;
     expect(pagamento.cobra).toBe(true);
-    expect(pagamento.valor).toBe('230');
+    expect(pagamento.valor).toBe('230,00');
     expect(pagamento.fundamentos).toEqual(['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA']);
     expect(pagamento.confirmacaoFundamentos).toBe(true);
   });

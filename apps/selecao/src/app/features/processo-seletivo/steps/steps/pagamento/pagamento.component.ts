@@ -23,6 +23,7 @@ import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { analisarValorEmReais, FORMATO_VALOR_EM_REAIS } from '../../shared/valor-em-reais';
 
 /**
  * Declaração de taxa de inscrição e dos fundamentos de isenção que o processo
@@ -67,6 +68,9 @@ export class PagamentoStepComponent {
   });
 
   readonly cobra = signal<boolean | null>(null);
+
+  /** O hint do campo e a mensagem de recusa dizem o mesmo formato. */
+  protected readonly formatoEsperado = FORMATO_VALOR_EM_REAIS;
 
   /** Fundamentos escolhidos, na ordem do catálogo. */
   readonly selecionados = computed(() => this.store.draft().pagamento.fundamentos);
@@ -182,6 +186,12 @@ export class PagamentoStepComponent {
       };
     }
 
+    // O comando não sai de um passo que a validação recusaria: sem isto, um
+    // texto que não é valor viraria `null` no envio e o servidor recusaria a
+    // combinação "cobra sem valor", com mensagem que não aponta o campo.
+    const conferencia = this.validate();
+    if (!conferencia.valid) return conferencia;
+
     const pagamento = this.store.draft().pagamento;
     const geracao = this.store.geracao();
     this.erroDeGravacao.set(null);
@@ -189,7 +199,7 @@ export class PagamentoStepComponent {
     try {
       const resultado = await this.cadastro.definirTaxaInscricao(processoId, {
         cobra: pagamento.cobra,
-        valor: pagamento.valor === '' ? null : Number(pagamento.valor.replace(',', '.')),
+        valor: analisarValorEmReais(pagamento.valor),
         fundamentos: pagamento.fundamentos,
         confirmacaoFundamentos: pagamento.confirmacaoFundamentos,
       });
@@ -222,9 +232,11 @@ export class PagamentoStepComponent {
     }
 
     if (pagamento.cobra === true) {
-      const valor = Number(pagamento.valor.replace(',', '.'));
-      if (!pagamento.valor.trim() || Number.isNaN(valor) || valor <= 0) {
-        mensagens.push('Informe o valor da taxa, maior que zero.');
+      const valor = analisarValorEmReais(pagamento.valor);
+      if (valor === null) {
+        mensagens.push(`Informe o valor da taxa. ${FORMATO_VALOR_EM_REAIS}`);
+      } else if (valor <= 0) {
+        mensagens.push('O valor da taxa precisa ser maior que zero.');
       }
     }
 
