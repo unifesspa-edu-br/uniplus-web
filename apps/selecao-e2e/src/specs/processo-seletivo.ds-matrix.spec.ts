@@ -1,6 +1,27 @@
-import { test, expect, type Page, type Route } from '@playwright/test';
+import { test, expect, type Page, type Route, type TestInfo } from '@playwright/test';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
+
+/**
+ * Fronteiras que estas verificações espelham, cada uma vinda da folha de
+ * estilo: o stepper lateral aparece a partir de 768 px
+ * (`processo-seletivo.css`) e o controle amplo do menu a partir de 1024 px
+ * (`components.css`).
+ *
+ * A largura vem do project, não do nome dele. Deduzir por substring obrigava
+ * a lembrar de cada verificação ao acrescentar um viewport — foi assim que a
+ * entrada de 375 px passou a clicar num stepper que aquela largura esconde.
+ */
+const LARGURA_STEPPER_LATERAL = 768;
+const LARGURA_MENU_AMPLO = 1024;
+
+function larguraDoProject(testInfo: TestInfo): number {
+  const largura = testInfo.project.use.viewport?.width;
+  if (largura === undefined) {
+    throw new Error(`Project ${testInfo.project.name} não declara viewport.`);
+  }
+  return largura;
+}
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -40,7 +61,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
    * estilo. Cada botão reporta o próprio estado em `aria-expanded`.
    */
   test('expõe um único controle de menu, coerente com a largura', async ({ page }, testInfo) => {
-    const menu = controleDeMenu(testInfo.project.name);
+    const menu = controleDeMenu(larguraDoProject(testInfo));
 
     await expect(page.locator(menu.visivel)).toBeVisible();
     await expect(page.locator(menu.oculto)).toBeHidden();
@@ -116,7 +137,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   });
 
   test('recusa publicar rascunho incompleto', async ({ page }, testInfo) => {
-    const stepper = navegacaoDePassos(page, testInfo.project.name);
+    const stepper = navegacaoDePassos(page, larguraDoProject(testInfo));
     await stepper();
 
     await page.getByRole('button', { name: 'Publicar' }).click();
@@ -132,13 +153,13 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
  * O menu lateral tem fronteira própria em 1024 px: 768 px ainda usa a gaveta.
  * A lateral das telas largas nasce expandida; a gaveta das estreitas, fechada.
  */
-function controleDeMenu(projectName: string): {
+function controleDeMenu(largura: number): {
   visivel: string;
   oculto: string;
   inicial: string;
   alternado: string;
 } {
-  const amplo = projectName.includes('desktop') || projectName.includes('-tv-');
+  const amplo = largura >= LARGURA_MENU_AMPLO;
 
   return amplo
     ? {
@@ -156,11 +177,10 @@ function controleDeMenu(projectName: string): {
 }
 
 /**
- * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo;
- * 768 px é a própria fronteira do DS e já mostra a navegação lateral.
+ * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo.
  */
-function navegacaoDePassos(page: Page, projectName: string): () => Promise<void> {
-  const compacto = projectName.includes('-320-');
+function navegacaoDePassos(page: Page, largura: number): () => Promise<void> {
+  const compacto = largura < LARGURA_STEPPER_LATERAL;
 
   if (!compacto) {
     return async () => {

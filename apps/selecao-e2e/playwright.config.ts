@@ -39,6 +39,7 @@ const RODAR_CONTRA_BACKEND_REAL = process.env['E2E_BACKEND_REAL'] === '1';
 
 const DS_MATRIX_VIEWPORTS = [
   { name: '320', viewport: { width: 320, height: 720 }, isMobile: true, hasTouch: true },
+  { name: '375', viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true },
   { name: '768', viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true },
   { name: 'desktop', viewport: { width: 1366, height: 900 }, isMobile: false, hasTouch: false },
   { name: 'tv', viewport: { width: 1920, height: 1080 }, isMobile: false, hasTouch: false },
@@ -48,8 +49,15 @@ const DS_MATRIX_VIEWPORTS = [
  * O gate AAA fica nos três viewports de referência da ADR-0023. Incluir a TV
  * aqui multiplicaria os projects por 1,33 sem cobrir critério novo: acima do
  * desktop o que muda é o teto de largura, verificado pela matriz visual.
+ *
+ * O 375 fica de fora pelo mesmo motivo, e não por esquecimento: entre 320 e
+ * 768 o que a página faz é distribuir a mesma coluna em mais espaço, e o gate
+ * de contraste e foco já é exercido nos extremos. Ele entra na matriz visual,
+ * onde o transbordo é o que importa.
  */
-const AAA_VIEWPORTS = DS_MATRIX_VIEWPORTS.filter((viewport) => viewport.name !== 'tv');
+const AAA_VIEWPORTS = DS_MATRIX_VIEWPORTS.filter(
+  (viewport) => viewport.name !== 'tv' && viewport.name !== '375',
+);
 
 const DS_MATRIX_THEMES = ['light', 'dark', 'contrast'] as const;
 const DS_MATRIX_FONT_MODES = ['default', 'legible'] as const;
