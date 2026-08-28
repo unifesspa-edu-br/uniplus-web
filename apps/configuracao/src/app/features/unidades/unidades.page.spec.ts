@@ -8,6 +8,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
+import { GEO_BASE_PATH, type CidadeResumoDto } from '@uniplus/shared-data/geo';
 import { ORGANIZACAO_BASE_PATH, TipoUnidade, UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { UnidadesPage } from './unidades.page';
@@ -15,6 +16,11 @@ import { UnidadesPage } from './unidades.page';
 const BASE = 'http://localhost:5000';
 const REITORIA_ID = '01960000-0000-7000-0000-000000000001';
 const INSTITUTO_ID = '01960000-0000-7000-0000-000000000002';
+
+const cidadesSeed: readonly CidadeResumoDto[] = [
+  { id: 'c-1500107', codigoIbge: '1500107', nome: 'Marabá', uf: 'PA', ddd: '94' },
+  { id: 'c-1501402', codigoIbge: '1501402', nome: 'Belém', uf: 'PA', ddd: '91' },
+];
 
 // Folga acima do debounce da busca (BUSCA_DEBOUNCE_MS = 300 na página).
 const DEBOUNCE_FOLGA_MS = 360;
@@ -33,6 +39,9 @@ const unidadesSeed: readonly UnidadeDto[] = [
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
     criadoEm: '2026-06-10T12:00:00Z',
+    cidadeCodigoIbge: null,
+    cidadeNome: null,
+    cidadeUf: null,
   },
   {
     id: INSTITUTO_ID,
@@ -47,6 +56,9 @@ const unidadesSeed: readonly UnidadeDto[] = [
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
     criadoEm: '2026-06-10T12:01:00Z',
+    cidadeCodigoIbge: '1500107',
+    cidadeNome: 'Marabá',
+    cidadeUf: 'PA',
   },
 ];
 
@@ -64,6 +76,7 @@ describe('UnidadesPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
+        { provide: GEO_BASE_PATH, useValue: BASE },
       ],
     });
 
@@ -112,8 +125,21 @@ describe('UnidadesPage', () => {
     await propagate();
   }
 
+  function expectCidadesGet(matcher?: (request: HttpRequest<unknown>) => boolean): TestRequest {
+    const req = controller.expectOne(
+      (request) =>
+        request.url === `${BASE}/api/cidades` &&
+        request.method === 'GET' &&
+        (matcher ? matcher(request) : true),
+    );
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('cidade', 1));
+    return req;
+  }
+
   // Abrir o formulário dispara o GET (sem filtro) das opções de "unidade
   // superior" — desacoplado do filtro da listagem. Flush logo após o abrir*.
+  // A busca de cidade NÃO entra aqui: ela só dispara quando o operador digita
+  // (mesmo modelo do "município que rege os prazos" do Seleção — sem preload).
   async function flushOpcoesSuperior(
     unidades: readonly UnidadeDto[] = unidadesSeed,
   ): Promise<void> {
@@ -284,6 +310,240 @@ describe('UnidadesPage', () => {
     await propagate();
     expectListGet().flush(unidadesSeed); // refetch pós-mutação
     await propagate();
+  });
+
+  it('cria unidade sem cidade selecionada enviando o trio como null (referência opcional)', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+    component['form'].setValue({
+      nome: 'Faculdade de Computação',
+      alias: '',
+      slug: 'facom',
+      sigla: 'FACOM',
+      codigo: 'FACOM',
+      unidadeSuperiorId: INSTITUTO_ID,
+      tipo: TipoUnidade.faculdade,
+      unidadeAcademica: true,
+      vigenciaInicio: '2026-02-01',
+      vigenciaFim: '',
+      motivoMudancaIdentificador: '',
+    });
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
+    expect(post.request.body).toMatchObject({
+      cidadeCodigoIbge: null,
+      cidadeNome: null,
+      cidadeUf: null,
+    });
+    post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
+  });
+
+  it('busca cidade a partir de 3 letras (sem preload) e envia o trio inteiro no comando', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    // Igual ao "município que rege os prazos" do Seleção: abrir o form não
+    // dispara nenhuma requisição de cidade — só a digitação.
+    controller.expectNone(`${BASE}/api/cidades`);
+
+    // Antes de 3 letras, nenhum GET (não dispara por tecla isolada).
+    component['buscarCidades']('ma');
+    await propagate();
+    controller.expectNone(`${BASE}/api/cidades`);
+
+    component['buscarCidades']('mar');
+    await propagate();
+
+    const request = expectCidadesGet((r) => r.params.get('q') === 'mar');
+    expect(request.request.params.get('limit')).toBe('20');
+    request.flush([cidadesSeed[0]]);
+    await propagate();
+
+    expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[0]]);
+
+    component['selecionarCidade']({
+      codigoIbge: cidadesSeed[0].codigoIbge,
+      nome: cidadesSeed[0].nome,
+      uf: cidadesSeed[0].uf,
+    });
+
+    expect(component['cidadeSelecionada']()).toEqual({
+      codigoIbge: '1500107',
+      nome: 'Marabá',
+      uf: 'PA',
+    });
+    // A seleção limpa o termo e as opções — reabrir a busca não mostra a lista antiga.
+    expect(component['buscaCidade']()).toBe('');
+    expect(component['cidadeOpcoes']()).toEqual([]);
+
+    component['form'].setValue({
+      nome: 'Faculdade de Computação',
+      alias: '',
+      slug: 'facom',
+      sigla: 'FACOM',
+      codigo: 'FACOM',
+      unidadeSuperiorId: INSTITUTO_ID,
+      tipo: TipoUnidade.faculdade,
+      unidadeAcademica: true,
+      vigenciaInicio: '2026-02-01',
+      vigenciaFim: '',
+      motivoMudancaIdentificador: '',
+    });
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
+    expect(post.request.body).toMatchObject({
+      cidadeCodigoIbge: '1500107',
+      cidadeNome: 'Marabá',
+      cidadeUf: 'PA',
+    });
+    post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
+  });
+
+  it('descarta resposta de busca de cidade obsoleta quando o termo já mudou', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    component['buscarCidades']('mar');
+    const primeira = expectCidadesGet((r) => r.params.get('q') === 'mar');
+
+    // Termo muda antes da primeira resposta chegar — dispara uma segunda busca.
+    component['buscarCidades']('bel');
+    const segunda = expectCidadesGet((r) => r.params.get('q') === 'bel');
+
+    // A resposta da busca antiga chega depois: descartada pela guarda de termo.
+    primeira.flush([cidadesSeed[0]]);
+    await propagate();
+    expect(component['cidadeOpcoes']()).toEqual([]);
+
+    segunda.flush([cidadesSeed[1]]);
+    await propagate();
+    expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[1]]);
+  });
+
+  it('sinaliza erro na busca de cidade sem bloquear o restante do formulário', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    component['buscarCidades']('mar');
+    expectCidadesGet((r) => r.params.get('q') === 'mar').flush(
+      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['buscandoCidades']()).toBe(false);
+    expect(component['cidadeOpcoes']()).toEqual([]);
+    expect(component['buscaCidadeErro']()).toBe('Erro interno');
+    // A falha na busca de cidade não impede o restante do cadastro.
+    expect(component['formError']()).toBeNull();
+  });
+
+  it('exibe a cidade da unidade no detalhe, e "Não informada" quando ausente', async () => {
+    await flushInicial();
+
+    component['abrirDetalhe'](unidadesSeed[1]);
+    expect(component['cidadeLabel'](unidadesSeed[1])).toBe('Marabá — PA');
+
+    component['abrirDetalhe'](unidadesSeed[0]);
+    expect(component['cidadeLabel'](unidadesSeed[0])).toBe('Não informada');
+  });
+
+  it('pré-preenche a cidade ao editar e permite trocá-la enviando null', async () => {
+    await flushInicial();
+    component['abrirEdicao'](unidadesSeed[1]);
+    await flushOpcoesSuperior();
+
+    expect(component['cidadeSelecionada']()).toEqual({
+      codigoIbge: '1500107',
+      nome: 'Marabá',
+      uf: 'PA',
+    });
+
+    component['limparCidade']();
+    expect(component['cidadeSelecionada']()).toBeNull();
+
+    component['salvar']();
+
+    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
+    expect(put.request.body).toMatchObject({
+      cidadeCodigoIbge: null,
+      cidadeNome: null,
+      cidadeUf: null,
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+
+    await propagate();
+    expectListGet().flush(unidadesSeed);
+    await propagate();
+  });
+
+  it('exibe erro 422 de referência de cidade inline, sem tocar o banner geral do formulário', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+    component['form'].setValue({
+      nome: 'Faculdade de Computação',
+      alias: '',
+      slug: 'facom',
+      sigla: 'FACOM',
+      codigo: 'FACOM',
+      unidadeSuperiorId: INSTITUTO_ID,
+      tipo: TipoUnidade.faculdade,
+      unidadeAcademica: true,
+      vigenciaInicio: '2026-02-01',
+      vigenciaFim: '',
+      motivoMudancaIdentificador: '',
+    });
+
+    component['salvar']();
+
+    controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
+        title: 'Erro de validação',
+        status: 422,
+        code: 'uniplus.validacao',
+        traceId: '1af15c7793883f87ce943219ab8fd845',
+        errors: [
+          {
+            field: 'CidadeUf',
+            code: 'uf_incoerente',
+            message: 'A UF informada não corresponde à UF do código IBGE informado.',
+          },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    expect(component['saving']()).toBe(false);
+    expect(component['formError']()).toBeNull();
+    expect(component['cidadeErro']()).toBe(
+      'A UF informada não corresponde à UF do código IBGE informado.',
+    );
   });
 
   it('submete regra de vigência ao backend e exibe erro 422 inline no campo correspondente', async () => {

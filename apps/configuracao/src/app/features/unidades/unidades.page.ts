@@ -30,6 +30,7 @@ import {
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
+import { GeoApi, type CidadeResumoDto } from '@uniplus/shared-data/geo';
 import {
   AtualizarUnidadeCommand,
   CriarUnidadeCommand,
@@ -39,6 +40,7 @@ import {
   UnidadeDto,
   UnidadesApi,
 } from '@uniplus/shared-data/organizacao';
+import { type CidadeRef, ehErroDeEndereco } from '../../shared/endereco';
 import {
   AlertComponent,
   ConfirmDialogComponent,
@@ -53,6 +55,9 @@ import {
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 100;
+
+/** Tamanho da janela do seletor de cidade (cursor pagination, ADR-0026). */
+const CIDADES_LIMIT = 20;
 
 /**
  * Debounce da busca textual — uma request por rajada de digitação, não por
@@ -402,6 +407,8 @@ const BACKEND_FIELD_TO_CONTROL = {
           <dd>{{ unidadeSuperiorLabel(unidade.unidadeSuperiorId) }}</dd>
           <dt>Unidade acadêmica</dt>
           <dd>{{ unidade.unidadeAcademica ? 'Sim' : 'Não' }}</dd>
+          <dt>Cidade</dt>
+          <dd>{{ cidadeLabel(unidade) }}</dd>
           <dt>Vigência</dt>
           <dd>{{ vigenciaLabel(unidade) }}</dd>
         </dl>
@@ -592,6 +599,73 @@ const BACKEND_FIELD_TO_CONTROL = {
           </div>
         </section>
 
+        <section aria-labelledby="cfg-form-localizacao">
+          <h3 id="cfg-form-localizacao" class="form-section__title">Localização</h3>
+          <div class="form-grid">
+            <div class="field field--full" [class.is-error]="cidadeErro() !== null">
+              <label class="field__label" for="cfg-unidade-cidade-busca">Cidade</label>
+              @if (cidadeSelecionada(); as cidade) {
+                <div class="input-group">
+                  <output class="field__readonly" aria-label="Cidade selecionada">
+                    {{ cidade.nome }} — {{ cidade.uf }}
+                  </output>
+                  <button
+                    type="button"
+                    class="btn btn--secondary btn--rect"
+                    (click)="limparCidade()"
+                  >
+                    Trocar cidade
+                  </button>
+                </div>
+              } @else {
+                <input
+                  id="cfg-unidade-cidade-busca"
+                  class="input"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Digite ao menos 3 letras da cidade"
+                  [attr.aria-busy]="buscandoCidades() || null"
+                  [value]="buscaCidade()"
+                  (input)="buscarCidades(inputValue($event))"
+                />
+                @if (buscandoCidades()) {
+                  <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
+                }
+                @if (buscaCidadeErro(); as erro) {
+                  <div class="field__error" role="alert">
+                    <p>{{ erro }}</p>
+                  </div>
+                }
+                @if (cidadeOpcoes().length > 0) {
+                  <ul class="localidade-opcoes" aria-label="Cidades encontradas">
+                    @for (opcao of cidadeOpcoes(); track opcao.codigoIbge) {
+                      <li>
+                        <button
+                          class="btn btn--tertiary"
+                          type="button"
+                          (click)="
+                            selecionarCidade({
+                              codigoIbge: opcao.codigoIbge,
+                              nome: opcao.nome,
+                              uf: opcao.uf,
+                            })
+                          "
+                        >
+                          {{ opcao.nome }} — {{ opcao.uf }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+              <span class="field__hint">Cidade-sede de referência da unidade. Opcional.</span>
+              @if (cidadeErro(); as erro) {
+                <span class="field__error" role="alert">{{ erro }}</span>
+              }
+            </div>
+          </div>
+        </section>
+
         <section aria-labelledby="cfg-form-vigencia">
           <h3 id="cfg-form-vigencia" class="form-section__title">Vigência</h3>
           <div class="form-grid">
@@ -665,9 +739,12 @@ export class UnidadesPage {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(ORGANIZACAO_BASE_PATH);
+  private readonly geo = inject(GeoApi);
 
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
+  /** Erro de referência de cidade (422, all-or-nothing) exibido inline (CA-06, mesmo padrão de Instituição). */
+  protected readonly cidadeErro = signal<string | null>(null);
   protected readonly busca = signal('');
   protected readonly tipoFiltro = signal('');
   protected readonly drawerOpen = signal(false);
@@ -690,7 +767,9 @@ export class UnidadesPage {
   );
 
   // Chave do filtro vigente — fonte do reset de paginação.
-  private readonly filtroKey = computed(() => JSON.stringify([this.buscaAplicada(), this.tipoFiltro()]));
+  private readonly filtroKey = computed(() =>
+    JSON.stringify([this.buscaAplicada(), this.tipoFiltro()]),
+  );
 
   /**
    * Página de navegação atual (`undefined` = primeira). Volta para a primeira
@@ -857,10 +936,18 @@ export class UnidadesPage {
   protected readonly opcoesSuperiorComErro = computed(() => {
     const envelope = this.opcoesSuperiorResource.value();
     return (
-      (envelope !== undefined && !envelope.ok) ||
-      this.opcoesSuperiorResource.error() !== undefined
+      (envelope !== undefined && !envelope.ok) || this.opcoesSuperiorResource.error() !== undefined
     );
   });
+
+  /** Cidade-sede escolhida — trio inteiro (codigoIbge/nome/uf), não um campo de texto. */
+  protected readonly cidadeSelecionada = signal<CidadeRef | null>(null);
+  /** Termo digitado no seletor de cidade; não é persistido no rascunho. */
+  protected readonly buscaCidade = signal('');
+  /** Resultado corrente da busca de cidade na Geo (mesmo padrão do "município que rege os prazos" do Seleção). */
+  protected readonly cidadeOpcoes = signal<readonly CidadeResumoDto[]>([]);
+  protected readonly buscandoCidades = signal(false);
+  protected readonly buscaCidadeErro = signal<string | null>(null);
 
   /**
    * Cache monotônico de unidades já vistas (páginas da lista + busca de pai),
@@ -1056,6 +1143,53 @@ export class UnidadesPage {
     this.opcoesSuperiorResource.reload();
   }
 
+  /**
+   * Busca de cidade na Geo — mesmo modelo do "município que rege os prazos"
+   * do Seleção: dispara a partir de 3 letras (sem preload, sem debounce
+   * explícito) e descarta a resposta se o termo já mudou (guarda contra
+   * resposta obsoleta chegando fora de ordem).
+   */
+  protected buscarCidades(termo: string): void {
+    this.buscaCidade.set(termo);
+    const busca = termo.trim();
+    if (busca.length < 3) {
+      this.cidadeOpcoes.set([]);
+      this.buscaCidadeErro.set(null);
+      this.buscandoCidades.set(false);
+      return;
+    }
+
+    this.buscandoCidades.set(true);
+    this.buscaCidadeErro.set(null);
+    this.cidadeOpcoes.set([]);
+    this.geo
+      .listarCidades({ q: busca, limit: CIDADES_LIMIT })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (this.buscaCidade().trim() !== busca) {
+          return;
+        }
+        this.buscandoCidades.set(false);
+        if (!result.ok) {
+          this.cidadeOpcoes.set([]);
+          this.buscaCidadeErro.set(this.problemI18n.resolve(result.problem).title);
+          return;
+        }
+        this.cidadeOpcoes.set(result.data);
+      });
+  }
+
+  /** Grava o trio inteiro vindo da opção escolhida — nunca campo a campo. */
+  protected selecionarCidade(cidade: CidadeRef): void {
+    this.cidadeSelecionada.set(cidade);
+    this.buscaCidade.set('');
+    this.cidadeOpcoes.set([]);
+  }
+
+  protected limparCidade(): void {
+    this.cidadeSelecionada.set(null);
+  }
+
   protected abrirCadastro(): void {
     this.modo.set('criar');
     this.unidadeEmEdicaoId.set(null);
@@ -1072,7 +1206,12 @@ export class UnidadesPage {
       vigenciaFim: '',
       motivoMudancaIdentificador: '',
     });
+    this.cidadeSelecionada.set(null);
+    this.buscaCidade.set('');
+    this.cidadeOpcoes.set([]);
     this.formError.set(null);
+    this.cidadeErro.set(null);
+    this.buscaCidadeErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.prepararOpcoesSuperior();
     this.formOpen.set(true);
@@ -1094,7 +1233,20 @@ export class UnidadesPage {
       vigenciaFim: unidade.vigenciaFim ?? '',
       motivoMudancaIdentificador: '',
     });
+    this.cidadeSelecionada.set(
+      unidade.cidadeCodigoIbge === null
+        ? null
+        : {
+            codigoIbge: unidade.cidadeCodigoIbge,
+            nome: unidade.cidadeNome ?? '',
+            uf: unidade.cidadeUf ?? '',
+          },
+    );
+    this.buscaCidade.set('');
+    this.cidadeOpcoes.set([]);
     this.formError.set(null);
+    this.cidadeErro.set(null);
+    this.buscaCidadeErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.prepararOpcoesSuperior();
     this.drawerOpen.set(false);
@@ -1150,6 +1302,7 @@ export class UnidadesPage {
 
     this.saving.set(true);
     this.formError.set(null);
+    this.cidadeErro.set(null);
 
     if (this.modo() === 'criar') {
       this.api
@@ -1201,6 +1354,13 @@ export class UnidadesPage {
       : `${formatarData(unidade.vigenciaInicio)} a ${formatarData(unidade.vigenciaFim)}`;
   }
 
+  /** Rótulo da cidade-sede na ficha de leitura (referência opcional, ADR-0090). */
+  protected cidadeLabel(unidade: UnidadeDto): string {
+    return unidade.cidadeCodigoIbge === null
+      ? 'Não informada'
+      : `${unidade.cidadeNome} — ${unidade.cidadeUf}`;
+  }
+
   protected inputValue(event: Event): string {
     return event.target instanceof HTMLInputElement ? event.target.value : '';
   }
@@ -1240,6 +1400,14 @@ export class UnidadesPage {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
+    // Erro de referência de cidade (422 sem `errors[]`, all-or-nothing) — inline
+    // no campo de cidade, mesmo padrão de Instituição (CA-06).
+    if (ehErroDeEndereco(problem.code)) {
+      this.renovarIdempotencyKey();
+      this.cidadeErro.set(this.problemI18n.resolve(problem).title);
+      this.formError.set(null);
+      return;
+    }
     if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
       this.renovarIdempotencyKey();
     }
@@ -1255,7 +1423,17 @@ export class UnidadesPage {
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     let aplicouAlgum = false;
+    let erroCidade: string | null = null;
     for (const erro of errors) {
+      // Campos de cidade não têm controle flat no FormGroup (trio escolhido
+      // inteiro numa busca) — vão inline no campo de cidade (CA-06), mesmo
+      // padrão de Instituição, em vez de serem descartados por
+      // `controlNameFromBackendField`.
+      if (ehErroDeEndereco(erro.field) || ehErroDeEndereco(erro.code)) {
+        erroCidade ??= erro.message;
+        aplicouAlgum = true;
+        continue;
+      }
       const controlName = controlNameFromBackendField(erro.field);
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
@@ -1264,6 +1442,7 @@ export class UnidadesPage {
       aplicouAlgum = true;
     }
 
+    this.cidadeErro.set(erroCidade);
     if (aplicouAlgum) {
       this.formError.set(null);
       return;
@@ -1274,6 +1453,7 @@ export class UnidadesPage {
 
   private criarCommand(): CriarUnidadeCommand {
     const raw = this.form.getRawValue();
+    const cidade = this.cidadeSelecionada();
     return {
       nome: raw.nome.trim(),
       alias: nullIfBlank(raw.alias),
@@ -1285,11 +1465,15 @@ export class UnidadesPage {
       unidadeAcademica: raw.unidadeAcademica,
       vigenciaInicio: raw.vigenciaInicio,
       vigenciaFim: nullIfBlank(raw.vigenciaFim),
+      cidadeCodigoIbge: cidade?.codigoIbge ?? null,
+      cidadeNome: cidade?.nome ?? null,
+      cidadeUf: cidade?.uf ?? null,
     };
   }
 
   private atualizarCommand(): AtualizarUnidadeCommand {
     const raw = this.form.getRawValue();
+    const cidade = this.cidadeSelecionada();
     return {
       id: this.unidadeEmEdicaoId() ?? '',
       nome: raw.nome.trim(),
@@ -1302,6 +1486,9 @@ export class UnidadesPage {
       unidadeAcademica: raw.unidadeAcademica,
       vigenciaFim: nullIfBlank(raw.vigenciaFim),
       motivoMudancaIdentificador: nullIfBlank(raw.motivoMudancaIdentificador),
+      cidadeCodigoIbge: cidade?.codigoIbge ?? null,
+      cidadeNome: cidade?.nome ?? null,
+      cidadeUf: cidade?.uf ?? null,
     };
   }
 }
