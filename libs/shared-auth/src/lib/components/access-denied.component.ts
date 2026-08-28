@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-
-import { AuthService } from '../services/auth.service';
+import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Página de "Acesso negado" (HTTP 403). Exibida quando um usuário
