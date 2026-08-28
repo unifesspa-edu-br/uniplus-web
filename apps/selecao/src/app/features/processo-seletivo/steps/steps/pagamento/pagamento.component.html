@@ -83,6 +83,7 @@
               <input
                 type="checkbox"
                 [checked]="estaSelecionado(fundamento.codigo)"
+                [disabled]="!store.aceitaEdicao()"
                 [attr.aria-describedby]="'f-desc-' + fundamento.codigo"
                 (change)="alternarFundamento(fundamento.codigo)"
               />

@@ -323,6 +323,17 @@ describe('AnexoEditalComponent', () => {
     expect(componente.anexoBloqueado()).toBe(true);
   });
 
+  /**
+   * Anexar é escrita, e o servidor recusa a de processo fora de rascunho. Um
+   * rascunho cancelado, por exemplo, não tem edital confirmado, então nenhum
+   * dos outros bloqueios pega — só o estado do processo.
+   */
+  it('bloqueia o anexo em processo fora de rascunho', () => {
+    store.remoteSnapshot.set({ status: 'Cancelado' } as never);
+
+    expect(componente.anexoBloqueado()).toBe(true);
+  });
+
   /** Sem saber se já existe edital, anexar é apostar que não existe. */
   it('bloqueia o anexo enquanto o estado dos documentos é desconhecido', () => {
     store.avisoDocumentos.set('Não foi possível verificar se já há edital anexado.');

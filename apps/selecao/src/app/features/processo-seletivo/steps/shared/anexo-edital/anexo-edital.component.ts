@@ -81,7 +81,9 @@ export class AnexoEditalComponent {
     () =>
       this.anexoEmCurso() ||
       this.anexoConfirmado() ||
-      this.store.salvando() ||
+      // Cobre também a gravação em curso: anexar é escrita, e o servidor
+      // recusa a de processo fora de rascunho.
+      !this.store.aceitaEdicao() ||
       this.anexo()?.confirmacaoIndefinida === true ||
       // Escolha entre documentos confirmados pendente: enviar outro criaria um
       // terceiro documento imutável e agravaria a ambiguidade que a escolha
