@@ -610,7 +610,8 @@ const BACKEND_FIELD_TO_CONTROL = {
                     id="cfg-unidade-cidade-busca"
                     class="input"
                     readonly
-                    aria-describedby="cfg-unidade-cidade-hint"
+                    [attr.aria-invalid]="cidadeErro() !== null || null"
+                    [attr.aria-describedby]="cidadeDescribedBy(false)"
                     [value]="cidade.nome + ' — ' + cidade.uf"
                   />
                   <button
@@ -628,8 +629,9 @@ const BACKEND_FIELD_TO_CONTROL = {
                   type="search"
                   autocomplete="off"
                   placeholder="Digite ao menos 3 letras da cidade"
-                  aria-describedby="cfg-unidade-cidade-hint"
                   [attr.aria-busy]="buscandoCidades() || null"
+                  [attr.aria-invalid]="cidadeErro() !== null || null"
+                  [attr.aria-describedby]="cidadeDescribedBy(true)"
                   [value]="buscaCidade()"
                   (input)="buscaCidade.set(inputValue($event))"
                 />
@@ -637,7 +639,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                   <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
                 }
                 @if (buscaCidadeErro(); as erro) {
-                  <div class="field__error" role="alert">
+                  <div class="field__error" id="cfg-unidade-cidade-busca-erro" role="alert">
                     <p>{{ erro }}</p>
                   </div>
                 }
@@ -661,13 +663,17 @@ const BACKEND_FIELD_TO_CONTROL = {
                       </li>
                     }
                   </ul>
+                } @else if (
+                  buscaCidade().trim().length >= 3 && !buscandoCidades() && buscaCidadeErro() === null
+                ) {
+                  <p class="field__hint" role="status" aria-live="polite">Nenhuma cidade encontrada.</p>
                 }
               }
               <span class="field__hint" id="cfg-unidade-cidade-hint">
                 Cidade-sede de referência da unidade. Opcional.
               </span>
               @if (cidadeErro(); as erro) {
-                <span class="field__error" role="alert">{{ erro }}</span>
+                <span class="field__error" id="cfg-unidade-cidade-erro" role="alert">{{ erro }}</span>
               }
             </div>
           </div>
@@ -949,7 +955,7 @@ export class UnidadesPage {
 
   /** Cidade-sede escolhida — trio inteiro (codigoIbge/nome/uf), não um campo de texto. */
   protected readonly cidadeSelecionada = signal<CidadeRef | null>(null);
-  /** Termo digitado no seletor de cidade; não é persistido no rascunho. */
+  /** Termo digitado no seletor de cidade; não integra o comando enviado — só o trio selecionado importa. */
   protected readonly buscaCidade = signal('');
   /** Resultado corrente da busca de cidade na Geo (mesmo padrão do "município que rege os prazos" do Seleção). */
   protected readonly cidadeOpcoes = signal<readonly CidadeResumoDto[]>([]);
@@ -1186,12 +1192,6 @@ export class UnidadesPage {
     this.opcoesSuperiorResource.reload();
   }
 
-  /**
-   * Busca de cidade na Geo — mesmo modelo do "município que rege os prazos"
-   * do Seleção: dispara a partir de 3 letras (sem preload, sem debounce
-   * explícito) e descarta a resposta se o termo já mudou (guarda contra
-   * resposta obsoleta chegando fora de ordem).
-   */
   /** Grava o trio inteiro vindo da opção escolhida — nunca campo a campo. */
   protected selecionarCidade(cidade: CidadeRef): void {
     this.cidadeSelecionada.set(cidade);
@@ -1199,8 +1199,31 @@ export class UnidadesPage {
     this.cidadeOpcoes.set([]);
   }
 
+  /**
+   * Limpa a seleção inteira — inclusive o erro de salvar e o resíduo de uma
+   * busca anterior (termo, opções e erro de busca). Sem isso, "Trocar cidade"
+   * reabria a busca com uma mensagem de erro de uma tentativa de salvar
+   * anterior ainda visível, ou com opções obsoletas de uma resposta que
+   * chegou tarde.
+   */
   protected limparCidade(): void {
     this.cidadeSelecionada.set(null);
+    this.buscaCidade.set('');
+    this.cidadeOpcoes.set([]);
+    this.cidadeErro.set(null);
+    this.buscaCidadeErro.set(null);
+  }
+
+  /** `aria-describedby` do campo Cidade: hint + erro de salvar (sempre relevante) + erro de busca (só no ramo de busca). */
+  protected cidadeDescribedBy(incluirErroBusca: boolean): string {
+    const ids = ['cfg-unidade-cidade-hint'];
+    if (this.cidadeErro() !== null) {
+      ids.push('cfg-unidade-cidade-erro');
+    }
+    if (incluirErroBusca && this.buscaCidadeErro() !== null) {
+      ids.push('cfg-unidade-cidade-busca-erro');
+    }
+    return ids.join(' ');
   }
 
   protected abrirCadastro(): void {
