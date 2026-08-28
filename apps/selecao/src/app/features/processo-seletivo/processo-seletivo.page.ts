@@ -132,10 +132,14 @@ export class ProcessoSeletivoPage {
    * "Próximo" descreve a navegação e esconde o efeito.
    */
   readonly rotuloDeAvanco = computed(() => {
+    if (!this.store.edicaoPermitida()) return 'Próximo';
     if (this.store.isLast()) return 'Publicar';
     const passo = this.stepValidatorAt(this.store.currentStep());
     return passo?.rotuloDeAvanco?.() ?? 'Próximo';
   });
+
+  /** No último passo o avanço só publica, e publicar exige rascunho. */
+  readonly ofereceAvanco = computed(() => this.store.edicaoPermitida() || !this.store.isLast());
 
   readonly stepsOverlayOpen = signal(false);
   readonly showBackToTop = signal(false);
@@ -415,6 +419,13 @@ export class ProcessoSeletivoPage {
     // Single-flight: o passo 2 grava na API, e um duplo clique criaria dois
     // processos com chaves de idempotência diferentes.
     if (this.store.salvando()) return;
+
+    // Consultar um processo publicado é livre; escrever nele o servidor
+    // recusaria, depois de o operador ter preenchido a tela inteira.
+    if (!this.store.edicaoPermitida()) {
+      this.store.next();
+      return;
+    }
 
     if (this.store.isLast()) {
       this.publicar();

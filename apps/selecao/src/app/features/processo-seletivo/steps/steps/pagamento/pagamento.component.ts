@@ -88,11 +88,9 @@ export class PagamentoStepComponent {
       );
     });
 
-    // Mudar o valor no meio do PUT faria o rascunho divergir do que o servidor
-    // gravou — o rodapé já recusa clique, os campos não recusavam digitação.
     effect(() => {
-      if (this.store.salvando()) this.form.disable({ emitEvent: false });
-      else this.form.enable({ emitEvent: false });
+      if (this.store.aceitaEdicao()) this.form.enable({ emitEvent: false });
+      else this.form.disable({ emitEvent: false });
     });
 
     effect(() => {
@@ -143,7 +141,9 @@ export class PagamentoStepComponent {
   }
 
   alternarFundamento(codigo: FundamentoIsencaoCodigo): void {
-    if (this.store.salvando()) return;
+    // A lista de fundamentos não é controle do formulário, então o `disable`
+    // acima não a alcança.
+    if (!this.store.aceitaEdicao()) return;
 
     const atuais = this.selecionados();
     const proximos = atuais.includes(codigo)

@@ -3,6 +3,13 @@
   declarar não equivale a não cobrar.
 </p>
 
+@if (!store.edicaoPermitida()) {
+  <p class="alert alert--info" role="status">
+    Este processo já foi publicado. A taxa e os fundamentos ficam disponíveis para consulta;
+    alterá-los depende de abrir uma retificação.
+  </p>
+}
+
 <form [formGroup]="form">
   <div class="step-card">
     <div class="form-grid">

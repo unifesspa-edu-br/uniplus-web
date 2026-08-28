@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { DOC_ETAPAS, DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.data';
 import { hidratarDraft } from './shared/hidratacao';
+import { STATUS_PROCESSO } from '../status-processo';
 import {
   DocumentoConfig,
   EtapaEdital,
@@ -158,6 +159,27 @@ export class ProcessoSeletivoStore {
   readonly cadastroInicialCongelado = computed(
     () => this.processoSeletivoId() !== null || this.salvando() || this.criacaoIndefinida(),
   );
+
+  /**
+   * `ProcessoSeletivo.MutacaoPermitida` também aceita processo publicado com
+   * retificação aberta, mas o detalhe não expõe a sessão editorial e a
+   * retificação ainda não tem tela — daí a allowlist de um status só, que
+   * também impede um status novo de abrir a edição por omissão.
+   *
+   * Sem detalhe nada é bloqueado: processo em criação ainda não tem status.
+   */
+  readonly edicaoPermitida = computed(() => {
+    const detalhe = this.remoteSnapshot();
+    return detalhe === null || detalhe.status === STATUS_PROCESSO.RASCUNHO;
+  });
+
+  /**
+   * Um passo aceita digitação quando o processo admite mutação e nenhuma
+   * gravação está em curso — alterar durante o comando faria o rascunho
+   * divergir do que o servidor recebeu. São duas razões para o mesmo efeito,
+   * resolvidas aqui para que nenhum passo repita a conjunção.
+   */
+  readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.salvando());
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
   readonly currentMeta = computed(() => {
