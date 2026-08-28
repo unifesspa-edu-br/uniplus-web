@@ -72,6 +72,12 @@ function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivo
     documentosExigidos: [],
     raizesExigencia: [],
     referenciaTemporalFatos: null,
+    configuracaoTaxaInscricao: {
+      cobra: true,
+      valor: 230,
+      fundamentos: ['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA'],
+      confirmacaoFundamentos: true,
+    },
     ...overrides,
   } as ProcessoSeletivoDto;
 }
@@ -127,7 +133,11 @@ function montar(opts: CenarioOpts = {}) {
       { provide: ModalidadesApi, useValue: modalidadesApiStub },
       {
         provide: ProcessosSeletivosApi,
-        useValue: { obter, listarDocumentosEdital: listarDocumentos },
+        useValue: {
+          obter,
+          listarDocumentosEdital: listarDocumentos,
+          listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
+        },
       },
       {
         provide: ActivatedRoute,
@@ -1035,5 +1045,34 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     await propagar();
 
     expect(cenario.navigate).not.toHaveBeenCalled();
+  });
+
+  /**
+   * A configuração de taxa já gravada volta ao editor. Sem isto, retomar um
+   * processo mostrava a declaração em branco — e regravar por cima apagaria o
+   * que estava lá.
+   */
+  it('hidrata a configuração de taxa já gravada', async () => {
+    const cenario = montar();
+    await propagar();
+
+    const pagamento = cenario.store.draft().pagamento;
+    expect(pagamento.cobra).toBe(true);
+    expect(pagamento.valor).toBe('230');
+    expect(pagamento.fundamentos).toEqual(['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA']);
+    expect(pagamento.confirmacaoFundamentos).toBe(true);
+  });
+
+  /**
+   * Ausência de configuração é "ainda não declarado", que não é o mesmo que
+   * declarar que não cobra — o passo precisa continuar exigindo a declaração.
+   */
+  it('deixa a cobrança por declarar quando o processo nunca a declarou', async () => {
+    const cenario = montar({
+      obter: vi.fn(() => of(okResult(detalhe({ configuracaoTaxaInscricao: null })))),
+    });
+    await propagar();
+
+    expect(cenario.store.draft().pagamento.cobra).toBeNull();
   });
 });

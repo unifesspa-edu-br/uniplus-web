@@ -1,4 +1,5 @@
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
 
@@ -174,6 +175,17 @@ export interface WizardDraft {
      * tirar o nome.
      */
     rotulo: string;
+  };
+  /**
+   * Declaração de cobrança e de quais fundamentos de isenção o processo
+   * reconhece. `cobra` começa nulo porque a ausência de declaração não é "não
+   * cobra" — a publicação recusa processo que nunca declarou.
+   */
+  pagamento: {
+    cobra: boolean | null;
+    valor: string;
+    fundamentos: FundamentoIsencaoCodigo[];
+    confirmacaoFundamentos: boolean;
   };
   identificacao: {
     nome: string;

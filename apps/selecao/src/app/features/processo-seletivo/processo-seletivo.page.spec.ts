@@ -11,7 +11,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { FundamentoIsencaoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
@@ -28,6 +28,10 @@ const geoApiStub = {
   listarCidades: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
 };
 
+/** O passo de pagamento lê o catálogo de fundamentos ao montar. */
+const listarFundamentos = () =>
+  of(apiOk<readonly FundamentoIsencaoDto[]>([], 200, new HttpHeaders()));
+
 const modalidadesApiStub = {
   listar: () => of(apiOk<readonly ModalidadeDto[]>([], 200, new HttpHeaders())),
 };
@@ -37,7 +41,7 @@ const modalidadesApiStub = {
  * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
  * grafo de injeção fechar sem `HttpClient` real.
  */
-const processosSeletivosApiStub = {};
+const processosSeletivosApiStub = { listarFundamentosIsencao: listarFundamentos };
 
 const PAGE_PROVIDERS = [
   provideRouter([]),
@@ -272,7 +276,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
         { provide: UnidadesApi, useValue: unidadesApiStub },
         { provide: GeoApi, useValue: geoApiStub },
         { provide: ModalidadesApi, useValue: modalidadesApiStub },
-        { provide: ProcessosSeletivosApi, useValue: { criar } },
+        { provide: ProcessosSeletivosApi, useValue: { criar, listarFundamentosIsencao: listarFundamentos } },
       ],
     });
 
@@ -398,7 +402,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
         { provide: UnidadesApi, useValue: unidadesApiStub },
         { provide: GeoApi, useValue: geoApiStub },
         { provide: ModalidadesApi, useValue: modalidadesApiStub },
-        { provide: ProcessosSeletivosApi, useValue: { criar: () => emVoo } },
+        { provide: ProcessosSeletivosApi, useValue: { criar: () => emVoo, listarFundamentosIsencao: listarFundamentos } },
       ],
     });
 
@@ -463,6 +467,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
               chamadas += 1;
               return emVoo;
             },
+            listarFundamentosIsencao: listarFundamentos,
           },
         },
       ],
