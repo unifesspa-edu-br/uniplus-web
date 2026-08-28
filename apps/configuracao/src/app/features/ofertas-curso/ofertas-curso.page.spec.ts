@@ -169,6 +169,32 @@ describe('OfertasCursoPage', () => {
     }
   });
 
+  it('percorre todas as páginas dos lookups de Curso e Local de oferta sem truncar (issue #580)', async () => {
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
+
+    const cursosPagina1 = expectLookup(`${BASE}/api/configuracao/cursos`);
+    cursosPagina1.flush([cursoSeed], {
+      headers: { Link: `<${BASE}/api/configuracao/cursos?cursor=pagina-2&direction=next>; rel="next"` },
+    });
+    const locais = expectLookup(`${BASE}/api/configuracao/locais-oferta`);
+    locais.flush([localSeed]);
+    await propagate();
+
+    const outroCurso: CursoDto = {
+      ...cursoSeed,
+      id: '01960000-0000-7000-0000-0000000000c2',
+      codigo: 'DIR',
+      nome: 'Direito',
+    };
+    const cursosPagina2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
+    expect(cursosPagina2.request.params.get('cursor')).toBe('pagina-2');
+    cursosPagina2.flush([outroCurso]);
+    await propagate();
+
+    expect(component['cursosOpcoes']()).toHaveLength(2);
+    expect(component['cursosOpcoes']().map((c) => c.codigo)).toEqual(['ENG-CIV', 'DIR']);
+  });
+
   it('renderiza a lista resolvendo rótulos de Curso e Local via lookup', async () => {
     await flushCargaInicial([ofertaSeed]);
     fixture.detectChanges();
