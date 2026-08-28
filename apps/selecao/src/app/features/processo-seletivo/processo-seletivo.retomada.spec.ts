@@ -1148,6 +1148,28 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       expect(publicadoCenario.store.motivoDeSomenteLeitura()).toContain('retificação');
     });
 
+    it('relê o edital confirmado, que é o que a consulta existe para mostrar', async () => {
+      const cenario = montar({
+        obter: vi.fn(() => of(okResult(detalhe({ status: 'Publicado' })))),
+        listarDocumentos: vi.fn(() => of(okResult([documento()]))),
+      });
+      await propagar();
+
+      expect(cenario.store.draft().identificacao.uploads.length).toBe(1);
+    });
+
+    it('não nomeia a situação de um status que este cliente não conhece', async () => {
+      const cenario = montar({
+        obter: vi.fn(() => of(okResult(detalhe({ status: 'Arquivado' })))),
+      });
+      await propagar();
+
+      const motivo = cenario.store.motivoDeSomenteLeitura();
+      expect(motivo).toContain('não está em rascunho');
+      expect(motivo).not.toContain('cancelado');
+      expect(motivo).not.toContain('encerrado');
+    });
+
     it('mantém a edição liberada enquanto o detalhe não chegou', () => {
       const cenario = montar();
 

@@ -195,8 +195,14 @@ export class ProcessoSeletivoStore {
       return 'Este processo já foi publicado. A configuração fica disponível para consulta; alterá-la depende de abrir uma retificação.';
     }
 
-    const situacao = status === STATUS_PROCESSO.ENCERRADO ? 'encerrado' : 'cancelado';
-    return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;
+    if (status === STATUS_PROCESSO.ENCERRADO || status === STATUS_PROCESSO.CANCELADO) {
+      const situacao = status === STATUS_PROCESSO.ENCERRADO ? 'encerrado' : 'cancelado';
+      return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;
+    }
+
+    // Status que este cliente não conhece. A allowlist estabelece que não é
+    // rascunho, e nada além disso — nomear a situação seria inventá-la.
+    return 'Este processo não está em rascunho e não aceita alteração. A configuração fica disponível para consulta.';
   });
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
@@ -274,6 +280,27 @@ export class ProcessoSeletivoStore {
     patch: Partial<WizardDraft[K]>,
   ): void {
     if (!this.edicaoPermitida()) return;
+    this.aplicarPatch(section, patch);
+  }
+
+  /**
+   * Projeta no rascunho o que veio do servidor. Não passa pelo bloqueio de
+   * edição: o que o servidor devolve descreve o processo, e é o que precisa
+   * continuar chegando quando ele está apenas para consulta. Sem esta
+   * separação, um processo publicado com edital confirmado anunciaria
+   * "nenhum arquivo adicionado" e perderia a ação de abrir o edital.
+   *
+   * Vale também para a escolha entre documentos confirmados: ela decide qual
+   * documento a tela apresenta, não altera nada no servidor.
+   */
+  projetarSecao<K extends keyof WizardDraft>(section: K, patch: Partial<WizardDraft[K]>): void {
+    this.aplicarPatch(section, patch);
+  }
+
+  private aplicarPatch<K extends keyof WizardDraft>(
+    section: K,
+    patch: Partial<WizardDraft[K]>,
+  ): void {
     const current = this.draft()[section];
     if (Array.isArray(current) || typeof current !== 'object' || current === null) {
       throw new Error(`A seção ${String(section)} não aceita patch de objeto.`);

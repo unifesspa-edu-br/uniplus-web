@@ -326,7 +326,7 @@ export class ProcessoSeletivoPage {
 
     const { vinculo, escolha } = classificarDocumentos(resultado.data);
     if (vinculo !== null) {
-      this.store.patchObjectSection('identificacao', { uploads: [vinculo] });
+      this.store.projetarSecao('identificacao', { uploads: [vinculo] });
     }
     this.store.documentosParaEscolha.set(escolha);
   }
