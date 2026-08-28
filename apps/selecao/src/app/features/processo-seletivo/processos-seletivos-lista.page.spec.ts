@@ -351,4 +351,34 @@ describe('ProcessosSeletivosListaPage', () => {
     expect(contador?.textContent?.trim()).toBe('2');
     expect(component['processos']()).toHaveLength(2);
   });
+
+  /**
+   * O percurso que a Story existe para garantir: cadastrar e voltar à listagem
+   * mostra o processo novo. Prova que a página relê da API ao ser montada, em
+   * vez de servir o que trouxe da visita anterior — se ela guardasse a coleção,
+   * o registro recém-criado não apareceria sem um refresh do navegador.
+   */
+  it('mostra o processo recém-criado ao voltar para a listagem', async () => {
+    await flushLista([processo({ nome: 'Vestibular 2026.1' })]);
+    expect(nomesNaTabela()).toEqual(['Vestibular 2026.1']);
+
+    // Sai da listagem e volta, como quem foi ao cadastro e concluiu.
+    fixture.destroy();
+    fixture = TestBed.createComponent(ProcessosSeletivosListaPage);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    await flushLista([
+      processo({ nome: 'Vestibular 2026.1' }),
+      processo({ id: '019f41cf-69fd-759a-ac6d-09acabc1b099', nome: 'PSIQ 2026' }),
+    ]);
+
+    expect(nomesNaTabela()).toEqual(['Vestibular 2026.1', 'PSIQ 2026']);
+  });
+
+  function nomesNaTabela(): string[] {
+    return [...host().querySelectorAll('tbody tr')].map(
+      (linha) => linha.querySelector('td')?.textContent?.trim().split('\n')[0] ?? '',
+    );
+  }
 });
