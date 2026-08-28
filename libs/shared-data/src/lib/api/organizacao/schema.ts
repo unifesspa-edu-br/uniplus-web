@@ -66,9 +66,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["InstituicaoDto"];
-                        readonly "application/json": components["schemas"]["InstituicaoDto"];
-                        readonly "text/json": components["schemas"]["InstituicaoDto"];
+                        readonly "application/vnd.uniplus.instituicao.v1+json": components["schemas"]["InstituicaoDto"];
                     };
                 };
                 /** @description Not Found */
@@ -387,9 +385,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["UnidadeDto"][];
-                        readonly "application/json": readonly components["schemas"]["UnidadeDto"][];
-                        readonly "text/json": readonly components["schemas"]["UnidadeDto"][];
+                        readonly "application/vnd.uniplus.unidade.v1+json": readonly components["schemas"]["UnidadeDto"][];
                     };
                 };
                 /** @description Bad Request */
@@ -462,9 +458,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["UnidadeDto"];
-                        readonly "application/json": components["schemas"]["UnidadeDto"];
-                        readonly "text/json": components["schemas"]["UnidadeDto"];
+                        readonly "application/vnd.uniplus.unidade.v1+json": components["schemas"]["UnidadeDto"];
                     };
                 };
                 /** @description Not Found */
@@ -764,11 +758,11 @@ export interface components {
         readonly AtualizarInstituicaoCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly codigoEmec: string;
-            readonly nome: string;
-            readonly sigla: string;
-            readonly organizacaoAcademica: string;
-            readonly categoriaAdministrativa: string;
+            readonly codigoEmec: null | string;
+            readonly nome: null | string;
+            readonly sigla: null | string;
+            readonly organizacaoAcademica: null | string;
+            readonly categoriaAdministrativa: null | string;
             readonly cnpj: null | string;
             readonly mantenedora: null | string;
             readonly codigoMantenedoraEmec: null | string;
@@ -788,11 +782,11 @@ export interface components {
         readonly AtualizarUnidadeCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
+            readonly nome: null | string;
             readonly alias: null | string;
-            readonly slug: string;
-            readonly sigla: string;
-            readonly codigo: string;
+            readonly slug: null | string;
+            readonly sigla: null | string;
+            readonly codigo: null | string;
             /** Format: uuid */
             readonly unidadeSuperiorId: null | string;
             readonly tipo: components["schemas"]["TipoUnidade"];
@@ -800,6 +794,9 @@ export interface components {
             /** Format: date */
             readonly vigenciaFim: null | string;
             readonly motivoMudancaIdentificador?: null | string;
+            readonly cidadeCodigoIbge?: null | string;
+            readonly cidadeNome?: null | string;
+            readonly cidadeUf?: null | string;
         };
         readonly AuthenticatedUserResponse: {
             readonly userId: null | string;
@@ -823,11 +820,11 @@ export interface components {
             readonly uf: null | string;
         };
         readonly CriarInstituicaoCommand: {
-            readonly codigoEmec: string;
-            readonly nome: string;
-            readonly sigla: string;
-            readonly organizacaoAcademica: string;
-            readonly categoriaAdministrativa: string;
+            readonly codigoEmec: null | string;
+            readonly nome: null | string;
+            readonly sigla: null | string;
+            readonly organizacaoAcademica: null | string;
+            readonly categoriaAdministrativa: null | string;
             readonly cnpj: null | string;
             readonly mantenedora: null | string;
             readonly codigoMantenedoraEmec: null | string;
@@ -845,11 +842,11 @@ export interface components {
             readonly unidadeRaizId: null | string;
         };
         readonly CriarUnidadeCommand: {
-            readonly nome: string;
+            readonly nome: null | string;
             readonly alias: null | string;
-            readonly slug: string;
-            readonly sigla: string;
-            readonly codigo: string;
+            readonly slug: null | string;
+            readonly sigla: null | string;
+            readonly codigo: null | string;
             /** Format: uuid */
             readonly unidadeSuperiorId: null | string;
             readonly tipo: components["schemas"]["TipoUnidade"];
@@ -858,6 +855,9 @@ export interface components {
             readonly vigenciaInicio: string;
             /** Format: date */
             readonly vigenciaFim: null | string;
+            readonly cidadeCodigoIbge?: null | string;
+            readonly cidadeNome?: null | string;
+            readonly cidadeUf?: null | string;
         };
         readonly EnderecoGeoDto: {
             readonly cep: string;
@@ -946,6 +946,9 @@ export interface components {
             readonly vigenciaFim: null | string;
             /** Format: date-time */
             readonly criadoEm: string;
+            readonly cidadeCodigoIbge: null | string;
+            readonly cidadeNome: null | string;
+            readonly cidadeUf: null | string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };

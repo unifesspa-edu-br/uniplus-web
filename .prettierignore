@@ -4,3 +4,8 @@
 /.nx/cache
 /.nx/workspace-data
 .angular
+
+# Gerados por openapi-typescript (npm run generate:api) — formatação própria
+# do gerador (4 espaços, aspas duplas). Reformatar aqui só causa diff/churn a
+# cada regeneração, sem ganho: o arquivo nunca é escrito à mão.
+libs/shared-data/src/lib/api/*/schema.ts

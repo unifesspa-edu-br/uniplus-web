@@ -36,6 +36,9 @@ const unidadeSeed: UnidadeDto = {
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
   criadoEm: '2026-06-10T12:00:00Z',
+  cidadeCodigoIbge: '1500107',
+  cidadeNome: 'Marabá',
+  cidadeUf: 'PA',
 };
 
 const criarCommand: CriarUnidadeCommand = {
@@ -49,6 +52,9 @@ const criarCommand: CriarUnidadeCommand = {
   unidadeAcademica: true,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
+  cidadeCodigoIbge: unidadeSeed.cidadeCodigoIbge,
+  cidadeNome: unidadeSeed.cidadeNome,
+  cidadeUf: unidadeSeed.cidadeUf,
 };
 
 const atualizarCommand: AtualizarUnidadeCommand = {
@@ -63,6 +69,9 @@ const atualizarCommand: AtualizarUnidadeCommand = {
   unidadeAcademica: true,
   vigenciaFim: null,
   motivoMudancaIdentificador: null,
+  cidadeCodigoIbge: unidadeSeed.cidadeCodigoIbge,
+  cidadeNome: unidadeSeed.cidadeNome,
+  cidadeUf: unidadeSeed.cidadeUf,
 };
 
 describe('UnidadesApi', () => {

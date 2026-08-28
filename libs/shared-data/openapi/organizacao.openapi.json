@@ -54,7 +54,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/profile/me": {
@@ -86,7 +91,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/organizacao/instituicao": {
@@ -98,17 +108,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstituicaoDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstituicaoDto"
-                }
-              },
-              "text/json": {
+              "application/vnd.uniplus.instituicao.v1\u002Bjson": {
                 "schema": {
                   "$ref": "#/components/schemas/InstituicaoDto"
                 }
@@ -262,6 +262,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "x-uniplus-idempotent": true
       }
     },
@@ -388,6 +393,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "x-uniplus-idempotent": true
       },
       "delete": {
@@ -439,7 +449,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/organizacao/unidades": {
@@ -520,23 +535,7 @@
               }
             },
             "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnidadeDto"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnidadeDto"
-                  }
-                }
-              },
-              "text/json": {
+              "application/vnd.uniplus.unidade.v1\u002Bjson": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -610,17 +609,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnidadeDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnidadeDto"
-                }
-              },
-              "text/json": {
+              "application/vnd.uniplus.unidade.v1\u002Bjson": {
                 "schema": {
                   "$ref": "#/components/schemas/UnidadeDto"
                 }
@@ -774,6 +763,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "x-uniplus-idempotent": true
       }
     },
@@ -900,6 +894,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "x-uniplus-idempotent": true
       },
       "delete": {
@@ -961,7 +960,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -997,19 +1001,34 @@
             "format": "uuid"
           },
           "codigoEmec": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sigla": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizacaoAcademica": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoriaAdministrativa": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cnpj": {
             "type": [
@@ -1122,7 +1141,10 @@
             "format": "uuid"
           },
           "nome": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "alias": {
             "type": [
@@ -1131,13 +1153,22 @@
             ]
           },
           "slug": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sigla": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "unidadeSuperiorId": {
             "type": [
@@ -1160,6 +1191,24 @@
             "format": "date"
           },
           "motivoMudancaIdentificador": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeCodigoIbge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeNome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeUf": {
             "type": [
               "null",
               "string"
@@ -1292,19 +1341,34 @@
         "type": "object",
         "properties": {
           "codigoEmec": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sigla": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "organizacaoAcademica": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoriaAdministrativa": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cnpj": {
             "type": [
@@ -1413,7 +1477,10 @@
         "type": "object",
         "properties": {
           "nome": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "alias": {
             "type": [
@@ -1422,13 +1489,22 @@
             ]
           },
           "slug": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sigla": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "unidadeSuperiorId": {
             "type": [
@@ -1453,6 +1529,24 @@
               "string"
             ],
             "format": "date"
+          },
+          "cidadeCodigoIbge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeNome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeUf": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1843,7 +1937,10 @@
           "unidadeAcademica",
           "vigenciaInicio",
           "vigenciaFim",
-          "criadoEm"
+          "criadoEm",
+          "cidadeCodigoIbge",
+          "cidadeNome",
+          "cidadeUf"
         ],
         "type": "object",
         "properties": {
@@ -1896,6 +1993,24 @@
           "criadoEm": {
             "type": "string",
             "format": "date-time"
+          },
+          "cidadeCodigoIbge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeNome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cidadeUf": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "_links": {
             "type": [
@@ -1963,6 +2078,14 @@
             "format": "date-time"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \u0022Bearer\u0022 \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },
