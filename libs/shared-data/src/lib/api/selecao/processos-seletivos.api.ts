@@ -21,6 +21,10 @@ export type FundamentoIsencaoDto = components['schemas']['FundamentoIsencaoDto']
 /** Vocabulário fechado dos fundamentos que a configuração pode referenciar. */
 export { DefinirTaxaInscricaoRequestFundamentos as FundamentoIsencao };
 export type FundamentoIsencaoCodigo = DefinirTaxaInscricaoRequestFundamentos;
+export type ConfiguracaoDistribuicaoVagasInput =
+  components['schemas']['ConfiguracaoDistribuicaoVagasInput'];
+export type ConfiguracaoDistribuicaoVagasDto =
+  components['schemas']['ConfiguracaoDistribuicaoVagasDto'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -55,6 +59,41 @@ export class ProcessosSeletivosApi {
     return this.http.get<ApiResult<readonly ProcessoSeletivoResumoDto[]>>(
       `${this.basePath}/api/selecao/processos-seletivos`,
       { params, context: withVendorMime('processo-seletivo', 1) },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/distribuicao-vagas/simulacao`
+   * — devolve o quadro como a regra o calcula, sem gravar.
+   *
+   * É o que permite ao editor mostrar o efeito da configuração — quanto sobra
+   * na ampla concorrência depois das reservas e das retiradas — sem reimplementar
+   * a Lei de Cotas no cliente.
+   */
+  simularDistribuicaoVagas(
+    processoSeletivoId: string,
+    distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
+  ): Observable<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>> {
+    return this.http.post<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas/simulacao`,
+      distribuicoes,
+      { context: withVendorMime('simulacao-distribuicao-vagas', 1) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/distribuicao-vagas` — substitui
+   * a coleção inteira. Enviar menos ofertas do que existem apaga as demais.
+   */
+  definirDistribuicaoVagas(
+    processoSeletivoId: string,
+    distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas`,
+      distribuicoes,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 
