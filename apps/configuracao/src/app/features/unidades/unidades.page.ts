@@ -60,6 +60,25 @@ const PAGE_SIZE = 100;
 const CIDADES_LIMIT = 20;
 
 /**
+ * Desfecho de uma busca de cidade na Geo, sempre carimbado com o termo que o
+ * originou. Termo, opções e erro andam juntos porque são partes do mesmo fato:
+ * separados, um reset que esquece um deles deixa o resultado de uma busca
+ * convivendo com o termo de outra — foi o que produziu o falso "nenhuma cidade
+ * encontrada" da #639, e é o que deixaria uma opção obsoleta clicável.
+ */
+interface RespostaCidade {
+  readonly termo: string;
+  readonly opcoes: readonly CidadeResumoDto[];
+  readonly erro: string | null;
+}
+
+/** Emissão do pipeline de busca: a resposta da Geo com o termo que a originou. */
+interface BuscaCidadeEmissao {
+  readonly busca: string;
+  readonly result: ApiResult<readonly CidadeResumoDto[]>;
+}
+
+/**
  * Debounce da busca textual — uma request por rajada de digitação, não por
  * tecla (critério de aceite #397). Angular 22 trará `debounced()`; no 21.x o
  * padrão oficial é a interop `toObservable → debounceTime → toSignal`.
@@ -663,9 +682,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                       </li>
                     }
                   </ul>
-                } @else if (
-                  buscaCidade().trim().length >= 3 && !buscandoCidades() && buscaCidadeErro() === null
-                ) {
+                } @else if (buscaCidadeSemResultado()) {
                   <p class="field__hint" role="status" aria-live="polite">Nenhuma cidade encontrada.</p>
                 }
               }
@@ -957,10 +974,38 @@ export class UnidadesPage {
   protected readonly cidadeSelecionada = signal<CidadeRef | null>(null);
   /** Termo digitado no seletor de cidade; não integra o comando enviado — só o trio selecionado importa. */
   protected readonly buscaCidade = signal('');
-  /** Resultado corrente da busca de cidade na Geo (mesmo padrão do "município que rege os prazos" do Seleção). */
-  protected readonly cidadeOpcoes = signal<readonly CidadeResumoDto[]>([]);
+  /** Último desfecho recebido da Geo, qualquer que seja o termo. */
+  private readonly ultimaRespostaCidade = signal<RespostaCidade | null>(null);
+  /**
+   * O desfecho acima **apenas quando ele responde ao termo que está no campo
+   * agora**. Enquanto o operador digita, a resposta anterior deixa de valer na
+   * mesma hora: `switchMap` só cancela a busca em voo depois do debounce, então
+   * sem esta guarda as opções de "mar" seguiriam clicáveis com "bel" no campo —
+   * e clicar gravaria a cidade errada.
+   */
+  private readonly respostaCidadeCorrente = computed<RespostaCidade | null>(() => {
+    const ultima = this.ultimaRespostaCidade();
+    return ultima !== null && ultima.termo === this.buscaCidade().trim() ? ultima : null;
+  });
+  /** Opções ofertadas para o termo corrente; vazio enquanto não há resposta dele. */
+  protected readonly cidadeOpcoes = computed<readonly CidadeResumoDto[]>(
+    () => this.respostaCidadeCorrente()?.opcoes ?? [],
+  );
+  /** Falha da busca do termo corrente — nunca a de um termo já abandonado. */
+  protected readonly buscaCidadeErro = computed<string | null>(
+    () => this.respostaCidadeCorrente()?.erro ?? null,
+  );
+  /**
+   * "Busquei e não achei" — distinto de "ainda nem busquei". Só é verdadeiro
+   * quando a Geo respondeu para este termo e devolveu lista vazia. Condicionar
+   * ao tamanho do texto digitado afirmaria o vazio dentro da janela do
+   * debounce, antes de qualquer request sair (#639).
+   */
+  protected readonly buscaCidadeSemResultado = computed(() => {
+    const resposta = this.respostaCidadeCorrente();
+    return resposta !== null && resposta.erro === null && resposta.opcoes.length === 0;
+  });
   protected readonly buscandoCidades = signal(false);
-  protected readonly buscaCidadeErro = signal<string | null>(null);
 
   /**
    * Cache monotônico de unidades já vistas (páginas da lista + busca de pai),
@@ -1095,27 +1140,27 @@ export class UnidadesPage {
         switchMap((busca) => {
           if (busca.length < 3) {
             this.buscandoCidades.set(false);
-            this.buscaCidadeErro.set(null);
-            return of<ApiResult<readonly CidadeResumoDto[]> | null>(null);
+            return of<BuscaCidadeEmissao | null>(null);
           }
           this.buscandoCidades.set(true);
-          this.buscaCidadeErro.set(null);
-          return this.geo.listarCidades({ q: busca, limit: CIDADES_LIMIT });
+          return this.geo
+            .listarCidades({ q: busca, limit: CIDADES_LIMIT })
+            .pipe(map((result) => ({ busca, result })));
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((result) => {
-        if (result === null) {
-          this.cidadeOpcoes.set([]);
+      .subscribe((emissao) => {
+        if (emissao === null) {
+          this.ultimaRespostaCidade.set(null);
           return;
         }
+        const { busca, result } = emissao;
         this.buscandoCidades.set(false);
-        if (!result.ok) {
-          this.cidadeOpcoes.set([]);
-          this.buscaCidadeErro.set(this.problemI18n.resolve(result.problem).title);
-          return;
-        }
-        this.cidadeOpcoes.set(result.data);
+        this.ultimaRespostaCidade.set(
+          result.ok
+            ? { termo: busca, opcoes: result.data, erro: null }
+            : { termo: busca, opcoes: [], erro: this.problemI18n.resolve(result.problem).title },
+        );
       });
   }
 
@@ -1196,7 +1241,7 @@ export class UnidadesPage {
   protected selecionarCidade(cidade: CidadeRef): void {
     this.cidadeSelecionada.set(cidade);
     this.buscaCidade.set('');
-    this.cidadeOpcoes.set([]);
+    this.ultimaRespostaCidade.set(null);
   }
 
   /**
@@ -1209,9 +1254,8 @@ export class UnidadesPage {
   protected limparCidade(): void {
     this.cidadeSelecionada.set(null);
     this.buscaCidade.set('');
-    this.cidadeOpcoes.set([]);
+    this.ultimaRespostaCidade.set(null);
     this.cidadeErro.set(null);
-    this.buscaCidadeErro.set(null);
   }
 
   /** `aria-describedby` do campo Cidade: hint + erro de salvar (sempre relevante) + erro de busca (só no ramo de busca). */
@@ -1244,10 +1288,9 @@ export class UnidadesPage {
     });
     this.cidadeSelecionada.set(null);
     this.buscaCidade.set('');
-    this.cidadeOpcoes.set([]);
+    this.ultimaRespostaCidade.set(null);
     this.formError.set(null);
     this.cidadeErro.set(null);
-    this.buscaCidadeErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.prepararOpcoesSuperior();
     this.formOpen.set(true);
@@ -1279,10 +1322,9 @@ export class UnidadesPage {
           },
     );
     this.buscaCidade.set('');
-    this.cidadeOpcoes.set([]);
+    this.ultimaRespostaCidade.set(null);
     this.formError.set(null);
     this.cidadeErro.set(null);
-    this.buscaCidadeErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.prepararOpcoesSuperior();
     this.drawerOpen.set(false);

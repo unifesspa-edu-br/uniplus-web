@@ -579,6 +579,107 @@ describe('UnidadesPage', () => {
     );
   });
 
+  it('não afirma "nenhuma cidade" enquanto o debounce ainda não disparou a busca', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    // Terceira letra recém-digitada: a request ainda não saiu (debounce de
+    // 300ms). Afirmar "nenhuma cidade" aqui é falso — e, num aria-live, o
+    // leitor de tela anuncia o falso negativo a cada busca (#639).
+    component['buscaCidade'].set('xyz');
+    appRef.tick();
+    fixture.detectChanges();
+
+    controller.expectNone(`${BASE}/api/cidades`);
+    expect(component['buscandoCidades']()).toBe(false);
+    expect(component['buscaCidadeSemResultado']()).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma cidade encontrada.');
+  });
+
+  it('não afirma "nenhuma cidade" ao rebuscar um termo que já devolveu resultado', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    // 'mar' devolveu Marabá e a cidade foi escolhida — a seleção descarta as
+    // opções da tela, mas o fato "'mar' tem resultado" continua verdadeiro.
+    component['buscaCidade'].set('mar');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    expectCidadesGet((r) => r.params.get('q') === 'mar').flush([cidadesSeed[0]]);
+    await propagate();
+    component['selecionarCidade']({
+      codigoIbge: cidadesSeed[0].codigoIbge,
+      nome: cidadesSeed[0].nome,
+      uf: cidadesSeed[0].uf,
+    });
+
+    component['limparCidade']();
+    component['buscaCidade'].set('mar');
+    appRef.tick();
+    fixture.detectChanges();
+
+    expect(component['buscaCidadeSemResultado']()).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma cidade encontrada.');
+  });
+
+  it('descarta a opção do termo anterior assim que o operador digita outro', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    component['buscaCidade'].set('mar');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    expectCidadesGet((r) => r.params.get('q') === 'mar').flush([cidadesSeed[0]]);
+    await propagate();
+    expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[0]]);
+
+    // Novo termo: a busca de 'bel' só sai depois do debounce, mas Marabá não
+    // pode seguir ofertada nesse intervalo — clicá-la gravaria a cidade errada.
+    component['buscaCidade'].set('bel');
+    appRef.tick();
+    fixture.detectChanges();
+
+    expect(component['cidadeOpcoes']()).toEqual([]);
+    expect(component['buscaCidadeSemResultado']()).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('Marabá — PA');
+    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma cidade encontrada.');
+  });
+
+  it('não rotula com o termo novo o erro de uma busca anterior', async () => {
+    await flushInicial();
+    component['abrirCadastro']();
+    await flushOpcoesSuperior();
+
+    component['buscaCidade'].set('mar');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    const requisicaoMar = expectCidadesGet((r) => r.params.get('q') === 'mar');
+
+    // O campo muda antes de a resposta de 'mar' chegar; `switchMap` só cancela
+    // depois do debounce, então a falha de 'mar' ainda aterrissa aqui.
+    component['buscaCidade'].set('bel');
+    requisicaoMar.flush(
+      {
+        type: 'about:blank',
+        title: 'Erro interno',
+        status: 500,
+        code: 'uniplus.erro',
+        traceId: 'x',
+      },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['buscaCidadeErro']()).toBeNull();
+  });
+
   it('avisa quando a busca de cidade não encontra nenhum resultado', async () => {
     await flushInicial();
     component['abrirCadastro']();
