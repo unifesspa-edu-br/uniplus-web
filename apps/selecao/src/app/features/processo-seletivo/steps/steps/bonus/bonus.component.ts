@@ -12,8 +12,8 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 })
 export class BonusStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  /** Só as modalidades aceitas no passo 3 podem receber bônus. */
-  readonly modalidades = computed(() => this.store.draft().modalidades.selected);
+  /** Só as modalidades que as ofertas de vagas selecionam podem receber bônus. */
+  readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
 
   /**
    * O que vale de fato: a escolha do operador cruzada com as aceitas. A escolha

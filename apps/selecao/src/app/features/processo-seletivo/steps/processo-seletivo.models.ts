@@ -75,19 +75,56 @@ export interface UploadItem {
   mensagemErro?: string;
 }
 
-export interface Curso {
-  id: number;
-  nome: string;
-  grau: string;
-  campus: string;
-  unidade: string;
+/**
+ * Distribuição de vagas de uma oferta de curso (UNI-REQ-0134).
+ *
+ * A oferta é referenciada pelo id do catálogo de Configuração, e não descrita
+ * aqui: curso, local, unidade, regime de turno e turnos são projeção dela, e
+ * remontá-los localmente foi o que produziu o quadro fictício que este modelo
+ * substitui.
+ *
+ * Os números são texto porque é o que o campo edita. Convertê-los com `Number`
+ * ao digitar leria `1.000` como 1 — a mesma armadilha corrigida no valor da
+ * taxa (#624); a conversão acontece no envio, com gramática explícita.
+ */
+export interface DistribuicaoDeVagas {
+  readonly ofertaCursoId: string;
+  readonly voBase: string;
+  readonly pr: string;
+  /** Regra do `rol_de_regras`, identificada por código **e** versão: publicar
+   * versão nova do catálogo não pode mudar a regra que um processo já
+   * publicado aplicou. */
+  readonly regraDistribuicaoCodigo: string;
+  readonly regraDistribuicaoVersao: string;
+  /** Obrigatória na Lei 12.711 (art. 11, § único); ausente nas demais. */
+  readonly regraAjusteCodigo: string | null;
+  readonly regraAjusteVersao: string | null;
+  /** Obrigatória na Lei 12.711 e recusada fora dela. */
+  readonly referenciaReservaDemograficaId: string | null;
+  readonly modalidades: readonly ModalidadeDaOferta[];
+  readonly quadro: readonly QuantidadeDeVagas[];
 }
 
-export type Turno = '' | 'matutino' | 'vespertino' | 'noturno';
+/**
+ * Quantidade que o edital fixa para uma modalidade.
+ *
+ * Nem toda modalidade selecionada aparece aqui: na Lei 12.711, as de
+ * composição `DENTRO_DO_VR` e `RESIDUAL_DO_VO` são calculadas pelo motor e
+ * informá-las é recusado. Fora dela, todas exigem quantidade.
+ */
+/**
+ * Modalidade que a oferta seleciona. O identificador é o que a gravação
+ * recebe; o código é como as demais dimensões do edital a nomeiam — bônus e
+ * documentos exigidos falam em `AC` e `LB_PPI`, não em uuid.
+ */
+export interface ModalidadeDaOferta {
+  readonly id: string;
+  readonly codigo: string;
+}
 
-export interface OfertaCurso extends Curso {
-  turno: Turno;
-  vagas: number;
+export interface QuantidadeDeVagas {
+  readonly modalidadeId: string;
+  readonly quantidade: string;
 }
 
 export interface EtapaEdital {
@@ -209,13 +246,8 @@ export interface WizardDraft {
     localidade: LocalidadeSelecionada | null;
     uploads: UploadItem[];
   };
-  modalidades: {
-    /** Código do contrato — a API é a fonte de verdade do vocabulário. */
-    selected: string[];
-    concorrenciaDupla: boolean;
-  };
   vagas: {
-    cursos: OfertaCurso[];
+    ofertas: DistribuicaoDeVagas[];
   };
   etapas: EtapaEdital[];
   formula: {

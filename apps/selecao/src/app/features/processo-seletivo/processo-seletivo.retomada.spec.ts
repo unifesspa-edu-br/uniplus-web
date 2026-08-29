@@ -4,7 +4,10 @@ import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  CursosApi,
   ModalidadesApi,
+  OfertasCursoApi,
+  ReservaDemograficaApi,
   TipoProcessoDto,
   TiposProcessoApi,
 } from '@uniplus/shared-data/configuracao';
@@ -13,6 +16,7 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoEditalDto,
   OrigemCandidatos,
+  RegrasCatalogoApi,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
   StatusProcesso,
@@ -40,6 +44,15 @@ const geoApiStub = {
 };
 const modalidadesApiStub = {
   listar: () => of(apiOk<readonly ModalidadeDto[]>([], 200, new HttpHeaders())),
+};
+
+/**
+ * O passo de vagas consome os catálogos de oferta, reserva demográfica e
+ * regras. Aqui eles vêm vazios: esta suíte cobre a retomada do processo, e o
+ * conteúdo dos catálogos é exercitado no teste do próprio passo.
+ */
+const catalogoVazioStub = {
+  listar: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
 };
 
 /**
@@ -134,6 +147,10 @@ function montar(opts: CenarioOpts = {}) {
       },
       { provide: GeoApi, useValue: geoApiStub },
       { provide: ModalidadesApi, useValue: modalidadesApiStub },
+      { provide: CursosApi, useValue: catalogoVazioStub },
+      { provide: OfertasCursoApi, useValue: catalogoVazioStub },
+      { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
+      { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
       {
         provide: ProcessosSeletivosApi,
         useValue: {
