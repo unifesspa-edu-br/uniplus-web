@@ -329,7 +329,7 @@ describe('AnexoEditalComponent', () => {
    * dos outros bloqueios pega — só o estado do processo.
    */
   it('bloqueia o anexo em processo fora de rascunho', () => {
-    store.remoteSnapshot.set({ status: 'Cancelado' } as never);
+    store.remoteSnapshot.set({ status: 'cancelado' } as never);
 
     expect(componente.anexoBloqueado()).toBe(true);
   });

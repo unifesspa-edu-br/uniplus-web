@@ -21,7 +21,7 @@ const PROCESSOS = [
       codigo: 'VESTIBULAR',
       nome: 'Vestibular',
     },
-    status: 'Rascunho',
+    status: 'rascunho',
     criadoEm: '2026-08-20T13:23:42.707136+00:00',
   },
   {
@@ -32,7 +32,7 @@ const PROCESSOS = [
       codigo: 'PSIQ',
       nome: 'Processo Seletivo Indígena e Quilombola',
     },
-    status: 'Publicado',
+    status: 'publicado',
     criadoEm: '2026-08-21T09:10:00.000000+00:00',
   },
 ] as const;

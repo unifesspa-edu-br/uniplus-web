@@ -1,8 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { DOC_ETAPAS, DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.data';
 import { hidratarDraft } from './shared/hidratacao';
-import { STATUS_PROCESSO } from '../status-processo';
 import {
   DocumentoConfig,
   EtapaEdital,
@@ -170,7 +170,7 @@ export class ProcessoSeletivoStore {
    */
   readonly edicaoPermitida = computed(() => {
     const detalhe = this.remoteSnapshot();
-    return detalhe === null || detalhe.status === STATUS_PROCESSO.RASCUNHO;
+    return detalhe === null || detalhe.status === StatusProcesso.rascunho;
   });
 
   /**
@@ -189,14 +189,14 @@ export class ProcessoSeletivoStore {
    */
   readonly motivoDeSomenteLeitura = computed(() => {
     const status = this.remoteSnapshot()?.status;
-    if (status === undefined || status === STATUS_PROCESSO.RASCUNHO) return null;
+    if (status === undefined || status === StatusProcesso.rascunho) return null;
 
-    if (status === STATUS_PROCESSO.PUBLICADO) {
+    if (status === StatusProcesso.publicado) {
       return 'Este processo já foi publicado. A configuração fica disponível para consulta; alterá-la depende de abrir uma retificação.';
     }
 
-    if (status === STATUS_PROCESSO.ENCERRADO || status === STATUS_PROCESSO.CANCELADO) {
-      const situacao = status === STATUS_PROCESSO.ENCERRADO ? 'encerrado' : 'cancelado';
+    if (status === StatusProcesso.encerrado || status === StatusProcesso.cancelado) {
+      const situacao = status === StatusProcesso.encerrado ? 'encerrado' : 'cancelado';
       return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;
     }
 
