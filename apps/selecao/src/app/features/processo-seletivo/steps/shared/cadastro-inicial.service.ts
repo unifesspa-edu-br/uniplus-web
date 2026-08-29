@@ -2,7 +2,6 @@ import { HttpContext, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
-  ApiFailure,
   ProblemDetails,
   SignedUploadClient,
   idempotencyKey,
@@ -10,11 +9,14 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import {
+  ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
   DefinirTaxaInscricaoRequest,
   IniciarUploadDocumentoEditalDto,
   ProcessosSeletivosApi,
 } from '@uniplus/shared-data/selecao';
+
+import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
 
 /** Recusa nomeada por `ProblemDetails`, para o chamador exibir e decidir o retry. */
 export interface FalhaOperacao {
@@ -26,14 +28,12 @@ export type ResultadoCriacao =
   | { readonly ok: true; readonly processoSeletivoId: string }
   | FalhaOperacao;
 
-/** A gravação da taxa responde 204 — não há corpo a devolver. */
-export type ResultadoDefinicaoDeTaxa = { readonly ok: true } | FalhaOperacao;
+/** As gravações de configuração respondem 204 — não há corpo a devolver. */
+export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
 
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
   | FalhaOperacao;
-
-export type ResultadoConfirmacao = { readonly ok: true } | FalhaOperacao;
 
 /**
  * Falha do envio ao storage. `expirada` separa o caso em que repetir o mesmo
@@ -46,9 +46,6 @@ export interface EnvioFalhou {
 }
 
 export type ResultadoEnvio = { readonly ok: true } | EnvioFalhou;
-
-const PROCESSING_CONFLICT = 'uniplus.idempotency.processing_conflict';
-const NETWORK_ERROR = 'uniplus.client.network_error';
 
 /**
  * Resposta que chegou depois de o editor passar a outro cadastro. Não descreve
@@ -90,16 +87,9 @@ export class CadastroInicialService {
   private chaveCriacao = idempotencyKey.create();
   private chaveIniciacao = idempotencyKey.create();
   private chaveConfirmacao = idempotencyKey.create();
-  private chaveTaxa = idempotencyKey.create();
 
-  /**
-   * Declaração que a `chaveTaxa` corrente acompanhou. Uma chave retida vale
-   * para o corpo que o servidor viu; reenviar outro sob ela devolve
-   * `body_mismatch`. Diferente da criação, aqui não é preciso repetir o envio
-   * original — o comando substitui a configuração inteira, então corrigir e
-   * regravar sob chave nova não duplica nada.
-   */
-  private taxaEnviada: string | null = null;
+  private readonly chaveTaxa = new ChaveDeSubstituicao();
+  private readonly chaveDistribuicao = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -128,11 +118,11 @@ export class CadastroInicialService {
   descartarCadastroEmAndamento(): void {
     this.geracao += 1;
     this.criacaoPendente = null;
-    this.taxaEnviada = null;
     this.chaveCriacao = idempotencyKey.create();
     this.chaveIniciacao = idempotencyKey.create();
     this.chaveConfirmacao = idempotencyKey.create();
-    this.chaveTaxa = idempotencyKey.create();
+    this.chaveTaxa.renovar();
+    this.chaveDistribuicao.renovar();
   }
 
   /**
@@ -191,29 +181,53 @@ export class CadastroInicialService {
   async definirTaxaInscricao(
     processoSeletivoId: string,
     request: DefinirTaxaInscricaoRequest,
-  ): Promise<ResultadoDefinicaoDeTaxa> {
-    const declaracao = JSON.stringify(request);
-    if (this.taxaEnviada !== null && this.taxaEnviada !== declaracao) {
-      this.chaveTaxa = idempotencyKey.create();
-    }
-    this.taxaEnviada = declaracao;
-    const chaveUsada = this.chaveTaxa;
-
+  ): Promise<ResultadoGravacao> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
-      this.api.definirTaxaInscricao(processoSeletivoId, request, contextoCom(this.chaveTaxa)),
+      this.api.definirTaxaInscricao(
+        processoSeletivoId,
+        request,
+        this.chaveTaxa.contextoPara(request),
+      ),
     );
 
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
 
     if (isApiOk(result)) {
-      this.chaveTaxa = idempotencyKey.create();
-      this.taxaEnviada = null;
+      this.chaveTaxa.renovar();
       return { ok: true };
     }
 
-    this.chaveTaxa = proximaChave(this.chaveTaxa, result);
-    if (this.chaveTaxa !== chaveUsada) this.taxaEnviada = null;
+    this.chaveTaxa.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava a distribuição de vagas do processo. O comando substitui o conjunto
+   * inteiro: as ofertas ausentes do envio deixam de ter distribuição, e é isso
+   * que permite ao operador remover uma linha do quadro.
+   */
+  async definirDistribuicaoVagas(
+    processoSeletivoId: string,
+    distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirDistribuicaoVagas(
+        processoSeletivoId,
+        distribuicoes,
+        this.chaveDistribuicao.contextoPara(distribuicoes),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveDistribuicao.renovar();
+      return { ok: true };
+    }
+
+    this.chaveDistribuicao.recusada(result);
     return { ok: false, problem: result.problem };
   }
 
@@ -285,7 +299,7 @@ export class CadastroInicialService {
   async confirmarUpload(
     processoSeletivoId: string,
     documentoEditalId: string,
-  ): Promise<ResultadoConfirmacao> {
+  ): Promise<ResultadoGravacao> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.confirmarUploadDocumentoEdital(
@@ -309,28 +323,6 @@ export class CadastroInicialService {
     this.confirmacaoPendente = this.chaveConfirmacao === chaveAnterior;
     return { ok: false, problem: result.problem };
   }
-}
-
-/**
- * Regra de rotação da `Idempotency-Key`, por código antes de status: o filtro
- * do backend guarda a resposta de qualquer status abaixo de 500, então reenviar
- * um corpo corrigido com a mesma chave devolveria `body_mismatch` em vez de
- * processar o comando novo. As exceções vão na direção oposta —
- * `processing_conflict` e falha sem resposta pedem retry com a mesma chave,
- * porque a execução anterior ainda pode concluir.
- */
-function proximaChave(chaveAtual: string, falha: ApiFailure): string {
-  const { code, status } = falha.problem;
-
-  // Só estes três casos deixam em aberto se o comando foi executado.
-  if (code === PROCESSING_CONFLICT || code === NETWORK_ERROR || status >= 500) {
-    return chaveAtual;
-  }
-  // Todo o resto é recusa definitiva — inclusive `body_mismatch` e o 413 de
-  // corpo acima do limite do filtro de idempotência. Manter a chave nesses
-  // casos prenderia a tela repetindo para sempre um comando que o servidor
-  // nunca vai aceitar.
-  return idempotencyKey.create();
 }
 
 function contextoCom(chave: string): HttpContext {
