@@ -48,14 +48,13 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
 function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
   const config = dto.configuracaoTaxaInscricao;
   if (config === null || config === undefined) {
-    return { cobra: null, valor: '', fundamentos: [], confirmacaoFundamentos: false };
+    return { cobra: null, valor: '', fundamentos: [] };
   }
 
   return {
     cobra: config.cobra,
     valor: valorGravadoComoTexto(config.valor),
     fundamentos: [...config.fundamentos].filter(ehFundamentoConhecido),
-    confirmacaoFundamentos: config.confirmacaoFundamentos,
   };
 }
 

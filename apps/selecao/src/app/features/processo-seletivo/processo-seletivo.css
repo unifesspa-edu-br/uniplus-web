@@ -2759,16 +2759,3 @@ dialog.vagas-modal::backdrop {
   padding-left: calc(var(--space-6) + var(--space-1));
 }
 
-/* A confirmação não é um fundamento: é a declaração de que os assinalados acima
-   são decisão do processo. Encostada na lista ela se lê como um quarto item, e
-   é a linha acima que a separa do que ela confirma. */
-.pagamento-confirmacao {
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.pagamento-confirmacao .field__hint {
-  margin: var(--space-1) 0 0;
-  padding-left: calc(var(--space-6) + var(--space-1));
-}
