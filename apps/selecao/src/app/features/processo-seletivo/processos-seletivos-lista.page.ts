@@ -17,9 +17,11 @@ import {
   type Cursor,
   type PaginationDirection,
 } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi, ProcessoSeletivoResumoDto } from '@uniplus/shared-data/selecao';
-
-import { STATUS_PROCESSO } from './status-processo';
+import {
+  ProcessosSeletivosApi,
+  ProcessoSeletivoResumoDto,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
   EmptyStateComponent,
@@ -34,27 +36,29 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 const PAGE_SIZE = 50;
 
 /**
- * Ciclo de vida do certame como a API o projeta: `StatusProcesso.ToString()`,
- * em PascalCase. Um token fora deste conjunto é exibido cru, para que um
- * status introduzido por um backend mais novo apareça ao operador em vez de
- * sumir atrás de um rótulo genérico.
+ * Rótulo de exibição por status. As chaves vêm do enum gerado a partir do
+ * contrato, não de uma cópia escrita à mão — o schema declara os valores
+ * admissíveis desde uniplus-api#1294, e derivá-los dali é o que impede a
+ * grafia divergir do que o servidor emite. Um token fora deste conjunto é
+ * exibido cru, para que um status introduzido por um backend mais novo
+ * apareça ao operador em vez de sumir atrás de um rótulo genérico.
  *
  * `Map` e não objeto literal: a chave vem do servidor, e num objeto literal
  * um token como `constructor` ou `toString` resolveria para o membro herdado
  * de `Object.prototype` — uma função, que o `??` não trata como ausência.
  */
 const STATUS_LABEL = new Map<string, string>([
-  [STATUS_PROCESSO.RASCUNHO, 'Rascunho'],
-  [STATUS_PROCESSO.PUBLICADO, 'Publicado'],
-  [STATUS_PROCESSO.ENCERRADO, 'Encerrado'],
-  [STATUS_PROCESSO.CANCELADO, 'Cancelado'],
+  [StatusProcesso.rascunho, 'Rascunho'],
+  [StatusProcesso.publicado, 'Publicado'],
+  [StatusProcesso.encerrado, 'Encerrado'],
+  [StatusProcesso.cancelado, 'Cancelado'],
 ]);
 
 const STATUS_VARIANTE = new Map<string, UiTagVariant>([
-  [STATUS_PROCESSO.RASCUNHO, 'warning'],
-  [STATUS_PROCESSO.PUBLICADO, 'success'],
-  [STATUS_PROCESSO.ENCERRADO, 'neutral'],
-  [STATUS_PROCESSO.CANCELADO, 'danger'],
+  [StatusProcesso.rascunho, 'warning'],
+  [StatusProcesso.publicado, 'success'],
+  [StatusProcesso.encerrado, 'neutral'],
+  [StatusProcesso.cancelado, 'danger'],
 ]);
 
 /**

@@ -12,8 +12,10 @@ import { GeoApi } from '@uniplus/shared-data/geo';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoEditalDto,
+  OrigemCandidatos,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
+  StatusProcesso,
 } from '@uniplus/shared-data/selecao';
 import { BehaviorSubject, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,10 +52,11 @@ function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivo
     id: PROCESSO_ID,
     nome: 'Vestibular 2026.1',
     tipoProcesso: { origemId: TIPO_ORIGEM_ID, codigo: 'VESTIBULAR', nome: 'Vestibular' },
-    status: 'Rascunho',
-    // Como a API emite de fato: a criação recebe `inscricaoPropria`, mas o
-    // detalhe devolve o nome do enum de domínio (uniplus-api#1294).
-    origemCandidatos: 'InscricaoPropria',
+    status: StatusProcesso.rascunho,
+    // Os dois campos saem do enum gerado, não de literal escrito à mão: desde
+    // uniplus-api#1294 o contrato os declara, e derivá-los dali é o que garante
+    // que a fixture use o vocabulário que a API realmente emite.
+    origemCandidatos: OrigemCandidatos.inscricaoPropria,
     unidadeAdministradora: {
       origemId: UNIDADE_ORIGEM_ID,
       sigla: 'IGE',
@@ -231,7 +234,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
 
   it('deixa a origem em branco quando o valor não é do vocabulário conhecido', async () => {
     const cenario = montar({
-      obter: vi.fn(() => of(okResult(detalhe({ origemCandidatos: 'Nenhuma' })))),
+      obter: vi.fn(() => of(okResult(detalhe({ origemCandidatos: OrigemCandidatos.nenhuma })))),
     });
     await propagar();
 
@@ -1088,7 +1091,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     const PASSO_PAGAMENTO = 2;
 
     const publicado = () =>
-      montar({ obter: vi.fn(() => of(okResult(detalhe({ status: 'Publicado' })))) });
+      montar({ obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))) });
 
     it('não promete gravação no rótulo do avanço', async () => {
       const cenario = publicado();
@@ -1134,7 +1137,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
 
     it('explica a consulta conforme o status, sem prometer retificação a quem não a tem', async () => {
       const cancelado = montar({
-        obter: vi.fn(() => of(okResult(detalhe({ status: 'Cancelado' })))),
+        obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.cancelado })))),
       });
       await propagar();
       expect(cancelado.store.motivoDeSomenteLeitura()).toContain('cancelado');
@@ -1148,7 +1151,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
 
     it('relê o edital confirmado, que é o que a consulta existe para mostrar', async () => {
       const cenario = montar({
-        obter: vi.fn(() => of(okResult(detalhe({ status: 'Publicado' })))),
+        obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))),
         listarDocumentos: vi.fn(() => of(okResult([documento()]))),
       });
       await propagar();
@@ -1158,7 +1161,9 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
 
     it('não nomeia a situação de um status que este cliente não conhece', async () => {
       const cenario = montar({
-        obter: vi.fn(() => of(okResult(detalhe({ status: 'Arquivado' })))),
+        // Fora do enum de propósito: simula um backend mais novo. O cast é o objeto
+        // do teste — sem ele não há como exprimir o token que o contrato não declara.
+        obter: vi.fn(() => of(okResult(detalhe({ status: 'Arquivado' as StatusProcesso })))),
       });
       await propagar();
 

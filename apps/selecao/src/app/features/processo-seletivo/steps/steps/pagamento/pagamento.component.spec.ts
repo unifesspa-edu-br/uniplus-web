@@ -460,7 +460,7 @@ describe('PagamentoStepComponent', () => {
    */
   it('desabilita as caixas de fundamento fora de rascunho', async () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'] });
-    store.remoteSnapshot.set({ status: 'Publicado' } as never);
+    store.remoteSnapshot.set({ status: 'publicado' } as never);
     detectar();
     await tick();
     detectar();

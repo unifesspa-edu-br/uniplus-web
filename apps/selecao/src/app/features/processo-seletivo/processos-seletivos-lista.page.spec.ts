@@ -5,7 +5,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
-import { ProcessoSeletivoResumoDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  ProcessoSeletivoResumoDto,
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessosSeletivosListaPage } from './processos-seletivos-lista.page';
@@ -26,7 +30,7 @@ function processo(overrides: Partial<ProcessoSeletivoResumoDto> = {}): ProcessoS
       codigo: 'VESTIBULAR',
       nome: 'Vestibular',
     },
-    status: 'Rascunho',
+    status: StatusProcesso.rascunho,
     criadoEm: '2026-08-20T13:23:42.707136+00:00',
     ...overrides,
   };
@@ -113,15 +117,17 @@ describe('ProcessosSeletivosListaPage', () => {
   });
 
   /**
-   * O backend projeta `StatusProcesso.ToString()`, em PascalCase. Comparar com
-   * `'RASCUNHO'` deixaria toda tag em `neutral` e apagaria a distinção visual
+   * O token do wire e o rótulo exibido são coisas diferentes: a API emite
+   * `rascunho` (uniplus-api#1294) e a tela mostra `Rascunho`. A primeira
+   * coluna é o que chega do servidor; a segunda, o que o operador lê. Casar a
+   * grafia errada deixaria toda tag em `neutral` e apagaria a distinção visual
    * entre um rascunho e um certame publicado.
    */
   it.each([
-    ['Rascunho', 'Rascunho', 'tag--warning'],
-    ['Publicado', 'Publicado', 'tag--success'],
-    ['Encerrado', 'Encerrado', ''],
-    ['Cancelado', 'Cancelado', 'tag--danger'],
+    [StatusProcesso.rascunho, 'Rascunho', 'tag--warning'],
+    [StatusProcesso.publicado, 'Publicado', 'tag--success'],
+    [StatusProcesso.encerrado, 'Encerrado', ''],
+    [StatusProcesso.cancelado, 'Cancelado', 'tag--danger'],
   ])('rotula e colore o status %s', async (status, rotulo, classe) => {
     await flushLista([processo({ status })]);
 
@@ -135,7 +141,7 @@ describe('ProcessosSeletivosListaPage', () => {
 
   /** Status vindo de um backend mais novo aparece cru, em vez de sumir. */
   it('exibe um status que esta versão não reconhece', async () => {
-    await flushLista([processo({ status: 'Suspenso' })]);
+    await flushLista([processo({ status: 'Suspenso' as StatusProcesso })]);
 
     expect(host().querySelector('[data-label="Status"] .tag')?.textContent?.trim()).toBe(
       'Suspenso',
@@ -150,7 +156,9 @@ describe('ProcessosSeletivosListaPage', () => {
   it.each(['constructor', 'toString', 'hasOwnProperty'])(
     'não confunde o status %s com membro herdado de Object',
     async (status) => {
-      await flushLista([processo({ status })]);
+      // Fora do enum de propósito: o que está sob prova é justamente o token que o
+      // contrato não declara, e sem o cast não há como exprimi-lo.
+      await flushLista([processo({ status: status as StatusProcesso })]);
 
       const tag = host().querySelector('[data-label="Status"] .tag');
 
