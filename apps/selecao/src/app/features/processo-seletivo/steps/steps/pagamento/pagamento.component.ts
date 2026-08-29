@@ -109,6 +109,15 @@ export class PagamentoStepComponent {
     effect(() => {
       const pagamento = this.store.draft().pagamento;
       this.cobra.set(pagamento.cobra);
+      // A pendência é do que o operador deixou de preencher, não do editor. O
+      // rascunho trocar — outro processo, ou o mesmo reidratado — significa que
+      // ela passou a acusar dados que ninguém validou; hidratar com
+      // `emitEvent: false` não alcança a limpeza do `valueChanges`, então ela
+      // fica aqui. Reconciliar com o rascunho corrente, em vez de apagar sempre,
+      // preserva o vermelho legítimo enquanto o operador não corrige.
+      this.fundamentosInvalidos.update(
+        (invalido) => invalido && pagamento.cobra === true && pagamento.fundamentos.length === 0,
+      );
       this.form.patchValue(
         {
           cobra: pagamento.cobra,

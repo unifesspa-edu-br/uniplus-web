@@ -120,6 +120,35 @@ describe('PagamentoStepComponent', () => {
     expect(componente.fundamentosInvalidos()).toBe(false);
   });
 
+  it('não carrega a pendência de fundamento para outro processo do editor', () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
+    componente.validate();
+    expect(componente.fundamentosInvalidos()).toBe(true);
+
+    // O editor é reusado entre processos: trocar de rascunho não pode levar o
+    // vermelho de um para o outro.
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '200,00',
+      fundamentos: ['CADASTRO_UNICO'],
+      confirmacaoFundamentos: true,
+    });
+    detectar();
+
+    expect(componente.fundamentosInvalidos()).toBe(false);
+  });
+
+  it('preserva a pendência enquanto o rascunho segue sem fundamento', () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
+    componente.validate();
+
+    store.patchObjectSection('pagamento', { valor: '180,00' });
+    detectar();
+
+    expect(componente.fundamentosInvalidos()).toBe(true,
+      'corrigir o valor não corrige o fundamento ausente');
+  });
+
   it('não acusa fundamento ausente em processo gratuito', () => {
     store.patchObjectSection('pagamento', { cobra: false, valor: '', fundamentos: [] });
 
