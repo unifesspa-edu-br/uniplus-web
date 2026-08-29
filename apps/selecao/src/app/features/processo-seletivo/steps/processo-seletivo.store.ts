@@ -54,8 +54,7 @@ const INITIAL_DRAFT: WizardDraft = {
     uploads: [],
   },
   pagamento: { cobra: null, valor: '', fundamentos: [] },
-  modalidades: { selected: [], concorrenciaDupla: false },
-  vagas: { cursos: [] },
+  vagas: { ofertas: [] },
   etapas: [initialEtapa()],
   // Fórmula e precisão começam vazios — o usuário DEVE escolher no passo 6.
   formula: { agregacao: '', precisao: '' },
@@ -204,6 +203,32 @@ export class ProcessoSeletivoStore {
     // rascunho, e nada além disso — nomear a situação seria inventá-la.
     return 'Este processo não está em rascunho e não aceita alteração. A configuração fica disponível para consulta.';
   });
+
+  /**
+   * Modalidades que o processo aceita: a união do que suas distribuições de
+   * vagas selecionam.
+   *
+   * Não é escolha própria do processo. Modalidade participa da distribuição de
+   * cada oferta, e o passo que a declarava globalmente foi removido — ele
+   * pedia duas vezes a mesma decisão e não tinha para onde gravar.
+   */
+  readonly modalidadesDoProcesso = computed<readonly string[]>(() => {
+    const codigos = this.draft().vagas.ofertas.flatMap((oferta) =>
+      oferta.modalidades.map((modalidade) => modalidade.codigo),
+    );
+    return [...new Set(codigos)];
+  });
+
+  /**
+   * Concorrência dupla (Lei 14.723/2023) vale quando o processo oferece cota
+   * reservada. É consequência das modalidades, não uma opção: o servidor a
+   * computa do mesmo modo em `ConcorrenciaDuplaAplicavel`.
+   */
+  readonly concorrenciaDuplaAplicavel = computed(() =>
+    this.modalidadesDoProcesso().some(
+      (codigo) => codigo.startsWith('LB_') || codigo.startsWith('LI_'),
+    ),
+  );
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
   readonly currentMeta = computed(() => {

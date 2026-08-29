@@ -2,17 +2,22 @@ import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/seleca
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
-import { WizardDraft } from '../processo-seletivo.models';
+import { DistribuicaoDeVagas, WizardDraft } from '../processo-seletivo.models';
+import {
+  decodificarComposicaoVagas,
+  REGRA_LEI_12711,
+  quantidadeEhDeclarada,
+} from '../steps/vagas/distribuicao-de-vagas';
 import { formatarValorEmReais } from './valor-em-reais';
 
 /**
  * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável,
  * só nos campos que já têm modelo de edição no wizard (issue #478, D4 do
- * design da fundação). As demais dimensões do DTO — etapas, distribuição de
- * vagas, cronograma, documentos exigidos, coleta de fatos etc. — ainda não
- * têm seção própria e por isso não são mapeadas aqui; nada as descarta, elas
- * simplesmente permanecem fora do rascunho local até a Story que as
- * implementa (`#479–#485`, `#504`, `#534`, `#540`) estender este adaptador.
+ * design da fundação). As demais dimensões do DTO — etapas, cronograma,
+ * documentos exigidos, coleta de fatos etc. — ainda não têm seção própria e
+ * por isso não são mapeadas aqui; nada as descarta, elas simplesmente
+ * permanecem fora do rascunho local até a Story que as implementa
+ * (`#479–#485`, `#504`, `#534`) estender este adaptador.
  */
 export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): WizardDraft {
   return {
@@ -22,6 +27,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       rotulo: dto.tipoProcesso.nome,
     },
     pagamento: pagamentoDe(dto),
+    vagas: { ofertas: distribuicoesDe(dto) },
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
@@ -34,6 +40,74 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       },
     },
   };
+}
+
+/**
+ * Projeta a distribuição de vagas já gravada.
+ *
+ * Guarda sempre os identificadores **de origem**, que é o que o comando de
+ * gravação recebe. O `id` que o detalhe traz identifica o snapshot da
+ * configuração, não a entidade do catálogo: reenviá-lo produziria referência
+ * que o servidor não resolve.
+ *
+ * Os números voltam como texto porque é o que o campo edita.
+ *
+ * O quadro devolvido é o resultado do cálculo, e só as quantidades que o edital
+ * fixou podem voltar como entrada: reenviar as calculadas na gravação seguinte
+ * faria o servidor recusar a configuração que ele mesmo devolveu.
+ */
+function distribuicoesDe(dto: ProcessoSeletivoDto): DistribuicaoDeVagas[] {
+  return (dto.distribuicaoVagas ?? []).map((distribuicao) => ({
+    ofertaCursoId: distribuicao.ofertaCursoOrigemId,
+    voBase: String(distribuicao.voBase),
+    pr: comoDecimalPtBr(distribuicao.pr),
+    regraDistribuicaoCodigo: distribuicao.regraDistribuicao.codigo,
+    regraDistribuicaoVersao: distribuicao.regraDistribuicao.versao,
+    regraAjusteCodigo: distribuicao.regraAjuste?.codigo ?? null,
+    regraAjusteVersao: distribuicao.regraAjuste?.versao ?? null,
+    referenciaReservaDemograficaId: distribuicao.referenciaDemografica?.origemId ?? null,
+    modalidades: distribuicao.modalidades.map((modalidade) => ({
+      id: modalidade.modalidadeOrigemId,
+      codigo: modalidade.codigo,
+    })),
+    quadro: quadroDeclaradoDe(distribuicao),
+  }));
+}
+
+/** Só o que o edital fixou; o que a regra calcula fica de fora do rascunho. */
+function quadroDeclaradoDe(
+  distribuicao: ProcessoSeletivoDto['distribuicaoVagas'][number],
+): DistribuicaoDeVagas['quadro'] {
+  const federal = distribuicao.regraDistribuicao.codigo === REGRA_LEI_12711;
+  const composicaoPorModalidade = new Map(
+    distribuicao.modalidades.map((modalidade) => [
+      modalidade.modalidadeOrigemId,
+      decodificarComposicaoVagas(modalidade.composicaoVagas),
+    ]),
+  );
+
+  return distribuicao.quadro
+    .filter((vaga) => {
+      const composicao = composicaoPorModalidade.get(vaga.modalidadeOrigemId);
+      return (
+        composicao !== undefined &&
+        composicao !== null &&
+        quantidadeEhDeclarada(composicao, federal)
+      );
+    })
+    .map((vaga) => ({
+      modalidadeId: vaga.modalidadeOrigemId,
+      quantidade: String(vaga.quantidade),
+    }));
+}
+
+/**
+ * O separador decimal do campo é a vírgula, e é assim que o operador informou o
+ * percentual. Devolver o ponto de `String(0.5)` faria a tela reabrir mostrando
+ * grafia diferente da que ela mesma pediu.
+ */
+function comoDecimalPtBr(valor: number | string): string {
+  return String(valor).replace('.', ',');
 }
 
 /**

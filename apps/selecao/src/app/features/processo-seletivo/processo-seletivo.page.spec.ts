@@ -5,13 +5,20 @@ import { Subject, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  CursosApi,
   ModalidadesApi,
+  OfertasCursoApi,
+  ReservaDemograficaApi,
   TipoProcessoDto,
   TiposProcessoApi,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
-import { FundamentoIsencaoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import {
+  FundamentoIsencaoDto,
+  ProcessosSeletivosApi,
+  RegrasCatalogoApi,
+} from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
@@ -36,6 +43,11 @@ const modalidadesApiStub = {
   listar: () => of(apiOk<readonly ModalidadeDto[]>([], 200, new HttpHeaders())),
 };
 
+/** Catálogos do passo de vagas: vazios, porque esta suíte cobre a página. */
+const catalogoVazioStub = {
+  listar: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
+};
+
 /**
  * A page provê `CadastroInicialService`, que injeta o client de Processo
  * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
@@ -49,6 +61,10 @@ const PAGE_PROVIDERS = [
   { provide: UnidadesApi, useValue: unidadesApiStub },
   { provide: GeoApi, useValue: geoApiStub },
   { provide: ModalidadesApi, useValue: modalidadesApiStub },
+  { provide: CursosApi, useValue: catalogoVazioStub },
+  { provide: OfertasCursoApi, useValue: catalogoVazioStub },
+  { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
+  { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
 ];
 
@@ -271,12 +287,11 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
       providers: [
-        provideRouter([]),
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ModalidadesApi, useValue: modalidadesApiStub },
-        { provide: ProcessosSeletivosApi, useValue: { criar, listarFundamentosIsencao: listarFundamentos } },
+        ...PAGE_PROVIDERS,
+        {
+          provide: ProcessosSeletivosApi,
+          useValue: { criar, listarFundamentosIsencao: listarFundamentos },
+        },
       ],
     });
 
@@ -397,12 +412,11 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
       providers: [
-        provideRouter([]),
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ModalidadesApi, useValue: modalidadesApiStub },
-        { provide: ProcessosSeletivosApi, useValue: { criar: () => emVoo, listarFundamentosIsencao: listarFundamentos } },
+        ...PAGE_PROVIDERS,
+        {
+          provide: ProcessosSeletivosApi,
+          useValue: { criar: () => emVoo, listarFundamentosIsencao: listarFundamentos },
+        },
       ],
     });
 
@@ -455,11 +469,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     TestBed.configureTestingModule({
       imports: [ProcessoSeletivoPage],
       providers: [
-        provideRouter([]),
-        { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
-        { provide: UnidadesApi, useValue: unidadesApiStub },
-        { provide: GeoApi, useValue: geoApiStub },
-        { provide: ModalidadesApi, useValue: modalidadesApiStub },
+        ...PAGE_PROVIDERS,
         {
           provide: ProcessosSeletivosApi,
           useValue: {

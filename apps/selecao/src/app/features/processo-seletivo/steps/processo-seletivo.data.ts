@@ -2,7 +2,6 @@ import {
   AtendimentoCondicao,
   AtendimentoRecurso,
   CriterioDesempate,
-  Curso,
   DocumentoGrupo,
 } from './processo-seletivo.models';
 
@@ -25,7 +24,6 @@ const DEFINICOES: readonly DefinicaoDePasso[] = [
   { rotulo: 'Tipo do processo', revisao: 'Tipo do processo seletivo' },
   { rotulo: 'Identificação' },
   { rotulo: 'Pagamento', titulo: 'Taxa de inscrição e isenção', revisao: 'Taxa de inscrição' },
-  { rotulo: 'Modalidades' },
   { rotulo: 'Vagas' },
   { rotulo: 'Etapas' },
   { rotulo: 'Fórmula e precisão', revisao: 'Fórmula de classificação' },
@@ -49,41 +47,6 @@ export const STEP_LABELS = PASSOS.map((passo) => passo.rotulo);
 
 /** O painel de revisão lista os passos anteriores, não a si mesmo. */
 export const REVIEW_NAMES = PASSOS.slice(0, -1).map((passo) => passo.revisao);
-
-export const CURSOS: Curso[] = [
-  {
-    id: 1,
-    nome: 'Ciências Sociais',
-    grau: 'Bach.',
-    campus: 'Campus de Marabá',
-    unidade: 'Unidade I',
-  },
-  { id: 2, nome: 'Física', grau: 'Lic.', campus: 'Campus de Marabá', unidade: 'Unidade I' },
-  {
-    id: 3,
-    nome: 'Licenciatura em Educação do Campo',
-    grau: 'Lic.',
-    campus: 'Campus de Marabá',
-    unidade: 'Unidade I',
-  },
-  { id: 4, nome: 'Matemática', grau: 'Lic.', campus: 'Campus de Marabá', unidade: 'Unidade II' },
-  { id: 5, nome: 'História', grau: 'Bach.', campus: 'Campus de Marabá', unidade: 'Unidade I' },
-  {
-    id: 6,
-    nome: 'Sistemas de Informação',
-    grau: 'Bach.',
-    campus: 'Campus de Marabá',
-    unidade: 'Unidade II',
-  },
-  {
-    id: 7,
-    nome: 'Engenharia de Produção',
-    grau: 'Bach.',
-    campus: 'Campus de Marabá',
-    unidade: 'Unidade III',
-  },
-  { id: 8, nome: 'Medicina', grau: 'Bach.', campus: 'Campus de Marabá', unidade: 'Unidade I' },
-];
 
 export const CRITERIOS_DESEMPATE: CriterioDesempate[] = [
   { id: 1, nome: 'Candidato idoso (60+ anos)', fonte: 'Lei 10.741/2003 art. 27' },

@@ -15,8 +15,8 @@ export class DocumentosStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly groups = DOCUMENTO_GRUPOS;
   readonly etapas = DOC_ETAPAS;
-  /** Só as modalidades aceitas no passo 3 podem exigir documento. */
-  readonly modalidades = computed(() => this.store.draft().modalidades.selected);
+  /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
+  readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
 
   config(id: string): DocumentoConfig {
     return this.store.draft().documentos[id];

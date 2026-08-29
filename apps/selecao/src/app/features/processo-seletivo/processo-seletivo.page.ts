@@ -30,7 +30,6 @@ import { WizardStepperComponent } from './steps/shared/wizard-stepper.component'
 import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
 import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
-import { ModalidadesStepComponent } from './steps/steps/modalidades/modalidades.component';
 import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
 import { EtapasStepComponent } from './steps/steps/etapas/etapas.component';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
@@ -71,7 +70,6 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     TipoProcessoStepComponent,
     IdentificacaoStepComponent,
     PagamentoStepComponent,
-    ModalidadesStepComponent,
     VagasStepComponent,
     EtapasStepComponent,
     FormulaStepComponent,
