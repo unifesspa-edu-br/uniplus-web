@@ -77,11 +77,20 @@ export class PagamentoStepComponent {
 
   readonly exigeConfirmacao = computed(() => this.selecionados().length > 0);
 
+  /**
+   * Pendência do grupo de fundamentos, acesa por `validate()` e apagada assim
+   * que o operador marca o primeiro. Vive aqui, e não em `selecionados()`,
+   * porque o passo não pode nascer vermelho: quem abre o passo 3 ainda não
+   * teve chance de escolher.
+   */
+  readonly fundamentosInvalidos = signal(false);
+
   constructor() {
     this.carregarFundamentos();
 
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
       this.cobra.set(valor.cobra ?? null);
+      if (valor.cobra !== true) this.fundamentosInvalidos.set(false);
       this.store.patchObjectSection(
         'pagamento',
         coerenteComADeclaracao(
@@ -162,6 +171,11 @@ export class PagamentoStepComponent {
       confirmacaoFundamentos:
         proximos.length > 0 && this.store.draft().pagamento.confirmacaoFundamentos,
     });
+
+    // A pendência acende na validação e apaga assim que ela deixa de existir —
+    // deixar o vermelho aceso depois de o operador escolher faria a tela acusar
+    // um erro que ele já corrigiu.
+    if (proximos.length > 0) this.fundamentosInvalidos.set(false);
   }
 
   /**
@@ -239,6 +253,14 @@ export class PagamentoStepComponent {
         mensagens.push('O valor da taxa precisa ser maior que zero.');
       }
     }
+
+    // Issue #1310: quem cobra reconhece ao menos um fundamento — é por eles que o
+    // candidato poderá pedir isenção, e o servidor recusa a gravação sem nenhum.
+    const semFundamento = pagamento.cobra === true && pagamento.fundamentos.length === 0;
+    if (semFundamento) {
+      mensagens.push('Selecione ao menos um fundamento de isenção.');
+    }
+    this.fundamentosInvalidos.set(semFundamento);
 
     if (pagamento.fundamentos.length > 0 && !pagamento.confirmacaoFundamentos) {
       mensagens.push('Confirme os fundamentos de isenção referenciados.');

@@ -75,7 +75,7 @@ describe('PagamentoStepComponent', () => {
   });
 
   it('exige valor positivo quando declara cobrança', () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '0' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '0', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     expect(componente.validate().valid).toBe(false);
     expect(componente.validate().messages?.[0]).toContain('maior que zero');
@@ -87,11 +87,46 @@ describe('PagamentoStepComponent', () => {
     expect(componente.validate().valid).toBe(true);
   });
 
-  /** UNI-REQ-0099: zero fundamentos é estado válido para processo que cobra. */
-  it('aceita cobrança sem nenhum fundamento de isenção', () => {
+  /** UNI-REQ-0099: quem cobra reconhece ao menos um fundamento (issue #638). */
+  it('recusa cobrança sem nenhum fundamento de isenção', () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
 
+    const resultado = componente.validate();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages).toContain('Selecione ao menos um fundamento de isenção.');
+    expect(componente.fundamentosInvalidos()).toBe(true);
+  });
+
+  it('aceita cobrança com um fundamento de isenção', () => {
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150,00',
+      fundamentos: ['CADASTRO_UNICO'],
+      confirmacaoFundamentos: true,
+    });
+
     expect(componente.validate().valid).toBe(true);
+    expect(componente.fundamentosInvalidos()).toBe(false);
+  });
+
+  it('apaga a pendência de fundamento assim que o operador seleciona um', () => {
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
+    componente.validate();
+    expect(componente.fundamentosInvalidos()).toBe(true);
+
+    componente.alternarFundamento('CADASTRO_UNICO');
+
+    expect(componente.fundamentosInvalidos()).toBe(false);
+  });
+
+  it('não acusa fundamento ausente em processo gratuito', () => {
+    store.patchObjectSection('pagamento', { cobra: false, valor: '', fundamentos: [] });
+
+    const resultado = componente.validate();
+
+    expect(resultado.valid).toBe(true);
+    expect(componente.fundamentosInvalidos()).toBe(false);
   });
 
   it('exige confirmação explícita quando há fundamento referenciado', () => {
@@ -119,7 +154,7 @@ describe('PagamentoStepComponent', () => {
 
   /** Os fundamentos só fazem sentido para processo que cobra. */
   it('oferece os fundamentos que o catálogo devolve, com a descrição', () => {
-    store.patchObjectSection('pagamento', { cobra: true });
+    store.patchObjectSection('pagamento', { cobra: true, fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
     detectar();
 
     expect(componente.fundamentos()).toHaveLength(3);
@@ -165,7 +200,7 @@ describe('PagamentoStepComponent', () => {
   });
 
   it('exibe a recusa da API sem apagar o que foi preenchido', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150,00' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const promessa = componente.persistir();
     await tick();
@@ -230,7 +265,7 @@ describe('PagamentoStepComponent', () => {
    * em vez de gravar, e o operador só sairia disso recarregando o editor.
    */
   it('renova a Idempotency-Key após 422 de validação', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '230' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const primeira = componente.persistir();
     await tick();
@@ -258,7 +293,7 @@ describe('PagamentoStepComponent', () => {
    * chave — a execução anterior ainda pode concluir.
    */
   it('preserva a Idempotency-Key em processing_conflict', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '230' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const primeira = componente.persistir();
     await tick();
@@ -286,7 +321,7 @@ describe('PagamentoStepComponent', () => {
    * avançaria o passo com o novo em tela.
    */
   it('não aceita edição enquanto a gravação está em curso', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
     await tick();
 
     const promessa = componente.persistir();
@@ -294,8 +329,9 @@ describe('PagamentoStepComponent', () => {
 
     expect(componente.form.disabled).toBe(true);
 
-    componente.alternarFundamento(FundamentoIsencao.CadastroUnico);
-    expect(store.draft().pagamento.fundamentos).toEqual([]);
+    componente.alternarFundamento(FundamentoIsencao.DoacaoMedulaOssea);
+    expect(store.draft().pagamento.fundamentos).toEqual(['CADASTRO_UNICO'],
+      'a lista não muda com a gravação em curso — alternar é ignorado');
 
     controller.expectOne(ROTA_TAXA).flush(null, { status: 204, statusText: 'No Content' });
     await promessa;
@@ -311,7 +347,7 @@ describe('PagamentoStepComponent', () => {
    * teria como sair disso.
    */
   it('renova a chave quando a declaração muda depois de falha retentável', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const primeira = componente.persistir();
     await tick();
@@ -331,7 +367,7 @@ describe('PagamentoStepComponent', () => {
 
   /** Repetir a mesma declaração é o que a chave retida existe para permitir. */
   it('mantém a chave ao repetir a mesma declaração após falha retentável', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const primeira = componente.persistir();
     await tick();
@@ -354,7 +390,7 @@ describe('PagamentoStepComponent', () => {
    * índice novo — marcando como concluído um passo que ninguém preencheu.
    */
   it('recusa troca de passo enquanto a gravação corre', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
     const passoInicial = store.currentStep();
 
     const promessa = componente.persistir();
@@ -377,7 +413,7 @@ describe('PagamentoStepComponent', () => {
    * editor que pode ter comando próprio em curso.
    */
   it('descarta a resposta quando o editor já passou a outro processo', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const promessa = componente.persistir();
     await tick();
@@ -402,7 +438,7 @@ describe('PagamentoStepComponent', () => {
    * tela não explica.
    */
   it('desabilita as caixas de fundamento fora de rascunho', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '230' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
     store.remoteSnapshot.set({ status: 'Publicado' } as never);
     detectar();
     await tick();
@@ -423,7 +459,7 @@ describe('PagamentoStepComponent', () => {
   it.each([['1e2'], ['0x10'], ['1.00'], ['1,234'], ['R$ 230']])(
     'recusa %j como valor da taxa em vez de convertê-lo',
     (texto) => {
-      store.patchObjectSection('pagamento', { cobra: true, valor: texto });
+      store.patchObjectSection('pagamento', { cobra: true, valor: texto, fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
       const resultado = componente.validate();
 
@@ -442,7 +478,7 @@ describe('PagamentoStepComponent', () => {
     ['1000,50', 1000.5],
     ['230', 230],
   ])('envia %j como %d', async (texto, esperado) => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: texto });
+    store.patchObjectSection('pagamento', { cobra: true, valor: texto, fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const promessa = componente.persistir();
     await tick();
@@ -455,7 +491,7 @@ describe('PagamentoStepComponent', () => {
 
   /** Texto que a validação recusa não pode virar comando. */
   it('não envia comando quando o valor não é um valor em reais', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '1e2x' });
+    store.patchObjectSection('pagamento', { cobra: true, valor: '1e2x', fundamentos: ['CADASTRO_UNICO'], confirmacaoFundamentos: true });
 
     const resultado = await componente.persistir();
 

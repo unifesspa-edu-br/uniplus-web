@@ -47,9 +47,9 @@
   @if (cobra() === true) {
     <div class="step-card">
       <h2 class="form-section__title">Fundamentos de isenção</h2>
-      <p class="field__hint">
-        Quais fundamentos este processo reconhece para isentar candidatos. Nenhum fundamento também
-        é uma configuração válida — a isenção não é obrigatória.
+      <p class="field__hint" id="f-fundamentos-hint">
+        Quais fundamentos este processo reconhece para isentar candidatos. Processo que cobra taxa
+        reconhece ao menos um — é por eles que o candidato poderá pedir isenção.
       </p>
 
       @if (fundamentosCarregando()) {
@@ -73,7 +73,21 @@
         </p>
       }
 
-      <ul class="pagamento-fundamentos">
+      @if (fundamentosInvalidos()) {
+        <p class="field__erro" id="f-fundamentos-erro" role="alert">
+          Selecione ao menos um fundamento de isenção.
+        </p>
+      }
+
+      <ul
+        class="pagamento-fundamentos"
+        role="group"
+        aria-label="Fundamentos de isenção reconhecidos"
+        [attr.aria-invalid]="fundamentosInvalidos() || null"
+        [attr.aria-describedby]="
+          fundamentosInvalidos() ? 'f-fundamentos-hint f-fundamentos-erro' : 'f-fundamentos-hint'
+        "
+      >
         @for (fundamento of fundamentos(); track fundamento.codigo) {
           <li class="pagamento-fundamentos__item">
             <label class="check-item">
