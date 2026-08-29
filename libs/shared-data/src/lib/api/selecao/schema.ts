@@ -5168,14 +5168,14 @@ export interface components {
         readonly ArgsRegraPrazoRecursoDto: {
             /** Format: double */
             readonly prazoValor: number | string;
-            readonly prazoUnidade: string;
+            readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
             readonly atoAncoraCodigo: string;
             /** Format: double */
             readonly suspensividadePrimeiraInstanciaValor: null | number | string;
-            readonly suspensividadePrimeiraInstanciaUnidade: null | string;
+            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
-            readonly suspensividadeSegundaInstanciaUnidade: null | string;
+            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
         };
         readonly AtualizarMotivoDecisaoIsencaoCommand: {
             /** Format: uuid */
@@ -5565,7 +5565,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly nome: string;
-            readonly carater: string;
+            readonly carater: components["schemas"]["CaraterEtapa"];
             readonly tipoEtapa: components["schemas"]["TipoEtapaSnapshotDto"];
             /** Format: double */
             readonly peso: null | number | string;
@@ -5740,7 +5740,7 @@ export interface components {
             readonly naturezaLegal: string;
             readonly composicaoVagas: string;
             readonly composicaoOrigemCodigo: null | string;
-            readonly regraRemanejamento: string;
+            readonly regraRemanejamento: null | string;
             readonly remanejamentoDestino: null | string;
             readonly remanejamentoPar: null | string;
             readonly remanejamentoFallback: null | string;
@@ -5893,8 +5893,8 @@ export interface components {
             readonly id: string;
             readonly nome: string;
             readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
-            readonly status: string;
-            readonly origemCandidatos: string;
+            readonly status: components["schemas"]["StatusProcesso"];
+            readonly origemCandidatos: components["schemas"]["OrigemCandidatos"];
             readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraSnapshotDto"];
             readonly localidade: components["schemas"]["LocalidadeRegenteDto"];
             readonly etapas: readonly components["schemas"]["EtapaProcessoDto"][];
@@ -5926,7 +5926,7 @@ export interface components {
             readonly id: string;
             readonly nome: string;
             readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
-            readonly status: string;
+            readonly status: components["schemas"]["StatusProcesso"];
             /** Format: date-time */
             readonly criadoEm: string;
         };
@@ -6093,6 +6093,8 @@ export interface components {
             readonly hashEdital: string;
             readonly configuracao: components["schemas"]["JsonNode"];
         };
+        /** @enum {string} */
+        readonly StatusProcesso: StatusProcesso;
         readonly TipoEtapaSnapshotDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -6279,6 +6281,13 @@ export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
 }
 export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
     modalidadesMinimas = "modalidadesMinimas"
+}
+export enum StatusProcesso {
+    nenhum = "nenhum",
+    rascunho = "rascunho",
+    publicado = "publicado",
+    encerrado = "encerrado",
+    cancelado = "cancelado"
 }
 export enum UnidadePrazo {
     nenhuma = "nenhuma",
