@@ -76,7 +76,6 @@ function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivo
       cobra: true,
       valor: 230,
       fundamentos: ['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA'],
-      confirmacaoFundamentos: true,
     },
     ...overrides,
   } as ProcessoSeletivoDto;
@@ -1064,7 +1063,6 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     expect(pagamento.cobra).toBe(true);
     expect(pagamento.valor).toBe('230,00');
     expect(pagamento.fundamentos).toEqual(['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA']);
-    expect(pagamento.confirmacaoFundamentos).toBe(true);
   });
 
   /**

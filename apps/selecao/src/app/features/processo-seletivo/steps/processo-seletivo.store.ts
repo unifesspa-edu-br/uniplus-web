@@ -53,7 +53,7 @@ const INITIAL_DRAFT: WizardDraft = {
     localidade: null,
     uploads: [],
   },
-  pagamento: { cobra: null, valor: '', fundamentos: [], confirmacaoFundamentos: false },
+  pagamento: { cobra: null, valor: '', fundamentos: [] },
   modalidades: { selected: [], concorrenciaDupla: false },
   vagas: { cursos: [] },
   etapas: [initialEtapa()],

@@ -64,7 +64,6 @@ export class PagamentoStepComponent {
   readonly form = new FormGroup({
     cobra: new FormControl<boolean | null>(null, { validators: [Validators.required] }),
     valor: new FormControl('', { nonNullable: true }),
-    confirmacaoFundamentos: new FormControl(false, { nonNullable: true }),
   });
 
   readonly cobra = signal<boolean | null>(null);
@@ -74,8 +73,6 @@ export class PagamentoStepComponent {
 
   /** Fundamentos escolhidos, na ordem do catálogo. */
   readonly selecionados = computed(() => this.store.draft().pagamento.fundamentos);
-
-  readonly exigeConfirmacao = computed(() => this.selecionados().length > 0);
 
   /**
    * Pendência do grupo de fundamentos, acesa por `validate()` e apagada assim
@@ -93,11 +90,7 @@ export class PagamentoStepComponent {
       if (valor.cobra !== true) this.fundamentosInvalidos.set(false);
       this.store.patchObjectSection(
         'pagamento',
-        coerenteComADeclaracao(
-          valor.cobra ?? null,
-          valor.valor ?? '',
-          valor.confirmacaoFundamentos ?? false,
-        ),
+        coerenteComADeclaracao(valor.cobra ?? null, valor.valor ?? ''),
       );
     });
 
@@ -119,11 +112,7 @@ export class PagamentoStepComponent {
         (invalido) => invalido && pagamento.cobra === true && pagamento.fundamentos.length === 0,
       );
       this.form.patchValue(
-        {
-          cobra: pagamento.cobra,
-          valor: pagamento.valor,
-          confirmacaoFundamentos: pagamento.confirmacaoFundamentos,
-        },
+        { cobra: pagamento.cobra, valor: pagamento.valor },
         { emitEvent: false },
       );
     });
@@ -172,14 +161,7 @@ export class PagamentoStepComponent {
       ? atuais.filter((item) => item !== codigo)
       : [...atuais, codigo];
 
-    // Desmarcar o último fundamento tira o que havia a confirmar: manter a
-    // confirmação gravada faria o processo ser publicado declarando uma
-    // conferência que já não corresponde a nada.
-    this.store.patchObjectSection('pagamento', {
-      fundamentos: proximos,
-      confirmacaoFundamentos:
-        proximos.length > 0 && this.store.draft().pagamento.confirmacaoFundamentos,
-    });
+    this.store.patchObjectSection('pagamento', { fundamentos: proximos });
 
     // A pendência acende na validação e apaga assim que ela deixa de existir —
     // deixar o vermelho aceso depois de o operador escolher faria a tela acusar
@@ -224,7 +206,6 @@ export class PagamentoStepComponent {
         cobra: pagamento.cobra,
         valor: analisarValorEmReais(pagamento.valor),
         fundamentos: pagamento.fundamentos,
-        confirmacaoFundamentos: pagamento.confirmacaoFundamentos,
       });
 
       // O editor pode ter passado a outro processo enquanto o comando corria.
@@ -271,9 +252,6 @@ export class PagamentoStepComponent {
     }
     this.fundamentosInvalidos.set(semFundamento);
 
-    if (pagamento.fundamentos.length > 0 && !pagamento.confirmacaoFundamentos) {
-      mensagens.push('Confirme os fundamentos de isenção referenciados.');
-    }
 
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
   }
@@ -302,9 +280,6 @@ function decodificarFundamento(codigo: string): FundamentoIsencaoCodigo | null {
 function coerenteComADeclaracao(
   cobra: boolean | null,
   valor: string,
-  confirmacaoFundamentos: boolean,
 ): Partial<WizardDraft['pagamento']> {
-  return cobra === true
-    ? { cobra, valor, confirmacaoFundamentos }
-    : { cobra, valor: '', fundamentos: [], confirmacaoFundamentos: false };
+  return cobra === true ? { cobra, valor } : { cobra, valor: '', fundamentos: [] };
 }

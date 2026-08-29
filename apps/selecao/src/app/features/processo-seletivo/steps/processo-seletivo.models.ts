@@ -185,7 +185,6 @@ export interface WizardDraft {
     cobra: boolean | null;
     valor: string;
     fundamentos: FundamentoIsencaoCodigo[];
-    confirmacaoFundamentos: boolean;
   };
   identificacao: {
     nome: string;

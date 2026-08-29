@@ -5362,7 +5362,6 @@ export interface components {
             /** Format: double */
             readonly valor: null | number | string;
             readonly fundamentos: readonly string[];
-            readonly confirmacaoFundamentos: boolean;
         };
         readonly ConformidadeLegalProcessoSeletivoDto: {
             /** Format: uuid */
@@ -5509,7 +5508,6 @@ export interface components {
             /** Format: double */
             readonly valor: null | number | string;
             readonly fundamentos: null | readonly DefinirTaxaInscricaoRequestFundamentos[];
-            readonly confirmacaoFundamentos: boolean;
         };
         readonly DestinoRemanejamentoDto: {
             /** Format: uuid */
