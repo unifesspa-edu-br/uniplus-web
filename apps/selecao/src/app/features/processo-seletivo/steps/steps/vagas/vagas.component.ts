@@ -599,7 +599,7 @@ export class VagasStepComponent {
   // processo publica ao todo, e quantas cada modalidade recebe somando as
   // ofertas. É a leitura que o edital precisa declarar.
 
-  /** Soma dos totais informados pelas ofertas, antes das suplementares. */
+  /** Soma dos totais que as ofertas informam. */
   readonly totalGeralDeVagas = computed(() =>
     this.distribuicoes().reduce((soma, item) => soma + inteiroOuZero(item.voBase), 0),
   );
@@ -607,8 +607,9 @@ export class VagasStepComponent {
   /**
    * Vagas que o processo publica somando as ofertas.
    *
-   * Pode passar do total informado: a modalidade suplementar acresce vagas ao
-   * total da oferta em vez de dividi-lo, e é aqui que essa diferença aparece.
+   * Vem do cálculo do servidor, que sabe o que cada ramo faz com a
+   * suplementar: sob a Lei 12.711 ela acresce ao total da oferta, e é aqui que
+   * a diferença para o total informado aparece.
    */
   readonly totalGeralPublicado = computed(() =>
     this.distribuicoes().reduce(
