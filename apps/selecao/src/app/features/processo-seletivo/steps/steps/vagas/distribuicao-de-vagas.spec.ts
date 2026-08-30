@@ -430,15 +430,38 @@ describe('soma do quadro contra o total de vagas', () => {
   });
 
   /**
-   * A suplementar acresce vagas ao total em vez de disputá-las (Portaria MEC
-   * 18/2012 art. 12), então somá-la faria o edital ser recusado por oferecer
-   * exatamente o que a norma permite acrescentar.
+   * Sob a Lei 12.711 a suplementar acresce vagas ao total em vez de disputá-las
+   * (Portaria MEC 18/2012 art. 12), então somá-la faria o edital ser recusado
+   * por oferecer exatamente o que a norma permite acrescentar.
    */
-  it('não conta a modalidade suplementar na soma', () => {
-    const comSuplementar = quadro({ [AC.id]: '40', [SUPLEMENTAR.id]: '10' });
+  it('não conta a modalidade suplementar no ramo federal', () => {
+    const comSuplementar = federal({
+      voBase: '40',
+      modalidades: [par(AC), par(SUPLEMENTAR)],
+      quadro: [
+        { modalidadeId: AC.id, quantidade: '40' },
+        { modalidadeId: SUPLEMENTAR.id, quantidade: '10' },
+      ],
+    });
 
     expect(totalFixadoDoVo(comSuplementar, CATALOGO_DA_SOMA)).toBe(40);
     expect(problemaDeSomaDoQuadro(comSuplementar, CATALOGO_DA_SOMA)).toBeNull();
+  });
+
+  /**
+   * Fora do ramo federal não há cálculo: o total publicado é a soma do quadro
+   * inteiro, suplementar inclusive. Num certame exclusivo de indígenas e
+   * quilombolas — sem ampla concorrência — são elas que compõem o total, e
+   * deixá-las de fora da soma dispensaria do teto as únicas modalidades que o
+   * quadro tem.
+   */
+  it('conta a modalidade suplementar no ramo institucional', () => {
+    const exclusivo = quadro({ [SUPLEMENTAR.id]: '41' });
+
+    expect(totalFixadoDoVo(exclusivo, CATALOGO_DA_SOMA)).toBe(41);
+    expect(problemaDeSomaDoQuadro(exclusivo, CATALOGO_DA_SOMA)).toBe(
+      'As quantidades fixadas somam 41 e passam do total de 40 vagas da oferta.',
+    );
   });
 
   /** A forma do total já é recusada em outro lugar. */

@@ -18,16 +18,26 @@ const COMPOSICOES_DECLARADAS = ['RETIRA_DE', 'SUPLEMENTAR_AO_TOTAL'];
 /** A que acresce vagas ao total da oferta em vez de disputar as que ela tem. */
 const COMPOSICAO_SUPLEMENTAR = 'SUPLEMENTAR_AO_TOTAL';
 
+/** A distribuição segue a Lei 12.711; fora dela, o edital fixa o quadro inteiro. */
+function ehRamoFederal(distribuicao: DistribuicaoDeVagas): boolean {
+  return distribuicao.regraDistribuicaoCodigo === REGRA_LEI_12711;
+}
+
 /**
  * A quantidade desta composição sai do total de vagas da oferta.
  *
- * A suplementar é a exceção: acresce vagas ao total, e é assim que a Portaria
- * MEC 18/2012 art. 12 trata a reserva suplementar. As demais dividem o mesmo
- * VO — é o que a `INV-3c` diz ao somar reserva, retiradas e ampla concorrência
- * de volta ao `VO_base`.
+ * A composição diz o que a modalidade é diante da oferta do curso, mas quem
+ * decide se ela consome o total é o ramo da regra. Sob a Lei 12.711 a
+ * suplementar acresce: o total publicado é o `VO_base` mais as suplementares,
+ * e somá-la aqui recusaria o edital por oferecer justamente o que a Portaria
+ * MEC 18/2012 art. 12 permite acrescentar. Fora dela não há cálculo algum — o
+ * quadro é o que se publica, e o total publicado é a soma de tudo que ele
+ * traz. Num certame exclusivo de indígenas e quilombolas, sem ampla
+ * concorrência, são as suplementares que compõem o total: não há outro
+ * conjunto a que elas se somem.
  */
-function consomeOTotalDeVagas(composicaoVagas: string): boolean {
-  return composicaoVagas !== COMPOSICAO_SUPLEMENTAR;
+function consomeOTotalDeVagas(composicaoVagas: string, federal: boolean): boolean {
+  return !federal || composicaoVagas !== COMPOSICAO_SUPLEMENTAR;
 }
 
 /**
@@ -42,9 +52,11 @@ export function totalFixadoDoVo(
   distribuicao: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): number {
+  const federal = ehRamoFederal(distribuicao);
+
   return distribuicao.quadro.reduce((soma, item) => {
     const composicao = catalogo.get(item.modalidadeId)?.composicaoVagas;
-    if (composicao === undefined || !consomeOTotalDeVagas(composicao)) return soma;
+    if (composicao === undefined || !consomeOTotalDeVagas(composicao, federal)) return soma;
 
     const quantidade = Number(item.quantidade.trim());
     return soma + (Number.isInteger(quantidade) && quantidade > 0 ? quantidade : 0);
@@ -239,7 +251,7 @@ export function problemasDaDistribuicao(
   distribuicao: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): ProblemaDaDistribuicao[] {
-  const federal = distribuicao.regraDistribuicaoCodigo === REGRA_LEI_12711;
+  const federal = ehRamoFederal(distribuicao);
   const excesso = problemaDeSomaDoQuadro(distribuicao, catalogo);
 
   return [
