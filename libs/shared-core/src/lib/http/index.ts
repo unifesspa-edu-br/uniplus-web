@@ -35,6 +35,9 @@ export {
 export { coletarPaginas } from './coletar-paginas';
 export { lookupCompleto } from './lookup-completo';
 export type { LookupCompleto } from './lookup-completo';
+
+export { resolverVinculo } from './resolucao-de-vinculo';
+export type { EstadoDoVinculo, ResolucaoDeVinculo } from './resolucao-de-vinculo';
 export type { Cursor, PaginationDirection } from './pagination';
 
 export { CLIENT_PROBLEM_CODES } from './problem-details';

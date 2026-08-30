@@ -14,6 +14,12 @@ export interface LookupCompleto<T> {
   readonly opcoes: Signal<readonly T[]>;
   /** `true` quando a última tentativa não completou o catálogo. */
   readonly comErro: Signal<boolean>;
+  /**
+   * `true` enquanto o catálogo não chegou: antes da primeira busca e durante
+   * cada tentativa. Distingue "ainda vem" de "chegou e não tem o item" — sem
+   * isso, um lookup lazy exibiria "não encontrado" antes de sequer buscar.
+   */
+  readonly pendente: Signal<boolean>;
   /** Busca de novo, descartando o que estiver em andamento. */
   recarregar(): void;
 }
@@ -37,6 +43,7 @@ export function lookupCompleto<T>(
 ): LookupCompleto<T> {
   const opcoes = signal<readonly T[]>([]);
   const comErro = signal(false);
+  const pendente = signal(true);
   let emAndamento: Subscription | undefined;
 
   // O teardown é registrado uma vez, na construção: `takeUntilDestroyed` por
@@ -46,6 +53,7 @@ export function lookupCompleto<T>(
   const recarregar = (): void => {
     emAndamento?.unsubscribe();
     comErro.set(false);
+    pendente.set(true);
     emAndamento = coletarPaginas(pagina).subscribe({
       next: (resultado) => {
         if (!resultado.ok) {
@@ -54,9 +62,18 @@ export function lookupCompleto<T>(
         }
         opcoes.set(resultado.data);
       },
-      error: () => comErro.set(true),
+      error: () => {
+        comErro.set(true);
+        pendente.set(false);
+      },
+      complete: () => pendente.set(false),
     });
   };
 
-  return { opcoes: opcoes.asReadonly(), comErro: comErro.asReadonly(), recarregar };
+  return {
+    opcoes: opcoes.asReadonly(),
+    comErro: comErro.asReadonly(),
+    pendente: pendente.asReadonly(),
+    recarregar,
+  };
 }
