@@ -12,7 +12,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import {
   API_MAX_PAGE_SIZE,
   ApiResult,
@@ -21,11 +20,11 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
-  coletarPaginas,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
+  lookupCompleto,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -35,7 +34,6 @@ import {
   AtualizarLocalOfertaCommand,
   CONFIGURACAO_BASE_PATH,
   CampiApi,
-  CampusDto,
   CriarLocalOfertaCommand,
   LocaisOfertaApi,
   LocalOfertaDto,
@@ -240,15 +238,15 @@ interface LocalOfertaForm {
               <span class="field__label">Campus responsável</span>
               <select class="select" formControlName="campusResponsavelId">
                 <option value="">(Sem campus responsável)</option>
-                @for (campus of campiOpcoes(); track campus.id) {
+                @for (campus of campi.opcoes(); track campus.id) {
                   <option [value]="campus.id">{{ campus.sigla }} — {{ campus.nome }}</option>
                 }
               </select>
               <span class="field__hint">Vínculo opcional ao campus que administra este local.</span>
-              @if (campiComErro()) {
+              @if (campi.comErro()) {
                 <span class="field__error">
                   Não foi possível carregar os campi para seleção.
-                  <button type="button" class="cfg-link-button" (click)="recarregarCampi()">
+                  <button type="button" class="cfg-link-button" (click)="campi.recarregar()">
                     Tentar novamente
                   </button>
                 </span>
@@ -329,12 +327,13 @@ export class LocaisOfertaPage {
   // Percorre todas as páginas por cursor em vez de truncar em API_MAX_PAGE_SIZE:
   // um select de FK não pode esconder opções silenciosamente.
   private readonly carregarCampi = signal(false);
-  private campiIniciado = signal(false);
-  protected readonly campiOpcoes = signal<readonly CampusDto[]>([]);
-  protected readonly campiComErro = signal(false);
-  private campiSubscription?: Subscription;
+  private campiIniciado = false;
+  protected readonly campi = lookupCompleto(
+    (cursor) => this.campiApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
   private readonly campiPorId = computed(
-    () => new Map(this.campiOpcoes().map((campus) => [campus.id, campus] as const)),
+    () => new Map(this.campi.opcoes().map((campus) => [campus.id, campus] as const)),
   );
 
   private readonly cursores = linkedSignal<
@@ -427,9 +426,9 @@ export class LocaisOfertaPage {
     // `carregarCampi` só liga o lookup; `campiIniciado` evita refazer a busca a
     // cada reabertura do drawer (abrirCadastro/abrirEdicao religam o sinal).
     effect(() => {
-      if (this.carregarCampi() && !this.campiIniciado()) {
-        this.campiIniciado.set(true);
-        untracked(() => this.buscarCampi());
+      if (this.carregarCampi() && !this.campiIniciado) {
+        this.campiIniciado = true;
+        untracked(() => this.campi.recarregar());
       }
     });
   }
@@ -469,26 +468,6 @@ export class LocaisOfertaPage {
     if (!this.loading()) {
       this.lista.reload();
     }
-  }
-
-  protected recarregarCampi(): void {
-    this.buscarCampi();
-  }
-
-  private buscarCampi(): void {
-    this.campiSubscription?.unsubscribe();
-    this.campiComErro.set(false);
-    this.campiSubscription = coletarPaginas((cursor) =>
-      this.campiApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (!result.ok) {
-          this.campiComErro.set(true);
-          return;
-        }
-        this.campiOpcoes.set(result.data);
-      });
   }
 
   protected abrirCadastro(): void {

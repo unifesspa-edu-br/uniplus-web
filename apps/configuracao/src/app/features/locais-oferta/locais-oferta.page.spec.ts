@@ -117,7 +117,7 @@ describe('LocaisOfertaPage', () => {
 
     const primeira = expectLookup(`${BASE}/api/configuracao/campi`);
 
-    component['recarregarCampi']();
+    component['campi'].recarregar();
     await propagate();
 
     // A primeira travessia precisa ter sido cancelada de verdade (não só
@@ -139,7 +139,7 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(component['campiOpcoes']()).toHaveLength(1);
+    expect(component['campi'].opcoes()).toHaveLength(1);
 
     // Se a primeira ainda estivesse "viva", flush aqui explodiria (request já
     // consumido) ou reabriria uma disputa — confirma que não sobra nada pendente.
@@ -245,7 +245,7 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(component['campiOpcoes']()).toHaveLength(2);
+    expect(component['campi'].opcoes()).toHaveLength(2);
     expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
     expect(component['campusLabel']('cmp2')).toBe('XIN — Campus de Xinguara');
   });
