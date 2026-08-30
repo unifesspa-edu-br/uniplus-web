@@ -252,7 +252,6 @@ export class PagamentoStepComponent {
     }
     this.fundamentosInvalidos.set(semFundamento);
 
-
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
   }
 }

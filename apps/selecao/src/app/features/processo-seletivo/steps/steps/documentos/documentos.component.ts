@@ -40,22 +40,38 @@ export class DocumentosStepComponent {
     });
   }
   toggleModalidade(id: string, code: string, checked: boolean): void {
-    const current = this.config(id).modalidades;
+    const config = this.config(id);
+
+    // A primeira personalização parte do que está marcado na tela — a lista
+    // guardada está vazia enquanto o documento acompanha o quadro, e desmarcar
+    // uma modalidade apagaria todas as outras. Depois disso vale a lista
+    // guardada: partir das efetivas descartaria a modalidade que saiu do quadro
+    // temporariamente, e voltar a ofertá-la já não a traria de volta.
+    const atual = config.modalidadesRecortadas ? config.modalidades : this.modalidadesEfetivas(id);
     this.patch(id, {
-      modalidades: checked ? [...current, code] : current.filter((item) => item !== code),
-      // A partir daqui o documento deixa de acompanhar o passo 3.
+      modalidades: checked ? [...atual, code] : atual.filter((item) => item !== code),
+      // A partir daqui o documento deixa de acompanhar as modalidades do quadro.
       modalidadesRecortadas: true,
     });
   }
 
   /**
-   * Modalidades que valem para o documento: a interseção do recorte com o que
-   * o processo aceita. O recorte guardado permanece intacto, então voltar a
-   * aceitar uma modalidade no passo 3 a traz de volta aqui.
+   * Modalidades que valem para o documento.
+   *
+   * Sem recorte, ele acompanha o que o quadro de vagas oferta — derivado, não
+   * copiado: uma lista própria a manter em dia dependeria de alguém sincronizá-la
+   * a cada mudança do quadro, e ficaria vazia no documento recém-incluído.
+   *
+   * Com recorte, vale a interseção. O recorte guardado permanece intacto, então
+   * voltar a ofertar uma modalidade a traz de volta aqui.
    */
   modalidadesEfetivas(id: string): string[] {
-    const aceitas = new Set(this.modalidades());
-    return this.config(id).modalidades.filter((code) => aceitas.has(code));
+    const aceitas = this.modalidades();
+    const config = this.config(id);
+    if (!config.modalidadesRecortadas) return [...aceitas];
+
+    const conjunto = new Set(aceitas);
+    return config.modalidades.filter((code) => conjunto.has(code));
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */

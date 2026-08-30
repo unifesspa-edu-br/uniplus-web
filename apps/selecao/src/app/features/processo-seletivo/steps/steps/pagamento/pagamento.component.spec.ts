@@ -15,7 +15,11 @@ const ROTA_FUNDAMENTOS = `${BASE}/api/selecao/fundamentos-isencao`;
 const ROTA_TAXA = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/taxa-inscricao`;
 
 const CATALOGO = [
-  { codigo: 'CADASTRO_UNICO', nome: 'Cadastro Único', descricao: 'Baixa renda inscrita no CadÚnico.' },
+  {
+    codigo: 'CADASTRO_UNICO',
+    nome: 'Cadastro Único',
+    descricao: 'Baixa renda inscrita no CadÚnico.',
+  },
   { codigo: 'DOACAO_MEDULA_OSSEA', nome: 'Doação de medula óssea', descricao: 'Candidato doador.' },
   {
     codigo: 'CARENCIA_SOCIOECONOMICA',
@@ -75,7 +79,11 @@ describe('PagamentoStepComponent', () => {
   });
 
   it('exige valor positivo quando declara cobrança', () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '0', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '0',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     expect(componente.validate().valid).toBe(false);
     expect(componente.validate().messages?.[0]).toContain('maior que zero');
@@ -143,8 +151,10 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', { valor: '180,00' });
     detectar();
 
-    expect(componente.fundamentosInvalidos()).toBe(true,
-      'corrigir o valor não corrige o fundamento ausente');
+    expect(componente.fundamentosInvalidos()).toBe(
+      true,
+      'corrigir o valor não corrige o fundamento ausente',
+    );
   });
 
   it('não acusa fundamento ausente em processo gratuito', () => {
@@ -223,7 +233,11 @@ describe('PagamentoStepComponent', () => {
   });
 
   it('exibe a recusa da API sem apagar o que foi preenchido', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150,00',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const promessa = componente.persistir();
     await tick();
@@ -286,7 +300,11 @@ describe('PagamentoStepComponent', () => {
    * em vez de gravar, e o operador só sairia disso recarregando o editor.
    */
   it('renova a Idempotency-Key após 422 de validação', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '230',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const primeira = componente.persistir();
     await tick();
@@ -314,7 +332,11 @@ describe('PagamentoStepComponent', () => {
    * chave — a execução anterior ainda pode concluir.
    */
   it('preserva a Idempotency-Key em processing_conflict', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '230',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const primeira = componente.persistir();
     await tick();
@@ -342,7 +364,11 @@ describe('PagamentoStepComponent', () => {
    * avançaria o passo com o novo em tela.
    */
   it('não aceita edição enquanto a gravação está em curso', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
     await tick();
 
     const promessa = componente.persistir();
@@ -351,8 +377,10 @@ describe('PagamentoStepComponent', () => {
     expect(componente.form.disabled).toBe(true);
 
     componente.alternarFundamento(FundamentoIsencao.DoacaoMedulaOssea);
-    expect(store.draft().pagamento.fundamentos).toEqual(['CADASTRO_UNICO'],
-      'a lista não muda com a gravação em curso — alternar é ignorado');
+    expect(store.draft().pagamento.fundamentos).toEqual(
+      ['CADASTRO_UNICO'],
+      'a lista não muda com a gravação em curso — alternar é ignorado',
+    );
 
     controller.expectOne(ROTA_TAXA).flush(null, { status: 204, statusText: 'No Content' });
     await promessa;
@@ -368,7 +396,11 @@ describe('PagamentoStepComponent', () => {
    * teria como sair disso.
    */
   it('renova a chave quando a declaração muda depois de falha retentável', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const primeira = componente.persistir();
     await tick();
@@ -388,7 +420,11 @@ describe('PagamentoStepComponent', () => {
 
   /** Repetir a mesma declaração é o que a chave retida existe para permitir. */
   it('mantém a chave ao repetir a mesma declaração após falha retentável', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const primeira = componente.persistir();
     await tick();
@@ -411,7 +447,11 @@ describe('PagamentoStepComponent', () => {
    * índice novo — marcando como concluído um passo que ninguém preencheu.
    */
   it('recusa troca de passo enquanto a gravação corre', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
     const passoInicial = store.currentStep();
 
     const promessa = componente.persistir();
@@ -434,7 +474,11 @@ describe('PagamentoStepComponent', () => {
    * editor que pode ter comando próprio em curso.
    */
   it('descarta a resposta quando o editor já passou a outro processo', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '150', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '150',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const promessa = componente.persistir();
     await tick();
@@ -459,7 +503,11 @@ describe('PagamentoStepComponent', () => {
    * tela não explica.
    */
   it('desabilita as caixas de fundamento fora de rascunho', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '230', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '230',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
     store.remoteSnapshot.set({ status: 'publicado' } as never);
     detectar();
     await tick();
@@ -480,7 +528,11 @@ describe('PagamentoStepComponent', () => {
   it.each([['1e2'], ['0x10'], ['1.00'], ['1,234'], ['R$ 230']])(
     'recusa %j como valor da taxa em vez de convertê-lo',
     (texto) => {
-      store.patchObjectSection('pagamento', { cobra: true, valor: texto, fundamentos: ['CADASTRO_UNICO'] });
+      store.patchObjectSection('pagamento', {
+        cobra: true,
+        valor: texto,
+        fundamentos: ['CADASTRO_UNICO'],
+      });
 
       const resultado = componente.validate();
 
@@ -499,7 +551,11 @@ describe('PagamentoStepComponent', () => {
     ['1000,50', 1000.5],
     ['230', 230],
   ])('envia %j como %d', async (texto, esperado) => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: texto, fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: texto,
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const promessa = componente.persistir();
     await tick();
@@ -512,7 +568,11 @@ describe('PagamentoStepComponent', () => {
 
   /** Texto que a validação recusa não pode virar comando. */
   it('não envia comando quando o valor não é um valor em reais', async () => {
-    store.patchObjectSection('pagamento', { cobra: true, valor: '1e2x', fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '1e2x',
+      fundamentos: ['CADASTRO_UNICO'],
+    });
 
     const resultado = await componente.persistir();
 

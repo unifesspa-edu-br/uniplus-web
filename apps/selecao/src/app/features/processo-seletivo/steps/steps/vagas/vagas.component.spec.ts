@@ -179,6 +179,29 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
     expect(componente.avisoDaRemocao()).toContain('quando o passo for gravado');
   });
 
+  /**
+   * Num processo retomado o padrão vem da primeira oferta, e `padraoPendente`
+   * só é preenchido por quem edita esses campos. Sem preservá-lo, tirar a
+   * última linha apagaria regra, percentual e modalidades já gravados.
+   */
+  it('preserva o padrão ao remover a última oferta do quadro', () => {
+    comQuadroDeUmaOferta();
+
+    componente.pedirRemocao(OFERTA);
+    componente.confirmarRemocao();
+
+    expect(store.draft().vagas.ofertas).toEqual([]);
+    expect(componente.padrao()).toMatchObject({
+      regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+      pr: '0,5',
+      modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
+    });
+  });
+
+  function comQuadroDeUmaOferta(): void {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+  }
+
   /** Passo em leitura não abre confirmação: não há remoção a confirmar. */
   it('não abre a confirmação com a edição bloqueada', () => {
     store.salvando.set(true);
@@ -349,6 +372,141 @@ describe('VagasStepComponent — gravação da distribuição', () => {
 
     expect(componente.conferenciaConfirmada()).toBe(false);
   });
+
+  /**
+   * A resposta descreveria o quadro anterior, e a conferência — que só olha se
+   * cada oferta tem resultado — a aceitaria como atual. Abandonar a requisição
+   * resolve os dois lados: nada obsoleto é instalado, e o botão de simular fica
+   * livre para o quadro novo em vez de esperar por um resultado que será
+   * ignorado.
+   */
+  it('abandona a simulação em voo quando o quadro muda', async () => {
+    componente.simular();
+    const requisicao = controller.expectOne(ROTA_SIMULACAO);
+    expect(componente.simulando()).toBe(true);
+
+    componente.alterarVoBase(OFERTA, '35');
+
+    expect(requisicao.cancelled).toBe(true);
+    expect(componente.simulando()).toBe(false);
+    expect(componente.simulacaoCobreOQuadro()).toBe(false);
+
+    const resultado = await componente.persistir();
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
+    controller.expectNone(ROTA_DISTRIBUICAO);
+  });
+
+  /** Simular de novo não deixa a requisição anterior competindo pelo resultado. */
+  it('abandona a simulação anterior ao simular outra vez', () => {
+    componente.simular();
+    const primeira = controller.expectOne(ROTA_SIMULACAO);
+
+    componente.simular();
+    const segunda = controller.expectOne(ROTA_SIMULACAO);
+
+    expect(primeira.cancelled).toBe(true);
+    expect(segunda.cancelled).toBe(false);
+    expect(componente.simulando()).toBe(true);
+  });
+
+  /** Sem edição no meio, a resposta é a do quadro em tela e vale. */
+  it('instala a simulação quando o quadro não mudou', () => {
+    simular([OFERTA, OUTRA_OFERTA]);
+
+    expect(componente.simulacaoCobreOQuadro()).toBe(true);
+  });
+
+  /**
+   * A rota é reusada entre processos e `store.reset()` não alcança signal de
+   * componente. Como a cobertura é verificada por id de oferta, o resultado do
+   * processo anterior valeria para o novo sempre que as ofertas coincidissem —
+   * e são as mesmas quando os dois usam o catálogo de cursos da instituição.
+   */
+  it('descarta a simulação ao trocar de processo', () => {
+    simularEConferir([OFERTA, OUTRA_OFERTA]);
+    expect(componente.simulacaoCobreOQuadro()).toBe(true);
+
+    trocarDeProcesso();
+
+    expect(componente.simulacaoCobreOQuadro()).toBe(false);
+    expect(componente.conferenciaConfirmada()).toBe(false);
+  });
+
+  /** O padrão guardado pertence ao processo em que foi guardado. */
+  it('descarta o padrão preservado ao trocar de processo', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    componente.pedirRemocao(OFERTA);
+    componente.confirmarRemocao();
+    expect(componente.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
+
+    trocarDeProcesso();
+
+    expect(componente.padrao().regraDistribuicaoCodigo).toBe('');
+    expect(componente.padrao().modalidades).toEqual([]);
+  });
+
+  /**
+   * O contrato guarda regra e percentual por oferta, então um processo criado
+   * por outro caminho pode chegar heterogêneo. A tela mostra o padrão da
+   * primeira e enviaria os valores de cada uma: gravar assim seria confirmar
+   * um quadro e declarar outro.
+   */
+  it('recusa gravar com oferta fora do padrão em tela', async () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicao(OFERTA), { ...distribuicao(OUTRA_OFERTA), pr: '0,75' }],
+    });
+
+    expect(componente.ofertasForaDoPadrao()).toHaveLength(1);
+
+    const resultado = await componente.persistir();
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('diferentes do padrão'))).toBe(true);
+    controller.expectNone(ROTA_DISTRIBUICAO);
+  });
+
+  it('uniformiza o quadro ao aplicar o padrão a todas', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicao(OFERTA), { ...distribuicao(OUTRA_OFERTA), pr: '0,75' }],
+    });
+
+    componente.aplicarPadraoATodas();
+
+    expect(componente.ofertasForaDoPadrao()).toEqual([]);
+    expect(store.draft().vagas.ofertas.map((item) => item.pr)).toEqual(['0,5', '0,5']);
+  });
+
+  /** A troca de processo devolve o botão de simular ao processo novo. */
+  it('desliga o indicador de simulação ao trocar de processo', () => {
+    componente.simular();
+    controller.expectOne(ROTA_SIMULACAO);
+    expect(componente.simulando()).toBe(true);
+
+    trocarDeProcesso();
+
+    expect(componente.simulando()).toBe(false);
+  });
+
+  /** O que sobra do processo anterior não pertence ao que está aberto. */
+  it('descarta o restante do estado local ao trocar de processo', () => {
+    componente.alternarOfertaMarcada(OFERTA);
+    componente.filtroDeOferta.set('medicina');
+    componente.pedirRemocao(OUTRA_OFERTA);
+    componente.erroDaSimulacao.set('falha anterior');
+
+    trocarDeProcesso();
+
+    expect(componente.ofertasMarcadas().size).toBe(0);
+    expect(componente.filtroDeOferta()).toBe('');
+    expect(componente.remocaoPendente()).toBeNull();
+    expect(componente.erroDaSimulacao()).toBeNull();
+  });
+
+  /** O editor reusa o componente; quem troca de processo é a geração do store. */
+  function trocarDeProcesso(): void {
+    store.geracao.update((valor) => valor + 1);
+    TestBed.tick();
+  }
 
   /** Sem processo criado não há o que gravar, e o comando não sai. */
   it('recusa gravar antes de o processo existir', async () => {
