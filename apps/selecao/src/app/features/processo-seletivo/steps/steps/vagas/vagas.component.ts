@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from '@uniplus/shared-ui/components';
 import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
@@ -15,6 +23,7 @@ import {
   ProcessosSeletivosApi,
 } from '@uniplus/shared-data/selecao';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -27,6 +36,7 @@ import {
   problemaDeVagasAutorizadas,
   problemasDaDistribuicao,
   quantidadeEhDeclarada,
+  seguemOMesmoPadrao,
   REGRA_LEI_12711,
 } from './distribuicao-de-vagas';
 import { comoComando } from './distribuicao-para-comando';
@@ -193,7 +203,16 @@ export class VagasStepComponent {
 
   /** Quadro como a regra o calcula, por oferta. Vazio até simular. */
   readonly simulacao = signal<ReadonlyMap<string, ConfiguracaoDistribuicaoVagasDto>>(new Map());
-  readonly simulando = signal(false);
+  /**
+   * Requisição de simulação em curso, para poder abandoná-la.
+   *
+   * O indicador deriva daqui em vez de ser ligado e desligado à mão: uma
+   * resposta que já não vale desligaria o indicador de outra que acabou de
+   * começar, e uma que nunca chega deixaria o botão preso para sempre.
+   */
+  private readonly simulacaoEmVoo = signal<Subscription | null>(null);
+
+  readonly simulando = computed(() => this.simulacaoEmVoo() !== null);
   readonly erroDaSimulacao = signal<string | null>(null);
 
   readonly ofertasMarcadas = signal<ReadonlySet<string>>(new Set());
@@ -256,6 +275,26 @@ export class VagasStepComponent {
 
   constructor() {
     this.catalogos.carregar();
+
+    // A rota é reusada entre processos e `store.reset()` não alcança signal de
+    // componente. Sem descartar o que é local, o processo seguinte abriria com
+    // a simulação, a conferência e o padrão do anterior — e a simulação antiga
+    // valeria como cobertura, porque a checagem é por id de oferta e dois
+    // processos do mesmo catálogo compartilham as ofertas.
+    effect(() => {
+      this.store.geracao();
+      untracked(() => this.descartarEstadoLocal());
+    });
+  }
+
+  /** Tudo o que descreve o processo aberto e não vive no rascunho. */
+  private descartarEstadoLocal(): void {
+    this.descartarSimulacao();
+    this.padraoPendente.set(PADRAO_VAZIO);
+    this.erroDaSimulacao.set(null);
+    this.ofertasMarcadas.set(new Set());
+    this.filtroDeOferta.set('');
+    this.remocaoPendente.set(null);
   }
 
   /**
@@ -438,7 +477,14 @@ export class VagasStepComponent {
   }
 
   private removerOferta(ofertaCursoId: string): void {
-    this.substituir(this.distribuicoes().filter((item) => item.ofertaCursoId !== ofertaCursoId));
+    const restantes = this.distribuicoes().filter((item) => item.ofertaCursoId !== ofertaCursoId);
+
+    // O padrão é lido da primeira oferta; sem nenhuma, ele não tem de onde vir.
+    // Num processo retomado, quem nunca mexeu nesses campos os perderia ao tirar
+    // a última linha, e a oferta seguinte nasceria sem regra nem percentual.
+    if (restantes.length === 0) this.padraoPendente.set(this.padrao());
+
+    this.substituir(restantes);
   }
 
   alterarVoBase(ofertaCursoId: string, voBase: string): void {
@@ -478,15 +524,19 @@ export class VagasStepComponent {
     const distribuicoes = this.distribuicoes();
     if (processoId === null || distribuicoes.length === 0) return;
 
-    this.simulando.set(true);
+    const quadroPedido = this.versaoDoQuadro;
+    const geracao = this.store.geracao();
+    this.abandonarSimulacaoEmVoo();
     this.erroDaSimulacao.set(null);
 
-    this.api
+    const inscricao = this.api
       .simularDistribuicaoVagas(processoId, distribuicoes.map(comoComando))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resultado) => {
-          this.simulando.set(false);
+          if (this.respostaVencida(quadroPedido, geracao)) return;
+          this.simulacaoEmVoo.set(null);
+
           if (!isApiOk(resultado)) {
             this.erroDaSimulacao.set(this.problemI18n.resolve(resultado.problem).title);
             return;
@@ -496,10 +546,31 @@ export class VagasStepComponent {
           );
         },
         error: () => {
-          this.simulando.set(false);
+          if (this.respostaVencida(quadroPedido, geracao)) return;
+          this.simulacaoEmVoo.set(null);
+
           this.erroDaSimulacao.set('Não foi possível simular o quadro. Tente novamente.');
         },
       });
+
+    this.simulacaoEmVoo.set(inscricao);
+  }
+
+  private abandonarSimulacaoEmVoo(): void {
+    this.simulacaoEmVoo()?.unsubscribe();
+    this.simulacaoEmVoo.set(null);
+  }
+
+  /**
+   * A resposta descreve um quadro que já não está em tela — o operador editou
+   * enquanto ela vinha, ou passou a outro processo.
+   *
+   * Instalá-la seria pior do que perdê-la: a conferência olha só se cada oferta
+   * tem resultado, então o cálculo antigo passaria por atual e o operador
+   * gravaria números que nunca viu.
+   */
+  private respostaVencida(quadroPedido: number, geracao: number): boolean {
+    return quadroPedido !== this.versaoDoQuadro || geracao !== this.store.geracao();
   }
 
   /**
@@ -566,6 +637,25 @@ export class VagasStepComponent {
    */
   readonly conferenciaConfirmada = signal(false);
 
+  /**
+   * Ofertas gravadas com regra, percentual ou modalidades diferentes do que a
+   * tela apresenta como padrão do edital.
+   *
+   * Só aparecem em processo criado por outro caminho — esta tela sempre reescreve
+   * o quadro inteiro ao alterar o padrão. Enquanto existirem, o que seria enviado
+   * não é o que está em tela, e gravar assim seria confirmar uma coisa e
+   * declarar outra.
+   */
+  readonly ofertasForaDoPadrao = computed(() => {
+    const padrao = this.padrao();
+    return this.distribuicoes().filter((item) => !seguemOMesmoPadrao(item, padrao));
+  });
+
+  /** Reescreve todas as ofertas com o padrão em tela. */
+  aplicarPadraoATodas(): void {
+    this.alterarPadrao({});
+  }
+
   readonly simulacaoCobreOQuadro = computed(() => {
     const calculado = this.simulacao();
     return this.distribuicoes().every((item) => calculado.has(item.ofertaCursoId));
@@ -600,7 +690,14 @@ export class VagasStepComponent {
   }
 
   /** Uma edição depois da simulação torna o resultado obsoleto. */
+  /** Avança a cada edição; identifica o quadro que originou uma simulação. */
+  private versaoDoQuadro = 0;
+
   private descartarSimulacao(): void {
+    this.versaoDoQuadro += 1;
+    // O quadro mudou: a resposta a caminho descreve outro. Abandoná-la libera
+    // o botão de simular em vez de esperar por um resultado que será ignorado.
+    this.abandonarSimulacaoEmVoo();
     if (this.simulacao().size > 0) this.simulacao.set(new Map());
     this.conferenciaConfirmada.set(false);
   }
@@ -708,7 +805,14 @@ export class VagasStepComponent {
       return ['Configure a distribuição de vagas de ao menos uma oferta de curso.'];
     }
 
+    const foraDoPadrao = this.ofertasForaDoPadrao().length;
+
     return [
+      ...(foraDoPadrao === 0
+        ? []
+        : [
+            `${frase(foraDoPadrao)} têm regra, percentual ou modalidades diferentes do padrão em tela. Aplique o padrão a todas antes de gravar.`,
+          ]),
       ...(this.simulacaoCobreOQuadro()
         ? []
         : ['Simule o quadro: é a conferência de quantas vagas cada modalidade recebe.']),

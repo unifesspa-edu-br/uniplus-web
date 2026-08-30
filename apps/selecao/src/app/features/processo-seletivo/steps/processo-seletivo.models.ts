@@ -159,13 +159,19 @@ export interface DocumentoConfig {
   included: boolean;
   todasEtapas: boolean;
   etapas: string[];
-  /** Código do contrato — a API é a fonte de verdade do vocabulário. */
+  /**
+   * O recorte do operador — vazio enquanto o documento acompanha o quadro de
+   * vagas. Não é a lista que vale: quem for persistir este passo precisa
+   * enviar `modalidadesEfetivas()`, que resolve o padrão contra o quadro.
+   *
+   * Código do contrato — a API é a fonte de verdade do vocabulário.
+   */
   modalidades: string[];
   /**
-   * `false` enquanto o documento acompanha as modalidades aceitas pelo
-   * processo; `true` depois que o operador recorta a lista no passo 10.
-   * Registrar o estado evita confundir um recorte que por acaso coincide com
-   * as aceitas — depois de uma remoção no passo 3 — com o padrão.
+   * `false` enquanto o documento acompanha as modalidades que o quadro de
+   * vagas oferta; `true` depois que o operador recorta a lista. Registrar o
+   * estado evita confundir um recorte que por acaso coincide com as ofertadas
+   * — depois de uma remoção no quadro — com o padrão.
    */
   modalidadesRecortadas: boolean;
 }

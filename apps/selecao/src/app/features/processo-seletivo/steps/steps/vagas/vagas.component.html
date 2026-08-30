@@ -474,6 +474,33 @@
         O total publicado, com o que a regra calcula, vem da simulação no servidor.
       </p>
 
+      @if (ofertasForaDoPadrao().length > 0) {
+        <div class="alert alert--warning vagas-divergencia" role="status">
+          <div class="alert__body">
+            <p class="alert__title">
+              {{
+                ofertasForaDoPadrao().length === 1
+                  ? '1 oferta foi gravada'
+                  : ofertasForaDoPadrao().length + ' ofertas foram gravadas'
+              }}
+              com um padrão diferente do que está em tela
+            </p>
+            <p class="alert__msg">
+              O padrão acima vem da primeira oferta do quadro. Aplicá-lo a todas deixa o que será
+              gravado igual ao que está sendo mostrado.
+            </p>
+            <button
+              class="btn btn--outline btn--sm"
+              type="button"
+              (click)="aplicarPadraoATodas()"
+              [disabled]="!store.aceitaEdicao()"
+            >
+              Aplicar o padrão a todas as ofertas
+            </button>
+          </div>
+        </div>
+      }
+
       <label
         class="check-item vagas-conferencia"
         [class.vagas-conferencia--pendente]="soFaltaConferir()"

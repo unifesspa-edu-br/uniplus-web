@@ -19,8 +19,8 @@ function initialDocumentos(): Record<string, DocumentoConfig> {
         included: false,
         todasEtapas: true,
         etapas: DOC_ETAPAS.map((item) => item.cod),
-        // Documentos acompanham a seleção de modalidades do passo 3 —
-        // preenchidos em `sincronizarModalidades` conforme o operador marca.
+        // Vazio enquanto o documento acompanha o quadro de vagas; só o recorte
+        // no passo de documentos preenche esta lista.
         modalidades: [],
         modalidadesRecortadas: false,
       },
