@@ -197,8 +197,12 @@ describe('OfertasCursoPage', () => {
     cursosPagina1.flush([cursoSeed], {
       headers: { Link: `<${BASE}/api/configuracao/cursos?cursor=pagina-2&direction=next>; rel="next"` },
     });
-    const locais = expectLookup(`${BASE}/api/configuracao/locais-oferta`);
-    locais.flush([localSeed]);
+    const locaisPagina1 = expectLookup(`${BASE}/api/configuracao/locais-oferta`);
+    locaisPagina1.flush([localSeed], {
+      headers: {
+        Link: `<${BASE}/api/configuracao/locais-oferta?cursor=pagina-2&direction=next>; rel="next"`,
+      },
+    });
     await propagate();
 
     const outroCurso: CursoDto = {
@@ -210,10 +214,61 @@ describe('OfertasCursoPage', () => {
     const cursosPagina2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
     expect(cursosPagina2.request.params.get('cursor')).toBe('pagina-2');
     cursosPagina2.flush([outroCurso]);
+
+    const outroLocal: LocalOfertaDto = {
+      ...localSeed,
+      id: '01960000-0000-7000-0000-0000000000e2',
+      cidade: { codigoIbge: '1508084', nome: 'Xinguara', uf: 'PA' },
+    };
+    const locaisPagina2 = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/locais-oferta`,
+    );
+    expect(locaisPagina2.request.params.get('cursor')).toBe('pagina-2');
+    locaisPagina2.flush([outroLocal]);
     await propagate();
 
     expect(component['cursos'].opcoes()).toHaveLength(2);
     expect(component['cursos'].opcoes().map((c) => c.codigo)).toEqual(['ENG-CIV', 'DIR']);
+    expect(component['locaisOferta'].opcoes()).toHaveLength(2);
+    expect(component['locaisOferta'].opcoes().map((l) => l.cidade?.nome)).toEqual([
+      'Marabá',
+      'Xinguara',
+    ]);
+  });
+
+  // Unidade é o único lookup cross-módulo (Organização, ADR-0056) e o que mais
+  // cresce: o truncamento aqui esconderia unidades ofertantes inteiras do
+  // select de criação.
+  it('percorre todas as páginas do lookup de Unidade sem truncar (issue #580)', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await propagate();
+
+    const unidadesPagina1 = expectLookup(`${BASE}/api/organizacao/unidades`);
+    unidadesPagina1.flush([unidadeSeed], {
+      headers: {
+        Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
+      },
+    });
+    await propagate();
+
+    const outraUnidade: UnidadeDto = {
+      ...unidadeSeed,
+      id: '01960000-0000-7000-0000-0000000000f2',
+      sigla: 'ICH',
+      nome: 'Instituto de Ciências Humanas',
+      slug: 'ich',
+      codigo: 'ICH',
+    };
+    const unidadesPagina2 = controller.expectOne(
+      (r) => r.url === `${BASE}/api/organizacao/unidades`,
+    );
+    expect(unidadesPagina2.request.params.get('cursor')).toBe('pagina-2');
+    unidadesPagina2.flush([outraUnidade]);
+    await propagate();
+
+    expect(component['unidades'].opcoes()).toHaveLength(2);
+    expect(component['unidades'].opcoes().map((u) => u.sigla)).toEqual(['IGE', 'ICH']);
   });
 
   it('renderiza a lista resolvendo rótulos de Curso e Local via lookup', async () => {
