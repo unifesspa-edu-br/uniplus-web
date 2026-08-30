@@ -30,6 +30,11 @@ export { FormFieldComponent } from '../../src/lib/components/form-field/form-fie
 export { InstitutionalBarComponent } from '../../src/lib/components/institutional-bar/institutional-bar';
 export { IconButtonComponent } from '../../src/lib/components/icon-button/icon-button';
 export { LoadingOverlayComponent } from '../../src/lib/components/loading-overlay/loading-overlay';
+export {
+  LookupAlertComponent,
+  type UiLookupFalho,
+} from '../../src/lib/components/lookup-alert/lookup-alert';
+export { LookupLabelComponent } from '../../src/lib/components/lookup-label/lookup-label';
 export { PageHeaderComponent } from '../../src/lib/components/page-header/page-header';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
 export {

@@ -308,6 +308,34 @@
 [data-theme="contrast"] .tag--solid { color: var(--text-on-primary); }
 
 /* ============================================================================
+ * Lookup label — marcador de chave estrangeira que não virou rótulo.
+ * estado: pending (buscando), failed (catálogo recusado), missing (id fora do
+ * catálogo). O itálico carrega a distinção para quem não percebe a cor, e o
+ * texto nomeia o estado — falha de carregamento não pode passar por dado real.
+ * ========================================================================== */
+.lookup-label { font-style: italic; color: var(--text-muted); }
+.lookup-label--failed  { color: var(--color-danger-700); }
+.lookup-label--missing { color: var(--color-warning-700); }
+
+/* O alerta que acompanha os marcadores acima: fica dentro do painel da
+ * listagem, então traz o próprio respiro em vez de encostar nas bordas.
+ * `display: contents` tira o host da caixa — sem alerta a exibir, o elemento
+ * não deixa espaço em branco entre o cabeçalho do painel e a tabela. */
+.lookup-alert { display: contents; }
+.lookup-alert .alert { margin: var(--space-4) var(--space-5); }
+.lookup-alert__acoes { display: inline-flex; flex-wrap: wrap; gap: var(--space-4); }
+.lookup-alert__retry {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ============================================================================
  * BULLET
  * variant: primary, success, warning, danger, neutral
  * ========================================================================== */

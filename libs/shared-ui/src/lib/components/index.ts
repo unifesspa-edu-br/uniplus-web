@@ -24,6 +24,8 @@ export { FormFieldComponent } from './form-field/form-field';
 export { IconButtonComponent } from './icon-button/icon-button';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';
 export { LoadingOverlayComponent } from './loading-overlay/loading-overlay';
+export { LookupAlertComponent, type UiLookupFalho } from './lookup-alert/lookup-alert';
+export { LookupLabelComponent } from './lookup-label/lookup-label';
 export { PageHeaderComponent } from './page-header/page-header';
 export { PagerComponent } from './pager/pager';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
