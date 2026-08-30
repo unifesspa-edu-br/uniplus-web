@@ -20,6 +20,13 @@ import { parseLink } from './link-header';
  * ```
  */
 
+/**
+ * Teto de itens por página aceito pela `uniplus-api` (ADR-0026 do
+ * **backend** `uniplus-api`). `limit` fora da faixa 1..100 responde
+ * 422 `uniplus.cursor.limit_invalido`.
+ */
+export const API_MAX_PAGE_SIZE = 100;
+
 declare const cursorBrand: unique symbol;
 
 /**
