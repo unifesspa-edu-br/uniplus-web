@@ -680,7 +680,7 @@ describe('OfertasCursoPage', () => {
     fixture.detectChanges();
 
     const celulaCurso: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Curso"]');
-    expect(celulaCurso.querySelector('.cfg-lookup-falho')?.textContent?.trim()).toBe(
+    expect(celulaCurso.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
       'Não carregado',
     );
 
@@ -694,7 +694,9 @@ describe('OfertasCursoPage', () => {
     expect(alerta.textContent).toContain('Recarregar cursos');
     expect(alerta.textContent).not.toContain('Recarregar locais de oferta');
 
-    const botaoRecarregar: HTMLButtonElement = alerta.querySelector('button')!;
+    const botaoRecarregar: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '.alert--warning button',
+    );
     botaoRecarregar.click();
     await propagate();
     expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
@@ -722,7 +724,7 @@ describe('OfertasCursoPage', () => {
     const celulaLocal: HTMLElement = fixture.nativeElement.querySelector(
       'td[data-label="Local de oferta"]',
     );
-    expect(celulaLocal.querySelector('.cfg-lookup-falho')?.textContent?.trim()).toBe(
+    expect(celulaLocal.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
       'Não carregado',
     );
     expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(

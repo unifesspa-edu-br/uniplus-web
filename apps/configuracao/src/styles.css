@@ -235,13 +235,6 @@ cfg-pesos-enem-page {
   font-size: var(--text-sm);
 }
 
-/* Rótulo de chave estrangeira que o lookup não conseguiu resolver. O itálico
-   separa o marcador do dado real para quem não distingue a cor. */
-.cfg-lookup-falho {
-  color: var(--color-danger-500);
-  font-style: italic;
-}
-
 .cfg-detail-list {
   display: grid;
   grid-template-columns: minmax(7rem, 10rem) 1fr;
