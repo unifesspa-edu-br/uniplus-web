@@ -258,10 +258,38 @@ export function problemasDaDistribuicao(
     ...comEscopo('preenchimento', problemasDeVoBase(distribuicao.voBase)),
     ...comEscopo('padrao', problemasDePr(distribuicao.pr)),
     ...comEscopo('padrao', problemasDeModalidades(distribuicao, catalogo, federal)),
+    ...comEscopo('oferta', problemasDeModalidadeForaDoCatalogo(distribuicao, catalogo)),
     ...problemasDeQuadro(distribuicao, catalogo, federal),
     ...comEscopo('padrao', problemasDeReferencias(distribuicao, federal)),
     ...comEscopo('oferta', excesso === null ? [] : [excesso]),
   ];
+}
+
+/**
+ * Modalidade que a oferta guarda mas o cadastro não tem mais.
+ *
+ * A distribuição gravada é um instantâneo e preserva a modalidade mesmo depois
+ * de o cadastro a excluir. A tela monta as colunas a partir do catálogo vivo,
+ * então a quantidade dessa modalidade não aparece em lugar nenhum — e seguiria
+ * no comando de gravação sem que ninguém a tivesse visto, fora do teto do
+ * quadro por não haver composição que a classifique. Refazer a oferta é o que
+ * devolve o quadro ao que a tela sabe mostrar.
+ *
+ * Catálogo vazio é catálogo ainda não carregado: sem ele não se afirma que uma
+ * modalidade saiu do cadastro.
+ */
+function problemasDeModalidadeForaDoCatalogo(
+  distribuicao: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): string[] {
+  if (catalogo.size === 0) return [];
+
+  return distribuicao.modalidades
+    .filter((modalidade) => !catalogo.has(modalidade.id))
+    .map(
+      (modalidade) =>
+        `${modalidade.codigo} não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.`,
+    );
 }
 
 function comEscopo(

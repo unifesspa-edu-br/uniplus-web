@@ -391,6 +391,39 @@ describe('problemaDeVagasAutorizadas', () => {
   });
 });
 
+describe('modalidade que saiu do cadastro', () => {
+  const SUMIDA = modalidade({
+    id: 'm-sumida',
+    codigo: 'PCD_ANTIGA',
+    composicaoVagas: 'RETIRA_DE',
+  });
+
+  /**
+   * A distribuição gravada preserva a modalidade que o cadastro excluiu, mas a
+   * tela monta as colunas do catálogo vivo: a quantidade dela não aparece e
+   * seguiria na gravação sem ninguém ter visto — e sem entrar no teto, porque
+   * não há composição que a classifique.
+   */
+  it('recusa a oferta que referencia modalidade ausente do catálogo', () => {
+    const orfa = distribuicao({
+      modalidades: [par(INSTITUCIONAL), par(SUMIDA)],
+      quadro: [
+        { modalidadeId: INSTITUCIONAL.id, quantidade: '10' },
+        { modalidadeId: SUMIDA.id, quantidade: '30' },
+      ],
+    });
+
+    expect(mensagens(problemasDaDistribuicao(orfa, CATALOGO))).toContain(
+      'PCD_ANTIGA não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.',
+    );
+  });
+
+  /** Sem catálogo carregado não há como afirmar que a modalidade saiu dele. */
+  it('não acusa ausência enquanto o catálogo não carregou', () => {
+    expect(problemasDaDistribuicao(distribuicao(), catalogo([]))).toEqual([]);
+  });
+});
+
 describe('soma do quadro contra o total de vagas', () => {
   const SUPLEMENTAR = modalidade({
     id: 'm-supl',
