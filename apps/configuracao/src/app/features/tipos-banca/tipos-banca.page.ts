@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
   PaginationDirection,
@@ -23,6 +24,7 @@ import {
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
+  lookupCompleto,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -31,7 +33,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CODIGOS_TIPO_BANCA,
   CONFIGURACAO_BASE_PATH,
-  FaseCanonicaDto,
+  FasesCanonicasApi,
   TipoBancaDto,
   TiposBancaApi,
   type AtualizarTipoBancaCommand,
@@ -329,6 +331,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
 })
 export class TiposBancaPage {
   private readonly api = inject(TiposBancaApi);
+  private readonly fasesApi = inject(FasesCanonicasApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -436,19 +439,14 @@ export class TiposBancaPage {
   // Sugestões de "Fase típica" — carregadas lazy na primeira abertura do
   // formulário (sem custo enquanto o drawer nunca abre). Campo texto livre
   // sem FK (UNI-REQ-0064): a lista só alimenta o `datalist`, não valida.
-  private readonly carregarSugestoesFaseTipica = signal(false);
-  private readonly sugestoesFaseTipicaResource = useApiResource<readonly FaseCanonicaDto[]>(() => {
-    if (!this.carregarSugestoesFaseTipica()) {
-      return undefined;
-    }
-    return {
-      url: `${this.basePath}/api/configuracao/fases-canonicas`,
-      params: new HttpParams().set('limit', '100'),
-      context: withVendorMime('fase-canonica', 1),
-    };
-  });
+  // Percorre todas as páginas por cursor: o catálogo de fases canônicas cresce
+  // por cadastro, e uma sugestão que some é indistinguível de "não existe".
+  private readonly fasesCanonicas = lookupCompleto(
+    (cursor) => this.fasesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
   protected readonly sugestoesFaseTipica = computed(() =>
-    (this.sugestoesFaseTipicaResource.data() ?? []).map((fase) => fase.nome),
+    this.fasesCanonicas.opcoes().map((fase) => fase.nome),
   );
 
   protected readonly form: FormGroup<BancaForm> = new FormGroup<BancaForm>({
@@ -594,11 +592,7 @@ export class TiposBancaPage {
   }
 
   private prepararSugestoesFaseTipica(): void {
-    if (!this.carregarSugestoesFaseTipica()) {
-      this.carregarSugestoesFaseTipica.set(true);
-    } else {
-      this.sugestoesFaseTipicaResource.reload();
-    }
+    this.fasesCanonicas.recarregar();
   }
 
   private montarParams(): HttpParams {

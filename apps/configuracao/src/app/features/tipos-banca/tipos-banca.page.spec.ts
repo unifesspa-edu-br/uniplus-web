@@ -4,11 +4,16 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, TipoBancaDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  FaseCanonicaDto,
+  TipoBancaDto,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
 
 const BASE = 'http://localhost:5000';
+const LIMITE_MAXIMO_API = 100;
 
 const bancaSeed: TipoBancaDto = {
   id: '01960000-0000-7000-0000-0000000000b2',
@@ -18,6 +23,20 @@ const bancaSeed: TipoBancaDto = {
   descricao: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };
+
+function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
+  return {
+    id: `fase-${codigo}`,
+    codigo,
+    nome,
+    descricao: null,
+    donoTipico: 'CEPS',
+    agrupaEtapas: false,
+    permiteComplementacao: false,
+    baseLegal: null,
+    criadoEm: '2026-06-10T12:00:00Z',
+  };
+}
 
 describe('TiposBancaPage', () => {
   let fixture: ComponentFixture<TiposBancaPage>;
@@ -162,6 +181,30 @@ describe('TiposBancaPage', () => {
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([]);
+  });
+
+  it('percorre todas as páginas de fases canônicas nas sugestões de fase típica', async () => {
+    const fasesUrl = `${BASE}/api/configuracao/fases-canonicas`;
+    await flushLista([]);
+    component['abrirCadastro']();
+    await propagate();
+
+    const pagina1 = controller.expectOne((r) => r.url === fasesUrl);
+    // O teto pedido é o da API, não um número escolhido à toa: acima dele a
+    // resposta é 422 e o `datalist` fica sem sugestão nenhuma.
+    expect(pagina1.request.params.get('limit')).toBe(String(LIMITE_MAXIMO_API));
+    pagina1.flush([faseCanonica('INSCRICAO', 'Inscrição')], {
+      headers: { Link: `<${fasesUrl}?cursor=pagina-2&direction=next>; rel="next"` },
+    });
+    await propagate();
+
+    const pagina2 = controller.expectOne(
+      (r) => r.url === fasesUrl && r.params.get('cursor') === 'pagina-2',
+    );
+    pagina2.flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
+    await propagate();
+
+    expect(component['sugestoesFaseTipica']()).toEqual(['Inscrição', 'Homologação']);
   });
 
   it('código duplicado (409) é rejeitado com erro no campo sem fechar o drawer', async () => {
