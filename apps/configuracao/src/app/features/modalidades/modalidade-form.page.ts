@@ -24,8 +24,8 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
-  coletarPaginas,
   idempotencyKey,
+  lookupCompleto,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -428,7 +428,10 @@ export class ModalidadeFormPage {
   protected readonly criterios = signal<readonly string[]>([]);
 
   /** Modalidades vivas para os selects de referência (origem/destino/par/fallback). */
-  private readonly modalidadesVivas = signal<readonly ModalidadeDto[]>([]);
+  private readonly modalidades = lookupCompleto(
+    (cursor) => this.api.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
 
   /** Snapshot da modalidade em edição — usado para pré-checar unicidade excluindo a si mesma. */
   private readonly codigoAtual = signal<string | null>(null);
@@ -479,7 +482,7 @@ export class ModalidadeFormPage {
   /** Opções de referência: modalidades vivas exceto a própria (por código). */
   protected readonly opcoesReferencia = computed(() => {
     const proprio = this.codigoAtual();
-    return this.modalidadesVivas()
+    return this.modalidades.opcoes()
       .filter((m) => m.codigo !== proprio)
       .map((m) => ({ value: m.codigo, label: m.descricao ? `${m.codigo} — ${m.descricao}` : m.codigo }));
   });
@@ -545,7 +548,7 @@ export class ModalidadeFormPage {
 
   constructor() {
     afterNextRender(() => this.tituloPagina()?.nativeElement.focus());
-    this.carregarModalidadesVivas();
+    this.modalidades.recarregar();
     if (this.id() !== null) {
       this.carregarModalidade(this.id() as string);
     } else {
@@ -568,7 +571,7 @@ export class ModalidadeFormPage {
     const control = this.form.controls.codigo;
     const codigo = control.value.trim();
     const duplicado =
-      codigo.length > 0 && this.modalidadesVivas().some((m) => m.codigo === codigo);
+      codigo.length > 0 && this.modalidades.opcoes().some((m) => m.codigo === codigo);
     if (duplicado) {
       control.setErrors({ ...(control.errors ?? {}), duplicado: true });
       control.markAsTouched();
@@ -774,20 +777,6 @@ export class ModalidadeFormPage {
       default:
         return regra === 'DESTINO_UNICO' || regra === 'CRUZADO';
     }
-  }
-
-  // Percorre todas as páginas por cursor em vez de truncar em API_MAX_PAGE_SIZE:
-  // um select de FK não pode esconder opções silenciosamente.
-  private carregarModalidadesVivas(): void {
-    coletarPaginas((cursor) =>
-      this.api.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (result.ok) {
-          this.modalidadesVivas.set([...result.data]);
-        }
-      });
   }
 
   private carregarModalidade(id: string): void {

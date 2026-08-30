@@ -100,8 +100,8 @@ describe('ModalidadeFormPage', () => {
     expect(pagina2.request.params.get('direction')).toBe('next');
     pagina2.flush([LB_PPI]);
 
-    expect(component['modalidadesVivas']()).toHaveLength(2);
-    expect(component['modalidadesVivas']().map((m) => m.codigo)).toEqual(['AC', 'LB_PPI']);
+    expect(component['modalidades'].opcoes()).toHaveLength(2);
+    expect(component['modalidades'].opcoes().map((m) => m.codigo)).toEqual(['AC', 'LB_PPI']);
   });
 
   it('ModalidadeForm_Natureza_AmplaOcultaRemanejamento', () => {

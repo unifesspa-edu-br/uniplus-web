@@ -28,11 +28,11 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
-  coletarPaginas,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
+  lookupCompleto,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -478,8 +478,18 @@ export class PrecedenciasFasePage {
    * apresentação: o domínio fechado das opções é o roster canônico, que o
    * backend valida contra `FaseCanonicaCatalogo` — não contra este cadastro.
    */
-  private readonly nomesDasFases = signal<ReadonlyMap<string, string>>(new Map());
-  protected readonly falhaAoCarregarFases = signal(false);
+  private readonly fases = lookupCompleto(
+    (cursor) => this.fasesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
+  private readonly nomesDasFases = computed(
+    () => new Map(this.fases.opcoes().map((fase) => [fase.codigo, fase.nome])),
+  );
+  /**
+   * A falha é sinalizada à parte para não se confundir com o erro da lista
+   * principal: sem os nomes, as opções ainda aparecem, só que pelo código.
+   */
+  protected readonly falhaAoCarregarFases = this.fases.comErro;
 
   /**
    * Identifica a abertura de formulário que originou uma mutação. A resposta
@@ -634,7 +644,7 @@ export class PrecedenciasFasePage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.erroDoPar.set(null));
 
-    this.carregarNomesDasFases();
+    this.fases.recarregar();
   }
 
   protected proximaPagina(): void {
@@ -829,28 +839,6 @@ export class PrecedenciasFasePage {
 
   protected nomeDaFase(codigo: string): string {
     return this.nomesDasFases().get(codigo) ?? '';
-  }
-
-  /**
-   * Uma leitura por vida da página: o cadastro de fases canônicas só alimenta
-   * rótulos, então não acompanha os reloads da lista de precedências. A falha
-   * é sinalizada à parte para não se confundir com o erro da lista principal.
-   */
-  private carregarNomesDasFases(): void {
-    coletarPaginas((cursor) =>
-      this.fasesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        // O interceptor converte 4xx/5xx em `ApiResult` de falha, sem erro de
-        // stream — a degradação depende de checar `ok`, não de `catchError`.
-        if (!result.ok) {
-          this.falhaAoCarregarFases.set(true);
-          return;
-        }
-        this.falhaAoCarregarFases.set(false);
-        this.nomesDasFases.set(new Map(result.data.map((fase) => [fase.codigo, fase.nome])));
-      });
   }
 
   private montarParams(): HttpParams {
