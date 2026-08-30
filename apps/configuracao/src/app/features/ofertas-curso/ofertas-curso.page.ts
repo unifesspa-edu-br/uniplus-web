@@ -11,7 +11,6 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { Subscription } from 'rxjs';
 import {
   AbstractControl,
   FormControl,
@@ -28,11 +27,11 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
-  coletarPaginas,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
+  lookupCompleto,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -42,7 +41,6 @@ import {
   AtualizarOfertaCursoCommand,
   CONFIGURACAO_BASE_PATH,
   CriarOfertaCursoCommand,
-  CursoDto,
   CursosApi,
   FORMATOS_PEDAGOGICOS,
   LocaisOfertaApi,
@@ -59,7 +57,7 @@ import {
   ordenarTurnosCanonicamente,
   turnosExigidosPorRegime,
 } from '@uniplus/shared-data/configuracao';
-import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   AlertComponent,
   ConfirmDialogComponent,
@@ -249,17 +247,17 @@ interface OfertaCursoForm {
                 <span class="field__label is-required">Curso</span>
                 <select class="select" formControlName="cursoId">
                   <option value="" disabled>Selecione…</option>
-                  @for (curso of cursosOpcoes(); track curso.id) {
+                  @for (curso of cursos.opcoes(); track curso.id) {
                     <option [value]="curso.id">{{ curso.codigo }} — {{ curso.nome }}</option>
                   }
                 </select>
                 @if (cursoContexto()) {
                   <span class="field__hint">{{ cursoContexto() }}</span>
                 }
-                @if (cursosComErro()) {
+                @if (cursos.comErro()) {
                   <span class="field__error">
                     Não foi possível carregar os cursos.
-                    <button type="button" class="cfg-link-button" (click)="recarregarCursos()">
+                    <button type="button" class="cfg-link-button" (click)="cursos.recarregar()">
                       Tentar novamente
                     </button>
                   </span>
@@ -272,17 +270,17 @@ interface OfertaCursoForm {
                 <span class="field__label is-required">Local de oferta</span>
                 <select class="select" formControlName="localOfertaId">
                   <option value="" disabled>Selecione…</option>
-                  @for (local of locaisOfertaOpcoes(); track local.id) {
+                  @for (local of locaisOferta.opcoes(); track local.id) {
                     <option [value]="local.id">{{ localOfertaLabel(local.id) }}</option>
                   }
                 </select>
                 @if (localContexto()) {
                   <span class="field__hint">{{ localContexto() }}</span>
                 }
-                @if (locaisOfertaComErro()) {
+                @if (locaisOferta.comErro()) {
                   <span class="field__error">
                     Não foi possível carregar os locais de oferta.
-                    <button type="button" class="cfg-link-button" (click)="recarregarLocaisOferta()">
+                    <button type="button" class="cfg-link-button" (click)="locaisOferta.recarregar()">
                       Tentar novamente
                     </button>
                   </span>
@@ -295,7 +293,7 @@ interface OfertaCursoForm {
                 <span class="field__label is-required">Unidade ofertante</span>
                 <select class="select" formControlName="unidadeOfertanteOrigemId">
                   <option value="" disabled>Selecione…</option>
-                  @for (unidade of unidadesOpcoes(); track unidade.id) {
+                  @for (unidade of unidades.opcoes(); track unidade.id) {
                     <option [value]="unidade.id">{{ unidade.sigla }} — {{ unidade.nome }}</option>
                   }
                 </select>
@@ -306,10 +304,10 @@ interface OfertaCursoForm {
                   Congelada por snapshot-copy ao criar — alterações posteriores na unidade de
                   origem não afetam a oferta (ADR-0061).
                 </span>
-                @if (unidadesComErro()) {
+                @if (unidades.comErro()) {
                   <span class="field__error">
                     Não foi possível carregar as unidades.
-                    <button type="button" class="cfg-link-button" (click)="recarregarUnidades()">
+                    <button type="button" class="cfg-link-button" (click)="unidades.recarregar()">
                       Tentar novamente
                     </button>
                   </span>
@@ -559,18 +557,21 @@ export class OfertasCursoPage {
   // ofertante, que já vem congelada por snapshot-copy no DTO da oferta).
   // Percorrem todas as páginas por cursor em vez de truncar em
   // API_MAX_PAGE_SIZE: um select de FK não pode esconder opções silenciosamente.
-  protected readonly cursosOpcoes = signal<readonly CursoDto[]>([]);
-  protected readonly cursosComErro = signal(false);
-  private cursosSubscription?: Subscription;
+  protected readonly cursos = lookupCompleto(
+    (cursor) => this.cursosApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
   private readonly cursosPorId = computed(
-    () => new Map(this.cursosOpcoes().map((curso) => [curso.id, curso] as const)),
+    () => new Map(this.cursos.opcoes().map((curso) => [curso.id, curso] as const)),
   );
 
-  protected readonly locaisOfertaOpcoes = signal<readonly LocalOfertaDto[]>([]);
-  protected readonly locaisOfertaComErro = signal(false);
-  private locaisOfertaSubscription?: Subscription;
+  protected readonly locaisOferta = lookupCompleto(
+    (cursor) =>
+      this.locaisOfertaApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
   private readonly locaisOfertaPorId = computed(
-    () => new Map(this.locaisOfertaOpcoes().map((local) => [local.id, local] as const)),
+    () => new Map(this.locaisOferta.opcoes().map((local) => [local.id, local] as const)),
   );
 
   // Lookup de Unidade — cross-módulo (Organização, ADR-0056). Lazy: só usado
@@ -578,11 +579,12 @@ export class OfertasCursoPage {
   // congelado em `oferta.unidadeOfertante`.
   private readonly carregarUnidades = signal(false);
   private unidadesIniciado = false;
-  protected readonly unidadesOpcoes = signal<readonly UnidadeDto[]>([]);
-  protected readonly unidadesComErro = signal(false);
-  private unidadesSubscription?: Subscription;
+  protected readonly unidades = lookupCompleto(
+    (cursor) => this.unidadesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
   private readonly unidadesPorId = computed(
-    () => new Map(this.unidadesOpcoes().map((unidade) => [unidade.id, unidade] as const)),
+    () => new Map(this.unidades.opcoes().map((unidade) => [unidade.id, unidade] as const)),
   );
 
   private readonly cursores = linkedSignal<
@@ -807,8 +809,8 @@ export class OfertasCursoPage {
       }
     });
 
-    this.buscarCursos();
-    this.buscarLocaisOferta();
+    this.cursos.recarregar();
+    this.locaisOferta.recarregar();
 
     // `carregarUnidades` só liga o lookup; `unidadesIniciado` evita refazer a
     // busca a cada reabertura do drawer (abrirCadastro/abrirEdicao religam o
@@ -816,7 +818,7 @@ export class OfertasCursoPage {
     effect(() => {
       if (this.carregarUnidades() && !this.unidadesIniciado) {
         this.unidadesIniciado = true;
-        untracked(() => this.buscarUnidades());
+        untracked(() => this.unidades.recarregar());
       }
     });
 
@@ -947,66 +949,6 @@ export class OfertasCursoPage {
     if (!this.loading()) {
       this.lista.reload();
     }
-  }
-
-  protected recarregarCursos(): void {
-    this.buscarCursos();
-  }
-
-  protected recarregarLocaisOferta(): void {
-    this.buscarLocaisOferta();
-  }
-
-  protected recarregarUnidades(): void {
-    this.buscarUnidades();
-  }
-
-  private buscarCursos(): void {
-    this.cursosSubscription?.unsubscribe();
-    this.cursosComErro.set(false);
-    this.cursosSubscription = coletarPaginas((cursor) =>
-      this.cursosApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (!result.ok) {
-          this.cursosComErro.set(true);
-          return;
-        }
-        this.cursosOpcoes.set(result.data);
-      });
-  }
-
-  private buscarLocaisOferta(): void {
-    this.locaisOfertaSubscription?.unsubscribe();
-    this.locaisOfertaComErro.set(false);
-    this.locaisOfertaSubscription = coletarPaginas((cursor) =>
-      this.locaisOfertaApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (!result.ok) {
-          this.locaisOfertaComErro.set(true);
-          return;
-        }
-        this.locaisOfertaOpcoes.set(result.data);
-      });
-  }
-
-  private buscarUnidades(): void {
-    this.unidadesSubscription?.unsubscribe();
-    this.unidadesComErro.set(false);
-    this.unidadesSubscription = coletarPaginas((cursor) =>
-      this.unidadesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (!result.ok) {
-          this.unidadesComErro.set(true);
-          return;
-        }
-        this.unidadesOpcoes.set(result.data);
-      });
   }
 
   protected abrirCadastro(): void {

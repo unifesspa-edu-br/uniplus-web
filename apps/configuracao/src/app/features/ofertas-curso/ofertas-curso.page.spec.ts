@@ -174,7 +174,7 @@ describe('OfertasCursoPage', () => {
     const primeira = expectLookup(`${BASE}/api/configuracao/cursos`);
     expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
 
-    component['recarregarCursos']();
+    component['cursos'].recarregar();
     await propagate();
 
     // A primeira travessia precisa ter sido cancelada de verdade (não só
@@ -186,8 +186,8 @@ describe('OfertasCursoPage', () => {
     segunda.flush([cursoSeed]);
     await propagate();
 
-    expect(component['cursosOpcoes']()).toHaveLength(1);
-    expect(component['cursosOpcoes']()[0].id).toBe(CURSO_ID);
+    expect(component['cursos'].opcoes()).toHaveLength(1);
+    expect(component['cursos'].opcoes()[0].id).toBe(CURSO_ID);
   });
 
   it('percorre todas as páginas dos lookups de Curso e Local de oferta sem truncar (issue #580)', async () => {
@@ -212,8 +212,8 @@ describe('OfertasCursoPage', () => {
     cursosPagina2.flush([outroCurso]);
     await propagate();
 
-    expect(component['cursosOpcoes']()).toHaveLength(2);
-    expect(component['cursosOpcoes']().map((c) => c.codigo)).toEqual(['ENG-CIV', 'DIR']);
+    expect(component['cursos'].opcoes()).toHaveLength(2);
+    expect(component['cursos'].opcoes().map((c) => c.codigo)).toEqual(['ENG-CIV', 'DIR']);
   });
 
   it('renderiza a lista resolvendo rótulos de Curso e Local via lookup', async () => {
