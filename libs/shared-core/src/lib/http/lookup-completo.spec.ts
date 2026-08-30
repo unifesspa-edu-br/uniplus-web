@@ -137,6 +137,66 @@ describe('lookupCompleto', () => {
     expect(lookup.opcoes()).toEqual([]);
   });
 
+  /**
+   * Sem esse sinal, catálogo vazio por busca em andamento e catálogo vazio por
+   * cadastro sem itens são o mesmo estado para quem consome o lookup — e a
+   * tela não tem como distinguir "carregando" de "não encontrado" (#579).
+   */
+  it('nasce pendente e só se resolve quando a busca termina', () => {
+    const emVoo = new Subject<ApiResult<readonly string[]>>();
+    const consulta = vi.fn(() => emVoo);
+
+    const lookup = lookupCompleto(consulta, destroyRef);
+    // Antes da primeira busca já conta como pendente: um lookup lazy exibiria
+    // "não encontrado" na janela entre o render e o disparo da consulta.
+    expect(lookup.pendente()).toBe(true);
+
+    lookup.recarregar();
+    expect(lookup.pendente()).toBe(true);
+
+    emVoo.next(pagina(['a']));
+    emVoo.complete();
+    expect(lookup.pendente()).toBe(false);
+  });
+
+  it('deixa de estar pendente quando o envelope é recusado', () => {
+    const lookup = lookupCompleto(() => of(recusa), destroyRef);
+    lookup.recarregar();
+
+    expect(lookup.comErro()).toBe(true);
+    expect(lookup.pendente()).toBe(false);
+  });
+
+  it('deixa de estar pendente quando o erro escapa do envelope', () => {
+    const lookup = lookupCompleto(
+      () => throwError(() => new Error('rede caiu')) as Observable<ApiResult<readonly string[]>>,
+      destroyRef,
+    );
+    lookup.recarregar();
+
+    expect(lookup.comErro()).toBe(true);
+    expect(lookup.pendente()).toBe(false);
+  });
+
+  it('volta a ficar pendente a cada nova tentativa', () => {
+    const segunda = new Subject<ApiResult<readonly string[]>>();
+    const consulta = vi
+      .fn<(cursor?: Cursor) => Observable<ApiResult<readonly string[]>>>()
+      .mockReturnValueOnce(of(pagina(['a'])))
+      .mockReturnValueOnce(segunda);
+
+    const lookup = lookupCompleto(consulta, destroyRef);
+    lookup.recarregar();
+    expect(lookup.pendente()).toBe(false);
+
+    lookup.recarregar();
+    expect(lookup.pendente()).toBe(true);
+
+    segunda.next(pagina(['b']));
+    segunda.complete();
+    expect(lookup.pendente()).toBe(false);
+  });
+
   it('encadeia as páginas na ordem em que o servidor as entrega', () => {
     const consulta = vi.fn((cursor?: Cursor) => {
       if (cursor === undefined) return of(pagina(['a'], 'p2'));
