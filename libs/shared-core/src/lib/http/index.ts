@@ -33,6 +33,8 @@ export {
   extractPrevCursor,
 } from './pagination';
 export { coletarPaginas } from './coletar-paginas';
+export { lookupCompleto } from './lookup-completo';
+export type { LookupCompleto } from './lookup-completo';
 export type { Cursor, PaginationDirection } from './pagination';
 
 export { CLIENT_PROBLEM_CODES } from './problem-details';
