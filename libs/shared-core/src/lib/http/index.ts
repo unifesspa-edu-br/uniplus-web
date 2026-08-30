@@ -25,7 +25,13 @@ export {
 export { parseLink } from './link-header';
 export type { ParsedLink } from './link-header';
 
-export { createCursor, cursorToString, extractNextCursor, extractPrevCursor } from './pagination';
+export {
+  API_MAX_PAGE_SIZE,
+  createCursor,
+  cursorToString,
+  extractNextCursor,
+  extractPrevCursor,
+} from './pagination';
 export { coletarPaginas } from './coletar-paginas';
 export type { Cursor, PaginationDirection } from './pagination';
 

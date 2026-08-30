@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createCursor, cursorToString, extractNextCursor, extractPrevCursor } from './pagination';
+import {
+  API_MAX_PAGE_SIZE,
+  createCursor,
+  cursorToString,
+  extractNextCursor,
+  extractPrevCursor,
+} from './pagination';
 
 function extractRequiredNextCursor(linkHeader: string): string {
   const next = extractNextCursor(linkHeader);
@@ -188,5 +194,11 @@ describe('extractPrevCursor — header Link → cursor da página anterior (ADR-
       const linkHeader = '<https://api/x?cursor=&direction=prev>; rel="prev"';
       expect(extractPrevCursor(linkHeader)).toBeNull();
     });
+  });
+});
+
+describe('API_MAX_PAGE_SIZE', () => {
+  it('espelha o teto 1..100 do ADR-0026 do backend uniplus-api', () => {
+    expect(API_MAX_PAGE_SIZE).toBe(100);
   });
 });
