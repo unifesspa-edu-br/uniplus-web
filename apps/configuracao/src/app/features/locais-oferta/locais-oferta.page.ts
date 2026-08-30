@@ -20,11 +20,13 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  ResolucaoDeVinculo,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
   lookupCompleto,
+  resolverVinculo,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -34,6 +36,7 @@ import {
   AtualizarLocalOfertaCommand,
   CONFIGURACAO_BASE_PATH,
   CampiApi,
+  CampusDto,
   CriarLocalOfertaCommand,
   LocaisOfertaApi,
   LocalOfertaDto,
@@ -45,8 +48,11 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  LookupAlertComponent,
+  LookupLabelComponent,
   PagerComponent,
   SpinnerComponent,
+  type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
 import {
   EnderecoFormComponent,
@@ -59,6 +65,8 @@ import {
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
+
+const rotularCampus = (campus: CampusDto): string => `${campus.sigla} — ${campus.nome}`;
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -79,6 +87,8 @@ interface LocalOfertaForm {
     DrawerComponent,
     EmptyStateComponent,
     EnderecoFormComponent,
+    LookupAlertComponent,
+    LookupLabelComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -124,6 +134,8 @@ interface LocalOfertaForm {
         </button>
       </div>
 
+      <ui-lookup-alert [falhas]="lookupsComFalha()" />
+
       @if (locais().length > 0) {
         <div class="table-responsive">
           <table>
@@ -141,7 +153,13 @@ interface LocalOfertaForm {
                 <tr>
                   <td data-label="Tipo"><span class="tag">{{ tipoLabel(local.tipo) }}</span></td>
                   <td data-label="Cidade">{{ cidadeLabel(local) }}</td>
-                  <td data-label="Campus responsável">{{ campusLabel(local.campusResponsavelId) }}</td>
+                  <td data-label="Campus responsável">
+                    @if (local.campusResponsavelId === null) {
+                      —
+                    } @else {
+                      <ui-lookup-label [resolucao]="campusDoLocal(local.campusResponsavelId)" />
+                    }
+                  </td>
                   <td data-label="Código e-MEC">{{ local.codigoEmec || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <button
@@ -336,6 +354,10 @@ export class LocaisOfertaPage {
     () => new Map(this.campi.opcoes().map((campus) => [campus.id, campus] as const)),
   );
 
+  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() =>
+    this.campi.comErro() ? [{ nome: 'campi', recarregar: () => this.campi.recarregar() }] : [],
+  );
+
   private readonly cursores = linkedSignal<
     ApiResult<readonly LocalOfertaDto[]> | undefined,
     { readonly prev: Cursor | null; readonly next: Cursor | null }
@@ -442,12 +464,25 @@ export class LocaisOfertaPage {
     return cidade ? `${cidade.nome} — ${cidade.uf}` : '—';
   }
 
+  /**
+   * Estado da resolução do Campus responsável — o que a listagem exibe.
+   * Distingue carregando, catálogo recusado e id fora do catálogo, que o
+   * rótulo único ("Vinculado") colapsava num texto de aparência normal (#579).
+   * O vínculo ausente (`null`) não chega aqui: é opcional e a tabela já o
+   * mostra como "—".
+   */
+  protected campusDoLocal(id: string): ResolucaoDeVinculo {
+    return resolverVinculo(this.campi, this.campiPorId().get(id), rotularCampus);
+  }
+
+  // No campo do drawer o campus já foi escolhido a partir do catálogo
+  // carregado, então só o rótulo interessa.
   protected campusLabel(id: string | null): string {
     if (id === null) {
       return '—';
     }
-    const campus = this.campiPorId().get(id);
-    return campus ? `${campus.sigla} — ${campus.nome}` : 'Vinculado';
+    const { estado, rotulo } = this.campusDoLocal(id);
+    return estado === 'resolvido' ? rotulo : 'Vinculado';
   }
 
   protected proximaPagina(): void {

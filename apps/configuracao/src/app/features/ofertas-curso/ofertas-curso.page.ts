@@ -27,11 +27,13 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  ResolucaoDeVinculo,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
   lookupCompleto,
+  resolverVinculo,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -41,6 +43,7 @@ import {
   AtualizarOfertaCursoCommand,
   CONFIGURACAO_BASE_PATH,
   CriarOfertaCursoCommand,
+  CursoDto,
   CursosApi,
   FORMATOS_PEDAGOGICOS,
   LocaisOfertaApi,
@@ -63,12 +66,25 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  LookupAlertComponent,
+  LookupLabelComponent,
   PagerComponent,
   SpinnerComponent,
+  type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
+
+// Rotulação dos vínculos da listagem. Fora da classe porque são funções puras
+// sobre o DTO — o mesmo texto serve à tabela e aos campos do drawer.
+const rotularCurso = (curso: CursoDto): string => `${curso.codigo} — ${curso.nome}`;
+
+const rotularTipoLocal = (local: LocalOfertaDto): string =>
+  TIPOS_LOCAL_OFERTA.find((t) => t.value === local.tipo)?.label ?? local.tipo;
+
+const rotularLocalOferta = (local: LocalOfertaDto): string =>
+  `${rotularTipoLocal(local)} — ${local.cidade.nome}`;
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -96,6 +112,8 @@ interface OfertaCursoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    LookupAlertComponent,
+    LookupLabelComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -141,16 +159,7 @@ interface OfertaCursoForm {
         </button>
       </div>
 
-      @if (lookupsComFalha().length > 0) {
-        <ui-alert variant="warning" heading="Rótulos não carregados">
-          As colunas afetadas mostram “Não carregado” até a busca ser refeita.
-          @for (lookup of lookupsComFalha(); track lookup.nome) {
-            <button type="button" class="cfg-link-button" (click)="lookup.recarregar()">
-              Recarregar {{ lookup.nome }}
-            </button>
-          }
-        </ui-alert>
-      }
+      <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (ofertas().length > 0) {
         <div class="table-responsive">
@@ -172,18 +181,10 @@ interface OfertaCursoForm {
               @for (oferta of ofertas(); track oferta.id) {
                 <tr>
                   <td data-label="Curso">
-                    @if (cursos.comErro()) {
-                      <span class="cfg-lookup-falho">Não carregado</span>
-                    } @else {
-                      {{ cursoLabel(oferta.cursoId) }}
-                    }
+                    <ui-lookup-label [resolucao]="cursoDaOferta(oferta.cursoId)" />
                   </td>
                   <td data-label="Local de oferta">
-                    @if (locaisOferta.comErro()) {
-                      <span class="cfg-lookup-falho">Não carregado</span>
-                    } @else {
-                      {{ localOfertaLabel(oferta.localOfertaId) }}
-                    }
+                    <ui-lookup-label [resolucao]="localDaOferta(oferta.localOfertaId)" />
                   </td>
                   <td data-label="Unidade ofertante">
                     {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
@@ -628,7 +629,7 @@ export class OfertasCursoPage {
     { nome: 'locais de oferta', lookup: this.locaisOferta },
   ] as const;
 
-  protected readonly lookupsComFalha = computed(() =>
+  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() =>
     this.lookupsDaListagem
       .filter(({ lookup }) => lookup.comErro())
       .map(({ nome, lookup }) => ({ nome, recarregar: () => lookup.recarregar() })),
@@ -747,7 +748,7 @@ export class OfertasCursoPage {
   });
   protected readonly localContexto = computed<string | null>(() => {
     const local = this.locaisOfertaPorId().get(this.localOfertaIdValue());
-    return local ? `${local.cidade.nome} · ${this.tipoLocalLabel(local)}` : null;
+    return local ? `${local.cidade.nome} · ${rotularTipoLocal(local)}` : null;
   });
 
   private readonly unidadeIdValue = toSignal(
@@ -955,14 +956,33 @@ export class OfertasCursoPage {
     control.markAsDirty();
   }
 
+  /**
+   * Estado da resolução do Curso da linha — o que a listagem exibe. Distingue
+   * carregando, catálogo recusado e id fora do catálogo, que o rótulo único
+   * ("Vinculado") colapsava num texto de aparência normal (#579).
+   */
+  protected cursoDaOferta(cursoId: string): ResolucaoDeVinculo {
+    return resolverVinculo(this.cursos, this.cursosPorId().get(cursoId), rotularCurso);
+  }
+
+  protected localDaOferta(localOfertaId: string): ResolucaoDeVinculo {
+    return resolverVinculo(
+      this.locaisOferta,
+      this.locaisOfertaPorId().get(localOfertaId),
+      rotularLocalOferta,
+    );
+  }
+
+  // Nos campos do drawer o vínculo já está escolhido a partir do próprio
+  // catálogo carregado, então só o rótulo interessa.
   protected cursoLabel(cursoId: string): string {
-    const curso = this.cursosPorId().get(cursoId);
-    return curso ? `${curso.codigo} — ${curso.nome}` : 'Vinculado';
+    const { estado, rotulo } = this.cursoDaOferta(cursoId);
+    return estado === 'resolvido' ? rotulo : 'Vinculado';
   }
 
   protected localOfertaLabel(localOfertaId: string): string {
-    const local = this.locaisOfertaPorId().get(localOfertaId);
-    return local ? `${this.tipoLocalLabel(local)} — ${local.cidade.nome}` : 'Vinculado';
+    const { estado, rotulo } = this.localDaOferta(localOfertaId);
+    return estado === 'resolvido' ? rotulo : 'Vinculado';
   }
 
   protected unidadeOfertanteEmEdicaoLabel(): string {
@@ -971,10 +991,6 @@ export class OfertasCursoPage {
       return '—';
     }
     return `${oferta.unidadeOfertante.sigla} · ${oferta.unidadeOfertante.nome} · ${oferta.unidadeOfertante.tipo}`;
-  }
-
-  private tipoLocalLabel(local: LocalOfertaDto): string {
-    return TIPOS_LOCAL_OFERTA.find((t) => t.value === local.tipo)?.label ?? local.tipo;
   }
 
   protected proximaPagina(): void {

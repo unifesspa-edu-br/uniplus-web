@@ -201,6 +201,86 @@ describe('LocaisOfertaPage', () => {
     expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
   });
 
+  // A coluna resolvia o campus por lookup e, quando a busca falhava, trocava o
+  // rótulo por "Vinculado" — texto de aparência normal que escondia a falha
+  // (#579). Cada desfecho agora tem marcador próprio.
+  it('lookup de campi recusado sinaliza a coluna e oferece recarregar', async () => {
+    const localVinculado: LocalOfertaDto = { ...localSeed, campusResponsavelId: 'cmp1' };
+    await flushLista([localVinculado]);
+    await propagate();
+    expectLookup(`${BASE}/api/configuracao/campi`).flush(
+      {},
+      { status: 500, statusText: 'Server Error' },
+    );
+    await propagate();
+    fixture.detectChanges();
+
+    const celula: HTMLElement = fixture.nativeElement.querySelector(
+      'td[data-label="Campus responsável"]',
+    );
+    expect(celula.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
+      'Não carregado',
+    );
+
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
+    expect(alerta.textContent).toContain('Recarregar campi');
+
+    const botaoRecarregar: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '.alert--warning button',
+    );
+    botaoRecarregar.click();
+    await propagate();
+    expectLookup(`${BASE}/api/configuracao/campi`).flush([
+      {
+        id: 'cmp1',
+        sigla: 'MAB',
+        nome: 'Campus de Marabá',
+        codigoEmec: null,
+        cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+        endereco: null,
+        criadoEm: '2026-06-10T12:00:00Z',
+      },
+    ]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('td[data-label="Campus responsável"]').textContent,
+    ).toContain('MAB — Campus de Marabá');
+  });
+
+  it('campus fora do catálogo carregado é "não identificado", não "não carregado"', async () => {
+    const localVinculado: LocalOfertaDto = { ...localSeed, campusResponsavelId: 'cmp-removido' };
+    await flushLista([localVinculado]);
+    await propagate();
+    // Catálogo íntegro, sem o id da linha: o vínculo é que está quebrado —
+    // esperar ou tentar de novo não resolve, e o marcador precisa dizer isso.
+    expectLookup(`${BASE}/api/configuracao/campi`).flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const celula: HTMLElement = fixture.nativeElement.querySelector(
+      'td[data-label="Campus responsável"]',
+    );
+    expect(celula.querySelector('.lookup-label--missing')?.textContent?.trim()).toBe(
+      'Não identificado',
+    );
+    expect(fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
+  });
+
+  it('local sem campus responsável mostra o traço, não marcador de lookup', async () => {
+    await flushLista([{ ...localSeed, campusResponsavelId: null }]);
+    await propagate();
+    fixture.detectChanges();
+
+    const celula: HTMLElement = fixture.nativeElement.querySelector(
+      'td[data-label="Campus responsável"]',
+    );
+    expect(celula.textContent?.trim()).toBe('—');
+    expect(celula.querySelector('.lookup-label')).toBeNull();
+  });
+
   it('percorre todas as páginas do lookup de campi sem truncar', async () => {
     await flushLista([]);
     component['abrirCadastro']();
