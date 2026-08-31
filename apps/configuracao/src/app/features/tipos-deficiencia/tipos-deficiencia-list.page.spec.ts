@@ -74,7 +74,7 @@ describe('TiposDeficienciaListPage', () => {
 
   function getSalvarOuEditarButtonEl() {
     return fixture.nativeElement.querySelector(
-      'button[form="cfg-unidade-form"]',
+      'button[form="cfg-tipo-deficiencia-form"]',
     ) as HTMLButtonElement;
   }
 
@@ -332,6 +332,43 @@ describe('TiposDeficienciaListPage', () => {
 
     expect(component['formOpen']()).toBe(true);
     expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
+  });
+
+  /**
+   * `aria-invalid` diz que há erro; sozinho, não diz **qual**. WCAG 2.1 AA
+   * (3.3.1 Identificação de Erro) pede que a mensagem esteja associada ao
+   * campo, e é o `aria-describedby` que faz o leitor de tela lê-la ao focar.
+   */
+  it('associa a dica e a mensagem de erro ao campo de código para leitor de tela', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    component['abrirDrawerCriacao']();
+    await propagate();
+    fixture.detectChanges();
+
+    const campoCodigo: HTMLInputElement = fixture.nativeElement.querySelector(
+      'input[formControlName="codigo"]',
+    );
+
+    // Sem erro, o campo aponta só para a dica.
+    expect(campoCodigo.getAttribute('aria-describedby')).toBe('cfg-td-codigo-dica');
+    expect(campoCodigo.getAttribute('aria-invalid')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#cfg-td-codigo-dica')).not.toBeNull();
+
+    digitar('codigo', '1VISUAL');
+    digitar('nome', 'Deficiência Visual');
+    digitar('descricao', 'Inclui baixa visão e cegueira');
+    component['salvar']();
+    await propagate();
+    fixture.detectChanges();
+
+    // Com erro, passa a apontar também para a mensagem — e ela existe no DOM
+    // com o id anunciado, senão o leitor de tela não lê nada.
+    expect(campoCodigo.getAttribute('aria-invalid')).toBe('true');
+    expect(campoCodigo.getAttribute('aria-describedby')).toBe(
+      'cfg-td-codigo-dica cfg-td-codigo-erro',
+    );
+    const mensagem: HTMLElement = fixture.nativeElement.querySelector('#cfg-td-codigo-erro');
+    expect(mensagem.textContent?.trim()).not.toBe('');
   });
 
   it('previne submeter código inválido sem fechar o drawer', async () => {
