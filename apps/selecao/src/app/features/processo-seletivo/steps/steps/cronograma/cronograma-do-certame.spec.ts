@@ -237,6 +237,16 @@ describe('etapa que compõe a nota', () => {
     expect(componeNota(etapa({ carater: 'classificatoria', peso: '' }))).toBe(false);
     expect(componeNota(etapa({ carater: 'classificatoria', peso: '   ' }))).toBe(false);
   });
+
+  /**
+   * Peso zero não soma ao divisor, e o domínio o recusa à parte por exigir peso
+   * maior que zero. Aceitá-lo aqui deixaria um conjunto todo zerado passar na
+   * conferência da tela e ser recusado no servidor por outro motivo.
+   */
+  it('não considera peso zero como composição de nota', () => {
+    expect(componeNota(etapa({ carater: 'classificatoria', peso: '0' }))).toBe(false);
+    expect(componeNota(etapa({ carater: 'ambas', peso: '0,0' }))).toBe(false);
+  });
 });
 
 describe('conversão do campo para número', () => {
