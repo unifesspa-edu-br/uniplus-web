@@ -9,7 +9,16 @@ export type TipoAtoPublicadoDto = components['schemas']['TipoAtoPublicadoDto'];
 
 /** Filtro da listagem do catálogo de tipos de ato (cursor opaco, ADR-0026). */
 export interface TiposAtoQuery {
-  /** Restringe aos que têm versão vigente hoje. Ausente devolve o catálogo inteiro. */
+  /**
+   * Restringe às versões vigentes hoje. **O servidor assume `true`**: omitir o
+   * parâmetro devolve apenas as vigentes, não o catálogo inteiro. Para alcançar
+   * a série histórica é preciso declarar `false` explicitamente.
+   *
+   * A distinção decide o que a tela consegue exibir. As opções que o operador
+   * pode escolher são as vigentes; mas um processo já configurado pode
+   * referenciar um código cuja versão encerrou, e resolvê-lo pelo padrão
+   * devolveria lista sem ele — rótulo vazio, sem erro nenhum.
+   */
   readonly vigentes?: boolean;
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';
@@ -35,7 +44,13 @@ export class TiposAtoApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(PUBLICACOES_BASE_PATH);
 
-  /** GET `/api/publicacoes/tipos-ato` — catálogo paginado por cursor opaco. */
+  /**
+   * GET `/api/publicacoes/tipos-ato` — catálogo paginado por cursor opaco.
+   *
+   * Sem `vigentes`, o parâmetro não viaja e vale o padrão do servidor, que é
+   * devolver só as versões vigentes. O cliente repassa a escolha em vez de
+   * impor uma, como os demais desta camada.
+   */
   listar(query: TiposAtoQuery = {}): Observable<ApiResult<readonly TipoAtoPublicadoDto[]>> {
     let params = new HttpParams();
     if (query.vigentes !== undefined) {
