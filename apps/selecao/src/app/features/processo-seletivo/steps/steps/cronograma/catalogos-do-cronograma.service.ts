@@ -54,6 +54,19 @@ export class CatalogosDoCronogramaService {
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
 
+  /**
+   * O dia que a conferência de vigência usa, fixado quando o catálogo é
+   * carregado.
+   *
+   * É signal, e não leitura direta do relógio dentro do `computed`: um
+   * `computed` só reage às fontes que lê, e o relógio não é uma delas — a lista
+   * de atos vigentes ficaria congelada na data da primeira avaliação, sem nunca
+   * se recalcular, o que numa aba aberta através da meia-noite ofereceria a
+   * vigência do dia anterior. Amarrar ao carregamento mantém a data e os dados
+   * do mesmo instante, que é a coerência que importa aqui.
+   */
+  private readonly diaDeReferencia = signal(hojeNoFusoInstitucional());
+
   /** Fase canônica por id — o que a linha do tempo lê para saber o que exigir. */
   readonly fasePorId = computed<ReadonlyMap<string, FaseCanonicaDto>>(
     () => new Map(this.fases().map((fase) => [fase.id, fase])),
@@ -81,7 +94,7 @@ export class CatalogosDoCronogramaService {
    * ele valer — para o servidor recusá-lo em seguida.
    */
   readonly atosVigentes = computed(() => {
-    const hoje = hojeNoFusoInstitucional();
+    const hoje = this.diaDeReferencia();
     return this.atos().filter(
       (ato) => ato.vigenciaInicio <= hoje && (ato.vigenciaFim === null || hoje < ato.vigenciaFim),
     );
@@ -160,6 +173,7 @@ export class CatalogosDoCronogramaService {
   carregar(): void {
     this.carregando.set(true);
     this.erro.set(null);
+    this.diaDeReferencia.set(hojeNoFusoInstitucional());
 
     forkJoin({
       fases: coletarPaginas((cursor) => this.fasesApi.listar({ cursor })),
