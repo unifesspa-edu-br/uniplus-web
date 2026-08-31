@@ -44,6 +44,7 @@
       "@uniplus/shared-core/notifications": ["libs/shared-core/notifications/src/index.ts"],
       "@uniplus/shared-data/ingresso": ["libs/shared-data/ingresso/src/index.ts"],
       "@uniplus/shared-data/geo": ["libs/shared-data/geo/src/index.ts"],
+      "@uniplus/shared-data/publicacoes": ["libs/shared-data/publicacoes/src/index.ts"],
       "@uniplus/shared-data/utils": ["libs/shared-data/utils/src/index.ts"]
     }
   },
