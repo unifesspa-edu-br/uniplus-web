@@ -31,6 +31,7 @@ import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-proc
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
 import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
 import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
+import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
@@ -70,6 +71,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     IdentificacaoStepComponent,
     PagamentoStepComponent,
     VagasStepComponent,
+    CronogramaStepComponent,
     FormulaStepComponent,
     BonusStepComponent,
     DesempateStepComponent,

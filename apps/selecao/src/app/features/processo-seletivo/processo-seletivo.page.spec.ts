@@ -11,9 +11,14 @@ import {
   ReservaDemograficaApi,
   TipoProcessoDto,
   TiposProcessoApi,
+  FasesCanonicasApi,
+  PrecedenciasFaseApi,
+  TiposBancaApi,
+  TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
+import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import {
   FundamentoIsencaoDto,
   ProcessosSeletivosApi,
@@ -66,6 +71,13 @@ const PAGE_PROVIDERS = [
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
+  // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
+  // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
+  { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
+  { provide: PrecedenciasFaseApi, useValue: catalogoVazioStub },
+  { provide: TiposBancaApi, useValue: catalogoVazioStub },
+  { provide: TiposEtapaApi, useValue: catalogoVazioStub },
+  { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
 ];
 
