@@ -93,9 +93,7 @@ export {
 } from './tipos-processo.api';
 export {
   TiposDocumentoApi,
-  CATEGORIAS_DOCUMENTO,
   type AtualizarTipoDocumentoCommand,
-  type CategoriaDocumentoOption,
   type CriarTipoDocumentoCommand,
   type TipoDocumentoDto,
   type TiposDocumentoQuery,

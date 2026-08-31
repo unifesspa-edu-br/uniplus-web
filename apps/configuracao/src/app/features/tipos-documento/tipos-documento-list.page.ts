@@ -20,10 +20,12 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  ResolucaoDeVinculo,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
+  resolverVinculo,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -31,22 +33,25 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarTipoDocumentoCommand,
-  CATEGORIAS_DOCUMENTO,
   CONFIGURACAO_BASE_PATH,
   CriarTipoDocumentoCommand,
   TipoDocumentoDto,
   TiposDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
+import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
 import {
   AlertComponent,
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
   FilterChipsComponent,
+  LookupAlertComponent,
+  LookupLabelComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
   type UiFilterChipOption,
+  type UiLookupFalho,
   FilterBarComponent
 } from '@uniplus/shared-ui/components';
 
@@ -58,6 +63,12 @@ const TIPO_DOCUMENTO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_document
 
 /** Teto do campo `tamanhoMaximoMb` — o backend só exige `> 0`; sem teto superior no contrato. */
 const TAMANHO_MAXIMO_MB_MINIMO = 1;
+
+/**
+ * Valor do chip que recolhe os registros cuja categoria saiu do cadastro. Não
+ * colide com código de categoria, que é `^[A-Z][A-Z0-9_]{1,49}$`.
+ */
+const FILTRO_FORA_DO_CATALOGO = '*fora-do-cadastro*';
 
 type ModoFormulario = 'criar' | 'editar';
 type FormatoAceitoChave = 'formatoPdf' | 'formatoJpeg' | 'formatoPng' | 'formatoTiff';
@@ -105,6 +116,8 @@ interface TipoDocumentoForm {
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    LookupAlertComponent,
+    LookupLabelComponent,
     PagerComponent,
     SpinnerComponent,
     TagComponent,
@@ -126,7 +139,7 @@ interface TipoDocumentoForm {
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os tipos de documento">
         {{ errorMessage() }}
-        <div class="cfg-tipos-documento__retry">
+        <div class="cfg-list__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -160,7 +173,7 @@ interface TipoDocumentoForm {
         <div class="panel-head__title">
           <h2 id="cfg-tipos-documento-list-title">Tipos de documento</h2>
           @if (loading()) {
-            <span class="cfg-tipos-documento__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -168,6 +181,8 @@ interface TipoDocumentoForm {
           Novo tipo
         </button>
       </div>
+
+      <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (documentosFiltrados().length > 0) {
         <div class="table-responsive">
@@ -192,7 +207,9 @@ interface TipoDocumentoForm {
                       <div class="table-responsive__meta">Equiv.: <code>{{ tipo.tipoEquivalente }}</code></div>
                     }
                   </td>
-                  <td data-label="Categoria"><ui-tag>{{ categoriaLabel(tipo.categoria) }}</ui-tag></td>
+                  <td data-label="Categoria">
+                    <ui-tag><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" /></ui-tag>
+                  </td>
                   <td data-label="Formatos aceitos" class="u-caption">{{ tipo.formatosAceitos || '—' }}</td>
                   <td data-label="Tam. máx." class="u-caption">{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
@@ -264,6 +281,21 @@ interface TipoDocumentoForm {
         <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
       }
 
+      @if (categorias.comErro()) {
+        <ui-alert variant="warning" heading="Categorias não carregadas">
+          Sem o catálogo de categorias não é possível classificar o tipo de documento.
+          <div class="cfg-list__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              (click)="categorias.recarregar()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
+
       <form
         [formGroup]="form"
         id="cfg-tipo-documento-form"
@@ -289,15 +321,30 @@ interface TipoDocumentoForm {
           </label>
           <label class="field" [class.is-error]="erroDoCampo('categoria')">
             <span class="field__label is-required">Categoria</span>
-            <select class="select" formControlName="categoria">
+            <select
+              class="select"
+              formControlName="categoria"
+              [attr.aria-busy]="categorias.pendente() ? 'true' : null"
+              [attr.aria-invalid]="erroDoCampo('categoria') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('categoria')
+                  ? 'cfg-td-categoria-dica cfg-td-categoria-erro'
+                  : 'cfg-td-categoria-dica'
+              "
+            >
               <option value="">Selecione…</option>
-              @for (opcao of categoriasDocumento; track opcao.value) {
-                <option [value]="opcao.value">{{ opcao.label }}</option>
+              @if (categoriaForaDasOpcoes(); as codigoAtual) {
+                <option [value]="codigoAtual">{{ codigoAtual }}</option>
+              }
+              @for (opcao of categorias.opcoes(); track opcao.id) {
+                <option [value]="opcao.codigo">{{ opcao.nome }}</option>
               }
             </select>
-            <span class="field__hint">Domínio fechado. Congelada no snapshot do edital (RN08).</span>
+            <span class="field__hint" id="cfg-td-categoria-dica">{{ dicaCategoria() }}</span>
             @if (erroDoCampo('categoria')) {
-              <span class="field__error">{{ erroDoCampo('categoria') }}</span>
+              <span class="field__error" id="cfg-td-categoria-erro">{{
+                erroDoCampo('categoria')
+              }}</span>
             }
           </label>
         </div>
@@ -417,8 +464,8 @@ export class TiposDocumentoListPage {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  protected readonly categorias = inject(CatalogoCategoriasDocumento);
 
-  protected readonly categoriasDocumento = CATEGORIAS_DOCUMENTO;
   protected readonly formatosAceitosOpcoes = FORMATOS_ACEITOS_OPCOES;
 
   protected readonly saving = signal(false);
@@ -428,7 +475,6 @@ export class TiposDocumentoListPage {
   protected readonly tipoEmEdicaoId = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
-  protected readonly filtroCategoria = signal('');
 
   protected readonly confirmInativarAberto = signal(false);
   protected readonly tipoParaInativar = signal<TipoDocumentoDto | null>(null);
@@ -502,9 +548,38 @@ export class TiposDocumentoListPage {
   });
 
   /**
+   * Códigos de categoria que a página exibe mas o catálogo não conhece —
+   * categoria removida do cadastro depois de já ter classificado um tipo.
+   *
+   * Só faz sentido perguntar isso do catálogo inteiro: enquanto ele não
+   * chegou, ou quando a busca foi recusada, todo registro pareceria órfão.
+   */
+  private readonly codigosForaDoCatalogo = computed<ReadonlySet<string>>(() => {
+    if (this.categorias.pendente() || this.categorias.comErro()) {
+      return new Set<string>();
+    }
+    const conhecidos = this.categorias.porCodigo();
+    return new Set(
+      this.tiposDocumento()
+        .map((tipo) => tipo.categoria)
+        .filter((codigo) => !conhecidos.has(codigo)),
+    );
+  });
+
+  /**
    * Chips de categoria com contador dinâmico sobre o conjunto já filtrado por
    * busca textual (CA-01) — refletem quantos registros de cada categoria
    * casam com o termo digitado, antes de aplicar o próprio filtro de chip.
+   *
+   * As opções vêm do cadastro, não de um roster escrito à mão: uma categoria
+   * criada pelo CEPS ganha chip próprio sem alteração de código. O chip extra
+   * recolhe os registros cuja categoria saiu do cadastro — sem ele, um terço
+   * do catálogo poderia ficar fora de toda navegação por categoria, que é o
+   * sintoma que esta tela tinha com as três categorias novas.
+   *
+   * A existência dos chips depende do catálogo e do conjunto **completo**, não
+   * do resultado da busca: chip que some ao digitar levaria junto o filtro
+   * selecionado.
    */
   protected readonly categoriaChips = computed<readonly UiFilterChipOption[]>(() => {
     const registros = this.registrosBuscados();
@@ -512,14 +587,39 @@ export class TiposDocumentoListPage {
     for (const registro of registros) {
       contagem.set(registro.categoria, (contagem.get(registro.categoria) ?? 0) + 1);
     }
-    return [
+    const orfaos = this.codigosForaDoCatalogo();
+    const chips: UiFilterChipOption[] = [
       { value: '', label: 'Todas', count: registros.length },
-      ...CATEGORIAS_DOCUMENTO.map((categoria) => ({
-        value: categoria.value,
-        label: categoria.label,
-        count: contagem.get(categoria.value) ?? 0,
+      ...this.categorias.opcoes().map((categoria) => ({
+        value: categoria.codigo,
+        label: categoria.nome,
+        count: contagem.get(categoria.codigo) ?? 0,
       })),
     ];
+    if (orfaos.size > 0) {
+      chips.push({
+        value: FILTRO_FORA_DO_CATALOGO,
+        label: 'Fora do cadastro',
+        count: registros.filter((tipo) => orfaos.has(tipo.categoria)).length,
+      });
+    }
+    return chips;
+  });
+
+  /**
+   * Chip selecionado, reconciliado com os chips que existem.
+   *
+   * O catálogo muda debaixo do filtro — basta a categoria escolhida ser
+   * removida do cadastro e o operador recarregar. Sem a reconciliação, a
+   * tabela continuaria filtrada por um chip que sumiu da barra, sem nada na
+   * tela para explicar o resultado nem para limpá-lo.
+   */
+  protected readonly filtroCategoria = linkedSignal<readonly UiFilterChipOption[], string>({
+    source: () => this.categoriaChips(),
+    computation: (chips, previous) => {
+      const atual = previous?.value ?? '';
+      return chips.some((chip) => chip.value === atual) ? atual : '';
+    },
   });
 
   protected readonly documentosFiltrados = computed(() => {
@@ -528,8 +628,18 @@ export class TiposDocumentoListPage {
     if (categoria === '') {
       return registros;
     }
+    if (categoria === FILTRO_FORA_DO_CATALOGO) {
+      const orfaos = this.codigosForaDoCatalogo();
+      return registros.filter((tipo) => orfaos.has(tipo.categoria));
+    }
     return registros.filter((tipo) => tipo.categoria === categoria);
   });
+
+  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() =>
+    this.categorias.comErro()
+      ? [{ nome: 'categorias', recarregar: () => this.categorias.recarregar() }]
+      : [],
+  );
 
   protected readonly temFiltro = computed(
     () => this.termoBusca().trim().length > 0 || this.filtroCategoria() !== '',
@@ -610,6 +720,10 @@ export class TiposDocumentoListPage {
   });
 
   constructor() {
+    // O catálogo é do injector raiz: a primeira tela do cadastro que o pedir
+    // paga a requisição, e as demais reaproveitam o que já está em memória.
+    this.categorias.garantirCarregado();
+
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -644,9 +758,51 @@ export class TiposDocumentoListPage {
     this.filtroCategoria.set('');
   }
 
-  protected categoriaLabel(valor: string): string {
-    return CATEGORIAS_DOCUMENTO.find((categoria) => categoria.value === valor)?.label ?? valor;
+  /**
+   * Estado da resolução da categoria — o que a coluna exibe.
+   *
+   * Distingue carregando, catálogo recusado e código fora do cadastro. O
+   * fallback anterior devolvia o próprio token quando não achava o rótulo, e
+   * `TITULACAO_EXPERIENCIA` em caixa alta no meio da tabela parecia dado
+   * legítimo, não catálogo desatualizado (#579).
+   */
+  protected categoriaDoTipo(codigo: string): ResolucaoDeVinculo {
+    return resolverVinculo(
+      this.categorias,
+      this.categorias.porCodigo().get(codigo),
+      (categoria) => categoria.nome,
+    );
   }
+
+  /**
+   * Código que o formulário carrega e o catálogo não oferece — categoria
+   * removida do cadastro, ou catálogo ainda não carregado.
+   *
+   * O `select` precisa de uma opção com esse valor: sem ela o campo renderiza
+   * em branco enquanto o control guarda o código, e salvar reenviaria uma
+   * categoria que o operador nunca viu na tela.
+   */
+  protected readonly categoriaForaDasOpcoes = computed<string | null>(() => {
+    const escolhida = this.formValue().categoria;
+    if (escolhida === '') {
+      return null;
+    }
+    return this.categorias.porCodigo().has(escolhida) ? null : escolhida;
+  });
+
+  /** Dica do campo Categoria — explica por que o `select` está como está. */
+  protected readonly dicaCategoria = computed(() => {
+    if (this.categorias.pendente()) {
+      return 'Carregando as categorias do cadastro…';
+    }
+    if (this.categorias.comErro()) {
+      return 'As categorias não puderam ser carregadas. Tente novamente para escolher uma.';
+    }
+    if (this.categoriaForaDasOpcoes() !== null) {
+      return 'A categoria atual não está mais no cadastro. Escolha uma das vigentes para substituí-la.';
+    }
+    return 'Vem do cadastro de categorias. Congelada no snapshot do edital (RN08).';
+  });
 
   protected tamanhoLabel(valor: number | string | null): string {
     const normalizado = normalizarTamanhoMaximo(valor);

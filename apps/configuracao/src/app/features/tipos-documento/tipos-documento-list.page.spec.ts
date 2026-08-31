@@ -4,11 +4,37 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, TipoDocumentoDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  type CategoriaDocumentoDto,
+  TipoDocumentoDto,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposDocumentoListPage } from './tipos-documento-list.page';
 
 const BASE = 'http://localhost:5000';
+const URL_CATEGORIAS = `${BASE}/api/configuracao/categorias-documento`;
+
+/** As dez categorias semeadas pelo cadastro (uniplus-api#1342). */
+const CATEGORIAS: readonly CategoriaDocumentoDto[] = [
+  ['IDENTIFICACAO', 'Identificação', 1],
+  ['ESCOLARIDADE', 'Escolaridade', 2],
+  ['TITULACAO_EXPERIENCIA', 'Titulação e experiência', 3],
+  ['RENDA', 'Renda', 4],
+  ['RESIDENCIA', 'Residência', 5],
+  ['RACA_ETNIA', 'Raça/etnia', 6],
+  ['SAUDE', 'Saúde', 7],
+  ['DOCUMENTO_PROCESSUAL', 'Documento processual', 8],
+  ['PRODUCAO_AVALIATIVA', 'Produção avaliativa', 9],
+  ['OUTROS', 'Outros', 10],
+].map(([codigo, nome, ordem]) => ({
+  id: `ca7e0000-0000-7000-8000-${String(ordem).padStart(12, '0')}`,
+  codigo: codigo as string,
+  nome: nome as string,
+  descricao: null,
+  ordem: ordem as number,
+  criadoEm: '2026-01-01T00:00:00Z',
+}));
 
 const rgSeed: TipoDocumentoDto = {
   id: '01960000-0000-7000-0000-0000000000d1',
@@ -32,6 +58,32 @@ const laudoSeed: TipoDocumentoDto = {
   tamanhoMaximoMb: null,
   tipoEquivalente: null,
   criadoEm: '2026-06-11T12:00:00Z',
+};
+
+/** Tipo numa das três categorias que o roster escrito à mão não conhecia. */
+const diplomaSeed: TipoDocumentoDto = {
+  id: '01960000-0000-7000-0000-0000000000d3',
+  codigo: 'DIPLOMA_GRADUACAO',
+  nome: 'Diploma de graduação',
+  descricao: null,
+  categoria: 'TITULACAO_EXPERIENCIA',
+  formatosAceitos: 'pdf',
+  tamanhoMaximoMb: null,
+  tipoEquivalente: null,
+  criadoEm: '2026-08-30T12:00:00Z',
+};
+
+/** Tipo cuja categoria saiu do cadastro depois de já tê-lo classificado. */
+const orfaoSeed: TipoDocumentoDto = {
+  id: '01960000-0000-7000-0000-0000000000d4',
+  codigo: 'CERTIDAO_MILITAR',
+  nome: 'Certidão militar',
+  descricao: null,
+  categoria: 'DOCUMENTO_MILITAR',
+  formatosAceitos: null,
+  tamanhoMaximoMb: null,
+  tipoEquivalente: null,
+  criadoEm: '2026-08-30T13:00:00Z',
 };
 
 describe('TiposDocumentoListPage', () => {
@@ -64,7 +116,29 @@ describe('TiposDocumentoListPage', () => {
     appRef.tick();
   };
 
+  /**
+   * Atende o catálogo de categorias, se ainda estiver pendente. A página o
+   * pede no construtor, então toda montagem tem esta requisição em voo; os
+   * testes que precisam de outro desfecho a atendem antes de chamar
+   * `flushLista`.
+   */
+  function flushCategorias(itens: readonly CategoriaDocumentoDto[] = CATEGORIAS): void {
+    for (const req of controller.match(URL_CATEGORIAS)) {
+      req.flush(itens);
+    }
+  }
+
+  function recusarCategorias(): void {
+    for (const req of controller.match(URL_CATEGORIAS)) {
+      req.flush(
+        { title: 'Serviço indisponível', status: 503 },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    }
+  }
+
   async function flushLista(itens: readonly TipoDocumentoDto[]): Promise<void> {
+    flushCategorias();
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`);
     req.flush(itens);
     await propagate();
@@ -78,7 +152,7 @@ describe('TiposDocumentoListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Registro Geral');
     expect(fixture.nativeElement.textContent).toContain('Equiv.:');
     expect(fixture.nativeElement.textContent).toContain('CIN');
-    expect(component['categoriaChips']().length).toBe(8);
+    expect(component['categoriaChips']().length).toBe(CATEGORIAS.length + 1);
   });
 
   // TiposDocumentoListPage_FiltroPorCategoria
@@ -385,5 +459,216 @@ describe('TiposDocumentoListPage', () => {
 
     await flushLista([]);
     expect(component['confirmInativarAberto']()).toBe(false);
+  });
+  // ---------------------------------------------------------------------------
+  // Cenários da issue #651 — o vocabulário de categoria passa a vir do cadastro
+  // ---------------------------------------------------------------------------
+
+  // Cenário: Formulário oferece as categorias vindas do cadastro
+  it('CA-02: o select de Categoria oferece as categorias do cadastro, com o nome do cadastro', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    const opcoes: HTMLOptionElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('select[formControlName="categoria"] option'),
+    );
+    // As dez do cadastro mais o "Selecione…".
+    expect(opcoes).toHaveLength(CATEGORIAS.length + 1);
+    expect(opcoes.map((o) => o.value)).toContain('DOCUMENTO_PROCESSUAL');
+    expect(opcoes.find((o) => o.value === 'TITULACAO_EXPERIENCIA')?.textContent?.trim()).toBe(
+      'Titulação e experiência',
+    );
+  });
+
+  // Cenário: Cadastro em categoria nova conclui
+  it('CA-02: cadastro numa das categorias novas envia o código e conclui', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].patchValue({
+      codigo: 'RECURSO_ADMINISTRATIVO',
+      nome: 'Recurso administrativo',
+      categoria: 'DOCUMENTO_PROCESSUAL',
+    });
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
+    expect(post.request.body.categoria).toBe('DOCUMENTO_PROCESSUAL');
+    post.flush('novo-id', { status: 201, statusText: 'Created' });
+    await propagate();
+
+    await flushLista([{ ...diplomaSeed, categoria: 'DOCUMENTO_PROCESSUAL' }]);
+    fixture.detectChanges();
+    expect(component['formOpen']()).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Documento processual');
+  });
+
+  // Cenário: Listagem não exibe token cru
+  it('CA-04: a coluna Categoria exibe o nome do cadastro, não o token em caixa alta', async () => {
+    await flushLista([diplomaSeed]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Titulação e experiência');
+    expect(fixture.nativeElement.textContent).not.toContain('TITULACAO_EXPERIENCIA');
+  });
+
+  // Cenário: Filtro cobre todos os tipos do catálogo
+  it('CA-04: todo tipo carregado aparece em pelo menos um chip de categoria', async () => {
+    await flushLista([rgSeed, laudoSeed, diplomaSeed, orfaoSeed]);
+    fixture.detectChanges();
+
+    const especificos = component['categoriaChips']().filter((chip) => chip.value !== '');
+    for (const tipo of [rgSeed, laudoSeed, diplomaSeed, orfaoSeed]) {
+      const cobre = especificos.filter((chip) => {
+        component['filtroCategoria'].set(chip.value);
+        return component['documentosFiltrados']().some((item) => item.id === tipo.id);
+      });
+      expect(cobre.length, `${tipo.codigo} ficou fora de todos os chips`).toBeGreaterThan(0);
+    }
+  });
+
+  // Cenário: Categoria criada no cadastro aparece sem mudança de código
+  it('CA-03: categoria criada no cadastro ganha opção e chip sem alteração de código', async () => {
+    const comMilitar: readonly CategoriaDocumentoDto[] = [
+      ...CATEGORIAS,
+      {
+        id: 'ca7e0000-0000-7000-8000-000000000011',
+        codigo: 'DOCUMENTO_MILITAR',
+        nome: 'Documento militar',
+        descricao: null,
+        ordem: 11,
+        criadoEm: '2026-08-30T00:00:00Z',
+      },
+    ];
+    flushCategorias(comMilitar);
+    await flushLista([orfaoSeed]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    const valores: string[] = Array.from(
+      fixture.nativeElement.querySelectorAll('select[formControlName="categoria"] option'),
+    ).map((o) => (o as HTMLOptionElement).value);
+    expect(valores).toContain('DOCUMENTO_MILITAR');
+    expect(component['categoriaChips']().map((c) => c.label)).toContain('Documento militar');
+    // Conhecida pelo cadastro, a categoria não é mais órfã.
+    expect(component['categoriaChips']().map((c) => c.label)).not.toContain('Fora do cadastro');
+  });
+
+  // Cenário: Categoria removida não quebra a listagem
+  it('CA-05: categoria fora do cadastro mantém a linha, sem token cru nem célula vazia', async () => {
+    await flushLista([orfaoSeed]);
+    fixture.detectChanges();
+
+    expect(component['documentosFiltrados']()).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Certidão militar');
+    expect(component['categoriaDoTipo']('DOCUMENTO_MILITAR').estado).toBe('ausente');
+
+    const celula: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Categoria"]');
+    expect(celula.textContent?.trim()).toBe('Não identificado');
+
+    // E continua alcançável pela navegação por categoria.
+    const chipOrfaos = component['categoriaChips']().find((c) => c.label === 'Fora do cadastro');
+    expect(chipOrfaos?.count).toBe(1);
+    component['filtroCategoria'].set(chipOrfaos?.value ?? '');
+    expect(component['documentosFiltrados']()).toHaveLength(1);
+  });
+
+  it('CA-05: editar um tipo de categoria removida preserva o código no select em vez de apagá-lo', async () => {
+    await flushLista([orfaoSeed]);
+    component['abrirEdicao'](orfaoSeed);
+    fixture.detectChanges();
+
+    expect(component['categoriaForaDasOpcoes']()).toBe('DOCUMENTO_MILITAR');
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
+      'select[formControlName="categoria"]',
+    );
+    expect(select.value).toBe('DOCUMENTO_MILITAR');
+    expect(component['dicaCategoria']()).toContain('não está mais no cadastro');
+  });
+
+  // Cenário: Falha ao carregar categorias é comunicada
+  it('CA-06: recusa do catálogo é comunicada e a nova tentativa resolve sem recarregar a página', async () => {
+    recusarCategorias();
+    await flushLista([diplomaSeed]);
+    fixture.detectChanges();
+
+    expect(component['lookupsComFalha']()).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Rótulos não carregados');
+    expect(component['categoriaDoTipo']('TITULACAO_EXPERIENCIA').estado).toBe('falhou');
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Categorias não carregadas');
+    expect(component['dicaCategoria']()).toContain('não puderam ser carregadas');
+
+    component['categorias'].recarregar();
+    flushCategorias();
+    fixture.detectChanges();
+
+    expect(component['lookupsComFalha']()).toHaveLength(0);
+    expect(component['categoriaDoTipo']('TITULACAO_EXPERIENCIA').rotulo).toBe(
+      'Titulação e experiência',
+    );
+  });
+
+  it('CA-06: enquanto o catálogo não chega, a coluna diz que está carregando', async () => {
+    // A lista responde antes do catálogo — a ordem real quando o catálogo é o mais lento.
+    const listaReq = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/tipos-documento`,
+    );
+    listaReq.flush([diplomaSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(component['categoriaDoTipo']('TITULACAO_EXPERIENCIA').estado).toBe('carregando');
+    const celula: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Categoria"]');
+    expect(celula.textContent?.trim()).toBe('Carregando…');
+    // Sem catálogo, nenhum registro é declarado órfão.
+    expect(component['categoriaChips']().map((c) => c.label)).not.toContain('Fora do cadastro');
+
+    flushCategorias();
+  });
+
+  /**
+   * `aria-invalid` diz que há erro; sozinho, não diz **qual**. WCAG 2.1 AA
+   * (3.3.1) pede a mensagem associada ao campo, e é o `aria-describedby` que
+   * faz o leitor de tela lê-la ao focar — inclusive a dica que explica por que
+   * o campo obrigatório está sem opções.
+   */
+  it('associa a dica e a mensagem de erro ao campo Categoria para leitor de tela', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
+      'select[formControlName="categoria"]',
+    );
+    expect(select.getAttribute('aria-describedby')).toBe('cfg-td-categoria-dica');
+    expect(fixture.nativeElement.querySelector('#cfg-td-categoria-dica')).not.toBeNull();
+
+    component['salvar']();
+    fixture.detectChanges();
+
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect(select.getAttribute('aria-describedby')).toBe(
+      'cfg-td-categoria-dica cfg-td-categoria-erro',
+    );
+    const erro: HTMLElement = fixture.nativeElement.querySelector('#cfg-td-categoria-erro');
+    expect(erro.textContent?.trim()).not.toBe('');
+  });
+
+  it('limpa o chip selecionado quando a categoria correspondente sai do cadastro', async () => {
+    await flushLista([rgSeed, laudoSeed]);
+    component['filtroCategoria'].set('SAUDE');
+    fixture.detectChanges();
+    expect(component['documentosFiltrados']()).toHaveLength(1);
+
+    component['categorias'].recarregar();
+    flushCategorias(CATEGORIAS.filter((c) => c.codigo !== 'SAUDE'));
+    fixture.detectChanges();
+
+    // Sem chip que a explique, a lista não pode continuar filtrada por ela.
+    expect(component['filtroCategoria']()).toBe('');
+    expect(component['documentosFiltrados']()).toHaveLength(2);
   });
 });
