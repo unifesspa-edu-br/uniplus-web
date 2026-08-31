@@ -131,3 +131,148 @@ describe('hidratarDraft — distribuição de vagas', () => {
     expect(ofertas[0].referenciaReservaDemograficaId).toBeNull();
   });
 });
+
+/**
+ * Fase que produz resultado e admite recurso — o caso completo. A janela vem com
+ * deslocamento, e é assim que precisa voltar: truncar para data perderia a hora
+ * que separa o fim de um dia do começo do seguinte.
+ */
+const FASE_COM_RECURSO = {
+  id: 'snapshot-fase-1',
+  ordem: 2,
+  faseCanonicaOrigemId: 'fase-canonica-homologacao',
+  codigo: 'HOMOLOGACAO',
+  donoInstitucional: 'CEPS',
+  origemData: 'PROPRIA',
+  agrupaEtapas: false,
+  permiteComplementacao: true,
+  produzResultado: true,
+  resultadoDefinitivo: false,
+  coletaInscricao: false,
+  inicio: '2026-03-25T08:00:00-03:00',
+  fim: '2026-03-25T23:59:59-03:00',
+  atoProduzidoCodigo: 'RESULTADO_HOMOLOGACAO',
+  atoProduzidoEfeitoIrreversivel: false,
+  bancasRequeridas: [
+    { id: 'snapshot-banca', tipoBancaOrigemId: 'tipo-banca-1', codigo: 'BANCA_ANALISE_RECURSOS' },
+  ],
+  regraRecurso: {
+    id: 'snapshot-recurso',
+    regra: { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: 'v1', hash: 'abc123' },
+    args: {
+      prazoValor: 2,
+      prazoUnidade: 'diasUteis',
+      atoAncoraCodigo: 'RESULTADO_HOMOLOGACAO',
+      suspensividadePrimeiraInstanciaValor: null,
+      suspensividadePrimeiraInstanciaUnidade: null,
+      suspensividadeSegundaInstanciaValor: null,
+      suspensividadeSegundaInstanciaUnidade: null,
+    },
+  },
+};
+
+const ETAPA = {
+  id: 'etapa-persistida-1',
+  nome: 'Prova Objetiva',
+  carater: 'classificatoria',
+  tipoEtapa: { origemId: 'tipo-etapa-1', codigo: 'PROVA_OBJETIVA', nome: 'Prova Objetiva' },
+  peso: 2,
+  notaMinima: null,
+  ordem: 1,
+};
+
+/** Reaproveita a base de `dtoCom`, que traz o que `hidratarDraft` lê fora do cronograma. */
+function dtoComCronograma(extra: Record<string, unknown>): ProcessoSeletivoDto {
+  return { ...dtoCom([]), ...extra } as unknown as ProcessoSeletivoDto;
+}
+
+const COM_CRONOGRAMA = dtoComCronograma({
+  cronogramaFases: [FASE_COM_RECURSO],
+  etapas: [ETAPA],
+  algoritmoContagemPrazo: {
+    codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+    versao: 'v1',
+    hash: 'def456',
+  },
+});
+
+describe('hidratarDraft — cronograma e etapas', () => {
+  it('projeta a fase pelo id de origem, não pelo id do snapshot', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.faseCanonicaId).toBe('fase-canonica-homologacao');
+    expect(fase.tiposBancaIds).toEqual(['tipo-banca-1']);
+  });
+
+  /**
+   * O código acompanha o id porque as pendências derivadas e as precedências
+   * falam em `INSCRICAO`, não em uuid.
+   */
+  it('guarda o código canônico ao lado do identificador da fase', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.codigo).toBe('HOMOLOGACAO');
+  });
+
+  it('preserva a janela como instante, com o deslocamento intacto', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.inicio).toBe('2026-03-25T08:00:00-03:00');
+    expect(fase.fim).toBe('2026-03-25T23:59:59-03:00');
+  });
+
+  /**
+   * O hash da referência não volta ao rascunho: o servidor o recompõe do
+   * catálogo, e uma cópia aqui envelheceria sozinha.
+   */
+  it('projeta a regra de recurso sem carregar o hash da referência', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.regraRecurso?.regraCodigo).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
+    expect(fase.regraRecurso?.prazoValor).toBe('2');
+    expect(fase.regraRecurso).not.toHaveProperty('hash');
+  });
+
+  /** Ausência dos dois campos é desativação da instância, e vira campo vazio. */
+  it('projeta a suspensividade desativada como par vazio', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.regraRecurso?.suspensividadePrimeiraInstanciaValor).toBe('');
+    expect(fase.regraRecurso?.suspensividadePrimeiraInstanciaUnidade).toBe('');
+  });
+
+  /**
+   * O `id` da etapa é o único que volta ao rascunho, porque critério de
+   * desempate e regra de eliminação o referenciam — perdê-lo ao reordenar
+   * deixaria os dois apontando para uma etapa que deixou de existir.
+   */
+  it('preserva o id da etapa e o id de origem do tipo', () => {
+    const [etapa] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.etapas;
+
+    expect(etapa.id).toBe('etapa-persistida-1');
+    expect(etapa.tipoEtapaOrigemId).toBe('tipo-etapa-1');
+  });
+
+  it('devolve nota mínima ausente como campo vazio, não como zero', () => {
+    const [etapa] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.etapas;
+
+    expect(etapa.notaMinima).toBe('');
+    expect(etapa.peso).toBe('2');
+  });
+
+  it('projeta a convenção de contagem declarada', () => {
+    const { cronograma } = hidratarDraft(DRAFT, COM_CRONOGRAMA);
+
+    expect(cronograma.algoritmoContagemCodigo).toBe('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    expect(cronograma.algoritmoContagemVersao).toBe('v1');
+  });
+
+  it('trata processo sem cronograma, sem etapa e sem convenção', () => {
+    const vazio = dtoComCronograma({ cronogramaFases: [], etapas: [] });
+    const { cronograma } = hidratarDraft(DRAFT, vazio);
+
+    expect(cronograma.fases).toEqual([]);
+    expect(cronograma.etapas).toEqual([]);
+    expect(cronograma.algoritmoContagemCodigo).toBe('');
+  });
+});
