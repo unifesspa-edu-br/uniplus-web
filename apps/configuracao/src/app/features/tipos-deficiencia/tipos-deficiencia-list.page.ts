@@ -295,7 +295,7 @@ const PAGE_SIZE = 50;
       }
       <form
         [formGroup]="form"
-        id="cfg-unidade-form"
+        id="cfg-tipo-deficiencia-form"
         (ngSubmit)="salvar()"
         novalidate
         class="cfg-form"
@@ -310,13 +310,18 @@ const PAGE_SIZE = 50;
                 placeholder="Ex.: Visual"
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('nome')
+                    ? 'cfg-td-nome-dica cfg-td-nome-erro'
+                    : 'cfg-td-nome-dica'
+                "
               />
-              <span class="field__hint">
+              <span class="field__hint" id="cfg-td-nome-dica">
                 Rótulo legível do tipo de deficiência — único entre os tipos ativos. Impede
                 duplicatas como dois "Visual".
               </span>
               @if (erroDoCampo('nome')) {
-                <span class="field__error">{{ erroDoCampo('nome') }}</span>
+                <span class="field__error" id="cfg-td-nome-erro">{{ erroDoCampo('nome') }}</span>
               }
             </label>
             @let erroCampoCodigo = erroDoCampo('codigo');
@@ -329,23 +334,17 @@ const PAGE_SIZE = 50;
                 formControlName="codigo"
                 style="text-transform: uppercase;"
                 [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
-                list="cfg-tipo-deficiencia-sugestoes"
+                [attr.aria-describedby]="
+                  erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica'
+                "
               />
-              <datalist id="cfg-tipo-deficiencia-sugestoes">
-                @for (
-                  tipoDeficienciaCodigoSugestao of tiposDeficienciaCodigoSugestoes();
-                  track $index
-                ) {
-                  <option [value]="tipoDeficienciaCodigoSugestao"></option>
-                }
-              </datalist>
-              <span class="field__hint">
+              <span class="field__hint" id="cfg-td-codigo-dica">
                 Identidade do cadastro: caixa alta, começando por letra, com letras, números e
                 sublinhado, de 2 a 50 caracteres. Único entre os tipos de deficiência ativos.
                 Sugerido a partir do nome e editável antes de salvar.
               </span>
               @if (erroCampoCodigo) {
-                <span class="field__error">{{ erroCampoCodigo }}</span>
+                <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
               }
             </label>
             <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
@@ -356,9 +355,12 @@ const PAGE_SIZE = 50;
                 placeholder="Ex.: abrangência ou base legal (TEA: Lei 12.764/2012)."
                 formControlName="descricao"
                 [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+                [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-td-descricao-erro' : null"
               ></textarea>
               @if (erroDoCampo('descricao')) {
-                <span class="field__error">{{ erroDoCampo('descricao') }}</span>
+                <span class="field__error" id="cfg-td-descricao-erro">{{
+                  erroDoCampo('descricao')
+                }}</span>
               }
             </label>
           </div>
@@ -371,7 +373,7 @@ const PAGE_SIZE = 50;
         </button>
         <button
           type="submit"
-          form="cfg-unidade-form"
+          form="cfg-tipo-deficiencia-form"
           class="btn btn--primary"
           [disabled]="saving() || form.invalid"
         >
@@ -521,7 +523,6 @@ export class TiposDeficienciaListPage {
   /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
   private ultimaSugestaoAplicada = '';
   protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
-  protected readonly tiposDeficienciaCodigoSugestoes = signal<string[]>([]);
 
   constructor() {
     effect(() => {
@@ -549,9 +550,6 @@ export class TiposDeficienciaListPage {
    * vigente é do registro.
    */
   private sincronizarSugestaoDeCodigo(nome: string): void {
-    const sugestao = sugerirCodigoDeTipoDeficiencia(nome);
-    this.tiposDeficienciaCodigoSugestoes.set(sugestao === '' ? [] : [sugestao]);
-
     if (this.modo() !== 'criar') {
       return;
     }
@@ -559,6 +557,7 @@ export class TiposDeficienciaListPage {
     if (codigoAtual !== '' && codigoAtual !== this.ultimaSugestaoAplicada) {
       return;
     }
+    const sugestao = sugerirCodigoDeTipoDeficiencia(nome);
     this.ultimaSugestaoAplicada = sugestao;
     this.form.controls.codigo.setValue(sugestao, { emitEvent: false });
   }
@@ -606,7 +605,6 @@ export class TiposDeficienciaListPage {
   abrirDrawerCriacao() {
     this.modo.set('criar');
     this.ultimaSugestaoAplicada = '';
-    this.tiposDeficienciaCodigoSugestoes.set([]);
     this.form.reset({
       nome: '',
       descricao: '',
