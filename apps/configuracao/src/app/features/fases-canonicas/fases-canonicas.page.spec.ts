@@ -103,6 +103,25 @@ describe('FasesCanonicasPage', () => {
     expect(component['showGrupoCompl']()).toBe(false);
   });
 
+  it('CA-02: o select oferece a solicitação de isenção, e ela não agrupa etapas nem admite complementação', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    const codigoSelect = fixture.nativeElement.querySelector(
+      '[formControlName="codigo"]',
+    ) as HTMLSelectElement;
+    const opcoes = Array.from(codigoSelect.options).map((o) => o.value);
+
+    expect(opcoes).toContain('SOLICITACAO_ISENCAO');
+
+    // Espelha o backend: só a avaliação agrupa etapas, e a complementação
+    // documental segue restrita a homologação e recursos.
+    component['form'].controls.codigo.setValue('SOLICITACAO_ISENCAO');
+    expect(component['showGrupoAgrupa']()).toBe(false);
+    expect(component['showGrupoCompl']()).toBe(false);
+  });
+
   it('CA-05: interação real via DOM no select [ngValue] de "Agrupa etapas" atualiza o boolean do form', async () => {
     await flushLista([]);
     component['abrirCadastro']();
