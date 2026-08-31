@@ -15,6 +15,7 @@ import {
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
+import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 
 /** Página única: sem header `Link`, `coletarPaginas` para na primeira. */
@@ -164,7 +165,7 @@ describe('CatalogosDoCronogramaService — tipos de ato', () => {
 
   /** A vigência é semiaberta: o dia do fim já está fora. */
   it('trata a vigência como semiaberta no extremo final', () => {
-    const hoje = new Date().toISOString().slice(0, 10);
+    const hoje = hojeNoFusoInstitucional();
     const { servico } = montar({ atos: [ato('FECHA_HOJE', hoje)] });
 
     expect(servico.atosVigentes()).toEqual([]);
