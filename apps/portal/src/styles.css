@@ -44,6 +44,10 @@ ptl-root {
   min-height: 100%;
 }
 
+/* Host da rota como coluna flex: o `ui-app-shell` trava a própria altura no
+   viewport e cuida da rolagem (conteúdo e navegação). */
 ptl-root {
-  display: block;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
 }

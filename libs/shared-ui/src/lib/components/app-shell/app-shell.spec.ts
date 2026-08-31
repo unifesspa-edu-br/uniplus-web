@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -108,5 +110,59 @@ describe('AppShellComponent', () => {
     fixture.componentRef.setInput('navGroups', groups);
     fixture.detectChanges();
     expect(host.querySelector('.topbar__nav')).toBeNull();
+  });
+
+  describe('contrato de rolagem (stylesheet compartilhado)', () => {
+    const styles = readFileSync(resolve(__dirname, '../../../styles/components.css'), 'utf-8');
+    const rule = (selector: string, marker = '') => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+      const source = marker
+        ? new RegExp(`${escaped}\\s*\\{[^}]*${marker}[^}]*\\}`, 'u')
+        : new RegExp(`${escaped}\\s*\\{[^}]*\\}`, 'u');
+      return styles.match(source)?.[0] ?? '';
+    };
+
+    it('o proprio ui-app-shell trava a altura no viewport dinamico', () => {
+      const shell = rule('ui-app-shell', 'overflow: hidden');
+      expect(shell).toContain('height: 100dvh');
+      expect(shell).toContain('overflow: hidden');
+    });
+
+    it('a area de conteudo e o unico contedor de rolagem vertical, sem rolagem horizontal', () => {
+      const page = rule('.page');
+      expect(page).toContain('overflow-y: auto');
+      expect(page).toContain('overflow-x: hidden');
+      expect(page).toContain('overscroll-behavior: contain');
+    });
+
+    it('a navegacao lateral tem rolagem vertical propria', () => {
+      const nav = rule('.sidebar nav');
+      expect(nav).toContain('overflow-y: auto');
+      expect(nav).toContain('overscroll-behavior: contain');
+    });
+
+    it('a coluna lateral acompanha a area e se limita ao viewport dinamico', () => {
+      const sidebar = rule('.sidebar', 'position: sticky');
+      expect(sidebar).toContain('align-self: stretch');
+      expect(sidebar).toContain('max-height: 100dvh');
+      expect(sidebar).toContain('min-height: 0');
+    });
+
+    it('as regioes rolaveis usam tokens do DS, sem cores fixas', () => {
+      const page = rule('.page');
+      const nav = rule('.sidebar nav');
+      expect(page).toMatch(/scrollbar-color:\s*var\(--/u);
+      expect(nav).toMatch(/scrollbar-color:\s*color-mix\(/u);
+      expect(`${page}${nav}`).not.toMatch(/#[0-9a-fA-F]{3,8}\b/u);
+      expect(`${page}${nav}`).not.toMatch(/rgba?\(/u);
+    });
+  });
+
+  it('expoe main.page e aside > nav como as duas regioes rolaveis', async () => {
+    const { fixture, host } = await montarShell();
+    fixture.componentRef.setInput('navGroups', groups);
+    fixture.detectChanges();
+    expect(host.querySelector('main.page')).toBeTruthy();
+    expect(host.querySelector('aside.sidebar > nav')).toBeTruthy();
   });
 });
