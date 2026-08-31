@@ -172,3 +172,140 @@ export function componeNota(etapa: EtapaPontuada): boolean {
  * aceitaria, porque 5 é um peso válido.
  */
 export { decimalDoCampo as comoNumero, inteiroDoCampo };
+
+/**
+ * O que impede a gravação, na ordem em que quem preenche resolve: primeiro o
+ * que falta declarar, depois o que está incoerente entre si.
+ *
+ * Só entra aqui o que a tela consegue afirmar com o que tem em mãos. Teto de
+ * vagas, vigência de ato e unicidade de código no servidor continuam sendo dele
+ * — repetir a conferência aqui daria duas fontes para a mesma regra, e a que
+ * ficasse desatualizada recusaria o que o servidor aceita.
+ */
+export function problemasDoCronograma(
+  fases: readonly FaseDoCronograma[],
+  etapas: readonly EtapaPontuada[],
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+  precedencias: readonly PrecedenciaFaseDto[],
+): readonly string[] {
+  const problemas: string[] = [];
+
+  if (fases.length === 0) {
+    problemas.push('O cronograma precisa de ao menos uma fase.');
+    return problemas;
+  }
+
+  const codigosRepetidos = repetidos(fases.map((fase) => fase.faseCanonicaId));
+  if (codigosRepetidos.length > 0) {
+    problemas.push('Cada fase canônica entra uma vez só no cronograma.');
+  }
+
+  if (repetidos(fases.map((fase) => fase.ordem)).length > 0) {
+    problemas.push('Duas fases não podem ocupar a mesma posição na linha do tempo.');
+  }
+
+  for (const fase of fases) {
+    const canonica = fasePorId.get(fase.faseCanonicaId);
+    if (canonica === undefined) continue;
+
+    const exigencias = exigenciasDe(canonica);
+
+    if (exigencias.janelaObrigatoria && (fase.inicio === null || fase.fim === null)) {
+      problemas.push(`A fase ${canonica.nome} precisa de data e hora de início e de fim.`);
+    }
+
+    if (
+      fase.inicio !== null &&
+      fase.fim !== null &&
+      Date.parse(fase.fim) < Date.parse(fase.inicio)
+    ) {
+      problemas.push(`Na fase ${canonica.nome}, o fim não pode vir antes do início.`);
+    }
+
+    if (exigencias.exigeAtoProduzido && fase.atoProduzidoCodigo === null) {
+      problemas.push(
+        `A fase ${canonica.nome} produz resultado e precisa declarar o ato que o publica.`,
+      );
+    }
+  }
+
+  problemas.push(...problemasDasEtapas(fases, etapas, fasePorId));
+
+  for (const violacao of violacoesDePrecedencia(fases, precedencias)) {
+    problemas.push(
+      violacao.motivo === 'ordem'
+        ? `${violacao.antecessora} precisa vir antes de ${violacao.sucessora} na linha do tempo.`
+        : `${violacao.antecessora} não pode se sobrepor a ${violacao.sucessora}: o cadastro exige que uma termine antes da outra começar.`,
+    );
+  }
+
+  return problemas;
+}
+
+/**
+ * As etapas e a fase que as agrupa formam um par: uma fase que agrupa etapas sem
+ * nenhuma etapa é recusada na hora da gravação, e etapas sem a fase que as
+ * agrupa passam agora para serem recusadas na publicação.
+ *
+ * Os dois casos entram aqui porque a diferença — recusa agora ou depois — não
+ * ajuda quem preenche: os dois descrevem um cronograma que não se sustenta.
+ */
+function problemasDasEtapas(
+  fases: readonly FaseDoCronograma[],
+  etapas: readonly EtapaPontuada[],
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): readonly string[] {
+  const problemas: string[] = [];
+  const faseQueAgrupa = fases.find((fase) => {
+    const canonica = fasePorId.get(fase.faseCanonicaId);
+    return canonica !== undefined && canonica.agrupaEtapas;
+  });
+
+  if (faseQueAgrupa !== undefined && etapas.length === 0) {
+    problemas.push(
+      'A fase de avaliação agrupa as etapas pontuadas e precisa de ao menos uma. Declare a etapa, ou remova a fase.',
+    );
+  }
+
+  if (faseQueAgrupa === undefined && etapas.length > 0) {
+    problemas.push(
+      'As etapas pontuadas precisam da fase de avaliação que as agrupa. Acrescente a fase, ou remova as etapas.',
+    );
+  }
+
+  if (etapas.length === 0) return problemas;
+
+  if (etapas.some((etapa) => etapa.nome.trim() === '')) {
+    problemas.push('Toda etapa precisa de nome.');
+  }
+
+  if (etapas.some((etapa) => etapa.tipoEtapaOrigemId === '')) {
+    problemas.push('Toda etapa precisa do tipo que a classifica.');
+  }
+
+  if (etapas.some((etapa) => etapa.carater === '')) {
+    problemas.push('Toda etapa precisa declarar se é classificatória, eliminatória ou ambas.');
+  }
+
+  if (repetidos(etapas.map((etapa) => etapa.ordem)).length > 0) {
+    problemas.push('Duas etapas não podem ocupar a mesma posição.');
+  }
+
+  if (!etapas.some(componeNota)) {
+    problemas.push(
+      'Ao menos uma etapa precisa compor a nota final: ser classificatória (ou ambas) e ter peso maior que zero.',
+    );
+  }
+
+  return problemas;
+}
+
+function repetidos<T>(valores: readonly T[]): readonly T[] {
+  const vistos = new Set<T>();
+  const repetidos = new Set<T>();
+  for (const valor of valores) {
+    if (vistos.has(valor)) repetidos.add(valor);
+    vistos.add(valor);
+  }
+  return [...repetidos];
+}
