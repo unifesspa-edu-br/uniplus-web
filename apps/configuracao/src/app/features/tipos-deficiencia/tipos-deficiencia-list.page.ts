@@ -31,6 +31,11 @@ import {
 } from "@uniplus/shared-core/http";
 import {NotificationService } from "@uniplus/shared-core/notifications";
 import {
+  CODIGO_CADASTRO_FORMATO,
+  CODIGO_CADASTRO_TAMANHO_MAXIMO,
+  sugerirCodigoDeCadastro,
+} from "@uniplus/shared-utils";
+import {
   AtualizarTipoDeficienciaCommand,
   CONFIGURACAO_BASE_PATH,
   CriarTipoDeficienciaCommand,
@@ -79,38 +84,6 @@ const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof TipoDeficienciaForm> = new M
   ['uniplus.configuracao.tipo_deficiencia.codigo_ja_existe', 'codigo' as const],
   ['uniplus.configuracao.tipo_deficiencia.nome_ja_existe', 'nome' as const],
 ]);
-
-/** Tamanho máximo do código aceito pelo backend (`CodigoTipoDeficiencia`). */
-const CODIGO_TAMANHO_MAXIMO = 50;
-
-/**
- * Formato fechado que o backend exige do código: começa por letra, segue com
- * letras, números ou sublinhado, de 2 a 50 caracteres. Uma definição só, usada
- * pelo validador do campo e pela sugestão — se as duas divergissem, a sugestão
- * poderia propor um código que o próprio formulário recusa.
- */
-const CODIGO_FORMATO = /^[A-Z][A-Z0-9_]{1,49}$/;
-
-/**
- * Deriva do nome um código no formato fechado que o backend exige: sem
- * diacríticos, em caixa alta, com não-alfanuméricos colapsados em sublinhado e as
- * pontas aparadas.
- *
- * Devolve string vazia quando o resultado não serviria — nome sem nada
- * aproveitável ("---"), curto demais ("A") ou começando por dígito ("21 de
- * abril" daria `21_DE_ABRIL`). Sugerir um código inválido deixaria o campo em
- * erro sem o operador ter chegado a tocá-lo; melhor não sugerir nada.
- */
-export function sugerirCodigoDeTipoDeficiencia(nome: string): string {
-  const candidato = nome
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/gu, '')
-    .replace(/[^a-zA-Z0-9]+/gu, '_')
-    .replace(/^_+|_+$/gu, '')
-    .toLocaleUpperCase('pt-BR')
-    .slice(0, CODIGO_TAMANHO_MAXIMO);
-  return CODIGO_FORMATO.test(candidato) ? candidato : '';
-}
 
 function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm | null {
   const normalized =
@@ -525,8 +498,8 @@ export class TiposDeficienciaListPage {
       validators: [
         Validators.required,
         Validators.minLength(2),
-        Validators.maxLength(CODIGO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_FORMATO),
+        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
+        Validators.pattern(CODIGO_CADASTRO_FORMATO),
       ],
     }),
   });
@@ -571,7 +544,7 @@ export class TiposDeficienciaListPage {
     if (codigoAtual !== '' && codigoAtual !== this.ultimaSugestaoAplicada) {
       return;
     }
-    const sugestao = sugerirCodigoDeTipoDeficiencia(nome);
+    const sugestao = sugerirCodigoDeCadastro(nome);
     this.ultimaSugestaoAplicada = sugestao;
     this.form.controls.codigo.setValue(sugestao, { emitEvent: false });
   }
