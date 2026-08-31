@@ -1,4 +1,4 @@
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, OrigemCandidatos, UnidadePrazo } from '@uniplus/shared-data/selecao';
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
@@ -127,15 +127,69 @@ export interface QuantidadeDeVagas {
   readonly quantidade: string;
 }
 
-export interface EtapaEdital {
-  id: string;
-  tipo: string;
-  inicio: string;
-  fim: string;
-  nomeCustomizado: string;
-  permiteRecurso: boolean;
-  tagNumeroAtiva: boolean;
-  administrativa: boolean;
+/**
+ * Uma fase do cronograma do certame.
+ *
+ * A fase é referenciada pelo id da fase canônica, e não descrita aqui: código,
+ * dono, origem da data e os sinalizadores que decidem o que ela exige são
+ * projeção do catálogo, congelados pelo servidor no momento da gravação. O
+ * `codigo` acompanha o id porque as pendências derivadas e as precedências
+ * falam em `INSCRICAO`, não em uuid — mesma razão pela qual a modalidade carrega
+ * o código ao lado do identificador na distribuição de vagas.
+ *
+ * A janela é instante em texto RFC 3339, não data: é o que o contrato recebe, e
+ * é a hora que separa o fim de um dia do começo do seguinte.
+ */
+export interface FaseDoCronograma {
+  readonly faseCanonicaId: string;
+  readonly codigo: string;
+  readonly ordem: number;
+  /** `null` só é válido em fase cuja origem de data é delegada. */
+  readonly inicio: string | null;
+  readonly fim: string | null;
+  readonly atoProduzidoCodigo: string | null;
+  readonly tiposBancaIds: readonly string[];
+  readonly regraRecurso: RecursoDaFase | null;
+}
+
+/**
+ * A regra de recurso de uma fase. A **presença** desta configuração é o que faz
+ * a fase admitir recurso — não há sinalizador próprio.
+ *
+ * Os números são texto porque é o que o campo edita; a conversão acontece no
+ * envio, com gramática explícita. O par de suspensividade de uma instância é
+ * declarado inteiro ou deixado inteiro em branco: metade preenchida é recusada,
+ * e a ausência dos dois é a desativação prevista daquela instância.
+ */
+export interface RecursoDaFase {
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+  readonly prazoValor: string;
+  readonly prazoUnidade: UnidadePrazo | '';
+  readonly atoAncoraCodigo: string;
+  readonly suspensividadePrimeiraInstanciaValor: string;
+  readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';
+  readonly suspensividadeSegundaInstanciaValor: string;
+  readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
+}
+
+/**
+ * Uma etapa pontuada do processo — o eixo de nota, distinto do eixo temporal.
+ * Não tem janela: quando ela ocorre é a janela da fase que a agrupa.
+ *
+ * O `id` é preservado e reenviado quando a etapa já existe. É o que critério de
+ * desempate e regra de eliminação referenciam, e perdê-lo ao reordenar deixaria
+ * as duas apontando para uma etapa que deixou de existir.
+ */
+export interface EtapaPontuada {
+  /** Devolvido pela API; `null` enquanto a etapa é nova. */
+  readonly id: string | null;
+  readonly nome: string;
+  readonly carater: CaraterEtapa | '';
+  readonly tipoEtapaOrigemId: string;
+  readonly peso: string;
+  readonly notaMinima: string;
+  readonly ordem: number;
 }
 
 export interface CriterioDesempate {
@@ -255,7 +309,21 @@ export interface WizardDraft {
   vagas: {
     ofertas: DistribuicaoDeVagas[];
   };
-  etapas: EtapaEdital[];
+  /**
+   * O cronograma do certame e as etapas que a fase de avaliação agrupa.
+   *
+   * As etapas moram aqui, e não como seção de topo, por duas razões que se
+   * somam: é a fase com `agrupaEtapas` que lhes dá lugar no tempo, e a projeção
+   * do detalhe sobre o rascunho lança quando a seção é um array — o mesmo
+   * motivo pelo qual as ofertas vivem dentro de `vagas`.
+   */
+  cronograma: {
+    fases: FaseDoCronograma[];
+    etapas: EtapaPontuada[];
+    /** Código e versão da regra escolhida; vazios enquanto não há escolha. */
+    algoritmoContagemCodigo: string;
+    algoritmoContagemVersao: string;
+  };
   formula: {
     agregacao: string;
     precisao: string;

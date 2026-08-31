@@ -5,7 +5,6 @@ import { DOC_ETAPAS, DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.d
 import { hidratarDraft } from './shared/hidratacao';
 import {
   DocumentoConfig,
-  EtapaEdital,
   FalhaDeLeitura,
   StepStatus,
   WizardDraft,
@@ -28,20 +27,6 @@ function initialDocumentos(): Record<string, DocumentoConfig> {
   );
 }
 
-function initialEtapa(): EtapaEdital {
-  return {
-    id: 'etapa-1',
-    tipo: '',
-    // Datas vazias — o usuário DEVE preencher início e fim no passo 5.
-    inicio: '',
-    fim: '',
-    nomeCustomizado: '',
-    permiteRecurso: false,
-    tagNumeroAtiva: false,
-    administrativa: false,
-  };
-}
-
 const INITIAL_DRAFT: WizardDraft = {
   // Desmarcado por padrão — o usuário DEVE escolher um tipo no step-01.
   tipoProcesso: { selected: '', rotulo: '' },
@@ -55,7 +40,12 @@ const INITIAL_DRAFT: WizardDraft = {
   },
   pagamento: { cobra: null, valor: '', fundamentos: [] },
   vagas: { ofertas: [] },
-  etapas: [initialEtapa()],
+  // Cronograma e etapas nascem vazios: quais fases o certame tem é decisão de
+  // quem configura, e processo com classificação importada não tem etapa
+  // pontuada. Semear qualquer um dos dois inventaria configuração que ninguém
+  // declarou, e a etapa fictícia ainda faria o processo novo nascer com uma
+  // linha que o operador não pediu.
+  cronograma: { fases: [], etapas: [], algoritmoContagemCodigo: '', algoritmoContagemVersao: '' },
   // Fórmula e precisão começam vazios — o usuário DEVE escolher no passo 6.
   formula: { agregacao: '', precisao: '' },
   bonus: { ativo: false, tipo: '', valor: null, criterio: '', modalidades: [] },

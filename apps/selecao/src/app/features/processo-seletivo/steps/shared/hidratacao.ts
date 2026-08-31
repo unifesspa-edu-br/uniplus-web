@@ -2,7 +2,13 @@ import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/seleca
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
-import { DistribuicaoDeVagas, WizardDraft } from '../processo-seletivo.models';
+import {
+  DistribuicaoDeVagas,
+  EtapaPontuada,
+  FaseDoCronograma,
+  RecursoDaFase,
+  WizardDraft,
+} from '../processo-seletivo.models';
 import {
   decodificarComposicaoVagas,
   REGRA_LEI_12711,
@@ -28,6 +34,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     },
     pagamento: pagamentoDe(dto),
     vagas: { ofertas: distribuicoesDe(dto) },
+    cronograma: cronogramaDe(dto),
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
@@ -40,6 +47,100 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       },
     },
   };
+}
+
+/**
+ * Projeta o cronograma, as etapas pontuadas e a convenção de contagem.
+ *
+ * Guarda os identificadores **de origem**, que é o que a gravação recebe: a
+ * fase pelo id da fase canônica, a banca pelo id do tipo de banca. O `id` que o
+ * detalhe traz identifica o snapshot da configuração, não a entidade do
+ * catálogo — reenviá-lo produziria referência que o servidor não resolve. E a
+ * entrada de fase sequer tem campo de id: a reconciliação é por fase canônica.
+ *
+ * A etapa é a exceção deliberada: o `id` dela é preservado e reenviado, porque
+ * critério de desempate e regra de eliminação o referenciam.
+ *
+ * Os números voltam como texto porque é o que o campo edita.
+ */
+function cronogramaDe(dto: ProcessoSeletivoDto): WizardDraft['cronograma'] {
+  const algoritmo = dto.algoritmoContagemPrazo;
+
+  return {
+    fases: (dto.cronogramaFases ?? []).map(faseDe),
+    etapas: (dto.etapas ?? []).map(etapaDe),
+    algoritmoContagemCodigo: algoritmo?.codigo ?? '',
+    algoritmoContagemVersao: algoritmo?.versao ?? '',
+  };
+}
+
+function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCronograma {
+  return {
+    faseCanonicaId: fase.faseCanonicaOrigemId,
+    codigo: fase.codigo,
+    ordem: comoInteiro(fase.ordem),
+    inicio: fase.inicio,
+    fim: fase.fim,
+    atoProduzidoCodigo: fase.atoProduzidoCodigo,
+    tiposBancaIds: fase.bancasRequeridas.map((banca) => banca.tipoBancaOrigemId),
+    regraRecurso: recursoDe(fase.regraRecurso),
+  };
+}
+
+/**
+ * A presença da regra é o que faz a fase admitir recurso. O hash da referência
+ * não volta ao rascunho: o servidor o recompõe do catálogo, e guardá-lo aqui
+ * criaria uma cópia que envelhece sozinha.
+ */
+function recursoDe(
+  regra: ProcessoSeletivoDto['cronogramaFases'][number]['regraRecurso'],
+): RecursoDaFase | null {
+  if (regra === null || regra === undefined) return null;
+
+  const args = regra.args;
+  return {
+    regraCodigo: regra.regra.codigo,
+    regraVersao: regra.regra.versao,
+    prazoValor: comoTexto(args.prazoValor),
+    prazoUnidade: args.prazoUnidade,
+    atoAncoraCodigo: args.atoAncoraCodigo,
+    suspensividadePrimeiraInstanciaValor: comoTexto(args.suspensividadePrimeiraInstanciaValor),
+    suspensividadePrimeiraInstanciaUnidade: args.suspensividadePrimeiraInstanciaUnidade ?? '',
+    suspensividadeSegundaInstanciaValor: comoTexto(args.suspensividadeSegundaInstanciaValor),
+    suspensividadeSegundaInstanciaUnidade: args.suspensividadeSegundaInstanciaUnidade ?? '',
+  };
+}
+
+function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
+  return {
+    id: etapa.id,
+    nome: etapa.nome,
+    carater: etapa.carater,
+    tipoEtapaOrigemId: etapa.tipoEtapa.origemId,
+    peso: comoTexto(etapa.peso),
+    notaMinima: comoTexto(etapa.notaMinima),
+    ordem: comoInteiro(etapa.ordem),
+  };
+}
+
+/** O contrato admite número ou texto; ausente vira campo vazio, não zero. */
+function comoTexto(valor: number | string | null | undefined): string {
+  if (valor === null || valor === undefined) return '';
+  return String(valor);
+}
+
+/**
+ * A ordem é posição na lista, e o contrato a admite como número ou texto.
+ * Ausente vira zero — que a validação recusa, e é o que se quer: ordem não
+ * declarada precisa aparecer como pendência, não passar despercebida.
+ */
+function comoInteiro(valor: number | string | null | undefined): number {
+  if (typeof valor === 'number') return valor;
+  if (typeof valor === 'string') {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : 0;
+  }
+  return 0;
 }
 
 /**
