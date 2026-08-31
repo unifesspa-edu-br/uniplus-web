@@ -643,6 +643,123 @@ A mesma fase canônica não se repete no cronograma (`FaseCanonicaDuplicada`), e
 em outro — não é representável hoje: as etapas dentro da fase não têm janela própria. Registrar como
 questão de modelagem se o caso aparecer num edital real; não bloqueia esta entrega.
 
+## Roteiro de execução autônoma
+
+Escrito para ser seguido sem supervisão, numa sessão longa. A ordem não é sugestão: cada passo
+depende do anterior por uma razão nomeada, e pular um deixa o seguinte num estado que a API recusa
+ou que não compila.
+
+### Passo 0 — massa de dados no ambiente local
+
+Antes de qualquer código, porque sem isso nenhuma task se testa contra o backend. Os cadastros
+abaixo estão **vazios** no Postgres local, e o cronograma consome todos.
+
+| Cadastro | O que criar | Via |
+|---|---|---|
+| `configuracao.fase_canonica` | as 14 do vocabulário | tela do app `configuracao` ou API admin |
+| `configuracao.tipo_banca` | os 4 tipos | tela do app `configuracao` ou API admin |
+| `publicacoes.tipo_ato_publicado` | os atos que as fases produzem, mais o de abertura do edital | **só API** — não há tela |
+| `configuracao.calendario_dias_uteis` | o dataset vigente | tela do app `configuracao` |
+| `configuracao.precedencia_fase` | uma aresta **com** sobreposição | API admin |
+
+Três regras do cadastro amarram os atributos, e violá-las é recusa nomeada: `agrupa_etapas` só é
+verdadeiro em `AVALIACAO`; `resultado_definitivo` verdadeiro pressupõe `produz_resultado`
+verdadeiro; `origem_data` própria obriga janela na fase que a usa. O resto — dono típico, base
+legal, quais fases permitem complementação além das que a lei já fixa — é escolha institucional.
+
+**Isto é massa de teste, não cadastro institucional.** O que entrar aqui existe para exercitar a
+tela e os E2E locais; a carga de homologação é decisão do CEPS e não sai deste roteiro. Registrar
+os comandos usados num script versionado do workspace, para que o ambiente seja reproduzível depois
+de um reset do banco.
+
+Critério de conclusão do passo: uma gravação de cronograma com uma fase que produz resultado é
+aceita pela API local.
+
+### Ordem das tasks
+
+```
+#655  contrato do módulo Publicações          ── nada depende de nada; destrava as demais
+  │
+  ├── #653  tipos de etapa + gravação de etapas
+  ├── #656  gravação de cronograma + convenção
+  │
+  └── #654  modelo do rascunho, remoção do mock, hidratação
+        │
+        └── #657  linha do tempo com as etapas na fase que as agrupa   ← a maior
+              │
+              ├── #658  recurso por fase + convenção de contagem
+              └── #659  pendências derivadas
+```
+
+`#655` primeiro e sozinha: sem tipo de ato, nenhuma fase que produz resultado grava, e são elas que
+carregam recurso. `#653` e `#656` são independentes entre si. `#654` precisa vir antes de `#657`
+porque troca o tipo do rascunho e remove o mock — e as duas metades de `#657` (linha do tempo e
+etapas) não se separam, pela bicondicional.
+
+### Ciclo por task
+
+O mesmo para todas, sem atalho:
+
+1. **Branch** a partir da `main` atualizada — `feature/{issue}-{slug}`.
+2. **Implementar** a task inteira, consultando as seções deste plano que ela cita.
+3. **Gates locais antes do PR**, todos verdes: `nx lint`, `nx typecheck`, `nx vite:test`,
+   `nx build <projeto> --configuration=production` e, quando o contrato mudar, `codegen-api-check`.
+   O build de produção é o único que pega import relativo entre entry points.
+4. **Commit** em conventional commits pt-BR, indicativo presente na 3ª pessoa, descrevendo a
+   mudança no código — nunca o processo de revisão. Sem atribuição de IA.
+5. **PR** vinculando a issue com `Closes #N` no corpo, com notas ao revisor antecipando o que for
+   previsivelmente questionável.
+6. **Revisão dupla**, e é aqui que entra o apoio externo:
+   - o **Codex** revisa no PR automaticamente ao abrir;
+   - em paralelo, um **subagente em contexto limpo** revisa o diff — sem ver o raciocínio que o
+     produziu, com instrução de reportar só o que tem cenário de falha concreto. Zero achados é
+     resultado válido.
+7. **Aplicar os achados confirmados.** Achado que cita documento ou requisito é conferido na fonte
+   antes de virar mudança — rótulo não é estado, e a revisão deste plano já produziu dois achados
+   que não se sustentaram. "Não bloqueante" não significa "não corrigir".
+8. **Responder e resolver cada thread**, inclusive as que não geraram mudança, dizendo por quê.
+9. **CI verde** — todos os checks, sem exceção.
+10. **Aprovar** com a conta de review e **mergear com rebase**, mantendo o histórico linear.
+11. **Voltar para a `main`**, atualizar, e só então começar a próxima.
+
+Nenhuma task começa com a anterior sem merge. O objetivo é que a `main` esteja sempre em estado
+publicável, e que uma falha numa task não contamine a seguinte.
+
+### Testes ao longo do caminho
+
+**Por task:** os testes que a própria task lista, mais um por invariante que ela toca. A regra que
+vale mais do que a contagem: o teste precisa **falhar sem o fix**. Um teste que passa antes e depois
+não prova nada.
+
+**E2E contra backend real:** a suíte tem projeto próprio, atrás de `E2E_BACKEND_REAL=1`, e exige a
+stack local de pé. Rodar ao fechar `#657` — antes disso não há tela que o exercite — e de novo ao
+fechar `#659`. Cobertura mínima: cronograma de uma fase sem recurso; cronograma com a fase de
+avaliação e duas etapas reordenadas, provando que os ids sobrevivem; e a contraprova de publicar sem
+convenção declarada quando há fase com recurso.
+
+**Ao final:** a suíte inteira do `selecao` e do `selecao-e2e`, mais a matriz responsiva e o axe.
+
+### Onde parar e perguntar
+
+Autonomia não é decidir tudo. Parar e registrar, sem inventar saída:
+
+- **regra de negócio que o registro canônico não cobre** — o portal é a fonte, e requisito
+  desatualizado vira issue própria, não bloqueio;
+- **mudança de contrato da API** — remover ou renomear campo é quebra sujeita à ADR-0028;
+- **decisão que muda o desenho** deste plano — ele foi acordado, e alterá-lo sozinho no meio da
+  execução desperdiça a revisão que o validou;
+- **issue atribuída a outra pessoa** — nunca tocar;
+- **qualquer coisa que exija cadastro institucional real**, distinto da massa de teste.
+
+Nesses casos: registrar no plano ou em issue, seguir com o que não depende da resposta, e deixar
+explícito o que ficou pendente.
+
+### Registro de progresso
+
+Manter, ao longo da sessão, o estado de cada task — o que foi feito, o que falhou, o que ficou
+pendente — de modo que o relatório final diga onde cada uma parou, e não só quantas fecharam. Task
+que não fecha não vira silêncio: vira linha do relatório, com a razão.
+
 ## Decisões incorporadas
 
 | Decisão | Origem |
