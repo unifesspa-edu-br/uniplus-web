@@ -215,6 +215,78 @@ describe('TiposDocumentoListPage', () => {
     expect(component['form'].controls.categoria.errors?.['required']).toBeTruthy();
   });
 
+  it('CA-01: o código é sugerido a partir do nome ao criar, em UPPER_SNAKE sem acento', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    component['form'].controls.nome.setValue('Laudo médico');
+
+    expect(component['form'].controls.codigo.value).toBe('LAUDO_MEDICO');
+    expect(component['form'].controls.codigo.valid).toBe(true);
+  });
+
+  it('CA-02: edição manual do operador não é sobrescrita pela sugestão', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    component['form'].controls.nome.setValue('Laudo médico');
+    component['form'].controls.codigo.setValue('LAUDO_MEDICO_PCD');
+    component['form'].controls.nome.setValue('Laudo médico para PcD');
+
+    expect(component['form'].controls.codigo.value).toBe('LAUDO_MEDICO_PCD');
+  });
+
+  it('CA-03: em edição, digitar o nome não altera o código já gravado', async () => {
+    // O código deste cadastro vai congelado no snapshot do edital: mexer nele por
+    // efeito colateral de digitação seria mudança silenciosa de identidade.
+    await flushLista([rgSeed]);
+    component['abrirEdicao'](rgSeed);
+    fixture.detectChanges();
+
+    component['form'].controls.nome.setValue('Registro Geral revisado');
+
+    expect(component['form'].controls.codigo.value).toBe('RG');
+  });
+
+  it('CA-04: nome que não produz código válido não deixa sugestão no campo', async () => {
+    // Sugerir '21_DE_ABRIL' — que começa com dígito — deixaria o campo em erro sem
+    // o operador tê-lo tocado.
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+
+    component['form'].controls.nome.setValue('21 de abril');
+
+    expect(component['form'].controls.codigo.value).toBe('');
+  });
+
+  it('CA-04: código fora do formato fechado é recusado no cliente, sem chamar o backend', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].patchValue({ codigo: '01', nome: 'Certificado', categoria: 'ESCOLARIDADE' });
+    fixture.detectChanges();
+
+    component['salvar']();
+
+    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-documento`);
+    expect(component['form'].controls.codigo.errors?.['pattern']).toBeTruthy();
+  });
+
+  it('associa a dica e a mensagem de erro ao campo Código para leitor de tela', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].patchValue({ codigo: '01' });
+    component['form'].controls.codigo.markAsTouched();
+    fixture.detectChanges();
+
+    const campo: HTMLInputElement = fixture.nativeElement.querySelector('[formControlName="codigo"]');
+    expect(campo.getAttribute('aria-describedby')).toContain('cfg-tdoc-codigo-dica');
+    expect(campo.getAttribute('aria-describedby')).toContain('cfg-tdoc-codigo-erro');
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+  });
+
   // TipoDocumentoForm_CodigoDuplicado_422MapeaCampo (via TiposDocumentoListPage_Erro422_MapeaCampo)
   it('CA-03: código duplicado (409) é mapeado ao campo Código sem fechar o drawer', async () => {
     await flushLista([]);

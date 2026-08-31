@@ -10,7 +10,6 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
-  sugerirCodigoDeTipoDeficiencia,
   TiposDeficienciaListPage,
 } from './tipos-deficiencia-list.page';
 
@@ -543,44 +542,5 @@ describe('TiposDeficienciaListPage', () => {
 
     // O backend pede retry do MESMO comando: chave nova viraria um comando novo.
     expect(component['idempotencyKeyAtual']()).toBe(chave);
-  });
-});
-
-describe('sugerirCodigoDeTipoDeficiencia', () => {
-  it('remove diacríticos e sobe para caixa alta', () => {
-    expect(sugerirCodigoDeTipoDeficiencia('Deficiência visual')).toBe('DEFICIENCIA_VISUAL');
-  });
-
-  it('colapsa pontuação em sublinhado e apara as pontas', () => {
-    expect(sugerirCodigoDeTipoDeficiencia('  Surdez — parcial/total!  ')).toBe(
-      'SURDEZ_PARCIAL_TOTAL',
-    );
-  });
-
-  it('não passa do tamanho aceito pelo backend', () => {
-    expect(sugerirCodigoDeTipoDeficiencia('A'.repeat(80))).toHaveLength(50);
-  });
-
-  it('devolve string vazia quando não sobra nada aproveitável', () => {
-    expect(sugerirCodigoDeTipoDeficiencia('  ---  ')).toBe('');
-  });
-
-  /**
-   * A sugestão preenche o campo sozinha. Se propusesse algo que o validador
-   * recusa, o operador veria o código já em erro sem ter chegado a tocá-lo —
-   * pior do que campo vazio, que ele preenche sabendo o que está fazendo.
-   */
-  it.each([
-    ['nome que começa por dígito', '21 de abril'],
-    ['nome de uma letra só', 'A'],
-    ['nome que vira um caractere', 'Á!'],
-  ])('não sugere código inválido: %s', (_caso, nome) => {
-    expect(sugerirCodigoDeTipoDeficiencia(nome)).toBe('');
-  });
-
-  it('sugere quando o nome começa por letra e sobra o bastante', () => {
-    expect(sugerirCodigoDeTipoDeficiencia('TEA - Transtorno do Espectro Autista')).toBe(
-      'TEA_TRANSTORNO_DO_ESPECTRO_AUTISTA',
-    );
   });
 });
