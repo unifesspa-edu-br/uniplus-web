@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { firstValueFrom } from 'rxjs';
+import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
+import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 
 import type {
   EtapaPontuada,
@@ -18,10 +20,15 @@ import {
   exigenciasDe,
   problemasDoCronograma,
   renumerar,
-  trocaFechaCiclo,
   type ExigenciasDaFase,
 } from './cronograma-do-certame';
 import { comoComandoDeEtapa, comoComandoDeFase } from './cronograma-para-comando';
+
+/**
+ * Recusa do servidor quando a nova ordem troca a posição entre fases que já
+ * existem, formando um ciclo que uma única gravação não consegue aplicar.
+ */
+const PERMUTACAO_DE_ORDEM = 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada';
 
 /** Caráter de uma etapa, com o rótulo que o operador lê. */
 const CARATERES = [
@@ -54,6 +61,7 @@ export class CronogramaStepComponent {
   readonly catalogos = inject(CatalogosDoCronogramaService);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly api = inject(ProcessosSeletivosApi);
 
   readonly careteres = CARATERES;
 
@@ -168,6 +176,15 @@ export class CronogramaStepComponent {
     this.avisoDeReordenacao.set(null);
   }
 
+  /**
+   * Troca a fase de lugar no rascunho.
+   *
+   * A troca é sempre aplicada. Trocar duas fases adjacentes forma o ciclo de
+   * ordem que o servidor não persiste numa chamada só — mas recusar aqui
+   * deixaria a linha do tempo impossível de reordenar, porque toda troca entre
+   * vizinhas tem essa forma. O rascunho aceita; quem arbitra é a gravação, e é
+   * lá que a orientação aparece, com o cronograma que a provocou à vista.
+   */
   mover(indice: number, direcao: -1 | 1): void {
     const { fases } = this.cronograma;
     const destino = indice + direcao;
@@ -177,17 +194,9 @@ export class CronogramaStepComponent {
 
     fases[indice] = vizinha;
     fases[destino] = atual;
-    const reordenadas = renumerar(fases);
-
-    if (trocaFechaCiclo(this.store.draft().cronograma.fases, reordenadas)) {
-      this.avisoDeReordenacao.set(
-        'Trocar estas duas fases de lugar exige duas gravações: grave o cronograma como está, mova uma delas para o fim, grave de novo e então traga a outra para a posição desejada.',
-      );
-      return;
-    }
 
     this.avisoDeReordenacao.set(null);
-    this.gravarFases([...reordenadas]);
+    this.gravarFases([...renumerar(fases)]);
   }
 
   definirJanela(indice: number, campo: 'inicio' | 'fim', valorLocal: string): void {
@@ -297,8 +306,14 @@ export class CronogramaStepComponent {
       );
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!fases.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(fases.problem).title] };
+        return {
+          valid: false,
+          messages: [this.explicarRecusa(fases.problem.code, fases.problem)],
+        };
       }
+
+      await this.reconciliarComOServidor(processoId);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
 
       return { valid: true };
     } finally {
@@ -308,6 +323,36 @@ export class CronogramaStepComponent {
 
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
+  }
+
+  /**
+   * Relê o processo depois de gravar.
+   *
+   * A gravação de etapas responde 204 sem corpo, e é o servidor quem atribui o
+   * `id` de uma etapa nova. Sem reler, o rascunho segue com `id: null` e a
+   * gravação seguinte omitiria o identificador de uma etapa que já existe — o
+   * servidor criaria outra no lugar, e o critério de desempate e a regra de
+   * eliminação que a referenciam ficariam apontando para a que deixou de
+   * existir.
+   */
+  private async reconciliarComOServidor(processoId: string): Promise<void> {
+    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    if (isApiOk(detalhe)) this.store.hidratar(detalhe.data);
+  }
+
+  /**
+   * A recusa de permutação de ordem descreve o que aconteceu, não o que fazer.
+   * Quem reordenou duas fases precisa saber que o caminho é fazê-lo em duas
+   * gravações — a informação que evita tentar de novo o mesmo movimento.
+   */
+  private explicarRecusa(
+    codigo: string,
+    problema: Parameters<ProblemI18nService['resolve']>[0],
+  ): string {
+    if (codigo === PERMUTACAO_DE_ORDEM) {
+      return 'Trocar duas fases de lugar exige duas gravações: mova uma delas para o fim da linha do tempo, grave, e então traga a outra para a posição desejada.';
+    }
+    return this.problemI18n.resolve(problema).title;
   }
 
   private atualizarFase(indice: number, patch: Partial<FaseDoCronograma>): void {
