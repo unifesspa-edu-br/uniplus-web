@@ -15,6 +15,8 @@ import {
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
+import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
+
 /** Tipo do `rol_de_regras` que a convenção de contagem referencia. */
 const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
 
@@ -73,9 +75,13 @@ export class CatalogosDoCronogramaService {
    * Atos que podem ser escolhidos hoje. A vigência é semiaberta — `[início,
    * fim)` —, e é ela que o servidor confere ao resolver o ato declarado: um
    * código fora de vigência é recusado na gravação.
+   *
+   * "Hoje" é o dia no fuso institucional, não em UTC: à noite em Belém a data
+   * UTC já é a de amanhã, e conferir por ela ofereceria um ato horas antes de
+   * ele valer — para o servidor recusá-lo em seguida.
    */
   readonly atosVigentes = computed(() => {
-    const hoje = new Date().toISOString().slice(0, 10);
+    const hoje = hojeNoFusoInstitucional();
     return this.atos().filter(
       (ato) => ato.vigenciaInicio <= hoje && (ato.vigenciaFim === null || hoje < ato.vigenciaFim),
     );
