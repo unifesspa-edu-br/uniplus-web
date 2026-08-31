@@ -20,7 +20,7 @@ import {
   ProcessosSeletivosApi,
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-import { OrigemCandidatos } from './schema';
+import { CaraterEtapa, OrigemCandidatos } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -231,7 +231,7 @@ describe('ProcessosSeletivosApi', () => {
       {
         id: '01960000-0000-7000-0000-0000000005e1',
         nome: 'Prova Objetiva',
-        carater: 'classificatoria',
+        carater: CaraterEtapa.classificatoria,
         tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000005f1',
         peso: 2,
         notaMinima: null,
@@ -239,7 +239,7 @@ describe('ProcessosSeletivosApi', () => {
       },
       {
         nome: 'Redação',
-        carater: 'ambas',
+        carater: CaraterEtapa.ambas,
         tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000005f2',
         peso: 1,
         notaMinima: 5,
