@@ -90,16 +90,16 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
       <div class="page-header__content">
         <h1 class="page-header__title">Tipo de Banca</h1>
         <p class="page-header__desc">
-          Vocabulário de cronograma — categorias de banca que atuam ao longo do processo seletivo
-          · UNI-REQ-0064.
+          Vocabulário de cronograma — categorias de banca que atuam ao longo do processo seletivo ·
+          UNI-REQ-0064.
         </p>
       </div>
     </div>
 
     <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
       O código de uma fase canônica ou de um tipo de banca não pode ser alterado após a criação —
-      pertence ao vocabulário canônico fixo e é congelado por snapshot nos cronogramas dos
-      editais. Para corrigir, crie uma nova entrada e inative a anterior.
+      pertence ao vocabulário canônico fixo e é congelado por snapshot nos cronogramas dos editais.
+      Para corrigir, crie uma nova entrada e inative a anterior.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -153,7 +153,9 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
             <tbody>
               @for (banca of bancasFiltradas(); track banca.id) {
                 <tr>
-                  <td data-label="Código"><code>{{ banca.codigo }}</code></td>
+                  <td data-label="Código">
+                    <code>{{ banca.codigo }}</code>
+                  </td>
                   <td data-label="Nome">{{ banca.nome }}</td>
                   <td data-label="Fase típica">{{ banca.faseTipica || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
@@ -314,7 +316,13 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
           @if (saving()) {
             <ui-spinner size="sm" />
           }
-          {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar tipo de banca' : 'Salvar tipo de banca' }}
+          {{
+            saving()
+              ? 'Salvando...'
+              : modo() === 'criar'
+                ? 'Criar tipo de banca'
+                : 'Salvar tipo de banca'
+          }}
         </button>
       </div>
     </ui-drawer>
@@ -328,6 +336,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class TiposBancaPage {
   private readonly api = inject(TiposBancaApi);

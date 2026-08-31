@@ -151,7 +151,9 @@ interface LocalOfertaForm {
             <tbody>
               @for (local of locais(); track local.id) {
                 <tr>
-                  <td data-label="Tipo"><span class="tag">{{ tipoLabel(local.tipo) }}</span></td>
+                  <td data-label="Tipo">
+                    <span class="tag">{{ tipoLabel(local.tipo) }}</span>
+                  </td>
                   <td data-label="Cidade">{{ cidadeLabel(local) }}</td>
                   <td data-label="Campus responsável">
                     @if (local.campusResponsavelId === null) {
@@ -219,7 +221,13 @@ interface LocalOfertaForm {
         <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
       }
 
-      <form [formGroup]="form" id="cfg-local-form" (ngSubmit)="salvar()" novalidate class="cfg-form">
+      <form
+        [formGroup]="form"
+        id="cfg-local-form"
+        (ngSubmit)="salvar()"
+        novalidate
+        class="cfg-form"
+      >
         <section aria-labelledby="cfg-local-classificacao">
           <h3 id="cfg-local-classificacao" class="form-section__title">Classificação</h3>
           <div class="form-grid">
@@ -285,12 +293,7 @@ interface LocalOfertaForm {
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>
-        <button
-          type="submit"
-          form="cfg-local-form"
-          class="btn btn--primary"
-          [disabled]="saving()"
-        >
+        <button type="submit" form="cfg-local-form" class="btn btn--primary" [disabled]="saving()">
           @if (saving()) {
             <ui-spinner size="sm" />
           }
@@ -308,6 +311,7 @@ interface LocalOfertaForm {
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class LocaisOfertaPage {
   private readonly api = inject(LocaisOfertaApi);

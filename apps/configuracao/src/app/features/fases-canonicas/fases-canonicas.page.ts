@@ -120,16 +120,15 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
       <div class="page-header__content">
         <h1 class="page-header__title">Fase Canônica</h1>
         <p class="page-header__desc">
-          Vocabulário de cronograma — momentos do ciclo de vida do processo seletivo ·
-          UNI-REQ-0064.
+          Vocabulário de cronograma — momentos do ciclo de vida do processo seletivo · UNI-REQ-0064.
         </p>
       </div>
     </div>
 
     <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
       O código de uma fase canônica ou de um tipo de banca não pode ser alterado após a criação —
-      pertence ao vocabulário canônico fixo e é congelado por snapshot nos cronogramas dos
-      editais. Para corrigir, crie uma nova entrada e inative a anterior.
+      pertence ao vocabulário canônico fixo e é congelado por snapshot nos cronogramas dos editais.
+      Para corrigir, crie uma nova entrada e inative a anterior.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -171,7 +170,11 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         <ng-container uiFilterBarSecondary>
           <label class="field">
             <span class="field__label sr-only">Filtrar por dono típico</span>
-            <select class="select" [value]="donoTipicoFiltro()" (change)="donoTipicoFiltro.set($any($event.target).value)">
+            <select
+              class="select"
+              [value]="donoTipicoFiltro()"
+              (change)="donoTipicoFiltro.set($any($event.target).value)"
+            >
               <option value="">Todos os donos típicos</option>
               @for (dono of donosTipicos; track dono) {
                 <option [value]="dono">{{ dono }}</option>
@@ -197,7 +200,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
             <tbody>
               @for (fase of fasesFiltradas(); track fase.id) {
                 <tr>
-                  <td data-label="Código"><code>{{ fase.codigo }}</code></td>
+                  <td data-label="Código">
+                    <code>{{ fase.codigo }}</code>
+                  </td>
                   <td data-label="Nome">{{ fase.nome }}</td>
                   <td data-label="Dono típico">
                     <span class="tag">{{ fase.donoTipico || '—' }}</span>
@@ -383,7 +388,12 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
             </label>
             <label class="field">
               <span class="field__label">Base legal</span>
-              <input class="input" type="text" formControlName="baseLegal" placeholder="Ex.: Lei 9.784/1999, art. 56" />
+              <input
+                class="input"
+                type="text"
+                formControlName="baseLegal"
+                placeholder="Ex.: Lei 9.784/1999, art. 56"
+              />
               <span class="field__hint">Dispositivo legal aplicável. Opcional.</span>
             </label>
           </div>
@@ -475,7 +485,13 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
           @if (saving()) {
             <ui-spinner size="sm" />
           }
-          {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar fase canônica' : 'Salvar fase canônica' }}
+          {{
+            saving()
+              ? 'Salvando...'
+              : modo() === 'criar'
+                ? 'Criar fase canônica'
+                : 'Salvar fase canônica'
+          }}
         </button>
       </div>
     </ui-drawer>
@@ -489,6 +505,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class FasesCanonicasPage {
   private readonly api = inject(FasesCanonicasApi);
@@ -603,22 +620,25 @@ export class FasesCanonicasPage {
       : 'Deseja inativar esta fase canônica?';
   });
 
-  protected readonly form: FormGroup<FaseForm> = new FormGroup<FaseForm>({
-    codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    donoTipico: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(255)],
-    }),
-    descricao: new FormControl('', { nonNullable: true }),
-    baseLegal: new FormControl('', { nonNullable: true }),
-    agrupaEtapas: new FormControl(false, { nonNullable: true }),
-    permiteComplementacao: new FormControl(false, { nonNullable: true }),
-    origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    produzResultado: new FormControl(false, { nonNullable: true }),
-    resultadoDefinitivo: new FormControl(false, { nonNullable: true }),
-    coletaInscricao: new FormControl(false, { nonNullable: true }),
-  }, { validators: resultadoDefinitivoValidator });
+  protected readonly form: FormGroup<FaseForm> = new FormGroup<FaseForm>(
+    {
+      codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      donoTipico: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      nome: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.maxLength(255)],
+      }),
+      descricao: new FormControl('', { nonNullable: true }),
+      baseLegal: new FormControl('', { nonNullable: true }),
+      agrupaEtapas: new FormControl(false, { nonNullable: true }),
+      permiteComplementacao: new FormControl(false, { nonNullable: true }),
+      origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      produzResultado: new FormControl(false, { nonNullable: true }),
+      resultadoDefinitivo: new FormControl(false, { nonNullable: true }),
+      coletaInscricao: new FormControl(false, { nonNullable: true }),
+    },
+    { validators: resultadoDefinitivoValidator },
+  );
 
   // Código selecionado atual — reage tanto ao `select` de criação quanto ao
   // `form.reset()` da edição, para controlar a visibilidade dos grupos
@@ -891,7 +911,9 @@ export class FasesCanonicasPage {
       donoTipico: nullIfBlank(raw.donoTipico),
       agrupaEtapas: raw.codigo === 'AVALIACAO' ? raw.agrupaEtapas : false,
       permiteComplementacao:
-        raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS' ? raw.permiteComplementacao : false,
+        raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS'
+          ? raw.permiteComplementacao
+          : false,
       baseLegal: nullIfBlank(raw.baseLegal),
       origemData: raw.origemData,
       produzResultado: raw.produzResultado,
@@ -911,7 +933,9 @@ export class FasesCanonicasPage {
       donoTipico: nullIfBlank(raw.donoTipico),
       agrupaEtapas: raw.codigo === 'AVALIACAO' ? raw.agrupaEtapas : false,
       permiteComplementacao:
-        raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS' ? raw.permiteComplementacao : false,
+        raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS'
+          ? raw.permiteComplementacao
+          : false,
       baseLegal: nullIfBlank(raw.baseLegal),
       origemData: raw.origemData,
       produzResultado: raw.produzResultado,

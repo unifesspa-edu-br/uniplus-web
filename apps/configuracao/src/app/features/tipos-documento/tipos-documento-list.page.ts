@@ -469,6 +469,7 @@ interface TipoDocumentoForm {
       (confirmed)="confirmarInativacao()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class TiposDocumentoListPage {
   private readonly api = inject(TiposDocumentoApi);

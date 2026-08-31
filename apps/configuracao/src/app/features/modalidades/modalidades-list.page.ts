@@ -89,7 +89,11 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
       </div>
     </div>
 
-    <ui-alert variant="info" heading="Configuração viva — congelamento por snapshot" [dynamic]="false">
+    <ui-alert
+      variant="info"
+      heading="Configuração viva — congelamento por snapshot"
+      [dynamic]="false"
+    >
       Mudanças neste cadastro não afetam processos já publicados, que congelam os dados no momento
       da criação (RN08). Origem, destino, par e fallback referenciam outra modalidade pelo seu
       código.
@@ -186,7 +190,9 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                     <td data-label="Composição de vagas">
                       {{ composicaoLabel(m.composicaoVagas) }}
                       @if (m.composicaoOrigem) {
-                        <span class="cfg-meta">de <code>{{ m.composicaoOrigem }}</code></span>
+                        <span class="cfg-meta"
+                          >de <code>{{ m.composicaoOrigem }}</code></span
+                        >
                       }
                     </td>
                     <td data-label="Remanejamento">{{ remanejamentoResumo(m) }}</td>
@@ -268,13 +274,22 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     >
       @if (modalidadeParaRemover(); as alvo) {
         @if (remocaoBloqueada()) {
-          <ui-alert variant="warning" heading="Modalidade referenciada por outra viva" [dynamic]="false">
+          <ui-alert
+            variant="warning"
+            heading="Modalidade referenciada por outra viva"
+            [dynamic]="false"
+          >
             @if (referenciadaPor(alvo.codigo).length > 0) {
               A modalidade <code>{{ alvo.codigo }}</code> não pode ser inativada porque é usada como
               origem, destino, par ou fallback das seguintes modalidades vivas:
               <ul class="cfg-refs-lista">
                 @for (r of referenciadaPor(alvo.codigo); track r.id) {
-                  <li><code>{{ r.codigo }}</code>@if (r.descricao) { — {{ r.descricao }} }</li>
+                  <li>
+                    <code>{{ r.codigo }}</code>
+                    @if (r.descricao) {
+                      — {{ r.descricao }}
+                    }
+                  </li>
                 }
               </ul>
               Ajuste ou remova essas referências antes de inativar.
@@ -284,20 +299,28 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
           </ui-alert>
         } @else {
           <p>
-            A modalidade <code>{{ alvo.codigo }}</code> é inativada (soft-delete) e mantida na trilha
-            de auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas
-            (RN08). Confirma?
+            A modalidade <code>{{ alvo.codigo }}</code> é inativada (soft-delete) e mantida na
+            trilha de auditoria. Cópias congeladas por snapshot em processos publicados não são
+            afetadas (RN08). Confirma?
           </p>
         }
       }
 
       <div uiDialogFooter>
         @if (remocaoBloqueada()) {
-          <button type="button" class="btn btn--primary btn--rect" (click)="dialogAberto.set(false)">
+          <button
+            type="button"
+            class="btn btn--primary btn--rect"
+            (click)="dialogAberto.set(false)"
+          >
             Entendi
           </button>
         } @else {
-          <button type="button" class="btn btn--tertiary btn--rect" (click)="dialogAberto.set(false)">
+          <button
+            type="button"
+            class="btn btn--tertiary btn--rect"
+            (click)="dialogAberto.set(false)"
+          >
             Cancelar
           </button>
           <button
@@ -315,6 +338,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
       </div>
     </ui-dialog>
   `,
+  host: { class: 'cfg-page' },
 })
 export class ModalidadesListPage {
   private readonly api = inject(ModalidadesApi);
