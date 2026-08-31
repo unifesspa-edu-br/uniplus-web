@@ -12,6 +12,7 @@ import {
   ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
   DefinirTaxaInscricaoRequest,
+  EtapaProcessoInput,
   IniciarUploadDocumentoEditalDto,
   ProcessosSeletivosApi,
 } from '@uniplus/shared-data/selecao';
@@ -90,6 +91,7 @@ export class CadastroInicialService {
 
   private readonly chaveTaxa = new ChaveDeSubstituicao();
   private readonly chaveDistribuicao = new ChaveDeSubstituicao();
+  private readonly chaveEtapas = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -123,6 +125,7 @@ export class CadastroInicialService {
     this.chaveConfirmacao = idempotencyKey.create();
     this.chaveTaxa.renovar();
     this.chaveDistribuicao.renovar();
+    this.chaveEtapas.renovar();
   }
 
   /**
@@ -228,6 +231,35 @@ export class CadastroInicialService {
     }
 
     this.chaveDistribuicao.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava as etapas pontuadas do processo. O comando substitui a coleção
+   * inteira: as ausentes deixam de existir, e é isso que permite remover uma
+   * etapa. Coleção vazia é estado válido — processo cuja classificação é
+   * importada não tem etapa pontuada.
+   *
+   * Chave própria, separada das demais dimensões: uma recusa aqui não pode
+   * invalidar a chave de uma gravação de vagas ou de taxa em curso.
+   */
+  async definirEtapas(
+    processoSeletivoId: string,
+    etapas: readonly EtapaProcessoInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirEtapas(processoSeletivoId, etapas, this.chaveEtapas.contextoPara(etapas)),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveEtapas.renovar();
+      return { ok: true };
+    }
+
+    this.chaveEtapas.recusada(result);
     return { ok: false, problem: result.problem };
   }
 

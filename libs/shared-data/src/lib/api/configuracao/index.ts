@@ -163,3 +163,8 @@ export {
   UNIDADES_FEDERATIVAS,
   type AbrangenciasToken,
 } from './calendario-dias-uteis.api';
+export {
+  TiposEtapaApi,
+  type TipoEtapaDto,
+  type TiposEtapaQuery,
+} from './tipos-etapa.api';

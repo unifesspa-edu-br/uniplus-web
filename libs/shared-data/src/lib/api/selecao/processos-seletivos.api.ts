@@ -25,6 +25,8 @@ export type ConfiguracaoDistribuicaoVagasInput =
   components['schemas']['ConfiguracaoDistribuicaoVagasInput'];
 export type ConfiguracaoDistribuicaoVagasDto =
   components['schemas']['ConfiguracaoDistribuicaoVagasDto'];
+export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
+export type EtapaProcessoDto = components['schemas']['EtapaProcessoDto'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -93,6 +95,34 @@ export class ProcessosSeletivosApi {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas`,
       distribuicoes,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/etapas` — substitui a coleção
+   * inteira de etapas pontuadas.
+   *
+   * Enviar menos etapas do que existem remove as ausentes, e é assim que uma
+   * etapa sai da configuração. Coleção vazia é estado válido: processo sem
+   * prova — classificação importada — não tem etapa pontuada, e o servidor a
+   * aceita sem inventar nenhuma.
+   *
+   * O `id` de cada item é opcional e **deve ser reenviado** quando a etapa já
+   * existe: é ele que critério de desempate e regra de eliminação referenciam,
+   * e omiti-lo faria o servidor criar outra etapa, deixando as referências
+   * apontando para uma que deixou de existir.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirEtapas(
+    processoSeletivoId: string,
+    etapas: readonly EtapaProcessoInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/etapas`,
+      etapas,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
