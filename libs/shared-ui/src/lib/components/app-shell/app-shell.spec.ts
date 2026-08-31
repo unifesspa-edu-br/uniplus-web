@@ -113,13 +113,35 @@ describe('AppShellComponent', () => {
   });
 
   describe('contrato de rolagem (stylesheet compartilhado)', () => {
-    const styles = readFileSync(resolve(__dirname, '../../../styles/components.css'), 'utf-8');
-    const rule = (selector: string, marker = '') => {
+    // Comentários removidos: as asserções abaixo têm de casar CSS aplicado, nunca
+    // uma declaração comentada.
+    const styles = readFileSync(
+      resolve(__dirname, '../../../styles/components.css'),
+      'utf-8',
+    ).replace(/\/\*[\s\S]*?\*\//gu, '');
+
+    /** Um bloco cujo seletor é exatamente `selector`; `marker` desambigua blocos
+     * homônimos (ex.: `.sidebar` base vs `.sidebar` do `position: sticky`). */
+    const rule = (selector: string, marker = ''): string => {
       const escaped = selector.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-      const source = marker
-        ? new RegExp(`${escaped}\\s*\\{[^}]*${marker}[^}]*\\}`, 'u')
-        : new RegExp(`${escaped}\\s*\\{[^}]*\\}`, 'u');
-      return styles.match(source)?.[0] ?? '';
+      const re = new RegExp(`(?:^|[^-\\w.])${escaped}\\s*\\{[^{}]*${marker}[^{}]*\\}`, 'u');
+      return styles.match(re)?.[0] ?? '';
+    };
+
+    /** Concatena TODOS os blocos cujo seletor começa por `prefix` — inclui as
+     * regras derivadas (`:hover`, `::-webkit-scrollbar*`), onde uma cor fixa
+     * escaparia de uma verificação feita só sobre o bloco base. */
+    const rules = (prefix: string): string => {
+      const encontrados: string[] = [];
+      const re = /([^{}]+?)\s*\{([^{}]*)\}/gu;
+      const casaSeletor = (s: string): boolean =>
+        s === prefix || (s.startsWith(prefix) && /^[^-\w]/u.test(s.slice(prefix.length)));
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(styles)) !== null) {
+        const seletores = m[1].split(',').map((s) => s.trim());
+        if (seletores.some(casaSeletor)) encontrados.push(m[0].trim());
+      }
+      return encontrados.join('\n');
     };
 
     it('o proprio ui-app-shell trava a altura no viewport dinamico', () => {
@@ -129,14 +151,14 @@ describe('AppShellComponent', () => {
     });
 
     it('a area de conteudo e o unico contedor de rolagem vertical, sem rolagem horizontal', () => {
-      const page = rule('.page');
+      const page = rules('.page');
       expect(page).toContain('overflow-y: auto');
       expect(page).toContain('overflow-x: hidden');
       expect(page).toContain('overscroll-behavior: contain');
     });
 
     it('a navegacao lateral tem rolagem vertical propria', () => {
-      const nav = rule('.sidebar nav');
+      const nav = rules('.sidebar nav');
       expect(nav).toContain('overflow-y: auto');
       expect(nav).toContain('overscroll-behavior: contain');
     });
@@ -148,13 +170,16 @@ describe('AppShellComponent', () => {
       expect(sidebar).toContain('min-height: 0');
     });
 
-    it('as regioes rolaveis usam tokens do DS, sem cores fixas', () => {
-      const page = rule('.page');
-      const nav = rule('.sidebar nav');
+    it('as regioes rolaveis usam tokens do DS, sem cores fixas — inclusive nas regras derivadas', () => {
+      const page = rules('.page');
+      const nav = rules('.sidebar nav');
       expect(page).toMatch(/scrollbar-color:\s*var\(--/u);
       expect(nav).toMatch(/scrollbar-color:\s*color-mix\(/u);
-      expect(`${page}${nav}`).not.toMatch(/#[0-9a-fA-F]{3,8}\b/u);
-      expect(`${page}${nav}`).not.toMatch(/rgba?\(/u);
+      // O trilho da navegação não pode depender de :hover para aparecer.
+      expect(nav).not.toContain(':hover');
+      const scrollCss = `${page}\n${nav}`;
+      expect(scrollCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/u);
+      expect(scrollCss).not.toMatch(/\brgba?\(/u);
     });
   });
 

@@ -41,13 +41,14 @@ body {
   background: var(--surface-page);
 }
 
-body.uni-drawer-open {
-  overflow: hidden;
-}
-
+/* Host da rota como coluna flex: o `ui-app-shell` trava a própria altura no
+   viewport (`100dvh`) e cuida da rolagem. O `100dvh` aqui acompanha o shell —
+   com `100vh` o host ficaria mais alto que ele em navegador móvel e o `<body>`
+   voltaria a rolar. O trava-scroll do menu (`body.uni-drawer-open`) vem do DS. */
 cfg-root {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   flex-direction: column;
 }
 
