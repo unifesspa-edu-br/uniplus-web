@@ -84,18 +84,32 @@ const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof TipoDeficienciaForm> = new M
 const CODIGO_TAMANHO_MAXIMO = 50;
 
 /**
+ * Formato fechado que o backend exige do código: começa por letra, segue com
+ * letras, números ou sublinhado, de 2 a 50 caracteres. Uma definição só, usada
+ * pelo validador do campo e pela sugestão — se as duas divergissem, a sugestão
+ * poderia propor um código que o próprio formulário recusa.
+ */
+const CODIGO_FORMATO = /^[A-Z][A-Z0-9_]{1,49}$/;
+
+/**
  * Deriva do nome um código no formato fechado que o backend exige: sem
  * diacríticos, em caixa alta, com não-alfanuméricos colapsados em sublinhado e as
- * pontas aparadas. Devolve string vazia quando não sobra nada aproveitável.
+ * pontas aparadas.
+ *
+ * Devolve string vazia quando o resultado não serviria — nome sem nada
+ * aproveitável ("---"), curto demais ("A") ou começando por dígito ("21 de
+ * abril" daria `21_DE_ABRIL`). Sugerir um código inválido deixaria o campo em
+ * erro sem o operador ter chegado a tocá-lo; melhor não sugerir nada.
  */
 export function sugerirCodigoDeTipoDeficiencia(nome: string): string {
-  return nome
+  const candidato = nome
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/gu, '')
     .replace(/[^a-zA-Z0-9]+/gu, '_')
     .replace(/^_+|_+$/gu, '')
     .toLocaleUpperCase('pt-BR')
     .slice(0, CODIGO_TAMANHO_MAXIMO);
+  return CODIGO_FORMATO.test(candidato) ? candidato : '';
 }
 
 function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm | null {
@@ -511,8 +525,8 @@ export class TiposDeficienciaListPage {
       validators: [
         Validators.required,
         Validators.minLength(2),
-        Validators.maxLength(50),
-        Validators.pattern('^[A-Z][A-Z0-9_]{1,49}$'),
+        Validators.maxLength(CODIGO_TAMANHO_MAXIMO),
+        Validators.pattern(CODIGO_FORMATO),
       ],
     }),
   });
