@@ -148,13 +148,21 @@ export function renumerar(fases: readonly FaseDoCronograma[]): readonly FaseDoCr
 }
 
 /**
- * Uma etapa compõe a nota quando pontua e declara peso. Havendo etapas, ao menos
- * uma precisa fazê-lo: sem nenhuma, o divisor da média seria zero, e o agregado
- * recusa com uma mensagem que fala de nota final, não de etapa.
+ * Uma etapa compõe a nota quando pontua e declara peso **positivo**. Havendo
+ * etapas, ao menos uma precisa fazê-lo: sem nenhuma, o divisor da média seria
+ * zero, e o agregado recusa com uma mensagem que fala de nota final, não de
+ * etapa.
+ *
+ * Peso zero não compõe: ele não soma ao divisor, e o domínio o recusa à parte,
+ * exigindo peso maior que zero quando informado. Aceitá-lo aqui faria um
+ * conjunto de etapas todo zerado passar na conferência da tela para ser
+ * recusado no servidor por outro motivo — com uma mensagem que fala do peso de
+ * uma etapa, não da nota final que ficou sem divisor.
  */
 export function componeNota(etapa: EtapaPontuada): boolean {
   const pontua = etapa.carater === 'classificatoria' || etapa.carater === 'ambas';
-  return pontua && etapa.peso.trim() !== '';
+  const peso = decimalDoCampo(etapa.peso);
+  return pontua && peso !== null && peso > 0;
 }
 
 /**
