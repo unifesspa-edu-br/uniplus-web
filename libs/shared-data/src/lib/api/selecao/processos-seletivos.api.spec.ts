@@ -357,11 +357,10 @@ describe('ProcessosSeletivosApi', () => {
   });
 
   /**
-   * O par de suspensividade ausente é a desativação prevista da instância, e
-   * precisa chegar como `null` explícito — não como campo omitido, que o
-   * servidor leria de outro modo.
+   * Fase de data delegada grava sem janela, e a ausência de recurso é `null`
+   * explícito — não campo omitido, que o servidor leria de outro modo.
    */
-  it('definirCronogramaFases() preserva o par de suspensividade ausente como nulo', async () => {
+  it('definirCronogramaFases() preserva janela e recurso ausentes como nulos', async () => {
     const fases: readonly FaseCronogramaInput[] = [
       {
         ordem: 1,
@@ -384,6 +383,55 @@ describe('ProcessosSeletivosApi', () => {
     expect(req.request.body[0].inicio).toBeNull();
     expect(req.request.body[0].fim).toBeNull();
     expect(req.request.body[0].regraRecurso).toBeNull();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await promise;
+  });
+
+  /**
+   * A ausência dos dois campos de uma instância é a desativação prevista dela —
+   * o domínio a distingue de par incompleto, que recusa. Os quatro campos
+   * chegam como `null` explícito dentro da regra de recurso, e não omitidos.
+   */
+  it('definirCronogramaFases() envia a suspensividade desativada como par nulo', async () => {
+    const fases: readonly FaseCronogramaInput[] = [
+      {
+        ordem: 1,
+        faseCanonicaId: '01960000-0000-7000-0000-0000000006a4',
+        inicio: '2026-03-25T08:00:00-03:00',
+        fim: '2026-03-25T23:59:59-03:00',
+        atoProduzidoCodigo: 'RESULTADO_HOMOLOGACAO',
+        tiposBancaIds: [],
+        regraRecurso: {
+          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+          regraVersao: 'v1',
+          prazoValor: 2,
+          prazoUnidade: UnidadePrazo.diasUteis,
+          atoAncoraCodigo: 'RESULTADO_HOMOLOGACAO',
+          suspensividadePrimeiraInstanciaValor: null,
+          suspensividadePrimeiraInstanciaUnidade: null,
+          suspensividadeSegundaInstanciaValor: null,
+          suspensividadeSegundaInstanciaUnidade: null,
+        },
+      },
+    ];
+
+    const promise = firstValueFrom(
+      api.definirCronogramaFases(ID, fases, withIdempotencyKey('chave-suspensividade')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/cronograma-fases`,
+    );
+
+    const recurso = req.request.body[0].regraRecurso;
+    for (const campo of [
+      'suspensividadePrimeiraInstanciaValor',
+      'suspensividadePrimeiraInstanciaUnidade',
+      'suspensividadeSegundaInstanciaValor',
+      'suspensividadeSegundaInstanciaUnidade',
+    ]) {
+      expect(campo in recurso, `${campo} sumiu do corpo`).toBe(true);
+      expect(recurso[campo]).toBeNull();
+    }
     req.flush(null, { status: 204, statusText: 'No Content' });
     await promise;
   });
