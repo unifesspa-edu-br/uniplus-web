@@ -7,6 +7,7 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { INGRESSO_BASE_PATH } from '@uniplus/shared-data/ingresso';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
+import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { AppConfigService } from './app-config.service';
 import { resolveOidcConfig, type AppConfig } from './app-config.model';
@@ -52,7 +53,8 @@ export function resolveGeoBasePath(store: AppConfigService): string {
  *      URLs reais já carregadas.
  *
  * `AUTH_CONFIG`, `SELECAO_BASE_PATH`, `INGRESSO_BASE_PATH`,
- * `ORGANIZACAO_BASE_PATH`, `CONFIGURACAO_BASE_PATH` e `GEO_BASE_PATH` continuam
+ * `ORGANIZACAO_BASE_PATH`, `CONFIGURACAO_BASE_PATH`, `PUBLICACOES_BASE_PATH` e
+ * `GEO_BASE_PATH` continuam
  * provedidos como factories síncronas que leem do store. São injetados
  * lazy (ex.: `tokenInterceptor` lê `AUTH_ALLOWED_URLS` no primeiro HTTP
  * request, que ocorre post-bootstrap, quando store já está populado).
@@ -101,6 +103,11 @@ export function provideRuntimeConfig(): EnvironmentProviders {
     },
     {
       provide: CONFIGURACAO_BASE_PATH,
+      useFactory: (store: AppConfigService) => store.get().apiUrl,
+      deps: [AppConfigService],
+    },
+    {
+      provide: PUBLICACOES_BASE_PATH,
       useFactory: (store: AppConfigService) => store.get().apiUrl,
       deps: [AppConfigService],
     },

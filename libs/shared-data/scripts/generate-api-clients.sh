@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INPUT_DIR="$SCRIPT_DIR/../openapi"
 OUTPUT_DIR="$SCRIPT_DIR/../src/lib/api"
 
-modules=(selecao ingresso organizacao configuracao geo)
+modules=(selecao ingresso organizacao configuracao geo publicacoes)
 
 echo "Gerando tipos OpenAPI (openapi-typescript) para módulos: ${modules[*]}"
 
