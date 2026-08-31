@@ -15,6 +15,11 @@ const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etapas`;
 const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
+const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
+const ID_ETAPA_GRAVADA = '01960000-0000-7000-0000-0000000000ee';
+
+/** O interceptor só lê o corpo como ProblemDetails sob este media type. */
+const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
 const ID_INSCRICAO = '01960000-0000-7000-0000-0000000000c1';
 const ID_AVALIACAO = '01960000-0000-7000-0000-0000000000c2';
@@ -63,6 +68,51 @@ const FASES_CANONICAS = [
 const TIPOS_ETAPA = [
   { id: TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva', ativo: true },
 ];
+
+/**
+ * O processo como o servidor o devolve depois de gravar: a etapa que subiu sem
+ * `id` volta com o que ele atribuiu.
+ */
+const PROCESSO_COM_ETAPA_GRAVADA = {
+  id: PROCESSO_ID,
+  nome: 'Vestibular 2026.1',
+  tipoProcesso: {
+    origemId: '01960000-0000-7000-0000-0000000000t1',
+    codigo: 'VESTIBULAR',
+    nome: 'Vestibular',
+  },
+  status: 'rascunho',
+  origemCandidatos: 'inscricaoPropria',
+  unidadeAdministradora: {
+    origemId: '01960000-0000-7000-0000-0000000000u1',
+    sigla: 'IGE',
+    slug: 'ige',
+    nome: 'Instituto de Geociências e Engenharias',
+  },
+  localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+  etapas: [
+    {
+      id: ID_ETAPA_GRAVADA,
+      nome: 'Prova objetiva',
+      carater: 'classificatoria',
+      tipoEtapa: { origemId: TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva' },
+      peso: 1,
+      notaMinima: null,
+      ordem: 1,
+    },
+  ],
+  ofertaAtendimento: null,
+  distribuicaoVagas: [],
+  bonusRegional: null,
+  cascata: null,
+  criteriosDesempate: [],
+  classificacao: null,
+  cronogramaFases: [],
+  documentosExigidos: [],
+  raizesExigencia: [],
+  referenciaTemporalFatos: null,
+  configuracaoTaxaInscricao: { cobra: false, valor: null, fundamentos: [] },
+};
 
 describe('CronogramaStepComponent', () => {
   let componente: CronogramaStepComponent;
@@ -186,18 +236,48 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * Trocar duas fases adjacentes de lugar forma o ciclo que o servidor não
-   * persiste numa chamada só: cada linha precisa que a outra libere a ordem
-   * primeiro. A tela orienta em vez de gravar e receber a recusa.
+   * Toda troca entre fases vizinhas forma o ciclo de ordem que o servidor não
+   * aplica numa chamada só. Recusar aqui deixaria a linha do tempo impossível
+   * de reordenar — o rascunho aceita, e quem arbitra é a gravação.
    */
-  it('orienta em vez de aplicar a troca que fecha ciclo de ordem', () => {
+  it('reordena no rascunho, renumerando a partir de 1', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
-    const antes = store.draft().cronograma.fases.map((fase) => fase.faseCanonicaId);
 
     componente.mover(0, 1);
 
-    expect(componente.avisoDeReordenacao()).not.toBeNull();
-    expect(store.draft().cronograma.fases.map((fase) => fase.faseCanonicaId)).toEqual(antes);
+    const depois = store.draft().cronograma.fases;
+    expect(depois.map((fase) => fase.faseCanonicaId)).toEqual([ID_AVALIACAO, ID_INSCRICAO]);
+    expect(depois.map((fase) => fase.ordem)).toEqual([1, 2]);
+  });
+
+  /**
+   * A recusa do servidor descreve o ciclo, não o caminho. Quem reordenou
+   * precisa saber que são duas gravações, ou tentaria o mesmo movimento de novo.
+   */
+  it('traduz a recusa de permutação na orientação de gravar em duas vezes', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    controller.expectOne(ROTA_FASES).flush(
+      {
+        type: 'about:blank',
+        title: 'A redefinição do cronograma troca a Ordem entre fases já existentes',
+        status: 422,
+        code: 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada',
+        traceId: '00000000000000000000000000000002',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('duas gravações');
   });
 
   it('renumera a partir de 1 ao acrescentar fase', () => {
@@ -253,8 +333,18 @@ describe('CronogramaStepComponent', () => {
     const fases = controller.expectOne(ROTA_FASES);
     expect(fases.request.method).toBe('PUT');
     fases.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    // A gravação de etapas responde 204 sem corpo, e o `id` de uma etapa nova é
+    // atribuído pelo servidor: sem reler, a gravação seguinte omitiria o
+    // identificador e o servidor criaria outra etapa no lugar.
+    const releitura = controller.expectOne(ROTA_PROCESSO);
+    expect(releitura.request.method).toBe('GET');
+    releitura.flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
 
     await expect(gravacao).resolves.toEqual({ valid: true });
+    expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
   });
 
   it('não tenta gravar o cronograma quando as etapas são recusadas', async () => {
@@ -264,12 +354,16 @@ describe('CronogramaStepComponent', () => {
 
     const gravacao = componente.persistir();
 
-    controller
-      .expectOne(ROTA_ETAPAS)
-      .flush(
-        { type: 'about:blank', title: 'Etapa recusada', status: 422, code: 'uniplus.selecao.x' },
-        { status: 422, statusText: 'Unprocessable Content' },
-      );
+    controller.expectOne(ROTA_ETAPAS).flush(
+      {
+        type: 'about:blank',
+        title: 'Etapa recusada',
+        status: 422,
+        code: 'uniplus.selecao.etapa_processo.invalida',
+        traceId: '00000000000000000000000000000001',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
     await proximoPasso();
 
     const resultado = await gravacao;
