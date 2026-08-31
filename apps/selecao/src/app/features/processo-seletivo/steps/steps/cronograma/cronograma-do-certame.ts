@@ -1,10 +1,6 @@
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
-import type {
-  AtributosCongeladosDaFase,
-  EtapaPontuada,
-  FaseDoCronograma,
-} from '../../processo-seletivo.models';
+import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 /** Origem de data que obriga a fase a declarar janela. */
@@ -32,20 +28,60 @@ export function exigenciasDe(fase: FaseCanonicaDto): ExigenciasDaFase {
 }
 
 /**
- * As mesmas exigências, lidas do que a fase congelou.
+ * A fase como o processo a conhece: rótulo, atributos e o que ela exige.
  *
- * O catálogo é vivo e o cronograma não: a fase canônica pode ter sido inativada
- * depois de entrar no edital, e a que já está lá continua valendo. Sem este
- * caminho, a tela esconderia janela, ato e etapas de uma fase que o operador
- * ainda precisa editar.
+ * **O que a fase congelou tem precedência sobre o catálogo**, e não o contrário.
+ * O catálogo é vivo: editar a fase canônica depois que um processo a congelou
+ * não pode mudar o que aquele processo exige — ligar `agrupaEtapas` faria a
+ * validação cobrar etapas de um edital que nunca as teve, e desligar esconderia
+ * as que ele tem. O catálogo descreve a fase que acabou de ser acrescentada, que
+ * ainda não congelou nada.
+ *
+ * O nome é a exceção deliberada: é rótulo de tela, e mostrar o atual ajuda quem
+ * lê. Sem entrada no catálogo, o código é o que identifica a fase.
  */
-export function exigenciasCongeladas(congelados: AtributosCongeladosDaFase): ExigenciasDaFase {
+export function descreverFase(
+  fase: FaseDoCronograma,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): DescricaoDaFase {
+  const canonica = fasePorId.get(fase.faseCanonicaId);
+  const congelados = fase.congelados;
+
+  if (congelados !== null) {
+    return {
+      nome: canonica?.nome ?? fase.codigo,
+      donoTipico: congelados.donoTipico,
+      resultadoDefinitivo: congelados.resultadoDefinitivo,
+      coletaInscricao: congelados.coletaInscricao,
+      exigencias: {
+        janelaObrigatoria: congelados.origemData === ORIGEM_DATA_PROPRIA,
+        exigeAtoProduzido: congelados.produzResultado,
+        admiteRecurso: congelados.produzResultado && !congelados.resultadoDefinitivo,
+        agrupaEtapas: congelados.agrupaEtapas,
+      },
+      foraDoCatalogo: canonica === undefined,
+    };
+  }
+
   return {
-    janelaObrigatoria: congelados.origemData === ORIGEM_DATA_PROPRIA,
-    exigeAtoProduzido: congelados.produzResultado,
-    admiteRecurso: congelados.produzResultado && !congelados.resultadoDefinitivo,
-    agrupaEtapas: congelados.agrupaEtapas,
+    nome: canonica?.nome ?? fase.codigo,
+    donoTipico: canonica?.donoTipico ?? '—',
+    resultadoDefinitivo: canonica?.resultadoDefinitivo ?? false,
+    coletaInscricao: canonica?.coletaInscricao ?? false,
+    exigencias: canonica === undefined ? null : exigenciasDe(canonica),
+    foraDoCatalogo: canonica === undefined,
   };
+}
+
+/** A fase resolvida, como tela e validação precisam vê-la. */
+export interface DescricaoDaFase {
+  readonly nome: string;
+  readonly donoTipico: string;
+  readonly resultadoDefinitivo: boolean;
+  readonly coletaInscricao: boolean;
+  /** `null` quando nem o catálogo nem o congelado descrevem a fase. */
+  readonly exigencias: ExigenciasDaFase | null;
+  readonly foraDoCatalogo: boolean;
 }
 
 /**
@@ -226,13 +262,15 @@ export function problemasDoCronograma(
   }
 
   for (const fase of fases) {
-    const canonica = fasePorId.get(fase.faseCanonicaId);
-    if (canonica === undefined) continue;
-
-    const exigencias = exigenciasDe(canonica);
+    // A mesma resolução que a tela usa: o que a fase congelou vale sobre o
+    // catálogo, e a fase cuja entrada saiu continua sendo conferida pelo que
+    // ela guarda. Consultar o catálogo direto aqui deixaria de conferir
+    // justamente a fase que ninguém mais confere.
+    const { nome, exigencias } = descreverFase(fase, fasePorId);
+    if (exigencias === null) continue;
 
     if (exigencias.janelaObrigatoria && (fase.inicio === null || fase.fim === null)) {
-      problemas.push(`A fase ${canonica.nome} precisa de data e hora de início e de fim.`);
+      problemas.push(`A fase ${nome} precisa de data e hora de início e de fim.`);
     }
 
     if (
@@ -240,13 +278,11 @@ export function problemasDoCronograma(
       fase.fim !== null &&
       Date.parse(fase.fim) < Date.parse(fase.inicio)
     ) {
-      problemas.push(`Na fase ${canonica.nome}, o fim não pode vir antes do início.`);
+      problemas.push(`Na fase ${nome}, o fim não pode vir antes do início.`);
     }
 
     if (exigencias.exigeAtoProduzido && fase.atoProduzidoCodigo === null) {
-      problemas.push(
-        `A fase ${canonica.nome} produz resultado e precisa declarar o ato que o publica.`,
-      );
+      problemas.push(`A fase ${nome} produz resultado e precisa declarar o ato que o publica.`);
     }
   }
 
@@ -277,10 +313,12 @@ function problemasDasEtapas(
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
 ): readonly string[] {
   const problemas: string[] = [];
-  const faseQueAgrupa = fases.find((fase) => {
-    const canonica = fasePorId.get(fase.faseCanonicaId);
-    return canonica !== undefined && canonica.agrupaEtapas;
-  });
+  // Pela mesma resolução da tela: uma fase de avaliação cuja entrada saiu do
+  // catálogo continua agrupando as etapas do processo. Procurá-la só no catálogo
+  // vivo faria as etapas dela parecerem órfãs, e a gravação nunca sairia.
+  const faseQueAgrupa = fases.find(
+    (fase) => descreverFase(fase, fasePorId).exigencias?.agrupaEtapas === true,
+  );
 
   if (faseQueAgrupa !== undefined && etapas.length === 0) {
     problemas.push(
