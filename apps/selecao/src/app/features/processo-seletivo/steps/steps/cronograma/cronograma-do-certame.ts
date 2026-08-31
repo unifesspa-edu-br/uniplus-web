@@ -1,6 +1,7 @@
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 /** Origem de data que obriga a fase a declarar janela. */
 export const ORIGEM_DATA_PROPRIA = 'PROPRIA';
@@ -80,9 +81,13 @@ export function violacoesDePrecedencia(
 /**
  * Trocar a ordem entre duas fases que permanecem no cronograma forma um ciclo
  * que o servidor não consegue persistir numa chamada só — cada linha precisa que
- * a outra libere o valor primeiro. A recusa orienta a mover uma delas para uma
- * ordem livre antes de fechar o ciclo, e a tela evita chegar lá renumerando a
- * lista inteira de forma sequencial.
+ * a outra libere o valor primeiro.
+ *
+ * Renumerar a lista sequencialmente **não** evita isso: trocar duas fases de
+ * lugar e renumerar produz precisamente essa permutação, e é a reordenação mais
+ * comum que existe. Quem move fase na tela guarda a operação com esta função e,
+ * quando ela acusa, segue o que a recusa do domínio orienta — mover uma das
+ * fases para uma ordem livre numa gravação e fechar o ciclo na seguinte.
  *
  * Uma cadeia que termina numa ordem livre, ou na ordem de uma fase removida, não
  * é ciclo: a remoção libera o valor.
@@ -153,16 +158,9 @@ export function componeNota(etapa: EtapaPontuada): boolean {
 }
 
 /**
- * Converte o texto do campo para o número que o comando recebe.
- *
- * Vírgula é o separador decimal que o operador digita; ponto é agrupador de
- * milhar na mesma escrita. `Number` sozinho leria `1.000` como 1 — a mesma
- * armadilha que o valor da taxa já corrigiu.
+ * Peso e nota mínima, como o comando os recebe. A gramática é a dos campos
+ * numéricos do editor, e não a de moeda: aqui o ponto é separador decimal,
+ * porque `0.5` é meio — lê-lo como agrupador devolveria 5, e o servidor
+ * aceitaria, porque 5 é um peso válido.
  */
-export function comoNumero(texto: string): number | null {
-  const limpo = texto.trim();
-  if (limpo === '') return null;
-
-  const numero = Number(limpo.replaceAll('.', '').replace(',', '.'));
-  return Number.isFinite(numero) ? numero : null;
-}
+export { decimalDoCampo as comoNumero, inteiroDoCampo };

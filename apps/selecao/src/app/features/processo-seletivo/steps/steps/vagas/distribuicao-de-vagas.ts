@@ -1,4 +1,5 @@
 import { DistribuicaoDeVagas, ModalidadeDaOferta } from '../../processo-seletivo.models';
+import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 /**
  * Código da regra de distribuição pela Lei 12.711 no `rol_de_regras`.
@@ -521,17 +522,10 @@ function rotulo(modalidadeId: string, catalogo: ReadonlyMap<string, ModalidadeDo
   return catalogo.get(modalidadeId)?.codigo ?? 'a modalidade';
 }
 
-/** Aceita apenas dígitos: `Number` leria `1e2` como 100 e `0x10` como 16. */
-function inteiroDe(texto: string): number | null {
-  const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? Number(limpo) : null;
-}
-
-/** Aceita vírgula ou ponto como separador decimal, sem notação exótica. */
-function decimalDe(texto: string): number | null {
-  const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
-}
+// A gramática destes dois campos é a mesma dos demais campos numéricos do
+// editor, e vive em `shared/numero-do-campo` para não divergir entre passos.
+const inteiroDe = inteiroDoCampo;
+const decimalDe = decimalDoCampo;
 
 function casasDecimais(texto: string): number {
   const fracao = texto.trim().replace(',', '.').split('.')[1];

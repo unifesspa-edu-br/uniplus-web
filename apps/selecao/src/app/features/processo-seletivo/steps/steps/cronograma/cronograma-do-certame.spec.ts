@@ -207,7 +207,16 @@ describe('permutação de ordem', () => {
     expect(trocaFechaCiclo([a, b], depois)).toBe(false);
   });
 
-  it('renumerar sequencialmente nunca fecha ciclo', () => {
+  /**
+   * Renumerar sequencialmente **não** evita o ciclo — trocar duas fases de
+   * lugar e renumerar produz exatamente a permutação que o servidor recusa. É a
+   * reordenação mais comum que existe, e quem implementar o arrastar-e-soltar
+   * precisa guardá-la com `trocaFechaCiclo`, não confiar na renumeração.
+   *
+   * A saída é mover uma das fases para uma ordem livre numa gravação e fechar o
+   * ciclo na seguinte, que é o que a recusa do domínio orienta.
+   */
+  it('renumerar após trocar duas fases produz o ciclo que o servidor recusa', () => {
     const depois = renumerar([b, a]);
 
     expect(depois.map((f) => f.ordem)).toEqual([1, 2]);
@@ -231,11 +240,19 @@ describe('etapa que compõe a nota', () => {
 });
 
 describe('conversão do campo para número', () => {
-  /** `Number` sozinho leria `1.000` como 1 — a armadilha do valor da taxa. */
-  it('lê vírgula como decimal e ponto como agrupador', () => {
+  /**
+   * O defeito que esta gramática existe para impedir: ler o ponto como
+   * agrupador devolveria 5 para `0.5`, e o servidor aceitaria — 5 é peso
+   * válido, e a classificação rodaria com o dobro em ordem de grandeza.
+   */
+  it('lê o ponto como separador decimal, não como agrupador', () => {
+    expect(comoNumero('0.5')).toBe(0.5);
+    expect(comoNumero('2.75')).toBe(2.75);
+  });
+
+  it('aceita vírgula como separador decimal', () => {
+    expect(comoNumero('0,5')).toBe(0.5);
     expect(comoNumero('2,5')).toBe(2.5);
-    expect(comoNumero('1.000')).toBe(1000);
-    expect(comoNumero('1.234,5')).toBe(1234.5);
   });
 
   it('devolve nulo para campo vazio, e não zero', () => {
@@ -245,6 +262,16 @@ describe('conversão do campo para número', () => {
 
   it('devolve nulo para texto que não é número', () => {
     expect(comoNumero('dois')).toBeNull();
+  });
+
+  /** `Number` leria `1e2` como 100 e `0x10` como 16; nenhum é peso. */
+  it('recusa notação científica e hexadecimal', () => {
+    expect(comoNumero('1e2')).toBeNull();
+    expect(comoNumero('0x10')).toBeNull();
+  });
+
+  it('recusa sinal negativo, que nenhum destes campos admite', () => {
+    expect(comoNumero('-1')).toBeNull();
   });
 
   it('preserva o zero declarado', () => {
