@@ -16,6 +16,7 @@ generated=(
   "libs/shared-data/src/lib/api/organizacao/schema.ts"
   "libs/shared-data/src/lib/api/configuracao/schema.ts"
   "libs/shared-data/src/lib/api/geo/schema.ts"
+  "libs/shared-data/src/lib/api/publicacoes/schema.ts"
 )
 
 bash "$SCRIPT_DIR/generate-api-clients.sh"

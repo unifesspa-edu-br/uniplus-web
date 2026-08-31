@@ -73,9 +73,10 @@ describe('TiposAtoApi', () => {
   });
 
   /**
-   * O filtro é opcional e distingue três estados — omitido, `true` e `false`.
-   * Enviá-lo sempre faria a tela pedir só os vigentes mesmo quando precisa
-   * exibir um código já referenciado cuja vigência encerrou.
+   * O cliente repassa a escolha em vez de impor uma. Omitido, o parâmetro não
+   * viaja e vale o padrão do servidor — que é `true`, só as vigentes. Quem
+   * precisa da série histórica declara `false`, e é esse o caminho de quem vai
+   * resolver o rótulo de um código já gravado cuja versão encerrou.
    */
   it('listar() só envia vigentes quando o filtro é declarado', async () => {
     const semFiltro = firstValueFrom(api.listar());
@@ -93,6 +94,24 @@ describe('TiposAtoApi', () => {
     expect(reqComFiltro.request.params.get('vigentes')).toBe('true');
     reqComFiltro.flush([atoSeed]);
     await comFiltro;
+  });
+
+  /**
+   * `false` precisa chegar ao servidor como `false`, e não sumir junto com o
+   * caso omitido: é o único caminho para a série histórica, e é o que resolve o
+   * rótulo de um ato referenciado cuja versão encerrou. Um `if (query.vigentes)`
+   * no lugar da checagem por `undefined` passaria em todo o resto da suíte e
+   * quebraria exatamente aqui.
+   */
+  it('listar() envia vigentes=false, que é o caminho da série histórica', async () => {
+    const promise = firstValueFrom(api.listar({ vigentes: false }));
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/publicacoes/tipos-ato`,
+    );
+
+    expect(req.request.params.get('vigentes')).toBe('false');
+    req.flush([atoSeed]);
+    await promise;
   });
 
   it('obterVigente() escapa o código na URL e omite data quando não informada', async () => {
