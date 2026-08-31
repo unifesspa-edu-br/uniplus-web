@@ -20,6 +20,7 @@ import {
   RegrasCatalogoApi,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { STEP_LABELS } from './steps/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
 const tiposProcessoApiStub = {
@@ -74,6 +75,32 @@ describe('ProcessoSeletivoPage — estrutura', () => {
       imports: [ProcessoSeletivoPage],
       providers: PAGE_PROVIDERS,
     }).compileComponents();
+  });
+
+  /**
+   * O painel de cada passo é escolhido pela POSIÇÃO — `[hidden]` compara com
+   * `currentStep()` —, e o validador que decide o avanço também é resolvido por
+   * índice. Um painel a mais ou a menos desalinha rótulo, conteúdo e validação
+   * de todos os passos seguintes: o passo mostraria um formulário e cobraria os
+   * campos de outro, e o último passo ficaria inalcançável.
+   *
+   * Nenhum gate pegava isso — o template compila com painel vazio, e os testes
+   * de passo montam cada componente isoladamente.
+   */
+  it('tem um painel por passo declarado, sem sobra nem lacuna', () => {
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const paineis = [...host.querySelectorAll('.step-pane')];
+
+    expect(paineis).toHaveLength(STEP_LABELS.length);
+    for (const painel of paineis) {
+      expect(
+        painel.children.length,
+        `painel de passo vazio em "${painel.outerHTML.slice(0, 80)}"`,
+      ).toBeGreaterThan(0);
+    }
   });
 
   it('não declara landmark main próprio', () => {
