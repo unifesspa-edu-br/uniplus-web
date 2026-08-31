@@ -111,6 +111,17 @@ function recursoDe(
   };
 }
 
+/**
+ * As etapas do processo como o rascunho as guarda.
+ *
+ * Exportada porque a gravação precisa recolher os `id` que o servidor atribuiu
+ * sem hidratar o wizard inteiro: `hidratarDraft` substitui todas as seções, e o
+ * operador pode ter editado outro passo sem gravá-lo — a navegação é livre.
+ */
+export function etapasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
+  return (dto.etapas ?? []).map(etapaDe);
+}
+
 function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
   return {
     id: etapa.id,

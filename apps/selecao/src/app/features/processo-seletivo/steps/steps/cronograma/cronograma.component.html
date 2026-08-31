@@ -239,7 +239,7 @@
                   [disabled]="!store.aceitaEdicao()"
                 >
                   <option value="">Selecione…</option>
-                  @for (tipo of catalogos.tiposEtapaAtivos(); track tipo.id) {
+                  @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
                     <option [value]="tipo.id">{{ tipo.nome }}</option>
                   }
                 </select>

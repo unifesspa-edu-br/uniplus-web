@@ -418,6 +418,37 @@ describe('o que impede gravar o cronograma', () => {
     expect(problemas).toContainEqual(expect.stringContaining('mesma posição na linha do tempo'));
   });
 
+  /**
+   * Texto que não converte vira `null` no comando, e `null` é o valor legítimo
+   * de "não declarado": sem conferir, o campo malformado grava com sucesso e
+   * apaga o que estava lá, sem nada dizer.
+   */
+  it('número malformado é recusado em vez de limpar o campo em silêncio', () => {
+    const notaTorta = etapa({
+      nome: 'Prova',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+      notaMinima: '7,5,',
+    });
+
+    const problemas = problemasDoCronograma([faseDeAvaliacao], [notaTorta], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('nota mínima'));
+  });
+
+  it('campo numérico vazio continua sendo não declarado, e não erro', () => {
+    const semNota = etapa({
+      nome: 'Prova',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+      notaMinima: '',
+    });
+
+    expect(problemasDoCronograma([faseDeAvaliacao], [semNota], catalogo, [])).toEqual([]);
+  });
+
   it('cronograma coerente não relata problema', () => {
     expect(problemasDoCronograma([faseDeAvaliacao], [etapaValida], catalogo, [])).toEqual([]);
   });
