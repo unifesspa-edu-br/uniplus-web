@@ -632,6 +632,9 @@ export class CronogramaStepComponent {
         this.fases.push(grupoDaFase(fase), { emitEvent: false });
       }
 
+      // A ordem das etapas vem resolvida da hidratação, que renumera o que o
+      // servidor devolveu — corrigir de novo aqui deixaria o formulário e o
+      // rascunho descrevendo posições diferentes.
       this.etapas.clear({ emitEvent: false });
       for (const etapa of cronograma.etapas) {
         this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });

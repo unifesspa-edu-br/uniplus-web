@@ -68,7 +68,15 @@ function cronogramaDe(dto: ProcessoSeletivoDto): WizardDraft['cronograma'] {
 
   return {
     fases: (dto.cronogramaFases ?? []).map(faseDe),
-    etapas: (dto.etapas ?? []).map(etapaDe),
+    // Renumeradas na chegada: a etapa gravada sem ordem volta como zero, e com
+    // uma etapa só não há duplicata que a conferência acuse nem botão de mover
+    // que a conserte — a gravação sairia com ordem zero para voltar recusada,
+    // sem nada na tela explicando. A posição na lista é a ordem que o servidor
+    // devolveu, então renumerar preserva a sequência que já existia.
+    etapas: (dto.etapas ?? []).map(etapaDe).map((etapa, posicao) => ({
+      ...etapa,
+      ordem: posicao + 1,
+    })),
     algoritmoContagemCodigo: algoritmo?.codigo ?? '',
     algoritmoContagemVersao: algoritmo?.versao ?? '',
   };
