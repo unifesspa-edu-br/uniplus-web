@@ -100,6 +100,7 @@ export {
   type TipoDocumentoDto,
   type TiposDocumentoQuery,
 } from './tipos-documento.api';
+export { CategoriasDocumentoApi, type CategoriaDocumentoDto } from './categorias-documento.api';
 export {
   ModalidadesApi,
   ACOES_QUANDO_INDEFERIDO,
