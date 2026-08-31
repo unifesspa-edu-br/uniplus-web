@@ -11,7 +11,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 
 import type {
@@ -21,11 +20,15 @@ import type {
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import {
+  CadastroInicialService,
+  type ResultadoGravacao,
+} from '../../shared/cadastro-inicial.service';
 import { etapasDe } from '../../shared/hidratacao';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
   componeNota,
+  exigenciasCongeladas,
   exigenciasDe,
   problemasDoCronograma,
   renumerar,
@@ -62,8 +65,13 @@ const CARATERES = [
  */
 interface FaseNaLinhaDoTempo {
   readonly grupo: FormGroup<FaseForm>;
-  readonly canonica: FaseCanonicaDto | undefined;
+  readonly nome: string;
+  readonly donoTipico: string;
+  readonly resultadoDefinitivo: boolean;
+  readonly coletaInscricao: boolean;
   readonly exigencias: ExigenciasDaFase | null;
+  /** A entrada do catálogo saiu; o que descreve a fase é o que ela congelou. */
+  readonly foraDoCatalogo: boolean;
   readonly indice: number;
 }
 
@@ -145,16 +153,43 @@ export class CronogramaStepComponent {
     return this.formulario.controls.etapas;
   }
 
+  /**
+   * A fase como a tela precisa dela: nome, responsável e o que ela exige.
+   *
+   * O catálogo responde por quem ainda está nele. Para a fase cuja entrada foi
+   * inativada depois de entrar no edital, respondem os atributos que ela
+   * congelou — a fase continua valendo no processo, e escondê-la atrás de um
+   * aviso deixaria o operador sem como editar datas e ato que já estão lá.
+   */
   readonly linhaDoTempo = computed<readonly FaseNaLinhaDoTempo[]>(() => {
     this.versaoDoFormulario();
     const fasePorId = this.catalogos.fasePorId();
 
     return this.fases.controls.map((grupo, indice) => {
       const canonica = fasePorId.get(grupo.controls.faseCanonicaId.value);
+      const congelados = grupo.controls.congelados.value;
+
+      if (canonica !== undefined) {
+        return {
+          grupo,
+          nome: canonica.nome,
+          donoTipico: canonica.donoTipico,
+          resultadoDefinitivo: canonica.resultadoDefinitivo,
+          coletaInscricao: canonica.coletaInscricao,
+          exigencias: exigenciasDe(canonica),
+          foraDoCatalogo: false,
+          indice,
+        };
+      }
+
       return {
         grupo,
-        canonica,
-        exigencias: canonica === undefined ? null : exigenciasDe(canonica),
+        nome: grupo.controls.codigo.value,
+        donoTipico: congelados?.donoTipico ?? '—',
+        resultadoDefinitivo: congelados?.resultadoDefinitivo ?? false,
+        coletaInscricao: congelados?.coletaInscricao ?? false,
+        exigencias: congelados === null ? null : exigenciasCongeladas(congelados),
+        foraDoCatalogo: true,
         indice,
       };
     });
@@ -245,6 +280,37 @@ export class CronogramaStepComponent {
     ];
   }
 
+  /**
+   * Bancas que o quadro da fase mostra: as do catálogo, mais as que ela já
+   * exige e saíram dele.
+   *
+   * A banca congelada continua fazendo parte do edital. Fora do quadro, ela
+   * seguiria sendo enviada a cada gravação sem que o operador a visse — nem
+   * pudesse tirá-la.
+   */
+  bancasDaFase(grupo: FormGroup<FaseForm>): readonly { id: string; nome: string }[] {
+    const doCatalogo = this.catalogos.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
+    const conhecidas = new Set(doCatalogo.map((banca) => banca.id));
+
+    const codigoCongelado = new Map(
+      (grupo.controls.congelados.value?.bancas ?? []).map((banca) => [banca.id, banca.codigo]),
+    );
+    const congeladas = grupo.controls.tiposBancaIds.value
+      .filter((id) => !conhecidas.has(id))
+      .map((id) => {
+        const codigo = codigoCongelado.get(id);
+        return {
+          id,
+          nome:
+            codigo === undefined
+              ? 'Banca fora do catálogo atual'
+              : `${codigo} (fora do catálogo atual)`,
+        };
+      });
+
+    return [...doCatalogo, ...congeladas];
+  }
+
   acrescentarFase(): void {
     const escolhida = this.formulario.controls.faseAAcrescentar.value;
     if (escolhida === '') return;
@@ -259,6 +325,7 @@ export class CronogramaStepComponent {
         atoProduzidoCodigo: null,
         tiposBancaIds: [],
         regraRecurso: null,
+        congelados: null,
       }),
     );
     this.formulario.controls.faseAAcrescentar.setValue('');
@@ -284,8 +351,7 @@ export class CronogramaStepComponent {
     const removida = this.fases.at(indice);
     if (removida === undefined) return;
 
-    const agrupavaEtapas =
-      this.catalogos.fasePorId().get(removida.controls.faseCanonicaId.value)?.agrupaEtapas === true;
+    const agrupavaEtapas = this.linhaDoTempo()[indice]?.exigencias?.agrupaEtapas === true;
 
     this.fases.removeAt(indice, { emitEvent: false });
     if (agrupavaEtapas) this.etapas.clear({ emitEvent: false });
@@ -382,22 +448,54 @@ export class CronogramaStepComponent {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
 
+    const fases = this.fases.controls.map(faseDoFormulario);
+    const etapas = this.etapas.controls.map(etapaDoFormulario);
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const etapas = await this.cadastro.definirEtapas(
-        processoId,
-        this.etapas.controls.map(etapaDoFormulario).map(comoComandoDeEtapa),
+      // A ordem segue a direção da mudança, porque a bicondicional do agregado
+      // recusa os dois estados intermediários — mas em momentos opostos.
+      //
+      // Enquanto houver fase que agrupa etapas, as etapas vão primeiro: gravar
+      // o cronograma antes deixaria essa fase sem nenhuma etapa, o que é
+      // recusado na hora.
+      //
+      // Quando ela sai, é o inverso. Zerar as etapas primeiro deixaria a fase
+      // agrupadora que ainda está no servidor sem etapa alguma, e a recusa
+      // impediria a própria gravação que a removeria — a remoção da fase de
+      // avaliação seria impossível de concluir. Removê-la antes deixa etapas
+      // órfãs por um instante, e isso o agregado tolera: só a publicação recusa.
+      const gravaEtapasPrimeiro = this.linhaDoTempo().some(
+        (item) => item.exigencias?.agrupaEtapas === true,
       );
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!etapas.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(etapas.problem).title] };
+
+      if (!gravaEtapasPrimeiro) {
+        const cronograma = await this.gravarCronograma(processoId, fases);
+        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+        if (!cronograma.ok) {
+          return {
+            valid: false,
+            messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
+          };
+        }
       }
 
-      // Antes de gravar as fases: as etapas já mudaram no servidor, e é aqui
-      // que o rascunho recolhe os identificadores atribuídos. Deixar para o fim
-      // perderia essa reconciliação se o cronograma fosse recusado — a tentativa
-      // seguinte reenviaria etapas que já existem sem o `id`, recriando-as.
+      const gravacaoDeEtapas = await this.cadastro.definirEtapas(
+        processoId,
+        etapas.map(comoComandoDeEtapa),
+      );
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!gravacaoDeEtapas.ok) {
+        return {
+          valid: false,
+          messages: [this.problemI18n.resolve(gravacaoDeEtapas.problem).title],
+        };
+      }
+
+      // As etapas já mudaram no servidor: é aqui que o rascunho recolhe os
+      // identificadores atribuídos. Deixar para o fim perderia a reconciliação
+      // se o cronograma fosse recusado, e a tentativa seguinte reenviaria
+      // etapas que já existem sem o `id`, recriando-as.
       const reconciliada = await this.reconciliarEtapas(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!reconciliada) {
@@ -409,16 +507,15 @@ export class CronogramaStepComponent {
         };
       }
 
-      const fases = await this.cadastro.definirCronogramaFases(
-        processoId,
-        this.fases.controls.map(faseDoFormulario).map(comoComandoDeFase),
-      );
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!fases.ok) {
-        return {
-          valid: false,
-          messages: [this.explicarRecusa(fases.problem.code, fases.problem)],
-        };
+      if (gravaEtapasPrimeiro) {
+        const cronograma = await this.gravarCronograma(processoId, fases);
+        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+        if (!cronograma.ok) {
+          return {
+            valid: false,
+            messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
+          };
+        }
       }
 
       return { valid: true };
@@ -429,6 +526,45 @@ export class CronogramaStepComponent {
 
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
+  }
+
+  /**
+   * Grava o cronograma, contornando o ciclo de ordem quando ele aparece.
+   *
+   * Reordenar é sempre uma permutação de `1..N`, e toda permutação não-trivial
+   * fecha ciclo: cada fase precisa que a outra libere a posição primeiro, e o
+   * servidor não persiste isso numa chamada. Mandar o operador "mover uma para
+   * o fim" não resolvia — renumerar produz `1..N` de novo, e o ciclo volta.
+   *
+   * O que resolve é uma posição que ninguém ocupa. O domínio aceita qualquer
+   * ordem positiva, não só a sequência fechada, então uma gravação intermediária
+   * em `N+1..2N` esvazia as posições `1..N` e a seguinte as ocupa sem cadeia que
+   * volte a si mesma. Duas chamadas em vez de uma, e só quando a primeira acusa.
+   */
+  private async gravarCronograma(
+    processoId: string,
+    fases: readonly FaseDoCronograma[],
+  ): Promise<ResultadoGravacao> {
+    const pretendida = await this.cadastro.definirCronogramaFases(
+      processoId,
+      fases.map(comoComandoDeFase),
+    );
+    if (pretendida.ok || pretendida.problem.code !== PERMUTACAO_DE_ORDEM) return pretendida;
+
+    // Deslocar pela quantidade de fases só serve se as ordens forem 1..N; o
+    // domínio aceita qualquer ordem positiva, e uma lacuna faria a faixa
+    // "livre" cair em cima de uma posição ocupada. Somar a maior ordem em uso
+    // põe todas acima de qualquer uma que exista hoje.
+    const deslocamento = Math.max(...fases.map((fase) => fase.ordem));
+    const emOrdemLivre = fases.map((fase) => ({ ...fase, ordem: fase.ordem + deslocamento }));
+
+    const intermediaria = await this.cadastro.definirCronogramaFases(
+      processoId,
+      emOrdemLivre.map(comoComandoDeFase),
+    );
+    if (!intermediaria.ok) return intermediaria;
+
+    return this.cadastro.definirCronogramaFases(processoId, fases.map(comoComandoDeFase));
   }
 
   /**

@@ -3,6 +3,7 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
 
 import type {
+  AtributosCongeladosDaFase,
   EtapaPontuada,
   FaseDoCronograma,
   RecursoDaFase,
@@ -37,6 +38,11 @@ export interface FaseForm {
    * daqui a apagaria a cada mudança de data.
    */
   readonly regraRecurso: FormControl<RecursoDaFase | null>;
+  /**
+   * O que a fase congelou do catálogo. Também não é editado — viaja para que a
+   * tela continue sabendo o que a fase exige quando o catálogo já não a tem.
+   */
+  readonly congelados: FormControl<AtributosCongeladosDaFase | null>;
 }
 
 /** Uma etapa pontuada como o formulário a guarda. */
@@ -75,6 +81,7 @@ export function grupoDaFase(fase: FaseDoCronograma): FormGroup<FaseForm> {
     atoProduzidoCodigo: controle(fase.atoProduzidoCodigo ?? ''),
     tiposBancaIds: controle<readonly string[]>(fase.tiposBancaIds),
     regraRecurso: controle<RecursoDaFase | null>(fase.regraRecurso),
+    congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
   });
 }
 
@@ -102,6 +109,7 @@ export function faseDoFormulario(grupo: FormGroup<FaseForm>): FaseDoCronograma {
     atoProduzidoCodigo: valor.atoProduzidoCodigo === '' ? null : valor.atoProduzidoCodigo,
     tiposBancaIds: valor.tiposBancaIds,
     regraRecurso: valor.regraRecurso,
+    congelados: valor.congelados,
   };
 }
 

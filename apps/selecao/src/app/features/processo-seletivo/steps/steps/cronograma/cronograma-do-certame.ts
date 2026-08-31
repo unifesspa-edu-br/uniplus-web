@@ -1,6 +1,10 @@
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
-import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import type {
+  AtributosCongeladosDaFase,
+  EtapaPontuada,
+  FaseDoCronograma,
+} from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 /** Origem de data que obriga a fase a declarar janela. */
@@ -24,6 +28,23 @@ export function exigenciasDe(fase: FaseCanonicaDto): ExigenciasDaFase {
     exigeAtoProduzido: fase.produzResultado,
     admiteRecurso: fase.produzResultado && !fase.resultadoDefinitivo,
     agrupaEtapas: fase.agrupaEtapas,
+  };
+}
+
+/**
+ * As mesmas exigências, lidas do que a fase congelou.
+ *
+ * O catálogo é vivo e o cronograma não: a fase canônica pode ter sido inativada
+ * depois de entrar no edital, e a que já está lá continua valendo. Sem este
+ * caminho, a tela esconderia janela, ato e etapas de uma fase que o operador
+ * ainda precisa editar.
+ */
+export function exigenciasCongeladas(congelados: AtributosCongeladosDaFase): ExigenciasDaFase {
+  return {
+    janelaObrigatoria: congelados.origemData === ORIGEM_DATA_PROPRIA,
+    exigeAtoProduzido: congelados.produzResultado,
+    admiteRecurso: congelados.produzResultado && !congelados.resultadoDefinitivo,
+    agrupaEtapas: congelados.agrupaEtapas,
   };
 }
 

@@ -78,6 +78,20 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
   return {
     faseCanonicaId: fase.faseCanonicaOrigemId,
     codigo: fase.codigo,
+    // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
+    // fase, e é isto que mantém a tela sabendo o que ela exige.
+    congelados: {
+      donoTipico: fase.donoInstitucional,
+      origemData: fase.origemData,
+      agrupaEtapas: fase.agrupaEtapas,
+      produzResultado: fase.produzResultado,
+      resultadoDefinitivo: fase.resultadoDefinitivo,
+      coletaInscricao: fase.coletaInscricao,
+      bancas: fase.bancasRequeridas.map((banca) => ({
+        id: banca.tipoBancaOrigemId,
+        codigo: banca.codigo,
+      })),
+    },
     ordem: comoInteiro(fase.ordem),
     inicio: fase.inicio,
     fim: fase.fim,
