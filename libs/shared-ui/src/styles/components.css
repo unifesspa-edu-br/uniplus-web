@@ -429,11 +429,21 @@
 /* ============================================================================
  * INSTITUTIONAL BAR + ACCESSIBILITY BAR + TOPBAR (mobile-first)
  * ========================================================================== */
+/*
+ * O `ui-app-shell` é dono da própria caixa: trava a altura no viewport dinâmico
+ * para que a rolagem aconteça nas regiões internas (`.page` e `.sidebar nav`) e
+ * nunca no `<body>`. Assim os apps consumidores não precisam de CSS de rolagem
+ * por rota — só que o host da rota (`*-root`) seja uma coluna flex. O cabeçalho
+ * institucional, a topbar e a navegação entram no cálculo da altura disponível
+ * pela própria cadeia flex (sem `calc()` com números mágicos).
+ */
 ui-app-shell {
   display: flex;
   flex-direction: column;
-  flex: 1;
   min-height: 0;
+  height: 100vh; /* fallback para navegadores sem dvh */
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .ui-app-shell {
@@ -2095,12 +2105,9 @@ ui-vlibras-loader {
   display: none;
 }
 @media (min-width: 1024px) {
-  /* Acompanha a altura da área de trabalho e limita-se ao viewport: assim a
-     navegação (`.sidebar nav`) rola por dentro em vez de esticar a coluna e
-     empurrar o rodapé (usuário autenticado) para fora da tela. Vale para as
-     cascas travadas no viewport (selecao, configuracao) e para as de rolagem
-     de página (portal, ingresso), onde o `position: sticky` mantém a coluna
-     fixa enquanto o corpo rola. */
+  /* Acompanha a altura da área de trabalho e limita-se ao viewport dinâmico:
+     assim a navegação (`.sidebar nav`) rola por dentro em vez de esticar a
+     coluna e empurrar o rodapé (usuário autenticado) para fora da tela. */
   .sidebar {
     position: sticky;
     top: 0;
@@ -2109,6 +2116,7 @@ ui-vlibras-loader {
     width: auto;
     min-height: 0;
     max-height: 100vh;
+    max-height: 100dvh;
     flex-direction: column;
     gap: var(--space-1);
     overflow: hidden;
@@ -2119,45 +2127,28 @@ ui-vlibras-loader {
   .admin-shell[data-sidebar-desktop='closed'] .sidebar { align-items: stretch; }
 }
 
+/* Navegação lateral com rolagem própria. O trilho fica sempre discretamente
+   visível (não só no hover) para identificar a região rolável em qualquer tema
+   — a cor deriva do texto sobre superfície invertida, então segue claro/escuro/
+   contraste. */
 .sidebar nav {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-
-  /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+  /* scrollbar-color: color-mix(in srgb, var(--text-on-inverse) 32%, transparent) transparent; */
 }
-
-/* Chrome / Edge / Safari */
-.sidebar nav::-webkit-scrollbar {
-  width: 5px;
-}
-
-.sidebar nav::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.sidebar nav::-webkit-scrollbar { width: 8px; }
+.sidebar nav::-webkit-scrollbar-track { background: transparent; }
 .sidebar nav::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 999px;
-}
-
-/* Mostra quando o mouse está sobre a área */
-.sidebar nav:hover::-webkit-scrollbar-thumb {
-  background: rgba(32, 37, 44, 0.55);
+  background: color-mix(in srgb, var(--text-on-inverse) 32%, transparent);
+  border-radius: var(--radius-pill);
 }
 
 .sidebar nav:hover {
   scrollbar-color: #20252c transparent;
-}
-
-/* Remove as setinhas */
-.sidebar nav::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
 }
 
 .sidebar__brand {
@@ -2384,35 +2375,23 @@ ui-vlibras-loader {
   flex-direction: column;
   gap: var(--space-7);
   padding: var(--space-5);
-  /* Contêiner de rolagem do conteúdo: com a casca do app travada no viewport
-     (root em altura fixa + overflow hidden), só a `.page` rola e a topbar/
-     sidebar ficam fixas. Onde a casca não trava a altura (portal, ingresso),
-     a `.page` tem a altura do conteúdo e isto vira no-op — o `<body>` rola. */
+  /* Único contêiner de rolagem vertical do conteúdo (o `ui-app-shell` trava a
+     altura no viewport). `overflow-x: hidden` garante que qualquer excesso
+     horizontal fique contido no componente que o gera (ex.: `.table-responsive`)
+     e nunca vire rolagem horizontal da página. */
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
-
-  /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
-
-/* Chrome, Edge e Safari */
-.page::-webkit-scrollbar {
-  width: 5px;
-}
-
-.page::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.page::-webkit-scrollbar { width: 10px; }
+.page::-webkit-scrollbar-track { background: transparent; }
 .page::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
 }
-
-.page::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+.page::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 @media (min-width: 768px) {
   .page { padding: var(--space-7); }
