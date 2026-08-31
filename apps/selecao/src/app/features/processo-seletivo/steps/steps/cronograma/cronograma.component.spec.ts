@@ -34,6 +34,8 @@ const ID_INSCRICAO = '01960000-0000-7000-0000-0000000000c1';
 const ID_AVALIACAO = '01960000-0000-7000-0000-0000000000c2';
 const ID_RESULTADO = '01960000-0000-7000-0000-0000000000c3';
 const TIPO_ETAPA = '01960000-0000-7000-0000-0000000000e1';
+/** Fase que o processo congelou e que não está mais no catálogo. */
+const FASE_SUMIDA = '01960000-0000-7000-0000-0000000000cf';
 
 const FASES_CANONICAS = [
   {
@@ -186,6 +188,34 @@ describe('CronogramaStepComponent', () => {
     detectar();
   }
 
+  /** Fases cujo processo congelou atributos diferentes dos do catálogo. */
+  function comFasesCongeladas(
+    ...declaradas: readonly { id: string; agrupaEtapas: boolean; produzResultado: boolean }[]
+  ): void {
+    store.patchObjectSection('cronograma', {
+      fases: declaradas.map((fase, indice) => ({
+        faseCanonicaId: fase.id,
+        codigo: 'FASE_CONGELADA',
+        ordem: indice + 1,
+        inicio: '2026-03-01T08:00:00-03:00',
+        fim: '2026-03-10T18:00:00-03:00',
+        atoProduzidoCodigo: null,
+        tiposBancaIds: [],
+        regraRecurso: null,
+        congelados: {
+          donoTipico: 'CEPS',
+          origemData: 'PROPRIA',
+          agrupaEtapas: fase.agrupaEtapas,
+          produzResultado: fase.produzResultado,
+          resultadoDefinitivo: false,
+          coletaInscricao: false,
+          bancas: [],
+        },
+      })),
+    });
+    detectar();
+  }
+
   function comUmaEtapa(): void {
     store.patchObjectSection('cronograma', {
       etapas: [
@@ -223,6 +253,26 @@ describe('CronogramaStepComponent', () => {
    * O caminho de volta: o que se digita no controle é o que a gravação envia, e
    * o que os outros passos leem pelo rascunho.
    */
+  /**
+   * O rascunho é reescrito a cada tecla pelo caminho de volta, e o espelho
+   * responde a essa mudança. Se ele reconstruísse os controles quando o
+   * conteúdo é o mesmo, o campo em que se digita seria recriado a cada letra —
+   * e o foco iria embora junto.
+   */
+  it('não recria os controles quando o rascunho recebe o que já está na tela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comUmaEtapa();
+    const antes = componente.fases.controls;
+    const antesEtapa = componente.etapas.at(0);
+
+    componente.fases.at(0).controls.inicio.setValue('2026-03-02T09:00');
+    detectar();
+
+    expect(componente.fases.controls[0]).toBe(antes[0]);
+    expect(componente.fases.controls[1]).toBe(antes[1]);
+    expect(componente.etapas.at(0)).toBe(antesEtapa);
+  });
+
   it('leva ao rascunho o que foi digitado no controle', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
@@ -247,6 +297,39 @@ describe('CronogramaStepComponent', () => {
     detectar();
 
     expect(componente.formulario.disabled).toBe(true);
+  });
+
+  /**
+   * O que a fase congelou vale sobre o catálogo, não o contrário. Editar a fase
+   * canônica depois que um processo a congelou não pode mudar o que aquele
+   * processo exige — ligar `agrupaEtapas` faria a conferência cobrar etapas de
+   * um edital que nunca as teve.
+   */
+  it('descreve a fase pelo que ela congelou, mesmo com o catálogo dizendo outra coisa', () => {
+    comFasesCongeladas({ id: ID_INSCRICAO, agrupaEtapas: true, produzResultado: false });
+
+    const item = componente.linhaDoTempo()[0];
+
+    expect(item.exigencias?.agrupaEtapas).toBe(
+      true,
+      'o catálogo diz que COLETA_INSCRICAO não agrupa; o processo congelou que agrupa',
+    );
+    expect(item.foraDoCatalogo).toBe(false);
+  });
+
+  /**
+   * A fase inativada some do catálogo, mas continua no processo. Conferir só
+   * pelo catálogo vivo faria as etapas dela parecerem órfãs, e a gravação nunca
+   * sairia.
+   */
+  it('confere pela fase congelada quando a entrada saiu do catálogo', () => {
+    comFasesCongeladas({ id: FASE_SUMIDA, agrupaEtapas: true, produzResultado: false });
+    comUmaEtapa();
+
+    expect(componente.linhaDoTempo()[0].foraDoCatalogo).toBe(true);
+    expect(componente.problemas()).not.toContainEqual(
+      expect.stringContaining('fase de avaliação que as agrupa'),
+    );
   });
 
   it('oferece cada fase canônica uma vez só', () => {

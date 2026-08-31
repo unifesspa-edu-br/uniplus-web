@@ -28,11 +28,10 @@ import { etapasDe } from '../../shared/hidratacao';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
   componeNota,
-  exigenciasCongeladas,
-  exigenciasDe,
+  descreverFase,
   problemasDoCronograma,
   renumerar,
-  type ExigenciasDaFase,
+  type DescricaoDaFase,
 } from './cronograma-do-certame';
 import {
   etapaDoFormulario,
@@ -63,15 +62,8 @@ const CARATERES = [
  * congela sobre ela. O componente monta este par uma vez e o template lê os dois
  * lados sem procurar a fase canônica a cada célula.
  */
-interface FaseNaLinhaDoTempo {
+interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   readonly grupo: FormGroup<FaseForm>;
-  readonly nome: string;
-  readonly donoTipico: string;
-  readonly resultadoDefinitivo: boolean;
-  readonly coletaInscricao: boolean;
-  readonly exigencias: ExigenciasDaFase | null;
-  /** A entrada do catálogo saiu; o que descreve a fase é o que ela congelou. */
-  readonly foraDoCatalogo: boolean;
   readonly indice: number;
 }
 
@@ -154,45 +146,20 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * A fase como a tela precisa dela: nome, responsável e o que ela exige.
-   *
-   * O catálogo responde por quem ainda está nele. Para a fase cuja entrada foi
-   * inativada depois de entrar no edital, respondem os atributos que ela
-   * congelou — a fase continua valendo no processo, e escondê-la atrás de um
-   * aviso deixaria o operador sem como editar datas e ato que já estão lá.
+   * A fase como a tela precisa dela, pela mesma resolução que a conferência
+   * usa: o que a fase congelou vale sobre o catálogo, e o catálogo descreve a
+   * que acabou de entrar. Duas resoluções separadas divergiriam, e a tela
+   * mostraria uma coisa enquanto a validação cobraria outra.
    */
   readonly linhaDoTempo = computed<readonly FaseNaLinhaDoTempo[]>(() => {
     this.versaoDoFormulario();
     const fasePorId = this.catalogos.fasePorId();
 
-    return this.fases.controls.map((grupo, indice) => {
-      const canonica = fasePorId.get(grupo.controls.faseCanonicaId.value);
-      const congelados = grupo.controls.congelados.value;
-
-      if (canonica !== undefined) {
-        return {
-          grupo,
-          nome: canonica.nome,
-          donoTipico: canonica.donoTipico,
-          resultadoDefinitivo: canonica.resultadoDefinitivo,
-          coletaInscricao: canonica.coletaInscricao,
-          exigencias: exigenciasDe(canonica),
-          foraDoCatalogo: false,
-          indice,
-        };
-      }
-
-      return {
-        grupo,
-        nome: grupo.controls.codigo.value,
-        donoTipico: congelados?.donoTipico ?? '—',
-        resultadoDefinitivo: congelados?.resultadoDefinitivo ?? false,
-        coletaInscricao: congelados?.coletaInscricao ?? false,
-        exigencias: congelados === null ? null : exigenciasCongeladas(congelados),
-        foraDoCatalogo: true,
-        indice,
-      };
-    });
+    return this.fases.controls.map((grupo, indice) => ({
+      grupo,
+      ...descreverFase(faseDoFormulario(grupo), fasePorId),
+      indice,
+    }));
   });
 
   /**
@@ -629,8 +596,8 @@ export class CronogramaStepComponent {
       etapas: this.etapas.controls.map(etapaDoFormulario),
     };
     if (
-      JSON.stringify(atuais.fases) === JSON.stringify(cronograma.fases) &&
-      JSON.stringify(atuais.etapas) === JSON.stringify(cronograma.etapas)
+      mesmoConteudo(atuais.fases, cronograma.fases) &&
+      mesmoConteudo(atuais.etapas, cronograma.etapas)
     ) {
       return;
     }
@@ -653,4 +620,29 @@ export class CronogramaStepComponent {
       this.espelhando = false;
     }
   }
+}
+
+/**
+ * Compara conteúdo, não a ordem em que os campos foram escritos.
+ *
+ * A projeção da leitura e a do formulário montam os mesmos objetos em ordens
+ * diferentes, e `JSON.stringify` preserva a ordem de inserção — comparar assim
+ * daria "diferente" para dado igual. O efeito seria reconstruir os controles a
+ * cada tecla, tirando o foco do campo em que se está digitando: um sintoma que
+ * não se parece nem um pouco com a causa.
+ */
+function mesmoConteudo(umLado: unknown, outroLado: unknown): boolean {
+  return canonico(umLado) === canonico(outroLado);
+}
+
+function canonico(valor: unknown): string {
+  return JSON.stringify(valor, (_chave, conteudo: unknown) =>
+    conteudo !== null && typeof conteudo === 'object' && !Array.isArray(conteudo)
+      ? Object.fromEntries(
+          Object.entries(conteudo as Record<string, unknown>).sort(([um], [outro]) =>
+            um.localeCompare(outro),
+          ),
+        )
+      : conteudo,
+  );
 }

@@ -41,6 +41,7 @@ function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
     atoProduzidoCodigo: null,
     tiposBancaIds: [],
     regraRecurso: null,
+    congelados: null,
     ...parcial,
   };
 }
