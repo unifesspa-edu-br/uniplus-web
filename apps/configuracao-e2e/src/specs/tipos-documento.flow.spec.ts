@@ -19,6 +19,33 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
+/**
+ * Catálogo de categorias servido pelo endpoint `GET
+ * /api/configuracao/categorias-documento`. Espelha o seed do backend — as dez
+ * categorias na ordem de exibição — porque é dele que a tela deriva as opções do
+ * `select`, os chips de filtro e o rótulo da coluna. Mockar só as três usadas
+ * pelos casos daria uma tela que não existe em nenhum ambiente.
+ */
+const categoriasSeed = [
+  { codigo: 'IDENTIFICACAO', nome: 'Identificação' },
+  { codigo: 'ESCOLARIDADE', nome: 'Escolaridade' },
+  { codigo: 'TITULACAO_EXPERIENCIA', nome: 'Titulação e experiência' },
+  { codigo: 'RENDA', nome: 'Renda' },
+  { codigo: 'RESIDENCIA', nome: 'Residência' },
+  { codigo: 'RACA_ETNIA', nome: 'Raça/etnia' },
+  { codigo: 'SAUDE', nome: 'Saúde' },
+  { codigo: 'DOCUMENTO_PROCESSUAL', nome: 'Documento processual' },
+  { codigo: 'PRODUCAO_AVALIATIVA', nome: 'Produção avaliativa' },
+  { codigo: 'OUTROS', nome: 'Outros' },
+].map((categoria, indice) => ({
+  id: `01990000-0000-7000-0000-0000000000${(indice + 1).toString(16).padStart(2, '0')}`,
+  codigo: categoria.codigo,
+  nome: categoria.nome,
+  descricao: null,
+  ordem: indice + 1,
+  criadoEm: '2026-08-30T12:00:00Z',
+}));
+
 const RG_ID = '01960000-0000-7000-0000-0000000000d1';
 const LAUDO_ID = '01960000-0000-7000-0000-0000000000d2';
 
@@ -86,6 +113,9 @@ async function mockApi(
   });
   await page.route(/\/api\/configuracao\/tipos-documento(\?.*)?$/, (route) =>
     jsonRoute(route, lista),
+  );
+  await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (route) =>
+    jsonRoute(route, categoriasSeed),
   );
 }
 
