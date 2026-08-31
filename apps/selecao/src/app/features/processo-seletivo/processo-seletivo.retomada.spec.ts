@@ -210,10 +210,26 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
   /**
    * CA-05: as dimensões sem tela própria não podem sumir só porque o wizard
    * ainda não sabe editá-las — o snapshot guarda o agregado inteiro.
+   *
+   * A etapa vem completa porque a dimensão passou a ter projeção no rascunho: o
+   * adaptador confia no contrato, que declara `tipoEtapa` obrigatório, do mesmo
+   * modo que já lê `tipoProcesso` e `unidadeAdministradora` sem guarda. Fixture
+   * parcial aqui não testaria tolerância a dado malformado — testaria o
+   * adaptador contra um DTO que a API não emite.
    */
   it('preserva o detalhe canônico inteiro como snapshot remoto', async () => {
     const dto = detalhe({
-      etapas: [{ ordem: 1 }] as unknown as ProcessoSeletivoDto['etapas'],
+      etapas: [
+        {
+          id: 'etapa-1',
+          nome: 'Prova Objetiva',
+          carater: 'classificatoria',
+          tipoEtapa: { origemId: 'tipo-etapa-1', codigo: 'PROVA_OBJETIVA', nome: 'Prova Objetiva' },
+          peso: 2,
+          notaMinima: null,
+          ordem: 1,
+        },
+      ] as unknown as ProcessoSeletivoDto['etapas'],
     });
     const cenario = montar({ obter: vi.fn(() => of(okResult(dto))) });
     await propagar();
