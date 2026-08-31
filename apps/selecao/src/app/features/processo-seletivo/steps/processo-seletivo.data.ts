@@ -25,6 +25,7 @@ const DEFINICOES: readonly DefinicaoDePasso[] = [
   { rotulo: 'Identificação' },
   { rotulo: 'Pagamento', titulo: 'Taxa de inscrição e isenção', revisao: 'Taxa de inscrição' },
   { rotulo: 'Vagas' },
+  { rotulo: 'Cronograma', titulo: 'Cronograma do certame', revisao: 'Cronograma e etapas' },
   { rotulo: 'Fórmula e precisão', revisao: 'Fórmula de classificação' },
   { rotulo: 'Bônus', titulo: 'Bônus (opcional)' },
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
