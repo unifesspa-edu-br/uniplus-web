@@ -260,6 +260,26 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(etapa.peso).toBe('2');
   });
 
+  /**
+   * A etapa gravada sem ordem volta como zero. Com uma etapa só não há duplicata
+   * que a conferência acuse nem botão de mover que a conserte: a gravação sairia
+   * com ordem zero para voltar recusada, sem nada na tela explicando. Renumerar
+   * na chegada preserva a sequência que o servidor devolveu.
+   */
+  it('renumera as etapas na chegada, corrigindo ordem ausente', () => {
+    const semOrdem = dtoComCronograma({
+      etapas: [
+        { ...ETAPA, id: 'etapa-sem-ordem', ordem: null },
+        { ...ETAPA, id: 'etapa-com-ordem', ordem: 7 },
+      ],
+    });
+
+    const { etapas } = hidratarDraft(DRAFT, semOrdem).cronograma;
+
+    expect(etapas.map((etapa) => etapa.ordem)).toEqual([1, 2]);
+    expect(etapas.map((etapa) => etapa.id)).toEqual(['etapa-sem-ordem', 'etapa-com-ordem']);
+  });
+
   it('projeta a convenção de contagem declarada', () => {
     const { cronograma } = hidratarDraft(DRAFT, COM_CRONOGRAMA);
 
