@@ -6,6 +6,7 @@ import {
   comoNumero,
   componeNota,
   exigenciasDe,
+  problemasDoCronograma,
   renumerar,
   trocaFechaCiclo,
   violacoesDePrecedencia,
@@ -114,7 +115,10 @@ describe('precedência entre fases', () => {
    * cronograma curto, e o agregado é explícito quanto a isso.
    */
   it('ignora a aresta cuja outra ponta não está no cronograma', () => {
-    const violacoes = violacoesDePrecedencia([fase({ codigo: 'INSCRICAO', ordem: 1 })], [aresta({})]);
+    const violacoes = violacoesDePrecedencia(
+      [fase({ codigo: 'INSCRICAO', ordem: 1 })],
+      [aresta({})],
+    );
 
     expect(violacoes).toEqual([]);
   });
@@ -286,5 +290,135 @@ describe('conversão do campo para número', () => {
 
   it('preserva o zero declarado', () => {
     expect(comoNumero('0')).toBe(0);
+  });
+});
+
+describe('o que impede gravar o cronograma', () => {
+  const AVALIACAO = faseCanonica({
+    id: 'id-avaliacao',
+    codigo: 'AVALIACAO',
+    nome: 'Avaliação',
+    agrupaEtapas: true,
+    origemData: 'PROPRIA',
+  });
+  const RESULTADO = faseCanonica({
+    id: 'id-resultado',
+    codigo: 'RESULTADO_PRELIMINAR',
+    nome: 'Resultado preliminar',
+    produzResultado: true,
+    origemData: 'DERIVADA',
+  });
+  const catalogo = new Map([
+    [AVALIACAO.id, AVALIACAO],
+    [RESULTADO.id, RESULTADO],
+  ]);
+
+  const etapaValida = etapa({
+    nome: 'Prova',
+    carater: 'classificatoria',
+    tipoEtapaOrigemId: 'tipo-1',
+    peso: '1',
+  });
+  const faseDeAvaliacao = fase({
+    faseCanonicaId: AVALIACAO.id,
+    codigo: 'AVALIACAO',
+    inicio: '2026-03-01T08:00:00-03:00',
+    fim: '2026-03-02T18:00:00-03:00',
+  });
+
+  it('cronograma sem nenhuma fase é o único problema relatado', () => {
+    expect(problemasDoCronograma([], [], catalogo, [])).toEqual([
+      'O cronograma precisa de ao menos uma fase.',
+    ]);
+  });
+
+  /**
+   * A fase que agrupa etapas é recusada na hora se o processo não tiver etapa
+   * alguma. Deixar o operador escolhê-la e descobrir isso na gravação é o
+   * estado que este passo existe para evitar.
+   */
+  it('fase que agrupa etapas sem nenhuma etapa é recusada antes de gravar', () => {
+    const problemas = problemasDoCronograma([faseDeAvaliacao], [], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('precisa de ao menos uma'));
+  });
+
+  /**
+   * O caminho oposto só seria recusado na publicação — tarde demais para quem
+   * já saiu deste passo.
+   */
+  it('etapas sem a fase que as agrupa também são recusadas', () => {
+    const semAvaliacao = fase({
+      faseCanonicaId: RESULTADO.id,
+      codigo: 'RESULTADO_PRELIMINAR',
+      atoProduzidoCodigo: 'EDITAL_RESULTADO',
+    });
+
+    const problemas = problemasDoCronograma([semAvaliacao], [etapaValida], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('fase de avaliação que as agrupa'));
+  });
+
+  it('fase com janela própria exige data e hora de início e de fim', () => {
+    const semJanela = fase({ faseCanonicaId: AVALIACAO.id, codigo: 'AVALIACAO' });
+
+    const problemas = problemasDoCronograma([semJanela], [etapaValida], catalogo, []);
+
+    expect(problemas).toContainEqual('A fase Avaliação precisa de data e hora de início e de fim.');
+  });
+
+  it('fim antes do início é recusado', () => {
+    const invertida = fase({
+      faseCanonicaId: AVALIACAO.id,
+      codigo: 'AVALIACAO',
+      inicio: '2026-03-10T08:00:00-03:00',
+      fim: '2026-03-01T08:00:00-03:00',
+    });
+
+    const problemas = problemasDoCronograma([invertida], [etapaValida], catalogo, []);
+
+    expect(problemas).toContainEqual('Na fase Avaliação, o fim não pode vir antes do início.');
+  });
+
+  it('fase que produz resultado exige o ato que o publica', () => {
+    const semAto = fase({ faseCanonicaId: RESULTADO.id, codigo: 'RESULTADO_PRELIMINAR' });
+
+    const problemas = problemasDoCronograma([semAto], [], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('precisa declarar o ato'));
+  });
+
+  /**
+   * Sem nenhuma etapa compondo a nota, o divisor da média seria zero — e a
+   * recusa do servidor fala de nota final, não da etapa que ficou sem peso.
+   */
+  it('etapas que não compõem a nota final são recusadas com a explicação da média', () => {
+    const soEliminatoria = etapa({
+      nome: 'Títulos',
+      carater: 'eliminatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '',
+    });
+
+    const problemas = problemasDoCronograma([faseDeAvaliacao], [soEliminatoria], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('compor a nota final'));
+  });
+
+  it('mesma posição em duas fases é recusada', () => {
+    const outra = fase({
+      faseCanonicaId: RESULTADO.id,
+      codigo: 'RESULTADO_PRELIMINAR',
+      ordem: 1,
+      atoProduzidoCodigo: 'EDITAL',
+    });
+
+    const problemas = problemasDoCronograma([faseDeAvaliacao, outra], [etapaValida], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('mesma posição na linha do tempo'));
+  });
+
+  it('cronograma coerente não relata problema', () => {
+    expect(problemasDoCronograma([faseDeAvaliacao], [etapaValida], catalogo, [])).toEqual([]);
   });
 });
