@@ -70,27 +70,85 @@ export class CatalogosDoCronogramaService {
   );
 
   /**
+   * Atos que podem ser escolhidos hoje. A vigência é semiaberta — `[início,
+   * fim)` —, e é ela que o servidor confere ao resolver o ato declarado: um
+   * código fora de vigência é recusado na gravação.
+   */
+  readonly atosVigentes = computed(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return this.atos().filter(
+      (ato) => ato.vigenciaInicio <= hoje && (ato.vigenciaFim === null || hoje < ato.vigenciaFim),
+    );
+  });
+
+  /** Rótulo de um ato, vigente ou não — um cronograma gravado precisa de nome. */
+  readonly rotuloDoAto = computed<ReadonlyMap<string, string>>(
+    () => new Map(this.atos().map((ato) => [ato.codigo, ato.nome])),
+  );
+
+  /**
    * Fases em ordem cronológica sugerida, derivada das precedências cadastradas.
    *
-   * As arestas não formam uma ordem total — há fases que nenhuma aresta alcança
-   * —, então a ordenação é topológica sobre o que existe, com o resto mantendo
-   * a ordem do catálogo. Serve para sugerir; quem arbitra a ordem declarada é o
-   * servidor, que recusa o que viola a precedência.
+   * Ordenação topológica de Kahn sobre as arestas que ligam fases do catálogo,
+   * com a ordem do próprio catálogo como desempate — assim o resultado é
+   * estável, e não depende da ordem em que as arestas chegaram. Um passe único
+   * de ajuste não bastaria: com o catálogo em `B, C, A` e as arestas `B→C` e
+   * `A→B`, mover `B` para depois de `A` deixaria `C` antes de `B`, violando a
+   * primeira aresta e sugerindo uma ordem que o servidor recusa.
+   *
+   * Fases que nenhuma aresta alcança entram na ordem do catálogo, e um ciclo no
+   * cadastro — que não deveria existir — degrada para essa mesma ordem em vez de
+   * perder fase. Isto sugere; quem arbitra continua sendo o servidor.
    */
   readonly fasesEmOrdemSugerida = computed<readonly FaseCanonicaDto[]>(() => {
     const fases = this.fases();
-    const posicao = new Map(fases.map((fase, indice) => [fase.codigo, indice]));
+    const porCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
+
+    const sucessores = new Map<string, string[]>();
+    const grauDeEntrada = new Map<string, number>(fases.map((fase) => [fase.codigo, 0]));
 
     for (const aresta of this.precedencias()) {
-      const antes = posicao.get(aresta.antecessoraCodigo);
-      const depois = posicao.get(aresta.sucessoraCodigo);
-      if (antes === undefined || depois === undefined || antes < depois) continue;
-      posicao.set(aresta.sucessoraCodigo, antes + 0.5);
+      if (!porCodigo.has(aresta.antecessoraCodigo) || !porCodigo.has(aresta.sucessoraCodigo)) {
+        continue;
+      }
+      sucessores.set(aresta.antecessoraCodigo, [
+        ...(sucessores.get(aresta.antecessoraCodigo) ?? []),
+        aresta.sucessoraCodigo,
+      ]);
+      grauDeEntrada.set(
+        aresta.sucessoraCodigo,
+        (grauDeEntrada.get(aresta.sucessoraCodigo) ?? 0) + 1,
+      );
     }
 
-    return [...fases].sort(
-      (a, b) => (posicao.get(a.codigo) ?? 0) - (posicao.get(b.codigo) ?? 0),
-    );
+    // A fila mantém a ordem do catálogo entre os elegíveis, o que torna o
+    // resultado determinístico para o mesmo cadastro.
+    const prontos = fases.filter((fase) => grauDeEntrada.get(fase.codigo) === 0).map((f) => f.codigo);
+    const ordenado: FaseCanonicaDto[] = [];
+
+    for (let codigo = prontos.shift(); codigo !== undefined; codigo = prontos.shift()) {
+      const fase = porCodigo.get(codigo);
+      if (fase !== undefined) ordenado.push(fase);
+
+      const liberados: string[] = [];
+      for (const sucessor of sucessores.get(codigo) ?? []) {
+        const restante = (grauDeEntrada.get(sucessor) ?? 0) - 1;
+        grauDeEntrada.set(sucessor, restante);
+        if (restante === 0) liberados.push(sucessor);
+      }
+
+      // Reinsere respeitando a ordem do catálogo, não a de liberação.
+      prontos.push(...liberados);
+      prontos.sort(
+        (a, b) =>
+          fases.findIndex((f) => f.codigo === a) - fases.findIndex((f) => f.codigo === b),
+      );
+    }
+
+    // Ciclo no cadastro deixaria fases de fora; devolvê-las na ordem do
+    // catálogo é melhor do que sumir com elas do seletor.
+    const incluidos = new Set(ordenado.map((fase) => fase.codigo));
+    return [...ordenado, ...fases.filter((fase) => !incluidos.has(fase.codigo))];
   });
 
   carregar(): void {
@@ -102,7 +160,10 @@ export class CatalogosDoCronogramaService {
       precedencias: coletarPaginas((cursor) => this.precedenciasApi.listar({ cursor })),
       bancas: coletarPaginas((cursor) => this.bancasApi.listar({ cursor })),
       tiposEtapa: coletarPaginas((cursor) => this.tiposEtapaApi.listar({ cursor })),
-      atos: coletarPaginas((cursor) => this.atosApi.listar({ cursor })),
+      // `vigentes` assume `true` no servidor, e a série completa é o que
+      // resolve o rótulo de um ato já referenciado cuja versão encerrou. Quais
+      // podem ser escolhidos é recorte da tela, em `atosVigentes`.
+      atos: coletarPaginas((cursor) => this.atosApi.listar({ cursor, vigentes: false })),
       recurso: coletarPaginas((cursor) =>
         this.regrasApi.listar({ tipo: TIPO_REGRA_RECURSO, cursor }),
       ),
