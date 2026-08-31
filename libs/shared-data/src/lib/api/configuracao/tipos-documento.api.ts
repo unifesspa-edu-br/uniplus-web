@@ -9,27 +9,6 @@ export type TipoDocumentoDto = components['schemas']['TipoDocumentoDto'];
 export type CriarTipoDocumentoCommand = components['schemas']['CriarTipoDocumentoCommand'];
 export type AtualizarTipoDocumentoCommand = components['schemas']['AtualizarTipoDocumentoCommand'];
 
-/** Opção de categoria de documento (domínio fechado, 7 valores). */
-export interface CategoriaDocumentoOption {
-  readonly value: string;
-  readonly label: string;
-}
-
-/**
- * As 7 categorias de `CategoriaDocumento` — vocabulário de referência (enum
- * fechado no backend, exposto como `string` no contrato). Espelha
- * `GRUPOS_AREA_ENEM` de `CursosApi`.
- */
-export const CATEGORIAS_DOCUMENTO: readonly CategoriaDocumentoOption[] = [
-  { value: 'IDENTIFICACAO', label: 'Identificação' },
-  { value: 'ESCOLARIDADE', label: 'Escolaridade' },
-  { value: 'RENDA', label: 'Renda' },
-  { value: 'RACA_ETNIA', label: 'Raça/etnia' },
-  { value: 'SAUDE', label: 'Saúde' },
-  { value: 'RESIDENCIA', label: 'Residência' },
-  { value: 'OUTROS', label: 'Outros' },
-] as const;
-
 /** Filtro de listagem de Tipos de Documento (cursor pagination, ADR-0026). */
 export interface TiposDocumentoQuery {
   readonly cursor?: string;
@@ -43,6 +22,10 @@ export interface TiposDocumentoQuery {
  * entidades cadastrais; `tipoEquivalente` é só um rótulo textual (não
  * referência), congelado por snapshot na configuração de exigência
  * documental do edital (RN08, fora desta tela).
+ *
+ * `categoria` guarda o **código** de uma categoria do cadastro, e não um token
+ * de vocabulário fechado: o catálogo cresce sem deploy, então o rótulo vem de
+ * `CategoriasDocumentoApi` e é resolvido por lookup.
  *
  * API thin (ADR-0013): tipos do `schema.ts` gerado; resposta envelopada em
  * `ApiResult<T>` (ADR-0011); versionamento por vendor MIME `tipo-documento
