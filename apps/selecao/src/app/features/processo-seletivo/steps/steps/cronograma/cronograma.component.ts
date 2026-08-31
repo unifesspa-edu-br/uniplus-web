@@ -216,6 +216,35 @@ export class CronogramaStepComponent {
     ];
   }
 
+  /**
+   * Atos que o seletor de uma fase oferece: os vigentes, mais o que ela já
+   * referencia quando a vigência dele encerrou.
+   *
+   * Mesma razão do tipo de etapa inativo: um ato fora de vigência não é escolha
+   * nova, mas descreve o cronograma gravado. Fora da lista, nenhuma opção casa e
+   * o campo aparece vazio — enquanto o código continua lá, sendo enviado e
+   * recusado pelo servidor na gravação seguinte.
+   */
+  atosEscolhiveisPara(grupo: FormGroup<FaseForm>): readonly { codigo: string; nome: string }[] {
+    const referenciado = grupo.controls.atoProduzidoCodigo.value;
+    const vigentes = this.catalogos
+      .atosVigentes()
+      .map((ato) => ({ codigo: ato.codigo, nome: ato.nome }));
+
+    if (referenciado === '' || vigentes.some((ato) => ato.codigo === referenciado)) {
+      return vigentes;
+    }
+
+    const rotulo = this.catalogos.rotuloDoAto().get(referenciado);
+    return [
+      ...vigentes,
+      {
+        codigo: referenciado,
+        nome: rotulo === undefined ? 'Ato fora do catálogo atual' : `${rotulo} (fora de vigência)`,
+      },
+    ];
+  }
+
   acrescentarFase(): void {
     const escolhida = this.formulario.controls.faseAAcrescentar.value;
     if (escolhida === '') return;
@@ -365,6 +394,21 @@ export class CronogramaStepComponent {
         return { valid: false, messages: [this.problemI18n.resolve(etapas.problem).title] };
       }
 
+      // Antes de gravar as fases: as etapas já mudaram no servidor, e é aqui
+      // que o rascunho recolhe os identificadores atribuídos. Deixar para o fim
+      // perderia essa reconciliação se o cronograma fosse recusado — a tentativa
+      // seguinte reenviaria etapas que já existem sem o `id`, recriando-as.
+      const reconciliada = await this.reconciliarEtapas(processoId);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!reconciliada) {
+        return {
+          valid: false,
+          messages: [
+            'As etapas foram gravadas, mas não foi possível relê-las para confirmar. Abra o processo de novo antes de editá-las: sem os identificadores que o servidor atribuiu, a próxima gravação recriaria as etapas e desfaria as referências de desempate e eliminação.',
+          ],
+        };
+      }
+
       const fases = await this.cadastro.definirCronogramaFases(
         processoId,
         this.fases.controls.map(faseDoFormulario).map(comoComandoDeFase),
@@ -374,17 +418,6 @@ export class CronogramaStepComponent {
         return {
           valid: false,
           messages: [this.explicarRecusa(fases.problem.code, fases.problem)],
-        };
-      }
-
-      const reconciliada = await this.reconciliarEtapas(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!reconciliada) {
-        return {
-          valid: false,
-          messages: [
-            'O cronograma foi gravado, mas não foi possível reler as etapas para confirmar. Abra o processo de novo antes de editá-las: sem os identificadores que o servidor atribuiu, a próxima gravação recriaria as etapas e desfaria as referências de desempate e eliminação.',
-          ],
         };
       }
 

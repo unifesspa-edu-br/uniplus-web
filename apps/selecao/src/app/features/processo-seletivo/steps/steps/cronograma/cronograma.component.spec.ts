@@ -308,6 +308,8 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
 
     controller.expectOne(ROTA_FASES).flush(
       {
@@ -376,21 +378,70 @@ describe('CronogramaStepComponent', () => {
     etapas.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
-    const fases = controller.expectOne(ROTA_FASES);
-    expect(fases.request.method).toBe('PUT');
-    fases.flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-
     // A gravação de etapas responde 204 sem corpo, e o `id` de uma etapa nova é
-    // atribuído pelo servidor: sem reler, a gravação seguinte omitiria o
-    // identificador e o servidor criaria outra etapa no lugar.
+    // atribuído pelo servidor: a releitura vem logo aqui, porque as etapas já
+    // mudaram no servidor mesmo que o cronograma venha a ser recusado.
     const releitura = controller.expectOne(ROTA_PROCESSO);
     expect(releitura.request.method).toBe('GET');
     releitura.flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
 
+    const fases = controller.expectOne(ROTA_FASES);
+    expect(fases.request.method).toBe('PUT');
+    fases.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
     await expect(gravacao).resolves.toEqual({ valid: true });
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+  });
+
+  /**
+   * As etapas já mudaram no servidor quando o cronograma é recusado. Sem
+   * recolher os identificadores aqui, a tentativa seguinte reenviaria etapas que
+   * já existem sem o `id`, e o servidor as recriaria.
+   */
+  it('recolhe os identificadores das etapas mesmo quando o cronograma é recusado', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+
+    controller.expectOne(ROTA_FASES).flush(
+      {
+        type: 'about:blank',
+        title: 'Cronograma recusado',
+        status: 422,
+        code: 'uniplus.selecao.fase_cronograma.invalida',
+        traceId: '00000000000000000000000000000004',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+  });
+
+  /**
+   * Um ato fora de vigência não é escolha nova, mas descreve o cronograma
+   * gravado. Fora da lista, nenhuma opção casa: o campo aparece vazio enquanto
+   * o código continua lá, para o servidor recusá-lo na gravação seguinte.
+   */
+  it('mantém no seletor o ato fora de vigência que a fase já referencia', () => {
+    comFases(ID_RESULTADO);
+    componente.fases.at(0).controls.atoProduzidoCodigo.setValue('EDITAL_ANTIGO');
+
+    const oferecidos = componente
+      .atosEscolhiveisPara(componente.fases.at(0))
+      .map((ato) => ato.codigo);
+
+    expect(oferecidos).toContain('EDITAL_ANTIGO');
   });
 
   it('não tenta gravar o cronograma quando as etapas são recusadas', async () => {
@@ -430,8 +481,6 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
 
     controller.expectOne(ROTA_PROCESSO).flush(
       {
@@ -448,6 +497,7 @@ describe('CronogramaStepComponent', () => {
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('Abra o processo de novo');
+    controller.expectNone(ROTA_FASES);
   });
 
   /**
@@ -467,9 +517,9 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
     await gravacao;

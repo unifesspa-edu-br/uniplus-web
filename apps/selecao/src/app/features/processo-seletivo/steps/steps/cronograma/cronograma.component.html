@@ -173,7 +173,7 @@
                     formControlName="atoProduzidoCodigo"
                   >
                     <option value="">Selecione o ato…</option>
-                    @for (ato of catalogos.atosVigentes(); track ato.codigo) {
+                    @for (ato of atosEscolhiveisPara(item.grupo); track ato.codigo) {
                       <option [value]="ato.codigo">{{ ato.nome }}</option>
                     }
                   </select>
