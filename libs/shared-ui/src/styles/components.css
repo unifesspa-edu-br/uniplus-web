@@ -1331,6 +1331,11 @@ ui-vlibras-loader {
  * DRAWER / OFF-CANVAS — left/right anchored, focus-trapped
  * Uses <dialog> nativo (focus trap free), styled as side panel.
  * ========================================================================== */
+/* `DrawerComponent` põe esta classe no <body> enquanto a gaveta está aberta. O
+   trava-scroll do fundo é do DS (todo app que usa <ui-drawer> herda) — não uma
+   regra corretiva repetida por app. */
+body.uni-drawer-open { overflow: hidden; }
+
 .uni-drawer {
   border: none; padding: 0; margin: 0;
   background: transparent;
@@ -2128,27 +2133,23 @@ ui-vlibras-loader {
 }
 
 /* Navegação lateral com rolagem própria. O trilho fica sempre discretamente
-   visível (não só no hover) para identificar a região rolável em qualquer tema
-   — a cor deriva do texto sobre superfície invertida, então segue claro/escuro/
-   contraste. */
+   visível (não só no hover) para identificar a região rolável — a cor deriva do
+   texto sobre superfície invertida a 40%, que garante o mínimo de 3:1 da WCAG
+   2.1 §1.4.11 nos temas claro, escuro e de alto contraste. Sem `:hover` com cor
+   fixa (fora do sistema de tokens e ilegível no tema de contraste). */
 .sidebar nav {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  /* scrollbar-color: color-mix(in srgb, var(--text-on-inverse) 32%, transparent) transparent; */
+  scrollbar-color: color-mix(in srgb, var(--text-on-inverse) 40%, transparent) transparent;
 }
 .sidebar nav::-webkit-scrollbar { width: 8px; }
 .sidebar nav::-webkit-scrollbar-track { background: transparent; }
 .sidebar nav::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--text-on-inverse) 32%, transparent);
+  background: color-mix(in srgb, var(--text-on-inverse) 40%, transparent);
   border-radius: var(--radius-pill);
-}
-
-.sidebar nav:hover {
-  scrollbar-color: #20252c transparent;
 }
 
 .sidebar__brand {
