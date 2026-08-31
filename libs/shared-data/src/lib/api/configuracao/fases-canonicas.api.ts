@@ -17,12 +17,15 @@ export interface FasesCanonicasQuery {
 }
 
 /**
- * Código canônico das 14 fases fixas do ciclo de vida do processo seletivo
+ * Código canônico das fases fixas do ciclo de vida do processo seletivo
  * (UNI-REQ-0064). Roster fechado — usado só pelo `select` de criação; a
- * edição trata `codigo` como imutável (readonly).
+ * edição trata `codigo` como imutável (readonly). Espelha
+ * `FaseCanonicaCatalogo.Codigos` do backend, que não declara o enum no
+ * OpenAPI: `codigo` é string no contrato e a pertença é guarda de domínio.
  */
 export const CODIGOS_FASE_CANONICA = [
   'INSCRICAO',
+  'SOLICITACAO_ISENCAO',
   'HOMOLOGACAO',
   'ENSALAMENTO',
   'AVALIACAO',
