@@ -3,8 +3,12 @@ export { RegrasCatalogoApi } from './regras-catalogo.api';
 export type {
   ConfiguracaoDistribuicaoVagasDto,
   ConfiguracaoDistribuicaoVagasInput,
+  DefinirAlgoritmoContagemPrazoRequest,
   EtapaProcessoDto,
   EtapaProcessoInput,
+  FaseCronogramaDto,
+  FaseCronogramaInput,
+  RegraRecursoFaseInput,
 } from './processos-seletivos.api';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
 export {
@@ -23,7 +27,7 @@ export {
   type ProcessosSeletivosQuery,
   type TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-export { CaraterEtapa, OrigemCandidatos, StatusProcesso } from './schema';
+export { CaraterEtapa, OrigemCandidatos, StatusProcesso, UnidadePrazo } from './schema';
 export {
   ObrigatoriedadesLegaisApi,
   type AtualizarObrigatoriedadeLegalCommand,
