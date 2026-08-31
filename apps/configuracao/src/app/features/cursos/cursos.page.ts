@@ -150,9 +150,13 @@ interface CursoForm {
             <tbody>
               @for (curso of cursosFiltrados(); track curso.id) {
                 <tr>
-                  <td data-label="Código"><code>{{ curso.codigo }}</code></td>
+                  <td data-label="Código">
+                    <code>{{ curso.codigo }}</code>
+                  </td>
                   <td data-label="Nome">{{ curso.nome }}</td>
-                  <td data-label="Grau"><span class="tag">{{ curso.grau }}</span></td>
+                  <td data-label="Grau">
+                    <span class="tag">{{ curso.grau }}</span>
+                  </td>
                   <td data-label="Nível">{{ curso.nivelEnsino }}</td>
                   <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
@@ -222,11 +226,17 @@ interface CursoForm {
       }
 
       <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
-        Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à Oferta de
-        Curso, não ao Curso.
+        Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à
+        Oferta de Curso, não ao Curso.
       </ui-alert>
 
-      <form [formGroup]="form" id="cfg-curso-form" (ngSubmit)="salvar()" novalidate class="cfg-form">
+      <form
+        [formGroup]="form"
+        id="cfg-curso-form"
+        (ngSubmit)="salvar()"
+        novalidate
+        class="cfg-form"
+      >
         <section aria-labelledby="cfg-curso-identificacao">
           <h3 id="cfg-curso-identificacao" class="form-section__title">Dados curriculares</h3>
           <div class="form-grid form-grid--1col">
@@ -412,6 +422,7 @@ interface CursoForm {
       }
     </ui-drawer>
   `,
+  host: { class: 'cfg-page' },
 })
 export class CursosPage {
   private readonly api = inject(CursosApi);

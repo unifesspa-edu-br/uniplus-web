@@ -146,8 +146,8 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
       <div class="page-header__content">
         <h1 class="page-header__title">Precedência de Fase</h1>
         <p class="page-header__desc">
-          Grafo de dependência entre as fases canônicas do cronograma — cada aresta diz que uma
-          fase antecede outra · UNI-REQ-0064.
+          Grafo de dependência entre as fases canônicas do cronograma — cada aresta diz que uma fase
+          antecede outra · UNI-REQ-0064.
         </p>
       </div>
     </div>
@@ -299,8 +299,8 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
 
       @if (falhaAoCarregarFases()) {
         <ui-alert variant="warning" heading="Nomes das fases indisponíveis">
-          Não foi possível consultar o cadastro de Fase Canônica agora, então as opções aparecem
-          só com o código. O cadastro da aresta continua disponível.
+          Não foi possível consultar o cadastro de Fase Canônica agora, então as opções aparecem só
+          com o código. O cadastro da aresta continua disponível.
         </ui-alert>
       }
 
@@ -450,6 +450,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class PrecedenciasFasePage {
   private readonly api = inject(PrecedenciasFaseApi);
@@ -767,7 +768,10 @@ export class PrecedenciasFasePage {
 
     if (criando) {
       this.api
-        .criar(command as CriarPrecedenciaFaseCommand, withIdempotencyKey(this.idempotencyKeyAtual()))
+        .criar(
+          command as CriarPrecedenciaFaseCommand,
+          withIdempotencyKey(this.idempotencyKeyAtual()),
+        )
         .pipe(
           finalize(() => this.encerrarGravacao()),
           takeUntilDestroyed(this.destroyRef),

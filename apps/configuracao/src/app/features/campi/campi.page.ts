@@ -133,7 +133,9 @@ interface CampusForm {
             <tbody>
               @for (campus of campi(); track campus.id) {
                 <tr>
-                  <td data-label="Sigla"><code>{{ campus.sigla }}</code></td>
+                  <td data-label="Sigla">
+                    <code>{{ campus.sigla }}</code>
+                  </td>
                   <td data-label="Nome">{{ campus.nome }}</td>
                   <td data-label="Cidade">{{ cidadeLabel(campus) }}</td>
                   <td data-label="Código e-MEC">{{ campus.codigoEmec || '—' }}</td>
@@ -195,7 +197,13 @@ interface CampusForm {
         <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
       }
 
-      <form [formGroup]="form" id="cfg-campus-form" (ngSubmit)="salvar()" novalidate class="cfg-form">
+      <form
+        [formGroup]="form"
+        id="cfg-campus-form"
+        (ngSubmit)="salvar()"
+        novalidate
+        class="cfg-form"
+      >
         <section aria-labelledby="cfg-campus-identificacao">
           <h3 id="cfg-campus-identificacao" class="form-section__title">Identificação</h3>
           <div class="form-grid">
@@ -251,12 +259,7 @@ interface CampusForm {
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>
-        <button
-          type="submit"
-          form="cfg-campus-form"
-          class="btn btn--primary"
-          [disabled]="saving()"
-        >
+        <button type="submit" form="cfg-campus-form" class="btn btn--primary" [disabled]="saving()">
           @if (saving()) {
             <ui-spinner size="sm" />
           }
@@ -274,6 +277,7 @@ interface CampusForm {
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class CampiPage {
   private readonly api = inject(CampiApi);

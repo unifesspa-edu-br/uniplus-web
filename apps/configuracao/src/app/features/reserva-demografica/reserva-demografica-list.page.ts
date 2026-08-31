@@ -85,12 +85,16 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
       </div>
     </div>
 
-    <ui-alert variant="info" heading="Configuração viva — congelamento por snapshot" [dynamic]="false">
+    <ui-alert
+      variant="info"
+      heading="Configuração viva — congelamento por snapshot"
+      [dynamic]="false"
+    >
       Cada linha registra os percentuais de um Censo. Quando um processo adota a regra de
       distribuição da Lei 12.711, os percentuais e o Censo são copiados por valor para o snapshot do
       edital (ADR-0061). Por isso editar ou inativar uma referência não impacta editais já
-      publicados, e a inativação não fica bloqueada. Processos SiSU não usam esta configuração.
-      Base legal: Lei 12.711/2012, art. 10, III (atualizada pela Lei 14.723/2023).
+      publicados, e a inativação não fica bloqueada. Processos SiSU não usam esta configuração. Base
+      legal: Lei 12.711/2012, art. 10, III (atualizada pela Lei 14.723/2023).
     </ui-alert>
 
     @if (errorMessage()) {
@@ -122,7 +126,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
           class="btn btn--tertiary btn--sm btn--rect"
           (click)="busca.set('')"
         >
-        Limpar
+          Limpar
         </button>
       </ui-filter-bar>
 
@@ -160,9 +164,13 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
               <tbody>
                 @for (ref of referenciasFiltradas(); track ref.id) {
                   <tr>
-                    <td data-label="Censo"><code>{{ ref.censoReferencia }}</code></td>
+                    <td data-label="Censo">
+                      <code>{{ ref.censoReferencia }}</code>
+                    </td>
                     <td data-label="PPI %" class="cfg-num">{{ pct(ref.ppiPercentual) }}</td>
-                    <td data-label="Quilombola %" class="cfg-num">{{ pct(ref.quilombolaPercentual) }}</td>
+                    <td data-label="Quilombola %" class="cfg-num">
+                      {{ pct(ref.quilombolaPercentual) }}
+                    </td>
                     <td data-label="PcD %" class="cfg-num">{{ pct(ref.pcdPercentual) }}</td>
                     <td data-label="Base legal">{{ ref.baseLegal }}</td>
                     <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
@@ -236,7 +244,13 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
       }
 
-      <form [formGroup]="form" id="cfg-reserva-form" (ngSubmit)="salvar()" novalidate class="cfg-form">
+      <form
+        [formGroup]="form"
+        id="cfg-reserva-form"
+        (ngSubmit)="salvar()"
+        novalidate
+        class="cfg-form"
+      >
         <section aria-labelledby="cfg-reserva-dados">
           <h3 id="cfg-reserva-dados" class="form-section__title">Dados do Censo</h3>
           <div class="form-grid">
@@ -273,7 +287,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                   formControlName="ppiPercentual"
                   [attr.aria-invalid]="erroDoCampo('ppiPercentual') ? 'true' : null"
                 />
-                <span class="field__hint">Pretos, pardos e indígenas (art. 10, III, "a"). 0 a 100.</span>
+                <span class="field__hint"
+                  >Pretos, pardos e indígenas (art. 10, III, "a"). 0 a 100.</span
+                >
                 @if (erroDoCampo('ppiPercentual')) {
                   <span class="field__error">{{ erroDoCampo('ppiPercentual') }}</span>
                 }
@@ -326,7 +342,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                 formControlName="baseLegal"
                 [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
               />
-              <span class="field__hint">Dispositivo exato (lei + artigo/parágrafo) que fundamenta os percentuais.</span>
+              <span class="field__hint"
+                >Dispositivo exato (lei + artigo/parágrafo) que fundamenta os percentuais.</span
+              >
               @if (erroDoCampo('baseLegal')) {
                 <span class="field__error">{{ erroDoCampo('baseLegal') }}</span>
               }
@@ -339,11 +357,18 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>
-        <button type="submit" form="cfg-reserva-form" class="btn btn--primary" [disabled]="saving()">
+        <button
+          type="submit"
+          form="cfg-reserva-form"
+          class="btn btn--primary"
+          [disabled]="saving()"
+        >
           @if (saving()) {
             <ui-spinner size="sm" />
           }
-          {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar referência' : 'Salvar referência' }}
+          {{
+            saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar referência' : 'Salvar referência'
+          }}
         </button>
       </div>
     </ui-drawer>
@@ -357,6 +382,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
       (confirmed)="removerConfirmado()"
     />
   `,
+  host: { class: 'cfg-page' },
 })
 export class ReservaDemograficaListPage {
   private readonly api = inject(ReservaDemograficaApi);
@@ -669,10 +695,16 @@ export class ReservaDemograficaListPage {
       return;
     }
     // Conflito de unicidade de Censo (409) — inline no campo censoReferencia.
-    if (problem.status === 409 || problem.code.includes('censo') || problem.code.includes('duplic')) {
+    if (
+      problem.status === 409 ||
+      problem.code.includes('censo') ||
+      problem.code.includes('duplic')
+    ) {
       this.renovarIdempotencyKey();
       const control = this.form.controls.censoReferencia;
-      control.setErrors({ backend: { code: problem.code, message: 'Censo de referência já cadastrado.' } });
+      control.setErrors({
+        backend: { code: problem.code, message: 'Censo de referência já cadastrado.' },
+      });
       control.markAsTouched();
       this.formError.set(null);
       return;
