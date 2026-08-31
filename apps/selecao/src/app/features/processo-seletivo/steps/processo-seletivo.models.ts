@@ -150,6 +150,27 @@ export interface FaseDoCronograma {
   readonly atoProduzidoCodigo: string | null;
   readonly tiposBancaIds: readonly string[];
   readonly regraRecurso: RecursoDaFase | null;
+  /** `null` numa fase acrescentada agora: quem a descreve é o catálogo. */
+  readonly congelados: AtributosCongeladosDaFase | null;
+}
+
+/**
+ * O que a fase congelou do catálogo no momento em que entrou no processo.
+ *
+ * Existe porque o catálogo é vivo e o cronograma não: uma fase canônica pode ser
+ * inativada depois, e a que já está no edital continua valendo. Sem guardar
+ * estes atributos, a tela deixaria de saber se a fase pede janela, ato ou
+ * etapas — e esconderia do operador a fase que ele precisa editar.
+ */
+export interface AtributosCongeladosDaFase {
+  readonly donoTipico: string;
+  readonly origemData: string;
+  readonly agrupaEtapas: boolean;
+  readonly produzResultado: boolean;
+  readonly resultadoDefinitivo: boolean;
+  readonly coletaInscricao: boolean;
+  /** Código de cada banca exigida, como a fase o congelou. */
+  readonly bancas: readonly { readonly id: string; readonly codigo: string }[];
 }
 
 /**

@@ -21,6 +21,15 @@ const ID_ETAPA_GRAVADA = '01960000-0000-7000-0000-0000000000ee';
 /** O interceptor só lê o corpo como ProblemDetails sob este media type. */
 const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
+/** A recusa do servidor quando a nova ordem fecha ciclo entre fases existentes. */
+const CICLO_DE_ORDEM = {
+  type: 'about:blank',
+  title: 'A redefinição do cronograma troca a Ordem entre fases já existentes',
+  status: 422,
+  code: 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada',
+  traceId: '00000000000000000000000000000002',
+};
+
 const ID_INSCRICAO = '01960000-0000-7000-0000-0000000000c1';
 const ID_AVALIACAO = '01960000-0000-7000-0000-0000000000c2';
 const ID_RESULTADO = '01960000-0000-7000-0000-0000000000c3';
@@ -156,6 +165,10 @@ describe('CronogramaStepComponent', () => {
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+  /** As ordens que o corpo do comando de cronograma declara. */
+  const ordensDe = (corpo: unknown): number[] =>
+    (corpo as { ordem: number }[]).map((fase) => fase.ordem);
+
   function comFases(...ids: readonly string[]): void {
     store.patchObjectSection('cronograma', {
       fases: ids.map((faseCanonicaId, indice) => ({
@@ -167,6 +180,7 @@ describe('CronogramaStepComponent', () => {
         atoProduzidoCodigo: null,
         tiposBancaIds: [],
         regraRecurso: null,
+        congelados: null,
       })),
     });
     detectar();
@@ -297,12 +311,15 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * A recusa do servidor descreve o ciclo, não o caminho. Quem reordenou
-   * precisa saber que são duas gravações, ou tentaria o mesmo movimento de novo.
+   * Toda reordenação é uma permutação de 1..N, e toda permutação não-trivial
+   * fecha o ciclo que o servidor recusa numa chamada só. Mandar o operador
+   * "mover uma para o fim" não resolvia: renumerar devolve 1..N e o ciclo
+   * volta. A gravação passa por uma faixa que ninguém ocupa e fecha a ordem
+   * pretendida em seguida, sem pedir nada a quem edita.
    */
-  it('traduz a recusa de permutação na orientação de gravar em duas vezes', async () => {
+  it('resolve o ciclo de ordem gravando por uma faixa livre', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
-    comFases(ID_AVALIACAO);
+    comFases(ID_AVALIACAO, ID_INSCRICAO);
     comUmaEtapa();
 
     const gravacao = componente.persistir();
@@ -311,17 +328,55 @@ describe('CronogramaStepComponent', () => {
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
 
-    controller.expectOne(ROTA_FASES).flush(
-      {
-        type: 'about:blank',
-        title: 'A redefinição do cronograma troca a Ordem entre fases já existentes',
-        status: 422,
-        code: 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada',
-        traceId: '00000000000000000000000000000002',
-      },
-      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-    );
+    const pretendida = controller.expectOne(ROTA_FASES);
+    expect(ordensDe(pretendida.request.body)).toEqual([1, 2]);
+    pretendida.flush(CICLO_DE_ORDEM, {
+      status: 422,
+      statusText: 'Unprocessable Content',
+      headers: PROBLEM_JSON,
+    });
     await proximoPasso();
+
+    const intermediaria = controller.expectOne(ROTA_FASES);
+    expect(ordensDe(intermediaria.request.body)).toEqual(
+      [3, 4],
+      'a faixa livre é a que nenhuma fase ocupa hoje',
+    );
+    intermediaria.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    const final = controller.expectOne(ROTA_FASES);
+    expect(ordensDe(final.request.body)).toEqual([1, 2]);
+    final.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  /**
+   * Quando nem a gravação em duas etapas resolve, a recusa precisa dizer o que
+   * fazer — a mensagem do servidor descreve o ciclo, não o caminho.
+   */
+  it('orienta a gravar em duas vezes quando o ciclo persiste', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO, ID_INSCRICAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+
+    // Duas tentativas: a ordem pretendida e a faixa livre — as duas recusadas.
+    for (let tentativa = 0; tentativa < 2; tentativa += 1) {
+      controller.expectOne(ROTA_FASES).flush(CICLO_DE_ORDEM, {
+        status: 422,
+        statusText: 'Unprocessable Content',
+        headers: PROBLEM_JSON,
+      });
+      await proximoPasso();
+    }
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);

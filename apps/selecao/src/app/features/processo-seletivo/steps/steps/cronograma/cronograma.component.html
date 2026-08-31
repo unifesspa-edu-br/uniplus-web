@@ -62,7 +62,7 @@
           <div class="fase-cabecalho">
             <h2 class="form-section__title">
               {{ item.grupo.controls.ordem.value }}.
-              {{ item.canonica?.nome ?? item.grupo.controls.codigo.value }}
+              {{ item.nome }}
             </h2>
             <div class="fase-acoes">
               <button
@@ -70,11 +70,7 @@
                 type="button"
                 (click)="mover(item.indice, -1)"
                 [disabled]="!store.aceitaEdicao() || item.indice === 0"
-                [attr.aria-label]="
-                  'Mover ' +
-                  (item.canonica?.nome ?? item.grupo.controls.codigo.value) +
-                  ' para antes'
-                "
+                [attr.aria-label]="'Mover ' + item.nome + ' para antes'"
               >
                 Subir
               </button>
@@ -83,11 +79,7 @@
                 type="button"
                 (click)="mover(item.indice, 1)"
                 [disabled]="!store.aceitaEdicao() || item.indice === linhaDoTempo().length - 1"
-                [attr.aria-label]="
-                  'Mover ' +
-                  (item.canonica?.nome ?? item.grupo.controls.codigo.value) +
-                  ' para depois'
-                "
+                [attr.aria-label]="'Mover ' + item.nome + ' para depois'"
               >
                 Descer
               </button>
@@ -97,9 +89,7 @@
                 (click)="removerFase(item.indice)"
                 [disabled]="!store.aceitaEdicao() || !podeRemoverFase()"
                 [attr.aria-describedby]="podeRemoverFase() ? null : 'cr-ultima-fase'"
-                [attr.aria-label]="
-                  'Remover ' + (item.canonica?.nome ?? item.grupo.controls.codigo.value)
-                "
+                [attr.aria-label]="'Remover ' + item.nome"
               >
                 Remover
               </button>
@@ -112,25 +102,33 @@
             </p>
           }
 
-          @if (item.canonica === undefined) {
+          @if (item.foraDoCatalogo) {
+            <p class="field__hint" role="status">
+              Esta fase saiu do catálogo institucional depois de entrar neste processo. Ela continua
+              valendo aqui, com os atributos que congelou, e pode ser editada normalmente — mas não
+              é oferecida para outros processos.
+            </p>
+          }
+
+          @if (item.exigencias === null) {
             <p class="field__erro" role="alert">
-              Esta fase não está no catálogo carregado. Recarregue a página; se persistir, ela pode
-              ter saído do cadastro institucional.
+              Não foi possível descrever esta fase: ela não está no catálogo carregado e o processo
+              não guardou os atributos dela. Recarregue a página antes de editar o cronograma.
             </p>
           } @else {
             <p class="field__hint">
-              Responsável: {{ item.canonica.donoTipico }}.
-              @if (item.exigencias?.exigeAtoProduzido) {
+              Responsável: {{ item.donoTipico }}.
+              @if (item.exigencias.exigeAtoProduzido) {
                 Produz resultado
-                {{ item.canonica.resultadoDefinitivo ? 'definitivo' : 'passível de recurso' }}.
+                {{ item.resultadoDefinitivo ? 'definitivo' : 'passível de recurso' }}.
               }
-              @if (item.canonica.coletaInscricao) {
+              @if (item.coletaInscricao) {
                 Coleta inscrições.
               }
             </p>
 
             <div class="form-grid">
-              @if (item.exigencias?.janelaObrigatoria) {
+              @if (item.exigencias.janelaObrigatoria) {
                 <div class="form-field">
                   <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
                   <input
@@ -162,7 +160,7 @@
                 </p>
               }
 
-              @if (item.exigencias?.exigeAtoProduzido) {
+              @if (item.exigencias.exigeAtoProduzido) {
                 <div class="form-field form-grid__full">
                   <label class="label" [attr.for]="'cr-ato-' + item.indice">
                     Ato que publica o resultado
@@ -180,10 +178,11 @@
                 </div>
               }
 
-              @if (catalogos.bancas().length > 0) {
+              @let bancasDestaFase = bancasDaFase(item.grupo);
+              @if (bancasDestaFase.length > 0) {
                 <fieldset class="form-field form-grid__full">
                   <legend class="label">Bancas requeridas (opcional)</legend>
-                  @for (banca of catalogos.bancas(); track banca.id) {
+                  @for (banca of bancasDestaFase; track banca.id) {
                     <label class="check">
                       <input
                         type="checkbox"
@@ -198,7 +197,7 @@
               }
             </div>
 
-            @if (item.exigencias?.agrupaEtapas) {
+            @if (item.exigencias.agrupaEtapas) {
               <h3 class="form-section__title">Etapas pontuadas desta fase</h3>
               <p class="field__hint">
                 As etapas que produzem nota. Ao menos uma precisa compor a nota final — ser
