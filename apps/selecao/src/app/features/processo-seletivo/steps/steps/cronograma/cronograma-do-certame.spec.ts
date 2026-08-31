@@ -449,6 +449,53 @@ describe('o que impede gravar o cronograma', () => {
     expect(problemasDoCronograma([faseDeAvaliacao], [semNota], catalogo, [])).toEqual([]);
   });
 
+  /**
+   * Zero converte, então nem a conferência de forma nem a agregada o pegam: com
+   * outra etapa compondo a nota, a gravação sairia para o domínio recusar por
+   * causa da que ficou zerada.
+   */
+  it('peso zero declarado é recusado mesmo com outra etapa compondo a nota', () => {
+    const compoe = etapa({
+      nome: 'Prova',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+      ordem: 1,
+    });
+    const zerada = etapa({
+      nome: 'Redação',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '0',
+      ordem: 2,
+    });
+
+    const problemas = problemasDoCronograma([faseDeAvaliacao], [compoe, zerada], catalogo, []);
+
+    expect(problemas).toContainEqual(expect.stringContaining('maior que zero'));
+  });
+
+  it('etapa sem peso declarado continua válida ao lado de outra que compõe', () => {
+    const compoe = etapa({
+      nome: 'Prova',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+      ordem: 1,
+    });
+    const soEliminatoria = etapa({
+      nome: 'Títulos',
+      carater: 'eliminatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '',
+      ordem: 2,
+    });
+
+    expect(
+      problemasDoCronograma([faseDeAvaliacao], [compoe, soEliminatoria], catalogo, []),
+    ).toEqual([]);
+  });
+
   it('cronograma coerente não relata problema', () => {
     expect(problemasDoCronograma([faseDeAvaliacao], [etapaValida], catalogo, [])).toEqual([]);
   });

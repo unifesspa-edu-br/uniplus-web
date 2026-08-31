@@ -304,6 +304,14 @@ function problemasDasEtapas(
     );
   }
 
+  // Zero converte, então a conferência de forma acima o deixa passar, e a
+  // agregada também: basta outra etapa compor a nota. O domínio exige peso
+  // maior que zero em toda etapa que o declara, e recusaria a gravação inteira
+  // por causa da que ficou zerada.
+  if (etapas.some((etapa) => pesoDeclaradoNaoPositivo(etapa.peso))) {
+    problemas.push('O peso de uma etapa, quando declarado, precisa ser maior que zero.');
+  }
+
   if (!etapas.some(componeNota)) {
     problemas.push(
       'Ao menos uma etapa precisa compor a nota final: ser classificatória (ou ambas) e ter peso maior que zero.',
@@ -311,6 +319,12 @@ function problemasDasEtapas(
   }
 
   return problemas;
+}
+
+/** Peso escrito na etapa que não é maior que zero. */
+function pesoDeclaradoNaoPositivo(peso: string): boolean {
+  const valor = decimalDoCampo(peso);
+  return peso.trim() !== '' && valor !== null && valor <= 0;
 }
 
 /** Campo preenchido que a gramática numérica do editor não aceita. */
