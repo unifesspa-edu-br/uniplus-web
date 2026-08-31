@@ -10,6 +10,7 @@ import {
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
+import { CaraterEtapa } from './index';
 import {
   CriarProcessoSeletivoCommand,
   EtapaProcessoInput,
@@ -20,7 +21,7 @@ import {
   ProcessosSeletivosApi,
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-import { CaraterEtapa, OrigemCandidatos } from './schema';
+import { OrigemCandidatos } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';

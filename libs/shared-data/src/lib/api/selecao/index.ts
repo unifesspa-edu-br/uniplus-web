@@ -23,7 +23,7 @@ export {
   type ProcessosSeletivosQuery,
   type TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-export { OrigemCandidatos, StatusProcesso } from './schema';
+export { CaraterEtapa, OrigemCandidatos, StatusProcesso } from './schema';
 export {
   ObrigatoriedadesLegaisApi,
   type AtualizarObrigatoriedadeLegalCommand,
