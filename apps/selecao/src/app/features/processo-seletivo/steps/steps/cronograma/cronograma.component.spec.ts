@@ -371,6 +371,90 @@ describe('CronogramaStepComponent', () => {
     controller.expectNone(ROTA_FASES);
   });
 
+  /**
+   * As duas gravações passaram, mas sem os ids relidos a próxima omitiria o
+   * identificador de etapas que já existem. Reportar sucesso aqui deixaria o
+   * operador seguir para o estado que a releitura existe para impedir.
+   */
+  it('recusa a gravação quando não consegue reler as etapas', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    controller.expectOne(ROTA_PROCESSO).flush(
+      {
+        type: 'about:blank',
+        title: 'Indisponível',
+        status: 503,
+        code: 'uniplus.selecao.indisponivel',
+        traceId: '00000000000000000000000000000003',
+      },
+      { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('Abra o processo de novo');
+  });
+
+  /**
+   * A navegação do wizard é livre: dá para editar outro passo sem gravá-lo e
+   * vir gravar o cronograma. Hidratar o processo inteiro aqui apagaria aquele
+   * trabalho, por causa de uma gravação que nem era daquele passo.
+   */
+  it('reconcilia só as etapas, preservando o que outro passo tem sem gravar', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    // `nome` é campo que a hidratação completa sobrescreve com o do servidor —
+    // é por ele que se enxerga a diferença entre projetar as etapas e projetar
+    // o processo inteiro.
+    store.patchObjectSection('identificacao', { nome: 'Nome ainda não gravado' });
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+
+    await gravacao;
+
+    expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+    expect(store.draft().identificacao.nome).toBe('Nome ainda não gravado');
+  });
+
+  /**
+   * Um tipo inativo não volta a ser escolha nova, mas continua descrevendo a
+   * etapa que o gravou — sem ele na lista o campo aparece em branco, e o
+   * operador grava por cima sem ver o que estava configurado.
+   */
+  it('mantém no seletor o tipo de etapa inativo que a etapa já referencia', () => {
+    const inativo = { id: '01960000-0000-7000-0000-0000000000e9', nome: 'Entrevista' };
+    const etapaComTipoInativo = {
+      id: null,
+      nome: 'Entrevista',
+      carater: 'classificatoria' as const,
+      tipoEtapaOrigemId: inativo.id,
+      peso: '1',
+      notaMinima: '',
+      ordem: 1,
+    };
+
+    const oferecidos = componente.tiposEscolhiveisPara(etapaComTipoInativo).map((tipo) => tipo.id);
+
+    expect(oferecidos).toContain(inativo.id);
+    expect(oferecidos).toContain(TIPO_ETAPA);
+  });
+
   it('recusa gravar enquanto a conferência aponta problema, sem chamar a API', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);

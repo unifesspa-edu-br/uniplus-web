@@ -291,6 +291,19 @@ function problemasDasEtapas(
     problemas.push('Duas etapas não podem ocupar a mesma posição.');
   }
 
+  // Texto que não converte vira `null` no comando, e `null` é o valor legítimo
+  // de "não declarado": sem esta conferência, `7,5,` digitado na nota mínima
+  // grava com sucesso e apaga o que estava lá, sem nada dizer.
+  if (etapas.some((etapa) => naoConverte(etapa.peso))) {
+    problemas.push('O peso de uma etapa precisa ser um número, com ponto ou vírgula decimal.');
+  }
+
+  if (etapas.some((etapa) => naoConverte(etapa.notaMinima))) {
+    problemas.push(
+      'A nota mínima de uma etapa precisa ser um número, com ponto ou vírgula decimal.',
+    );
+  }
+
   if (!etapas.some(componeNota)) {
     problemas.push(
       'Ao menos uma etapa precisa compor a nota final: ser classificatória (ou ambas) e ter peso maior que zero.',
@@ -298,6 +311,11 @@ function problemasDasEtapas(
   }
 
   return problemas;
+}
+
+/** Campo preenchido que a gramática numérica do editor não aceita. */
+function naoConverte(valor: string): boolean {
+  return valor.trim() !== '' && decimalDoCampo(valor) === null;
 }
 
 function repetidos<T>(valores: readonly T[]): readonly T[] {

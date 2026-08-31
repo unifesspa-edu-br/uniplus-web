@@ -14,6 +14,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { campoDoInstante, instanteDoCampo } from '../../shared/fuso-institucional';
+import { etapasDe } from '../../shared/hidratacao';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
   componeNota,
@@ -121,6 +122,36 @@ export class CronogramaStepComponent {
       this.catalogos.precedencias(),
     ),
   );
+
+  /**
+   * Tipos que o seletor de uma etapa oferece: os ativos, mais o que ela já
+   * referencia quando esse saiu de atividade.
+   *
+   * Um tipo inativo não volta a ser escolha nova, mas continua descrevendo a
+   * etapa que o gravou. Sem ele na lista, nenhuma opção casa e o campo aparece
+   * em branco — o operador não veria qual classificação está configurada, e
+   * gravaria por cima dela sem perceber.
+   */
+  tiposEscolhiveisPara(etapa: EtapaPontuada): readonly { id: string; nome: string }[] {
+    const ativos = this.catalogos
+      .tiposEtapaAtivos()
+      .map((tipo) => ({ id: tipo.id, nome: tipo.nome }));
+    if (
+      etapa.tipoEtapaOrigemId === '' ||
+      ativos.some((tipo) => tipo.id === etapa.tipoEtapaOrigemId)
+    ) {
+      return ativos;
+    }
+
+    const rotulo = this.catalogos.rotuloDoTipoEtapa().get(etapa.tipoEtapaOrigemId);
+    return [
+      ...ativos,
+      {
+        id: etapa.tipoEtapaOrigemId,
+        nome: rotulo === undefined ? 'Tipo fora do catálogo atual' : `${rotulo} (inativo)`,
+      },
+    ];
+  }
 
   /** Quantas etapas compõem a nota final — o que a fórmula vai dividir. */
   readonly etapasQueCompoemNota = computed(() => this.etapas().filter(componeNota).length);
@@ -312,8 +343,16 @@ export class CronogramaStepComponent {
         };
       }
 
-      await this.reconciliarComOServidor(processoId);
+      const reconciliada = await this.reconciliarEtapas(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!reconciliada) {
+        return {
+          valid: false,
+          messages: [
+            'O cronograma foi gravado, mas não foi possível reler as etapas para confirmar. Abra o processo de novo antes de editá-las: sem os identificadores que o servidor atribuiu, a próxima gravação recriaria as etapas e desfaria as referências de desempate e eliminação.',
+          ],
+        };
+      }
 
       return { valid: true };
     } finally {
@@ -326,18 +365,26 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Relê o processo depois de gravar.
+   * Recolhe os `id` que o servidor atribuiu às etapas novas. Devolve se
+   * conseguiu.
    *
    * A gravação de etapas responde 204 sem corpo, e é o servidor quem atribui o
-   * `id` de uma etapa nova. Sem reler, o rascunho segue com `id: null` e a
-   * gravação seguinte omitiria o identificador de uma etapa que já existe — o
-   * servidor criaria outra no lugar, e o critério de desempate e a regra de
-   * eliminação que a referenciam ficariam apontando para a que deixou de
-   * existir.
+   * identificador. Sem reler, o rascunho segue com `id: null` e a gravação
+   * seguinte omitiria o identificador de uma etapa que já existe — o servidor
+   * criaria outra no lugar, e o critério de desempate e a regra de eliminação
+   * que a referenciam ficariam apontando para a que deixou de existir.
+   *
+   * Projeta **só as etapas**, e não o processo inteiro: a navegação do wizard é
+   * livre, e hidratar tudo aqui substituiria as seções de passos que o operador
+   * editou sem ter gravado ainda — o trabalho sumiria sem aviso, por causa de
+   * uma gravação que nem era daquele passo.
    */
-  private async reconciliarComOServidor(processoId: string): Promise<void> {
+  private async reconciliarEtapas(processoId: string): Promise<boolean> {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
-    if (isApiOk(detalhe)) this.store.hidratar(detalhe.data);
+    if (!isApiOk(detalhe)) return false;
+
+    this.store.projetarSecao('cronograma', { etapas: etapasDe(detalhe.data) });
+    return true;
   }
 
   /**
