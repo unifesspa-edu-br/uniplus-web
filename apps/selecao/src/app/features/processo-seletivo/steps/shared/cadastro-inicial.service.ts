@@ -11,8 +11,10 @@ import {
 import {
   ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
+  DefinirAlgoritmoContagemPrazoRequest,
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
+  FaseCronogramaInput,
   IniciarUploadDocumentoEditalDto,
   ProcessosSeletivosApi,
 } from '@uniplus/shared-data/selecao';
@@ -92,6 +94,8 @@ export class CadastroInicialService {
   private readonly chaveTaxa = new ChaveDeSubstituicao();
   private readonly chaveDistribuicao = new ChaveDeSubstituicao();
   private readonly chaveEtapas = new ChaveDeSubstituicao();
+  private readonly chaveCronograma = new ChaveDeSubstituicao();
+  private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -126,6 +130,8 @@ export class CadastroInicialService {
     this.chaveTaxa.renovar();
     this.chaveDistribuicao.renovar();
     this.chaveEtapas.renovar();
+    this.chaveCronograma.renovar();
+    this.chaveAlgoritmoContagem.renovar();
   }
 
   /**
@@ -260,6 +266,67 @@ export class CadastroInicialService {
     }
 
     this.chaveEtapas.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava o cronograma de fases. Substitui a coleção inteira: uma fase ausente
+   * do envio deixa de existir no processo.
+   *
+   * Chave própria — uma recusa do cronograma não pode invalidar a chave da
+   * gravação de etapas, que costuma vir logo antes na mesma interação.
+   */
+  async definirCronogramaFases(
+    processoSeletivoId: string,
+    fases: readonly FaseCronogramaInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirCronogramaFases(
+        processoSeletivoId,
+        fases,
+        this.chaveCronograma.contextoPara(fases),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveCronograma.renovar();
+      return { ok: true };
+    }
+
+    this.chaveCronograma.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Declara a convenção de contagem de prazo do processo, por código e versão.
+   *
+   * Só é chamada quando há escolha: o endpoint recusa código ou versão nulos, e
+   * não existe caminho para desdeclarar a convenção.
+   */
+  async definirAlgoritmoContagemPrazo(
+    processoSeletivoId: string,
+    request: DefinirAlgoritmoContagemPrazoRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirAlgoritmoContagemPrazo(
+        processoSeletivoId,
+        request,
+        this.chaveAlgoritmoContagem.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveAlgoritmoContagem.renovar();
+      return { ok: true };
+    }
+
+    this.chaveAlgoritmoContagem.recusada(result);
     return { ok: false, problem: result.problem };
   }
 

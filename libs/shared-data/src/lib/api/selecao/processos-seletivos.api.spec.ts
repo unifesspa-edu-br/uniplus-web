@@ -10,10 +10,11 @@ import {
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
-import { CaraterEtapa } from './index';
+import { CaraterEtapa, UnidadePrazo } from './index';
 import {
   CriarProcessoSeletivoCommand,
   EtapaProcessoInput,
+  FaseCronogramaInput,
   DocumentoEditalDto,
   IniciarUploadDocumentoEditalDto,
   ProcessoSeletivoDto,
@@ -291,6 +292,138 @@ describe('ProcessosSeletivosApi', () => {
         title: 'Ao menos uma etapa deve compor a nota final',
         status: 422,
         code: 'uniplus.selecao.processo_seletivo.nenhuma_etapa_compoe_nota',
+        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(false);
+    if (!result.ok) expect(result.problem.status).toBe(422);
+  });
+
+  /**
+   * A janela é instante, não data — o contrato declara `date-time`, e o servidor
+   * normaliza para UTC preservando o momento. O teste envia deslocamento de
+   * Belém de propósito: um cliente que truncasse para data perderia a hora que
+   * separa o fim do dia do começo dele.
+   */
+  it('definirCronogramaFases() envia a coleção com a janela em instante', async () => {
+    const fases: readonly FaseCronogramaInput[] = [
+      {
+        ordem: 1,
+        faseCanonicaId: '01960000-0000-7000-0000-0000000006a1',
+        inicio: '2026-03-01T08:00:00-03:00',
+        fim: '2026-03-20T23:59:59-03:00',
+        atoProduzidoCodigo: null,
+        tiposBancaIds: [],
+        regraRecurso: null,
+      },
+      {
+        ordem: 2,
+        faseCanonicaId: '01960000-0000-7000-0000-0000000006a2',
+        inicio: '2026-03-25T08:00:00-03:00',
+        fim: '2026-03-25T23:59:59-03:00',
+        atoProduzidoCodigo: 'RESULTADO_HOMOLOGACAO',
+        tiposBancaIds: ['01960000-0000-7000-0000-0000000006b1'],
+        regraRecurso: {
+          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+          regraVersao: 'v1',
+          prazoValor: 2,
+          prazoUnidade: UnidadePrazo.diasUteis,
+          atoAncoraCodigo: 'RESULTADO_HOMOLOGACAO',
+          suspensividadePrimeiraInstanciaValor: null,
+          suspensividadePrimeiraInstanciaUnidade: null,
+          suspensividadeSegundaInstanciaValor: null,
+          suspensividadeSegundaInstanciaUnidade: null,
+        },
+      },
+    ];
+
+    const promise = firstValueFrom(
+      api.definirCronogramaFases(ID, fases, withIdempotencyKey('chave-cronograma')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/cronograma-fases`,
+    );
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-cronograma');
+    expect(req.request.body).toEqual(fases);
+    expect(req.request.body[0].inicio).toBe('2026-03-01T08:00:00-03:00');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  /**
+   * O par de suspensividade ausente é a desativação prevista da instância, e
+   * precisa chegar como `null` explícito — não como campo omitido, que o
+   * servidor leria de outro modo.
+   */
+  it('definirCronogramaFases() preserva o par de suspensividade ausente como nulo', async () => {
+    const fases: readonly FaseCronogramaInput[] = [
+      {
+        ordem: 1,
+        faseCanonicaId: '01960000-0000-7000-0000-0000000006a3',
+        inicio: null,
+        fim: null,
+        atoProduzidoCodigo: null,
+        tiposBancaIds: [],
+        regraRecurso: null,
+      },
+    ];
+
+    const promise = firstValueFrom(
+      api.definirCronogramaFases(ID, fases, withIdempotencyKey('chave-sem-janela')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/cronograma-fases`,
+    );
+
+    expect(req.request.body[0].inicio).toBeNull();
+    expect(req.request.body[0].fim).toBeNull();
+    expect(req.request.body[0].regraRecurso).toBeNull();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await promise;
+  });
+
+  it('definirAlgoritmoContagemPrazo() envia código e versão da regra', async () => {
+    const promise = firstValueFrom(
+      api.definirAlgoritmoContagemPrazo(
+        ID,
+        { codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL', versao: 'v1' },
+        withIdempotencyKey('chave-algoritmo'),
+      ),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/algoritmo-contagem-prazo`,
+    );
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({
+      codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+      versao: 'v1',
+    });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('definirCronogramaFases() propaga a recusa do domínio sem lançar', async () => {
+    const promise = firstValueFrom(
+      api.definirCronogramaFases(ID, [], withIdempotencyKey('chave-vazio')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/cronograma-fases`,
+    );
+
+    req.flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.processo_seletivo.cronograma_fases_vazio',
+        title: 'O processo deve ter ao menos uma fase no cronograma',
+        status: 422,
+        code: 'uniplus.selecao.processo_seletivo.cronograma_fases_vazio',
         traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
       },
       { status: 422, statusText: 'Unprocessable Entity' },

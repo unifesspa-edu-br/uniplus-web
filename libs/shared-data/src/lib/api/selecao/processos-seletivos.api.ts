@@ -27,6 +27,11 @@ export type ConfiguracaoDistribuicaoVagasDto =
   components['schemas']['ConfiguracaoDistribuicaoVagasDto'];
 export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
 export type EtapaProcessoDto = components['schemas']['EtapaProcessoDto'];
+export type FaseCronogramaInput = components['schemas']['FaseCronogramaInput'];
+export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
+export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
+export type DefinirAlgoritmoContagemPrazoRequest =
+  components['schemas']['DefinirAlgoritmoContagemPrazoRequest'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -123,6 +128,56 @@ export class ProcessosSeletivosApi {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/etapas`,
       etapas,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/cronograma-fases` — substitui o
+   * cronograma inteiro.
+   *
+   * A janela de cada fase é **instante**, não data: o servidor normaliza para
+   * UTC preservando o momento, e o deslocamento com que o cliente escreve é
+   * transporte. Enviar só a data perderia a hora que separa "encerra dia 20" de
+   * "encerra 20/03 às 23:59:59".
+   *
+   * Não há campo de `id` na entrada — a reconciliação do servidor é por
+   * `faseCanonicaId`, que é a identidade estável de uma fase no cronograma.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirCronogramaFases(
+    processoSeletivoId: string,
+    fases: readonly FaseCronogramaInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/cronograma-fases`,
+      fases,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/algoritmo-contagem-prazo` —
+   * declara a convenção de contagem que o certame usa nos prazos que distinguem
+   * dia útil, por código e versão do catálogo de regras.
+   *
+   * **Não aceita limpar a declaração.** Código ou versão nulos são recusados
+   * com 422, ainda que o contrato tipe os dois como anuláveis — não existe
+   * "desmarcar" a convenção, só trocá-la. Quem chama só dispara depois de haver
+   * escolha.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirAlgoritmoContagemPrazo(
+    processoSeletivoId: string,
+    request: DefinirAlgoritmoContagemPrazoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/algoritmo-contagem-prazo`,
+      request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
