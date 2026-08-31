@@ -13,304 +13,303 @@
     </button>
   </div>
 } @else {
-  <div class="step-card">
-    <h2 class="form-section__title">Acrescentar fase</h2>
-    <div class="form-grid">
-      <div class="form-field form-grid__full">
-        <label class="label" for="cr-nova-fase">Fase do catálogo</label>
-        <select
-          class="input"
-          id="cr-nova-fase"
-          [ngModel]="faseAAcrescentar()"
-          (ngModelChange)="faseAAcrescentar.set($event)"
-          [disabled]="!store.aceitaEdicao() || fasesDisponiveis().length === 0"
-        >
-          <option value="">Selecione a fase…</option>
-          @for (fase of fasesDisponiveis(); track fase.id) {
-            <option [value]="fase.id">{{ fase.nome }}</option>
-          }
-        </select>
-        <p class="field__hint">
-          As fases aparecem na ordem que as precedências do cadastro sugerem. Uma fase entra uma vez
-          só, e o cronograma não precisa de todas: inclua as que este processo realmente tem.
-        </p>
-      </div>
-      <div class="form-field form-grid__full">
-        <button
-          class="btn btn--secondary"
-          type="button"
-          (click)="acrescentarFase()"
-          [disabled]="!store.aceitaEdicao() || faseAAcrescentar() === ''"
-        >
-          Acrescentar à linha do tempo
-        </button>
-      </div>
-    </div>
-  </div>
-
-  @if (avisoDeReordenacao(); as aviso) {
-    <div class="field__erro" role="alert">
-      <p>{{ aviso }}</p>
-    </div>
-  }
-
-  @if (linhaDoTempo().length === 0) {
-    <p class="field__hint">
-      Nenhuma fase na linha do tempo. Comece pela fase em que as inscrições são coletadas, ou pela
-      publicação do edital.
-    </p>
-  }
-
-  @for (item of linhaDoTempo(); track item.fase.faseCanonicaId) {
+  <form [formGroup]="formulario">
     <div class="step-card">
-      <div class="fase-cabecalho">
-        <h2 class="form-section__title">
-          {{ item.fase.ordem }}. {{ item.canonica?.nome ?? item.fase.codigo }}
-        </h2>
-        <div class="fase-acoes">
-          <button
-            class="btn btn--tertiary"
-            type="button"
-            (click)="mover(item.indice, -1)"
-            [disabled]="!store.aceitaEdicao() || item.indice === 0"
-            [attr.aria-label]="'Mover ' + (item.canonica?.nome ?? item.fase.codigo) + ' para antes'"
-          >
-            Subir
-          </button>
-          <button
-            class="btn btn--tertiary"
-            type="button"
-            (click)="mover(item.indice, 1)"
-            [disabled]="!store.aceitaEdicao() || item.indice === linhaDoTempo().length - 1"
-            [attr.aria-label]="
-              'Mover ' + (item.canonica?.nome ?? item.fase.codigo) + ' para depois'
-            "
-          >
-            Descer
-          </button>
-          <button
-            class="btn btn--tertiary"
-            type="button"
-            (click)="removerFase(item.indice)"
-            [disabled]="!store.aceitaEdicao() || !podeRemoverFase()"
-            [attr.aria-describedby]="podeRemoverFase() ? null : 'cr-ultima-fase'"
-            [attr.aria-label]="'Remover ' + (item.canonica?.nome ?? item.fase.codigo)"
-          >
-            Remover
-          </button>
-        </div>
-      </div>
-
-      @if (!podeRemoverFase()) {
-        <p class="field__hint" id="cr-ultima-fase">
-          O cronograma não pode ficar sem nenhuma fase. Acrescente outra antes de remover esta.
-        </p>
-      }
-
-      @if (item.canonica === undefined) {
-        <p class="field__erro" role="alert">
-          Esta fase não está no catálogo carregado. Recarregue a página; se persistir, ela pode ter
-          saído do cadastro institucional.
-        </p>
-      } @else {
-        <p class="field__hint">
-          Responsável: {{ item.canonica.donoTipico }}.
-          @if (item.exigencias?.exigeAtoProduzido) {
-            Produz resultado
-            {{ item.canonica.resultadoDefinitivo ? 'definitivo' : 'passível de recurso' }}.
-          }
-          @if (item.canonica.coletaInscricao) {
-            Coleta inscrições.
-          }
-        </p>
-
-        <div class="form-grid">
-          @if (item.exigencias?.janelaObrigatoria) {
-            <div class="form-field">
-              <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
-              <input
-                class="input"
-                type="datetime-local"
-                [attr.id]="'cr-inicio-' + item.indice"
-                [ngModel]="janelaNoCampo(item.fase.inicio)"
-                (ngModelChange)="definirJanela(item.indice, 'inicio', $event)"
-                [disabled]="!store.aceitaEdicao()"
-                [attr.aria-describedby]="'cr-fuso-' + item.indice"
-              />
-            </div>
-            <div class="form-field">
-              <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
-              <input
-                class="input"
-                type="datetime-local"
-                [attr.id]="'cr-fim-' + item.indice"
-                [ngModel]="janelaNoCampo(item.fase.fim)"
-                (ngModelChange)="definirJanela(item.indice, 'fim', $event)"
-                [disabled]="!store.aceitaEdicao()"
-                [attr.aria-describedby]="'cr-fuso-' + item.indice"
-              />
-            </div>
-            <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
-              Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são
-              contados.
-            </p>
-          } @else {
-            <p class="field__hint form-grid__full">
-              A janela desta fase é derivada de outra: o sistema a calcula, e ela não é declarada
-              aqui.
-            </p>
-          }
-
-          @if (item.exigencias?.exigeAtoProduzido) {
-            <div class="form-field form-grid__full">
-              <label class="label" [attr.for]="'cr-ato-' + item.indice"
-                >Ato que publica o resultado</label
-              >
-              <select
-                class="input"
-                [attr.id]="'cr-ato-' + item.indice"
-                [ngModel]="item.fase.atoProduzidoCodigo ?? ''"
-                (ngModelChange)="definirAto(item.indice, $event)"
-                [disabled]="!store.aceitaEdicao()"
-              >
-                <option value="">Selecione o ato…</option>
-                @for (ato of catalogos.atosVigentes(); track ato.codigo) {
-                  <option [value]="ato.codigo">{{ ato.nome }}</option>
-                }
-              </select>
-              @if (
-                item.fase.atoProduzidoCodigo !== null &&
-                  catalogos.rotuloDoAto().get(item.fase.atoProduzidoCodigo);
-                as rotuloGravado
-              ) {
-                <p class="field__hint">Ato declarado: {{ rotuloGravado }}.</p>
-              }
-            </div>
-          }
-
-          @if (catalogos.bancas().length > 0) {
-            <fieldset class="form-field form-grid__full">
-              <legend class="label">Bancas requeridas (opcional)</legend>
-              @for (banca of catalogos.bancas(); track banca.id) {
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    [checked]="bancaMarcada(item.fase, banca.id)"
-                    (change)="alternarBanca(item.indice, banca.id, $any($event.target).checked)"
-                    [disabled]="!store.aceitaEdicao()"
-                  />
-                  {{ banca.nome }}
-                </label>
-              }
-            </fieldset>
-          }
-        </div>
-
-        @if (item.exigencias?.agrupaEtapas) {
-          <h3 class="form-section__title">Etapas pontuadas desta fase</h3>
-          <p class="field__hint">
-            As etapas que produzem nota. Ao menos uma precisa compor a nota final — ser
-            classificatória (ou ambas) e ter peso maior que zero.
-            @if (etapas().length > 0) {
-              Hoje {{ etapasQueCompoemNota() }} de {{ etapas().length }} compõem.
+      <h2 class="form-section__title">Acrescentar fase</h2>
+      <div class="form-grid">
+        <div class="form-field form-grid__full">
+          <label class="label" for="cr-nova-fase">Fase do catálogo</label>
+          <select class="input" id="cr-nova-fase" formControlName="faseAAcrescentar">
+            <option value="">Selecione a fase…</option>
+            @for (fase of fasesDisponiveis(); track fase.id) {
+              <option [value]="fase.id">{{ fase.nome }}</option>
             }
+          </select>
+          <p class="field__hint">
+            As fases aparecem na ordem que as precedências do cadastro sugerem. Uma fase entra uma
+            vez só, e o cronograma não precisa de todas: inclua as que este processo realmente tem.
           </p>
-
-          @for (etapa of etapas(); track $index) {
-            <div class="form-grid etapa-linha">
-              <div class="form-field">
-                <label class="label" [attr.for]="'cr-etapa-nome-' + $index">Nome</label>
-                <input
-                  class="input"
-                  type="text"
-                  [attr.id]="'cr-etapa-nome-' + $index"
-                  [ngModel]="etapa.nome"
-                  (ngModelChange)="atualizarEtapa($index, { nome: $event })"
-                  [disabled]="!store.aceitaEdicao()"
-                />
-              </div>
-              <div class="form-field">
-                <label class="label" [attr.for]="'cr-etapa-tipo-' + $index">Tipo</label>
-                <select
-                  class="input"
-                  [attr.id]="'cr-etapa-tipo-' + $index"
-                  [ngModel]="etapa.tipoEtapaOrigemId"
-                  (ngModelChange)="atualizarEtapa($index, { tipoEtapaOrigemId: $event })"
-                  [disabled]="!store.aceitaEdicao()"
-                >
-                  <option value="">Selecione…</option>
-                  @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
-                    <option [value]="tipo.id">{{ tipo.nome }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-field">
-                <label class="label" [attr.for]="'cr-etapa-carater-' + $index">Caráter</label>
-                <select
-                  class="input"
-                  [attr.id]="'cr-etapa-carater-' + $index"
-                  [ngModel]="etapa.carater"
-                  (ngModelChange)="atualizarEtapa($index, { carater: $event })"
-                  [disabled]="!store.aceitaEdicao()"
-                >
-                  <option value="">Selecione…</option>
-                  @for (opcao of careteres; track opcao.valor) {
-                    <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-field">
-                <label class="label" [attr.for]="'cr-etapa-peso-' + $index">Peso</label>
-                <input
-                  class="input"
-                  type="text"
-                  inputmode="decimal"
-                  [attr.id]="'cr-etapa-peso-' + $index"
-                  [ngModel]="etapa.peso"
-                  (ngModelChange)="atualizarEtapa($index, { peso: $event })"
-                  [disabled]="!store.aceitaEdicao()"
-                />
-              </div>
-              <div class="form-field">
-                <label class="label" [attr.for]="'cr-etapa-nota-' + $index">Nota mínima</label>
-                <input
-                  class="input"
-                  type="text"
-                  inputmode="decimal"
-                  [attr.id]="'cr-etapa-nota-' + $index"
-                  [ngModel]="etapa.notaMinima"
-                  (ngModelChange)="atualizarEtapa($index, { notaMinima: $event })"
-                  [disabled]="!store.aceitaEdicao()"
-                />
-              </div>
-              <div class="form-field">
-                <button
-                  class="btn btn--tertiary"
-                  type="button"
-                  (click)="removerEtapa($index)"
-                  [disabled]="!store.aceitaEdicao()"
-                  [attr.aria-label]="
-                    'Remover etapa ' + (etapa.nome === '' ? $index + 1 : etapa.nome)
-                  "
-                >
-                  Remover etapa
-                </button>
-              </div>
-            </div>
-          }
-
+        </div>
+        <div class="form-field form-grid__full">
           <button
             class="btn btn--secondary"
             type="button"
-            (click)="acrescentarEtapa()"
-            [disabled]="!store.aceitaEdicao()"
+            (click)="acrescentarFase()"
+            [disabled]="!store.aceitaEdicao() || formulario.controls.faseAAcrescentar.value === ''"
           >
-            Acrescentar etapa
+            Acrescentar à linha do tempo
           </button>
-        }
+        </div>
+      </div>
+    </div>
+
+    @if (avisoDeReordenacao(); as aviso) {
+      <div class="field__erro" role="alert">
+        <p>{{ aviso }}</p>
+      </div>
+    }
+
+    @if (linhaDoTempo().length === 0) {
+      <p class="field__hint">
+        Nenhuma fase na linha do tempo. Comece pela fase em que as inscrições são coletadas, ou pela
+        publicação do edital.
+      </p>
+    }
+
+    <div formArrayName="fases">
+      @for (item of linhaDoTempo(); track item.grupo) {
+        <div class="step-card" [formGroupName]="item.indice">
+          <div class="fase-cabecalho">
+            <h2 class="form-section__title">
+              {{ item.grupo.controls.ordem.value }}.
+              {{ item.canonica?.nome ?? item.grupo.controls.codigo.value }}
+            </h2>
+            <div class="fase-acoes">
+              <button
+                class="btn btn--tertiary"
+                type="button"
+                (click)="mover(item.indice, -1)"
+                [disabled]="!store.aceitaEdicao() || item.indice === 0"
+                [attr.aria-label]="
+                  'Mover ' +
+                  (item.canonica?.nome ?? item.grupo.controls.codigo.value) +
+                  ' para antes'
+                "
+              >
+                Subir
+              </button>
+              <button
+                class="btn btn--tertiary"
+                type="button"
+                (click)="mover(item.indice, 1)"
+                [disabled]="!store.aceitaEdicao() || item.indice === linhaDoTempo().length - 1"
+                [attr.aria-label]="
+                  'Mover ' +
+                  (item.canonica?.nome ?? item.grupo.controls.codigo.value) +
+                  ' para depois'
+                "
+              >
+                Descer
+              </button>
+              <button
+                class="btn btn--tertiary"
+                type="button"
+                (click)="removerFase(item.indice)"
+                [disabled]="!store.aceitaEdicao() || !podeRemoverFase()"
+                [attr.aria-describedby]="podeRemoverFase() ? null : 'cr-ultima-fase'"
+                [attr.aria-label]="
+                  'Remover ' + (item.canonica?.nome ?? item.grupo.controls.codigo.value)
+                "
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+
+          @if (!podeRemoverFase()) {
+            <p class="field__hint" id="cr-ultima-fase">
+              O cronograma não pode ficar sem nenhuma fase. Acrescente outra antes de remover esta.
+            </p>
+          }
+
+          @if (item.canonica === undefined) {
+            <p class="field__erro" role="alert">
+              Esta fase não está no catálogo carregado. Recarregue a página; se persistir, ela pode
+              ter saído do cadastro institucional.
+            </p>
+          } @else {
+            <p class="field__hint">
+              Responsável: {{ item.canonica.donoTipico }}.
+              @if (item.exigencias?.exigeAtoProduzido) {
+                Produz resultado
+                {{ item.canonica.resultadoDefinitivo ? 'definitivo' : 'passível de recurso' }}.
+              }
+              @if (item.canonica.coletaInscricao) {
+                Coleta inscrições.
+              }
+            </p>
+
+            <div class="form-grid">
+              @if (item.exigencias?.janelaObrigatoria) {
+                <div class="form-field">
+                  <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
+                  <input
+                    class="input"
+                    type="datetime-local"
+                    [attr.id]="'cr-inicio-' + item.indice"
+                    formControlName="inicio"
+                    [attr.aria-describedby]="'cr-fuso-' + item.indice"
+                  />
+                </div>
+                <div class="form-field">
+                  <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
+                  <input
+                    class="input"
+                    type="datetime-local"
+                    [attr.id]="'cr-fim-' + item.indice"
+                    formControlName="fim"
+                    [attr.aria-describedby]="'cr-fuso-' + item.indice"
+                  />
+                </div>
+                <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
+                  Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são
+                  contados.
+                </p>
+              } @else {
+                <p class="field__hint form-grid__full">
+                  A janela desta fase é derivada de outra: o sistema a calcula, e ela não é
+                  declarada aqui.
+                </p>
+              }
+
+              @if (item.exigencias?.exigeAtoProduzido) {
+                <div class="form-field form-grid__full">
+                  <label class="label" [attr.for]="'cr-ato-' + item.indice">
+                    Ato que publica o resultado
+                  </label>
+                  <select
+                    class="input"
+                    [attr.id]="'cr-ato-' + item.indice"
+                    formControlName="atoProduzidoCodigo"
+                  >
+                    <option value="">Selecione o ato…</option>
+                    @for (ato of catalogos.atosVigentes(); track ato.codigo) {
+                      <option [value]="ato.codigo">{{ ato.nome }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              @if (catalogos.bancas().length > 0) {
+                <fieldset class="form-field form-grid__full">
+                  <legend class="label">Bancas requeridas (opcional)</legend>
+                  @for (banca of catalogos.bancas(); track banca.id) {
+                    <label class="check">
+                      <input
+                        type="checkbox"
+                        [checked]="bancaMarcada(item.grupo, banca.id)"
+                        (change)="alternarBanca(item.grupo, banca.id, $event)"
+                        [disabled]="!store.aceitaEdicao()"
+                      />
+                      {{ banca.nome }}
+                    </label>
+                  }
+                </fieldset>
+              }
+            </div>
+
+            @if (item.exigencias?.agrupaEtapas) {
+              <h3 class="form-section__title">Etapas pontuadas desta fase</h3>
+              <p class="field__hint">
+                As etapas que produzem nota. Ao menos uma precisa compor a nota final — ser
+                classificatória (ou ambas) e ter peso maior que zero.
+                @if (etapas.length > 0) {
+                  Hoje {{ etapasQueCompoemNota() }} de {{ etapas.length }} compõem.
+                }
+              </p>
+
+              <!--
+                As etapas são do processo, não da fase: no formulário elas são
+                irmãs de `fases`, e é a tela que as mostra dentro da fase que as
+                agrupa. Cada grupo se liga por referência justamente por isso —
+                um `formArrayName` aqui seria procurado dentro do grupo da fase.
+              -->
+              <div>
+                @for (etapa of etapas.controls; track etapa; let posicao = $index) {
+                  <div class="form-grid etapa-linha" [formGroup]="etapa">
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-etapa-nome-' + posicao">Nome</label>
+                      <input
+                        class="input"
+                        type="text"
+                        [attr.id]="'cr-etapa-nome-' + posicao"
+                        formControlName="nome"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-etapa-tipo-' + posicao">Tipo</label>
+                      <select
+                        class="input"
+                        [attr.id]="'cr-etapa-tipo-' + posicao"
+                        formControlName="tipoEtapaOrigemId"
+                      >
+                        <option value="">Selecione…</option>
+                        @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
+                          <option [value]="tipo.id">{{ tipo.nome }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-etapa-carater-' + posicao"
+                        >Caráter</label
+                      >
+                      <select
+                        class="input"
+                        [attr.id]="'cr-etapa-carater-' + posicao"
+                        formControlName="carater"
+                      >
+                        <option value="">Selecione…</option>
+                        @for (opcao of careteres; track opcao.valor) {
+                          <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-etapa-peso-' + posicao">Peso</label>
+                      <input
+                        class="input"
+                        type="text"
+                        inputmode="decimal"
+                        [attr.id]="'cr-etapa-peso-' + posicao"
+                        formControlName="peso"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
+                        >Nota mínima</label
+                      >
+                      <input
+                        class="input"
+                        type="text"
+                        inputmode="decimal"
+                        [attr.id]="'cr-etapa-nota-' + posicao"
+                        formControlName="notaMinima"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <button
+                        class="btn btn--tertiary"
+                        type="button"
+                        (click)="removerEtapa(posicao)"
+                        [disabled]="!store.aceitaEdicao()"
+                        [attr.aria-label]="
+                          'Remover etapa ' +
+                          (etapa.controls.nome.value === ''
+                            ? posicao + 1
+                            : etapa.controls.nome.value)
+                        "
+                      >
+                        Remover etapa
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <button
+                class="btn btn--secondary"
+                type="button"
+                (click)="acrescentarEtapa()"
+                [disabled]="!store.aceitaEdicao()"
+              >
+                Acrescentar etapa
+              </button>
+            }
+          }
+        </div>
       }
     </div>
-  }
+  </form>
 
   @if (problemas().length > 0) {
     <div class="field__erro" role="status">

@@ -189,6 +189,52 @@ describe('CronogramaStepComponent', () => {
     detectar();
   }
 
+  /**
+   * O rascunho é o que persiste entre passos e o que a hidratação preenche. O
+   * formulário precisa refletir o que chega de fora — sem isso, reabrir um
+   * processo mostraria a linha do tempo vazia sobre um cronograma que existe.
+   */
+  it('espelha no formulário o cronograma que chega ao rascunho', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comUmaEtapa();
+
+    expect(componente.fases.length).toBe(2);
+    expect(componente.fases.at(0).controls.faseCanonicaId.value).toBe(ID_INSCRICAO);
+    expect(componente.fases.at(0).controls.inicio.value).toBe('2026-03-01T08:00');
+    expect(componente.etapas.length).toBe(1);
+    expect(componente.etapas.at(0).controls.nome.value).toBe('Prova objetiva');
+  });
+
+  /**
+   * O caminho de volta: o que se digita no controle é o que a gravação envia, e
+   * o que os outros passos leem pelo rascunho.
+   */
+  it('leva ao rascunho o que foi digitado no controle', () => {
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    componente.etapas.at(0).controls.peso.setValue('2,5');
+
+    expect(store.draft().cronograma.etapas[0].peso).toBe('2,5');
+  });
+
+  /**
+   * Fora de rascunho — e durante uma gravação — o passo não aceita digitação. O
+   * formulário acompanha o que o wizard já decide para os outros passos, em vez
+   * de deixar campos editáveis cujo valor não teria para onde ir.
+   */
+  it('desabilita os controles enquanto o passo não aceita edição', () => {
+    comFases(ID_INSCRICAO);
+    expect(componente.formulario.enabled).toBe(true);
+
+    // `salvando` é o outro motivo pelo qual o passo para de aceitar digitação,
+    // e o que este teste alcança sem simular um processo publicado inteiro.
+    store.salvando.set(true);
+    detectar();
+
+    expect(componente.formulario.disabled).toBe(true);
+  });
+
   it('oferece cada fase canônica uma vez só', () => {
     comFases(ID_INSCRICAO);
 
@@ -282,12 +328,12 @@ describe('CronogramaStepComponent', () => {
 
   it('renumera a partir de 1 ao acrescentar fase', () => {
     comFases(ID_INSCRICAO);
-    componente.faseAAcrescentar.set(ID_AVALIACAO);
+    componente.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
 
     componente.acrescentarFase();
 
     expect(store.draft().cronograma.fases.map((fase) => fase.ordem)).toEqual([1, 2]);
-    expect(componente.faseAAcrescentar()).toBe('');
+    expect(componente.formulario.controls.faseAAcrescentar.value).toBe('');
   });
 
   /**
@@ -297,18 +343,18 @@ describe('CronogramaStepComponent', () => {
   it('grava a janela como instante no fuso institucional', () => {
     comFases(ID_INSCRICAO);
 
-    componente.definirJanela(0, 'inicio', '2026-03-05T09:30');
+    componente.fases.at(0).controls.inicio.setValue('2026-03-05T09:30');
 
     expect(store.draft().cronograma.fases[0].inicio).toBe('2026-03-05T09:30:00-03:00');
-    expect(componente.janelaNoCampo(store.draft().cronograma.fases[0].inicio)).toBe(
-      '2026-03-05T09:30',
-    );
+    // O controle guarda a hora de parede; quem carimba o fuso é a saída para o
+    // rascunho, e é ela que o campo lê de volta ao reabrir o processo.
+    expect(componente.fases.at(0).controls.inicio.value).toBe('2026-03-05T09:30');
   });
 
   it('campo de janela esvaziado volta a não declarar instante', () => {
     comFases(ID_INSCRICAO);
 
-    componente.definirJanela(0, 'fim', '');
+    componente.fases.at(0).controls.fim.setValue('');
 
     expect(store.draft().cronograma.fases[0].fim).toBeNull();
   });
@@ -438,20 +484,16 @@ describe('CronogramaStepComponent', () => {
    * operador grava por cima sem ver o que estava configurado.
    */
   it('mantém no seletor o tipo de etapa inativo que a etapa já referencia', () => {
-    const inativo = { id: '01960000-0000-7000-0000-0000000000e9', nome: 'Entrevista' };
-    const etapaComTipoInativo = {
-      id: null,
-      nome: 'Entrevista',
-      carater: 'classificatoria' as const,
-      tipoEtapaOrigemId: inativo.id,
-      peso: '1',
-      notaMinima: '',
-      ordem: 1,
-    };
+    const inativo = '01960000-0000-7000-0000-0000000000e9';
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    componente.etapas.at(0).controls.tipoEtapaOrigemId.setValue(inativo);
 
-    const oferecidos = componente.tiposEscolhiveisPara(etapaComTipoInativo).map((tipo) => tipo.id);
+    const oferecidos = componente
+      .tiposEscolhiveisPara(componente.etapas.at(0))
+      .map((tipo) => tipo.id);
 
-    expect(oferecidos).toContain(inativo.id);
+    expect(oferecidos).toContain(inativo);
     expect(oferecidos).toContain(TIPO_ETAPA);
   });
 
