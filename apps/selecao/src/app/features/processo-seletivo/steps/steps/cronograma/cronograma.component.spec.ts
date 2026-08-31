@@ -685,6 +685,46 @@ describe('CronogramaStepComponent', () => {
     expect(oferecidos).toContain(TIPO_ETAPA);
   });
 
+  /**
+   * É o `id` que critério de desempate e regra de eliminação referenciam.
+   * Reordenar removendo e recriando daria outro identificador no servidor, e
+   * essas regras ficariam apontando para uma etapa que deixou de existir — por
+   * isso o grupo é movido, não recriado.
+   */
+  it('reordena as etapas preservando o identificador de cada uma', () => {
+    comFases(ID_AVALIACAO);
+    store.patchObjectSection('cronograma', {
+      etapas: [
+        {
+          id: 'etapa-primeira',
+          nome: 'Prova',
+          carater: 'classificatoria' as const,
+          tipoEtapaOrigemId: TIPO_ETAPA,
+          peso: '1',
+          notaMinima: '',
+          ordem: 1,
+        },
+        {
+          id: 'etapa-segunda',
+          nome: 'Redação',
+          carater: 'classificatoria' as const,
+          tipoEtapaOrigemId: TIPO_ETAPA,
+          peso: '2',
+          notaMinima: '',
+          ordem: 2,
+        },
+      ],
+    });
+    detectar();
+
+    componente.moverEtapa(0, 1);
+
+    const depois = store.draft().cronograma.etapas;
+    expect(depois.map((etapa) => etapa.id)).toEqual(['etapa-segunda', 'etapa-primeira']);
+    expect(depois.map((etapa) => etapa.ordem)).toEqual([1, 2]);
+    expect(depois.map((etapa) => etapa.nome)).toEqual(['Redação', 'Prova']);
+  });
+
   it('recusa gravar enquanto a conferência aponta problema, sem chamar a API', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);

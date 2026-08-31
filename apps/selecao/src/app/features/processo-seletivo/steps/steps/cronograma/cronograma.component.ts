@@ -379,9 +379,32 @@ export class CronogramaStepComponent {
 
   removerEtapa(indice: number): void {
     this.etapas.removeAt(indice, { emitEvent: false });
-    this.etapas.controls.forEach((grupo, posicao) =>
-      grupo.controls.ordem.setValue(posicao + 1, { emitEvent: false }),
-    );
+    this.renumerarEtapas();
+  }
+
+  /**
+   * Troca a etapa de lugar, movendo o grupo inteiro.
+   *
+   * Move o controle em vez de trocar os valores entre dois: é o `id` que
+   * critério de desempate e regra de eliminação referenciam, e recriar a etapa
+   * numa posição diferente lhe daria outro identificador no servidor, deixando
+   * essas regras apontando para uma etapa que deixou de existir.
+   */
+  moverEtapa(indice: number, direcao: -1 | 1): void {
+    const destino = indice + direcao;
+    const atual = this.etapas.at(indice);
+    if (atual === undefined || this.etapas.at(destino) === undefined) return;
+
+    this.etapas.removeAt(indice, { emitEvent: false });
+    this.etapas.insert(destino, atual, { emitEvent: false });
+    this.renumerarEtapas();
+  }
+
+  /** Reescreve a posição das etapas de 1 a N, sem tocar nos identificadores. */
+  private renumerarEtapas(): void {
+    for (const [posicao, grupo] of this.etapas.controls.entries()) {
+      grupo.controls.ordem.setValue(posicao + 1, { emitEvent: false });
+    }
     this.etapas.updateValueAndValidity();
   }
 

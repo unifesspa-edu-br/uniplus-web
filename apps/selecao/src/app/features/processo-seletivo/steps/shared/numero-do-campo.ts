@@ -13,14 +13,24 @@
  * porque 5 é um peso perfeitamente válido.
  */
 
-/** Aceita só dígitos, sem sinal nem notação exótica. */
+/**
+ * Aceita só dígitos, sem sinal nem notação exótica.
+ *
+ * Recusa também o que estoura o alcance do número: uma sequência longa demais
+ * de dígitos passa na forma e vira `Infinity`, que a serialização JSON manda no
+ * corpo como `null` — o campo chegaria ao servidor apagado, e não recusado.
+ */
 export function inteiroDoCampo(texto: string): number | null {
   const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? Number(limpo) : null;
+  return /^\d+$/.test(limpo) ? finitoOuNulo(Number(limpo)) : null;
 }
 
 /** Aceita vírgula ou ponto como separador decimal, sem notação exótica. */
 export function decimalDoCampo(texto: string): number | null {
   const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
+  return /^\d+(\.\d+)?$/.test(limpo) ? finitoOuNulo(Number(limpo)) : null;
+}
+
+function finitoOuNulo(valor: number): number | null {
+  return Number.isFinite(valor) ? valor : null;
 }

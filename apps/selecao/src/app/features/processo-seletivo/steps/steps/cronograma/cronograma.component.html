@@ -275,20 +275,37 @@
                         formControlName="notaMinima"
                       />
                     </div>
-                    <div class="form-field">
+                    @let rotuloDaEtapa =
+                      etapa.controls.nome.value === ''
+                        ? 'etapa ' + (posicao + 1)
+                        : etapa.controls.nome.value;
+                    <div class="form-field etapa-acoes">
+                      <button
+                        class="btn btn--tertiary"
+                        type="button"
+                        (click)="moverEtapa(posicao, -1)"
+                        [disabled]="!store.aceitaEdicao() || posicao === 0"
+                        [attr.aria-label]="'Mover ' + rotuloDaEtapa + ' para antes'"
+                      >
+                        Subir
+                      </button>
+                      <button
+                        class="btn btn--tertiary"
+                        type="button"
+                        (click)="moverEtapa(posicao, 1)"
+                        [disabled]="!store.aceitaEdicao() || posicao === etapas.length - 1"
+                        [attr.aria-label]="'Mover ' + rotuloDaEtapa + ' para depois'"
+                      >
+                        Descer
+                      </button>
                       <button
                         class="btn btn--tertiary"
                         type="button"
                         (click)="removerEtapa(posicao)"
                         [disabled]="!store.aceitaEdicao()"
-                        [attr.aria-label]="
-                          'Remover etapa ' +
-                          (etapa.controls.nome.value === ''
-                            ? posicao + 1
-                            : etapa.controls.nome.value)
-                        "
+                        [attr.aria-label]="'Remover ' + rotuloDaEtapa"
                       >
-                        Remover etapa
+                        Remover
                       </button>
                     </div>
                   </div>
