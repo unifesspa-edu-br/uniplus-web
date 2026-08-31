@@ -12,6 +12,7 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   CriarProcessoSeletivoCommand,
+  EtapaProcessoInput,
   DocumentoEditalDto,
   IniciarUploadDocumentoEditalDto,
   ProcessoSeletivoDto,
@@ -219,4 +220,83 @@ describe('ProcessosSeletivosApi', () => {
     if (result.ok) expect(result.data.status).toBe('Confirmado');
   });
 
+  /**
+   * A coleção é substituída por inteiro, e o `id` de cada item é o que critério
+   * de desempate e regra de eliminação referenciam. Omiti-lo faria o servidor
+   * criar outra etapa, deixando essas referências apontando para uma que deixou
+   * de existir — daí o teste afirmar o corpo item a item, e não só a rota.
+   */
+  it('definirEtapas() envia a coleção inteira preservando o id das existentes', async () => {
+    const etapas: readonly EtapaProcessoInput[] = [
+      {
+        id: '01960000-0000-7000-0000-0000000005e1',
+        nome: 'Prova Objetiva',
+        carater: 'classificatoria',
+        tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000005f1',
+        peso: 2,
+        notaMinima: null,
+        ordem: 1,
+      },
+      {
+        nome: 'Redação',
+        carater: 'ambas',
+        tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000005f2',
+        peso: 1,
+        notaMinima: 5,
+        ordem: 2,
+      },
+    ];
+
+    const promise = firstValueFrom(
+      api.definirEtapas(ID, etapas, withIdempotencyKey('chave-etapas')),
+    );
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/etapas`);
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-etapas');
+    expect(req.request.body).toEqual(etapas);
+    expect(req.request.body[0].id).toBe('01960000-0000-7000-0000-0000000005e1');
+    expect(req.request.body[1].id).toBeUndefined();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  /**
+   * Processo cuja classificação é importada não tem etapa pontuada, e a coleção
+   * vazia é como isso se declara. O cliente não pode transformá-la em ausência
+   * de requisição nem inventar um item.
+   */
+  it('definirEtapas() envia a coleção vazia como corpo válido', async () => {
+    const promise = firstValueFrom(api.definirEtapas(ID, [], withIdempotencyKey('chave-vazia')));
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/etapas`);
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual([]);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('definirEtapas() propaga a recusa do domínio sem lançar', async () => {
+    const promise = firstValueFrom(api.definirEtapas(ID, [], withIdempotencyKey('chave-recusa')));
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/etapas`);
+
+    req.flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.processo_seletivo.nenhuma_etapa_compoe_nota',
+        title: 'Ao menos uma etapa deve compor a nota final',
+        status: 422,
+        code: 'uniplus.selecao.processo_seletivo.nenhuma_etapa_compoe_nota',
+        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(false);
+    if (!result.ok) expect(result.problem.status).toBe(422);
+  });
 });
