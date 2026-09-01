@@ -29,6 +29,8 @@ export type { ParsedLink } from './link-header';
 
 export {
   API_MAX_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
   createCursor,
   cursorToString,
   extractNextCursor,

@@ -953,9 +953,19 @@ ui-vlibras-loader {
   font-size: var(--text-xs);
   margin-top: var(--space-1);
 }
+/* Reserva a altura de uma página cheia para que a tabela não encolha na
+ * última página (ou com poucos registros). `--rows` = tamanho de página
+ * vigente; ~3.25rem por linha + ~3rem do cabeçalho. Desligado no layout
+ * de cartões (mobile), onde a altura fixa não faz sentido. */
+.table-responsive--rows {
+  min-height: calc(var(--rows, 10) * 3.25rem + 3rem);
+}
 @media (max-width: 767px) {
   .table-responsive {
     overflow: visible;
+  }
+  .table-responsive--rows {
+    min-height: 0;
   }
   .table-responsive thead {
     display: none;
@@ -1463,6 +1473,48 @@ ui-vlibras-loader {
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: inherit; font-size: var(--text-sm);
+}
+
+/* ----------------------------------------------------------------------------
+ * TABLE-PAGINATION — rodapé fixo das tabelas (ui-pagination-footer)
+ * Esquerda: seletor "N por página". Direita: Anterior / faixa / Próximo.
+ * Reaproveita .pager__btn (hover/disabled/focus já cobertos).
+ * -------------------------------------------------------------------------- */
+.table-pagination {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-page);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.table-pagination__size { display: inline-flex; align-items: center; }
+.table-pagination__size-select {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit; font-size: var(--text-sm);
+  cursor: pointer;
+}
+.table-pagination__size-select:disabled { opacity: 0.6; cursor: not-allowed; }
+.table-pagination__nav {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  margin-left: auto;
+}
+.table-pagination__range {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  text-align: center;
+  min-width: 6ch;
+}
+@media (max-width: 480px) {
+  .table-pagination { justify-content: center; }
+  .table-pagination__nav { margin-left: 0; }
 }
 
 /* ============================================================================

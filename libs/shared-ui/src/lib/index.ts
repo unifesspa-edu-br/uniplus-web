@@ -21,6 +21,7 @@ export { LoadingOverlayComponent } from './components/loading-overlay/loading-ov
 export { NotificationHostComponent } from './components/notification-host/notification-host';
 export { PageHeaderComponent } from './components/page-header/page-header';
 export { PagerComponent } from './components/pager/pager';
+export { PaginationFooterComponent } from './components/pagination-footer/pagination-footer';
 export { SegmentedComponent, type UiSegmentedOption } from './components/segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './components/select/select';
 export { SkeletonComponent } from './components/skeleton/skeleton';

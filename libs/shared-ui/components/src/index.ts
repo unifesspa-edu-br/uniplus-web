@@ -37,6 +37,7 @@ export {
 export { LookupLabelComponent } from '../../src/lib/components/lookup-label/lookup-label';
 export { PageHeaderComponent } from '../../src/lib/components/page-header/page-header';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export { PaginationFooterComponent } from '../../src/lib/components/pagination-footer/pagination-footer';
 export {
   SegmentedComponent,
   type UiSegmentedOption,

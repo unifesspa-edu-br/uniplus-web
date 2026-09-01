@@ -27,6 +27,23 @@ import { parseLink } from './link-header';
  */
 export const API_MAX_PAGE_SIZE = 100;
 
+/**
+ * Tamanho de página padrão das listagens paginadas por cursor do
+ * `uniplus-web`. Não é imposto pela `uniplus-api` (que só valida o teto
+ * {@link API_MAX_PAGE_SIZE}) — é a preferência de UX do frontend e o ponto
+ * único de verdade para o valor inicial do seletor "N por página" do rodapé
+ * de paginação das tabelas (`ui-pagination-footer`). Sempre dentro da faixa
+ * 1..{@link API_MAX_PAGE_SIZE}.
+ */
+export const DEFAULT_PAGE_SIZE = 50;
+
+/**
+ * Opções oferecidas pelo seletor "N por página" do rodapé de paginação das
+ * tabelas. Todas dentro da faixa 1..{@link API_MAX_PAGE_SIZE} aceita pela
+ * API; {@link DEFAULT_PAGE_SIZE} deve constar da lista.
+ */
+export const PAGE_SIZE_OPTIONS: readonly number[] = [10, 25, 50, 100];
+
 declare const cursorBrand: unique symbol;
 
 /**

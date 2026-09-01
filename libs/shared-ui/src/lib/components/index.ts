@@ -28,6 +28,7 @@ export { LookupAlertComponent, type UiLookupFalho } from './lookup-alert/lookup-
 export { LookupLabelComponent } from './lookup-label/lookup-label';
 export { PageHeaderComponent } from './page-header/page-header';
 export { PagerComponent } from './pager/pager';
+export { PaginationFooterComponent } from './pagination-footer/pagination-footer';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './select/select';
 export { SkeletonComponent } from './skeleton/skeleton';

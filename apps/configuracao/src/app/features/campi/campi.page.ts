@@ -15,6 +15,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   ApiResult,
   Cursor,
+  DEFAULT_PAGE_SIZE,
   PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
@@ -40,7 +41,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
-  PagerComponent,
+  PaginationFooterComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import {
@@ -51,9 +52,6 @@ import {
   enderecoParaCommand,
   type EnderecoEstruturado,
 } from '../../shared/endereco';
-
-/** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
-const PAGE_SIZE = 50;
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -74,7 +72,7 @@ interface CampusForm {
     DrawerComponent,
     EmptyStateComponent,
     EnderecoFormComponent,
-    PagerComponent,
+    PaginationFooterComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -119,7 +117,11 @@ interface CampusForm {
       </div>
 
       @if (campi().length > 0) {
-        <div class="table-responsive">
+        <div
+          class="table-responsive"
+          [class.table-responsive--rows]="paginacaoAtiva()"
+          [style.--rows]="pageSize()"
+        >
           <table>
             <thead>
               <tr>
@@ -171,15 +173,18 @@ interface CampusForm {
         </ui-empty-state>
       }
 
-      @if (prevCursor() !== null || nextCursor() !== null) {
-        <ui-pager
-          statusText="Navegação por páginas"
+      @if (!errorMessage()) {
+        <ui-pagination-footer
           navigationLabel="Paginação de campi"
+          [pageSize]="pageSize()"
+          [pageIndex]="pageIndex()"
+          [currentCount]="campi().length"
           [hasPrevious]="prevCursor() !== null"
           [hasNext]="nextCursor() !== null"
           [isDisabled]="loading()"
           (previous)="paginaAnterior()"
           (next)="proximaPagina()"
+          (pageSizeChange)="mudarTamanhoPagina($event)"
         />
       }
     </section>
@@ -296,6 +301,11 @@ export class CampiPage {
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
 
+  /** Tamanho de página vigente (seletor do rodapé; default compartilhado). */
+  protected readonly pageSize = signal(DEFAULT_PAGE_SIZE);
+  /** Página corrente, 1-based — contada pelos cliques de navegação por cursor. */
+  protected readonly pageIndex = signal(1);
+
   private readonly lista = useApiResource<readonly CampusDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/campi`,
     params: this.montarParams(),
@@ -325,6 +335,15 @@ export class CampiPage {
 
   protected readonly prevCursor = computed(() => this.cursores().prev);
   protected readonly nextCursor = computed(() => this.cursores().next);
+
+  /**
+   * Reserva de altura só faz sentido quando o dataset tem mais de uma página
+   * (as páginas não-finais são cheias e a final não deve encolher a tabela).
+   * Em dataset de página única não há variação de altura a prevenir.
+   */
+  protected readonly paginacaoAtiva = computed(
+    () => this.nextCursor() !== null || this.pageIndex() > 1,
+  );
 
   protected readonly campi = linkedSignal<
     ApiResult<readonly CampusDto[]> | undefined,
@@ -397,6 +416,7 @@ export class CampiPage {
     const proximo = this.nextCursor();
     if (proximo !== null && !this.loading()) {
       this.pagina.set({ cursor: proximo, direction: 'next' });
+      this.pageIndex.update((n) => n + 1);
     }
   }
 
@@ -404,6 +424,22 @@ export class CampiPage {
     const anterior = this.prevCursor();
     if (anterior !== null && !this.loading()) {
       this.pagina.set({ cursor: anterior, direction: 'prev' });
+      this.pageIndex.update((n) => Math.max(1, n - 1));
+    }
+  }
+
+  protected mudarTamanhoPagina(tamanho: number): void {
+    if (tamanho === this.pageSize() || this.loading()) {
+      return;
+    }
+    this.pageSize.set(tamanho);
+    // Volta à 1ª página: com `pagina` indefinido, `montarParams` reage ao novo
+    // `pageSize()` e o resource refaz a consulta; se já estava na 1ª, força.
+    this.pageIndex.set(1);
+    if (this.pagina() === undefined) {
+      this.lista.reload();
+    } else {
+      this.pagina.set(undefined);
     }
   }
 
@@ -517,7 +553,7 @@ export class CampiPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-      return new HttpParams().set('limit', String(PAGE_SIZE));
+      return new HttpParams().set('limit', String(this.pageSize()));
     }
     return new HttpParams()
       .set('cursor', cursorToString(pagina.cursor))
@@ -525,6 +561,7 @@ export class CampiPage {
   }
 
   private recarregar(): void {
+    this.pageIndex.set(1);
     if (this.pagina() === undefined) {
       this.lista.reload();
     } else {
