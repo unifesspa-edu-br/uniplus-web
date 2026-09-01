@@ -75,6 +75,16 @@ cfg-pesos-enem-page {
   margin-bottom: 0;
 }
 
+/* Drawer e diálogos fechados não têm caixa própria — o <dialog> interno vira
+   display: none do agente de usuário, mas o host continua um item flex e
+   ainda consome um gap do .cfg-page, deixando espaço morto no fim da página
+   (issue #673). Nenhum dos três componentes estiliza o próprio host. */
+.cfg-page > ui-drawer,
+.cfg-page > ui-dialog,
+.cfg-page > ui-confirm-dialog {
+  display: contents;
+}
+
 .cfg-unidades-scope {
   display: flex;
   flex-direction: column;
