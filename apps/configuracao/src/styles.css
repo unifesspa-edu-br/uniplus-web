@@ -406,6 +406,10 @@ cfg-pesos-enem-page {
     max-width: min(760px, 100vw);
   }
 
+  .cfg-ofertas-drawer .uni-drawer__panel {
+    max-width: min(760px, 100vw);
+  }
+
   .cfg-form-drawer .form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

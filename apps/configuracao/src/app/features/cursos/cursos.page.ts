@@ -112,7 +112,6 @@ interface CursoForm {
         </div>
       </ui-alert>
     }
-
     <section class="panel" aria-labelledby="cfg-cursos-list-title">
       <div class="panel-head">
         <div class="panel-head__title">

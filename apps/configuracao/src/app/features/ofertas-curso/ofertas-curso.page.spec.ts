@@ -76,6 +76,7 @@ const ofertaSeed: OfertaCursoDto = {
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
   regimeDeTurno: 'REGULAR',
+  regimeDeFuncionamento: 'EXTENSIVO',
   turnos: ['MATUTINO'],
   eMecCodigo: '123456',
   codigoSga: null,
@@ -332,6 +333,7 @@ describe('OfertasCursoPage', () => {
   it('edição de oferta REGULAR com atoAutorizacaoMec preexistente preserva o valor no payload', async () => {
     const ofertaRegularComAto: OfertaCursoDto = {
       ...ofertaSeed,
+      regimeDeFuncionamento: 'EXTENSIVO',
       programaDeOferta: 'REGULAR',
       baseLegal: null,
       atoAutorizacaoMec: 'Portaria SERES/MEC nº 270/2021',
@@ -346,7 +348,6 @@ describe('OfertasCursoPage', () => {
 
     component['form'].controls.eMecCodigo.setValue('999999');
     component['salvar']();
-
     const put = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
     expect(put.request.body.atoAutorizacaoMec).toBe('Portaria SERES/MEC nº 270/2021');
     put.flush(null, { status: 204, statusText: 'No Content' });
@@ -365,10 +366,10 @@ describe('OfertasCursoPage', () => {
       programaDeOferta: 'REGULAR',
       formatoPedagogico: 'PRESENCIAL',
       regimeDeTurno: 'REGULAR',
+      regimeDeFuncionamento: 'EXTENSIVO',
       turnos: ['MATUTINO'],
       vagasAnuaisAutorizadas: 40,
     });
-
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`);
@@ -378,6 +379,11 @@ describe('OfertasCursoPage', () => {
       localOfertaId: LOCAL_ID,
       unidadeOfertanteOrigemId: UNIDADE_ID,
       programaDeOferta: 'REGULAR',
+      regimeDeFuncionamento: 'EXTENSIVO',
+      formatoPedagogico: 'PRESENCIAL',
+      regimeDeTurno: 'REGULAR',
+      turnos: ['MATUTINO'],
+      vagasAnuaisAutorizadas: 40,
     });
     post.flush(OFERTA_ID, { status: 201, statusText: 'Created' });
     await flushRecarregarLista([ofertaSeed]);
@@ -534,6 +540,7 @@ describe('OfertasCursoPage', () => {
       programaDeOferta: 'REGULAR',
       formatoPedagogico: 'PRESENCIAL',
       regimeDeTurno: 'INTEGRAL',
+      regimeDeFuncionamento: 'EXTENSIVO',
     });
     component['alternarTurno']('NOTURNO');
     component['alternarTurno']('VESPERTINO');
@@ -562,6 +569,7 @@ describe('OfertasCursoPage', () => {
       programaDeOferta: 'REGULAR',
       formatoPedagogico: 'PRESENCIAL',
       regimeDeTurno: 'REGULAR',
+      regimeDeFuncionamento: 'EXTENSIVO',
     });
     component['alternarTurno']('MATUTINO');
     await propagate();
@@ -734,5 +742,27 @@ describe('OfertasCursoPage', () => {
     const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
     expect(alerta.textContent).toContain('Recarregar locais de oferta');
     expect(alerta.textContent).not.toContain('Recarregar cursos');
+  });
+
+  it('evita submissão de formulário quando regime de funcionamento INTENSIVO e regime de turno REGULAR', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].patchValue({
+      cursoId: CURSO_ID,
+      localOfertaId: LOCAL_ID,
+      unidadeOfertanteOrigemId: UNIDADE_ID,
+      programaDeOferta: 'REGULAR',
+      formatoPedagogico: 'PRESENCIAL',
+      regimeDeTurno: 'REGULAR',
+      regimeDeFuncionamento: 'INTENSIVO',
+    });
+    component['alternarTurno']('NOTURNO');
+    await propagate();
+    component['salvar']();
+
+    controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
+    expect(component['erroDoCampo']('regimeDeFuncionamento')).toContain('INTENSIVO');
   });
 });

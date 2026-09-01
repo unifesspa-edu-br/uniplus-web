@@ -9,6 +9,7 @@ import {
   linkedSignal,
   signal,
   untracked,
+  OnInit,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -59,6 +60,7 @@ import {
   type TurnoOfertaOption,
   ordenarTurnosCanonicamente,
   turnosExigidosPorRegime,
+  REGIMES_DE_FUNCIONAMENTO,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
@@ -101,6 +103,7 @@ interface OfertaCursoForm {
   vagasAnuaisAutorizadas: FormControl<number | null>;
   baseLegal: FormControl<string>;
   atoAutorizacaoMec: FormControl<string>;
+  regimeDeFuncionamento: FormControl<string>;
 }
 
 @Component({
@@ -170,8 +173,9 @@ interface OfertaCursoForm {
                 <th scope="col">Local de oferta</th>
                 <th scope="col">Unidade ofertante</th>
                 <th scope="col">Programa</th>
-                <th scope="col">Formato</th>
-                <th scope="col">Regime</th>
+                <th scope="col">Modalidade de ensino</th>
+                <th scope="col">Regime de funcionamento</th>
+                <th scope="col">Regime de turno</th>
                 <th scope="col">Turnos</th>
                 <th scope="col">Vagas e-MEC</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
@@ -192,9 +196,14 @@ interface OfertaCursoForm {
                   <td data-label="Programa">
                     <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
                   </td>
-                  <td data-label="Formato">{{ formatoLabel(oferta.formatoPedagogico) }}</td>
-                  <td data-label="Regime">
-                    <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
+                  <td data-label="Modalidade de ensino">
+                    {{ formatoLabel(oferta.formatoPedagogico) }}
+                  </td>
+                  <td data-label="Regime de funcionamento">
+                    {{ oferta.regimeDeFuncionamento }}
+                  </td>
+                  <td data-label="Regime de turno">
+                    {{ oferta.regimeDeTurno }}
                   </td>
                   <td data-label="Turnos">{{ turnosLabel(oferta.turnos) }}</td>
                   <td data-label="Vagas e-MEC">{{ oferta.vagasAnuaisAutorizadas ?? '—' }}</td>
@@ -394,13 +403,30 @@ interface OfertaCursoForm {
                 <span class="field__error">{{ erroDoCampo('formatoPedagogico') }}</span>
               }
             </label>
+            @let erroCampoRegimeDeFuncionamento = erroDoCampo('regimeDeFuncionamento');
+            <label class="field" [class.is-error]="erroCampoRegimeDeFuncionamento">
+              <span class="field__label is-required">Regime de funcionamento</span>
+              <select class="select" formControlName="regimeDeFuncionamento">
+                @for (
+                  regimeFuncionamentoOption of regimesFuncionamentoOptions;
+                  track regimeFuncionamentoOption.value
+                ) {
+                  <option [value]="regimeFuncionamentoOption.value">
+                    {{ regimeFuncionamentoOption.label }}
+                  </option>
+                }
+              </select>
+              @if (erroCampoRegimeDeFuncionamento) {
+                <span class="field__error">{{ erroCampoRegimeDeFuncionamento }}</span>
+              }
+            </label>
             <label class="field" [class.is-error]="erroDoCampo('regimeDeTurno')">
               <span class="field__label is-required">Regime de turno</span>
               <select class="select" formControlName="regimeDeTurno">
                 @if (regimeNaoReconhecido(); as token) {
                   <option [value]="token">{{ token }} — não reconhecido por esta versão</option>
                 }
-                @for (opcao of regimeOptions; track opcao.value) {
+                @for (opcao of regimeOptions(); track opcao.value) {
                   <option [value]="opcao.value">{{ opcao.label }}</option>
                 }
               </select>
@@ -551,7 +577,7 @@ interface OfertaCursoForm {
   `,
   host: { class: 'cfg-page' },
 })
-export class OfertasCursoPage {
+export class OfertasCursoPage implements OnInit {
   private readonly api = inject(OfertasCursoApi);
   private readonly cursosApi = inject(CursosApi);
   private readonly locaisOfertaApi = inject(LocaisOfertaApi);
@@ -563,7 +589,8 @@ export class OfertasCursoPage {
 
   protected readonly programaOptions = PROGRAMAS_DE_OFERTA;
   protected readonly formatoOptions = FORMATOS_PEDAGOGICOS;
-  protected readonly regimeOptions = REGIMES_DE_TURNO;
+  protected readonly regimeOptions = signal(REGIMES_DE_TURNO);
+  protected readonly regimesFuncionamentoOptions = REGIMES_DE_FUNCIONAMENTO;
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
@@ -733,6 +760,10 @@ export class OfertasCursoPage {
       nonNullable: true,
       validators: [Validators.maxLength(300)],
     }),
+    regimeDeFuncionamento: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(30)],
+    }),
   });
 
   private readonly cursoIdValue = toSignal(this.form.controls.cursoId.valueChanges, {
@@ -848,6 +879,10 @@ export class OfertasCursoPage {
       : 'cfg-oferta-turnos-hint cfg-oferta-turnos-erro';
   }
 
+  protected readonly regimeFuncionamentoMessageErro = signal(
+    'A oferta INTENSIVO exige regime de turno INTEGRAL; foi declarado REGULAR.',
+  );
+
   constructor() {
     effect(() => {
       const problem = this.lista.problem();
@@ -906,6 +941,22 @@ export class OfertasCursoPage {
         }
         this.form.controls.turnos.updateValueAndValidity({ emitEvent: false });
       });
+    });
+  }
+
+  ngOnInit(): void {
+    const regimeDeFuncionamentoControl = this.form.controls.regimeDeFuncionamento;
+    this.form.valueChanges.subscribe((form) => {
+      if (!form.regimeDeFuncionamento || !form.regimeDeTurno) {
+        return;
+      }
+      if (this.regimeDeFuncionamentoInvalido()) {
+        regimeDeFuncionamentoControl.setErrors({
+          regimeFuncionamentoDomainError: true,
+        });
+      } else {
+        regimeDeFuncionamentoControl.setErrors(null);
+      }
     });
   }
 
@@ -1049,6 +1100,7 @@ export class OfertasCursoPage {
       programaDeOferta: oferta.programaDeOferta,
       formatoPedagogico: oferta.formatoPedagogico,
       regimeDeTurno: oferta.regimeDeTurno,
+      regimeDeFuncionamento: oferta.regimeDeFuncionamento,
       turnos: ordenarTurnosCanonicamente(oferta.turnos),
       eMecCodigo: oferta.eMecCodigo ?? '',
       codigoSga: oferta.codigoSga ?? '',
@@ -1152,6 +1204,11 @@ export class OfertasCursoPage {
     if (control.errors['turnoRepetido']) return 'Os turnos devem ser distintos entre si.';
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     if (control.errors['min']) return 'Valor não pode ser negativo.';
+    if (control.errors['regimeFuncionamentoIncompativelRegimeTurno']) {
+      return this.regimeFuncionamentoMessageErro();
+    }
+    if (control.errors['regimeFuncionamentoDomainError'])
+      return this.regimeFuncionamentoMessageErro();
     return 'Valor inválido.';
   }
 
@@ -1251,6 +1308,7 @@ export class OfertasCursoPage {
       vagasAnuaisAutorizadas: raw.vagasAnuaisAutorizadas,
       baseLegal: nullIfBlank(raw.baseLegal),
       atoAutorizacaoMec: nullIfBlank(raw.atoAutorizacaoMec),
+      regimeDeFuncionamento: nullIfBlank(raw.regimeDeFuncionamento),
     };
   }
 
@@ -1270,7 +1328,15 @@ export class OfertasCursoPage {
       vagasAnuaisAutorizadas: raw.vagasAnuaisAutorizadas,
       baseLegal: nullIfBlank(raw.baseLegal),
       atoAutorizacaoMec: nullIfBlank(raw.atoAutorizacaoMec),
+      regimeDeFuncionamento: nullIfBlank(raw.regimeDeFuncionamento),
     };
+  }
+
+  protected regimeDeFuncionamentoInvalido(): boolean {
+    return (
+      this.form.controls.regimeDeTurno.value === 'REGULAR' &&
+      this.form.controls.regimeDeFuncionamento.value === 'INTENSIVO'
+    );
   }
 }
 
@@ -1312,6 +1378,7 @@ const OFERTA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof OfertaCursoForm>
   'unidadeOfertanteOrigemId',
   'programaDeOferta',
   'formatoPedagogico',
+  'regimeDeFuncionamento',
   'regimeDeTurno',
   'turnos',
   'eMecCodigo',
@@ -1340,6 +1407,15 @@ const OFERTA_ERROR_CODE_TO_CONTROL: ReadonlyMap<string, keyof OfertaCursoForm> =
     'baseLegal',
   ],
   ['uniplus.configuracao.oferta_curso.vagas_anuais_negativas', 'vagasAnuaisAutorizadas'],
+  [
+    'uniplus.configuracao.oferta_curso.regime_de_funcionamento_obrigatorio',
+    'regimeDeFuncionamento',
+  ],
+  ['uniplus.configuracao.oferta_curso.regime_de_funcionamento_invalido', 'regimeDeFuncionamento'],
+  [
+    'uniplus.configuracao.oferta_curso.regime_de_funcionamento_incompativel_com_regime_de_turno',
+    'regimeDeFuncionamento',
+  ],
 ]);
 
 function controlNameFromBackendField(field: string): keyof OfertaCursoForm | null {
