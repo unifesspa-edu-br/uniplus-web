@@ -95,6 +95,23 @@ export const REGIMES_DE_TURNO: readonly RegimeDeTurnoOption[] = [
 /** Regime de turno padrão de uma oferta nova — um turno só. */
 export const REGIME_DE_TURNO_REGULAR = 'REGULAR';
 
+
+export interface RegimeDeFuncionamentoOption {
+  value: string;
+  label: string;
+}
+
+export const REGIMES_DE_FUNCIONAMENTO: readonly RegimeDeFuncionamentoOption[] = [
+  {
+    value: 'INTENSIVO',
+    label: 'Intensivo',
+  },
+  {
+    value: 'EXTENSIVO',
+    label: 'Extensivo',
+  },
+] as const;
+
 /**
  * Quantos turnos distintos o regime exige, ou `null` quando o token não é um
  * regime conhecido (a API é a árbitra final nesse caso).

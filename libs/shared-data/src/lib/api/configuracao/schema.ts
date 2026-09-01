@@ -7592,6 +7592,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly programaDeOferta: null | string;
+            readonly regimeDeFuncionamento: null | string;
             readonly regimeDeTurno: null | string;
             readonly turnos: null | readonly string[];
             readonly formatoPedagogico?: null | string;
@@ -7840,6 +7841,7 @@ export interface components {
             /** Format: uuid */
             readonly unidadeOfertanteOrigemId: string;
             readonly programaDeOferta: null | string;
+            readonly regimeDeFuncionamento: null | string;
             readonly regimeDeTurno: null | string;
             readonly turnos: null | readonly string[];
             readonly formatoPedagogico?: null | string;
@@ -8087,6 +8089,7 @@ export interface components {
             readonly unidadeOfertante: components["schemas"]["UnidadeOfertanteDto"];
             readonly programaDeOferta: string;
             readonly formatoPedagogico: string;
+            readonly regimeDeFuncionamento: string;
             readonly regimeDeTurno: string;
             readonly turnos: readonly string[];
             readonly eMecCodigo: null | string;
