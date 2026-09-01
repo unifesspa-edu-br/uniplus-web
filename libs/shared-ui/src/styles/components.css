@@ -916,7 +916,7 @@ ui-vlibras-loader {
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
-.table-responsive th {
+.table-responsive thead th {
   text-align: left;
   padding: var(--space-3) var(--space-5);
   font-weight: var(--weight-semibold);
@@ -927,13 +927,22 @@ ui-vlibras-loader {
   background: var(--surface-page);
   border-bottom: 1px solid var(--border-subtle);
 }
-.table-responsive td {
+/* th[scope="row"] identifica a linha para o leitor de tela, mas renderiza
+   como célula de dados: mesma caixa do td, sem a tipografia nem o fundo de
+   cabeçalho. Nenhuma outra tabela do repo usa th fora de thead. */
+.table-responsive td,
+.table-responsive th[scope="row"] {
   padding: var(--space-4) var(--space-5);
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-subtle);
 }
+.table-responsive th[scope="row"] {
+  font-weight: var(--weight-regular);
+  text-align: left;
+}
 .table-responsive tbody tr:hover { background: var(--surface-page); }
-.table-responsive tbody tr:last-child td { border-bottom: none; }
+.table-responsive tbody tr:last-child td,
+.table-responsive tbody tr:last-child th[scope="row"] { border-bottom: none; }
 .table-responsive__num {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -963,7 +972,8 @@ ui-vlibras-loader {
   .table-responsive table,
   .table-responsive tbody,
   .table-responsive tr,
-  .table-responsive td {
+  .table-responsive td,
+  .table-responsive th[scope="row"] {
     display: block;
     width: 100%;
   }
@@ -980,7 +990,9 @@ ui-vlibras-loader {
   .table-responsive tbody tr:hover {
     border-color: var(--border-default);
   }
-  .table-responsive td {
+  /* th[scope="row"] COM data-label empilha como par rótulo/valor, igual ao td. */
+  .table-responsive td,
+  .table-responsive th[scope="row"][data-label] {
     border: none;
     display: flex;
     justify-content: space-between;
@@ -989,7 +1001,8 @@ ui-vlibras-loader {
     padding: var(--space-1) 0;
     text-align: right;
   }
-  .table-responsive td::before {
+  .table-responsive td::before,
+  .table-responsive th[scope="row"][data-label]::before {
     content: attr(data-label);
     color: var(--text-muted);
     font-size: var(--text-xs);
@@ -997,6 +1010,14 @@ ui-vlibras-loader {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: left;
+  }
+  /* th[scope="row"] SEM data-label encabeça o cartão. */
+  .table-responsive th[scope="row"]:not([data-label]) {
+    border: none;
+    display: block;
+    padding: 0 0 var(--space-1);
+    text-align: left;
+    font-weight: var(--weight-medium);
   }
   .table-responsive__num {
     text-align: right;
