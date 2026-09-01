@@ -135,7 +135,12 @@ export class LayoutComponent {
           routerLink: '/reserva-demografica',
           exact: true,
         },
-        { label: 'Peso ENEM', icon: 'pi-sliders-h', routerLink: '/pesos-enem', exact: true },
+        {
+          label: 'Pesos por áreas dos cursos',
+          icon: 'pi-sliders-h',
+          routerLink: '/pesos-enem',
+          exact: true,
+        },
         { label: 'Calendários', icon: 'pi-calendar', routerLink: '/calendario-dias-uteis' },
       ],
     },

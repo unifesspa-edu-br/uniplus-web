@@ -118,7 +118,7 @@ type EstadoOperacao = 'ok' | 'erro';
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title">Peso ENEM por grupo de curso</h1>
+        <h1 class="page-header__title">Pesos por áreas dos cursos</h1>
         <p class="page-header__desc">
           Pesos das cinco áreas do ENEM por grupo de curso, versionados por resolução INEP ·
           UNI-REQ-0066.
@@ -139,11 +139,7 @@ type EstadoOperacao = 'ok' | 'erro';
       }
     </div>
 
-    <ui-alert
-      variant="info"
-      heading="Chave composta: resolução + grupo de curso"
-      [dynamic]="false"
-    >
+    <ui-alert variant="info" heading="Chave composta: resolução + grupo de curso" [dynamic]="false">
       Cada linha representa um dos 4 grupos de curso de uma resolução INEP. Os pesos das áreas são
       definidos pela instituição em cada edital — não há soma fixa; o sistema registra os valores
       informados sem bloquear. O corte de redação é a nota mínima exigida na redação (padrão 400;
@@ -234,7 +230,9 @@ type EstadoOperacao = 'ok' | 'erro';
             @for (grupo of form.controls; track grupo.controls.id.value; let gi = $index) {
               <div class="num-grid__row" [formGroup]="grupo">
                 <div>
-                  <strong class="cell-label--group-label">{{ grupo.controls.grupoCurso.value }}</strong>
+                  <strong class="cell-label--group-label">{{
+                    grupo.controls.grupoCurso.value
+                  }}</strong>
                   <span class="field__hint">Chave composta — não editável</span>
                   @if (estadoLinhasEdicao().get(grupo.controls.id.value) === 'ok') {
                     <ui-tag variant="success">Salvo</ui-tag>
@@ -354,7 +352,11 @@ type EstadoOperacao = 'ok' | 'erro';
             }
             <div class="grid-editbar" id="grid-pe-bar">
               @if (editErro()) {
-                <ui-alert variant="danger" heading="Não foi possível salvar todos os grupos" [dynamic]="false">
+                <ui-alert
+                  variant="danger"
+                  heading="Não foi possível salvar todos os grupos"
+                  [dynamic]="false"
+                >
                   {{ editErro() }}
                 </ui-alert>
               }
@@ -532,8 +534,8 @@ type EstadoOperacao = 'ok' | 'erro';
               [attr.aria-invalid]="erroDoCampoLote('resolucao') ? 'true' : null"
             />
             <span class="field__hint">
-              Identificador da resolução INEP. Parte da chave composta — não pode ser alterado
-              após a criação.
+              Identificador da resolução INEP. Parte da chave composta — não pode ser alterado após
+              a criação.
             </span>
             @if (erroDoCampoLote('resolucao')) {
               <span class="field__error" role="alert">{{ erroDoCampoLote('resolucao') }}</span>
@@ -552,7 +554,9 @@ type EstadoOperacao = 'ok' | 'erro';
               Aplicada aos 4 grupos como valor pré-preenchido — cada grupo permanece editável.
             </span>
             @if (erroDoCampoLote('baseLegalGlobal')) {
-              <span class="field__error" role="alert">{{ erroDoCampoLote('baseLegalGlobal') }}</span>
+              <span class="field__error" role="alert">{{
+                erroDoCampoLote('baseLegalGlobal')
+              }}</span>
             }
           </label>
         </div>
@@ -788,7 +792,9 @@ export class PesosEnemPage {
   }
 
   protected linhaDoGrupo(resolucao: string, grupo: string): PesoAreaEnemDto | undefined {
-    return this.porResolucao().get(resolucao)?.find((linha) => linha.grupoCurso === grupo);
+    return this.porResolucao()
+      .get(resolucao)
+      ?.find((linha) => linha.grupoCurso === grupo);
   }
 
   protected tentarNovamente(): void {
@@ -838,7 +844,9 @@ export class PesosEnemPage {
     this.editForm.set(form);
     this.editErro.set(null);
     this.estadoLinhasEdicao.set(new Map());
-    this.idempotencyKeysEdicao.set(new Map(linhas.map((linha) => [linha.id, idempotencyKey.create()])));
+    this.idempotencyKeysEdicao.set(
+      new Map(linhas.map((linha) => [linha.id, idempotencyKey.create()])),
+    );
     this.ultimoPayloadEdicao.set(new Map());
     this.editandoResolucao.set(resolucao);
     queueMicrotask(() => {
@@ -867,7 +875,10 @@ export class PesosEnemPage {
     // linhas em `registros` antes de descartar — senão o modo leitura
     // voltaria a mostrar o valor pré-edição para uma linha que já foi salva
     // no backend, ficando desatualizado até um reload manual.
-    if (form !== null && [...this.estadoLinhasEdicao().values()].some((estado) => estado === 'ok')) {
+    if (
+      form !== null &&
+      [...this.estadoLinhasEdicao().values()].some((estado) => estado === 'ok')
+    ) {
       this.aplicarLinhasAtualizadas(form);
     }
     this.editandoResolucao.set(null);
@@ -881,7 +892,10 @@ export class PesosEnemPage {
     }
   }
 
-  protected erroDoCampo(grupo: FormGroup<PesoEdicaoGrupoForm>, nome: PesoCampoComum): string | null {
+  protected erroDoCampo(
+    grupo: FormGroup<PesoEdicaoGrupoForm>,
+    nome: PesoCampoComum,
+  ): string | null {
     return this.erroDeControle(grupo.controls[nome], nome);
   }
 
@@ -1096,7 +1110,9 @@ export class PesosEnemPage {
     }
   }
 
-  protected erroDoCampoLote(nome: keyof Pick<PesoLoteForm, 'resolucao' | 'baseLegalGlobal'>): string | null {
+  protected erroDoCampoLote(
+    nome: keyof Pick<PesoLoteForm, 'resolucao' | 'baseLegalGlobal'>,
+  ): string | null {
     return this.erroDeControle(this.pesoLoteForm.controls[nome], nome);
   }
 
