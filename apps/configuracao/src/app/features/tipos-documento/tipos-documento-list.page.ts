@@ -57,7 +57,7 @@ import {
   TagComponent,
   type UiFilterChipOption,
   type UiLookupFalho,
-  FilterBarComponent
+  FilterBarComponent,
 } from '@uniplus/shared-ui/components';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
