@@ -973,7 +973,7 @@ ui-vlibras-loader {
   .table-responsive tbody,
   .table-responsive tr,
   .table-responsive td,
-  .table-responsive th[scope="row"] {
+  .table-responsive tbody th[scope="row"] {
     display: block;
     width: 100%;
   }
@@ -990,9 +990,11 @@ ui-vlibras-loader {
   .table-responsive tbody tr:hover {
     border-color: var(--border-default);
   }
+  /* Só o th[scope="row"] do tbody empilha como cartão; o do tfoot (linha de
+     totais) segue com a borda que o consumidor aplica. */
   /* th[scope="row"] COM data-label empilha como par rótulo/valor, igual ao td. */
   .table-responsive td,
-  .table-responsive th[scope="row"][data-label] {
+  .table-responsive tbody th[scope="row"][data-label] {
     border: none;
     display: flex;
     justify-content: space-between;
@@ -1002,7 +1004,7 @@ ui-vlibras-loader {
     text-align: right;
   }
   .table-responsive td::before,
-  .table-responsive th[scope="row"][data-label]::before {
+  .table-responsive tbody th[scope="row"][data-label]::before {
     content: attr(data-label);
     color: var(--text-muted);
     font-size: var(--text-xs);
@@ -1012,7 +1014,7 @@ ui-vlibras-loader {
     text-align: left;
   }
   /* th[scope="row"] SEM data-label encabeça o cartão. */
-  .table-responsive th[scope="row"]:not([data-label]) {
+  .table-responsive tbody th[scope="row"]:not([data-label]) {
     border: none;
     display: block;
     padding: 0 0 var(--space-1);
