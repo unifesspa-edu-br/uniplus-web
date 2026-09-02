@@ -289,6 +289,16 @@ describe('OfertasCursoPage', () => {
     );
   });
 
+  it('a listagem mostra os regimes por rótulo, não pelo token do contrato', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.textContent as string;
+    expect(texto).toContain('Extensivo');
+    expect(texto).toContain('Regular');
+    expect(texto).not.toContain('EXTENSIVO');
+  });
+
   it('CA-06: programa REGULAR não exige base legal; programa != REGULAR exige', async () => {
     await flushCargaInicial([]);
     component['abrirCadastro']();
