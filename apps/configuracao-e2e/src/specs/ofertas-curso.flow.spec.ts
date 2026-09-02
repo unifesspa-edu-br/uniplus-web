@@ -64,6 +64,7 @@ const ofertaSeed = {
   },
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
+  regimeDeFuncionamento: 'EXTENSIVO',
   regimeDeTurno: 'REGULAR',
   turnos: ['MATUTINO'],
   eMecCodigo: '123456',
@@ -176,6 +177,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
     await marcarTurno(page, 'Matutino');
     await page.getByRole('button', { name: 'Criar oferta' }).click();
 
@@ -184,6 +186,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
       cursoId: CURSO_ID,
       localOfertaId: LOCAL_ID,
       unidadeOfertanteOrigemId: UNIDADE_ID,
+      regimeDeFuncionamento: 'EXTENSIVO',
       regimeDeTurno: 'REGULAR',
       turnos: ['MATUTINO'],
     });
@@ -199,6 +202,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
     await page.locator('[formControlName="programaDeOferta"]').selectOption('PARFOR');
+    await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
     await marcarTurno(page, 'Matutino');
 
     await expect(page.locator('[formControlName="baseLegal"]')).toBeVisible();
@@ -222,6 +226,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
     await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
     await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
     await page.locator('[formControlName="regimeDeTurno"]').selectOption('INTEGRAL');
 
     // Marcação por teclado: foco no checkbox e barra de espaço — sem clique.
@@ -284,6 +289,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     expect(put['cursoId']).toBeUndefined();
     expect(put['localOfertaId']).toBeUndefined();
     expect(put['unidadeOfertanteOrigemId']).toBeUndefined();
+    expect(put['regimeDeFuncionamento']).toBe('EXTENSIVO');
     expect(put['eMecCodigo']).toBe('999999');
   });
 });

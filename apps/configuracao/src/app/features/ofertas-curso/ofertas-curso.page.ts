@@ -61,6 +61,7 @@ import {
   ordenarTurnosCanonicamente,
   turnosExigidosPorRegime,
   REGIMES_DE_FUNCIONAMENTO,
+  REGIME_DE_FUNCIONAMENTO_EXTENSIVO,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
@@ -760,7 +761,7 @@ export class OfertasCursoPage implements OnInit {
       nonNullable: true,
       validators: [Validators.maxLength(300)],
     }),
-    regimeDeFuncionamento: new FormControl('', {
+    regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(30)],
     }),
@@ -1073,6 +1074,7 @@ export class OfertasCursoPage implements OnInit {
       unidadeOfertanteOrigemId: '',
       programaDeOferta: PROGRAMA_DE_OFERTA_REGULAR,
       formatoPedagogico: 'PRESENCIAL',
+      regimeDeFuncionamento: REGIME_DE_FUNCIONAMENTO_EXTENSIVO,
       regimeDeTurno: REGIME_DE_TURNO_REGULAR,
       turnos: [],
       eMecCodigo: '',
