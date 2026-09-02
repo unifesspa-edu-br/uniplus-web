@@ -170,6 +170,14 @@ describe('AppShellComponent', () => {
       expect(sidebar).toContain('min-height: 0');
     });
 
+    it('o painel do menu movel se limita ao viewport dinamico', () => {
+      // Com `100vh` em navegador móvel de barra retrátil o painel passa da área
+      // visível e o fim da lista fica atrás da barra, com o fundo travado por
+      // `body.uni-drawer-open`.
+      expect(rule('.uni-drawer', 'max-width: 100vw')).toContain('max-height: 100dvh');
+      expect(rule('.uni-drawer__panel', 'max-width: 320px')).toContain('height: 100dvh');
+    });
+
     it('as regioes rolaveis usam tokens do DS, sem cores fixas — inclusive nas regras derivadas', () => {
       const page = rules('.page');
       const nav = rules('.sidebar nav');
