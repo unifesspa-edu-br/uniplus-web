@@ -5,6 +5,10 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 /**
  * Rolagem vertical do shell administrativo compartilhado (`ui-app-shell`).
  *
+ * Os identificadores `CA-NN` citados nos casos abaixo são os critérios de
+ * aceite da issue #666 (`bug(shared-ui): conteúdo e navegação lateral ficam
+ * inacessíveis sem rolagem`).
+ *
  * Contrato exercitado:
  * - a área de conteúdo (`main.page`) é o único contêiner de rolagem vertical do
  *   conteúdo; o `<body>` não rola;
@@ -245,6 +249,16 @@ test.describe('Shell administrativo — rolagem vertical', () => {
       expect(metricas.mainRola).toBe(true);
       expect(metricas.navRola).toBe(true);
       expect(metricas.docRolaVertical).toBe(false);
+
+      // O CA-13 da #666 pede a identificação visual da região rolável, não só
+      // que ela role: o trilho é pintado em qualquer tema. `scrollbar-color`
+      // é `<thumb> <track>` — um thumb transparente devolveria a região sem
+      // marca alguma, que é o que este caso existe para barrar.
+      const trilho = await page
+        .locator('aside.sidebar nav')
+        .evaluate((el) => getComputedStyle(el).scrollbarColor);
+      expect(trilho).not.toBe('auto');
+      expect(trilho).not.toMatch(/^(transparent\b|rgba\([^)]*,\s*0\))/u);
 
       const ultimaLinha = page.getByRole('row', { name: new RegExp(ULTIMO_CAMPUS) });
       await ultimaLinha.scrollIntoViewIfNeeded();
