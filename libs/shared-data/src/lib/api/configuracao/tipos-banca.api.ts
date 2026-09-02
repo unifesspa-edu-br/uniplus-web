@@ -17,7 +17,7 @@ export interface TiposBancaQuery {
 }
 
 /**
- * Código canônico dos 4 tipos de banca fixos (UNI-REQ-0064). Roster fechado —
+ * Código canônico dos 6 tipos de banca fixos (UNI-REQ-0139). Roster fechado —
  * usado só pelo `select` de criação; a edição trata `codigo` como imutável.
  */
 export const CODIGOS_TIPO_BANCA = [
@@ -25,6 +25,8 @@ export const CODIGOS_TIPO_BANCA = [
   'BANCA_ENTREVISTA',
   'BANCA_CORRECAO_REDACOES',
   'BANCA_ANALISE_RECURSOS',
+  'BANCA_HETEROIDENTIFICACAO',
+  'BANCA_BIOPSICOSSOCIAL',
 ] as const;
 
 export type CodigoTipoBanca = (typeof CODIGOS_TIPO_BANCA)[number];
