@@ -119,17 +119,17 @@ const PAGE_SIZE = 50;
                   <td data-label="Ações" class="table-responsive__actions">
                     <a
                       class="btn btn--tertiary btn--sm btn--rect"
-                      aria-label="Visualizar calendário"
+                      [attr.aria-label]="'Visualizar calendário ' + calendario.versaoDataset"
                       [routerLink]="[calendario.id]"
                     >
-                      Ver detalhe
+                      Visualizar calendário
                     </a>
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
                       [title]="calendario.vigente ? 'Marque outro dataset como vigente' : ''"
                       [disabled]="loading() || saving() || calendario.vigente"
-                      [attr.aria-label]="'Marcar vigente'"
+                      [attr.aria-label]="'Marcar vigente ' + calendario.versaoDataset"
                       (click)="solicitarVigenteConfirmado(calendario)"
                     >
                       Marcar vigente
@@ -143,10 +143,10 @@ const PAGE_SIZE = 50;
                           : ''
                       "
                       [disabled]="loading() || saving() || calendario.vigente"
-                      [attr.aria-label]="'Remover o calendário'"
+                      [attr.aria-label]="'Remover calendário ' + calendario.versaoDataset"
                       (click)="abrirRemoverCalendario(calendario)"
                     >
-                      Remover
+                      Remover calendário
                     </button>
                   </td>
                 </tr>
