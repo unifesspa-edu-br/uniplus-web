@@ -18,7 +18,7 @@ export interface FasesCanonicasQuery {
 
 /**
  * Código canônico das fases fixas do ciclo de vida do processo seletivo
- * (UNI-REQ-0064). Roster fechado — usado só pelo `select` de criação; a
+ * (UNI-REQ-0139). Roster fechado — usado só pelo `select` de criação; a
  * edição trata `codigo` como imutável (readonly). Espelha
  * `FaseCanonicaCatalogo.Codigos` do backend, que não declara o enum no
  * OpenAPI: `codigo` é string no contrato e a pertença é guarda de domínio.
@@ -35,6 +35,7 @@ export const CODIGOS_FASE_CANONICA = [
   'RESULTADO_FINAL',
   'HABILITACAO',
   'HETEROIDENTIFICACAO',
+  'AVALIACAO_BIOPSICOSSOCIAL',
   'MATRICULA',
   'HOMOLOGACAO_RESULTADO_FINAL',
   'LISTA_ESPERA',
