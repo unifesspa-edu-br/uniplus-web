@@ -9,7 +9,6 @@ import {
   linkedSignal,
   signal,
   untracked,
-  OnInit,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -62,6 +61,8 @@ import {
   turnosExigidosPorRegime,
   REGIMES_DE_FUNCIONAMENTO,
   REGIME_DE_FUNCIONAMENTO_EXTENSIVO,
+  REGIME_DE_FUNCIONAMENTO_INTENSIVO,
+  REGIME_DE_TURNO_INTEGRAL,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
@@ -578,7 +579,7 @@ interface OfertaCursoForm {
   `,
   host: { class: 'cfg-page' },
 })
-export class OfertasCursoPage implements OnInit {
+export class OfertasCursoPage {
   private readonly api = inject(OfertasCursoApi);
   private readonly cursosApi = inject(CursosApi);
   private readonly locaisOfertaApi = inject(LocaisOfertaApi);
@@ -763,7 +764,11 @@ export class OfertasCursoPage implements OnInit {
     }),
     regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(30)],
+      validators: [
+        Validators.required,
+        Validators.maxLength(30),
+        compatibilidadeComRegimeDeTurno,
+      ],
     }),
   });
 
@@ -880,10 +885,6 @@ export class OfertasCursoPage implements OnInit {
       : 'cfg-oferta-turnos-hint cfg-oferta-turnos-erro';
   }
 
-  protected readonly regimeFuncionamentoMessageErro = signal(
-    'A oferta INTENSIVO exige regime de turno INTEGRAL; foi declarado REGULAR.',
-  );
-
   constructor() {
     effect(() => {
       const problem = this.lista.problem();
@@ -943,21 +944,14 @@ export class OfertasCursoPage implements OnInit {
         this.form.controls.turnos.updateValueAndValidity({ emitEvent: false });
       });
     });
-  }
 
-  ngOnInit(): void {
-    const regimeDeFuncionamentoControl = this.form.controls.regimeDeFuncionamento;
-    this.form.valueChanges.subscribe((form) => {
-      if (!form.regimeDeFuncionamento || !form.regimeDeTurno) {
-        return;
-      }
-      if (this.regimeDeFuncionamentoInvalido()) {
-        regimeDeFuncionamentoControl.setErrors({
-          regimeFuncionamentoDomainError: true,
-        });
-      } else {
-        regimeDeFuncionamentoControl.setErrors(null);
-      }
+    // O regime de funcionamento é validado contra o regime de turno declarado,
+    // então trocar o turno tem de reavaliar o outro controle.
+    effect(() => {
+      this.regimeValue();
+      untracked(() => {
+        this.form.controls.regimeDeFuncionamento.updateValueAndValidity({ emitEvent: false });
+      });
     });
   }
 
@@ -1207,10 +1201,11 @@ export class OfertasCursoPage implements OnInit {
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     if (control.errors['min']) return 'Valor não pode ser negativo.';
     if (control.errors['regimeFuncionamentoIncompativelRegimeTurno']) {
-      return this.regimeFuncionamentoMessageErro();
+      const { regimeDeTurno } = control.errors['regimeFuncionamentoIncompativelRegimeTurno'] as {
+        regimeDeTurno: string;
+      };
+      return `A oferta INTENSIVO exige regime de turno INTEGRAL; foi declarado ${regimeDeTurno}.`;
     }
-    if (control.errors['regimeFuncionamentoDomainError'])
-      return this.regimeFuncionamentoMessageErro();
     return 'Valor inválido.';
   }
 
@@ -1333,13 +1328,6 @@ export class OfertasCursoPage implements OnInit {
       regimeDeFuncionamento: nullIfBlank(raw.regimeDeFuncionamento),
     };
   }
-
-  protected regimeDeFuncionamentoInvalido(): boolean {
-    return (
-      this.form.controls.regimeDeTurno.value === 'REGULAR' &&
-      this.form.controls.regimeDeFuncionamento.value === 'INTENSIVO'
-    );
-  }
 }
 
 /** Descarta os turnos marcados há mais tempo até caber no limite do regime. */
@@ -1372,6 +1360,25 @@ function cardinalidadeDeTurnos(control: AbstractControl): ValidationErrors | nul
     return { cardinalidadeTurnos: { regime, exigidos } };
   }
   return null;
+}
+
+/**
+ * Antecipa no formulário a compatibilidade entre as duas dimensões do regime
+ * (UNI-REQ-0138): `INTENSIVO` exige regime de turno `INTEGRAL`. Vive no
+ * controle, e não numa subscrição que escreve `setErrors`, para conviver no
+ * mesmo `errors` com `required`, `maxLength` e a recusa vinda da API — apagar
+ * o objeto inteiro levaria essas outras junto. A API continua sendo a árbitra
+ * final: turno que o frontend não conhece não bloqueia o envio.
+ */
+function compatibilidadeComRegimeDeTurno(control: AbstractControl): ValidationErrors | null {
+  if (control.value !== REGIME_DE_FUNCIONAMENTO_INTENSIVO) {
+    return null;
+  }
+  const regimeDeTurno = control.parent?.get('regimeDeTurno')?.value as string | undefined;
+  if (!regimeDeTurno || regimeDeTurno === REGIME_DE_TURNO_INTEGRAL) {
+    return null;
+  }
+  return { regimeFuncionamentoIncompativelRegimeTurno: { regimeDeTurno } };
 }
 
 const OFERTA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof OfertaCursoForm>([
