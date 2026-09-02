@@ -181,10 +181,10 @@ describe('AppShellComponent', () => {
     it('as regioes rolaveis usam tokens do DS, sem cores fixas — inclusive nas regras derivadas', () => {
       const page = rules('.page');
       const nav = rules('.sidebar nav');
-      expect(page).toMatch(/scrollbar-color:\s*var\(--/u);
-      expect(nav).toMatch(/scrollbar-color:\s*color-mix\(/u);
-      // O trilho da navegação não pode depender de :hover para aparecer.
-      expect(nav).not.toContain(':hover');
+      // Ancorado na regra base, e não no conjunto: é ela que tem de pintar o
+      // trilho. Casar numa derivada aceitaria um trilho que só existe no hover.
+      expect(rule('.page', 'overflow-y: auto')).toMatch(/scrollbar-color:\s*var\(--/u);
+      expect(rule('.sidebar nav', 'overflow-y: auto')).toMatch(/scrollbar-color:\s*color-mix\(/u);
       const scrollCss = `${page}\n${nav}`;
       expect(scrollCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/u);
       expect(scrollCss).not.toMatch(/\brgba?\(/u);
