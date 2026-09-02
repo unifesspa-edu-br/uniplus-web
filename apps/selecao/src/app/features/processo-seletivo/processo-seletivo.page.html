@@ -224,7 +224,13 @@
   (closed)="cancelarGravacao()"
 >
   @if (confirmacaoPendente(); as confirmacao) {
-  <p class="alert alert--info" role="status">{{ confirmacao.aviso }}</p>
+  <div class="alert alert--warning" role="status">
+    <span class="alert__icon" aria-hidden="true">!</span>
+    <div class="alert__body">
+      <p class="alert__title">Atenção!</p>
+      <p class="alert__msg">{{ confirmacao.aviso }}</p>
+    </div>
+  </div>
   <dl class="confirmacao-lista">
     @for (item of confirmacao.itens; track item.rotulo) {
     <div class="confirmacao-lista__linha">
@@ -241,7 +247,7 @@
       [disabled]="store.salvando()"
       (click)="cancelarGravacao()"
     >
-      Voltar e revisar
+      Voltar e corrigir
     </button>
     <!-- Continua habilitado enquanto grava, e de propósito: é o único controle
          que resta no diálogo nesse estado, e desabilitá-lo deixaria a janela

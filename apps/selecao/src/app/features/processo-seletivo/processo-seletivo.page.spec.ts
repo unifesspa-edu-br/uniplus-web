@@ -395,6 +395,29 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     expect(texto).toContain('não poderão ser alterados');
   });
 
+  /**
+   * O aviso precisa se distinguir de uma mensagem informativa comum — a cor
+   * sozinha não pode carregar essa distinção (WCAG 2.1 — 1.4.1), daí o rótulo
+   * textual "Atenção!" ao lado da variante `alert--warning`.
+   */
+  it('destaca o aviso de irreversibilidade e o botão de desistência', async () => {
+    const { page, fixture } = cenario();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const aviso = host.querySelector('.alert--warning');
+    expect(aviso).not.toBeNull();
+    expect(aviso?.getAttribute('role')).toBe('status');
+    expect(aviso?.querySelector('.alert__title')?.textContent).toContain('Atenção!');
+
+    const botao = [...host.querySelectorAll('button')].find((b) =>
+      /Voltar e corrigir/.test(b.textContent ?? ''),
+    );
+    expect(botao).toBeDefined();
+  });
+
   it('anuncia no botão que o avanço grava', async () => {
     const { page, fixture } = cenario();
     fixture.detectChanges();
