@@ -47,10 +47,15 @@ export const appRoutes: Routes = [
           ),
       },
       {
-        path: 'pesos-enem',
-        data: { breadcrumb: 'Pesos por áreas dos cursos' },
+        path: 'pesos-por-area',
+        data: { breadcrumb: 'Peso por Área' },
         loadChildren: () =>
           import('./features/pesos-enem/pesos-enem.routes').then((m) => m.PESOS_ENEM_ROUTES),
+      },
+      {
+        path: 'pesos-enem',
+        redirectTo: 'pesos-por-area',
+        pathMatch: 'full',
       },
       {
         path: 'cursos',

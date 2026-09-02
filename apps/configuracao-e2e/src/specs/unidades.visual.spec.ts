@@ -360,7 +360,7 @@ async function assertSidebarBehavior(page: Page, viewport: VisualViewport): Prom
     await expect(sidebar).toBeVisible();
 
     await sidebar.evaluate((node) => node.querySelector('nav')?.scrollTo({ top: 10_000 }));
-    await expect(sidebar.getByText('Peso ENEM')).toBeVisible();
+    await expect(sidebar.getByText('Peso por Área')).toBeVisible();
   } else {
     await expect(page.getByRole('dialog', { name: 'Menu de navegação' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();

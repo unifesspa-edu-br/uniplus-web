@@ -98,9 +98,9 @@ async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown
 }
 
 async function abrirPagina(page: Page): Promise<void> {
-  await page.goto('/pesos-enem');
+  await page.goto('/peso-por-area');
   await expect(
-    page.getByRole('heading', { name: 'Peso ENEM por grupo de curso', level: 1 }),
+    page.getByRole('heading', { name: 'Peso por Área', level: 1 }),
   ).toBeVisible();
 }
 
