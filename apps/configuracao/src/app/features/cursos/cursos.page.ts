@@ -51,8 +51,14 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
-/** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
+/** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
+
+/** Opções de "itens por página" do rodapé da lista principal (backend aceita 1..100). */
+const OPCOES_LIMITE = [10, 25, 50, 100] as const;
+
+/** Limite inicial da lista principal, antes de qualquer escolha do usuário. */
+const LIMITE_PADRAO = 25;
 
 /** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
@@ -200,10 +206,12 @@ interface CursoForm {
         </ui-empty-state>
       }
 
-      @if (prevCursor() !== null || nextCursor() !== null) {
+      @if (cursosFiltrados().length > 0 || prevCursor() !== null || nextCursor() !== null) {
         <ui-pager
-          statusText="Navegação por páginas"
           navigationLabel="Paginação de cursos"
+          [pageSizeOptions]="opcoesLimite"
+          [pageSize]="limite()"
+          (pageSizeChange)="aoTrocarLimite($event)"
           [hasPrevious]="prevCursor() !== null"
           [hasNext]="nextCursor() !== null"
           [isDisabled]="loading()"
@@ -443,6 +451,10 @@ export class CursosPage {
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
 
+  /** Itens por página escolhidos no rodapé; só em memória (volta ao padrão a cada visita). */
+  protected readonly limite = signal<number>(LIMITE_PADRAO);
+  protected readonly opcoesLimite = OPCOES_LIMITE;
+
   // Drawer "Ofertas do curso" — inspeção sob demanda das ofertas vivas de um
   // curso via filtro `?cursoId` (api#755, issue #435).
   protected readonly ofertasOpen = signal(false);
@@ -655,6 +667,20 @@ export class CursosPage {
     }
   }
 
+  /**
+   * Troca o limite e volta à primeira página: o cursor da página atual carrega
+   * a janela antiga (ADR-0026), então navegar a partir dele ignoraria a escolha.
+   * `montarParams` lê `limite()` no ramo da primeira página, então o reset de
+   * `pagina` (ou o próprio `limite`, quando já na primeira) redispara o GET.
+   */
+  protected aoTrocarLimite(valor: number | null): void {
+    if (valor === null || valor === this.limite() || this.loading()) {
+      return;
+    }
+    this.limite.set(valor);
+    this.pagina.set(undefined);
+  }
+
   /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
   protected abrirOfertas(curso: CursoDto): void {
     this.ofertasBloqueio.set(null);
@@ -848,7 +874,7 @@ export class CursosPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-      return new HttpParams().set('limit', String(PAGE_SIZE));
+      return new HttpParams().set('limit', String(this.limite()));
     }
     return new HttpParams()
       .set('cursor', cursorToString(pagina.cursor))

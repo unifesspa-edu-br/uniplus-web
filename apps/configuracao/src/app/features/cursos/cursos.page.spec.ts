@@ -79,7 +79,7 @@ describe('CursosPage', () => {
 
   async function flushLista(itens: readonly CursoDto[]): Promise<void> {
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
-    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.get('limit')).toBe('25');
     req.flush(itens);
     await propagate();
   }
@@ -330,6 +330,45 @@ describe('CursosPage', () => {
     await propagate();
     await flushLista([]);
     expect(component['confirmOpen']()).toBe(false);
+  });
+
+  it('trocar itens por página recarrega a primeira página com o novo limit', async () => {
+    await flushLista([cursoSeed]);
+
+    component['aoTrocarLimite'](100);
+    await propagate();
+
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
+    expect(req.request.params.get('limit')).toBe('100');
+    expect(req.request.params.has('cursor')).toBe(false);
+    req.flush([cursoSeed]);
+    await propagate();
+    expect(component['limite']()).toBe(100);
+  });
+
+  it('trocar itens por página a partir de uma página navegada volta ao início sem cursor', async () => {
+    const CURSOS_URL = `${BASE}/api/configuracao/cursos`;
+    const p1 = controller.expectOne((r) => r.url === CURSOS_URL);
+    p1.flush([cursoSeed], {
+      headers: { Link: `<${CURSOS_URL}?cursor=pagina-2&direction=next>; rel="next"` },
+    });
+    await propagate();
+
+    component['proximaPagina']();
+    await propagate();
+    const p2 = controller.expectOne((r) => r.url === CURSOS_URL);
+    expect(p2.request.params.get('cursor')).toBe('pagina-2');
+    p2.flush([cursoSeed]);
+    await propagate();
+
+    component['aoTrocarLimite'](10);
+    await propagate();
+
+    const p3 = controller.expectOne((r) => r.url === CURSOS_URL);
+    expect(p3.request.params.get('limit')).toBe('10');
+    expect(p3.request.params.has('cursor')).toBe(false);
+    p3.flush([cursoSeed]);
+    await propagate();
   });
 
   it('filtra a lista client-side por código ou nome', async () => {
