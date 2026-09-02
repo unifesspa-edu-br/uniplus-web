@@ -35,6 +35,7 @@ export {
   type AtualizarCursoCommand,
   type CriarCursoCommand,
   type CursoDto,
+  type CursosOrdenarPor,
   type CursosQuery,
   type GrupoAreaEnemOption,
 } from './cursos.api';

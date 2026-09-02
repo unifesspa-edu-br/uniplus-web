@@ -60,6 +60,14 @@ const OPCOES_LIMITE = [10, 25, 50, 100] as const;
 /** Limite inicial da lista principal, antes de qualquer escolha do usuário. */
 const LIMITE_PADRAO = 25;
 
+/** Coluna e sentido da ordenação server-side (`?ordenarPor=&ordem=`). */
+type ColunaOrdenavel = 'nome' | 'codigo';
+type SentidoOrdenacao = 'asc' | 'desc';
+interface Ordenacao {
+  readonly por: ColunaOrdenavel;
+  readonly sentido: SentidoOrdenacao;
+}
+
 /** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
 
@@ -145,7 +153,17 @@ interface CursoForm {
             <thead>
               <tr>
                 <th scope="col">Código</th>
-                <th scope="col">Nome</th>
+                <th scope="col" [attr.aria-sort]="ariaSort('nome')">
+                  <button
+                    type="button"
+                    class="th-sort"
+                    [disabled]="loading()"
+                    (click)="alternarOrdenacao('nome')"
+                  >
+                    <span>Nome</span>
+                    <i [class]="iconeOrdenacao('nome')" aria-hidden="true"></i>
+                  </button>
+                </th>
                 <th scope="col">Grau</th>
                 <th scope="col">Nível</th>
                 <th scope="col">Grupo ENEM</th>
@@ -455,6 +473,9 @@ export class CursosPage {
   protected readonly limite = signal<number>(LIMITE_PADRAO);
   protected readonly opcoesLimite = OPCOES_LIMITE;
 
+  /** Ordenação corrente da lista; `null` = ordem padrão do backend (por Id). */
+  protected readonly ordenacao = signal<Ordenacao | null>(null);
+
   // Drawer "Ofertas do curso" — inspeção sob demanda das ofertas vivas de um
   // curso via filtro `?cursoId` (api#755, issue #435).
   protected readonly ofertasOpen = signal(false);
@@ -681,6 +702,47 @@ export class CursosPage {
     this.pagina.set(undefined);
   }
 
+  /**
+   * Ciclo do cabeçalho ordenável: sem ordem → asc → desc → sem ordem. Trocar a
+   * ordem volta à primeira página (o cursor atual carrega a ordem antiga, como
+   * o `limit`); `montarParams` lê `ordenacao()` no ramo da primeira página.
+   */
+  protected alternarOrdenacao(por: ColunaOrdenavel): void {
+    if (this.loading()) {
+      return;
+    }
+    const atual = this.ordenacao();
+    const proxima: Ordenacao | null =
+      atual === null || atual.por !== por
+        ? { por, sentido: 'asc' }
+        : atual.sentido === 'asc'
+          ? { por, sentido: 'desc' }
+          : null;
+    this.ordenacao.set(proxima);
+    this.pagina.set(undefined);
+  }
+
+  /** Valor de `aria-sort` do `<th>` da coluna (WAI-ARIA: `none` quando não é a coluna ativa). */
+  protected ariaSort(por: ColunaOrdenavel): 'ascending' | 'descending' | 'none' {
+    const atual = this.ordenacao();
+    if (atual === null || atual.por !== por) {
+      return 'none';
+    }
+    return atual.sentido === 'asc' ? 'ascending' : 'descending';
+  }
+
+  /** Classe completa do PrimeIcon que indica o estado de ordenação da coluna. */
+  protected iconeOrdenacao(por: ColunaOrdenavel): string {
+    const atual = this.ordenacao();
+    const glifo =
+      atual === null || atual.por !== por
+        ? 'pi-sort-alt'
+        : atual.sentido === 'asc'
+          ? 'pi-sort-amount-up-alt'
+          : 'pi-sort-amount-down-alt';
+    return `pi th-sort__icon ${glifo}`;
+  }
+
   /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
   protected abrirOfertas(curso: CursoDto): void {
     this.ofertasBloqueio.set(null);
@@ -874,7 +936,12 @@ export class CursosPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-      return new HttpParams().set('limit', String(this.limite()));
+      let params = new HttpParams().set('limit', String(this.limite()));
+      const ordem = this.ordenacao();
+      if (ordem !== null) {
+        params = params.set('ordenarPor', ordem.por).set('ordem', ordem.sentido);
+      }
+      return params;
     }
     return new HttpParams()
       .set('cursor', cursorToString(pagina.cursor))

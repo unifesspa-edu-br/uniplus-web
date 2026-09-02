@@ -220,6 +220,37 @@ cfg-pesos-enem-page {
   border-top: 1px solid var(--border-subtle);
 }
 
+/* Cabeçalho de coluna ordenável — herda a tipografia do `<th>` (caixa alta,
+   espaçamento) e só adiciona o alvo clicável e a setinha de estado. */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.th-sort:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+.th-sort:disabled {
+  cursor: default;
+}
+.th-sort__icon {
+  font-size: 0.85em;
+  opacity: 0.45;
+}
+th[aria-sort='ascending'] .th-sort__icon,
+th[aria-sort='descending'] .th-sort__icon {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
 .cfg-link-button {
   padding: 0;
   color: inherit;

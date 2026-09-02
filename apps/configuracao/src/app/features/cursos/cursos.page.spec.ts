@@ -371,6 +371,40 @@ describe('CursosPage', () => {
     await propagate();
   });
 
+  it('cabeçalho Nome cicla ordenação asc → desc → padrão, sempre voltando à primeira página', async () => {
+    const CURSOS_URL = `${BASE}/api/configuracao/cursos`;
+    await flushLista([cursoSeed]);
+
+    // 1º clique: asc
+    component['alternarOrdenacao']('nome');
+    await propagate();
+    const asc = controller.expectOne((r) => r.url === CURSOS_URL);
+    expect(asc.request.params.get('ordenarPor')).toBe('nome');
+    expect(asc.request.params.get('ordem')).toBe('asc');
+    expect(asc.request.params.has('cursor')).toBe(false);
+    asc.flush([cursoSeed]);
+    await propagate();
+    expect(component['ariaSort']('nome')).toBe('ascending');
+
+    // 2º clique: desc
+    component['alternarOrdenacao']('nome');
+    await propagate();
+    const desc = controller.expectOne((r) => r.url === CURSOS_URL);
+    expect(desc.request.params.get('ordem')).toBe('desc');
+    desc.flush([cursoSeed]);
+    await propagate();
+    expect(component['ariaSort']('nome')).toBe('descending');
+
+    // 3º clique: volta ao padrão (sem ordenarPor)
+    component['alternarOrdenacao']('nome');
+    await propagate();
+    const padrao = controller.expectOne((r) => r.url === CURSOS_URL);
+    expect(padrao.request.params.has('ordenarPor')).toBe(false);
+    padrao.flush([cursoSeed]);
+    await propagate();
+    expect(component['ariaSort']('nome')).toBe('none');
+  });
+
   it('filtra a lista client-side por código ou nome', async () => {
     const outroCurso: CursoDto = { ...cursoSeed, id: 'outro-id', codigo: 'ADM', nome: 'Administração' };
     await flushLista([cursoSeed, outroCurso]);

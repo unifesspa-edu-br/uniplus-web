@@ -23,11 +23,22 @@ export const GRUPOS_AREA_ENEM: readonly GrupoAreaEnemOption[] = [
   { value: 'Saúde e Biológicas', label: 'Saúde e Biológicas' },
 ] as const;
 
+/** Colunas ordenáveis da listagem de Cursos (impl. provisória no backend). */
+export type CursosOrdenarPor = 'nome' | 'codigo';
+
 /** Filtro de listagem de Cursos (cursor pagination, ADR-0026). */
 export interface CursosQuery {
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
+  /**
+   * Ordenação keyset por coluna; omitido = ordem padrão (por `Id`). Só vale na
+   * primeira página — o cursor carrega a âncora `(chave, Id)` e a ordem
+   * (espelha o `limit`, ADR-0026). Valor fora do vocabulário → 400.
+   */
+  readonly ordenarPor?: CursosOrdenarPor;
+  /** Sentido; só tem efeito com `ordenarPor`. Padrão do backend: `asc`. */
+  readonly ordem?: 'asc' | 'desc';
 }
 
 /**
@@ -52,6 +63,12 @@ export class CursosApi {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
     } else {
       params = params.set('limit', String(query.limit ?? 100));
+      if (query.ordenarPor !== undefined) {
+        params = params.set('ordenarPor', query.ordenarPor);
+        if (query.ordem !== undefined) {
+          params = params.set('ordem', query.ordem);
+        }
+      }
     }
     return this.http.get<ApiResult<readonly CursoDto[]>>(`${this.basePath}/api/configuracao/cursos`, {
       params,

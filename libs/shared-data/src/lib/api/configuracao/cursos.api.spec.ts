@@ -72,6 +72,26 @@ describe('CursosApi', () => {
     await promise;
   });
 
+  it('listar() na primeira página envia ordenarPor + ordem quando informados', async () => {
+    const promise = firstValueFrom(api.listar({ limit: 25, ordenarPor: 'nome', ordem: 'desc' }));
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
+    expect(req.request.params.get('ordenarPor')).toBe('nome');
+    expect(req.request.params.get('ordem')).toBe('desc');
+    req.flush([cursoSeed]);
+    await promise;
+  });
+
+  it('listar() com cursor omite ordenarPor/ordem (o cursor carrega a ordem)', async () => {
+    const promise = firstValueFrom(
+      api.listar({ cursor: 'abc', direction: 'next', ordenarPor: 'nome', ordem: 'asc' }),
+    );
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
+    expect(req.request.params.has('ordenarPor')).toBe(false);
+    expect(req.request.params.has('ordem')).toBe(false);
+    req.flush([cursoSeed]);
+    await promise;
+  });
+
   it('obter() faz GET /api/configuracao/cursos/{id}', async () => {
     const promise = firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/cursos/${ID}`);
