@@ -50,6 +50,14 @@ import { comoComandoDeEtapa, comoComandoDeFase } from './cronograma-para-comando
  */
 const PERMUTACAO_DE_ORDEM = 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada';
 
+/**
+ * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
+ * que o servidor atribuiu. Serve à conferência do passo e à recusa da gravação,
+ * que é o mesmo impedimento dito uma vez só.
+ */
+const AGUARDA_RELEITURA =
+  'As etapas foram gravadas, mas a tela ainda não recolheu os identificadores que o servidor atribuiu. Releia as etapas antes de gravar de novo: sem eles, a gravação seguinte recriaria as etapas e desfaria as referências de desempate e eliminação.';
+
 /** Caráter de uma etapa, com o rótulo que o operador lê. */
 const CARATERES = [
   { valor: 'classificatoria', rotulo: 'Classificatória' },
@@ -104,6 +112,24 @@ export class CronogramaStepComponent {
    */
   readonly avisoDeReordenacao = signal<string | null>(null);
 
+  /**
+   * As etapas existem no servidor, mas o rascunho ficou sem os identificadores
+   * que ele atribuiu — a releitura que os recolheria não respondeu.
+   *
+   * Enquanto durar, a tela não grava: a gravação seguinte omitiria o `id` de
+   * etapas que já existem, e o servidor criaria outras no lugar, deixando o
+   * critério de desempate e a regra de eliminação apontando para as que
+   * deixaram de existir. Instruir a reabrir o processo descreve a saída, mas não
+   * fecha a porta — quem fecha é a recusa, e o bloqueio é a face visível dela.
+   */
+  readonly reconciliacaoPendente = signal(false);
+
+  /** Releitura em voo: o botão que a dispara não aceita um segundo clique. */
+  readonly relendo = signal(false);
+
+  /** Por que a última tentativa de releitura não destravou a tela. */
+  readonly erroDeReleitura = signal<string | null>(null);
+
   constructor() {
     this.catalogos.carregar();
     this.espelharRascunho(this.store.draft().cronograma);
@@ -127,12 +153,25 @@ export class CronogramaStepComponent {
     });
 
     // Fora de rascunho o servidor recusa qualquer gravação; o formulário
-    // acompanha o que o wizard já decide para os outros passos.
+    // acompanha o que o wizard já decide para os outros passos, e mais o que só
+    // este passo sabe — as etapas gravadas à espera dos seus identificadores.
     effect(() => {
-      const editavel = this.store.aceitaEdicao();
+      const editavel = this.edicaoLiberada();
       untracked(() => {
         if (editavel) this.formulario.enable({ emitEvent: false });
         else this.formulario.disable({ emitEvent: false });
+      });
+    });
+
+    // Outro processo entra em cena — por troca de rota ou por recomeço — e o
+    // que travou a tela era de um cadastro que não está mais aqui. Sem isto o
+    // bloqueio atravessaria a fronteira e recusaria a gravação de um processo
+    // que nunca teve etapa nenhuma pendente.
+    effect(() => {
+      this.store.geracao();
+      untracked(() => {
+        this.reconciliacaoPendente.set(false);
+        this.erroDeReleitura.set(null);
       });
     });
   }
@@ -144,6 +183,15 @@ export class CronogramaStepComponent {
   get etapas() {
     return this.formulario.controls.etapas;
   }
+
+  /**
+   * O que a tela aceita editar: o que o wizard já permite, menos o intervalo em
+   * que as etapas gravadas seguem sem identificador. Duas origens para a mesma
+   * resposta, resolvidas aqui para que nenhum controle repita a conjunção.
+   */
+  readonly edicaoLiberada = computed(
+    () => this.store.aceitaEdicao() && !this.reconciliacaoPendente(),
+  );
 
   /**
    * A fase como a tela precisa dela, pela mesma resolução que a conferência
@@ -408,7 +456,15 @@ export class CronogramaStepComponent {
     this.etapas.updateValueAndValidity();
   }
 
+  /**
+   * A conferência do passo, que também é o que a gravação consulta antes de
+   * enviar qualquer coisa: recusar aqui é o que impede a segunda gravação de
+   * recriar etapas que já existem, e é o que impede a revisão final de declarar
+   * íntegro um cronograma que o servidor ainda não confirmou.
+   */
   validate(): StepValidation {
+    if (this.reconciliacaoPendente()) return { valid: false, messages: [AGUARDA_RELEITURA] };
+
     const problemas = this.problemas();
     return problemas.length === 0 ? { valid: true } : { valid: false, messages: [...problemas] };
   }
@@ -489,12 +545,11 @@ export class CronogramaStepComponent {
       const reconciliada = await this.reconciliarEtapas(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!reconciliada) {
-        return {
-          valid: false,
-          messages: [
-            'As etapas foram gravadas, mas não foi possível relê-las para confirmar. Abra o processo de novo antes de editá-las: sem os identificadores que o servidor atribuiu, a próxima gravação recriaria as etapas e desfaria as referências de desempate e eliminação.',
-          ],
-        };
+        // Trava a tela em vez de só avisar: o `finally` logo abaixo devolve o
+        // botão de gravar, e o rascunho ainda tem `id: null` nas etapas que o
+        // servidor acabou de criar.
+        this.reconciliacaoPendente.set(true);
+        return { valid: false, messages: [AGUARDA_RELEITURA] };
       }
 
       if (gravaEtapasPrimeiro) {
@@ -573,11 +628,49 @@ export class CronogramaStepComponent {
    * uma gravação que nem era daquele passo.
    */
   private async reconciliarEtapas(processoId: string): Promise<boolean> {
+    const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (!isApiOk(detalhe)) return false;
 
+    // A leitura estava em voo e outro processo entrou no lugar: projetar agora
+    // escreveria as etapas de um cadastro sobre o rascunho de outro. Quem
+    // chamou confere a mesma geração e descarta o resultado.
+    if (geracao !== this.store.geracao()) return false;
+
     this.store.projetarSecao('cronograma', { etapas: etapasDe(detalhe.data) });
     return true;
+  }
+
+  /**
+   * Refaz a releitura que travou a tela.
+   *
+   * É a saída no próprio passo. Recarregar o processo resolve igual, mas custa
+   * ao operador sair de onde está — e a tela já sabe exatamente o que faltou.
+   */
+  async relerEtapas(): Promise<void> {
+    const processoId = this.store.processoSeletivoId();
+    if (processoId === null || this.relendo()) return;
+
+    const geracao = this.store.geracao();
+    this.relendo.set(true);
+    this.erroDeReleitura.set(null);
+    try {
+      const reconciliada = await this.reconciliarEtapas(processoId);
+      // Outro processo assumiu a tela enquanto a leitura vinha: o bloqueio que
+      // existia era do anterior, e quem o desfaz é a troca, não esta resposta.
+      if (geracao !== this.store.geracao()) return;
+
+      if (reconciliada) {
+        this.reconciliacaoPendente.set(false);
+        return;
+      }
+
+      this.erroDeReleitura.set(
+        'Não foi possível reler as etapas agora. Tente de novo em instantes; se continuar assim, recarregue o processo.',
+      );
+    } finally {
+      this.relendo.set(false);
+    }
   }
 
   /**
@@ -640,7 +733,7 @@ export class CronogramaStepComponent {
         this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
       }
 
-      if (!this.store.aceitaEdicao()) this.formulario.disable({ emitEvent: false });
+      if (!this.edicaoLiberada()) this.formulario.disable({ emitEvent: false });
       this.versaoDoFormulario.update((versao) => versao + 1);
     } finally {
       this.espelhando = false;

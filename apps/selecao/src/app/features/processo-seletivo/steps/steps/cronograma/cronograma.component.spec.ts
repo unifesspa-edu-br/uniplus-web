@@ -567,6 +567,123 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
+   * O cenário que corrompe: o `PUT` das etapas passa, a releitura que recolheria
+   * os identificadores não vem, e o botão de gravar volta a ficar disponível.
+   * Sem o bloqueio, a segunda gravação reenvia etapas que já existem sem o
+   * `id`, e o servidor cria outras no lugar — deixando desempate e eliminação
+   * apontando para as que deixaram de existir.
+   */
+  it('recusa nova gravação enquanto as etapas gravadas estão sem identificador', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await proximoPasso();
+
+    const primeira = await gravacao;
+    expect(primeira.valid).toBe(false);
+    expect(primeira.messages?.[0]).toContain('identificadores');
+    expect(store.draft().cronograma.etapas[0].id).toBeNull();
+
+    const segunda = await componente.persistir();
+
+    expect(segunda.valid).toBe(false);
+    // A prova do bug: sem o bloqueio, esta segunda gravação teria enviado as
+    // etapas de novo — sem `id`, porque a releitura nunca chegou.
+    controller.expectNone(ROTA_ETAPAS);
+    controller.expectNone(ROTA_FASES);
+  });
+
+  it('suspende a edição enquanto a releitura não reconcilia', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await proximoPasso();
+    await gravacao;
+    detectar();
+
+    expect(componente.edicaoLiberada()).toBe(false);
+    expect(componente.formulario.disabled).toBe(true);
+  });
+
+  /**
+   * A saída fica no próprio passo: refeita a releitura, os identificadores
+   * chegam ao rascunho e a gravação seguinte os envia — que é o que impede a
+   * recriação de acontecer mais tarde.
+   */
+  it('releitura bem-sucedida destrava a tela e a gravação seguinte leva o identificador', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await proximoPasso();
+    await gravacao;
+
+    const releitura = componente.relerEtapas();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await releitura;
+    detectar();
+
+    expect(componente.reconciliacaoPendente()).toBe(false);
+    expect(componente.edicaoLiberada()).toBe(true);
+    expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+
+    const segunda = componente.persistir();
+    const reenvio = controller.expectOne(ROTA_ETAPAS);
+    expect((reenvio.request.body as { id: string | null }[])[0].id).toBe(ID_ETAPA_GRAVADA);
+    reenvio.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    await segunda;
+  });
+
+  /**
+   * O bloqueio pertence ao processo que o provocou. Outro cadastro entrando na
+   * tela recomeça do que o servidor disser sobre ele.
+   */
+  it('troca de processo desfaz o bloqueio da releitura', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await proximoPasso();
+    await gravacao;
+
+    store.reset();
+    detectar();
+
+    expect(componente.reconciliacaoPendente()).toBe(false);
+  });
+
+  /**
    * Um ato fora de vigência não é escolha nova, mas descreve o cronograma
    * gravado. Fora da lista, nenhuma opção casa: o campo aparece vazio enquanto
    * o código continua lá, para o servidor recusá-lo na gravação seguinte.
@@ -634,7 +751,7 @@ describe('CronogramaStepComponent', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.[0]).toContain('Abra o processo de novo');
+    expect(resultado.messages?.[0]).toContain('Releia as etapas');
     controller.expectNone(ROTA_FASES);
   });
 

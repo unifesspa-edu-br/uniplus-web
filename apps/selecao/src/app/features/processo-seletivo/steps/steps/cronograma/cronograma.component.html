@@ -35,13 +35,33 @@
             class="btn btn--secondary"
             type="button"
             (click)="acrescentarFase()"
-            [disabled]="!store.aceitaEdicao() || formulario.controls.faseAAcrescentar.value === ''"
+            [disabled]="!edicaoLiberada() || formulario.controls.faseAAcrescentar.value === ''"
           >
             Acrescentar à linha do tempo
           </button>
         </div>
       </div>
     </div>
+
+    @if (reconciliacaoPendente()) {
+      <div class="field__erro" role="alert">
+        <p>
+          As etapas foram gravadas, mas a tela não conseguiu reler quais identificadores o servidor
+          atribuiu a elas. Enquanto isso, a edição fica suspensa: gravar de novo agora recriaria as
+          etapas e desfaria as referências de desempate e eliminação.
+        </p>
+        <button class="btn btn--tertiary" type="button" (click)="relerEtapas()" [disabled]="relendo()">
+          @if (relendo()) {
+            Relendo as etapas…
+          } @else {
+            Reler as etapas
+          }
+        </button>
+        @if (erroDeReleitura(); as erro) {
+          <p>{{ erro }}</p>
+        }
+      </div>
+    }
 
     @if (avisoDeReordenacao(); as aviso) {
       <div class="field__erro" role="alert">
@@ -69,7 +89,7 @@
                 class="btn btn--tertiary"
                 type="button"
                 (click)="mover(item.indice, -1)"
-                [disabled]="!store.aceitaEdicao() || item.indice === 0"
+                [disabled]="!edicaoLiberada() || item.indice === 0"
                 [attr.aria-label]="'Mover ' + item.nome + ' para antes'"
               >
                 Subir
@@ -78,7 +98,7 @@
                 class="btn btn--tertiary"
                 type="button"
                 (click)="mover(item.indice, 1)"
-                [disabled]="!store.aceitaEdicao() || item.indice === linhaDoTempo().length - 1"
+                [disabled]="!edicaoLiberada() || item.indice === linhaDoTempo().length - 1"
                 [attr.aria-label]="'Mover ' + item.nome + ' para depois'"
               >
                 Descer
@@ -87,7 +107,7 @@
                 class="btn btn--tertiary"
                 type="button"
                 (click)="removerFase(item.indice)"
-                [disabled]="!store.aceitaEdicao() || !podeRemoverFase()"
+                [disabled]="!edicaoLiberada() || !podeRemoverFase()"
                 [attr.aria-describedby]="podeRemoverFase() ? null : 'cr-ultima-fase'"
                 [attr.aria-label]="'Remover ' + item.nome"
               >
@@ -188,7 +208,7 @@
                         type="checkbox"
                         [checked]="bancaMarcada(item.grupo, banca.id)"
                         (change)="alternarBanca(item.grupo, banca.id, $event)"
-                        [disabled]="!store.aceitaEdicao()"
+                        [disabled]="!edicaoLiberada()"
                       />
                       {{ banca.nome }}
                     </label>
@@ -284,7 +304,7 @@
                         class="btn btn--tertiary"
                         type="button"
                         (click)="moverEtapa(posicao, -1)"
-                        [disabled]="!store.aceitaEdicao() || posicao === 0"
+                        [disabled]="!edicaoLiberada() || posicao === 0"
                         [attr.aria-label]="'Mover ' + rotuloDaEtapa + ' para antes'"
                       >
                         Subir
@@ -293,7 +313,7 @@
                         class="btn btn--tertiary"
                         type="button"
                         (click)="moverEtapa(posicao, 1)"
-                        [disabled]="!store.aceitaEdicao() || posicao === etapas.length - 1"
+                        [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
                         [attr.aria-label]="'Mover ' + rotuloDaEtapa + ' para depois'"
                       >
                         Descer
@@ -302,7 +322,7 @@
                         class="btn btn--tertiary"
                         type="button"
                         (click)="removerEtapa(posicao)"
-                        [disabled]="!store.aceitaEdicao()"
+                        [disabled]="!edicaoLiberada()"
                         [attr.aria-label]="'Remover ' + rotuloDaEtapa"
                       >
                         Remover
@@ -316,7 +336,7 @@
                 class="btn btn--secondary"
                 type="button"
                 (click)="acrescentarEtapa()"
-                [disabled]="!store.aceitaEdicao()"
+                [disabled]="!edicaoLiberada()"
               >
                 Acrescentar etapa
               </button>
@@ -325,6 +345,7 @@
         </div>
       }
     </div>
+
   </form>
 
   @if (problemas().length > 0) {
