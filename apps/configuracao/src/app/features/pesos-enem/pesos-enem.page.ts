@@ -118,7 +118,7 @@ type EstadoOperacao = 'ok' | 'erro';
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title">Pesos por áreas dos cursos</h1>
+        <h1 class="page-header__title">Peso por Área</h1>
         <p class="page-header__desc">
           Pesos das cinco áreas do ENEM por grupo de curso, versionados por resolução INEP ·
           UNI-REQ-0066.

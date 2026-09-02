@@ -136,9 +136,9 @@ export class LayoutComponent {
           exact: true,
         },
         {
-          label: 'Pesos por áreas dos cursos',
+          label: 'Peso por Área',
           icon: 'pi-sliders-h',
-          routerLink: '/pesos-enem',
+          routerLink: '/pesos-por-area',
           exact: true,
         },
         { label: 'Calendários', icon: 'pi-calendar', routerLink: '/calendario-dias-uteis' },
