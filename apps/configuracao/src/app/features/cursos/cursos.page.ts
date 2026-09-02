@@ -185,17 +185,21 @@ interface CursoForm {
                   <td class="table-responsive__actions" data-label="Ações">
                     <button
                       type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
+                      class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                      [attr.aria-label]="'Ofertas de ' + curso.codigo"
+                      data-tooltip="Ofertas do curso"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="abrirOfertas(curso)"
                     >
-                      Ofertas
+                      <i class="pi pi-briefcase" aria-hidden="true"></i>
                     </button>
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
                       [attr.aria-label]="'Editar curso ' + curso.codigo"
-                      title="Editar"
+                      data-tooltip="Editar curso"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="abrirEdicao(curso)"
                     >
@@ -205,7 +209,8 @@ interface CursoForm {
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
                       [attr.aria-label]="'Remover curso ' + curso.codigo"
-                      title="Remover"
+                      data-tooltip="Remover curso"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="pedirRemocao(curso)"
                     >
