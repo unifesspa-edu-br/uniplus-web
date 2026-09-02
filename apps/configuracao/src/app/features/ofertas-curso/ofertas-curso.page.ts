@@ -202,10 +202,10 @@ interface OfertaCursoForm {
                     {{ formatoLabel(oferta.formatoPedagogico) }}
                   </td>
                   <td data-label="Regime de funcionamento">
-                    {{ oferta.regimeDeFuncionamento }}
+                    {{ regimeFuncionamentoLabel(oferta.regimeDeFuncionamento) }}
                   </td>
                   <td data-label="Regime de turno">
-                    {{ oferta.regimeDeTurno }}
+                    <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
                   </td>
                   <td data-label="Turnos">{{ turnosLabel(oferta.turnos) }}</td>
                   <td data-label="Vagas e-MEC">{{ oferta.vagasAnuaisAutorizadas ?? '—' }}</td>
@@ -965,6 +965,10 @@ export class OfertasCursoPage {
 
   protected regimeLabel(token: string): string {
     return REGIMES_DE_TURNO.find((r) => r.value === token)?.label ?? token;
+  }
+
+  protected regimeFuncionamentoLabel(token: string): string {
+    return REGIMES_DE_FUNCIONAMENTO.find((r) => r.value === token)?.label ?? token;
   }
 
   protected turnosLabel(tokens: readonly string[]): string {
