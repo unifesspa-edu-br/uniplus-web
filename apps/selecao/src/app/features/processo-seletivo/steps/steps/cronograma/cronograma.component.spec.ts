@@ -130,6 +130,7 @@ describe('CronogramaStepComponent', () => {
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
+  let nativo: HTMLElement;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -150,6 +151,7 @@ describe('CronogramaStepComponent', () => {
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     detectar = () => fixture.detectChanges();
+    nativo = fixture.nativeElement as HTMLElement;
 
     detectar();
 
@@ -681,6 +683,35 @@ describe('CronogramaStepComponent', () => {
     detectar();
 
     expect(componente.reconciliacaoPendente()).toBe(false);
+  });
+
+  /**
+   * Sem a fase que as agrupa, as etapas não aparecem em nenhuma fase da linha
+   * do tempo — e a conferência manda removê-las. Sem esta lista à parte, a
+   * ordem é para remover algo que não está na tela.
+   */
+  it('mostra e remove as etapas que nenhuma fase agrupa', () => {
+    comFases(ID_INSCRICAO);
+    comUmaEtapa();
+    detectar();
+
+    expect(componente.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
+    expect(nativo.textContent ?? '').toContain('Etapas sem a fase que as agrupa');
+    expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(true);
+
+    componente.removerTodasAsEtapas();
+    detectar();
+
+    expect(componente.etapasOrfas()).toEqual([]);
+    expect(store.draft().cronograma.etapas).toEqual([]);
+    expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(false);
+  });
+
+  it('não repete como órfã a etapa que a fase de avaliação já agrupa', () => {
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    expect(componente.etapasOrfas()).toEqual([]);
   });
 
   /**

@@ -346,6 +346,45 @@
       }
     </div>
 
+    <!--
+      As etapas órfãs ficam fora do laço das fases porque é exatamente isso que
+      elas são: etapas sem a fase que as receberia. Aparecem só para serem
+      removidas — editá-las aqui sugeriria que estão configuradas, quando o que
+      falta é a fase que as avalia.
+    -->
+    @if (etapasOrfas().length > 0) {
+      <div class="step-card">
+        <h2 class="form-section__title">Etapas sem a fase que as agrupa</h2>
+        <p class="field__hint">
+          Estas etapas pontuadas continuam no processo, mas nenhuma fase da linha do tempo as agrupa.
+          Acrescente a fase de avaliação acima para recebê-las de volta, ou remova-as aqui.
+        </p>
+        <ul>
+          @for (orfa of etapasOrfas(); track orfa.indice) {
+            <li>
+              {{ orfa.rotulo }}
+              <button
+                class="btn btn--tertiary"
+                type="button"
+                (click)="removerEtapa(orfa.indice)"
+                [disabled]="!edicaoLiberada()"
+                [attr.aria-label]="'Remover ' + orfa.rotulo"
+              >
+                Remover
+              </button>
+            </li>
+          }
+        </ul>
+        <button
+          class="btn btn--secondary"
+          type="button"
+          (click)="removerTodasAsEtapas()"
+          [disabled]="!edicaoLiberada()"
+        >
+          Remover todas as etapas
+        </button>
+      </div>
+    }
   </form>
 
   @if (problemas().length > 0) {

@@ -238,6 +238,30 @@ export class CronogramaStepComponent {
   });
 
   /**
+   * Etapas que nenhuma fase da linha do tempo agrupa.
+   *
+   * O agregado tolera o estado — só a publicação o recusa —, e chega-se a ele
+   * quando a fase de avaliação sai e a gravação que esvaziaria as etapas não
+   * acontece. Elas não têm onde aparecer na linha do tempo, então a tela as
+   * mostra à parte: sem isso a conferência cobra a remoção de etapas que não
+   * estão em lugar nenhum, e o cronograma fica sem gravação possível.
+   *
+   * Resolve pelo mesmo caminho da conferência — o que a fase congelou vale
+   * sobre o catálogo —, para que as duas nunca discordem sobre haver ou não
+   * quem agrupe.
+   */
+  readonly etapasOrfas = computed<readonly { indice: number; rotulo: string }[]>(() => {
+    this.versaoDoFormulario();
+    const agrupadas = this.linhaDoTempo().some((item) => item.exigencias?.agrupaEtapas === true);
+    if (agrupadas) return [];
+
+    return this.etapas.controls.map((grupo, indice) => {
+      const nome = grupo.controls.nome.value.trim();
+      return { indice, rotulo: nome === '' ? `Etapa ${indice + 1}, ainda sem nome` : nome };
+    });
+  });
+
+  /**
    * Tipos que o seletor de uma etapa oferece: os ativos, mais o que ela já
    * referencia quando esse saiu de atividade.
    *
@@ -428,6 +452,15 @@ export class CronogramaStepComponent {
   removerEtapa(indice: number): void {
     this.etapas.removeAt(indice, { emitEvent: false });
     this.renumerarEtapas();
+  }
+
+  /**
+   * Esvazia as etapas de uma vez. Existe para o cronograma que ficou sem a fase
+   * que as agrupa: a conferência manda acrescentar a fase ou remover as etapas,
+   * e remover uma a uma é o caminho longo para a mesma decisão.
+   */
+  removerTodasAsEtapas(): void {
+    this.etapas.clear();
   }
 
   /**
