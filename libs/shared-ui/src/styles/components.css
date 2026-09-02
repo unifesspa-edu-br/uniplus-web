@@ -2375,6 +2375,12 @@ body.uni-drawer-open { overflow: hidden; }
 }
 
 .page {
+  /* `position: relative` faz o `.page` ser o bloco contêiner dos descendentes
+     `position: absolute` (ex.: o `span.sr-only` dentro de `<th>`). Sem isso eles
+     escapam do recorte de `overflow` e são posicionados contra o ICB — um
+     `.sr-only` fundo do conteúdo empurra o `scrollHeight` do `<html>` e a
+     página inteira volta a rolar. */
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
