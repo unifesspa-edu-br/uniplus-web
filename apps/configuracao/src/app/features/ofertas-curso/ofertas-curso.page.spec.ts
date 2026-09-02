@@ -597,6 +597,50 @@ describe('OfertasCursoPage', () => {
     expect(component['form'].controls.cursoId.value).toBe(CURSO_ID);
   });
 
+  it('a recusa de regime de funcionamento sobrevive à edição de outro campo', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+
+    component['form'].patchValue({
+      cursoId: CURSO_ID,
+      localOfertaId: LOCAL_ID,
+      unidadeOfertanteOrigemId: UNIDADE_ID,
+      programaDeOferta: 'REGULAR',
+      formatoPedagogico: 'PRESENCIAL',
+      regimeDeTurno: 'REGULAR',
+      regimeDeFuncionamento: 'EXTENSIVO',
+    });
+    component['alternarTurno']('MATUTINO');
+    await propagate();
+
+    component['salvar']();
+
+    controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`).flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.configuracao.oferta_curso.regime_de_funcionamento_invalido',
+        title: 'Regime de funcionamento inválido',
+        status: 422,
+        code: 'uniplus.configuracao.oferta_curso.regime_de_funcionamento_invalido',
+        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Content',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['erroDoCampo']('regimeDeFuncionamento')).toBeTruthy();
+
+    // Editar um campo sem relação nenhuma não pode varrer a recusa da tela.
+    component['form'].controls.eMecCodigo.setValue('999999');
+    await propagate();
+
+    expect(component['erroDoCampo']('regimeDeFuncionamento')).toBeTruthy();
+  });
+
   it('regime desconhecido pelo frontend não trunca os turnos vindos da API', async () => {
     // Um regime introduzido por um backend mais novo: a UI não conhece a
     // cardinalidade e não pode reduzir a seleção — a decisão fica com a API.

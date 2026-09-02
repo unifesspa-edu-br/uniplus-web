@@ -95,6 +95,9 @@ export const REGIMES_DE_TURNO: readonly RegimeDeTurnoOption[] = [
 /** Regime de turno padrão de uma oferta nova — um turno só. */
 export const REGIME_DE_TURNO_REGULAR = 'REGULAR';
 
+/** Único regime de turno que comporta o regime de funcionamento INTENSIVO. */
+export const REGIME_DE_TURNO_INTEGRAL = 'INTEGRAL';
+
 
 export interface RegimeDeFuncionamentoOption {
   value: string;
@@ -118,6 +121,9 @@ export const REGIMES_DE_FUNCIONAMENTO: readonly RegimeDeFuncionamentoOption[] = 
  * `REGULAR` (UNI-REQ-0138).
  */
 export const REGIME_DE_FUNCIONAMENTO_EXTENSIVO = 'EXTENSIVO';
+
+/** Regime de funcionamento que exige regime de turno INTEGRAL (UNI-REQ-0138). */
+export const REGIME_DE_FUNCIONAMENTO_INTENSIVO = 'INTENSIVO';
 
 /**
  * Quantos turnos distintos o regime exige, ou `null` quando o token não é um
