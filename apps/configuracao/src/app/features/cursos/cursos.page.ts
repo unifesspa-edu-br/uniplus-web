@@ -193,19 +193,23 @@ interface CursoForm {
                     </button>
                     <button
                       type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
+                      class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                      [attr.aria-label]="'Editar curso ' + curso.codigo"
+                      title="Editar"
                       [disabled]="loading()"
                       (click)="abrirEdicao(curso)"
                     >
-                      Editar
+                      <i class="pi pi-pencil" aria-hidden="true"></i>
                     </button>
                     <button
                       type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
+                      class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                      [attr.aria-label]="'Remover curso ' + curso.codigo"
+                      title="Remover"
                       [disabled]="loading()"
                       (click)="pedirRemocao(curso)"
                     >
-                      Remover
+                      <i class="pi pi-trash" aria-hidden="true"></i>
                     </button>
                   </td>
                 </tr>
