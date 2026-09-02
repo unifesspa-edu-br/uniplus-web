@@ -113,6 +113,13 @@ export const REGIMES_DE_FUNCIONAMENTO: readonly RegimeDeFuncionamentoOption[] = 
 ] as const;
 
 /**
+ * Regime de funcionamento padrão de uma oferta nova. `INTENSIVO` não serve como
+ * inicial porque exige regime de turno `INTEGRAL`, e o formulário abre em
+ * `REGULAR` (UNI-REQ-0138).
+ */
+export const REGIME_DE_FUNCIONAMENTO_EXTENSIVO = 'EXTENSIVO';
+
+/**
  * Quantos turnos distintos o regime exige, ou `null` quando o token não é um
  * regime conhecido (a API é a árbitra final nesse caso).
  */

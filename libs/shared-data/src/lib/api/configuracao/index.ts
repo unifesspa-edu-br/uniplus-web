@@ -46,6 +46,7 @@ export {
   REGIME_DE_TURNO_REGULAR,
   REGIMES_DE_TURNO,
   TURNOS_OFERTA,
+  REGIME_DE_FUNCIONAMENTO_EXTENSIVO,
   REGIMES_DE_FUNCIONAMENTO,
   ordenarTurnosCanonicamente,
   turnosExigidosPorRegime,
