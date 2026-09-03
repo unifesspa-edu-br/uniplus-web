@@ -282,10 +282,10 @@ describe('OfertasCursoPage', () => {
   it('renderiza a lista resolvendo rótulos de Curso e Local via lookup', async () => {
     await flushCargaInicial([ofertaSeed]);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('ENG-CIV — Engenharia Civil');
+    expect(fixture.nativeElement.textContent).toContain('Engenharia Civil');
     expect(fixture.nativeElement.textContent).toContain('Marabá');
     expect(fixture.nativeElement.textContent).toContain(
-      'IGE — Instituto de Geociências e Engenharias',
+      'IGE',
     );
   });
 
@@ -767,7 +767,7 @@ describe('OfertasCursoPage', () => {
 
     expect(fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
     expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
-      'ENG-CIV — Engenharia Civil',
+      'Engenharia Civil',
     );
   });
 
@@ -790,7 +790,7 @@ describe('OfertasCursoPage', () => {
       'Não carregado',
     );
     expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
-      'ENG-CIV — Engenharia Civil',
+      'Engenharia Civil',
     );
 
     const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
@@ -818,5 +818,86 @@ describe('OfertasCursoPage', () => {
 
     controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
     expect(component['erroDoCampo']('regimeDeFuncionamento')).toContain('INTENSIVO');
+  });
+
+  it('CA-01, CA-02, CA-03 e CA-07: apresenta a coluna Grau logo após Curso com valor resolvido e data-label', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    fixture.detectChanges();
+
+    const headers = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLTableCellElement>('th'),
+    ).map((th) => th.textContent?.trim());
+
+    expect(headers[0]).toBe('Curso');
+    expect(headers[1]).toBe('Grau');
+
+    const celulaGrau: HTMLElement | null = fixture.nativeElement.querySelector(
+      'td[data-label="Grau"]',
+    );
+    expect(celulaGrau).toBeTruthy();
+    expect(celulaGrau?.textContent?.trim()).toBe('Bacharelado');
+  });
+
+  it('Cenário BDD: exibe graus diferentes para cada curso relacionado na tabela', async () => {
+    const cursoLicenciatura: CursoDto = {
+      ...cursoSeed,
+      id: '01960000-0000-7000-0000-0000000000c2',
+      codigo: 'LET-POR',
+      nome: 'Letras - Língua Portuguesa',
+      grau: 'Licenciatura',
+    };
+
+    const oferta2: OfertaCursoDto = {
+      ...ofertaSeed,
+      id: '01960000-0000-7000-0000-0000000000d2',
+      cursoId: cursoLicenciatura.id,
+    };
+
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
+      .flush([ofertaSeed, oferta2]);
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed, cursoLicenciatura]);
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    const celulasGrau = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLTableCellElement>('td[data-label="Grau"]'),
+    ).map((td) => td.textContent?.trim());
+
+    expect(celulasGrau).toEqual(['Bacharelado', 'Licenciatura']);
+  });
+
+  it('CA-06: apresenta "—" na coluna Grau quando o cursoId não puder ser resolvido no lookup', async () => {
+    const ofertaComCursoInexistente: OfertaCursoDto = {
+      ...ofertaSeed,
+      cursoId: '01960000-0000-7000-0000-0000000000c9',
+    };
+
+    await flushCargaInicial([ofertaComCursoInexistente]);
+    fixture.detectChanges();
+
+    const celulaGrau: HTMLElement | null = fixture.nativeElement.querySelector(
+      'td[data-label="Grau"]',
+    );
+    expect(celulaGrau?.textContent?.trim()).toBe('—');
+  });
+
+  it('CA-06: apresenta "—" na coluna Grau quando a requisição do lookup de Cursos falhar', async () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
+      .flush([ofertaSeed]);
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush(
+      {},
+      { status: 500, statusText: 'Server Error' },
+    );
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    const celulaGrau: HTMLElement | null = fixture.nativeElement.querySelector(
+      'td[data-label="Grau"]',
+    );
+    expect(celulaGrau?.textContent?.trim()).toBe('—');
   });
 });
