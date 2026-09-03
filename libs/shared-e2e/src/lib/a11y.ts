@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
-import type { AxeResults } from 'axe-core';
+import type { AxeResults, RuleObject } from 'axe-core';
 
 /**
  * Tags WCAG 2.1 A + AA — combinação canônica para baseline de acessibilidade
@@ -30,8 +30,11 @@ export const WCAG_A_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as co
  *
  * Nível A é piso regulatório (e-MAG 3.1, Lei 13.146/2015) — a regra ser
  * experimental no axe-core não a torna opcional para autarquia federal.
+ *
+ * Deliberadamente não exportada: habilitar por spec recria o furo que ela
+ * fecha. O caminho é passar por `runAxeWcagAA`.
  */
-export const REGRAS_EXPERIMENTAIS_HABILITADAS: Readonly<Record<string, { enabled: boolean }>> = {
+const REGRAS_EXPERIMENTAIS_HABILITADAS: Readonly<RuleObject> = {
   'label-content-name-mismatch': { enabled: true },
 };
 
@@ -96,13 +99,14 @@ export interface AaaVisualContractOptions {
  * perdidos.
  */
 export async function runAxeWcagAA(page: Page, options: RunAxeOptions = {}): Promise<AxeResults> {
-  // Ordem obrigatória: `.options()` SUBSTITUI o objeto de opções do
-  // AxeBuilder, enquanto `.withTags()` apenas escreve `runOnly` dentro dele.
-  // Invertida, a chamada a `.options()` descartaria o filtro por tags e a
-  // varredura passaria a rodar o catálogo inteiro do axe.
-  let builder = new AxeBuilder({ page })
-    .options({ rules: { ...REGRAS_EXPERIMENTAIS_HABILITADAS } })
-    .withTags([...(options.tags ?? WCAG_A_AA_TAGS)]);
+  // Tags e regras num único `RunOptions`. Encadear `.withTags()` com
+  // `.options()` também funcionaria, mas só numa ordem: `.options()`
+  // substitui o objeto de opções do AxeBuilder, enquanto `.withTags()`
+  // escreve `runOnly` dentro dele.
+  let builder = new AxeBuilder({ page }).options({
+    runOnly: { type: 'tag', values: [...(options.tags ?? WCAG_A_AA_TAGS)] },
+    rules: { ...REGRAS_EXPERIMENTAIS_HABILITADAS },
+  });
 
   if (options.include) {
     builder = builder.include(options.include);

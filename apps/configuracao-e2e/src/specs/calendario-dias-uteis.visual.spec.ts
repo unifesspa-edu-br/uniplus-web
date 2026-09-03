@@ -1,6 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { assertSemViolacoesGraves } from '../support/a11y';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
 
@@ -120,11 +120,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
 
-    const resultado = await runAxeWcagAA(page);
-    const graves = resultado.violations.filter(
-      (violacao) => violacao.impact === 'serious' || violacao.impact === 'critical',
-    );
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 });
 

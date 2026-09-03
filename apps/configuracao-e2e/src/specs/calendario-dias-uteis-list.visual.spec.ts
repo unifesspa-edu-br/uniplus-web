@@ -8,6 +8,9 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
+  // Sem expor `Link`, o navegador entrega a resposta mas esconde o header do
+  // JS: os cursores viriam nulos e o pager nunca montaria — silenciosamente.
+  'access-control-expose-headers': 'link',
 };
 
 /**
@@ -31,6 +34,13 @@ const CALENDARIOS = [
   },
 ] as const;
 
+/**
+ * Com `rel="next"` a página monta o `ui-pager`. Sem isso o componente não
+ * entra no DOM e escapa da varredura — foi assim que uma violação de SC 2.5.3
+ * no botão "Próximo" sobreviveu em componente usado por todas as listagens.
+ */
+const LINK_HEADER = '</api/configuracao/calendarios-dias-uteis?cursor=PROXIMA>; rel="next"';
+
 test.describe('Calendário de dias úteis — Lista', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const theme = metadataTheme(testInfo);
@@ -46,34 +56,33 @@ test.describe('Calendário de dias úteis — Lista', () => {
       );
     }, theme);
     await mockCalendariosApi(page);
+
+    await page.goto('/calendario-dias-uteis');
+    // Guarda contra varredura sobre conjunto vazio: as ações de linha e o
+    // pager só existem no DOM com a tabela renderizada, e é neles que mora a
+    // cobertura de SC 2.5.3. Sem isto o scan aprovaria a tela de erro ou o
+    // empty-state — o modo de falha que motivou a issue #677. É estrutural de
+    // propósito: ancorada no nome acessível corrigido, seria a guarda, e não o
+    // axe, a pegar uma regressão de rótulo.
+    await expect(page.locator('table tbody tr')).toHaveCount(CALENDARIOS.length);
+    await expect(page.getByRole('navigation', { name: /Paginação/ })).toBeVisible();
   });
 
   test('aplica o tema selecionado e lista os datasets cadastrados', async ({ page }, testInfo) => {
-    await page.goto('/calendario-dias-uteis');
-
     await expect(page.locator('html')).toHaveAttribute('data-theme', metadataTheme(testInfo));
     await expect(page.getByRole('heading', { name: 'Calendários', level: 1 })).toBeVisible();
-    await expect(page.locator('table tbody tr')).toHaveCount(CALENDARIOS.length);
   });
 
-  test('lista não tem violações serious/critical', async ({ page }) => {
-    await page.goto('/calendario-dias-uteis');
-
-    // Guarda contra aprovação por vacuidade: as ações de linha só existem no
-    // DOM com a tabela renderizada, e é nelas que mora a cobertura de SC
-    // 2.5.3. Sem esta asserção o scan aprovaria a tela de erro ou o
-    // empty-state, que é o modo de falha que motivou a issue #677.
-    //
-    // A asserção é estrutural de propósito: ancorá-la no nome acessível
-    // corrigido faria a guarda — e não o axe — pegar uma regressão de rótulo,
-    // escondendo justamente o que este spec existe para verificar.
-    await expect(page.locator('td.table-responsive__actions a')).toHaveCount(CALENDARIOS.length);
-
+  test('lista não viola WCAG 2.1 A/AA', async ({ page }) => {
     const resultado = await runAxeWcagAA(page);
-    const graves = resultado.violations.filter(
-      (violacao) => violacao.impact === 'serious' || violacao.impact === 'critical',
-    );
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+
+    // Assere a coleção inteira, não um recorte por severidade: `impact` é
+    // severidade do axe, não nível de conformidade. Mapear para o id faz a
+    // falha dizer qual regra caiu.
+    expect(
+      resultado.violations.map((violacao) => violacao.id),
+      JSON.stringify(resultado.violations, null, 2),
+    ).toEqual([]);
   });
 });
 
@@ -94,7 +103,7 @@ async function mockCalendariosApi(page: Page): Promise<void> {
       }
       await route.fulfill({
         status: 200,
-        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+        headers: { ...CORS_HEADERS, 'content-type': 'application/json', link: LINK_HEADER },
         body: JSON.stringify(CALENDARIOS),
       });
     },

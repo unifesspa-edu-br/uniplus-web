@@ -1,9 +1,8 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { assertSemViolacoesGraves } from '../support/a11y';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
-type AxeResult = Awaited<ReturnType<typeof runAxeWcagAA>>;
 
 const CALENDARIO_ID = '019ff7ee-3c00-7976-860c-eb2f61c9b3d1';
 
@@ -152,12 +151,14 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const botaoDia = page.getByRole('button', { name: /15 de novembro de 2026/ });
-    // O contador é renderizado por CSS a partir do atributo, fora do texto do
-    // DOM, para não entrar no rótulo visível do botão (SC 2.5.3).
-    await expect(botaoDia.locator('.cfg-calendario-mensal__contador')).toHaveAttribute(
-      'data-contador',
-      '×2',
-    );
+    // Contador pintado em ::before, fora do texto do DOM (SC 2.5.3). Além do
+    // atributo — que é só o insumo —, confere o que a tela de fato mostra:
+    // apagar a regra CSS some com o contador sem quebrar nada mais.
+    const contador = botaoDia.locator('.cfg-calendario-mensal__contador');
+    await expect(contador).toHaveAttribute('data-contador', '2');
+    await expect
+      .poll(() => contador.evaluate((el) => getComputedStyle(el, '::before').content))
+      .toContain('×2');
     await botaoDia.click();
 
     const dialogo = page.getByRole('dialog', { name: '15 de novembro de 2026' });
@@ -307,22 +308,15 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
 
-    const fechado = await runAxeWcagAA(page);
-    expect(gravesDe(fechado), JSON.stringify(gravesDe(fechado), null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
 
     await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
     await expect(page.getByRole('dialog', { name: '5 de abril de 2026' })).toBeVisible();
 
-    const aberto = await runAxeWcagAA(page);
-    expect(gravesDe(aberto), JSON.stringify(gravesDe(aberto), null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 });
 
-function gravesDe(resultado: AxeResult) {
-  return resultado.violations.filter(
-    (violacao) => violacao.impact === 'serious' || violacao.impact === 'critical',
-  );
-}
 
 async function mockCalendarioApi(page: Page): Promise<void> {
   await page.route(/\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/, async (route, request) => {

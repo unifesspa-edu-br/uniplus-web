@@ -65,10 +65,9 @@ Specs com sufixo `*.authenticated.spec.ts` rodam no project `*-authenticated` e 
 
 - `runAxeWcagAA(page, options?)` — executa `@axe-core/playwright` filtrado por tags WCAG 2.1 A + AA. Retorna `AxeResults`; caller asserta sobre `violations`.
 - `WCAG_A_AA_TAGS` — constante `['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']`.
-- `REGRAS_EXPERIMENTAIS_HABILITADAS` — regras que o axe-core traz com `enabled: false` e que o helper liga explicitamente. Hoje: `label-content-name-mismatch` (SC 2.5.3, nível A).
 - `RunAxeOptions` — `tags?` (override), `include?` (subtree), `exclude?` (selectors a suprimir).
 
-> **Não monte `AxeBuilder` direto no spec.** Regra `experimental` do axe-core não roda só por estar na tag — `withTags(['…','wcag21a'])` sozinho não executa `label-content-name-mismatch`, e a varredura passa verde sobre nome acessível que não contém o texto visível. O helper é o único ponto que liga essas regras.
+> **Não monte `AxeBuilder` direto no spec.** Regra `experimental` do axe-core não roda só por estar na tag — `withTags(['…','wcag21a'])` sozinho não executa `label-content-name-mismatch` (SC 2.5.3, Label in Name, nível A), e a varredura passa verde sobre nome acessível que não contém o texto visível. `runAxeWcagAA` liga essas regras, e é o único lugar que faz isso.
 
 ### AAA aplicável do contrato visual Uni+ DS
 
