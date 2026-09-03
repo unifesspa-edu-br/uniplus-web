@@ -1,7 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { WCAG_A_AA_TAGS } from '@uniplus/shared-e2e';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 /**
  * Rolagem vertical do shell administrativo compartilhado (`ui-app-shell`).
@@ -273,7 +272,7 @@ test.describe('Shell administrativo — rolagem vertical', () => {
     await page.setViewportSize({ width: 1280, height: 640 });
     await irParaCampi(page);
 
-    const resultado = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    const resultado = await runAxeWcagAA(page);
     const graves = resultado.violations.filter(
       (v) => v.impact === 'serious' || v.impact === 'critical',
     );

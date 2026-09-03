@@ -1,7 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { WCAG_A_AA_TAGS } from '@uniplus/shared-e2e';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
 
@@ -121,7 +120,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
 
-    const resultado = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    const resultado = await runAxeWcagAA(page);
     const graves = resultado.violations.filter(
       (violacao) => violacao.impact === 'serious' || violacao.impact === 'critical',
     );

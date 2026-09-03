@@ -1,7 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { WCAG_A_AA_TAGS } from '@uniplus/shared-e2e';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 /**
  * E2E funcional do cadastro de Modalidade de concorrência (issue #390, Piloto B).
@@ -284,7 +283,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
   });
 
   async function violacoesGraves(page: Page): Promise<unknown[]> {
-    const resultado = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    const resultado = await runAxeWcagAA(page);
     return resultado.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   }
 

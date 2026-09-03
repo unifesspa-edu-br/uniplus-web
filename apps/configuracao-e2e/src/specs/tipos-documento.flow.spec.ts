@@ -1,7 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { WCAG_A_AA_TAGS } from '@uniplus/shared-e2e';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 /**
  * E2E funcional do cadastro de Tipo de Documento (issue #392). Convenção do
@@ -282,7 +281,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
   });
 
   async function violacoesGraves(page: Page): Promise<unknown[]> {
-    const resultado = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    const resultado = await runAxeWcagAA(page);
     return resultado.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   }
 
@@ -323,10 +322,7 @@ test.describe('ui-filter-bar — auditoria isolada axe-core (CA-06 da issue #513
     await mockApi(page, novoCapturado(), [rgSeed, laudoSeed]);
     await abrirPagina(page);
 
-    const resultado = await new AxeBuilder({ page })
-      .include('.filter-bar')
-      .withTags([...WCAG_A_AA_TAGS])
-      .analyze();
+    const resultado = await runAxeWcagAA(page, { include: '.filter-bar' });
     const graves = resultado.violations.filter(
       (v) => v.impact === 'serious' || v.impact === 'critical',
     );
