@@ -77,11 +77,12 @@ cfg-pesos-enem-page {
 
 /* Drawer e diálogos fechados não têm caixa própria — o <dialog> interno vira
    display: none do agente de usuário, mas o host continua um item flex e
-   ainda consome um gap do .cfg-page, deixando espaço morto no fim da página
-   (issue #673). Nenhum dos três componentes estiliza o próprio host. */
-.cfg-page > ui-drawer,
-.cfg-page > ui-dialog,
-.cfg-page > ui-confirm-dialog {
+   ainda consome um gap do container, deixando espaço morto no fim da página
+   (issue #673). Alcança os dois containers de página do módulo: a classe
+   .cfg-page e as páginas estilizadas por seletor de elemento, que repetem o
+   mesmo flex/gap. Nenhum dos três componentes estiliza o próprio host. */
+:is(.cfg-page, cfg-unidades-page, cfg-instituicao-page, cfg-pesos-enem-page)
+  > :is(ui-drawer, ui-dialog, ui-confirm-dialog) {
   display: contents;
 }
 
