@@ -48,6 +48,7 @@ import {
   FilterBarComponent,
   PagerComponent,
   SpinnerComponent,
+  TagComponent,
 } from '@uniplus/shared-ui/components';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -80,6 +81,7 @@ interface TipoProcessoForm {
     FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
+    TagComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -97,7 +99,7 @@ interface TipoProcessoForm {
     <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
       O código é a chave natural do tipo de processo — definido só na criação e exibido como somente
       leitura na edição. Desativar um tipo não libera o código: um novo cadastro com o mesmo código
-      continua sendo recusado.
+      continua sendo recusado. Um tipo desativado pode ser reativado a qualquer momento.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -145,6 +147,7 @@ interface TipoProcessoForm {
                 <th scope="col">Código</th>
                 <th scope="col">Nome</th>
                 <th scope="col">Descrição</th>
+                <th scope="col">Situação</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -156,29 +159,50 @@ interface TipoProcessoForm {
                   </td>
                   <td data-label="Nome">{{ tipo.nome }}</td>
                   <td data-label="Descrição" class="u-caption">{{ tipo.descricao || '—' }}</td>
+                  <td data-label="Situação">
+                    @if (tipo.ativo) {
+                      <ui-tag variant="success">Ativo</ui-tag>
+                    } @else {
+                      <ui-tag variant="danger">Inativo</ui-tag>
+                    }
+                  </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [attr.aria-label]="'Editar tipo de processo ' + tipo.codigo"
-                      data-tooltip="Editar tipo de processo"
-                      data-tooltip-position="left"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(tipo)"
-                    >
-                      <i class="pi pi-pencil" aria-hidden="true"></i>
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [attr.aria-label]="'Inativar tipo de processo ' + tipo.codigo"
-                      data-tooltip="Inativar tipo de processo"
-                      data-tooltip-position="left"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(tipo)"
-                    >
-                      <i class="pi pi-trash" aria-hidden="true"></i>
-                    </button>
+                    @if (tipo.ativo) {
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [attr.aria-label]="'Editar tipo de processo ' + tipo.codigo"
+                        data-tooltip="Editar tipo de processo"
+                        data-tooltip-position="left"
+                        [disabled]="loading()"
+                        (click)="abrirEdicao(tipo)"
+                      >
+                        <i class="pi pi-pencil" aria-hidden="true"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [attr.aria-label]="'Inativar tipo de processo ' + tipo.codigo"
+                        data-tooltip="Inativar tipo de processo"
+                        data-tooltip-position="left"
+                        [disabled]="loading()"
+                        (click)="pedirRemocao(tipo)"
+                      >
+                        <i class="pi pi-trash" aria-hidden="true"></i>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [attr.aria-label]="'Reativar tipo de processo ' + tipo.codigo"
+                        data-tooltip="Reativar tipo de processo"
+                        data-tooltip-position="left"
+                        [disabled]="loading()"
+                        (click)="pedirReativacao(tipo)"
+                      >
+                        <i class="pi pi-replay" aria-hidden="true"></i>
+                      </button>
+                    }
                   </td>
                 </tr>
               }
@@ -330,6 +354,15 @@ interface TipoProcessoForm {
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
     />
+
+    <ui-confirm-dialog
+      [(visible)]="confirmReativarOpen"
+      heading="Reativar tipo de processo"
+      [message]="confirmReativarMessage()"
+      confirmLabel="Reativar"
+      confirmVariant="primary"
+      (confirmed)="reativarConfirmado()"
+    />
   `,
   host: { class: 'cfg-page' },
 })
@@ -343,12 +376,16 @@ export class TiposProcessoPage {
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);
+  protected readonly confirmReativarOpen = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly confirmError = signal<string | null>(null);
+  protected readonly confirmReativarError = signal<string | null>(null);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly tipoEmEdicaoId = signal<string | null>(null);
   protected readonly tipoParaRemover = signal<TipoProcessoDto | null>(null);
+  protected readonly tipoParaReativar = signal<TipoProcessoDto | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
+  protected readonly idempotencyKeyReativar = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
 
   /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
@@ -358,8 +395,11 @@ export class TiposProcessoPage {
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
 
+  // Listagem de manutenção (plataforma-admin): traz ativos e desativados
+  // (`apenasAtivos` default `false` no contrato), para permitir a reativação.
+  // A leitura pública `/tipos-processo` continua expondo só ativos.
   private readonly lista = useApiResource<readonly TipoProcessoDto[]>(() => ({
-    url: `${this.basePath}/api/configuracao/tipos-processo`,
+    url: `${this.basePath}/api/configuracao/admin/tipos-processo`,
     params: this.montarParams(),
     context: withVendorMime('tipo-processo', 1),
   }));
@@ -442,9 +482,23 @@ export class TiposProcessoPage {
     const tipo = this.tipoParaRemover();
     return tipo
       ? `Deseja inativar o tipo de processo ${tipo.codigo}? Ele deixa de ser oferecido na criação ` +
-          'de novos Processos Seletivos e sai desta lista. Processos já criados que o referenciam ' +
-          'não são afetados. Um novo cadastro com o mesmo código continua sendo recusado.'
+          'de novos Processos Seletivos. Processos já criados que o referenciam não são afetados. ' +
+          'Um novo cadastro com o mesmo código continua sendo recusado — mas o tipo pode ser ' +
+          'reativado depois.'
       : 'Deseja inativar este tipo de processo?';
+  });
+
+  protected readonly confirmReativarMessage = computed(() => {
+    const erro = this.confirmReativarError();
+    if (erro !== null) {
+      return erro;
+    }
+    const tipo = this.tipoParaReativar();
+    return tipo
+      ? `Deseja reativar o tipo de processo ${tipo.codigo}? Ele volta a ser oferecido na criação ` +
+          'de novos Processos Seletivos. Processos e versões de configuração já produzidos não são ' +
+          'alterados.'
+      : 'Deseja reativar este tipo de processo?';
   });
 
   protected readonly form: FormGroup<TipoProcessoForm> = new FormGroup<TipoProcessoForm>({
@@ -563,6 +617,44 @@ export class TiposProcessoPage {
         const titulo = this.problemI18n.resolve(result.problem).title;
         this.confirmError.set(titulo);
         this.confirmOpen.set(true);
+        if (result.problem.status >= 500) {
+          this.notifications.errorFromProblem(result.problem, { title: titulo });
+        }
+      });
+  }
+
+  protected pedirReativacao(tipo: TipoProcessoDto): void {
+    this.tipoParaReativar.set(tipo);
+    this.confirmReativarError.set(null);
+    this.idempotencyKeyReativar.set(idempotencyKey.create());
+    this.confirmReativarOpen.set(true);
+  }
+
+  protected reativarConfirmado(): void {
+    const tipo = this.tipoParaReativar();
+    if (tipo === null || this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    this.api
+      .reativar(tipo.id, withIdempotencyKey(this.idempotencyKeyReativar()))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.saving.set(false);
+        if (result.ok) {
+          this.notifications.success('Tipo de processo reativado', tipo.codigo);
+          this.confirmReativarOpen.set(false);
+          this.tipoParaReativar.set(null);
+          this.recarregar();
+          return;
+        }
+        // Reabre o diálogo com a mensagem da API. Cobre o 422
+        // `tipo_processo.ja_ativo` e o 409 `...conflito_de_concorrencia`
+        // (outra sessão reativou/alterou o tipo nesse meio-tempo).
+        this.idempotencyKeyReativar.set(idempotencyKey.create());
+        const titulo = this.problemI18n.resolve(result.problem).title;
+        this.confirmReativarError.set(titulo);
+        this.confirmReativarOpen.set(true);
         if (result.problem.status >= 500) {
           this.notifications.errorFromProblem(result.problem, { title: titulo });
         }

@@ -19,6 +19,17 @@ const tipoSeed: TipoProcessoDto = {
   criadoEm: '2026-08-11T12:00:00Z',
 };
 
+const tipoInativo: TipoProcessoDto = {
+  id: '01960000-0000-7000-0000-0000000000f0',
+  codigo: 'VESTIBULAR_TRAD',
+  nome: 'Vestibular tradicional',
+  descricao: null,
+  ativo: false,
+  criadoEm: '2026-05-01T12:00:00Z',
+};
+
+const ADMIN_LISTA = `${BASE}/api/configuracao/admin/tipos-processo`;
+
 describe('TiposProcessoPage', () => {
   let fixture: ComponentFixture<TiposProcessoPage>;
   let component: TiposProcessoPage;
@@ -50,18 +61,22 @@ describe('TiposProcessoPage', () => {
   };
 
   async function flushLista(itens: readonly TipoProcessoDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`);
+    const req = controller.expectOne((r) => r.url === ADMIN_LISTA);
     expect(req.request.params.get('limit')).toBe('50');
+    // Listagem de manutenção — sem restringir a ativos (default do contrato).
+    expect(req.request.params.has('apenasAtivos')).toBe(false);
     req.flush(itens);
     await propagate();
   }
 
-  it('renderiza a lista de tipos de processo', async () => {
-    await flushLista([tipoSeed]);
-    expect(component['tipos']()).toHaveLength(1);
+  it('renderiza a lista de tipos de processo com a situação de cada um', async () => {
+    await flushLista([tipoSeed, tipoInativo]);
+    expect(component['tipos']()).toHaveLength(2);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('SiSU');
     expect(fixture.nativeElement.textContent).toContain('SISU');
+    expect(fixture.nativeElement.textContent).toContain('Ativo');
+    expect(fixture.nativeElement.textContent).toContain('Inativo');
   });
 
   it('banner de código imutável é visível mesmo com lista vazia', async () => {
@@ -191,5 +206,44 @@ describe('TiposProcessoPage', () => {
 
     expect(component['confirmOpen']()).toBe(true);
     expect(component['confirmMessage']()).toContain('já está desativado');
+  });
+
+  it('reativa um tipo inativo após confirmação (POST .../ativacao com Idempotency-Key)', async () => {
+    await flushLista([tipoInativo]);
+    component['pedirReativacao'](tipoInativo);
+    component['reativarConfirmado']();
+
+    const req = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBeTruthy();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([{ ...tipoInativo, ativo: true }]);
+    expect(component['confirmReativarOpen']()).toBe(false);
+  });
+
+  it('reativação de tipo já ativo (422) mantém o diálogo com a mensagem da API', async () => {
+    await flushLista([tipoInativo]);
+    component['pedirReativacao'](tipoInativo);
+    component['reativarConfirmado']();
+
+    const req = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
+    req.flush(
+      {
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_processo.ja_ativo',
+        title: 'Tipo de processo seletivo já está ativo',
+        status: 422,
+        code: 'uniplus.configuracao.tipo_processo.ja_ativo',
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['confirmReativarOpen']()).toBe(true);
+    expect(component['confirmReativarMessage']()).toContain('já está ativo');
   });
 });

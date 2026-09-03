@@ -134,4 +134,45 @@ describe('TiposProcessoApi', () => {
     const result = (await promise) as ApiResult<void>;
     expect(isApiOk(result)).toBe(true);
   });
+
+  it('listarParaManutencao() faz GET admin com limit, Accept versionado e sem apenasAtivos por padrão', async () => {
+    const promise = firstValueFrom(api.listarParaManutencao({ limit: 50 }));
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/configuracao/admin/tipos-processo`,
+    );
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.has('apenasAtivos')).toBe(false);
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('tipo-processo', 1));
+    req.flush([tipoSeed]);
+
+    const result = (await promise) as ApiResult<readonly TipoProcessoDto[]>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('listarParaManutencao({ apenasAtivos: true }) envia o filtro', async () => {
+    const promise = firstValueFrom(api.listarParaManutencao({ apenasAtivos: true }));
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/configuracao/admin/tipos-processo`,
+    );
+
+    expect(req.request.params.get('apenasAtivos')).toBe('true');
+    req.flush([tipoSeed]);
+    await promise;
+  });
+
+  it('reativar() faz POST .../{id}/ativacao com Idempotency-Key', async () => {
+    const promise = firstValueFrom(api.reativar(ID, withIdempotencyKey('k')));
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-processo/${ID}/ativacao`,
+    );
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    const result = (await promise) as ApiResult<void>;
+    expect(isApiOk(result)).toBe(true);
+  });
 });
