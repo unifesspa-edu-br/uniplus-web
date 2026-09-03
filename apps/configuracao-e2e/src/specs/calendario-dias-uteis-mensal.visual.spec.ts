@@ -153,7 +153,12 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const botaoDia = page.getByRole('button', { name: /15 de novembro de 2026/ });
-    await expect(botaoDia).toContainText('×2');
+    // O contador é renderizado por CSS a partir do atributo, fora do texto do
+    // DOM, para não entrar no rótulo visível do botão (SC 2.5.3).
+    await expect(botaoDia.locator('.cfg-calendario-mensal__contador')).toHaveAttribute(
+      'data-contador',
+      '×2',
+    );
     await botaoDia.click();
 
     const dialogo = page.getByRole('dialog', { name: '15 de novembro de 2026' });
