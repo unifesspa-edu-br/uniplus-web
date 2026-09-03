@@ -81,8 +81,15 @@ import {
 const PAGE_SIZE = 50;
 
 // Rotulação dos vínculos da listagem. Fora da classe porque são funções puras
-// sobre o DTO — o mesmo texto serve à tabela e aos campos do drawer.
-const rotularCurso = (curso: CursoDto): string => `${curso.nome}`;
+// sobre o DTO.
+//
+// O Curso tem dois rótulos com propósitos distintos: a coluna da tabela exibe
+// só o nome, porque as demais colunas da linha já situam a oferta; fora dela o
+// curso aparece sozinho — mensagem de confirmação de remoção, campos do drawer
+// — e aí o código é o que distingue cursos de nome semelhante.
+const rotularCursoNaListagem = (curso: CursoDto): string => curso.nome;
+
+const rotularCursoCompleto = (curso: CursoDto): string => `${curso.codigo} — ${curso.nome}`;
 
 const rotularTipoLocal = (local: LocalOfertaDto): string =>
   TIPOS_LOCAL_OFERTA.find((t) => t.value === local.tipo)?.label ?? local.tipo;
@@ -1012,7 +1019,7 @@ export class OfertasCursoPage {
    * ("Vinculado") colapsava num texto de aparência normal (#579).
    */
   protected cursoDaOferta(cursoId: string): ResolucaoDeVinculo {
-    return resolverVinculo(this.cursos, this.cursosPorId().get(cursoId), rotularCurso);
+    return resolverVinculo(this.cursos, this.cursosPorId().get(cursoId), rotularCursoNaListagem);
   }
 
   protected grauDoCurso(cursoId: string): string {
@@ -1029,10 +1036,15 @@ export class OfertasCursoPage {
   }
 
   // Nos campos do drawer o vínculo já está escolhido a partir do próprio
-  // catálogo carregado, então só o rótulo interessa.
+  // catálogo carregado, então só o rótulo interessa. Aqui o curso aparece
+  // isolado, sem as demais colunas da linha para situá-lo, então o rótulo
+  // carrega o código junto do nome.
   protected cursoLabel(cursoId: string): string {
-    const { estado, rotulo } = this.cursoDaOferta(cursoId);
-    return estado === 'resolvido' ? rotulo : 'Vinculado';
+    const curso = this.cursosPorId().get(cursoId);
+    const { estado } = this.cursoDaOferta(cursoId);
+    return estado === 'resolvido' && curso !== undefined
+      ? rotularCursoCompleto(curso)
+      : 'Vinculado';
   }
 
   protected localOfertaLabel(localOfertaId: string): string {
