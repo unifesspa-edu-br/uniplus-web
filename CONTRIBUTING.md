@@ -377,6 +377,8 @@ features/
 | Imagens | Atributo `alt` descritivo ou `role="presentation"` |
 | Modais | Focus trap ativo, fechamento via Esc |
 | Loading states | `aria-busy="true"` e `aria-live="polite"` para anúncios |
+| Nome acessível de botão/link | Precisa **conter** o texto visível (SC 2.5.3). `aria-label` que reescreve o rótulo quebra comando de voz — "Próximo" com nome "Próxima página" não ativa |
+| Texto decorativo dentro de botão/link | Fora do nó de texto: expor por `data-*` e pintar em `::before`. `aria-hidden` esconde do leitor, não da vista, e o critério compara com o que se lê na tela |
 
 ### Verificação
 
