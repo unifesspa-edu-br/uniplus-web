@@ -1,11 +1,8 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { WCAG_A_AA_TAGS } from '@uniplus/shared-e2e';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
-
-const CALENDARIO_ID = '019ff7ee-3c00-7976-860c-eb2f61c9b2d1';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -14,47 +11,25 @@ const CORS_HEADERS = {
 };
 
 /**
- * Dataset com as três formas de localidade que o detalhe precisa apresentar:
- * municipal (snapshot da ADR-0090), estadual (UF) e nacional (sem região).
+ * Dois datasets para cobrir os dois estados das ações de linha: no vigente as
+ * ações de vigência e remoção ficam desabilitadas, no não vigente ficam
+ * ativas. Versões distintas porque o nome acessível das ações é derivado da
+ * versão do dataset — linhas com a mesma versão não seriam distinguíveis.
  */
-const CALENDARIO = {
-  id: CALENDARIO_ID,
-  versaoDataset: '2026.1',
-  vigente: true,
-  criadoEm: '2026-08-13T12:00:00Z',
-  diasNaoUteis: [
-    {
-      id: '019ff7ee-3c00-7976-860c-eb2f61c9b201',
-      abrangencia: 'MUNICIPAL',
-      municipioIbge: '1504208',
-      municipioNome: 'Marabá',
-      municipioUf: 'PA',
-      uf: null,
-      data: '2026-04-05',
-      descricao: 'Aniversário de Marabá',
-    },
-    {
-      id: '019ff7ee-3c00-7976-860c-eb2f61c9b202',
-      abrangencia: 'ESTADUAL',
-      municipioIbge: null,
-      municipioNome: null,
-      municipioUf: null,
-      uf: 'PA',
-      data: '2026-08-15',
-      descricao: 'Adesão do Grão-Pará à Independência',
-    },
-    {
-      id: '019ff7ee-3c00-7976-860c-eb2f61c9b203',
-      abrangencia: 'NACIONAL',
-      municipioIbge: null,
-      municipioNome: null,
-      municipioUf: null,
-      uf: null,
-      data: '2026-09-07',
-      descricao: 'Independência do Brasil',
-    },
-  ],
-} as const;
+const CALENDARIOS = [
+  {
+    id: '019ff7ee-3c00-7976-860c-eb2f61c9b2d1',
+    versaoDataset: '2026.1',
+    vigente: true,
+    criadoEm: '2026-08-13T12:00:00Z',
+  },
+  {
+    id: '019ff7ee-3c00-7976-860c-eb2f61c9b2d2',
+    versaoDataset: '2025.2',
+    vigente: false,
+    criadoEm: '2025-11-04T12:00:00Z',
+  },
+] as const;
 
 test.describe('Calendário de dias úteis — Lista', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -70,20 +45,31 @@ test.describe('Calendário de dias úteis — Lista', () => {
         }),
       );
     }, theme);
-    await mockCalendarioApi(page);
+    await mockCalendariosApi(page);
   });
 
-  test('exibe a localidade legível no drawer sem consultar a Geo', async ({ page }, testInfo) => {
-    await page.goto(`/calendario-dias-uteis`);
+  test('aplica o tema selecionado e lista os datasets cadastrados', async ({ page }, testInfo) => {
+    await page.goto('/calendario-dias-uteis');
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', metadataTheme(testInfo));
     await expect(page.getByRole('heading', { name: 'Calendários', level: 1 })).toBeVisible();
+    await expect(page.locator('table tbody tr')).toHaveCount(CALENDARIOS.length);
   });
 
-  test('detalhe não tem violações serious/critical', async ({ page }) => {
-    await page.goto(`/calendario-dias-uteis`);
+  test('lista não tem violações serious/critical', async ({ page }) => {
+    await page.goto('/calendario-dias-uteis');
 
-    const resultado = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    // Guarda contra aprovação por vacuidade: as ações de linha só existem no
+    // DOM com a tabela renderizada, e é nelas que mora a cobertura de SC
+    // 2.5.3. Sem esta asserção o scan aprovaria a tela de erro ou o
+    // empty-state, que é o modo de falha que motivou a issue #677.
+    //
+    // A asserção é estrutural de propósito: ancorá-la no nome acessível
+    // corrigido faria a guarda — e não o axe — pegar uma regressão de rótulo,
+    // escondendo justamente o que este spec existe para verificar.
+    await expect(page.locator('td.table-responsive__actions a')).toHaveCount(CALENDARIOS.length);
+
+    const resultado = await runAxeWcagAA(page);
     const graves = resultado.violations.filter(
       (violacao) => violacao.impact === 'serious' || violacao.impact === 'critical',
     );
@@ -91,9 +77,12 @@ test.describe('Calendário de dias úteis — Lista', () => {
   });
 });
 
-async function mockCalendarioApi(page: Page): Promise<void> {
+async function mockCalendariosApi(page: Page): Promise<void> {
+  // A coleção é paginada por cursor (ADR-0026), então a URL sempre carrega
+  // query string (`limit` ou `cursor`+`direction`). Ancorar o padrão no fim do
+  // path deixaria a requisição de lista escapar para a rede.
   await page.route(
-    /\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/,
+    /\/api\/configuracao\/calendarios-dias-uteis(\?.*)?$/,
     async (route, request) => {
       if (request.method() === 'OPTIONS') {
         await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -106,7 +95,7 @@ async function mockCalendarioApi(page: Page): Promise<void> {
       await route.fulfill({
         status: 200,
         headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-        body: JSON.stringify(CALENDARIO),
+        body: JSON.stringify(CALENDARIOS),
       });
     },
   );

@@ -1,10 +1,9 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { WCAG_A_AA_TAGS } from '@uniplus/shared-e2e';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
-type AxeResult = Awaited<ReturnType<AxeBuilder['analyze']>>;
+type AxeResult = Awaited<ReturnType<typeof runAxeWcagAA>>;
 
 const CALENDARIO_ID = '019ff7ee-3c00-7976-860c-eb2f61c9b3d1';
 
@@ -308,13 +307,13 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
 
-    const fechado = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    const fechado = await runAxeWcagAA(page);
     expect(gravesDe(fechado), JSON.stringify(gravesDe(fechado), null, 2)).toEqual([]);
 
     await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
     await expect(page.getByRole('dialog', { name: '5 de abril de 2026' })).toBeVisible();
 
-    const aberto = await new AxeBuilder({ page }).withTags([...WCAG_A_AA_TAGS]).analyze();
+    const aberto = await runAxeWcagAA(page);
     expect(gravesDe(aberto), JSON.stringify(gravesDe(aberto), null, 2)).toEqual([]);
   });
 });

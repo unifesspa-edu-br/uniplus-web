@@ -19,6 +19,23 @@ import type { AxeResults } from 'axe-core';
 export const WCAG_A_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as const;
 
 /**
+ * Regras marcadas como `experimental` no axe-core vêm com `enabled: false` e
+ * **não rodam só por estarem na tag** — precisam ser habilitadas caso a caso.
+ *
+ * `label-content-name-mismatch` cobre o SC 2.5.3 (Label in Name, **nível A**):
+ * o nome acessível precisa conter o texto visível, sob pena de quem usa
+ * comando de voz dizer o rótulo que lê na tela e não ativar o elemento. É a
+ * única regra da tag `wcag21a` no axe-core 4.12.x, então sem esta habilitação
+ * a tag não acrescenta cobertura nenhuma e o gate roda verde sobre a violação.
+ *
+ * Nível A é piso regulatório (e-MAG 3.1, Lei 13.146/2015) — a regra ser
+ * experimental no axe-core não a torna opcional para autarquia federal.
+ */
+export const REGRAS_EXPERIMENTAIS_HABILITADAS: Readonly<Record<string, { enabled: boolean }>> = {
+  'label-content-name-mismatch': { enabled: true },
+};
+
+/**
  * Superset automatizável para o contrato visual AAA do Uni+ DS. Mantém A/AA
  * como baseline regulatório e adiciona `wcag2aaa` apenas como gate visual
  * aplicável, sem declarar conformidade WCAG AAA completa.
@@ -79,7 +96,13 @@ export interface AaaVisualContractOptions {
  * perdidos.
  */
 export async function runAxeWcagAA(page: Page, options: RunAxeOptions = {}): Promise<AxeResults> {
-  let builder = new AxeBuilder({ page }).withTags([...(options.tags ?? WCAG_A_AA_TAGS)]);
+  // Ordem obrigatória: `.options()` SUBSTITUI o objeto de opções do
+  // AxeBuilder, enquanto `.withTags()` apenas escreve `runOnly` dentro dele.
+  // Invertida, a chamada a `.options()` descartaria o filtro por tags e a
+  // varredura passaria a rodar o catálogo inteiro do axe.
+  let builder = new AxeBuilder({ page })
+    .options({ rules: { ...REGRAS_EXPERIMENTAIS_HABILITADAS } })
+    .withTags([...(options.tags ?? WCAG_A_AA_TAGS)]);
 
   if (options.include) {
     builder = builder.include(options.include);
