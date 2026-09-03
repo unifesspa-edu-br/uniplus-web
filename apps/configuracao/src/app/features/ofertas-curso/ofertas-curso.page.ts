@@ -82,7 +82,7 @@ const PAGE_SIZE = 50;
 
 // Rotulação dos vínculos da listagem. Fora da classe porque são funções puras
 // sobre o DTO — o mesmo texto serve à tabela e aos campos do drawer.
-const rotularCurso = (curso: CursoDto): string => `${curso.codigo} — ${curso.nome}`;
+const rotularCurso = (curso: CursoDto): string => `${curso.nome}`;
 
 const rotularTipoLocal = (local: LocalOfertaDto): string =>
   TIPOS_LOCAL_OFERTA.find((t) => t.value === local.tipo)?.label ?? local.tipo;
@@ -172,6 +172,7 @@ interface OfertaCursoForm {
             <thead>
               <tr>
                 <th scope="col">Curso</th>
+                <th scope="col">Grau</th>
                 <th scope="col">Local de oferta</th>
                 <th scope="col">Unidade ofertante</th>
                 <th scope="col">Programa</th>
@@ -189,11 +190,14 @@ interface OfertaCursoForm {
                   <td data-label="Curso">
                     <ui-lookup-label [resolucao]="cursoDaOferta(oferta.cursoId)" />
                   </td>
+                  <td data-label="Grau">
+                    {{ grauDoCurso(oferta.cursoId) }}
+                  </td>
                   <td data-label="Local de oferta">
                     <ui-lookup-label [resolucao]="localDaOferta(oferta.localOfertaId)" />
                   </td>
                   <td data-label="Unidade ofertante">
-                    {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
+                    {{ oferta.unidadeOfertante.sigla }}
                   </td>
                   <td data-label="Programa">
                     <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
@@ -764,11 +768,7 @@ export class OfertasCursoPage {
     }),
     regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
       nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(30),
-        compatibilidadeComRegimeDeTurno,
-      ],
+      validators: [Validators.required, Validators.maxLength(30), compatibilidadeComRegimeDeTurno],
     }),
   });
 
@@ -1013,6 +1013,11 @@ export class OfertasCursoPage {
    */
   protected cursoDaOferta(cursoId: string): ResolucaoDeVinculo {
     return resolverVinculo(this.cursos, this.cursosPorId().get(cursoId), rotularCurso);
+  }
+
+  protected grauDoCurso(cursoId: string): string {
+    const curso = this.cursosPorId().get(cursoId);
+    return curso?.grau?.trim() || '—';
   }
 
   protected localDaOferta(localOfertaId: string): ResolucaoDeVinculo {

@@ -156,13 +156,15 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  test('CA-01/04: lista resolve rótulos de Curso e Local via lookup', async ({ page }) => {
+  test('CA-01/03/04: lista resolve rótulos de Curso, Grau e Local via lookup', async ({ page }) => {
     await mockApi(page, novoCapturado(), [ofertaSeed]);
     await abrirPagina(page);
 
-    await expect(page.getByRole('cell', { name: 'ENG-CIV — Engenharia Civil' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Grau' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Engenharia Civil' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Bacharelado' })).toBeVisible();
     await expect(
-      page.getByRole('cell', { name: 'IGE — Instituto de Geociências e Engenharias' }),
+      page.getByRole('cell', { name: 'IGE' }),
     ).toBeVisible();
   });
 
