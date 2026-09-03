@@ -124,6 +124,12 @@ export class LayoutComponent {
         },
         { label: 'Tipo de Banca', icon: 'pi-shield', routerLink: '/tipos-banca', exact: true },
         {
+          label: 'Tipo de Processo',
+          icon: 'pi-flag',
+          routerLink: '/tipos-processo',
+          exact: true,
+        },
+        {
           label: 'Precedência de Fase',
           icon: 'pi-sort-alt',
           routerLink: '/precedencias-fase',

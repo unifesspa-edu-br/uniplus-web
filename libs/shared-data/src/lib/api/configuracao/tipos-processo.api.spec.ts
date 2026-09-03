@@ -8,8 +8,13 @@ import {
   apiResultInterceptor,
   buildVendorMimeAccept,
   isApiOk,
+  withIdempotencyKey,
 } from '@uniplus/shared-core/http';
-import { TipoProcessoDto, TiposProcessoApi } from './tipos-processo.api';
+import {
+  CriarTipoProcessoCommand,
+  TipoProcessoDto,
+  TiposProcessoApi,
+} from './tipos-processo.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -22,6 +27,12 @@ const tipoSeed: TipoProcessoDto = {
   descricao: 'Sistema de Seleção Unificada.',
   ativo: true,
   criadoEm: '2026-08-11T12:00:00Z',
+};
+
+const criarCommand: CriarTipoProcessoCommand = {
+  codigo: 'SISU',
+  nome: 'SiSU',
+  descricao: 'Sistema de Seleção Unificada.',
 };
 
 describe('TiposProcessoApi', () => {
@@ -67,5 +78,60 @@ describe('TiposProcessoApi', () => {
     expect(req.request.params.has('limit')).toBe(false);
     req.flush([tipoSeed]);
     await promise;
+  });
+
+  it('obter() faz GET /api/configuracao/tipos-processo/{id} com Accept versionado', async () => {
+    const promise = firstValueFrom(api.obter(ID));
+    const req = controller.expectOne(`${BASE}/api/configuracao/tipos-processo/${ID}`);
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('tipo-processo', 1));
+    req.flush(tipoSeed);
+
+    const result = (await promise) as ApiResult<TipoProcessoDto>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('criar() faz POST /api/configuracao/admin/tipos-processo com Idempotency-Key e Accept JSON', async () => {
+    const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-processo`);
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+    expect(req.request.headers.get('Accept')).toBe('application/json');
+    req.flush(ID, { status: 201, statusText: 'Created' });
+
+    const result = (await promise) as ApiResult<string>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('atualizar() faz PUT /api/configuracao/admin/tipos-processo/{id} sem o campo codigo', async () => {
+    const promise = firstValueFrom(
+      api.atualizar(
+        ID,
+        { id: ID, nome: 'SiSU (revisado)', descricao: null },
+        withIdempotencyKey('k'),
+      ),
+    );
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-processo/${ID}`);
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+    expect(req.request.body).not.toHaveProperty('codigo');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    const result = (await promise) as ApiResult<void>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('remover() faz DELETE /api/configuracao/admin/tipos-processo/{id}', async () => {
+    const promise = firstValueFrom(api.remover(ID));
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-processo/${ID}`);
+
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    const result = (await promise) as ApiResult<void>;
+    expect(isApiOk(result)).toBe(true);
   });
 });

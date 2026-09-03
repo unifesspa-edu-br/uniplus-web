@@ -94,6 +94,14 @@ export const appRoutes: Routes = [
           import('./features/tipos-banca/tipos-banca.routes').then((m) => m.TIPOS_BANCA_ROUTES),
       },
       {
+        path: 'tipos-processo',
+        data: { breadcrumb: 'Tipo de Processo' },
+        loadChildren: () =>
+          import('./features/tipos-processo/tipos-processo.routes').then(
+            (m) => m.TIPOS_PROCESSO_ROUTES,
+          ),
+      },
+      {
         path: 'tipos-documento',
         data: { breadcrumb: 'Tipo de Documento' },
         loadChildren: () =>
