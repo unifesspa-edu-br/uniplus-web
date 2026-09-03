@@ -53,11 +53,6 @@ export const appRoutes: Routes = [
           import('./features/pesos-enem/pesos-enem.routes').then((m) => m.PESOS_ENEM_ROUTES),
       },
       {
-        path: 'pesos-enem',
-        redirectTo: 'pesos-por-area',
-        pathMatch: 'full',
-      },
-      {
         path: 'cursos',
         data: { breadcrumb: 'Curso' },
         loadChildren: () => import('./features/cursos/cursos.routes').then((m) => m.CURSOS_ROUTES),
