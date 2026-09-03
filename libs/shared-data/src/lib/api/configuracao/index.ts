@@ -92,6 +92,8 @@ export {
 } from './tipos-banca.api';
 export {
   TiposProcessoApi,
+  type AtualizarTipoProcessoCommand,
+  type CriarTipoProcessoCommand,
   type TipoProcessoDto,
   type TiposProcessoQuery,
 } from './tipos-processo.api';
