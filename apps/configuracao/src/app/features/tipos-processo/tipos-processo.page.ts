@@ -188,7 +188,7 @@ interface TipoProcessoForm {
                         [disabled]="loading()"
                         (click)="pedirRemocao(tipo)"
                       >
-                        <i class="pi pi-trash" aria-hidden="true"></i>
+                        <i class="pi pi-power-off" aria-hidden="true"></i>
                       </button>
                     } @else {
                       <button
