@@ -284,9 +284,40 @@ describe('OfertasCursoPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Engenharia Civil');
     expect(fixture.nativeElement.textContent).toContain('Marabá');
-    expect(fixture.nativeElement.textContent).toContain(
-      'IGE',
+    expect(fixture.nativeElement.textContent).toContain('IGE');
+  });
+
+  // Asserção por igualdade, não por continência: `toContain('Engenharia Civil')`
+  // também passaria com o rótulo `ENG-CIV — Engenharia Civil`, e o que estas
+  // colunas precisam provar é justamente o que deixou de ser exibido.
+  it('CA-01/CA-02 (#696): a coluna Curso exibe o nome do curso sem o código', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    fixture.detectChanges();
+
+    const celulaCurso: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Curso"]');
+    expect(celulaCurso.textContent?.trim()).toBe('Engenharia Civil');
+    expect(celulaCurso.textContent).not.toContain('ENG-CIV');
+  });
+
+  it('CA-01/CA-02 (#697): a coluna Unidade ofertante exibe a sigla sem o nome', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    fixture.detectChanges();
+
+    const celulaUnidade: HTMLElement = fixture.nativeElement.querySelector(
+      'td[data-label="Unidade ofertante"]',
     );
+    expect(celulaUnidade.textContent?.trim()).toBe('IGE');
+    expect(celulaUnidade.textContent).not.toContain('Instituto de Geociências e Engenharias');
+  });
+
+  // CA-11 da #696: enxugar a coluna não pode enxugar as mensagens. Aqui o curso
+  // aparece sozinho, sem as demais colunas da linha, e o código é o que
+  // distingue cursos de nome semelhante numa remoção.
+  it('CA-11 (#696): a confirmação de remoção identifica o curso pelo código e nome', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    component['pedirRemocao'](ofertaSeed);
+
+    expect(component['confirmMessage']()).toContain('ENG-CIV — Engenharia Civil');
   });
 
   it('a listagem mostra os regimes por rótulo, não pelo token do contrato', async () => {

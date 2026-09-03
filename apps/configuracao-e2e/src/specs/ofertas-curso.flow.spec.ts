@@ -160,12 +160,13 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockApi(page, novoCapturado(), [ofertaSeed]);
     await abrirPagina(page);
 
+    // `exact: true` é o que faz a asserção discriminar: sem ele o match é por
+    // substring, e `'IGE'` passaria também com o rótulo antigo
+    // `IGE — Instituto de Geociências e Engenharias`.
     await expect(page.getByRole('columnheader', { name: 'Grau' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Engenharia Civil' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Bacharelado' })).toBeVisible();
-    await expect(
-      page.getByRole('cell', { name: 'IGE' }),
-    ).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Engenharia Civil', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Bacharelado', exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'IGE', exact: true })).toBeVisible();
   });
 
   test('CA-04: cria oferta com os 3 vínculos e programa Regular (sem base legal)', async ({
