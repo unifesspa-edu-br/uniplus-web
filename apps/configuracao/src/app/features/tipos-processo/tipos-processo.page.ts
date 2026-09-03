@@ -95,9 +95,9 @@ interface TipoProcessoForm {
     </div>
 
     <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
-      O código é a chave natural do tipo de processo — definido só na criação e exibido como
-      somente leitura na edição. Desativar um tipo não libera o código: um novo cadastro com o
-      mesmo código continua sendo recusado.
+      O código é a chave natural do tipo de processo — definido só na criação e exibido como somente
+      leitura na edição. Desativar um tipo não libera o código: um novo cadastro com o mesmo código
+      continua sendo recusado.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -160,18 +160,24 @@ interface TipoProcessoForm {
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
+                      [attr.aria-label]="'Editar tipo de processo ' + tipo.codigo"
+                      data-tooltip="Editar tipo de processo"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="abrirEdicao(tipo)"
                     >
-                      Editar
+                      <i class="pi pi-pencil" aria-hidden="true"></i>
                     </button>
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
+                      [attr.aria-label]="'Inativar tipo de processo ' + tipo.codigo"
+                      data-tooltip="Inativar tipo de processo"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="pedirRemocao(tipo)"
                     >
-                      Inativar
+                      <i class="pi pi-trash" aria-hidden="true"></i>
                     </button>
                   </td>
                 </tr>
@@ -246,7 +252,9 @@ interface TipoProcessoForm {
                 [readonly]="modo() === 'editar'"
                 [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
                 [attr.aria-describedby]="
-                  erroCampoCodigo ? 'cfg-tproc-codigo-dica cfg-tproc-codigo-erro' : 'cfg-tproc-codigo-dica'
+                  erroCampoCodigo
+                    ? 'cfg-tproc-codigo-dica cfg-tproc-codigo-erro'
+                    : 'cfg-tproc-codigo-dica'
                 "
               />
               <span class="field__hint" id="cfg-tproc-codigo-dica">
@@ -757,9 +765,7 @@ function controlNameFromBackendField(field: string): keyof TipoProcessoForm | nu
       .at(-1)
       ?.replace(/\[\d+\]$/u, '') ?? field;
   const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return TIPO_PROCESSO_CONTROL_NAMES.has(camelCase)
-    ? (camelCase as keyof TipoProcessoForm)
-    : null;
+  return TIPO_PROCESSO_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof TipoProcessoForm) : null;
 }
 
 function nullIfBlank(value: string): string | null {
