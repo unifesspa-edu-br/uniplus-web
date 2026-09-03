@@ -27,9 +27,7 @@
   "paths": {
     "/api/auth/me": {
       "get": {
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "summary": "Retorna o usu\u00E1rio autenticado",
         "description": "Retorna informa\u00E7\u00F5es do usu\u00E1rio extra\u00EDdas do access token. Requer autentica\u00E7\u00E3o.",
         "operationId": "GetAuthenticatedUser",
@@ -54,14 +52,17 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/profile/me": {
       "get": {
-        "tags": [
-          "Profile"
-        ],
+        "tags": ["Profile"],
         "summary": "Retorna o perfil do usu\u00E1rio autenticado",
         "description": "Retorna atributos de identidade e institucionais (CPF, NomeSocial) extra\u00EDdos do access token. Requer autentica\u00E7\u00E3o.",
         "operationId": "GetAuthenticatedUserProfile",
@@ -86,39 +87,29 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
       "AuthenticatedUserResponse": {
-        "required": [
-          "userId",
-          "name",
-          "email",
-          "roles",
-          "timestamp"
-        ],
+        "required": ["userId", "name", "email", "roles", "timestamp"],
         "type": "object",
         "properties": {
           "userId": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "name": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "email": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "roles": {
             "type": "array",
@@ -136,83 +127,44 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "title": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "status": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
+            "type": ["null", "integer", "string"],
             "format": "int32"
           },
           "detail": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "instance": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           }
         }
       },
       "UserProfileResponse": {
-        "required": [
-          "userId",
-          "name",
-          "email",
-          "cpf",
-          "nomeSocial",
-          "roles",
-          "timestamp"
-        ],
+        "required": ["userId", "name", "email", "cpf", "nomeSocial", "roles", "timestamp"],
         "type": "object",
         "properties": {
           "userId": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "name": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "email": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "cpf": {
             "pattern": "^\\d{11}$",
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": ["null", "string"],
             "description": "CPF (apenas d\u00EDgitos, sem formata\u00E7\u00E3o). PII \u2014 sempre mascarar em logs (\u0027***.999.999-**\u0027, ADR-0011)."
           },
           "nomeSocial": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "roles": {
             "type": "array",
@@ -225,6 +177,14 @@
             "format": "date-time"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \u0022Bearer\u0022 \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },

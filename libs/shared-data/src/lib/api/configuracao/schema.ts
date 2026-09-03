@@ -892,6 +892,314 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/categorias-documento/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.categoria-documento.v1+json": components["schemas"]["CategoriaDocumentoDto"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/categorias-documento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["CriarCategoriaDocumentoCommand"];
+                    readonly "text/json": components["schemas"]["CriarCategoriaDocumentoCommand"];
+                    readonly "application/*+json": components["schemas"]["CriarCategoriaDocumentoCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": string;
+                        readonly "application/json": string;
+                        readonly "text/json": string;
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/categorias-documento/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AtualizarCategoriaDocumentoCommand"];
+                    readonly "text/json": components["schemas"]["AtualizarCategoriaDocumentoCommand"];
+                    readonly "application/*+json": components["schemas"]["AtualizarCategoriaDocumentoCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/condicoes-atendimento": {
         readonly parameters: {
             readonly query?: never;
@@ -7256,7 +7564,92 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get?: never;
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    readonly apenasAtivos?: boolean;
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiConfiguracaoAdminTiposProcessoGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.tipo-processo.v1+json": readonly components["schemas"]["TipoProcessoDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         readonly put?: never;
         readonly post: {
             readonly parameters: {
@@ -7356,7 +7749,7 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get?: never;
+        readonly get: operations["ObterTipoProcessoParaManutencao"];
         readonly put: {
             readonly parameters: {
                 readonly query?: never;
@@ -7495,6 +7888,15 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
                 /** @description Unprocessable Entity */
                 readonly 422: {
                     headers: {
@@ -7511,6 +7913,193 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/tipos-processo/{id}/ativacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/tipos-banca": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-tipo-banca.v1+json": readonly components["schemas"]["TipoBancaVocabularioDto"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/vocabularios/fases-canonicas": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-fase-canonica.v1+json": readonly components["schemas"]["FaseCanonicaVocabularioDto"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7518,28 +8107,37 @@ export interface components {
         readonly AtualizarCampusCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly sigla: string;
-            readonly nome: string;
-            readonly cidadeCodigoIbge: string;
-            readonly cidadeNome: string;
-            readonly cidadeUf: string;
+            readonly sigla: null | string;
+            readonly nome: null | string;
+            readonly cidadeCodigoIbge: null | string;
+            readonly cidadeNome: null | string;
+            readonly cidadeUf: null | string;
             readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
             readonly codigoEmec: null | string;
+        };
+        readonly AtualizarCategoriaDocumentoCommand: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly descricao?: null | string;
+            /** Format: int32 */
+            readonly ordem?: null | number | string;
         };
         readonly AtualizarCondicaoAtendimentoCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly codigo: string;
-            readonly nome: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly AtualizarCursoCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly codigo: string;
-            readonly nome: string;
-            readonly grau: string;
-            readonly nivelEnsino: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly grau: null | string;
+            readonly nivelEnsino: null | string;
             readonly grupoAreaEnem?: null | string;
         };
         readonly AtualizarFaseCanonicaCommand: {
@@ -7559,6 +8157,8 @@ export interface components {
             readonly resultadoDefinitivo: boolean;
             /** @default false */
             readonly coletaInscricao: boolean;
+            /** @default false */
+            readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData?: null | string;
         };
         readonly AtualizarLocalOfertaCommand: {
@@ -7567,9 +8167,9 @@ export interface components {
             readonly tipo: components["schemas"]["TipoLocalOferta"];
             /** Format: uuid */
             readonly campusResponsavelId: null | string;
-            readonly cidadeCodigoIbge: string;
-            readonly cidadeNome: string;
-            readonly cidadeUf: string;
+            readonly cidadeCodigoIbge: null | string;
+            readonly cidadeNome: null | string;
+            readonly cidadeUf: null | string;
             readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
             readonly codigoEmec: null | string;
         };
@@ -7618,7 +8218,7 @@ export interface components {
             readonly pesoMatematica: number | string;
             /** Format: double */
             readonly corteRedacao: number | string;
-            readonly baseLegal: string;
+            readonly baseLegal: null | string;
         };
         readonly AtualizarPrecedenciaFaseCommand: {
             /** Format: uuid */
@@ -7628,20 +8228,20 @@ export interface components {
         readonly AtualizarRecursoAcessibilidadeCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly AtualizarReferenciaReservaDemograficaCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly censoReferencia: string;
+            readonly censoReferencia: null | string;
             /** Format: double */
             readonly ppiPercentual: number | string;
             /** Format: double */
             readonly quilombolaPercentual: number | string;
             /** Format: double */
             readonly pcdPercentual: number | string;
-            readonly baseLegal: string;
+            readonly baseLegal: null | string;
         };
         readonly AtualizarTipoBancaCommand: {
             /** Format: uuid */
@@ -7661,9 +8261,9 @@ export interface components {
         readonly AtualizarTipoDocumentoCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly codigo: string;
-            readonly nome: string;
-            readonly categoria: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly categoria: null | string;
             readonly descricao?: null | string;
             readonly formatosAceitos?: null | string;
             /** Format: int32 */
@@ -7673,13 +8273,13 @@ export interface components {
         readonly AtualizarTipoEtapaCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly AtualizarTipoProcessoCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly AuthenticatedUserResponse: {
@@ -7727,19 +8327,6 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly CidadeReferenciaDto: {
-            readonly codigoIbge: string;
-            readonly nome: string;
-            readonly uf: string;
-            readonly origem?: null | string;
-            /** Format: date-time */
-            readonly displayAtualizadoEm?: null | string;
-        };
-        readonly CidadeReferenciaInput: {
-            readonly codigoIbge: null | string;
-            readonly nome: null | string;
-            readonly uf: null | string;
-        };
         readonly CategoriaDocumentoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -7754,6 +8341,19 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly CidadeReferenciaDto: {
+            readonly codigoIbge: string;
+            readonly nome: string;
+            readonly uf: string;
+            readonly origem?: null | string;
+            /** Format: date-time */
+            readonly displayAtualizadoEm?: null | string;
+        };
+        readonly CidadeReferenciaInput: {
+            readonly codigoIbge: null | string;
+            readonly nome: null | string;
+            readonly uf: null | string;
+        };
         readonly CondicaoAtendimentoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -7767,32 +8367,39 @@ export interface components {
             };
         };
         readonly CriarCalendarioDiasUteisCommand: {
-            readonly versaoDataset: string;
-            readonly diasNaoUteis: readonly components["schemas"]["DiaNaoUtilCommandItem"][];
+            readonly versaoDataset: null | string;
+            readonly diasNaoUteis: null | readonly components["schemas"]["DiaNaoUtilCommandItem"][];
         };
         readonly CriarCampusCommand: {
-            readonly sigla: string;
-            readonly nome: string;
-            readonly cidadeCodigoIbge: string;
-            readonly cidadeNome: string;
-            readonly cidadeUf: string;
+            readonly sigla: null | string;
+            readonly nome: null | string;
+            readonly cidadeCodigoIbge: null | string;
+            readonly cidadeNome: null | string;
+            readonly cidadeUf: null | string;
             readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
             readonly codigoEmec: null | string;
         };
+        readonly CriarCategoriaDocumentoCommand: {
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly descricao?: null | string;
+            /** Format: int32 */
+            readonly ordem?: null | number | string;
+        };
         readonly CriarCondicaoAtendimentoCommand: {
-            readonly codigo: string;
-            readonly nome: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly CriarCursoCommand: {
-            readonly codigo: string;
-            readonly nome: string;
-            readonly grau: string;
-            readonly nivelEnsino: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly grau: null | string;
+            readonly nivelEnsino: null | string;
             readonly grupoAreaEnem?: null | string;
         };
         readonly CriarFaseCanonicaCommand: {
-            readonly codigo: string;
+            readonly codigo: null | string;
             readonly nome?: null | string;
             readonly descricao?: null | string;
             readonly donoTipico?: null | string;
@@ -7807,20 +8414,22 @@ export interface components {
             readonly resultadoDefinitivo: boolean;
             /** @default false */
             readonly coletaInscricao: boolean;
+            /** @default false */
+            readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData?: null | string;
         };
         readonly CriarLocalOfertaCommand: {
             readonly tipo: components["schemas"]["TipoLocalOferta"];
             /** Format: uuid */
             readonly campusResponsavelId: null | string;
-            readonly cidadeCodigoIbge: string;
-            readonly cidadeNome: string;
-            readonly cidadeUf: string;
+            readonly cidadeCodigoIbge: null | string;
+            readonly cidadeNome: null | string;
+            readonly cidadeUf: null | string;
             readonly endereco: null | components["schemas"]["EnderecoGeoInput"];
             readonly codigoEmec: null | string;
         };
         readonly CriarModalidadeCommand: {
-            readonly codigo: string;
+            readonly codigo: null | string;
             readonly descricao?: null | string;
             readonly naturezaLegal?: null | string;
             readonly composicaoVagas?: null | string;
@@ -7853,8 +8462,8 @@ export interface components {
             readonly atoAutorizacaoMec?: null | string;
         };
         readonly CriarPesoAreaEnemCommand: {
-            readonly resolucao: string;
-            readonly grupoCurso: string;
+            readonly resolucao: null | string;
+            readonly grupoCurso: null | string;
             /** Format: double */
             readonly pesoRedacao: number | string;
             /** Format: double */
@@ -7865,38 +8474,38 @@ export interface components {
             readonly pesoLinguagens: number | string;
             /** Format: double */
             readonly pesoMatematica: number | string;
-            readonly baseLegal: string;
+            readonly baseLegal: null | string;
             /** Format: double */
             readonly corteRedacao?: null | number | string;
         };
         readonly CriarPrecedenciaFaseCommand: {
-            readonly antecessoraCodigo: string;
-            readonly sucessoraCodigo: string;
+            readonly antecessoraCodigo: null | string;
+            readonly sucessoraCodigo: null | string;
             /** @default false */
             readonly permiteSobreposicao: boolean;
         };
         readonly CriarRecursoAcessibilidadeCommand: {
-            readonly nome: string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly CriarReferenciaReservaDemograficaCommand: {
-            readonly censoReferencia: string;
+            readonly censoReferencia: null | string;
             /** Format: double */
             readonly ppiPercentual: number | string;
             /** Format: double */
             readonly quilombolaPercentual: number | string;
             /** Format: double */
             readonly pcdPercentual: number | string;
-            readonly baseLegal: string;
+            readonly baseLegal: null | string;
         };
         readonly CriarTermoConsentimentoCommand: {
-            readonly nome: string;
+            readonly nome: null | string;
             readonly textoRascunho: null | string;
             readonly baseLegalRascunho: null | string;
             readonly formaAceiteRascunho: null | string;
         };
         readonly CriarTipoBancaCommand: {
-            readonly codigo: string;
+            readonly codigo: null | string;
             readonly nome?: null | string;
             readonly faseTipica?: null | string;
             readonly descricao?: null | string;
@@ -7908,9 +8517,9 @@ export interface components {
             readonly permanente?: null | boolean;
         };
         readonly CriarTipoDocumentoCommand: {
-            readonly codigo: string;
-            readonly nome: string;
-            readonly categoria: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
+            readonly categoria: null | string;
             readonly descricao?: null | string;
             readonly formatosAceitos?: null | string;
             /** Format: int32 */
@@ -7918,13 +8527,13 @@ export interface components {
             readonly tipoEquivalente?: null | string;
         };
         readonly CriarTipoEtapaCommand: {
-            readonly codigo: string;
-            readonly nome: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly CriarTipoProcessoCommand: {
-            readonly codigo: string;
-            readonly nome: string;
+            readonly codigo: null | string;
+            readonly nome: null | string;
             readonly descricao?: null | string;
         };
         readonly CursoDto: {
@@ -7942,13 +8551,13 @@ export interface components {
             };
         };
         readonly DiaNaoUtilCommandItem: {
-            readonly abrangencia: string;
+            readonly abrangencia: null | string;
             readonly municipioIbge: null | string;
             readonly municipioNome: null | string;
             readonly municipioUf: null | string;
             /** Format: date */
             readonly data: string;
-            readonly descricao: string;
+            readonly descricao: null | string;
             readonly uf?: null | string;
         };
         readonly DiaNaoUtilDto: {
@@ -8015,12 +8624,17 @@ export interface components {
             readonly produzResultado: boolean;
             readonly resultadoDefinitivo: boolean;
             readonly coletaInscricao: boolean;
+            readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData: string;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly FaseCanonicaVocabularioDto: {
+            readonly codigo: string;
+            readonly nome: string;
         };
         readonly FatoCandidatoView: {
             /** Format: uuid */
@@ -8228,6 +8842,10 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly TipoBancaVocabularioDto: {
+            readonly codigo: string;
+            readonly nome: string;
+        };
         readonly TipoDeficienciaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -8371,6 +8989,64 @@ export interface operations {
             };
         };
     };
+    readonly ObterTipoProcessoParaManutencao: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.tipo-processo.v1+json": components["schemas"]["TipoProcessoDto"];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
 }
 export enum PathsApiConfiguracaoCalendariosDiasUteisGetParametersQueryDirection {
     next = "next",
@@ -8441,6 +9117,10 @@ export enum PathsApiConfiguracaoTiposEtapaGetParametersQueryDirection {
     prev = "prev"
 }
 export enum PathsApiConfiguracaoTiposProcessoGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum PathsApiConfiguracaoAdminTiposProcessoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }

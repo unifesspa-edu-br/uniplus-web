@@ -85,6 +85,7 @@ interface FaseForm {
   produzResultado: FormControl<boolean>;
   resultadoDefinitivo: FormControl<boolean>;
   coletaInscricao: FormControl<boolean>;
+  coletaSolicitacaoIsencao: FormControl<boolean>;
 }
 
 const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
@@ -99,6 +100,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
   'produzResultado',
   'resultadoDefinitivo',
   'coletaInscricao',
+  'coletaSolicitacaoIsencao',
 ]);
 
 @Component({
@@ -430,6 +432,14 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
               </select>
               <span class="field__hint">A fase recebe inscrições de candidatos.</span>
             </label>
+            <label class="field">
+              <span class="field__label">Coleta solicitação isenção</span>
+              <select class="select" formControlName="coletaSolicitacaoIsencao">
+                <option [ngValue]="true">Sim</option>
+                <option [ngValue]="false">Não</option>
+              </select>
+              <span class="field__hint">A fase recebe isenção de candidatos.</span>
+            </label>
           </div>
         </fieldset>
 
@@ -636,6 +646,7 @@ export class FasesCanonicasPage {
       produzResultado: new FormControl(false, { nonNullable: true }),
       resultadoDefinitivo: new FormControl(false, { nonNullable: true }),
       coletaInscricao: new FormControl(false, { nonNullable: true }),
+      coletaSolicitacaoIsencao: new FormControl(false, { nonNullable: true }),
     },
     { validators: resultadoDefinitivoValidator },
   );
@@ -722,6 +733,7 @@ export class FasesCanonicasPage {
       produzResultado: false,
       resultadoDefinitivo: false,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -743,6 +755,7 @@ export class FasesCanonicasPage {
       produzResultado: fase.produzResultado,
       resultadoDefinitivo: fase.resultadoDefinitivo,
       coletaInscricao: fase.coletaInscricao,
+      coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -921,6 +934,7 @@ export class FasesCanonicasPage {
       // já esconde o controle nesse caso, então o valor residual não vaza.
       resultadoDefinitivo: raw.produzResultado && raw.resultadoDefinitivo,
       coletaInscricao: raw.coletaInscricao,
+      coletaSolicitacaoIsencao: raw.coletaSolicitacaoIsencao,
     };
   }
 
@@ -943,6 +957,7 @@ export class FasesCanonicasPage {
       // já esconde o controle nesse caso, então o valor residual não vaza.
       resultadoDefinitivo: raw.produzResultado && raw.resultadoDefinitivo,
       coletaInscricao: raw.coletaInscricao,
+      coletaSolicitacaoIsencao: raw.coletaSolicitacaoIsencao,
     };
   }
 }
