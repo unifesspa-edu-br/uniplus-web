@@ -27,6 +27,7 @@ const faseSeed = {
   produzResultado: false,
   resultadoDefinitivo: false,
   coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
   origemData: 'PROPRIA',
   criadoEm: '2026-06-10T12:00:00Z',
 };

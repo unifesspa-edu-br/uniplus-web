@@ -22,6 +22,7 @@ const faseAvaliacaoSeed: FaseCanonicaDto = {
   produzResultado: false,
   resultadoDefinitivo: false,
   coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
   origemData: 'PROPRIA',
   criadoEm: '2026-06-10T12:00:00Z',
 };
@@ -156,6 +157,7 @@ describe('FasesCanonicasPage', () => {
       produzResultado: false,
       resultadoDefinitivo: false,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
 
     component['salvar']();
@@ -169,6 +171,7 @@ describe('FasesCanonicasPage', () => {
       produzResultado: false,
       resultadoDefinitivo: false,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
@@ -214,6 +217,7 @@ describe('FasesCanonicasPage', () => {
       produzResultado: false,
       resultadoDefinitivo: false,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
 
     component['salvar']();
@@ -252,6 +256,7 @@ describe('FasesCanonicasPage', () => {
       produzResultado: false,
       resultadoDefinitivo: false,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
 
     // O backend exige `origemData`; sem o campo no formulário, toda criação
@@ -283,6 +288,7 @@ describe('FasesCanonicasPage', () => {
       produzResultado: false,
       resultadoDefinitivo: true,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
 
     // Mesma regra do backend: definitivo exige produzir resultado.
@@ -317,6 +323,7 @@ describe('FasesCanonicasPage', () => {
       produzResultado: true,
       resultadoDefinitivo: true,
       coletaInscricao: false,
+      coletaSolicitacaoIsencao: false,
     });
 
     // Voltar atrás esconde o controle de resultado definitivo; se o valor

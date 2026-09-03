@@ -938,10 +938,10 @@ export class CursosPage {
   private criarCommand(): CriarCursoCommand {
     const raw = this.form.getRawValue();
     return {
-      codigo: raw.codigo.trim(),
-      nome: raw.nome.trim(),
-      grau: raw.grau.trim(),
-      nivelEnsino: raw.nivelEnsino.trim(),
+      codigo: nullIfBlank(raw.codigo),
+      nome: nullIfBlank(raw.nome),
+      grau: nullIfBlank(raw.grau),
+      nivelEnsino: nullIfBlank(raw.nivelEnsino),
       grupoAreaEnem: nullIfBlank(raw.grupoAreaEnem),
     };
   }

@@ -1017,9 +1017,7 @@
     },
     "/api/configuracao/categorias-documento": {
       "get": {
-        "tags": [
-          "CategoriasDocumento"
-        ],
+        "tags": ["CategoriasDocumento"],
         "responses": {
           "200": {
             "description": "OK",
@@ -1045,6 +1043,367 @@
             }
           }
         }
+      }
+    },
+    "/api/configuracao/categorias-documento/{id}": {
+      "get": {
+        "tags": ["CategoriasDocumento"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.categoria-documento.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriaDocumentoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/admin/categorias-documento": {
+      "post": {
+        "tags": ["CategoriasDocumento"],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCategoriaDocumentoCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCategoriaDocumentoCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCategoriaDocumentoCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/configuracao/admin/categorias-documento/{id}": {
+      "put": {
+        "tags": ["CategoriasDocumento"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarCategoriaDocumentoCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarCategoriaDocumentoCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarCategoriaDocumentoCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      },
+      "delete": {
+        "tags": ["CategoriasDocumento"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/configuracao/condicoes-atendimento": {
@@ -8550,6 +8909,142 @@
       }
     },
     "/api/configuracao/admin/tipos-processo": {
+      "get": {
+        "tags": ["TiposProcesso"],
+        "parameters": [
+          {
+            "name": "apenasAtivos",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor opaco AES-GCM emitido pelo servidor no header Link da p\u00E1gina anterior. Ausente na primeira p\u00E1gina. Cliente trata como string opaca \u2014 n\u00E3o decodificar (ADR-0026, ADR-0031).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "schema": {
+              "enum": ["next", "prev"],
+              "type": "string",
+              "default": "next"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Link": {
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "description": "Quantidade de itens retornados na p\u00E1gina atual (sempre menor ou igual ao limit efetivo).",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.uniplus.tipo-processo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoProcessoDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-paginated": true
+      },
       "post": {
         "tags": ["TiposProcesso"],
         "parameters": [
@@ -8680,6 +9175,78 @@
       }
     },
     "/api/configuracao/admin/tipos-processo/{id}": {
+      "get": {
+        "tags": ["TiposProcesso"],
+        "operationId": "ObterTipoProcessoParaManutencao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.tipo-processo.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoProcessoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
       "put": {
         "tags": ["TiposProcesso"],
         "parameters": [
@@ -8854,6 +9421,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Unprocessable Entity",
             "content": {
@@ -8870,6 +9447,168 @@
             "bearerAuth": []
           }
         ]
+      }
+    },
+    "/api/configuracao/admin/tipos-processo/{id}/ativacao": {
+      "post": {
+        "tags": ["TiposProcesso"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/configuracao/vocabularios/tipos-banca": {
+      "get": {
+        "tags": ["Vocabularios"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.codigo-tipo-banca.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoBancaVocabularioDto"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/vocabularios/fases-canonicas": {
+      "get": {
+        "tags": ["Vocabularios"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.codigo-fase-canonica.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FaseCanonicaVocabularioDto"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -8893,19 +9632,19 @@
             "format": "uuid"
           },
           "sigla": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeCodigoIbge": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeNome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeUf": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "endereco": {
             "oneOf": [
@@ -8922,6 +9661,30 @@
           }
         }
       },
+      "AtualizarCategoriaDocumentoCommand": {
+        "required": ["id", "codigo", "nome"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": ["null", "string"]
+          },
+          "nome": {
+            "type": ["null", "string"]
+          },
+          "descricao": {
+            "type": ["null", "string"]
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["null", "integer", "string"],
+            "format": "int32"
+          }
+        }
+      },
       "AtualizarCondicaoAtendimentoCommand": {
         "required": ["id", "codigo", "nome"],
         "type": "object",
@@ -8931,10 +9694,10 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -8950,16 +9713,16 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "grau": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nivelEnsino": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "grupoAreaEnem": {
             "type": ["null", "string"]
@@ -9006,6 +9769,10 @@
             "type": "boolean",
             "default": false
           },
+          "coletaSolicitacaoIsencao": {
+            "type": "boolean",
+            "default": false
+          },
           "origemData": {
             "type": ["null", "string"]
           }
@@ -9036,13 +9803,13 @@
             "format": "uuid"
           },
           "cidadeCodigoIbge": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeNome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeUf": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "endereco": {
             "oneOf": [
@@ -9106,13 +9873,7 @@
         }
       },
       "AtualizarOfertaCursoCommand": {
-        "required": [
-          "id",
-          "programaDeOferta",
-          "regimeDeFuncionamento",
-          "regimeDeTurno",
-          "turnos"
-        ],
+        "required": ["id", "programaDeOferta", "regimeDeFuncionamento", "regimeDeTurno", "turnos"],
         "type": "object",
         "properties": {
           "id": {
@@ -9120,70 +9881,39 @@
             "format": "uuid"
           },
           "programaDeOferta": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "regimeDeFuncionamento": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "regimeDeTurno": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "turnos": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": ["null", "array"],
             "items": {
               "type": "string"
             }
           },
           "formatoPedagogico": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "eMecCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "codigoSga": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
+            "type": ["null", "integer", "string"],
             "format": "int32"
           },
           "baseLegal": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "atoAutorizacaoMec": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           }
         }
       },
@@ -9235,7 +9965,7 @@
             "format": "double"
           },
           "baseLegal": {
-            "type": "string"
+            "type": ["null", "string"]
           }
         }
       },
@@ -9261,7 +9991,7 @@
             "format": "uuid"
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -9284,7 +10014,7 @@
             "format": "uuid"
           },
           "censoReferencia": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "ppiPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
@@ -9302,7 +10032,7 @@
             "format": "double"
           },
           "baseLegal": {
-            "type": "string"
+            "type": ["null", "string"]
           }
         }
       },
@@ -9356,13 +10086,13 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "categoria": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -9389,7 +10119,7 @@
             "format": "uuid"
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -9405,7 +10135,7 @@
             "format": "uuid"
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -9537,6 +10267,40 @@
           }
         }
       },
+      "CategoriaDocumentoDto": {
+        "required": ["id", "codigo", "nome", "descricao", "ordem", "criadoEm"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": ["null", "string"]
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "format": "int32"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "_links": {
+            "type": ["null", "object"],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "CidadeReferenciaDto": {
         "required": ["codigoIbge", "nome", "uf"],
         "type": "object",
@@ -9574,56 +10338,6 @@
           }
         }
       },
-      "CategoriaDocumentoDto": {
-        "required": [
-          "id",
-          "codigo",
-          "nome",
-          "descricao",
-          "ordem",
-          "criadoEm"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "codigo": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "descricao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "ordem": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "criadoEm": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "_links": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        }
-      },
       "CondicaoAtendimentoDto": {
         "required": ["id", "codigo", "nome", "descricao", "criadoEm"],
         "type": "object",
@@ -9658,10 +10372,10 @@
         "type": "object",
         "properties": {
           "versaoDataset": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "diasNaoUteis": {
-            "type": "array",
+            "type": ["null", "array"],
             "items": {
               "$ref": "#/components/schemas/DiaNaoUtilCommandItem"
             }
@@ -9681,19 +10395,19 @@
         "type": "object",
         "properties": {
           "sigla": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeCodigoIbge": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeNome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeUf": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "endereco": {
             "oneOf": [
@@ -9710,15 +10424,35 @@
           }
         }
       },
+      "CriarCategoriaDocumentoCommand": {
+        "required": ["codigo", "nome"],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": ["null", "string"]
+          },
+          "nome": {
+            "type": ["null", "string"]
+          },
+          "descricao": {
+            "type": ["null", "string"]
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["null", "integer", "string"],
+            "format": "int32"
+          }
+        }
+      },
       "CriarCondicaoAtendimentoCommand": {
         "required": ["codigo", "nome"],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -9730,16 +10464,16 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "grau": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nivelEnsino": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "grupoAreaEnem": {
             "type": ["null", "string"]
@@ -9751,7 +10485,7 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
             "type": ["null", "string"]
@@ -9785,6 +10519,10 @@
             "type": "boolean",
             "default": false
           },
+          "coletaSolicitacaoIsencao": {
+            "type": "boolean",
+            "default": false
+          },
           "origemData": {
             "type": ["null", "string"]
           }
@@ -9810,13 +10548,13 @@
             "format": "uuid"
           },
           "cidadeCodigoIbge": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeNome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "cidadeUf": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "endereco": {
             "oneOf": [
@@ -9838,7 +10576,7 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -9903,70 +10641,39 @@
             "format": "uuid"
           },
           "programaDeOferta": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "regimeDeFuncionamento": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "regimeDeTurno": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "turnos": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": ["null", "array"],
             "items": {
               "type": "string"
             }
           },
           "formatoPedagogico": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "eMecCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "codigoSga": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
+            "type": ["null", "integer", "string"],
             "format": "int32"
           },
           "baseLegal": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "atoAutorizacaoMec": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           }
         }
       },
@@ -9984,10 +10691,10 @@
         "type": "object",
         "properties": {
           "resolucao": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "grupoCurso": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "pesoRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
@@ -10015,7 +10722,7 @@
             "format": "double"
           },
           "baseLegal": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "corteRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
@@ -10029,10 +10736,10 @@
         "type": "object",
         "properties": {
           "antecessoraCodigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "sucessoraCodigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "permiteSobreposicao": {
             "type": "boolean",
@@ -10045,7 +10752,7 @@
         "type": "object",
         "properties": {
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -10063,7 +10770,7 @@
         "type": "object",
         "properties": {
           "censoReferencia": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "ppiPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
@@ -10081,7 +10788,7 @@
             "format": "double"
           },
           "baseLegal": {
-            "type": "string"
+            "type": ["null", "string"]
           }
         }
       },
@@ -10090,7 +10797,7 @@
         "type": "object",
         "properties": {
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "textoRascunho": {
             "type": ["null", "string"]
@@ -10108,7 +10815,7 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
             "type": ["null", "string"]
@@ -10144,13 +10851,13 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "categoria": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -10173,10 +10880,10 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -10188,10 +10895,10 @@
         "type": "object",
         "properties": {
           "codigo": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "nome": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "descricao": {
             "type": ["null", "string"]
@@ -10245,7 +10952,7 @@
         "type": "object",
         "properties": {
           "abrangencia": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "municipioIbge": {
             "type": ["null", "string"]
@@ -10261,7 +10968,7 @@
             "format": "date"
           },
           "descricao": {
-            "type": "string"
+            "type": ["null", "string"]
           },
           "uf": {
             "type": ["null", "string"]
@@ -10463,6 +11170,7 @@
           "produzResultado",
           "resultadoDefinitivo",
           "coletaInscricao",
+          "coletaSolicitacaoIsencao",
           "origemData",
           "criadoEm"
         ],
@@ -10502,6 +11210,9 @@
           "coletaInscricao": {
             "type": "boolean"
           },
+          "coletaSolicitacaoIsencao": {
+            "type": "boolean"
+          },
           "origemData": {
             "type": "string"
           },
@@ -10514,6 +11225,18 @@
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "FaseCanonicaVocabularioDto": {
+        "required": ["codigo", "nome"],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
           }
         }
       },
@@ -10774,47 +11497,28 @@
             }
           },
           "eMecCodigo": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "codigoSga": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
+            "type": ["null", "integer", "string"],
             "format": "int32"
           },
           "baseLegal": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "atoAutorizacaoMec": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": ["null", "string"]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": [
-              "null",
-              "object"
-            ],
+            "type": ["null", "object"],
             "additionalProperties": {
               "type": "string"
             }
@@ -11166,6 +11870,18 @@
           }
         }
       },
+      "TipoBancaVocabularioDto": {
+        "required": ["codigo", "nome"],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
       "TipoDeficienciaDto": {
         "required": ["id", "codigo", "nome", "descricao", "permanente", "criadoEm"],
         "type": "object",
@@ -11403,6 +12119,9 @@
       "name": "Campi"
     },
     {
+      "name": "CategoriasDocumento"
+    },
+    {
       "name": "CondicoesAtendimento"
     },
     {
@@ -11452,6 +12171,9 @@
     },
     {
       "name": "TiposProcesso"
+    },
+    {
+      "name": "Vocabularios"
     }
   ]
 }
