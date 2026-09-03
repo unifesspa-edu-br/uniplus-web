@@ -819,4 +819,19 @@ describe('OfertasCursoPage', () => {
     controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
     expect(component['erroDoCampo']('regimeDeFuncionamento')).toContain('INTENSIVO');
   });
+
+  it('trocar itens por página recarrega a primeira página com o novo limit', async () => {
+    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
+    await flushCargaInicial([ofertaSeed]);
+
+    component['aoTrocarLimite'](50);
+    await propagate();
+
+    const req = controller.expectOne((r) => r.url === LISTA_URL);
+    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.has('cursor')).toBe(false);
+    req.flush([ofertaSeed]);
+    await propagate();
+    expect(component['limite']()).toBe(50);
+  });
 });

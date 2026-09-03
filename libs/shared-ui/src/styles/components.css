@@ -485,6 +485,11 @@ ui-vlibras-loader {
   display: contents;
 }
 
+/* Wrapper puro em volta do `ui-pager` — não introduz caixa própria. */
+ui-list-footer {
+  display: contents;
+}
+
 .institutional-bar {
   background: var(--color-primary-900);
   color: var(--text-on-inverse);

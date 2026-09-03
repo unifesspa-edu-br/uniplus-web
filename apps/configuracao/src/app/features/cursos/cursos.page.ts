@@ -45,21 +45,17 @@ import {
 import {
   AlertComponent,
   ConfirmDialogComponent,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
-  PagerComponent,
+  ListFooterComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
 /** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 5;
-
-/** Opções de "itens por página" do rodapé da lista principal (backend aceita 1..100). */
-const OPCOES_LIMITE = [5, 25, 50, 100] as const;
-
-/** Limite inicial da lista principal, antes de qualquer escolha do usuário. */
-const LIMITE_PADRAO = 5;
 
 /**
  * Debounce da busca textual — uma request por rajada de digitação, não por
@@ -104,7 +100,7 @@ interface CursoForm {
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
-    PagerComponent,
+    ListFooterComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -252,19 +248,18 @@ interface CursoForm {
         }
       }
 
-      @if (cursos().length > 0 || prevCursor() !== null || nextCursor() !== null) {
-        <ui-pager
-          navigationLabel="Paginação de cursos"
-          [pageSizeOptions]="opcoesLimite"
-          [pageSize]="limite()"
-          (pageSizeChange)="aoTrocarLimite($event)"
-          [hasPrevious]="prevCursor() !== null"
-          [hasNext]="nextCursor() !== null"
-          [isDisabled]="loading()"
-          (previous)="paginaAnterior()"
-          (next)="proximaPagina()"
-        />
-      }
+      <ui-list-footer
+        navigationLabel="Paginação de cursos"
+        [pageSizeOptions]="opcoesLimite"
+        [pageSize]="limite()"
+        (pageSizeChange)="aoTrocarLimite($event)"
+        [hasRows]="cursos().length > 0"
+        [hasPrevious]="prevCursor() !== null"
+        [hasNext]="nextCursor() !== null"
+        [isDisabled]="loading()"
+        (previous)="paginaAnterior()"
+        (next)="proximaPagina()"
+      />
     </section>
 
     <ui-drawer
@@ -462,17 +457,14 @@ interface CursoForm {
         />
       }
 
-      @if (ofertasPrevCursor() !== null || ofertasNextCursor() !== null) {
-        <ui-pager
-          statusText="Navegação por páginas"
-          navigationLabel="Paginação de ofertas do curso"
-          [hasPrevious]="ofertasPrevCursor() !== null"
-          [hasNext]="ofertasNextCursor() !== null"
-          [isDisabled]="ofertasLoading()"
-          (previous)="paginaAnteriorOfertas()"
-          (next)="proximaPaginaOfertas()"
-        />
-      }
+      <ui-list-footer
+        navigationLabel="Paginação de ofertas do curso"
+        [hasPrevious]="ofertasPrevCursor() !== null"
+        [hasNext]="ofertasNextCursor() !== null"
+        [isDisabled]="ofertasLoading()"
+        (previous)="paginaAnteriorOfertas()"
+        (next)="proximaPaginaOfertas()"
+      />
     </ui-drawer>
   `,
   host: { class: 'cfg-page' },
@@ -498,8 +490,8 @@ export class CursosPage {
   protected readonly termoBusca = signal('');
 
   /** Itens por página escolhidos no rodapé; só em memória (volta ao padrão a cada visita). */
-  protected readonly limite = signal<number>(LIMITE_PADRAO);
-  protected readonly opcoesLimite = OPCOES_LIMITE;
+  protected readonly limite = signal<number>(DEFAULT_PAGE_SIZE);
+  protected readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
 
   /** Ordenação corrente da lista; `null` = ordem padrão do backend (por Id). */
   protected readonly ordenacao = signal<Ordenacao | null>(null);

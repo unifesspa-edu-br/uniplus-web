@@ -27,6 +27,11 @@ export { LoadingOverlayComponent } from './loading-overlay/loading-overlay';
 export { LookupAlertComponent, type UiLookupFalho } from './lookup-alert/lookup-alert';
 export { LookupLabelComponent } from './lookup-label/lookup-label';
 export { PageHeaderComponent } from './page-header/page-header';
+export {
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  ListFooterComponent,
+} from './list-footer/list-footer';
 export { PagerComponent } from './pager/pager';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './select/select';

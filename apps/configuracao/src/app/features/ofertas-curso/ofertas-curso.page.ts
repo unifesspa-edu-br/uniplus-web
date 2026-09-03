@@ -68,17 +68,16 @@ import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   AlertComponent,
   ConfirmDialogComponent,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
   DrawerComponent,
   EmptyStateComponent,
+  ListFooterComponent,
   LookupAlertComponent,
   LookupLabelComponent,
-  PagerComponent,
   SpinnerComponent,
   type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
-
-/** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
-const PAGE_SIZE = 50;
 
 // Rotulação dos vínculos da listagem. Fora da classe porque são funções puras
 // sobre o DTO — o mesmo texto serve à tabela e aos campos do drawer.
@@ -117,9 +116,9 @@ interface OfertaCursoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    ListFooterComponent,
     LookupAlertComponent,
     LookupLabelComponent,
-    PagerComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -213,18 +212,24 @@ interface OfertaCursoForm {
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
+                      [attr.aria-label]="'Editar oferta de curso ' + oferta.id"
+                      data-tooltip="Editar oferta de curso"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="abrirEdicao(oferta)"
                     >
-                      Editar
+                      <i class="pi pi-pencil" aria-hidden="true"></i>
                     </button>
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
+                      [attr.aria-label]="'Remover oferta de curso ' + oferta.id"
+                      data-tooltip="Remover oferta de curso"
+                      data-tooltip-position="left"
                       [disabled]="loading()"
                       (click)="pedirRemocao(oferta)"
                     >
-                      Remover
+                      <i class="pi pi-trash" aria-hidden="true"></i>
                     </button>
                   </td>
                 </tr>
@@ -243,17 +248,18 @@ interface OfertaCursoForm {
         </ui-empty-state>
       }
 
-      @if (prevCursor() !== null || nextCursor() !== null) {
-        <ui-pager
-          statusText="Navegação por páginas"
-          navigationLabel="Paginação de ofertas de curso"
-          [hasPrevious]="prevCursor() !== null"
-          [hasNext]="nextCursor() !== null"
-          [isDisabled]="loading()"
-          (previous)="paginaAnterior()"
-          (next)="proximaPagina()"
-        />
-      }
+      <ui-list-footer
+        navigationLabel="Paginação de ofertas de curso"
+        [pageSizeOptions]="opcoesLimite"
+        [pageSize]="limite()"
+        (pageSizeChange)="aoTrocarLimite($event)"
+        [hasRows]="ofertas().length > 0"
+        [hasPrevious]="prevCursor() !== null"
+        [hasNext]="nextCursor() !== null"
+        [isDisabled]="loading()"
+        (previous)="paginaAnterior()"
+        (next)="proximaPagina()"
+      />
     </section>
 
     <ui-drawer
@@ -607,6 +613,10 @@ export class OfertasCursoPage {
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
 
+  /** Itens por página escolhidos no rodapé; só em memória (volta ao padrão a cada visita). */
+  protected readonly limite = signal<number>(DEFAULT_PAGE_SIZE);
+  protected readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
+
   private readonly lista = useApiResource<readonly OfertaCursoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/ofertas-curso`,
     params: this.montarParams(),
@@ -764,11 +774,7 @@ export class OfertasCursoPage {
     }),
     regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
       nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(30),
-        compatibilidadeComRegimeDeTurno,
-      ],
+      validators: [Validators.required, Validators.maxLength(30), compatibilidadeComRegimeDeTurno],
     }),
   });
 
@@ -1216,11 +1222,23 @@ export class OfertasCursoPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-      return new HttpParams().set('limit', String(PAGE_SIZE));
+      return new HttpParams().set('limit', String(this.limite()));
     }
     return new HttpParams()
       .set('cursor', cursorToString(pagina.cursor))
       .set('direction', pagina.direction);
+  }
+
+  /**
+   * Troca o limite e volta à primeira página: o cursor da página atual carrega
+   * a janela antiga (ADR-0026). `montarParams` lê `limite()` só no ramo da
+   * primeira página, então o `pagina.set(undefined)` garante o refetch.
+   */
+  protected aoTrocarLimite(valor: number | null): void {
+    if (valor !== null && valor !== this.limite()) {
+      this.limite.set(valor);
+      this.pagina.set(undefined);
+    }
   }
 
   private recarregar(): void {

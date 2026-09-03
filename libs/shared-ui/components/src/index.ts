@@ -36,6 +36,11 @@ export {
 } from '../../src/lib/components/lookup-alert/lookup-alert';
 export { LookupLabelComponent } from '../../src/lib/components/lookup-label/lookup-label';
 export { PageHeaderComponent } from '../../src/lib/components/page-header/page-header';
+export {
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  ListFooterComponent,
+} from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
 export {
   SegmentedComponent,
