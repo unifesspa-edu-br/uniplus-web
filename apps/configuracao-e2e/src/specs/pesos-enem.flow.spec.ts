@@ -155,3 +155,17 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await expect.poll(() => capturado.deletedIds.length).toBe(4);
   });
 });
+
+test.describe('Peso por Área — identificação (#689)', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockConfiguracaoRuntimeConfig(page);
+  });
+
+  test('breadcrumb exibe "Peso por Área"', async ({ page }) => {
+    await mockApi(page, novoCapturado(), SEED);
+    await abrirPagina(page);
+
+    const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+    await expect(breadcrumb.getByText('Peso por Área', { exact: true })).toBeVisible();
+  });
+});
