@@ -386,7 +386,9 @@ async function assertClickableHeaderMenus(page: Page, viewport: VisualViewport):
   if (viewport === 'desktop') {
     const userHeader = page.locator('auth-user-header-info');
     await expect(userHeader.getByTestId('auth-user-display-name')).toHaveText('Admin');
-    await expect(userHeader.locator('.user-chip__avatar')).toHaveText('A');
+    // A inicial vem de `data-initials` e é pintada por CSS: como texto do DOM
+    // ela entraria no rótulo visível do botão e violaria o SC 2.5.3.
+    await expect(userHeader.locator('.user-chip__avatar')).toHaveAttribute('data-initials', 'A');
     await expect(
       userHeader.getByRole('button', { name: 'Abrir menu da conta de Admin Teste' }),
     ).toBeVisible();

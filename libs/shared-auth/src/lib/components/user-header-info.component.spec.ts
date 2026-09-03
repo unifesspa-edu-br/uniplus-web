@@ -60,7 +60,10 @@ describe('UserHeaderInfoComponent', () => {
     const name = chip.querySelector<HTMLElement>('[data-testid="auth-user-display-name"]');
     const avatar = chip.querySelector<HTMLElement>('.user-chip__avatar');
     expect(name?.textContent?.trim()).toBe('Candidato');
-    expect(avatar?.textContent?.trim()).toBe('C');
+    // A inicial é exposta por atributo e renderizada em ::before — fora do
+    // texto do DOM, para não entrar no rótulo visível do botão (SC 2.5.3).
+    expect(avatar?.getAttribute('data-initials')).toBe('C');
+    expect(avatar?.textContent?.trim()).toBe('');
     // O chip não repete username nem nome completo — a identidade completa vive no dropdown.
     expect(chip.textContent).not.toContain('@');
     expect(chip.textContent).not.toContain('Candidato Teste');

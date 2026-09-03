@@ -210,7 +210,11 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     await carregar([DIA_MUNICIPAL, segunda_ocorrencia]);
 
     const botao = botaoDoDia(DIA_MUNICIPAL.data);
-    expect(botao.textContent).toContain('×2');
+    // Contador exposto por atributo e pintado em ::before — fora do texto do
+    // DOM, para não entrar no rótulo visível do botão (SC 2.5.3).
+    expect(
+      botao.querySelector('.cfg-calendario-mensal__contador')?.getAttribute('data-contador'),
+    ).toBe('×2');
 
     botao.click();
     fixture.detectChanges();

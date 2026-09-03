@@ -714,6 +714,10 @@ ui-vlibras-loader {
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: var(--weight-bold); font-size: var(--text-xs);
 }
+/* A inicial vem de `data-initials` em vez de nó de texto: como texto do DOM
+ * ela entraria no rótulo visível do botão e violaria o SC 2.5.3 (Label in
+ * Name), que compara o nome acessível com o que se lê na tela. */
+.user-chip__avatar::before { content: attr(data-initials); }
 
 /* ============================================================================
  * STEPPER / WIZARD

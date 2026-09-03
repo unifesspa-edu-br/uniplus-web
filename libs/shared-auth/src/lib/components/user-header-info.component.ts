@@ -40,9 +40,18 @@ import {
           (click)="toggleMenu()"
           (keydown)="onTriggerKeydown($event)"
         >
-          <span class="user-chip__avatar" aria-hidden="true">{{
-            initials(userContext.firstDisplayName())
-          }}</span>
+          <!--
+            A inicial é decorativa e duplica a primeira letra do nome ao lado.
+            Precisa ficar fora do texto do DOM: o SC 2.5.3 compara o nome
+            acessível com o texto VISTO na tela, e aria-hidden não remove
+            nada da tela. Como texto, ela transformaria o rótulo visível em
+            "AAdmin", que nenhum nome acessível legível conteria.
+          -->
+          <span
+            class="user-chip__avatar"
+            aria-hidden="true"
+            [attr.data-initials]="initials(userContext.firstDisplayName())"
+          ></span>
           <span class="ui-user-header__text">
             <strong data-testid="auth-user-display-name">{{
               userContext.firstDisplayName()

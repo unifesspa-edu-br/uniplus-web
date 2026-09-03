@@ -136,9 +136,18 @@ const DIAS_SEMANA = [
                                 aria-hidden="true"
                               ></span>
                               @if (celula.ocorrencias.length > 1) {
-                                <span class="cfg-calendario-mensal__contador" aria-hidden="true">
-                                  ×{{ celula.ocorrencias.length }}
-                                </span>
+                                <!--
+                                  Contador vai por atributo, não por nó de
+                                  texto: o SC 2.5.3 compara o nome acessível
+                                  com o texto lido na tela, e "×2" não tem
+                                  como caber no rótulo, que já anuncia
+                                  "2 ocorrências" por extenso.
+                                -->
+                                <span
+                                  class="cfg-calendario-mensal__contador"
+                                  aria-hidden="true"
+                                  [attr.data-contador]="'×' + celula.ocorrencias.length"
+                                ></span>
                               }
                               @if (diaEmPreview() === celula.data) {
                                 <span class="cfg-calendario-mensal__preview" aria-hidden="true">
@@ -334,6 +343,9 @@ const DIAS_SEMANA = [
       border-radius: var(--radius-pill);
       background: var(--color-primary);
       color: var(--text-on-primary);
+    }
+    .cfg-calendario-mensal__contador::before {
+      content: attr(data-contador);
     }
 
     .cfg-calendario-mensal__preview {
