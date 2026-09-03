@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { assertSemViolacoesGraves } from '../support/a11y';
 
 /**
  * E2E funcional do cadastro de Precedência de fase (issue #497). Convenção do
@@ -323,16 +323,10 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  async function violacoesGraves(page: Page): Promise<unknown[]> {
-    const resultado = await runAxeWcagAA(page);
-    return resultado.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-  }
-
-  test('lista não tem violações serious/critical', async ({ page }) => {
+    test('lista não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [arestaSeed]);
     await abrirPagina(page);
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 
   test('drawer de criação aberto não tem violações serious/critical', async ({ page }) => {
@@ -340,8 +334,7 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
     await abrirPagina(page);
     await page.getByRole('button', { name: 'Nova aresta' }).first().click();
     await expect(page.locator('#cfg-precedencia-fase-form')).toBeVisible();
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 
   test('drawer com erro de campo não tem violações serious/critical', async ({ page }) => {
@@ -354,8 +347,7 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
     await expect(
       page.getByText('A fase sucessora não pode ser igual à antecessora.'),
     ).toBeVisible();
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 
   test('modal de remoção aberto não tem violações serious/critical', async ({ page }) => {
@@ -363,7 +355,6 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
     await abrirPagina(page);
     await page.getByRole('button', { name: 'Remover' }).first().click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 });

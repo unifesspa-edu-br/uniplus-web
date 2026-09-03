@@ -714,9 +714,13 @@ ui-vlibras-loader {
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: var(--weight-bold); font-size: var(--text-xs);
 }
-/* A inicial vem de `data-initials` em vez de nó de texto: como texto do DOM
- * ela entraria no rótulo visível do botão e violaria o SC 2.5.3 (Label in
- * Name), que compara o nome acessível com o que se lê na tela. */
+/* A inicial é decorativa e duplica a primeira letra do nome ao lado. Vem de
+ * `data-initials` em vez de nó de texto porque, como texto do DOM, ela
+ * comporia o rótulo VISÍVEL do botão ("AAdmin"), que nenhum nome acessível
+ * legível conteria — o SC 2.5.3 (Label in Name, nível A) compara o nome
+ * acessível com o texto lido na tela, e `aria-hidden` esconde do leitor, não
+ * da vista. Quem navega por comando de voz é quem paga: diz o rótulo que lê e
+ * o elemento não ativa. Mesmo padrão no contador do calendário mensal. */
 .user-chip__avatar::before { content: attr(data-initials); }
 
 /* ============================================================================

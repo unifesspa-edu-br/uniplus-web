@@ -40,13 +40,7 @@ import {
           (click)="toggleMenu()"
           (keydown)="onTriggerKeydown($event)"
         >
-          <!--
-            A inicial é decorativa e duplica a primeira letra do nome ao lado.
-            Precisa ficar fora do texto do DOM: o SC 2.5.3 compara o nome
-            acessível com o texto VISTO na tela, e aria-hidden não remove
-            nada da tela. Como texto, ela transformaria o rótulo visível em
-            "AAdmin", que nenhum nome acessível legível conteria.
-          -->
+          <!-- Inicial pintada em ::before (ver shared-ui/styles/components.css) — SC 2.5.3. -->
           <span
             class="user-chip__avatar"
             aria-hidden="true"

@@ -136,17 +136,11 @@ const DIAS_SEMANA = [
                                 aria-hidden="true"
                               ></span>
                               @if (celula.ocorrencias.length > 1) {
-                                <!--
-                                  Contador vai por atributo, não por nó de
-                                  texto: o SC 2.5.3 compara o nome acessível
-                                  com o texto lido na tela, e "×2" não tem
-                                  como caber no rótulo, que já anuncia
-                                  "2 ocorrências" por extenso.
-                                -->
+                                <!-- Contador pintado em ::before (ver styles) — SC 2.5.3. -->
                                 <span
                                   class="cfg-calendario-mensal__contador"
                                   aria-hidden="true"
-                                  [attr.data-contador]="'×' + celula.ocorrencias.length"
+                                  [attr.data-contador]="celula.ocorrencias.length"
                                 ></span>
                               }
                               @if (diaEmPreview() === celula.data) {
@@ -344,8 +338,14 @@ const DIAS_SEMANA = [
       background: var(--color-primary);
       color: var(--text-on-primary);
     }
+    /* O contador é decorativo e duplica o que o aria-label do botão já diz por
+     * extenso ("N ocorrências"). Como nó de texto ele comporia o rótulo
+     * VISÍVEL do botão ("15×2"), que o nome acessível não conteria — o SC
+     * 2.5.3 compara com o texto lido na tela, e aria-hidden esconde do leitor,
+     * não da vista. Daí o dado vir por atributo e o "×" morar aqui, na camada
+     * que já é dona da apresentação. */
     .cfg-calendario-mensal__contador::before {
-      content: attr(data-contador);
+      content: '×' attr(data-contador);
     }
 
     .cfg-calendario-mensal__preview {

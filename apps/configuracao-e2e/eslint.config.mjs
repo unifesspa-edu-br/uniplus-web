@@ -6,7 +6,13 @@ export default [
   ...baseConfig,
   {
     files: ['**/*.ts', '**/*.js'],
-    // Override or add rules here
-    rules: {},
+    rules: {
+      // Helpers de asserção do próprio app: sem declará-los, a regra acusa
+      // "Test has no assertions" em teste que assere dentro do helper.
+      'playwright/expect-expect': [
+        'warn',
+        { assertFunctionNames: ['assertSemViolacoesGraves'] },
+      ],
+    },
   },
 ];

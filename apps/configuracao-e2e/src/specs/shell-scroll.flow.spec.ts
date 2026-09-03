@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { assertSemViolacoesGraves } from '../support/a11y';
 
 /**
  * Rolagem vertical do shell administrativo compartilhado (`ui-app-shell`).
@@ -272,10 +272,6 @@ test.describe('Shell administrativo — rolagem vertical', () => {
     await page.setViewportSize({ width: 1280, height: 640 });
     await irParaCampi(page);
 
-    const resultado = await runAxeWcagAA(page);
-    const graves = resultado.violations.filter(
-      (v) => v.impact === 'serious' || v.impact === 'critical',
-    );
-    expect(graves).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 });

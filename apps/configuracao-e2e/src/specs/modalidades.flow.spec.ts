@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { assertSemViolacoesGraves } from '../support/a11y';
 
 /**
  * E2E funcional do cadastro de Modalidade de concorrência (issue #390, Piloto B).
@@ -282,16 +282,10 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  async function violacoesGraves(page: Page): Promise<unknown[]> {
-    const resultado = await runAxeWcagAA(page);
-    return resultado.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-  }
-
-  test('lista não tem violações serious/critical', async ({ page }) => {
+    test('lista não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 
   test('tela dedicada não tem violações serious/critical', async ({ page }) => {
@@ -299,8 +293,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
     await page.goto('/modalidades/novo');
     await page.locator('[formControlName="naturezaLegal"]').selectOption('SUPLEMENTAR');
     await page.locator('[formControlName="regraRemanejamento"]').selectOption('CRUZADO');
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 
   test('modal de bloqueio aberto não tem violações serious/critical', async ({ page }) => {
@@ -308,7 +301,6 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
     await abrirLista(page);
     await page.getByRole('button', { name: 'Inativar modalidade AC' }).click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
-    const graves = await violacoesGraves(page);
-    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
+    await assertSemViolacoesGraves(page);
   });
 });
