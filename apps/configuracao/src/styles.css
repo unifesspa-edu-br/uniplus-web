@@ -242,7 +242,7 @@ cfg-pesos-enem-page {
   cursor: default;
 }
 .th-sort__icon {
-  font-size: 0.85em;
+  font-size: 0.95em;
   opacity: 0.45;
 }
 th[aria-sort='ascending'] .th-sort__icon,

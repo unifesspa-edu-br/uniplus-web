@@ -10,8 +10,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import {
   ApiResult,
   Cursor,
@@ -52,13 +53,20 @@ import {
 } from '@uniplus/shared-ui/components';
 
 /** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 5;
 
 /** Opções de "itens por página" do rodapé da lista principal (backend aceita 1..100). */
-const OPCOES_LIMITE = [10, 25, 50, 100] as const;
+const OPCOES_LIMITE = [5, 25, 50, 100] as const;
 
 /** Limite inicial da lista principal, antes de qualquer escolha do usuário. */
-const LIMITE_PADRAO = 25;
+const LIMITE_PADRAO = 5;
+
+/**
+ * Debounce da busca textual — uma request por rajada de digitação, não por
+ * tecla (mesmo padrão de Unidades). No Angular 21.x o caminho oficial é a
+ * interop `toObservable → debounceTime → toSignal`.
+ */
+const BUSCA_DEBOUNCE_MS = 300;
 
 /** Coluna e sentido da ordenação server-side (`?ordenarPor=&ordem=`). */
 type ColunaOrdenavel = 'nome' | 'codigo';
@@ -147,7 +155,7 @@ interface CursoForm {
         [(searchValue)]="termoBusca"
       />
 
-      @if (cursosFiltrados().length > 0) {
+      @if (cursos().length > 0) {
         <div class="table-responsive">
           <table>
             <thead>
@@ -171,7 +179,7 @@ interface CursoForm {
               </tr>
             </thead>
             <tbody>
-              @for (curso of cursosFiltrados(); track curso.id) {
+              @for (curso of cursos(); track curso.id) {
                 <tr>
                   <td data-label="Código">
                     <code>{{ curso.codigo }}</code>
@@ -223,17 +231,28 @@ interface CursoForm {
           </table>
         </div>
       } @else if (!loading() && !errorMessage()) {
-        <ui-empty-state
-          heading="Nenhum curso encontrado"
-          description="Cadastre o primeiro curso para vincular ofertas de curso."
-        >
-          <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-            Novo curso
-          </button>
-        </ui-empty-state>
+        @if (temBusca()) {
+          <ui-empty-state
+            heading="Nenhum curso encontrado"
+            description="Nenhum curso corresponde à busca. Ajuste o código ou o nome."
+          >
+            <button type="button" class="btn btn--secondary" (click)="limparBusca()">
+              Limpar busca
+            </button>
+          </ui-empty-state>
+        } @else {
+          <ui-empty-state
+            heading="Nenhum curso cadastrado"
+            description="Cadastre o primeiro curso para vincular ofertas de curso."
+          >
+            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+              Novo curso
+            </button>
+          </ui-empty-state>
+        }
       }
 
-      @if (cursosFiltrados().length > 0 || prevCursor() !== null || nextCursor() !== null) {
+      @if (cursos().length > 0 || prevCursor() !== null || nextCursor() !== null) {
         <ui-pager
           navigationLabel="Paginação de cursos"
           [pageSizeOptions]="opcoesLimite"
@@ -485,6 +504,23 @@ export class CursosPage {
   /** Ordenação corrente da lista; `null` = ordem padrão do backend (por Id). */
   protected readonly ordenacao = signal<Ordenacao | null>(null);
 
+  /**
+   * Termo aplicado à busca server-side (`?q=`) — debounced: uma request por
+   * rajada, não por tecla. O backend filtra por código/nome; o cliente não
+   * filtra mais em memória (o filtro só valeria para a página carregada).
+   */
+  private readonly buscaAplicada = toSignal(
+    toObservable(this.termoBusca).pipe(
+      map((termo) => termo.trim()),
+      debounceTime(BUSCA_DEBOUNCE_MS),
+      distinctUntilChanged(),
+    ),
+    { initialValue: '' },
+  );
+
+  /** Há busca ativa? Distingue "sem cursos" de "busca sem resultado" no empty-state. */
+  protected readonly temBusca = computed(() => this.buscaAplicada().length > 0);
+
   // Drawer "Ofertas do curso" — inspeção sob demanda das ofertas vivas de um
   // curso via filtro `?cursoId` (api#755, issue #435).
   protected readonly ofertasOpen = signal(false);
@@ -494,9 +530,24 @@ export class CursosPage {
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
 
-  private readonly pagina = signal<
+  /** Chave do filtro vigente (busca + ordenação + limite) — fonte do reset de paginação. */
+  private readonly filtroKey = computed(() =>
+    JSON.stringify([this.buscaAplicada(), this.ordenacao(), this.limite()]),
+  );
+
+  /**
+   * Página de navegação atual (`undefined` = primeira). Volta para a primeira
+   * sempre que a busca, a ordenação ou o limite mudam (`linkedSignal` com
+   * `source` = `filtroKey`) — o cursor da página atual carrega o filtro/janela
+   * antigos, então navegar a partir dele ignoraria a mudança.
+   */
+  private readonly pagina = linkedSignal<
+    string,
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  >({
+    source: () => this.filtroKey(),
+    computation: () => undefined,
+  });
 
   private readonly lista = useApiResource<readonly CursoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/cursos`,
@@ -616,20 +667,6 @@ export class CursosPage {
     return curso ? `Ofertas de ${curso.codigo}` : 'Ofertas do curso';
   });
 
-  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
-  // por cursor, sem filtro de texto/código/nome no contrato.
-  protected readonly cursosFiltrados = computed(() => {
-    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
-    if (termo.length === 0) {
-      return this.cursos();
-    }
-    return this.cursos().filter(
-      (curso) =>
-        curso.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
-        curso.nome.toLocaleLowerCase('pt-BR').includes(termo),
-    );
-  });
-
   protected readonly errorMessage = computed<string | null>(() => {
     const problem = this.lista.problem();
     if (problem) {
@@ -698,28 +735,27 @@ export class CursosPage {
   }
 
   /**
-   * Troca o limite e volta à primeira página: o cursor da página atual carrega
-   * a janela antiga (ADR-0026), então navegar a partir dele ignoraria a escolha.
-   * `montarParams` lê `limite()` no ramo da primeira página, então o reset de
-   * `pagina` (ou o próprio `limite`, quando já na primeira) redispara o GET.
+   * Troca o limite. `pagina` é `linkedSignal` com `source` = `filtroKey` (que
+   * inclui o limite), então a mudança já reseta para a primeira página e
+   * redispara o GET — sem `pagina.set` manual.
    */
   protected aoTrocarLimite(valor: number | null): void {
-    if (valor === null || valor === this.limite() || this.loading()) {
-      return;
+    if (valor !== null && valor !== this.limite()) {
+      this.limite.set(valor);
     }
-    this.limite.set(valor);
-    this.pagina.set(undefined);
   }
 
   /**
-   * Ciclo do cabeçalho ordenável: sem ordem → asc → desc → sem ordem. Trocar a
-   * ordem volta à primeira página (o cursor atual carrega a ordem antiga, como
-   * o `limit`); `montarParams` lê `ordenacao()` no ramo da primeira página.
+   * Ciclo do cabeçalho ordenável: sem ordem → asc → desc → sem ordem. Como o
+   * limite, a ordenação faz parte da `filtroKey` — mudá-la volta à primeira
+   * página automaticamente.
    */
+  /** Zera a busca — o `termoBusca` alimenta o `ui-filter-bar` por two-way binding. */
+  protected limparBusca(): void {
+    this.termoBusca.set('');
+  }
+
   protected alternarOrdenacao(por: ColunaOrdenavel): void {
-    if (this.loading()) {
-      return;
-    }
     const atual = this.ordenacao();
     const proxima: Ordenacao | null =
       atual === null || atual.por !== por
@@ -728,7 +764,6 @@ export class CursosPage {
           ? { por, sentido: 'desc' }
           : null;
     this.ordenacao.set(proxima);
-    this.pagina.set(undefined);
   }
 
   /** Valor de `aria-sort` do `<th>` da coluna (WAI-ARIA: `none` quando não é a coluna ativa). */
@@ -943,18 +978,24 @@ export class CursosPage {
   }
 
   private montarParams(): HttpParams {
+    let params = new HttpParams();
+    // `q` acompanha toda página: o cursor keyset carrega a âncora e a ordem,
+    // não o predicado de filtro — omiti-lo na navegação traria itens fora da
+    // busca (mesmo contrato de Unidades).
+    const q = this.buscaAplicada();
+    if (q.length > 0) {
+      params = params.set('q', q);
+    }
     const pagina = this.pagina();
     if (pagina === undefined) {
-      let params = new HttpParams().set('limit', String(this.limite()));
+      params = params.set('limit', String(this.limite()));
       const ordem = this.ordenacao();
       if (ordem !== null) {
         params = params.set('ordenarPor', ordem.por).set('ordem', ordem.sentido);
       }
       return params;
     }
-    return new HttpParams()
-      .set('cursor', cursorToString(pagina.cursor))
-      .set('direction', pagina.direction);
+    return params.set('cursor', cursorToString(pagina.cursor)).set('direction', pagina.direction);
   }
 
   /** Params da listagem de ofertas do curso — `cursoId` reanexado em toda página (api#755). */

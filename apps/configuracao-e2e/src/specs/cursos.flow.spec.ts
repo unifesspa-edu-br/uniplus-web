@@ -64,10 +64,11 @@ interface Capturado {
   readonly posts: unknown[];
   readonly deletedIds: string[];
   readonly ofertaCursoIds: string[];
+  readonly listaUrls: string[];
 }
 
 function novoCapturado(): Capturado {
-  return { posts: [], deletedIds: [], ofertaCursoIds: [] };
+  return { posts: [], deletedIds: [], ofertaCursoIds: [], listaUrls: [] };
 }
 
 async function mockApi(
@@ -117,7 +118,12 @@ async function mockApi(
     }
     await jsonRoute(route, opcoes.ofertas ?? []);
   });
-  await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => jsonRoute(route, lista));
+  await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => {
+    if (route.request().method() === 'GET') {
+      capturado.listaUrls.push(route.request().url());
+    }
+    return jsonRoute(route, lista);
+  });
 }
 
 async function abrirPagina(page: Page): Promise<void> {
@@ -240,5 +246,23 @@ test.describe('Curso — CRUD (#389)', () => {
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(CURSO_ID);
+  });
+
+  test('busca por código/nome dispara GET server-side com ?q após o debounce', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, [cursoSeed]);
+    await abrirPagina(page);
+    await expect(page.locator('table tbody tr')).toHaveCount(1);
+
+    await page.getByRole('searchbox', { name: 'Buscar curso' }).fill('civil');
+
+    await expect
+      .poll(() => capturado.listaUrls.some((u) => new URL(u).searchParams.get('q') === 'civil'))
+      .toBe(true);
+
+    // uma request por rajada, não uma por tecla digitada
+    const comQ = capturado.listaUrls.filter((u) => new URL(u).searchParams.has('q'));
+    expect(comQ.length).toBeLessThanOrEqual(2);
+    expect(new URL(comQ[comQ.length - 1]).searchParams.has('cursor')).toBe(false);
   });
 });

@@ -77,9 +77,14 @@ describe('CursosPage', () => {
     appRef.tick();
   };
 
+  // Folga acima do debounce da busca (BUSCA_DEBOUNCE_MS = 300 na página).
+  const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+  const DEBOUNCE_FOLGA_MS = 360;
+
   async function flushLista(itens: readonly CursoDto[]): Promise<void> {
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
-    expect(req.request.params.get('limit')).toBe('25');
+    // A primeira página envia o limite corrente do rodapé (independe do valor).
+    expect(req.request.params.get('limit')).toBe(String(component['limite']()));
     req.flush(itens);
     await propagate();
   }
@@ -240,7 +245,7 @@ describe('CursosPage', () => {
 
     const req = controller.expectOne((r) => r.url === OFERTAS_URL);
     expect(req.request.params.get('cursoId')).toBe(cursoSeed.id);
-    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.has('limit')).toBe(true);
     req.flush([ofertaSeed]);
     await propagate();
 
@@ -361,11 +366,11 @@ describe('CursosPage', () => {
     p2.flush([cursoSeed]);
     await propagate();
 
-    component['aoTrocarLimite'](10);
+    component['aoTrocarLimite'](50);
     await propagate();
 
     const p3 = controller.expectOne((r) => r.url === CURSOS_URL);
-    expect(p3.request.params.get('limit')).toBe('10');
+    expect(p3.request.params.get('limit')).toBe('50');
     expect(p3.request.params.has('cursor')).toBe(false);
     p3.flush([cursoSeed]);
     await propagate();
@@ -405,14 +410,50 @@ describe('CursosPage', () => {
     expect(component['ariaSort']('nome')).toBe('none');
   });
 
-  it('filtra a lista client-side por código ou nome', async () => {
-    const outroCurso: CursoDto = { ...cursoSeed, id: 'outro-id', codigo: 'ADM', nome: 'Administração' };
-    await flushLista([cursoSeed, outroCurso]);
+  it('busca server-side: digitação em rajada dispara um único GET com q após o debounce, na primeira página', async () => {
+    const CURSOS_URL = `${BASE}/api/configuracao/cursos`;
+    await flushLista([cursoSeed]);
 
-    component['termoBusca'].set('ADM');
-    fixture.detectChanges();
+    component['termoBusca'].set('a');
+    component['termoBusca'].set('adm');
+    component['termoBusca'].set('administ');
+    appRef.tick();
+    // Antes do debounce, nenhuma request com q (não dispara por tecla).
+    controller.expectNone((r) => r.url === CURSOS_URL && r.params.has('q'));
 
-    expect(component['cursosFiltrados']()).toHaveLength(1);
-    expect(component['cursosFiltrados']()[0].codigo).toBe('ADM');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+
+    const req = controller.expectOne((r) => r.url === CURSOS_URL && r.params.has('q'));
+    expect(req.request.params.get('q')).toBe('administ');
+    expect(req.request.params.has('cursor')).toBe(false);
+    expect(req.request.params.has('limit')).toBe(true);
+    req.flush([{ ...cursoSeed, codigo: 'ADM', nome: 'Administração' }]);
+    await propagate();
+    expect(component['cursos']()).toHaveLength(1);
+  });
+
+  it('navegar com busca ativa reanexa q (o cursor não carrega o filtro)', async () => {
+    const CURSOS_URL = `${BASE}/api/configuracao/cursos`;
+    await flushLista([cursoSeed]);
+
+    component['termoBusca'].set('eng');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+
+    const p1 = controller.expectOne((r) => r.url === CURSOS_URL && r.params.get('q') === 'eng');
+    p1.flush([cursoSeed], {
+      headers: { Link: `<${CURSOS_URL}?cursor=p2&direction=next>; rel="next"` },
+    });
+    await propagate();
+
+    component['proximaPagina']();
+    await propagate();
+
+    const p2 = controller.expectOne((r) => r.url === CURSOS_URL);
+    expect(p2.request.params.get('q')).toBe('eng');
+    expect(p2.request.params.get('cursor')).toBe('p2');
+    p2.flush([cursoSeed]);
+    await propagate();
   });
 });

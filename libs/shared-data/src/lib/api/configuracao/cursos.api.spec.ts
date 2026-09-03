@@ -92,6 +92,21 @@ describe('CursosApi', () => {
     await promise;
   });
 
+  it('listar() envia q (trim) em toda página — inclusive na navegação por cursor', async () => {
+    const pagina1 = firstValueFrom(api.listar({ limit: 25, q: '  eng  ' }));
+    const r1 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
+    expect(r1.request.params.get('q')).toBe('eng');
+    r1.flush([cursoSeed]);
+    await pagina1;
+
+    const pagina2 = firstValueFrom(api.listar({ cursor: 'abc', direction: 'next', q: 'eng' }));
+    const r2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
+    expect(r2.request.params.get('q')).toBe('eng');
+    expect(r2.request.params.get('cursor')).toBe('abc');
+    r2.flush([cursoSeed]);
+    await pagina2;
+  });
+
   it('obter() faz GET /api/configuracao/cursos/{id}', async () => {
     const promise = firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/cursos/${ID}`);

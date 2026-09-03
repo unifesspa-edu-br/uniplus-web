@@ -32,6 +32,13 @@ export interface CursosQuery {
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
   /**
+   * Busca textual: `ILIKE '%q%'` sobre código e nome (caixa-insensível). Vai em
+   * toda página — o cursor keyset carrega a âncora, não o predicado do filtro;
+   * os links `prev`/`next` do header `Link` já reanexam `q`. Acima de 200
+   * caracteres → 400.
+   */
+  readonly q?: string;
+  /**
    * Ordenação keyset por coluna; omitido = ordem padrão (por `Id`). Só vale na
    * primeira página — o cursor carrega a âncora `(chave, Id)` e a ordem
    * (espelha o `limit`, ADR-0026). Valor fora do vocabulário → 400.
@@ -59,6 +66,10 @@ export class CursosApi {
   /** GET `/api/configuracao/cursos` — lista paginada por cursor (ADR-0026). */
   listar(query: CursosQuery = {}): Observable<ApiResult<readonly CursoDto[]>> {
     let params = new HttpParams();
+    const q = query.q?.trim();
+    if (q) {
+      params = params.set('q', q);
+    }
     if (query.cursor !== undefined) {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
     } else {
