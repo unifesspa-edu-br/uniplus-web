@@ -1007,8 +1007,8 @@ export class PrecedenciasFasePage {
     // do formulário, para que um campo novo no form não vaze para o payload.
     const raw = this.form.getRawValue();
     return {
-      antecessoraCodigo: raw.antecessoraCodigo,
-      sucessoraCodigo: raw.sucessoraCodigo,
+      antecessoraCodigo: nullIfBlank(raw.antecessoraCodigo),
+      sucessoraCodigo: nullIfBlank(raw.sucessoraCodigo),
       permiteSobreposicao: raw.permiteSobreposicao,
     };
   }
@@ -1032,4 +1032,9 @@ function controlNameFromBackendField(field: string): keyof PrecedenciaForm | nul
       ?.replace(/\[\d+\]$/u, '') ?? field;
   const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
   return PRECEDENCIA_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof PrecedenciaForm) : null;
+}
+
+function nullIfBlank(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }

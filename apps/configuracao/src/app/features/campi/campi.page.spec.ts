@@ -113,6 +113,32 @@ describe('CampiPage', () => {
     expect(component['formOpen']()).toBe(false);
   });
 
+  it('envia null nos campos obrigatórios preenchidos só com espaços', async () => {
+    await flushLista([]);
+
+    component['abrirCadastro']();
+    // `Validators.required` aceita espaços em branco: sem normalizar, o payload
+    // levaria '' e o backend responderia sobre formato, não sobre ausência.
+    component['form'].setValue({
+      sigla: '   ',
+      nome: '  ',
+      codigoEmec: '',
+      endereco: enderecoResolvido,
+    });
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/campi`);
+    expect(post.request.body).toMatchObject({
+      sigla: null,
+      nome: null,
+      codigoEmec: null,
+    });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('bloqueia salvar sem cidade e sinaliza erro no endereço', async () => {
     await flushLista([]);
     component['abrirCadastro']();

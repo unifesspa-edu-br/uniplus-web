@@ -702,9 +702,9 @@ export class LocaisOfertaPage {
       tipo: raw.tipo as TipoLocalOferta,
       codigoEmec: nullIfBlank(raw.codigoEmec),
       campusResponsavelId: nullIfBlank(raw.campusResponsavelId),
-      cidadeCodigoIbge: cidadeCodigoIbge ?? '',
-      cidadeNome: cidadeNome ?? '',
-      cidadeUf: cidadeUf ?? '',
+      cidadeCodigoIbge,
+      cidadeNome,
+      cidadeUf,
       endereco,
     };
   }

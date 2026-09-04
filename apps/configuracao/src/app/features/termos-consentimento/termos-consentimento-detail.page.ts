@@ -562,7 +562,7 @@ export class TermosConsentimentoDetailPage {
     this.formError.set(null);
     const raw = this.criarForm.getRawValue();
     const command: CriarTermoConsentimentoCommand = {
-      nome: raw.nome.trim(),
+      nome: nullIfBlank(raw.nome),
       textoRascunho: nullIfBlank(raw.texto),
       baseLegalRascunho: nullIfBlank(raw.baseLegal),
       formaAceiteRascunho: raw.formaAceite,

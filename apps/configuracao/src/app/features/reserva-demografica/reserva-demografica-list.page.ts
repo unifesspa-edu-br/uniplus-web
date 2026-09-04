@@ -742,11 +742,11 @@ export class ReservaDemograficaListPage {
   private criarCommand(): CriarReferenciaReservaDemograficaCommand {
     const raw = this.form.getRawValue();
     return {
-      censoReferencia: raw.censoReferencia.trim(),
+      censoReferencia: nullIfBlank(raw.censoReferencia),
       ppiPercentual: raw.ppiPercentual ?? 0,
       quilombolaPercentual: raw.quilombolaPercentual ?? 0,
       pcdPercentual: raw.pcdPercentual ?? 0,
-      baseLegal: raw.baseLegal.trim(),
+      baseLegal: nullIfBlank(raw.baseLegal),
     };
   }
 
@@ -772,4 +772,9 @@ function controlNameFromBackendField(field: string): keyof ReservaForm | null {
       ?.replace(/\[\d+\]$/u, '') ?? field;
   const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
   return RESERVA_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof ReservaForm) : null;
+}
+
+function nullIfBlank(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }

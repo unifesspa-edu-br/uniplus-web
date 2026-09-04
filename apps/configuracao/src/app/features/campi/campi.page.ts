@@ -602,16 +602,18 @@ export class CampiPage {
 
   private criarCommand(): CriarCampusCommand {
     const raw = this.form.getRawValue();
-    // A cidade é obrigatória (validator cidadeObrigatoria) — o `?? ''` só satisfaz
-    // o tipo não-nulo do command; em runtime o submit já está bloqueado sem cidade.
+    // A cidade é obrigatória (validator cidadeObrigatoria) e o submit está
+    // bloqueado sem ela. Os três campos seguem como vêm de enderecoParaCommand:
+    // o contrato os aceita nulos, então a ausência chega à validação de domínio
+    // em vez de ser mascarada por uma string vazia.
     const { cidadeCodigoIbge, cidadeNome, cidadeUf, endereco } = enderecoParaCommand(raw.endereco);
     return {
-      sigla: raw.sigla.trim(),
-      nome: raw.nome.trim(),
+      sigla: nullIfBlank(raw.sigla),
+      nome: nullIfBlank(raw.nome),
       codigoEmec: nullIfBlank(raw.codigoEmec),
-      cidadeCodigoIbge: cidadeCodigoIbge ?? '',
-      cidadeNome: cidadeNome ?? '',
-      cidadeUf: cidadeUf ?? '',
+      cidadeCodigoIbge,
+      cidadeNome,
+      cidadeUf,
       endereco,
     };
   }

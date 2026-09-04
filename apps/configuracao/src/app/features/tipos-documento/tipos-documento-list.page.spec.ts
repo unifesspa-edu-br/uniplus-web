@@ -381,6 +381,21 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
   });
 
+  it('envia null no nome preenchido só com espaços', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    // `Validators.required` aceita espaços em branco: sem normalizar, o payload
+    // levaria '' e o backend responderia sobre formato, não sobre ausência.
+    component['form'].patchValue({ codigo: 'DECL3', nome: '   ', categoria: 'OUTROS' });
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
+    expect(post.request.body).toMatchObject({ codigo: 'DECL3', nome: null, categoria: 'OUTROS' });
+    post.flush('new-id-3', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('nenhum formato marcado serializa para null', async () => {
     await flushLista([]);
     component['abrirCadastro']();

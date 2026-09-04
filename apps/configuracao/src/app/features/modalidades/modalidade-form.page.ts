@@ -907,7 +907,10 @@ export class ModalidadeFormPage {
   }
 
   private montarComandoCriar(): CriarModalidadeCommand {
-    return { codigo: this.form.getRawValue().codigo.trim(), ...this.montarCamposComuns() };
+    return {
+      codigo: normalizarOpcional(this.form.getRawValue().codigo),
+      ...this.montarCamposComuns(),
+    };
   }
 
   private montarComandoAtualizar(): AtualizarModalidadeCommand {

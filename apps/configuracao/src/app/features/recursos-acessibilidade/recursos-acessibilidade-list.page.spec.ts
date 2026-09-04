@@ -133,6 +133,23 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Leitura da prova em voz alta por fiscal designado.');
   });
 
+  it('envia null nos campos obrigatórios preenchidos só com espaços', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    // `Validators.required` aceita espaços em branco: sem normalizar, o payload
+    // levaria '' e o backend responderia sobre formato, não sobre ausência.
+    component['form'].setValue({ nome: '   ', descricao: '  ' });
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/recursos-acessibilidade`);
+    expect(post.request.body).toMatchObject({ nome: null, descricao: null });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('cria recurso de acessibilidade com nome único, descrição válidos', async () => {
       await flushLista([]);
 

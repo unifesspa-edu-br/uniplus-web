@@ -937,7 +937,7 @@ export class PesosEnemPage {
         pesoMatematica: raw.pesoMatematica,
         pesoRedacao: raw.pesoRedacao,
         corteRedacao: raw.corteRedacao,
-        baseLegal: raw.baseLegal.trim(),
+        baseLegal: nullIfBlank(raw.baseLegal),
       };
       // Reusa a Idempotency-Key SOMENTE se o corpo é idêntico ao da última
       // tentativa dessa linha. A maioria dos 422 de peso/corte é rejeitada
@@ -1151,15 +1151,15 @@ export class PesosEnemPage {
     const chamadas = pendentes.map(({ grupo, index }) => {
       const raw = grupo.getRawValue();
       const command: CriarPesoAreaEnemCommand = {
-        resolucao,
-        grupoCurso: raw.grupoCurso,
+        resolucao: nullIfBlank(resolucao),
+        grupoCurso: nullIfBlank(raw.grupoCurso),
         pesoLinguagens: raw.pesoLinguagens,
         pesoCienciasHumanas: raw.pesoCienciasHumanas,
         pesoCienciasNatureza: raw.pesoCienciasNatureza,
         pesoMatematica: raw.pesoMatematica,
         pesoRedacao: raw.pesoRedacao,
         corteRedacao: raw.corteRedacao,
-        baseLegal: raw.baseLegal.trim(),
+        baseLegal: nullIfBlank(raw.baseLegal),
       };
       // Reusa a Idempotency-Key SOMENTE se o corpo é idêntico ao da última
       // tentativa desse grupo — só assim é seguro assumir que uma falha
@@ -1580,4 +1580,9 @@ function slug(valor: string): string {
     .replace(/[̀-ͯ]/gu, '')
     .replace(/[^a-zA-Z0-9]+/gu, '-')
     .toLowerCase();
+}
+
+function nullIfBlank(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }

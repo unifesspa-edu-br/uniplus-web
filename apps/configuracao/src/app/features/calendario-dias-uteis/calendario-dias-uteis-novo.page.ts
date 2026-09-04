@@ -746,7 +746,7 @@ export class CalendarioDiasUteisNovoPage {
 
     this.saving.set(true);
     const command: CriarCalendarioDiasUteisCommand = {
-      versaoDataset: this.form.controls.versaoDataset.value.trim(),
+      versaoDataset: nullIfBlank(this.form.controls.versaoDataset.value),
       diasNaoUteis: this.form.controls.diasNaoUteis.controls.map((control, index) => {
         const abrangencia = control.controls.abrangencia.value;
         // Snapshot da ADR-0090: os três campos saem juntos da opção da Geo e só
@@ -759,7 +759,7 @@ export class CalendarioDiasUteisNovoPage {
           municipioIbge: municipio?.codigoIbge ?? null,
           municipioNome: municipio?.nome ?? null,
           municipioUf: municipio?.uf ?? null,
-          descricao: control.controls.descricao.value.trim(),
+          descricao: nullIfBlank(control.controls.descricao.value),
         };
       }),
     };
@@ -1163,4 +1163,9 @@ export class CalendarioDiasUteisNovoPage {
     }
     return 'Valor inválido.';
   }
+}
+
+function nullIfBlank(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
