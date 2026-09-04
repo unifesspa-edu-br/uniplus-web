@@ -174,6 +174,21 @@ export class VagasStepComponent {
   });
 
   /**
+   * Reaplicar o rol tem efeito além de quando a seleção diverge dele: uma
+   * modalidade pode continuar corretamente selecionada e ainda assim ter,
+   * no quadro, uma quantidade que a regra atual não aceita mais como
+   * declarada (composição que passou a ser calculada sob ramo federal) —
+   * `selecaoBateComORol` não enxerga essa divergência, porque ela não é do
+   * conjunto de ids, é do conteúdo do quadro.
+   */
+  readonly reaplicarRolTemEfeito = computed(() => {
+    if (this.rolDaRegraEscolhida() === null) return false;
+    if (!this.selecaoBateComORol()) return true;
+
+    return this.perderiaQuantidadeDoQuadro(this.modalidadesDoRolAtual());
+  });
+
+  /**
    * Recompõe a seleção pelo rol fechado da regra atual — resolve excesso e
    * falta juntos, a única saída da tela quando um processo chega com uma
    * seleção que não bate mais com o rol (regra reeditada no catálogo, ou
@@ -427,7 +442,7 @@ export class VagasStepComponent {
   readonly reaplicarRolPendente = signal(false);
 
   readonly avisoDoReaplicarRol =
-    'Completar a seleção pelo rol da regra atual remove do quadro as quantidades das modalidades que saírem da seleção. O processo só muda quando o passo for gravado.';
+    'Recompor pelo rol da regra atual pode remover do quadro quantidades já preenchidas — de modalidade que sai da seleção, ou de modalidade que fica mas cuja quantidade a regra atual não aceita mais como declarada. O processo só muda quando o passo for gravado.';
 
   /**
    * O valor que o `<select>` de regra exibe — a escolha pendente enquanto ela
@@ -457,7 +472,7 @@ export class VagasStepComponent {
   private readonly campoDeRegra = viewChild<ElementRef<HTMLSelectElement>>('campoRegra');
 
   readonly avisoDaTrocaDeRegra =
-    'Trocar a regra de distribuição substitui as modalidades desta oferta pelas que a nova regra admite, e remove do quadro as quantidades das que saírem. O processo só muda quando o passo for gravado.';
+    'Trocar a regra de distribuição substitui as modalidades desta oferta pelas que a nova regra admite, e pode remover do quadro quantidades já preenchidas — de modalidade que sai da seleção, ou de modalidade que fica mas cuja quantidade a nova regra não aceita mais como declarada. O processo só muda quando o passo for gravado.';
 
   escolherRegraDistribuicao(valor: string): void {
     const [codigo = '', versao = ''] = valor.split('|');

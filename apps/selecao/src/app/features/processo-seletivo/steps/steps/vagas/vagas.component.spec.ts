@@ -1008,4 +1008,36 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
 
     expect(componente.reaplicarRolPendente()).toBe(true);
   });
+
+  /**
+   * selecaoBateComORol não vê essa divergência: os ids batem com o rol, a
+   * checagem é sobre o CONTEÚDO do quadro. Sem reaplicarRolTemEfeito, o
+   * botão "Recompor pelo rol da regra atual" ficaria escondido e a única
+   * saída seria remover e recriar a oferta — o achado original do Codex.
+   */
+  it('reaplicarRolTemEfeito acusa mesmo quando a seleção já bate com o rol', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ofertaCursoId: OFERTA,
+          voBase: '40',
+          pr: '0,5',
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
+          regraDistribuicaoVersao: 'v1',
+          regraAjusteCodigo: null,
+          regraAjusteVersao: null,
+          referenciaReservaDemograficaId: null,
+          modalidades: [
+            { id: MODALIDADE, codigo: 'AC_I' },
+            { id: MODALIDADE_CALCULADA, codigo: 'X_CALC' },
+          ],
+          quadro: [{ modalidadeId: MODALIDADE_CALCULADA, quantidade: '5' }],
+        },
+      ],
+    });
+    detectar();
+
+    expect(componente.selecaoBateComORol()).toBe(true);
+    expect(componente.reaplicarRolTemEfeito()).toBe(true);
+  });
 });
