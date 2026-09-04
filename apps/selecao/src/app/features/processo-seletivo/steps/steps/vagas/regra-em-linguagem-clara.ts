@@ -44,15 +44,24 @@ function comoTextos(valor: unknown): readonly string[] {
   return valor.filter((item): item is string => typeof item === 'string');
 }
 
+/**
+ * O rol admitido já aparece como o próprio conjunto de checkboxes da seção de
+ * modalidades — repeti-lo aqui como prosa crua não acrescenta informação, só
+ * ruído.
+ */
+const CHAVE_DO_ROL = 'modalidades_admitidas';
+
 function comoParametros(esquemaArgs: unknown): readonly ParametroDaRegra[] {
   if (typeof esquemaArgs !== 'object' || esquemaArgs === null || Array.isArray(esquemaArgs)) {
     return [];
   }
 
-  return Object.entries(esquemaArgs).map(([chave, valor]) => ({
-    chave,
-    valores: comoValores(valor),
-  }));
+  return Object.entries(esquemaArgs)
+    .filter(([chave]) => chave !== CHAVE_DO_ROL)
+    .map(([chave, valor]) => ({
+      chave,
+      valores: comoValores(valor),
+    }));
 }
 
 function comoValores(valor: unknown): readonly string[] {

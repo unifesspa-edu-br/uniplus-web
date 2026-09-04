@@ -613,3 +613,399 @@ describe('VagasStepComponent — totais do quadro', () => {
     expect(componente.totalGeralPublicado()).toBe(0);
   });
 });
+
+const REGRA_INSTITUCIONAL = {
+  codigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+  versao: 'v1',
+  tipo: 'regra_distribuicao_vagas',
+  esquemaArgs: {},
+  invariantes: [],
+  baseLegal: 'Res. Unifesspa 532/2021',
+  hash: 'hash-institucional',
+  modalidadesAdmitidas: null,
+};
+
+/** O rol fechado coincide, de propósito, com o catálogo de duas modalidades já usado nos demais testes. */
+const REGRA_PSIQ = {
+  codigo: 'DISTRIB-VAGAS-PSIQ',
+  versao: 'v1',
+  tipo: 'regra_distribuicao_vagas',
+  esquemaArgs: {},
+  invariantes: [],
+  baseLegal: 'Portaria Normativa MEC 18/2012',
+  hash: 'hash-psiq',
+  modalidadesAdmitidas: ['AC_I', 'AC_Q'],
+};
+
+describe('VagasStepComponent — regra determina o rol de modalidades', () => {
+  let componente: VagasStepComponent;
+  let store: ProcessoSeletivoStore;
+  let controller: HttpTestingController;
+  let detectar: () => void;
+  let elementoRaiz: HTMLElement;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [VagasStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VagasStepComponent);
+    componente = fixture.componentInstance;
+    store = TestBed.inject(ProcessoSeletivoStore);
+    controller = TestBed.inject(HttpTestingController);
+    detectar = () => fixture.detectChanges();
+    elementoRaiz = fixture.nativeElement;
+
+    detectar();
+    for (const requisicao of controller.match(() => true)) {
+      const url = requisicao.request.url;
+      if (url.includes('ofertas-curso')) requisicao.flush(OFERTAS);
+      else if (url.includes('cursos')) requisicao.flush(CURSOS);
+      else if (url.includes('modalidades')) requisicao.flush(MODALIDADES);
+      else if (url.includes('regras-catalogo')) {
+        const tipo = requisicao.request.params.get('tipo');
+        requisicao.flush(tipo === 'regra_distribuicao_vagas' ? [REGRA_INSTITUCIONAL, REGRA_PSIQ] : []);
+      } else requisicao.flush([]);
+    }
+    detectar();
+  });
+
+  afterEach(() => controller.verify());
+
+  it('rol aberto (Institucional) oferece o catálogo inteiro para seleção livre', () => {
+    expect(componente.rolDaRegraEscolhida()).toBeNull();
+    expect(componente.modalidadesOferecidas().map((m) => m.codigo)).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  it('trocar para regra sem dado a perder aplica direto, sem confirmação', () => {
+    store.patchObjectSection('vagas', { ofertas: [] });
+    detectar();
+
+    componente.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+
+    expect(componente.trocaDeRegraPendente()).toBeNull();
+    expect(componente.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-PSIQ');
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  it('trocar de regra com dado preenchido pede confirmação antes de mudar', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+
+    componente.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+
+    expect(componente.trocaDeRegraPendente()).toEqual({ codigo: 'DISTRIB-VAGAS-PSIQ', versao: 'v1' });
+    expect(componente.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
+  });
+
+  it('confirmar a troca aplica o rol fechado da nova regra por inteiro', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+
+    componente.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+    componente.confirmarTrocaDeRegra();
+
+    expect(componente.trocaDeRegraPendente()).toBeNull();
+    expect(componente.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-PSIQ');
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+    expect(componente.rolDaRegraEscolhida()).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  it('cancelar a troca mantém a regra e as modalidades como estavam', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+
+    componente.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+    componente.cancelarTrocaDeRegra();
+
+    expect(componente.trocaDeRegraPendente()).toBeNull();
+    expect(componente.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
+    expect(componente.padrao().modalidades).toEqual([{ id: MODALIDADE, codigo: 'AC_I' }]);
+  });
+
+  it('rol fechado não aceita alternar modalidade manualmente', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+    componente.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+    componente.confirmarTrocaDeRegra();
+
+    componente.alternarModalidade({ id: MODALIDADE, codigo: 'AC_I' } as never);
+
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  /** Processo hidratado por fora do fluxo normal, trazendo modalidade que a regra atual não admite. */
+  it('nomeia a modalidade hidratada fora do rol fechado, em vez de escondê-la', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicao(OFERTA),
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
+          regraDistribuicaoVersao: 'v1',
+          modalidades: [
+            { id: MODALIDADE, codigo: 'AC_I' },
+            { id: OUTRA_MODALIDADE, codigo: 'AC_Q' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'PCD_PURO' },
+          ],
+        },
+      ],
+    });
+    detectar();
+
+    const problemas = componente.problemasDe(store.draft().vagas.ofertas[0]);
+
+    expect(
+      problemas.some(
+        (p) => p.mensagem.includes('PCD_PURO') && p.mensagem.includes('não pertence ao rol'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rol fechado incompleto: selecaoBateComORol acusa, e reaplicarRolDaRegra completa', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicao(OFERTA),
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
+          regraDistribuicaoVersao: 'v1',
+          modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
+        },
+      ],
+    });
+    detectar();
+
+    expect(componente.selecaoBateComORol()).toBe(false);
+
+    componente.reaplicarRolDaRegra();
+
+    expect(componente.selecaoBateComORol()).toBe(true);
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  /**
+   * Diferente do caso "só falta" acima: aqui a modalidade excedente tem
+   * quantidade preenchida no quadro — reaplicar descartaria essa quantidade
+   * em silêncio se não pedisse confirmação, a mesma perda que a troca de
+   * regra evita.
+   */
+  it('reaplicar o rol com quantidade a perder no quadro pede confirmação antes de completar', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicao(OFERTA),
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
+          regraDistribuicaoVersao: 'v1',
+          modalidades: [
+            { id: MODALIDADE, codigo: 'AC_I' },
+            { id: OUTRA_MODALIDADE, codigo: 'AC_Q' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'PCD_PURO' },
+          ],
+          quadro: [{ modalidadeId: '01960000-0000-7000-0000-0000000000a9', quantidade: '3' }],
+        },
+      ],
+    });
+    detectar();
+
+    componente.reaplicarRolDaRegra();
+
+    expect(componente.reaplicarRolPendente()).toBe(true);
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual([
+      'AC_I',
+      'AC_Q',
+      'PCD_PURO',
+    ]);
+
+    componente.confirmarReaplicarRol();
+
+    expect(componente.reaplicarRolPendente()).toBe(false);
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+  });
+
+  it('cancelar o reaplicar do rol mantém a seleção divergente como estava', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicao(OFERTA),
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-PSIQ',
+          regraDistribuicaoVersao: 'v1',
+          modalidades: [
+            { id: MODALIDADE, codigo: 'AC_I' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'PCD_PURO' },
+          ],
+          quadro: [{ modalidadeId: '01960000-0000-7000-0000-0000000000a9', quantidade: '3' }],
+        },
+      ],
+    });
+    detectar();
+
+    componente.reaplicarRolDaRegra();
+    componente.cancelarReaplicarRol();
+
+    expect(componente.reaplicarRolPendente()).toBe(false);
+    expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual([
+      'AC_I',
+      'PCD_PURO',
+    ]);
+  });
+
+  it('rol fechado com a seleção certa: selecaoBateComORol aprova', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+
+    componente.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+    componente.confirmarTrocaDeRegra();
+
+    expect(componente.selecaoBateComORol()).toBe(true);
+  });
+
+  /**
+   * NgModel só reescreve o <select> nativo quando o valor do binding muda
+   * entre ciclos de detecção — chamar os métodos direto na instância (como os
+   * demais testes deste describe) não exercita essa reescrita. Este teste
+   * interage com o elemento real.
+   */
+  it('cancelar a troca devolve o <select> nativo à regra vigente, não à rejeitada', () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
+    detectar();
+
+    const campoRegra = elementoRaiz.querySelector<HTMLSelectElement>('#f-regra');
+    if (campoRegra === null) throw new Error('Campo #f-regra não encontrado no template.');
+
+    campoRegra.value = 'DISTRIB-VAGAS-PSIQ|v1';
+    campoRegra.dispatchEvent(new Event('change'));
+    detectar();
+
+    expect(componente.trocaDeRegraPendente()).not.toBeNull();
+    expect(campoRegra.value).toBe('DISTRIB-VAGAS-PSIQ|v1');
+
+    componente.cancelarTrocaDeRegra();
+    detectar();
+
+    expect(campoRegra.value).toBe('DISTRIB-VAGAS-INSTITUCIONAL|v1');
+  });
+});
+
+describe('VagasStepComponent — reaplicar o rol sob composição calculada', () => {
+  let componente: VagasStepComponent;
+  let store: ProcessoSeletivoStore;
+  let controller: HttpTestingController;
+  let detectar: () => void;
+
+  const MODALIDADE_CALCULADA = '01960000-0000-7000-0000-0000000000c1';
+
+  const MODALIDADES_FEDERAL = [
+    {
+      id: MODALIDADE,
+      codigo: 'AC_I',
+      descricao: 'Indígena',
+      naturezaLegal: 'SUPLEMENTAR',
+      composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
+      composicaoOrigemCodigo: null,
+      regraRemanejamento: null,
+      remanejamentoDestino: null,
+      remanejamentoPar: null,
+      remanejamentoFallback: null,
+    },
+    {
+      id: MODALIDADE_CALCULADA,
+      codigo: 'X_CALC',
+      descricao: 'Calculada pela regra',
+      naturezaLegal: 'COTA_RESERVADA',
+      composicaoVagas: 'DENTRO_DO_VR',
+      composicaoOrigemCodigo: null,
+      regraRemanejamento: null,
+      remanejamentoDestino: null,
+      remanejamentoPar: null,
+      remanejamentoFallback: null,
+    },
+  ];
+
+  const REGRA_FEDERAL = {
+    codigo: 'DISTRIB-VAGAS-LEI-12711',
+    versao: 'v1',
+    tipo: 'regra_distribuicao_vagas',
+    esquemaArgs: {},
+    invariantes: [],
+    baseLegal: 'Lei 12.711/2012',
+    hash: 'hash-federal',
+    modalidadesAdmitidas: ['AC_I', 'X_CALC'],
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [VagasStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VagasStepComponent);
+    componente = fixture.componentInstance;
+    store = TestBed.inject(ProcessoSeletivoStore);
+    controller = TestBed.inject(HttpTestingController);
+    detectar = () => fixture.detectChanges();
+
+    detectar();
+    for (const requisicao of controller.match(() => true)) {
+      const url = requisicao.request.url;
+      if (url.includes('ofertas-curso')) requisicao.flush(OFERTAS);
+      else if (url.includes('cursos')) requisicao.flush(CURSOS);
+      else if (url.includes('modalidades')) requisicao.flush(MODALIDADES_FEDERAL);
+      else if (url.includes('regras-catalogo')) {
+        const tipo = requisicao.request.params.get('tipo');
+        requisicao.flush(tipo === 'regra_distribuicao_vagas' ? [REGRA_FEDERAL] : []);
+      } else requisicao.flush([]);
+    }
+    detectar();
+  });
+
+  afterEach(() => controller.verify());
+
+  /**
+   * A modalidade continua no rol — o id permanece selecionado —, mas sua
+   * composicaoVagas é calculada pela fórmula do art. 10 sob ramo federal:
+   * quadroCoerente descarta a quantidade fixada por essa segunda condição,
+   * não porque a modalidade saiu da seleção. Checar só "saiu do rol" não
+   * pega esse caso — reaplicarRolDaRegra precisa comparar com o resultado
+   * real de quadroCoerente, não reimplementar metade do filtro dele.
+   */
+  it('pede confirmação quando a quantidade que seria perdida é de composição calculada, não de modalidade fora do rol', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ofertaCursoId: OFERTA,
+          voBase: '40',
+          pr: '0,5',
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
+          regraDistribuicaoVersao: 'v1',
+          regraAjusteCodigo: null,
+          regraAjusteVersao: null,
+          referenciaReservaDemograficaId: null,
+          modalidades: [
+            { id: MODALIDADE, codigo: 'AC_I' },
+            { id: MODALIDADE_CALCULADA, codigo: 'X_CALC' },
+          ],
+          quadro: [{ modalidadeId: MODALIDADE_CALCULADA, quantidade: '5' }],
+        },
+      ],
+    });
+    detectar();
+
+    componente.reaplicarRolDaRegra();
+
+    expect(componente.reaplicarRolPendente()).toBe(true);
+  });
+});

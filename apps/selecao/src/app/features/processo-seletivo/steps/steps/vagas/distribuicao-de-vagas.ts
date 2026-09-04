@@ -2,13 +2,17 @@ import { DistribuicaoDeVagas, ModalidadeDaOferta } from '../../processo-seletivo
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 /**
- * Código da regra de distribuição pela Lei 12.711 no `rol_de_regras`.
+ * Códigos de regra do ramo federal (Lei 12.711) no `rol_de_regras`: a
+ * fórmula pura do art. 10 e a variação que soma AC_PCD a ela.
  *
  * O ramo federal muda o que o resto do formulário exige — referência
  * demográfica, regra de ajuste e o conjunto de modalidades —, então a tela
- * precisa reconhecê-lo pelo código, que é estável, e não pelo rótulo.
+ * precisa reconhecê-lo pelo código, que é estável, e não pelo rótulo. Espelha
+ * `RegraDistribuicaoVagasCodigo.EhRamoFederal` do uniplus-api: comparar com
+ * um único literal deixaria a variação -COM-AC-PCD caindo no ramo
+ * institucional, sem referência demográfica nem regra de ajuste.
  */
-export const REGRA_LEI_12711 = 'DISTRIB-VAGAS-LEI-12711';
+const REGRAS_RAMO_FEDERAL = ['DISTRIB-VAGAS-LEI-12711', 'DISTRIB-VAGAS-LEI-12711-COM-AC-PCD'];
 
 /** Composições cuja quantidade o motor calcula; informá-las é recusado. */
 const COMPOSICOES_CALCULADAS = ['DENTRO_DO_VR', 'RESIDUAL_DO_VO'];
@@ -19,9 +23,9 @@ const COMPOSICOES_DECLARADAS = ['RETIRA_DE', 'SUPLEMENTAR_AO_TOTAL'];
 /** A que acresce vagas ao total da oferta em vez de disputar as que ela tem. */
 const COMPOSICAO_SUPLEMENTAR = 'SUPLEMENTAR_AO_TOTAL';
 
-/** A distribuição segue a Lei 12.711; fora dela, o edital fixa o quadro inteiro. */
-function ehRamoFederal(distribuicao: DistribuicaoDeVagas): boolean {
-  return distribuicao.regraDistribuicaoCodigo === REGRA_LEI_12711;
+/** A distribuição segue a Lei 12.711 (em alguma de suas variações). */
+export function ehRamoFederal(regraDistribuicaoCodigo: string): boolean {
+  return REGRAS_RAMO_FEDERAL.includes(regraDistribuicaoCodigo);
 }
 
 /**
@@ -53,7 +57,7 @@ export function totalFixadoDoVo(
   distribuicao: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): number {
-  const federal = ehRamoFederal(distribuicao);
+  const federal = ehRamoFederal(distribuicao.regraDistribuicaoCodigo);
 
   return distribuicao.quadro.reduce((soma, item) => {
     const composicao = catalogo.get(item.modalidadeId)?.composicaoVagas;
@@ -206,20 +210,17 @@ export function quantidadeEhDeclarada(composicaoVagas: string, federal: boolean)
 }
 
 /**
- * Naturezas que a Lei 12.711 exige na oferta: as oito cotas do art. 8º e a
- * ampla concorrência que recebe o residual. A natureza vem do catálogo de
- * Configuração — manter aqui a lista das oito modalidades por código faria a
- * tela envelhecer na primeira que fosse acrescentada.
+ * As modalidades do catálogo que o rol admitido de uma regra reconhece.
+ *
+ * A regra determina o rol — não filtra uma escolha do operador dentro dele.
+ * `null` é rol aberto (`DISTRIB-VAGAS-INSTITUCIONAL`, ou nenhuma regra ainda
+ * escolhida): devolve o catálogo inteiro, mantendo a seleção livre.
  */
-const NATUREZAS_EXIGIDAS_PELA_LEI = ['COTA_RESERVADA', 'AMPLA'];
-
-/** As modalidades do catálogo que a `ModalidadesFederaisIncompletas` cobra. */
-export function modalidadesExigidasPelaLei<T extends { readonly naturezaLegal: string }>(
+export function modalidadesDoRol<T extends { readonly codigo: string }>(
   catalogo: readonly T[],
+  rol: readonly string[] | null,
 ): readonly T[] {
-  return catalogo.filter((modalidade) =>
-    NATUREZAS_EXIGIDAS_PELA_LEI.includes(modalidade.naturezaLegal),
-  );
+  return rol === null ? catalogo : catalogo.filter((modalidade) => rol.includes(modalidade.codigo));
 }
 
 const PR_MINIMO = 0.5;
@@ -251,8 +252,9 @@ export interface ProblemaDaDistribuicao {
 export function problemasDaDistribuicao(
   distribuicao: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  rol: readonly string[] | null = null,
 ): ProblemaDaDistribuicao[] {
-  const federal = ehRamoFederal(distribuicao);
+  const federal = ehRamoFederal(distribuicao.regraDistribuicaoCodigo);
   const excesso = problemaDeSomaDoQuadro(distribuicao, catalogo);
 
   return [
@@ -260,6 +262,7 @@ export function problemasDaDistribuicao(
     ...comEscopo('padrao', problemasDePr(distribuicao.pr)),
     ...comEscopo('padrao', problemasDeModalidades(distribuicao, catalogo, federal)),
     ...comEscopo('oferta', problemasDeModalidadeForaDoCatalogo(distribuicao, catalogo)),
+    ...comEscopo('oferta', problemasDeModalidadeForaDoRol(distribuicao, rol)),
     ...problemasDeQuadro(distribuicao, catalogo, federal),
     ...comEscopo('padrao', problemasDeReferencias(distribuicao, federal)),
     ...comEscopo('oferta', excesso === null ? [] : [excesso]),
@@ -291,6 +294,47 @@ function problemasDeModalidadeForaDoCatalogo(
       (modalidade) =>
         `${modalidade.codigo} não está mais no cadastro de modalidades: remova esta oferta do quadro e configure-a novamente.`,
     );
+}
+
+/**
+ * Modalidade que a oferta guarda mas o rol da regra atual não admite, ou que
+ * o rol exige e a oferta não tem — as duas metades da mesma invariante: rol
+ * fechado é conjunto EXATO, não teto (espelha
+ * `ConfiguracaoDistribuicaoVagas.Criar` do uniplus-api).
+ *
+ * A distribuição gravada é um instantâneo: um processo hidratado pode trazer
+ * uma seleção que já esteve certa e não está mais (regra reeditada no
+ * catálogo, ou processo de antes desta tela derivar o rol). A seleção
+ * derivada não esconde a divergência — quem preenche precisa saber que ela
+ * existe. Nenhuma das duas mensagens prescreve remover ou marcar uma
+ * modalidade avulsa: para rol fechado não há esse controle na tela (só o
+ * rol inteiro é oferecido) — a saída é recompor a seleção pelo rol atual.
+ *
+ * `rol` nulo é rol aberto: nada fica de fora dele, nada falta dele.
+ */
+function problemasDeModalidadeForaDoRol(
+  distribuicao: DistribuicaoDeVagas,
+  rol: readonly string[] | null,
+): string[] {
+  if (rol === null) return [];
+
+  const codigosSelecionados = distribuicao.modalidades.map((modalidade) => modalidade.codigo);
+
+  const excedentes = codigosSelecionados
+    .filter((codigo) => !rol.includes(codigo))
+    .map(
+      (codigo) =>
+        `${codigo} não pertence ao rol que ${distribuicao.regraDistribuicaoCodigo} admite — a seleção desta oferta precisa corresponder exatamente ao rol da regra atual.`,
+    );
+
+  const faltantes = rol
+    .filter((codigo) => !codigosSelecionados.includes(codigo))
+    .map(
+      (codigo) =>
+        `${codigo} pertence ao rol que ${distribuicao.regraDistribuicaoCodigo} exige e não está selecionada nesta oferta — a seleção desta oferta precisa corresponder exatamente ao rol da regra atual.`,
+    );
+
+  return [...excedentes, ...faltantes];
 }
 
 function comEscopo(

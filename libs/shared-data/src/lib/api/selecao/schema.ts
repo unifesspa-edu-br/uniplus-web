@@ -5997,6 +5997,7 @@ export interface components {
             readonly invariantes: components["schemas"]["JsonElement"];
             readonly baseLegal: string;
             readonly hash: string;
+            readonly modalidadesAdmitidas: null | readonly string[];
             readonly _links?: null | {
                 readonly [key: string]: string;
             };

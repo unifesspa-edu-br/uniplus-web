@@ -3,16 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import {
   decodificarComposicaoVagas,
+  ehRamoFederal,
   seguemOMesmoPadrao,
+  modalidadesDoRol,
   problemaDeSomaDoQuadro,
   problemaDeVagasAutorizadas,
   ModalidadeDoCatalogo,
-  modalidadesExigidasPelaLei,
   ofertasRepetidas,
   problemasDaDistribuicao,
   totalFixadoDoVo,
-  REGRA_LEI_12711,
 } from './distribuicao-de-vagas';
+
+const REGRA_LEI_12711 = 'DISTRIB-VAGAS-LEI-12711';
+const REGRA_LEI_12711_COM_AC_PCD = 'DISTRIB-VAGAS-LEI-12711-COM-AC-PCD';
 
 const AC = modalidade({ id: 'm-ac', codigo: 'AC', composicaoVagas: 'RESIDUAL_DO_VO' });
 const LI_PPI = modalidade({ id: 'm-li-ppi', codigo: 'LI_PPI', composicaoVagas: 'DENTRO_DO_VR' });
@@ -311,32 +314,99 @@ describe('ofertasRepetidas', () => {
   });
 });
 
-describe('modalidadesExigidasPelaLei', () => {
-  const CATALOGO_COMPLETO = [
-    { codigo: 'AC', naturezaLegal: 'AMPLA' },
-    { codigo: 'LB_PPI', naturezaLegal: 'COTA_RESERVADA' },
-    { codigo: 'LB_Q', naturezaLegal: 'COTA_RESERVADA' },
-    { codigo: 'AC_PCD', naturezaLegal: 'OUTRA_MODALIDADE' },
-  ];
+describe('ehRamoFederal', () => {
+  it.each([[REGRA_LEI_12711], [REGRA_LEI_12711_COM_AC_PCD]])(
+    'reconhece %j como ramo federal',
+    (codigo) => {
+      expect(ehRamoFederal(codigo)).toBe(true);
+    },
+  );
 
-  /** As oito cotas e a ampla; o que o art. 8º não alcança fica de fora. */
-  it('inclui as cotas reservadas e a ampla concorrência', () => {
-    expect(modalidadesExigidasPelaLei(CATALOGO_COMPLETO).map((m) => m.codigo)).toEqual([
-      'AC',
-      'LB_PPI',
-      'LB_Q',
+  it.each([['DISTRIB-VAGAS-INSTITUCIONAL'], ['DISTRIB-VAGAS-PSIQ'], ['DISTRIB-VAGAS-COM-PCD-PURO']])(
+    'não reconhece %j como ramo federal',
+    (codigo) => {
+      expect(ehRamoFederal(codigo)).toBe(false);
+    },
+  );
+});
+
+describe('modalidadesDoRol', () => {
+  const CATALOGO_COMPLETO = [{ codigo: 'AC' }, { codigo: 'AC_I' }, { codigo: 'AC_Q' }];
+
+  it('devolve o catálogo inteiro quando o rol é aberto (null)', () => {
+    expect(modalidadesDoRol(CATALOGO_COMPLETO, null)).toEqual(CATALOGO_COMPLETO);
+  });
+
+  it('restringe ao rol fechado, na ordem do catálogo', () => {
+    expect(modalidadesDoRol(CATALOGO_COMPLETO, ['AC_I', 'AC_Q']).map((m) => m.codigo)).toEqual([
+      'AC_I',
+      'AC_Q',
     ]);
   });
 
-  it('deixa a modalidade institucional de fora', () => {
-    expect(modalidadesExigidasPelaLei(CATALOGO_COMPLETO)).not.toContainEqual(
-      expect.objectContaining({ codigo: 'AC_PCD' }),
+  it('devolve vazio quando nenhuma modalidade do catálogo está no rol', () => {
+    expect(modalidadesDoRol(CATALOGO_COMPLETO, ['PCD_PURO'])).toEqual([]);
+  });
+});
+
+describe('problemasDaDistribuicao — rol fechado da regra', () => {
+  it('sem rol informado (padrão), modalidade fora de nenhum rol declarado não é recusada por isso', () => {
+    const problemas = problemasDaDistribuicao(
+      distribuicao({
+        modalidades: [par(AC)],
+        quadro: [{ modalidadeId: AC.id, quantidade: '40' }],
+      }),
+      CATALOGO,
+    );
+
+    expect(problemas.some((p) => p.mensagem.includes('não pertence ao rol'))).toBe(false);
+  });
+
+  it('recusa modalidade hidratada fora do rol fechado da regra atual, nomeando-a', () => {
+    const problemas = problemasDaDistribuicao(
+      distribuicao({ modalidades: [par(AC), par(PCD_PURO)] }),
+      CATALOGO,
+      ['AC'],
+    );
+
+    expect(mensagens(problemas).some((p) => p.includes('PCD_PURO') && p.includes('não pertence ao rol'))).toBe(
+      true,
     );
   });
 
-  /** Natureza desconhecida não entra — o atalho some em vez de marcar errado. */
-  it('ignora natureza que o catálogo não classificou', () => {
-    expect(modalidadesExigidasPelaLei([{ codigo: 'X', naturezaLegal: 'NOVA' }])).toEqual([]);
+  it('aceita todas as modalidades quando estão dentro do rol fechado', () => {
+    const problemas = problemasDaDistribuicao(
+      distribuicao({ modalidades: [par(AC)], quadro: [{ modalidadeId: AC.id, quantidade: '40' }] }),
+      CATALOGO,
+      ['AC'],
+    );
+
+    expect(problemas.some((p) => p.mensagem.includes('não pertence ao rol'))).toBe(false);
+  });
+
+  it('recusa rol fechado incompleto, nomeando a modalidade que falta', () => {
+    const problemas = problemasDaDistribuicao(distribuicao({ modalidades: [par(AC)] }), CATALOGO, [
+      'AC',
+      'PCD_PURO',
+    ]);
+
+    expect(mensagens(problemas).some((p) => p.includes('PCD_PURO') && p.includes('exige'))).toBe(
+      true,
+    );
+  });
+
+  it('acusa excesso e falta ao mesmo tempo quando a oferta troca uma modalidade do rol por outra fora dele', () => {
+    const problemas = problemasDaDistribuicao(
+      distribuicao({ modalidades: [par(AC), par(LI_PPI)] }),
+      CATALOGO,
+      ['AC', 'PCD_PURO'],
+    );
+
+    const textos = mensagens(problemas);
+    expect(textos.some((p) => p.includes('LI_PPI') && p.includes('não pertence ao rol'))).toBe(
+      true,
+    );
+    expect(textos.some((p) => p.includes('PCD_PURO') && p.includes('exige'))).toBe(true);
   });
 });
 
