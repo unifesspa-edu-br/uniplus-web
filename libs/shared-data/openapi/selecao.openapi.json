@@ -10367,7 +10367,8 @@
           "esquemaArgs",
           "invariantes",
           "baseLegal",
-          "hash"
+          "hash",
+          "modalidadesAdmitidas"
         ],
         "type": "object",
         "properties": {
@@ -10391,6 +10392,15 @@
           },
           "hash": {
             "type": "string"
+          },
+          "modalidadesAdmitidas": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           },
           "_links": {
             "type": [

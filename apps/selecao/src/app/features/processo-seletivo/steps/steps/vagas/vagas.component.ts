@@ -3,9 +3,11 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from '@uniplus/shared-ui/components';
@@ -30,14 +32,14 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
 import {
   EscopoDoProblema,
-  modalidadesExigidasPelaLei,
+  ehRamoFederal,
+  modalidadesDoRol,
   ofertasRepetidas,
   ProblemaDaDistribuicao,
   problemaDeVagasAutorizadas,
   problemasDaDistribuicao,
   quantidadeEhDeclarada,
   seguemOMesmoPadrao,
-  REGRA_LEI_12711,
 } from './distribuicao-de-vagas';
 import { comoComando } from './distribuicao-para-comando';
 import { explicarRegra } from './regra-em-linguagem-clara';
@@ -132,23 +134,109 @@ export class VagasStepComponent {
   /** Enquanto não há oferta, o padrão declarado fica aqui. */
   private readonly padraoPendente = signal<PadraoDaDistribuicao>(PADRAO_VAZIO);
 
-  readonly ehFederal = computed(() => this.padrao().regraDistribuicaoCodigo === REGRA_LEI_12711);
+  readonly ehFederal = computed(() => ehRamoFederal(this.padrao().regraDistribuicaoCodigo));
+
+  /** A entrada do catálogo para a regra de distribuição escolhida no padrão. */
+  private readonly regraDistribuicaoEscolhida = computed(() =>
+    this.catalogos
+      .regrasDistribuicao()
+      .find(
+        (regra) =>
+          regra.codigo === this.padrao().regraDistribuicaoCodigo &&
+          regra.versao === this.padrao().regraDistribuicaoVersao,
+      ),
+  );
+
+  /**
+   * O rol que a regra escolhida admite. `null` é rol aberto — nenhuma regra
+   * ainda escolhida cai aqui também, e a seção de modalidades mostra o
+   * catálogo inteiro até a escolha acontecer.
+   */
+  readonly rolDaRegraEscolhida = computed(
+    () => this.regraDistribuicaoEscolhida()?.modalidadesAdmitidas ?? null,
+  );
+
+  /** As modalidades que a seção oferece: o rol da regra, ou o catálogo inteiro quando ele é aberto. */
+  readonly modalidadesOferecidas = computed(() =>
+    modalidadesDoRol(this.catalogos.modalidades(), this.rolDaRegraEscolhida()),
+  );
+
+  /**
+   * A seleção do padrão bate exatamente com o rol fechado da regra escolhida
+   * — rol aberto sempre bate, porque nada o restringe.
+   */
+  readonly selecaoBateComORol = computed(() => {
+    const rol = this.rolDaRegraEscolhida();
+    if (rol === null) return true;
+
+    const selecionados = new Set(this.padrao().modalidades.map((m) => m.codigo));
+    return rol.length === selecionados.size && rol.every((codigo) => selecionados.has(codigo));
+  });
+
+  /**
+   * Recompõe a seleção pelo rol fechado da regra atual — resolve excesso e
+   * falta juntos, a única saída da tela quando um processo chega com uma
+   * seleção que não bate mais com o rol (regra reeditada no catálogo, ou
+   * processo de antes desta tela derivar o rol): rol fechado não tem
+   * checkbox para modalidade fora dele, então não há como corrigir a
+   * divergência um item de cada vez.
+   */
+  reaplicarRolDaRegra(): void {
+    if (this.rolDaRegraEscolhida() === null) return;
+
+    const modalidades = this.modalidadesDoRolAtual();
+
+    if (this.perderiaQuantidadeDoQuadro(modalidades)) {
+      this.reaplicarRolPendente.set(true);
+      return;
+    }
+
+    this.alterarPadrao({ modalidades });
+  }
+
+  confirmarReaplicarRol(): void {
+    if (!this.reaplicarRolPendente()) return;
+
+    this.reaplicarRolPendente.set(false);
+    this.alterarPadrao({ modalidades: this.modalidadesDoRolAtual() });
+  }
+
+  cancelarReaplicarRol(): void {
+    this.reaplicarRolPendente.set(false);
+  }
+
+  private modalidadesDoRolAtual(): { readonly id: string; readonly codigo: string }[] {
+    const rol = this.rolDaRegraEscolhida();
+    if (rol === null) return [];
+
+    return modalidadesDoRol(this.catalogos.modalidades(), rol).map((m) => ({
+      id: m.id,
+      codigo: m.codigo,
+    }));
+  }
+
+  /**
+   * Se aplicar `modalidades` faria `quadroCoerente` descartar alguma
+   * quantidade já preenchida — não só a de modalidade que sai da seleção,
+   * também a de modalidade que fica mas passa a ter composição calculada
+   * pela regra (`quadroCoerente` filtra pelas duas condições juntas).
+   * Delega para o método real em vez de reimplementar o filtro: qualquer
+   * condição nova que `quadroCoerente` ganhar no futuro entra aqui de graça.
+   */
+  private perderiaQuantidadeDoQuadro(
+    modalidades: readonly { readonly id: string; readonly codigo: string }[],
+  ): boolean {
+    const proximoPadrao = { ...this.padrao(), modalidades };
+    return this.distribuicoes().some(
+      (item) => this.quadroCoerente(item.quadro, proximoPadrao).length < item.quadro.length,
+    );
+  }
 
   /**
    * O que a regra escolhida estabelece. Sem isto, o operador escolhe entre dois
    * códigos sem saber o que cada um faz com as vagas do processo.
    */
-  readonly regraExplicada = computed(() =>
-    explicarRegra(
-      this.catalogos
-        .regrasDistribuicao()
-        .find(
-          (regra) =>
-            regra.codigo === this.padrao().regraDistribuicaoCodigo &&
-            regra.versao === this.padrao().regraDistribuicaoVersao,
-        ),
-    ),
-  );
+  readonly regraExplicada = computed(() => explicarRegra(this.regraDistribuicaoEscolhida()));
 
   readonly ajusteExplicado = computed(() =>
     explicarRegra(
@@ -295,6 +383,8 @@ export class VagasStepComponent {
     this.ofertasMarcadas.set(new Set());
     this.filtroDeOferta.set('');
     this.remocaoPendente.set(null);
+    this.trocaDeRegraPendente.set(null);
+    this.reaplicarRolPendente.set(false);
   }
 
   /**
@@ -319,12 +409,128 @@ export class VagasStepComponent {
 
   // ── padrão do edital ────────────────────────────────────────────────────
 
+  /**
+   * Troca pendente de regra de distribuição, aguardando confirmação.
+   *
+   * A regra determina o rol: trocá-la substitui as modalidades pelo rol da
+   * nova regra (ou preserva a seleção livre, se o rol for aberto) e descarta
+   * do quadro as quantidades das que saírem — silencioso, com dez ofertas já
+   * preenchidas, seria surpresa grande demais para um clique de `<select>`.
+   */
+  readonly trocaDeRegraPendente = signal<{ codigo: string; versao: string } | null>(null);
+
+  /**
+   * Reaplicar o rol da regra ATUAL (sem trocar de regra) também pode
+   * descartar quantidade do quadro — a mesma perda silenciosa que a troca de
+   * regra evita com confirmação, só que sem `<select>` nenhum envolvido.
+   */
+  readonly reaplicarRolPendente = signal(false);
+
+  readonly avisoDoReaplicarRol =
+    'Completar a seleção pelo rol da regra atual remove do quadro as quantidades das modalidades que saírem da seleção. O processo só muda quando o passo for gravado.';
+
+  /**
+   * O valor que o `<select>` de regra exibe — a escolha pendente enquanto ela
+   * aguarda confirmação, o padrão vigente fora disso.
+   *
+   * `NgModel` só reescreve o `<select>` nativo quando o valor do binding MUDA
+   * de um ciclo de detecção de mudanças para o outro. Ligar `[ngModel]` direto
+   * a `padrao()` faz cancelar a troca não voltar a tela: o `<select>` nativo já
+   * mudou pela própria interação do operador, `padrao()` nunca muda ao
+   * cancelar, e o binding "não muda" aos olhos do Angular — o `<select>`
+   * fica preso mostrando a regra rejeitada. Este computed muda em cada
+   * transição (escolher, confirmar, cancelar), então sempre há uma mudança
+   * de valor para o `NgModel` reagir.
+   */
+  readonly valorDoSelectDeRegra = computed(() => {
+    const pendente = this.trocaDeRegraPendente();
+    return pendente !== null
+      ? `${pendente.codigo}|${pendente.versao}`
+      : `${this.padrao().regraDistribuicaoCodigo}|${this.padrao().regraDistribuicaoVersao}`;
+  });
+
+  /**
+   * Referência ao `<select>` de regra, só para o cancelamento (ver
+   * {@link cancelarTrocaDeRegra}) — a leitura do valor exibido continua pelo
+   * `[ngModel]` declarativo de {@link valorDoSelectDeRegra}.
+   */
+  private readonly campoDeRegra = viewChild<ElementRef<HTMLSelectElement>>('campoRegra');
+
+  readonly avisoDaTrocaDeRegra =
+    'Trocar a regra de distribuição substitui as modalidades desta oferta pelas que a nova regra admite, e remove do quadro as quantidades das que saírem. O processo só muda quando o passo for gravado.';
+
   escolherRegraDistribuicao(valor: string): void {
     const [codigo = '', versao = ''] = valor.split('|');
+    if (
+      codigo === this.padrao().regraDistribuicaoCodigo &&
+      versao === this.padrao().regraDistribuicaoVersao
+    ) {
+      return;
+    }
+
+    // `padrao().modalidades` cobre a seleção mesmo antes da primeira oferta
+    // existir (fica em `padraoPendente`, sem linha alguma em `distribuicoes()`
+    // para o `.some()` iterar) — checar só as ofertas deixaria passar sem
+    // aviso a troca que descarta modalidades já escolhidas para um processo
+    // que ainda não tem nenhuma oferta no quadro.
+    const haDadoAPerder =
+      this.padrao().modalidades.length > 0 ||
+      this.distribuicoes().some((item) => item.quadro.length > 0);
+    if (haDadoAPerder) {
+      this.trocaDeRegraPendente.set({ codigo, versao });
+      return;
+    }
+
+    this.aplicarTrocaDeRegra(codigo, versao);
+  }
+
+  confirmarTrocaDeRegra(): void {
+    const pendente = this.trocaDeRegraPendente();
+    if (pendente === null) return;
+
+    this.trocaDeRegraPendente.set(null);
+    this.aplicarTrocaDeRegra(pendente.codigo, pendente.versao);
+  }
+
+  /**
+   * `NgModel` só reescreve o `<select>` nativo quando o valor do binding MUDA
+   * de um ciclo de detecção para o outro. Ligar `[ngModel]` só a
+   * `valorDoSelectDeRegra()` não basta aqui: entre a interação do operador
+   * (que já mudou o `<select>` nativo por conta própria, via
+   * `SelectControlValueAccessor`) e este cancelamento, o `viewModel` interno
+   * do `NgModel` também já ficou sincronizado com a escolha rejeitada — o
+   * binding volta a valer o mesmo texto que `NgModel` já tem guardado, o
+   * Angular não vê mudança nenhuma, e a reescrita do DOM nunca acontece
+   * (comprovado empiricamente; não é dedução de documentação). Corrige-se
+   * escrevendo o `value` do elemento nativo diretamente.
+   */
+  cancelarTrocaDeRegra(): void {
+    this.trocaDeRegraPendente.set(null);
+
+    const elemento = this.campoDeRegra()?.nativeElement;
+    if (elemento) elemento.value = this.valorDoSelectDeRegra();
+  }
+
+  private aplicarTrocaDeRegra(codigo: string, versao: string): void {
+    const rol =
+      this.catalogos
+        .regrasDistribuicao()
+        .find((regra) => regra.codigo === codigo && regra.versao === versao)
+        ?.modalidadesAdmitidas ?? null;
+
+    // Rol aberto preserva a seleção livre; rol fechado é a oferta inteira —
+    // a regra determina o conjunto, não filtra uma escolha dentro dele.
+    const modalidades =
+      rol === null
+        ? this.padrao().modalidades
+        : modalidadesDoRol(this.catalogos.modalidades(), rol).map((m) => ({
+            id: m.id,
+            codigo: m.codigo,
+          }));
 
     this.alterarPadrao(
-      codigo === REGRA_LEI_12711
-        ? { regraDistribuicaoCodigo: codigo, regraDistribuicaoVersao: versao }
+      ehRamoFederal(codigo)
+        ? { regraDistribuicaoCodigo: codigo, regraDistribuicaoVersao: versao, modalidades }
         : {
             regraDistribuicaoCodigo: codigo,
             regraDistribuicaoVersao: versao,
@@ -332,6 +538,7 @@ export class VagasStepComponent {
             regraAjusteCodigo: null,
             regraAjusteVersao: null,
             referenciaReservaDemograficaId: null,
+            modalidades,
           },
     );
   }
@@ -352,7 +559,10 @@ export class VagasStepComponent {
     this.alterarPadrao({ pr });
   }
 
+  /** Rol fechado não é escolha do operador — a regra já a fez. */
   alternarModalidade(modalidade: ModalidadeDto): void {
+    if (this.rolDaRegraEscolhida() !== null) return;
+
     const atuais = this.padrao().modalidades;
     this.alterarPadrao({
       modalidades: this.modalidadeSelecionada(modalidade.id)
@@ -366,34 +576,17 @@ export class VagasStepComponent {
   }
 
   readonly todasAsModalidadesSelecionadas = computed(() => {
-    const catalogo = this.catalogos.modalidades();
-    return catalogo.length > 0 && catalogo.every((m) => this.modalidadeSelecionada(m.id));
+    const oferecidas = this.modalidadesOferecidas();
+    return oferecidas.length > 0 && oferecidas.every((m) => this.modalidadeSelecionada(m.id));
   });
 
-  readonly exigidasPelaLei = computed(() =>
-    modalidadesExigidasPelaLei(this.catalogos.modalidades()),
-  );
-
-  readonly exigidasPelaLeiSelecionadas = computed(() =>
-    this.exigidasPelaLei().every((m) => this.modalidadeSelecionada(m.id)),
-  );
-
+  /** Só faz sentido com rol aberto: rol fechado já marca tudo, sem escolha. */
   marcarTodasAsModalidades(marcar: boolean): void {
     this.alterarPadrao({
       modalidades: marcar
-        ? this.catalogos.modalidades().map((m) => ({ id: m.id, codigo: m.codigo }))
+        ? this.modalidadesOferecidas().map((m) => ({ id: m.id, codigo: m.codigo }))
         : [],
     });
-  }
-
-  /** Satisfaz `ModalidadesFederaisIncompletas` sem tentativa e erro. */
-  marcarAsExigidasPelaLei(): void {
-    const jaSelecionadas = this.padrao().modalidades;
-    const exigidas = this.exigidasPelaLei()
-      .filter((m) => !this.modalidadeSelecionada(m.id))
-      .map((m) => ({ id: m.id, codigo: m.codigo }));
-
-    this.alterarPadrao({ modalidades: [...jaSelecionadas, ...exigidas] });
   }
 
   // ── quadro de vagas ─────────────────────────────────────────────────────
@@ -704,9 +897,27 @@ export class VagasStepComponent {
   }
 
   problemasDe(distribuicao: DistribuicaoDeVagas): readonly ProblemaDaDistribuicao[] {
-    const problemas = problemasDaDistribuicao(distribuicao, this.catalogos.modalidadePorId());
+    const rol = this.rolDaDistribuicao(distribuicao);
+    const problemas = problemasDaDistribuicao(distribuicao, this.catalogos.modalidadePorId(), rol);
     const teto = this.problemaDeTeto(distribuicao);
     return teto === null ? problemas : [...problemas, { escopo: 'oferta', mensagem: teto }];
+  }
+
+  /**
+   * O rol da regra que ESTA oferta referencia — não necessariamente a do
+   * padrão. Um processo hidratado de fora do fluxo normal pode trazer uma
+   * oferta cuja regra já divergiu do padrão que as demais seguem.
+   */
+  private rolDaDistribuicao(distribuicao: DistribuicaoDeVagas): readonly string[] | null {
+    return (
+      this.catalogos
+        .regrasDistribuicao()
+        .find(
+          (regra) =>
+            regra.codigo === distribuicao.regraDistribuicaoCodigo &&
+            regra.versao === distribuicao.regraDistribuicaoVersao,
+        )?.modalidadesAdmitidas ?? null
+    );
   }
 
   private problemasComEscopo(
@@ -889,7 +1100,7 @@ export class VagasStepComponent {
     padrao: PadraoDaDistribuicao,
   ): DistribuicaoDeVagas['quadro'] {
     const selecionadas = new Set(padrao.modalidades.map((modalidade) => modalidade.id));
-    const federal = padrao.regraDistribuicaoCodigo === REGRA_LEI_12711;
+    const federal = ehRamoFederal(padrao.regraDistribuicaoCodigo);
     const catalogo = this.catalogos.modalidadePorId();
 
     return quadro.filter((item) => {

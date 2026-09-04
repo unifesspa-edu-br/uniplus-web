@@ -11,7 +11,7 @@ import {
 } from '../processo-seletivo.models';
 import {
   decodificarComposicaoVagas,
-  REGRA_LEI_12711,
+  ehRamoFederal,
   quantidadeEhDeclarada,
 } from '../steps/vagas/distribuicao-de-vagas';
 import { formatarValorEmReais } from './valor-em-reais';
@@ -212,7 +212,7 @@ function distribuicoesDe(dto: ProcessoSeletivoDto): DistribuicaoDeVagas[] {
 function quadroDeclaradoDe(
   distribuicao: ProcessoSeletivoDto['distribuicaoVagas'][number],
 ): DistribuicaoDeVagas['quadro'] {
-  const federal = distribuicao.regraDistribuicao.codigo === REGRA_LEI_12711;
+  const federal = ehRamoFederal(distribuicao.regraDistribuicao.codigo);
   const composicaoPorModalidade = new Map(
     distribuicao.modalidades.map((modalidade) => [
       modalidade.modalidadeOrigemId,

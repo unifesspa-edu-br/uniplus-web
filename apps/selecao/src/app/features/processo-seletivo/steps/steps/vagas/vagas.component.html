@@ -21,7 +21,8 @@
         <select
           class="input"
           id="f-regra"
-          [ngModel]="padrao().regraDistribuicaoCodigo + '|' + padrao().regraDistribuicaoVersao"
+          #campoRegra
+          [ngModel]="valorDoSelectDeRegra()"
           (ngModelChange)="escolherRegraDistribuicao($event)"
           [disabled]="!store.aceitaEdicao()"
         >
@@ -159,36 +160,46 @@
 
     <h3 class="form-section__title">Modalidades oferecidas</h3>
 
-    <div class="vagas-modalidades__atalhos">
-      <label class="check-item">
-        <input
-          type="checkbox"
-          [checked]="todasAsModalidadesSelecionadas()"
-          [disabled]="!store.aceitaEdicao()"
-          (change)="marcarTodasAsModalidades($any($event.target).checked)"
-        />
-        <span>Marcar todas as {{ catalogos.modalidades().length }} modalidades</span>
-      </label>
+    @if (rolDaRegraEscolhida(); as rol) {
+      <p class="field__hint">
+        A regra escolhida determina estas {{ rol.length }} modalidades — não há escolha a fazer
+        aqui. Para compor livremente, escolha DISTRIB-VAGAS-INSTITUCIONAL.
+      </p>
 
-      @if (ehFederal() && !exigidasPelaLeiSelecionadas()) {
+      @if (!selecaoBateComORol()) {
+        <p class="field__erro" role="alert">
+          A seleção desta oferta não corresponde mais ao rol da regra atual.
+        </p>
         <button
           class="btn btn--tertiary btn--sm"
           type="button"
-          (click)="marcarAsExigidasPelaLei()"
+          (click)="reaplicarRolDaRegra()"
           [disabled]="!store.aceitaEdicao()"
         >
-          Marcar as {{ exigidasPelaLei().length }} exigidas pela Lei 12.711
+          Completar com as {{ rol.length }} modalidades do rol
         </button>
       }
-    </div>
+    } @else {
+      <div class="vagas-modalidades__atalhos">
+        <label class="check-item">
+          <input
+            type="checkbox"
+            [checked]="todasAsModalidadesSelecionadas()"
+            [disabled]="!store.aceitaEdicao()"
+            (change)="marcarTodasAsModalidades($any($event.target).checked)"
+          />
+          <span>Marcar todas as {{ modalidadesOferecidas().length }} modalidades</span>
+        </label>
+      </div>
+    }
 
     <div class="checkbox-grid">
-      @for (modalidade of catalogos.modalidades(); track modalidade.id) {
+      @for (modalidade of modalidadesOferecidas(); track modalidade.id) {
         <label class="check-item">
           <input
             type="checkbox"
             [checked]="modalidadeSelecionada(modalidade.id)"
-            [disabled]="!store.aceitaEdicao()"
+            [disabled]="!store.aceitaEdicao() || rolDaRegraEscolhida() !== null"
             (change)="alternarModalidade(modalidade)"
           />
           <span>{{ modalidade.codigo }} — {{ modalidade.descricao }}</span>
@@ -531,4 +542,26 @@
   confirmVariant="danger"
   (confirmed)="confirmarRemocao()"
   (cancelled)="cancelarRemocao()"
+/>
+
+<ui-confirm-dialog
+  [visible]="trocaDeRegraPendente() !== null"
+  heading="Trocar regra de distribuição"
+  [message]="avisoDaTrocaDeRegra"
+  confirmLabel="Trocar regra"
+  cancelLabel="Manter a regra atual"
+  confirmVariant="danger"
+  (confirmed)="confirmarTrocaDeRegra()"
+  (cancelled)="cancelarTrocaDeRegra()"
+/>
+
+<ui-confirm-dialog
+  [visible]="reaplicarRolPendente()"
+  heading="Completar com o rol da regra"
+  [message]="avisoDoReaplicarRol"
+  confirmLabel="Completar seleção"
+  cancelLabel="Manter como está"
+  confirmVariant="danger"
+  (confirmed)="confirmarReaplicarRol()"
+  (cancelled)="cancelarReaplicarRol()"
 />
