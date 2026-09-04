@@ -133,6 +133,36 @@ test.describe('Fase canônica — CRUD (#393)', () => {
     });
   });
 
+  test('a fase de isenção deriva a marca de isenção e esconde a coleta de inscrição', async ({
+    page,
+  }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, []);
+    await abrirPagina(page);
+
+    await page.getByRole('button', { name: 'Nova fase canônica' }).first().click();
+    await page.locator('[formControlName="coletaInscricao"]').selectOption({ label: 'Sim' });
+
+    // A marca de isenção pertence a essa fase e só a ela, e as duas janelas são
+    // exclusivas — o formulário deriva ambas do código em vez de deixar o
+    // operador montar uma combinação que o backend recusaria com 422.
+    await page.locator('[formControlName="codigo"]').selectOption('SOLICITACAO_ISENCAO');
+    await expect(page.getByTestId('cfg-fase-coleta-isencao')).toHaveValue('Sim');
+    await expect(page.locator('[formControlName="coletaInscricao"]')).toBeHidden();
+
+    await page.locator('[formControlName="nome"]').fill('Solicitação de isenção');
+    await page.locator('[formControlName="donoTipico"]').selectOption('CEPS');
+    await page.locator('[formControlName="origemData"]').selectOption('PROPRIA');
+    await page.getByRole('button', { name: 'Criar fase canônica' }).click();
+
+    await expect.poll(() => capturado.posts.length).toBe(1);
+    expect(capturado.posts[0]).toMatchObject({
+      codigo: 'SOLICITACAO_ISENCAO',
+      coletaSolicitacaoIsencao: true,
+      coletaInscricao: false,
+    });
+  });
+
   test('CA-05: grupos condicionais aparecem e somem conforme o código selecionado', async ({
     page,
   }) => {
