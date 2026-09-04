@@ -62,6 +62,13 @@ const PAGE_SIZE = 50;
 const FASE_CANONICA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.fase_canonica.codigo_ja_existe';
 
 /**
+ * Fase que recebe os pedidos de isenção da taxa. A marca `coletaSolicitacaoIsencao`
+ * é bicondicional com este código no agregado: vale aqui e só aqui, e nunca junto
+ * da coleta de inscrição — são janelas com prazos distintos.
+ */
+const CODIGO_SOLICITACAO_ISENCAO = 'SOLICITACAO_ISENCAO';
+
+/**
  * Espelha a regra do backend: uma fase só pode ter resultado definitivo se
  * também produzir resultado.
  */
@@ -424,21 +431,29 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                 </span>
               </label>
             }
-            <label class="field">
-              <span class="field__label">Coleta inscrição</span>
-              <select class="select" formControlName="coletaInscricao">
-                <option [ngValue]="true">Sim</option>
-                <option [ngValue]="false">Não</option>
-              </select>
-              <span class="field__hint">A fase recebe inscrições de candidatos.</span>
-            </label>
-            <label class="field">
-              <span class="field__label">Coleta solicitação isenção</span>
-              <select class="select" formControlName="coletaSolicitacaoIsencao">
-                <option [ngValue]="true">Sim</option>
-                <option [ngValue]="false">Não</option>
-              </select>
-              <span class="field__hint">A fase recebe isenção de candidatos.</span>
+            @if (!ehFaseDeIsencao()) {
+              <label class="field" aria-live="polite">
+                <span class="field__label">Coleta inscrição</span>
+                <select class="select" formControlName="coletaInscricao">
+                  <option [ngValue]="true">Sim</option>
+                  <option [ngValue]="false">Não</option>
+                </select>
+                <span class="field__hint">A fase recebe inscrições de candidatos.</span>
+              </label>
+            }
+            <label class="field" aria-live="polite">
+              <span class="field__label">Coleta solicitação de isenção</span>
+              <input
+                class="input"
+                type="text"
+                data-testid="cfg-fase-coleta-isencao"
+                [value]="ehFaseDeIsencao() ? 'Sim' : 'Não'"
+                readonly
+              />
+              <span class="field__hint">
+                Derivado do código: só a fase {{ codigoSolicitacaoIsencao }} recebe pedidos de
+                isenção da taxa, e ela não coleta inscrição — são janelas com prazos distintos.
+              </span>
             </label>
           </div>
         </fieldset>
@@ -671,6 +686,12 @@ export class FasesCanonicasPage {
     () => this.codigoAtual() === 'HOMOLOGACAO' || this.codigoAtual() === 'RECURSOS',
   );
 
+  protected readonly codigoSolicitacaoIsencao = CODIGO_SOLICITACAO_ISENCAO;
+
+  protected readonly ehFaseDeIsencao = computed(
+    () => this.codigoAtual() === CODIGO_SOLICITACAO_ISENCAO,
+  );
+
   constructor() {
     effect(() => {
       const problem = this.lista.problem();
@@ -691,6 +712,28 @@ export class FasesCanonicasPage {
           this.form.controls.resultadoDefinitivo.setValue(false);
         }
       });
+
+    // A marca de isenção não é escolha do usuário: o agregado a exige verdadeira
+    // exatamente na fase de solicitação de isenção e a recusa em qualquer outra.
+    // Sem derivá-la do código, o formulário no default enviaria `false` para essa
+    // fase — e o valor sobreviveria a uma troca de código — nos dois casos com 422.
+    this.form.controls.codigo.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((codigo) => this.derivarMarcaDeIsencao(codigo));
+  }
+
+  /**
+   * Alinha `coletaSolicitacaoIsencao` ao código e zera a coleta de inscrição na
+   * fase de isenção, que o agregado trata como janelas mutuamente exclusivas.
+   */
+  private derivarMarcaDeIsencao(codigo: string): void {
+    const ehIsencao = codigo === CODIGO_SOLICITACAO_ISENCAO;
+    if (this.form.controls.coletaSolicitacaoIsencao.value !== ehIsencao) {
+      this.form.controls.coletaSolicitacaoIsencao.setValue(ehIsencao);
+    }
+    if (ehIsencao && this.form.controls.coletaInscricao.value) {
+      this.form.controls.coletaInscricao.setValue(false);
+    }
   }
 
   protected proximaPagina(): void {
@@ -918,7 +961,7 @@ export class FasesCanonicasPage {
   private criarCommand(): CriarFaseCanonicaCommand {
     const raw = this.form.getRawValue();
     return {
-      codigo: raw.codigo,
+      codigo: nullIfBlank(raw.codigo),
       nome: raw.nome.trim(),
       descricao: nullIfBlank(raw.descricao),
       donoTipico: nullIfBlank(raw.donoTipico),

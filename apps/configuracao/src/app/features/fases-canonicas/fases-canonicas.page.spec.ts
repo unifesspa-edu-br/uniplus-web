@@ -178,6 +178,69 @@ describe('FasesCanonicasPage', () => {
     await flushLista([]);
   });
 
+  it('escolher a fase de isenção marca a coleta de isenção e zera a coleta de inscrição', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].setValue({
+      codigo: 'INSCRICAO',
+      donoTipico: 'CEPS',
+      nome: 'Solicitação de isenção',
+      descricao: '',
+      baseLegal: '',
+      agrupaEtapas: false,
+      permiteComplementacao: false,
+      origemData: 'PROPRIA',
+      produzResultado: false,
+      resultadoDefinitivo: false,
+      coletaInscricao: true,
+      coletaSolicitacaoIsencao: false,
+    });
+
+    // Trocar para a fase de isenção: o agregado exige a marca verdadeira aqui e
+    // recusa a coleta de inscrição na mesma fase — as duas janelas são exclusivas.
+    component['form'].controls.codigo.setValue('SOLICITACAO_ISENCAO');
+    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
+    expect(component['form'].controls.coletaInscricao.value).toBe(false);
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
+    expect(post.request.body).toMatchObject({
+      codigo: 'SOLICITACAO_ISENCAO',
+      coletaSolicitacaoIsencao: true,
+      coletaInscricao: false,
+    });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
+  it('sair da fase de isenção desmarca a coleta de isenção antes do envio', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].controls.codigo.setValue('SOLICITACAO_ISENCAO');
+    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
+
+    component['form'].patchValue({
+      codigo: 'MATRICULA',
+      donoTipico: 'CEPS',
+      nome: 'Matrícula',
+      origemData: 'PROPRIA',
+    });
+    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(false);
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
+    expect(post.request.body).toMatchObject({
+      codigo: 'MATRICULA',
+      coletaSolicitacaoIsencao: false,
+    });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('CA-06: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
     await flushLista([faseAvaliacaoSeed]);
     component['abrirEdicao'](faseAvaliacaoSeed);
