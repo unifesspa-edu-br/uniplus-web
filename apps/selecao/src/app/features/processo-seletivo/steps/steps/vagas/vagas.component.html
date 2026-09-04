@@ -166,9 +166,9 @@
         aqui. Para compor livremente, escolha DISTRIB-VAGAS-INSTITUCIONAL.
       </p>
 
-      @if (!selecaoBateComORol()) {
+      @if (reaplicarRolTemEfeito()) {
         <p class="field__erro" role="alert">
-          A seleção desta oferta não corresponde mais ao rol da regra atual.
+          A seleção ou o quadro desta oferta não correspondem mais ao rol da regra atual.
         </p>
         <button
           class="btn btn--tertiary btn--sm"
@@ -176,7 +176,7 @@
           (click)="reaplicarRolDaRegra()"
           [disabled]="!store.aceitaEdicao()"
         >
-          Completar com as {{ rol.length }} modalidades do rol
+          Recompor pelo rol da regra atual
         </button>
       }
     } @else {
