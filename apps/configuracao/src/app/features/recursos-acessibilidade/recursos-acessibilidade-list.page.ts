@@ -523,7 +523,7 @@ export class RecursosAcessibilidadeListPage {
   private criarCommand(): CriarRecursoAcessibilidadeCommand {
     const raw = this.form.getRawValue();
     return {
-      nome: raw.nome.trim(),
+      nome: nullIfBlank(raw.nome),
       descricao: nullIfBlank(raw.descricao),
     };
   }

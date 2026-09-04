@@ -672,6 +672,28 @@ describe('PesosEnemPage', () => {
     await propagate();
   });
 
+  it('PesosEnemPage_Criar_CamposDeTextoEmBrancoViajamComoNull', async () => {
+    // `Validators.required` aceita espaços em branco: sem normalizar, o payload
+    // levaria '' e o backend responderia sobre formato, não sobre ausência.
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: '   ', baseLegalGlobal: '  ' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match(
+      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
+    );
+    expect(requests).toHaveLength(4);
+    requests.forEach((req, i) => {
+      expect(req.request.body).toMatchObject({ resolucao: null, baseLegal: null });
+      req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' });
+    });
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
   it('PesosEnemPage_FalhaTransitoriaNaCriacao_PreservaIdempotencyKey', async () => {
     // Regressão: renovar a key numa falha transitória
     // (rede/5xx) trocaria um retry idempotente seguro por uma criação

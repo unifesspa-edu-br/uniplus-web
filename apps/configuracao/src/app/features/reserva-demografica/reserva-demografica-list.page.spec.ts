@@ -77,6 +77,29 @@ describe('ReservaDemograficaListPage', () => {
     expect(component['referenciasFiltradas']().map((r) => r.censoReferencia)).toEqual(['2010']);
   });
 
+  it('envia null nos campos de texto preenchidos só com espaços', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    // `Validators.required` aceita espaços em branco: sem normalizar, o payload
+    // levaria '' e o backend responderia sobre formato, não sobre ausência.
+    component['form'].setValue({
+      censoReferencia: '  ',
+      ppiPercentual: 78.5,
+      quilombolaPercentual: 1.2,
+      pcdPercentual: 8.4,
+      baseLegal: '   ',
+    });
+    component['salvar']();
+
+    const post = controller.expectOne(
+      `${BASE}/api/configuracao/admin/referencias-reserva-demografica`,
+    );
+    expect(post.request.body).toMatchObject({ censoReferencia: null, baseLegal: null });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('CA-02: cria referência válida (POST com command)', async () => {
     await flushLista([]);
     component['abrirCadastro']();

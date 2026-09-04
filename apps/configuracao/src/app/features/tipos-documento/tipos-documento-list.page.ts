@@ -1103,9 +1103,9 @@ export class TiposDocumentoListPage {
   private criarCommand(): CriarTipoDocumentoCommand {
     const raw = this.form.getRawValue();
     return {
-      codigo: raw.codigo.trim(),
-      nome: raw.nome.trim(),
-      categoria: raw.categoria,
+      codigo: nullIfBlank(raw.codigo),
+      nome: nullIfBlank(raw.nome),
+      categoria: nullIfBlank(raw.categoria),
       descricao: nullIfBlank(raw.descricao),
       formatosAceitos: serializarFormatosAceitos(raw),
       tamanhoMaximoMb: raw.tamanhoMaximoMb,

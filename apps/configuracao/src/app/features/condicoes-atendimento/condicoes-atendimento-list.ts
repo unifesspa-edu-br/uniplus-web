@@ -547,8 +547,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
   private criarCommand(): CriarCondicaoAtendimentoCommand {
     const raw = this.form.getRawValue();
     return {
-      codigo: raw.codigo,
-      nome: raw.nome.trim(),
+      codigo: nullIfBlank(raw.codigo),
+      nome: nullIfBlank(raw.nome),
       descricao: nullIfBlank(raw.descricao),
     };
   }

@@ -119,6 +119,23 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('LBI (Lei 13.146/2015), art. 30');
   });
 
+  it('envia null no nome preenchido só com espaços', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    // `required` + `minLength(2)` aceitam espaços em branco: sem normalizar, o
+    // payload levaria '' e o backend responderia sobre formato, não ausência.
+    component['form'].setValue({ codigo: 'PCD', nome: '   ', descricao: ' ' });
+
+    component['salvar']();
+
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento`);
+    expect(post.request.body).toMatchObject({ codigo: 'PCD', nome: null, descricao: null });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([]);
+  });
+
   it('cria condição de atendimento com código único, nome, descrição válidos', async () => {
       await flushLista([]);
 
