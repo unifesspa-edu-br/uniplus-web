@@ -20,6 +20,7 @@ import {
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
+  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
@@ -651,7 +652,9 @@ export class TiposProcessoPage {
         // Reabre o diálogo com a mensagem da API. Cobre o 422
         // `tipo_processo.ja_ativo` e o 409 `...conflito_de_concorrencia`
         // (outra sessão reativou/alterou o tipo nesse meio-tempo).
-        this.idempotencyKeyReativar.set(idempotencyKey.create());
+        if (deveRotacionarIdempotencyKey(result.problem)) {
+          this.idempotencyKeyReativar.set(idempotencyKey.create());
+        }
         const titulo = this.problemI18n.resolve(result.problem).title;
         this.confirmReativarError.set(titulo);
         this.confirmReativarOpen.set(true);
@@ -778,8 +781,10 @@ export class TiposProcessoPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarIdempotencyKey();
+    }
+    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
@@ -787,15 +792,11 @@ export class TiposProcessoPage {
     // esse array só existe no pipeline FluentValidation/422); mapeado ao campo
     // manualmente para exibir o erro inline exigido pelo critério de aceite.
     if (problem.code === TIPO_PROCESSO_CODIGO_JA_EXISTE_CODE) {
-      this.renovarIdempotencyKey();
       this.form.controls.codigo.setErrors({
         backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
       });
       this.form.controls.codigo.markAsTouched();
       return;
-    }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
-      this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {

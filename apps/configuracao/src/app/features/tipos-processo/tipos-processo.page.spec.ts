@@ -246,4 +246,29 @@ describe('TiposProcessoPage', () => {
     expect(component['confirmReativarOpen']()).toBe(true);
     expect(component['confirmReativarMessage']()).toContain('já está ativo');
   });
+
+  it('reativação com falha 5xx mantém a mesma Idempotency-Key (retry seguro do mesmo comando)', async () => {
+    await flushLista([tipoInativo]);
+    component['pedirReativacao'](tipoInativo);
+    component['reativarConfirmado']();
+
+    const primeiraReq = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
+    const chaveOriginal = primeiraReq.request.headers.get('Idempotency-Key');
+    primeiraReq.flush(
+      { title: 'Erro interno', status: 500 },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    component['reativarConfirmado']();
+    const segundaReq = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
+    expect(segundaReq.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
+    segundaReq.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([{ ...tipoInativo, ativo: true }]);
+  });
 });
