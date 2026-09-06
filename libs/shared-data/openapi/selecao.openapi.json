@@ -8586,7 +8586,6 @@
           "inicio",
           "fim",
           "atoProduzidoCodigo",
-          "atoProduzidoEfeitoIrreversivel",
           "bancasRequeridas",
           "regraRecurso"
         ],
@@ -8651,9 +8650,6 @@
               "null",
               "string"
             ]
-          },
-          "atoProduzidoEfeitoIrreversivel": {
-            "type": "boolean"
           },
           "bancasRequeridas": {
             "type": "array",
