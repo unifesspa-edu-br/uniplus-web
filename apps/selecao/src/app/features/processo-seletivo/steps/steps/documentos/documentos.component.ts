@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DOC_ETAPAS, DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
-import { DocumentoConfig, StepValidation } from '../../processo-seletivo.models';
+import { DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
+import { DocumentoConfig, FaseDoCronograma, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 
@@ -14,9 +14,16 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 export class DocumentosStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly groups = DOCUMENTO_GRUPOS;
-  readonly etapas = DOC_ETAPAS;
   /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
+  /**
+   * Fases do cronograma em edição, na ordem em que ocorrem. É a origem das
+   * etapas oferecidas ao passo — não um vocabulário fixo, que inevitavelmente
+   * diverge do que o certame realmente tem.
+   */
+  readonly fasesDoCronograma = computed<readonly FaseDoCronograma[]>(() =>
+    [...this.store.draft().cronograma.fases].sort((a, b) => a.ordem - b.ordem),
+  );
 
   config(id: string): DocumentoConfig {
     return this.store.draft().documentos[id];
@@ -30,7 +37,7 @@ export class DocumentosStepComponent {
   toggleTodasEtapas(id: string, checked: boolean): void {
     this.patch(id, {
       todasEtapas: checked,
-      etapas: checked ? this.etapas.map((item) => item.cod) : this.config(id).etapas,
+      etapas: checked ? this.fasesDoCronograma().map((fase) => fase.codigo) : this.config(id).etapas,
     });
   }
   toggleEtapa(id: string, code: string, checked: boolean): void {
@@ -38,6 +45,20 @@ export class DocumentosStepComponent {
     this.patch(id, {
       etapas: checked ? [...current, code] : current.filter((item) => item !== code),
     });
+  }
+
+  /**
+   * Etapas que valem para o documento: o que o operador guardou, cruzado com
+   * as fases que o cronograma ainda tem.
+   *
+   * A lista guardada não é reescrita quando uma fase sai do cronograma (CA-04)
+   * — apagar a seleção do operador em silêncio é o defeito que esta tela
+   * corrige. Filtrar aqui, na leitura, é o que faz a fase reaparecer marcada
+   * se ela voltar ao cronograma.
+   */
+  etapasEfetivas(id: string): string[] {
+    const codigos = new Set(this.fasesDoCronograma().map((fase) => fase.codigo));
+    return this.config(id).etapas.filter((codigo) => codigos.has(codigo));
   }
   toggleModalidade(id: string, code: string, checked: boolean): void {
     const config = this.config(id);
@@ -78,7 +99,9 @@ export class DocumentosStepComponent {
   validate(): StepValidation {
     const documentos = Object.entries(this.store.draft().documentos);
 
-    const semEtapa = documentos.some(([, config]) => config.included && config.etapas.length === 0);
+    const semEtapa = documentos.some(
+      ([id, config]) => config.included && this.etapasEfetivas(id).length === 0,
+    );
     if (semEtapa) {
       return { valid: false, message: 'Todo documento incluído deve ter ao menos uma etapa.' };
     }

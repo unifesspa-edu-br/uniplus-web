@@ -36,31 +36,38 @@
                   Marque "Todas as etapas" para exigir o documento desde a inscrição até o resultado
                   final, ou escolha apenas as etapas específicas.
                 </p>
-                <label class="doc-expand__all"
-                  ><input
-                    class="doc-all-chk"
-                    type="checkbox"
-                    [checked]="config(doc.id).todasEtapas"
-                    (change)="toggleTodasEtapas(doc.id, $any($event.target).checked)"
-                  /><span>Todas as etapas do edital</span></label
-                >
-                <div class="doc-expand__etapas">
-                  @for (etapa of etapas; track etapa.cod) {
-                    <label class="doc-etapa-item"
-                      ><input
-                        class="doc-etapa-chk"
-                        type="checkbox"
-                        [checked]="config(doc.id).etapas.includes(etapa.cod)"
-                        [disabled]="config(doc.id).todasEtapas"
-                        (change)="toggleEtapa(doc.id, etapa.cod, $any($event.target).checked)"
-                      /><span
-                        ><span class="doc-etapa-num">{{ etapa.num }} —</span><br />{{
-                          etapa.cod
-                        }}</span
-                      ></label
-                    >
-                  }
-                </div>
+                @if (fasesDoCronograma().length > 0) {
+                  <label class="doc-expand__all"
+                    ><input
+                      class="doc-all-chk"
+                      type="checkbox"
+                      [checked]="config(doc.id).todasEtapas"
+                      (change)="toggleTodasEtapas(doc.id, $any($event.target).checked)"
+                    /><span>Todas as etapas do edital</span></label
+                  >
+                  <div class="doc-expand__etapas">
+                    @for (fase of fasesDoCronograma(); track fase.codigo) {
+                      <label class="doc-etapa-item"
+                        ><input
+                          class="doc-etapa-chk"
+                          type="checkbox"
+                          [checked]="etapasEfetivas(doc.id).includes(fase.codigo)"
+                          [disabled]="config(doc.id).todasEtapas"
+                          (change)="toggleEtapa(doc.id, fase.codigo, $any($event.target).checked)"
+                        /><span
+                          ><span class="doc-etapa-num">Etapa {{ fase.ordem }} —</span><br />{{
+                            fase.codigo
+                          }}</span
+                        ></label
+                      >
+                    }
+                  </div>
+                } @else {
+                  <p class="doc-expand__hint">
+                    Este processo ainda não tem cronograma definido. Defina as fases no passo
+                    Cronograma antes de vincular exigências documentais a uma etapa.
+                  </p>
+                }
                 <strong class="doc-expand__q">Modalidades que devem entregar</strong>
                 <div class="doc-expand__mods">
                   @for (code of modalidades(); track code) {
