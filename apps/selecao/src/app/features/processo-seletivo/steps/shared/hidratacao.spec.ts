@@ -152,7 +152,6 @@ const FASE_COM_RECURSO = {
   inicio: '2026-03-25T08:00:00-03:00',
   fim: '2026-03-25T23:59:59-03:00',
   atoProduzidoCodigo: 'RESULTADO_HOMOLOGACAO',
-  atoProduzidoEfeitoIrreversivel: false,
   bancasRequeridas: [
     { id: 'snapshot-banca', tipoBancaOrigemId: 'tipo-banca-1', codigo: 'BANCA_ANALISE_RECURSOS' },
   ],

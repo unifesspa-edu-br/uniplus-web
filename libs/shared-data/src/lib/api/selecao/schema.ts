@@ -5608,7 +5608,6 @@ export interface components {
             /** Format: date-time */
             readonly fim: null | string;
             readonly atoProduzidoCodigo: null | string;
-            readonly atoProduzidoEfeitoIrreversivel: boolean;
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaDto"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseDto"];
         };
