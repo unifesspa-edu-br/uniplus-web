@@ -178,14 +178,6 @@ export const DOCUMENTO_GRUPOS: DocumentoGrupo[] = [
   },
 ];
 
-export const DOC_ETAPAS = [
-  { num: 'Etapa 1', cod: 'INSCRICAO_CANDIDATOS' },
-  { num: 'Etapa 2', cod: 'HOMOLOGACAO_INSCRICOES' },
-  { num: 'Etapa 3', cod: 'IMPORTACAO_NOTAS_ENEM' },
-  { num: 'Etapa 4', cod: 'DIVULGACAO_RESULTADO_PARCIAL' },
-  { num: 'Etapa 5', cod: 'DIVULGACAO_RESULTADO_FINAL' },
-] as const;
-
 export const POLOS = [
   'Marabá (PA)',
   'Canaã dos Carajás (PA)',
