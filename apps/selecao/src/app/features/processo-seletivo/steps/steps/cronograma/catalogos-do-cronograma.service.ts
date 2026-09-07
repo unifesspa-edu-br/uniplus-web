@@ -3,6 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
+  CategoriaDocumentoDto,
+  CategoriasDocumentoApi,
   FaseCanonicaDto,
   FasesCanonicasApi,
   PrecedenciaFaseDto,
@@ -24,20 +26,26 @@ const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
 const TIPO_REGRA_RECURSO = 'regra_prazo_recurso';
 
 /**
- * Catálogos que o cronograma referencia, todos de fora do módulo Seleção: fases
- * canônicas, precedências, tipos de banca e tipos de etapa são cadastro de
- * Configuração, o tipo de ato é de Publicações, e as regras vêm do
- * `rol_de_regras` versionado.
+ * Catálogos que o cronograma e a configuração de cada fase referenciam, todos de
+ * fora do módulo Seleção: fases canônicas, precedências, tipos de banca, tipos de
+ * etapa e categorias de documento são cadastro de Configuração, o tipo de ato é
+ * de Publicações, e as regras vêm do `rol_de_regras` versionado.
  *
  * Carrega todos por cursor até o fim, porque uma escolha só sabe o que oferecer
  * quando conhece todas as opções — diferente de uma listagem, em que a página é
- * o que o operador navega.
+ * o que o operador navega. A categoria de documento é a exceção: o backend não
+ * pagina aquele recurso.
+ *
+ * Vive na página do wizard, e não num passo: a linha do tempo e a superfície de
+ * configuração por fase leem os mesmos catálogos, e uma instância por passo os
+ * baixaria duas vezes para responder a mesma coisa.
  */
 @Injectable()
 export class CatalogosDoCronogramaService {
   private readonly fasesApi = inject(FasesCanonicasApi);
   private readonly precedenciasApi = inject(PrecedenciasFaseApi);
   private readonly bancasApi = inject(TiposBancaApi);
+  private readonly categoriasApi = inject(CategoriasDocumentoApi);
   private readonly tiposEtapaApi = inject(TiposEtapaApi);
   private readonly atosApi = inject(TiposAtoApi);
   private readonly regrasApi = inject(RegrasCatalogoApi);
@@ -46,6 +54,7 @@ export class CatalogosDoCronogramaService {
   readonly fases = signal<readonly FaseCanonicaDto[]>([]);
   readonly precedencias = signal<readonly PrecedenciaFaseDto[]>([]);
   readonly bancas = signal<readonly TipoBancaDto[]>([]);
+  readonly categorias = signal<readonly CategoriaDocumentoDto[]>([]);
   readonly tiposEtapa = signal<readonly TipoEtapaDto[]>([]);
   readonly atos = signal<readonly TipoAtoPublicadoDto[]>([]);
   readonly regrasRecurso = signal<readonly RegraCatalogoDto[]>([]);
@@ -103,6 +112,26 @@ export class CatalogosDoCronogramaService {
   /** Rótulo de um ato, vigente ou não — um cronograma gravado precisa de nome. */
   readonly rotuloDoAto = computed<ReadonlyMap<string, string>>(
     () => new Map(this.atos().map((ato) => [ato.codigo, ato.nome])),
+  );
+
+  /**
+   * O ato pelo código, vigente ou não. É por aqui que a tela sabe se um ato é
+   * resultado — só ato que é resultado admite papel preliminar ou definitivo — e
+   * a série completa importa: um ato já declarado cuja versão encerrou continua
+   * descrevendo o que a fase publica.
+   */
+  readonly atoPorCodigo = computed<ReadonlyMap<string, TipoAtoPublicadoDto>>(
+    () => new Map(this.atos().map((ato) => [ato.codigo, ato])),
+  );
+
+  /** Tipo de banca por id — o rótulo que a superfície da fase mostra. */
+  readonly bancaPorId = computed<ReadonlyMap<string, TipoBancaDto>>(
+    () => new Map(this.bancas().map((banca) => [banca.id, banca])),
+  );
+
+  /** Categoria de documento por id, para nomear o recorte de competência. */
+  readonly categoriaPorId = computed<ReadonlyMap<string, CategoriaDocumentoDto>>(
+    () => new Map(this.categorias().map((categoria) => [categoria.id, categoria])),
   );
 
   /**
@@ -170,7 +199,16 @@ export class CatalogosDoCronogramaService {
     return [...ordenado, ...fases.filter((fase) => !incluidos.has(fase.codigo))];
   });
 
+  /**
+   * Já buscou, ou está buscando. Dois passos do wizard dependem destes
+   * catálogos e ambos pedem o carregamento ao nascer; sem a guarda, cada
+   * abertura do editor faria a mesma rodada de requisições duas vezes.
+   */
+  private buscaIniciada = false;
+
   carregar(): void {
+    if (this.buscaIniciada) return;
+    this.buscaIniciada = true;
     this.carregando.set(true);
     this.erro.set(null);
     this.diaDeReferencia.set(hojeNoFusoInstitucional());
@@ -179,6 +217,8 @@ export class CatalogosDoCronogramaService {
       fases: coletarPaginas((cursor) => this.fasesApi.listar({ cursor })),
       precedencias: coletarPaginas((cursor) => this.precedenciasApi.listar({ cursor })),
       bancas: coletarPaginas((cursor) => this.bancasApi.listar({ cursor })),
+      // Conjunto de referência fechado, que o backend devolve inteiro.
+      categorias: this.categoriasApi.listar(),
       tiposEtapa: coletarPaginas((cursor) => this.tiposEtapaApi.listar({ cursor })),
       // `vigentes` assume `true` no servidor, e a série completa é o que
       // resolve o rótulo de um ato já referenciado cuja versão encerrou. Quais
@@ -194,7 +234,8 @@ export class CatalogosDoCronogramaService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resultados) => {
-          const { fases, precedencias, bancas, tiposEtapa, atos, recurso, contagem } = resultados;
+          const { fases, precedencias, bancas, categorias, tiposEtapa, atos, recurso, contagem } =
+            resultados;
 
           // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
           // o operador não teria como saber. Ou vêm todos, ou nenhum.
@@ -202,6 +243,7 @@ export class CatalogosDoCronogramaService {
             !isApiOk(fases) ||
             !isApiOk(precedencias) ||
             !isApiOk(bancas) ||
+            !isApiOk(categorias) ||
             !isApiOk(tiposEtapa) ||
             !isApiOk(atos) ||
             !isApiOk(recurso) ||
@@ -214,6 +256,7 @@ export class CatalogosDoCronogramaService {
           this.fases.set(fases.data);
           this.precedencias.set(precedencias.data);
           this.bancas.set(bancas.data);
+          this.categorias.set(categorias.data);
           this.tiposEtapa.set(tiposEtapa.data);
           this.atos.set(atos.data);
           this.regrasRecurso.set(recurso.data);
@@ -225,8 +268,11 @@ export class CatalogosDoCronogramaService {
   }
 
   private anunciarErro(): void {
+    // Libera a guarda: o que impediu a rodada anterior pode ter passado, e a
+    // tela precisa de um caminho de volta que não seja recarregar a página.
+    this.buscaIniciada = false;
     this.erro.set(
-      'Não foi possível carregar os catálogos de fases, bancas, atos e regras. Tente novamente.',
+      'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos e regras. Tente novamente.',
     );
     this.carregando.set(false);
   }

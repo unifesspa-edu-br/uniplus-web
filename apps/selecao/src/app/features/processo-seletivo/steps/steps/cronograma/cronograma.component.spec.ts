@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { BancaRequeridaDaFase, ProdutoDaFase } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './cronograma.component';
 
 const BASE = 'http://localhost:5000';
@@ -136,6 +137,7 @@ describe('CronogramaStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },

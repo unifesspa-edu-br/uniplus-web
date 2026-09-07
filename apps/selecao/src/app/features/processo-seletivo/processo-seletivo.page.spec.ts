@@ -15,6 +15,7 @@ import {
   PrecedenciasFaseApi,
   TiposBancaApi,
   TiposEtapaApi,
+  CategoriasDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
@@ -76,6 +77,7 @@ const PAGE_PROVIDERS = [
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
   { provide: PrecedenciasFaseApi, useValue: catalogoVazioStub },
   { provide: TiposBancaApi, useValue: catalogoVazioStub },
+  { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },

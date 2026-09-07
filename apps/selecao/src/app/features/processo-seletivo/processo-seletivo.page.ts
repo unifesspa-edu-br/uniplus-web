@@ -31,12 +31,13 @@ import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-proc
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
 import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
 import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
+import { CatalogosDoCronogramaService } from './steps/steps/cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
+import { FaseStepComponent } from './steps/steps/fase/fase.component';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
 import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
-import { DocumentosStepComponent } from './steps/steps/documentos/documentos.component';
 import { PolosStepComponent } from './steps/steps/polos/polos.component';
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
@@ -72,16 +73,16 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     PagamentoStepComponent,
     VagasStepComponent,
     CronogramaStepComponent,
+    FaseStepComponent,
     FormulaStepComponent,
     BonusStepComponent,
     DesempateStepComponent,
     EliminacaoStepComponent,
-    DocumentosStepComponent,
     PolosStepComponent,
     AtendimentoStepComponent,
     RevisaoStepComponent,
   ],
-  providers: [ProcessoSeletivoStore, CadastroInicialService],
+  providers: [ProcessoSeletivoStore, CadastroInicialService, CatalogosDoCronogramaService],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

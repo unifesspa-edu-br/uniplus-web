@@ -82,7 +82,7 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   imports: [ReactiveFormsModule],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [CatalogosDoCronogramaService, provePassoDoWizard(CronogramaStepComponent)],
+  providers: [provePassoDoWizard(CronogramaStepComponent)],
 })
 export class CronogramaStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
