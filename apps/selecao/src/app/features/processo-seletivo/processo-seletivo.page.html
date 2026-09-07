@@ -36,10 +36,13 @@
   type="button"
   [attr.aria-expanded]="stepsOverlayOpen()"
   aria-controls="steps-overlay"
-  aria-label="Abrir lista de etapas"
   [style.--step-progress]="store.progress() + '%'"
   (click)="openStepsOverlay()"
 >
+  <!-- A ação nomeia o botão por texto dentro dele, e não por `aria-label`: o
+       rótulo que reescreve o conteúdo visível deixa quem usa comando de voz
+       dizendo o que lê na tela sem ativar nada (WCAG 2.1, SC 2.5.3). -->
+  <span class="sr-only">Abrir lista de etapas.</span>
   <div class="step-bar__info">
     <span class="step-bar__heading">Cadastro do processo seletivo</span
     ><span class="step-bar__meta">{{ store.currentMeta() }}</span>

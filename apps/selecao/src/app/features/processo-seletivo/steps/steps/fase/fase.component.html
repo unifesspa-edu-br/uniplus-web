@@ -72,8 +72,8 @@
       </div>
 
       <!-- Publicações -->
-      <fieldset class="step-card">
-        <legend class="form-section__title">O que esta fase publica</legend>
+      <div class="step-card">
+        <h2 class="form-section__title">O que esta fase publica</h2>
         <p class="field__hint" id="fase-produtos-ajuda">
           Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo
           marca como resultado: é ele que abre o ciclo recursal (preliminar) e o encerra
@@ -149,7 +149,7 @@
         @if (erroDoCampo('produtos'); as erro) {
           <p class="field__erro" id="fase-produtos-erro" role="alert">{{ erro }}</p>
         }
-      </fieldset>
+      </div>
 
       <!-- Conclusão do ciclo recursal e parecer -->
       <div class="step-card">
@@ -218,8 +218,8 @@
       </div>
 
       <!-- Regra de recurso -->
-      <fieldset class="step-card">
-        <legend class="form-section__title">Recurso contra o que esta fase publica</legend>
+      <div class="step-card">
+        <h2 class="form-section__title">Recurso contra o que esta fase publica</h2>
 
         <label class="check" for="fase-admite-recurso">
           <input
@@ -411,11 +411,11 @@
             }
           </div>
         }
-      </fieldset>
+      </div>
 
       <!-- Bancas requeridas -->
-      <fieldset class="step-card">
-        <legend class="form-section__title">Bancas que esta fase requer</legend>
+      <div class="step-card">
+        <h2 class="form-section__title">Bancas que esta fase requer</h2>
         <p class="field__hint" id="fase-bancas-ajuda">
           O recorte de competência diz que categorias de documento cada banca julga. Com uma banca
           de cada tipo ele é dispensável — a banca julga tudo o que a fase exige. Com duas do mesmo
@@ -479,7 +479,7 @@
                 class="btn btn--tertiary"
                 type="button"
                 [disabled]="!store.aceitaEdicao()"
-                [attr.aria-label]="'Remover a banca ' + ($index + 1) + ' desta fase'"
+                [attr.aria-label]="'Remover banca ' + ($index + 1) + ' desta fase'"
                 (click)="removerBanca($index)"
               >
                 Remover banca
@@ -504,11 +504,11 @@
         @if (erroDoCampo('bancasRequeridas'); as erro) {
           <p class="field__erro" id="fase-bancas-erro" role="alert">{{ erro }}</p>
         }
-      </fieldset>
+      </div>
 
       <!-- Exigências documentais -->
-      <fieldset class="step-card">
-        <legend class="form-section__title">Documentos exigidos nesta fase</legend>
+      <div class="step-card">
+        <h2 class="form-section__title">Documentos exigidos nesta fase</h2>
         <p class="field__hint">
           Marque o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades que
           devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
@@ -519,21 +519,27 @@
             <h3 class="docs-group__label">{{ grupo.label }}</h3>
             @for (doc of grupo.docs; track doc.id) {
               <div class="doc-item">
+                <!-- A caixa fica fora do bloco de texto, e o nome e a descrição dentro
+                     dele: é `doc-item__info` que traz o `min-width: 0` sem o qual a
+                     descrição não quebra e alarga a linha inteira a 320 px. -->
                 <div class="doc-item__row">
-                  <label class="check" [attr.for]="'fase-doc-' + doc.id">
-                    <input
-                      type="checkbox"
-                      [attr.id]="'fase-doc-' + doc.id"
-                      [checked]="exigidoNestaFase(doc.id)"
-                      [disabled]="!store.aceitaEdicao() || valeEmTodasAsFases(doc.id)"
-                      [attr.aria-describedby]="'fase-doc-desc-' + doc.id"
-                      (change)="alternarExigencia(doc.id, $any($event.target).checked)"
-                    />
-                    {{ doc.nome }}
-                  </label>
-                  <span class="doc-item__desc" [attr.id]="'fase-doc-desc-' + doc.id">
-                    {{ doc.desc }}
-                  </span>
+                  <input
+                    class="doc-checkbox"
+                    type="checkbox"
+                    [attr.id]="'fase-doc-' + doc.id"
+                    [checked]="exigidoNestaFase(doc.id)"
+                    [disabled]="!store.aceitaEdicao() || valeEmTodasAsFases(doc.id)"
+                    [attr.aria-describedby]="'fase-doc-desc-' + doc.id"
+                    (change)="alternarExigencia(doc.id, $any($event.target).checked)"
+                  />
+                  <div class="doc-item__info">
+                    <label class="doc-item__name" [attr.for]="'fase-doc-' + doc.id">{{
+                      doc.nome
+                    }}</label
+                    ><span class="doc-item__desc" [attr.id]="'fase-doc-desc-' + doc.id">{{
+                      doc.desc
+                    }}</span>
+                  </div>
                 </div>
 
                 @if (valeEmTodasAsFases(doc.id)) {
@@ -588,7 +594,7 @@
             }
           </div>
         }
-      </fieldset>
+      </div>
     </form>
   }
 }
