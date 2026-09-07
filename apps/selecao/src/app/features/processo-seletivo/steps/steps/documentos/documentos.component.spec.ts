@@ -116,4 +116,36 @@ describe('DocumentosStepComponent', () => {
 
     expect(componente.validate().valid).toBe(true);
   });
+
+  it('aceita documento incluído com todasEtapas ligado (padrão) e cronograma definido', () => {
+    store.patchObjectSection('vagas', { ofertas: [ofertaComModalidade('AC')] });
+    store.patchObjectSection('cronograma', { fases: [faseCom('INSCRICAO', 1)] });
+    // todasEtapas e etapas ficam no estado inicial (true / []) — só marca o documento.
+    componente.patch(DOC_ID, { included: true, modalidades: ['AC'], modalidadesRecortadas: true });
+
+    expect(componente.validate().valid).toBe(true);
+  });
+
+  it('etapasEfetivas acompanha fase nova do cronograma enquanto todasEtapas está ligado', () => {
+    store.patchObjectSection('cronograma', { fases: [faseCom('INSCRICAO', 1)] });
+    expect(componente.etapasEfetivas(DOC_ID)).toEqual(['INSCRICAO']);
+
+    store.patchObjectSection('cronograma', {
+      fases: [faseCom('INSCRICAO', 1), faseCom('HOMOLOGACAO', 2)],
+    });
+    expect(componente.etapasEfetivas(DOC_ID)).toEqual(['INSCRICAO', 'HOMOLOGACAO']);
+  });
+
+  it('toggleTodasEtapas(false) preserva o recorte manual anterior em vez de zerá-lo', () => {
+    store.patchObjectSection('cronograma', {
+      fases: [faseCom('INSCRICAO', 1), faseCom('HOMOLOGACAO', 2)],
+    });
+    componente.toggleTodasEtapas(DOC_ID, false);
+    componente.toggleEtapa(DOC_ID, 'INSCRICAO', true);
+
+    componente.toggleTodasEtapas(DOC_ID, true);
+    componente.toggleTodasEtapas(DOC_ID, false);
+
+    expect(store.draft().documentos[DOC_ID].etapas).toEqual(['INSCRICAO']);
+  });
 });
