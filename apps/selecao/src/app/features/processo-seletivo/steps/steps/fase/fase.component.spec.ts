@@ -139,6 +139,7 @@ describe('FaseStepComponent', () => {
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
+  let nativo: HTMLElement;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -160,6 +161,7 @@ describe('FaseStepComponent', () => {
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     detectar = () => fixture.detectChanges();
+    nativo = fixture.nativeElement as HTMLElement;
 
     detectar();
 
@@ -235,6 +237,74 @@ describe('FaseStepComponent', () => {
     expect(store.draft().cronograma.fases[0].produtos).toEqual([
       { atoCodigo: 'COMUNICADO', papel: null },
     ]);
+  });
+
+  /** O seletor, como o operador o vê — não como o modelo o guarda. */
+  function selecionado(id: string): string {
+    const campo = nativo.querySelector<HTMLSelectElement>(`#${id}`);
+    if (campo === null) throw new Error(`Seletor ${id} não está na tela.`);
+    return campo.value;
+  }
+
+  /**
+   * O que a tela mostra é o que o operador acredita ter declarado. Um seletor em
+   * branco sobre uma fase que publica faria ele gravar por cima do que existe
+   * sem perceber — e a gravação substitui a coleção inteira.
+   */
+  describe('o que os seletores exibem', () => {
+    beforeEach(() => {
+      comCronograma(
+        fase({
+          produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+          bancasRequeridas: [
+            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
+          ],
+          regraRecurso: null,
+        }),
+      );
+    });
+
+    it('mostra a publicação que a fase declara, não o rótulo de escolha', () => {
+      expect(selecionado('fase-produto-ato-0')).toBe('RESULTADO_FINAL');
+    });
+
+    it('mostra o papel que a publicação declara', () => {
+      expect(selecionado('fase-produto-papel-0')).toBe('DEFINITIVO');
+    });
+
+    it('mostra a banca que a fase requer', () => {
+      expect(selecionado('fase-banca-0')).toBe(ID_BANCA_HETERO);
+    });
+
+    it('mostra a regra de recurso escolhida', async () => {
+      comCronograma(
+        fase({
+          produtos: [
+            { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
+            { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+          ],
+          regraRecurso: {
+            regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+            regraVersao: 'v1',
+            prazoValor: '2',
+            prazoUnidade: 'diasUteis',
+            atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+            suspensividadePrimeiraInstanciaValor: '',
+            suspensividadePrimeiraInstanciaUnidade: '',
+            suspensividadeSegundaInstanciaValor: '',
+            suspensividadeSegundaInstanciaUnidade: '',
+          },
+        }),
+      );
+
+      // O bloco da regra de recurso só entra no DOM depois de `admiteRecurso`
+      // ligar, e o valor do seletor é escrito no microtask seguinte.
+      await proximoPasso();
+      detectar();
+
+      expect(selecionado('fase-regra')).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
+      expect(selecionado('fase-ancora')).toBe('RESULTADO_PRELIMINAR');
+    });
   });
 
   describe('âncora do prazo de recurso', () => {
@@ -466,6 +536,24 @@ describe('FaseStepComponent', () => {
      * do zero apagaria a exigência das outras fases por causa de uma decisão
      * tomada numa só.
      */
+    /**
+     * O rascunho nasce com `todasEtapas: true` e `included: false` em todo
+     * documento — é o padrão de "acompanha o edital", não uma exigência. Travar
+     * a caixa por `todasEtapas` sozinho deixava o processo novo com quinze
+     * documentos desmarcados, desabilitados e anunciando "exigido em todas as
+     * fases": o operador lia o oposto do estado real e não tinha como marcar
+     * nenhum.
+     */
+    it('deixa marcar o documento que o processo novo ainda não exige', () => {
+      comCronograma(fase({}));
+
+      const caixa = nativo.querySelector<HTMLInputElement>('#fase-doc-cpf');
+
+      expect(caixa?.disabled).toBe(false);
+      expect(caixa?.checked).toBe(false);
+      expect(nativo.textContent).not.toContain('Exigido em todas as fases do edital.');
+    });
+
     it('recorta por fase partindo das fases que o edital tem hoje', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 

@@ -8,7 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
@@ -71,7 +71,7 @@ interface FaseNoSeletor {
  */
 @Component({
   selector: 'sel-step-fase',
-  imports: [ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FaseStepComponent)],
@@ -462,6 +462,20 @@ export class FaseStepComponent {
 
   configuracaoDoDocumento(id: string): DocumentoConfig {
     return this.store.draft().documentos[id];
+  }
+
+  /**
+   * O documento acompanha todas as fases do edital.
+   *
+   * `todasEtapas` sozinho não basta: o rascunho nasce com ele ligado e
+   * `included` desligado, que é o padrão de "acompanha o edital quando for
+   * incluído", não uma exigência. Ler só o sinalizador travava a caixa de todo
+   * documento de um processo novo, sob o texto de que ele já era exigido em
+   * toda parte — o oposto do estado real, e sem caminho para marcar nenhum.
+   */
+  valeEmTodasAsFases(id: string): boolean {
+    const config = this.configuracaoDoDocumento(id);
+    return config.included && config.todasEtapas;
   }
 
   /**
