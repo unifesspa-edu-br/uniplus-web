@@ -568,6 +568,36 @@ describe('FaseStepComponent', () => {
       expect((await gravacao).valid).toBe(true);
     });
 
+    /**
+     * As etapas pontuadas são irmãs das fases dentro da mesma seção do
+     * rascunho, e não têm tela nesta superfície. Escrever a seção inteira em
+     * vez de remendá-la as apagaria — sem erro, sem aviso, e só a gravação do
+     * cronograma perceberia, recusando um processo que tinha etapa.
+     */
+    it('não apaga as etapas pontuadas ao declarar algo na fase', () => {
+      store.patchObjectSection('cronograma', {
+        fases: [fase({})],
+        etapas: [
+          {
+            id: '01960000-0000-7000-0000-0000000000ee',
+            nome: 'Prova objetiva',
+            carater: 'classificatoria' as const,
+            tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000000e1',
+            peso: '1',
+            notaMinima: '',
+            ordem: 1,
+          },
+        ],
+      });
+      detectar();
+
+      componente.formulario()?.controls.emiteParecerIndividual.setValue(true);
+      detectar();
+
+      expect(store.draft().cronograma.etapas).toHaveLength(1);
+      expect(store.draft().cronograma.etapas[0].nome).toBe('Prova objetiva');
+    });
+
     it('não envia nada quando a conferência da fase acusa', async () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       comCronograma(
