@@ -151,7 +151,7 @@ export interface FaseDoCronograma {
   /** Código canônico da fase que conclui o ciclo recursal desta, quando não é ela mesma. */
   readonly faseConcluinteCodigo: string | null;
   readonly emiteParecerIndividual: boolean;
-  readonly tiposBancaIds: readonly string[];
+  readonly bancasRequeridas: readonly BancaRequeridaDaFase[];
   readonly regraRecurso: RecursoDaFase | null;
   /** `null` numa fase acrescentada agora: quem a descreve é o catálogo. */
   readonly congelados: AtributosCongeladosDaFase | null;
@@ -172,6 +172,19 @@ export interface FaseDoCronograma {
 export interface ProdutoDaFase {
   readonly atoCodigo: string;
   readonly papel: string | null;
+}
+
+/**
+ * Uma banca que a fase requer, e as categorias de documento que ela julga.
+ *
+ * O recorte de competência é o que distingue duas bancas do mesmo tipo na mesma
+ * fase — sem ele, quem avalia o quê fica indeterminado, e é por isso que o
+ * domínio o exige justamente quando o tipo se repete. Recorte vazio significa
+ * "julga tudo o que a fase exige", e é o estado normal da banca única.
+ */
+export interface BancaRequeridaDaFase {
+  readonly tipoBancaId: string;
+  readonly categoriasDocumentoIds: readonly string[];
 }
 
 /** Papel do produto de cujo instante de publicação o prazo de recurso conta. */
@@ -214,6 +227,17 @@ export interface RecursoDaFase {
   readonly regraVersao: string;
   readonly prazoValor: string;
   readonly prazoUnidade: UnidadePrazo | '';
+  /**
+   * Código do tipo de ato cujo produto ancora o prazo — o vocabulário da
+   * escrita. A leitura devolve a identidade da publicação (`produtoAncoraId`),
+   * e a hidratação a cruza contra os produtos da própria fase para reconstruir
+   * este campo. Guardar aqui o identificador em vez do código faria a gravação
+   * enviar o que o comando não recebe.
+   *
+   * `''` quando o cruzamento não achou o produto: é ausência declarada, que a
+   * conferência cobra, e não um código inventado que reancoraria o prazo em
+   * outra publicação.
+   */
   readonly atoAncoraCodigo: string;
   readonly suspensividadePrimeiraInstanciaValor: string;
   readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';

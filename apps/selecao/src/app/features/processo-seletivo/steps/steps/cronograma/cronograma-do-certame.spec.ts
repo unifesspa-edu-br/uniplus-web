@@ -11,7 +11,9 @@ import {
   componeNota,
   descreverFase,
   exigenciasDe,
+  problemaDaAncora,
   problemasDoCronograma,
+  produtosPreliminares,
   publicaResultadoDefinitivo,
   renumerar,
   trocaFechaCiclo,
@@ -45,7 +47,7 @@ function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,
-    tiposBancaIds: [],
+    bancasRequeridas: [],
     regraRecurso: null,
     congelados: null,
     ...parcial,
@@ -78,6 +80,7 @@ function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
 
 const PRELIMINAR: ProdutoDaFase = { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' };
 const DEFINITIVO: ProdutoDaFase = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' };
+const SEM_PAPEL: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 
 describe('exigências da fase', () => {
@@ -346,6 +349,65 @@ describe('conversão do campo para número', () => {
   });
 });
 
+describe('âncora do prazo de recurso', () => {
+  const recurso = (atoAncoraCodigo: string): FaseDoCronograma['regraRecurso'] => ({
+    regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+    regraVersao: 'v1',
+    prazoValor: '2',
+    prazoUnidade: 'diasUteis',
+    atoAncoraCodigo,
+    suspensividadePrimeiraInstanciaValor: '',
+    suspensividadePrimeiraInstanciaUnidade: '',
+    suspensividadeSegundaInstanciaValor: '',
+    suspensividadeSegundaInstanciaUnidade: '',
+  });
+
+  it('fase sem regra de recurso não tem âncora a conferir', () => {
+    expect(problemaDaAncora(fase({ produtos: [PRELIMINAR] }))).toBeNull();
+  });
+
+  it('âncora que é produto preliminar da própria fase é coerente', () => {
+    const declarada = fase({
+      produtos: [PRELIMINAR, DEFINITIVO],
+      regraRecurso: recurso('RESULTADO_PRELIMINAR'),
+    });
+
+    expect(problemaDaAncora(declarada)).toBeNull();
+  });
+
+  /**
+   * É o que a hidratação produz quando o cruzamento não acha a publicação
+   * ancorada: sem acusar, a gravação seguinte sairia com a âncora em branco.
+   */
+  it('acusa a âncora vazia numa fase que declara recurso', () => {
+    const declarada = fase({ produtos: [PRELIMINAR], regraRecurso: recurso('') });
+
+    expect(problemaDaAncora(declarada)).toBe('ausente');
+  });
+
+  it('acusa a âncora que a fase publica sem papel preliminar', () => {
+    const declarada = fase({
+      produtos: [DEFINITIVO],
+      regraRecurso: recurso('RESULTADO_FINAL'),
+    });
+
+    expect(problemaDaAncora(declarada)).toBe('naoPreliminar');
+  });
+
+  it('acusa a âncora que a fase sequer publica', () => {
+    const declarada = fase({
+      produtos: [PRELIMINAR],
+      regraRecurso: recurso('RESULTADO_DE_OUTRA_FASE'),
+    });
+
+    expect(problemaDaAncora(declarada)).toBe('naoPreliminar');
+  });
+
+  it('oferece à escolha só os produtos com papel preliminar', () => {
+    expect(produtosPreliminares([PRELIMINAR, DEFINITIVO, SEM_PAPEL])).toEqual([PRELIMINAR]);
+  });
+});
+
 describe('o que impede gravar o cronograma', () => {
   const AVALIACAO = faseCanonica({
     id: 'id-avaliacao',
@@ -542,5 +604,40 @@ describe('o que impede gravar o cronograma', () => {
 
   it('cronograma coerente não relata problema', () => {
     expect(problemasDoCronograma([faseDeAvaliacao], [etapaValida], catalogo, [])).toEqual([]);
+  });
+
+  /**
+   * A âncora não é editada neste passo, mas atravessa o formulário até a
+   * gravação. Sem cobrá-la aqui, mexer numa data enviaria o cronograma inteiro
+   * para ser recusado por um campo que a tela nem mostra.
+   */
+  it('cobra a publicação que ancora o prazo antes de deixar gravar', () => {
+    const semAncora = fase({
+      faseCanonicaId: RESULTADO.id,
+      codigo: 'RESULTADO_PRELIMINAR',
+      produtos: [PRELIMINAR],
+      regraRecurso: {
+        regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+        regraVersao: 'v1',
+        prazoValor: '2',
+        prazoUnidade: 'diasUteis',
+        atoAncoraCodigo: '',
+        suspensividadePrimeiraInstanciaValor: '',
+        suspensividadePrimeiraInstanciaUnidade: '',
+        suspensividadeSegundaInstanciaValor: '',
+        suspensividadeSegundaInstanciaUnidade: '',
+      },
+    });
+
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao, semAncora],
+      [etapaValida],
+      catalogo,
+      [],
+    );
+
+    expect(problemas).toContain(
+      'A fase Resultado preliminar admite recurso e está sem a publicação que ancora o prazo. Escolha-a em Configuração por fase.',
+    );
   });
 });

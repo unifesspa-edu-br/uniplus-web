@@ -318,7 +318,7 @@ describe('ProcessosSeletivosApi', () => {
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: [],
+        bancasRequeridas: [],
         regraRecurso: null,
       },
       {
@@ -329,7 +329,12 @@ describe('ProcessosSeletivosApi', () => {
         produtos: [{ atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' }],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: ['01960000-0000-7000-0000-0000000006b1'],
+        bancasRequeridas: [
+          {
+            tipoBancaId: '01960000-0000-7000-0000-0000000006b1',
+            categoriasDocumentoIds: ['01960000-0000-7000-0000-0000000006c1'],
+          },
+        ],
         regraRecurso: {
           regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
           regraVersao: 'v1',
@@ -374,7 +379,7 @@ describe('ProcessosSeletivosApi', () => {
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: [],
+        bancasRequeridas: [],
         regraRecurso: null,
       },
     ];
@@ -408,7 +413,7 @@ describe('ProcessosSeletivosApi', () => {
         produtos: [{ atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' }],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: [],
+        bancasRequeridas: [],
         regraRecurso: {
           regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
           regraVersao: 'v1',

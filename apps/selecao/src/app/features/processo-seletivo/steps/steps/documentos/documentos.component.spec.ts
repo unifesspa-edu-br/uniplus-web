@@ -32,7 +32,7 @@ function faseCom(codigo: string, ordem: number): FaseDoCronograma {
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,
-    tiposBancaIds: [],
+    bancasRequeridas: [],
     regraRecurso: null,
     congelados: null,
   };

@@ -5169,7 +5169,6 @@ export interface components {
             /** Format: double */
             readonly prazoValor: number | string;
             readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
-            readonly atoAncoraCodigo: string;
             /** Format: double */
             readonly suspensividadePrimeiraInstanciaValor: null | number | string;
             readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
@@ -5212,6 +5211,12 @@ export interface components {
             /** Format: uuid */
             readonly tipoBancaOrigemId: string;
             readonly codigo: string;
+            readonly recorteDeCompetencia: readonly components["schemas"]["CategoriaJulgadaDto"][];
+        };
+        readonly BancaRequeridaInput: {
+            /** Format: uuid */
+            readonly tipoBancaId: string;
+            readonly categoriasDocumentoIds: readonly string[];
         };
         readonly BaseLegalDto: {
             /** Format: uuid */
@@ -5235,6 +5240,13 @@ export interface components {
         };
         /** @enum {string} */
         readonly CaraterEtapa: CaraterEtapa;
+        readonly CategoriaJulgadaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly categoriaDocumentoOrigemId: string;
+            readonly codigo: string;
+        };
         /** @enum {string} */
         readonly CategoriaObrigatoriedade: CategoriaObrigatoriedade;
         readonly CondicaoDerivacaoDto: {
@@ -5624,7 +5636,7 @@ export interface components {
             readonly produtos: readonly components["schemas"]["ProdutoDaFaseInput"][];
             readonly faseConcluinteCodigo: null | string;
             readonly emiteParecerIndividual: boolean;
-            readonly tiposBancaIds: readonly string[];
+            readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaInput"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
         };
         readonly FatoColetadoDto: {
@@ -6050,6 +6062,8 @@ export interface components {
         readonly RegraRecursoFaseDto: {
             /** Format: uuid */
             readonly id: string;
+            /** Format: uuid */
+            readonly produtoAncoraId: string;
             readonly regra: components["schemas"]["ReferenciaRegraDto"];
             readonly args: components["schemas"]["ArgsRegraPrazoRecursoDto"];
         };

@@ -4,6 +4,7 @@ import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
 
 import type {
   AtributosCongeladosDaFase,
+  BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
   ProdutoDaFase,
@@ -38,7 +39,11 @@ export interface FaseForm {
   readonly faseConcluinteCodigo: FormControl<string | null>;
   /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
   readonly emiteParecerIndividual: FormControl<boolean>;
-  readonly tiposBancaIds: FormControl<readonly string[]>;
+  /**
+   * Também não editado aqui, e carregado pela mesma razão de `produtos`: quem
+   * declara a banca e o recorte que ela julga é a superfície da fase.
+   */
+  readonly bancasRequeridas: FormControl<readonly BancaRequeridaDaFase[]>;
   /**
    * Não é editado neste passo, e viaja no formulário justamente por isso: a
    * gravação substitui o cronograma inteiro, e deixar a regra de recurso fora
@@ -88,7 +93,7 @@ export function grupoDaFase(fase: FaseDoCronograma): FormGroup<FaseForm> {
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
     faseConcluinteCodigo: controle<string | null>(fase.faseConcluinteCodigo),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
-    tiposBancaIds: controle<readonly string[]>(fase.tiposBancaIds),
+    bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
     regraRecurso: controle<RecursoDaFase | null>(fase.regraRecurso),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
   });
@@ -118,7 +123,7 @@ export function faseDoFormulario(grupo: FormGroup<FaseForm>): FaseDoCronograma {
     produtos: valor.produtos,
     faseConcluinteCodigo: valor.faseConcluinteCodigo,
     emiteParecerIndividual: valor.emiteParecerIndividual,
-    tiposBancaIds: valor.tiposBancaIds,
+    bancasRequeridas: valor.bancasRequeridas,
     regraRecurso: valor.regraRecurso,
     congelados: valor.congelados,
   };

@@ -55,6 +55,33 @@ export function publicaResultadoDefinitivo(produtos: readonly ProdutoDaFase[]): 
   return produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO);
 }
 
+/** Os produtos preliminares da fase — os únicos que podem ancorar o prazo. */
+export function produtosPreliminares(
+  produtos: readonly ProdutoDaFase[],
+): readonly ProdutoDaFase[] {
+  return produtos.filter((produto) => produto.papel === PAPEL_PRELIMINAR);
+}
+
+/**
+ * O que há de errado com a âncora do prazo de recurso da fase, ou `null`.
+ *
+ * Existe porque o servidor recusa os dois estados, e a recusa chega depois de o
+ * operador ter perdido a gravação inteira. A âncora vazia é o que a hidratação
+ * produz quando o cruzamento com os produtos não acha a publicação; a âncora
+ * que não é preliminar da própria fase é o que sobra quando o produto muda de
+ * papel — ou sai — depois de a regra ter sido declarada.
+ */
+export function problemaDaAncora(fase: FaseDoCronograma): 'ausente' | 'naoPreliminar' | null {
+  const regra = fase.regraRecurso;
+  if (regra === null) return null;
+  if (regra.atoAncoraCodigo === '') return 'ausente';
+
+  const preliminares = produtosPreliminares(fase.produtos);
+  return preliminares.some((produto) => produto.atoCodigo === regra.atoAncoraCodigo)
+    ? null
+    : 'naoPreliminar';
+}
+
 /**
  * A fase como o processo a conhece: rótulo, atributos e o que ela exige.
  *
@@ -302,6 +329,20 @@ export function problemasDoCronograma(
       Date.parse(fase.fim) < Date.parse(fase.inicio)
     ) {
       problemas.push(`Na fase ${nome}, o fim não pode vir antes do início.`);
+    }
+
+    // A âncora não é editada aqui, mas atravessa este passo até a gravação: sem
+    // conferi-la, mudar uma data enviaria uma âncora que o servidor recusa, e a
+    // recusa chegaria depois de o cronograma inteiro ter sido perdido.
+    const ancora = problemaDaAncora(fase);
+    if (ancora === 'ausente') {
+      problemas.push(
+        `A fase ${nome} admite recurso e está sem a publicação que ancora o prazo. Escolha-a em Configuração por fase.`,
+      );
+    } else if (ancora === 'naoPreliminar') {
+      problemas.push(
+        `Na fase ${nome}, o prazo de recurso está ancorado numa publicação que ela não declara como resultado preliminar. Corrija em Configuração por fase.`,
+      );
     }
   }
 

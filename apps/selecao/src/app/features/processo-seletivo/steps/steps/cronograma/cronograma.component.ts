@@ -313,37 +313,6 @@ export class CronogramaStepComponent {
     }));
   }
 
-  /**
-   * Bancas que o quadro da fase mostra: as do catálogo, mais as que ela já
-   * exige e saíram dele.
-   *
-   * A banca congelada continua fazendo parte do edital. Fora do quadro, ela
-   * seguiria sendo enviada a cada gravação sem que o operador a visse — nem
-   * pudesse tirá-la.
-   */
-  bancasDaFase(grupo: FormGroup<FaseForm>): readonly { id: string; nome: string }[] {
-    const doCatalogo = this.catalogos.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
-    const conhecidas = new Set(doCatalogo.map((banca) => banca.id));
-
-    const codigoCongelado = new Map(
-      (grupo.controls.congelados.value?.bancas ?? []).map((banca) => [banca.id, banca.codigo]),
-    );
-    const congeladas = grupo.controls.tiposBancaIds.value
-      .filter((id) => !conhecidas.has(id))
-      .map((id) => {
-        const codigo = codigoCongelado.get(id);
-        return {
-          id,
-          nome:
-            codigo === undefined
-              ? 'Banca fora do catálogo atual'
-              : `${codigo} (fora do catálogo atual)`,
-        };
-      });
-
-    return [...doCatalogo, ...congeladas];
-  }
-
   acrescentarFase(): void {
     const escolhida = this.formulario.controls.faseAAcrescentar.value;
     if (escolhida === '') return;
@@ -358,7 +327,7 @@ export class CronogramaStepComponent {
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: [],
+        bancasRequeridas: [],
         regraRecurso: null,
         congelados: null,
       }),
@@ -413,22 +382,6 @@ export class CronogramaStepComponent {
     this.fases.insert(destino, atual, { emitEvent: false });
     this.renumerarFases();
     this.avisoDeReordenacao.set(null);
-  }
-
-  alternarBanca(grupo: FormGroup<FaseForm>, tipoBancaId: string, evento: Event): void {
-    const alvo = evento.target;
-    const marcada = alvo instanceof HTMLInputElement && alvo.checked;
-
-    const bancas = new Set(grupo.controls.tiposBancaIds.value);
-    if (marcada) bancas.add(tipoBancaId);
-    else bancas.delete(tipoBancaId);
-
-    grupo.controls.tiposBancaIds.setValue([...bancas]);
-  }
-
-  bancaMarcada(grupo: FormGroup<FaseForm>, tipoBancaId: string): boolean {
-    this.versaoDoFormulario();
-    return grupo.controls.tiposBancaIds.value.includes(tipoBancaId);
   }
 
   acrescentarEtapa(): void {
