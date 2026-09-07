@@ -8152,10 +8152,6 @@ export interface components {
             readonly permiteComplementacao: boolean;
             readonly baseLegal?: null | string;
             /** @default false */
-            readonly produzResultado: boolean;
-            /** @default false */
-            readonly resultadoDefinitivo: boolean;
-            /** @default false */
             readonly coletaInscricao: boolean;
             /** @default false */
             readonly coletaSolicitacaoIsencao: boolean;
@@ -8409,10 +8405,6 @@ export interface components {
             readonly permiteComplementacao: boolean;
             readonly baseLegal?: null | string;
             /** @default false */
-            readonly produzResultado: boolean;
-            /** @default false */
-            readonly resultadoDefinitivo: boolean;
-            /** @default false */
             readonly coletaInscricao: boolean;
             /** @default false */
             readonly coletaSolicitacaoIsencao: boolean;
@@ -8621,8 +8613,6 @@ export interface components {
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;
             readonly baseLegal: null | string;
-            readonly produzResultado: boolean;
-            readonly resultadoDefinitivo: boolean;
             readonly coletaInscricao: boolean;
             readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData: string;

@@ -9757,14 +9757,6 @@
           "baseLegal": {
             "type": ["null", "string"]
           },
-          "produzResultado": {
-            "type": "boolean",
-            "default": false
-          },
-          "resultadoDefinitivo": {
-            "type": "boolean",
-            "default": false
-          },
           "coletaInscricao": {
             "type": "boolean",
             "default": false
@@ -10507,14 +10499,6 @@
           "baseLegal": {
             "type": ["null", "string"]
           },
-          "produzResultado": {
-            "type": "boolean",
-            "default": false
-          },
-          "resultadoDefinitivo": {
-            "type": "boolean",
-            "default": false
-          },
           "coletaInscricao": {
             "type": "boolean",
             "default": false
@@ -11167,8 +11151,6 @@
           "agrupaEtapas",
           "permiteComplementacao",
           "baseLegal",
-          "produzResultado",
-          "resultadoDefinitivo",
           "coletaInscricao",
           "coletaSolicitacaoIsencao",
           "origemData",
@@ -11200,12 +11182,6 @@
           },
           "baseLegal": {
             "type": ["null", "string"]
-          },
-          "produzResultado": {
-            "type": "boolean"
-          },
-          "resultadoDefinitivo": {
-            "type": "boolean"
           },
           "coletaInscricao": {
             "type": "boolean"
