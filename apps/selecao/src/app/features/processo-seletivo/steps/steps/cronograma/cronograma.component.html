@@ -138,9 +138,10 @@
           } @else {
             <p class="field__hint">
               Responsável: {{ item.donoTipico }}.
-              @if (item.exigencias.exigeAtoProduzido) {
-                Produz resultado
-                {{ item.resultadoDefinitivo ? 'definitivo' : 'passível de recurso' }}.
+              @if (item.exigencias.admiteRecurso) {
+                Publica resultado preliminar, do qual cabe recurso.
+              } @else if (item.publicaResultadoDefinitivo) {
+                Publica resultado definitivo.
               }
               @if (item.coletaInscricao) {
                 Coleta inscrições.
@@ -180,21 +181,17 @@
                 </p>
               }
 
-              @if (item.exigencias.exigeAtoProduzido) {
+              @if (item.exigencias.publicaProduto) {
+                @let produtos = produtosDaFase(item.grupo);
                 <div class="form-field form-grid__full">
-                  <label class="label" [attr.for]="'cr-ato-' + item.indice">
-                    Ato que publica o resultado
-                  </label>
-                  <select
-                    class="input"
-                    [attr.id]="'cr-ato-' + item.indice"
-                    formControlName="atoProduzidoCodigo"
-                  >
-                    <option value="">Selecione o ato…</option>
-                    @for (ato of atosEscolhiveisPara(item.grupo); track ato.codigo) {
-                      <option [value]="ato.codigo">{{ ato.nome }}</option>
+                  <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">
+                    O que esta fase publica
+                  </h3>
+                  <ul class="field__hint" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
+                    @for (produto of produtos; track produto.atoCodigo) {
+                      <li>{{ produto.nome }} — {{ produto.papel }}.</li>
                     }
-                  </select>
+                  </ul>
                 </div>
               }
 

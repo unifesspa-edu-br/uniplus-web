@@ -6,6 +6,7 @@ import type {
   AtributosCongeladosDaFase,
   EtapaPontuada,
   FaseDoCronograma,
+  ProdutoDaFase,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 import { campoDoInstante, instanteDoCampo } from '../../shared/fuso-institucional';
@@ -19,10 +20,6 @@ export type CaraterEscolhido = CaraterEtapa | '';
  * A janela vive aqui como **hora de parede** (`AAAA-MM-DDTHH:mm`), que é o que o
  * campo de data e hora entrega e devolve; virar instante é passo da saída para o
  * rascunho, não do controle.
- *
- * `atoProduzidoCodigo` é `''` quando não há ato, e não `null`: um `<select>` sem
- * escolha tem valor vazio, e deixar `null` no controle faria o Angular procurar
- * uma opção que não existe.
  */
 export interface FaseForm {
   readonly faseCanonicaId: FormControl<string>;
@@ -30,7 +27,17 @@ export interface FaseForm {
   readonly ordem: FormControl<number>;
   readonly inicio: FormControl<string>;
   readonly fim: FormControl<string>;
-  readonly atoProduzidoCodigo: FormControl<string>;
+  /**
+   * O que a fase publica. Como a regra de recurso, não é editado neste passo e
+   * viaja no formulário por isso: a gravação substitui o cronograma inteiro, e
+   * deixá-lo fora daqui apagaria os produtos a cada mudança de data — junto com
+   * o que a fase produz e com a âncora do recurso, que deles derivam.
+   */
+  readonly produtos: FormControl<readonly ProdutoDaFase[]>;
+  /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
+  readonly faseConcluinteCodigo: FormControl<string | null>;
+  /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
+  readonly emiteParecerIndividual: FormControl<boolean>;
   readonly tiposBancaIds: FormControl<readonly string[]>;
   /**
    * Não é editado neste passo, e viaja no formulário justamente por isso: a
@@ -78,7 +85,9 @@ export function grupoDaFase(fase: FaseDoCronograma): FormGroup<FaseForm> {
     ordem: controle(fase.ordem),
     inicio: controle(fase.inicio === null ? '' : campoDoInstante(fase.inicio)),
     fim: controle(fase.fim === null ? '' : campoDoInstante(fase.fim)),
-    atoProduzidoCodigo: controle(fase.atoProduzidoCodigo ?? ''),
+    produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
+    faseConcluinteCodigo: controle<string | null>(fase.faseConcluinteCodigo),
+    emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     tiposBancaIds: controle<readonly string[]>(fase.tiposBancaIds),
     regraRecurso: controle<RecursoDaFase | null>(fase.regraRecurso),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
@@ -106,7 +115,9 @@ export function faseDoFormulario(grupo: FormGroup<FaseForm>): FaseDoCronograma {
     ordem: valor.ordem,
     inicio: valor.inicio === '' ? null : instanteDoCampo(valor.inicio),
     fim: valor.fim === '' ? null : instanteDoCampo(valor.fim),
-    atoProduzidoCodigo: valor.atoProduzidoCodigo === '' ? null : valor.atoProduzidoCodigo,
+    produtos: valor.produtos,
+    faseConcluinteCodigo: valor.faseConcluinteCodigo,
+    emiteParecerIndividual: valor.emiteParecerIndividual,
     tiposBancaIds: valor.tiposBancaIds,
     regraRecurso: valor.regraRecurso,
     congelados: valor.congelados,

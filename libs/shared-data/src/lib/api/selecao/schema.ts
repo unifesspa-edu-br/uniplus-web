@@ -5601,13 +5601,14 @@ export interface components {
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;
             readonly produzResultado: boolean;
-            readonly resultadoDefinitivo: boolean;
             readonly coletaInscricao: boolean;
             /** Format: date-time */
             readonly inicio: null | string;
             /** Format: date-time */
             readonly fim: null | string;
-            readonly atoProduzidoCodigo: null | string;
+            readonly produtos: readonly components["schemas"]["ProdutoDaFaseDto"][];
+            readonly faseConcluinteCodigo: null | string;
+            readonly emiteParecerIndividual: boolean;
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaDto"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseDto"];
         };
@@ -5620,7 +5621,9 @@ export interface components {
             readonly inicio: null | string;
             /** Format: date-time */
             readonly fim: null | string;
-            readonly atoProduzidoCodigo: null | string;
+            readonly produtos: readonly components["schemas"]["ProdutoDaFaseInput"][];
+            readonly faseConcluinteCodigo: null | string;
+            readonly emiteParecerIndividual: boolean;
             readonly tiposBancaIds: readonly string[];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
         };
@@ -5928,6 +5931,16 @@ export interface components {
             readonly status: components["schemas"]["StatusProcesso"];
             /** Format: date-time */
             readonly criadoEm: string;
+        };
+        readonly ProdutoDaFaseDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly atoCodigo: string;
+            readonly papel: null | string;
+        };
+        readonly ProdutoDaFaseInput: {
+            readonly atoCodigo: string;
+            readonly papel: null | string;
         };
         readonly PublicarProcessoSeletivoRequest: {
             readonly numero: null | string;

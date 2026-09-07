@@ -6,9 +6,11 @@ import { decimalDoCampo } from '../../shared/numero-do-campo';
 /**
  * A fase como o comando a recebe.
  *
- * A regra de recurso atravessa inalterada: quem a edita é o passo que a
- * configura, e a gravação do cronograma substitui a coleção inteira — deixá-la
- * de fora aqui apagaria, a cada mudança de data, o recurso já declarado.
+ * Os produtos, a fase concluinte, o parecer individual e a regra de recurso
+ * atravessam inalterados: quem os edita é o passo que os configura, e a
+ * gravação do cronograma substitui a coleção inteira — deixá-los de fora aqui
+ * apagaria, a cada mudança de data, o que a fase declara publicar e o recurso
+ * que dali deriva.
  */
 export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
   return {
@@ -16,7 +18,12 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     faseCanonicaId: fase.faseCanonicaId,
     inicio: fase.inicio,
     fim: fase.fim,
-    atoProduzidoCodigo: fase.atoProduzidoCodigo,
+    produtos: fase.produtos.map((produto) => ({
+      atoCodigo: produto.atoCodigo,
+      papel: produto.papel,
+    })),
+    faseConcluinteCodigo: fase.faseConcluinteCodigo,
+    emiteParecerIndividual: fase.emiteParecerIndividual,
     tiposBancaIds: [...fase.tiposBancaIds],
     regraRecurso:
       fase.regraRecurso === null

@@ -13,10 +13,12 @@ import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 
-import type {
-  EtapaPontuada,
-  FaseDoCronograma,
-  StepValidation,
+import {
+  PAPEL_DEFINITIVO,
+  PAPEL_PRELIMINAR,
+  type EtapaPontuada,
+  type FaseDoCronograma,
+  type StepValidation,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -291,32 +293,24 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Atos que o seletor de uma fase oferece: os vigentes, mais o que ela já
-   * referencia quando a vigência dele encerrou.
+   * O que a fase publica, como a tela o mostra: nome do ato e papel da
+   * publicação. É leitura, não escolha — a declaração dos produtos é de outro
+   * passo, e o que está aqui atravessa a gravação inalterado.
    *
-   * Mesma razão do tipo de etapa inativo: um ato fora de vigência não é escolha
-   * nova, mas descreve o cronograma gravado. Fora da lista, nenhuma opção casa e
-   * o campo aparece vazio — enquanto o código continua lá, sendo enviado e
-   * recusado pelo servidor na gravação seguinte.
+   * O ato cujo rótulo o catálogo não resolve aparece pelo código: ele descreve
+   * o cronograma gravado, e escondê-lo faria a fase parecer publicar menos do
+   * que publica.
    */
-  atosEscolhiveisPara(grupo: FormGroup<FaseForm>): readonly { codigo: string; nome: string }[] {
-    const referenciado = grupo.controls.atoProduzidoCodigo.value;
-    const vigentes = this.catalogos
-      .atosVigentes()
-      .map((ato) => ({ codigo: ato.codigo, nome: ato.nome }));
+  produtosDaFase(
+    grupo: FormGroup<FaseForm>,
+  ): readonly { atoCodigo: string; nome: string; papel: string }[] {
+    const rotulos = this.catalogos.rotuloDoAto();
 
-    if (referenciado === '' || vigentes.some((ato) => ato.codigo === referenciado)) {
-      return vigentes;
-    }
-
-    const rotulo = this.catalogos.rotuloDoAto().get(referenciado);
-    return [
-      ...vigentes,
-      {
-        codigo: referenciado,
-        nome: rotulo === undefined ? 'Ato fora do catálogo atual' : `${rotulo} (fora de vigência)`,
-      },
-    ];
+    return grupo.controls.produtos.value.map((produto) => ({
+      atoCodigo: produto.atoCodigo,
+      nome: rotulos.get(produto.atoCodigo) ?? produto.atoCodigo,
+      papel: rotuloDoPapel(produto.papel),
+    }));
   }
 
   /**
@@ -361,7 +355,9 @@ export class CronogramaStepComponent {
         ordem: this.fases.length + 1,
         inicio: null,
         fim: null,
-        atoProduzidoCodigo: null,
+        produtos: [],
+        faseConcluinteCodigo: null,
+        emiteParecerIndividual: false,
         tiposBancaIds: [],
         regraRecurso: null,
         congelados: null,
@@ -797,4 +793,15 @@ function canonico(valor: unknown): string {
         )
       : conteudo,
   );
+}
+
+/**
+ * Como a tela nomeia o papel de uma publicação. O token que o contrato venha a
+ * acrescentar aparece como veio: inventar rótulo para o desconhecido esconderia
+ * do operador que a fase declara algo que esta tela ainda não sabe descrever.
+ */
+function rotuloDoPapel(papel: string | null): string {
+  if (papel === PAPEL_PRELIMINAR) return 'resultado preliminar';
+  if (papel === PAPEL_DEFINITIVO) return 'resultado definitivo';
+  return papel ?? 'não é resultado';
 }

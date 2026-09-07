@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
-import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import type {
+  EtapaPontuada,
+  FaseDoCronograma,
+  ProdutoDaFase,
+} from '../../processo-seletivo.models';
 import {
   comoNumero,
   componeNota,
+  descreverFase,
   exigenciasDe,
   problemasDoCronograma,
+  publicaResultadoDefinitivo,
   renumerar,
   trocaFechaCiclo,
   violacoesDePrecedencia,
@@ -22,8 +28,6 @@ function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
     agrupaEtapas: false,
     permiteComplementacao: false,
     baseLegal: null,
-    produzResultado: false,
-    resultadoDefinitivo: false,
     coletaInscricao: false,
     origemData: 'PROPRIA',
     criadoEm: '2026-08-30T12:00:00Z',
@@ -38,7 +42,9 @@ function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
     ordem: 1,
     inicio: null,
     fim: null,
-    atoProduzidoCodigo: null,
+    produtos: [],
+    faseConcluinteCodigo: null,
+    emiteParecerIndividual: false,
     tiposBancaIds: [],
     regraRecurso: null,
     congelados: null,
@@ -70,30 +76,76 @@ function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
   };
 }
 
-describe('exigências lidas da fase canônica', () => {
-  it('data própria obriga janela; delegada não', () => {
-    expect(exigenciasDe(faseCanonica({ origemData: 'PROPRIA' })).janelaObrigatoria).toBe(true);
-    expect(exigenciasDe(faseCanonica({ origemData: 'DELEGADA' })).janelaObrigatoria).toBe(false);
-  });
+const PRELIMINAR: ProdutoDaFase = { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' };
+const DEFINITIVO: ProdutoDaFase = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' };
+const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 
-  it('fase que produz resultado exige declarar o ato produzido', () => {
-    expect(exigenciasDe(faseCanonica({ produzResultado: true })).exigeAtoProduzido).toBe(true);
-    expect(exigenciasDe(faseCanonica({ produzResultado: false })).exigeAtoProduzido).toBe(false);
+describe('exigências da fase', () => {
+  it('data própria obriga janela; delegada não', () => {
+    expect(exigenciasDe(faseCanonica({ origemData: 'PROPRIA' }), []).janelaObrigatoria).toBe(true);
+    expect(exigenciasDe(faseCanonica({ origemData: 'DELEGADA' }), []).janelaObrigatoria).toBe(
+      false,
+    );
   });
 
   /**
-   * Recurso não é sinalizador próprio: cabe onde há resultado, e nunca contra
-   * resultado definitivo. Oferecer a configuração numa fase definitiva levaria o
-   * operador a preencher algo que o domínio recusa.
+   * O que a fase publica é declaração dela, não atributo do catálogo: a mesma
+   * fase canônica entra em dois editais publicando coisas diferentes.
    */
-  it('recurso cabe só em resultado não definitivo', () => {
-    const admite = faseCanonica({ produzResultado: true, resultadoDefinitivo: false });
-    const definitiva = faseCanonica({ produzResultado: true, resultadoDefinitivo: true });
-    const semResultado = faseCanonica({ produzResultado: false });
+  it('publica produto quando a fase declara ao menos um', () => {
+    const canonica = faseCanonica({});
 
-    expect(exigenciasDe(admite).admiteRecurso).toBe(true);
-    expect(exigenciasDe(definitiva).admiteRecurso).toBe(false);
-    expect(exigenciasDe(semResultado).admiteRecurso).toBe(false);
+    expect(exigenciasDe(canonica, [AVISO]).publicaProduto).toBe(true);
+    expect(exigenciasDe(canonica, []).publicaProduto).toBe(false);
+  });
+
+  /**
+   * Recurso não é sinalizador próprio: cabe contra o resultado preliminar, que
+   * é a âncora de que o prazo conta. Fase que só publica o definitivo encerra a
+   * matéria, e oferecer ali a configuração levaria o operador a preencher algo
+   * que o domínio recusa.
+   */
+  it('recurso cabe só onde há produto preliminar', () => {
+    const canonica = faseCanonica({});
+
+    expect(exigenciasDe(canonica, [PRELIMINAR]).admiteRecurso).toBe(true);
+    expect(exigenciasDe(canonica, [DEFINITIVO]).admiteRecurso).toBe(false);
+    expect(exigenciasDe(canonica, [AVISO]).admiteRecurso).toBe(false);
+    expect(exigenciasDe(canonica, []).admiteRecurso).toBe(false);
+  });
+
+  /**
+   * Ato que não é resultado não torna a fase produtora de resultado — publicar
+   * um comunicado não abre nem encerra matéria nenhuma.
+   */
+  it('produto sem papel não publica resultado definitivo', () => {
+    expect(publicaResultadoDefinitivo([DEFINITIVO])).toBe(true);
+    expect(publicaResultadoDefinitivo([PRELIMINAR, AVISO])).toBe(false);
+    expect(publicaResultadoDefinitivo([])).toBe(false);
+  });
+
+  /**
+   * A fase que saiu do catálogo continua descrita pelo que congelou — mas o que
+   * ela publica sai dos produtos dela, que o congelado não guarda.
+   */
+  it('descreve a fase congelada pelos produtos que ela declara', () => {
+    const congelada = fase({
+      produtos: [PRELIMINAR],
+      congelados: {
+        donoTipico: 'CEPS',
+        origemData: 'PROPRIA',
+        agrupaEtapas: false,
+        coletaInscricao: false,
+        bancas: [],
+      },
+    });
+
+    const descricao = descreverFase(congelada, new Map());
+
+    expect(descricao.exigencias?.admiteRecurso).toBe(true);
+    expect(descricao.exigencias?.publicaProduto).toBe(true);
+    expect(descricao.publicaResultadoDefinitivo).toBe(false);
+    expect(descricao.foraDoCatalogo).toBe(true);
   });
 });
 
@@ -306,7 +358,6 @@ describe('o que impede gravar o cronograma', () => {
     id: 'id-resultado',
     codigo: 'RESULTADO_PRELIMINAR',
     nome: 'Resultado preliminar',
-    produzResultado: true,
     origemData: 'DERIVADA',
   });
   const catalogo = new Map([
@@ -352,7 +403,7 @@ describe('o que impede gravar o cronograma', () => {
     const semAvaliacao = fase({
       faseCanonicaId: RESULTADO.id,
       codigo: 'RESULTADO_PRELIMINAR',
-      atoProduzidoCodigo: 'EDITAL_RESULTADO',
+      produtos: [PRELIMINAR],
     });
 
     const problemas = problemasDoCronograma([semAvaliacao], [etapaValida], catalogo, []);
@@ -381,14 +432,6 @@ describe('o que impede gravar o cronograma', () => {
     expect(problemas).toContainEqual('Na fase Avaliação, o fim não pode vir antes do início.');
   });
 
-  it('fase que produz resultado exige o ato que o publica', () => {
-    const semAto = fase({ faseCanonicaId: RESULTADO.id, codigo: 'RESULTADO_PRELIMINAR' });
-
-    const problemas = problemasDoCronograma([semAto], [], catalogo, []);
-
-    expect(problemas).toContainEqual(expect.stringContaining('precisa declarar o ato'));
-  });
-
   /**
    * Sem nenhuma etapa compondo a nota, o divisor da média seria zero — e a
    * recusa do servidor fala de nota final, não da etapa que ficou sem peso.
@@ -411,7 +454,7 @@ describe('o que impede gravar o cronograma', () => {
       faseCanonicaId: RESULTADO.id,
       codigo: 'RESULTADO_PRELIMINAR',
       ordem: 1,
-      atoProduzidoCodigo: 'EDITAL',
+      produtos: [PRELIMINAR],
     });
 
     const problemas = problemasDoCronograma([faseDeAvaliacao, outra], [etapaValida], catalogo, []);
