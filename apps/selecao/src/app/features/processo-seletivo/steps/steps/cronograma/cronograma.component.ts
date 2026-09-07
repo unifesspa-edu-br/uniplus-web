@@ -22,10 +22,12 @@ import {
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
-  CadastroInicialService,
-  type ResultadoGravacao,
-} from '../../shared/cadastro-inicial.service';
+  ORIENTACAO_DE_PERMUTACAO,
+  PERMUTACAO_DE_ORDEM,
+  gravarCronogramaFases,
+} from '../../shared/gravacao-do-cronograma';
 import { etapasDe } from '../../shared/hidratacao';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
@@ -44,13 +46,7 @@ import {
   type EtapaForm,
   type FaseForm,
 } from './cronograma-form';
-import { comoComandoDeEtapa, comoComandoDeFase } from './cronograma-para-comando';
-
-/**
- * Recusa do servidor quando a nova ordem troca a posição entre fases que já
- * existem, formando um ciclo que uma única gravação não consegue aplicar.
- */
-const PERMUTACAO_DE_ORDEM = 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada';
+import { comoComandoDeEtapa } from './cronograma-para-comando';
 
 /**
  * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
@@ -500,7 +496,7 @@ export class CronogramaStepComponent {
       );
 
       if (!gravaEtapasPrimeiro) {
-        const cronograma = await this.gravarCronograma(processoId, fases);
+        const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
         if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
         if (!cronograma.ok) {
           return {
@@ -537,7 +533,7 @@ export class CronogramaStepComponent {
       }
 
       if (gravaEtapasPrimeiro) {
-        const cronograma = await this.gravarCronograma(processoId, fases);
+        const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
         if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
         if (!cronograma.ok) {
           return {
@@ -627,39 +623,8 @@ export class CronogramaStepComponent {
     codigo: string,
     problema: Parameters<ProblemI18nService['resolve']>[0],
   ): string {
-    if (codigo === PERMUTACAO_DE_ORDEM) {
-      return 'Trocar duas fases de lugar exige duas gravações: mova uma delas para o fim da linha do tempo, grave, e então traga a outra para a posição desejada.';
-    }
+    if (codigo === PERMUTACAO_DE_ORDEM) return ORIENTACAO_DE_PERMUTACAO;
     return this.problemI18n.resolve(problema).title;
-  }
-
-  /**
-   * Grava o cronograma, contornando o ciclo de ordem quando ele aparece.
-   *
-   * Reordenar é sempre uma permutação de `1..N`, e toda permutação não-trivial
-   * fecha ciclo: cada fase precisa que a outra libere a posição primeiro, e o
-   * servidor não persiste isso numa chamada.
-   */
-  private async gravarCronograma(
-    processoId: string,
-    fases: readonly FaseDoCronograma[],
-  ): Promise<ResultadoGravacao> {
-    const pretendida = await this.cadastro.definirCronogramaFases(
-      processoId,
-      fases.map(comoComandoDeFase),
-    );
-    if (pretendida.ok || pretendida.problem.code !== PERMUTACAO_DE_ORDEM) return pretendida;
-
-    const deslocamento = Math.max(...fases.map((fase) => fase.ordem));
-    const emOrdemLivre = fases.map((fase) => ({ ...fase, ordem: fase.ordem + deslocamento }));
-
-    const intermediaria = await this.cadastro.definirCronogramaFases(
-      processoId,
-      emOrdemLivre.map(comoComandoDeFase),
-    );
-    if (!intermediaria.ok) return intermediaria;
-
-    return this.cadastro.definirCronogramaFases(processoId, fases.map(comoComandoDeFase));
   }
 
   /** Reescreve a posição de 1 a N na ordem em que as fases estão. */
