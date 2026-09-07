@@ -26,9 +26,13 @@ import {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import {
+  ORIENTACAO_DE_PERMUTACAO,
+  PERMUTACAO_DE_ORDEM,
+  gravarCronogramaFases,
+} from '../../shared/gravacao-do-cronograma';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { descreverFase } from '../cronograma/cronograma-do-certame';
-import { comoComandoDeFase } from '../cronograma/cronograma-para-comando';
 import {
   PAPEIS_ESCOLHIVEIS,
   problemasDaFase,
@@ -646,6 +650,10 @@ export class FaseStepComponent {
    * só, e o `PUT` a substitui inteira. Envia na ordem do rascunho — a mesma que
    * localiza cada recusa devolvida.
    *
+   * Vai pelo mesmo colaborador que a linha do tempo usa, e não direto ao
+   * serviço: uma reordenação feita lá fica no rascunho até alguém gravar, e
+   * quem grava pode ser esta tela. Sem o contorno da permutação, ela devolveria
+   * a recusa de uma troca de posições que nem dá para desfazer daqui.
    */
   async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
@@ -663,10 +671,7 @@ export class FaseStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const gravacao = await this.cadastro.definirCronogramaFases(
-        processoId,
-        fases.map(comoComandoDeFase),
-      );
+      const gravacao = await gravarCronogramaFases(this.cadastro, processoId, fases);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!gravacao.ok) return this.registrarRecusa(gravacao.problem, fases);
 
@@ -695,6 +700,16 @@ export class FaseStepComponent {
       if (fase === undefined) return `posição ${indice + 1}`;
       return nomes.get(fase.faseCanonicaId) ?? fase.codigo;
     };
+
+    // A permutação de ordem não descreve campo nenhum desta tela: ela é da
+    // linha do tempo, e o que orienta é como desfazê-la lá. Traduzi-la por
+    // campo apontaria um controle que não tem nada a ver com o que foi
+    // recusado.
+    if (problema.code === PERMUTACAO_DE_ORDEM) {
+      this.recusaPorCampo.set(new Map());
+      this.recusasGerais.set([ORIENTACAO_DE_PERMUTACAO]);
+      return { valid: false, messages: [ORIENTACAO_DE_PERMUTACAO] };
+    }
 
     const traduzida = traduzirRecusa(problema, abertaEm, nomeDaFase);
     this.recusaPorCampo.set(traduzida.porCampo);

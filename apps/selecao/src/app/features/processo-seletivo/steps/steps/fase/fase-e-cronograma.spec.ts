@@ -19,6 +19,18 @@ const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/crono
 const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etapas`;
 const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
 
+/** O interceptor só lê o corpo como ProblemDetails sob este media type. */
+const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
+
+/** A recusa do servidor quando a nova ordem fecha ciclo entre fases existentes. */
+const CICLO_DE_ORDEM = {
+  type: 'about:blank',
+  title: 'A redefinição do cronograma troca a Ordem entre fases já existentes',
+  status: 422,
+  code: 'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada',
+  traceId: '00000000000000000000000000000002',
+};
+
 const ID_AVALIACAO = '01960000-0000-7000-0000-0000000000c2';
 const ID_RESULTADO = '01960000-0000-7000-0000-0000000000c3';
 const ID_TIPO_ETAPA = '01960000-0000-7000-0000-0000000000e1';
@@ -198,6 +210,14 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+  /** As ordens que o corpo do comando de cronograma declara. */
+  const ordensDe = (corpo: unknown): number[] =>
+    (corpo as { ordem: number }[]).map((fase) => fase.ordem);
+
+  /** As fases do corpo, na ordem em que ele as declara. */
+  const fasesDe = (corpo: unknown): string[] =>
+    (corpo as { faseCanonicaId: string }[]).map((fase) => fase.faseCanonicaId);
+
   function comCertame(): void {
     store.patchObjectSection('cronograma', {
       fases: [
@@ -372,6 +392,80 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('prazo de interposição');
     controller.expectNone(ROTA_FASES);
+  });
+
+  /**
+   * A reordenação fica no rascunho até alguém gravar, e quem grava pode ser a
+   * superfície da fase. Toda permutação não-trivial fecha ciclo de ordem, que o
+   * servidor não persiste numa chamada só — o contorno de duas gravações precisa
+   * valer em qualquer caminho que substitua a coleção.
+   */
+  it('contorna o ciclo de ordem também quando quem grava é a superfície da fase', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comCertame();
+
+    // Troca as duas fases de lugar pela linha do tempo, sem gravar ali.
+    cronograma.mover(0, 1);
+    detectar();
+
+    const gravacao = superficie.persistir();
+
+    // Renumerar produz 1..N de novo: a permutação está em qual fase ocupa cada
+    // posição, não nos valores.
+    const pretendida = controller.expectOne(ROTA_FASES);
+    expect(fasesDe(pretendida.request.body)).toEqual([ID_RESULTADO, ID_AVALIACAO]);
+    expect(ordensDe(pretendida.request.body)).toEqual([1, 2]);
+    pretendida.flush(CICLO_DE_ORDEM, {
+      status: 422,
+      statusText: 'Unprocessable Content',
+      headers: PROBLEM_JSON,
+    });
+    await proximoPasso();
+
+    // A gravação intermediária tira as duas da faixa disputada.
+    const intermediaria = controller.expectOne(ROTA_FASES);
+    expect(ordensDe(intermediaria.request.body)).toEqual([3, 4]);
+    intermediaria.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    const definitiva = controller.expectOne(ROTA_FASES);
+    expect(fasesDe(definitiva.request.body)).toEqual([ID_RESULTADO, ID_AVALIACAO]);
+    expect(ordensDe(definitiva.request.body)).toEqual([1, 2]);
+    definitiva.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    expect((await gravacao).valid).toBe(true);
+  });
+
+  /**
+   * Quando o contorno não resolve, o operador precisa da orientação — não do
+   * título cru de uma recusa que fala de uma tela onde ele nem reordena.
+   */
+  it('explica a permutação de ordem que a superfície da fase não consegue contornar', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comCertame();
+
+    cronograma.mover(0, 1);
+    detectar();
+
+    const gravacao = superficie.persistir();
+
+    controller.expectOne(ROTA_FASES).flush(CICLO_DE_ORDEM, {
+      status: 422,
+      statusText: 'Unprocessable Content',
+      headers: PROBLEM_JSON,
+    });
+    await proximoPasso();
+    controller.expectOne(ROTA_FASES).flush(CICLO_DE_ORDEM, {
+      status: 422,
+      statusText: 'Unprocessable Content',
+      headers: PROBLEM_JSON,
+    });
+    await proximoPasso();
+
+    const resultado = await gravacao;
+    expect(resultado.messages?.join(' ')).toContain('exige duas gravações');
+    expect(superficie.recusasGerais().join(' ')).toContain('exige duas gravações');
   });
 
   /**
