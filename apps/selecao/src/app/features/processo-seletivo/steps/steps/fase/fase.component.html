@@ -187,6 +187,12 @@
             <p class="field__hint form-grid__full">
               Esta fase não publica resultado preliminar: não há ciclo recursal a concluir.
             </p>
+            <!-- O seletor some com o ciclo, e a recusa que sobra precisa de onde
+                 aparecer: sem isto ela só existiria no resumo do topo, apontando
+                 um campo que esta tela declara inexistente. -->
+            @if (erroDoCampo('faseConcluinteCodigo'); as erro) {
+              <p class="field__erro form-grid__full" role="alert">{{ erro }}</p>
+            }
           }
 
           <div class="form-field form-grid__full">

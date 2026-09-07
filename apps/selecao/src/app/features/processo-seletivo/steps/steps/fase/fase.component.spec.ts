@@ -369,6 +369,28 @@ describe('FaseStepComponent', () => {
       expect(componente.erroDoCampo('recurso.ancora')).toContain('Escolha a publicação preliminar');
     });
 
+    /**
+     * Ligar o interruptor não muda a lista de âncoras possíveis nem recria o
+     * formulário, e o campo ficaria vazio esperando uma escolha que não existe.
+     */
+    it('pré-seleciona a âncora ao ligar o recurso numa fase com um preliminar só', () => {
+      comCronograma(
+        fase({
+          produtos: [
+            { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
+            { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+          ],
+        }),
+      );
+
+      componente.formulario()?.controls.admiteRecurso.setValue(true);
+      detectar();
+
+      expect(store.draft().cronograma.fases[0].regraRecurso?.atoAncoraCodigo).toBe(
+        'RESULTADO_PRELIMINAR',
+      );
+    });
+
     it('oferece à escolha só as publicações preliminares da própria fase', () => {
       comCronograma(
         fase({
@@ -383,6 +405,46 @@ describe('FaseStepComponent', () => {
       expect(componente.ancorasPossiveis()).toEqual([
         { codigo: 'GABARITO_PRELIMINAR', nome: 'Gabarito preliminar' },
       ]);
+    });
+  });
+
+  /**
+   * A conclusão do ciclo só existe em fase que publica preliminar, e o seletor
+   * que a declara some junto com ele. Deixar o código declarado para trás
+   * trancaria o passo numa recusa cujo campo a tela não mostra mais.
+   */
+  describe('conclusão declarada que perde o preliminar', () => {
+    const comConcluinte = () =>
+      comCronograma(
+        fase({
+          produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+          faseConcluinteCodigo: 'RECURSOS',
+        }),
+        fase({
+          faseCanonicaId: ID_RECURSOS,
+          codigo: 'RECURSOS',
+          ordem: 2,
+          produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+        }),
+      );
+
+    it('esquece a fase concluinte quando o papel preliminar é trocado', () => {
+      comConcluinte();
+
+      componente.escolherPapel(0, 'DEFINITIVO');
+      detectar();
+
+      expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
+      expect(componente.validate().valid).toBe(true);
+    });
+
+    it('esquece a fase concluinte quando a publicação preliminar é removida', () => {
+      comConcluinte();
+
+      componente.removerProduto(0);
+      detectar();
+
+      expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
     });
   });
 

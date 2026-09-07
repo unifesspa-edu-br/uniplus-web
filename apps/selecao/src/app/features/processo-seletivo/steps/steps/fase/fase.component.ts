@@ -16,6 +16,7 @@ import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
 import {
   PAPEL_DEFINITIVO,
+  PAPEL_PRELIMINAR,
   type BancaRequeridaDaFase,
   type DocumentoConfig,
   type FaseDoCronograma,
@@ -155,6 +156,10 @@ export class FaseStepComponent {
     effect(() => {
       const unica = this.ancoraUnica();
       const formulario = this.formulario();
+      // Ligar o interruptor não muda a lista de âncoras nem recria o
+      // formulário: sem acompanhar a edição, o campo ficaria vazio esperando
+      // uma escolha que não existe.
+      this.versaoDoFormulario();
       untracked(() => {
         if (formulario === null || unica === null) return;
         if (!formulario.controls.admiteRecurso.value) return;
@@ -387,8 +392,25 @@ export class FaseStepComponent {
     return ato === undefined || ato.ehResultado;
   }
 
+  /**
+   * Escreve as publicações e reconcilia o que depende delas.
+   *
+   * A conclusão do ciclo recursal só existe em fase que publica preliminar, e o
+   * seletor que a declara desaparece junto com ele. Deixar o código declarado
+   * para trás trancaria o passo numa recusa — "só fase que publica resultado
+   * preliminar declara quem a conclui" — cujo campo a tela já não mostra, e sem
+   * caminho visível para desfazê-la.
+   */
   private escreverProdutos(produtos: readonly ProdutoDaFase[]): void {
-    this.formulario()?.controls.produtos.setValue(produtos);
+    const formulario = this.formulario();
+    if (formulario === null) return;
+
+    formulario.controls.produtos.setValue(produtos);
+
+    const abreCicloRecursal = produtos.some((produto) => produto.papel === PAPEL_PRELIMINAR);
+    if (!abreCicloRecursal && formulario.controls.faseConcluinteCodigo.value !== '') {
+      formulario.controls.faseConcluinteCodigo.setValue('');
+    }
   }
 
   // ─── Bancas requeridas e o recorte de competência ───────────────────────
