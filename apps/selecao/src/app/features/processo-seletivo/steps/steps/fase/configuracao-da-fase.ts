@@ -6,10 +6,18 @@ import {
   type FaseDoCronograma,
 } from '../../processo-seletivo.models';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
-import {
-  produtosPreliminares,
-  publicaResultadoDefinitivo,
-} from '../cronograma/cronograma-do-certame';
+
+/** A fase encerra a matéria que abriu: do que ela publica não cabe mais recurso. */
+export function publicaResultadoDefinitivo(produtos: FaseDoCronograma['produtos']): boolean {
+  return produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO);
+}
+
+/** Os produtos preliminares da fase — os únicos que podem ancorar o prazo. */
+export function produtosPreliminares(
+  produtos: FaseDoCronograma['produtos'],
+): FaseDoCronograma['produtos'] {
+  return produtos.filter((produto) => produto.papel === PAPEL_PRELIMINAR);
+}
 
 /**
  * Onde a mensagem de recusa aparece. É a chave que liga a conferência — e a

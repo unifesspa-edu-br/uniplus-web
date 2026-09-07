@@ -6,19 +6,31 @@ import type {
   FaseDoCronograma,
   ProdutoDaFase,
 } from '../../processo-seletivo.models';
+import { publicaResultadoDefinitivo, type AtoDoCatalogo } from '../fase/configuracao-da-fase';
 import {
   comoNumero,
   componeNota,
   descreverFase,
   exigenciasDe,
-  problemaDaAncora,
   problemasDoCronograma,
-  produtosPreliminares,
-  publicaResultadoDefinitivo,
   renumerar,
   trocaFechaCiclo,
   violacoesDePrecedencia,
 } from './cronograma-do-certame';
+
+/** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
+const SEM_CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map();
+const nomeDaBanca = (id: string): string => id;
+
+/** A conferência do cronograma, com os catálogos que ela consulta. */
+function problemasDe(
+  fases: Parameters<typeof problemasDoCronograma>[0],
+  etapas: Parameters<typeof problemasDoCronograma>[1],
+  fasePorId: Parameters<typeof problemasDoCronograma>[2],
+  precedencias: Parameters<typeof problemasDoCronograma>[3],
+): readonly string[] {
+  return problemasDoCronograma(fases, etapas, fasePorId, precedencias, SEM_CATALOGO, nomeDaBanca);
+}
 
 function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
   return {
@@ -80,7 +92,6 @@ function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
 
 const PRELIMINAR: ProdutoDaFase = { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' };
 const DEFINITIVO: ProdutoDaFase = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' };
-const SEM_PAPEL: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 
 describe('exigências da fase', () => {
@@ -349,65 +360,6 @@ describe('conversão do campo para número', () => {
   });
 });
 
-describe('âncora do prazo de recurso', () => {
-  const recurso = (atoAncoraCodigo: string): FaseDoCronograma['regraRecurso'] => ({
-    regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-    regraVersao: 'v1',
-    prazoValor: '2',
-    prazoUnidade: 'diasUteis',
-    atoAncoraCodigo,
-    suspensividadePrimeiraInstanciaValor: '',
-    suspensividadePrimeiraInstanciaUnidade: '',
-    suspensividadeSegundaInstanciaValor: '',
-    suspensividadeSegundaInstanciaUnidade: '',
-  });
-
-  it('fase sem regra de recurso não tem âncora a conferir', () => {
-    expect(problemaDaAncora(fase({ produtos: [PRELIMINAR] }))).toBeNull();
-  });
-
-  it('âncora que é produto preliminar da própria fase é coerente', () => {
-    const declarada = fase({
-      produtos: [PRELIMINAR, DEFINITIVO],
-      regraRecurso: recurso('RESULTADO_PRELIMINAR'),
-    });
-
-    expect(problemaDaAncora(declarada)).toBeNull();
-  });
-
-  /**
-   * É o que a hidratação produz quando o cruzamento não acha a publicação
-   * ancorada: sem acusar, a gravação seguinte sairia com a âncora em branco.
-   */
-  it('acusa a âncora vazia numa fase que declara recurso', () => {
-    const declarada = fase({ produtos: [PRELIMINAR], regraRecurso: recurso('') });
-
-    expect(problemaDaAncora(declarada)).toBe('ausente');
-  });
-
-  it('acusa a âncora que a fase publica sem papel preliminar', () => {
-    const declarada = fase({
-      produtos: [DEFINITIVO],
-      regraRecurso: recurso('RESULTADO_FINAL'),
-    });
-
-    expect(problemaDaAncora(declarada)).toBe('naoPreliminar');
-  });
-
-  it('acusa a âncora que a fase sequer publica', () => {
-    const declarada = fase({
-      produtos: [PRELIMINAR],
-      regraRecurso: recurso('RESULTADO_DE_OUTRA_FASE'),
-    });
-
-    expect(problemaDaAncora(declarada)).toBe('naoPreliminar');
-  });
-
-  it('oferece à escolha só os produtos com papel preliminar', () => {
-    expect(produtosPreliminares([PRELIMINAR, DEFINITIVO, SEM_PAPEL])).toEqual([PRELIMINAR]);
-  });
-});
-
 describe('o que impede gravar o cronograma', () => {
   const AVALIACAO = faseCanonica({
     id: 'id-avaliacao',
@@ -441,7 +393,7 @@ describe('o que impede gravar o cronograma', () => {
   });
 
   it('cronograma sem nenhuma fase é o único problema relatado', () => {
-    expect(problemasDoCronograma([], [], catalogo, [])).toEqual([
+    expect(problemasDe([], [], catalogo, [])).toEqual([
       'O cronograma precisa de ao menos uma fase.',
     ]);
   });
@@ -452,7 +404,7 @@ describe('o que impede gravar o cronograma', () => {
    * estado que este passo existe para evitar.
    */
   it('fase que agrupa etapas sem nenhuma etapa é recusada antes de gravar', () => {
-    const problemas = problemasDoCronograma([faseDeAvaliacao], [], catalogo, []);
+    const problemas = problemasDe([faseDeAvaliacao], [], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('precisa de ao menos uma'));
   });
@@ -468,7 +420,7 @@ describe('o que impede gravar o cronograma', () => {
       produtos: [PRELIMINAR],
     });
 
-    const problemas = problemasDoCronograma([semAvaliacao], [etapaValida], catalogo, []);
+    const problemas = problemasDe([semAvaliacao], [etapaValida], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('fase de avaliação que as agrupa'));
   });
@@ -476,7 +428,7 @@ describe('o que impede gravar o cronograma', () => {
   it('fase com janela própria exige data e hora de início e de fim', () => {
     const semJanela = fase({ faseCanonicaId: AVALIACAO.id, codigo: 'AVALIACAO' });
 
-    const problemas = problemasDoCronograma([semJanela], [etapaValida], catalogo, []);
+    const problemas = problemasDe([semJanela], [etapaValida], catalogo, []);
 
     expect(problemas).toContainEqual('A fase Avaliação precisa de data e hora de início e de fim.');
   });
@@ -489,7 +441,7 @@ describe('o que impede gravar o cronograma', () => {
       fim: '2026-03-01T08:00:00-03:00',
     });
 
-    const problemas = problemasDoCronograma([invertida], [etapaValida], catalogo, []);
+    const problemas = problemasDe([invertida], [etapaValida], catalogo, []);
 
     expect(problemas).toContainEqual('Na fase Avaliação, o fim não pode vir antes do início.');
   });
@@ -506,7 +458,7 @@ describe('o que impede gravar o cronograma', () => {
       peso: '',
     });
 
-    const problemas = problemasDoCronograma([faseDeAvaliacao], [soEliminatoria], catalogo, []);
+    const problemas = problemasDe([faseDeAvaliacao], [soEliminatoria], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('compor a nota final'));
   });
@@ -519,7 +471,7 @@ describe('o que impede gravar o cronograma', () => {
       produtos: [PRELIMINAR],
     });
 
-    const problemas = problemasDoCronograma([faseDeAvaliacao, outra], [etapaValida], catalogo, []);
+    const problemas = problemasDe([faseDeAvaliacao, outra], [etapaValida], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('mesma posição na linha do tempo'));
   });
@@ -538,7 +490,7 @@ describe('o que impede gravar o cronograma', () => {
       notaMinima: '7,5,',
     });
 
-    const problemas = problemasDoCronograma([faseDeAvaliacao], [notaTorta], catalogo, []);
+    const problemas = problemasDe([faseDeAvaliacao], [notaTorta], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('nota mínima'));
   });
@@ -552,7 +504,7 @@ describe('o que impede gravar o cronograma', () => {
       notaMinima: '',
     });
 
-    expect(problemasDoCronograma([faseDeAvaliacao], [semNota], catalogo, [])).toEqual([]);
+    expect(problemasDe([faseDeAvaliacao], [semNota], catalogo, [])).toEqual([]);
   });
 
   /**
@@ -576,7 +528,7 @@ describe('o que impede gravar o cronograma', () => {
       ordem: 2,
     });
 
-    const problemas = problemasDoCronograma([faseDeAvaliacao], [compoe, zerada], catalogo, []);
+    const problemas = problemasDe([faseDeAvaliacao], [compoe, zerada], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('maior que zero'));
   });
@@ -597,13 +549,11 @@ describe('o que impede gravar o cronograma', () => {
       ordem: 2,
     });
 
-    expect(
-      problemasDoCronograma([faseDeAvaliacao], [compoe, soEliminatoria], catalogo, []),
-    ).toEqual([]);
+    expect(problemasDe([faseDeAvaliacao], [compoe, soEliminatoria], catalogo, [])).toEqual([]);
   });
 
   it('cronograma coerente não relata problema', () => {
-    expect(problemasDoCronograma([faseDeAvaliacao], [etapaValida], catalogo, [])).toEqual([]);
+    expect(problemasDe([faseDeAvaliacao], [etapaValida], catalogo, [])).toEqual([]);
   });
 
   /**
@@ -629,15 +579,10 @@ describe('o que impede gravar o cronograma', () => {
       },
     });
 
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao, semAncora],
-      [etapaValida],
-      catalogo,
-      [],
-    );
+    const problemas = problemasDe([faseDeAvaliacao, semAncora], [etapaValida], catalogo, []);
 
     expect(problemas).toContain(
-      'A fase Resultado preliminar admite recurso e está sem a publicação que ancora o prazo. Escolha-a em Configuração por fase.',
+      'Na fase Resultado preliminar: Escolha a publicação preliminar de cuja divulgação corre o prazo de recurso. Corrija em Configuração por fase.',
     );
   });
 });

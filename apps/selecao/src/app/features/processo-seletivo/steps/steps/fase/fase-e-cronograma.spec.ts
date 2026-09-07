@@ -316,6 +316,65 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
   });
 
   /**
+   * A linha em branco nasce no rascunho no instante em que o operador clica em
+   * "Acrescentar publicação", e a gravação do cronograma substitui a coleção
+   * inteira. A conferência da linha do tempo precisa cobrar o que a superfície
+   * deixou pela metade: sem isso, mexer numa data manda a publicação sem ato ao
+   * servidor, e a recusa volta falando de um campo que aquele passo não mostra.
+   */
+  it('recusa gravar pela linha do tempo a publicação que a fase deixou sem ato', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comCertame();
+
+    superficie.acrescentarProduto();
+    detectar();
+
+    cronograma.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
+    detectar();
+
+    const resultado = await cronograma.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain('Escolha o tipo de ato');
+    expect(resultado.messages?.join(' ')).toContain('Configuração por fase');
+    controller.expectNone(ROTA_FASES);
+    controller.expectNone(ROTA_ETAPAS);
+  });
+
+  it('recusa gravar pela linha do tempo a banca que a fase deixou sem tipo', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comCertame();
+
+    superficie.acrescentarBanca();
+    detectar();
+
+    const resultado = await cronograma.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain('Escolha o tipo de cada banca requerida');
+    controller.expectNone(ROTA_FASES);
+  });
+
+  /**
+   * "Cabe recurso" marcado sem regra nem prazo: `comoComandoDeFase` converteria
+   * o prazo vazio em zero e mandaria a unidade em branco, e o servidor recusaria
+   * a gravação inteira por causa de um campo que a linha do tempo não edita.
+   */
+  it('recusa gravar pela linha do tempo o recurso declarado pela metade', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comCertame();
+
+    superficie.formulario()?.controls.admiteRecurso.setValue(true);
+    detectar();
+
+    const resultado = await cronograma.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain('prazo de interposição');
+    controller.expectNone(ROTA_FASES);
+  });
+
+  /**
    * O mesmo trajeto visto do outro lado: gravar pela superfície da fase envia a
    * coleção inteira, e o que a linha do tempo declarou tem de ir junto.
    */

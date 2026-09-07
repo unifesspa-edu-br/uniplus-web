@@ -27,11 +27,12 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { descreverFase, produtosPreliminares } from '../cronograma/cronograma-do-certame';
+import { descreverFase } from '../cronograma/cronograma-do-certame';
 import { comoComandoDeFase } from '../cronograma/cronograma-para-comando';
 import {
   PAPEIS_ESCOLHIVEIS,
   problemasDaFase,
+  produtosPreliminares,
   traduzirRecusa,
   type AtoDoCatalogo,
   type CampoDaFase,
@@ -644,6 +645,7 @@ export class FaseStepComponent {
    * Grava a configuração das fases pelo comando do cronograma: é uma coleção
    * só, e o `PUT` a substitui inteira. Envia na ordem do rascunho — a mesma que
    * localiza cada recusa devolvida.
+   *
    */
   async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
