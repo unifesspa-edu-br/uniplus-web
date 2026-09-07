@@ -28,8 +28,9 @@
         <select
           class="input"
           id="fase-aberta"
-          [value]="faseAberta()"
-          (change)="abrirFase($any($event.target).value)"
+          [ngModel]="faseAberta()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="abrirFase($event)"
         >
           @for (fase of fasesNoSeletor(); track fase.faseCanonicaId) {
             <option [value]="fase.faseCanonicaId">{{ fase.ordem }}. {{ fase.nome }}</option>
@@ -86,7 +87,8 @@
               <select
                 class="input"
                 [attr.id]="'fase-produto-ato-' + $index"
-                [value]="produto.atoCodigo"
+                [ngModel]="produto.atoCodigo"
+                [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao()"
                 [attr.aria-describedby]="
                   erroDoCampo('produtos')
@@ -94,7 +96,7 @@
                     : 'fase-produtos-ajuda'
                 "
                 [attr.aria-invalid]="erroDoCampo('produtos') ? 'true' : null"
-                (change)="escolherAto($index, $any($event.target).value)"
+                (ngModelChange)="escolherAto($index, $event)"
               >
                 <option value="">Selecione o tipo de ato…</option>
                 @for (ato of atosPara(produto.atoCodigo); track ato.codigo) {
@@ -107,9 +109,10 @@
               <select
                 class="input"
                 [attr.id]="'fase-produto-papel-' + $index"
-                [value]="produto.papel ?? ''"
+                [ngModel]="produto.papel ?? ''"
+                [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao() || !aceitaPapel(produto.atoCodigo)"
-                (change)="escolherPapel($index, $any($event.target).value)"
+                (ngModelChange)="escolherPapel($index, $event)"
               >
                 @for (papel of papeis; track papel.valor) {
                   <option [value]="papel.valor">{{ papel.rotulo }}</option>
@@ -233,9 +236,10 @@
               <select
                 class="input"
                 id="fase-regra"
-                [value]="form.controls.recurso.controls.regraCodigo.value"
+                [ngModel]="form.controls.recurso.controls.regraCodigo.value"
+                [ngModelOptions]="{ standalone: true }"
                 [attr.aria-invalid]="erroDoCampo('recurso.regra') ? 'true' : null"
-                (change)="escolherRegra($any($event.target).value)"
+                (ngModelChange)="escolherRegra($event)"
               >
                 <option value="">Selecione a regra…</option>
                 @for (regra of regrasDeRecurso(); track regra.codigo + regra.versao) {
@@ -418,7 +422,8 @@
               <select
                 class="input"
                 [attr.id]="'fase-banca-' + $index"
-                [value]="banca.tipoBancaId"
+                [ngModel]="banca.tipoBancaId"
+                [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao()"
                 [attr.aria-describedby]="
                   erroDoCampo('bancasRequeridas')
@@ -426,7 +431,7 @@
                     : 'fase-bancas-ajuda'
                 "
                 [attr.aria-invalid]="erroDoCampo('bancasRequeridas') ? 'true' : null"
-                (change)="escolherTipoDeBanca($index, $any($event.target).value)"
+                (ngModelChange)="escolherTipoDeBanca($index, $event)"
               >
                 <option value="">Selecione o tipo…</option>
                 @for (tipo of bancasEscolhiveis(); track tipo.id) {
@@ -513,9 +518,7 @@
                       type="checkbox"
                       [attr.id]="'fase-doc-' + doc.id"
                       [checked]="exigidoNestaFase(doc.id)"
-                      [disabled]="
-                        !store.aceitaEdicao() || configuracaoDoDocumento(doc.id).todasEtapas
-                      "
+                      [disabled]="!store.aceitaEdicao() || valeEmTodasAsFases(doc.id)"
                       [attr.aria-describedby]="'fase-doc-desc-' + doc.id"
                       (change)="alternarExigencia(doc.id, $any($event.target).checked)"
                     />
@@ -526,7 +529,7 @@
                   </span>
                 </div>
 
-                @if (configuracaoDoDocumento(doc.id).todasEtapas) {
+                @if (valeEmTodasAsFases(doc.id)) {
                   <p class="field__hint">
                     Exigido em todas as fases do edital.
                     <button
