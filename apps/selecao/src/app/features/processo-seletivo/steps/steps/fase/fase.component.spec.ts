@@ -448,6 +448,40 @@ describe('FaseStepComponent', () => {
     });
   });
 
+  /**
+   * Fora de rascunho — e enquanto uma gravação corre — o servidor recusa
+   * qualquer escrita. Um controle que continua aceitando clique faz a tela
+   * passar a descrever uma configuração que o processo não tem.
+   */
+  it('não aceita trocar a regra de recurso enquanto a edição está suspensa', async () => {
+    comCronograma(
+      fase({
+        produtos: [
+          { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
+          { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+        ],
+        regraRecurso: {
+          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+          regraVersao: 'v1',
+          prazoValor: '2',
+          prazoUnidade: 'diasUteis',
+          atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+          suspensividadePrimeiraInstanciaValor: '',
+          suspensividadePrimeiraInstanciaUnidade: '',
+          suspensividadeSegundaInstanciaValor: '',
+          suspensividadeSegundaInstanciaUnidade: '',
+        },
+      }),
+    );
+
+    store.salvando.set(true);
+    detectar();
+    await proximoPasso();
+    detectar();
+
+    expect(nativo.querySelector<HTMLSelectElement>('#fase-regra')?.disabled).toBe(true);
+  });
+
   describe('bancas requeridas', () => {
     it('declara a banca com o recorte de competência que ela julga', () => {
       comCronograma(fase({}));

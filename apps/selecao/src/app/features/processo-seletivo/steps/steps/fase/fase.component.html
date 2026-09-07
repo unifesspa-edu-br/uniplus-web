@@ -244,6 +244,7 @@
                 id="fase-regra"
                 [ngModel]="form.controls.recurso.controls.regraCodigo.value"
                 [ngModelOptions]="{ standalone: true }"
+                [disabled]="!store.aceitaEdicao()"
                 [attr.aria-invalid]="erroDoCampo('recurso.regra') ? 'true' : null"
                 (ngModelChange)="escolherRegra($event)"
               >
