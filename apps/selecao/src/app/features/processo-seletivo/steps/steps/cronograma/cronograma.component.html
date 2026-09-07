@@ -194,24 +194,6 @@
                   </ul>
                 </div>
               }
-
-              @let bancasDestaFase = bancasDaFase(item.grupo);
-              @if (bancasDestaFase.length > 0) {
-                <fieldset class="form-field form-grid__full">
-                  <legend class="label">Bancas requeridas (opcional)</legend>
-                  @for (banca of bancasDestaFase; track banca.id) {
-                    <label class="check">
-                      <input
-                        type="checkbox"
-                        [checked]="bancaMarcada(item.grupo, banca.id)"
-                        (change)="alternarBanca(item.grupo, banca.id, $event)"
-                        [disabled]="!edicaoLiberada()"
-                      />
-                      {{ banca.nome }}
-                    </label>
-                  }
-                </fieldset>
-              }
             </div>
 
             @if (item.exigencias.agrupaEtapas) {

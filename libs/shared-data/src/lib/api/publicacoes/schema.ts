@@ -852,6 +852,7 @@ export interface components {
             readonly congelaConfiguracao: boolean;
             readonly unicoPorObjeto: boolean;
             readonly efeitoIrreversivel: boolean;
+            readonly ehResultado: boolean;
             /** Format: date */
             readonly vigenciaInicio: string;
             /** Format: date */
@@ -877,6 +878,7 @@ export interface components {
             readonly congelaConfiguracao: boolean;
             readonly unicoPorObjeto: boolean;
             readonly efeitoIrreversivel: boolean;
+            readonly ehResultado: boolean;
             /** Format: date */
             readonly vigenciaInicio: string;
             /** Format: date */
@@ -925,6 +927,7 @@ export interface components {
             readonly congelaConfiguracao: boolean;
             readonly unicoPorObjeto: boolean;
             readonly efeitoIrreversivel: boolean;
+            readonly ehResultado: boolean;
             /** Format: date */
             readonly vigenciaInicio: string;
             /** Format: date */

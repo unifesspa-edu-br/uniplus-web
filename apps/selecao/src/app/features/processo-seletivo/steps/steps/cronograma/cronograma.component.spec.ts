@@ -7,7 +7,7 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ProdutoDaFase } from '../../processo-seletivo.models';
+import type { BancaRequeridaDaFase, ProdutoDaFase } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CronogramaStepComponent } from './cronograma.component';
@@ -37,6 +37,9 @@ const ID_RESULTADO = '01960000-0000-7000-0000-0000000000c3';
 const TIPO_ETAPA = '01960000-0000-7000-0000-0000000000e1';
 /** Fase que o processo congelou e que não está mais no catálogo. */
 const FASE_SUMIDA = '01960000-0000-7000-0000-0000000000cf';
+const ID_BANCA_HETERO = '01960000-0000-7000-0000-0000000000b1';
+const ID_CATEGORIA_RACA = '01960000-0000-7000-0000-0000000000d1';
+const ID_CATEGORIA_RENDA = '01960000-0000-7000-0000-0000000000d2';
 
 const FASES_CANONICAS = [
   {
@@ -179,7 +182,7 @@ describe('CronogramaStepComponent', () => {
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: [],
+        bancasRequeridas: [],
         regraRecurso: null,
         congelados: null,
       })),
@@ -188,7 +191,10 @@ describe('CronogramaStepComponent', () => {
   }
 
   /** Uma fase única que declara o que publica, sem que este passo o edite. */
-  function comFaseQuePublica(produtos: readonly ProdutoDaFase[]): void {
+  function comFaseQuePublica(
+    produtos: readonly ProdutoDaFase[],
+    bancasRequeridas: readonly BancaRequeridaDaFase[] = [],
+  ): void {
     store.patchObjectSection('cronograma', {
       fases: [
         {
@@ -200,7 +206,7 @@ describe('CronogramaStepComponent', () => {
           produtos,
           faseConcluinteCodigo: 'RECURSOS',
           emiteParecerIndividual: true,
-          tiposBancaIds: [],
+          bancasRequeridas,
           regraRecurso: null,
           congelados: null,
         },
@@ -223,7 +229,7 @@ describe('CronogramaStepComponent', () => {
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
-        tiposBancaIds: [],
+        bancasRequeridas: [],
         regraRecurso: null,
         congelados: {
           donoTipico: 'CEPS',
@@ -794,6 +800,42 @@ describe('CronogramaStepComponent', () => {
       faseConcluinteCodigo: 'RECURSOS',
       emiteParecerIndividual: true,
     });
+
+    enviadas.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    await gravacao;
+  });
+
+  /**
+   * As bancas requeridas e o recorte que cada uma julga passaram a ser editados
+   * na superfície da fase, e este passo apenas os carrega. A gravação substitui
+   * a coleção inteira: sem reenviá-los, mudar uma data desfaria a competência
+   * declarada de cada banca.
+   */
+  it('reenvia na gravação as bancas requeridas com o recorte de cada uma', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFaseQuePublica(
+      [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+      [
+        { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
+        { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
+      ],
+    );
+
+    componente.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
+    detectar();
+
+    const gravacao = componente.persistir();
+    const enviadas = controller.expectOne(ROTA_FASES);
+
+    expect((enviadas.request.body as { bancasRequeridas: unknown }[])[0].bancasRequeridas).toEqual([
+      { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
+      { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
+    ]);
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();

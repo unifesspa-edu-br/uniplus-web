@@ -157,15 +157,26 @@ const FASE_COM_RECURSO = {
   faseConcluinteCodigo: 'RECURSOS',
   emiteParecerIndividual: true,
   bancasRequeridas: [
-    { id: 'snapshot-banca', tipoBancaOrigemId: 'tipo-banca-1', codigo: 'BANCA_ANALISE_RECURSOS' },
+    {
+      id: 'snapshot-banca',
+      tipoBancaOrigemId: 'tipo-banca-1',
+      codigo: 'BANCA_ANALISE_RECURSOS',
+      recorteDeCompetencia: [
+        {
+          id: 'snapshot-categoria',
+          categoriaDocumentoOrigemId: 'categoria-renda',
+          codigo: 'RENDA',
+        },
+      ],
+    },
   ],
   regraRecurso: {
     id: 'snapshot-recurso',
+    produtoAncoraId: 'produto-preliminar',
     regra: { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: 'v1', hash: 'abc123' },
     args: {
       prazoValor: 2,
       prazoUnidade: 'diasUteis',
-      atoAncoraCodigo: 'RESULTADO_HOMOLOGACAO',
       suspensividadePrimeiraInstanciaValor: null,
       suspensividadePrimeiraInstanciaUnidade: null,
       suspensividadeSegundaInstanciaValor: null,
@@ -204,7 +215,9 @@ describe('hidratarDraft — cronograma e etapas', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
 
     expect(fase.faseCanonicaId).toBe('fase-canonica-homologacao');
-    expect(fase.tiposBancaIds).toEqual(['tipo-banca-1']);
+    expect(fase.bancasRequeridas).toEqual([
+      { tipoBancaId: 'tipo-banca-1', categoriasDocumentoIds: ['categoria-renda'] },
+    ]);
   });
 
   /**
@@ -256,6 +269,34 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(fase.regraRecurso?.regraCodigo).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
     expect(fase.regraRecurso?.prazoValor).toBe('2');
     expect(fase.regraRecurso).not.toHaveProperty('hash');
+  });
+
+  /**
+   * A leitura devolve a identidade da publicação; a gravação recebe o código do
+   * tipo de ato. Sem cruzar os dois pelos produtos da fase, a gravação seguinte
+   * sairia com a âncora em branco — recusada — ou com um código que aponta para
+   * outra publicação, reancorando o prazo sem ninguém perceber.
+   */
+  it('reconstrói o código da âncora cruzando o produto ancorado com os da fase', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.regraRecurso?.atoAncoraCodigo).toBe('RESULTADO_HOMOLOGACAO');
+  });
+
+  /**
+   * Nenhum produto da fase corresponde ao ancorado. Inventar um código elegeria
+   * uma publicação em silêncio; devolver vazio deixa a ausência visível, e é ela
+   * que a conferência do cronograma cobra antes de qualquer gravação.
+   */
+  it('devolve a âncora vazia quando o produto ancorado não está entre os da fase', () => {
+    const semOProduto = dtoComCronograma({
+      cronogramaFases: [{ ...FASE_COM_RECURSO, produtos: [] }],
+      etapas: [],
+    });
+
+    const [fase] = hidratarDraft(DRAFT, semOProduto).cronograma.fases;
+
+    expect(fase.regraRecurso?.atoAncoraCodigo).toBe('');
   });
 
   /** Ausência dos dois campos é desativação da instância, e vira campo vazio. */

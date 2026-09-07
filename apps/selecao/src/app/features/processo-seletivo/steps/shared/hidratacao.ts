@@ -107,8 +107,13 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
     })),
     faseConcluinteCodigo: fase.faseConcluinteCodigo,
     emiteParecerIndividual: fase.emiteParecerIndividual,
-    tiposBancaIds: fase.bancasRequeridas.map((banca) => banca.tipoBancaOrigemId),
-    regraRecurso: recursoDe(fase.regraRecurso),
+    bancasRequeridas: fase.bancasRequeridas.map((banca) => ({
+      tipoBancaId: banca.tipoBancaOrigemId,
+      categoriasDocumentoIds: banca.recorteDeCompetencia.map(
+        (categoria) => categoria.categoriaDocumentoOrigemId,
+      ),
+    })),
+    regraRecurso: recursoDe(fase.regraRecurso, fase.produtos),
   };
 }
 
@@ -116,19 +121,28 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
  * A presença da regra é o que faz a fase admitir recurso. O hash da referência
  * não volta ao rascunho: o servidor o recompõe do catálogo, e guardá-lo aqui
  * criaria uma cópia que envelhece sozinha.
+ *
+ * A âncora chega como identidade da publicação e é gravada como código do tipo
+ * de ato. A ponte entre os dois vocabulários são os produtos da própria fase,
+ * que trazem `id` e `atoCodigo` juntos — e o cruzamento é sem perda porque o
+ * ato entra uma vez só em cada fase. Sem ele, uma simples mudança de data
+ * reenviaria a âncora em branco, ou um código resolvido para outro produto:
+ * o prazo de recurso passaria a contar de outra publicação, em silêncio.
  */
 function recursoDe(
   regra: ProcessoSeletivoDto['cronogramaFases'][number]['regraRecurso'],
+  produtos: ProcessoSeletivoDto['cronogramaFases'][number]['produtos'],
 ): RecursoDaFase | null {
   if (regra === null || regra === undefined) return null;
 
   const args = regra.args;
+  const ancora = produtos.find((produto) => produto.id === regra.produtoAncoraId);
   return {
     regraCodigo: regra.regra.codigo,
     regraVersao: regra.regra.versao,
     prazoValor: comoTexto(args.prazoValor),
     prazoUnidade: args.prazoUnidade,
-    atoAncoraCodigo: args.atoAncoraCodigo,
+    atoAncoraCodigo: ancora?.atoCodigo ?? '',
     suspensividadePrimeiraInstanciaValor: comoTexto(args.suspensividadePrimeiraInstanciaValor),
     suspensividadePrimeiraInstanciaUnidade: args.suspensividadePrimeiraInstanciaUnidade ?? '',
     suspensividadeSegundaInstanciaValor: comoTexto(args.suspensividadeSegundaInstanciaValor),
