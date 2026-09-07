@@ -24,8 +24,6 @@ const faseSeed = {
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
-  produzResultado: false,
-  resultadoDefinitivo: false,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
   origemData: 'PROPRIA',
