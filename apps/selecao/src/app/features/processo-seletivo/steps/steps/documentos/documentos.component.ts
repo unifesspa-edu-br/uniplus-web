@@ -34,11 +34,15 @@ export class DocumentosStepComponent {
       [id]: { ...this.config(id), ...patch },
     });
   }
+  /**
+   * "Todas as etapas" é um estado a respeitar continuamente, não um
+   * preenchimento único: gravar um snapshot dos códigos em `etapas` apagaria
+   * em silêncio o recorte manual anterior, e não acompanharia uma fase nova
+   * adicionada ao cronograma depois de marcado. `etapasEfetivas` resolve isso
+   * na leitura; aqui só alterna a flag.
+   */
   toggleTodasEtapas(id: string, checked: boolean): void {
-    this.patch(id, {
-      todasEtapas: checked,
-      etapas: checked ? this.fasesDoCronograma().map((fase) => fase.codigo) : this.config(id).etapas,
-    });
+    this.patch(id, { todasEtapas: checked });
   }
   toggleEtapa(id: string, code: string, checked: boolean): void {
     const current = this.config(id).etapas;
@@ -48,17 +52,25 @@ export class DocumentosStepComponent {
   }
 
   /**
-   * Etapas que valem para o documento: o que o operador guardou, cruzado com
-   * as fases que o cronograma ainda tem.
+   * Etapas que valem para o documento.
    *
-   * A lista guardada não é reescrita quando uma fase sai do cronograma (CA-04)
-   * — apagar a seleção do operador em silêncio é o defeito que esta tela
-   * corrige. Filtrar aqui, na leitura, é o que faz a fase reaparecer marcada
-   * se ela voltar ao cronograma.
+   * Com "todas as etapas" marcado, acompanha o cronograma vivo — derivado,
+   * não copiado, pelo mesmo motivo que `modalidadesEfetivas` deriva do
+   * quadro de vagas em vez de guardar uma lista própria.
+   *
+   * Sem "todas as etapas", vale o que o operador guardou, cruzado com as
+   * fases que o cronograma ainda tem. A lista guardada não é reescrita
+   * quando uma fase sai do cronograma (CA-04) — apagar a seleção do operador
+   * em silêncio é o defeito que esta tela corrige. Filtrar aqui, na leitura,
+   * é o que faz a fase reaparecer marcada se ela voltar ao cronograma.
    */
   etapasEfetivas(id: string): string[] {
-    const codigos = new Set(this.fasesDoCronograma().map((fase) => fase.codigo));
-    return this.config(id).etapas.filter((codigo) => codigos.has(codigo));
+    const vivas = this.fasesDoCronograma().map((fase) => fase.codigo);
+    const config = this.config(id);
+    if (config.todasEtapas) return vivas;
+
+    const codigos = new Set(vivas);
+    return config.etapas.filter((codigo) => codigos.has(codigo));
   }
   toggleModalidade(id: string, code: string, checked: boolean): void {
     const config = this.config(id);
