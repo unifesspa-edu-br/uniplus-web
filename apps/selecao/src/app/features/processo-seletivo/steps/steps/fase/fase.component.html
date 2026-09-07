@@ -1,0 +1,584 @@
+<p class="step-subtitle">
+  Tudo o que pertence a uma fase do certame num só lugar: o que ela publica, quem conclui o ciclo
+  recursal dela, o prazo de recurso, as bancas que ela requer e os documentos que exige. A janela e
+  a posição na linha do tempo continuam no passo Cronograma.
+</p>
+
+@if (catalogos.carregando()) {
+  <p class="field__hint" role="status">
+    Carregando fases, bancas, categorias de documento, atos e regras…
+  </p>
+} @else if (catalogos.erro(); as erro) {
+  <div class="field__erro" role="alert">
+    <p>{{ erro }}</p>
+    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
+      Tentar novamente
+    </button>
+  </div>
+} @else if (fasesNoSeletor().length === 0) {
+  <p class="field__hint">
+    Este processo ainda não tem cronograma. Defina as fases no passo Cronograma antes de configurar
+    o que cada uma publica, julga e exige.
+  </p>
+} @else {
+  <div class="step-card">
+    <div class="form-grid">
+      <div class="form-field form-grid__full">
+        <label class="label" for="fase-aberta">Fase a configurar</label>
+        <select
+          class="input"
+          id="fase-aberta"
+          [value]="faseAberta()"
+          (change)="abrirFase($any($event.target).value)"
+        >
+          @for (fase of fasesNoSeletor(); track fase.faseCanonicaId) {
+            <option [value]="fase.faseCanonicaId">{{ fase.ordem }}. {{ fase.nome }}</option>
+          }
+        </select>
+        <p class="field__hint">
+          A ordem é a da linha do tempo. Trocar de fase aqui não perde o que já foi declarado nas
+          outras — a gravação envia todas.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  @if (formulario(); as form) {
+    <div aria-live="polite" aria-atomic="true">
+      @if (recusasGerais().length > 0) {
+        <div class="field__erro" role="alert">
+          <p>O servidor recusou a gravação:</p>
+          <ul>
+            @for (recusa of recusasGerais(); track recusa) {
+              <li>{{ recusa }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <form [formGroup]="form">
+      <div class="step-card">
+        <h2 class="form-section__title">{{ nomeDaFaseAberta() }}</h2>
+        <p class="field__hint">
+          @if (form.controls.inicio.value === null && form.controls.fim.value === null) {
+            Esta fase não declara janela própria — o sistema a deriva de outra.
+          } @else {
+            Janela declarada no passo Cronograma: de {{ form.controls.inicio.value ?? '—' }} até
+            {{ form.controls.fim.value ?? '—' }}.
+          }
+        </p>
+      </div>
+
+      <!-- Publicações -->
+      <fieldset class="step-card">
+        <legend class="form-section__title">O que esta fase publica</legend>
+        <p class="field__hint" id="fase-produtos-ajuda">
+          Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo
+          marca como resultado: é ele que abre o ciclo recursal (preliminar) e o encerra
+          (definitivo).
+        </p>
+
+        @for (produto of produtos; track $index) {
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="label" [attr.for]="'fase-produto-ato-' + $index">Publicação</label>
+              <select
+                class="input"
+                [attr.id]="'fase-produto-ato-' + $index"
+                [value]="produto.atoCodigo"
+                [disabled]="!store.aceitaEdicao()"
+                [attr.aria-describedby]="
+                  erroDoCampo('produtos')
+                    ? 'fase-produtos-erro fase-produtos-ajuda'
+                    : 'fase-produtos-ajuda'
+                "
+                [attr.aria-invalid]="erroDoCampo('produtos') ? 'true' : null"
+                (change)="escolherAto($index, $any($event.target).value)"
+              >
+                <option value="">Selecione o tipo de ato…</option>
+                @for (ato of atosPara(produto.atoCodigo); track ato.codigo) {
+                  <option [value]="ato.codigo">{{ ato.nome }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="label" [attr.for]="'fase-produto-papel-' + $index">Papel</label>
+              <select
+                class="input"
+                [attr.id]="'fase-produto-papel-' + $index"
+                [value]="produto.papel ?? ''"
+                [disabled]="!store.aceitaEdicao() || !aceitaPapel(produto.atoCodigo)"
+                (change)="escolherPapel($index, $any($event.target).value)"
+              >
+                @for (papel of papeis; track papel.valor) {
+                  <option [value]="papel.valor">{{ papel.rotulo }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <button
+                class="btn btn--tertiary"
+                type="button"
+                [disabled]="!store.aceitaEdicao()"
+                [attr.aria-label]="'Remover a publicação ' + ($index + 1) + ' desta fase'"
+                (click)="removerProduto($index)"
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (produtos.length === 0) {
+          <p class="field__hint">Esta fase não declara nenhuma publicação.</p>
+        }
+
+        <button
+          class="btn btn--secondary"
+          type="button"
+          [disabled]="!store.aceitaEdicao()"
+          (click)="acrescentarProduto()"
+        >
+          Acrescentar publicação
+        </button>
+
+        @if (erroDoCampo('produtos'); as erro) {
+          <p class="field__erro" id="fase-produtos-erro" role="alert">{{ erro }}</p>
+        }
+      </fieldset>
+
+      <!-- Conclusão do ciclo recursal e parecer -->
+      <div class="step-card">
+        <h2 class="form-section__title">Ciclo recursal da matéria</h2>
+        <div class="form-grid">
+          @if (publicaPreliminar()) {
+            <div class="form-field form-grid__full">
+              <label class="label" for="fase-concluinte">Fase que conclui o ciclo</label>
+              <select
+                class="input"
+                id="fase-concluinte"
+                formControlName="faseConcluinteCodigo"
+                [attr.aria-invalid]="erroDoCampo('faseConcluinteCodigo') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('faseConcluinteCodigo')
+                    ? 'fase-concluinte-erro fase-concluinte-ajuda'
+                    : 'fase-concluinte-ajuda'
+                "
+              >
+                <option value="">Esta fase conclui a si mesma</option>
+                @for (fase of concluintesPossiveis(); track fase.faseCanonicaId) {
+                  <option [value]="fase.codigo">{{ fase.ordem }}. {{ fase.nome }}</option>
+                }
+              </select>
+              <p class="field__hint" id="fase-concluinte-ajuda">
+                A fase publica resultado preliminar. Se ela também publica o definitivo da matéria,
+                conclui a si mesma e nada se declara aqui; se a definitiva sai noutra fase, é essa
+                fase que precisa ser declarada — e ela vem depois desta na linha do tempo.
+              </p>
+              @if (erroDoCampo('faseConcluinteCodigo'); as erro) {
+                <p class="field__erro" id="fase-concluinte-erro" role="alert">{{ erro }}</p>
+              }
+            </div>
+          } @else {
+            <p class="field__hint form-grid__full">
+              Esta fase não publica resultado preliminar: não há ciclo recursal a concluir.
+            </p>
+          }
+
+          <div class="form-field form-grid__full">
+            <label class="check" for="fase-parecer">
+              <input
+                type="checkbox"
+                id="fase-parecer"
+                formControlName="emiteParecerIndividual"
+                aria-describedby="fase-parecer-ajuda"
+                [attr.aria-invalid]="erroDoCampo('emiteParecerIndividual') ? 'true' : null"
+              />
+              Esta fase emite parecer individual
+            </label>
+            <p class="field__hint" id="fase-parecer-ajuda">
+              O edital promete devolutiva a cada candidato. Só fase que publica algum resultado pode
+              prometê-la.
+            </p>
+            @if (erroDoCampo('emiteParecerIndividual'); as erro) {
+              <p class="field__erro" role="alert">{{ erro }}</p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Regra de recurso -->
+      <fieldset class="step-card">
+        <legend class="form-section__title">Recurso contra o que esta fase publica</legend>
+
+        <label class="check" for="fase-admite-recurso">
+          <input
+            type="checkbox"
+            id="fase-admite-recurso"
+            formControlName="admiteRecurso"
+            aria-describedby="fase-recurso-ajuda"
+          />
+          Cabe recurso do que esta fase publica
+        </label>
+        <p class="field__hint" id="fase-recurso-ajuda">
+          Desmarcado, a fase não declara regra de recurso alguma. Marcado, ela precisa publicar ao
+          menos um resultado preliminar — é da divulgação dele que o prazo corre.
+        </p>
+
+        @if (form.controls.admiteRecurso.value) {
+          <div class="form-grid" formGroupName="recurso">
+            <div class="form-field form-grid__full">
+              <label class="label" for="fase-regra">Regra de contagem</label>
+              <select
+                class="input"
+                id="fase-regra"
+                [value]="form.controls.recurso.controls.regraCodigo.value"
+                [attr.aria-invalid]="erroDoCampo('recurso.regra') ? 'true' : null"
+                (change)="escolherRegra($any($event.target).value)"
+              >
+                <option value="">Selecione a regra…</option>
+                @for (regra of regrasDeRecurso(); track regra.codigo + regra.versao) {
+                  <option [value]="regra.codigo">
+                    {{ regra.codigo }} ({{ regra.versao }}) — {{ regra.baseLegal }}
+                  </option>
+                }
+              </select>
+              @if (erroDoCampo('recurso.regra'); as erro) {
+                <p class="field__erro" role="alert">{{ erro }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label class="label" for="fase-prazo-valor">Prazo de interposição</label>
+              <input
+                class="input"
+                id="fase-prazo-valor"
+                type="text"
+                inputmode="decimal"
+                formControlName="prazoValor"
+                [attr.aria-invalid]="erroDoCampo('recurso.prazo') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('recurso.prazo')
+                    ? 'fase-prazo-erro fase-prazo-ajuda'
+                    : 'fase-prazo-ajuda'
+                "
+              />
+            </div>
+            <div class="form-field">
+              <label class="label" for="fase-prazo-unidade">Unidade do prazo</label>
+              <select
+                class="input"
+                id="fase-prazo-unidade"
+                formControlName="prazoUnidade"
+                [attr.aria-invalid]="erroDoCampo('recurso.prazo') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('recurso.prazo')
+                    ? 'fase-prazo-erro fase-prazo-ajuda'
+                    : 'fase-prazo-ajuda'
+                "
+              >
+                <option value="">Selecione…</option>
+                @for (unidade of unidades; track unidade.valor) {
+                  <option [value]="unidade.valor">{{ unidade.rotulo }}</option>
+                }
+              </select>
+            </div>
+            <p class="field__hint form-grid__full" id="fase-prazo-ajuda">
+              Dia corrido não é aceito na interposição. Em dias úteis o prazo é inteiro; a fração só
+              existe em horas.
+            </p>
+            @if (erroDoCampo('recurso.prazo'); as erro) {
+              <p class="field__erro form-grid__full" id="fase-prazo-erro" role="alert">
+                {{ erro }}
+              </p>
+            }
+
+            <div class="form-field form-grid__full">
+              <label class="label" for="fase-ancora">Publicação de que o prazo corre</label>
+              <select
+                class="input"
+                id="fase-ancora"
+                formControlName="atoAncoraCodigo"
+                [attr.aria-invalid]="erroDoCampo('recurso.ancora') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('recurso.ancora')
+                    ? 'fase-ancora-erro fase-ancora-ajuda'
+                    : 'fase-ancora-ajuda'
+                "
+              >
+                <option value="">Selecione a publicação…</option>
+                @for (ancora of ancorasPossiveis(); track ancora.codigo) {
+                  <option [value]="ancora.codigo">{{ ancora.nome }}</option>
+                }
+              </select>
+              <p class="field__hint" id="fase-ancora-ajuda">
+                Só os resultados preliminares desta fase entram aqui. Uma fase que publica gabarito
+                e resultado preliminares admite recurso de qualquer um dos dois, e é a escolha feita
+                aqui que decide de qual publicação a janela é contada.
+              </p>
+              @if (erroDoCampo('recurso.ancora'); as erro) {
+                <p class="field__erro" id="fase-ancora-erro" role="alert">{{ erro }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label class="label" for="fase-susp1-valor">
+                Suspensividade da 1ª instância — prazo
+              </label>
+              <input
+                class="input"
+                id="fase-susp1-valor"
+                type="text"
+                inputmode="decimal"
+                formControlName="suspensividadePrimeiraInstanciaValor"
+                aria-describedby="fase-susp-ajuda"
+                [attr.aria-invalid]="
+                  erroDoCampo('recurso.suspensividadePrimeiraInstancia') ? 'true' : null
+                "
+              />
+            </div>
+            <div class="form-field">
+              <label class="label" for="fase-susp1-unidade">
+                Suspensividade da 1ª instância — unidade
+              </label>
+              <select
+                class="input"
+                id="fase-susp1-unidade"
+                formControlName="suspensividadePrimeiraInstanciaUnidade"
+                aria-describedby="fase-susp-ajuda"
+              >
+                <option value="">Sem suspensividade</option>
+                @for (unidade of unidades; track unidade.valor) {
+                  <option [value]="unidade.valor">{{ unidade.rotulo }}</option>
+                }
+              </select>
+            </div>
+            @if (erroDoCampo('recurso.suspensividadePrimeiraInstancia'); as erro) {
+              <p class="field__erro form-grid__full" role="alert">{{ erro }}</p>
+            }
+
+            <div class="form-field">
+              <label class="label" for="fase-susp2-valor">
+                Suspensividade da 2ª instância — prazo
+              </label>
+              <input
+                class="input"
+                id="fase-susp2-valor"
+                type="text"
+                inputmode="decimal"
+                formControlName="suspensividadeSegundaInstanciaValor"
+                aria-describedby="fase-susp-ajuda"
+                [attr.aria-invalid]="
+                  erroDoCampo('recurso.suspensividadeSegundaInstancia') ? 'true' : null
+                "
+              />
+            </div>
+            <div class="form-field">
+              <label class="label" for="fase-susp2-unidade">
+                Suspensividade da 2ª instância — unidade
+              </label>
+              <select
+                class="input"
+                id="fase-susp2-unidade"
+                formControlName="suspensividadeSegundaInstanciaUnidade"
+                aria-describedby="fase-susp-ajuda"
+              >
+                <option value="">Sem suspensividade</option>
+                @for (unidade of unidades; track unidade.valor) {
+                  <option [value]="unidade.valor">{{ unidade.rotulo }}</option>
+                }
+              </select>
+            </div>
+            <p class="field__hint form-grid__full" id="fase-susp-ajuda">
+              O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são
+              declarados juntos; deixar os dois em branco desativa a suspensividade daquela
+              instância.
+            </p>
+            @if (erroDoCampo('recurso.suspensividadeSegundaInstancia'); as erro) {
+              <p class="field__erro form-grid__full" role="alert">{{ erro }}</p>
+            }
+          </div>
+        }
+      </fieldset>
+
+      <!-- Bancas requeridas -->
+      <fieldset class="step-card">
+        <legend class="form-section__title">Bancas que esta fase requer</legend>
+        <p class="field__hint" id="fase-bancas-ajuda">
+          O recorte de competência diz que categorias de documento cada banca julga. Com uma banca
+          de cada tipo ele é dispensável — a banca julga tudo o que a fase exige. Com duas do mesmo
+          tipo, ele passa a ser obrigatório e precisa distingui-las.
+        </p>
+
+        @for (banca of bancas; track $index) {
+          <div class="form-grid">
+            <div class="form-field form-grid__full">
+              <label class="label" [attr.for]="'fase-banca-' + $index">Tipo de banca</label>
+              <select
+                class="input"
+                [attr.id]="'fase-banca-' + $index"
+                [value]="banca.tipoBancaId"
+                [disabled]="!store.aceitaEdicao()"
+                [attr.aria-describedby]="
+                  erroDoCampo('bancasRequeridas')
+                    ? 'fase-bancas-erro fase-bancas-ajuda'
+                    : 'fase-bancas-ajuda'
+                "
+                [attr.aria-invalid]="erroDoCampo('bancasRequeridas') ? 'true' : null"
+                (change)="escolherTipoDeBanca($index, $any($event.target).value)"
+              >
+                <option value="">Selecione o tipo…</option>
+                @for (tipo of bancasEscolhiveis(); track tipo.id) {
+                  <option [value]="tipo.id">{{ tipo.nome }}</option>
+                }
+              </select>
+            </div>
+
+            <fieldset class="form-field form-grid__full">
+              <legend class="label">
+                Recorte de competência
+                @if (recorteObrigatorio($index)) {
+                  (obrigatório)
+                }
+              </legend>
+              @if (categorias().length === 0) {
+                <p class="field__hint">
+                  Nenhuma categoria de documento no cadastro. Sem elas, o recorte não pode ser
+                  declarado.
+                </p>
+              }
+              @for (categoria of categorias(); track categoria.id) {
+                <label class="check" [attr.for]="'fase-recorte-' + $index + '-' + categoria.id">
+                  <input
+                    type="checkbox"
+                    [attr.id]="'fase-recorte-' + $index + '-' + categoria.id"
+                    [checked]="categoriaMarcada($index, categoria.id)"
+                    [disabled]="!store.aceitaEdicao()"
+                    (change)="alternarCategoria($index, categoria.id, $any($event.target).checked)"
+                  />
+                  {{ categoria.nome }}
+                </label>
+              }
+            </fieldset>
+
+            <div class="form-field">
+              <button
+                class="btn btn--tertiary"
+                type="button"
+                [disabled]="!store.aceitaEdicao()"
+                [attr.aria-label]="'Remover a banca ' + ($index + 1) + ' desta fase'"
+                (click)="removerBanca($index)"
+              >
+                Remover banca
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (bancas.length === 0) {
+          <p class="field__hint">Esta fase não requer banca alguma.</p>
+        }
+
+        <button
+          class="btn btn--secondary"
+          type="button"
+          [disabled]="!store.aceitaEdicao()"
+          (click)="acrescentarBanca()"
+        >
+          Acrescentar banca
+        </button>
+
+        @if (erroDoCampo('bancasRequeridas'); as erro) {
+          <p class="field__erro" id="fase-bancas-erro" role="alert">{{ erro }}</p>
+        }
+      </fieldset>
+
+      <!-- Exigências documentais -->
+      <fieldset class="step-card">
+        <legend class="form-section__title">Documentos exigidos nesta fase</legend>
+        <p class="field__hint">
+          Marque o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades que
+          devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
+        </p>
+
+        @for (grupo of gruposDeDocumento; track grupo.label) {
+          <div class="docs-group">
+            <h3 class="docs-group__label">{{ grupo.label }}</h3>
+            @for (doc of grupo.docs; track doc.id) {
+              <div class="doc-item">
+                <div class="doc-item__row">
+                  <label class="check" [attr.for]="'fase-doc-' + doc.id">
+                    <input
+                      type="checkbox"
+                      [attr.id]="'fase-doc-' + doc.id"
+                      [checked]="exigidoNestaFase(doc.id)"
+                      [disabled]="
+                        !store.aceitaEdicao() || configuracaoDoDocumento(doc.id).todasEtapas
+                      "
+                      [attr.aria-describedby]="'fase-doc-desc-' + doc.id"
+                      (change)="alternarExigencia(doc.id, $any($event.target).checked)"
+                    />
+                    {{ doc.nome }}
+                  </label>
+                  <span class="doc-item__desc" [attr.id]="'fase-doc-desc-' + doc.id">
+                    {{ doc.desc }}
+                  </span>
+                </div>
+
+                @if (configuracaoDoDocumento(doc.id).todasEtapas) {
+                  <p class="field__hint">
+                    Exigido em todas as fases do edital.
+                    <button
+                      class="btn btn--tertiary"
+                      type="button"
+                      [disabled]="!store.aceitaEdicao()"
+                      (click)="recortarPorFase(doc.id)"
+                    >
+                      Recortar por fase
+                    </button>
+                  </p>
+                } @else if (configuracaoDoDocumento(doc.id).included) {
+                  <p class="field__hint">
+                    <button
+                      class="btn btn--tertiary"
+                      type="button"
+                      [disabled]="!store.aceitaEdicao()"
+                      (click)="valerEmTodasAsFases(doc.id)"
+                    >
+                      Exigir em todas as fases
+                    </button>
+                  </p>
+                }
+
+                @if (exigidoNestaFase(doc.id)) {
+                  <fieldset class="doc-expand">
+                    <legend class="label">Modalidades que devem entregar</legend>
+                    @if (modalidades().length === 0) {
+                      <p class="field__hint">
+                        O quadro de vagas ainda não seleciona modalidade alguma. Declare as ofertas
+                        no passo Vagas.
+                      </p>
+                    }
+                    @for (codigo of modalidades(); track codigo) {
+                      <label class="check" [attr.for]="'fase-mod-' + doc.id + '-' + codigo">
+                        <input
+                          type="checkbox"
+                          [attr.id]="'fase-mod-' + doc.id + '-' + codigo"
+                          [checked]="modalidadesEfetivas(doc.id).includes(codigo)"
+                          [disabled]="!store.aceitaEdicao()"
+                          (change)="alternarModalidade(doc.id, codigo, $any($event.target).checked)"
+                        />
+                        {{ codigo }}
+                      </label>
+                    }
+                  </fieldset>
+                }
+              </div>
+            }
+          </div>
+        }
+      </fieldset>
+    </form>
+  }
+}

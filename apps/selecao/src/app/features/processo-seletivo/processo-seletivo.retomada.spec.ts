@@ -14,6 +14,7 @@ import {
   PrecedenciasFaseApi,
   TiposBancaApi,
   TiposEtapaApi,
+  CategoriasDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
 import { GeoApi } from '@uniplus/shared-data/geo';
 import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
@@ -161,6 +162,7 @@ function montar(opts: CenarioOpts = {}) {
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
   { provide: PrecedenciasFaseApi, useValue: catalogoVazioStub },
   { provide: TiposBancaApi, useValue: catalogoVazioStub },
+  { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
       {

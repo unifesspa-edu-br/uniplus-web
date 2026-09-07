@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  CategoriasDocumentoApi,
   FaseCanonicaDto,
   FasesCanonicasApi,
   PrecedenciaFaseDto,
@@ -59,6 +60,7 @@ function ato(codigo: string, vigenciaFim: string | null): TipoAtoPublicadoDto {
     efeitoIrreversivel: false,
     vigenciaInicio: '2020-01-01',
     vigenciaFim,
+    ehResultado: false,
     baseLegal: null,
     criadoEm: '2026-08-30T12:00:00Z',
   } as TipoAtoPublicadoDto;
@@ -87,6 +89,7 @@ function montar(cenario: Cenario = {}) {
         useValue: { listar: () => pagina(cenario.precedencias ?? []) },
       },
       { provide: TiposBancaApi, useValue: { listar: () => pagina([]) } },
+      { provide: CategoriasDocumentoApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposEtapaApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposAtoApi, useValue: { listar: listarAtos } },
       { provide: RegrasCatalogoApi, useValue: { listar: () => pagina([]) } },
@@ -133,6 +136,19 @@ describe('CatalogosDoCronogramaService — ordem sugerida', () => {
     });
 
     expect(servico.fasesEmOrdemSugerida().map((f) => f.codigo).sort()).toEqual(['P', 'Q']);
+  });
+
+  /**
+   * A linha do tempo e a superfície de configuração por fase pedem os catálogos
+   * ao nascer, e as duas nascem juntas. Sem a guarda, cada abertura do editor
+   * dispararia a mesma rodada de requisições duas vezes.
+   */
+  it('não repete a busca quando dois passos pedem o carregamento', () => {
+    const { servico, listarAtos } = montar();
+
+    servico.carregar();
+
+    expect(listarAtos).toHaveBeenCalledTimes(1);
   });
 });
 
