@@ -147,7 +147,10 @@ export interface FaseDoCronograma {
   /** `null` só é válido em fase cuja origem de data é delegada. */
   readonly inicio: string | null;
   readonly fim: string | null;
-  readonly atoProduzidoCodigo: string | null;
+  readonly produtos: readonly ProdutoDaFase[];
+  /** Código canônico da fase que conclui o ciclo recursal desta, quando não é ela mesma. */
+  readonly faseConcluinteCodigo: string | null;
+  readonly emiteParecerIndividual: boolean;
   readonly tiposBancaIds: readonly string[];
   readonly regraRecurso: RecursoDaFase | null;
   /** `null` numa fase acrescentada agora: quem a descreve é o catálogo. */
@@ -155,19 +158,43 @@ export interface FaseDoCronograma {
 }
 
 /**
+ * Uma publicação que a fase declara: o tipo de ato e o papel dela no ciclo
+ * recursal — `PRELIMINAR`, `DEFINITIVO`, ou ausente quando o ato não é
+ * resultado. É desta coleção que sai o que a fase produz: sem produto com
+ * papel, a fase não produz resultado; sem produto preliminar, não há do que
+ * recorrer.
+ *
+ * O papel viaja como o texto que o contrato entrega, sem estreitar para um
+ * conjunto fechado. Este passo não o edita, e reduzir aqui um token que o
+ * servidor venha a acrescentar o transformaria em "sem papel" na gravação
+ * seguinte — perda silenciosa, do mesmo tipo que tirar o campo do formulário.
+ */
+export interface ProdutoDaFase {
+  readonly atoCodigo: string;
+  readonly papel: string | null;
+}
+
+/** Papel do produto de cujo instante de publicação o prazo de recurso conta. */
+export const PAPEL_PRELIMINAR = 'PRELIMINAR';
+
+/** Papel do produto que encerra a matéria: dele não cabe mais recurso. */
+export const PAPEL_DEFINITIVO = 'DEFINITIVO';
+
+/**
  * O que a fase congelou do catálogo no momento em que entrou no processo.
  *
  * Existe porque o catálogo é vivo e o cronograma não: uma fase canônica pode ser
  * inativada depois, e a que já está no edital continua valendo. Sem guardar
- * estes atributos, a tela deixaria de saber se a fase pede janela, ato ou
- * etapas — e esconderia do operador a fase que ele precisa editar.
+ * estes atributos, a tela deixaria de saber se a fase pede janela ou etapas — e
+ * esconderia do operador a fase que ele precisa editar.
+ *
+ * O que a fase publica não entra aqui: é declaração da própria fase, em
+ * `produtos`, e não cópia do catálogo.
  */
 export interface AtributosCongeladosDaFase {
   readonly donoTipico: string;
   readonly origemData: string;
   readonly agrupaEtapas: boolean;
-  readonly produzResultado: boolean;
-  readonly resultadoDefinitivo: boolean;
   readonly coletaInscricao: boolean;
   /** Código de cada banca exigida, como a fase o congelou. */
   readonly bancas: readonly { readonly id: string; readonly codigo: string }[];

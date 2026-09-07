@@ -33,8 +33,6 @@ function fase(codigo: string): FaseCanonicaDto {
     agrupaEtapas: false,
     permiteComplementacao: false,
     baseLegal: null,
-    produzResultado: false,
-    resultadoDefinitivo: false,
     coletaInscricao: false,
     origemData: 'PROPRIA',
     criadoEm: '2026-08-30T12:00:00Z',

@@ -92,8 +92,6 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
       donoTipico: fase.donoInstitucional,
       origemData: fase.origemData,
       agrupaEtapas: fase.agrupaEtapas,
-      produzResultado: fase.produzResultado,
-      resultadoDefinitivo: fase.resultadoDefinitivo,
       coletaInscricao: fase.coletaInscricao,
       bancas: fase.bancasRequeridas.map((banca) => ({
         id: banca.tipoBancaOrigemId,
@@ -103,7 +101,12 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
     ordem: comoInteiro(fase.ordem),
     inicio: fase.inicio,
     fim: fase.fim,
-    atoProduzidoCodigo: fase.atoProduzidoCodigo,
+    produtos: fase.produtos.map((produto) => ({
+      atoCodigo: produto.atoCodigo,
+      papel: produto.papel ?? null,
+    })),
+    faseConcluinteCodigo: fase.faseConcluinteCodigo,
+    emiteParecerIndividual: fase.emiteParecerIndividual,
     tiposBancaIds: fase.bancasRequeridas.map((banca) => banca.tipoBancaOrigemId),
     regraRecurso: recursoDe(fase.regraRecurso),
   };

@@ -1,30 +1,58 @@
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
-import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import {
+  PAPEL_DEFINITIVO,
+  PAPEL_PRELIMINAR,
+  type EtapaPontuada,
+  type FaseDoCronograma,
+  type ProdutoDaFase,
+} from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 /** Origem de data que obriga a fase a declarar janela. */
 export const ORIGEM_DATA_PROPRIA = 'PROPRIA';
 
 /**
- * O que a fase escolhida exige, lido do catálogo — nunca declarado pelo
- * operador. É a diferença entre perguntar "esta fase permite recurso?" e
- * descobrir que ela permite porque produz resultado não definitivo.
+ * O que a fase escolhida exige — nunca declarado pelo operador. É a diferença
+ * entre perguntar "esta fase permite recurso?" e descobrir que ela permite
+ * porque publica um resultado preliminar.
+ *
+ * As duas origens são distintas, e é por isso que a derivação recebe duas
+ * entradas. Janela e agrupamento de etapas descrevem a **fase canônica**, e vêm
+ * do catálogo (ou do que a fase congelou dele). O que a fase publica é
+ * declaração da **fase do cronograma**, em `produtos`: o catálogo não sabe o que
+ * este edital resolveu publicar nela.
  */
 export interface ExigenciasDaFase {
   readonly janelaObrigatoria: boolean;
-  readonly exigeAtoProduzido: boolean;
+  /** A fase publica ao menos um produto — não necessariamente um resultado. */
+  readonly publicaProduto: boolean;
+  /** A fase publica ao menos um produto preliminar, que é a âncora do prazo. */
   readonly admiteRecurso: boolean;
   readonly agrupaEtapas: boolean;
 }
 
-export function exigenciasDe(fase: FaseCanonicaDto): ExigenciasDaFase {
+/** Os atributos da fase canônica que decidem exigência, venham do catálogo ou do congelado. */
+interface AtributosDaFaseCanonica {
+  readonly origemData: string;
+  readonly agrupaEtapas: boolean;
+}
+
+export function exigenciasDe(
+  canonica: AtributosDaFaseCanonica,
+  produtos: readonly ProdutoDaFase[],
+): ExigenciasDaFase {
   return {
-    janelaObrigatoria: fase.origemData === ORIGEM_DATA_PROPRIA,
-    exigeAtoProduzido: fase.produzResultado,
-    admiteRecurso: fase.produzResultado && !fase.resultadoDefinitivo,
-    agrupaEtapas: fase.agrupaEtapas,
+    janelaObrigatoria: canonica.origemData === ORIGEM_DATA_PROPRIA,
+    publicaProduto: produtos.length > 0,
+    admiteRecurso: produtos.some((produto) => produto.papel === PAPEL_PRELIMINAR),
+    agrupaEtapas: canonica.agrupaEtapas,
   };
+}
+
+/** A fase encerra a matéria que abriu: do que ela publica não cabe mais recurso. */
+export function publicaResultadoDefinitivo(produtos: readonly ProdutoDaFase[]): boolean {
+  return produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO);
 }
 
 /**
@@ -51,14 +79,9 @@ export function descreverFase(
     return {
       nome: canonica?.nome ?? fase.codigo,
       donoTipico: congelados.donoTipico,
-      resultadoDefinitivo: congelados.resultadoDefinitivo,
+      publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
       coletaInscricao: congelados.coletaInscricao,
-      exigencias: {
-        janelaObrigatoria: congelados.origemData === ORIGEM_DATA_PROPRIA,
-        exigeAtoProduzido: congelados.produzResultado,
-        admiteRecurso: congelados.produzResultado && !congelados.resultadoDefinitivo,
-        agrupaEtapas: congelados.agrupaEtapas,
-      },
+      exigencias: exigenciasDe(congelados, fase.produtos),
       foraDoCatalogo: canonica === undefined,
     };
   }
@@ -66,9 +89,9 @@ export function descreverFase(
   return {
     nome: canonica?.nome ?? fase.codigo,
     donoTipico: canonica?.donoTipico ?? '—',
-    resultadoDefinitivo: canonica?.resultadoDefinitivo ?? false,
+    publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
     coletaInscricao: canonica?.coletaInscricao ?? false,
-    exigencias: canonica === undefined ? null : exigenciasDe(canonica),
+    exigencias: canonica === undefined ? null : exigenciasDe(canonica, fase.produtos),
     foraDoCatalogo: canonica === undefined,
   };
 }
@@ -77,7 +100,7 @@ export function descreverFase(
 export interface DescricaoDaFase {
   readonly nome: string;
   readonly donoTipico: string;
-  readonly resultadoDefinitivo: boolean;
+  readonly publicaResultadoDefinitivo: boolean;
   readonly coletaInscricao: boolean;
   /** `null` quando nem o catálogo nem o congelado descrevem a fase. */
   readonly exigencias: ExigenciasDaFase | null;
@@ -279,10 +302,6 @@ export function problemasDoCronograma(
       Date.parse(fase.fim) < Date.parse(fase.inicio)
     ) {
       problemas.push(`Na fase ${nome}, o fim não pode vir antes do início.`);
-    }
-
-    if (exigencias.exigeAtoProduzido && fase.atoProduzidoCodigo === null) {
-      problemas.push(`A fase ${nome} produz resultado e precisa declarar o ato que o publica.`);
     }
   }
 

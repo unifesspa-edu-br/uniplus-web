@@ -7,6 +7,7 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import type { ProdutoDaFase } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CronogramaStepComponent } from './cronograma.component';
@@ -45,8 +46,6 @@ const FASES_CANONICAS = [
     donoTipico: 'CEPS',
     agrupaEtapas: false,
     permiteComplementacao: false,
-    produzResultado: false,
-    resultadoDefinitivo: false,
     coletaInscricao: true,
     origemData: 'PROPRIA',
   },
@@ -57,8 +56,6 @@ const FASES_CANONICAS = [
     donoTipico: 'CEPS',
     agrupaEtapas: true,
     permiteComplementacao: false,
-    produzResultado: false,
-    resultadoDefinitivo: false,
     coletaInscricao: false,
     origemData: 'PROPRIA',
   },
@@ -69,8 +66,6 @@ const FASES_CANONICAS = [
     donoTipico: 'CEPS',
     agrupaEtapas: false,
     permiteComplementacao: false,
-    produzResultado: true,
-    resultadoDefinitivo: true,
     coletaInscricao: false,
     origemData: 'DERIVADA',
   },
@@ -181,7 +176,9 @@ describe('CronogramaStepComponent', () => {
         ordem: indice + 1,
         inicio: '2026-03-01T08:00:00-03:00',
         fim: '2026-03-10T18:00:00-03:00',
-        atoProduzidoCodigo: null,
+        produtos: [],
+        faseConcluinteCodigo: null,
+        emiteParecerIndividual: false,
         tiposBancaIds: [],
         regraRecurso: null,
         congelados: null,
@@ -190,9 +187,31 @@ describe('CronogramaStepComponent', () => {
     detectar();
   }
 
+  /** Uma fase única que declara o que publica, sem que este passo o edite. */
+  function comFaseQuePublica(produtos: readonly ProdutoDaFase[]): void {
+    store.patchObjectSection('cronograma', {
+      fases: [
+        {
+          faseCanonicaId: ID_RESULTADO,
+          codigo: 'RESULTADO_FINAL',
+          ordem: 1,
+          inicio: '2026-03-01T08:00:00-03:00',
+          fim: '2026-03-10T18:00:00-03:00',
+          produtos,
+          faseConcluinteCodigo: 'RECURSOS',
+          emiteParecerIndividual: true,
+          tiposBancaIds: [],
+          regraRecurso: null,
+          congelados: null,
+        },
+      ],
+    });
+    detectar();
+  }
+
   /** Fases cujo processo congelou atributos diferentes dos do catálogo. */
   function comFasesCongeladas(
-    ...declaradas: readonly { id: string; agrupaEtapas: boolean; produzResultado: boolean }[]
+    ...declaradas: readonly { id: string; agrupaEtapas: boolean }[]
   ): void {
     store.patchObjectSection('cronograma', {
       fases: declaradas.map((fase, indice) => ({
@@ -201,15 +220,15 @@ describe('CronogramaStepComponent', () => {
         ordem: indice + 1,
         inicio: '2026-03-01T08:00:00-03:00',
         fim: '2026-03-10T18:00:00-03:00',
-        atoProduzidoCodigo: null,
+        produtos: [],
+        faseConcluinteCodigo: null,
+        emiteParecerIndividual: false,
         tiposBancaIds: [],
         regraRecurso: null,
         congelados: {
           donoTipico: 'CEPS',
           origemData: 'PROPRIA',
           agrupaEtapas: fase.agrupaEtapas,
-          produzResultado: fase.produzResultado,
-          resultadoDefinitivo: false,
           coletaInscricao: false,
           bancas: [],
         },
@@ -308,7 +327,7 @@ describe('CronogramaStepComponent', () => {
    * um edital que nunca as teve.
    */
   it('descreve a fase pelo que ela congelou, mesmo com o catálogo dizendo outra coisa', () => {
-    comFasesCongeladas({ id: ID_INSCRICAO, agrupaEtapas: true, produzResultado: false });
+    comFasesCongeladas({ id: ID_INSCRICAO, agrupaEtapas: true });
 
     const item = componente.linhaDoTempo()[0];
 
@@ -325,7 +344,7 @@ describe('CronogramaStepComponent', () => {
    * sairia.
    */
   it('confere pela fase congelada quando a entrada saiu do catálogo', () => {
-    comFasesCongeladas({ id: FASE_SUMIDA, agrupaEtapas: true, produzResultado: false });
+    comFasesCongeladas({ id: FASE_SUMIDA, agrupaEtapas: true });
     comUmaEtapa();
 
     expect(componente.linhaDoTempo()[0].foraDoCatalogo).toBe(true);
@@ -715,19 +734,74 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * Um ato fora de vigência não é escolha nova, mas descreve o cronograma
-   * gravado. Fora da lista, nenhuma opção casa: o campo aparece vazio enquanto
-   * o código continua lá, para o servidor recusá-lo na gravação seguinte.
+   * O ato cujo rótulo o catálogo não resolve descreve o cronograma gravado do
+   * mesmo jeito. Escondê-lo faria a fase parecer publicar menos do que publica.
    */
-  it('mantém no seletor o ato fora de vigência que a fase já referencia', () => {
-    comFases(ID_RESULTADO);
-    componente.fases.at(0).controls.atoProduzidoCodigo.setValue('EDITAL_ANTIGO');
+  it('mostra pelo código o ato que o catálogo não nomeia', () => {
+    comFaseQuePublica([{ atoCodigo: 'EDITAL_ANTIGO', papel: 'PRELIMINAR' }]);
 
-    const oferecidos = componente
-      .atosEscolhiveisPara(componente.fases.at(0))
-      .map((ato) => ato.codigo);
+    const mostrados = componente.produtosDaFase(componente.fases.at(0));
 
-    expect(oferecidos).toContain('EDITAL_ANTIGO');
+    expect(mostrados).toEqual([
+      { atoCodigo: 'EDITAL_ANTIGO', nome: 'EDITAL_ANTIGO', papel: 'resultado preliminar' },
+    ]);
+  });
+
+  /**
+   * O papel que esta tela ainda não sabe nomear aparece como veio: inventar
+   * rótulo para o desconhecido esconderia do operador que a fase declara algo
+   * que a tela não descreve.
+   */
+  it('mostra o papel desconhecido pelo token que o contrato entregou', () => {
+    comFaseQuePublica([{ atoCodigo: 'EDITAL', papel: 'RETIFICACAO' }]);
+
+    expect(componente.produtosDaFase(componente.fases.at(0))[0].papel).toBe('RETIFICACAO');
+  });
+
+  /**
+   * A prova do apagamento silencioso: produtos, fase concluinte e parecer
+   * individual não são editados neste passo, e a gravação substitui o
+   * cronograma inteiro. Fora do formulário, uma simples mudança de data os
+   * apagaria — junto com o que a fase produz e com a âncora do recurso, que
+   * deles derivam.
+   */
+  it('reenvia na gravação o que a tela não edita, depois de mexer na janela', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFaseQuePublica([
+      { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+      { atoCodigo: 'COMUNICADO', papel: null },
+    ]);
+
+    componente.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
+    detectar();
+
+    const gravacao = componente.persistir();
+    const enviadas = controller.expectOne(ROTA_FASES);
+
+    expect(
+      (
+        enviadas.request.body as {
+          produtos: unknown;
+          faseConcluinteCodigo: unknown;
+          emiteParecerIndividual: unknown;
+        }[]
+      )[0],
+    ).toMatchObject({
+      produtos: [
+        { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+        { atoCodigo: 'COMUNICADO', papel: null },
+      ],
+      faseConcluinteCodigo: 'RECURSOS',
+      emiteParecerIndividual: true,
+    });
+
+    enviadas.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    await gravacao;
   });
 
   it('não tenta gravar o cronograma quando as etapas são recusadas', async () => {

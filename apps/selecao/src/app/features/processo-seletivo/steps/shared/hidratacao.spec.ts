@@ -147,11 +147,15 @@ const FASE_COM_RECURSO = {
   agrupaEtapas: false,
   permiteComplementacao: true,
   produzResultado: true,
-  resultadoDefinitivo: false,
   coletaInscricao: false,
   inicio: '2026-03-25T08:00:00-03:00',
   fim: '2026-03-25T23:59:59-03:00',
-  atoProduzidoCodigo: 'RESULTADO_HOMOLOGACAO',
+  produtos: [
+    { id: 'produto-preliminar', atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' },
+    { id: 'produto-aviso', atoCodigo: 'COMUNICADO_HOMOLOGACAO', papel: null },
+  ],
+  faseConcluinteCodigo: 'RECURSOS',
+  emiteParecerIndividual: true,
   bancasRequeridas: [
     { id: 'snapshot-banca', tipoBancaOrigemId: 'tipo-banca-1', codigo: 'BANCA_ANALISE_RECURSOS' },
   ],
@@ -211,6 +215,28 @@ describe('hidratarDraft — cronograma e etapas', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
 
     expect(fase.codigo).toBe('HOMOLOGACAO');
+  });
+
+  /**
+   * O que a fase publica volta inteiro, com o papel de cada publicação: é dele
+   * que a tela deriva o que a fase produz e se cabe recurso, e é ele que a
+   * gravação do cronograma reenvia — a coleção é substituída por inteiro.
+   */
+  it('projeta os produtos da fase com o papel de cada publicação', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.produtos).toEqual([
+      { atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' },
+      { atoCodigo: 'COMUNICADO_HOMOLOGACAO', papel: null },
+    ]);
+  });
+
+  /** Também não editados neste passo, e também reenviados a cada gravação. */
+  it('projeta a fase concluinte e a promessa de parecer individual', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.faseConcluinteCodigo).toBe('RECURSOS');
+    expect(fase.emiteParecerIndividual).toBe(true);
   });
 
   it('preserva a janela como instante, com o deslocamento intacto', () => {
