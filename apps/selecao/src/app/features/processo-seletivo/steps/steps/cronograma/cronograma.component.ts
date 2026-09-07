@@ -230,6 +230,8 @@ export class CronogramaStepComponent {
       this.etapas.controls.map(etapaDoFormulario),
       this.catalogos.fasePorId(),
       this.catalogos.precedencias(),
+      this.catalogos.atoPorCodigo(),
+      (tipoBancaId) => this.catalogos.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
     );
   });
 
@@ -556,45 +558,6 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Grava o cronograma, contornando o ciclo de ordem quando ele aparece.
-   *
-   * Reordenar é sempre uma permutação de `1..N`, e toda permutação não-trivial
-   * fecha ciclo: cada fase precisa que a outra libere a posição primeiro, e o
-   * servidor não persiste isso numa chamada. Mandar o operador "mover uma para
-   * o fim" não resolvia — renumerar produz `1..N` de novo, e o ciclo volta.
-   *
-   * O que resolve é uma posição que ninguém ocupa. O domínio aceita qualquer
-   * ordem positiva, não só a sequência fechada, então uma gravação intermediária
-   * em `N+1..2N` esvazia as posições `1..N` e a seguinte as ocupa sem cadeia que
-   * volte a si mesma. Duas chamadas em vez de uma, e só quando a primeira acusa.
-   */
-  private async gravarCronograma(
-    processoId: string,
-    fases: readonly FaseDoCronograma[],
-  ): Promise<ResultadoGravacao> {
-    const pretendida = await this.cadastro.definirCronogramaFases(
-      processoId,
-      fases.map(comoComandoDeFase),
-    );
-    if (pretendida.ok || pretendida.problem.code !== PERMUTACAO_DE_ORDEM) return pretendida;
-
-    // Deslocar pela quantidade de fases só serve se as ordens forem 1..N; o
-    // domínio aceita qualquer ordem positiva, e uma lacuna faria a faixa
-    // "livre" cair em cima de uma posição ocupada. Somar a maior ordem em uso
-    // põe todas acima de qualquer uma que exista hoje.
-    const deslocamento = Math.max(...fases.map((fase) => fase.ordem));
-    const emOrdemLivre = fases.map((fase) => ({ ...fase, ordem: fase.ordem + deslocamento }));
-
-    const intermediaria = await this.cadastro.definirCronogramaFases(
-      processoId,
-      emOrdemLivre.map(comoComandoDeFase),
-    );
-    if (!intermediaria.ok) return intermediaria;
-
-    return this.cadastro.definirCronogramaFases(processoId, fases.map(comoComandoDeFase));
-  }
-
-  /**
    * Recolhe os `id` que o servidor atribuiu às etapas novas. Devolve se
    * conseguiu.
    *
@@ -668,6 +631,35 @@ export class CronogramaStepComponent {
       return 'Trocar duas fases de lugar exige duas gravações: mova uma delas para o fim da linha do tempo, grave, e então traga a outra para a posição desejada.';
     }
     return this.problemI18n.resolve(problema).title;
+  }
+
+  /**
+   * Grava o cronograma, contornando o ciclo de ordem quando ele aparece.
+   *
+   * Reordenar é sempre uma permutação de `1..N`, e toda permutação não-trivial
+   * fecha ciclo: cada fase precisa que a outra libere a posição primeiro, e o
+   * servidor não persiste isso numa chamada.
+   */
+  private async gravarCronograma(
+    processoId: string,
+    fases: readonly FaseDoCronograma[],
+  ): Promise<ResultadoGravacao> {
+    const pretendida = await this.cadastro.definirCronogramaFases(
+      processoId,
+      fases.map(comoComandoDeFase),
+    );
+    if (pretendida.ok || pretendida.problem.code !== PERMUTACAO_DE_ORDEM) return pretendida;
+
+    const deslocamento = Math.max(...fases.map((fase) => fase.ordem));
+    const emOrdemLivre = fases.map((fase) => ({ ...fase, ordem: fase.ordem + deslocamento }));
+
+    const intermediaria = await this.cadastro.definirCronogramaFases(
+      processoId,
+      emOrdemLivre.map(comoComandoDeFase),
+    );
+    if (!intermediaria.ok) return intermediaria;
+
+    return this.cadastro.definirCronogramaFases(processoId, fases.map(comoComandoDeFase));
   }
 
   /** Reescreve a posição de 1 a N na ordem em que as fases estão. */

@@ -1,13 +1,17 @@
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
 import {
-  PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
   type EtapaPontuada,
   type FaseDoCronograma,
   type ProdutoDaFase,
 } from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
+import {
+  problemasDaFase,
+  publicaResultadoDefinitivo,
+  type AtoDoCatalogo,
+} from '../fase/configuracao-da-fase';
 
 /** Origem de data que obriga a fase a declarar janela. */
 export const ORIGEM_DATA_PROPRIA = 'PROPRIA';
@@ -48,38 +52,6 @@ export function exigenciasDe(
     admiteRecurso: produtos.some((produto) => produto.papel === PAPEL_PRELIMINAR),
     agrupaEtapas: canonica.agrupaEtapas,
   };
-}
-
-/** A fase encerra a matéria que abriu: do que ela publica não cabe mais recurso. */
-export function publicaResultadoDefinitivo(produtos: readonly ProdutoDaFase[]): boolean {
-  return produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO);
-}
-
-/** Os produtos preliminares da fase — os únicos que podem ancorar o prazo. */
-export function produtosPreliminares(
-  produtos: readonly ProdutoDaFase[],
-): readonly ProdutoDaFase[] {
-  return produtos.filter((produto) => produto.papel === PAPEL_PRELIMINAR);
-}
-
-/**
- * O que há de errado com a âncora do prazo de recurso da fase, ou `null`.
- *
- * Existe porque o servidor recusa os dois estados, e a recusa chega depois de o
- * operador ter perdido a gravação inteira. A âncora vazia é o que a hidratação
- * produz quando o cruzamento com os produtos não acha a publicação; a âncora
- * que não é preliminar da própria fase é o que sobra quando o produto muda de
- * papel — ou sai — depois de a regra ter sido declarada.
- */
-export function problemaDaAncora(fase: FaseDoCronograma): 'ausente' | 'naoPreliminar' | null {
-  const regra = fase.regraRecurso;
-  if (regra === null) return null;
-  if (regra.atoAncoraCodigo === '') return 'ausente';
-
-  const preliminares = produtosPreliminares(fase.produtos);
-  return preliminares.some((produto) => produto.atoCodigo === regra.atoAncoraCodigo)
-    ? null
-    : 'naoPreliminar';
 }
 
 /**
@@ -294,6 +266,8 @@ export function problemasDoCronograma(
   etapas: readonly EtapaPontuada[],
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
   precedencias: readonly PrecedenciaFaseDto[],
+  atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
+  nomeDaBanca: (tipoBancaId: string) => string,
 ): readonly string[] {
   const problemas: string[] = [];
 
@@ -331,18 +305,15 @@ export function problemasDoCronograma(
       problemas.push(`Na fase ${nome}, o fim não pode vir antes do início.`);
     }
 
-    // A âncora não é editada aqui, mas atravessa este passo até a gravação: sem
-    // conferi-la, mudar uma data enviaria uma âncora que o servidor recusa, e a
-    // recusa chegaria depois de o cronograma inteiro ter sido perdido.
-    const ancora = problemaDaAncora(fase);
-    if (ancora === 'ausente') {
-      problemas.push(
-        `A fase ${nome} admite recurso e está sem a publicação que ancora o prazo. Escolha-a em Configuração por fase.`,
-      );
-    } else if (ancora === 'naoPreliminar') {
-      problemas.push(
-        `Na fase ${nome}, o prazo de recurso está ancorado numa publicação que ela não declara como resultado preliminar. Corrija em Configuração por fase.`,
-      );
+    // O que a fase declara não é editado aqui, mas atravessa este passo até a
+    // gravação — e a gravação substitui a coleção inteira. Sem conferir, uma
+    // publicação sem ato, uma banca sem tipo ou um recurso pela metade sairiam
+    // no comando por causa de uma mudança de data, e a recusa voltaria falando
+    // de um campo que este passo não mostra. Quem confere é a mesma função que
+    // a superfície da fase usa: duplicar a regra aqui é o que já produziu um
+    // defeito nesta frente.
+    for (const declarado of problemasDaFase(fase, fases, atoPorCodigo, nomeDaBanca)) {
+      problemas.push(`Na fase ${nome}: ${declarado.mensagem} Corrija em Configuração por fase.`);
     }
   }
 

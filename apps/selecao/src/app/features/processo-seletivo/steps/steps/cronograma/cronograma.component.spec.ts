@@ -212,6 +212,27 @@ describe('CronogramaStepComponent', () => {
           regraRecurso: null,
           congelados: null,
         },
+        // A fase concluinte precisa estar na linha do tempo, publicar a
+        // definitiva e vir depois — é o que a conferência do passo confere.
+        {
+          faseCanonicaId: FASE_SUMIDA,
+          codigo: 'RECURSOS',
+          ordem: 2,
+          inicio: '2026-03-12T08:00:00-03:00',
+          fim: '2026-03-20T18:00:00-03:00',
+          produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+          faseConcluinteCodigo: null,
+          emiteParecerIndividual: false,
+          bancasRequeridas: [],
+          regraRecurso: null,
+          congelados: {
+            donoTipico: 'CEPS',
+            origemData: 'PROPRIA',
+            agrupaEtapas: false,
+            coletaInscricao: false,
+            bancas: [],
+          },
+        },
       ],
     });
     detectar();
@@ -776,7 +797,7 @@ describe('CronogramaStepComponent', () => {
   it('reenvia na gravação o que a tela não edita, depois de mexer na janela', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFaseQuePublica([
-      { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+      { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
       { atoCodigo: 'COMUNICADO', papel: null },
     ]);
 
@@ -796,7 +817,7 @@ describe('CronogramaStepComponent', () => {
       )[0],
     ).toMatchObject({
       produtos: [
-        { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+        { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
         { atoCodigo: 'COMUNICADO', papel: null },
       ],
       faseConcluinteCodigo: 'RECURSOS',
@@ -821,7 +842,7 @@ describe('CronogramaStepComponent', () => {
   it('reenvia na gravação as bancas requeridas com o recorte de cada uma', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFaseQuePublica(
-      [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+      [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
       [
         { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
         { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
