@@ -1,4 +1,5 @@
 import { ProblemDetails } from '@uniplus/shared-core/http';
+import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import {
   DadosDoAtoRequest,
   ItemConformidadeDto,
@@ -7,6 +8,25 @@ import {
 
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
 import { hojeNoFusoInstitucional, instanteDoCampo } from '../../shared/fuso-institucional';
+
+/** Sem catálogo à mão, só o que já foi hidratado do servidor decide — nunca `false` por omissão do parâmetro. */
+const SEM_CATALOGO: ReadonlyMap<string, FaseCanonicaDto> = new Map();
+
+/**
+ * Se a fase coleta inscrição — o que ela congelou tem precedência, e o
+ * catálogo institucional é o fallback. **A ordem importa**: uma fase
+ * acrescentada nesta sessão (`acrescentarFase()` do passo Cronograma) nasce
+ * com `congelados: null` — só `hidratarDraft()` a partir de um `GET /{id}`
+ * preenche esse campo — e `persistir()` do Cronograma reconcilia só as
+ * etapas, não as fases (`reconciliarEtapas`). Sem o fallback, uma fase de
+ * coleta acrescentada e gravada na mesma sessão fica invisível para esta
+ * tela até um F5, e o comando de publicação manda o período preenchido onde
+ * o servidor exige `null` — 422 `PeriodoInscricaoNaoInformavel` na
+ * publicação mais comum, a de processo com inscrição própria.
+ */
+function coletaInscricao(fase: FaseDoCronograma, fasePorId: ReadonlyMap<string, FaseCanonicaDto>): boolean {
+  return fase.congelados?.coletaInscricao ?? fasePorId.get(fase.faseCanonicaId)?.coletaInscricao ?? false;
+}
 
 /**
  * A fase que ancora o período de inscrição do Edital — a de menor `ordem`
@@ -19,10 +39,17 @@ import { hojeNoFusoInstitucional, instanteDoCampo } from '../../shared/fuso-inst
  * menor `ordem` deterministicamente (`ProcessoSeletivo.cs:3039-3058`), e
  * perguntar ao operador qual vale produziria `PeriodoInscricaoNaoInformavel`
  * ao enviar o que ele escolhesse.
+ *
+ * `fasePorId` é o catálogo de fases canônicas (`CatalogosDoCronogramaService.fasePorId`,
+ * já provido na página) — ver `coletaInscricao()` para o porquê de não bastar
+ * `fase.congelados`.
  */
-export function faseQueAncoraOPeriodoDeInscricao(draft: WizardDraft): FaseDoCronograma | null {
+export function faseQueAncoraOPeriodoDeInscricao(
+  draft: WizardDraft,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
+): FaseDoCronograma | null {
   const fasesDeColeta = draft.cronograma.fases
-    .filter((fase) => fase.congelados?.coletaInscricao === true)
+    .filter((fase) => coletaInscricao(fase, fasePorId))
     .sort((a, b) => a.ordem - b.ordem);
   return fasesDeColeta[0] ?? null;
 }
@@ -41,8 +68,11 @@ export function faseQueAncoraOPeriodoDeInscricao(draft: WizardDraft): FaseDoCron
  * A tela nunca deriva: só decide qual dos dois ramos vale, a partir do mesmo
  * campo (`coletaInscricao`) que `hidratacao.ts` já mapeia.
  */
-export function temFaseDeColetaInscricao(draft: WizardDraft): boolean {
-  return faseQueAncoraOPeriodoDeInscricao(draft) !== null;
+export function temFaseDeColetaInscricao(
+  draft: WizardDraft,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
+): boolean {
+  return faseQueAncoraOPeriodoDeInscricao(draft, fasePorId) !== null;
 }
 
 /**
@@ -55,8 +85,11 @@ export function temFaseDeColetaInscricao(draft: WizardDraft): boolean {
  * `dataReferencia` deixaria o servidor usar a referência de hoje, que não é a
  * pergunta que se quer responder aqui.
  */
-export function dataReferenciaLegalDe(draft: WizardDraft): string | null {
-  const ancora = faseQueAncoraOPeriodoDeInscricao(draft);
+export function dataReferenciaLegalDe(
+  draft: WizardDraft,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
+): string | null {
+  const ancora = faseQueAncoraOPeriodoDeInscricao(draft, fasePorId);
   if (ancora !== null) {
     return ancora.inicio === null ? null : hojeNoFusoInstitucional(new Date(ancora.inicio));
   }
@@ -222,6 +255,7 @@ function inteiro(texto: string): number | null {
 export function mensagensDePublicacao(
   draft: WizardDraft,
   documentoEditalId: string | null,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
 ): string[] {
   const mensagens: string[] = [];
   const publicacao = draft.publicacao;
@@ -232,7 +266,7 @@ export function mensagensDePublicacao(
     );
   }
 
-  if (!temFaseDeColetaInscricao(draft)) {
+  if (!temFaseDeColetaInscricao(draft, fasePorId)) {
     if (instanteDoCampo(publicacao.periodoInscricaoInicio) === null) {
       mensagens.push(
         'Informe o início do período de inscrição — o cronograma não tem fase que colete inscrição pelo sistema.',
@@ -264,9 +298,10 @@ export function mensagensDePublicacao(
 export function comoComandoDePublicacao(
   draft: WizardDraft,
   documentoEditalId: string,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
 ): PublicarProcessoSeletivoRequest {
   const publicacao = draft.publicacao;
-  const temFase = temFaseDeColetaInscricao(draft);
+  const temFase = temFaseDeColetaInscricao(draft, fasePorId);
 
   const ato: DadosDoAtoRequest = {
     orgao: publicacao.ato.orgao.trim(),
