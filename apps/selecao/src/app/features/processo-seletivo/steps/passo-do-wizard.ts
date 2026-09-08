@@ -37,6 +37,16 @@ export interface PassoDoWizard {
 
   /** O que confirmar antes de gravar, ou `null` quando não há o que confirmar. */
   confirmacaoDeGravacao?(): ConfirmacaoDeGravacao | null;
+
+  /**
+   * Refaz, a partir do servidor, o que este passo cacheia para `validate()`
+   * decidir. A maioria dos passos não tem cache — só a Revisão, cujo
+   * checklist é lido uma vez e reaproveitado enquanto o operador estiver
+   * nela. Sem isto, gravar de novo um passo anterior (`gravarPassosAnte-
+   * riores`) não se reflete no checklist da Revisão, e `validate()` recusa
+   * com a foto de antes da correção (achado do Codex na #486, P1).
+   */
+  recarregarChecklist?(): Promise<void>;
 }
 
 /** Token pelo qual a página coleta os passos, na ordem do template. */

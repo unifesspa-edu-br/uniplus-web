@@ -362,6 +362,36 @@ describe('RevisaoStepComponent', () => {
     });
 
     /**
+     * O `POST` já devolveu `204` quando esta releitura roda — mas ela ainda
+     * mostra `rascunho`, um status que só é consistente ANTES da publicação.
+     * Atraso de propagação (réplica desatualizada) ou falha real de aplicar:
+     * as duas exigem manter a tela travada, não tratar o status desatualizado
+     * como se fosse a verdade definitiva (achado do Codex na #486, P1 — a
+     * mesma família de "estado intermediário tratado como final" que já
+     * apareceu nesta frente).
+     */
+    it('mantém a tela travada quando a releitura pós-204 ainda mostra rascunho', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
+
+      await flushMicrotasks();
+      controller
+        .expectOne(ROTA_DETALHE)
+        .flush({ ...PROCESSO_DTO_MINIMO, status: StatusProcesso.rascunho });
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+
+      const resultado = await gravacao;
+      expect(resultado.valid).toBe(false);
+      expect(store.publicacaoNaoConfirmada()).toBe(true);
+      expect(store.edicaoPermitida()).toBe(false);
+      expect(componente.snapshotConfirmado()).toBeNull();
+    });
+
+    /**
      * A fase acrescentada nesta sessão (`acrescentarFase()` do passo
      * Cronograma) nasce com `congelados: null` — só uma releitura do
      * servidor preenche esse campo, e `persistir()` do Cronograma reconcilia
