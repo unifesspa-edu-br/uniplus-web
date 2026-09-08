@@ -29,14 +29,12 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  CODIGOS_FASE_CANONICA,
   CONFIGURACAO_BASE_PATH,
   DONOS_TIPICOS_FASE,
   ORIGENS_DATA_FASE,
   FaseCanonicaDto,
   FasesCanonicasApi,
   type AtualizarFaseCanonicaCommand,
-  type CriarFaseCanonicaCommand,
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
@@ -51,17 +49,12 @@ import {
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
 
-/** Vendor code do DomainError `FaseCanonica.CodigoJaExiste` (uniplus-api, 409 Conflict). */
-const FASE_CANONICA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.fase_canonica.codigo_ja_existe';
-
 /**
  * Fase que recebe os pedidos de isenção da taxa. A marca `coletaSolicitacaoIsencao`
  * é bicondicional com este código no agregado: vale aqui e só aqui, e nunca junto
  * da coleta de inscrição — são janelas com prazos distintos.
  */
 const CODIGO_SOLICITACAO_ISENCAO = 'SOLICITACAO_ISENCAO';
-
-type ModoFormulario = 'criar' | 'editar';
 
 interface FaseForm {
   codigo: FormControl<string>;
@@ -113,10 +106,14 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
       </div>
     </div>
 
-    <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
-      O código de uma fase canônica ou de um tipo de banca não pode ser alterado após a criação —
-      pertence ao vocabulário canônico fixo e é congelado por snapshot nos cronogramas dos editais.
-      Para corrigir, crie uma nova entrada e inative a anterior.
+    <ui-alert
+      variant="info"
+      heading="Códigos definidos pelo catálogo institucional"
+      [dynamic]="false"
+    >
+      As fases canônicas pertencem a um vocabulário fixo, provisionado pela instituição no seed da
+      API e congelado por snapshot nos cronogramas dos editais. Esta tela não cria fases nem altera
+      o código de uma fase — aqui você apenas edita os atributos de fases existentes ou as inativa.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -143,10 +140,6 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
             <span class="cfg-fases-canonicas__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-          Nova fase canônica
-        </button>
       </div>
 
       <ui-filter-bar
@@ -246,13 +239,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
           </ui-empty-state>
         } @else {
           <ui-empty-state
-            heading="Nenhuma fase canônica cadastrada"
-            description="Cadastre a primeira fase para montar o cronograma de processos seletivos."
-          >
-            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-              Nova fase canônica
-            </button>
-          </ui-empty-state>
+            heading="Nenhuma fase canônica disponível"
+            description="O catálogo de fases é definido institucionalmente. As fases aparecem aqui quando o backend as provisiona."
+          />
         }
       }
 
@@ -272,7 +261,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
     <ui-drawer
       class="cfg-form-drawer"
       [(visible)]="formOpen"
-      [heading]="formHeading()"
+      heading="Editar fase canônica"
       ariaLabel="Formulário de fase canônica"
       position="right"
     >
@@ -290,34 +279,14 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         <section aria-labelledby="cfg-fase-identificacao">
           <h3 id="cfg-fase-identificacao" class="form-section__title">Identificação</h3>
           <div class="form-grid form-grid--1col">
-            @if (modo() === 'criar') {
-              <label class="field" [class.is-error]="erroDoCampo('codigo')">
-                <span class="field__label is-required">Código</span>
-                <select
-                  class="select"
-                  formControlName="codigo"
-                  [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
-                >
-                  <option value="" disabled>Selecione o código</option>
-                  @for (codigo of codigosFase; track codigo) {
-                    <option [value]="codigo">{{ codigo }}</option>
-                  }
-                </select>
-                <span class="field__hint">Imutável após a criação.</span>
-                @if (erroDoCampo('codigo')) {
-                  <span class="field__error">{{ erroDoCampo('codigo') }}</span>
-                }
-              </label>
-            } @else {
-              <label class="field" [class.is-error]="erroDoCampo('codigo')">
-                <span class="field__label is-required">Código</span>
-                <input class="input" type="text" formControlName="codigo" readonly />
-                <span class="field__hint">Imutável após criação.</span>
-                @if (erroDoCampo('codigo')) {
-                  <span class="field__error">{{ erroDoCampo('codigo') }}</span>
-                }
-              </label>
-            }
+            <label class="field" [class.is-error]="erroDoCampo('codigo')">
+              <span class="field__label is-required">Código</span>
+              <input class="input" type="text" formControlName="codigo" readonly />
+              <span class="field__hint">Imutável após criação.</span>
+              @if (erroDoCampo('codigo')) {
+                <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+              }
+            </label>
             <label class="field" [class.is-error]="erroDoCampo('donoTipico')">
               <span class="field__label is-required">Dono típico</span>
               <select
@@ -469,13 +438,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
           @if (saving()) {
             <ui-spinner size="sm" />
           }
-          {{
-            saving()
-              ? 'Salvando...'
-              : modo() === 'criar'
-                ? 'Criar fase canônica'
-                : 'Salvar fase canônica'
-          }}
+          {{ saving() ? 'Salvando...' : 'Salvar fase canônica' }}
         </button>
       </div>
     </ui-drawer>
@@ -498,7 +461,6 @@ export class FasesCanonicasPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  protected readonly codigosFase = CODIGOS_FASE_CANONICA;
   protected readonly donosTipicos = DONOS_TIPICOS_FASE;
   protected readonly origensData = ORIGENS_DATA_FASE;
 
@@ -506,7 +468,6 @@ export class FasesCanonicasPage {
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);
   protected readonly formError = signal<string | null>(null);
-  protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly faseEmEdicaoId = signal<string | null>(null);
   protected readonly faseParaRemover = signal<FaseCanonicaDto | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
@@ -593,10 +554,6 @@ export class FasesCanonicasPage {
     return this.lista.error() ? 'Erro inesperado ao carregar fases canônicas.' : null;
   });
 
-  protected readonly formHeading = computed(() =>
-    this.modo() === 'criar' ? 'Nova fase canônica' : 'Editar fase canônica',
-  );
-
   protected readonly confirmMessage = computed(() => {
     const fase = this.faseParaRemover();
     return fase
@@ -621,9 +578,9 @@ export class FasesCanonicasPage {
       coletaSolicitacaoIsencao: new FormControl(false, { nonNullable: true }),
     });
 
-  // Código selecionado atual — reage tanto ao `select` de criação quanto ao
-  // `form.reset()` da edição, para controlar a visibilidade dos grupos
-  // condicionais (ADR de UI da story #393: fieldset segue o código, não o modo).
+  // Código da fase em edição — carregado pelo `form.reset()` de `abrirEdicao` e
+  // usado para controlar a visibilidade dos grupos condicionais (ADR de UI da
+  // story #393: fieldset segue o código).
   private readonly codigoAtual = toSignal(this.form.controls.codigo.valueChanges, {
     initialValue: this.form.controls.codigo.value,
   });
@@ -697,28 +654,7 @@ export class FasesCanonicasPage {
     this.donoTipicoFiltro.set('');
   }
 
-  protected abrirCadastro(): void {
-    this.modo.set('criar');
-    this.faseEmEdicaoId.set(null);
-    this.form.reset({
-      codigo: '',
-      donoTipico: '',
-      nome: '',
-      descricao: '',
-      baseLegal: '',
-      agrupaEtapas: false,
-      permiteComplementacao: false,
-      origemData: '',
-      coletaInscricao: false,
-      coletaSolicitacaoIsencao: false,
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.formOpen.set(true);
-  }
-
   protected abrirEdicao(fase: FaseCanonicaDto): void {
-    this.modo.set('editar');
     this.faseEmEdicaoId.set(fase.id);
     this.form.reset({
       codigo: fase.codigo,
@@ -777,14 +713,6 @@ export class FasesCanonicasPage {
     this.saving.set(true);
     this.formError.set(null);
 
-    if (this.modo() === 'criar') {
-      this.api
-        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.handleSalvarResult(result));
-      return;
-    }
-
     this.api
       .atualizar(
         this.faseEmEdicaoId() ?? '',
@@ -831,9 +759,7 @@ export class FasesCanonicasPage {
   private handleSalvarResult(result: ApiResult<string | void>): void {
     this.saving.set(false);
     if (result.ok) {
-      this.notifications.success(
-        this.modo() === 'criar' ? 'Fase canônica criada' : 'Fase canônica atualizada',
-      );
+      this.notifications.success('Fase canônica atualizada');
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
       this.recarregar();
@@ -846,17 +772,6 @@ export class FasesCanonicasPage {
     if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
-      return;
-    }
-    // FaseCanonica.CodigoJaExiste é um DomainError único (409, sem `errors[]`
-    // — esse array só existe no pipeline FluentValidation/422); mapeado ao
-    // campo manualmente para exibir o erro inline exigido pelo CA-07.
-    if (problem.code === FASE_CANONICA_CODIGO_JA_EXISTE_CODE) {
-      this.renovarIdempotencyKey();
-      this.form.controls.codigo.setErrors({
-        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-      });
-      this.form.controls.codigo.markAsTouched();
       return;
     }
     if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
@@ -888,25 +803,6 @@ export class FasesCanonicasPage {
       return;
     }
     this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
-  }
-
-  private criarCommand(): CriarFaseCanonicaCommand {
-    const raw = this.form.getRawValue();
-    return {
-      codigo: nullIfBlank(raw.codigo),
-      nome: raw.nome.trim(),
-      descricao: nullIfBlank(raw.descricao),
-      donoTipico: nullIfBlank(raw.donoTipico),
-      agrupaEtapas: raw.codigo === 'AVALIACAO' ? raw.agrupaEtapas : false,
-      permiteComplementacao:
-        raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS'
-          ? raw.permiteComplementacao
-          : false,
-      baseLegal: nullIfBlank(raw.baseLegal),
-      origemData: raw.origemData,
-      coletaInscricao: raw.coletaInscricao,
-      coletaSolicitacaoIsencao: raw.coletaSolicitacaoIsencao,
-    };
   }
 
   private atualizarCommand(): AtualizarFaseCanonicaCommand {
