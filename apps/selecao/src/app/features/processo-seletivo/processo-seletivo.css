@@ -1328,6 +1328,17 @@
   padding-inline: var(--space-3);
 }
 
+/* Código de modalidade é um token só, sem espaço: retirar o `nowrap` não cria
+   oportunidade de quebra, porque `overflow-wrap: normal` não quebra dentro da
+   palavra. Como cartão, ao lado do rótulo "1ª PREFERÊNCIA", um código de até 60
+   caracteres transbordaria mesmo assim. `anywhere` — e não `break-word` —
+   porque só ele também reduz o tamanho mínimo intrínseco, que é o que impede o
+   transbordo dentro do flex do cartão. Sem efeito acima de 768 px, onde o
+   `nowrap` da media query prevalece. */
+.cascata-matriz td.cascata-matriz__destino {
+  overflow-wrap: anywhere;
+}
+
 .cascata-matriz td.cascata-matriz__destino {
   font-variant-numeric: tabular-nums;
 }
