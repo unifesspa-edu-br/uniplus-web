@@ -31,9 +31,13 @@ const REGRAS_CALCULO = [
   regra('FORMULA-MEDIA-PONDERADA', 'regra_calculo', 'Resolução CEPS 12/2026'),
   regra('CLASSIFICACAO-IMPORTADA', 'regra_calculo', 'Portaria MEC 468/2023'),
 ];
-const REGRAS_ARREDONDAMENTO = [regra('ARRED-TRUNCAR', 'regra_arredondamento', 'Edital padrão PSIQ')];
+const REGRAS_ARREDONDAMENTO = [
+  regra('ARRED-TRUNCAR', 'regra_arredondamento', 'Edital padrão PSIQ'),
+];
 const REGRAS_ORDEM_ALOCACAO = [regra('ALOCACAO-OPCOES-RN04', 'regra_ordem_alocacao', 'RN04')];
-const REGRAS_ELIMINACAO = [regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º')];
+const REGRAS_ELIMINACAO = [
+  regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
+];
 const REGRAS_BONUS = [regra('BONUS-MULTIPLICATIVO', 'regra_bonus', 'RN05')];
 const CRITERIOS_DESEMPATE = [
   regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate', 'Costume administrativo'),
@@ -74,9 +78,11 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       page,
     }, testInfo) => {
       await irAoPasso(page, 'Fórmula e precisão', testInfo);
-      await page.getByLabel('Regra de cálculo').selectOption('CLASSIFICACAO-IMPORTADA|1.0');
+      await page
+        .getByLabel('Regra de cálculo', { exact: true })
+        .selectOption('CLASSIFICACAO-IMPORTADA|1.0');
 
-      await expect(page.getByLabel('Regra de arredondamento')).toBeHidden();
+      await expect(page.getByLabel('Regra de arredondamento', { exact: true })).toBeHidden();
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -86,11 +92,11 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await irAoPasso(page, 'Fórmula e precisão', testInfo);
       await declararFormulaLocal(page);
 
-      await expect(page.getByLabel('Regra de cálculo')).toBeVisible();
-      await expect(page.getByLabel('Regra de arredondamento')).toBeVisible();
-      await expect(page.getByLabel('Casas decimais')).toBeVisible();
-      await expect(page.getByLabel('Ordem de alocação')).toBeVisible();
-      await expect(page.getByLabel('Número de opções de curso')).toBeVisible();
+      await expect(page.getByLabel('Regra de cálculo', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Regra de arredondamento', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Casas decimais', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Ordem de alocação', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Número de opções de curso', { exact: true })).toBeVisible();
     });
   });
 
@@ -101,11 +107,13 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
     }, testInfo) => {
       await irAoPasso(page, 'Fórmula e precisão', testInfo);
       await declararFormulaLocal(page);
-      await page.getByLabel(/Classificação baseada em provas/).check();
+      await page.getByLabel('Classificação baseada em provas').check();
 
       await irAoPasso(page, 'Eliminação', testInfo);
       await page.getByRole('button', { name: '+ Acrescentar regra de eliminação' }).click();
-      await page.getByLabel('Regra').selectOption('ELIM-ZERO-EM-AREA|1.0');
+      await page
+        .getByLabel('Regra de eliminação', { exact: true })
+        .selectOption('ELIM-ZERO-EM-AREA|1.0');
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -124,9 +132,13 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
   test.describe('Bônus', () => {
     test('não viola WCAG 2.1 AA com bônus declarado', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Bônus', testInfo);
-      await page.getByLabel('Aplicar bônus regional neste processo seletivo?').check();
-      await page.getByLabel('Regra').selectOption('BONUS-MULTIPLICATIVO|1.0');
-      await page.getByLabel('Fator').fill('1.2');
+      await page
+        .getByLabel('Aplicar bônus regional neste processo seletivo?', { exact: true })
+        .check();
+      await page
+        .getByLabel('Regra do bônus', { exact: true })
+        .selectOption('BONUS-MULTIPLICATIVO|1.0');
+      await page.getByLabel('Fator', { exact: true }).fill('1.2');
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -134,8 +146,10 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
 
     test('não viola WCAG 2.1 AA com a conferência acusando', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Bônus', testInfo);
-      await page.getByLabel('Aplicar bônus regional neste processo seletivo?').check();
-      await page.getByLabel('Fator').fill('0');
+      await page
+        .getByLabel('Aplicar bônus regional neste processo seletivo?', { exact: true })
+        .check();
+      await page.getByLabel('Fator', { exact: true }).fill('0');
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -148,18 +162,24 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
     }, testInfo) => {
       await irAoPasso(page, 'Desempate', testInfo);
 
-      await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await page.getByLabel('Regra').selectOption('DESEMPATE-MAIOR-IDADE|1.0');
+      // "Regra do critério" se repete uma vez por linha da lista — o mesmo
+      // rótulo em cada ocorrência é o comportamento correto de acessibilidade
+      // para campos repetidos, e o `.nth()` aqui seleciona a N-ésima linha,
+      // não desambigua conceitos diferentes que colidiram por acidente.
+      const regraDoCriterio = page.getByLabel('Regra do critério', { exact: true });
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await page.getByLabel('Regra').nth(1).selectOption('DESEMPATE-IDOSO|1.0');
-      await page.getByLabel('Idade mínima').fill('60');
+      await regraDoCriterio.nth(0).selectOption('DESEMPATE-MAIOR-IDADE|1.0');
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await page.getByLabel('Regra').nth(2).selectOption('DESEMPATE-PREDICADO-FATO|1.0');
-      await page.getByLabel('Fato').fill('RENDA_PER_CAPITA');
-      await page.getByLabel('Operador').fill('lte');
-      await page.getByLabel('Valor').fill('1.5');
+      await regraDoCriterio.nth(1).selectOption('DESEMPATE-IDOSO|1.0');
+      await page.getByLabel('Idade mínima', { exact: true }).fill('60');
+
+      await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
+      await regraDoCriterio.nth(2).selectOption('DESEMPATE-PREDICADO-FATO|1.0');
+      await page.getByLabel('Fato', { exact: true }).fill('RENDA_PER_CAPITA');
+      await page.getByLabel('Operador', { exact: true }).fill('lte');
+      await page.getByLabel('Valor', { exact: true }).fill('1.5');
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -194,11 +214,17 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
 
 /** Fórmula local completa — regra de cálculo, arredondamento, casas e ordem de alocação. */
 async function declararFormulaLocal(page: Page): Promise<void> {
-  await page.getByLabel('Regra de cálculo').selectOption('FORMULA-MEDIA-PONDERADA|1.0');
-  await page.getByLabel('Regra de arredondamento').selectOption('ARRED-TRUNCAR|1.0');
-  await page.getByLabel('Casas decimais').fill('2');
-  await page.getByLabel('Ordem de alocação').selectOption('ALOCACAO-OPCOES-RN04|1.0');
-  await page.getByLabel('Número de opções de curso').selectOption('2');
+  await page
+    .getByLabel('Regra de cálculo', { exact: true })
+    .selectOption('FORMULA-MEDIA-PONDERADA|1.0');
+  await page
+    .getByLabel('Regra de arredondamento', { exact: true })
+    .selectOption('ARRED-TRUNCAR|1.0');
+  await page.getByLabel('Casas decimais', { exact: true }).fill('2');
+  await page
+    .getByLabel('Ordem de alocação', { exact: true })
+    .selectOption('ALOCACAO-OPCOES-RN04|1.0');
+  await page.getByLabel('Número de opções de curso', { exact: true }).selectOption('2');
 }
 
 /**
