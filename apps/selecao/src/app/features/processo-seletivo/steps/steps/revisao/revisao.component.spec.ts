@@ -166,8 +166,14 @@ describe('RevisaoStepComponent', () => {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  /** O `effect()` que dispara o preflight roda no scheduler do Angular, não na mesma tarefa síncrona de `.set()`. */
+  /**
+   * O `effect()` que dispara o preflight roda no scheduler do Angular, não na
+   * mesma tarefa síncrona de `.set()`. Recarrega ao ENTRAR no passo
+   * (`store.isLast()`, #486) — a Revisão é sempre o último, então o cenário
+   * de teste também precisa estar lá para o `effect` dessa condição disparar.
+   */
   async function criarProcesso(): Promise<void> {
+    store.currentStep.set(store.totalSteps - 1);
     store.processoSeletivoId.set(PROCESSO_ID);
     await flushMicrotasks();
     fixture.detectChanges();

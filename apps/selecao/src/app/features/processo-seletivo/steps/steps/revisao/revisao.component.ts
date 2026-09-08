@@ -135,16 +135,30 @@ export class RevisaoStepComponent {
   });
 
   constructor() {
-    // Todos os passos ficam montados (`[hidden]`) desde a entrada na página —
-    // o construtor roda bem antes de o operador chegar a este passo, e numa
-    // retomada por endereço o id só existe depois que `retomar()` conclui a
-    // leitura. Um `effect()` — não uma checagem única aqui — é o que garante
-    // carregar assim que o id passar a existir.
+    // Todos os passos ficam montados (`[hidden]`) desde a entrada na
+    // página — não há criação/destruição deste componente ao navegar pelo
+    // stepper, então "entrar no passo" só existe como transição de sinal,
+    // nunca como ciclo de vida. `store.isLast()` é como o passo se
+    // identifica sem saber a própria posição (o mesmo princípio de
+    // `passo-do-wizard.ts`: "o passo não sabe se é o segundo ou o quinto"),
+    // e a Revisão é sempre o último (`PASSOS.slice(0, -1)` em
+    // `processo-seletivo.data.ts`).
+    //
+    // Recarrega — força, não só popula o cache — a cada entrada, porque
+    // qualquer dimensão gravada num passo anterior (Vagas, Cronograma,
+    // Taxa…) muda o que o servidor considera conforme, e nenhuma delas sabe
+    // invalidar o cache deste serviço. Sem isto, o fluxo normal de criação
+    // chegava aqui com o checklist de quando o processo foi criado — todo
+    // vermelho, porque nenhuma dimensão existia ainda —, e `validate()`
+    // bloqueava a publicação até o operador descobrir sozinho o botão
+    // "Atualizar checklist" (achado do Codex na #486: o caminho feliz da
+    // Story falhando).
     effect(() => {
       const id = this.store.processoSeletivoId();
-      if (id === null) return;
+      const entrouNoPasso = this.store.isLast();
+      if (id === null || !entrouNoPasso) return;
       untracked(() => {
-        void this.preflight.carregar(id, this.dataReferenciaLegal());
+        void this.preflight.recarregar(id, this.dataReferenciaLegal());
       });
     });
 
@@ -486,7 +500,7 @@ export class RevisaoStepComponent {
         return {
           valid: false,
           messages: [
-            'A publicação foi aceita, mas não foi possível confirmar o snapshot. Recarregue a página para conferir o estado do processo.',
+            'A publicação foi aceita, mas não foi possível confirmar o estado do processo. Recarregue a página para conferir.',
           ],
         };
       }
@@ -510,7 +524,17 @@ export class RevisaoStepComponent {
       this.cadastro.obterSnapshotVigente(processoId),
     ]);
 
-    if (!detalhe.ok) return false;
+    if (!detalhe.ok) {
+      // O `POST` já devolveu `204` — a publicação pode ter acontecido de
+      // verdade — mas sem o detalhe relido não há como confirmar nem
+      // descartar. `persistir()` ainda vai liberar `salvando` no `finally`;
+      // sem este sinal a edição destravaria sobre um processo possivelmente
+      // já publicado (achado do Codex na #486). Só uma releitura que chegue
+      // ao fim — aqui numa nova tentativa, ou na retomada da página — limpa
+      // isto, em `store.hidratar()`.
+      this.store.publicacaoNaoConfirmada.set(true);
+      return false;
+    }
 
     // Hidrata assim que o detalhe responde, mesmo que o snapshot falhe: o
     // POST já pode ter publicado de verdade, e deixar o rascunho no estado

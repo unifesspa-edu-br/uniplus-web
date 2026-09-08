@@ -170,6 +170,19 @@ export class ProcessoSeletivoStore {
   );
 
   /**
+   * `true` entre um `POST …/publicacao` que devolveu `204` e a releitura de
+   * `GET /{id}` que confirmaria o novo status — quando essa releitura falha
+   * (rede, 5xx transitório), a publicação já pode ter acontecido de forma
+   * irreversível no servidor, mas `remoteSnapshot()` ainda mostra o status
+   * antigo. Sem este sinal, `edicaoPermitida()` confiaria nesse status
+   * desatualizado e destravaria a edição sobre um processo possivelmente já
+   * publicado (achado do Codex na #486). `hidratar()` é quem limpa: qualquer
+   * releitura que chegue ao fim traz verdade nova o bastante para o status
+   * decidir sozinho de novo.
+   */
+  readonly publicacaoNaoConfirmada = signal(false);
+
+  /**
    * `ProcessoSeletivo.MutacaoPermitida` também aceita processo publicado com
    * retificação aberta, mas o detalhe não expõe a sessão editorial e a
    * retificação ainda não tem tela — daí a allowlist de um status só, que
@@ -178,6 +191,7 @@ export class ProcessoSeletivoStore {
    * Sem detalhe nada é bloqueado: processo em criação ainda não tem status.
    */
   readonly edicaoPermitida = computed(() => {
+    if (this.publicacaoNaoConfirmada()) return false;
     const detalhe = this.remoteSnapshot();
     return detalhe === null || detalhe.status === StatusProcesso.rascunho;
   });
@@ -197,6 +211,10 @@ export class ProcessoSeletivoStore {
    * nenhum.
    */
   readonly motivoDeSomenteLeitura = computed(() => {
+    if (this.publicacaoNaoConfirmada()) {
+      return 'A publicação foi aceita, mas ainda não foi possível confirmar o novo estado do processo. A configuração fica bloqueada até a confirmação ser refeita — recarregue a página.';
+    }
+
     const status = this.remoteSnapshot()?.status;
     if (status === undefined || status === StatusProcesso.rascunho) return null;
 
@@ -355,6 +373,7 @@ export class ProcessoSeletivoStore {
     this.processoSeletivoId.set(null);
     this.salvando.set(false);
     this.criacaoIndefinida.set(false);
+    this.publicacaoNaoConfirmada.set(false);
     this.remoteSnapshot.set(null);
     this.hidratando.set(false);
     this.falhaDeLeitura.set(null);
@@ -374,6 +393,9 @@ export class ProcessoSeletivoStore {
     if (this.processoSeletivoId() !== dto.id) {
       this.geracao.update((valor) => valor + 1);
     }
+    // Qualquer releitura que chegue até aqui traz status atual do servidor —
+    // resolve a incerteza de `publicacaoNaoConfirmada`, publicado ou não.
+    this.publicacaoNaoConfirmada.set(false);
     this.remoteSnapshot.set(dto);
     this.processoSeletivoId.set(dto.id);
     this.draft.update((draft) => hidratarDraft(draft, dto));

@@ -20,7 +20,7 @@ import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
-import { StepValidation } from './steps/processo-seletivo.models';
+import { StepValidation, WizardDraft } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao } from './steps/passo-do-wizard';
@@ -109,6 +109,20 @@ export class ProcessoSeletivoPage {
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
+
+  /**
+   * Retrato do rascunho logo depois da última gravação bem-sucedida (avanço
+   * normal por `gravarEAvancar()`) ou hidratação — `null` até a primeira das
+   * duas. A navegação entre passos é livre: o operador pode voltar a um
+   * passo já gravado pelo stepper, editá-lo, e pular direto para a Revisão
+   * sem passar pelo "avançar" que dispara `persistir()` de novo. Sem este
+   * retrato, `validarRascunho()` aprova o rascunho local (está bem-formado)
+   * e a publicação confirma sobre uma edição que nunca chegou ao servidor —
+   * publica-se a configuração antiga enquanto o operador acredita publicar a
+   * que acabou de editar (achado do Codex na #486, P1). Ver
+   * `secoesNaoGravadas()`.
+   */
+  private ultimoDraftGravado: WizardDraft | null = null;
 
   /** Retorna o componente do step ativo, se estiver instanciado. */
   private stepValidatorAt(index: number): PassoDoWizard | undefined {
@@ -296,6 +310,7 @@ export class ProcessoSeletivoPage {
     }
 
     this.store.hidratar(detalhe.data);
+    this.ultimoDraftGravado = structuredClone(this.store.draft());
     await this.restaurarDocumentoEdital(id, superada);
     if (superada()) return;
 
@@ -344,6 +359,7 @@ export class ProcessoSeletivoPage {
    */
   private limparEditor(): void {
     this.store.reset();
+    this.ultimoDraftGravado = null;
     this.cadastro.descartarCadastroEmAndamento();
 
     // A rota reusa esta página, então um resumo aberto sobrevive à troca de
@@ -544,6 +560,9 @@ export class ProcessoSeletivoPage {
     }
 
     this.store.setStepError(null);
+    // O ponto único por onde toda gravação normal passa — captura aqui cobre
+    // avanço comum e o diálogo de confirmação, que também chama este método.
+    this.ultimoDraftGravado = structuredClone(this.store.draft());
     this.store.next();
     return true;
   }
@@ -567,6 +586,15 @@ export class ProcessoSeletivoPage {
 
     if (pendentes.length > 0) {
       this.store.setStepError(pendentes);
+      this.revelarErro();
+      return;
+    }
+
+    const naoGravadas = this.secoesNaoGravadas();
+    if (naoGravadas.length > 0) {
+      this.store.setStepError([
+        `Há alterações não gravadas em: ${naoGravadas.join(', ')}. Volte a cada passo alterado e avance normalmente antes de publicar.`,
+      ]);
       this.revelarErro();
       return;
     }
@@ -649,6 +677,34 @@ export class ProcessoSeletivoPage {
 
     this.store.syncCompleted(concluidos);
     return pendencias;
+  }
+
+  /**
+   * Seções do rascunho que divergem do retrato de `ultimoDraftGravado` — o
+   * que mudou desde a última gravação bem-sucedida (ou hidratação) sem
+   * passar por uma gravação nova. Ignora `publicacao`: é a seção que o
+   * próprio `gravarEAvancar` da Revisão está prestes a gravar em seguida, e
+   * ainda diverge por definição enquanto o operador digita nela.
+   *
+   * `[]` antes da primeira gravação — não há o que comparar — e depois que
+   * cada gravação normal atualiza o retrato por inteiro (`WizardDraft` é um
+   * único objeto cumulativo, não uma cópia por passo).
+   */
+  private secoesNaoGravadas(): readonly string[] {
+    if (this.ultimoDraftGravado === null) return [];
+
+    const atual = this.store.draft();
+    const gravado = this.ultimoDraftGravado;
+    const secoes: string[] = [];
+
+    for (const chave of Object.keys(atual) as (keyof WizardDraft)[]) {
+      if (chave === 'publicacao') continue;
+      if (JSON.stringify(atual[chave]) !== JSON.stringify(gravado[chave])) {
+        secoes.push(chave);
+      }
+    }
+
+    return secoes;
   }
 
   scrollToTop(): void {
