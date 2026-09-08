@@ -9,7 +9,13 @@
 
 @if (snapshotConfirmado(); as snapshot) {
   <div class="alert alert--success" role="status">
-    <p class="alert__title">
+    <!-- Destino de foco explícito: no último passo, `store.next()` não avança
+         (não há passo seguinte), então o efeito de troca de passo da página —
+         que move o foco ao título do passo novo em qualquer outra gravação —
+         nunca dispara aqui. Sem isto, fechar o diálogo de confirmação da
+         publicação deixa teclado e leitor de tela sem destino (achado do
+         Codex na #486, P1). -->
+    <p class="alert__title revisao-publicado-titulo" tabindex="-1">
       Processo publicado — status confirmado em {{ store.remoteSnapshot()?.status }}.
     </p>
     <dl class="confirmacao-lista">
@@ -94,7 +100,9 @@
                   [class.revisao-item--ok]="item.ok"
                   [class.revisao-item--pending]="!item.ok"
                 >
-                  <span class="revisao-item__name">{{ item.mensagem }}</span>
+                  <div class="revisao-item__meta">
+                    <span class="revisao-item__name">{{ item.mensagem }}</span>
+                  </div>
                   @if (!item.ok && passoDaDimensao(grupo.dimensao) !== null) {
                     <button
                       class="btn btn--sm btn--ghost revisao-item__go"
@@ -126,10 +134,10 @@
               <div class="revisao-item__meta">
                 <span class="revisao-item__name">{{ regra.descricaoHumana }}</span
                 ><span class="step-hint">{{ regra.baseLegal }}</span>
+                @if (regra.motivo) {
+                  <span class="revisao-item__name">{{ regra.motivo }}</span>
+                }
               </div>
-              @if (regra.motivo) {
-                <span class="revisao-item__name">{{ regra.motivo }}</span>
-              }
             </li>
           }
         </ul>
