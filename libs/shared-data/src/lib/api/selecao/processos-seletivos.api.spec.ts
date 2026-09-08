@@ -12,7 +12,12 @@ import {
 } from '@uniplus/shared-core/http';
 import { CaraterEtapa, UnidadePrazo } from './index';
 import {
+  ConformidadeLegalProcessoSeletivoDto,
+  ConformidadeProcessoSeletivoDto,
   CriarProcessoSeletivoCommand,
+  DadosDoAtoRequest,
+  DefinirCascataRemanejamentoRequest,
+  DefinirOfertaAtendimentoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
   DocumentoEditalDto,
@@ -20,6 +25,7 @@ import {
   ProcessoSeletivoDto,
   ProcessoSeletivoResumoDto,
   ProcessosSeletivosApi,
+  PublicarProcessoSeletivoRequest,
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
 import { OrigemCandidatos } from './schema';
@@ -493,5 +499,271 @@ describe('ProcessosSeletivosApi', () => {
     const result = await promise;
     expect(isApiOk(result)).toBe(false);
     if (!result.ok) expect(result.problem.status).toBe(422);
+  });
+
+  it('definirOfertaAtendimento() envia os ids dos cadastros de Configuração', async () => {
+    const request: DefinirOfertaAtendimentoRequest = {
+      condicaoIds: ['01960000-0000-7000-0000-000000000601'],
+      recursoIds: ['01960000-0000-7000-0000-000000000602'],
+      tipoDeficienciaIds: ['01960000-0000-7000-0000-000000000603'],
+    };
+
+    const promise = firstValueFrom(
+      api.definirOfertaAtendimento(ID, request, withIdempotencyKey('chave-atendimento')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/oferta-atendimento`,
+    );
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-atendimento');
+    expect(req.request.body).toEqual(request);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('definirOfertaAtendimento() propaga a recusa por tipo de deficiência sem condição PcD', async () => {
+    const request: DefinirOfertaAtendimentoRequest = {
+      condicaoIds: [],
+      recursoIds: [],
+      tipoDeficienciaIds: ['01960000-0000-7000-0000-000000000603'],
+    };
+
+    const promise = firstValueFrom(
+      api.definirOfertaAtendimento(ID, request, withIdempotencyKey('chave-sem-pcd')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/oferta-atendimento`,
+    );
+
+    req.flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.oferta_atendimento.tipo_deficiencia_sem_condicao_pcd',
+        title: 'Tipo de deficiência exige a condição PcD marcada',
+        status: 422,
+        code: 'uniplus.selecao.oferta_atendimento.tipo_deficiencia_sem_condicao_pcd',
+        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(false);
+    if (!result.ok) expect(result.problem.status).toBe(422);
+  });
+
+  /**
+   * A tela não compõe a matriz: envia o que a regra do catálogo já congelou.
+   * O teste afirma o corpo exato — fallback e destinos — para provar que o
+   * cliente não reordena nem reformata o que o chamador montou.
+   */
+  it('definirCascataRemanejamento() envia a matriz congelada pela regra', async () => {
+    const request: DefinirCascataRemanejamentoRequest = {
+      regraCodigo: 'REMANEJ-CASCATA-LEI-12711',
+      regraVersao: 'v1',
+      fallbackCodigo: 'AC_ESCOLA_PUBLICA_RENDA_ATE_1_5',
+      destinos: [
+        {
+          modalidadeOrigemCodigo: 'AC_ESCOLA_PUBLICA_PPI_RENDA_ATE_1_5',
+          ordem: 1,
+          modalidadeDestinoCodigo: 'AC_ESCOLA_PUBLICA_RENDA_ATE_1_5',
+        },
+      ],
+    };
+
+    const promise = firstValueFrom(
+      api.definirCascataRemanejamento(ID, request, withIdempotencyKey('chave-cascata')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/cascata-remanejamento`,
+    );
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-cascata');
+    expect(req.request.body).toEqual(request);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('definirCascataRemanejamento() propaga a matriz divergente da regra sem lançar', async () => {
+    const request: DefinirCascataRemanejamentoRequest = {
+      regraCodigo: 'REMANEJ-CASCATA-LEI-12711',
+      regraVersao: 'v1',
+      fallbackCodigo: 'CODIGO_INVENTADO',
+      destinos: [],
+    };
+
+    const promise = firstValueFrom(
+      api.definirCascataRemanejamento(ID, request, withIdempotencyKey('chave-cascata-invalida')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/cascata-remanejamento`,
+    );
+
+    req.flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.configuracao_cascata_remanejamento.matriz_divergente_da_regra',
+        title: 'A matriz enviada diverge do esquema congelado pela regra',
+        status: 422,
+        code: 'uniplus.selecao.configuracao_cascata_remanejamento.matriz_divergente_da_regra',
+        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(false);
+    if (!result.ok) expect(result.problem.status).toBe(422);
+  });
+
+  it('obterConformidade() lê o preflight estrutural com o vendor MIME do recurso', async () => {
+    const conformidade: ConformidadeProcessoSeletivoDto = {
+      processoSeletivoId: ID,
+      itens: [
+        { codigo: 'classificacao_ausente', dimensao: 'classificacao', mensagem: 'x', ok: false },
+      ],
+    };
+
+    const promise = firstValueFrom(api.obterConformidade(ID));
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/conformidade`);
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('conformidade-processo-seletivo', 1),
+    );
+    req.flush(conformidade);
+
+    const result = (await promise) as ApiResult<ConformidadeProcessoSeletivoDto>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) expect(result.data.itens[0].ok).toBe(false);
+  });
+
+  it('obterConformidadeLegal() sem dataReferencia deixa o servidor decidir a referência', async () => {
+    const conformidadeLegal: ConformidadeLegalProcessoSeletivoDto = {
+      processoSeletivoId: ID,
+      dataReferencia: '2027-03-01',
+      regras: [],
+      avisos: [],
+    };
+
+    const promise = firstValueFrom(api.obterConformidadeLegal(ID));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/conformidade-legal`,
+    );
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.has('dataReferencia')).toBe(false);
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('conformidade-legal-processo-seletivo', 1),
+    );
+    req.flush(conformidadeLegal);
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('obterConformidadeLegal() com dataReferencia envia a data de início da inscrição', async () => {
+    const promise = firstValueFrom(api.obterConformidadeLegal(ID, '2027-03-01'));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/conformidade-legal?dataReferencia=2027-03-01`,
+    );
+
+    expect(req.request.params.get('dataReferencia')).toBe('2027-03-01');
+    req.flush({
+      processoSeletivoId: ID,
+      dataReferencia: '2027-03-01',
+      regras: [],
+      avisos: [],
+    } satisfies ConformidadeLegalProcessoSeletivoDto);
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  /**
+   * O período de inscrição não é derivado aqui: quem chama decide `null` ou os
+   * dois campos preenchidos antes de montar o corpo. O teste só afirma que o
+   * cliente transporta o que recebeu, sem reescrever nenhum dos dois ramos.
+   */
+  it('publicar() transporta null nos dois campos de período quando o cronograma tem fase de coleta', async () => {
+    const ato: DadosDoAtoRequest = {
+      orgao: 'Reitoria',
+      serie: '1',
+      ano: 2027,
+      dataPublicacao: '2027-01-15',
+      assinante: 'Reitor',
+      tipoAtoCodigo: 'PORTARIA',
+    };
+    const request: PublicarProcessoSeletivoRequest = {
+      numero: '001/2027',
+      periodoInscricaoInicio: null,
+      periodoInscricaoFim: null,
+      documentoEditalId: '01960000-0000-7000-0000-000000000518',
+      ato,
+    };
+
+    const promise = firstValueFrom(
+      api.publicar(ID, request, withIdempotencyKey('chave-publicacao')),
+    );
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/publicacao`);
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-publicacao');
+    expect(req.request.body).toEqual(request);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  /**
+   * A recusa por pendência chega tipada a quem chamou — `ApiResult.fail` com o
+   * `ProblemDetails` do 422 — sem catch genérico que a esconda do chamador.
+   */
+  it('publicar() propaga o 422 de pendência como ApiResult.fail tipado', async () => {
+    const ato: DadosDoAtoRequest = {
+      orgao: 'Reitoria',
+      serie: '1',
+      ano: 2027,
+      dataPublicacao: '2027-01-15',
+      assinante: 'Reitor',
+      tipoAtoCodigo: 'PORTARIA',
+    };
+    const request: PublicarProcessoSeletivoRequest = {
+      numero: '001/2027',
+      periodoInscricaoInicio: null,
+      periodoInscricaoFim: null,
+      documentoEditalId: '01960000-0000-7000-0000-000000000518',
+      ato,
+    };
+
+    const promise = firstValueFrom(
+      api.publicar(ID, request, withIdempotencyKey('chave-publicacao-pendente')),
+    );
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/publicacao`);
+
+    req.flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.processo_seletivo.conformidade_estrutural_insuficiente',
+        title: 'O processo tem pendências estruturais',
+        status: 422,
+        code: 'uniplus.selecao.processo_seletivo.conformidade_estrutural_insuficiente',
+        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+        pendencias: ['classificacao_ausente'],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(false);
+    if (!result.ok) {
+      expect(result.problem.status).toBe(422);
+      expect(result.problem.code).toBe(
+        'uniplus.selecao.processo_seletivo.conformidade_estrutural_insuficiente',
+      );
+    }
   });
 });
