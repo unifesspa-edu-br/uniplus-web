@@ -4727,8 +4727,8 @@ export interface paths {
         };
         readonly get: {
             readonly parameters: {
-                readonly query: {
-                    readonly dataReferencia: string;
+                readonly query?: {
+                    readonly dataReferencia?: string;
                 };
                 readonly header?: never;
                 readonly path: {
@@ -5165,6 +5165,17 @@ export interface components {
         readonly AlterarMotivoRetificacaoRequest: {
             readonly motivo: string;
         };
+        readonly ArgsRegraAjusteDistribuicao: components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirDe"] | components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm"];
+        readonly ArgsRegraAjusteDistribuicaoArgsReduzirDe: {
+            /** @enum {string} */
+            readonly $tipo?: ArgsRegraAjusteDistribuicaoArgsReduzirDe$tipo;
+            readonly modalidadeCodigo: string;
+        };
+        readonly ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm: {
+            /** @enum {string} */
+            readonly $tipo?: ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm$tipo;
+            readonly modalidadeCodigos: readonly string[];
+        };
         readonly ArgsRegraPrazoRecursoDto: {
             /** Format: double */
             readonly prazoValor: number | string;
@@ -5364,6 +5375,7 @@ export interface components {
             readonly referenciaReservaDemograficaId: null | string;
             readonly modalidadeIds: readonly string[];
             readonly quadro: readonly components["schemas"]["QuantidadeVagaInput"][];
+            readonly argsAjuste?: null | components["schemas"]["ArgsRegraAjusteDistribuicao"];
         };
         readonly ConfiguracaoDivulgacaoDto: {
             readonly camposPublicos: readonly string[];
@@ -5614,6 +5626,7 @@ export interface components {
             readonly permiteComplementacao: boolean;
             readonly produzResultado: boolean;
             readonly coletaInscricao: boolean;
+            readonly coletaSolicitacaoIsencao: boolean;
             /** Format: date-time */
             readonly inicio: null | string;
             /** Format: date-time */
@@ -5669,10 +5682,10 @@ export interface components {
         };
         readonly FecharRetificacaoRequest: {
             readonly numero: null | string;
-            /** Format: date */
-            readonly periodoInscricaoInicio: string;
-            /** Format: date */
-            readonly periodoInscricaoFim: string;
+            /** Format: date-time */
+            readonly periodoInscricaoInicio: null | string;
+            /** Format: date-time */
+            readonly periodoInscricaoFim: null | string;
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
@@ -5956,10 +5969,10 @@ export interface components {
         };
         readonly PublicarProcessoSeletivoRequest: {
             readonly numero: null | string;
-            /** Format: date */
-            readonly periodoInscricaoInicio: string;
-            /** Format: date */
-            readonly periodoInscricaoFim: string;
+            /** Format: date-time */
+            readonly periodoInscricaoInicio: null | string;
+            /** Format: date-time */
+            readonly periodoInscricaoFim: null | string;
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
@@ -6101,10 +6114,10 @@ export interface components {
         readonly RetificarProcessoSeletivoRequest: {
             readonly motivo: string;
             readonly numero: null | string;
-            /** Format: date */
-            readonly periodoInscricaoInicio: string;
-            /** Format: date */
-            readonly periodoInscricaoFim: string;
+            /** Format: date-time */
+            readonly periodoInscricaoInicio: null | string;
+            /** Format: date-time */
+            readonly periodoInscricaoFim: null | string;
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
@@ -6256,6 +6269,12 @@ export enum PathsApiSelecaoProcessosSeletivosGetParametersQueryDirection {
 export enum PathsApiSelecaoRegrasCatalogoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum ArgsRegraAjusteDistribuicaoArgsReduzirDe$tipo {
+    reduzirDe = "reduzirDe"
+}
+export enum ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm$tipo {
+    reduzirProporcionalEm = "reduzirProporcionalEm"
 }
 export enum CaraterEtapa {
     nenhum = "nenhum",
