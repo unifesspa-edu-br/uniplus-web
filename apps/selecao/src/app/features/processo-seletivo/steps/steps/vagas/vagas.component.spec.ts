@@ -872,6 +872,38 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
   });
 
   /**
+   * Uma falha transitória (5xx) ao consultar a versão fora da listagem não
+   * pode virar "regra não encontrada" — a mensagem precisa dizer que foi a
+   * consulta que falhou, distinta da recusa definitiva do teste acima.
+   */
+  it('recusa avançar com mensagem distinta quando a consulta da regra hidratada falha (não confunde com regra ausente)', async () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicaoComCascata()],
+      cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
+    });
+    detectar();
+    simularEConferirDistribuicao();
+
+    controller
+      .expectOne(`${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`)
+      .flush(
+        { type: 'about:blank', title: 'Erro interno.', status: 503, traceId: 't' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('a consulta falhou'))).toBe(true);
+    expect(resultado.messages?.some((m) => m.includes('não foi encontrada no catálogo'))).toBe(
+      false,
+    );
+    controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
+    controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  /**
    * `cascata_modalidade_fora_do_regime_federal` bloqueia a publicação mais
    * adiante (`ExisteCascataForaDoRegimeFederal` no domínio) mesmo quando a
    * seção da cascata nem aparece — por isso o passo Vagas não pode deixar o

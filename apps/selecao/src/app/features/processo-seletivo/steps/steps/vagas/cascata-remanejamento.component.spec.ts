@@ -377,6 +377,18 @@ describe('CascataRemanejamentoComponent', () => {
       ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
     });
     expect(elemento.textContent).toContain('Fallback');
+
+    // A regra resolvida por busca direta precisa aparecer como opção do
+    // seletor — sem isto o controle segura um valor sem <option>
+    // correspondente e o <select> aparece em branco, mesmo com a matriz
+    // conferível e gravável (D1).
+    const select = elemento.querySelector<HTMLSelectElement>('#c-regra-cascata');
+    const opcaoSelecionada = select?.querySelector(
+      'option[value="REMANEJ-CASCATA-LEI-12711|v0"]',
+    );
+    expect(opcaoSelecionada).not.toBeNull();
+    expect(opcaoSelecionada?.textContent).toContain('v0');
+    expect(select?.value).toBe('REMANEJ-CASCATA-LEI-12711|v0');
   });
 
   it('marca a regra como não encontrada quando a busca direta da versão também falha, sem confundir com esquemaArgs malformado', () => {
@@ -399,5 +411,50 @@ describe('CascataRemanejamentoComponent', () => {
     expect(componente.esquemaNaoReconhecido()).toBe(false);
     expect(componente.matriz()).toBeNull();
     expect(elemento.textContent).toContain('não foi encontrada no catálogo');
+  });
+
+  /**
+   * Reproduz o achado de revisão: um 5xx (ou falha de rede/autorização) na
+   * busca da versão fora da listagem não prova que a regra não existe —
+   * classificar como `nao_encontrada` transformaria uma indisponibilidade
+   * transitória num veredito permanente, e a busca nunca mais tentaria de
+   * novo (D2). `falhaAoConsultarRegra()` é o estado certo, com saída via
+   * `tentarNovamenteRegra()`.
+   */
+  it('marca falha ao consultar (não "não encontrada") quando a busca direta responde 5xx, e permite tentar de novo', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
+    });
+    detectar();
+
+    controller
+      .expectOne(`${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`)
+      .flush(
+        { type: 'about:blank', title: 'Erro interno.', status: 503, traceId: 't' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    detectar();
+
+    expect(componente.falhaAoConsultarRegra()).toBe(true);
+    expect(componente.regraNaoEncontrada()).toBe(false);
+    expect(componente.esquemaNaoReconhecido()).toBe(false);
+    expect(componente.matriz()).toBeNull();
+    expect(elemento.textContent).toContain('a consulta falhou, não a regra');
+
+    componente.tentarNovamenteRegra();
+    detectar();
+
+    const retentativa = controller.expectOne(
+      `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`,
+    );
+    retentativa.flush(REGRA_CASCATA_INATIVADA);
+    detectar();
+
+    expect(componente.falhaAoConsultarRegra()).toBe(false);
+    expect(componente.matriz()).toEqual({
+      fallbackCodigo: 'AC',
+      ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
+    });
   });
 });
