@@ -247,7 +247,6 @@ describe('ProcessoSeletivoPage — publicação', () => {
     page.nextOrPublish();
     fixture.detectChanges();
 
-    expect(page.publicationMessage()).toBe('');
     const erros = store.stepError();
     expect(erros).not.toBeNull();
     expect(erros?.length).toBeGreaterThan(0);
@@ -292,7 +291,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(store.completedSteps().has(1)).toBe(false);
   });
 
-  it('exibe mensagem de sucesso quando não há pendência', () => {
+  it('sem pendência local, segue para gravarEAvancar em vez de travar no aviso genérico', () => {
     const { fixture, page, store } = montar();
     const stub = { validate: () => ({ valid: true }) };
 
@@ -305,8 +304,11 @@ describe('ProcessoSeletivoPage — publicação', () => {
     fixture.detectChanges();
     page.nextOrPublish();
 
+    // O stub não declara persistir() nem confirmacaoDeGravacao(): o fluxo
+    // completa como navegação simples, sem erro nem confirmação pendente.
     expect(store.stepError()).toBeNull();
-    expect(page.publicationMessage()).toContain('Rascunho validado');
+    expect(store.salvando()).toBe(false);
+    expect(page.confirmacaoPendente()).toBeNull();
   });
 });
 
