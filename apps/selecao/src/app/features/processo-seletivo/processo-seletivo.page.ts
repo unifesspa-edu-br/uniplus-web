@@ -148,7 +148,6 @@ export class ProcessoSeletivoPage {
 
   readonly stepsOverlayOpen = signal(false);
   readonly showBackToTop = signal(false);
-  readonly publicationMessage = signal('');
   @ViewChild('stepBarButton') private stepBarButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlayClose') private stepsOverlayClose?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
@@ -433,7 +432,7 @@ export class ProcessoSeletivoPage {
     }
 
     if (this.store.isLast()) {
-      this.publicar();
+      await this.publicar();
       return;
     }
 
@@ -534,21 +533,35 @@ export class ProcessoSeletivoPage {
    * livre, chegar ao último passo não significa ter preenchido os anteriores:
    * sem esta checagem dá para saltar direto para a revisão e publicar um
    * rascunho vazio, ou invalidar um passo já concluído e voltar para cá.
+   *
+   * `validarRascunho()` já roda `validate()` de TODOS os passos — 1 a 12,
+   * inclusive a própria Revisão (CA-01) — então o preflight do servidor e os
+   * campos que só a Revisão coleta chegam aqui pela mesma varredura, sem
+   * checagem duplicada. Passado esse portão, o passo segue o mesmo contrato
+   * de qualquer outro que grava: confirma (se declarar
+   * `confirmacaoDeGravacao()`) e `gravarEAvancar` chama `persistir()`, que é
+   * quem publica de verdade.
    */
-  private publicar(): void {
+  private async publicar(): Promise<void> {
     const pendentes = this.validarRascunho();
 
     if (pendentes.length > 0) {
-      this.publicationMessage.set('');
       this.store.setStepError(pendentes);
       this.revelarErro();
       return;
     }
 
     this.store.setStepError(null);
-    this.publicationMessage.set(
-      'Rascunho validado. A publicação será habilitada quando a integração com a API estiver disponível.',
-    );
+
+    const validator = this.stepValidatorAt(this.store.currentStep());
+    const confirmacao = validator?.confirmacaoDeGravacao?.();
+    if (confirmacao) {
+      this.restaurarFocoAoFechar.set(true);
+      this.confirmacaoPendente.set(confirmacao);
+      return;
+    }
+
+    await this.gravarEAvancar(validator);
   }
 
   /**
