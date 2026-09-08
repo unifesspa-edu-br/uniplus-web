@@ -1293,15 +1293,6 @@
   border-bottom: 1px solid var(--border-default);
 }
 
-/* A origem é um código curto: ocupa o que precisa e devolve o resto à cadeia.
-   `width: 1%` com `white-space: nowrap` é a forma de dizer "o mínimo do
-   conteúdo" numa tabela de layout automático. */
-.cascata-matriz thead th:first-child,
-.cascata-matriz tbody th[scope='row'] {
-  width: 1%;
-  white-space: nowrap;
-}
-
 .cascata-matriz tbody th[scope='row'] {
   padding: var(--space-3) var(--space-4);
   text-align: left;
@@ -1338,17 +1329,26 @@
 }
 
 /* A origem é a âncora da linha: fica presa à esquerda quando a matriz precisa
-   rolar na horizontal, senão o operador perde de quem é a linha que está lendo. */
-.cascata-matriz thead th:first-child,
-.cascata-matriz tbody th[scope='row'] {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--surface-card);
-}
+   rolar na horizontal, senão o operador perde de quem é a linha que está lendo.
 
-.cascata-matriz thead th:first-child {
-  background: var(--surface-subtle);
+   Só a partir de 768 px. Abaixo disso `.table-responsive` empilha cada linha
+   como cartão e dá `display: block` e `width: 100%` ao `th[scope="row"]`; como
+   as regras têm a mesma especificidade e esta vem depois, sem a media query ela
+   venceria e prenderia a origem dentro do cartão, sem deixá-la quebrar. */
+@media (min-width: 768px) {
+  .cascata-matriz thead th:first-child,
+  .cascata-matriz tbody th[scope='row'] {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface-card);
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  .cascata-matriz thead th:first-child {
+    background: var(--surface-subtle);
+  }
 }
 
 /* O destino final não é linha da matriz — a portaria o enuncia à parte, e
