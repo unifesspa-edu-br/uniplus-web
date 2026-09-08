@@ -218,7 +218,7 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await expect(page.getByText('Nenhuma pendência estrutural.')).toBeVisible();
     await expect(page.getByText('Nenhuma obrigatoriedade legal reprovada.')).toBeVisible();
     // Com fase de coleta, o período não é pedido nesta tela.
-    await expect(page.getByLabel('Início do período de inscrição')).toBeHidden();
+    await expect(page.getByLabel('Início do período de inscrição', { exact: true })).toBeHidden();
 
     const resultado = await runAxeWcagAA(page);
     expect(identificadoresDe(resultado)).toEqual([]);
@@ -232,16 +232,16 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await irAoPasso(page, 'Revisão e publicação', testInfo);
 
-    await expect(page.getByLabel('Início do período de inscrição')).toBeVisible();
-    await page.getByLabel('Início do período de inscrição').fill('2027-05-01T08:00');
-    await page.getByLabel('Fim do período de inscrição').fill('2027-05-10T18:00');
-    await page.getByLabel('Número do ato (opcional)').fill('001/2027');
-    await page.getByLabel('Tipo de ato').selectOption('PORTARIA');
-    await page.getByLabel('Órgão').fill('Reitoria');
-    await page.getByLabel('Série').fill('1');
-    await page.getByLabel('Ano').fill('2027');
-    await page.getByLabel('Data de publicação do ato').fill('2027-01-15');
-    await page.getByLabel('Assinante').fill('Reitor');
+    await expect(page.getByLabel('Início do período de inscrição', { exact: true })).toBeVisible();
+    await page.getByLabel('Início do período de inscrição', { exact: true }).fill('2027-05-01T08:00');
+    await page.getByLabel('Fim do período de inscrição', { exact: true }).fill('2027-05-10T18:00');
+    await page.getByLabel('Número do ato (opcional)', { exact: true }).fill('001/2027');
+    await page.getByLabel('Tipo de ato', { exact: true }).selectOption('PORTARIA');
+    await page.getByLabel('Órgão', { exact: true }).fill('Reitoria');
+    await page.getByLabel('Série', { exact: true }).fill('1');
+    await page.getByLabel('Ano', { exact: true }).fill('2027');
+    await page.getByLabel('Data de publicação do ato', { exact: true }).fill('2027-01-15');
+    await page.getByLabel('Assinante', { exact: true }).fill('Reitor');
 
     const resultado = await runAxeWcagAA(page);
     expect(identificadoresDe(resultado)).toEqual([]);

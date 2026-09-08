@@ -75,11 +75,16 @@
   }
 
   <div class="upload-layout">
+    <!-- Sem `aria-label` de propósito: o nome acessível vem do próprio
+         conteúdo visível ("Arraste e solte o arquivo ou Procure" + a dica de
+         formato) — um `aria-label` estático que não contém esse texto viola
+         `label-content-name-mismatch` (achado do gate de acessibilidade,
+         primeira vez que este componente entrou numa matriz DS — vive só na
+         Revisão, `#486`). -->
     <div
       class="upload-zone"
       role="button"
       tabindex="0"
-      aria-label="Clique ou arraste o PDF do edital aqui"
       [attr.aria-disabled]="anexoBloqueado() || null"
       [class.is-dragover]="dragging()"
       [class.is-invalid]="uploadError() !== null"
