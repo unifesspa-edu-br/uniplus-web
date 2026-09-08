@@ -46,6 +46,15 @@ export type RegraAvaliadaDto = components['schemas']['RegraAvaliadaDto'];
 export type PublicarProcessoSeletivoRequest =
   components['schemas']['PublicarProcessoSeletivoRequest'];
 export type DadosDoAtoRequest = components['schemas']['DadosDoAtoRequest'];
+export type ReferenciaRegraDto = components['schemas']['ReferenciaRegraDto'];
+export type ConfiguracaoClassificacaoDto = components['schemas']['ConfiguracaoClassificacaoDto'];
+export type DefinirClassificacaoRequest = components['schemas']['DefinirClassificacaoRequest'];
+export type RegraEliminacaoDto = components['schemas']['RegraEliminacaoDto'];
+export type RegraEliminacaoInput = components['schemas']['RegraEliminacaoInput'];
+export type ConfiguracaoBonusRegionalDto = components['schemas']['ConfiguracaoBonusRegionalDto'];
+export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
+export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
+export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -310,6 +319,68 @@ export class ProcessosSeletivosApi {
     return this.http.post<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/publicacao`,
       request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/classificacao` — declara num
+   * corpo único a regra de cálculo, a precisão, a ordem de alocação, o número
+   * de opções e o vetor de regras de eliminação (UNI-REQ-0482).
+   *
+   * `regraArredondamentoCodigo`/`…Versao`/`casasArredondamento` viajam `null`
+   * quando a regra de cálculo é `CLASSIFICACAO-IMPORTADA` (INV-B8) — o
+   * mapeador que monta este corpo é quem decide isso, não este método.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirClassificacao(
+    processoSeletivoId: string,
+    request: DefinirClassificacaoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/classificacao`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` — declara o
+   * bônus regional (RN05). Toggle por presença: enviar os cinco campos `null`
+   * é a forma de declarar "sem bônus" — não existe "desmarcar" separado.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirBonusRegional(
+    processoSeletivoId: string,
+    request: DefinirBonusRegionalRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/bonus-regional`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/criterios-desempate` —
+   * substitui a coleção inteira de critérios de desempate, na ordem em que
+   * serão avaliados. Coleção vazia é estado válido: processo sem critério de
+   * desempate declarado.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirCriteriosDesempate(
+    processoSeletivoId: string,
+    criterios: readonly CriterioDesempateInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/criterios-desempate`,
+      criterios,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
