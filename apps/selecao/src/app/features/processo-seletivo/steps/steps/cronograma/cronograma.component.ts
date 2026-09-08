@@ -8,7 +8,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
@@ -16,9 +16,8 @@ import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
-  type EtapaPontuada,
-  type FaseDoCronograma,
   type StepValidation,
+  type WizardDraft,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -75,7 +74,7 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 
 @Component({
   selector: 'sel-step-cronograma',
-  imports: [ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(CronogramaStepComponent)],
@@ -147,6 +146,8 @@ export class CronogramaStepComponent {
       this.store.patchObjectSection('cronograma', {
         fases: this.fases.controls.map(faseDoFormulario),
         etapas: this.etapas.controls.map(etapaDoFormulario),
+        algoritmoContagemCodigo: this.formulario.controls.algoritmoContagemCodigo.value,
+        algoritmoContagemVersao: this.formulario.controls.algoritmoContagemVersao.value,
       });
     });
 
@@ -230,6 +231,18 @@ export class CronogramaStepComponent {
       (tipoBancaId) => this.catalogos.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
     );
   });
+
+  /**
+   * Convenções de contagem de prazo publicadas no catálogo versionado. O DTO
+   * não tem `nome` nem `descricao` — só `codigo`, `versao` e `baseLegal` são
+   * legíveis, e é isso que o seletor exibe. Nenhum mapa código→rótulo é
+   * escrito aqui: seria vocabulário institucional duplicado no frontend.
+   */
+  readonly regrasDeContagem = computed(() =>
+    this.catalogos
+      .regrasContagem()
+      .map((regra) => ({ codigo: regra.codigo, versao: regra.versao, baseLegal: regra.baseLegal })),
+  );
 
   /** Quantas etapas compõem a nota final — o que a fórmula vai dividir. */
   readonly etapasQueCompoemNota = computed(() => {
@@ -382,6 +395,18 @@ export class CronogramaStepComponent {
     this.avisoDeReordenacao.set(null);
   }
 
+  /**
+   * A convenção é identificada por código **e** versão: publicar versão nova
+   * do catálogo não pode mudar a regra que um processo já declarou. Escolher
+   * pelo código e deduzir a versão do que está carregado é o que mantém o par
+   * coerente — gravar código novo com versão velha é recusado.
+   */
+  escolherAlgoritmo(codigo: string): void {
+    const versao = this.regrasDeContagem().find((regra) => regra.codigo === codigo)?.versao ?? '';
+    this.formulario.controls.algoritmoContagemCodigo.setValue(codigo);
+    this.formulario.controls.algoritmoContagemVersao.setValue(versao);
+  }
+
   acrescentarEtapa(): void {
     this.etapas.push(
       grupoDaEtapa({
@@ -450,17 +475,26 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Grava as duas dimensões, etapas primeiro.
+   * Grava as três dimensões: etapas e cronograma de fases, na ordem que a
+   * bicondicional do agregado exige, e por último a convenção de contagem de
+   * prazo — só quando o rascunho declara uma.
    *
-   * A ordem não é preferência: a fase que agrupa etapas é recusada na hora se o
-   * processo não tiver nenhuma etapa, então gravar o cronograma antes das etapas
-   * derrubaria a gravação de um cronograma que é válido.
+   * A ordem entre etapas e cronograma não é preferência: a fase que agrupa
+   * etapas é recusada na hora se o processo não tiver nenhuma etapa, então
+   * gravar o cronograma antes das etapas derrubaria a gravação de um
+   * cronograma que é válido.
    *
    * As duas vão juntas mesmo quando só uma mudou. O acoplamento que isso
    * poderia criar — uma etapa malformada impedindo a correção de uma data — não
    * chega a existir, porque a conferência acima recusa antes de qualquer envio e
    * aponta a etapa; e um `PUT` que substitui a coleção pelo mesmo conteúdo não
    * muda nada no servidor.
+   *
+   * O algoritmo vem por último e é opcional: ausência é estado válido
+   * enquanto rascunho (CA-05) — o endpoint recusa código ou versão nulos, e
+   * não existe caminho para desdeclarar a convenção depois de escolhida. Se
+   * ele falhar, as duas primeiras chamadas já gravaram, e a mensagem diz isso
+   * em vez de tratar a falha como se nada tivesse sido salvo.
    */
   async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
@@ -539,6 +573,27 @@ export class CronogramaStepComponent {
           return {
             valid: false,
             messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
+          };
+        }
+      }
+
+      // Ausência é estado válido em rascunho (CA-05): a chamada só acontece
+      // quando há escolha. O código e a versão do formulário sempre andam
+      // juntos — `escolherAlgoritmo` os grava ao mesmo tempo —, então checar
+      // um basta para saber que o par está completo.
+      const codigoAlgoritmo = this.formulario.controls.algoritmoContagemCodigo.value;
+      if (codigoAlgoritmo !== '') {
+        const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(processoId, {
+          codigo: codigoAlgoritmo,
+          versao: this.formulario.controls.algoritmoContagemVersao.value,
+        });
+        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+        if (!algoritmo.ok) {
+          return {
+            valid: false,
+            messages: [
+              `As etapas e o cronograma de fases foram gravados. ${this.problemI18n.resolve(algoritmo.problem).title}`,
+            ],
           };
         }
       }
@@ -642,17 +697,21 @@ export class CronogramaStepComponent {
    * rascunho é atualizado a cada tecla pelo caminho de volta, e recriar os
    * controles a cada uma tiraria o foco do campo que está sendo preenchido.
    */
-  private espelharRascunho(cronograma: {
-    readonly fases: readonly FaseDoCronograma[];
-    readonly etapas: readonly EtapaPontuada[];
-  }): void {
+  private espelharRascunho(cronograma: WizardDraft['cronograma']): void {
     const atuais = {
       fases: this.fases.controls.map(faseDoFormulario),
       etapas: this.etapas.controls.map(etapaDoFormulario),
     };
+    const algoritmoIgual =
+      this.formulario.controls.algoritmoContagemCodigo.value ===
+        cronograma.algoritmoContagemCodigo &&
+      this.formulario.controls.algoritmoContagemVersao.value ===
+        cronograma.algoritmoContagemVersao;
+
     if (
       mesmoConteudo(atuais.fases, cronograma.fases) &&
-      mesmoConteudo(atuais.etapas, cronograma.etapas)
+      mesmoConteudo(atuais.etapas, cronograma.etapas) &&
+      algoritmoIgual
     ) {
       return;
     }
@@ -671,6 +730,15 @@ export class CronogramaStepComponent {
       for (const etapa of cronograma.etapas) {
         this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
       }
+
+      this.formulario.controls.algoritmoContagemCodigo.setValue(
+        cronograma.algoritmoContagemCodigo,
+        { emitEvent: false },
+      );
+      this.formulario.controls.algoritmoContagemVersao.setValue(
+        cronograma.algoritmoContagemVersao,
+        { emitEvent: false },
+      );
 
       if (!this.edicaoLiberada()) this.formulario.disable({ emitEvent: false });
       this.versaoDoFormulario.update((versao) => versao + 1);

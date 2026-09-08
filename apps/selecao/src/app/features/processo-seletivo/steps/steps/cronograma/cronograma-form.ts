@@ -73,6 +73,14 @@ export interface CronogramaForm {
   readonly faseAAcrescentar: FormControl<string>;
   readonly fases: FormArray<FormGroup<FaseForm>>;
   readonly etapas: FormArray<FormGroup<EtapaForm>>;
+  /**
+   * Convenção de contagem de prazo do processo, por código e versão do
+   * catálogo — declaração do processo inteiro, não de uma fase. Vazio é
+   * estado válido enquanto rascunho (CA-05): nenhuma convenção vem
+   * pré-selecionada.
+   */
+  readonly algoritmoContagemCodigo: FormControl<string>;
+  readonly algoritmoContagemVersao: FormControl<string>;
 }
 
 export function novoFormularioDoCronograma(): FormGroup<CronogramaForm> {
@@ -80,6 +88,8 @@ export function novoFormularioDoCronograma(): FormGroup<CronogramaForm> {
     faseAAcrescentar: controle(''),
     fases: new FormArray<FormGroup<FaseForm>>([]),
     etapas: new FormArray<FormGroup<EtapaForm>>([]),
+    algoritmoContagemCodigo: controle(''),
+    algoritmoContagemVersao: controle(''),
   });
 }
 

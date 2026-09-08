@@ -364,6 +364,38 @@
         </button>
       </div>
     }
+
+    <!--
+      Declaração do processo inteiro, não de uma fase: toda fase com regra de
+      recurso conta o prazo pela mesma convenção. Ausência é estado válido
+      enquanto rascunho — nenhuma opção vem pré-selecionada, e o seletor exibe
+      só `codigo` e `baseLegal`, que é o que o catálogo tem de legível.
+    -->
+    <div class="step-card">
+      <h2 class="form-section__title">Convenção de contagem de prazo</h2>
+      <div class="form-field form-grid__full">
+        <label class="label" for="cr-algoritmo-contagem">Convenção de contagem</label>
+        <select
+          class="input"
+          id="cr-algoritmo-contagem"
+          [ngModel]="formulario.controls.algoritmoContagemCodigo.value"
+          [ngModelOptions]="{ standalone: true }"
+          [disabled]="!edicaoLiberada()"
+          (ngModelChange)="escolherAlgoritmo($event)"
+        >
+          <option value="">Nenhuma convenção declarada</option>
+          @for (regra of regrasDeContagem(); track regra.codigo + regra.versao) {
+            <option [value]="regra.codigo">
+              {{ regra.codigo }} ({{ regra.versao }}) — {{ regra.baseLegal }}
+            </option>
+          }
+        </select>
+        <p class="field__hint">
+          Regra do catálogo institucional que define como os prazos de recurso deste cronograma são
+          contados. Sem escolha, o processo segue em rascunho quanto a este item.
+        </p>
+      </div>
+    </div>
   </form>
 
   @if (problemas().length > 0) {
