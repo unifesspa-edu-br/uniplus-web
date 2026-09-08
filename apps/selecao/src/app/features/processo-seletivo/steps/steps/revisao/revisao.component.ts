@@ -242,10 +242,23 @@ export class RevisaoStepComponent {
   }
 
   recarregarPreflight(): void {
+    void this.recarregarChecklist();
+  }
+
+  /**
+   * `PassoDoWizard.recarregarChecklist()` — o mesmo recarregar do botão
+   * "Atualizar checklist", mas aguardável: `ProcessoSeletivoPage.publicar()`
+   * chama isto depois de `gravarPassosAnteriores()` gravar de novo um passo
+   * anterior corrigido, para o checklist em tela refletir a correção antes
+   * de `validarRascunho()` julgar de novo — sem isto, a correção fica
+   * gravada no servidor, mas `validate()` desta tela ainda recusa com o
+   * checklist de antes dela (achado do Codex na #486, P1).
+   */
+  async recarregarChecklist(): Promise<void> {
     const id = this.store.processoSeletivoId();
     if (id === null) return;
     this.ultimaRecusa.set(null);
-    void this.preflight.recarregar(id, this.dataReferenciaLegal());
+    await this.preflight.recarregar(id, this.dataReferenciaLegal());
   }
 
   private dataReferenciaLegal(): string | null {
@@ -548,12 +561,29 @@ export class RevisaoStepComponent {
       return false;
     }
 
-    // Hidrata assim que o detalhe responde, mesmo que o snapshot falhe: o
-    // POST já pode ter publicado de verdade, e deixar o rascunho no estado
-    // antigo reabriria os controles de edição e de publicar sobre um
-    // processo que o servidor já considera imutável (achado do Codex na
-    // #486). `persistir()` ainda devolve inválido quando `snapshot` falha —
-    // só a hidratação, que é o que trava a tela, não pode esperar por ele.
+    if (detalhe.data.status === StatusProcesso.rascunho) {
+      // O `POST` já devolveu `204` — a publicação foi aceita —, mas esta
+      // releitura ainda mostra rascunho. Atraso de propagação (réplica que
+      // ainda não viu a escrita) ou falha real de aplicar — não dá para
+      // distinguir daqui, e as duas exigem a MESMA cautela. `hidratar()`
+      // aplicaria este status desatualizado E limparia
+      // `publicacaoNaoConfirmada` (é o que ele faz para resolver a
+      // incerteza numa releitura que CHEGA a uma resposta definitiva) —
+      // tratando um estado ainda intermediário como se fosse o final
+      // (achado do Codex na #486, P1: a mesma família que já apareceu
+      // nesta frente). Mantém travado; só uma releitura que mostre um
+      // status definitivo resolve.
+      this.store.publicacaoNaoConfirmada.set(true);
+      return false;
+    }
+
+    // Hidrata assim que o detalhe responde com um status definitivo, mesmo
+    // que o snapshot falhe: o POST já pode ter publicado de verdade, e
+    // deixar o rascunho no estado antigo reabriria os controles de edição e
+    // de publicar sobre um processo que o servidor já considera imutável
+    // (achado do Codex na #486). `persistir()` ainda devolve inválido
+    // quando `snapshot` falha — só a hidratação, que é o que trava a tela,
+    // não pode esperar por ele.
     this.store.hidratar(detalhe.data);
 
     if (!snapshot.ok) return false;

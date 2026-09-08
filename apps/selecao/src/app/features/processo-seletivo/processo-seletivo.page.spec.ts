@@ -239,12 +239,19 @@ describe('ProcessoSeletivoPage — publicação', () => {
     return { fixture, page, store: page.store };
   }
 
-  it('recusa publicar rascunho vazio alcançado por salto de passo', () => {
+  /**
+   * `page.nextOrPublish()` aguardado em todo teste deste describe: `publicar()`
+   * agora grava de novo os passos anteriores e recarrega o checklist da
+   * Revisão ANTES de validar (achado do Codex na #486, P1 — ver o
+   * comentário de `publicar()`), o que introduz pontos `await` reais que
+   * não existiam quando `validarRascunho()` era a primeira coisa a rodar.
+   */
+  it('recusa publicar rascunho vazio alcançado por salto de passo', async () => {
     const { fixture, page, store } = montar();
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
     fixture.detectChanges();
 
     const erros = store.stepError();
@@ -258,7 +265,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve));
 
@@ -268,24 +275,24 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(document.activeElement).toBe(alerta);
   });
 
-  it('identifica cada pendência pelo passo de origem', () => {
+  it('identifica cada pendência pelo passo de origem', async () => {
     const { fixture, page, store } = montar();
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
 
     const erros = store.stepError() ?? [];
     expect(erros.some((erro) => erro.startsWith('Passo 2 — Identificação'))).toBe(true);
   });
 
-  it('reconcilia o progresso ao validar o rascunho inteiro', () => {
+  it('reconcilia o progresso ao validar o rascunho inteiro', async () => {
     const { fixture, page, store } = montar();
 
     store.syncCompleted([0, 1, 2]);
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
 
     expect(store.completedSteps().has(0)).toBe(false);
     expect(store.completedSteps().has(1)).toBe(false);
@@ -359,6 +366,76 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.'))).toBe(
       true,
     );
+  });
+
+  /**
+   * A Revisão fica de fora da primeira passada de `validarRascunho()`
+   * porque seu checklist pode estar desatualizado — mas sem recarregá-lo
+   * entre gravar de novo e a segunda passada, `validate()` recusaria com a
+   * foto de antes da correção mesmo depois de ela já ter sido gravada
+   * (achado do Codex na #486, P1).
+   */
+  it('recarrega o checklist da Revisão entre gravar de novo e validar, antes de publicar', async () => {
+    const { fixture, page, store } = montar();
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    let checklistRecarregado = false;
+    const recarregarChecklist = vi.fn().mockImplementation(async () => {
+      checklistRecarregado = true;
+    });
+    const stubRevisao = {
+      validate: () =>
+        checklistRecarregado ? { valid: true } : { valid: false, messages: ['Checklist desatualizado.'] },
+      recarregarChecklist,
+    };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(recarregarChecklist).toHaveBeenCalledTimes(1);
+    expect(store.stepError()).toBeNull();
+  });
+
+  /**
+   * `gravarPassosAnteriores()` grava vários passos em sequência — se o
+   * operador trocar de processo em pleno voo (`geracao` muda), continuar a
+   * varredura chamaria `persistir()` dos passos seguintes contra o
+   * rascunho do processo NOVO, gravando lá por engano (achado do Codex na
+   * #486, P1 — o mais sério dos três desta rodada).
+   */
+  it('para a varredura sem gravar no processo errado quando geracao muda em pleno voo', async () => {
+    const { fixture, page, store } = montar();
+    const persistirDoSegundoPasso = vi.fn().mockResolvedValue({ valid: true });
+    const persistirDoPrimeiroPasso = vi.fn().mockImplementation(async () => {
+      // Simula o operador trocando de processo enquanto este passo ainda
+      // gravava — mesmo efeito de `store.hidratar()` mudar a geracao.
+      store.reset();
+      return { valid: true };
+    });
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stub1 = { validate: () => ({ valid: true }), persistir: persistirDoPrimeiroPasso };
+    const stub2 = { validate: () => ({ valid: true }), persistir: persistirDoSegundoPasso };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => {
+      if (index === 1) return stub1;
+      if (index === 2) return stub2;
+      return stubSemPersistir;
+    });
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(persistirDoPrimeiroPasso).toHaveBeenCalledTimes(1);
+    expect(persistirDoSegundoPasso).not.toHaveBeenCalled();
   });
 });
 
