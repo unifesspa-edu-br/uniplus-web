@@ -49,19 +49,30 @@ const INITIAL_DRAFT: WizardDraft = {
   // declarou, e a etapa fictícia ainda faria o processo novo nascer com uma
   // linha que o operador não pediu.
   cronograma: { fases: [], etapas: [], algoritmoContagemCodigo: '', algoritmoContagemVersao: '' },
-  // Fórmula e precisão começam vazios — o usuário DEVE escolher no passo 6.
-  formula: { agregacao: '', precisao: '' },
-  bonus: { ativo: false, tipo: '', valor: null, criterio: '', modalidades: [] },
-  desempate: [],
-  eliminacao: {
-    notasMinimas: {
-      INSCRICAO_CANDIDATOS: null,
-      HOMOLOGACAO_INSCRICOES: null,
-      IMPORTACAO_NOTAS_ENEM: null,
-      DIVULGACAO_RESULTADO_FINAL: null,
-    },
-    clausulas: [],
+  // Classificação começa vazia — o usuário DEVE escolher a regra de cálculo
+  // no passo de Fórmula antes de a Eliminação poder gravar.
+  classificacao: {
+    regraCalculoCodigo: '',
+    regraCalculoVersao: '',
+    regraArredondamentoCodigo: '',
+    regraArredondamentoVersao: '',
+    casasArredondamento: '',
+    regraOrdemAlocacaoCodigo: '',
+    regraOrdemAlocacaoVersao: '',
+    nOpcoesAlocacao: '',
+    baseadoEmEnem: false,
+    regrasEliminacao: [],
   },
+  bonus: {
+    ativo: false,
+    regraCodigo: '',
+    regraVersao: '',
+    fator: '',
+    teto: '',
+    municipioConvenio: '',
+    baseLegal: '',
+  },
+  desempate: [],
   documentos: initialDocumentos(),
   polos: {},
   atendimento: { condicoes: [], tiposPcd: [], recursos: [] },

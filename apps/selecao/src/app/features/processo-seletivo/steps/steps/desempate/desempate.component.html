@@ -1,137 +1,166 @@
 <p class="step-subtitle">
   Ordem dos critérios de desempate. O primeiro da lista é avaliado primeiro. Use ↑↓ para reordenar.
 </p>
+@if (catalogos.erro(); as erro) {
+  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+}
+
 <div class="desempate-list">
   @for (
-    criterion of ordered();
-    track criterion.id;
-    let index = $index;
+    criterio of criterios();
+    track $index;
+    let indice = $index;
     let first = $first;
     let last = $last
   ) {
-    <div class="desempate-item">
-      <span class="desempate-num">{{ index + 1 }}º</span>
-      <div class="desempate-info">
-        <span class="desempate-nome">{{ criterion.nome }}</span
-        ><span class="desempate-fonte">{{ criterion.fonte }}</span>
+    <section class="step-section" [attr.aria-label]="'Critério de desempate ' + (indice + 1)">
+      <div class="desempate-item">
+        <span class="desempate-num">{{ indice + 1 }}º</span>
+        <div class="form-grid form-grid--3" style="flex: 1">
+          <div class="form-field">
+            <label class="label" [attr.for]="'desemp-regra-' + indice">Regra</label
+            ><select
+              class="input"
+              [id]="'desemp-regra-' + indice"
+              [disabled]="catalogos.carregando()"
+              [value]="criterio.regraCodigo + '|' + criterio.regraVersao"
+              (change)="escolherRegra(indice, $any($event.target).value)"
+            >
+              <option value="|">— escolher —</option>
+              @for (opcao of regraEscolhivel(criterio); track opcao.codigo + opcao.versao) {
+                <option [value]="opcao.codigo + '|' + opcao.versao">
+                  {{ opcao.codigo }} — {{ opcao.baseLegal ?? 'base legal indisponível' }}
+                </option>
+              }
+            </select>
+          </div>
+
+          @if (usaEtapa(criterio)) {
+            <div class="form-field">
+              <label class="label" [attr.for]="'desemp-etapa-' + indice">Etapa</label
+              ><select
+                class="input"
+                [id]="'desemp-etapa-' + indice"
+                [value]="criterio.etapaRef"
+                (change)="alterarEtapaRef(indice, $any($event.target).value)"
+              >
+                <option value="">— escolher —</option>
+                @for (etapa of etapasReferenciaveis(); track etapa.id) {
+                  <option [value]="etapa.id">{{ etapa.nome || 'Etapa sem nome' }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (usaIdadeMinima(criterio)) {
+            <div class="form-field">
+              <label class="label" [attr.for]="'desemp-idade-' + indice">Idade mínima</label
+              ><input
+                class="input"
+                [id]="'desemp-idade-' + indice"
+                type="number"
+                min="1"
+                step="1"
+                [value]="criterio.idadeMinima"
+                (input)="alterarIdadeMinima(indice, $any($event.target).value)"
+              />
+            </div>
+          }
+
+          @if (usaPredicadoFato(criterio)) {
+            <div class="form-field">
+              <label class="label" [attr.for]="'desemp-fato-' + indice">Fato</label
+              ><input
+                class="input"
+                [id]="'desemp-fato-' + indice"
+                type="text"
+                [value]="criterio.fato"
+                (input)="alterarFato(indice, $any($event.target).value)"
+              />
+            </div>
+            <div class="form-field">
+              <label class="label" [attr.for]="'desemp-operador-' + indice">Operador</label
+              ><input
+                class="input"
+                [id]="'desemp-operador-' + indice"
+                type="text"
+                [value]="criterio.operador"
+                (input)="alterarOperador(indice, $any($event.target).value)"
+              />
+            </div>
+            <div class="form-field">
+              <label class="label" [attr.for]="'desemp-valor-' + indice">Valor</label
+              ><input
+                class="input"
+                [id]="'desemp-valor-' + indice"
+                type="text"
+                [value]="criterio.valor"
+                (input)="alterarValor(indice, $any($event.target).value)"
+              />
+            </div>
+          }
+        </div>
+        <div class="desempate-actions">
+          <button
+            class="desempate-btn"
+            type="button"
+            aria-label="Mover para cima"
+            [disabled]="first"
+            (click)="mover(indice, -1)"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            >
+              <path d="M18 15l-6-6-6 6" />
+            </svg></button
+          ><button
+            class="desempate-btn"
+            type="button"
+            aria-label="Mover para baixo"
+            [disabled]="last"
+            (click)="mover(indice, 1)"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg></button
+          ><button
+            class="desempate-btn"
+            type="button"
+            [attr.aria-label]="'Remover critério de desempate ' + (indice + 1)"
+            (click)="remover(indice)"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div class="desempate-actions">
-        <button
-          class="desempate-btn"
-          type="button"
-          aria-label="Mover para cima"
-          [disabled]="first"
-          (click)="move(index, -1)"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          >
-            <path d="M18 15l-6-6-6 6" />
-          </svg></button
-        ><button
-          class="desempate-btn"
-          type="button"
-          aria-label="Mover para baixo"
-          [disabled]="last"
-          (click)="move(index, 1)"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg></button
-        ><button
-          class="desempate-btn"
-          type="button"
-          [attr.aria-label]="'Remover ' + criterion.nome"
-          (click)="remove(criterion.id)"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          >
-            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-          </svg>
-        </button>
-      </div>
-    </div>
+    </section>
   }
 </div>
-<div class="desempate-add-wrap">
-  <p class="desempate-add-label">Adicionar critério</p>
-  <button #addCriterion class="btn btn--outline btn--sm" type="button" (click)="open()">
-    + Adicionar
-  </button>
-</div>
-<dialog
-  #criteriaDialog
-  aria-labelledby="criterio-modal-title"
-  class="vagas-modal"
-  tabindex="-1"
-  (click)="backdrop($event)"
-  (keydown)="backdrop($event)"
-  (cancel)="cancel($event)"
->
-  <div class="vagas-modal__panel">
-    <div class="vagas-modal__header">
-      <h2 class="vagas-modal__title" id="criterio-modal-title">Adicionar critérios de desempate</h2>
-      <button aria-label="Fechar modal" class="vagas-modal__close" type="button" (click)="close()">
-        <svg
-          aria-hidden="true"
-          fill="none"
-          height="20"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-width="2.5"
-          viewBox="0 0 24 24"
-          width="20"
-        >
-          <path d="M18 6L6 18M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-    <div class="vagas-modal__body">
-      <ul aria-labelledby="criterio-modal-title" class="vagas-modal__list" role="group">
-        @for (criterion of criteria; track criterion.id) {
-          @let already = store.draft().desempate.includes(criterion.id);
-          <li>
-            <label class="vagas-modal__item" [class.is-disabled]="already"
-              ><input
-                type="checkbox"
-                [value]="criterion.id"
-                [disabled]="already"
-                [checked]="already || pending().has(criterion.id)"
-                (change)="toggle(criterion.id, $any($event.target).checked)"
-              />
-              <div class="vagas-modal__item-info">
-                <span class="vagas-modal__item-nome">{{ criterion.nome }}</span
-                ><span class="vagas-modal__item-sub">{{ criterion.fonte }}</span>
-              </div>
-            </label>
-          </li>
-        }
-      </ul>
-    </div>
-    <div class="vagas-modal__footer">
-      <button class="btn btn--ghost" type="button" (click)="close()">Cancelar</button
-      ><button class="btn btn--primary" type="button" (click)="confirm()">Confirmar seleção</button>
-    </div>
-  </div>
-</dialog>
+
+<button class="btn btn--outline btn--sm" type="button" (click)="acrescentar()">
+  + Acrescentar critério
+</button>

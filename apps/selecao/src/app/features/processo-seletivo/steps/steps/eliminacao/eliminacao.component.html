@@ -1,55 +1,103 @@
 <p class="step-subtitle">
-  Critérios que eliminam o candidato do processo. Notas mínimas por etapa são opcionais; cláusulas
-  gerais protegem a integridade do processo.
+  Regras de eliminação. Esta gravação envia junto a regra de cálculo, a precisão e a ordem de
+  alocação do passo Fórmula — os quatro compõem um comando só.
 </p>
-<section class="step-section">
-  <h2 class="step-section__title">Notas mínimas por etapa</h2>
-  <div class="eliminacao-table-wrap">
-    <table aria-label="Notas mínimas por etapa" class="eliminacao-table">
-      <thead>
-        <tr>
-          <th>Etapa</th>
-          <th>Nota mínima</th>
-          <th>Eliminatória?</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (etapa of etapas; track etapa[0]) {
-          <tr>
-            <td class="eliminacao-etapa">{{ etapa[0] }}</td>
-            <td>
-              <input
-                class="input eliminacao-input"
+@if (catalogos.erro(); as erro) {
+  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+}
+
+@if (!usaFormulaLocal()) {
+  <p class="alert alert--info" role="status">
+    A classificação escolhida no passo Fórmula é importada — regras de eliminação locais não se
+    aplicam e nada será enviado nesta seção.
+  </p>
+} @else {
+  @if (divisorInvalido()) {
+    <p class="alert alert--danger" role="alert">
+      Nenhuma etapa do Cronograma compõe a nota. Volte ao Cronograma e declare ao menos uma etapa
+      classificatória (ou ambas) com peso maior que zero antes de gravar.
+    </p>
+  }
+
+  <div class="eliminacao-list">
+    @for (regra of regras(); track $index; let indice = $index) {
+      <section class="step-section" [attr.aria-label]="'Regra de eliminação ' + (indice + 1)">
+        <div class="form-grid form-grid--3">
+          <div class="form-field">
+            <label class="label" [attr.for]="'elim-regra-' + indice">Regra</label
+            ><select
+              class="input"
+              [id]="'elim-regra-' + indice"
+              [value]="regra.regraCodigo + '|' + regra.regraVersao"
+              (change)="escolherRegra(indice, $any($event.target).value)"
+            >
+              <option value="|">— escolher —</option>
+              @for (opcao of regraEscolhivel(regra); track opcao.codigo + opcao.versao) {
+                <option [value]="opcao.codigo + '|' + opcao.versao">
+                  {{ opcao.codigo }} — {{ opcao.baseLegal ?? 'base legal indisponível' }}
+                </option>
+              }
+            </select>
+          </div>
+
+          @if (usaEtapaENotaMinima(regra)) {
+            <div class="form-field">
+              <label class="label" [attr.for]="'elim-etapa-' + indice">Etapa</label
+              ><select
+                class="input"
+                [id]="'elim-etapa-' + indice"
+                [value]="regra.etapaRef"
+                (change)="alterarEtapaRef(indice, $any($event.target).value)"
+              >
+                <option value="">— escolher —</option>
+                @for (etapa of etapasReferenciaveis(); track etapa.id) {
+                  <option [value]="etapa.id">{{ etapa.nome || 'Etapa sem nome' }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="label" [attr.for]="'elim-nota-' + indice">Nota mínima</label
+              ><input
+                class="input"
+                [id]="'elim-nota-' + indice"
                 type="number"
                 min="0"
-                max="1000"
                 step="0.01"
-                placeholder="Sem mínima"
-                [attr.aria-label]="'Nota mínima — ' + etapa[1]"
-                [value]="store.draft().eliminacao.notasMinimas[etapa[0]] ?? ''"
-                (input)="setNota(etapa[0], $any($event.target).value)"
+                [value]="regra.notaMinima"
+                (input)="alterarNotaMinima(indice, $any($event.target).value)"
               />
-            </td>
-            <td><span class="eliminacao-badge">Não</span></td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-</section>
-<section class="step-section">
-  <h2 class="step-section__title">Cláusulas gerais de eliminação</h2>
-  <div class="step-card">
-    <div class="checkbox-grid">
-      @for (clausula of clausulas; track clausula) {
-        <label class="check-item"
-          ><input
-            type="checkbox"
-            [checked]="store.draft().eliminacao.clausulas.includes(clausula)"
-            (change)="toggleClausula(clausula, $any($event.target).checked)"
-          /><span>{{ clausula }}</span></label
+            </div>
+          }
+
+          @if (usaMinimo(regra)) {
+            <div class="form-field">
+              <label class="label" [attr.for]="'elim-minimo-' + indice">Mínimo exigido</label
+              ><input
+                class="input"
+                [id]="'elim-minimo-' + indice"
+                type="number"
+                min="0"
+                step="0.01"
+                [value]="regra.minimo"
+                (input)="alterarMinimo(indice, $any($event.target).value)"
+              />
+            </div>
+          }
+        </div>
+        <button
+          class="btn btn--outline btn--sm"
+          type="button"
+          style="margin-top: var(--space-3)"
+          [attr.aria-label]="'Remover regra de eliminação ' + (indice + 1)"
+          (click)="removerRegra(indice)"
         >
-      }
-    </div>
+          Remover
+        </button>
+      </section>
+    }
   </div>
-</section>
+
+  <button class="btn btn--outline btn--sm" type="button" (click)="acrescentarRegra()">
+    + Acrescentar regra de eliminação
+  </button>
+}
