@@ -174,16 +174,30 @@
 
         <div class="form-field">
           <label class="label" for="rev-tipo-ato">Tipo de ato</label>
+          <!-- `[attr.selected]` por `<option>`, não `[value]` no `<select>`: o
+               bloco inteiro é recriado quando o preflight recarrega depois de
+               um erro (troca de ramo `@if`/`@else`), e um `[value]` no
+               `<select>` seria aplicado antes de o `@for` criar as `<option>`
+               — o navegador não acha correspondência e volta para
+               "— escolher —" mesmo com o rascunho e o comando corretos por
+               baixo. Cada opção decide a própria seleção no mesmo passe em
+               que o `@for` a cria, sem essa corrida. -->
           <select
             class="input"
             id="rev-tipo-ato"
-            [value]="store.draft().publicacao.ato.tipoAtoCodigo"
             [disabled]="!store.aceitaEdicao()"
             (change)="alterarAto({ tipoAtoCodigo: $any($event.target).value })"
           >
-            <option value="">— escolher —</option>
+            <option value="" [attr.selected]="store.draft().publicacao.ato.tipoAtoCodigo === '' ? '' : null">
+              — escolher —
+            </option>
             @for (tipo of preflight.tiposAto(); track tipo.codigo) {
-              <option [value]="tipo.codigo">{{ tipo.nome }} ({{ tipo.codigo }})</option>
+              <option
+                [value]="tipo.codigo"
+                [attr.selected]="tipo.codigo === store.draft().publicacao.ato.tipoAtoCodigo ? '' : null"
+              >
+                {{ tipo.nome }} ({{ tipo.codigo }})
+              </option>
             }
           </select>
         </div>
