@@ -55,6 +55,7 @@ export type ConfiguracaoBonusRegionalDto = components['schemas']['ConfiguracaoBo
 export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
 export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
 export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
+export type SnapshotVigenteDto = components['schemas']['SnapshotVigenteDto'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -320,6 +321,32 @@ export class ProcessosSeletivosApi {
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/publicacao`,
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/snapshot-vigente` — o snapshot
+   * imutável da última publicação: `snapshotPublicacaoId`, o `atoId`, a
+   * `schemaVersion`, o hash do algoritmo, o hash da configuração e do
+   * edital, e a `configuracao` congelada em si.
+   *
+   * CA-08 da #486: depois do `204` de `publicar()`, é esta leitura — ao lado
+   * de `obter()` — que confirma que a versão 1 ficou vigente. O campo
+   * `configuracao` é o JSON canônico congelado no instante da publicação, não
+   * um DTO editável: interpretá-lo como comando de gravação reabriria um
+   * rascunho que o próprio ato tornou imutável.
+   */
+  obterSnapshotVigente(
+    processoSeletivoId: string,
+    instante?: string,
+  ): Observable<ApiResult<SnapshotVigenteDto>> {
+    let params = new HttpParams();
+    if (instante !== undefined) {
+      params = params.set('instante', instante);
+    }
+    return this.http.get<ApiResult<SnapshotVigenteDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/snapshot-vigente`,
+      { params, context: withVendorMime('snapshot-vigente-processo-seletivo', 1) },
     );
   }
 
