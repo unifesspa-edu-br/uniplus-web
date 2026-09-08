@@ -2521,6 +2521,56 @@ dialog.vagas-modal::backdrop {
   }
 }
 
+/* ── Preflight de publicação (#486): cabeçalho de seção com ação ──── */
+
+.step-section__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.step-section__header h2 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
+  margin: 0;
+}
+
+/* Grupo de itens de conformidade por dimensão — grupo conforme fica
+   recolhido (`<details>` nativo, sem `open`); grupo pendente já abre. */
+.revisao-grupo {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.revisao-grupo__resumo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.revisao-grupo__resumo::-webkit-details-marker {
+  display: none;
+}
+
+.revisao-grupo__nome {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.revisao-grupo__itens {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--space-3);
+  padding: 0 0 0 var(--space-6);
+  list-style: none;
+}
+
 /* ── Estados da retomada por endereço ────────────────────────────── */
 
 .ps-estado {

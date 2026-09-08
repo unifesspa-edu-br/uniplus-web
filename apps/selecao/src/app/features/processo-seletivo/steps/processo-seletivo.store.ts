@@ -76,6 +76,12 @@ const INITIAL_DRAFT: WizardDraft = {
   documentos: initialDocumentos(),
   polos: {},
   atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
+  publicacao: {
+    numero: '',
+    periodoInscricaoInicio: '',
+    periodoInscricaoFim: '',
+    ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+  },
 };
 
 @Injectable()
