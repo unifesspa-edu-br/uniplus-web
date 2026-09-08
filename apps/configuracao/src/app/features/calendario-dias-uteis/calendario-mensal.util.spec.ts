@@ -27,7 +27,7 @@ function celulasComOcorrencia(meses: ReturnType<typeof agruparPorMes>): CelulaCa
 }
 
 describe('agruparPorMes()', () => {
-  it('agrupa cronologicamente e omite meses sem feriado', () => {
+  it('apresenta todos os 12 meses do ano em ordem cronológica, incluindo meses sem feriado (CA01, CA02, CA03)', () => {
     const dias = [
       diaNaoUtil({ id: '1', data: '2026-12-25', descricao: 'Natal' }),
       diaNaoUtil({ id: '2', data: '2026-01-01', descricao: 'Confraternização' }),
@@ -36,27 +36,57 @@ describe('agruparPorMes()', () => {
 
     const meses = agruparPorMes(dias);
 
-    expect(meses.map((mes) => mes.chave)).toEqual(['2026-01', '2026-04', '2026-12']);
+    expect(meses).toHaveLength(12);
+    expect(meses.map((mes) => mes.chave)).toEqual([
+      '2026-01',
+      '2026-02',
+      '2026-03',
+      '2026-04',
+      '2026-05',
+      '2026-06',
+      '2026-07',
+      '2026-08',
+      '2026-09',
+      '2026-10',
+      '2026-11',
+      '2026-12',
+    ]);
     expect(meses.map((mes) => mes.rotulo)).toEqual([
       'Janeiro de 2026',
+      'Fevereiro de 2026',
+      'Março de 2026',
       'Abril de 2026',
+      'Maio de 2026',
+      'Junho de 2026',
+      'Julho de 2026',
+      'Agosto de 2026',
+      'Setembro de 2026',
+      'Outubro de 2026',
+      'Novembro de 2026',
       'Dezembro de 2026',
     ]);
   });
 
-  it('atravessa anos mantendo ordem cronológica', () => {
-    const dias = [
-      diaNaoUtil({ id: '1', data: '2027-01-01' }),
-      diaNaoUtil({ id: '2', data: '2026-12-25' }),
-    ];
+  it('apresenta 12 meses mesmo para dataset sem dias cadastrados (CA04)', () => {
+    const meses = agruparPorMes([], 2026);
 
-    const meses = agruparPorMes(dias);
-
-    expect(meses.map((mes) => mes.chave)).toEqual(['2026-12', '2027-01']);
+    expect(meses).toHaveLength(12);
+    expect(celulasComOcorrencia(meses)).toHaveLength(0);
   });
 
-  it('retorna lista vazia para dataset sem dias', () => {
-    expect(agruparPorMes([])).toEqual([]);
+  it('respeita o ano selecionado e ignora datas de outros anos (CA06)', () => {
+    const dias = [
+      diaNaoUtil({ id: '1', data: '2026-01-01', descricao: 'Ano Novo 2026' }),
+      diaNaoUtil({ id: '2', data: '2027-01-01', descricao: 'Ano Novo 2027' }),
+    ];
+
+    const meses = agruparPorMes(dias, 2026);
+
+    expect(meses).toHaveLength(12);
+    expect(meses.every((mes) => mes.ano === 2026)).toBe(true);
+    const celulas = celulasComOcorrencia(meses);
+    expect(celulas).toHaveLength(1);
+    expect(celulas[0].ocorrencias[0].id).toBe('1');
   });
 
   it('descarta defensivamente datas que não formam um calendário válido', () => {
@@ -65,39 +95,47 @@ describe('agruparPorMes()', () => {
       diaNaoUtil({ id: '2', data: '2026-04-21', descricao: 'Tiradentes' }),
     ];
 
-    const meses = agruparPorMes(dias);
+    const meses = agruparPorMes(dias, 2026);
 
-    expect(meses).toHaveLength(1);
-    expect(meses[0].chave).toBe('2026-04');
+    expect(meses).toHaveLength(12);
+    const celulas = celulasComOcorrencia(meses);
+    expect(celulas).toHaveLength(1);
+    expect(celulas[0].data).toBe('2026-04-21');
   });
 
   describe('posicionamento civil da semana', () => {
-    it('fevereiro de 2026 começa numa domingo (padding zero)', () => {
+    it('fevereiro de 2026 começa no domingo (padding zero)', () => {
       // 2026-02-01 é domingo.
-      const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-02-14' })]);
-      expect(mes.semanas[0][0]).not.toBeNull();
-      expect(mes.semanas[0][0]?.dia).toBe(1);
+      const meses = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-02-14' })], 2026);
+      const fevereiro = meses[1];
+      expect(fevereiro.semanas[0][0]).not.toBeNull();
+      expect(fevereiro.semanas[0][0]?.dia).toBe(1);
     });
 
     it('abril de 2026 começa numa quarta-feira (3 paddings)', () => {
       // 2026-04-01 é quarta-feira.
-      const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-04-21' })]);
-      expect(mes.semanas[0].slice(0, 3)).toEqual([null, null, null]);
-      expect(mes.semanas[0][3]?.dia).toBe(1);
+      const meses = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-04-21' })], 2026);
+      const abril = meses[3];
+      expect(abril.semanas[0].slice(0, 3)).toEqual([null, null, null]);
+      expect(abril.semanas[0][3]?.dia).toBe(1);
     });
 
     it('todo mês tem exatamente 7 colunas em cada semana', () => {
-      const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-04-21' })]);
-      for (const semana of mes.semanas) {
-        expect(semana).toHaveLength(7);
+      const meses = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-04-21' })], 2026);
+      for (const mes of meses) {
+        for (const semana of mes.semanas) {
+          expect(semana).toHaveLength(7);
+        }
       }
     });
 
     it('fevereiro de ano bissexto (2028) tem 29 dias mapeados', () => {
-      const [mes] = agruparPorMes([
-        diaNaoUtil({ id: '1', data: '2028-02-29', descricao: 'Bissexto' }),
-      ]);
-      const dias = mes.semanas
+      const meses = agruparPorMes(
+        [diaNaoUtil({ id: '1', data: '2028-02-29', descricao: 'Bissexto' })],
+        2028,
+      );
+      const fevereiro = meses[1];
+      const dias = fevereiro.semanas
         .flat()
         .filter((celula): celula is CelulaCalendarioMensal => celula !== null);
       expect(dias).toHaveLength(29);
@@ -122,16 +160,17 @@ describe('agruparPorMes()', () => {
       }),
     ];
 
-    const meses = agruparPorMes(dias);
+    const meses = agruparPorMes(dias, 2026);
     const celulas = celulasComOcorrencia(meses);
 
     expect(celulas).toHaveLength(1);
     expect(celulas[0].ocorrencias.map((o) => o.id)).toEqual(['1', '2']);
   });
 
-  it('dias sem feriado permanecem como célula com ocorrencias vazio', () => {
-    const [mes] = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-04-21' })]);
-    const dia1 = mes.semanas.flat().find((celula) => celula?.dia === 1);
+  it('dias sem feriado permanecem como célula com ocorrencias vazio (CA04, CA05)', () => {
+    const meses = agruparPorMes([diaNaoUtil({ id: '1', data: '2026-04-21' })], 2026);
+    const abril = meses[3];
+    const dia1 = abril.semanas.flat().find((celula) => celula?.dia === 1);
     expect(dia1?.ocorrencias).toEqual([]);
     expect(dia1?.data).toBe('2026-04-01');
   });

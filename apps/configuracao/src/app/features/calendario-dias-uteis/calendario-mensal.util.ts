@@ -37,22 +37,42 @@ const NOMES_MES = [
 ] as const;
 
 /**
- * Agrupa os dias não úteis em meses cronológicos, prontos para exibição em
- * grade civil de 7 colunas. Meses sem nenhum dia não útil não aparecem no
- * resultado. Múltiplas ocorrências na mesma data civil viram uma única
- * célula (CA-09). Datas que não parseiam como calendário válido são
- * descartadas — o contrato da API garante `format: date`; este é um
- * descarte defensivo contra dado corrompido, não um caminho esperado.
+ * Agrupa os dias não úteis nos 12 meses do ano (Janeiro a Dezembro), prontos para exibição
+ * em grade civil de 7 colunas. Meses sem registros permanecem visíveis sem marcações (CA01-CA06).
  */
-export function agruparPorMes(dias: readonly DiaNaoUtilDto[]): MesCalendarioMensal[] {
+export function agruparPorMes(
+  dias: readonly DiaNaoUtilDto[],
+  anoAlvo?: number,
+): MesCalendarioMensal[] {
+  let ano = anoAlvo;
+
+  // Se o ano não for informado explicitamente, extrai do primeiro registro válido
+  if (!ano) {
+    for (const dia of dias) {
+      const parsed = parseIsoDate(dia.data);
+      if (parsed) {
+        ano = parsed.getUTCFullYear();
+        break;
+      }
+    }
+  }
+
+  // Fallback para o ano atual caso a lista de dias seja vazia
+  ano = ano ?? new Date().getUTCFullYear();
+
   const porMes = new Map<string, Map<number, DiaNaoUtilDto[]>>();
 
   for (const dia of dias) {
     const parsed = parseIsoDate(dia.data);
     if (!parsed) continue;
 
-    const ano = String(parsed.getUTCFullYear()).padStart(4, '0'); // getUTCFullYear() não zero-preenche
-    const chave = `${ano}-${String(parsed.getUTCMonth() + 1).padStart(2, '0')}`;
+    const anoDia = parsed.getUTCFullYear();
+    if (anoDia !== ano) continue;
+
+    const anoStr = String(anoDia).padStart(4, '0');
+    const mesStr = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+    const chave = `${anoStr}-${mesStr}`;
+
     const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
     porMes.set(chave, porDiaDoMes);
 
@@ -62,9 +82,18 @@ export function agruparPorMes(dias: readonly DiaNaoUtilDto[]): MesCalendarioMens
     porDiaDoMes.set(diaDoMes, ocorrencias);
   }
 
-  return [...porMes.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([chave, porDiaDoMes]) => construirMes(chave, porDiaDoMes));
+  const anoStr = String(ano).padStart(4, '0');
+  const resultado: MesCalendarioMensal[] = [];
+
+  // Garante a criação dos 12 meses (Janeiro a Dezembro) em ordem cronológica
+  for (let mesIndice = 1; mesIndice <= 12; mesIndice++) {
+    const mesStr = String(mesIndice).padStart(2, '0');
+    const chave = `${anoStr}-${mesStr}`;
+    const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
+    resultado.push(construirMes(chave, porDiaDoMes));
+  }
+
+  return resultado;
 }
 
 function construirMes(
@@ -75,11 +104,9 @@ function construirMes(
   const ano = Number(anoStr);
   const mes = Number(mesStr);
 
-  // setUTCFullYear em vez de Date.UTC(ano, …) direto pelo mesmo motivo do
-  // parseIsoDate: UTC não pula dia civil numa transição de offset.
   const primeiroDia = new Date(0);
   primeiroDia.setUTCFullYear(ano, mes - 1, 1);
-  const primeiroDiaSemana = primeiroDia.getUTCDay(); // 0=dom..6=sáb
+  const primeiroDiaSemana = primeiroDia.getUTCDay();
 
   const ultimoDiaDoMes = new Date(0);
   ultimoDiaDoMes.setUTCFullYear(ano, mes, 0);
