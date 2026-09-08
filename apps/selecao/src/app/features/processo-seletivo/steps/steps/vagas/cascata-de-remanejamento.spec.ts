@@ -217,11 +217,11 @@ describe('problemasDaCascata', () => {
     // oferece) — os dois é que fecham a mesma causa raiz.
     expect(
       problemas.some(
-        (p) => p.ofertaCursoId === 'oferta-1' && p.mensagem.includes('fallback'),
+        (p) => p.ofertaCursoId === 'oferta-1' && p.mensagem.includes('destino final'),
       ),
     ).toBe(true);
     expect(
-      problemas.some((p) => p.ofertaCursoId === null && p.mensagem.includes('fallback AC')),
+      problemas.some((p) => p.ofertaCursoId === null && p.mensagem.includes('AC como destino final')),
     ).toBe(true);
   });
 
@@ -231,7 +231,7 @@ describe('problemasDaCascata', () => {
     const oferta = ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]);
     const problemas = problemasDaCascata([oferta], CATALOGO, matriz);
 
-    expect(problemas.some((p) => p.mensagem.includes('fallback'))).toBe(true);
+    expect(problemas.some((p) => p.mensagem.includes('destino final'))).toBe(true);
     expect(problemas.some((p) => p.mensagem.includes('Nenhum destino'))).toBe(true);
   });
 

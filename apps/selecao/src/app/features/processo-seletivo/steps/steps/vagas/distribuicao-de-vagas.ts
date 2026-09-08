@@ -414,7 +414,7 @@ function problemasDeDependencia(
       ...(modalidade.regraRemanejamento === 'CRUZADO'
         ? [
             { codigo: modalidade.remanejamentoPar, papel: 'o par do remanejamento' },
-            { codigo: modalidade.remanejamentoFallback, papel: 'o fallback do remanejamento' },
+            { codigo: modalidade.remanejamentoFallback, papel: 'o destino final do remanejamento' },
           ]
         : []),
     ].map((exigencia) => ({ ...exigencia, de: modalidade.codigo }));

@@ -132,7 +132,7 @@ export interface ProblemaDaCascata {
  *
  * **Por oferta** — nunca contra a união —, espelhando
  * `FallbackNaoSelecionadoNaOferta` e `DestinoDaOrigemNaoResolvivelNaOferta`:
- * o fallback tem de estar selecionado em cada oferta federal que exige
+ * o destino final tem de estar selecionado em cada oferta federal que exige
  * cascata, e cada origem que ela declara com `SEGUE_CASCATA` precisa de ao
  * menos um destino, entre os que a regra ordena para ela, também selecionado
  * na mesma oferta.
@@ -165,7 +165,7 @@ export function problemasDaCascata(
     if (!codigosDaOferta.has(matriz.fallbackCodigo)) {
       problemas.push({
         ofertaCursoId: oferta.ofertaCursoId,
-        mensagem: `O fallback da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
+        mensagem: `O destino final da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
       });
     }
 
@@ -250,7 +250,7 @@ function problemasDeCoberturaDaMatriz(
   if (!codigosOfertados.has(matriz.fallbackCodigo)) {
     problemas.push({
       ofertaCursoId: null,
-      mensagem: `A regra declara o fallback ${matriz.fallbackCodigo}, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
+      mensagem: `A regra declara ${matriz.fallbackCodigo} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
     });
   }
 
