@@ -1,15 +1,18 @@
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import { SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
+import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 
-import { FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
+import { FaseDoCronograma, FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { RevisaoStepComponent } from './revisao.component';
 
 const BASE = 'http://localhost:5000';
@@ -119,8 +122,12 @@ describe('RevisaoStepComponent', () => {
   let componente: RevisaoStepComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
+  /** Mutável por teste — a fase de coleta pode não ter `congelados` ainda, e é o catálogo quem resolve. */
+  let fasePorId: ReturnType<typeof signal<ReadonlyMap<string, FaseCanonicaDto>>>;
 
   beforeEach(async () => {
+    fasePorId = signal(new Map());
+
     await TestBed.configureTestingModule({
       imports: [RevisaoStepComponent],
       providers: [
@@ -133,6 +140,9 @@ describe('RevisaoStepComponent', () => {
           provide: TiposAtoApi,
           useValue: { listar: () => of(apiOk([TIPO_ATO_DTO], 200, new HttpHeaders())) },
         },
+        // Stub minimalista: só o que RevisaoStepComponent lê do catálogo de
+        // fases — evita puxar as sete APIs que o serviço real injeta.
+        { provide: CatalogosDoCronogramaService, useValue: { fasePorId } },
       ],
     }).compileComponents();
 
@@ -294,6 +304,60 @@ describe('RevisaoStepComponent', () => {
       expect(store.salvando()).toBe(false);
     });
 
+    /**
+     * A fase acrescentada nesta sessão (`acrescentarFase()` do passo
+     * Cronograma) nasce com `congelados: null` — só uma releitura do
+     * servidor preenche esse campo, e `persistir()` do Cronograma reconcilia
+     * só as etapas. Sem o fallback pelo catálogo, o comando mandaria o
+     * período preenchido onde o servidor exige `null`, e a publicação mais
+     * comum (processo com inscrição própria) recusaria com 422
+     * `PeriodoInscricaoNaoInformavel`.
+     */
+    it('reconhece fase de coleta sem congelados ainda, pelo catálogo (fase recém-acrescentada nesta sessão)', async () => {
+      const faseSemCongelados: FaseDoCronograma = {
+        faseCanonicaId: 'fase-inscricao-1',
+        codigo: 'INSCRICAO',
+        ordem: 1,
+        inicio: null,
+        fim: null,
+        produtos: [],
+        faseConcluinteCodigo: null,
+        emiteParecerIndividual: false,
+        bancasRequeridas: [],
+        regraRecurso: null,
+        congelados: null,
+      };
+      fasePorId.set(
+        new Map([
+          [
+            'fase-inscricao-1',
+            { id: 'fase-inscricao-1', codigo: 'INSCRICAO', coletaInscricao: true } as FaseCanonicaDto,
+          ],
+        ]),
+      );
+
+      await criarProcesso();
+      store.patchObjectSection('cronograma', { fases: [faseSemCongelados] });
+      prepararCamposLocais();
+      await flushPreflightVerde();
+
+      // A tela não pode cobrar o período: a fase de coleta existe, só ainda
+      // não foi relida do servidor.
+      expect(componente.validate()).toEqual({ valid: true });
+
+      const gravacao = componente.persistir();
+      const requisicao = controller.expectOne(ROTA_PUBLICACAO);
+      expect(requisicao.request.body).toMatchObject({
+        periodoInscricaoInicio: null,
+        periodoInscricaoFim: null,
+      });
+      requisicao.flush(null, { status: 204, statusText: 'No Content' });
+      await flushMicrotasks();
+      controller.expectOne(ROTA_DETALHE).flush(PROCESSO_DTO_MINIMO);
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await gravacao;
+    });
+
     it('em 422 estrutural, guarda as pendências da extension e não marca como publicado', async () => {
       await criarProcesso();
       prepararCamposLocais();
@@ -420,6 +484,56 @@ describe('RevisaoStepComponent', () => {
       await gravacao;
 
       expect(store.salvando()).toBe(false);
+    });
+  });
+
+  describe('select de tipo de ato — sobrevive a destruir e recriar a seção', () => {
+    /**
+     * O bloco do formulário só existe dentro do `@else` de
+     * `preflight.erro()`: uma recarga que falhe destrói o `<select>`
+     * inteiro, e uma recarga seguinte que dê certo o recria do zero, com as
+     * `<option>` do `@for` de novo. Um `[value]` no `<select>` aplicado
+     * antes de o `@for` criar as opções não acha correspondência no DOM e
+     * volta para "— escolher —", ainda que `draft` e o comando continuem
+     * corretos — por isso a seleção é decidida por opção
+     * (`[attr.selected]`), não pelo `<select>`.
+     */
+    it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
+      await criarProcesso();
+      prepararCamposLocais();
+      await flushPreflightVerde();
+
+      componente.alterarAto({ tipoAtoCodigo: 'PORTARIA' });
+      fixture.detectChanges();
+
+      let select = fixture.nativeElement.querySelector<HTMLSelectElement>('#rev-tipo-ato');
+      expect(select?.value).toBe('PORTARIA');
+
+      // Recarga que falha — o `@else` inteiro sai da árvore, o `<select>` é destruído.
+      componente.recarregarPreflight();
+      controller.expectOne(ROTA_CONFORMIDADE).flush(
+        { type: 'about:blank', title: 'x', status: 500, code: 'erro', traceId: 't' },
+        { status: 500, statusText: 'Internal Server Error', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+      controller
+        .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
+        .flush(CONFORMIDADE_LEGAL_VERDE);
+      await flushMicrotasks();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#rev-tipo-ato')).toBeNull();
+
+      // Recarga que dá certo — o `@else` volta, o `<select>` é recriado do zero.
+      componente.recarregarPreflight();
+      controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
+      controller
+        .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
+        .flush(CONFORMIDADE_LEGAL_VERDE);
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      select = fixture.nativeElement.querySelector<HTMLSelectElement>('#rev-tipo-ato');
+      expect(select?.value).toBe('PORTARIA');
+      expect(store.draft().publicacao.ato.tipoAtoCodigo).toBe('PORTARIA');
     });
   });
 });

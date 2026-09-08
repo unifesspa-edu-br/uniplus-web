@@ -17,6 +17,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
+import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import {
   ObrigatoriedadeReprovadaProblem,
@@ -82,6 +83,12 @@ export class RevisaoStepComponent {
   readonly preflight = inject(PreflightDaPublicacaoService);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
+  /**
+   * Provido na página, mesma instância que `CronogramaStepComponent` já usa.
+   * Necessário para resolver `coletaInscricao` de uma fase acrescentada nesta
+   * sessão — ver `coletaInscricao()` em `publicacao-para-comando.ts`.
+   */
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
 
   /** O que a última tentativa de `POST …/publicacao` devolveu, ou `null` enquanto não houve tentativa (ou ela publicou). */
   readonly ultimaRecusa = signal<RecusaDePublicacao | null>(null);
@@ -99,7 +106,7 @@ export class RevisaoStepComponent {
       const id = this.store.processoSeletivoId();
       if (id === null) return;
       untracked(() => {
-        void this.preflight.carregar(id, dataReferenciaLegalDe(this.store.draft()));
+        void this.preflight.carregar(id, this.dataReferenciaLegal());
       });
     });
   }
@@ -108,7 +115,11 @@ export class RevisaoStepComponent {
     const id = this.store.processoSeletivoId();
     if (id === null) return;
     this.ultimaRecusa.set(null);
-    void this.preflight.recarregar(id, dataReferenciaLegalDe(this.store.draft()));
+    void this.preflight.recarregar(id, this.dataReferenciaLegal());
+  }
+
+  private dataReferenciaLegal(): string | null {
+    return dataReferenciaLegalDe(this.store.draft(), this.catalogosDoCronograma.fasePorId());
   }
 
   /**
@@ -125,8 +136,12 @@ export class RevisaoStepComponent {
   /** Mais de um documento confirmado aguardando escolha explícita — resolvida na Identificação (CA-02). */
   readonly precisaEscolherDocumento = computed(() => this.store.documentosParaEscolha().length > 0);
 
-  readonly temFaseDeColeta = computed(() => temFaseDeColetaInscricao(this.store.draft()));
-  readonly faseAncora = computed(() => faseQueAncoraOPeriodoDeInscricao(this.store.draft()));
+  readonly temFaseDeColeta = computed(() =>
+    temFaseDeColetaInscricao(this.store.draft(), this.catalogosDoCronograma.fasePorId()),
+  );
+  readonly faseAncora = computed(() =>
+    faseQueAncoraOPeriodoDeInscricao(this.store.draft(), this.catalogosDoCronograma.fasePorId()),
+  );
 
   /**
    * Checklist estrutural agrupado por dimensão — `null` enquanto não carregou.
@@ -278,7 +293,13 @@ export class RevisaoStepComponent {
         'Há mais de um documento confirmado. Escolha o oficial na Identificação antes de publicar.',
       );
     }
-    messages.push(...mensagensDePublicacao(this.store.draft(), this.documentoEditalId()));
+    messages.push(
+      ...mensagensDePublicacao(
+        this.store.draft(),
+        this.documentoEditalId(),
+        this.catalogosDoCronograma.fasePorId(),
+      ),
+    );
 
     return messages.length ? { valid: false, messages } : { valid: true };
   }
@@ -308,7 +329,11 @@ export class RevisaoStepComponent {
       return { valid: false, messages: [] };
     }
 
-    const comando = comoComandoDePublicacao(this.store.draft(), documentoEditalId);
+    const comando = comoComandoDePublicacao(
+      this.store.draft(),
+      documentoEditalId,
+      this.catalogosDoCronograma.fasePorId(),
+    );
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     this.ultimaRecusa.set(null);
