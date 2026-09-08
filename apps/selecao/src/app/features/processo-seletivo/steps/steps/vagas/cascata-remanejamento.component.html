@@ -95,7 +95,7 @@
 
     @if (matriz(); as matrizDaRegra) {
       <div class="table-responsive">
-        <table class="vagas-table">
+        <table class="cascata-matriz">
           <caption class="sr-only">
             Matriz de remanejamento congelada pela regra escolhida: origem, ordem de preferência e
             destino.
@@ -110,7 +110,24 @@
             @for (ordem of matrizDaRegra.ordens; track ordem.origem) {
               <tr>
                 <th scope="row">{{ ordem.origem }}</th>
-                <td>{{ ordem.destinos.join(' → ') }}</td>
+                <td>
+                  <!--
+                    Cada passo carrega a própria seta e não quebra por dentro, então
+                    a linha nunca termina com a seta órfã: a quebra só acontece
+                    entre passos. O texto lido em sequência continua sendo
+                    "LB_Q → LB_PCD → …", que é o que o leitor de tela anuncia.
+                  -->
+                  <span class="cascata-matriz__cadeia">
+                    @for (destino of ordem.destinos; track $index) {
+                      <span class="cascata-matriz__passo">
+                        @if (!$first) {
+                          <span aria-hidden="true">→</span>
+                        }
+                        {{ destino }}
+                      </span>
+                    }
+                  </span>
+                </td>
               </tr>
             }
             <tr>
