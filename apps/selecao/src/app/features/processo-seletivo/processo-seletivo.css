@@ -2484,6 +2484,10 @@ dialog.vagas-modal::backdrop {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
+  /* Mensagem de conformidade e descrição de regra legal vêm do servidor, sem
+     limite de tamanho — sem isto, um texto mais longo do que 320px cabe
+     mantém a linha inteira e transborda o container. */
+  overflow-wrap: anywhere;
 }
 
 .revisao-chip {
@@ -2525,6 +2529,7 @@ dialog.vagas-modal::backdrop {
 
 .step-section__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
@@ -2532,6 +2537,12 @@ dialog.vagas-modal::backdrop {
 }
 
 .step-section__header h2 {
+  /* Sem `min-width: 0`, o título não encolhe abaixo da própria largura
+     intrínseca, e "Checklist estrutural" + o botão "Atualizar checklist" não
+     cabem lado a lado a 320px — o `flex-wrap` acima já permite empilhar,
+     isto garante que o título sozinho também não force a largura da linha. */
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: var(--text-md);
   font-weight: var(--weight-bold);
   color: var(--color-primary);
@@ -2558,6 +2569,13 @@ dialog.vagas-modal::backdrop {
 }
 
 .revisao-grupo__nome {
+  /* Mesma proteção de `.revisao-item__meta`: sem `min-width: 0`, um item flex
+     não encolhe abaixo da largura intrínseca do próprio conteúdo, e o rótulo
+     da dimensão — texto do servidor, sem limite — transborda o `<summary>`
+     a 320px. */
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
