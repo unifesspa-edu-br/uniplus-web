@@ -56,11 +56,17 @@ export class ChaveDeSubstituicao {
    * O servidor recusou. A chave só é preservada quando a execução anterior
    * ainda pode concluir; nesse caso o corpo fica retido, porque a retentativa
    * precisa repeti-lo igual.
+   *
+   * Devolve `true` quando a chave foi preservada — a recusa é inconclusiva
+   * (erro de rede ou 5xx), e quem chama não pode tratar o comando como "não
+   * aplicado": o servidor pode tê-lo executado mesmo sem confirmar.
    */
-  recusada(falha: ApiFailure): void {
+  recusada(falha: ApiFailure): boolean {
     const anterior = this.chave;
     this.chave = proximaChave(anterior, falha);
-    if (this.chave !== anterior) this.corpoEnviado = null;
+    const inconclusiva = this.chave === anterior;
+    if (!inconclusiva) this.corpoEnviado = null;
+    return inconclusiva;
   }
 
   /** O comando terminou, ou o cadastro que ele tratava foi abandonado. */

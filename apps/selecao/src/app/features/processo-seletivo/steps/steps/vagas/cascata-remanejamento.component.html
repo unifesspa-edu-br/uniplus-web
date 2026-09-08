@@ -78,6 +78,12 @@
       </div>
     }
 
+    @if (regraNaoEncontrada()) {
+      <div class="field__erro" role="alert">
+        <p>A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.</p>
+      </div>
+    }
+
     @if (matriz(); as matrizDaRegra) {
       <div class="table-responsive">
         <table class="vagas-table">

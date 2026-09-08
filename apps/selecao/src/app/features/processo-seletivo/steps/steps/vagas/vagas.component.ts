@@ -1082,7 +1082,9 @@ export class VagasStepComponent {
       return {
         valid: false,
         messages: [
-          'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
+          secao.regraNaoEncontrada()
+            ? 'A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.'
+            : 'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
         ],
       };
     }
@@ -1091,7 +1093,11 @@ export class VagasStepComponent {
       processoId,
       comandoDaCascata(cascataSelecionada, matriz),
     );
-    if (resultado.ok) secao.existeNoServidor.set(true);
+    // Uma recusa inconclusiva (erro de rede, 5xx) não prova que o servidor
+    // não aplicou o comando — marcar como presente garante que uma mudança
+    // futura que torne a cascata desnecessária dispare a remoção, em vez de
+    // pular a limpeza de uma cascata que pode ter sido gravada.
+    if (resultado.ok || resultado.inconclusiva) secao.existeNoServidor.set(true);
     return resultado.ok
       ? { valid: true }
       : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
@@ -1180,6 +1186,17 @@ export class VagasStepComponent {
       return [
         ...pendenciasForaDoRegime,
         'Cascata — a regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
+      ];
+    }
+
+    // A seleção (escolhida agora ou hidratada) não está na listagem ativa do
+    // catálogo, e a busca direta da versão exata também não a encontrou —
+    // mesmo beco sem saída do desvio acima, por uma entrada diferente
+    // (regra inativada ou removida, não esquemaArgs malformado).
+    if (secao.regraNaoEncontrada()) {
+      return [
+        ...pendenciasForaDoRegime,
+        'Cascata — a regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.',
       ];
     }
 

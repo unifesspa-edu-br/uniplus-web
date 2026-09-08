@@ -69,6 +69,21 @@ const REGRA_CASCATA = {
   modalidadesAdmitidas: null,
 };
 
+/** Uma versão anterior, que a listagem ativa não traz mais — só a busca direta a resolve. */
+const REGRA_CASCATA_INATIVADA = {
+  codigo: 'REMANEJ-CASCATA-LEI-12711',
+  versao: 'v0',
+  tipo: 'criterio_remanejamento',
+  esquemaArgs: {
+    fallbackCodigo: 'AC',
+    ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
+  },
+  invariantes: [],
+  baseLegal: 'Portaria MEC nº 704/2025 (redação anterior)',
+  hash: 'hash-cascata-v0',
+  modalidadesAdmitidas: null,
+};
+
 function distribuicaoFederal(
   modalidades: readonly { id: string; codigo: string }[],
 ): DistribuicaoDeVagas {
@@ -331,5 +346,58 @@ describe('CascataRemanejamentoComponent', () => {
     detectar();
 
     expect(componente.regraControl.value).toBe('REMANEJ-CASCATA-LEI-12711|v1');
+  });
+
+  /**
+   * Reproduz o achado de revisão: a seleção hidratada (ou de uma gravação
+   * anterior) pode referenciar uma versão que a listagem ativa não traz mais
+   * — `regraEscolhida()` não pode ficar `undefined` só porque a listagem
+   * não tem a versão, senão a tabela e o checkbox somem e `validate()` cai
+   * no "confirme a cascata" sem controle nenhum na tela (CA-03: item já
+   * referenciado permanece legível como snapshot).
+   */
+  it('busca a versão específica quando a seleção hidratada não está na listagem, e resolve a matriz normalmente', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      cascata: { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' },
+    });
+    detectar();
+
+    const requisicao = controller.expectOne(
+      `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`,
+    );
+    expect(requisicao.request.method).toBe('GET');
+    requisicao.flush(REGRA_CASCATA_INATIVADA);
+    detectar();
+
+    expect(componente.esquemaNaoReconhecido()).toBe(false);
+    expect(componente.regraNaoEncontrada()).toBe(false);
+    expect(componente.matriz()).toEqual({
+      fallbackCodigo: 'AC',
+      ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
+    });
+    expect(elemento.textContent).toContain('Fallback');
+  });
+
+  it('marca a regra como não encontrada quando a busca direta da versão também falha, sem confundir com esquemaArgs malformado', () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+      cascata: { regraCodigo: 'REMANEJ-CASCATA-REMOVIDA', regraVersao: 'v9' },
+    });
+    detectar();
+
+    const requisicao = controller.expectOne(
+      `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-REMOVIDA/versoes/v9`,
+    );
+    requisicao.flush(
+      { type: 'about:blank', title: 'Regra não encontrada.', status: 404, traceId: 't' },
+      { status: 404, statusText: 'Not Found' },
+    );
+    detectar();
+
+    expect(componente.regraNaoEncontrada()).toBe(true);
+    expect(componente.esquemaNaoReconhecido()).toBe(false);
+    expect(componente.matriz()).toBeNull();
+    expect(elemento.textContent).toContain('não foi encontrada no catálogo');
   });
 });
