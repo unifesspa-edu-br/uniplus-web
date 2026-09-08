@@ -90,7 +90,7 @@
                 type="button"
                 (click)="mover(item.indice, -1)"
                 [disabled]="!edicaoLiberada() || item.indice === 0"
-                [attr.aria-label]="'Mover ' + item.nome + ' para antes'"
+                [attr.aria-label]="'Subir ' + item.nome"
               >
                 Subir
               </button>
@@ -99,7 +99,7 @@
                 type="button"
                 (click)="mover(item.indice, 1)"
                 [disabled]="!edicaoLiberada() || item.indice === linhaDoTempo().length - 1"
-                [attr.aria-label]="'Mover ' + item.nome + ' para depois'"
+                [attr.aria-label]="'Descer ' + item.nome"
               >
                 Descer
               </button>
@@ -284,7 +284,7 @@
                         type="button"
                         (click)="moverEtapa(posicao, -1)"
                         [disabled]="!edicaoLiberada() || posicao === 0"
-                        [attr.aria-label]="'Mover ' + rotuloDaEtapa + ' para antes'"
+                        [attr.aria-label]="'Subir ' + rotuloDaEtapa"
                       >
                         Subir
                       </button>
@@ -293,7 +293,7 @@
                         type="button"
                         (click)="moverEtapa(posicao, 1)"
                         [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
-                        [attr.aria-label]="'Mover ' + rotuloDaEtapa + ' para depois'"
+                        [attr.aria-label]="'Descer ' + rotuloDaEtapa"
                       >
                         Descer
                       </button>
