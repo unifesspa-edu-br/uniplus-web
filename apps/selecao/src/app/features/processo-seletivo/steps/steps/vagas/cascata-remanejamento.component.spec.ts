@@ -215,6 +215,14 @@ describe('CascataRemanejamentoComponent', () => {
     ].map((celula) => celula.textContent?.trim());
     expect(primeiraLinha).toEqual(['LB_PPI', 'LB_Q', 'AC']);
 
+    // Até 767 px o design system esconde o `thead` e usa `data-label` como
+    // rótulo visível da célula. Sem ele o cartão mostraria só os códigos, e a
+    // ordem de preferência — o que a matriz existe para dizer — sumiria.
+    const rotulos = [
+      ...elemento.querySelectorAll('.cascata-matriz tbody tr:first-child td'),
+    ].map((celula) => celula.getAttribute('data-label'));
+    expect(rotulos).toEqual(['1ª preferência', '2ª preferência']);
+
     // O destino final é enunciado fora da matriz: tratá-lo como linha sugeriria
     // que a ampla concorrência também remaneja.
     expect(elemento.querySelector('.cascata-matriz__terminal')?.textContent).toContain(
