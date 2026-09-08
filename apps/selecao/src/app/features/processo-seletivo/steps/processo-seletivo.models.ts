@@ -106,6 +106,20 @@ export interface DistribuicaoDeVagas {
 }
 
 /**
+ * A regra de remanejamento que o operador escolheu no catálogo, por código e
+ * versão — nunca o `fallbackCodigo` nem os `destinos[]` em separado.
+ *
+ * A tela não compõe a matriz: `fallbackCodigo` e `destinos[]` são derivados do
+ * `esquemaArgs` congelado desta regra no momento de montar o comando de
+ * gravação (RN-CASCATA-5). Guardar aqui algo além do par código/versão criaria
+ * uma segunda fonte que poderia divergir da regra escolhida.
+ */
+export interface CascataSelecionada {
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+}
+
+/**
  * Quantidade que o edital fixa para uma modalidade.
  *
  * Nem toda modalidade selecionada aparece aqui: na Lei 12.711, as de
@@ -412,6 +426,12 @@ export interface WizardDraft {
   };
   vagas: {
     ofertas: DistribuicaoDeVagas[];
+    /**
+     * `null` enquanto não há decisão — inclusive quando nenhuma oferta federal
+     * exige cascata. Ausência de decisão nunca vira sequência institucional
+     * pré-selecionada (CA-04).
+     */
+    cascata: CascataSelecionada | null;
   };
   /**
    * O cronograma do certame e as etapas que a fase de avaliação agrupa.

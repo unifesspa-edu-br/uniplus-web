@@ -14,6 +14,7 @@ import {
   CriterioDesempateInput,
   DefinirAlgoritmoContagemPrazoRequest,
   DefinirBonusRegionalRequest,
+  DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
@@ -96,6 +97,7 @@ export class CadastroInicialService {
 
   private readonly chaveTaxa = new ChaveDeSubstituicao();
   private readonly chaveDistribuicao = new ChaveDeSubstituicao();
+  private readonly chaveCascata = new ChaveDeSubstituicao();
   private readonly chaveEtapas = new ChaveDeSubstituicao();
   private readonly chaveCronograma = new ChaveDeSubstituicao();
   private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
@@ -135,6 +137,7 @@ export class CadastroInicialService {
     this.chaveConfirmacao = idempotencyKey.create();
     this.chaveTaxa.renovar();
     this.chaveDistribuicao.renovar();
+    this.chaveCascata.renovar();
     this.chaveEtapas.renovar();
     this.chaveCronograma.renovar();
     this.chaveAlgoritmoContagem.renovar();
@@ -246,6 +249,38 @@ export class CadastroInicialService {
     }
 
     this.chaveDistribuicao.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava a cascata de remanejamento do processo — ou a remove, quando
+   * `request` traz os quatro campos nulos.
+   *
+   * Chave própria, separada da distribuição de vagas: a cascata é gravada
+   * depois dela no `persistir()` do passo Vagas, e uma recusa aqui não pode
+   * invalidar a chave de um comando de distribuição que já foi aceito.
+   */
+  async definirCascataRemanejamento(
+    processoSeletivoId: string,
+    request: DefinirCascataRemanejamentoRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirCascataRemanejamento(
+        processoSeletivoId,
+        request,
+        this.chaveCascata.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveCascata.renovar();
+      return { ok: true };
+    }
+
+    this.chaveCascata.recusada(result);
     return { ok: false, problem: result.problem };
   }
 

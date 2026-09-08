@@ -1,0 +1,134 @@
+@if (ofertasForaDoRegime().length > 0) {
+  <div class="alert alert--warning" role="status">
+    <div class="alert__body">
+      <p class="alert__title">
+        {{
+          ofertasForaDoRegime().length === 1
+            ? '1 oferta tem modalidade que segue a cascata, mas fora do ramo federal'
+            : ofertasForaDoRegime().length +
+              ' ofertas têm modalidade que segue a cascata, mas fora do ramo federal'
+        }}
+      </p>
+      <p class="alert__msg">
+        A cascata de remanejamento só se aplica a ofertas cuja regra de distribuição é a Lei
+        12.711 (em qualquer variação). Corrija a regra de distribuição ou a modalidade no quadro
+        de vagas acima:
+      </p>
+      <ul>
+        @for (oferta of ofertasForaDoRegime(); track oferta.ofertaCursoId) {
+          <li>{{ rotuloDaOferta(oferta.ofertaCursoId) }}</li>
+        }
+      </ul>
+    </div>
+  </div>
+}
+
+@if (precisaExibir()) {
+  <div class="step-card">
+    <h2 class="form-section__title">Cascata de remanejamento</h2>
+    <p class="step-subtitle">
+      Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do processo.
+      Escolha a regra: o fallback e a ordem de destinos vêm congelados na regra, e esta tela não os
+      compõe — apenas apresenta o que a regra declara para confirmação.
+    </p>
+
+    <div class="form-field form-grid__full">
+      <label class="label" for="c-regra-cascata">Regra de remanejamento</label>
+      <select class="input" id="c-regra-cascata" [formControl]="regraControl">
+        <option value="|">Selecione a regra…</option>
+        @for (regra of catalogos.regrasCascata(); track regra.codigo + regra.versao) {
+          <option [value]="regra.codigo + '|' + regra.versao">
+            {{ regra.codigo }} · versão {{ regra.versao }}
+          </option>
+        }
+      </select>
+      <p class="field__hint">
+        O frontend não propõe uma cascata institucional por padrão: a ausência de escolha é estado
+        válido enquanto rascunho.
+      </p>
+    </div>
+
+    @if (regraExplicada(); as regra) {
+      <details class="regra-explicada">
+        <summary>
+          Base legal e garantias desta regra
+          <span class="regra-explicada__contagem">{{ regra.invariantes.length }} garantias</span>
+        </summary>
+
+        <p class="regra-explicada__rotulo">Base legal</p>
+        <p class="regra-explicada__legal">{{ regra.baseLegal }}</p>
+
+        @if (regra.invariantes.length > 0) {
+          <p class="regra-explicada__rotulo">O que esta regra garante</p>
+          <ul class="regra-explicada__invariantes">
+            @for (invariante of regra.invariantes; track invariante) {
+              <li>{{ invariante }}</li>
+            }
+          </ul>
+        }
+      </details>
+    }
+
+    @if (esquemaNaoReconhecido()) {
+      <div class="field__erro" role="alert">
+        <p>
+          A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha
+          outra versão ou avise o suporte.
+        </p>
+      </div>
+    }
+
+    @if (matriz(); as matrizDaRegra) {
+      <div class="table-responsive">
+        <table class="vagas-table">
+          <caption class="sr-only">
+            Matriz de remanejamento congelada pela regra escolhida: origem, ordem de preferência e
+            destino.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Origem</th>
+              <th scope="col">Ordem de destinos (1ª preferência primeiro)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ordem of matrizDaRegra.ordens; track ordem.origem) {
+              <tr>
+                <th scope="row">{{ ordem.origem }}</th>
+                <td>{{ ordem.destinos.join(' → ') }}</td>
+              </tr>
+            }
+            <tr>
+              <th scope="row">Fallback (esgotadas as origens)</th>
+              <td>{{ matrizDaRegra.fallbackCodigo }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      @if (problemas().length > 0) {
+        <div class="field__erro" role="alert">
+          <p>A matriz desta regra não se encaixa no quadro de vagas configurado acima:</p>
+          <ul>
+            @for (problema of problemas(); track $index) {
+              <li>{{ rotuloDoProblema(problema) }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <label class="check-item" [class.vagas-conferencia--pendente]="problemas().length === 0 && !confirmado()">
+        <input
+          type="checkbox"
+          [checked]="confirmado()"
+          [disabled]="!store.aceitaEdicao() || problemas().length > 0"
+          (change)="confirmado.set($any($event.target).checked)"
+        />
+        <span>
+          Confirmo que conferi a cascata de remanejamento: a regra, o fallback e a ordem de
+          destinos acima são os que este processo deve aplicar.
+        </span>
+      </label>
+    }
+  </div>
+}

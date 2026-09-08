@@ -42,7 +42,7 @@ const INITIAL_DRAFT: WizardDraft = {
     uploads: [],
   },
   pagamento: { cobra: null, valor: '', fundamentos: [] },
-  vagas: { ofertas: [] },
+  vagas: { ofertas: [], cascata: null },
   // Cronograma e etapas nascem vazios: quais fases o certame tem é decisão de
   // quem configura, e processo com classificação importada não tem etapa
   // pontuada. Semear qualquer um dos dois inventaria configuração que ninguém
