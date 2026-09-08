@@ -3,11 +3,17 @@ export { RegrasCatalogoApi } from './regras-catalogo.api';
 export type {
   ConfiguracaoDistribuicaoVagasDto,
   ConfiguracaoDistribuicaoVagasInput,
+  ConfiguracaoBonusRegionalDto,
+  ConfiguracaoClassificacaoDto,
   ConformidadeLegalProcessoSeletivoDto,
   ConformidadeProcessoSeletivoDto,
+  CriterioDesempateDto,
+  CriterioDesempateInput,
   DadosDoAtoRequest,
   DefinirAlgoritmoContagemPrazoRequest,
+  DefinirBonusRegionalRequest,
   DefinirCascataRemanejamentoRequest,
+  DefinirClassificacaoRequest,
   DefinirOfertaAtendimentoRequest,
   DestinoRemanejamentoInput,
   EtapaProcessoDto,
@@ -16,7 +22,10 @@ export type {
   FaseCronogramaInput,
   ItemConformidadeDto,
   PublicarProcessoSeletivoRequest,
+  ReferenciaRegraDto,
   RegraAvaliadaDto,
+  RegraEliminacaoDto,
+  RegraEliminacaoInput,
   RegraRecursoFaseInput,
 } from './processos-seletivos.api';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';

@@ -11,7 +11,10 @@ import {
 import {
   ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
+  CriterioDesempateInput,
   DefinirAlgoritmoContagemPrazoRequest,
+  DefinirBonusRegionalRequest,
+  DefinirClassificacaoRequest,
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
@@ -96,6 +99,9 @@ export class CadastroInicialService {
   private readonly chaveEtapas = new ChaveDeSubstituicao();
   private readonly chaveCronograma = new ChaveDeSubstituicao();
   private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
+  private readonly chaveClassificacao = new ChaveDeSubstituicao();
+  private readonly chaveBonus = new ChaveDeSubstituicao();
+  private readonly chaveDesempate = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -132,6 +138,9 @@ export class CadastroInicialService {
     this.chaveEtapas.renovar();
     this.chaveCronograma.renovar();
     this.chaveAlgoritmoContagem.renovar();
+    this.chaveClassificacao.renovar();
+    this.chaveBonus.renovar();
+    this.chaveDesempate.renovar();
   }
 
   /**
@@ -327,6 +336,94 @@ export class CadastroInicialService {
     }
 
     this.chaveAlgoritmoContagem.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava a classificação inteira do processo — regra de cálculo, precisão,
+   * ordem de alocação, número de opções e o vetor de regras de eliminação, num
+   * corpo só (UNI-REQ-0482). Chave própria: uma recusa aqui não pode invalidar
+   * a chave da gravação de bônus ou desempate, que costumam vir na mesma
+   * interação.
+   */
+  async definirClassificacao(
+    processoSeletivoId: string,
+    request: DefinirClassificacaoRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirClassificacao(
+        processoSeletivoId,
+        request,
+        this.chaveClassificacao.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveClassificacao.renovar();
+      return { ok: true };
+    }
+
+    this.chaveClassificacao.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Declara o bônus regional do processo (RN05). Enviar os cinco campos
+   * `null` é a forma de declarar "sem bônus" — não existe rota separada para
+   * desligá-lo.
+   */
+  async definirBonusRegional(
+    processoSeletivoId: string,
+    request: DefinirBonusRegionalRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirBonusRegional(
+        processoSeletivoId,
+        request,
+        this.chaveBonus.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveBonus.renovar();
+      return { ok: true };
+    }
+
+    this.chaveBonus.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava os critérios de desempate, na ordem em que serão avaliados.
+   * Substitui a coleção inteira: coleção vazia é estado válido.
+   */
+  async definirCriteriosDesempate(
+    processoSeletivoId: string,
+    criterios: readonly CriterioDesempateInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirCriteriosDesempate(
+        processoSeletivoId,
+        criterios,
+        this.chaveDesempate.contextoPara(criterios),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveDesempate.renovar();
+      return { ok: true };
+    }
+
+    this.chaveDesempate.recusada(result);
     return { ok: false, problem: result.problem };
   }
 
