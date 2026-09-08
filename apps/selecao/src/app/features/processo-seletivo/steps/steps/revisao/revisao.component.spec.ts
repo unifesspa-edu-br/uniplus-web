@@ -543,18 +543,17 @@ describe('RevisaoStepComponent', () => {
      * O bloco do formulário só existe dentro do `@else` de
      * `preflight.erro()`: uma recarga que falhe destrói o `<select>`
      * inteiro, e uma recarga seguinte que dê certo o recria do zero, com as
-     * `<option>` do `@for` de novo. Um `[value]` no `<select>` aplicado
-     * antes de o `@for` criar as opções não acha correspondência no DOM e
-     * volta para "— escolher —", ainda que `draft` e o comando continuem
-     * corretos — por isso a seleção é decidida por opção
-     * (`[attr.selected]`), não pelo `<select>`.
+     * `<option>` do `@for` de novo. O binding é `formControlName`, não
+     * `[value]` cru — `NgSelectOption` reaplica `writeValue()` do controle a
+     * cada `<option>` que se registra, então a seleção sobrevive mesmo
+     * quando as opções são criadas depois do valor já estar no controle.
      */
     it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
       prepararCamposLocais();
       await criarProcesso();
       await flushPreflightVerde();
 
-      componente.alterarAto({ tipoAtoCodigo: 'PORTARIA' });
+      componente.form.controls.tipoAtoCodigo.setValue('PORTARIA');
       fixture.detectChanges();
 
       let select = fixture.nativeElement.querySelector<HTMLSelectElement>('#rev-tipo-ato');

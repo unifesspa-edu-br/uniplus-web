@@ -7,11 +7,13 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { SnapshotVigenteDto, StatusProcesso } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
+import { StepValidation } from '../../processo-seletivo.models';
 import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.component';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -33,8 +35,6 @@ import {
   rotuloDaDimensao as rotularDimensao,
   temFaseDeColetaInscricao,
 } from './publicacao-para-comando';
-
-type AtoDoRascunho = WizardDraft['publicacao']['ato'];
 
 /**
  * O que a última tentativa de publicar devolveu — CA-06: a corrida entre
@@ -73,7 +73,7 @@ const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE = 'ProcessoSeletivo.ConformidadeLeg
 @Component({
   selector: 'sel-step-revisao',
   standalone: true,
-  imports: [AnexoEditalComponent],
+  imports: [AnexoEditalComponent, ReactiveFormsModule],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(RevisaoStepComponent), PreflightDaPublicacaoService],
@@ -95,6 +95,44 @@ export class RevisaoStepComponent {
 
   /** O snapshot lido depois do `204` (CA-08) — só existe quando esta sessão acabou de publicar. */
   readonly snapshotConfirmado = signal<SnapshotVigenteDto | null>(null);
+
+  /**
+   * Formulário reativo tipado do ato de publicação (AGENTS.md: "formulários
+   * reativos tipados"), mesmo padrão de `cascata-remanejamento.component.ts`
+   * (`#726`/`f91c71b`): o rascunho continua sendo a fonte de verdade — um
+   * `effect` empurra `valoresDoRascunho()` para o formulário sem realimentar
+   * o próprio evento (`emitEvent: false`) —, e o único caminho de volta é
+   * `form.valueChanges`. Habilitar/desabilitar é feito pelo próprio
+   * formulário (`enable()`/`disable()`), nunca por `[disabled]` no
+   * template: os dois juntos disparam aviso do Angular e o binding de
+   * atributo perde a corrida contra o `FormGroup`.
+   */
+  readonly form = new FormGroup({
+    numero: new FormControl<string>('', { nonNullable: true }),
+    tipoAtoCodigo: new FormControl<string>('', { nonNullable: true }),
+    orgao: new FormControl<string>('', { nonNullable: true }),
+    serie: new FormControl<string>('', { nonNullable: true }),
+    ano: new FormControl<string>('', { nonNullable: true }),
+    dataPublicacao: new FormControl<string>('', { nonNullable: true }),
+    assinante: new FormControl<string>('', { nonNullable: true }),
+    periodoInscricaoInicio: new FormControl<string>('', { nonNullable: true }),
+    periodoInscricaoFim: new FormControl<string>('', { nonNullable: true }),
+  });
+
+  private readonly valoresDoRascunho = computed(() => {
+    const draft = this.store.draft().publicacao;
+    return {
+      numero: draft.numero,
+      tipoAtoCodigo: draft.ato.tipoAtoCodigo,
+      orgao: draft.ato.orgao,
+      serie: draft.ato.serie,
+      ano: draft.ato.ano,
+      dataPublicacao: draft.ato.dataPublicacao,
+      assinante: draft.ato.assinante,
+      periodoInscricaoInicio: draft.periodoInscricaoInicio,
+      periodoInscricaoFim: draft.periodoInscricaoFim,
+    };
+  });
 
   constructor() {
     // Todos os passos ficam montados (`[hidden]`) desde a entrada na página —
@@ -123,6 +161,68 @@ export class RevisaoStepComponent {
       untracked(() => {
         this.ultimaRecusa.set(null);
         this.snapshotConfirmado.set(null);
+      });
+    });
+
+    // Empurra o rascunho para o formulário sem disparar `valueChanges` — quem
+    // decide o valor exibido é o rascunho (hidratação, troca de processo por
+    // endereço), nunca o formulário por si.
+    effect(() => {
+      const valores = this.valoresDoRascunho();
+      untracked(() => {
+        for (const chave of Object.keys(valores) as (keyof typeof valores)[]) {
+          const controle = this.form.controls[chave];
+          if (controle.value !== valores[chave]) controle.setValue(valores[chave], { emitEvent: false });
+        }
+      });
+    });
+
+    effect(() => {
+      const habilitado = this.store.aceitaEdicao();
+      untracked(() => {
+        if (habilitado && this.form.disabled) this.form.enable({ emitEvent: false });
+        if (!habilitado && this.form.enabled) this.form.disable({ emitEvent: false });
+      });
+    });
+
+    // Um "Atualizar checklist" pode trazer um catálogo de tipos de ato sem o
+    // código escolhido antes (ele deixou de ser vigente entre as duas
+    // leituras). O `<select>` recua para o placeholder na tela, mas sem esta
+    // limpeza o rascunho continuava com o código velho — `mensagensDePubli-
+    // cacao` só checa "não vazio", então `validate()` aprovava e o operador
+    // só descobria com o 422, depois de confirmar o diálogo de publicação
+    // (achado do Codex na #486). Só limpa com o catálogo definitivamente
+    // carregado (fora de `carregando`/`erro`) — nunca durante a primeira
+    // carga, quando `tiposAto()` ainda está no valor inicial vazio.
+    effect(() => {
+      const carregando = this.preflight.carregando();
+      const erro = this.preflight.erro();
+      const tipos = this.preflight.tiposAto();
+      if (carregando || erro !== null) return;
+      untracked(() => {
+        const codigoAtual = this.store.draft().publicacao.ato.tipoAtoCodigo;
+        if (codigoAtual !== '' && !tipos.some((tipo) => tipo.codigo === codigoAtual)) {
+          this.store.patchObjectSection('publicacao', {
+            ato: { ...this.store.draft().publicacao.ato, tipoAtoCodigo: '' },
+          });
+        }
+      });
+    });
+
+    // O único caminho de volta: interação do operador com o formulário.
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe((valores) => {
+      this.store.patchObjectSection('publicacao', {
+        numero: valores.numero ?? '',
+        periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',
+        periodoInscricaoFim: valores.periodoInscricaoFim ?? '',
+        ato: {
+          orgao: valores.orgao ?? '',
+          serie: valores.serie ?? '',
+          ano: valores.ano ?? '',
+          dataPublicacao: valores.dataPublicacao ?? '',
+          assinante: valores.assinante ?? '',
+          tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
+        },
       });
     });
   }
@@ -230,24 +330,6 @@ export class RevisaoStepComponent {
   /** Navega ao passo dono da dimensão, pelo código estável — nunca por comparação de frase (CA-04). */
   irParaSecao(index: number): void {
     this.store.goTo(index);
-  }
-
-  alterarNumero(valor: string): void {
-    this.store.patchObjectSection('publicacao', { numero: valor });
-  }
-
-  alterarPeriodoInicio(valor: string): void {
-    this.store.patchObjectSection('publicacao', { periodoInscricaoInicio: valor });
-  }
-
-  alterarPeriodoFim(valor: string): void {
-    this.store.patchObjectSection('publicacao', { periodoInscricaoFim: valor });
-  }
-
-  alterarAto(patch: Partial<AtoDoRascunho>): void {
-    this.store.patchObjectSection('publicacao', {
-      ato: { ...this.store.draft().publicacao.ato, ...patch },
-    });
   }
 
   rotuloDeAvanco(): string {
