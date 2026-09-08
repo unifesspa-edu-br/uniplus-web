@@ -289,8 +289,14 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await irAoPasso(page, 'Revisão e publicação', testInfo);
 
     // Grupo pendente abre sozinho — o item fica visível sem clique algum.
+    // Ancorado em `.revisao-list` (não `page` inteira): todos os passos do
+    // wizard ficam montados (`[hidden]`), e o passo Pagamento tem um
+    // subtítulo estático com a MESMA frase que este item de pendência —
+    // coincidência de domínio (o texto do checklist espelha o da tela),
+    // não colisão de teste. `getByText` alcança elemento oculto por padrão,
+    // então sem ancorar o teste bateria em dois elementos.
     await expect(
-      page.getByText('Declare se o processo cobra taxa de inscrição.'),
+      page.locator('.revisao-list').getByText('Declare se o processo cobra taxa de inscrição.'),
     ).toBeVisible();
     await expect(page.getByText('Reserva de vagas da Lei de Cotas')).toBeVisible();
     await expect(page.getByRole('button', { name: /Ir para Taxa inscricao/ })).toBeVisible();
