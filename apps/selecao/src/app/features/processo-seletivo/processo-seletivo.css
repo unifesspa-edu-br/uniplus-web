@@ -1316,11 +1316,15 @@
 }
 
 /* Uma coluna por posição de preferência, estreita e centrada — a leitura é de
-   comparação entre linhas, não de texto corrido. */
+   comparação entre linhas, não de texto corrido.
+
+   O `nowrap` fica de fora daqui de propósito: abaixo de 768 px a célula vira
+   linha de um cartão, ao lado do rótulo "1ª PREFERÊNCIA", e o código de
+   modalidade admite até 60 caracteres. Impedi-lo de quebrar ali faria o texto
+   transbordar do cartão. */
 .cascata-matriz thead th.cascata-matriz__ordem,
 .cascata-matriz td.cascata-matriz__destino {
   text-align: center;
-  white-space: nowrap;
   padding-inline: var(--space-3);
 }
 
@@ -1336,6 +1340,13 @@
    as regras têm a mesma especificidade e esta vem depois, sem a media query ela
    venceria e prenderia a origem dentro do cartão, sem deixá-la quebrar. */
 @media (min-width: 768px) {
+  /* Como tabela, a coluna é estreita e a quebra do código atrapalharia a
+     comparação vertical entre linhas. */
+  .cascata-matriz thead th.cascata-matriz__ordem,
+  .cascata-matriz td.cascata-matriz__destino {
+    white-space: nowrap;
+  }
+
   .cascata-matriz thead th:first-child,
   .cascata-matriz tbody th[scope='row'] {
     position: sticky;
