@@ -17,6 +17,7 @@ const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etapas`;
 const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
+const ROTA_ALGORITMO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/algoritmo-contagem-prazo`;
 const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
 const ID_ETAPA_GRAVADA = '01960000-0000-7000-0000-0000000000ee';
 
@@ -77,6 +78,20 @@ const FASES_CANONICAS = [
 
 const TIPOS_ETAPA = [
   { id: TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva', ativo: true },
+];
+
+/** O catálogo não tem `nome` nem `descricao` — só `codigo` e `baseLegal` são legíveis. */
+const REGRAS_CONTAGEM = [
+  {
+    codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+    versao: 'v1',
+    tipo: 'algoritmo_contagem_prazo',
+    esquemaArgs: {},
+    invariantes: {},
+    baseLegal: 'Lei 9.784/1999, art. 66',
+    hash: 'xyz',
+    modalidadesAdmitidas: null,
+  },
 ];
 
 /**
@@ -159,7 +174,9 @@ describe('CronogramaStepComponent', () => {
       const { url } = requisicao.request;
       if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
       else if (url.includes('tipos-etapa')) requisicao.flush(TIPOS_ETAPA);
-      else requisicao.flush([]);
+      else if (requisicao.request.params.get('tipo') === 'algoritmo_contagem_prazo') {
+        requisicao.flush(REGRAS_CONTAGEM);
+      } else requisicao.flush([]);
     }
     detectar();
   });
@@ -1021,5 +1038,154 @@ describe('CronogramaStepComponent', () => {
     expect(resultado.valid).toBe(false);
     controller.expectNone(ROTA_ETAPAS);
     controller.expectNone(ROTA_FASES);
+  });
+
+  // ─── Convenção de contagem de prazo (#480) ──────────────────────────────
+
+  /** CA-05: ausência é estado válido enquanto rascunho — nenhum default. */
+  it('não pré-seleciona nenhuma convenção de contagem de prazo', () => {
+    expect(componente.formulario.controls.algoritmoContagemCodigo.value).toBe('');
+    expect(componente.formulario.controls.algoritmoContagemVersao.value).toBe('');
+    expect(
+      nativo.querySelector<HTMLSelectElement>('#cr-algoritmo-contagem')?.value ?? '',
+    ).toBe('');
+  });
+
+  /**
+   * O `RegraCatalogoDto` não tem `nome` nem `descricao` — só `codigo` e
+   * `baseLegal` são legíveis, e inventar um mapa código→rótulo no frontend é
+   * achado bloqueante (#511). O seletor mostra exatamente os dois campos.
+   */
+  it('oferece cada convenção do catálogo pelo código e pela base legal', () => {
+    expect(componente.regrasDeContagem()).toEqual([
+      {
+        codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+        versao: 'v1',
+        baseLegal: 'Lei 9.784/1999, art. 66',
+      },
+    ]);
+    expect(nativo.textContent ?? '').toContain(
+      'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1) — Lei 9.784/1999, art. 66',
+    );
+  });
+
+  /**
+   * A convenção é identificada por código **e** versão. Escolher pelo código
+   * e deduzir a versão do catálogo carregado é o que mantém o par coerente —
+   * gravar código novo com versão velha é recusado pelo servidor.
+   */
+  it('escolher a convenção grava código e versão juntos no rascunho', () => {
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    expect(store.draft().cronograma.algoritmoContagemCodigo).toBe(
+      'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+    );
+    expect(store.draft().cronograma.algoritmoContagemVersao).toBe('v1');
+  });
+
+  /** Hidratação: o rascunho que chega de fora aparece refletido na tela. */
+  it('espelha no formulário a convenção de contagem que chega ao rascunho', () => {
+    store.patchObjectSection('cronograma', {
+      algoritmoContagemCodigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+      algoritmoContagemVersao: 'v1',
+    });
+    detectar();
+
+    expect(componente.formulario.controls.algoritmoContagemCodigo.value).toBe(
+      'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+    );
+    expect(componente.formulario.controls.algoritmoContagemVersao.value).toBe('v1');
+  });
+
+  /**
+   * O algoritmo é a terceira gravação, e só acontece quando há escolha
+   * (CA-05). As etapas e o cronograma de fases já foram gravados quando o
+   * `PUT` do algoritmo sai.
+   */
+  it('grava a convenção de contagem depois das etapas e do cronograma de fases', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_INSCRICAO);
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    const gravacao = componente.persistir();
+
+    const fases = controller.expectOne(ROTA_FASES);
+    controller.expectNone(ROTA_ALGORITMO);
+    fases.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    const etapas = controller.expectOne(ROTA_ETAPAS);
+    controller.expectNone(ROTA_ALGORITMO);
+    etapas.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+
+    const algoritmo = controller.expectOne(ROTA_ALGORITMO);
+    expect(algoritmo.request.method).toBe('PUT');
+    expect(algoritmo.request.body).toEqual({
+      codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+      versao: 'v1',
+    });
+    algoritmo.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  /** CA-05: sem escolha, a terceira chamada simplesmente não acontece. */
+  it('não grava convenção de contagem quando nenhuma foi escolhida', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_INSCRICAO);
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+
+    controller.expectNone(ROTA_ALGORITMO);
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  /**
+   * CA-08: se a última chamada falhar, as duas primeiras já gravaram — a
+   * mensagem tem de dizer isso, não "não foi possível concluir a operação".
+   */
+  it('diz que etapas e cronograma já gravaram quando só a convenção falha', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_INSCRICAO);
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+
+    controller.expectOne(ROTA_ALGORITMO).flush(
+      {
+        type: 'about:blank',
+        title: 'Convenção de contagem recusada',
+        status: 422,
+        code: 'uniplus.selecao.algoritmo_contagem_prazo.invalido',
+        traceId: '00000000000000000000000000000005',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('etapas e o cronograma de fases foram gravados');
+    expect(resultado.messages?.[0]).toContain('Convenção de contagem recusada');
   });
 });
