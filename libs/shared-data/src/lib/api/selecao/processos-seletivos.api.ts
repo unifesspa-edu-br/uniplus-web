@@ -32,6 +32,20 @@ export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
 export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
 export type DefinirAlgoritmoContagemPrazoRequest =
   components['schemas']['DefinirAlgoritmoContagemPrazoRequest'];
+export type DefinirOfertaAtendimentoRequest =
+  components['schemas']['DefinirOfertaAtendimentoRequest'];
+export type DefinirCascataRemanejamentoRequest =
+  components['schemas']['DefinirCascataRemanejamentoRequest'];
+export type DestinoRemanejamentoInput = components['schemas']['DestinoRemanejamentoInput'];
+export type ConformidadeProcessoSeletivoDto =
+  components['schemas']['ConformidadeProcessoSeletivoDto'];
+export type ItemConformidadeDto = components['schemas']['ItemConformidadeDto'];
+export type ConformidadeLegalProcessoSeletivoDto =
+  components['schemas']['ConformidadeLegalProcessoSeletivoDto'];
+export type RegraAvaliadaDto = components['schemas']['RegraAvaliadaDto'];
+export type PublicarProcessoSeletivoRequest =
+  components['schemas']['PublicarProcessoSeletivoRequest'];
+export type DadosDoAtoRequest = components['schemas']['DadosDoAtoRequest'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -177,6 +191,124 @@ export class ProcessosSeletivosApi {
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/algoritmo-contagem-prazo`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/oferta-atendimento` — declara o
+   * atendimento especializado do processo por **id** dos cadastros de
+   * Configuração: condições de atendimento, recursos de acessibilidade e
+   * tipos de deficiência.
+   *
+   * O agregado recusa com 422 (`OfertaAtendimento.TipoDeficienciaSemCondicaoPcd`)
+   * qualquer `tipoDeficienciaIds` não vazio sem a condição de código `PCD`
+   * marcada em `condicaoIds` — quem chama não filtra isso no cliente, é o
+   * servidor que arbitra a invariante.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirOfertaAtendimento(
+    processoSeletivoId: string,
+    request: DefinirOfertaAtendimentoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/oferta-atendimento`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/cascata-remanejamento` —
+   * grava a matriz de remanejamento entre modalidades.
+   *
+   * A tela não compõe `fallbackCodigo` nem `destinos[]`: o handler valida o
+   * corpo célula a célula contra o `esquemaArgs` **congelado** da regra
+   * escolhida e recusa com 422 (`ConfiguracaoCascataRemanejamento.MatrizDivergenteDaRegra`)
+   * qualquer divergência — quem chama envia o que a regra do catálogo já
+   * declarou, nunca uma composição livre.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirCascataRemanejamento(
+    processoSeletivoId: string,
+    request: DefinirCascataRemanejamentoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/cascata-remanejamento`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/conformidade` — o preflight
+   * **estrutural**: os seis gates que `ProcessoSeletivo.AvaliarConformidade()`
+   * projeta, agrupados por `dimensao`.
+   *
+   * Checklist inteiramente verde não é publicável por si só — a publicação
+   * ainda recusa por conformidade legal, documento do edital e tipo de ato,
+   * nenhum dos três coberto aqui. Ver `obterConformidadeLegal()`.
+   */
+  obterConformidade(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<ConformidadeProcessoSeletivoDto>> {
+    return this.http.get<ApiResult<ConformidadeProcessoSeletivoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/conformidade`,
+      { context: withVendorMime('conformidade-processo-seletivo', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/conformidade-legal` — as
+   * obrigatoriedades legais avaliadas contra `dataReferencia`.
+   *
+   * `dataReferencia` é a data de início do período de inscrição do processo,
+   * não um valor arbitrário do cliente — o contrato marca o parâmetro como
+   * opcional, e omiti-lo deixa o servidor decidir a referência padrão.
+   */
+  obterConformidadeLegal(
+    processoSeletivoId: string,
+    dataReferencia?: string,
+  ): Observable<ApiResult<ConformidadeLegalProcessoSeletivoDto>> {
+    let params = new HttpParams();
+    if (dataReferencia !== undefined) {
+      params = params.set('dataReferencia', dataReferencia);
+    }
+    return this.http.get<ApiResult<ConformidadeLegalProcessoSeletivoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/conformidade-legal`,
+      { params, context: withVendorMime('conformidade-legal-processo-seletivo', 1) },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/publicacao` — publica o
+   * processo.
+   *
+   * `periodoInscricaoInicio`/`…Fim` **não são derivados no cliente**: quando o
+   * cronograma tem fase com `coletaInscricao`, os dois vão `null` e o servidor
+   * usa a janela da fase (422 `PeriodoInscricaoNaoInformavel` se vierem
+   * preenchidos); sem fase de coleta — certame de origem importada — os dois
+   * são obrigatórios (422 `PeriodoInscricaoObrigatorioSemFaseDeColeta` se
+   * vierem nulos). Quem chama decide isso antes de montar o corpo, não aqui.
+   *
+   * A recusa por pendência chega como `ApiResult.fail` — o `ProblemDetails` do
+   * 422 é devolvido tal como o servidor emitiu, sem catch genérico que o
+   * esconda do chamador.
+   *
+   * Responde 204 sem corpo.
+   */
+  publicar(
+    processoSeletivoId: string,
+    request: PublicarProcessoSeletivoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.post<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/publicacao`,
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
