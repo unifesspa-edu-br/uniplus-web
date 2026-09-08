@@ -5,10 +5,13 @@ import { Subject, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
   OfertasCursoApi,
+  RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
+  TipoDeficienciaApi,
   TipoProcessoDto,
   TiposProcessoApi,
   FasesCanonicasApi,
@@ -80,6 +83,11 @@ const PAGE_PROVIDERS = [
   { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
+  // O passo de atendimento carrega os três cadastros de Configuração ao
+  // montar; esta suíte não exercita as escolhas, só a estrutura da página.
+  { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },
+  { provide: RecursoAcessibilidadeApi, useValue: catalogoVazioStub },
+  { provide: TipoDeficienciaApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
 ];
 

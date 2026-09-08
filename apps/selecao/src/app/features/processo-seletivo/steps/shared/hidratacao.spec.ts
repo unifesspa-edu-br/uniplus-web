@@ -543,3 +543,49 @@ describe('hidratarDraft — cascata de remanejamento', () => {
     expect(cascata).toBeNull();
   });
 });
+
+const OFERTA_ATENDIMENTO = {
+  id: 'snapshot-atendimento',
+  condicoes: [
+    {
+      id: 'snapshot-condicao-1',
+      condicaoOrigemId: 'condicao-pcd',
+      condicaoCodigo: 'PCD',
+      condicaoNome: 'Pessoa com deficiência',
+    },
+  ],
+  recursos: [
+    { id: 'snapshot-recurso-1', recursoOrigemId: 'recurso-ledor', recursoNome: 'Ledor' },
+  ],
+  tiposDeficiencia: [
+    {
+      id: 'snapshot-tipo-1',
+      tipoDeficienciaOrigemId: 'tipo-visual',
+      tipoDeficienciaNome: 'Deficiência visual',
+    },
+  ],
+};
+
+describe('hidratarDraft — oferta de atendimento especializado', () => {
+  it('projeta condições, recursos e tipos de deficiência pelo id de origem', () => {
+    const { atendimento } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ ofertaAtendimento: OFERTA_ATENDIMENTO }),
+    );
+
+    expect(atendimento).toEqual({
+      condicoes: [{ id: 'condicao-pcd', codigo: 'PCD', nome: 'Pessoa com deficiência' }],
+      recursos: [{ id: 'recurso-ledor', nome: 'Ledor' }],
+      tiposDeficiencia: [{ id: 'tipo-visual', nome: 'Deficiência visual' }],
+    });
+  });
+
+  it('trata processo sem oferta de atendimento como as três listas vazias', () => {
+    const { atendimento } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ ofertaAtendimento: null }),
+    );
+
+    expect(atendimento).toEqual({ condicoes: [], recursos: [], tiposDeficiencia: [] });
+  });
+});

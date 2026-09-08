@@ -4,10 +4,13 @@ import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
   OfertasCursoApi,
+  RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
+  TipoDeficienciaApi,
   TipoProcessoDto,
   TiposProcessoApi,
   FasesCanonicasApi,
@@ -165,6 +168,11 @@ function montar(opts: CenarioOpts = {}) {
   { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
+  // O passo de atendimento carrega os três cadastros de Configuração ao
+  // montar; esta suíte cobre a retomada do processo, não as escolhas.
+  { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },
+  { provide: RecursoAcessibilidadeApi, useValue: catalogoVazioStub },
+  { provide: TipoDeficienciaApi, useValue: catalogoVazioStub },
       {
         provide: ProcessosSeletivosApi,
         useValue: {

@@ -1,80 +1,146 @@
-<p class="step-atend-intro">
-  Configure a <strong>oferta de atendimento especializado</strong> deste processo seletivo, no
-  vocabulário canônico do INEP (Edital ENEM 52/2025). Selecione as
-  <strong>condições aceitas</strong> (item 4.2.1) — ao marcar PcD, especifique os
-  <strong>tipos de deficiência reconhecidos</strong> (LBI) — e os
-  <strong>recursos de acessibilidade</strong> oferecidos durante a aplicação da prova (item 4.2.2).
+<p class="step-subtitle">
+  Condições de atendimento, tipos de deficiência e recursos de acessibilidade que este processo
+  reconhece — vindos dos cadastros institucionais de Configuração.
 </p>
-<fieldset class="scroll-tabela">
-  <div class="atend-section">
-    <strong class="atend-section__title">Condições aceitas (item 4.2.1)</strong>
-    <p class="atend-section__desc">
-      Categorias de candidato que o processo seletivo reconhece para fins de atendimento
-      especializado.
-    </p>
-    <div class="atend-grid">
-      @for (condition of conditions; track condition.id) {
-        <label class="atend-card"
-          ><input
+
+@if (catalogos.carregando()) {
+  <p class="field__hint" role="status">
+    Carregando condições, recursos e tipos de deficiência… O que já está gravado neste processo
+    segue visível abaixo, sem alteração, enquanto o carregamento não confirma o que continua
+    ativo.
+  </p>
+}
+
+@if (catalogos.erro(); as erro) {
+  <div class="field__erro" role="alert">
+    <p>{{ erro }}</p>
+    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
+      Tentar novamente
+    </button>
+  </div>
+  <p class="field__hint">
+    O que já está gravado neste processo segue visível abaixo, sem alteração — sem o catálogo
+    não é possível confirmar o que continua ativo, nem oferecer novas opções.
+  </p>
+}
+
+<div class="step-card">
+  <h2 class="form-section__title">Condições aceitas</h2>
+
+  @if (catalogos.condicoes().length > 0 || condicoesInativas().length > 0) {
+    <div class="checkbox-grid">
+      @for (condicao of catalogos.condicoes(); track condicao.id) {
+        <label class="check-item">
+          <input
             type="checkbox"
-            [id]="'cond-' + condition.id"
-            [checked]="store.draft().atendimento.condicoes.includes(condition.id)"
-            (change)="toggle('condicoes', condition.id, $any($event.target).checked)"
+            [checked]="condicaoMarcada(condicao.id)"
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (change)="toggleCondicao(condicao, $any($event.target).checked)"
           />
-          <div class="atend-card__body">
-            <span class="atend-card__name">{{ condition.nome }}</span>
-            @if (condition.laudo) {
-              <span class="atend-badge atend-badge--laudo">Exige laudo</span>
-            }
-          </div></label
-        >
+          <span>{{ condicao.nome }}</span>
+        </label>
+      }
+      @for (inativa of condicoesInativas(); track inativa.id) {
+        <label class="check-item">
+          <input
+            type="checkbox"
+            checked
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (change)="removerCondicaoInativa(inativa.id)"
+          />
+          <span>{{ inativa.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
+        </label>
       }
     </div>
-    @if (store.draft().atendimento.condicoes.includes('pcd')) {
-      <div class="pcd-subblock">
-        <strong class="pcd-subblock__title"
-          >Tipos de deficiência reconhecidos pelo edital (LBI)</strong
-        >
-        <p class="pcd-subblock__desc">Especifique quais categorias o edital reconhece.</p>
-        <div class="atend-grid">
-          @for (type of pcdTypes; track type; let index = $index) {
-            <label class="atend-card"
-              ><input
-                type="checkbox"
-                [id]="'pcd-tipo-' + index"
-                [checked]="store.draft().atendimento.tiposPcd.includes(type)"
-                (change)="toggle('tiposPcd', type, $any($event.target).checked)"
-              />
-              <div class="atend-card__body">
-                <span class="atend-card__name">{{ type }}</span>
-              </div></label
+  } @else if (catalogoConfirmado()) {
+    <p class="field__hint">
+      Nenhuma condição de atendimento cadastrada. Cadastre ao menos uma em Configuração →
+      Condições de atendimento antes de configurar este passo.
+    </p>
+  }
+</div>
+
+@if (pcdSelecionada()) {
+  <div class="step-card">
+    <h2 class="form-section__title">Tipos de deficiência reconhecidos</h2>
+    <p class="field__hint">
+      Só pode ser preenchido com a condição "Pessoa com deficiência" marcada acima.
+    </p>
+
+    @if (catalogos.tiposDeficiencia().length > 0 || tiposDeficienciaInativos().length > 0) {
+      <div class="checkbox-grid">
+        @for (tipo of catalogos.tiposDeficiencia(); track tipo.id) {
+          <label class="check-item">
+            <input
+              type="checkbox"
+              [checked]="tipoDeficienciaMarcado(tipo.id)"
+              [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+              (change)="toggleTipoDeficiencia(tipo, $any($event.target).checked)"
+            />
+            <span>{{ tipo.nome }}</span>
+          </label>
+        }
+        @for (inativo of tiposDeficienciaInativos(); track inativo.id) {
+          <label class="check-item">
+            <input
+              type="checkbox"
+              checked
+              [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+              (change)="removerTipoDeficienciaInativo(inativo.id)"
+            />
+            <span
+              >{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span
             >
-          }
-        </div>
+          </label>
+        }
       </div>
+    } @else if (catalogoConfirmado()) {
+      <p class="field__hint">
+        Nenhum tipo de deficiência cadastrado. Cadastre ao menos um em Configuração → Tipos de
+        deficiência antes de reconhecer tipos aqui.
+      </p>
     }
   </div>
-  <div class="atend-section">
-    <strong class="atend-section__title">Recursos de acessibilidade oferecidos (item 4.2.2)</strong>
-    <p class="atend-section__desc">Adaptações disponíveis para a aplicação da prova.</p>
-    <div class="atend-grid">
-      @for (resource of resources; track resource.id) {
-        <label class="atend-card"
-          ><input
+}
+
+<div class="step-card">
+  <h2 class="form-section__title">Recursos de acessibilidade oferecidos</h2>
+
+  @if (catalogos.recursos().length > 0 || recursosInativos().length > 0) {
+    <div class="checkbox-grid">
+      @for (recurso of catalogos.recursos(); track recurso.id) {
+        <label class="check-item">
+          <input
             type="checkbox"
-            [id]="'rec-' + resource.id"
-            [checked]="store.draft().atendimento.recursos.includes(resource.id)"
-            (change)="toggle('recursos', resource.id, $any($event.target).checked)"
+            [checked]="recursoMarcado(recurso.id)"
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (change)="toggleRecurso(recurso, $any($event.target).checked)"
           />
-          <div class="atend-card__body">
-            <span class="atend-card__name">{{ resource.nome }}</span>
-            @if (resource.ext) {
-              <span class="atend-badge atend-badge--ext">Extensão local</span>
-            }
-            <span class="atend-card__desc">{{ resource.desc }}</span>
-          </div></label
-        >
+          <span>{{ recurso.nome }}</span>
+        </label>
+      }
+      @for (inativo of recursosInativos(); track inativo.id) {
+        <label class="check-item">
+          <input
+            type="checkbox"
+            checked
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (change)="removerRecursoInativo(inativo.id)"
+          />
+          <span>{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
+        </label>
       }
     </div>
+  } @else if (catalogoConfirmado()) {
+    <p class="field__hint">
+      Nenhum recurso de acessibilidade cadastrado. Cadastre ao menos um em Configuração →
+      Recursos de acessibilidade antes de configurar este passo.
+    </p>
+  }
+</div>
+
+@if (erroDeGravacao(); as erro) {
+  <div class="field__erro" role="alert">
+    <p>{{ erro }}</p>
   </div>
-</fieldset>
+}
