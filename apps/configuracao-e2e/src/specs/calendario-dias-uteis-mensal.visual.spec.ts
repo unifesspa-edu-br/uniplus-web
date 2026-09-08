@@ -95,19 +95,31 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await mockCalendarioApi(page);
   });
 
-  test('exibe só os meses com feriado, em ordem cronológica cruzando anos (CA-03)', async ({ page }) => {
+  test('exibe os 12 meses do ano em ordem cronológica de janeiro a dezembro (CA-01, CA-02, CA-03)', async ({
+    page,
+  }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const titulos = page.locator('.cfg-calendario-mensal__titulo');
     await expect(titulos).toHaveText([
+      'Janeiro de 2026',
+      'Fevereiro de 2026',
+      'Março de 2026',
       'Abril de 2026',
+      'Maio de 2026',
       'Junho de 2026',
+      'Julho de 2026',
+      'Agosto de 2026',
+      'Setembro de 2026',
+      'Outubro de 2026',
       'Novembro de 2026',
-      'Janeiro de 2027',
+      'Dezembro de 2026',
     ]);
   });
 
-  test('abre por clique, fecha pelo botão e restaura o foco no dia exato (CA-07/CA-08)', async ({ page }) => {
+  test('abre por clique, fecha pelo botão e restaura o foco no dia exato (CA-07/CA-08)', async ({
+    page,
+  }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
@@ -125,7 +137,9 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await expect(page.locator('.cfg-calendario-mensal__preview')).toBeHidden();
   });
 
-  test('abre por teclado (Enter e Espaço) e Escape fecha restaurando o foco (CA-07/CA-08)', async ({ page }) => {
+  test('abre por teclado (Enter e Espaço) e Escape fecha restaurando o foco (CA-07/CA-08)', async ({
+    page,
+  }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
@@ -213,7 +227,9 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await expect(previewDoBotao).toBeHidden();
   });
 
-  test('foco sair do botão que o mouse ainda ocupa não esconde a prévia (CA-06)', async ({ page }) => {
+  test('foco sair do botão que o mouse ainda ocupa não esconde a prévia (CA-06)', async ({
+    page,
+  }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
     const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
@@ -223,14 +239,17 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await botaoDia.focus();
     await expect(previewDoBotao).toBeVisible();
 
-    // Foco sai para um elemento sem handler de prévia própria, mas o mouse
-    // continua sobre o botão original: sem o guard, o blur incondicional
-    // esconderia a prévia mesmo com o cursor ali.
-    await page.getByRole('link', { name: 'Voltar à lista' }).focus();
+    // Foco sai para um elemento sem handler de prévia própria (usando preventScroll
+    // para evitar que o scroll vertical no mobile desloque o botão sob o cursor do mouse).
+    await page
+      .getByRole('link', { name: 'Voltar à lista' })
+      .evaluate((el) => el.focus({ preventScroll: true }));
     await expect(previewDoBotao).toBeVisible();
   });
 
-  test('320 px sem rolagem horizontal, inclusive com a prévia aberta (CA-12)', async ({ page }, testInfo) => {
+  test('320 px sem rolagem horizontal, inclusive com a prévia aberta (CA-12)', async ({
+    page,
+  }, testInfo) => {
     await page.setViewportSize({ width: 320, height: 720 });
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
@@ -283,28 +302,33 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.setViewportSize({ width: 320, height: 720 });
     // Até 60 caracteres aceitos pelo formulário de criação, num único token.
     const versaoLonga = 'V'.repeat(60);
-    await page.route(/\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/, async (route, request) => {
-      if (request.method() === 'OPTIONS') {
-        await route.fulfill({ status: 204, headers: CORS_HEADERS });
-        return;
-      }
-      if (request.method() !== 'GET') {
-        await route.continue();
-        return;
-      }
-      await route.fulfill({
-        status: 200,
-        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-        body: JSON.stringify({ ...CALENDARIO, versaoDataset: versaoLonga }),
-      });
-    });
+    await page.route(
+      /\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/,
+      async (route, request) => {
+        if (request.method() === 'OPTIONS') {
+          await route.fulfill({ status: 204, headers: CORS_HEADERS });
+          return;
+        }
+        if (request.method() !== 'GET') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+          body: JSON.stringify({ ...CALENDARIO, versaoDataset: versaoLonga }),
+        });
+      },
+    );
 
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByText(versaoLonga)).toBeVisible();
     await assertNoHorizontalOverflow(page);
   });
 
-  test('sem violações serious/critical, com o drawer fechado e aberto (CA-13)', async ({ page }) => {
+  test('sem violações serious/critical, com o drawer fechado e aberto (CA-13)', async ({
+    page,
+  }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
 
@@ -317,23 +341,25 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   });
 });
 
-
 async function mockCalendarioApi(page: Page): Promise<void> {
-  await page.route(/\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/, async (route, request) => {
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    if (request.method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-      body: JSON.stringify(CALENDARIO),
-    });
-  });
+  await page.route(
+    /\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/,
+    async (route, request) => {
+      if (request.method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      if (request.method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+        body: JSON.stringify(CALENDARIO),
+      });
+    },
+  );
 }
 
 async function assertNoHorizontalOverflow(page: Page): Promise<void> {

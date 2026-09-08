@@ -36,17 +36,6 @@ const DIA_ESTADUAL = {
   descricao: 'Adesão do Grão-Pará à Independência',
 };
 
-const DIA_NACIONAL_JANEIRO = {
-  id: '019f41cf-69fd-759a-ac6d-09acabc1b102',
-  abrangencia: 'NACIONAL',
-  municipioIbge: null,
-  municipioNome: null,
-  municipioUf: null,
-  uf: null,
-  data: '2027-01-01',
-  descricao: 'Confraternização Universal',
-};
-
 describe('CalendarioDiasUteisDetalhePage', () => {
   let fixture: ComponentFixture<CalendarioDiasUteisDetalhePage>;
   let controller: HttpTestingController;
@@ -70,9 +59,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
           },
         },
       ],
-      // GEO_BASE_PATH deliberadamente ausente: se a página injetasse a GeoApi,
-      // o TestBed falharia em criar o componente (ADR-0090 — a localidade
-      // persistida é lida do snapshot, sem consultar a Geo).
     });
     fixture = TestBed.createComponent(CalendarioDiasUteisDetalhePage);
     controller = TestBed.inject(HttpTestingController);
@@ -147,12 +133,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     expect(texto).toContain('Vigente');
   });
 
-  /**
-   * Cada ocorrência é uma entrada própria do dataset, com abrangência e
-   * descrição próprias, e é por entrada que ele é conferido antes de virar
-   * vigente. Colapsar duas no mesmo dia fazia o conferente procurar registros
-   * que pareciam ter sumido.
-   */
   it('conta as ocorrências do dataset no resumo, não as datas (CA-02)', async () => {
     const segundaOcorrenciaNoMesmoDia = {
       ...DIA_MUNICIPAL,
@@ -165,7 +145,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     expect(resumo.textContent).toContain('3');
   });
 
-  /** A grade continua desenhando um dia só, com as duas ocorrências dentro. */
   it('mantém uma célula por data mesmo com mais de uma ocorrência', async () => {
     const segundaOcorrenciaNoMesmoDia = {
       ...DIA_MUNICIPAL,
@@ -179,13 +158,26 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     ).toHaveLength(1);
   });
 
-  it('exibe só os meses com feriado, em ordem cronológica, mesmo atravessando anos (CA-03)', async () => {
-    await carregar([DIA_ESTADUAL, DIA_NACIONAL_JANEIRO]);
+  it('exibe os 12 meses do ano em ordem cronológica de janeiro a dezembro (CA01, CA02, CA03)', async () => {
+    await carregar([DIA_ESTADUAL]);
 
     const titulos = [
       ...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo'),
     ].map((elemento: Element) => elemento.textContent?.trim());
-    expect(titulos).toEqual(['Agosto de 2026', 'Janeiro de 2027']);
+    expect(titulos).toEqual([
+      'Janeiro de 2026',
+      'Fevereiro de 2026',
+      'Março de 2026',
+      'Abril de 2026',
+      'Maio de 2026',
+      'Junho de 2026',
+      'Julho de 2026',
+      'Agosto de 2026',
+      'Setembro de 2026',
+      'Outubro de 2026',
+      'Novembro de 2026',
+      'Dezembro de 2026',
+    ]);
   });
 
   it('abre o drawer com heading e conteúdo do dia ao ativar o botão (CA-07)', async () => {
@@ -210,7 +202,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     await carregar([DIA_MUNICIPAL, segunda_ocorrencia]);
 
     const botao = botaoDoDia(DIA_MUNICIPAL.data);
-    // Contador pintado em ::before (ver styles do componente) — SC 2.5.3.
     expect(
       botao.querySelector('.cfg-calendario-mensal__contador')?.getAttribute('data-contador'),
     ).toBe('2');
@@ -233,7 +224,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
     expect(texto).toContain('Marabá — PA');
     expect(texto).toContain('Código IBGE: 1504208');
-    // Nenhuma requisição à Geo: `controller.verify()` no afterEach falharia.
     controller.expectNone((request) => request.url.includes('/api/cidades'));
   });
 
@@ -265,8 +255,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.drawerVisivel()).toBe(true);
 
-    // O clique também foca o botão (evento nativo do navegador), então a
-    // prévia liga junto com a abertura — não é o cenário deste teste.
     fixture.componentInstance.mostrarPreview(DIA_MUNICIPAL.data);
     fixture.detectChanges();
     expect(fixture.componentInstance.diaEmPreview()).toBe(DIA_MUNICIPAL.data);
@@ -318,7 +306,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     });
     await propagate();
 
-    // O drawer não reabre sozinho com o dia do calendário anterior.
     expect(fixture.componentInstance.drawerVisivel()).toBe(false);
     expect(fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
   });
