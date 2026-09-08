@@ -286,7 +286,7 @@ describe('problemasDaDistribuicao — dependências entre modalidades', () => {
       catalogo([cruzada]),
     );
     expect(mensagens(problemas).some((p) => p.includes('par do remanejamento (LI_EP)'))).toBe(true);
-    expect(mensagens(problemas).some((p) => p.includes('fallback do remanejamento (AC)'))).toBe(
+    expect(mensagens(problemas).some((p) => p.includes('destino final do remanejamento (AC)'))).toBe(
       true,
     );
   });

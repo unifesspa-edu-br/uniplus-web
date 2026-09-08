@@ -1324,18 +1324,39 @@
   border-bottom: none;
 }
 
-/* A cadeia quebra entre passos, nunca dentro de um. O `gap` substitui o espaço
-   em branco do template, que o compilador do Angular colapsa. */
-.cascata-matriz__cadeia {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: var(--space-2);
-  row-gap: var(--space-1);
+/* Uma coluna por posição de preferência, estreita e centrada — a leitura é de
+   comparação entre linhas, não de texto corrido. */
+.cascata-matriz thead th.cascata-matriz__ordem,
+.cascata-matriz td.cascata-matriz__destino {
+  text-align: center;
+  white-space: nowrap;
+  padding-inline: var(--space-3);
 }
 
-.cascata-matriz__passo {
-  white-space: nowrap;
+.cascata-matriz td.cascata-matriz__destino {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A origem é a âncora da linha: fica presa à esquerda quando a matriz precisa
+   rolar na horizontal, senão o operador perde de quem é a linha que está lendo. */
+.cascata-matriz thead th:first-child,
+.cascata-matriz tbody th[scope='row'] {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface-card);
+}
+
+.cascata-matriz thead th:first-child {
+  background: var(--surface-subtle);
+}
+
+/* O destino final não é linha da matriz — a portaria o enuncia à parte, e
+   tratá-lo como origem sugeriria que ele também remaneja. */
+.cascata-matriz__terminal {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .vagas-table__curso-nome {

@@ -203,12 +203,27 @@ describe('CascataRemanejamentoComponent', () => {
       fallbackCodigo: 'AC',
       ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
     });
-    expect(elemento.textContent).toContain('LB_PPI');
-    expect(elemento.textContent).toContain('LB_Q → AC');
+    // A matriz é apresentada como a portaria a publica: origem na linha e a
+    // ordem de preferência em colunas numeradas, não como cadeia de setas.
+    const cabecalhos = [...elemento.querySelectorAll('.cascata-matriz thead th')].map((th) =>
+      th.textContent?.trim(),
+    );
+    expect(cabecalhos).toEqual(['Origem', '1ª', '2ª']);
+
+    const primeiraLinha = [
+      ...(elemento.querySelector('.cascata-matriz tbody tr')?.querySelectorAll('th, td') ?? []),
+    ].map((celula) => celula.textContent?.trim());
+    expect(primeiraLinha).toEqual(['LB_PPI', 'LB_Q', 'AC']);
+
+    // O destino final é enunciado fora da matriz: tratá-lo como linha sugeriria
+    // que a ampla concorrência também remaneja.
+    expect(elemento.querySelector('.cascata-matriz__terminal')?.textContent).toContain(
+      'revertida à ampla concorrência',
+    );
   });
 
   it('aponta o encaixe pendente e trava a confirmação quando a oferta não cobre a matriz', () => {
-    // Só a origem está selecionada — nem o fallback nem o outro destino.
+    // Só a origem está selecionada — nem o destino final nem o outro destino.
     store.patchObjectSection('vagas', {
       ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
     });
@@ -376,7 +391,7 @@ describe('CascataRemanejamentoComponent', () => {
       fallbackCodigo: 'AC',
       ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
     });
-    expect(elemento.textContent).toContain('Fallback');
+    expect(elemento.querySelector('.cascata-matriz__terminal')?.textContent).toContain('AC');
 
     // A regra resolvida por busca direta precisa aparecer como opção do
     // seletor — sem isto o controle segura um valor sem <option>
