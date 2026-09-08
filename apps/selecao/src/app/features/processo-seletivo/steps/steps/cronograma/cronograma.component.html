@@ -383,7 +383,9 @@
           [disabled]="!edicaoLiberada()"
           (ngModelChange)="escolherAlgoritmo($event)"
         >
-          <option value="">Nenhuma convenção declarada</option>
+          @if (!algoritmoDeclaradoNoServidor()) {
+            <option value="">Nenhuma convenção declarada</option>
+          }
           @for (regra of regrasDeContagem(); track regra.codigo + regra.versao) {
             <option [value]="regra.codigo">
               {{ regra.codigo }} ({{ regra.versao }}) — {{ regra.baseLegal }}
@@ -392,7 +394,13 @@
         </select>
         <p class="field__hint">
           Regra do catálogo institucional que define como os prazos de recurso deste cronograma são
-          contados. Sem escolha, o processo segue em rascunho quanto a este item.
+          contados.
+          @if (algoritmoDeclaradoNoServidor()) {
+            Depois de declarada, a convenção não pode ser removida — apenas trocada por outra do
+            catálogo.
+          } @else {
+            Sem escolha, o processo segue em rascunho quanto a este item.
+          }
         </p>
       </div>
     </div>
