@@ -584,6 +584,35 @@ describe('RevisaoStepComponent', () => {
      * cada `<option>` que se registra, então a seleção sobrevive mesmo
      * quando as opções são criadas depois do valor já estar no controle.
      */
+    /**
+     * Regressão de `#738`. Os demais testes deste arquivo preenchem o rascunho
+     * pelo store, então o mapeador sempre recebia texto — e o defeito vivia
+     * justamente **entre** o template e o mapeador: com `type="number"`, o
+     * `NumberValueAccessor` do Angular grava número num controle declarado
+     * como texto, e `validate()` estourava com `texto.trim is not a function`.
+     *
+     * Por isso este teste atravessa o DOM: escreve no `<input>` e dispara o
+     * evento, que é o caminho que o operador percorre. Preencher o controle por
+     * `setValue` não reproduz o defeito, porque aí o valor já é do tipo
+     * declarado.
+     */
+    it('valida sem estourar quando o ano é digitado no campo, e não posto no controle', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+      fixture.detectChanges();
+
+      const ano = fixture.nativeElement.querySelector<HTMLInputElement>('#rev-ano');
+      expect(ano).not.toBeNull();
+
+      ano!.value = '2027';
+      ano!.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(() => componente.validate()).not.toThrow();
+      expect(componente.form.controls.ano.value).toBe('2027');
+    });
+
     it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
       prepararCamposLocais();
       await criarProcesso();
