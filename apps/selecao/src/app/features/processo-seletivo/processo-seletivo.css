@@ -1333,9 +1333,16 @@
    palavra. Como cartão, ao lado do rótulo "1ª PREFERÊNCIA", um código de até 60
    caracteres transbordaria mesmo assim. `anywhere` — e não `break-word` —
    porque só ele também reduz o tamanho mínimo intrínseco, que é o que impede o
-   transbordo dentro do flex do cartão. Sem efeito acima de 768 px, onde o
-   `nowrap` da media query prevalece. */
-.cascata-matriz td.cascata-matriz__destino {
+   transbordo dentro do flex do cartão.
+
+   Vale para os TRÊS lugares em que um código do catálogo é exibido: a origem
+   da linha, cada destino, e o destino final no parágrafo abaixo da matriz.
+   Proteger só um deles deixa os outros dois transbordando o mesmo texto.
+   Acima de 768 px o `nowrap` da media query prevalece na tabela; o parágrafo
+   não é tabela e mantém a quebra em qualquer largura. */
+.cascata-matriz tbody th[scope='row'],
+.cascata-matriz td.cascata-matriz__destino,
+.cascata-matriz__terminal {
   overflow-wrap: anywhere;
 }
 
