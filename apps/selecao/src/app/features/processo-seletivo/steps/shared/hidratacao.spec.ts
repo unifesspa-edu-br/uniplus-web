@@ -519,3 +519,27 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     expect(desempate).toEqual([]);
   });
 });
+
+describe('hidratarDraft — cascata de remanejamento', () => {
+  it('projeta só o par código/versão da regra escolhida', () => {
+    const dto = dtoCom([DISTRIBUICAO]);
+    (dto as unknown as { cascata: unknown }).cascata = {
+      id: 'snapshot-cascata',
+      regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'hash-1' },
+      fallbackCodigo: 'AC',
+      destinos: [
+        { id: 'd1', modalidadeOrigemCodigo: 'LB_PPI', ordem: 1, modalidadeDestinoCodigo: 'LB_Q' },
+      ],
+    };
+
+    const { cascata } = hidratarDraft(DRAFT, dto).vagas;
+
+    expect(cascata).toEqual({ regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v1' });
+  });
+
+  it('processo sem cascata gravada hidrata null', () => {
+    const { cascata } = hidratarDraft(DRAFT, dtoCom([DISTRIBUICAO])).vagas;
+
+    expect(cascata).toBeNull();
+  });
+});

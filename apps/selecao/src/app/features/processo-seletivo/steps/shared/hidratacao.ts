@@ -7,6 +7,7 @@ import type {
 } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import {
+  CascataSelecionada,
   CriterioDesempateConfigurado,
   DistribuicaoDeVagas,
   EtapaPontuada,
@@ -39,7 +40,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
       rotulo: dto.tipoProcesso.nome,
     },
     pagamento: pagamentoDe(dto),
-    vagas: { ofertas: distribuicoesDe(dto) },
+    vagas: { ofertas: distribuicoesDe(dto), cascata: cascataDe(dto) },
     cronograma: cronogramaDe(dto),
     classificacao: classificacaoDe(dto),
     bonus: bonusDe(dto),
@@ -358,6 +359,22 @@ function quadroDeclaradoDe(
       modalidadeId: vaga.modalidadeOrigemId,
       quantidade: String(vaga.quantidade),
     }));
+}
+
+/**
+ * Projeta a cascata já gravada, só pelo par código/versão da regra escolhida.
+ *
+ * `fallbackCodigo` e `destinos[]` não entram no rascunho: são derivados do
+ * `esquemaArgs` da regra no momento de montar o comando (RN-CASCATA-5), e
+ * trazê-los da leitura criaria uma segunda fonte que poderia divergir da regra
+ * — por exemplo se o catálogo tiver ganhado uma versão nova entre a gravação e
+ * esta leitura.
+ */
+function cascataDe(dto: ProcessoSeletivoDto): CascataSelecionada | null {
+  const cascata = dto.cascata;
+  if (cascata === null || cascata === undefined) return null;
+
+  return { regraCodigo: cascata.regra.codigo, regraVersao: cascata.regra.versao };
 }
 
 /**

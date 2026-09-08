@@ -29,6 +29,8 @@ import { Subscription } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { comandoDaCascata, comandoDeRemocaoDaCascata } from './cascata-de-remanejamento';
+import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
 import {
   EscopoDoProblema,
@@ -101,7 +103,7 @@ function lista(itens: readonly string[]): string {
  */
 @Component({
   selector: 'sel-step-vagas',
-  imports: [FormsModule, ConfirmDialogComponent],
+  imports: [FormsModule, ConfirmDialogComponent, CascataRemanejamentoComponent],
   templateUrl: './vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CatalogosDeDistribuicaoService, provePassoDoWizard(VagasStepComponent)],
@@ -109,6 +111,14 @@ function lista(itens: readonly string[]): string {
 export class VagasStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicaoService);
+
+  /**
+   * A cascata é seção deste passo, não passo próprio (§7 da Story #481): lida
+   * por `viewChild` para `validate()`/`persistir()` consultarem o mesmo
+   * estado derivado que a seção já computa, sem duplicar a lógica de
+   * encaixe por oferta aqui.
+   */
+  private readonly cascataSecao = viewChild(CascataRemanejamentoComponent);
 
   readonly distribuicoes = computed(() => this.store.draft().vagas.ofertas);
 
@@ -966,7 +976,11 @@ export class VagasStepComponent {
   }
 
   /**
-   * Grava a distribuição inteira ao concluir o passo.
+   * Grava a distribuição inteira ao concluir o passo, e a cascata de
+   * remanejamento logo depois (CA-06): a cascata referencia modalidades que
+   * só existem depois de a oferta ser gravada, e as duas chamadas são
+   * independentes — a falha de uma não desfaz a outra, e a mensagem diz qual
+   * parte gravou.
    *
    * Até aqui o quadro vive no rascunho: com vinte ofertas, gravar célula a
    * célula transformaria o preenchimento numa sequência de idas ao servidor, e
@@ -1004,12 +1018,78 @@ export class VagasStepComponent {
         return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
       }
 
+      const cascata = await this.persistirCascata(processoId);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!cascata.valid) {
+        return {
+          valid: false,
+          messages: [
+            `A distribuição de vagas foi gravada. A cascata de remanejamento não: ${(cascata.messages ?? []).join(' ')}`,
+          ],
+        };
+      }
+
       return { valid: true };
     } finally {
       // Quem destrava é a geração que travou: um editor novo pode ter comando
       // próprio em curso.
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  /**
+   * A cascata é única por processo: só é enviada quando a seção se aplica
+   * (oferta federal com modalidade `SEGUE_CASCATA`) **e** o operador
+   * confirmou a matriz que a regra congela. Quando deixa de se aplicar,
+   * envia a remoção — os quatro campos nulos — **se o servidor pode ter uma
+   * cascata gravada** (`secao.existeNoServidor()`), para não deixar cascata
+   * órfã referenciando modalidade que o quadro já não oferta.
+   *
+   * A checagem não é sobre `store.draft().vagas.cascata`: o operador pode
+   * limpar o seletor de regra (zerando o rascunho) sem que isso apague nada
+   * no servidor — só o envio da remoção faz isso, e por isso quem decide se
+   * há remoção pendente é `existeNoServidor`, atualizado por hidratação e
+   * pelas próprias gravações deste método, nunca pelo valor do seletor.
+   */
+  private async persistirCascata(processoId: string): Promise<StepValidation> {
+    const secao = this.cascataSecao();
+
+    if (secao === undefined || !secao.precisaExibir()) {
+      if (secao === undefined || !secao.existeNoServidor()) return { valid: true };
+
+      const resultado = await this.cadastro.definirCascataRemanejamento(
+        processoId,
+        comandoDeRemocaoDaCascata(),
+      );
+      if (resultado.ok) secao.existeNoServidor.set(false);
+      return resultado.ok
+        ? { valid: true }
+        : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+    }
+
+    const cascataSelecionada = this.store.draft().vagas.cascata;
+    if (cascataSelecionada === null || !secao.pronta()) {
+      return {
+        valid: false,
+        messages: [
+          'Escolha a regra de remanejamento e confirme a matriz antes de gravar as vagas.',
+        ],
+      };
+    }
+
+    const matriz = secao.matriz();
+    if (matriz === null) {
+      return { valid: false, messages: ['A regra escolhida não tem matriz reconhecida.'] };
+    }
+
+    const resultado = await this.cadastro.definirCascataRemanejamento(
+      processoId,
+      comandoDaCascata(cascataSelecionada, matriz),
+    );
+    if (resultado.ok) secao.existeNoServidor.set(true);
+    return resultado.ok
+      ? { valid: true }
+      : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
   }
 
   /**
@@ -1058,12 +1138,52 @@ export class VagasStepComponent {
     () => !this.conferenciaConfirmada() && this.pendenciasAlemDaConferencia().length === 0,
   );
 
+  /**
+   * O que a seção de cascata ainda pede antes de gravar — vazio quando ela
+   * não se aplica a nenhuma oferta desta distribuição.
+   *
+   * A oferta fora do regime federal bloqueia o avanço mesmo quando a seção
+   * inteira não aparece (`precisaExibir()` falso): sem isto, o alerta que a
+   * seção mostra (`ofertasForaDoRegime()`) seria só decorativo — o operador
+   * gravaria e avançaria com `cascata_modalidade_fora_do_regime_federal`
+   * vermelho, que bloqueia a publicação mais adiante sem nenhuma pista de
+   * onde a correção mora.
+   */
+  private readonly pendenciasDaCascata = computed<readonly string[]>(() => {
+    const secao = this.cascataSecao();
+    if (secao === undefined) return [];
+
+    const pendenciasForaDoRegime = secao
+      .ofertasForaDoRegime()
+      .map(
+        (oferta) =>
+          `Cascata — ${this.rotuloDaOferta(oferta.ofertaCursoId)}: tem modalidade que segue a cascata fora do ramo federal. Corrija a regra de distribuição ou a modalidade desta oferta.`,
+      );
+
+    if (!secao.precisaExibir()) return pendenciasForaDoRegime;
+
+    if (secao.cascata() === null) {
+      return [...pendenciasForaDoRegime, 'Escolha a regra de remanejamento da cascata.'];
+    }
+
+    const problemas = secao
+      .problemas()
+      .map((problema) => `Cascata — ${secao.rotuloDoProblema(problema)}`);
+    if (problemas.length > 0) return [...pendenciasForaDoRegime, ...problemas];
+
+    return [
+      ...pendenciasForaDoRegime,
+      ...(secao.confirmado() ? [] : ['Confirme que conferiu a cascata de remanejamento.']),
+    ];
+  });
+
   validate(): StepValidation {
     const mensagens = [
       ...this.pendenciasAlemDaConferencia(),
       ...(this.conferenciaConfirmada() || this.distribuicoes().length === 0
         ? []
         : ['Confirme que conferiu o quadro de vagas antes de gravar.']),
+      ...this.pendenciasDaCascata(),
     ];
 
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
@@ -1130,5 +1250,8 @@ export class VagasStepComponent {
   private substituir(ofertas: readonly DistribuicaoDeVagas[]): void {
     this.descartarSimulacao();
     this.store.patchObjectSection('vagas', { ofertas: [...ofertas] });
+    // O encaixe da cascata é por oferta: mudar o quadro pode alterar o que
+    // faltava ou sobrava, e uma confirmação anterior não vale mais.
+    this.cascataSecao()?.confirmado.set(false);
   }
 }

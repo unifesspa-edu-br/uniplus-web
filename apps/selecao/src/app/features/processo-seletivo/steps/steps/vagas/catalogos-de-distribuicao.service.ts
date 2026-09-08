@@ -19,13 +19,16 @@ import { ModalidadeDoCatalogo } from './distribuicao-de-vagas';
 /** Tipos do `rol_de_regras` que esta tela referencia. */
 const TIPO_REGRA_DISTRIBUICAO = 'regra_distribuicao_vagas';
 const TIPO_REGRA_AJUSTE = 'regra_ajuste_distribuicao_vagas';
+const TIPO_REGRA_CASCATA = 'criterio_remanejamento';
 
 /**
- * Catálogos que a distribuição de vagas referencia, todos vindos de fora do
- * módulo Seleção: ofertas, modalidades e referência demográfica são cadastro de
- * Configuração, e as regras são o `rol_de_regras` versionado.
+ * Catálogos que a distribuição de vagas e a cascata de remanejamento
+ * referenciam, todos vindos de fora do módulo Seleção: ofertas, modalidades e
+ * referência demográfica são cadastro de Configuração, e as regras são o
+ * `rol_de_regras` versionado — distribuição, ajuste e remanejamento
+ * (`criterio_remanejamento`, que a seção de cascata do passo Vagas consome).
  *
- * Carrega os quatro por cursor até o fim, porque uma escolha só sabe o que
+ * Carrega os cinco por cursor até o fim, porque uma escolha só sabe o que
  * oferecer quando conhece todas as opções — diferente de uma listagem, em que
  * a página é o que o operador navega.
  */
@@ -44,6 +47,7 @@ export class CatalogosDeDistribuicaoService {
   readonly referencias = signal<readonly ReferenciaReservaDemograficaDto[]>([]);
   readonly regrasDistribuicao = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasAjuste = signal<readonly RegraCatalogoDto[]>([]);
+  readonly regrasCascata = signal<readonly RegraCatalogoDto[]>([]);
 
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
@@ -154,11 +158,15 @@ export class CatalogosDeDistribuicaoService {
       ajuste: coletarPaginas((cursor) =>
         this.regrasApi.listar({ tipo: TIPO_REGRA_AJUSTE, cursor }),
       ),
+      cascata: coletarPaginas((cursor) =>
+        this.regrasApi.listar({ tipo: TIPO_REGRA_CASCATA, cursor }),
+      ),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resultados) => {
-          const { ofertas, cursos, modalidades, referencias, distribuicao, ajuste } = resultados;
+          const { ofertas, cursos, modalidades, referencias, distribuicao, ajuste, cascata } =
+            resultados;
 
           // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
           // o operador não teria como saber. Ou vêm todos, ou nenhum.
@@ -168,7 +176,8 @@ export class CatalogosDeDistribuicaoService {
             !isApiOk(modalidades) ||
             !isApiOk(referencias) ||
             !isApiOk(distribuicao) ||
-            !isApiOk(ajuste)
+            !isApiOk(ajuste) ||
+            !isApiOk(cascata)
           ) {
             this.anunciarErro();
             return;
@@ -180,6 +189,7 @@ export class CatalogosDeDistribuicaoService {
           this.referencias.set(referencias.data);
           this.regrasDistribuicao.set(distribuicao.data);
           this.regrasAjuste.set(ajuste.data);
+          this.regrasCascata.set(cascata.data);
           this.carregando.set(false);
         },
         error: () => this.anunciarErro(),

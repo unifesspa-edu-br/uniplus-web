@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
@@ -531,6 +531,405 @@ describe('VagasStepComponent — gravação da distribuição', () => {
 
     expect(resultado.valid).toBe(false);
     controller.expectNone(ROTA_DISTRIBUICAO);
+  });
+});
+
+/**
+ * Cede o event loop para que a cadeia de `await` do `persistir()` avance até a
+ * segunda requisição (cascata). `Promise.resolve()` sozinho não basta: a
+ * cadeia passa por `firstValueFrom` e por mais de um microtask entre o flush
+ * da distribuição e o disparo do PUT da cascata.
+ */
+function tick(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+const LB_PPI = '01960000-0000-7000-0000-0000000000c1';
+const LB_Q = '01960000-0000-7000-0000-0000000000c2';
+const AC_CASCATA = '01960000-0000-7000-0000-0000000000c3';
+
+const MODALIDADES_CASCATA = [
+  {
+    id: LB_PPI,
+    codigo: 'LB_PPI',
+    descricao: null,
+    naturezaLegal: 'COTA_RESERVADA',
+    composicaoVagas: 'RETIRA_DE',
+    composicaoOrigem: 'AC',
+    regraRemanejamento: 'SEGUE_CASCATA',
+    remanejamentoDestino: null,
+    remanejamentoPar: null,
+    remanejamentoFallback: null,
+  },
+  {
+    id: LB_Q,
+    codigo: 'LB_Q',
+    descricao: null,
+    naturezaLegal: 'COTA_RESERVADA',
+    composicaoVagas: 'RETIRA_DE',
+    composicaoOrigem: 'AC',
+    regraRemanejamento: null,
+    remanejamentoDestino: null,
+    remanejamentoPar: null,
+    remanejamentoFallback: null,
+  },
+  {
+    id: AC_CASCATA,
+    codigo: 'AC',
+    descricao: null,
+    naturezaLegal: 'GERAL',
+    composicaoVagas: 'RETIRA_DE',
+    composicaoOrigem: null,
+    regraRemanejamento: null,
+    remanejamentoDestino: null,
+    remanejamentoPar: null,
+    remanejamentoFallback: null,
+  },
+];
+
+const OFERTA_CASCATA = '01960000-0000-7000-0000-0000000000f9';
+const OFERTAS_CASCATA = [
+  {
+    id: OFERTA_CASCATA,
+    cursoId: 'curso-1',
+    unidadeOfertante: { sigla: 'IGE' },
+    programaDeOferta: 'REGULAR',
+    formatoPedagogico: 'PRESENCIAL',
+    turnos: ['MATUTINO'],
+    vagasAnuaisAutorizadas: 100,
+  },
+];
+
+const REGRA_CASCATA = {
+  codigo: 'REMANEJ-CASCATA-LEI-12711',
+  versao: 'v1',
+  tipo: 'criterio_remanejamento',
+  esquemaArgs: {
+    fallbackCodigo: 'AC',
+    ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
+  },
+  invariantes: [],
+  baseLegal: 'Portaria MEC nº 704/2025',
+  hash: 'hash-cascata-v1',
+  modalidadesAdmitidas: null,
+};
+
+/** Oferta federal com as três modalidades: cobre fallback e o destino da origem. */
+function distribuicaoComCascata(): DistribuicaoDeVagas {
+  return {
+    ofertaCursoId: OFERTA_CASCATA,
+    voBase: '100',
+    pr: '0,5',
+    regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
+    regraDistribuicaoVersao: 'v1',
+    regraAjusteCodigo: 'AJUSTE-PADRAO',
+    regraAjusteVersao: 'v1',
+    referenciaReservaDemograficaId: 'ref-1',
+    modalidades: [
+      { id: LB_PPI, codigo: 'LB_PPI' },
+      { id: LB_Q, codigo: 'LB_Q' },
+      { id: AC_CASCATA, codigo: 'AC' },
+    ],
+    quadro: [
+      { modalidadeId: LB_PPI, quantidade: '10' },
+      { modalidadeId: LB_Q, quantidade: '10' },
+      { modalidadeId: AC_CASCATA, quantidade: '80' },
+    ],
+  };
+}
+
+describe('VagasStepComponent — gravação da cascata de remanejamento', () => {
+  let componente: VagasStepComponent;
+  let store: ProcessoSeletivoStore;
+  let controller: HttpTestingController;
+  let detectar: () => void;
+  let elementoRaiz: HTMLElement;
+  const ROTA_CASCATA_TESTE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cascata-remanejamento`;
+  const ROTA_DISTRIBUICAO_TESTE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/distribuicao-vagas`;
+  const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [VagasStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VagasStepComponent);
+    componente = fixture.componentInstance;
+    store = TestBed.inject(ProcessoSeletivoStore);
+    controller = TestBed.inject(HttpTestingController);
+    detectar = () => fixture.detectChanges();
+    elementoRaiz = fixture.nativeElement;
+
+    detectar();
+    for (const requisicao of controller.match(() => true)) {
+      const url = requisicao.request.url;
+      if (url.includes('ofertas-curso')) requisicao.flush(OFERTAS_CASCATA);
+      else if (url.includes('cursos')) requisicao.flush(CURSOS);
+      else if (url.includes('modalidades')) requisicao.flush(MODALIDADES_CASCATA);
+      else if (url.includes('regras-catalogo')) {
+        const tipo = requisicao.request.params.get('tipo');
+        requisicao.flush(tipo === 'criterio_remanejamento' ? [REGRA_CASCATA] : []);
+      } else requisicao.flush([]);
+    }
+    detectar();
+
+    store.processoSeletivoId.set(PROCESSO_ID);
+  });
+
+  afterEach(() => controller.verify());
+
+  function simularEConferirDistribuicao(): void {
+    componente.simular();
+    controller.expectOne(ROTA_SIMULACAO_TESTE).flush([
+      {
+        ofertaCursoOrigemId: OFERTA_CASCATA,
+        quadro: [
+          { modalidadeOrigemId: LB_PPI, modalidadeCodigo: 'LB_PPI', quantidade: 10 },
+          { modalidadeOrigemId: LB_Q, modalidadeCodigo: 'LB_Q', quantidade: 10 },
+          { modalidadeOrigemId: AC_CASCATA, modalidadeCodigo: 'AC', quantidade: 80 },
+        ],
+        totalPublicado: 100,
+      },
+    ]);
+    componente.conferenciaConfirmada.set(true);
+  }
+
+  /** Interage com o `<select>` real da seção da cascata, no molde do teste do seletor de regra da distribuição. */
+  function escolherRegraCascataNaTela(valor: string): void {
+    const campo = elementoRaiz.querySelector<HTMLSelectElement>('#c-regra-cascata');
+    if (campo === null) throw new Error('Campo #c-regra-cascata não encontrado no template.');
+    campo.value = valor;
+    campo.dispatchEvent(new Event('change'));
+    detectar();
+  }
+
+  /** Marca a confirmação da cascata pelo checkbox real, dentro do custom element da seção. */
+  function confirmarCascataNaTela(): void {
+    const checkbox = elementoRaiz.querySelector<HTMLInputElement>(
+      'sel-cascata-remanejamento input[type="checkbox"]',
+    );
+    if (checkbox === null) throw new Error('Checkbox de confirmação da cascata não encontrado.');
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    detectar();
+  }
+
+  it('grava a cascata depois da distribuição, com a matriz inteira da regra', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    confirmarCascataNaTela();
+    detectar();
+
+    const gravacao = componente.persistir();
+
+    const distribuicaoReq = controller.expectOne(ROTA_DISTRIBUICAO_TESTE);
+    distribuicaoReq.flush(null, { status: 204, statusText: 'No Content' });
+    await tick();
+
+    const cascataReq = controller.expectOne(ROTA_CASCATA_TESTE);
+    expect(cascataReq.request.method).toBe('PUT');
+    expect(cascataReq.request.body).toEqual({
+      regraCodigo: 'REMANEJ-CASCATA-LEI-12711',
+      regraVersao: 'v1',
+      fallbackCodigo: 'AC',
+      destinos: [
+        { modalidadeOrigemCodigo: 'LB_PPI', ordem: 1, modalidadeDestinoCodigo: 'LB_Q' },
+        { modalidadeOrigemCodigo: 'LB_PPI', ordem: 2, modalidadeDestinoCodigo: 'AC' },
+      ],
+    });
+    expect(cascataReq.request.headers.get('Idempotency-Key')).toBeTruthy();
+
+    cascataReq.flush(null, { status: 204, statusText: 'No Content' });
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  it('não envia cascata quando nenhuma oferta a exige', async () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [{ ...distribuicaoComCascata(), modalidades: [
+            { id: LB_Q, codigo: 'LB_Q' },
+            { id: AC_CASCATA, codigo: 'AC' },
+          ],
+          quadro: [
+            { modalidadeId: LB_Q, quantidade: '20' },
+            { modalidadeId: AC_CASCATA, quantidade: '80' },
+          ], }],
+    });
+    detectar();
+    componente.simular();
+    controller
+      .expectOne(ROTA_SIMULACAO_TESTE)
+      .flush([{ ofertaCursoOrigemId: OFERTA_CASCATA, quadro: [], totalPublicado: 100 }]);
+    componente.conferenciaConfirmada.set(true);
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await tick();
+
+    controller.expectNone(ROTA_CASCATA_TESTE);
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  it('recusa gravar sem confirmar a cascata, e não chama nenhuma das duas rotas', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('cascata'))).toBe(true);
+    controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
+    controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  /**
+   * `cascata_modalidade_fora_do_regime_federal` bloqueia a publicação mais
+   * adiante (`ExisteCascataForaDoRegimeFederal` no domínio) mesmo quando a
+   * seção da cascata nem aparece — por isso o passo Vagas não pode deixar o
+   * operador avançar como se estivesse tudo bem, só porque não há cascata
+   * para confirmar.
+   */
+  it('recusa gravar com modalidade SEGUE_CASCATA fora do ramo federal, mesmo sem seção de cascata', async () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+        },
+      ],
+    });
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('fora do ramo federal'))).toBe(true);
+    controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
+    controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  it('quando a distribuição falha, a cascata não é enviada', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    confirmarCascataNaTela();
+    detectar();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(
+      {
+        type: 'about:blank',
+        title: 'Quantidade inválida.',
+        status: 422,
+        code: 'uniplus.selecao.configuracao_distribuicao_vagas.quantidade_invalida',
+        traceId: 'trace-1',
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  it('quando a distribuição grava mas a cascata falha, a mensagem diz que só a distribuição gravou', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    confirmarCascataNaTela();
+    detectar();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await tick();
+    controller.expectOne(ROTA_CASCATA_TESTE).flush(
+      {
+        type: 'about:blank',
+        title: 'A matriz diverge da regra.',
+        status: 422,
+        code: 'uniplus.selecao.configuracao_cascata_remanejamento.matriz_divergente_da_regra',
+        traceId: 'trace-2',
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('distribuição de vagas foi gravada');
+  });
+
+  it('envia a remoção quando a cascata deixou de se aplicar mas havia escolha anterior', async () => {
+    // Hidratação anterior trouxe uma cascata do servidor — é isto, não o
+    // valor do seletor de regra, que decide se a remoção precisa ser
+    // enviada quando a oferta em tela já não tem modalidade SEGUE_CASCATA.
+    store.remoteSnapshot.set({
+      status: StatusProcesso.rascunho,
+      cascata: {
+        id: 'cascata-1',
+        regra: { codigo: 'REMANEJ-CASCATA-LEI-12711', versao: 'v1', hash: 'hash-1' },
+        fallbackCodigo: 'AC',
+        destinos: [],
+      },
+    } as unknown as ProcessoSeletivoDto);
+    detectar();
+
+    store.patchObjectSection('vagas', {
+      ofertas: [{ ...distribuicaoComCascata(), modalidades: [
+            { id: LB_Q, codigo: 'LB_Q' },
+            { id: AC_CASCATA, codigo: 'AC' },
+          ],
+          quadro: [
+            { modalidadeId: LB_Q, quantidade: '20' },
+            { modalidadeId: AC_CASCATA, quantidade: '80' },
+          ], }],
+      cascata: null,
+    });
+    detectar();
+    componente.simular();
+    controller
+      .expectOne(ROTA_SIMULACAO_TESTE)
+      .flush([{ ofertaCursoOrigemId: OFERTA_CASCATA, quadro: [], totalPublicado: 100 }]);
+    componente.conferenciaConfirmada.set(true);
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await tick();
+
+    const cascataReq = controller.expectOne(ROTA_CASCATA_TESTE);
+    expect(cascataReq.request.body).toEqual({
+      regraCodigo: null,
+      regraVersao: null,
+      fallbackCodigo: null,
+      destinos: null,
+    });
+    cascataReq.flush(null, { status: 204, statusText: 'No Content' });
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
   });
 });
 
