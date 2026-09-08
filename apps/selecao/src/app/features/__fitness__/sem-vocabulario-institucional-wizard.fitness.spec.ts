@@ -118,9 +118,39 @@ function exportsConstDe(source: string): string[] {
   return nomes;
 }
 
+/**
+ * Nomes expostos por lista de export — `export { a, b as c }` — sob o nome
+ * final (depois do `as`, quando presente). `cronograma-do-certame.ts` usa
+ * essa forma para reexportar (`export { decimalDoCampo as comoNumero,
+ * inteiroDoCampo }`), então uma constante banida também poderia sair por
+ * aqui, sem nunca aparecer como `export const` no mesmo arquivo. Não cobre
+ * `export * from` nem renomear a constante banida para outro nome no export
+ * — o gate é anchorado em nomes conhecidos (nota técnica da issue #511), não
+ * em análise semântica de valor.
+ */
+function exportsEspecificadorDe(source: string): string[] {
+  const regex = /export\s*\{([^}]*)\}/g;
+  const nomes: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(source)) !== null) {
+    for (const especificador of match[1].split(',')) {
+      const partes = especificador.trim().split(/\s+as\s+/);
+      const nomeExportado = partes.length > 1 ? partes[1]?.trim() : partes[0]?.trim();
+      if (nomeExportado) nomes.push(nomeExportado);
+    }
+  }
+  return nomes;
+}
+
+/** Todo nome que o arquivo expõe como export, por qualquer uma das duas formas acima. */
+function todosOsExportsDe(source: string): string[] {
+  const semComentario = semComentarios(source);
+  return [...exportsConstDe(semComentario), ...exportsEspecificadorDe(semComentario)];
+}
+
 /** Dos exports do arquivo, quais batem com um nome do inventário banido. */
 function exportsBanidosEm(source: string): string[] {
-  return exportsConstDe(semComentarios(source)).filter((nome) => nome in CATALOGO_BANIDO);
+  return todosOsExportsDe(source).filter((nome) => nome in CATALOGO_BANIDO);
 }
 
 describe('Fitness — vocabulário institucional não duplica no wizard de Processo Seletivo', () => {
@@ -130,7 +160,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
 
   describe('processo-seletivo.data.ts só exporta rótulo de navegação (mais a exceção temporária DOCUMENTO_GRUPOS — #483)', () => {
     const source = semComentarios(fs.readFileSync(DATA_FILE, 'utf-8'));
-    const exportados = exportsConstDe(source);
+    const exportados = todosOsExportsDe(source);
 
     it('sanity check — o regex está lendo o arquivo certo (0 exports seria suspeito)', () => {
       expect(exportados.length).toBeGreaterThan(0);
@@ -193,6 +223,22 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
       expect(exportsBanidosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
     });
 
+    it('sinaliza POLOS reexportado por lista — `const` privado + `export { POLOS }`, forma que o wizard já usa em cronograma-do-certame.ts', () => {
+      const fonteSintetica = `
+        const POLOS = ['Marabá (PA)'];
+        export { POLOS };
+      `;
+      expect(exportsBanidosEm(fonteSintetica)).toEqual(['POLOS']);
+    });
+
+    it('sinaliza CRITERIOS_DESEMPATE reexportado com rename — `export { criterios as CRITERIOS_DESEMPATE }`', () => {
+      const fonteSintetica = `
+        const criterios = [{ id: 1 }];
+        export { criterios as CRITERIOS_DESEMPATE };
+      `;
+      expect(exportsBanidosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
+    });
+
     it('NÃO sinaliza a exceção nomeada — código de vocabulário fechado citado pela lógica (SEGUE_CASCATA, PCD, ramo federal)', () => {
       const fonteSintetica = `
         const SEGUE_CASCATA = 'SEGUE_CASCATA';
@@ -202,6 +248,11 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
           return REGRAS_RAMO_FEDERAL.includes(codigo);
         }
       `;
+      expect(exportsBanidosEm(fonteSintetica)).toEqual([]);
+    });
+
+    it('NÃO sinaliza o padrão real de export por lista do wizard (cronograma-do-certame.ts)', () => {
+      const fonteSintetica = `export { decimalDoCampo as comoNumero, inteiroDoCampo };`;
       expect(exportsBanidosEm(fonteSintetica)).toEqual([]);
     });
 
