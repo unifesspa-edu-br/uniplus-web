@@ -525,6 +525,31 @@ export interface WizardDraft {
     recursos: readonly ReferenciaDeAtendimento[];
     tiposDeficiencia: readonly ReferenciaDeAtendimento[];
   };
+  /**
+   * O que o passo Revisão coleta para `POST …/publicacao` (UNI-REQ, Story
+   * #486). Não é projetado por `hidratarDraft`: publicar não é uma dimensão
+   * que o `ProcessoSeletivoDto` devolva editável — depois do `204` o processo
+   * vira somente leitura, e não há "reabrir para editar o número do ato".
+   *
+   * `periodoInscricaoInicio`/`…Fim` só têm sentido quando o cronograma NÃO tem
+   * fase com `coletaInscricao` (armadilha do período — `#486`, `ResolucaoDoPe-
+   * riodoDeInscricao.cs:28-56`): a tela os abre só nesse ramo, e o mapeador
+   * para o comando os ignora no outro. Os dois são `date-time` no contrato —
+   * o valor aqui é o que `<input type="datetime-local">` devolve, sem fuso.
+   */
+  publicacao: {
+    numero: string;
+    periodoInscricaoInicio: string;
+    periodoInscricaoFim: string;
+    ato: {
+      orgao: string;
+      serie: string;
+      ano: string;
+      dataPublicacao: string;
+      assinante: string;
+      tipoAtoCodigo: string;
+    };
+  };
 }
 
 /**
