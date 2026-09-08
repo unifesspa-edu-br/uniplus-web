@@ -104,6 +104,14 @@ export class CascataRemanejamentoComponent {
    * `null` enquanto não há por que buscar (seleção vazia, já na listagem,
    * ou catálogo ainda carregando — a listagem tem prioridade e chega
    * primeiro na maioria dos casos).
+   *
+   * `nao_encontrada` é reservado ao 404 — a única resposta que confirma que
+   * a regra não existe. Erro de rede, 5xx ou falha de autorização são
+   * `falha`: a consulta não deu certo agora, o que não prova nada sobre a
+   * regra em si, e por isso é retentável (`tentarNovamenteRegra()`) em vez
+   * de terminal — tratar os dois como a mesma coisa transformaria uma
+   * indisponibilidade transitória num veredito permanente de "regra
+   * inexistente" sobre um processo já configurado.
    */
   private readonly buscaDaVersaoFora = signal<
     | { readonly estado: 'buscando'; readonly codigo: string; readonly versao: string }
@@ -114,6 +122,7 @@ export class CascataRemanejamentoComponent {
         readonly regra: RegraCatalogoDto;
       }
     | { readonly estado: 'nao_encontrada'; readonly codigo: string; readonly versao: string }
+    | { readonly estado: 'falha'; readonly codigo: string; readonly versao: string }
     | null
   >(null);
 
@@ -151,9 +160,45 @@ export class CascataRemanejamentoComponent {
     );
   });
 
+  /**
+   * A busca da versão fora da listagem falhou por um motivo que não prova
+   * que a regra não existe (rede, 5xx, autorização) — diferente de
+   * `regraNaoEncontrada`, que é o 404 definitivo. `tentarNovamenteRegra()`
+   * é a saída: a tela nunca declara a regra inexistente sem uma resposta
+   * que confirme isso.
+   */
+  readonly falhaAoConsultarRegra = computed(() => {
+    const selecao = this.cascata();
+    if (selecao === null) return false;
+    const busca = this.buscaDaVersaoFora();
+    return (
+      busca?.estado === 'falha' &&
+      busca.codigo === selecao.regraCodigo &&
+      busca.versao === selecao.regraVersao
+    );
+  });
+
   readonly regraExplicada = computed<RegraExplicada | null>(() =>
     explicarRegra(this.regraEscolhida()),
   );
+
+  /**
+   * As opções que o seletor oferece: a listagem ativa, mais a regra da
+   * seleção atual quando ela foi resolvida por busca direta fora da
+   * listagem — sem isto, o `<select>` confirma um código/versão que
+   * nenhuma `<option>` nomeia, mesmo com a matriz conferível e gravável
+   * (o controle segura um valor sem opção correspondente).
+   */
+  readonly opcoesDoSeletor = computed<readonly RegraCatalogoDto[]>(() => {
+    const listagem = this.catalogos.regrasCascata();
+    const regra = this.regraEscolhida();
+    if (regra === undefined) return listagem;
+
+    const jaNaListagem = listagem.some(
+      (item) => item.codigo === regra.codigo && item.versao === regra.versao,
+    );
+    return jaNaListagem ? listagem : [...listagem, regra];
+  });
 
   /** A matriz que a regra escolhida congela — o que a tela apresenta e envia, sem editar. */
   readonly matriz = computed<MatrizDaRegra | null>(() => {
@@ -271,12 +316,35 @@ export class CascataRemanejamentoComponent {
         const atual = this.cascata();
         if (atual === null || atual.regraCodigo !== codigo || atual.regraVersao !== versao) return;
 
+        if (isApiOk(resultado)) {
+          this.buscaDaVersaoFora.set({ estado: 'encontrada', codigo, versao, regra: resultado.data });
+          return;
+        }
+
+        // 404 é a única resposta que confirma que a regra não existe.
+        // Qualquer outra falha (rede, 5xx, autorização) não prova nada
+        // sobre a regra — só que a consulta não deu certo agora.
         this.buscaDaVersaoFora.set(
-          isApiOk(resultado)
-            ? { estado: 'encontrada', codigo, versao, regra: resultado.data }
-            : { estado: 'nao_encontrada', codigo, versao },
+          resultado.problem.status === 404
+            ? { estado: 'nao_encontrada', codigo, versao }
+            : { estado: 'falha', codigo, versao },
         );
       });
+  }
+
+  /**
+   * Refaz a busca da versão fora da listagem depois de uma falha retentável
+   * (`falhaAoConsultarRegra()`) — limpa o estado anterior para que
+   * `buscarVersaoForaDaListagemSePreciso` não o veja como "já tratado" e
+   * pule a tentativa nova.
+   */
+  tentarNovamenteRegra(): void {
+    this.buscaDaVersaoFora.set(null);
+    this.buscarVersaoForaDaListagemSePreciso(
+      this.cascata(),
+      this.catalogos.carregando(),
+      this.catalogos.regrasCascata(),
+    );
   }
 
   /** A cascata está pronta para gravar: regra escolhida, matriz reconhecida, sem pendência e conferida. */

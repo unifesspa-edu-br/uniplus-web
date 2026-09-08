@@ -72,6 +72,23 @@ function frase(quantas: number): string {
 }
 
 /**
+ * Por que `secao.matriz()` é `null` — três causas distintas, cada uma com
+ * mensagem própria (esquema malformado, regra confirmadamente ausente,
+ * consulta que falhou sem confirmar nada), nunca a mesma frase genérica
+ * para as três. É o mesmo desvio em dois lugares — `pendenciasDaCascata` e
+ * `persistirCascata` —, então fica num só ponto.
+ */
+function mensagemDeMatrizIndisponivel(secao: CascataRemanejamentoComponent): string {
+  if (secao.regraNaoEncontrada()) {
+    return 'A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.';
+  }
+  if (secao.falhaAoConsultarRegra()) {
+    return 'Não foi possível confirmar a regra escolhida — a consulta falhou. Tente novamente antes de gravar.';
+  }
+  return 'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.';
+}
+
+/**
  * O que não é inteiro positivo não entra na soma: célula vazia ou malformada
  * já é apontada pela validação, e somá-la como `NaN` apagaria o total inteiro.
  */
@@ -1081,11 +1098,7 @@ export class VagasStepComponent {
     if (matriz === null) {
       return {
         valid: false,
-        messages: [
-          secao.regraNaoEncontrada()
-            ? 'A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.'
-            : 'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
-        ],
+        messages: [mensagemDeMatrizIndisponivel(secao)],
       };
     }
 
@@ -1177,27 +1190,18 @@ export class VagasStepComponent {
       return [...pendenciasForaDoRegime, 'Escolha a regra de remanejamento da cascata.'];
     }
 
-    // A regra escolhida existe no catálogo, mas o `esquemaArgs` não declara a
-    // matriz no formato esperado — a tabela e o checkbox de confirmação nem
-    // aparecem no template (`@if (matriz(); as matrizDaRegra)`). Sem este
-    // desvio, o operador cairia no "confirme a cascata" de baixo, pedindo
-    // para marcar um checkbox que não existe na tela.
-    if (secao.esquemaNaoReconhecido()) {
-      return [
-        ...pendenciasForaDoRegime,
-        'Cascata — a regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
-      ];
-    }
-
-    // A seleção (escolhida agora ou hidratada) não está na listagem ativa do
-    // catálogo, e a busca direta da versão exata também não a encontrou —
-    // mesmo beco sem saída do desvio acima, por uma entrada diferente
-    // (regra inativada ou removida, não esquemaArgs malformado).
-    if (secao.regraNaoEncontrada()) {
-      return [
-        ...pendenciasForaDoRegime,
-        'Cascata — a regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.',
-      ];
+    // `matriz()` pode ser `null` por três causas distintas — esquema
+    // malformado, regra confirmadamente ausente (404) ou consulta que
+    // falhou sem confirmar nada —, e a tabela e o checkbox de confirmação
+    // não aparecem no template em nenhuma delas (`@if (matriz(); as
+    // matrizDaRegra)`). Sem este desvio, o operador cairia no "confirme a
+    // cascata" de baixo, pedindo para marcar um checkbox que não existe na
+    // tela — e tratar as três causas como a mesma coisa esconderia qual
+    // delas é, e se vale tentar de novo ou trocar de regra.
+    const naoResolveMatriz =
+      secao.esquemaNaoReconhecido() || secao.regraNaoEncontrada() || secao.falhaAoConsultarRegra();
+    if (naoResolveMatriz) {
+      return [...pendenciasForaDoRegime, `Cascata — ${mensagemDeMatrizIndisponivel(secao)}`];
     }
 
     const problemas = secao

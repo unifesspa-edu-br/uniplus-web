@@ -36,7 +36,7 @@
       <label class="label" for="c-regra-cascata">Regra de remanejamento</label>
       <select class="input" id="c-regra-cascata" [formControl]="regraControl">
         <option value="|">Selecione a regra…</option>
-        @for (regra of catalogos.regrasCascata(); track regra.codigo + regra.versao) {
+        @for (regra of opcoesDoSeletor(); track regra.codigo + regra.versao) {
           <option [value]="regra.codigo + '|' + regra.versao">
             {{ regra.codigo }} · versão {{ regra.versao }}
           </option>
@@ -81,6 +81,15 @@
     @if (regraNaoEncontrada()) {
       <div class="field__erro" role="alert">
         <p>A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.</p>
+      </div>
+    }
+
+    @if (falhaAoConsultarRegra()) {
+      <div class="field__erro" role="alert">
+        <p>Não foi possível confirmar a regra selecionada — a consulta falhou, não a regra.</p>
+        <button class="btn btn--tertiary" type="button" (click)="tentarNovamenteRegra()">
+          Tentar novamente
+        </button>
       </div>
     }
 
