@@ -30,7 +30,6 @@ const DEFINICOES: readonly DefinicaoDePasso[] = [
   { rotulo: 'Bônus', titulo: 'Bônus (opcional)' },
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
   { rotulo: 'Eliminação', revisao: 'Regras de eliminação' },
-  { rotulo: 'Locais de prova' },
   { rotulo: 'Atend. especial', titulo: 'Atendimento especializado' },
   { rotulo: 'Revisão e publicação' },
 ];
@@ -47,6 +46,13 @@ export const STEP_LABELS = PASSOS.map((passo) => passo.rotulo);
 /** O painel de revisão lista os passos anteriores, não a si mesmo. */
 export const REVIEW_NAMES = PASSOS.slice(0, -1).map((passo) => passo.revisao);
 
+/**
+ * Exceção nomeada e temporária ao banimento de catálogo local (`#511`): os
+ * grupos e a lista de documentos abaixo pertencem à `#483` — a fonte correta
+ * é `TiposDocumentoApi`, e os grupos visuais podem ser derivados dela, não
+ * outro catálogo. Enquanto a `#483` não migra os consumidores, este export
+ * fica de fora do gate de vocabulário institucional (ver `__fitness__`).
+ */
 export const DOCUMENTO_GRUPOS: DocumentoGrupo[] = [
   {
     label: 'IDENTIFICACAO',
@@ -166,42 +172,4 @@ export const DOCUMENTO_GRUPOS: DocumentoGrupo[] = [
     ],
   },
 ];
-
-export const POLOS = [
-  'Marabá (PA)',
-  'Canaã dos Carajás (PA)',
-  'Rondon do Pará (PA)',
-  'Santana do Araguaia (PA)',
-  'São Félix do Xingu (PA)',
-  'Xinguara (PA)',
-  'Abel Figueiredo (PA)',
-  'Água Azul do Norte (PA)',
-  'Almeirim (PA)',
-  'Anapu (PA)',
-  'Bannach (PA)',
-  'Bom Jesus do Tocantins (PA)',
-  'Brejo Grande do Araguaia (PA)',
-  'Conceição do Araguaia (PA)',
-  'Cumaru do Norte (PA)',
-  'Curionópolis (PA)',
-  'Dom Eliseu (PA)',
-  'Eldorado dos Carajás (PA)',
-  'Floresta do Araguaia (PA)',
-  'Goianésia do Pará (PA)',
-  'Itupiranga (PA)',
-  'Jacundá (PA)',
-  'Novo Repartimento (PA)',
-  'Ourilândia do Norte (PA)',
-  'Palestina do Pará (PA)',
-  'Parauapebas (PA)',
-  'Piçarra (PA)',
-  'Redenção (PA)',
-  'Rio Maria (PA)',
-  'São Domingos do Araguaia (PA)',
-  'São Geraldo do Araguaia (PA)',
-  'São João do Araguaia (PA)',
-  'Sapucaia (PA)',
-  'Tucumã (PA)',
-  'Tucuruí (PA)',
-] as const;
 

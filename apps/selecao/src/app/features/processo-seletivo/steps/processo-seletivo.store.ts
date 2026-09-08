@@ -74,7 +74,6 @@ const INITIAL_DRAFT: WizardDraft = {
   },
   desempate: [],
   documentos: initialDocumentos(),
-  polos: {},
   atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   publicacao: {
     numero: '',

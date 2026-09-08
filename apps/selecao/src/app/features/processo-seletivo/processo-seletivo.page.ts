@@ -39,7 +39,6 @@ import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
 import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
-import { PolosStepComponent } from './steps/steps/polos/polos.component';
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
 import { classificarDocumentos } from './steps/shared/hidratacao';
@@ -79,7 +78,6 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     BonusStepComponent,
     DesempateStepComponent,
     EliminacaoStepComponent,
-    PolosStepComponent,
     AtendimentoStepComponent,
     RevisaoStepComponent,
   ],

@@ -348,11 +348,6 @@ export interface DocumentoConfig {
   modalidadesRecortadas: boolean;
 }
 
-export interface PoloConfig {
-  selected: boolean;
-  capacidade: number | null;
-}
-
 /**
  * Uma condição de atendimento que o processo oferta, referenciada pelo id do
  * cadastro de Configuração. O `codigo` acompanha o id porque a invariante do
@@ -512,7 +507,6 @@ export interface WizardDraft {
    */
   desempate: readonly CriterioDesempateConfigurado[];
   documentos: Record<string, DocumentoConfig>;
-  polos: Record<string, PoloConfig>;
   /**
    * A oferta de atendimento especializado (UNI-REQ-0012), gravada por `PUT
    * …/oferta-atendimento`. As três listas vêm dos cadastros de Configuração —

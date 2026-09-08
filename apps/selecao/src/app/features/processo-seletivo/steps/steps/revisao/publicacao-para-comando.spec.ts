@@ -54,7 +54,6 @@ function draftVazio(): WizardDraft {
     },
     desempate: [],
     documentos: {},
-    polos: {},
     atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
     publicacao: {
       numero: '',
