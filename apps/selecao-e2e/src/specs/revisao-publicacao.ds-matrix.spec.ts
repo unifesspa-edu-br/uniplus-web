@@ -59,8 +59,12 @@ function processoDto(cronogramaFases: readonly unknown[]) {
     id: PROCESSO_ID,
     nome: 'Processo Seletivo de teste',
     tipoProcesso: { origemId: '01960000-0000-7000-0000-000000000905', codigo: 'GRAD', nome: 'Graduação' },
-    status: 'Rascunho',
-    origemCandidatos: 'InscricaoPropria',
+    // Vocabulário do wire é camelCase, não o nome do enum C# — status: 'Rascunho'
+    // faria hidratar() marcar o processo como somente leitura (edicaoPermitida()
+    // compara com StatusProcesso.rascunho === 'rascunho') e todo campo do
+    // formulário nasceria desabilitado.
+    status: 'rascunho',
+    origemCandidatos: 'inscricaoPropria',
     unidadeAdministradora: {
       origemId: '01960000-0000-7000-0000-000000000906',
       sigla: 'CEPS',
