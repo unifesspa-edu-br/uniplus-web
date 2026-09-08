@@ -402,6 +402,55 @@ describe('ProcessoSeletivoPage — publicação', () => {
   });
 
   /**
+   * Cada `persistir()` individual solta `store.salvando` no próprio
+   * `finally` assim que a PRÓPRIA chamada termina — mas a orquestração de
+   * `publicar()` (gravar os passos anteriores, recarregar o checklist,
+   * validar de novo) ainda não acabou. Sem uma trava que cubra a
+   * orquestração inteira, o intervalo entre um passo terminar e a recarga
+   * do checklist começar liberava o stepper e os campos por um instante
+   * real: o operador podia navegar e editar antes da recarga concluir
+   * (achado do Codex na #486, P1 — a quarta ocorrência de "estado
+   * intermediário tratado como final" nesta Story).
+   */
+  it('mantém a edição e a navegação travadas durante toda a orquestração de publicar, não só em cada passo isolado', async () => {
+    const { fixture, page, store } = montar();
+    const estadosDurante: boolean[] = [];
+    const passoAtingidoDuranteATrava: number[] = [];
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubComPersistir = {
+      validate: () => ({ valid: true }),
+      // Não mexe em store.salvando — como o persistir() real de cada passo
+      // já soltou o próprio no finally antes de retornar, chegar aqui com
+      // operacaoEmAndamento() ainda true só é possível pela trava nova.
+      persistir: vi.fn().mockResolvedValue({ valid: true }),
+    };
+    const recarregarChecklist = vi.fn().mockImplementation(async () => {
+      estadosDurante.push(store.operacaoEmAndamento());
+      store.goTo(0); // tentativa de navegar por baixo, durante a recarga
+      passoAtingidoDuranteATrava.push(store.currentStep());
+    });
+    const stubRevisao = { validate: () => ({ valid: true }), recarregarChecklist };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => {
+      if (index === store.totalSteps - 1) return stubRevisao;
+      if (index === 1) return stubComPersistir;
+      return stubSemPersistir;
+    });
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(estadosDurante).toEqual([true]);
+    // goTo(0) foi barrado: o passo continuou sendo o último (Revisão).
+    expect(passoAtingidoDuranteATrava).toEqual([store.totalSteps - 1]);
+    expect(store.operacaoEmAndamento()).toBe(false);
+  });
+
+  /**
    * `gravarPassosAnteriores()` grava vários passos em sequência — se o
    * operador trocar de processo em pleno voo (`geracao` muda), continuar a
    * varredura chamaria `persistir()` dos passos seguintes contra o
