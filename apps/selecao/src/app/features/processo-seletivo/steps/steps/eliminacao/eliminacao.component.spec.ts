@@ -78,13 +78,48 @@ describe('EliminacaoStepComponent', () => {
     expect(componente.validate().valid).toBe(false);
   });
 
-  it('sob classificação importada, ignora regras de eliminação e valida sempre', () => {
+  it('sob classificação importada, ainda exige ordem de alocação e número de opções', () => {
     store.patchObjectSection('classificacao', {
       regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
       regraCalculoVersao: '1.0',
     });
 
+    // Regra de cálculo escolhida, mas o restante do passo Fórmula não — o
+    // wizard navega livremente, e a Eliminação grava o comando inteiro.
+    expect(componente.validate().valid).toBe(false);
+  });
+
+  it('sob classificação importada com Fórmula completa, ignora regras de eliminação e valida', () => {
+    store.patchObjectSection('classificacao', {
+      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraCalculoVersao: '1.0',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoVersao: '1.0',
+      nOpcoesAlocacao: '2',
+    });
+
     expect(componente.validate().valid).toBe(true);
+  });
+
+  it('recusa quando a Fórmula não declarou a ordem de alocação, mesmo com o restante completo', () => {
+    prepararClassificacaoLocal();
+    store.patchObjectSection('classificacao', {
+      regraOrdemAlocacaoCodigo: '',
+      regraOrdemAlocacaoVersao: '',
+    });
+
+    const resultado = componente.validate();
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain('ordem de alocação');
+  });
+
+  it('recusa quando a Fórmula não declarou o número de opções de curso', () => {
+    prepararClassificacaoLocal();
+    store.patchObjectSection('classificacao', { nOpcoesAlocacao: '' });
+
+    const resultado = componente.validate();
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain('número de opções');
   });
 
   it('recusa sob fórmula local sem nenhuma etapa que componha a nota', () => {
@@ -191,6 +226,24 @@ describe('EliminacaoStepComponent', () => {
 
   describe('ELIM-ZERO-EM-AREA — não usa argumento', () => {
     beforeEach(() => prepararClassificacaoLocal());
+
+    it('recusa sem baseadoEmEnem — a exigência não é exclusiva de ELIM-CORTE-REDACAO', () => {
+      store.patchObjectSection('classificacao', {
+        regrasEliminacao: [
+          {
+            regraCodigo: 'ELIM-ZERO-EM-AREA',
+            regraVersao: '1.0',
+            etapaRef: '',
+            notaMinima: '',
+            minimo: '',
+          },
+        ],
+      });
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('baseada em ENEM');
+    });
 
     it('aceita sem etapaRef, notaMinima nem minimo, desde que baseadoEmEnem', () => {
       store.patchObjectSection('classificacao', {
