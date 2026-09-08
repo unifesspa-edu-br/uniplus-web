@@ -353,18 +353,29 @@ export interface PoloConfig {
   capacidade: number | null;
 }
 
-export interface AtendimentoCondicao {
-  id: string;
-  nome: string;
-  laudo?: boolean;
-  isPcd?: boolean;
+/**
+ * Uma condição de atendimento que o processo oferta, referenciada pelo id do
+ * cadastro de Configuração. O `codigo` acompanha o id porque a invariante do
+ * PcD (ADR-0067) compara pelo código canônico `PCD`, não por um rótulo
+ * inventado no frontend — e o `nome` é o que a tela mostra quando a condição
+ * já saiu do cadastro ativo (item inativo já referenciado permanece legível).
+ */
+export interface AtendimentoCondicaoSelecionada {
+  readonly id: string;
+  readonly codigo: string;
+  readonly nome: string;
 }
 
-export interface AtendimentoRecurso {
-  id: string;
-  nome: string;
-  desc: string;
-  ext?: boolean;
+/**
+ * Um recurso de acessibilidade ou tipo de deficiência que o processo oferta,
+ * referenciado pelo id do cadastro de Configuração. O `nome` acompanha o id
+ * pelo mesmo motivo de `AtendimentoCondicaoSelecionada`: nenhuma regra local
+ * depende do código destes dois cadastros, e uma referência já inativada
+ * precisa continuar legível sem consultar o catálogo vivo.
+ */
+export interface ReferenciaDeAtendimento {
+  readonly id: string;
+  readonly nome: string;
 }
 
 /**
@@ -502,10 +513,17 @@ export interface WizardDraft {
   desempate: readonly CriterioDesempateConfigurado[];
   documentos: Record<string, DocumentoConfig>;
   polos: Record<string, PoloConfig>;
+  /**
+   * A oferta de atendimento especializado (UNI-REQ-0012), gravada por `PUT
+   * …/oferta-atendimento`. As três listas vêm dos cadastros de Configuração —
+   * condições, recursos de acessibilidade e tipos de deficiência —, nunca de
+   * vocabulário local; a exceção nomeada é o código `PCD`, ancorado no
+   * ADR-0067 (`OfertaAtendimentoEspecializado.CodigoCondicaoPcd`).
+   */
   atendimento: {
-    condicoes: string[];
-    tiposPcd: string[];
-    recursos: string[];
+    condicoes: readonly AtendimentoCondicaoSelecionada[];
+    recursos: readonly ReferenciaDeAtendimento[];
+    tiposDeficiencia: readonly ReferenciaDeAtendimento[];
   };
 }
 

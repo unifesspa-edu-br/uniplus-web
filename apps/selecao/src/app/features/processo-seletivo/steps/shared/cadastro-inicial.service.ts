@@ -16,6 +16,7 @@ import {
   DefinirBonusRegionalRequest,
   DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
+  DefinirOfertaAtendimentoRequest,
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
@@ -116,6 +117,7 @@ export class CadastroInicialService {
   private readonly chaveClassificacao = new ChaveDeSubstituicao();
   private readonly chaveBonus = new ChaveDeSubstituicao();
   private readonly chaveDesempate = new ChaveDeSubstituicao();
+  private readonly chaveAtendimento = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -156,6 +158,7 @@ export class CadastroInicialService {
     this.chaveClassificacao.renovar();
     this.chaveBonus.renovar();
     this.chaveDesempate.renovar();
+    this.chaveAtendimento.renovar();
   }
 
   /**
@@ -471,6 +474,36 @@ export class CadastroInicialService {
     }
 
     this.chaveDesempate.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava a oferta de atendimento especializado — condições, recursos de
+   * acessibilidade e tipos de deficiência, por id do cadastro de
+   * Configuração. Substitui a configuração inteira: lista vazia é estado
+   * válido e apaga o que estava declarado (CA-05).
+   */
+  async definirOfertaAtendimento(
+    processoSeletivoId: string,
+    request: DefinirOfertaAtendimentoRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirOfertaAtendimento(
+        processoSeletivoId,
+        request,
+        this.chaveAtendimento.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveAtendimento.renovar();
+      return { ok: true };
+    }
+
+    this.chaveAtendimento.recusada(result);
     return { ok: false, problem: result.problem };
   }
 

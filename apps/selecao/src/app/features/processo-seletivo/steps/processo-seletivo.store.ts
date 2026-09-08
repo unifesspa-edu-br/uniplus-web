@@ -75,7 +75,7 @@ const INITIAL_DRAFT: WizardDraft = {
   desempate: [],
   documentos: initialDocumentos(),
   polos: {},
-  atendimento: { condicoes: [], tiposPcd: [], recursos: [] },
+  atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
 };
 
 @Injectable()

@@ -7,12 +7,14 @@ import type {
 } from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import {
+  AtendimentoCondicaoSelecionada,
   CascataSelecionada,
   CriterioDesempateConfigurado,
   DistribuicaoDeVagas,
   EtapaPontuada,
   FaseDoCronograma,
   RecursoDaFase,
+  ReferenciaDeAtendimento,
   RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../processo-seletivo.models';
@@ -45,6 +47,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     classificacao: classificacaoDe(dto),
     bonus: bonusDe(dto),
     desempate: desempateDe(dto),
+    atendimento: atendimentoDe(dto),
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
@@ -280,6 +283,38 @@ function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfig
       operador: criterio.operador ?? '',
       valor: criterio.valor ?? '',
     }));
+}
+
+/**
+ * Projeta a oferta de atendimento já gravada. Guarda o id **de origem** — o
+ * que a gravação recebe — junto do nome (e, para condições, do código) que o
+ * detalhe devolveu no momento da leitura: é o que mantém a referência legível
+ * mesmo se o item já tiver saído do cadastro ativo de Configuração (CA-05).
+ *
+ * `null` no detalhe é "nenhuma oferta declarada ainda" — as três listas
+ * voltam vazias, não um erro de leitura.
+ */
+function atendimentoDe(dto: ProcessoSeletivoDto): WizardDraft['atendimento'] {
+  const oferta = dto.ofertaAtendimento;
+  if (oferta === null || oferta === undefined) {
+    return { condicoes: [], recursos: [], tiposDeficiencia: [] };
+  }
+
+  const condicoes: AtendimentoCondicaoSelecionada[] = oferta.condicoes.map((condicao) => ({
+    id: condicao.condicaoOrigemId,
+    codigo: condicao.condicaoCodigo,
+    nome: condicao.condicaoNome,
+  }));
+  const recursos: ReferenciaDeAtendimento[] = oferta.recursos.map((recurso) => ({
+    id: recurso.recursoOrigemId,
+    nome: recurso.recursoNome,
+  }));
+  const tiposDeficiencia: ReferenciaDeAtendimento[] = oferta.tiposDeficiencia.map((tipo) => ({
+    id: tipo.tipoDeficienciaOrigemId,
+    nome: tipo.tipoDeficienciaNome,
+  }));
+
+  return { condicoes, recursos, tiposDeficiencia };
 }
 
 /** O contrato admite número ou texto; ausente vira campo vazio, não zero. */
