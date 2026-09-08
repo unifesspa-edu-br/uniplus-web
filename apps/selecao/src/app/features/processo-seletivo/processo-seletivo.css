@@ -2400,88 +2400,12 @@ dialog.vagas-modal::backdrop {
   }
 }
 
-/* ---- Step 11: Locais de prova ---- */
-.polo-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.polo-item {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface-subtle);
-  overflow: hidden;
-  transition: border-color 120ms ease;
-}
-
-.polo-item:has(.polo-checkbox:checked) {
-  border-color: var(--color-primary);
-}
-
-.polo-item__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  cursor: pointer;
-  user-select: none;
-}
-
-.polo-checkbox {
-  flex-shrink: 0;
-  width: 17px;
-  height: 17px;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-}
-
-.polo-item__name {
-  flex: 1;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-}
-
-.polo-item:has(.polo-checkbox:checked) .polo-item__name {
-  color: var(--color-primary);
-}
-
-.polo-item__expand {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.polo-item__expand[hidden] {
-  display: none;
-}
-
-.polo-expand__label {
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.polo-expand__cap {
-  width: 130px;
-}
-
-.polo-expand__hint {
-  font-size: var(--text-xs, 0.75rem);
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-/* ---- Step 12: Atendimento especializado ----
+/* ---- Step 11: Atendimento especializado ----
    Reconstruído sobre os cadastros de Configuração (#543): usa só classes
    compartilhadas do passo (`.step-card`, `.form-section__title`,
    `.check-item`, `.field__hint`, `.tag`) — sem CSS próprio. */
 
-/* ---- Step 13: Revisão e publicação ---- */
+/* ---- Step 12: Revisão e publicação ---- */
 .revisao-summary {
   display: flex;
   align-items: center;
