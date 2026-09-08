@@ -102,6 +102,23 @@ export class ProcessoSeletivoStore {
   /** Mutação em curso — usado para impedir disparo duplo e travar a navegação. */
   readonly salvando = signal(false);
   /**
+   * Trava adicional a `salvando()`, para uma orquestração que grava MAIS de
+   * um passo em sequência (hoje só `ProcessoSeletivoPage.publicar()`: grava
+   * os passos anteriores, recarrega o checklist da Revisão, valida de
+   * novo). Cada `persistir()` individual já solta `salvando` no próprio
+   * `finally` assim que a PRÓPRIA chamada termina — mas a orquestração
+   * inteira ainda não acabou, e o intervalo entre um passo terminar e o
+   * próximo começar (ou entre o último passo e a recarga que vem depois)
+   * liberava o stepper e os campos por um instante real, não um microtask:
+   * o operador podia navegar, editar, e voltar antes da recarga concluir, e
+   * a confirmação seguinte comparava contra um checklist que já não
+   * descrevia o rascunho atual (achado do Codex na #486, P1 — a mesma
+   * "estado intermediário tratado como final" que já apareceu três vezes
+   * nesta frente, agora na janela assíncrona ENTRE passos, não dentro de
+   * um só). Ver `operacaoEmAndamento`.
+   */
+  readonly travamentoDeOrquestracao = signal(false);
+  /**
    * Uma criação ficou sem resposta definitiva (rede ou 5xx): o servidor pode
    * tê-la executado. A retentativa repete o mesmo comando, então alterar o
    * rascunho agora só faria a tela divergir do que existe no servidor.
@@ -196,13 +213,16 @@ export class ProcessoSeletivoStore {
     return detalhe === null || detalhe.status === StatusProcesso.rascunho;
   });
 
+  /** `salvando()` OU uma orquestração de vários passos em curso — ver `travamentoDeOrquestracao`. */
+  readonly operacaoEmAndamento = computed(() => this.salvando() || this.travamentoDeOrquestracao());
+
   /**
    * Um passo aceita digitação quando o processo admite mutação e nenhuma
    * gravação está em curso — alterar durante o comando faria o rascunho
    * divergir do que o servidor recebeu. São duas razões para o mesmo efeito,
    * resolvidas aqui para que nenhum passo repita a conjunção.
    */
-  readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.salvando());
+  readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.operacaoEmAndamento());
 
   /**
    * Por que a configuração está apenas para consulta. O texto acompanha o
@@ -270,8 +290,11 @@ export class ProcessoSeletivoStore {
   goTo(index: number): void {
     // Trocar de passo durante a gravação faria o avanço partir do índice novo:
     // o comando conclui e o `next()` seguinte marca como concluído um passo que
-    // ninguém preencheu.
-    if (this.salvando()) return;
+    // ninguém preencheu. `operacaoEmAndamento()`, não só `salvando()`: uma
+    // orquestração de vários passos (`publicar()`) também precisa travar a
+    // navegação pela janela inteira, não só enquanto CADA passo individual
+    // está com sua própria chamada em voo.
+    if (this.operacaoEmAndamento()) return;
 
     if (index < 0 || index >= this.totalSteps) return;
     this.currentStep.set(index);
@@ -372,6 +395,7 @@ export class ProcessoSeletivoStore {
     this.stepError.set(null);
     this.processoSeletivoId.set(null);
     this.salvando.set(false);
+    this.travamentoDeOrquestracao.set(false);
     this.criacaoIndefinida.set(false);
     this.publicacaoNaoConfirmada.set(false);
     this.remoteSnapshot.set(null);

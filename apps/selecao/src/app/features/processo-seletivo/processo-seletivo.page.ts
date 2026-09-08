@@ -415,14 +415,17 @@ export class ProcessoSeletivoPage {
   }
 
   previous(): void {
-    if (this.store.salvando()) return;
+    if (this.store.operacaoEmAndamento()) return;
     this.store.previous();
   }
 
   async nextOrPublish(): Promise<void> {
     // Single-flight: o passo 2 grava na API, e um duplo clique criaria dois
-    // processos com chaves de idempotência diferentes.
-    if (this.store.salvando()) return;
+    // processos com chaves de idempotência diferentes. `operacaoEmAndamento()`
+    // cobre também a janela de `publicar()` entre um passo terminar e o
+    // próximo começar — `salvando()` sozinho fica `false` ali por um
+    // instante real (achado do Codex na #486, P1).
+    if (this.store.operacaoEmAndamento()) return;
 
     // Consultar um processo publicado é livre; escrever nele o servidor
     // recusaria, depois de o operador ter preenchido a tela inteira.
@@ -587,39 +590,58 @@ export class ProcessoSeletivoPage {
       return;
     }
 
-    const falhasDeGravacao = await this.gravarPassosAnteriores();
-    if (geracao !== this.store.geracao()) return;
-    if (falhasDeGravacao.length > 0) {
-      this.store.setStepError(falhasDeGravacao);
-      this.revelarErro();
-      return;
+    // `travamentoDeOrquestracao`, não só o `salvando()` de cada passo
+    // individual: cada `persistir()` da varredura abaixo solta `salvando`
+    // no próprio `finally` assim que a PRÓPRIA chamada termina, mas esta
+    // orquestração — gravar os passos anteriores, recarregar o checklist,
+    // validar de novo — ainda não acabou. Sem uma trava que cubra a
+    // orquestração inteira, o intervalo entre um passo terminar e o
+    // próximo começar (ou entre o último passo e a recarga que vem depois)
+    // liberava o stepper e os campos por um instante real: o operador podia
+    // navegar, editar e voltar antes da recarga concluir, e a confirmação
+    // seguinte comparava contra um checklist que já não descrevia o
+    // rascunho atual (achado do Codex na #486, P1 — a quarta ocorrência de
+    // "estado intermediário tratado como final" nesta Story). Solta ao sair
+    // — inclusive ao abrir o diálogo de confirmação: a partir dali é a
+    // modalidade dele, não esta trava, que impede editar por baixo.
+    this.store.travamentoDeOrquestracao.set(true);
+    try {
+      const falhasDeGravacao = await this.gravarPassosAnteriores();
+      if (geracao !== this.store.geracao()) return;
+      if (falhasDeGravacao.length > 0) {
+        this.store.setStepError(falhasDeGravacao);
+        this.revelarErro();
+        return;
+      }
+
+      // A Revisão fica de fora da varredura acima — seu `persistir()`
+      // publica de verdade, não é um resalvar — mas o checklist que ela
+      // cacheia pode ter ficado desatualizado exatamente pelos passos que
+      // acabamos de gravar de novo.
+      await this.stepValidatorAt(this.store.totalSteps - 1)?.recarregarChecklist?.();
+      if (geracao !== this.store.geracao()) return;
+
+      const pendentes = this.validarRascunho();
+      if (pendentes.length > 0) {
+        this.store.setStepError(pendentes);
+        this.revelarErro();
+        return;
+      }
+
+      this.store.setStepError(null);
+
+      const validator = this.stepValidatorAt(this.store.currentStep());
+      const confirmacao = validator?.confirmacaoDeGravacao?.();
+      if (confirmacao) {
+        this.restaurarFocoAoFechar.set(true);
+        this.confirmacaoPendente.set(confirmacao);
+        return;
+      }
+
+      await this.gravarEAvancar(validator);
+    } finally {
+      if (geracao === this.store.geracao()) this.store.travamentoDeOrquestracao.set(false);
     }
-
-    // A Revisão fica de fora da varredura acima — seu `persistir()` publica
-    // de verdade, não é um resalvar — mas o checklist que ela cacheia pode
-    // ter ficado desatualizado exatamente pelos passos que acabamos de
-    // gravar de novo.
-    await this.stepValidatorAt(this.store.totalSteps - 1)?.recarregarChecklist?.();
-    if (geracao !== this.store.geracao()) return;
-
-    const pendentes = this.validarRascunho();
-    if (pendentes.length > 0) {
-      this.store.setStepError(pendentes);
-      this.revelarErro();
-      return;
-    }
-
-    this.store.setStepError(null);
-
-    const validator = this.stepValidatorAt(this.store.currentStep());
-    const confirmacao = validator?.confirmacaoDeGravacao?.();
-    if (confirmacao) {
-      this.restaurarFocoAoFechar.set(true);
-      this.confirmacaoPendente.set(confirmacao);
-      return;
-    }
-
-    await this.gravarEAvancar(validator);
   }
 
   /**
