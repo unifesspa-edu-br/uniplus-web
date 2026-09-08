@@ -2,7 +2,27 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import {
+  classificacaoUsaFormulaLocal,
+  divisorDaMediaValido,
+} from '../classificacao/classificacao-para-comando';
+import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 
+/**
+ * Fórmula, precisão e ordem de alocação da classificação (UNI-REQ-0482).
+ *
+ * Coleta até `regrasEliminacao`, que é do passo Eliminação — que também é
+ * quem grava o corpo inteiro em `PUT …/classificacao`. Este passo não tem
+ * `persistir()` próprio: gravar duas vezes enviaria `regrasEliminacao` vazio
+ * na primeira e derrubaria o item de conformidade que a Eliminação acabou de
+ * levantar.
+ *
+ * A classificação é bimodal (INV-B8): sob `CLASSIFICACAO-IMPORTADA`, precisão
+ * e eliminação não se aplicam, e a seção de precisão desaparece — não fica
+ * desabilitada, some, porque o que o operador vê tem de bater com o que será
+ * enviado (`null` nos dois campos).
+ */
 @Component({
   selector: 'sel-step-formula',
   standalone: true,
@@ -12,37 +32,162 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 })
 export class FormulaStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
+  readonly catalogos = inject(CatalogosDeClassificacaoService);
+
   /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
-  readonly preview = computed(() => {
-    switch (this.store.draft().formula.agregacao) {
-      case 'SOMA_PONDERADA_COM_FATOR':
-        return 'NOTA_FINAL = Σ(NOTA_ETAPA × PESO) / FATOR';
-      case 'MEDIA_SIMPLES':
-        return 'NOTA_FINAL = Σ NOTAS / N ETAPAS';
-      case 'MEDIA_PONDERADA_ENEM':
-        return 'NOTA_FINAL = Σ(NOTA_ÁREA_ENEM × PESO_DO_CURSO) / Σ PESOS';
-      default:
-        return 'NOTA_FINAL = ((N1×1) + (N2×1) + (N3×1) + (N4×1) + (N5×1)) / 5';
-    }
+
+  constructor() {
+    this.catalogos.carregar();
+  }
+
+  readonly usaFormulaLocal = computed(() =>
+    classificacaoUsaFormulaLocal(this.store.draft().classificacao.regraCalculoCodigo),
+  );
+
+  readonly regrasCalculo = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    return regrasEscolhiveis(
+      this.catalogos.regrasCalculo(),
+      classificacao.regraCalculoCodigo,
+      classificacao.regraCalculoVersao,
+    );
   });
+
+  readonly regrasArredondamento = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    return regrasEscolhiveis(
+      this.catalogos.regrasArredondamento(),
+      classificacao.regraArredondamentoCodigo,
+      classificacao.regraArredondamentoVersao,
+    );
+  });
+
+  readonly regrasOrdemAlocacao = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    return regrasEscolhiveis(
+      this.catalogos.regrasOrdemAlocacao(),
+      classificacao.regraOrdemAlocacaoCodigo,
+      classificacao.regraOrdemAlocacaoVersao,
+    );
+  });
+
+  /**
+   * Aviso antecipado do que a Eliminação vai recusar ao gravar: sob fórmula
+   * local, sem etapa que componha a nota o divisor da média fica zero. Não
+   * bloqueia este passo — só o `persistir()` da Eliminação bloqueia —, mas
+   * avisa aqui porque é onde o operador acabou de escolher a fórmula.
+   */
+  readonly avisoDeDivisorInvalido = computed(
+    () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
+  );
+
+  readonly valorDoSelectDeCalculo = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    return `${classificacao.regraCalculoCodigo}|${classificacao.regraCalculoVersao}`;
+  });
+
+  readonly valorDoSelectDeArredondamento = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    return `${classificacao.regraArredondamentoCodigo}|${classificacao.regraArredondamentoVersao}`;
+  });
+
+  readonly valorDoSelectDeOrdemAlocacao = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    return `${classificacao.regraOrdemAlocacaoCodigo}|${classificacao.regraOrdemAlocacaoVersao}`;
+  });
+
+  escolherRegraCalculo(valor: string): void {
+    const [codigo = '', versao = ''] = valor.split('|');
+    if (codigo === '') {
+      this.store.patchObjectSection('classificacao', {
+        regraCalculoCodigo: '',
+        regraCalculoVersao: '',
+      });
+      return;
+    }
+
+    const local = classificacaoUsaFormulaLocal(codigo);
+    this.store.patchObjectSection('classificacao', {
+      regraCalculoCodigo: codigo,
+      regraCalculoVersao: versao,
+      // A troca de ramo (local ↔ importada) não some com o que o operador já
+      // digitou do outro lado — o mapeador para o comando é quem decide o que
+      // enviar (INV-B8). Só a saída explícita do formulário local zera o
+      // arredondamento aqui, para o `<select>` não continuar mostrando uma
+      // escolha que o ramo atual não usa.
+      ...(local ? {} : { regraArredondamentoCodigo: '', regraArredondamentoVersao: '' }),
+    });
+  }
+
+  escolherRegraArredondamento(valor: string): void {
+    const [codigo = '', versao = ''] = valor.split('|');
+    this.store.patchObjectSection('classificacao', {
+      regraArredondamentoCodigo: codigo,
+      regraArredondamentoVersao: versao,
+    });
+  }
+
+  alterarCasasArredondamento(valor: string): void {
+    this.store.patchObjectSection('classificacao', { casasArredondamento: valor });
+  }
+
+  escolherRegraOrdemAlocacao(valor: string): void {
+    const [codigo = '', versao = ''] = valor.split('|');
+    this.store.patchObjectSection('classificacao', {
+      regraOrdemAlocacaoCodigo: codigo,
+      regraOrdemAlocacaoVersao: versao,
+    });
+  }
+
+  alterarNOpcoesAlocacao(valor: string): void {
+    this.store.patchObjectSection('classificacao', { nOpcoesAlocacao: valor });
+  }
+
+  alternarBaseadoEmEnem(checked: boolean): void {
+    this.store.patchObjectSection('classificacao', { baseadoEmEnem: checked });
+  }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
-    const formula = this.store.draft().formula;
+    const classificacao = this.store.draft().classificacao;
     const messages: string[] = [];
     const invalid = new Set<string>();
 
-    if (!formula.agregacao) {
-      messages.push('Selecione a fórmula de agregação.');
-      invalid.add('agregacao');
+    if (!classificacao.regraCalculoCodigo) {
+      messages.push('Selecione a regra de cálculo da nota.');
+      invalid.add('regraCalculo');
     }
-    if (!formula.precisao) {
-      messages.push('Selecione a regra de precisão.');
-      invalid.add('precisao');
+
+    if (this.usaFormulaLocal()) {
+      if (!classificacao.regraArredondamentoCodigo) {
+        messages.push('Selecione a regra de arredondamento.');
+        invalid.add('regraArredondamento');
+      }
+      const casas = numero(classificacao.casasArredondamento);
+      if (casas === null || casas <= 0) {
+        messages.push('Informe as casas decimais de arredondamento, maior que zero.');
+        invalid.add('casasArredondamento');
+      }
+    }
+
+    if (!classificacao.regraOrdemAlocacaoCodigo) {
+      messages.push('Selecione a regra de ordem de alocação.');
+      invalid.add('regraOrdemAlocacao');
+    }
+
+    const nOpcoes = numero(classificacao.nOpcoesAlocacao);
+    if (nOpcoes !== 1 && nOpcoes !== 2) {
+      messages.push('O número de opções de curso deve ser 1 ou 2.');
+      invalid.add('nOpcoesAlocacao');
     }
 
     this.invalidFields.set(invalid);
     return messages.length ? { valid: false, messages } : { valid: true };
   }
+}
+
+function numero(texto: string): number | null {
+  const limpo = texto.trim();
+  return /^\d+$/.test(limpo) ? Number(limpo) : null;
 }

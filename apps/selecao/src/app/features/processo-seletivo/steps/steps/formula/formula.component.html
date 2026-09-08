@@ -1,43 +1,115 @@
-<p class="step-subtitle">Fórmula de agregação aplicada à nota final + regra de precisão decimal.</p>
+<p class="step-subtitle">
+  Regra de cálculo da nota final, precisão e ordem de alocação — a regra de eliminação fica no
+  próximo passo.
+</p>
+@if (catalogos.erro(); as erro) {
+  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+}
 <div class="step-card">
   <div class="form-field">
-    <label class="label" for="f-agregacao">Agregação</label
+    <label class="label" for="f-regra-calculo">Regra de cálculo</label
     ><select
       class="input"
-      id="f-agregacao"
-      [class.is-invalid]="invalidFields().has('agregacao')"
-      [value]="store.draft().formula.agregacao"
-      (change)="store.patchObjectSection('formula', { agregacao: $any($event.target).value })"
+      id="f-regra-calculo"
+      [class.is-invalid]="invalidFields().has('regraCalculo')"
+      [disabled]="catalogos.carregando()"
+      [value]="valorDoSelectDeCalculo()"
+      (change)="escolherRegraCalculo($any($event.target).value)"
     >
-      <option value="">— escolher —</option>
-      <option value="MEDIA_PONDERADA">Média Ponderada — Σ(nota×peso) / Σ pesos</option>
-      <option value="SOMA_PONDERADA_COM_FATOR">
-        Soma Ponderada com Fator — Σ(nota×peso) / fator
-      </option>
-      <option value="MEDIA_SIMPLES">Média Simples — Σ nota / N etapas</option>
-      <option value="MEDIA_PONDERADA_ENEM">
-        Média Ponderada ENEM — pesos por área + grupo de curso
-      </option>
+      <option value="|">— escolher —</option>
+      @for (regra of regrasCalculo(); track regra.codigo + regra.versao) {
+        <option [value]="regra.codigo + '|' + regra.versao">
+          {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
+        </option>
+      }
     </select>
   </div>
-  <div class="form-field" style="margin-top: var(--space-4); max-width: 280px">
-    <label class="label" for="f-precisao">Precisão</label
-    ><select
-      class="input"
-      id="f-precisao"
-      [class.is-invalid]="invalidFields().has('precisao')"
-      [value]="store.draft().formula.precisao"
-      (change)="store.patchObjectSection('formula', { precisao: $any($event.target).value })"
-    >
-      <option value="">— escolher —</option>
-      <option value="TRUNCAR_2_CASAS">Truncar 2 casas decimais (PSIQ)</option>
-      <option value="ARREDONDAR_PARA_CIMA_2_CASAS_SE_3A_GTE_5">
-        Arredondar para cima 2 casas se 3ª casa ≥ 5 (PSE, PS Convênios)
-      </option>
-    </select>
+
+  @if (usaFormulaLocal()) {
+    <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
+      <div class="form-field">
+        <label class="label" for="f-regra-arredondamento">Regra de arredondamento</label
+        ><select
+          class="input"
+          id="f-regra-arredondamento"
+          [class.is-invalid]="invalidFields().has('regraArredondamento')"
+          [disabled]="catalogos.carregando()"
+          [value]="valorDoSelectDeArredondamento()"
+          (change)="escolherRegraArredondamento($any($event.target).value)"
+        >
+          <option value="|">— escolher —</option>
+          @for (regra of regrasArredondamento(); track regra.codigo + regra.versao) {
+            <option [value]="regra.codigo + '|' + regra.versao">
+              {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="label" for="f-casas">Casas decimais</label
+        ><input
+          class="input"
+          id="f-casas"
+          type="number"
+          min="1"
+          step="1"
+          [class.is-invalid]="invalidFields().has('casasArredondamento')"
+          [value]="store.draft().classificacao.casasArredondamento"
+          (input)="alterarCasasArredondamento($any($event.target).value)"
+        />
+      </div>
+    </div>
+    @if (avisoDeDivisorInvalido()) {
+      <p class="alert alert--warning" role="alert" style="margin-top: var(--space-4)">
+        Nenhuma etapa do Cronograma compõe a nota (classificatória ou ambas, com peso maior que
+        zero). A Eliminação recusa gravar a classificação enquanto isso não for corrigido.
+      </p>
+    }
+  }
+
+  <div class="form-grid form-grid--3" style="margin-top: var(--space-5)">
+    <div class="form-field">
+      <label class="label" for="f-ordem-alocacao">Ordem de alocação</label
+      ><select
+        class="input"
+        id="f-ordem-alocacao"
+        [class.is-invalid]="invalidFields().has('regraOrdemAlocacao')"
+        [disabled]="catalogos.carregando()"
+        [value]="valorDoSelectDeOrdemAlocacao()"
+        (change)="escolherRegraOrdemAlocacao($any($event.target).value)"
+      >
+        <option value="|">— escolher —</option>
+        @for (regra of regrasOrdemAlocacao(); track regra.codigo + regra.versao) {
+          <option [value]="regra.codigo + '|' + regra.versao">
+            {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="form-field">
+      <label class="label" for="f-n-opcoes">Número de opções de curso</label
+      ><select
+        class="input"
+        id="f-n-opcoes"
+        [class.is-invalid]="invalidFields().has('nOpcoesAlocacao')"
+        [value]="store.draft().classificacao.nOpcoesAlocacao"
+        (change)="alterarNOpcoesAlocacao($any($event.target).value)"
+      >
+        <option value="">— escolher —</option>
+        <option value="1">1 opção</option>
+        <option value="2">2 opções</option>
+      </select>
+    </div>
   </div>
-</div>
-<div class="formula-preview">
-  <p class="formula-preview__label">Preview da fórmula</p>
-  <p class="formula-preview__text">{{ preview() }}</p>
+
+  <label class="check-item" style="margin-top: var(--space-5)"
+    ><input
+      type="checkbox"
+      [checked]="store.draft().classificacao.baseadoEmEnem"
+      (change)="alternarBaseadoEmEnem($any($event.target).checked)"
+    /><span
+      >Classificação baseada em provas e notas do ENEM (habilita regras de eliminação por corte de
+      redação e zero em área, no próximo passo)</span
+    ></label
+  >
 </div>

@@ -1,7 +1,6 @@
 import {
   AtendimentoCondicao,
   AtendimentoRecurso,
-  CriterioDesempate,
   DocumentoGrupo,
 } from './processo-seletivo.models';
 
@@ -51,16 +50,6 @@ export const STEP_LABELS = PASSOS.map((passo) => passo.rotulo);
 
 /** O painel de revisão lista os passos anteriores, não a si mesmo. */
 export const REVIEW_NAMES = PASSOS.slice(0, -1).map((passo) => passo.revisao);
-
-export const CRITERIOS_DESEMPATE: CriterioDesempate[] = [
-  { id: 1, nome: 'Candidato idoso (60+ anos)', fonte: 'Lei 10.741/2003 art. 27' },
-  { id: 2, nome: 'Maior nota na Redação', fonte: 'Definido por cada edital' },
-  { id: 3, nome: 'Maior idade cronológica', fonte: 'Costume administrativo' },
-  { id: 4, nome: 'Menor número de inscrição', fonte: 'Definido por cada edital' },
-  { id: 5, nome: 'Maior nota total no ENEM', fonte: 'Definido por cada edital' },
-  { id: 6, nome: 'Maior nota em Ciências da Natureza', fonte: 'Definido por cada edital' },
-  { id: 7, nome: 'Maior nota em Ciências Humanas', fonte: 'Definido por cada edital' },
-];
 
 export const DOCUMENTO_GRUPOS: DocumentoGrupo[] = [
   {

@@ -362,3 +362,160 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(cronograma.algoritmoContagemCodigo).toBe('');
   });
 });
+
+const CLASSIFICACAO = {
+  regraCalculo: { codigo: 'FORMULA-MEDIA-PONDERADA', versao: '1.0' },
+  regraArredondamento: { codigo: 'ARRED-TRUNCAR', versao: '1.0' },
+  casasArredondamento: 2,
+  regraOrdemAlocacao: { codigo: 'ALOCACAO-OPCOES-RN04', versao: '1.0' },
+  nOpcoesAlocacao: 2,
+  baseadoEmEnem: false,
+  concorrenciaDuplaAplicavel: false,
+  regrasEliminacao: [
+    {
+      id: 'snapshot-elim-1',
+      regra: { codigo: 'ELIM-NOTA-MINIMA-ETAPA', versao: '1.0' },
+      etapaRef: 'etapa-persistida-1',
+      notaMinima: 5,
+      minimo: null,
+    },
+  ],
+};
+
+const BONUS = {
+  id: 'snapshot-bonus-1',
+  regra: { codigo: 'BONUS-MULTIPLICATIVO', versao: '1.0' },
+  fator: 1.2,
+  teto: null,
+  municipioConvenio: 'Marabá',
+  baseLegal: 'Convênio 01/2026',
+};
+
+const CRITERIOS_DESEMPATE = [
+  {
+    id: 'snapshot-desemp-2',
+    ordem: 2,
+    regra: { codigo: 'DESEMPATE-IDOSO', versao: '1.0' },
+    etapaRef: null,
+    idadeMinima: 60,
+    fato: null,
+    operador: null,
+    valor: null,
+  },
+  {
+    id: 'snapshot-desemp-1',
+    ordem: 1,
+    regra: { codigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', versao: '1.0' },
+    etapaRef: 'etapa-persistida-1',
+    idadeMinima: null,
+    fato: null,
+    operador: null,
+    valor: null,
+  },
+];
+
+describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)', () => {
+  it('projeta a classificação inteira, inclusive as regras de eliminação', () => {
+    const dto = dtoComCronograma({ classificacao: CLASSIFICACAO });
+
+    expect(hidratarDraft(DRAFT, dto).classificacao).toEqual({
+      regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+      regraCalculoVersao: '1.0',
+      regraArredondamentoCodigo: 'ARRED-TRUNCAR',
+      regraArredondamentoVersao: '1.0',
+      casasArredondamento: '2',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoVersao: '1.0',
+      nOpcoesAlocacao: '2',
+      baseadoEmEnem: false,
+      regrasEliminacao: [
+        {
+          regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
+          regraVersao: '1.0',
+          etapaRef: 'etapa-persistida-1',
+          notaMinima: '5',
+          minimo: '',
+        },
+      ],
+    });
+  });
+
+  /** Sob classificação importada (INV-B8), o arredondamento é ausente — `null`, não zero. */
+  it('projeta classificação importada sem arredondamento como campo vazio', () => {
+    const importada = {
+      ...CLASSIFICACAO,
+      regraCalculo: { codigo: 'CLASSIFICACAO-IMPORTADA', versao: '1.0' },
+      regraArredondamento: null,
+      casasArredondamento: null,
+      regrasEliminacao: [],
+    };
+    const { classificacao } = hidratarDraft(DRAFT, dtoComCronograma({ classificacao: importada }));
+
+    expect(classificacao.regraArredondamentoCodigo).toBe('');
+    expect(classificacao.casasArredondamento).toBe('');
+    expect(classificacao.regrasEliminacao).toEqual([]);
+  });
+
+  it('trata processo sem classificação gravada como rascunho vazio', () => {
+    const { classificacao } = hidratarDraft(DRAFT, dtoComCronograma({ classificacao: null }));
+
+    expect(classificacao.regraCalculoCodigo).toBe('');
+    expect(classificacao.regrasEliminacao).toEqual([]);
+  });
+
+  it('projeta o bônus regional gravado como ativo', () => {
+    const { bonus } = hidratarDraft(DRAFT, dtoComCronograma({ bonusRegional: BONUS }));
+
+    expect(bonus).toEqual({
+      ativo: true,
+      regraCodigo: 'BONUS-MULTIPLICATIVO',
+      regraVersao: '1.0',
+      fator: '1.2',
+      teto: '',
+      municipioConvenio: 'Marabá',
+      baseLegal: 'Convênio 01/2026',
+    });
+  });
+
+  /** Ausência é o próprio "sem bônus" (RN05) — não `ativo: false` com resíduo. */
+  it('trata processo sem bônus regional como ausência declarada', () => {
+    const { bonus } = hidratarDraft(DRAFT, dtoComCronograma({ bonusRegional: null }));
+
+    expect(bonus).toEqual({
+      ativo: false,
+      regraCodigo: '',
+      regraVersao: '',
+      fator: '',
+      teto: '',
+      municipioConvenio: '',
+      baseLegal: '',
+    });
+  });
+
+  it('projeta os critérios de desempate na ordem em que o servidor os avalia', () => {
+    const { desempate } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ criteriosDesempate: CRITERIOS_DESEMPATE }),
+    );
+
+    expect(desempate.map((criterio) => criterio.regraCodigo)).toEqual([
+      'DESEMPATE-MAIOR-NOTA-ETAPA',
+      'DESEMPATE-IDOSO',
+    ]);
+    expect(desempate[1]).toEqual({
+      regraCodigo: 'DESEMPATE-IDOSO',
+      regraVersao: '1.0',
+      etapaRef: '',
+      idadeMinima: '60',
+      fato: '',
+      operador: '',
+      valor: '',
+    });
+  });
+
+  it('trata processo sem critério de desempate declarado', () => {
+    const { desempate } = hidratarDraft(DRAFT, dtoComCronograma({ criteriosDesempate: [] }));
+
+    expect(desempate).toEqual([]);
+  });
+});

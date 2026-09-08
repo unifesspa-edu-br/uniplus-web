@@ -264,10 +264,42 @@ export interface EtapaPontuada {
   readonly ordem: number;
 }
 
-export interface CriterioDesempate {
-  id: number;
-  nome: string;
-  fonte: string;
+/**
+ * Uma regra de eliminação configurada no rascunho, no shape do `esquema_args`
+ * fechado que `DefinirClassificacaoCommandHandler.MontarArgs` valida por
+ * código: só uma das três colunas seguintes se aplica a cada regra, e as
+ * demais viajam `null` no comando — nunca omitidas. `ELIM-NOTA-MINIMA-ETAPA`
+ * usa `etapaRef` + `notaMinima`; `ELIM-CORTE-REDACAO` usa `minimo`;
+ * `ELIM-ZERO-EM-AREA` não usa nenhuma. Os três campos ficam sempre presentes
+ * no rascunho — o mapeador para o comando é quem decide qual vale, a partir de
+ * `regraCodigo` — porque trocar de regra sem perder o que já foi digitado
+ * simplifica a tela sem violar a invariante do servidor.
+ */
+export interface RegraEliminacaoConfigurada {
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+  /** Id de uma etapa pontuada do processo (`EtapaPontuada.id`). */
+  readonly etapaRef: string;
+  readonly notaMinima: string;
+  readonly minimo: string;
+}
+
+/**
+ * Um critério de desempate configurado no rascunho, no shape fechado que
+ * `ArgsCriterioDesempate` define por código: `DESEMPATE-MAIOR-NOTA-ETAPA` usa
+ * `etapaRef`; `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-PREDICADO-FATO`
+ * usa `fato` + `operador` + `valor`; `DESEMPATE-MAIOR-IDADE` não usa nenhum.
+ * A ordem não é um campo aqui — é a posição do item na lista do rascunho,
+ * reescrita a cada `move`/`remove`, como já valia para o desempate anterior.
+ */
+export interface CriterioDesempateConfigurado {
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+  readonly etapaRef: string;
+  readonly idadeMinima: string;
+  readonly fato: string;
+  readonly operador: string;
+  readonly valor: string;
 }
 
 export interface DocumentoDefinicao {
@@ -396,23 +428,58 @@ export interface WizardDraft {
     algoritmoContagemCodigo: string;
     algoritmoContagemVersao: string;
   };
-  formula: {
-    agregacao: string;
-    precisao: string;
+  /**
+   * A classificação inteira do processo — `PUT …/classificacao` recebe num
+   * corpo único a regra de cálculo, a precisão, a ordem de alocação e o vetor
+   * de eliminação (UNI-REQ-0482). Repartida entre dois passos do wizard —
+   * Fórmula preenche até `regrasEliminacao`, Eliminação preenche o vetor e é
+   * quem grava — mas é uma seção só, porque é um comando só.
+   *
+   * `regraArredondamentoCodigo`/`…Versao`/`casasArredondamento` só valem sob
+   * `FORMULA-MEDIA-PONDERADA` (INV-B8): sob `CLASSIFICACAO-IMPORTADA`, o
+   * mapeador para o comando os envia `null` **independentemente** do que
+   * esteja digitado aqui, e o mesmo vale para `regrasEliminacao`, que a
+   * invariante exige vazio nesse ramo.
+   */
+  classificacao: {
+    regraCalculoCodigo: string;
+    regraCalculoVersao: string;
+    regraArredondamentoCodigo: string;
+    regraArredondamentoVersao: string;
+    casasArredondamento: string;
+    regraOrdemAlocacaoCodigo: string;
+    regraOrdemAlocacaoVersao: string;
+    nOpcoesAlocacao: string;
+    /**
+     * Único booleano do corpo — condiciona se `ELIM-CORTE-REDACAO` e
+     * `ELIM-ZERO-EM-AREA` são aceitas em `regrasEliminacao`
+     * (`EliminacaoEnemForaDeProcessoEnem`).
+     */
+    baseadoEmEnem: boolean;
+    regrasEliminacao: readonly RegraEliminacaoConfigurada[];
   };
+  /**
+   * Bônus regional (RN05, `PUT …/bonus-regional`) — toggle por presença: a
+   * ausência da entidade no processo já significa sem bônus, e por isso
+   * `ativo === false` não impede persistir; grava o corpo com os cinco campos
+   * `null` (CA-04). Nenhum campo coincide com a tela anterior — é
+   * reconstrução conforme o contrato, não adaptação.
+   */
   bonus: {
     ativo: boolean;
-    tipo: string;
-    valor: number | null;
-    criterio: string;
-    /** Código do contrato — a API é a fonte de verdade do vocabulário. */
-    modalidades: string[];
+    regraCodigo: string;
+    regraVersao: string;
+    fator: string;
+    teto: string;
+    municipioConvenio: string;
+    baseLegal: string;
   };
-  desempate: number[];
-  eliminacao: {
-    notasMinimas: Record<string, number | null>;
-    clausulas: string[];
-  };
+  /**
+   * Critérios de desempate (`PUT …/criterios-desempate`), na ordem em que
+   * serão avaliados — o primeiro do array desempata primeiro, e a ordem é
+   * a própria posição, reescrita pelo reorder.
+   */
+  desempate: readonly CriterioDesempateConfigurado[];
   documentos: Record<string, DocumentoConfig>;
   polos: Record<string, PoloConfig>;
   atendimento: {

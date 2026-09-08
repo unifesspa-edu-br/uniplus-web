@@ -34,6 +34,7 @@ import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
 import { CatalogosDoCronogramaService } from './steps/steps/cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
 import { FaseStepComponent } from './steps/steps/fase/fase.component';
+import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
@@ -82,7 +83,12 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     AtendimentoStepComponent,
     RevisaoStepComponent,
   ],
-  providers: [ProcessoSeletivoStore, CadastroInicialService, CatalogosDoCronogramaService],
+  providers: [
+    ProcessoSeletivoStore,
+    CadastroInicialService,
+    CatalogosDoCronogramaService,
+    CatalogosDeClassificacaoService,
+  ],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

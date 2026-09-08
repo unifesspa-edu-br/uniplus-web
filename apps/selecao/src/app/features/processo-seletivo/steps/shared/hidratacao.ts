@@ -1,12 +1,18 @@
 import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
-import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import type {
+  ConfiguracaoClassificacaoDto,
+  DocumentoEditalDto,
+  ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import {
+  CriterioDesempateConfigurado,
   DistribuicaoDeVagas,
   EtapaPontuada,
   FaseDoCronograma,
   RecursoDaFase,
+  RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../processo-seletivo.models';
 import {
@@ -35,6 +41,9 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     pagamento: pagamentoDe(dto),
     vagas: { ofertas: distribuicoesDe(dto) },
     cronograma: cronogramaDe(dto),
+    classificacao: classificacaoDe(dto),
+    bonus: bonusDe(dto),
+    desempate: desempateDe(dto),
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
@@ -171,6 +180,105 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     notaMinima: comoTexto(etapa.notaMinima),
     ordem: comoInteiro(etapa.ordem),
   };
+}
+
+/**
+ * Projeta a classificação já gravada (UNI-REQ-0482). Ausente é estado válido
+ * — rascunho onde a Eliminação ainda não gravou — e volta com os campos
+ * vazios que a criação já usa; a bimodalidade de INV-B8 não precisa de
+ * projeção especial aqui, porque o `regraArredondamento` nulo vira `''` de
+ * qualquer forma, e é o mapeador para o comando quem decide o que enviar.
+ */
+function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao'] {
+  const classificacao = dto.classificacao;
+  if (classificacao === null || classificacao === undefined) {
+    return {
+      regraCalculoCodigo: '',
+      regraCalculoVersao: '',
+      regraArredondamentoCodigo: '',
+      regraArredondamentoVersao: '',
+      casasArredondamento: '',
+      regraOrdemAlocacaoCodigo: '',
+      regraOrdemAlocacaoVersao: '',
+      nOpcoesAlocacao: '',
+      baseadoEmEnem: false,
+      regrasEliminacao: [],
+    };
+  }
+
+  return {
+    regraCalculoCodigo: classificacao.regraCalculo.codigo,
+    regraCalculoVersao: classificacao.regraCalculo.versao,
+    regraArredondamentoCodigo: classificacao.regraArredondamento?.codigo ?? '',
+    regraArredondamentoVersao: classificacao.regraArredondamento?.versao ?? '',
+    casasArredondamento: comoTexto(classificacao.casasArredondamento),
+    regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacao.codigo,
+    regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacao.versao,
+    nOpcoesAlocacao: comoTexto(classificacao.nOpcoesAlocacao),
+    baseadoEmEnem: classificacao.baseadoEmEnem,
+    regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
+  };
+}
+
+function regraEliminacaoDe(
+  regra: ConfiguracaoClassificacaoDto['regrasEliminacao'][number],
+): RegraEliminacaoConfigurada {
+  return {
+    regraCodigo: regra.regra.codigo,
+    regraVersao: regra.regra.versao,
+    etapaRef: regra.etapaRef ?? '',
+    notaMinima: comoTexto(regra.notaMinima),
+    minimo: comoTexto(regra.minimo),
+  };
+}
+
+/**
+ * Projeta o bônus regional já gravado. Ausente é sem bônus (RN05, toggle por
+ * presença) — não `ativo: false` com campos residuais de uma configuração
+ * antiga, e sim os cinco campos vazios que a criação já usa.
+ */
+function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
+  const bonus = dto.bonusRegional;
+  if (bonus === null || bonus === undefined) {
+    return {
+      ativo: false,
+      regraCodigo: '',
+      regraVersao: '',
+      fator: '',
+      teto: '',
+      municipioConvenio: '',
+      baseLegal: '',
+    };
+  }
+
+  return {
+    ativo: true,
+    regraCodigo: bonus.regra.codigo,
+    regraVersao: bonus.regra.versao,
+    fator: comoTexto(bonus.fator),
+    teto: comoTexto(bonus.teto),
+    municipioConvenio: bonus.municipioConvenio ?? '',
+    baseLegal: bonus.baseLegal ?? '',
+  };
+}
+
+/**
+ * Projeta os critérios de desempate na ordem em que o servidor os avalia — a
+ * posição no array é a ordem, então a lista chega ordenada por `ordem` antes
+ * de perder o número.
+ */
+function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfigurado[] {
+  return [...(dto.criteriosDesempate ?? [])]
+    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
+    .map((criterio) => ({
+      regraCodigo: criterio.regra.codigo,
+      regraVersao: criterio.regra.versao,
+      etapaRef: criterio.etapaRef ?? '',
+      idadeMinima: comoTexto(criterio.idadeMinima),
+      fato: criterio.fato ?? '',
+      operador: criterio.operador ?? '',
+      valor: criterio.valor ?? '',
+    }));
 }
 
 /** O contrato admite número ou texto; ausente vira campo vazio, não zero. */
