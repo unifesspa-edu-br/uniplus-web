@@ -128,13 +128,19 @@ export class RevisaoStepComponent {
   readonly temFaseDeColeta = computed(() => temFaseDeColetaInscricao(this.store.draft()));
   readonly faseAncora = computed(() => faseQueAncoraOPeriodoDeInscricao(this.store.draft()));
 
-  /** Checklist estrutural agrupado por dimensão — `null` enquanto não carregou. */
+  /**
+   * Checklist estrutural agrupado por dimensão — `null` enquanto não carregou.
+   *
+   * Enquanto `ultimaRecusa()` existir, ela é a fonte inteira (não só para
+   * decidir "ok"): o `GET` anterior pode estar desatualizado, e mostrar os
+   * grupos antigos ao lado do banner verde de `estruturalOk()` contradiria a
+   * própria tela — a pendência reaparece só quando `recarregarPreflight()`
+   * busca um novo `GET` e `ultimaRecusa()` é limpa.
+   */
   readonly gruposEstruturais = computed(() => {
     const recusa = this.ultimaRecusa();
-    if (recusa !== null && recusa.pendencias.length > 0) {
-      return agruparPorDimensao(
-        recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false })),
-      );
+    if (recusa !== null) {
+      return agruparPorDimensao(recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false })));
     }
     const itens = this.preflight.estrutural();
     return itens === null ? null : agruparPorDimensao(itens);
