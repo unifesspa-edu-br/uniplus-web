@@ -300,6 +300,13 @@ describe('CronogramaStepComponent', () => {
     detectar();
   }
 
+  /** Valores das `<option>` do seletor de convenção, na ordem em que aparecem. */
+  function opcoesDaConvencao(): string[] {
+    return Array.from(
+      nativo.querySelectorAll<HTMLOptionElement>('#cr-algoritmo-contagem option'),
+    ).map((opcao) => opcao.value);
+  }
+
   /**
    * O rascunho é o que persiste entre passos e o que a hidratação preenche. O
    * formulário precisa refletir o que chega de fora — sem isso, reabrir um
@@ -1049,6 +1056,93 @@ describe('CronogramaStepComponent', () => {
     expect(
       nativo.querySelector<HTMLSelectElement>('#cr-algoritmo-contagem')?.value ?? '',
     ).toBe('');
+  });
+
+  /**
+   * O endpoint não tem operação de remoção — `DefinirAlgoritmoContagemPrazoRequest`
+   * exige `codigo` e `versao`. Enquanto nada foi declarado, a opção continua
+   * disponível: é o caminho normal para a primeira escolha.
+   */
+  it('não esconde a opção de remover enquanto a escolha ainda não foi gravada', () => {
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    expect(opcoesDaConvencao()).toContain('');
+  });
+
+  /**
+   * A prova do bug que esta Story fecha: sem esconder a opção, o operador
+   * escolhia "Nenhuma convenção declarada" sobre um processo que já tinha
+   * convenção no servidor, `persistir()` pulava a terceira chamada em
+   * silêncio e devolvia sucesso — a tela passava a mostrar "nenhuma" enquanto
+   * o servidor continuava com a convenção anterior, e a divergência só
+   * aparecia ao recarregar o processo.
+   */
+  it('esconde a opção de remover a convenção depois que ela chega declarada do servidor', () => {
+    // `remoteSnapshot`, não `patchObjectSection`: é a última leitura completa
+    // do servidor, não uma escrita local — molde de
+    // `pagamento.component.spec.ts:511` e `anexo-edital.component.spec.ts:332`.
+    store.remoteSnapshot.set({
+      algoritmoContagemPrazo: { codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL', versao: 'v1' },
+    } as never);
+    detectar();
+
+    expect(opcoesDaConvencao()).not.toContain('');
+  });
+
+  it('esconde a opção de remover a convenção logo após gravá-la nesta sessão', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_INSCRICAO);
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_ALGORITMO).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    await gravacao;
+    detectar();
+
+    expect(opcoesDaConvencao()).not.toContain('');
+  });
+
+  /**
+   * Falha na terceira chamada não confirma nada no servidor — a opção de
+   * "nenhuma" continua disponível para a retentativa, exatamente como antes.
+   */
+  it('mantém a opção de remover disponível quando a gravação da convenção falha', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_INSCRICAO);
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_ALGORITMO).flush(
+      {
+        type: 'about:blank',
+        title: 'Convenção de contagem recusada',
+        status: 422,
+        code: 'uniplus.selecao.algoritmo_contagem_prazo.invalido',
+        traceId: '00000000000000000000000000000006',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+    await proximoPasso();
+    await gravacao;
+    detectar();
+
+    expect(opcoesDaConvencao()).toContain('');
   });
 
   /**

@@ -127,6 +127,30 @@ export class CronogramaStepComponent {
   /** Por que a última tentativa de releitura não destravou a tela. */
   readonly erroDeReleitura = signal<string | null>(null);
 
+  /**
+   * A convenção foi gravada com sucesso nesta sessão. Só `persistir()`
+   * escreve aqui, no sucesso da terceira chamada — nunca a mirror genérica de
+   * `espelharRascunho`, que roda por causa de qualquer uma das três dimensões
+   * (inclusive uma reconciliação de etapas que nada tem a ver com o
+   * algoritmo) e daria falso positivo se lida como confirmação do servidor.
+   */
+  private readonly algoritmoConfirmadoNestaSessao = signal(false);
+
+  /**
+   * A convenção já foi declarada no servidor — pela última leitura completa
+   * (`remoteSnapshot`) ou por uma gravação desta sessão. Enquanto for
+   * `false`, "nenhuma convenção" é opção legítima (CA-05); depois, deixa de
+   * ser: o endpoint não tem operação de remoção —
+   * `DefinirAlgoritmoContagemPrazoRequest` exige `codigo` e `versao` — e
+   * oferecer a opção de novo convidaria a uma gravação que a tela pularia em
+   * silêncio, relatando sucesso sem o servidor ter mudado nada.
+   */
+  readonly algoritmoDeclaradoNoServidor = computed(
+    () =>
+      this.store.remoteSnapshot()?.algoritmoContagemPrazo != null ||
+      this.algoritmoConfirmadoNestaSessao(),
+  );
+
   constructor() {
     this.catalogos.carregar();
     this.espelharRascunho(this.store.draft().cronograma);
@@ -171,6 +195,7 @@ export class CronogramaStepComponent {
       untracked(() => {
         this.reconciliacaoPendente.set(false);
         this.erroDeReleitura.set(null);
+        this.algoritmoConfirmadoNestaSessao.set(false);
       });
     });
   }
@@ -596,6 +621,11 @@ export class CronogramaStepComponent {
             ],
           };
         }
+
+        // A partir daqui o endpoint não tem operação de remoção: o seletor
+        // deixa de oferecer "nenhuma convenção" para não convidar a uma
+        // gravação futura que a tela pularia em silêncio.
+        this.algoritmoConfirmadoNestaSessao.set(true);
       }
 
       return { valid: true };
