@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FasesCanonicasPage } from './fases-canonicas.page';
 
 const BASE = 'http://localhost:5000';
+const CRIAR_URL = `${BASE}/api/configuracao/admin/fases-canonicas`;
 
 const faseAvaliacaoSeed: FaseCanonicaDto = {
   id: '01960000-0000-7000-0000-0000000000f1',
@@ -48,7 +49,11 @@ describe('FasesCanonicasPage', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => {
+    // Issue #698: a tela nunca deve emitir a criação de fase canônica.
+    controller.expectNone((r) => r.method === 'POST' && r.url === CRIAR_URL);
+    controller.verify();
+  });
 
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
@@ -62,7 +67,13 @@ describe('FasesCanonicasPage', () => {
     await propagate();
   }
 
-  it('CA-01: renderiza a lista de fases canônicas', async () => {
+  function nomesDeBotoes(): string[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('button')).map((b) =>
+      ((b as HTMLButtonElement).textContent ?? '').trim().replace(/\s+/gu, ' '),
+    );
+  }
+
+  it('CA-12: renderiza a lista de fases canônicas', async () => {
     await flushLista([faseAvaliacaoSeed]);
     expect(component['fases']()).toHaveLength(1);
     fixture.detectChanges();
@@ -70,170 +81,69 @@ describe('FasesCanonicasPage', () => {
     expect(fixture.nativeElement.textContent).toContain('AVALIACAO');
   });
 
-  it('CA-10: banner de código imutável é visível mesmo com lista vazia', async () => {
-    await flushLista([]);
+  it('CA-01/CA-03: o cabeçalho não oferece a ação "Nova fase canônica"', async () => {
+    await flushLista([faseAvaliacaoSeed]);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Código imutável após criação');
+    const nomes = nomesDeBotoes();
+    expect(nomes).not.toContain('Nova fase canônica');
+    expect(nomes).not.toContain('Criar fase canônica');
   });
 
-  it('CA-02: filtro de dono típico filtra registros carregados', async () => {
-    const faseCrca: FaseCanonicaDto = { ...faseAvaliacaoSeed, id: 'f2', codigo: 'MATRICULA', donoTipico: 'CRCA' };
+  it('CA-02/CA-16: o estado vazio informa sem sugerir cadastro da primeira fase', async () => {
+    await flushLista([]);
+    fixture.detectChanges();
+    const texto: string = fixture.nativeElement.textContent;
+    expect(texto).toContain('catálogo de fases é definido institucionalmente');
+    expect(texto).not.toMatch(/cadastr\w+ a primeira/iu);
+    expect(nomesDeBotoes()).not.toContain('Nova fase canônica');
+  });
+
+  it('CA-10/CA-11: o aviso remete ao catálogo institucional e não orienta a criar uma nova entrada', async () => {
+    await flushLista([]);
+    fixture.detectChanges();
+    const texto: string = fixture.nativeElement.textContent;
+    expect(texto).toContain('Códigos definidos pelo catálogo institucional');
+    expect(texto).not.toContain('crie uma nova entrada');
+  });
+
+  it('CA-13: filtro de dono típico filtra registros carregados', async () => {
+    const faseCrca: FaseCanonicaDto = {
+      ...faseAvaliacaoSeed,
+      id: 'f2',
+      codigo: 'MATRICULA',
+      donoTipico: 'CRCA',
+    };
     await flushLista([faseAvaliacaoSeed, faseCrca]);
 
     component['donoTipicoFiltro'].set('CRCA');
     expect(component['fasesFiltradas']()).toEqual([faseCrca]);
   });
 
-  it('CA-05: grupo "Agrupamento de etapas" só aparece para AVALIACAO', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    expect(component['showGrupoAgrupa']()).toBe(false);
+  it('CA-05: o drawer só abre a partir da edição de uma fase existente', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    expect(component['formOpen']()).toBe(false);
 
-    component['form'].controls.codigo.setValue('AVALIACAO');
-    expect(component['showGrupoAgrupa']()).toBe(true);
-    expect(component['showGrupoCompl']()).toBe(false);
-
-    component['form'].controls.codigo.setValue('HOMOLOGACAO');
-    expect(component['showGrupoAgrupa']()).toBe(false);
-    expect(component['showGrupoCompl']()).toBe(true);
-
-    component['form'].controls.codigo.setValue('MATRICULA');
-    expect(component['showGrupoAgrupa']()).toBe(false);
-    expect(component['showGrupoCompl']()).toBe(false);
+    component['abrirEdicao'](faseAvaliacaoSeed);
+    expect(component['formOpen']()).toBe(true);
+    expect(component['faseEmEdicaoId']()).toBe(faseAvaliacaoSeed.id);
   });
 
-  it('CA-02: o select oferece a solicitação de isenção, e ela não agrupa etapas nem admite complementação', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
+  it('CA-06: o drawer de edição usa título e ação compatíveis com a edição', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    component['abrirEdicao'](faseAvaliacaoSeed);
     fixture.detectChanges();
 
-    const codigoSelect = fixture.nativeElement.querySelector(
-      '[formControlName="codigo"]',
-    ) as HTMLSelectElement;
-    const opcoes = Array.from(codigoSelect.options).map((o) => o.value);
+    const texto: string = fixture.nativeElement.textContent;
+    expect(texto).toContain('Editar fase canônica');
+    expect(texto).not.toContain('Nova fase canônica');
 
-    expect(opcoes).toContain('SOLICITACAO_ISENCAO');
-
-    // Espelha o backend: só a avaliação agrupa etapas, e a complementação
-    // documental segue restrita a homologação e recursos.
-    component['form'].controls.codigo.setValue('SOLICITACAO_ISENCAO');
-    expect(component['showGrupoAgrupa']()).toBe(false);
-    expect(component['showGrupoCompl']()).toBe(false);
+    const submit = fixture.nativeElement.querySelector(
+      'button[form="cfg-fase-canonica-form"]',
+    ) as HTMLButtonElement;
+    expect(submit.textContent?.trim()).toBe('Salvar fase canônica');
   });
 
-  it('CA-05: interação real via DOM no select [ngValue] de "Agrupa etapas" atualiza o boolean do form', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    component['form'].controls.codigo.setValue('AVALIACAO');
-    fixture.detectChanges();
-
-    const agrupaSelect = fixture.nativeElement.querySelector(
-      '[formControlName="agrupaEtapas"]',
-    ) as HTMLSelectElement;
-    expect(agrupaSelect).toBeTruthy();
-    expect(component['form'].controls.agrupaEtapas.value).toBe(false);
-
-    agrupaSelect.value = agrupaSelect.options[0].value; // "Sim" → [ngValue]="true"
-    agrupaSelect.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-
-    expect(component['form'].controls.agrupaEtapas.value).toBe(true);
-  });
-
-  it('CA-05: submeter fora de AVALIACAO/HOMOLOGACAO/RECURSOS força os sinalizadores para false', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    component['form'].setValue({
-      codigo: 'MATRICULA',
-      donoTipico: 'CEPS',
-      nome: 'Matrícula',
-      descricao: '',
-      baseLegal: '',
-      agrupaEtapas: true, // valor "vazado" de uma seleção anterior — não deve ser enviado
-      permiteComplementacao: true,
-      origemData: 'PROPRIA',
-      coletaInscricao: false,
-      coletaSolicitacaoIsencao: false,
-    });
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
-    expect(post.request.body).toMatchObject({
-      codigo: 'MATRICULA',
-      agrupaEtapas: false,
-      permiteComplementacao: false,
-      origemData: 'PROPRIA',
-      coletaInscricao: false,
-      coletaSolicitacaoIsencao: false,
-    });
-    post.flush('new-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
-  });
-
-  it('escolher a fase de isenção marca a coleta de isenção e zera a coleta de inscrição', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    component['form'].setValue({
-      codigo: 'INSCRICAO',
-      donoTipico: 'CEPS',
-      nome: 'Solicitação de isenção',
-      descricao: '',
-      baseLegal: '',
-      agrupaEtapas: false,
-      permiteComplementacao: false,
-      origemData: 'PROPRIA',
-      coletaInscricao: true,
-      coletaSolicitacaoIsencao: false,
-    });
-
-    // Trocar para a fase de isenção: o agregado exige a marca verdadeira aqui e
-    // recusa a coleta de inscrição na mesma fase — as duas janelas são exclusivas.
-    component['form'].controls.codigo.setValue('SOLICITACAO_ISENCAO');
-    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
-    expect(component['form'].controls.coletaInscricao.value).toBe(false);
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
-    expect(post.request.body).toMatchObject({
-      codigo: 'SOLICITACAO_ISENCAO',
-      coletaSolicitacaoIsencao: true,
-      coletaInscricao: false,
-    });
-    post.flush('new-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
-  });
-
-  it('sair da fase de isenção desmarca a coleta de isenção antes do envio', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    component['form'].controls.codigo.setValue('SOLICITACAO_ISENCAO');
-    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
-
-    component['form'].patchValue({
-      codigo: 'MATRICULA',
-      donoTipico: 'CEPS',
-      nome: 'Matrícula',
-      origemData: 'PROPRIA',
-    });
-    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(false);
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
-    expect(post.request.body).toMatchObject({
-      codigo: 'MATRICULA',
-      coletaSolicitacaoIsencao: false,
-    });
-    post.flush('new-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
-  });
-
-  it('CA-06: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
+  it('CA-07: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
     await flushLista([faseAvaliacaoSeed]);
     component['abrirEdicao'](faseAvaliacaoSeed);
     expect(component['form'].controls.codigo.value).toBe('AVALIACAO');
@@ -251,80 +161,83 @@ describe('FasesCanonicasPage', () => {
     );
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).not.toHaveProperty('codigo');
-    expect(put.request.body).toMatchObject({ id: faseAvaliacaoSeed.id, nome: 'Avaliação (revisada)' });
+    expect(put.request.body).toMatchObject({
+      id: faseAvaliacaoSeed.id,
+      nome: 'Avaliação (revisada)',
+    });
     put.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([faseAvaliacaoSeed]);
   });
 
-  it('CA-07: código duplicado (409) é rejeitado com erro no campo sem fechar o drawer', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    component['form'].setValue({
-      codigo: 'AVALIACAO',
-      donoTipico: 'CEPS',
-      nome: 'Avaliação (dup)',
-      descricao: '',
-      baseLegal: '',
-      agrupaEtapas: false,
-      permiteComplementacao: false,
-      origemData: 'PROPRIA',
-      coletaInscricao: false,
-      coletaSolicitacaoIsencao: false,
-    });
-
+  it('CA-08/CA-14: salvar a edição emite PUT e nunca POST', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    component['abrirEdicao'](faseAvaliacaoSeed);
+    component['form'].controls.nome.setValue('Avaliação (2)');
     component['salvar']();
 
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
-    post.flush(
-      {
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.fase_canonica.codigo_ja_existe',
-        title: 'Já existe uma fase canônica ativa com este código',
-        status: 409,
-        code: 'uniplus.configuracao.fase_canonica.codigo_ja_existe',
-      },
-      { status: 409, statusText: 'Conflict', headers: { 'Content-Type': 'application/problem+json' } },
+    controller.expectNone(CRIAR_URL);
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/fases-canonicas/${faseAvaliacaoSeed.id}`,
     );
+    put.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['erroDoCampo']('codigo')).toContain(
-      'Já existe uma fase canônica ativa com este código',
-    );
-    expect(component['formError']()).toBeNull();
+    await flushLista([faseAvaliacaoSeed]);
   });
 
-  it('origem da data é obrigatória e viaja no payload de criação', async () => {
-    await flushLista([]);
-    component['abrirCadastro']();
-    component['form'].setValue({
-      codigo: 'MATRICULA',
-      donoTipico: 'CRCA',
-      nome: 'Matrícula',
-      descricao: '',
-      baseLegal: '',
+  it('CA-05: grupos condicionais seguem o código da fase em edição', async () => {
+    const faseHomologacao: FaseCanonicaDto = {
+      ...faseAvaliacaoSeed,
+      id: 'f-homolog',
+      codigo: 'HOMOLOGACAO',
       agrupaEtapas: false,
-      permiteComplementacao: false,
-      origemData: '',
-      coletaInscricao: false,
-      coletaSolicitacaoIsencao: false,
-    });
+    };
+    await flushLista([faseAvaliacaoSeed, faseHomologacao]);
 
-    // O backend exige `origemData`; sem o campo no formulário, toda criação
-    // era recusada com 422 (#501).
-    component['salvar']();
-    controller.expectNone(`${BASE}/api/configuracao/admin/fases-canonicas`);
+    component['abrirEdicao'](faseAvaliacaoSeed);
+    expect(component['showGrupoAgrupa']()).toBe(true);
+    expect(component['showGrupoCompl']()).toBe(false);
 
-    component['form'].controls.origemData.setValue('DELEGADA');
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
-    expect(post.request.body).toMatchObject({ origemData: 'DELEGADA' });
-    post.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
+    component['abrirEdicao'](faseHomologacao);
+    expect(component['showGrupoAgrupa']()).toBe(false);
+    expect(component['showGrupoCompl']()).toBe(true);
   });
 
-  it('edição carrega os sinalizadores do DTO e os devolve na atualização', async () => {
+  it('editar a fase de isenção deriva a marca de isenção e esconde a coleta de inscrição', async () => {
+    const faseIsencao: FaseCanonicaDto = {
+      ...faseAvaliacaoSeed,
+      id: 'f-isencao',
+      codigo: 'SOLICITACAO_ISENCAO',
+      agrupaEtapas: false,
+      coletaInscricao: false,
+      coletaSolicitacaoIsencao: true,
+    };
+    await flushLista([faseIsencao]);
+
+    component['abrirEdicao'](faseIsencao);
+    fixture.detectChanges();
+    // O agregado exige a marca verdadeira nessa fase e recusa a coleta de
+    // inscrição na mesma fase — as duas janelas são exclusivas.
+    expect(component['ehFaseDeIsencao']()).toBe(true);
+    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('[formControlName="coletaInscricao"]'),
+    ).toBeNull();
+
+    component['salvar']();
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/fases-canonicas/${faseIsencao.id}`,
+    );
+    expect(put.request.body).toMatchObject({
+      coletaSolicitacaoIsencao: true,
+      coletaInscricao: false,
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([faseIsencao]);
+  });
+
+  it('CA-14: edição carrega os sinalizadores do DTO e os devolve na atualização', async () => {
     const faseComColeta: FaseCanonicaDto = {
       ...faseAvaliacaoSeed,
       coletaInscricao: true,
@@ -349,7 +262,15 @@ describe('FasesCanonicasPage', () => {
     await flushLista([faseComColeta]);
   });
 
-  it('CA-08: inativa uma fase canônica após confirmação', async () => {
+  it('CA-10: aviso de código do catálogo é visível mesmo com lista vazia', async () => {
+    await flushLista([]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Códigos definidos pelo catálogo institucional',
+    );
+  });
+
+  it('CA-15: inativa uma fase canônica após confirmação', async () => {
     await flushLista([faseAvaliacaoSeed]);
     component['pedirRemocao'](faseAvaliacaoSeed);
     component['removerConfirmado']();
