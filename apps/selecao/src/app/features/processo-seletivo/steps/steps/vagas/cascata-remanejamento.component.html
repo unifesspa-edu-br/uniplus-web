@@ -118,7 +118,16 @@
               <tr>
                 <th scope="row">{{ ordem.origem }}</th>
                 @for (ordinal of ordinaisDaMatriz(); track ordinal; let posicao = $index) {
-                  <td class="cascata-matriz__destino">{{ destinoNaPosicao(ordem.destinos, posicao) }}</td>
+                  <!--
+                    `data-label` não é decoração: até 767 px o design system
+                    esconde o `thead` e empilha a linha como cartão, usando este
+                    atributo como rótulo visível da célula. Sem ele o cartão
+                    mostraria só os códigos, e a ordem de preferência — que é o
+                    que a matriz existe para dizer — desapareceria.
+                  -->
+                  <td class="cascata-matriz__destino" [attr.data-label]="ordinal + ' preferência'">
+                    {{ destinoNaPosicao(ordem.destinos, posicao) }}
+                  </td>
                 }
               </tr>
             }
