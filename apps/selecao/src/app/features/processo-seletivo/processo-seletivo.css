@@ -1269,6 +1269,75 @@
   border-bottom: none;
 }
 
+/* ---- Matriz da cascata de remanejamento (passo Vagas) ----
+   Tabela própria, e não `.vagas-table`: aquela foi desenhada para a distribuição
+   de vagas, onde a última coluna é a de ação e mede 56 px. Aqui a última coluna é
+   o conteúdo principal — a ordem de destinos —, e herdar aquela largura espremia
+   a cadeia em cinco linhas enquanto a origem, de seis caracteres, ficava com o
+   resto da tabela (#732). */
+.cascata-matriz {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.cascata-matriz thead th {
+  background: var(--surface-subtle);
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* A origem é um código curto: ocupa o que precisa e devolve o resto à cadeia.
+   `width: 1%` com `white-space: nowrap` é a forma de dizer "o mínimo do
+   conteúdo" numa tabela de layout automático. */
+.cascata-matriz thead th:first-child,
+.cascata-matriz tbody th[scope='row'] {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.cascata-matriz tbody th[scope='row'] {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.cascata-matriz tbody td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.cascata-matriz tbody tr:last-child th[scope='row'],
+.cascata-matriz tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* A cadeia quebra entre passos, nunca dentro de um. O `gap` substitui o espaço
+   em branco do template, que o compilador do Angular colapsa. */
+.cascata-matriz__cadeia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
+}
+
+.cascata-matriz__passo {
+  white-space: nowrap;
+}
+
 .vagas-table__curso-nome {
   font-weight: var(--weight-semibold);
 }
