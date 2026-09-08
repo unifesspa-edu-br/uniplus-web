@@ -48,9 +48,16 @@ export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
  * confirmação de que a gravação chegou a aplicar — nunca dar a cascata como
  * ausente do servidor só porque a resposta não chegou.
  */
-export type ResultadoGravacaoCascata =
+/**
+ * Forma reaproveitada por qualquer gravação cujo chamador precise saber se
+ * uma recusa deixou em aberto se o comando foi executado — hoje a cascata de
+ * remanejamento e a publicação (`publicar()`).
+ */
+export type ResultadoGravacaoComInconclusiva =
   | { readonly ok: true }
   | (FalhaOperacao & { readonly inconclusiva: boolean });
+
+export type ResultadoGravacaoCascata = ResultadoGravacaoComInconclusiva;
 
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
@@ -516,25 +523,33 @@ export class CadastroInicialService {
    * rotaciona a chave (o corpo corrigido sob a mesma chave voltaria
    * `body_mismatch`); `processing_conflict`, rede e 5xx preservam a chave,
    * porque a execução anterior pode ainda concluir.
+   *
+   * `inconclusiva` (mesmo contrato de `ResultadoGravacaoCascata`) diz ao
+   * chamador se a recusa deixou em aberto se o comando foi executado — a
+   * tela de Revisão usa isso para manter a edição travada nesse caso
+   * (achado do Codex na #486, P1): sem o sinal, o `finally` de `persistir()`
+   * destravaria a edição, e um retry com o corpo editado giraria a chave
+   * (`ChaveDeSubstituicao.contextoPara`), deixando de ser o replay seguro do
+   * comando incerto e podendo correr contra a primeira tentativa.
    */
   async publicar(
     processoSeletivoId: string,
     request: PublicarProcessoSeletivoRequest,
-  ): Promise<ResultadoGravacao> {
+  ): Promise<ResultadoGravacaoComInconclusiva> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.publicar(processoSeletivoId, request, this.chavePublicacao.contextoPara(request)),
     );
 
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
 
     if (isApiOk(result)) {
       this.chavePublicacao.renovar();
       return { ok: true };
     }
 
-    this.chavePublicacao.recusada(result);
-    return { ok: false, problem: result.problem };
+    const inconclusiva = this.chavePublicacao.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
   }
 
   /**
