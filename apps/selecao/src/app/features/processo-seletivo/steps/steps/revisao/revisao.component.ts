@@ -475,6 +475,18 @@ export class RevisaoStepComponent {
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
 
       if (!resultado.ok) {
+        // Rede, 5xx ou `processing_conflict`: `CadastroInicialService`
+        // preserva a `Idempotency-Key` porque o comando pode já ter sido
+        // executado, mas isso só protege um replay que reenvie o MESMO
+        // corpo. Se o operador editar um campo antes de tentar de novo,
+        // `ChaveDeSubstituicao.contextoPara()` gira a chave para o corpo
+        // mudado — o retry deixa de ser o replay seguro do comando incerto e
+        // pode correr contra a primeira tentativa. Mantém a tela travada
+        // pelo mesmo sinal do caminho "204 mas releitura falhou", em vez de
+        // deixar o `finally` liberar a edição sobre um resultado que ainda
+        // não se sabe se aplicou (achado do Codex na #486, P1).
+        if (resultado.inconclusiva) this.store.publicacaoNaoConfirmada.set(true);
+
         const problem = comExtensoesDePublicacao(resultado.problem);
         this.ultimaRecusa.set({
           pendencias: problem.pendencias ?? [],

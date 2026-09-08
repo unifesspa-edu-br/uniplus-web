@@ -20,7 +20,7 @@ import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
-import { StepValidation, WizardDraft } from './steps/processo-seletivo.models';
+import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao } from './steps/passo-do-wizard';
@@ -109,20 +109,6 @@ export class ProcessoSeletivoPage {
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
-
-  /**
-   * Retrato do rascunho logo depois da última gravação bem-sucedida (avanço
-   * normal por `gravarEAvancar()`) ou hidratação — `null` até a primeira das
-   * duas. A navegação entre passos é livre: o operador pode voltar a um
-   * passo já gravado pelo stepper, editá-lo, e pular direto para a Revisão
-   * sem passar pelo "avançar" que dispara `persistir()` de novo. Sem este
-   * retrato, `validarRascunho()` aprova o rascunho local (está bem-formado)
-   * e a publicação confirma sobre uma edição que nunca chegou ao servidor —
-   * publica-se a configuração antiga enquanto o operador acredita publicar a
-   * que acabou de editar (achado do Codex na #486, P1). Ver
-   * `secoesNaoGravadas()`.
-   */
-  private ultimoDraftGravado: WizardDraft | null = null;
 
   /** Retorna o componente do step ativo, se estiver instanciado. */
   private stepValidatorAt(index: number): PassoDoWizard | undefined {
@@ -310,7 +296,6 @@ export class ProcessoSeletivoPage {
     }
 
     this.store.hidratar(detalhe.data);
-    this.ultimoDraftGravado = structuredClone(this.store.draft());
     await this.restaurarDocumentoEdital(id, superada);
     if (superada()) return;
 
@@ -359,7 +344,6 @@ export class ProcessoSeletivoPage {
    */
   private limparEditor(): void {
     this.store.reset();
-    this.ultimoDraftGravado = null;
     this.cadastro.descartarCadastroEmAndamento();
 
     // A rota reusa esta página, então um resumo aberto sobrevive à troca de
@@ -560,9 +544,6 @@ export class ProcessoSeletivoPage {
     }
 
     this.store.setStepError(null);
-    // O ponto único por onde toda gravação normal passa — captura aqui cobre
-    // avanço comum e o diálogo de confirmação, que também chama este método.
-    this.ultimoDraftGravado = structuredClone(this.store.draft());
     this.store.next();
     return true;
   }
@@ -576,10 +557,13 @@ export class ProcessoSeletivoPage {
    * `validarRascunho()` já roda `validate()` de TODOS os passos — 1 a 12,
    * inclusive a própria Revisão (CA-01) — então o preflight do servidor e os
    * campos que só a Revisão coleta chegam aqui pela mesma varredura, sem
-   * checagem duplicada. Passado esse portão, o passo segue o mesmo contrato
-   * de qualquer outro que grava: confirma (se declarar
-   * `confirmacaoDeGravacao()`) e `gravarEAvancar` chama `persistir()`, que é
-   * quem publica de verdade.
+   * checagem duplicada. Passado esse portão, `gravarPassosAnteriores()`
+   * grava de novo cada passo anterior — não só valida — porque a navegação
+   * livre entre passos deixa o rascunho local divergir do que o servidor
+   * tem sem nenhum aviso (achado do Codex na #486, P1; ver o comentário de
+   * `gravarPassosAnteriores`). Só então o passo segue o mesmo contrato de
+   * qualquer outro que grava: confirma (se declarar `confirmacaoDeGravacao()`)
+   * e `gravarEAvancar` chama `persistir()`, que é quem publica de verdade.
    */
   private async publicar(): Promise<void> {
     const pendentes = this.validarRascunho();
@@ -590,11 +574,9 @@ export class ProcessoSeletivoPage {
       return;
     }
 
-    const naoGravadas = this.secoesNaoGravadas();
-    if (naoGravadas.length > 0) {
-      this.store.setStepError([
-        `Há alterações não gravadas em: ${naoGravadas.join(', ')}. Volte a cada passo alterado e avance normalmente antes de publicar.`,
-      ]);
+    const falhasDeGravacao = await this.gravarPassosAnteriores();
+    if (falhasDeGravacao.length > 0) {
+      this.store.setStepError(falhasDeGravacao);
       this.revelarErro();
       return;
     }
@@ -680,31 +662,54 @@ export class ProcessoSeletivoPage {
   }
 
   /**
-   * Seções do rascunho que divergem do retrato de `ultimoDraftGravado` — o
-   * que mudou desde a última gravação bem-sucedida (ou hidratação) sem
-   * passar por uma gravação nova. Ignora `publicacao`: é a seção que o
-   * próprio `gravarEAvancar` da Revisão está prestes a gravar em seguida, e
-   * ainda diverge por definição enquanto o operador digita nela.
+   * Grava de novo cada passo anterior à Revisão que declara `persistir()` —
+   * não só valida. A navegação entre passos é livre: o operador pode voltar
+   * a um passo já gravado pelo stepper, editá-lo, e pular direto para a
+   * Revisão sem passar pelo "avançar" que dispara `persistir()` de novo.
+   * `validarRascunho()` só confere que o rascunho local está bem-formado —
+   * não que bate com o que o servidor tem —, e sem esta varredura a
+   * publicação confirmava sobre uma edição que nunca chegou ao servidor:
+   * publica-se a configuração antiga enquanto o operador acredita publicar
+   * a que acabou de editar (achado do Codex na #486, P1).
    *
-   * `[]` antes da primeira gravação — não há o que comparar — e depois que
-   * cada gravação normal atualiza o retrato por inteiro (`WizardDraft` é um
-   * único objeto cumulativo, não uma cópia por passo).
+   * Detectar "sujo" seção a seção exigiria um mapeamento de passo para
+   * seção do `WizardDraft` que não existe em lugar nenhum do wizard de
+   * propósito (`processo-seletivo.data.ts`: "nenhum componente de passo
+   * declara a própria [posição]" — vale também para a seção) — e o
+   * rascunho tem mais de um caminho de escrita (`patchObjectSection` do
+   * operador, `patchSection`, `projetarSecao` de reconciliação com o
+   * servidor), cada um por conta própria. Uma tentativa anterior comparou
+   * um retrato do rascunho tirado após a hidratação contra o atual, e
+   * quebrou toda retomada com edital confirmado porque a restauração do
+   * anexo muda o rascunho de novo, assincronamente, depois do retrato — a
+   * mesma classe de lacuna se repetiria a cada novo caminho de escrita que
+   * aparecesse. Gravar de novo é mais caro (uma chamada a mais por passo já
+   * visitado, mesmo sem edição), mas correto por construção: `persistir()`
+   * de cada passo já é reenvio idempotente (`ChaveDeSubstituicao`), e
+   * nenhum deles depende de `store.currentStep()` — todos já são chamados
+   * genericamente por `gravarEAvancar()` fora desta varredura.
    */
-  private secoesNaoGravadas(): readonly string[] {
-    if (this.ultimoDraftGravado === null) return [];
+  private async gravarPassosAnteriores(): Promise<string[]> {
+    const pendencias: string[] = [];
 
-    const atual = this.store.draft();
-    const gravado = this.ultimoDraftGravado;
-    const secoes: string[] = [];
+    for (let index = 0; index < this.store.totalSteps - 1; index += 1) {
+      const validator = this.stepValidatorAt(index);
+      if (!validator?.persistir) continue;
 
-    for (const chave of Object.keys(atual) as (keyof WizardDraft)[]) {
-      if (chave === 'publicacao') continue;
-      if (JSON.stringify(atual[chave]) !== JSON.stringify(gravado[chave])) {
-        secoes.push(chave);
+      const commit = await validator.persistir().catch(
+        (): StepValidation => ({
+          valid: false,
+          messages: ['Não foi possível concluir a operação. Tente novamente.'],
+        }),
+      );
+
+      if (!commit.valid && commit.messages?.length !== 0) {
+        const detalhe = mensagensDe(commit).join(' ');
+        pendencias.push(`Passo ${index + 1} — ${this.store.labels[index]}: ${detalhe}`);
       }
     }
 
-    return secoes;
+    return pendencias;
   }
 
   scrollToTop(): void {

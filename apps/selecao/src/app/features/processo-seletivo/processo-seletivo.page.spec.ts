@@ -310,6 +310,56 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(store.salvando()).toBe(false);
     expect(page.confirmacaoPendente()).toBeNull();
   });
+
+  /**
+   * A navegação entre passos é livre: o operador pode voltar a um passo já
+   * gravado pelo stepper, editá-lo, e pular direto para a Revisão sem passar
+   * pelo "avançar" que dispara `persistir()` de novo. Sem `gravarPassosAn-
+   * teriores()`, `validarRascunho()` aprovaria o rascunho local (está
+   * bem-formado) e a publicação confirmaria sobre uma edição que nunca
+   * chegou ao servidor (achado do Codex na #486, P1).
+   */
+  it('grava de novo um passo anterior antes de publicar, mesmo sem editar via avançar', async () => {
+    const { fixture, page, store } = montar();
+    const persistirDoPassoAnterior = vi.fn().mockResolvedValue({ valid: true });
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubComPersistir = { validate: () => ({ valid: true }), persistir: persistirDoPassoAnterior };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === 2 ? stubComPersistir : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(persistirDoPassoAnterior).toHaveBeenCalledTimes(1);
+    expect(store.stepError()).toBeNull();
+  });
+
+  it('recusa publicar e nomeia o passo quando a gravação de um passo anterior falha', async () => {
+    const { fixture, page, store } = montar();
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubComFalha = {
+      validate: () => ({ valid: true }),
+      persistir: vi.fn().mockResolvedValue({ valid: false, messages: ['Falha ao gravar de novo.'] }),
+    };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === 2 ? stubComFalha : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    const erros = store.stepError() ?? [];
+    expect(erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.'))).toBe(
+      true,
+    );
+  });
 });
 
 /** Garante que o store exposto pela página é o mesmo instanciado na rota. */
