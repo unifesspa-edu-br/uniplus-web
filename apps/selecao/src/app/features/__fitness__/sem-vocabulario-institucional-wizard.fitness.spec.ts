@@ -25,7 +25,9 @@ import { describe, expect, it } from 'vitest';
  *    `processo-seletivo.data.ts` nem usam um dos nomes do inventário banido
  *    abaixo.
  * 3. **catálogo local paralelo** — lista de opções institucionais que
- *    deveria vir de um client de API. Reprova.
+ *    deveria vir de um client de API. Reprova, declarado exportado, privado
+ *    (usado só dentro do próprio arquivo) ou reexportado com outro nome
+ *    local — as três formas contam como reintrodução.
  *
  * `DOCUMENTO_GRUPOS` é exceção nomeada e temporária: pertence à `#483`, que
  * não está nesta frente (ver comentário no próprio export, em
@@ -124,9 +126,8 @@ function exportsConstDe(source: string): string[] {
  * essa forma para reexportar (`export { decimalDoCampo as comoNumero,
  * inteiroDoCampo }`), então uma constante banida também poderia sair por
  * aqui, sem nunca aparecer como `export const` no mesmo arquivo. Não cobre
- * `export * from` nem renomear a constante banida para outro nome no export
- * — o gate é anchorado em nomes conhecidos (nota técnica da issue #511), não
- * em análise semântica de valor.
+ * `export * from` — o gate é anchorado em nomes conhecidos (nota técnica da
+ * issue #511), não em análise semântica de valor.
  */
 function exportsEspecificadorDe(source: string): string[] {
   const regex = /export\s*\{([^}]*)\}/g;
@@ -148,9 +149,42 @@ function todosOsExportsDe(source: string): string[] {
   return [...exportsConstDe(semComentario), ...exportsEspecificadorDe(semComentario)];
 }
 
-/** Dos exports do arquivo, quais batem com um nome do inventário banido. */
-function exportsBanidosEm(source: string): string[] {
-  return todosOsExportsDe(source).filter((nome) => nome in CATALOGO_BANIDO);
+/**
+ * Nomes declarados como `const <NOME>`, com ou sem `export` na frente — ao
+ * contrário de `exportsConstDe`, não exige o prefixo `export`. Uma
+ * constante privada com o nome de um catálogo banido, usada só dentro do
+ * próprio arquivo (nunca importável de fora), já recria o catálogo local
+ * que a #511 existe para impedir: o BDD da issue fala em "adiciona uma
+ * constante com valores aceitos de um catálogo banido", sem exigir que ela
+ * seja exportada. Não distingue escopo de módulo de escopo de função — o
+ * mesmo trade-off de regex-sem-parser do resto deste arquivo — mas os sete
+ * nomes do inventário são específicos o bastante para não colidir com
+ * variável local de outro propósito.
+ */
+function declaracoesConstDe(source: string): string[] {
+  const regex = /\bconst\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
+  const nomes: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(source)) !== null) {
+    nomes.push(match[1]);
+  }
+  return nomes;
+}
+
+/**
+ * Dos nomes que o arquivo declara — const local, `export const` ou export
+ * por lista/reexport —, quais batem com um nome do inventário banido.
+ * Cobre as três formas de reintroduzir o catálogo: declará-lo exportado,
+ * declará-lo privado e usá-lo só ali dentro, ou declará-lo com outro nome
+ * local e reexportá-lo sob o nome banido.
+ */
+function nomesBanidosDeclaradosEm(source: string): string[] {
+  const semComentario = semComentarios(source);
+  const todosOsNomes = [
+    ...declaracoesConstDe(semComentario),
+    ...exportsEspecificadorDe(semComentario),
+  ];
+  return [...new Set(todosOsNomes)].filter((nome) => nome in CATALOGO_BANIDO);
 }
 
 describe('Fitness — vocabulário institucional não duplica no wizard de Processo Seletivo', () => {
@@ -188,7 +222,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
 
     it.each(arquivos)('%s', (filePath) => {
       const source = fs.readFileSync(filePath, 'utf-8');
-      const banidos = exportsBanidosEm(source);
+      const banidos = nomesBanidosDeclaradosEm(source);
       const relativePath = path.relative(path.resolve(__dirname, '../../../../../..'), filePath);
 
       expect(
@@ -208,19 +242,29 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
 
   // Prova negativa da própria regra (DoD da #511): mostra que o checker
   // reprova a reintrodução de um catálogo banido, sem tocar em arquivo real
-  // do wizard — a fonte é sintética, só para exercitar exportsBanidosEm().
+  // do wizard — a fonte é sintética, só para exercitar nomesBanidosDeclaradosEm().
   describe('prova negativa — o gate reprova a reintrodução de um catálogo banido', () => {
     it('sinaliza export local de POLOS', () => {
       const fonteSintetica = `
         export const PASSOS = [{ rotulo: 'x' }];
         export const POLOS = ['Marabá (PA)', 'Canaã dos Carajás (PA)'] as const;
       `;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual(['POLOS']);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['POLOS']);
     });
 
     it('sinaliza export local de CRITERIOS_DESEMPATE', () => {
       const fonteSintetica = `export const CRITERIOS_DESEMPATE = [{ id: 1, label: 'Idade' }];`;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
+    });
+
+    it('sinaliza POLOS declarado como `const` privada e usada só dentro do próprio arquivo, nunca exportada', () => {
+      const fonteSintetica = `
+        const POLOS = ['Marabá (PA)', 'Canaã dos Carajás (PA)'];
+        export class PolosStepComponent {
+          readonly polos = POLOS;
+        }
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['POLOS']);
     });
 
     it('sinaliza POLOS reexportado por lista — `const` privado + `export { POLOS }`, forma que o wizard já usa em cronograma-do-certame.ts', () => {
@@ -228,7 +272,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
         const POLOS = ['Marabá (PA)'];
         export { POLOS };
       `;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual(['POLOS']);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['POLOS']);
     });
 
     it('sinaliza CRITERIOS_DESEMPATE reexportado com rename — `export { criterios as CRITERIOS_DESEMPATE }`', () => {
@@ -236,7 +280,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
         const criterios = [{ id: 1 }];
         export { criterios as CRITERIOS_DESEMPATE };
       `;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
     });
 
     it('NÃO sinaliza a exceção nomeada — código de vocabulário fechado citado pela lógica (SEGUE_CASCATA, PCD, ramo federal)', () => {
@@ -248,12 +292,12 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
           return REGRAS_RAMO_FEDERAL.includes(codigo);
         }
       `;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual([]);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
     });
 
     it('NÃO sinaliza o padrão real de export por lista do wizard (cronograma-do-certame.ts)', () => {
       const fonteSintetica = `export { decimalDoCampo as comoNumero, inteiroDoCampo };`;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual([]);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
     });
 
     it('NÃO sinaliza rótulo de navegação nem a exceção temporária DOCUMENTO_GRUPOS', () => {
@@ -263,7 +307,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
         export const REVIEW_NAMES = [];
         export const DOCUMENTO_GRUPOS = [];
       `;
-      expect(exportsBanidosEm(fonteSintetica)).toEqual([]);
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
     });
   });
 });
