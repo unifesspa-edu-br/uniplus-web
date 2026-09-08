@@ -270,6 +270,9 @@ const BACKEND_FIELD_TO_CONTROL = {
         @if (unidades().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Unidades
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Sigla</th>
@@ -310,6 +313,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="recarregandoLista()"
                         (click)="abrirEdicao(unidade)"
+                        [attr.aria-label]="'Editar ' + unidade.sigla"
                       >
                         Editar
                       </button>
@@ -318,6 +322,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="recarregandoLista()"
                         (click)="pedirRemocao(unidade)"
+                        [attr.aria-label]="'Remover ' + unidade.sigla"
                       >
                         Remover
                       </button>
@@ -633,11 +638,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                     [attr.aria-describedby]="cidadeDescribedBy(false)"
                     [value]="cidade.nome + ' — ' + cidade.uf"
                   />
-                  <button
-                    type="button"
-                    class="btn btn--tertiary"
-                    (click)="limparCidade()"
-                  >
+                  <button type="button" class="btn btn--tertiary" (click)="limparCidade()">
                     Trocar cidade
                   </button>
                 </div>
@@ -683,14 +684,18 @@ const BACKEND_FIELD_TO_CONTROL = {
                     }
                   </ul>
                 } @else if (buscaCidadeSemResultado()) {
-                  <p class="field__hint" role="status" aria-live="polite">Nenhuma cidade encontrada.</p>
+                  <p class="field__hint" role="status" aria-live="polite">
+                    Nenhuma cidade encontrada.
+                  </p>
                 }
               }
               <span class="field__hint" id="cfg-unidade-cidade-hint">
                 Cidade-sede de referência da unidade. Opcional.
               </span>
               @if (cidadeErro(); as erro) {
-                <span class="field__error" id="cfg-unidade-cidade-erro" role="alert">{{ erro }}</span>
+                <span class="field__error" id="cfg-unidade-cidade-erro" role="alert">{{
+                  erro
+                }}</span>
               }
             </div>
           </div>

@@ -79,8 +79,23 @@ describe('TiposBancaPage', () => {
     await flushLista([bancaSeed]);
     expect(component['bancas']()).toHaveLength(1);
     fixture.detectChanges();
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const inativarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
     expect(fixture.nativeElement.textContent).toContain('Banca de Entrevista');
     expect(fixture.nativeElement.textContent).toContain('BANCA_ENTREVISTA');
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar Banca de Entrevista');
+    expect(inativarButtonEl.textContent).toContain('Inativar');
+    expect(inativarButtonEl.getAttribute('aria-label')).toContain('Inativar Banca de Entrevista');
+    expect(tableCaptionEl.textContent).toContain('Tipo de banca');
   });
 
   it('CA-10: banner de código imutável é visível mesmo com lista vazia', async () => {

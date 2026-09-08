@@ -169,6 +169,9 @@ interface OfertaCursoForm {
       @if (ofertas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Oferta de curso
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Curso</th>
@@ -215,6 +218,9 @@ interface OfertaCursoForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(oferta)"
+                      [attr.aria-label]="
+                        'Editar oferta do curso ' + cursoDaOferta(oferta.cursoId).rotulo
+                      "
                     >
                       Editar
                     </button>
@@ -223,6 +229,9 @@ interface OfertaCursoForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirRemocao(oferta)"
+                      [attr.aria-label]="
+                        'Remover oferta do curso ' + cursoDaOferta(oferta.cursoId).rotulo
+                      "
                     >
                       Remover
                     </button>
@@ -764,11 +773,7 @@ export class OfertasCursoPage {
     }),
     regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
       nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(30),
-        compatibilidadeComRegimeDeTurno,
-      ],
+      validators: [Validators.required, Validators.maxLength(30), compatibilidadeComRegimeDeTurno],
     }),
   });
 

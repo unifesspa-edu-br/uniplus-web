@@ -171,6 +171,9 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         @if (condicoesFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Condições de atendimento
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>
@@ -213,17 +216,25 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
                         (click)="abrirEdicao(condicao)"
+                        [attr.aria-label]="'Editar ' + condicao.nome"
                       >
                         Editar
                       </button>
                       <button
-                          type="button"
-                          class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
-                          [title]="condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''"
-                          (click)="abrirInativarCondicao(condicao)"
-                        >
-                          Inativar
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
+                        [title]="
+                          condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''
+                        "
+                        (click)="abrirInativarCondicao(condicao)"
+                        [attr.aria-label]="
+                          condicao.codigo === 'PCD'
+                            ? 'A condição PCD não pode ser inativada.'
+                            : 'Inativar ' + condicao.nome
+                        "
+                      >
+                        Inativar
                       </button>
                     </td>
                   </tr>
@@ -370,8 +381,8 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
       <p>
         Você está prestes a inativar a condição
         <strong>{{ condicaoParaInativar()?.nome }}/{{ condicaoParaInativar()?.codigo }}.</strong>
-        A inativação impede novos editais de utilizá-lo, mas não altera ofertas já congeladas —
-        a cópia por valor de cada processo permanece íntegra.
+        A inativação impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a
+        cópia por valor de cada processo permanece íntegra.
       </p>
       <div uiDialogFooter>
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
@@ -489,7 +500,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
         nonNullable: true,
         validators: [Validators.maxLength(1000)],
       }),
-  });
+    });
   protected readonly formError = signal<string | null>(null);
 
   constructor() {
@@ -503,10 +514,10 @@ export class CondicoesAtendimentoListPage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.form.get('codigo')?.valueChanges.subscribe(val => {
+    this.form.get('codigo')?.valueChanges.subscribe((val) => {
       this.form.get('codigo')?.setValue(val.toUpperCase(), {
         emitEvent: false,
-        emitModelToViewChange: false
+        emitModelToViewChange: false,
       });
     });
   }
@@ -705,7 +716,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
+    if (control.errors['minlength'])
+      return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     if (control.errors['pattern'])
       return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: DISLEXIA, TDAH).';

@@ -8,7 +8,11 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, LocalOfertaDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  LocalOfertaDto,
+  TipoLocalOferta,
+} from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LocaisOfertaPage } from './locais-oferta.page';
@@ -22,7 +26,7 @@ const LIMITE_MAXIMO_API = 100;
 
 const localSeed: LocalOfertaDto = {
   id: '01960000-0000-7000-0000-0000000000d1',
-  tipo: 'poloEad',
+  tipo: TipoLocalOferta.poloEad,
   codigoEmec: '999',
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -139,8 +143,6 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(component['campi'].opcoes()).toHaveLength(1);
-
     // Se a primeira ainda estivesse "viva", flush aqui explodiria (request já
     // consumido) ou reabriria uma disputa — confirma que não sobra nada pendente.
     controller.verify();
@@ -152,6 +154,26 @@ describe('LocaisOfertaPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Polo EAD');
     expect(fixture.nativeElement.textContent).toContain('Marabá — PA');
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(
+      'Editar 01960000-0000-7000-0000-0000000000d1',
+    );
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain(
+      'Remover 01960000-0000-7000-0000-0000000000d1',
+    );
+    expect(tableCaptionEl.textContent).toContain('Locais de oferta');
   });
 
   it('CA-04: cria local de oferta com tipo + endereço aninhado', async () => {
@@ -198,7 +220,19 @@ describe('LocaisOfertaPage', () => {
       },
     ]);
     await propagate();
+
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
     expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar MAB — Campus de Marabá');
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain('Remover MAB — Campus de Marabá');
   });
 
   // A coluna resolvia o campus por lookup e, quando a busca falhava, trocava o

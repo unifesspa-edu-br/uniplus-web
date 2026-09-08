@@ -117,6 +117,22 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('PCD');
     expect(fixture.nativeElement.textContent).toContain('Pcd');
     expect(fixture.nativeElement.textContent).toContain('LBI (Lei 13.146/2015), art. 30');
+
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = getEditarButtonEl();
+    const inativarButtonEl = getInativarButtonEl();
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(
+      'Editar Pcd',
+    );
+    expect(inativarButtonEl.textContent).toContain('Inativar');
+    expect(inativarButtonEl.getAttribute('aria-label')).toContain(
+      'A condição PCD não pode ser inativada.',
+    );
+    expect(tableCaptionEl.textContent).toContain('Condições de atendimento');
   });
 
   it('cria condição de atendimento com código único, nome, descrição válidos', async () => {

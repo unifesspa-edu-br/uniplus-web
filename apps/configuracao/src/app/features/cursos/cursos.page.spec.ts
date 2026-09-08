@@ -37,6 +37,7 @@ const ofertaSeed: OfertaCursoDto = {
   },
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
+  regimeDeFuncionamento: 'EXTENSIVO',
   regimeDeTurno: 'REGULAR',
   turnos: ['MATUTINO'],
   eMecCodigo: '123456',
@@ -90,6 +91,28 @@ describe('CursosPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Engenharia Civil');
     expect(fixture.nativeElement.textContent).toContain('ENG-CIV');
+
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+
+    const ofertasButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:nth-child(2)',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
+    expect(ofertasButtonEl.textContent).toContain('Ofertas');
+    expect(ofertasButtonEl.getAttribute('aria-label')).toContain('Ofertas de Engenharia Civil');
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar Engenharia Civil');
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain('Remover Engenharia Civil');
+    expect(tableCaptionEl.textContent).toContain('Cursos');
   });
 
   it('CA-02: cria curso com código único, nome, grau e nível válidos', async () => {

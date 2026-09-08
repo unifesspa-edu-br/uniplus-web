@@ -136,6 +136,9 @@ interface CursoForm {
       @if (cursosFiltrados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Cursos
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -164,6 +167,7 @@ interface CursoForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirOfertas(curso)"
+                      [attr.aria-label]="'Ofertas de ' + curso.nome"
                     >
                       Ofertas
                     </button>
@@ -172,6 +176,7 @@ interface CursoForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(curso)"
+                      [attr.aria-label]="'Editar ' + curso.nome"
                     >
                       Editar
                     </button>
@@ -180,6 +185,7 @@ interface CursoForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirRemocao(curso)"
+                      [attr.aria-label]="'Remover ' + curso.nome"
                     >
                       Remover
                     </button>

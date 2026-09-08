@@ -126,11 +126,22 @@ describe('RecursosAcessibilidadeListPage', () => {
 
   it('renderiza a lista de recursos de acessibilidade', async () => {
     await flushLista([recurso_acessibilidade_seed]);
+
+    const editarButtonEl = getEditarButtonEl();
+    const inativarButtonEl = getInativarButtonEl();
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
     expect(component['recursos']()).toHaveLength(1);
 
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Ledor');
     expect(fixture.nativeElement.textContent).toContain('Leitura da prova em voz alta por fiscal designado.');
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar Ledor');
+    expect(inativarButtonEl.textContent).toContain('Inativar');
+    expect(inativarButtonEl.getAttribute('aria-label')).toContain('Inativar Ledor');
+    expect(tableCaptionEl.textContent).toContain('Recursos de acessibilidade');
   });
 
   it('cria recurso de acessibilidade com nome único, descrição válidos', async () => {

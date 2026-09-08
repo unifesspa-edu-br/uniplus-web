@@ -287,6 +287,26 @@ describe('OfertasCursoPage', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'IGE — Instituto de Geociências e Engenharias',
     );
+
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(
+      'Editar oferta do curso ENG-CIV — Engenharia Civil',
+    );
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain(
+      'Remover oferta do curso ENG-CIV — Engenharia Civil',
+    );
+    expect(tableCaptionEl.textContent).toContain('Oferta de curso');
   });
 
   it('a listagem mostra os regimes por rótulo, não pelo token do contrato', async () => {

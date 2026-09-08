@@ -65,10 +65,28 @@ describe('ReservaDemograficaListPage', () => {
     await flushLista([seed]);
     expect(component['referenciasFiltradas']()).toHaveLength(1);
     fixture.detectChanges();
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const inativarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
     const texto = fixture.nativeElement.textContent;
     expect(texto).toContain('2022');
     expect(texto).toContain('78.50');
     expect(texto).toContain('Ativa');
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(
+      "Editar 01960000-0000-7000-0000-0000000000e1",
+    );
+    expect(inativarButtonEl.textContent).toContain('Inativar');
+    expect(inativarButtonEl.getAttribute('aria-label')).toContain(
+      "Inativar 01960000-0000-7000-0000-0000000000e1",
+    );
+    expect(tableCaptionEl.textContent).toContain('Reserva demográfica');
   });
 
   it('CA-01: busca por Censo filtra client-side', async () => {

@@ -128,8 +128,19 @@ describe('TiposDeficienciaListPage', () => {
     expect(component['tiposDeficiencia']()).toHaveLength(1);
 
     fixture.detectChanges();
+    const editarButtonEl = getEditarButtonEl();
+    const inativarButtonEl = getInativarButtonEl();
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
     expect(fixture.nativeElement.textContent).toContain('Visual');
     expect(fixture.nativeElement.textContent).toContain('Inclui baixa visão e cegueira');
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar Visual');
+    expect(inativarButtonEl.textContent).toContain('Inativar');
+    expect(inativarButtonEl.getAttribute('aria-label')).toContain('Inativar Visual');
+    expect(tableCaptionEl.textContent).toContain('Tipo de deficiência');
   });
 
   it('descrição em branco barra o envio e não vira null no payload', async () => {

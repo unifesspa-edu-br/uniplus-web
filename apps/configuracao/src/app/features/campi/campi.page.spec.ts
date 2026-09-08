@@ -80,6 +80,19 @@ describe('CampiPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Campus de Marabá');
     expect(fixture.nativeElement.textContent).toContain('Marabá — PA');
+    const editarButtonEl = fixture.nativeElement.querySelector('.table-responsive__actions > button:first-child') as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar ' + campusSeed.sigla);
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain('Remover ' + campusSeed.sigla);
+
+    expect(tableCaptionEl.textContent).toContain('Campi da instituição com endereço estruturado');
   });
 
   it('CA-04: cria campus com cidade + endereço aninhado e recarrega a lista', async () => {

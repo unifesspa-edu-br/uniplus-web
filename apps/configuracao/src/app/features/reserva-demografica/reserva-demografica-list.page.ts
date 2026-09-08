@@ -150,6 +150,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         @if (referenciasFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Reserva demográfica
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Censo</th>
@@ -180,6 +183,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading()"
                         (click)="abrirEdicao(ref)"
+                        [attr.aria-label]="'Editar ' + ref.id"
                       >
                         Editar
                       </button>
@@ -188,6 +192,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading()"
                         (click)="pedirRemocao(ref)"
+                        [attr.aria-label]="'Inativar ' + ref.id"
                       >
                         Inativar
                       </button>

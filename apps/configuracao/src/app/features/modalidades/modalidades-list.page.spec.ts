@@ -89,6 +89,25 @@ describe('ModalidadesListPage', () => {
     expect(texto).toContain('AC');
     expect(texto).toContain('Ampla concorrência');
     expect(texto).toContain('Ativa');
+
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > a',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button',
+    ) as HTMLButtonElement;
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(
+      'Editar modalidade AC',
+    );
+    expect(removerButtonEl.textContent).toContain('Inativar');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain('Inativar modalidade AC');
+    expect(tableCaptionEl.textContent).toContain('Modalidades');
   });
 
   it('CA-01: chips de natureza contam por token e filtram client-side', async () => {

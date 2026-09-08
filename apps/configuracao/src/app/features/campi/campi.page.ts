@@ -121,6 +121,9 @@ interface CampusForm {
       @if (campi().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Campi da instituição com endereço estruturado
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Sigla</th>
@@ -145,6 +148,7 @@ interface CampusForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(campus)"
+                      [attr.aria-label]="'Editar ' + campus.sigla"
                     >
                       Editar
                     </button>
@@ -153,6 +157,7 @@ interface CampusForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirRemocao(campus)"
+                      [attr.aria-label]="'Remover ' + campus.sigla"
                     >
                       Remover
                     </button>

@@ -344,6 +344,9 @@ function ultimaChaveDoCaminho(field: string): string {
           @if ((termo()?.versoes?.length ?? 0) > 0) {
             <div class="table-responsive">
               <table>
+                <caption class="sr-only">
+                  Versões promovidas
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Promovida em</th>

@@ -192,6 +192,9 @@ interface TipoDocumentoForm {
       @if (documentosFiltrados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Tipo de documento
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -205,24 +208,35 @@ interface TipoDocumentoForm {
             <tbody>
               @for (tipo of documentosFiltrados(); track tipo.id) {
                 <tr>
-                  <td data-label="Código"><code>{{ tipo.codigo }}</code></td>
+                  <td data-label="Código">
+                    <code>{{ tipo.codigo }}</code>
+                  </td>
                   <td data-label="Nome">
                     {{ tipo.nome }}
                     @if (tipo.tipoEquivalente) {
-                      <div class="table-responsive__meta">Equiv.: <code>{{ tipo.tipoEquivalente }}</code></div>
+                      <div class="table-responsive__meta">
+                        Equiv.: <code>{{ tipo.tipoEquivalente }}</code>
+                      </div>
                     }
                   </td>
                   <td data-label="Categoria">
-                    <ui-tag><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" /></ui-tag>
+                    <ui-tag
+                      ><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)"
+                    /></ui-tag>
                   </td>
-                  <td data-label="Formatos aceitos" class="u-caption">{{ tipo.formatosAceitos || '—' }}</td>
-                  <td data-label="Tam. máx." class="u-caption">{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</td>
+                  <td data-label="Formatos aceitos" class="u-caption">
+                    {{ tipo.formatosAceitos || '—' }}
+                  </td>
+                  <td data-label="Tam. máx." class="u-caption">
+                    {{ tamanhoLabel(tipo.tamanhoMaximoMb) }}
+                  </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(tipo)"
+                      [attr.aria-label]="'Editar tipo de documento ' + tipo.nome"
                     >
                       Editar
                     </button>
@@ -231,6 +245,7 @@ interface TipoDocumentoForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirInativacao(tipo)"
+                      [attr.aria-label]="'Inativar tipo de documento ' + tipo.nome"
                     >
                       Inativar
                     </button>
@@ -319,7 +334,9 @@ interface TipoDocumentoForm {
               formControlName="codigo"
               [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
               [attr.aria-describedby]="
-                erroCampoCodigo ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro' : 'cfg-tdoc-codigo-dica'
+                erroCampoCodigo
+                  ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro'
+                  : 'cfg-tdoc-codigo-dica'
               "
             />
             <span class="field__hint" id="cfg-tdoc-codigo-dica">

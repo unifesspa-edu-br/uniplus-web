@@ -139,14 +139,17 @@ interface LocalOfertaForm {
       @if (locais().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Locais de oferta
+            </caption>
             <thead>
-              <tr>
-                <th scope="col">Tipo</th>
-                <th scope="col">Cidade</th>
-                <th scope="col">Campus responsável</th>
-                <th scope="col">Código e-MEC</th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
-              </tr>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col">Cidade</th>
+              <th scope="col">Campus responsável</th>
+              <th scope="col">Código e-MEC</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
             </thead>
             <tbody>
               @for (local of locais(); track local.id) {
@@ -169,6 +172,7 @@ interface LocalOfertaForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(local)"
+                      [attr.aria-label]="'Editar ' + campusIdentificadorLabel(local)"
                     >
                       Editar
                     </button>
@@ -177,6 +181,7 @@ interface LocalOfertaForm {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirRemocao(local)"
+                      [attr.aria-label]="'Remover ' + campusIdentificadorLabel(local)"
                     >
                       Remover
                     </button>
@@ -711,6 +716,14 @@ export class LocaisOfertaPage {
 
   private atualizarCommand(): AtualizarLocalOfertaCommand {
     return { id: this.localEmEdicaoId() ?? '', ...this.criarCommand() };
+  }
+
+  protected campusIdentificadorLabel(local: LocalOfertaDto): string {
+    if (!local.campusResponsavelId) {
+      return local.id;
+    }
+    const campusDoLocal = this.campusDoLocal(local.campusResponsavelId);
+    return campusDoLocal.estado === 'resolvido' ? campusDoLocal.rotulo : local.id;
   }
 }
 

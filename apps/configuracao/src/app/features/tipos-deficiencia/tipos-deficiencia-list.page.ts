@@ -184,6 +184,9 @@ const PAGE_SIZE = 50;
         @if (tiposDeficienciaFiltrados().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Tipo de deficiência
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>
@@ -216,6 +219,7 @@ const PAGE_SIZE = 50;
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
                         (click)="abrirEdicao(tipoDeficiencia)"
+                        [attr.aria-label]="'Editar ' + tipoDeficiencia.nome"
                       >
                         Editar
                       </button>
@@ -224,6 +228,7 @@ const PAGE_SIZE = 50;
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
                         (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
+                        [attr.aria-label]="'Inativar ' + tipoDeficiencia.nome"
                       >
                         Inativar
                       </button>
@@ -298,9 +303,7 @@ const PAGE_SIZE = 50;
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
                 [attr.aria-describedby]="
-                  erroDoCampo('nome')
-                    ? 'cfg-td-nome-dica cfg-td-nome-erro'
-                    : 'cfg-td-nome-dica'
+                  erroDoCampo('nome') ? 'cfg-td-nome-dica cfg-td-nome-erro' : 'cfg-td-nome-dica'
                 "
               />
               <span class="field__hint" id="cfg-td-nome-dica">

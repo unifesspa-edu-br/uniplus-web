@@ -108,8 +108,8 @@ const PAGE_SIZE = 50;
       <div class="page-header__content">
         <h1 class="page-header__title">Recurso de Acessibilidade</h1>
         <p class="page-header__desc">
-          Recursos oferecidos no atendimento especializado, independentes da condição —
-          cadastro identificado pelo nome · UNI-REQ-0012.
+          Recursos oferecidos no atendimento especializado, independentes da condição — cadastro
+          identificado pelo nome · UNI-REQ-0012.
         </p>
       </div>
     </div>
@@ -169,6 +169,9 @@ const PAGE_SIZE = 50;
         @if (recursosFiltrados().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Recursos de acessibilidade
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Nome</th>
@@ -178,7 +181,10 @@ const PAGE_SIZE = 50;
                 </tr>
               </thead>
               <tbody>
-                @for (recursoAcessibilidade of recursosFiltrados(); track recursoAcessibilidade.id) {
+                @for (
+                  recursoAcessibilidade of recursosFiltrados();
+                  track recursoAcessibilidade.id
+                ) {
                   <tr>
                     <td data-label="Nome">
                       <div class="table-responsive__primary">
@@ -197,17 +203,19 @@ const PAGE_SIZE = 50;
                         class="btn btn--tertiary btn--sm btn--rect"
                         [disabled]="loading() || submitting()"
                         (click)="abrirEdicao(recursoAcessibilidade)"
+                        [attr.aria-label]="'Editar ' + recursoAcessibilidade.nome"
                       >
                         Editar
                       </button>
-                        <button
-                          type="button"
-                          class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="loading() || submitting()"
-                          (click)="abrirInativarRecurso(recursoAcessibilidade)"
-                        >
-                          Inativar
-                        </button>
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [disabled]="loading() || submitting()"
+                        (click)="abrirInativarRecurso(recursoAcessibilidade)"
+                        [attr.aria-label]="'Inativar ' + recursoAcessibilidade.nome"
+                      >
+                        Inativar
+                      </button>
                     </td>
                   </tr>
                 }
@@ -281,7 +289,8 @@ const PAGE_SIZE = 50;
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
               />
               <span class="field__hint">
-                Identificador do recurso — único entre os recursos ativos. Impede duplicatas como dois "Ledor".
+                Identificador do recurso — único entre os recursos ativos. Impede duplicatas como
+                dois "Ledor".
               </span>
               @if (erroDoCampo('nome')) {
                 <span class="field__error">{{ erroDoCampo('nome') }}</span>
@@ -330,7 +339,8 @@ const PAGE_SIZE = 50;
         Você está prestes a inativar o recurso <strong>{{ recursoParaInativar()?.nome }}.</strong>
       </p>
       <p>
-        A inativação impede novos editais de utilizá-lo, mas <strong>não altera ofertas já congeladas</strong>
+        A inativação impede novos editais de utilizá-lo, mas
+        <strong>não altera ofertas já congeladas</strong>
         — a cópia por valor de cada processo permanece íntegra.
       </p>
       <div uiDialogFooter>
@@ -343,7 +353,7 @@ const PAGE_SIZE = 50;
       </div>
     </ui-dialog>
   `,
-  host: { 'class': 'cfg-page' },
+  host: { class: 'cfg-page' },
 })
 export class RecursosAcessibilidadeListPage {
   private readonly api = inject(RecursoAcessibilidadeApi);
@@ -382,22 +392,22 @@ export class RecursosAcessibilidadeListPage {
   protected readonly prevCursor = computed(() => this.cursores().prev);
   protected readonly nextCursor = computed(() => this.cursores().next);
   protected readonly recursos = linkedSignal<
-      ApiResult<readonly RecursoAcessibilidadeDto[]> | undefined,
-      readonly RecursoAcessibilidadeDto[]
-    >({
-      source: () => this.lista.value(),
-      computation: (envelope, previous) => {
-        const atual = previous?.value ?? [];
-        if (envelope === undefined) {
-          return atual;
-        }
-        const primeiraPagina = untracked(() => this.pagina() === undefined);
-        if (!envelope.ok) {
-          return primeiraPagina ? [] : atual;
-        }
-        return [...envelope.data];
-      },
-    });
+    ApiResult<readonly RecursoAcessibilidadeDto[]> | undefined,
+    readonly RecursoAcessibilidadeDto[]
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? [];
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.pagina() === undefined);
+      if (!envelope.ok) {
+        return primeiraPagina ? [] : atual;
+      }
+      return [...envelope.data];
+    },
+  });
   // Busca client-side sobre a página carregada: o backend (api#588) só pagina
   // por cursor, sem filtro de texto/código/nome no contrato.
   protected readonly recursosFiltrados = computed(() => {
@@ -405,8 +415,8 @@ export class RecursosAcessibilidadeListPage {
     if (termo.length === 0) {
       return this.recursos();
     }
-    return this.recursos().filter(
-      (recurso) => recurso.nome.toLocaleLowerCase('pt-BR').includes(termo),
+    return this.recursos().filter((recurso) =>
+      recurso.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
   protected readonly errorMessage = computed<string | null>(() => {
@@ -427,11 +437,11 @@ export class RecursosAcessibilidadeListPage {
   readonly form = new FormGroup<RecursoAcessibilidadeForm>({
     nome: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)]
+      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
     }),
     descricao: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(1000)]
+      validators: [Validators.maxLength(1000)],
     }),
   });
   protected readonly formError = signal<string | null>(null);
@@ -455,11 +465,11 @@ export class RecursosAcessibilidadeListPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-    return new HttpParams().set('limit', String(PAGE_SIZE));
+      return new HttpParams().set('limit', String(PAGE_SIZE));
     }
     return new HttpParams()
-    .set('cursor', cursorToString(pagina.cursor))
-    .set('direction', pagina.direction);
+      .set('cursor', cursorToString(pagina.cursor))
+      .set('direction', pagina.direction);
   }
 
   tentarNovamente(): void {
@@ -492,11 +502,12 @@ export class RecursosAcessibilidadeListPage {
     this.confirmOpen.set(true);
   }
 
-  protected abrirEdicao(recurso: RecursoAcessibilidadeDto): void {this.modo.set('editar');
+  protected abrirEdicao(recurso: RecursoAcessibilidadeDto): void {
+    this.modo.set('editar');
     this.recursosAcessibilidadeEmEdicaoId.set(recurso.id);
     this.form.reset({
       nome: recurso.nome,
-      descricao: recurso.descricao ?? ''
+      descricao: recurso.descricao ?? '',
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -515,7 +526,8 @@ export class RecursosAcessibilidadeListPage {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
+    if (control.errors['minlength'])
+      return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     return 'Valor inválido.';
   }
@@ -542,10 +554,7 @@ export class RecursosAcessibilidadeListPage {
 
     if (this.modo() === 'criar') {
       this.api
-        .criar(
-          this.criarCommand(),
-          withIdempotencyKey(this.idempotencyKeyAtual())
-        )
+        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((result) => this.handleSalvarResult(result));
       return;
@@ -578,21 +587,21 @@ export class RecursosAcessibilidadeListPage {
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-        let aplicouAlgum = false;
-        for (const erro of errors) {
-          const controlName = controlNameFromBackendField(erro.field);
-          if (controlName === null) continue;
-          const control = this.form.controls[controlName];
-          control.setErrors({ backend: { code: erro.code, message: erro.message } });
-          control.markAsTouched();
-          aplicouAlgum = true;
-        }
+    let aplicouAlgum = false;
+    for (const erro of errors) {
+      const controlName = controlNameFromBackendField(erro.field);
+      if (controlName === null) continue;
+      const control = this.form.controls[controlName];
+      control.setErrors({ backend: { code: erro.code, message: erro.message } });
+      control.markAsTouched();
+      aplicouAlgum = true;
+    }
 
-        if (aplicouAlgum) {
-          this.formError.set(null);
-          return;
-        }
-        this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
+    if (aplicouAlgum) {
+      this.formError.set(null);
+      return;
+    }
+    this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
   }
 
   private aplicarFalha(problem: ProblemDetails): void {

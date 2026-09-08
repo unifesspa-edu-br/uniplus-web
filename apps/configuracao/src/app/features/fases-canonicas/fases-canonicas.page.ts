@@ -187,6 +187,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
       @if (fasesFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Fases canônicas
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -229,6 +232,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(fase)"
+                      [attr.aria-label]="'Editar ' + fase.nome"
                     >
                       Editar
                     </button>
@@ -237,6 +241,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirRemocao(fase)"
+                      [attr.aria-label]="'Inativar ' + fase.nome"
                     >
                       Inativar
                     </button>

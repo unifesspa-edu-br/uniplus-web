@@ -67,8 +67,24 @@ describe('FasesCanonicasPage', () => {
     await flushLista([faseAvaliacaoSeed]);
     expect(component['fases']()).toHaveLength(1);
     fixture.detectChanges();
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const inativarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
     expect(fixture.nativeElement.textContent).toContain('Avaliação');
     expect(fixture.nativeElement.textContent).toContain('AVALIACAO');
+    expect(tableCaptionEl.textContent).toContain('Fases canônicas');
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar Avaliação');
+    expect(inativarButtonEl.textContent).toContain('Inativar');
+    expect(inativarButtonEl.getAttribute('aria-label')).toContain('Inativar Avaliação');
+    expect(tableCaptionEl.textContent).toContain('Fases canônicas');
   });
 
   it('CA-10: banner de código imutável é visível mesmo com lista vazia', async () => {

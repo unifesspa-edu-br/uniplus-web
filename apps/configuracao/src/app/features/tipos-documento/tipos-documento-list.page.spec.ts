@@ -148,11 +148,32 @@ describe('TiposDocumentoListPage', () => {
   it('renderiza a lista com colunas, chips de categoria e paginador', async () => {
     await flushLista([rgSeed, laudoSeed]);
     fixture.detectChanges();
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
     expect(fixture.nativeElement.textContent).toContain('RG');
     expect(fixture.nativeElement.textContent).toContain('Registro Geral');
     expect(fixture.nativeElement.textContent).toContain('Equiv.:');
     expect(fixture.nativeElement.textContent).toContain('CIN');
     expect(component['categoriaChips']().length).toBe(CATEGORIAS.length + 1);
+
+    expect(editarButtonEl).toBeTruthy();
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(
+      'Editar tipo de documento Registro Geral',
+    );
+    expect(removerButtonEl.textContent).toContain('Inativar');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain(
+      'Inativar tipo de documento Registro Geral',
+    );
+    expect(tableCaptionEl.textContent).toContain('Tipo de documento');
   });
 
   // TiposDocumentoListPage_FiltroPorCategoria

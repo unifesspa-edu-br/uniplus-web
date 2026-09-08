@@ -198,6 +198,9 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
       @if (arestasFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Precedência de fase
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Fase antecessora</th>
@@ -234,6 +237,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(aresta)"
+                      [attr.aria-label]="'Editar ' + aresta.id"
                     >
                       Editar
                     </button>
@@ -242,6 +246,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading() || removendo()"
                       (click)="pedirRemocao(aresta)"
+                      [attr.aria-label]="'Remover ' + aresta.id"
                     >
                       Remover
                     </button>

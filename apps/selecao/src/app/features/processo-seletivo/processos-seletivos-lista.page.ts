@@ -141,6 +141,9 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
         @if (processos().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Processos Seletivos
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Processo</th>

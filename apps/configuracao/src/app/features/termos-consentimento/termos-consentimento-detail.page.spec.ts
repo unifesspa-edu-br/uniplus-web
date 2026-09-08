@@ -100,7 +100,7 @@ describe('TermosConsentimentoDetailPage', () => {
       `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`,
     );
 
-    const tentarNovamente = fixture.nativeElement.querySelector<HTMLButtonElement>('button');
+    const tentarNovamente = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(tentarNovamente?.textContent).toContain('Tentar novamente');
     tentarNovamente?.click();
 
@@ -117,9 +117,9 @@ describe('TermosConsentimentoDetailPage', () => {
     component['salvarRascunho']();
     fixture.detectChanges();
 
-    const campos = fixture.nativeElement.querySelector<HTMLFieldSetElement>(
+    const campos = fixture.nativeElement.querySelector(
       '.cfg-termo-consentimento__campos',
-    );
+    ) as HTMLFieldSetElement;
     expect(campos?.disabled).toBe(true);
 
     const salvar = controller.expectOne(
@@ -202,18 +202,18 @@ describe('TermosConsentimentoDetailPage', () => {
       }),
     );
 
-    const promocao = fixture.nativeElement.querySelector<HTMLElement>(
+    const promocao = fixture.nativeElement.querySelector(
       '[aria-label="Promover a versão indisponível"]',
-    );
+    ) as HTMLSpanElement;
     expect(promocao?.getAttribute('tabindex')).toBe('0');
     expect(promocao?.getAttribute('data-tooltip')).toContain('Marque o rascunho como revisado');
     expect(promocao?.getAttribute('aria-describedby')).toBe(
       'cfg-termo-consentimento-motivo-promocao',
     );
 
-    const remocao = fixture.nativeElement.querySelector<HTMLElement>(
+    const remocao = fixture.nativeElement.querySelector(
       '[aria-label="Remover termo indisponível"]',
-    );
+    ) as HTMLSpanElement;
     expect(remocao?.getAttribute('tabindex')).toBe('0');
     expect(remocao?.getAttribute('data-tooltip')).toContain('Termo com versão promovida');
     expect(

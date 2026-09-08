@@ -1157,4 +1157,23 @@ describe('UnidadesPage', () => {
     reaberto.flush(unidadesSeed);
     await propagate();
   });
+
+  it('checa o conteúdo do caption da tabela e além dos botões de ações', async () => {
+   await flushInicial([unidadesSeed[0]]);
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      '.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain('Editar REITORIA');
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain('Remover REITORIA');
+    expect(tableCaptionEl.textContent).toContain('Unidades');
+  });
 });

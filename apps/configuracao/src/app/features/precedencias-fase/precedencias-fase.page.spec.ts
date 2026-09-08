@@ -120,6 +120,22 @@ describe('PrecedenciasFasePage', () => {
     expect(texto).toContain('INSCRICAO');
     expect(texto).toContain('HOMOLOGACAO');
     expect(texto).toContain('Não');
+
+    const tableCaptionEl = fixture.nativeElement.querySelector(
+      'table > caption',
+    ) as HTMLTableCaptionElement;
+    const editarButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:first-child',
+    ) as HTMLButtonElement;
+    const removerButtonEl = fixture.nativeElement.querySelector(
+      'td.table-responsive__actions > button:last-child',
+    ) as HTMLButtonElement;
+
+    expect(editarButtonEl.textContent).toContain('Editar');
+    expect(editarButtonEl.getAttribute('aria-label')).toContain(`Editar ${ARESTA_ID}`);
+    expect(removerButtonEl.textContent).toContain('Remover');
+    expect(removerButtonEl.getAttribute('aria-label')).toContain(`Remover ${ARESTA_ID}`);
+    expect(tableCaptionEl.textContent).toContain('Precedência de fase');
   });
 
   it('percorre todas as páginas de fases canônicas sem truncar', async () => {

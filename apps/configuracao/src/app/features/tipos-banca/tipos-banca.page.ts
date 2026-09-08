@@ -142,6 +142,9 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
       @if (bancasFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Tipo de banca
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -164,6 +167,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="abrirEdicao(banca)"
+                      [attr.aria-label]="'Editar ' + banca.nome"
                     >
                       Editar
                     </button>
@@ -172,6 +176,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
                       class="btn btn--tertiary btn--sm btn--rect"
                       [disabled]="loading()"
                       (click)="pedirRemocao(banca)"
+                      [attr.aria-label]="'Inativar ' + banca.nome"
                     >
                       Inativar
                     </button>
