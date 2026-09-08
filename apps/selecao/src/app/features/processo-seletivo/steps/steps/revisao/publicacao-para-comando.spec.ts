@@ -279,7 +279,7 @@ describe('passoDaDimensao', () => {
     expect(passoDaDimensao('cronograma')).toBe(4);
     expect(passoDaDimensao('contagem_de_prazos')).toBe(4);
     expect(passoDaDimensao('classificacao')).toBe(9);
-    expect(passoDaDimensao('atendimento_especializado')).toBe(11);
+    expect(passoDaDimensao('atendimento_especializado')).toBe(10);
   });
 
   it('não inventa passo para dimensão fora do núcleo desta frente', () => {

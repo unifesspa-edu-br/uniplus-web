@@ -174,7 +174,8 @@ const PASSO_POR_DIMENSAO: Readonly<Record<string, number>> = {
   // A classificação inteira — regra de cálculo, precisão e eliminação — é gravada
   // no persistir() do passo Eliminação (#482, plano §7, decisão registrada ali).
   classificacao: 9,
-  atendimento_especializado: 11,
+  // Locais de prova saiu do wizard (#511) — Atendimento herdou o índice 10.
+  atendimento_especializado: 10,
 };
 
 export function passoDaDimensao(dimensao: string): number | null {
