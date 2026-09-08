@@ -109,6 +109,22 @@ export class RevisaoStepComponent {
         void this.preflight.carregar(id, this.dataReferenciaLegal());
       });
     });
+
+    // O reuseKey da rota mantém esta instância viva ao trocar de processo por
+    // endereço — só o `id` muda, o componente não é recriado. `ultimaRecusa`
+    // e `snapshotConfirmado` são estado LOCAL desta sessão de revisão, e sem
+    // este reset a recusa (ou o snapshot) do processo A continuaria valendo
+    // para o processo B assim que ele carregasse (achado do Codex na #486).
+    // `store.geracao()` já é o sinal que o resto do wizard usa para "o
+    // processo em tela mudou" — `cronograma.component.ts` reseta seu próprio
+    // estado local do mesmo jeito.
+    effect(() => {
+      this.store.geracao();
+      untracked(() => {
+        this.ultimaRecusa.set(null);
+        this.snapshotConfirmado.set(null);
+      });
+    });
   }
 
   recarregarPreflight(): void {
@@ -190,6 +206,22 @@ export class RevisaoStepComponent {
 
     const legal = this.preflight.legal();
     return legal !== null && legal.regras.every((regra) => regra.aprovada);
+  });
+
+  /**
+   * O checklist legal em tela foi avaliado para uma `dataReferencia` que já
+   * não é a que o rascunho declara agora — a fase de coleta mudou, ou o
+   * operador terminou de digitar o início do período depois de o preflight
+   * ter carregado sem essa data (achado do Codex na #486: sem esta checagem,
+   * `validate()` podia aprovar um checklist legal avaliado para a data
+   * errada). Não recarrega sozinho — `dataReferenciaLegalDe` muda a cada
+   * tecla no campo de período, e recarregar a cada tecla é justamente a
+   * corrida que `PreflightDaPublicacaoService` foi corrigido para evitar; o
+   * operador usa "Atualizar checklist", que já existe na tela.
+   */
+  readonly legalDesatualizada = computed(() => {
+    if (this.preflight.legal() === null) return false;
+    return this.preflight.dataReferenciaCarregada() !== this.dataReferenciaLegal();
   });
 
   readonly rotuloDaDimensao = rotularDimensao;
@@ -285,7 +317,11 @@ export class RevisaoStepComponent {
     if (!this.estruturalOk()) {
       messages.push('Há pendências estruturais no checklist. Corrija-as antes de publicar.');
     }
-    if (!this.legalOk()) {
+    if (this.legalDesatualizada()) {
+      messages.push(
+        'A data de referência do checklist legal mudou desde a última carga. Use "Atualizar checklist" antes de publicar.',
+      );
+    } else if (!this.legalOk()) {
       messages.push('Há obrigatoriedades legais reprovadas. Corrija-as antes de publicar.');
     }
     if (this.precisaEscolherDocumento()) {
@@ -392,9 +428,18 @@ export class RevisaoStepComponent {
       this.cadastro.obterSnapshotVigente(processoId),
     ]);
 
-    if (!detalhe.ok || !snapshot.ok) return false;
+    if (!detalhe.ok) return false;
 
+    // Hidrata assim que o detalhe responde, mesmo que o snapshot falhe: o
+    // POST já pode ter publicado de verdade, e deixar o rascunho no estado
+    // antigo reabriria os controles de edição e de publicar sobre um
+    // processo que o servidor já considera imutável (achado do Codex na
+    // #486). `persistir()` ainda devolve inválido quando `snapshot` falha —
+    // só a hidratação, que é o que trava a tela, não pode esperar por ele.
     this.store.hidratar(detalhe.data);
+
+    if (!snapshot.ok) return false;
+
     this.snapshotConfirmado.set(snapshot.data);
     return detalhe.data.status === StatusProcesso.publicado;
   }

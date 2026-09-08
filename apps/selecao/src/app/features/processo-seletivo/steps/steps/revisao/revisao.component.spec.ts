@@ -208,8 +208,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('recusa com checklist estrutural pendente', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
 
       controller.expectOne(ROTA_CONFORMIDADE).flush({
         processoSeletivoId: PROCESSO_ID,
@@ -238,11 +238,32 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('válido com preflight verde, documento confirmado e ato completo', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       expect(componente.validate()).toEqual({ valid: true });
+    });
+
+    /**
+     * O checklist legal foi avaliado para a data de referência de QUANDO ele
+     * carregou — se o operador muda o período depois, sem recarregar,
+     * `validate()` não pode aprovar um checklist que já não corresponde ao
+     * que vai ser publicado (achado do Codex na #486).
+     */
+    it('recusa quando a data de referência mudou depois do último carregamento do checklist legal', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+      expect(componente.validate()).toEqual({ valid: true });
+
+      // Sem fase de coleta nestes testes — a data de referência vem do campo.
+      // Mudar o início do período invalida o checklist legal já carregado.
+      store.patchObjectSection('publicacao', { periodoInscricaoInicio: '2027-06-15T09:00' });
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.some((m) => m.includes('Atualizar checklist'))).toBe(true);
     });
   });
 
@@ -258,8 +279,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('resume os dados do ato quando válido', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const confirmacao = componente.confirmacaoDeGravacao();
@@ -275,8 +296,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('publica, relê /{id} e /snapshot-vigente, e hidrata o store como publicado', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const gravacao = componente.persistir();
@@ -302,6 +323,36 @@ describe('RevisaoStepComponent', () => {
         SNAPSHOT_DTO.snapshotPublicacaoId,
       );
       expect(store.salvando()).toBe(false);
+    });
+
+    /**
+     * O `POST` já publicou de verdade quando esta releitura roda — se o
+     * snapshot falhar por um blip transitório, o processo continua
+     * publicado no servidor, e o rascunho não pode seguir parecendo editável
+     * (achado do Codex na #486: perder a hidratação aqui reabriria os
+     * controles de um processo já imutável).
+     */
+    it('hidrata o detalhe publicado mesmo quando a releitura do snapshot falha', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
+
+      await flushMicrotasks();
+      controller.expectOne(ROTA_DETALHE).flush(PROCESSO_DTO_MINIMO);
+      controller.expectOne(ROTA_SNAPSHOT).flush(
+        { type: 'about:blank', title: 'x', status: 503, code: 'erro', traceId: 't' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+
+      const resultado = await gravacao;
+      expect(resultado.valid).toBe(false);
+      // O snapshot não confirmou, mas o detalhe publicado já está no store.
+      expect(store.remoteSnapshot()?.status).toBe(StatusProcesso.publicado);
+      expect(store.edicaoPermitida()).toBe(false);
+      expect(componente.snapshotConfirmado()).toBeNull();
     });
 
     /**
@@ -336,9 +387,9 @@ describe('RevisaoStepComponent', () => {
         ]),
       );
 
-      await criarProcesso();
       store.patchObjectSection('cronograma', { fases: [faseSemCongelados] });
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       // A tela não pode cobrar o período: a fase de coleta existe, só ainda
@@ -359,8 +410,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('em 422 estrutural, guarda as pendências da extension e não marca como publicado', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const gravacao = componente.persistir();
@@ -386,8 +437,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('em 422 de conformidade legal, guarda as obrigatoriedades reprovadas', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const gravacao = componente.persistir();
@@ -412,8 +463,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('em erro nomeado de documento/ato, marca o bloco próprio sem tocar nos dois checklists', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const gravacao = componente.persistir();
@@ -436,8 +487,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('a segunda tentativa depois de um 422 usa uma Idempotency-Key diferente (CA-07)', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const primeira = componente.persistir();
@@ -470,8 +521,8 @@ describe('RevisaoStepComponent', () => {
     });
 
     it('marca salvando() true durante o comando em curso, e false ao concluir', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       const gravacao = componente.persistir();
@@ -499,8 +550,8 @@ describe('RevisaoStepComponent', () => {
      * (`[attr.selected]`), não pelo `<select>`.
      */
     it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
-      await criarProcesso();
       prepararCamposLocais();
+      await criarProcesso();
       await flushPreflightVerde();
 
       componente.alterarAto({ tipoAtoCodigo: 'PORTARIA' });

@@ -477,12 +477,32 @@ export class ProcessoSeletivoPage {
       // tela; quem passa a mandar no foco é o efeito de troca de passo, que
       // leva ao título do passo novo. Falhando, a tela é a mesma e a
       // restauração continua correta.
-      this.restaurarFocoAoFechar.set(
-        !(await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()))),
-      );
+      const sucesso = await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()));
+      this.restaurarFocoAoFechar.set(!sucesso);
+
+      // `store.next()` não avança a partir do último passo — não há passo
+      // seguinte —, então o efeito de troca de passo (que move o foco ao
+      // título do passo novo em qualquer outra gravação) não dispara depois
+      // de publicar. Sem este destino explícito, fechar o diálogo de
+      // confirmação da publicação deixa o foco sem lugar nenhum.
+      if (sucesso && this.store.isLast()) {
+        this.focarConfirmacaoDePublicacao();
+      }
     } finally {
       this.confirmacaoPendente.set(null);
     }
+  }
+
+  /** Foca o título "Processo publicado" — só existe quando `persistir()` da Revisão confirmou o snapshot. */
+  private focarConfirmacaoDePublicacao(): void {
+    // `setTimeout`, não `queueMicrotask`: o bloco só entra no DOM depois que o
+    // Angular processa `snapshotConfirmado()`, o que acontece depois da fila
+    // de microtarefas — mesmo motivo de `revelarErro()`.
+    setTimeout(() => {
+      this.root.nativeElement
+        .querySelector<HTMLElement>('.revisao-publicado-titulo')
+        ?.focus({ preventScroll: true });
+    });
   }
 
   /**
