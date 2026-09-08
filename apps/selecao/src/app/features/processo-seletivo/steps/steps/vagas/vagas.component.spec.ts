@@ -614,6 +614,18 @@ const REGRA_CASCATA = {
   modalidadesAdmitidas: null,
 };
 
+/** Regra existente no catálogo, mas com `esquemaArgs` que não bate com o shape que `matrizDaRegra` reconhece. */
+const REGRA_CASCATA_SEM_MATRIZ = {
+  codigo: 'REMANEJ-CASCATA-SEM-MATRIZ',
+  versao: 'v1',
+  tipo: 'criterio_remanejamento',
+  esquemaArgs: {},
+  invariantes: [],
+  baseLegal: 'Portaria MEC nº 704/2025',
+  hash: 'hash-cascata-sem-matriz',
+  modalidadesAdmitidas: null,
+};
+
 /** Oferta federal com as três modalidades: cobre fallback e o destino da origem. */
 function distribuicaoComCascata(): DistribuicaoDeVagas {
   return {
@@ -676,7 +688,9 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       else if (url.includes('modalidades')) requisicao.flush(MODALIDADES_CASCATA);
       else if (url.includes('regras-catalogo')) {
         const tipo = requisicao.request.params.get('tipo');
-        requisicao.flush(tipo === 'criterio_remanejamento' ? [REGRA_CASCATA] : []);
+        requisicao.flush(
+          tipo === 'criterio_remanejamento' ? [REGRA_CASCATA, REGRA_CASCATA_SEM_MATRIZ] : [],
+        );
       } else requisicao.flush([]);
     }
     detectar();
@@ -795,6 +809,31 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('cascata'))).toBe(true);
+    controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
+    controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  /**
+   * Reproduz o beco sem saída: a regra existe no catálogo, mas seu
+   * `esquemaArgs` não declara a matriz no formato esperado — a tabela e o
+   * checkbox de confirmação não aparecem no template. Sem o desvio em
+   * `pendenciasDaCascata()`, `validate()` pedia para "confirmar a cascata",
+   * mandando o operador marcar um controle que a tela nem renderiza.
+   */
+  it('recusa avançar com mensagem acionável quando a regra escolhida não tem matriz reconhecida', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-SEM-MATRIZ|v1');
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('não declara uma matriz'))).toBe(true);
+    expect(resultado.messages?.some((m) => /escolha outra regra ou versão/i.test(m))).toBe(true);
+    expect(resultado.messages?.some((m) => m.includes('Confirme que conferiu'))).toBe(false);
     controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
     controller.expectNone(ROTA_CASCATA_TESTE);
   });

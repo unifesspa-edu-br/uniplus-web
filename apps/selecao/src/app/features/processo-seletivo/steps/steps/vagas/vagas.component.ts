@@ -1079,7 +1079,12 @@ export class VagasStepComponent {
 
     const matriz = secao.matriz();
     if (matriz === null) {
-      return { valid: false, messages: ['A regra escolhida não tem matriz reconhecida.'] };
+      return {
+        valid: false,
+        messages: [
+          'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
+        ],
+      };
     }
 
     const resultado = await this.cadastro.definirCascataRemanejamento(
@@ -1164,6 +1169,18 @@ export class VagasStepComponent {
 
     if (secao.cascata() === null) {
       return [...pendenciasForaDoRegime, 'Escolha a regra de remanejamento da cascata.'];
+    }
+
+    // A regra escolhida existe no catálogo, mas o `esquemaArgs` não declara a
+    // matriz no formato esperado — a tabela e o checkbox de confirmação nem
+    // aparecem no template (`@if (matriz(); as matrizDaRegra)`). Sem este
+    // desvio, o operador cairia no "confirme a cascata" de baixo, pedindo
+    // para marcar um checkbox que não existe na tela.
+    if (secao.esquemaNaoReconhecido()) {
+      return [
+        ...pendenciasForaDoRegime,
+        'Cascata — a regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.',
+      ];
     }
 
     const problemas = secao
