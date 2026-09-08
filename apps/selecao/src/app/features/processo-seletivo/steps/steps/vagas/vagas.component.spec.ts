@@ -839,6 +839,39 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
   });
 
   /**
+   * Reproduz o mesmo beco sem saída do teste acima, por outra entrada: a
+   * cascata hidratada referencia uma versão que a listagem ativa não traz
+   * mais, e a busca direta da versão também não a encontra (regra
+   * genuinamente removida, não apenas fora da página carregada).
+   */
+  it('recusa avançar com mensagem acionável quando a regra hidratada não é encontrada no catálogo', async () => {
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicaoComCascata()],
+      cascata: { regraCodigo: 'REMANEJ-CASCATA-REMOVIDA', regraVersao: 'v9' },
+    });
+    detectar();
+    simularEConferirDistribuicao();
+
+    controller
+      .expectOne(`${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-REMOVIDA/versoes/v9`)
+      .flush(
+        { type: 'about:blank', title: 'Regra não encontrada.', status: 404, traceId: 't' },
+        { status: 404, statusText: 'Not Found' },
+      );
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.some((m) => m.includes('não foi encontrada no catálogo'))).toBe(
+      true,
+    );
+    expect(resultado.messages?.some((m) => m.includes('Confirme que conferiu'))).toBe(false);
+    controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
+    controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  /**
    * `cascata_modalidade_fora_do_regime_federal` bloqueia a publicação mais
    * adiante (`ExisteCascataForaDoRegimeFederal` no domínio) mesmo quando a
    * seção da cascata nem aparece — por isso o passo Vagas não pode deixar o
@@ -917,6 +950,81 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('distribuição de vagas foi gravada');
+  });
+
+  /**
+   * Reproduz o achado de revisão: um 5xx na gravação da cascata é resposta
+   * inconclusiva (`ChaveDeSubstituicao` preserva a chave porque o servidor
+   * pode ter aplicado o comando mesmo sem confirmar) — `existeNoServidor`
+   * não pode ficar `false` nesse caso, senão uma mudança seguinte que torne
+   * a cascata desnecessária pula a remoção e deixa uma cascata possivelmente
+   * gravada órfã no servidor.
+   */
+  it('trata recusa 5xx da cascata como presença possível, e força a remoção quando ela deixa de se aplicar depois', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    confirmarCascataNaTela();
+    detectar();
+
+    const primeiraGravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await tick();
+    controller.expectOne(ROTA_CASCATA_TESTE).flush(
+      {
+        type: 'about:blank',
+        title: 'Erro interno do servidor.',
+        status: 503,
+        traceId: 'trace-3',
+      },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    expect((await primeiraGravacao).valid).toBe(false);
+
+    // A oferta deixa de exigir cascata — se o 5xx acima aplicou o comando no
+    // servidor, pular a remoção deixaria a cascata órfã.
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          modalidades: [
+            { id: LB_Q, codigo: 'LB_Q' },
+            { id: AC_CASCATA, codigo: 'AC' },
+          ],
+          quadro: [
+            { modalidadeId: LB_Q, quantidade: '20' },
+            { modalidadeId: AC_CASCATA, quantidade: '80' },
+          ],
+        },
+      ],
+    });
+    detectar();
+    componente.simular();
+    controller
+      .expectOne(ROTA_SIMULACAO_TESTE)
+      .flush([{ ofertaCursoOrigemId: OFERTA_CASCATA, quadro: [], totalPublicado: 100 }]);
+    componente.conferenciaConfirmada.set(true);
+
+    const segundaGravacao = componente.persistir();
+    controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    await tick();
+
+    const remocao = controller.expectOne(ROTA_CASCATA_TESTE);
+    expect(remocao.request.body).toEqual({
+      regraCodigo: null,
+      regraVersao: null,
+      fallbackCodigo: null,
+      destinos: null,
+    });
+    remocao.flush(null, { status: 204, statusText: 'No Content' });
+    await expect(segundaGravacao).resolves.toEqual({ valid: true });
   });
 
   it('envia a remoção quando a cascata deixou de se aplicar mas havia escolha anterior', async () => {

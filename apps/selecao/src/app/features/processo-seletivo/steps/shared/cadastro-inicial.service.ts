@@ -38,6 +38,18 @@ export type ResultadoCriacao =
 /** As gravações de configuração respondem 204 — não há corpo a devolver. */
 export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
 
+/**
+ * A gravação da cascata precisa dizer se a recusa é inconclusiva — a
+ * `ChaveDeSubstituicao` preservou a chave porque a execução anterior ainda
+ * pode ter sido aplicada (erro de rede ou 5xx). `VagasStepComponent` usa
+ * isso para decidir se uma remoção futura continua obrigatória mesmo sem
+ * confirmação de que a gravação chegou a aplicar — nunca dar a cascata como
+ * ausente do servidor só porque a resposta não chegou.
+ */
+export type ResultadoGravacaoCascata =
+  | { readonly ok: true }
+  | (FalhaOperacao & { readonly inconclusiva: boolean });
+
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
   | FalhaOperacao;
@@ -263,7 +275,7 @@ export class CadastroInicialService {
   async definirCascataRemanejamento(
     processoSeletivoId: string,
     request: DefinirCascataRemanejamentoRequest,
-  ): Promise<ResultadoGravacao> {
+  ): Promise<ResultadoGravacaoCascata> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.definirCascataRemanejamento(
@@ -273,15 +285,15 @@ export class CadastroInicialService {
       ),
     );
 
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
 
     if (isApiOk(result)) {
       this.chaveCascata.renovar();
       return { ok: true };
     }
 
-    this.chaveCascata.recusada(result);
-    return { ok: false, problem: result.problem };
+    const inconclusiva = this.chaveCascata.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
   }
 
   /**

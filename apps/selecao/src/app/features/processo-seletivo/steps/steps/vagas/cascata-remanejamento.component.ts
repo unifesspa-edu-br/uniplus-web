@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
@@ -9,7 +10,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
+import { isApiOk } from '@uniplus/shared-core/http';
+import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
@@ -50,6 +52,8 @@ import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 export class CascataRemanejamentoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  private readonly regrasCatalogoApi = inject(RegrasCatalogoApi);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly ofertas = computed(() => this.store.draft().vagas.ofertas);
   readonly cascata = computed(() => this.store.draft().vagas.cascata);
@@ -88,12 +92,63 @@ export class CascataRemanejamentoComponent {
    */
   readonly regraControl = new FormControl<string>('|', { nonNullable: true });
 
+  /**
+   * A versão específica de uma seleção que a listagem carregada não tem —
+   * hidratação (ou uma gravação anterior) pode referenciar uma regra que
+   * saiu de lá desde então (inativada, ou nova versão publicada por cima).
+   * A listagem só traz o que está ativo hoje; a seleção é imutável por
+   * código+versão (CA-03 da #481: item já referenciado permanece legível
+   * como snapshot), então a busca é pela versão exata via
+   * `RegrasCatalogoApi.obterVersao`, nunca por uma substituta.
+   *
+   * `null` enquanto não há por que buscar (seleção vazia, já na listagem,
+   * ou catálogo ainda carregando — a listagem tem prioridade e chega
+   * primeiro na maioria dos casos).
+   */
+  private readonly buscaDaVersaoFora = signal<
+    | { readonly estado: 'buscando'; readonly codigo: string; readonly versao: string }
+    | {
+        readonly estado: 'encontrada';
+        readonly codigo: string;
+        readonly versao: string;
+        readonly regra: RegraCatalogoDto;
+      }
+    | { readonly estado: 'nao_encontrada'; readonly codigo: string; readonly versao: string }
+    | null
+  >(null);
+
   private readonly regraEscolhida = computed<RegraCatalogoDto | undefined>(() => {
     const selecao = this.cascata();
     if (selecao === null) return undefined;
-    return this.catalogos
+
+    const daListagem = this.catalogos
       .regrasCascata()
       .find((regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao);
+    if (daListagem !== undefined) return daListagem;
+
+    const busca = this.buscaDaVersaoFora();
+    return busca?.estado === 'encontrada' &&
+      busca.codigo === selecao.regraCodigo &&
+      busca.versao === selecao.regraVersao
+      ? busca.regra
+      : undefined;
+  });
+
+  /**
+   * A seleção não está na listagem carregada, e a busca direta da versão
+   * já terminou sem encontrá-la — diferente de "ainda carregando" (onde
+   * `regraEscolhida()` fica temporariamente `undefined` sem que isso seja
+   * defeito) e de "esquemaArgs malformado" (onde a regra existe).
+   */
+  readonly regraNaoEncontrada = computed(() => {
+    const selecao = this.cascata();
+    if (selecao === null) return false;
+    const busca = this.buscaDaVersaoFora();
+    return (
+      busca?.estado === 'nao_encontrada' &&
+      busca.codigo === selecao.regraCodigo &&
+      busca.versao === selecao.regraVersao
+    );
   });
 
   readonly regraExplicada = computed<RegraExplicada | null>(() =>
@@ -106,7 +161,7 @@ export class CascataRemanejamentoComponent {
     return regra === undefined ? null : matrizDaRegra(regra.esquemaArgs);
   });
 
-  /** A regra existe no catálogo mas o `esquemaArgs` não tem a forma reconhecida — defeito a reportar, não matriz vazia. */
+  /** A regra existe (na listagem ou pela busca direta) mas o `esquemaArgs` não tem a forma reconhecida — defeito a reportar, não matriz vazia. */
   readonly esquemaNaoReconhecido = computed(
     () => this.regraEscolhida() !== undefined && this.matriz() === null,
   );
@@ -173,6 +228,55 @@ export class CascataRemanejamentoComponent {
     this.regraControl.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((valor) => this.escolherRegra(valor));
+
+    // Busca a versão específica quando a seleção não está na listagem —
+    // só depois dela terminar de carregar, para a listagem ter prioridade
+    // e não disparar uma busca que a própria listagem resolveria a seguir.
+    effect(() => {
+      const selecao = this.cascata();
+      const carregando = this.catalogos.carregando();
+      const regras = this.catalogos.regrasCascata();
+      untracked(() => this.buscarVersaoForaDaListagemSePreciso(selecao, carregando, regras));
+    });
+  }
+
+  private buscarVersaoForaDaListagemSePreciso(
+    selecao: { readonly regraCodigo: string; readonly regraVersao: string } | null,
+    carregando: boolean,
+    regras: readonly RegraCatalogoDto[],
+  ): void {
+    if (selecao === null || carregando) return;
+
+    const naListagem = regras.some(
+      (regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao,
+    );
+    if (naListagem) return;
+
+    const buscaAtual = this.buscaDaVersaoFora();
+    const jaTratada =
+      buscaAtual !== null &&
+      buscaAtual.codigo === selecao.regraCodigo &&
+      buscaAtual.versao === selecao.regraVersao;
+    if (jaTratada) return;
+
+    const { regraCodigo: codigo, regraVersao: versao } = selecao;
+    this.buscaDaVersaoFora.set({ estado: 'buscando', codigo, versao });
+    this.regrasCatalogoApi
+      .obterVersao(codigo, versao)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => {
+        // A seleção pode ter mudado enquanto a busca corria — uma resposta
+        // atrasada da versão anterior não pode sobrescrever o estado da
+        // busca que já está em curso para a seleção atual.
+        const atual = this.cascata();
+        if (atual === null || atual.regraCodigo !== codigo || atual.regraVersao !== versao) return;
+
+        this.buscaDaVersaoFora.set(
+          isApiOk(resultado)
+            ? { estado: 'encontrada', codigo, versao, regra: resultado.data }
+            : { estado: 'nao_encontrada', codigo, versao },
+        );
+      });
   }
 
   /** A cascata está pronta para gravar: regra escolhida, matriz reconhecida, sem pendência e conferida. */
