@@ -114,8 +114,20 @@
                     <span class="revisao-item__name">{{ item.mensagem }}</span>
                   </div>
                   @if (!item.ok && passoDaDimensao(grupo.dimensao) !== null) {
+                    <!-- `revisao-item__ir`, não `revisao-item__go`: esse nome
+                         já é de um widget de resumo de progresso mais antigo
+                         (`.revisao-summary`/`.revisao-progress`), sem HTML
+                         nenhum que o use mais — mas o CSS dele continua no
+                         arquivo, com um `@media (max-width: 600px) { display:
+                         none }` pensado para AQUELE botão. Reusar o nome
+                         herdava esse `display: none` a 320px sem querer — o
+                         botão desaparecia do DOM renderizado, ainda que
+                         presente no template (achado do Codex na #486). Este
+                         botão é a única forma de agir numa pendência a partir
+                         do checklist, em qualquer largura — não pode
+                         desaparecer no mobile. -->
                     <button
-                      class="btn btn--sm btn--ghost revisao-item__go"
+                      class="btn btn--sm btn--ghost revisao-item__ir"
                       type="button"
                       (click)="irParaSecao(passoDaDimensao(grupo.dimensao)!)"
                     >
