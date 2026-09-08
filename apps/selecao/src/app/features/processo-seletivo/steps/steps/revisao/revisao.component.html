@@ -73,8 +73,18 @@
     <section class="step-section" aria-labelledby="revisao-estrutural-titulo">
       <div class="step-section__header">
         <h2 id="revisao-estrutural-titulo">Checklist estrutural</h2>
-        <button class="btn btn--sm btn--ghost" type="button" (click)="recarregarPreflight()">
-          Atualizar checklist
+        <!-- Desabilitado durante uma recarga: a chave de identidade do
+             preflight é determinística por processo+dataReferencia, então
+             dois cliques em sequência pedem exatamente a mesma coisa — a
+             segunda resposta apenas sobrescreve a primeira sem necessidade
+             (achado do Codex na #486). -->
+        <button
+          class="btn btn--sm btn--ghost"
+          type="button"
+          [disabled]="preflight.carregando()"
+          (click)="recarregarPreflight()"
+        >
+          {{ preflight.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
         </button>
       </div>
 
@@ -167,109 +177,45 @@
         O edital anexado acima é o documento que a publicação referencia — nada a repetir aqui.
       </p>
 
-      <div class="form-grid">
+      <div class="form-grid" [formGroup]="form">
         <div class="form-field">
           <label class="label" for="rev-numero">Número do ato (opcional)</label>
-          <input
-            class="input"
-            id="rev-numero"
-            type="text"
-            [value]="store.draft().publicacao.numero"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarNumero($any($event.target).value)"
-          />
+          <input class="input" id="rev-numero" type="text" formControlName="numero" />
         </div>
 
         <div class="form-field">
           <label class="label" for="rev-tipo-ato">Tipo de ato</label>
-          <!-- `[attr.selected]` por `<option>`, não `[value]` no `<select>`: o
-               bloco inteiro é recriado quando o preflight recarrega depois de
-               um erro (troca de ramo `@if`/`@else`), e um `[value]` no
-               `<select>` seria aplicado antes de o `@for` criar as `<option>`
-               — o navegador não acha correspondência e volta para
-               "— escolher —" mesmo com o rascunho e o comando corretos por
-               baixo. Cada opção decide a própria seleção no mesmo passe em
-               que o `@for` a cria, sem essa corrida. -->
-          <select
-            class="input"
-            id="rev-tipo-ato"
-            [disabled]="!store.aceitaEdicao()"
-            (change)="alterarAto({ tipoAtoCodigo: $any($event.target).value })"
-          >
-            <option value="" [attr.selected]="store.draft().publicacao.ato.tipoAtoCodigo === '' ? '' : null">
-              — escolher —
-            </option>
+          <select class="input" id="rev-tipo-ato" formControlName="tipoAtoCodigo">
+            <option value="">— escolher —</option>
             @for (tipo of preflight.tiposAto(); track tipo.codigo) {
-              <option
-                [value]="tipo.codigo"
-                [attr.selected]="tipo.codigo === store.draft().publicacao.ato.tipoAtoCodigo ? '' : null"
-              >
-                {{ tipo.nome }} ({{ tipo.codigo }})
-              </option>
+              <option [value]="tipo.codigo">{{ tipo.nome }} ({{ tipo.codigo }})</option>
             }
           </select>
         </div>
 
         <div class="form-field">
           <label class="label" for="rev-orgao">Órgão</label>
-          <input
-            class="input"
-            id="rev-orgao"
-            type="text"
-            [value]="store.draft().publicacao.ato.orgao"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarAto({ orgao: $any($event.target).value })"
-          />
+          <input class="input" id="rev-orgao" type="text" formControlName="orgao" />
         </div>
 
         <div class="form-field">
           <label class="label" for="rev-serie">Série</label>
-          <input
-            class="input"
-            id="rev-serie"
-            type="text"
-            [value]="store.draft().publicacao.ato.serie"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarAto({ serie: $any($event.target).value })"
-          />
+          <input class="input" id="rev-serie" type="text" formControlName="serie" />
         </div>
 
         <div class="form-field">
           <label class="label" for="rev-ano">Ano</label>
-          <input
-            class="input"
-            id="rev-ano"
-            type="number"
-            min="0"
-            step="1"
-            [value]="store.draft().publicacao.ato.ano"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarAto({ ano: $any($event.target).value })"
-          />
+          <input class="input" id="rev-ano" type="number" min="0" step="1" formControlName="ano" />
         </div>
 
         <div class="form-field">
           <label class="label" for="rev-data-publicacao">Data de publicação do ato</label>
-          <input
-            class="input"
-            id="rev-data-publicacao"
-            type="date"
-            [value]="store.draft().publicacao.ato.dataPublicacao"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarAto({ dataPublicacao: $any($event.target).value })"
-          />
+          <input class="input" id="rev-data-publicacao" type="date" formControlName="dataPublicacao" />
         </div>
 
         <div class="form-field">
           <label class="label" for="rev-assinante">Assinante</label>
-          <input
-            class="input"
-            id="rev-assinante"
-            type="text"
-            [value]="store.draft().publicacao.ato.assinante"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarAto({ assinante: $any($event.target).value })"
-          />
+          <input class="input" id="rev-assinante" type="text" formControlName="assinante" />
         </div>
       </div>
 
@@ -287,16 +233,14 @@
           O cronograma não tem fase que colete inscrição pelo sistema — informe o período de
           inscrição do certame de origem importada.
         </p>
-        <div class="form-grid">
+        <div class="form-grid" [formGroup]="form">
           <div class="form-field">
             <label class="label" for="rev-periodo-inicio">Início do período de inscrição</label>
             <input
               class="input"
               id="rev-periodo-inicio"
               type="datetime-local"
-              [value]="store.draft().publicacao.periodoInscricaoInicio"
-              [disabled]="!store.aceitaEdicao()"
-              (input)="alterarPeriodoInicio($any($event.target).value)"
+              formControlName="periodoInscricaoInicio"
             />
           </div>
           <div class="form-field">
@@ -305,9 +249,7 @@
               class="input"
               id="rev-periodo-fim"
               type="datetime-local"
-              [value]="store.draft().publicacao.periodoInscricaoFim"
-              [disabled]="!store.aceitaEdicao()"
-              (input)="alterarPeriodoFim($any($event.target).value)"
+              formControlName="periodoInscricaoFim"
             />
           </div>
         </div>
