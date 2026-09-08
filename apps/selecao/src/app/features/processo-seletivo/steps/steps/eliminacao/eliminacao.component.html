@@ -6,7 +6,11 @@
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 
-@if (!usaFormulaLocal()) {
+@if (!store.draft().classificacao.regraCalculoCodigo) {
+  <p class="alert alert--info" role="status">
+    Escolha a regra de cálculo no passo Fórmula antes de configurar a eliminação.
+  </p>
+} @else if (!usaFormulaLocal()) {
   <p class="alert alert--info" role="status">
     A classificação escolhida no passo Fórmula é importada — regras de eliminação locais não se
     aplicam e nada será enviado nesta seção.

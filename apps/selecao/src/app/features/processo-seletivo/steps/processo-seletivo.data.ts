@@ -33,7 +33,7 @@ const DEFINICOES: readonly DefinicaoDePasso[] = [
   { rotulo: 'Fórmula e precisão', revisao: 'Fórmula de classificação' },
   { rotulo: 'Bônus', titulo: 'Bônus (opcional)' },
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
-  { rotulo: 'Eliminação', revisao: 'Notas mínimas e cláusulas' },
+  { rotulo: 'Eliminação', revisao: 'Regras de eliminação' },
   { rotulo: 'Locais de prova' },
   { rotulo: 'Atend. especial', titulo: 'Atendimento especializado' },
   { rotulo: 'Revisão e publicação' },

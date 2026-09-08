@@ -18,6 +18,7 @@ import {
   eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaMinimo,
+  mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 
@@ -176,21 +177,22 @@ export class EliminacaoStepComponent {
     };
   }
 
-  /** Validação declarativa — acionada pela page ao clicar em "Próximo" e antes de gravar. */
+  /**
+   * Validação declarativa — acionada pela page ao clicar em "Próximo" e antes
+   * de gravar. Inclui os campos que o passo Fórmula coleta
+   * (`mensagensDeClassificacaoBase`): a navegação do wizard é livre, e este
+   * passo grava o comando de classificação inteiro — não só a eliminação —
+   * então não pode supor que o operador passou pela Fórmula antes de chegar
+   * aqui.
+   */
   validate(): StepValidation {
     const classificacao = this.store.draft().classificacao;
-    const messages: string[] = [];
-
-    if (!classificacao.regraCalculoCodigo) {
-      messages.push(
-        'Escolha a regra de cálculo no passo Fórmula antes de configurar a eliminação.',
-      );
-      return { valid: false, messages };
-    }
+    const messages: string[] = [...mensagensDeClassificacaoBase(classificacao)];
 
     if (!this.usaFormulaLocal()) {
-      // CLASSIFICACAO-IMPORTADA não usa eliminação local — nada a validar aqui.
-      return { valid: true };
+      // CLASSIFICACAO-IMPORTADA (ou regra ainda não escolhida) não usa
+      // eliminação local — nada além da base acima a validar aqui.
+      return messages.length ? { valid: false, messages } : { valid: true };
     }
 
     if (this.divisorInvalido()) {

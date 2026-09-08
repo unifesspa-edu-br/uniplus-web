@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { EtapaPontuada, RegraEliminacaoConfigurada, WizardDraft } from '../../processo-seletivo.models';
+import {
+  EtapaPontuada,
+  RegraEliminacaoConfigurada,
+  WizardDraft,
+} from '../../processo-seletivo.models';
 import {
   classificacaoUsaFormulaLocal,
   comoComandoDeClassificacao,
@@ -9,6 +13,7 @@ import {
   eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaMinimo,
+  mensagensDeClassificacaoBase,
 } from './classificacao-para-comando';
 
 function classificacaoBase(): WizardDraft['classificacao'] {
@@ -206,5 +211,82 @@ describe('divisorDaMediaValido', () => {
 
   it('é verdadeiro para etapa de caráter "ambas"', () => {
     expect(divisorDaMediaValido([etapa({ carater: 'ambas', peso: '2' })])).toBe(true);
+  });
+});
+
+describe('mensagensDeClassificacaoBase', () => {
+  const classificacaoCompleta = (): WizardDraft['classificacao'] => ({
+    ...classificacaoBase(),
+    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoVersao: '1.0',
+    regraArredondamentoCodigo: 'ARRED-TRUNCAR',
+    regraArredondamentoVersao: '1.0',
+    casasArredondamento: '2',
+    regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+    regraOrdemAlocacaoVersao: '1.0',
+    nOpcoesAlocacao: '2',
+  });
+
+  it('sem mensagens quando a base está completa (fórmula local)', () => {
+    expect(mensagensDeClassificacaoBase(classificacaoCompleta())).toEqual([]);
+  });
+
+  it('recusa sem regra de cálculo escolhida', () => {
+    expect(mensagensDeClassificacaoBase(classificacaoBase()).length).toBeGreaterThan(0);
+  });
+
+  /**
+   * A navegação do wizard é livre: quem chega na Eliminação sem ter
+   * preenchido o resto da Fórmula não pode gravar um comando com
+   * `regraOrdemAlocacaoCodigo`/`nOpcoesAlocacao` vazios.
+   */
+  it('recusa sem ordem de alocação, mesmo sob classificação importada', () => {
+    const mensagens = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraArredondamentoCodigo: '',
+      regraArredondamentoVersao: '',
+      casasArredondamento: '',
+      regraOrdemAlocacaoCodigo: '',
+      regraOrdemAlocacaoVersao: '',
+    });
+
+    expect(mensagens.some((mensagem) => mensagem.includes('ordem de alocação'))).toBe(true);
+  });
+
+  it('recusa sem número de opções válido (1 ou 2)', () => {
+    const mensagens = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      nOpcoesAlocacao: '3',
+    });
+
+    expect(mensagens.some((mensagem) => mensagem.includes('número de opções'))).toBe(true);
+  });
+
+  it('sob classificação importada, não exige arredondamento nem casas', () => {
+    const mensagens = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraArredondamentoCodigo: '',
+      regraArredondamentoVersao: '',
+      casasArredondamento: '',
+    });
+
+    expect(mensagens).toEqual([]);
+  });
+
+  it('sob fórmula local, recusa sem arredondamento ou casas maior que zero', () => {
+    const semArredondamento = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      regraArredondamentoCodigo: '',
+      regraArredondamentoVersao: '',
+    });
+    const comCasasZero = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      casasArredondamento: '0',
+    });
+
+    expect(semArredondamento.length).toBeGreaterThan(0);
+    expect(comCasasZero.length).toBeGreaterThan(0);
   });
 });

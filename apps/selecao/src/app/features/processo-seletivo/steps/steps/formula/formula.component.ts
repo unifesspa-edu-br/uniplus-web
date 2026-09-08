@@ -6,6 +6,7 @@ import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-c
 import {
   classificacaoUsaFormulaLocal,
   divisorDaMediaValido,
+  mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 
@@ -148,42 +149,35 @@ export class FormulaStepComponent {
     this.store.patchObjectSection('classificacao', { baseadoEmEnem: checked });
   }
 
-  /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
+  /**
+   * Validação declarativa — acionada pela page ao clicar em "Próximo". As
+   * mensagens vêm de `mensagensDeClassificacaoBase`, a mesma fonte que a
+   * Eliminação usa para os campos desta tela — a Eliminação persiste o
+   * comando inteiro e não pode divergir sobre o que conta como válido aqui.
+   * O `Set` de campos inválidos é só para o destaque `.is-invalid` deste
+   * template, então continua calculado à parte.
+   */
   validate(): StepValidation {
     const classificacao = this.store.draft().classificacao;
-    const messages: string[] = [];
     const invalid = new Set<string>();
 
-    if (!classificacao.regraCalculoCodigo) {
-      messages.push('Selecione a regra de cálculo da nota.');
-      invalid.add('regraCalculo');
-    }
+    if (!classificacao.regraCalculoCodigo) invalid.add('regraCalculo');
 
     if (this.usaFormulaLocal()) {
-      if (!classificacao.regraArredondamentoCodigo) {
-        messages.push('Selecione a regra de arredondamento.');
-        invalid.add('regraArredondamento');
-      }
+      if (!classificacao.regraArredondamentoCodigo) invalid.add('regraArredondamento');
       const casas = numero(classificacao.casasArredondamento);
-      if (casas === null || casas <= 0) {
-        messages.push('Informe as casas decimais de arredondamento, maior que zero.');
-        invalid.add('casasArredondamento');
-      }
+      if (casas === null || casas <= 0) invalid.add('casasArredondamento');
     }
 
-    if (!classificacao.regraOrdemAlocacaoCodigo) {
-      messages.push('Selecione a regra de ordem de alocação.');
-      invalid.add('regraOrdemAlocacao');
-    }
+    if (!classificacao.regraOrdemAlocacaoCodigo) invalid.add('regraOrdemAlocacao');
 
     const nOpcoes = numero(classificacao.nOpcoesAlocacao);
-    if (nOpcoes !== 1 && nOpcoes !== 2) {
-      messages.push('O número de opções de curso deve ser 1 ou 2.');
-      invalid.add('nOpcoesAlocacao');
-    }
+    if (nOpcoes !== 1 && nOpcoes !== 2) invalid.add('nOpcoesAlocacao');
 
     this.invalidFields.set(invalid);
-    return messages.length ? { valid: false, messages } : { valid: true };
+
+    const messages = mensagensDeClassificacaoBase(classificacao);
+    return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
   }
 }
 
