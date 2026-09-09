@@ -273,6 +273,72 @@ describe('RevisaoStepComponent', () => {
     });
   });
 
+  describe('#742 — conformidade legal não avaliável', () => {
+    const PROBLEM_SEM_FASE_DE_COLETA = {
+      type: 'about:blank',
+      title: 'Período de inscrição obrigatório',
+      status: 422,
+      detail:
+        'O processo não tem fase do cronograma que colete inscrição, então o período de inscrição precisa ser informado na publicação.',
+      code: 'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
+      traceId: 't',
+    };
+
+    async function flushPreflightComPendenciaLegal(): Promise<void> {
+      controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
+      controller
+        .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
+        .flush(PROBLEM_SEM_FASE_DE_COLETA, {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'Content-Type': 'application/problem+json' },
+        });
+      await flushMicrotasks();
+    }
+
+    /**
+     * O defeito que originou a issue: o 422 acendia o alerta de erro, e a seção
+     * "Documento e ato de publicação" — que mora dentro do `@else` desse erro —
+     * não renderizava. O campo onde o período seria informado ficava escondido
+     * atrás da recusa que só o período resolveria, e o certame de origem
+     * importada não tinha como ser publicado.
+     */
+    it('mantém em tela o campo de período, que é o que destrava a avaliação', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightComPendenciaLegal();
+      fixture.detectChanges();
+
+      const html: HTMLElement = fixture.nativeElement;
+      expect(html.querySelector('#rev-periodo-inicio')).not.toBeNull();
+      expect(html.querySelector('#rev-periodo-fim')).not.toBeNull();
+      expect(html.querySelector('#rev-tipo-ato')).not.toBeNull();
+      expect(html.querySelector('.alert--danger')).toBeNull();
+    });
+
+    it('anuncia o motivo do servidor, sem oferecer "Tentar novamente"', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightComPendenciaLegal();
+      fixture.detectChanges();
+
+      const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(texto).toContain('período de inscrição precisa ser informado');
+      expect(texto).not.toContain('Tentar novamente');
+    });
+
+    it('recusa a publicação com o motivo, e não com "obrigatoriedades reprovadas"', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightComPendenciaLegal();
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.some((m) => m.includes('período de inscrição precisa ser informado'))).toBe(true);
+      expect(resultado.messages?.some((m) => m.includes('obrigatoriedades legais reprovadas'))).toBe(false);
+    });
+  });
+
   describe('rotuloDeAvanco()', () => {
     it('diz "Publicar processo"', () => {
       expect(componente.rotuloDeAvanco()).toBe('Publicar processo');

@@ -125,6 +125,125 @@ describe('PreflightDaPublicacaoService', () => {
     expect(servico.carregando()).toBe(false);
   });
 
+  it('#742 — 422 de conformidade legal não avaliável é pendência, não falha: estrutural e tipos de ato carregam', async () => {
+    // Sem isto, o certame sem fase de coleta acendia o alerta de erro, que na
+    // tela esconde o bloco do ato — justamente onde o período que destravaria a
+    // avaliação seria informado. O processo ficava impublicável.
+    const obterConformidadeLegal = vi.fn(() =>
+      of(
+        apiFailure(
+          {
+            type: 'about:blank',
+            title: 'Período de inscrição obrigatório',
+            status: 422,
+            detail:
+              'O processo não tem fase do cronograma que colete inscrição, então o período de inscrição precisa ser informado na publicação.',
+            code: 'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
+            traceId: 't',
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    const { servico } = montar({ obterConformidadeLegal });
+
+    await servico.carregar(PROCESSO_ID, null);
+
+    expect(servico.erro()).toBeNull();
+    expect(servico.legalIndisponivel()).toContain('período de inscrição precisa ser informado');
+    expect(servico.legal()).toBeNull();
+    expect(servico.estrutural()).toEqual(ITENS);
+    expect(servico.tiposAto()).toEqual(TIPOS_ATO);
+    expect(servico.carregando()).toBe(false);
+  });
+
+  it('#742 — fase que coleta inscrição sem janela também é pendência, não falha', async () => {
+    const obterConformidadeLegal = vi.fn(() =>
+      of(
+        apiFailure(
+          {
+            type: 'about:blank',
+            title: 'Fase sem janela',
+            status: 422,
+            detail: "A fase 'INSCRICAO' coleta inscrição e precisa de início e fim definidos.",
+            code: 'uniplus.selecao.processo_seletivo.fase_que_coleta_inscricao_sem_janela',
+            traceId: 't',
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    const { servico } = montar({ obterConformidadeLegal });
+
+    await servico.carregar(PROCESSO_ID, null);
+
+    expect(servico.erro()).toBeNull();
+    expect(servico.legalIndisponivel()).toContain('início e fim definidos');
+    expect(servico.estrutural()).toEqual(ITENS);
+  });
+
+  it('#742 — 422 de OUTRO código na conformidade legal continua sendo falha de carga', async () => {
+    // O terceiro desfecho vale só para as pendências que o servidor nomeia como
+    // "ainda não dá para avaliar". Qualquer outra recusa é falha, e a tela tem
+    // de continuar oferecendo "Tentar novamente".
+    const obterConformidadeLegal = vi.fn(() =>
+      of(
+        apiFailure(
+          {
+            type: 'about:blank',
+            title: 'Outro',
+            status: 422,
+            code: 'uniplus.selecao.processo_seletivo.qualquer_outra_coisa',
+            traceId: 't',
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    const { servico } = montar({ obterConformidadeLegal });
+
+    await servico.carregar(PROCESSO_ID, null);
+
+    expect(servico.erro()).not.toBeNull();
+    expect(servico.legalIndisponivel()).toBeNull();
+    expect(servico.estrutural()).toBeNull();
+    expect(servico.tiposAto()).toEqual([]);
+  });
+
+  it('#742 — a pendência é limpa quando uma carga seguinte avalia a conformidade legal', async () => {
+    const obterConformidadeLegal = vi
+      .fn()
+      .mockReturnValueOnce(
+        of(
+          apiFailure(
+            {
+              type: 'about:blank',
+              title: 'Período de inscrição obrigatório',
+              status: 422,
+              detail: 'Informe o período.',
+              code: 'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
+              traceId: 't',
+            },
+            422,
+            new HttpHeaders(),
+          ),
+        ),
+      )
+      .mockReturnValueOnce(of(apiOk(LEGAL, 200, new HttpHeaders())));
+    const { servico } = montar({ obterConformidadeLegal });
+
+    await servico.carregar(PROCESSO_ID, null);
+    expect(servico.legalIndisponivel()).not.toBeNull();
+
+    await servico.recarregar(PROCESSO_ID, '2027-01-01');
+
+    expect(servico.legalIndisponivel()).toBeNull();
+    expect(servico.legal()).toEqual(LEGAL);
+  });
+
   it('recarregar() repete a busca mesmo já tendo carregado — usado após 422 (CA-06)', async () => {
     const obterConformidade = vi
       .fn()

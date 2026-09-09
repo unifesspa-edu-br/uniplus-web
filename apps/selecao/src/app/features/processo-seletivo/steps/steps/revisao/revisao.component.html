@@ -145,7 +145,13 @@
     <section class="step-section" aria-labelledby="revisao-legal-titulo">
       <h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
 
-      @if (legalOk()) {
+      @if (preflight.legalIndisponivel(); as motivo) {
+        <!-- Pendência do rascunho, não falha de carga: o servidor respondeu por
+             que ainda não há como avaliar, e o que destrava está nesta mesma
+             tela (o período do ato) ou no Cronograma. Sem "Tentar novamente",
+             que aqui não resolveria nada (`#742`). -->
+        <p class="alert alert--info" role="status">{{ motivo }}</p>
+      } @else if (legalOk()) {
         <p class="alert alert--success" role="status">
           Nenhuma obrigatoriedade legal reprovada.
         </p>
