@@ -426,7 +426,14 @@ export class RevisaoStepComponent {
     if (!this.estruturalOk()) {
       messages.push('Há pendências estruturais no checklist. Corrija-as antes de publicar.');
     }
-    if (this.legalDesatualizada()) {
+    const legalIndisponivel = this.preflight.legalIndisponivel();
+    if (legalIndisponivel !== null) {
+      // A conformidade legal não chegou a ser avaliada — dizer "há
+      // obrigatoriedades reprovadas" mandaria o operador procurar uma
+      // reprovação que não existe. O que falta é o insumo que o próprio
+      // servidor nomeou (`#742`).
+      messages.push(legalIndisponivel);
+    } else if (this.legalDesatualizada()) {
       messages.push(
         'A data de referência do checklist legal mudou desde a última carga. Use "Atualizar checklist" antes de publicar.',
       );

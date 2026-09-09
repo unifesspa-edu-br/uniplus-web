@@ -196,6 +196,36 @@ export function eErroDeDocumentoOuAto(codigo: string): boolean {
 }
 
 /**
+ * Recusas de `GET /conformidade-legal` que NÃO são falha de carga: o servidor
+ * entendeu o pedido e respondeu que ainda não há como avaliar, porque o
+ * rascunho não tem de onde derivar a data de referência (`uniplus-api#1456`).
+ *
+ * São os mesmos dois códigos que o gate de publicação emitiria, e é por isso
+ * que a tela pode repeti-los ao operador como pendência a resolver — o que
+ * falta aqui é exatamente o que faltaria lá. Tratá-los como falha de carga
+ * mandava "tente novamente" para quem precisava, na verdade, informar o
+ * período de inscrição ou dar janela à fase que coleta.
+ */
+const CODIGOS_DE_CONFORMIDADE_LEGAL_NAO_AVALIAVEL = new Set<string>([
+  'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
+  'uniplus.selecao.processo_seletivo.fase_que_coleta_inscricao_sem_janela',
+]);
+
+/**
+ * O motivo pelo qual a conformidade legal não pôde ser avaliada, ou `null`
+ * quando a resposta não é uma dessas pendências — e aí é falha de carga, que
+ * o preflight trata como sempre tratou.
+ *
+ * Compara contra a taxonomia `uniplus.*`, que é o que `Extensions["code"]`
+ * carrega no wire; o código de domínio (`ProcessoSeletivo.*`) é chave de
+ * lookup do servidor e não trafega.
+ */
+export function motivoDeConformidadeLegalNaoAvaliavel(problem: ProblemDetails): string | null {
+  if (!CODIGOS_DE_CONFORMIDADE_LEGAL_NAO_AVALIAVEL.has(problem.code)) return null;
+  return problem.detail?.trim() || problem.title;
+}
+
+/**
  * Uma pendência estrutural, como `Extensions["pendencias"]` do 422 as
  * devolve (`ProcessoSeletivoController.cs:785-791`) — mesmo shape de
  * `ItemConformidadeDto` sem o `ok` (todo item aqui já é reprovado).
