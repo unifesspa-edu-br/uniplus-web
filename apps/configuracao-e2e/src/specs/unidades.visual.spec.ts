@@ -81,41 +81,96 @@ test.describe('Unidade — cobertura visual DS', () => {
     await mockUnidadesApi(page);
   });
 
-  test('layout principal, menus, filtro e tema permanecem aderentes ao DS', async ({
+  test('layout principal, menus, filtro, árvore e tema permanecem aderentes ao DS', async ({
     page,
   }, testInfo) => {
     const theme = metadataTheme(testInfo);
     const viewport = metadataViewport(testInfo);
 
     await page.goto('/unidades');
+
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.getByRole('heading', { name: 'Unidade', level: 1 })).toBeVisible();
+
+    await expect(page.getByRole('heading', { name: 'Unidades', level: 1 })).toBeVisible();
+
     await expect(page.getByRole('region', { name: 'Identificação institucional' })).toBeVisible();
+
     await expect(page.locator('.admin-topbar')).toBeVisible();
+
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeVisible();
+
     await expect(page.getByRole('search', { name: 'Filtrar unidades' })).toBeVisible();
+
+    await expect(page.getByRole('heading', { name: 'Unidades', level: 2 })).toBeVisible();
+
+    await expect(page.getByRole('button', { name: 'Nova unidade', exact: true })).toBeVisible();
+
+    const tree = page.locator('.unit-tree');
+
+    await expect(tree).toBeVisible();
+
+    await expect(
+      tree.getByRole('button', { name: 'Editar unidade REITORIA', exact: true }),
+    ).toBeVisible();
+
+    await expect(
+      tree.getByRole('button', { name: 'Remover unidade REITORIA', exact: true }),
+    ).toBeVisible();
+
+    // A árvore começa recolhida. Expande a raiz para validar os descendentes.
+    const toggleRaiz = tree.locator('> .unit-node > .unit-node__row .unit-node__toggle');
+
+    await expect(toggleRaiz).toBeVisible();
+
+    await toggleRaiz.click();
+
+    await expect(
+      tree.getByRole('button', { name: 'Editar unidade PROEG', exact: true }),).toBeVisible();
+
+    await expect(
+      tree.getByRole('button', { name: 'Remover unidade PROEG', exact: true }),).toBeVisible();
+
+    await expect(
+      tree.getByRole('button', {
+        name: 'Editar unidade CTIC',
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await expect(
+      tree.getByRole('button', {
+        name: 'Remover unidade CTIC',
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    const nodeProeg = tree
+      .locator('.unit-node')
+      .filter({
+        has: page.getByRole('button', {
+          name: 'Editar unidade PROEG',
+          exact: true,
+        }),
+      })
+      .last();
+
+    const toggleProeg = nodeProeg.locator('.unit-node__toggle');
+
+    await expect(toggleProeg).toBeVisible();
+
+    await toggleProeg.click();
+
+    await expect(
+      tree.getByRole('button', { name: 'Editar unidade CEPS', exact: true }),
+    ).toBeVisible();
+
+    await expect(
+      tree.getByRole('button', { name: 'Remover unidade CEPS', exact: true }),
+    ).toBeVisible();
 
     await assertNoHorizontalOverflow(page);
     await assertSidebarBehavior(page, viewport);
     await assertClickableHeaderMenus(page, viewport);
-
-    await page.getByRole('searchbox', { name: 'Buscar unidade' }).fill('ceps');
-    await expect(page.locator('table tbody tr')).toHaveCount(1);
-    await expect(
-      page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ }),
-    ).toBeVisible();
-
-    await page.getByRole('button', { name: 'Limpar' }).click();
-    // Chips vêm do roster fechado (sem contagem, server-side); nome exato
-    // evita colidir com os botões de linha "Centro de …".
-    await page.getByRole('button', { name: 'Centro', exact: true }).click();
-    await expect(page.locator('table tbody tr')).toHaveCount(2);
-    await expect(
-      page.getByRole('row', { name: /CEPS.*Centro de Processos Seletivos/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('row', { name: /CTIC.*Centro de Tecnologia da Informação e Comunicação/ }),
-    ).toBeVisible();
 
     await attachScreenshot(page, testInfo, 'unidades-lista');
   });
