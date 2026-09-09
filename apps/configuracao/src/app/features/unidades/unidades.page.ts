@@ -59,40 +59,19 @@ const PAGE_SIZE = 100;
 /** Tamanho da janela do seletor de cidade (cursor pagination, ADR-0026). */
 const CIDADES_LIMIT = 20;
 
-/**
- * Desfecho de uma busca de cidade na Geo, sempre carimbado com o termo que o
- * originou. Termo, opções e erro andam juntos porque são partes do mesmo fato:
- * separados, um reset que esquece um deles deixa o resultado de uma busca
- * convivendo com o termo de outra — foi o que produziu o falso "nenhuma cidade
- * encontrada" da #639, e é o que deixaria uma opção obsoleta clicável.
- */
 interface RespostaCidade {
   readonly termo: string;
   readonly opcoes: readonly CidadeResumoDto[];
   readonly erro: string | null;
 }
 
-/** Emissão do pipeline de busca: a resposta da Geo com o termo que a originou. */
 interface BuscaCidadeEmissao {
   readonly busca: string;
   readonly result: ApiResult<readonly CidadeResumoDto[]>;
 }
 
-/**
- * Debounce da busca textual — uma request por rajada de digitação, não por
- * tecla (critério de aceite #397). Angular 22 trará `debounced()`; no 21.x o
- * padrão oficial é a interop `toObservable → debounceTime → toSignal`.
- */
 const BUSCA_DEBOUNCE_MS = 300;
 
-/**
- * Ordinal numérico do enum `TipoUnidade` no backend (`TipoUnidade.cs`) —
- * usado só pelo filtro `?tipo=` da listagem. Esse query param é bindado pelo
- * controller como `int[]` bruto (`UnidadesController.Listar`), independente
- * do enum string (`JsonStringEnumConverter` camelCase) que o corpo JSON de
- * `Criar/AtualizarUnidadeCommand` usa — não decorre de `TIPOS_UNIDADE.value`
- * porque o enum string não expõe ordinal em runtime.
- */
 const TIPO_UNIDADE_FILTRO_ORDINAL: Readonly<Record<TipoUnidade, number>> = {
   [TipoUnidade.nenhum]: 0,
   [TipoUnidade.reitoria]: 1,
@@ -167,7 +146,7 @@ const BACKEND_FIELD_TO_CONTROL = {
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title">Unidade</h1>
+        <h1 class="page-header__title">Unidades</h1>
         <p class="page-header__desc">
           Estrutura organizacional hierárquica da Unifesspa — identidade rica com histórico de
           identificadores · UNI-REQ-0008.
@@ -230,18 +209,33 @@ const BACKEND_FIELD_TO_CONTROL = {
       <section class="panel" aria-labelledby="cfg-unidades-tree-title">
         <div class="panel-head">
           <div class="panel-head__title">
-            <h2 id="cfg-unidades-tree-title">Hierarquia</h2>
+            <h2 id="cfg-unidades-tree-title">Unidades</h2>
           </div>
+          <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+            <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+            Nova unidade
+          </button>
           @if (loading()) {
             <span class="cfg-unidades__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
 
-        @if (arvore().length === 0) {
-          <div class="cfg-panel-empty">
-            <p class="cfg-muted">Sem relações carregadas.</p>
-          </div>
-        } @else {
+        @if (arvore().length === 0 && !loading()) {
+          <ui-empty-state
+            heading="Nenhuma unidade encontrada"
+            [description]="
+              temFiltro()
+                ? 'Tente ajustar os termos de busca ou limpar os filtros.'
+                : 'Nenhuma unidade cadastrada na estrutura organizacional.'
+            "
+          >
+            @if (temFiltro()) {
+              <button type="button" class="btn btn--secondary btn--sm" (click)="limparFiltros()">
+                Limpar filtros
+              </button>
+            }
+          </ui-empty-state>
+        } @else if (arvore().length > 0) {
           <nav class="unit-tree" aria-label="Hierarquia de unidades da Unifesspa">
             @for (node of arvore(); track node.unidade.id) {
               <ng-container
@@ -250,130 +244,56 @@ const BACKEND_FIELD_TO_CONTROL = {
               />
             }
           </nav>
-        }
-      </section>
 
-      <section class="panel" aria-labelledby="cfg-unidades-list-title">
-        <div class="panel-head">
-          <div class="panel-head__title">
-            <h2 id="cfg-unidades-list-title">Unidades</h2>
-            <span class="list-count" aria-label="Total de unidades carregadas">
-              {{ unidades().length }}
-            </span>
-          </div>
-          <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-            <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-            Nova unidade
-          </button>
-        </div>
-
-        @if (unidades().length > 0) {
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Sigla</th>
-                  <th scope="col">Nome</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Unidade superior</th>
-                  <th scope="col"><span class="sr-only">Ações</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (unidade of unidades(); track unidade.id) {
-                  <tr>
-                    <td data-label="Sigla">
-                      <code>{{ unidade.sigla }}</code>
-                    </td>
-                    <td data-label="Nome">
-                      <button
-                        type="button"
-                        class="cfg-link-button table-responsive__primary"
-                        [disabled]="recarregandoLista()"
-                        (click)="abrirDetalhe(unidade)"
-                      >
-                        {{ unidade.nome }}
-                      </button>
-                      @if (unidade.alias) {
-                        <div class="table-responsive__meta">Alias: {{ unidade.alias }}</div>
-                      }
-                    </td>
-                    <td data-label="Tipo">
-                      <span class="tag">{{ unidade.tipo }}</span>
-                    </td>
-                    <td data-label="Unidade superior">
-                      {{ unidadeSuperiorLabel(unidade.unidadeSuperiorId) }}
-                    </td>
-                    <td class="table-responsive__actions" data-label="Ações">
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="recarregandoLista()"
-                        (click)="abrirEdicao(unidade)"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="recarregandoLista()"
-                        (click)="pedirRemocao(unidade)"
-                      >
-                        Remover
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else if (!loading() && !errorMessage()) {
-          @if (temFiltro()) {
-            <ui-empty-state
-              heading="Nenhuma unidade encontrada"
-              description="Ajuste a busca ou o filtro de tipo para ver resultados."
-            >
-              <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
-                Limpar filtros
-              </button>
-            </ui-empty-state>
-          } @else {
-            <ui-empty-state
-              heading="Nenhuma unidade carregada"
-              description="Cadastre a primeira unidade para iniciar a estrutura institucional."
-            >
-              <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-                Nova unidade
-              </button>
-            </ui-empty-state>
+          @if (prevCursor() !== null || nextCursor() !== null) {
+            <ui-pager
+              [hasPrevious]="prevCursor() !== null && !loading()"
+              [hasNext]="nextCursor() !== null && !loading()"
+              (previous)="paginaAnterior()"
+              (next)="proximaPagina()"
+            />
           }
-        }
-
-        @if (prevCursor() !== null || nextCursor() !== null) {
-          <ui-pager
-            statusText="Navegação por páginas"
-            navigationLabel="Paginação de unidades"
-            [hasPrevious]="prevCursor() !== null"
-            [hasNext]="nextCursor() !== null"
-            [isDisabled]="loading()"
-            (previous)="paginaAnterior()"
-            (next)="proximaPagina()"
-          />
         }
       </section>
     </div>
 
     <ng-template #treeNode let-node>
       <div class="unit-node">
-        <div class="unit-node__row">
-          <span class="unit-node__icon" aria-hidden="true">
-            <i class="pi pi-sitemap"></i>
-          </span>
+        <div
+          class="unit-node__row"
+          role="button"
+          tabindex="0"
+          (click)="toggleExpand(node.unidade.id, $event)"
+          (keyup.enter)="toggleExpand(node.unidade.id, $event)"
+          (keyup.space)="toggleExpand(node.unidade.id, $event)"
+        >
+          @if (node.children.length > 0) {
+            <button
+              type="button"
+              class="unit-node__toggle"
+              [attr.aria-expanded]="isExpanded(node.unidade.id)"
+              [attr.aria-label]="
+                (isExpanded(node.unidade.id) ? 'Recolher ' : 'Expandir ') + node.unidade.sigla
+              "
+              (click)="toggleExpand(node.unidade.id, $event)"
+            >
+              <i
+                class="pi"
+                [class.pi-chevron-down]="isExpanded(node.unidade.id)"
+                [class.pi-chevron-right]="!isExpanded(node.unidade.id)"
+              ></i>
+            </button>
+          } @else {
+            <span class="unit-node__icon" aria-hidden="true">
+              <i class="pi pi-sitemap"></i>
+            </span>
+          }
+
           <button
             type="button"
             class="unit-node__name"
             [disabled]="recarregandoLista()"
-            (click)="abrirDetalhe(node.unidade)"
+            (click)="abrirDetalheComEvent(node.unidade, $event)"
           >
             {{ node.unidade.sigla }}
           </button>
@@ -382,15 +302,24 @@ const BACKEND_FIELD_TO_CONTROL = {
             <button
               type="button"
               class="btn btn--tertiary btn--sm btn--rect"
-              [attr.aria-label]="'Editar ' + node.unidade.sigla"
+              [attr.aria-label]="'Editar unidade ' + node.unidade.sigla"
               [disabled]="recarregandoLista()"
-              (click)="abrirEdicao(node.unidade)"
+              (click)="abrirEdicaoComEvent(node.unidade, $event)"
             >
               Editar
             </button>
+            <button
+              type="button"
+              class="btn btn--tertiary btn--sm btn--rect"
+              [attr.aria-label]="'Remover unidade ' + node.unidade.sigla"
+              [disabled]="recarregandoLista()"
+              (click)="pedirRemocaoComEvent(node.unidade, $event)"
+            >
+              Remover
+            </button>
           </div>
         </div>
-        @if (node.children.length > 0) {
+        @if (node.children.length > 0 && isExpanded(node.unidade.id)) {
           <div class="unit-node__children">
             @for (child of node.children; track child.unidade.id) {
               <ng-container
@@ -633,11 +562,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                     [attr.aria-describedby]="cidadeDescribedBy(false)"
                     [value]="cidade.nome + ' — ' + cidade.uf"
                   />
-                  <button
-                    type="button"
-                    class="btn btn--tertiary"
-                    (click)="limparCidade()"
-                  >
+                  <button type="button" class="btn btn--tertiary" (click)="limparCidade()">
                     Trocar cidade
                   </button>
                 </div>
@@ -683,14 +608,18 @@ const BACKEND_FIELD_TO_CONTROL = {
                     }
                   </ul>
                 } @else if (buscaCidadeSemResultado()) {
-                  <p class="field__hint" role="status" aria-live="polite">Nenhuma cidade encontrada.</p>
+                  <p class="field__hint" role="status" aria-live="polite">
+                    Nenhuma cidade encontrada.
+                  </p>
                 }
               }
               <span class="field__hint" id="cfg-unidade-cidade-hint">
                 Cidade-sede de referência da unidade. Opcional.
               </span>
               @if (cidadeErro(); as erro) {
-                <span class="field__error" id="cfg-unidade-cidade-erro" role="alert">{{ erro }}</span>
+                <span class="field__error" id="cfg-unidade-cidade-erro" role="alert">{{
+                  erro
+                }}</span>
               }
             </div>
           </div>
@@ -786,7 +715,9 @@ export class UnidadesPage {
   protected readonly unidadeEmEdicaoId = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
-  // Termo de busca aplicado — debounced (uma request por rajada, não por tecla).
+  /** Conjunto de IDs dos nós expandidos manualmente na árvore. */
+  protected readonly nodesExpandidos = signal<Set<string>>(new Set());
+
   private readonly buscaAplicada = toSignal(
     toObservable(this.busca).pipe(
       map((termo) => termo.trim()),
@@ -1162,6 +1093,49 @@ export class UnidadesPage {
             : { termo: busca, opcoes: [], erro: this.problemI18n.resolve(result.problem).title },
         );
       });
+  }
+
+  /**
+   * Verifica se o nó da árvore deve estar visível/expandido.
+   * Quando um filtro está ativo, expande automaticamente.
+   */
+  protected isExpanded(id: string): boolean {
+    if (this.temFiltro()) {
+      return true;
+    }
+    return this.nodesExpandidos().has(id);
+  }
+
+  /** Alterna a expansão visual do nó. */
+  protected toggleExpand(id: string, event?: Event): void {
+    if (event && event.target !== event.currentTarget && event.type.startsWith('key')) {
+      return;
+    }
+    event?.stopPropagation();
+    this.nodesExpandidos.update((set) => {
+      const next = new Set(set);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  protected abrirEdicaoComEvent(unidade: UnidadeDto, event: Event): void {
+    event.stopPropagation();
+    this.abrirEdicao(unidade);
+  }
+
+  protected pedirRemocaoComEvent(unidade: UnidadeDto, event: Event): void {
+    event.stopPropagation();
+    this.pedirRemocao(unidade);
+  }
+
+  protected abrirDetalheComEvent(unidade: UnidadeDto, event: Event): void {
+    event.stopPropagation();
+    this.abrirDetalhe(unidade);
   }
 
   protected proximaPagina(): void {
