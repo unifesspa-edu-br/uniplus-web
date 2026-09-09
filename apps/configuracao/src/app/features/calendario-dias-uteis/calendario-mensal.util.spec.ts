@@ -1,6 +1,6 @@
 import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
-import { agruparPorMes, type CelulaCalendarioMensal } from './calendario-mensal.util';
+import { agruparPorMes, anosDoCalendario, type CelulaCalendarioMensal } from './calendario-mensal.util';
 
 function diaNaoUtil(
   overrides: Partial<DiaNaoUtilDto> & { id: string; data: string },
@@ -34,7 +34,7 @@ describe('agruparPorMes()', () => {
       diaNaoUtil({ id: '3', data: '2026-04-21', descricao: 'Tiradentes' }),
     ];
 
-    const meses = agruparPorMes(dias);
+    const meses = agruparPorMes(dias, 2026);
 
     expect(meses).toHaveLength(12);
     expect(meses.map((mes) => mes.chave)).toEqual([
@@ -173,5 +173,30 @@ describe('agruparPorMes()', () => {
     const dia1 = abril.semanas.flat().find((celula) => celula?.dia === 1);
     expect(dia1?.ocorrencias).toEqual([]);
     expect(dia1?.data).toBe('2026-04-01');
+  });
+});
+
+describe('anosDoCalendario()', () => {
+  it('retorna os anos presentes no dataset em ordem crescente, sem repetição', () => {
+    const dias = [
+      diaNaoUtil({ id: '1', data: '2026-11-15', descricao: 'Proclamação da República' }),
+      diaNaoUtil({ id: '2', data: '2027-01-01', descricao: 'Confraternização Universal' }),
+      diaNaoUtil({ id: '3', data: '2026-12-25', descricao: 'Natal' }),
+    ];
+
+    expect(anosDoCalendario(dias)).toEqual([2026, 2027]);
+  });
+
+  it('retorna um único ano quando o dataset não atravessa a virada do ano', () => {
+    const dias = [diaNaoUtil({ id: '1', data: '2026-04-21', descricao: 'Tiradentes' })];
+
+    expect(anosDoCalendario(dias)).toEqual([2026]);
+  });
+
+  it('cai no ano corrente quando o dataset está vazio ou só tem datas inválidas', () => {
+    expect(anosDoCalendario([])).toEqual([new Date().getUTCFullYear()]);
+    expect(anosDoCalendario([diaNaoUtil({ id: '1', data: '2026-02-30' })])).toEqual([
+      new Date().getUTCFullYear(),
+    ]);
   });
 });

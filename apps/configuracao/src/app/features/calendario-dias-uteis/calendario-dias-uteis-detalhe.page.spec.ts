@@ -36,6 +36,17 @@ const DIA_ESTADUAL = {
   descricao: 'Adesão do Grão-Pará à Independência',
 };
 
+const DIA_NACIONAL_JANEIRO = {
+  id: '019f41cf-69fd-759a-ac6d-09acabc1b102',
+  abrangencia: 'NACIONAL',
+  municipioIbge: null,
+  municipioNome: null,
+  municipioUf: null,
+  uf: null,
+  data: '2027-01-01',
+  descricao: 'Confraternização Universal',
+};
+
 describe('CalendarioDiasUteisDetalhePage', () => {
   let fixture: ComponentFixture<CalendarioDiasUteisDetalhePage>;
   let controller: HttpTestingController;
@@ -178,6 +189,25 @@ describe('CalendarioDiasUteisDetalhePage', () => {
       'Novembro de 2026',
       'Dezembro de 2026',
     ]);
+  });
+
+  it('preserva os 12 meses de cada ano quando o dataset atravessa a virada do ano (CA05)', async () => {
+    await carregar([DIA_ESTADUAL, DIA_NACIONAL_JANEIRO]);
+
+    const titulos = [
+      ...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo'),
+    ].map((elemento: Element) => elemento.textContent?.trim());
+    expect(titulos).toHaveLength(24);
+    expect(titulos[0]).toBe('Janeiro de 2026');
+    expect(titulos[11]).toBe('Dezembro de 2026');
+    expect(titulos[12]).toBe('Janeiro de 2027');
+    expect(titulos[23]).toBe('Dezembro de 2027');
+
+    botaoDoDia(DIA_NACIONAL_JANEIRO.data).click();
+    fixture.detectChanges();
+
+    const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
+    expect(dialogo.textContent).toContain('Confraternização Universal');
   });
 
   it('abre o drawer com heading e conteúdo do dia ao ativar o botão (CA-07)', async () => {

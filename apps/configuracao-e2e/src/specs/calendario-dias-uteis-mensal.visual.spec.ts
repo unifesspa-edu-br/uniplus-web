@@ -95,11 +95,13 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await mockCalendarioApi(page);
   });
 
-  test('exibe os 12 meses do ano em ordem cronológica de janeiro a dezembro (CA-01, CA-02, CA-03)', async ({
+  test('exibe os 12 meses de cada ano do dataset, em ordem cronológica de janeiro a dezembro (CA-01, CA-02, CA-03, CA-05)', async ({
     page,
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
+    // CALENDARIO cruza 2026 e 2027 (ver comentário do dataset acima) — os dois
+    // anos precisam aparecer completos, sem descartar o feriado de 2027.
     const titulos = page.locator('.cfg-calendario-mensal__titulo');
     await expect(titulos).toHaveText([
       'Janeiro de 2026',
@@ -114,7 +116,22 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
       'Outubro de 2026',
       'Novembro de 2026',
       'Dezembro de 2026',
+      'Janeiro de 2027',
+      'Fevereiro de 2027',
+      'Março de 2027',
+      'Abril de 2027',
+      'Maio de 2027',
+      'Junho de 2027',
+      'Julho de 2027',
+      'Agosto de 2027',
+      'Setembro de 2027',
+      'Outubro de 2027',
+      'Novembro de 2027',
+      'Dezembro de 2027',
     ]);
+
+    await page.getByRole('button', { name: /1 de janeiro de 2027/ }).click();
+    await expect(page.getByRole('dialog')).toContainText('Confraternização Universal');
   });
 
   test('abre por clique, fecha pelo botão e restaura o foco no dia exato (CA-07/CA-08)', async ({
