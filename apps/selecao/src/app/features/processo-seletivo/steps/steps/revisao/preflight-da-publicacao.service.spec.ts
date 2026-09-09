@@ -184,6 +184,38 @@ describe('PreflightDaPublicacaoService', () => {
     expect(servico.estrutural()).toEqual(ITENS);
   });
 
+  it('#742 — inscrição própria sem fase que colete também é pendência, e aponta o cronograma', async () => {
+    // Terceiro código que o gate emite para "não há de onde derivar a data". Aqui o que falta
+    // não é o período no ato — é criar a fase no Cronograma —, e cair na falha de carga mandava
+    // "tente novamente" para quem precisava mudar outro passo do wizard.
+    const obterConformidadeLegal = vi.fn(() =>
+      of(
+        apiFailure(
+          {
+            type: 'about:blank',
+            title: 'Inscrição própria sem fase de coleta',
+            status: 422,
+            detail:
+              'A origem dos candidatos é inscrição própria, e nenhuma fase do cronograma coleta inscrição.',
+            code: 'uniplus.selecao.processo_seletivo.inscricao_propria_sem_fase_de_coleta',
+            traceId: 't',
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    const { servico } = montar({ obterConformidadeLegal });
+
+    await servico.carregar(PROCESSO_ID, null);
+
+    expect(servico.erro()).toBeNull();
+    expect(servico.legalIndisponivel()).toContain('nenhuma fase do cronograma coleta inscrição');
+    expect(servico.legal()).toBeNull();
+    expect(servico.estrutural()).toEqual(ITENS);
+    expect(servico.tiposAto()).toEqual(TIPOS_ATO);
+  });
+
   it('#742 — 422 de OUTRO código na conformidade legal continua sendo falha de carga', async () => {
     // O terceiro desfecho vale só para as pendências que o servidor nomeia como
     // "ainda não dá para avaliar". Qualquer outra recusa é falha, e a tela tem
