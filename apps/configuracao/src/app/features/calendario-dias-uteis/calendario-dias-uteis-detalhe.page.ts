@@ -26,7 +26,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { tap } from 'rxjs';
 
-import { agruparPorMes, type CelulaCalendarioMensal } from './calendario-mensal.util';
+import { agruparPorMes, anosDoCalendario, type CelulaCalendarioMensal } from './calendario-mensal.util';
 
 const DIAS_SEMANA = [
   { abrev: 'Dom', nome: 'Domingo' },
@@ -475,7 +475,10 @@ export class CalendarioDiasUteisDetalhePage {
     return this.calendarioResource.error() ? 'Erro inesperado ao carregar o calendário.' : null;
   });
 
-  protected readonly meses = computed(() => agruparPorMes(this.calendario()?.diasNaoUteis ?? []));
+  protected readonly meses = computed(() => {
+    const dias = this.calendario()?.diasNaoUteis ?? [];
+    return anosDoCalendario(dias).flatMap((ano) => agruparPorMes(dias, ano));
+  });
   /**
    * Registros do dataset, não datas do calendário. Duas ocorrências no mesmo
    * dia — abrangências diferentes, como um feriado municipal que cai num

@@ -37,42 +37,58 @@ const NOMES_MES = [
 ] as const;
 
 /**
- * Agrupa os dias não úteis nos 12 meses do ano (Janeiro a Dezembro), prontos para exibição
- * em grade civil de 7 colunas. Meses sem registros permanecem visíveis sem marcações (CA01-CA06).
+ * Monta os 12 meses (Janeiro a Dezembro) de um único ano, prontos para exibição em grade
+ * civil de 7 colunas. Meses sem registros permanecem visíveis sem marcações (CA01-CA05).
+ * Dias não úteis de outros anos são ignorados — quem decide quais anos mostrar é o
+ * chamador, via {@link anosDoCalendario}, não esta função.
  */
-export function agruparPorMes(
-  dias: readonly DiaNaoUtilDto[],
-  anoAlvo?: number,
-): MesCalendarioMensal[] {
-  let ano = anoAlvo;
+export function agruparPorMes(dias: readonly DiaNaoUtilDto[], ano: number): MesCalendarioMensal[] {
+  const porMes = agruparPorAnoMes(dias, ano);
 
-  // Se o ano não for informado explicitamente, extrai do primeiro registro válido
-  if (!ano) {
-    for (const dia of dias) {
-      const parsed = parseIsoDate(dia.data);
-      if (parsed) {
-        ano = parsed.getUTCFullYear();
-        break;
-      }
-    }
+  const resultado: MesCalendarioMensal[] = [];
+  for (let mesIndice = 1; mesIndice <= 12; mesIndice++) {
+    const chave = chaveAnoMes(ano, mesIndice);
+    resultado.push(construirMes(chave, porMes.get(chave) ?? new Map()));
   }
 
-  // Fallback para o ano atual caso a lista de dias seja vazia
-  ano = ano ?? new Date().getUTCFullYear();
+  return resultado;
+}
 
+/**
+ * Anos com ao menos um dia não útil no dataset, em ordem crescente. A tela ainda não
+ * tem seletor de ano (issue #712): até que exista, todo ano presente no dataset precisa
+ * ser exibido, para não fazer feriados cadastrados sumirem da visualização quando o
+ * dataset atravessa a virada do ano (issue #525, CA05). Dataset vazio cai no ano
+ * corrente, só para não devolver uma tela sem nenhum mês.
+ */
+export function anosDoCalendario(dias: readonly DiaNaoUtilDto[]): number[] {
+  const anos = new Set<number>();
+
+  for (const dia of dias) {
+    const parsed = parseIsoDate(dia.data);
+    if (parsed) anos.add(parsed.getUTCFullYear());
+  }
+
+  if (anos.size === 0) anos.add(new Date().getUTCFullYear());
+
+  return [...anos].sort((a, b) => a - b);
+}
+
+function chaveAnoMes(ano: number, mes: number): string {
+  return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}`;
+}
+
+function agruparPorAnoMes(
+  dias: readonly DiaNaoUtilDto[],
+  ano: number,
+): Map<string, Map<number, DiaNaoUtilDto[]>> {
   const porMes = new Map<string, Map<number, DiaNaoUtilDto[]>>();
 
   for (const dia of dias) {
     const parsed = parseIsoDate(dia.data);
-    if (!parsed) continue;
+    if (!parsed || parsed.getUTCFullYear() !== ano) continue;
 
-    const anoDia = parsed.getUTCFullYear();
-    if (anoDia !== ano) continue;
-
-    const anoStr = String(anoDia).padStart(4, '0');
-    const mesStr = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-    const chave = `${anoStr}-${mesStr}`;
-
+    const chave = chaveAnoMes(ano, parsed.getUTCMonth() + 1);
     const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
     porMes.set(chave, porDiaDoMes);
 
@@ -82,18 +98,7 @@ export function agruparPorMes(
     porDiaDoMes.set(diaDoMes, ocorrencias);
   }
 
-  const anoStr = String(ano).padStart(4, '0');
-  const resultado: MesCalendarioMensal[] = [];
-
-  // Garante a criação dos 12 meses (Janeiro a Dezembro) em ordem cronológica
-  for (let mesIndice = 1; mesIndice <= 12; mesIndice++) {
-    const mesStr = String(mesIndice).padStart(2, '0');
-    const chave = `${anoStr}-${mesStr}`;
-    const porDiaDoMes = porMes.get(chave) ?? new Map<number, DiaNaoUtilDto[]>();
-    resultado.push(construirMes(chave, porDiaDoMes));
-  }
-
-  return resultado;
+  return porMes;
 }
 
 function construirMes(
