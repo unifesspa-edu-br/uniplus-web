@@ -200,15 +200,22 @@ export function eErroDeDocumentoOuAto(codigo: string): boolean {
  * entendeu o pedido e respondeu que ainda não há como avaliar, porque o
  * rascunho não tem de onde derivar a data de referência (`uniplus-api#1456`).
  *
- * São os mesmos dois códigos que o gate de publicação emitiria, e é por isso
- * que a tela pode repeti-los ao operador como pendência a resolver — o que
- * falta aqui é exatamente o que faltaria lá. Tratá-los como falha de carga
- * mandava "tente novamente" para quem precisava, na verdade, informar o
- * período de inscrição ou dar janela à fase que coleta.
+ * São os mesmos três códigos que o gate de publicação emitiria, na mesma ordem
+ * em que ele os emite, e é por isso que a tela pode repeti-los ao operador como
+ * pendência a resolver — o que falta aqui é exatamente o que faltaria lá:
+ *
+ * - `inscricao_propria_sem_fase_de_coleta` — criar a fase que coleta, no Cronograma;
+ * - `fase_que_coleta_inscricao_sem_janela` — dar início e fim à fase, no Cronograma;
+ * - `periodo_inscricao_obrigatorio_sem_fase_de_coleta` — informar o período aqui,
+ *   no bloco do ato, e só no certame de origem importada.
+ *
+ * Tratá-los como falha de carga mandava "tente novamente" para quem precisava,
+ * na verdade, mexer no cronograma ou preencher o período.
  */
 const CODIGOS_DE_CONFORMIDADE_LEGAL_NAO_AVALIAVEL = new Set<string>([
-  'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
+  'uniplus.selecao.processo_seletivo.inscricao_propria_sem_fase_de_coleta',
   'uniplus.selecao.processo_seletivo.fase_que_coleta_inscricao_sem_janela',
+  'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
 ]);
 
 /**
