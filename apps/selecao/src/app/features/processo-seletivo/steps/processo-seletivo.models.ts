@@ -348,11 +348,6 @@ export interface DocumentoConfig {
   modalidadesRecortadas: boolean;
 }
 
-export interface PoloConfig {
-  selected: boolean;
-  capacidade: number | null;
-}
-
 /**
  * Uma condição de atendimento que o processo oferta, referenciada pelo id do
  * cadastro de Configuração. O `codigo` acompanha o id porque a invariante do
@@ -512,7 +507,6 @@ export interface WizardDraft {
    */
   desempate: readonly CriterioDesempateConfigurado[];
   documentos: Record<string, DocumentoConfig>;
-  polos: Record<string, PoloConfig>;
   /**
    * A oferta de atendimento especializado (UNI-REQ-0012), gravada por `PUT
    * …/oferta-atendimento`. As três listas vêm dos cadastros de Configuração —
@@ -524,6 +518,31 @@ export interface WizardDraft {
     condicoes: readonly AtendimentoCondicaoSelecionada[];
     recursos: readonly ReferenciaDeAtendimento[];
     tiposDeficiencia: readonly ReferenciaDeAtendimento[];
+  };
+  /**
+   * O que o passo Revisão coleta para `POST …/publicacao` (UNI-REQ, Story
+   * #486). Não é projetado por `hidratarDraft`: publicar não é uma dimensão
+   * que o `ProcessoSeletivoDto` devolva editável — depois do `204` o processo
+   * vira somente leitura, e não há "reabrir para editar o número do ato".
+   *
+   * `periodoInscricaoInicio`/`…Fim` só têm sentido quando o cronograma NÃO tem
+   * fase com `coletaInscricao` (armadilha do período — `#486`, `ResolucaoDoPe-
+   * riodoDeInscricao.cs:28-56`): a tela os abre só nesse ramo, e o mapeador
+   * para o comando os ignora no outro. Os dois são `date-time` no contrato —
+   * o valor aqui é o que `<input type="datetime-local">` devolve, sem fuso.
+   */
+  publicacao: {
+    numero: string;
+    periodoInscricaoInicio: string;
+    periodoInscricaoFim: string;
+    ato: {
+      orgao: string;
+      serie: string;
+      ano: string;
+      dataPublicacao: string;
+      assinante: string;
+      tipoAtoCodigo: string;
+    };
   };
 }
 

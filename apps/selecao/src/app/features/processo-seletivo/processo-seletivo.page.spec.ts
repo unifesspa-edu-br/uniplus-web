@@ -239,15 +239,21 @@ describe('ProcessoSeletivoPage — publicação', () => {
     return { fixture, page, store: page.store };
   }
 
-  it('recusa publicar rascunho vazio alcançado por salto de passo', () => {
+  /**
+   * `page.nextOrPublish()` aguardado em todo teste deste describe: `publicar()`
+   * agora grava de novo os passos anteriores e recarrega o checklist da
+   * Revisão ANTES de validar (achado do Codex na #486, P1 — ver o
+   * comentário de `publicar()`), o que introduz pontos `await` reais que
+   * não existiam quando `validarRascunho()` era a primeira coisa a rodar.
+   */
+  it('recusa publicar rascunho vazio alcançado por salto de passo', async () => {
     const { fixture, page, store } = montar();
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
     fixture.detectChanges();
 
-    expect(page.publicationMessage()).toBe('');
     const erros = store.stepError();
     expect(erros).not.toBeNull();
     expect(erros?.length).toBeGreaterThan(0);
@@ -259,7 +265,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve));
 
@@ -269,30 +275,30 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(document.activeElement).toBe(alerta);
   });
 
-  it('identifica cada pendência pelo passo de origem', () => {
+  it('identifica cada pendência pelo passo de origem', async () => {
     const { fixture, page, store } = montar();
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
 
     const erros = store.stepError() ?? [];
     expect(erros.some((erro) => erro.startsWith('Passo 2 — Identificação'))).toBe(true);
   });
 
-  it('reconcilia o progresso ao validar o rascunho inteiro', () => {
+  it('reconcilia o progresso ao validar o rascunho inteiro', async () => {
     const { fixture, page, store } = montar();
 
     store.syncCompleted([0, 1, 2]);
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
-    page.nextOrPublish();
+    await page.nextOrPublish();
 
     expect(store.completedSteps().has(0)).toBe(false);
     expect(store.completedSteps().has(1)).toBe(false);
   });
 
-  it('exibe mensagem de sucesso quando não há pendência', () => {
+  it('sem pendência local, segue para gravarEAvancar em vez de travar no aviso genérico', () => {
     const { fixture, page, store } = montar();
     const stub = { validate: () => ({ valid: true }) };
 
@@ -305,8 +311,180 @@ describe('ProcessoSeletivoPage — publicação', () => {
     fixture.detectChanges();
     page.nextOrPublish();
 
+    // O stub não declara persistir() nem confirmacaoDeGravacao(): o fluxo
+    // completa como navegação simples, sem erro nem confirmação pendente.
     expect(store.stepError()).toBeNull();
-    expect(page.publicationMessage()).toContain('Rascunho validado');
+    expect(store.salvando()).toBe(false);
+    expect(page.confirmacaoPendente()).toBeNull();
+  });
+
+  /**
+   * A navegação entre passos é livre: o operador pode voltar a um passo já
+   * gravado pelo stepper, editá-lo, e pular direto para a Revisão sem passar
+   * pelo "avançar" que dispara `persistir()` de novo. Sem `gravarPassosAn-
+   * teriores()`, `validarRascunho()` aprovaria o rascunho local (está
+   * bem-formado) e a publicação confirmaria sobre uma edição que nunca
+   * chegou ao servidor (achado do Codex na #486, P1).
+   */
+  it('grava de novo um passo anterior antes de publicar, mesmo sem editar via avançar', async () => {
+    const { fixture, page, store } = montar();
+    const persistirDoPassoAnterior = vi.fn().mockResolvedValue({ valid: true });
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubComPersistir = { validate: () => ({ valid: true }), persistir: persistirDoPassoAnterior };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === 2 ? stubComPersistir : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(persistirDoPassoAnterior).toHaveBeenCalledTimes(1);
+    expect(store.stepError()).toBeNull();
+  });
+
+  it('recusa publicar e nomeia o passo quando a gravação de um passo anterior falha', async () => {
+    const { fixture, page, store } = montar();
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubComFalha = {
+      validate: () => ({ valid: true }),
+      persistir: vi.fn().mockResolvedValue({ valid: false, messages: ['Falha ao gravar de novo.'] }),
+    };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === 2 ? stubComFalha : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    const erros = store.stepError() ?? [];
+    expect(erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.'))).toBe(
+      true,
+    );
+  });
+
+  /**
+   * A Revisão fica de fora da primeira passada de `validarRascunho()`
+   * porque seu checklist pode estar desatualizado — mas sem recarregá-lo
+   * entre gravar de novo e a segunda passada, `validate()` recusaria com a
+   * foto de antes da correção mesmo depois de ela já ter sido gravada
+   * (achado do Codex na #486, P1).
+   */
+  it('recarrega o checklist da Revisão entre gravar de novo e validar, antes de publicar', async () => {
+    const { fixture, page, store } = montar();
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    let checklistRecarregado = false;
+    const recarregarChecklist = vi.fn().mockImplementation(async () => {
+      checklistRecarregado = true;
+    });
+    const stubRevisao = {
+      validate: () =>
+        checklistRecarregado ? { valid: true } : { valid: false, messages: ['Checklist desatualizado.'] },
+      recarregarChecklist,
+    };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(recarregarChecklist).toHaveBeenCalledTimes(1);
+    expect(store.stepError()).toBeNull();
+  });
+
+  /**
+   * Cada `persistir()` individual solta `store.salvando` no próprio
+   * `finally` assim que a PRÓPRIA chamada termina — mas a orquestração de
+   * `publicar()` (gravar os passos anteriores, recarregar o checklist,
+   * validar de novo) ainda não acabou. Sem uma trava que cubra a
+   * orquestração inteira, o intervalo entre um passo terminar e a recarga
+   * do checklist começar liberava o stepper e os campos por um instante
+   * real: o operador podia navegar e editar antes da recarga concluir
+   * (achado do Codex na #486, P1 — a quarta ocorrência de "estado
+   * intermediário tratado como final" nesta Story).
+   */
+  it('mantém a edição e a navegação travadas durante toda a orquestração de publicar, não só em cada passo isolado', async () => {
+    const { fixture, page, store } = montar();
+    const estadosDurante: boolean[] = [];
+    const passoAtingidoDuranteATrava: number[] = [];
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubComPersistir = {
+      validate: () => ({ valid: true }),
+      // Não mexe em store.salvando — como o persistir() real de cada passo
+      // já soltou o próprio no finally antes de retornar, chegar aqui com
+      // operacaoEmAndamento() ainda true só é possível pela trava nova.
+      persistir: vi.fn().mockResolvedValue({ valid: true }),
+    };
+    const recarregarChecklist = vi.fn().mockImplementation(async () => {
+      estadosDurante.push(store.operacaoEmAndamento());
+      store.goTo(0); // tentativa de navegar por baixo, durante a recarga
+      passoAtingidoDuranteATrava.push(store.currentStep());
+    });
+    const stubRevisao = { validate: () => ({ valid: true }), recarregarChecklist };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => {
+      if (index === store.totalSteps - 1) return stubRevisao;
+      if (index === 1) return stubComPersistir;
+      return stubSemPersistir;
+    });
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(estadosDurante).toEqual([true]);
+    // goTo(0) foi barrado: o passo continuou sendo o último (Revisão).
+    expect(passoAtingidoDuranteATrava).toEqual([store.totalSteps - 1]);
+    expect(store.operacaoEmAndamento()).toBe(false);
+  });
+
+  /**
+   * `gravarPassosAnteriores()` grava vários passos em sequência — se o
+   * operador trocar de processo em pleno voo (`geracao` muda), continuar a
+   * varredura chamaria `persistir()` dos passos seguintes contra o
+   * rascunho do processo NOVO, gravando lá por engano (achado do Codex na
+   * #486, P1 — o mais sério dos três desta rodada).
+   */
+  it('para a varredura sem gravar no processo errado quando geracao muda em pleno voo', async () => {
+    const { fixture, page, store } = montar();
+    const persistirDoSegundoPasso = vi.fn().mockResolvedValue({ valid: true });
+    const persistirDoPrimeiroPasso = vi.fn().mockImplementation(async () => {
+      // Simula o operador trocando de processo enquanto este passo ainda
+      // gravava — mesmo efeito de `store.hidratar()` mudar a geracao.
+      store.reset();
+      return { valid: true };
+    });
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stub1 = { validate: () => ({ valid: true }), persistir: persistirDoPrimeiroPasso };
+    const stub2 = { validate: () => ({ valid: true }), persistir: persistirDoSegundoPasso };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => {
+      if (index === 1) return stub1;
+      if (index === 2) return stub2;
+      return stubSemPersistir;
+    });
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(persistirDoPrimeiroPasso).toHaveBeenCalledTimes(1);
+    expect(persistirDoSegundoPasso).not.toHaveBeenCalled();
   });
 });
 

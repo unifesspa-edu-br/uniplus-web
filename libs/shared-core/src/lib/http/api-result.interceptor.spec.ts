@@ -198,6 +198,30 @@ describe('apiResultInterceptor', () => {
       expect(fail.problem.code).toBe('uniplus.contract.versao_nao_suportada');
     });
 
+    it('422 preserva extension nomeada por endpoint específico (ex.: pendencias)', () => {
+      let received: ApiResult<unknown> | undefined;
+
+      http
+        .get<ApiResult<unknown>>('/api/selecao/processos-seletivos/1/publicacao')
+        .subscribe((res) => (received = res));
+
+      controller.expectOne('/api/selecao/processos-seletivos/1/publicacao').flush(
+        {
+          ...baseProblem,
+          status: 422,
+          code: 'ProcessoSeletivo.DocumentoNaoConfirmado',
+          pendencias: [{ codigo: 'x', dimensao: 'y', mensagem: 'z' }],
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
+      );
+
+      const fail = received as ApiFailure;
+      const problem = fail.problem as typeof fail.problem & {
+        readonly pendencias?: readonly unknown[];
+      };
+      expect(problem.pendencias).toEqual([{ codigo: 'x', dimensao: 'y', mensagem: 'z' }]);
+    });
+
     it('500 emite ApiResult.fail preservando code do backend', () => {
       let received: ApiResult<unknown> | undefined;
 

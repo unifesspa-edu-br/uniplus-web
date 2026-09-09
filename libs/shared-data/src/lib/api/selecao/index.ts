@@ -27,6 +27,7 @@ export type {
   RegraEliminacaoDto,
   RegraEliminacaoInput,
   RegraRecursoFaseInput,
+  SnapshotVigenteDto,
 } from './processos-seletivos.api';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
 export {

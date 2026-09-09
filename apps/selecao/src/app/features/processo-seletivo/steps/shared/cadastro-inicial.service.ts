@@ -22,6 +22,7 @@ import {
   FaseCronogramaInput,
   IniciarUploadDocumentoEditalDto,
   ProcessosSeletivosApi,
+  PublicarProcessoSeletivoRequest,
 } from '@uniplus/shared-data/selecao';
 
 import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
@@ -47,9 +48,16 @@ export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
  * confirmação de que a gravação chegou a aplicar — nunca dar a cascata como
  * ausente do servidor só porque a resposta não chegou.
  */
-export type ResultadoGravacaoCascata =
+/**
+ * Forma reaproveitada por qualquer gravação cujo chamador precise saber se
+ * uma recusa deixou em aberto se o comando foi executado — hoje a cascata de
+ * remanejamento e a publicação (`publicar()`).
+ */
+export type ResultadoGravacaoComInconclusiva =
   | { readonly ok: true }
   | (FalhaOperacao & { readonly inconclusiva: boolean });
+
+export type ResultadoGravacaoCascata = ResultadoGravacaoComInconclusiva;
 
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
@@ -118,6 +126,7 @@ export class CadastroInicialService {
   private readonly chaveBonus = new ChaveDeSubstituicao();
   private readonly chaveDesempate = new ChaveDeSubstituicao();
   private readonly chaveAtendimento = new ChaveDeSubstituicao();
+  private readonly chavePublicacao = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -159,6 +168,7 @@ export class CadastroInicialService {
     this.chaveBonus.renovar();
     this.chaveDesempate.renovar();
     this.chaveAtendimento.renovar();
+    this.chavePublicacao.renovar();
   }
 
   /**
@@ -507,6 +517,58 @@ export class CadastroInicialService {
     return { ok: false, problem: result.problem };
   }
 
+  /**
+   * Publica o processo — `POST …/publicacao`. Chave de substituição como as
+   * demais gravações desta classe: depois de um `422`, a próxima tentativa
+   * rotaciona a chave (o corpo corrigido sob a mesma chave voltaria
+   * `body_mismatch`); `processing_conflict`, rede e 5xx preservam a chave,
+   * porque a execução anterior pode ainda concluir.
+   *
+   * `inconclusiva` (mesmo contrato de `ResultadoGravacaoCascata`) diz ao
+   * chamador se a recusa deixou em aberto se o comando foi executado — a
+   * tela de Revisão usa isso para manter a edição travada nesse caso
+   * (achado do Codex na #486, P1): sem o sinal, o `finally` de `persistir()`
+   * destravaria a edição, e um retry com o corpo editado giraria a chave
+   * (`ChaveDeSubstituicao.contextoPara`), deixando de ser o replay seguro do
+   * comando incerto e podendo correr contra a primeira tentativa.
+   */
+  async publicar(
+    processoSeletivoId: string,
+    request: PublicarProcessoSeletivoRequest,
+  ): Promise<ResultadoGravacaoComInconclusiva> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.publicar(processoSeletivoId, request, this.chavePublicacao.contextoPara(request)),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
+
+    if (isApiOk(result)) {
+      this.chavePublicacao.renovar();
+      return { ok: true };
+    }
+
+    const inconclusiva = this.chavePublicacao.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
+  }
+
+  /**
+   * Releitura pós-publicação (CA-08 da #486): o detalhe canônico do processo,
+   * para confirmar `status === publicado` depois do `204` de `publicar()`.
+   */
+  obterDetalhe(processoSeletivoId: string) {
+    return firstValueFrom(this.api.obter(processoSeletivoId));
+  }
+
+  /**
+   * Releitura pós-publicação (CA-08 da #486): o snapshot imutável da versão
+   * vigente — `snapshotPublicacaoId`, `schemaVersion` e os hashes. O
+   * `configuracao` que ele traz não é reinterpretado como comando de
+   * gravação; a tela só confirma que a publicação congelou.
+   */
+  obterSnapshotVigente(processoSeletivoId: string) {
+    return firstValueFrom(this.api.obterSnapshotVigente(processoSeletivoId));
+  }
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */
   async iniciarUpload(processoSeletivoId: string): Promise<ResultadoIniciacao> {
     const geracao = this.geracao;

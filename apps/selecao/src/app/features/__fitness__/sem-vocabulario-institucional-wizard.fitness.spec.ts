@@ -1,0 +1,313 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+/**
+ * Fitness test do wizard de Processo Seletivo (`#511`): impede a volta de
+ * catálogos institucionais locais para conceitos cujo vocabulário pertence
+ * à API, depois que `#480`–`#482` migraram seus consumidores. Inventário
+ * reconciliado na própria issue `#511` e detalhado no §7 do plano de
+ * execução da frente ("o wizard vai até a publicação").
+ *
+ * O gate distingue três coisas, ou reprova o que deve passar:
+ *
+ * 1. **rótulos de navegação** — `PASSOS`, `STEP_LABELS`, `REVIEW_NAMES` em
+ *    `processo-seletivo.data.ts`. Não são vocabulário institucional, ficam.
+ * 2. **códigos de vocabulário fechado que a própria API devolve, e sobre os
+ *    quais a interface decide** — `'SEGUE_CASCATA'`/`'DESTINO_UNICO'`
+ *    (`distribuicao-de-vagas.ts`, `cascata-de-remanejamento.ts`), os códigos
+ *    do ramo federal de distribuição (`REGRAS_RAMO_FEDERAL`), `'PCD'`
+ *    (`CODIGO_CONDICAO_PCD`, linha protegida do ADR-0067) e os códigos
+ *    discriminadores de regra em `classificacao-para-comando.ts` e
+ *    `desempate-para-comando.ts` (`ELIM-*`, `DESEMPATE-*`). A lógica que
+ *    depende deles não é escrevível sem citá-los, e já estão em produção nas
+ *    Stories mergeadas — passam. O gate nunca os alcança: eles não vivem em
+ *    `processo-seletivo.data.ts` nem usam um dos nomes do inventário banido
+ *    abaixo.
+ * 3. **catálogo local paralelo** — lista de opções institucionais que
+ *    deveria vir de um client de API. Reprova, declarado exportado, privado
+ *    (usado só dentro do próprio arquivo) ou reexportado com outro nome
+ *    local — as três formas contam como reintrodução.
+ *
+ * `DOCUMENTO_GRUPOS` é exceção nomeada e temporária: pertence à `#483`, que
+ * não está nesta frente (ver comentário no próprio export, em
+ * `processo-seletivo.data.ts`). Sem essa exceção o gate nasceria vermelho
+ * por causa de uma Story fora da fila.
+ *
+ * Estratégia: glob + readFileSync + regex sobre exports, no molde de
+ * `no-direct-http-in-pages.fitness.spec.ts`. Não bane por substring
+ * genérica (nota técnica da issue `#511`) — ancora em nomes de export
+ * específicos e no diretório do wizard, para não reprovar a exceção do
+ * item 2.
+ */
+
+const STEPS_ROOT = path.resolve(__dirname, '../processo-seletivo/steps');
+const DATA_FILE = path.join(STEPS_ROOT, 'processo-seletivo.data.ts');
+
+/**
+ * Inventário reconciliado (issue `#511`): conceito → fonte canônica e Story
+ * dona da migração. Usado só para compor a mensagem de falha — o veredito é
+ * puramente estrutural (o nome do export), não depende deste texto.
+ */
+const CATALOGO_BANIDO: Readonly<Record<string, { fonte: string; story: string }>> = {
+  CURSOS: {
+    fonte: 'OfertasCursoApi — a seleção persiste oferta, não curso abstrato',
+    story: '#481',
+  },
+  ATENDIMENTO_CONDICOES: {
+    fonte: 'condicoes-atendimento.api (client de Configuração)',
+    story: '#481',
+  },
+  ATENDIMENTO_RECURSOS: {
+    fonte: 'recurso-acessibilidade.api (client de Configuração)',
+    story: '#481',
+  },
+  PCD_TIPOS: {
+    fonte: 'tipo-deficiencia.api (client de Configuração)',
+    story: '#481',
+  },
+  CRITERIOS_DESEMPATE: {
+    fonte: 'GET /regras-catalogo?tipo=criterio_desempate',
+    story: '#482',
+  },
+  DOC_ETAPAS: {
+    fonte: 'fases canônicas do cronograma',
+    story: '#480 e #483',
+  },
+  POLOS: {
+    fonte:
+      'nenhuma — "local de prova" fica fora do MVP (Feature #477) até decisão própria do CEPS/PO',
+    story: 'remoção/reconciliação em #481',
+  },
+};
+
+/** Rótulos de navegação e a exceção temporária — decisão 2 do plano da frente. */
+const EXPORTS_PERMITIDOS_EM_DATA_TS = new Set([
+  'PASSOS',
+  'STEP_LABELS',
+  'REVIEW_NAMES',
+  'DOCUMENTO_GRUPOS',
+]);
+
+function listarArquivosTs(root: string): string[] {
+  const arquivos: string[] = [];
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    const fullPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      arquivos.push(...listarArquivosTs(fullPath));
+    } else if (entry.isFile() && fullPath.endsWith('.ts') && !fullPath.endsWith('.spec.ts')) {
+      arquivos.push(fullPath);
+    }
+  }
+  return arquivos;
+}
+
+// Mesmo motivo do molde de HttpClient: strip de comentários antes do regex
+// evita que um exemplo em JSDoc (citando o nome banido para explicar a
+// própria regra, como este arquivo faz) dispare falso positivo.
+function semComentarios(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+}
+
+/** Nomes declarados como `export const <NOME>` no source (sem comentários). */
+function exportsConstDe(source: string): string[] {
+  const regex = /export\s+const\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
+  const nomes: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(source)) !== null) {
+    nomes.push(match[1]);
+  }
+  return nomes;
+}
+
+/**
+ * Nomes expostos por lista de export — `export { a, b as c }` — sob o nome
+ * final (depois do `as`, quando presente). `cronograma-do-certame.ts` usa
+ * essa forma para reexportar (`export { decimalDoCampo as comoNumero,
+ * inteiroDoCampo }`), então uma constante banida também poderia sair por
+ * aqui, sem nunca aparecer como `export const` no mesmo arquivo. Não cobre
+ * `export * from` — o gate é anchorado em nomes conhecidos (nota técnica da
+ * issue #511), não em análise semântica de valor.
+ */
+function exportsEspecificadorDe(source: string): string[] {
+  const regex = /export\s*\{([^}]*)\}/g;
+  const nomes: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(source)) !== null) {
+    for (const especificador of match[1].split(',')) {
+      const partes = especificador.trim().split(/\s+as\s+/);
+      const nomeExportado = partes.length > 1 ? partes[1]?.trim() : partes[0]?.trim();
+      if (nomeExportado) nomes.push(nomeExportado);
+    }
+  }
+  return nomes;
+}
+
+/** Todo nome que o arquivo expõe como export, por qualquer uma das duas formas acima. */
+function todosOsExportsDe(source: string): string[] {
+  const semComentario = semComentarios(source);
+  return [...exportsConstDe(semComentario), ...exportsEspecificadorDe(semComentario)];
+}
+
+/**
+ * Nomes declarados como `const <NOME>`, com ou sem `export` na frente — ao
+ * contrário de `exportsConstDe`, não exige o prefixo `export`. Uma
+ * constante privada com o nome de um catálogo banido, usada só dentro do
+ * próprio arquivo (nunca importável de fora), já recria o catálogo local
+ * que a #511 existe para impedir: o BDD da issue fala em "adiciona uma
+ * constante com valores aceitos de um catálogo banido", sem exigir que ela
+ * seja exportada. Não distingue escopo de módulo de escopo de função — o
+ * mesmo trade-off de regex-sem-parser do resto deste arquivo — mas os sete
+ * nomes do inventário são específicos o bastante para não colidir com
+ * variável local de outro propósito.
+ */
+function declaracoesConstDe(source: string): string[] {
+  const regex = /\bconst\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
+  const nomes: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(source)) !== null) {
+    nomes.push(match[1]);
+  }
+  return nomes;
+}
+
+/**
+ * Dos nomes que o arquivo declara — const local, `export const` ou export
+ * por lista/reexport —, quais batem com um nome do inventário banido.
+ * Cobre as três formas de reintroduzir o catálogo: declará-lo exportado,
+ * declará-lo privado e usá-lo só ali dentro, ou declará-lo com outro nome
+ * local e reexportá-lo sob o nome banido.
+ */
+function nomesBanidosDeclaradosEm(source: string): string[] {
+  const semComentario = semComentarios(source);
+  const todosOsNomes = [
+    ...declaracoesConstDe(semComentario),
+    ...exportsEspecificadorDe(semComentario),
+  ];
+  return [...new Set(todosOsNomes)].filter((nome) => nome in CATALOGO_BANIDO);
+}
+
+describe('Fitness — vocabulário institucional não duplica no wizard de Processo Seletivo', () => {
+  it('o passo "Locais de prova" não voltou — sem endpoint, POLOS não vira diretório de novo (Feature #477)', () => {
+    expect(fs.existsSync(path.join(STEPS_ROOT, 'steps', 'polos'))).toBe(false);
+  });
+
+  describe('processo-seletivo.data.ts só exporta rótulo de navegação (mais a exceção temporária DOCUMENTO_GRUPOS — #483)', () => {
+    const source = semComentarios(fs.readFileSync(DATA_FILE, 'utf-8'));
+    const exportados = todosOsExportsDe(source);
+
+    it('sanity check — o regex está lendo o arquivo certo (0 exports seria suspeito)', () => {
+      expect(exportados.length).toBeGreaterThan(0);
+      expect(exportados).toContain('PASSOS');
+    });
+
+    it.each(exportados)('"%s" está na allowlist de rótulo de navegação ou é a exceção nomeada', (nome) => {
+      expect(
+        EXPORTS_PERMITIDOS_EM_DATA_TS.has(nome),
+        `\nprocesso-seletivo.data.ts exporta "${nome}", que não é rótulo de navegação ` +
+          `(PASSOS/STEP_LABELS/REVIEW_NAMES) nem a exceção temporária DOCUMENTO_GRUPOS (#483).\n` +
+          `Se "${nome}" é uma lista de valores aceitos de um catálogo institucional, ela pertence a um ` +
+          `client de API (uniplus/shared-data) — confira o inventário reconciliado na issue #511.\n` +
+          `Se é rótulo de apresentação legítimo, adicione o nome a EXPORTS_PERMITIDOS_EM_DATA_TS neste fitness test.`,
+      ).toBe(true);
+    });
+  });
+
+  describe('nenhum arquivo do wizard reexporta um catálogo do inventário banido, mesmo fora de data.ts', () => {
+    const arquivos = listarArquivosTs(STEPS_ROOT);
+
+    it('sanity check — o glob percorre o diretório de passos do wizard', () => {
+      expect(arquivos.length).toBeGreaterThan(10);
+    });
+
+    it.each(arquivos)('%s', (filePath) => {
+      const source = fs.readFileSync(filePath, 'utf-8');
+      const banidos = nomesBanidosDeclaradosEm(source);
+      const relativePath = path.relative(path.resolve(__dirname, '../../../../../..'), filePath);
+
+      expect(
+        banidos,
+        banidos
+          .map(
+            (nome) =>
+              `\nArquivo: ${relativePath}\n` +
+              `Exporta "${nome}", catálogo institucional banido pela #511.\n` +
+              `Fonte canônica: ${CATALOGO_BANIDO[nome].fonte}.\n` +
+              `Story dona da migração: ${CATALOGO_BANIDO[nome].story}.`,
+          )
+          .join('\n'),
+      ).toEqual([]);
+    });
+  });
+
+  // Prova negativa da própria regra (DoD da #511): mostra que o checker
+  // reprova a reintrodução de um catálogo banido, sem tocar em arquivo real
+  // do wizard — a fonte é sintética, só para exercitar nomesBanidosDeclaradosEm().
+  describe('prova negativa — o gate reprova a reintrodução de um catálogo banido', () => {
+    it('sinaliza export local de POLOS', () => {
+      const fonteSintetica = `
+        export const PASSOS = [{ rotulo: 'x' }];
+        export const POLOS = ['Marabá (PA)', 'Canaã dos Carajás (PA)'] as const;
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['POLOS']);
+    });
+
+    it('sinaliza export local de CRITERIOS_DESEMPATE', () => {
+      const fonteSintetica = `export const CRITERIOS_DESEMPATE = [{ id: 1, label: 'Idade' }];`;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
+    });
+
+    it('sinaliza POLOS declarado como `const` privada e usada só dentro do próprio arquivo, nunca exportada', () => {
+      const fonteSintetica = `
+        const POLOS = ['Marabá (PA)', 'Canaã dos Carajás (PA)'];
+        export class PolosStepComponent {
+          readonly polos = POLOS;
+        }
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['POLOS']);
+    });
+
+    it('sinaliza POLOS reexportado por lista — `const` privado + `export { POLOS }`, forma que o wizard já usa em cronograma-do-certame.ts', () => {
+      const fonteSintetica = `
+        const POLOS = ['Marabá (PA)'];
+        export { POLOS };
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['POLOS']);
+    });
+
+    it('sinaliza CRITERIOS_DESEMPATE reexportado com rename — `export { criterios as CRITERIOS_DESEMPATE }`', () => {
+      const fonteSintetica = `
+        const criterios = [{ id: 1 }];
+        export { criterios as CRITERIOS_DESEMPATE };
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual(['CRITERIOS_DESEMPATE']);
+    });
+
+    it('NÃO sinaliza a exceção nomeada — código de vocabulário fechado citado pela lógica (SEGUE_CASCATA, PCD, ramo federal)', () => {
+      const fonteSintetica = `
+        const SEGUE_CASCATA = 'SEGUE_CASCATA';
+        export const CODIGO_CONDICAO_PCD = 'PCD';
+        const REGRAS_RAMO_FEDERAL = ['DISTRIB-VAGAS-LEI-12711', 'DISTRIB-VAGAS-LEI-12711-COM-AC-PCD'];
+        export function ehRamoFederal(codigo: string) {
+          return REGRAS_RAMO_FEDERAL.includes(codigo);
+        }
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
+    });
+
+    it('NÃO sinaliza o padrão real de export por lista do wizard (cronograma-do-certame.ts)', () => {
+      const fonteSintetica = `export { decimalDoCampo as comoNumero, inteiroDoCampo };`;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
+    });
+
+    it('NÃO sinaliza rótulo de navegação nem a exceção temporária DOCUMENTO_GRUPOS', () => {
+      const fonteSintetica = `
+        export const PASSOS = [];
+        export const STEP_LABELS = [];
+        export const REVIEW_NAMES = [];
+        export const DOCUMENTO_GRUPOS = [];
+      `;
+      expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
+    });
+  });
+});

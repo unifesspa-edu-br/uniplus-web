@@ -154,12 +154,43 @@ function isProblemShape(body: unknown): body is ProblemDetails {
   );
 }
 
+/**
+ * Campos do envelope RFC 9457 que já têm normalização própria abaixo — o
+ * restante do objeto são extensions (`ProblemDetails.Extensions` do backend,
+ * ADR-0023) que este interceptor não conhece por nome e não pode filtrar.
+ *
+ * Endpoints específicos anexam extensions próprias — `pendencias` e
+ * `obrigatoriedadesReprovadas` do preflight de publicação de Processo
+ * Seletivo (`ProcessoSeletivoController`, issue #1096) são um exemplo, não a
+ * lista inteira. Reconstruir o objeto só com os campos abaixo, como a versão
+ * anterior desta função fazia, descartava toda extension nomeada por uma
+ * Story específica antes de ela chegar ao componente que a lê.
+ */
+const CAMPOS_NORMALIZADOS = new Set<string>([
+  'type',
+  'title',
+  'status',
+  'detail',
+  'instance',
+  'code',
+  'traceId',
+  'errors',
+  'legalReference',
+  'available_versions',
+]);
+
 function normalizeProblem(body: ProblemDetails, fallbackStatus: number): ProblemDetails {
   const candidate = body as ProblemDetails & {
     readonly traceId?: unknown;
     readonly errors?: ReadonlyArray<unknown>;
   };
+  const extensoesNaoMapeadas = Object.fromEntries(
+    Object.entries(body as unknown as Record<string, unknown>).filter(
+      ([chave]) => !CAMPOS_NORMALIZADOS.has(chave),
+    ),
+  );
   return {
+    ...extensoesNaoMapeadas,
     type: body.type ?? 'about:blank',
     title: body.title,
     status: typeof body.status === 'number' ? body.status : fallbackStatus,

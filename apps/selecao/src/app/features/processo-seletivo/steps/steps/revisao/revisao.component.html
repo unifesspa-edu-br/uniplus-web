@@ -1,127 +1,290 @@
 <p class="step-subtitle">
-  Confira cada passo antes de publicar. Passos não visitados aparecem como pendentes.
+  Confira o que o servidor exige para publicar — o checklist estrutural, a conformidade legal e o
+  documento e o ato do edital — e informe os dados que faltam antes de publicar.
 </p>
-<div class="revisao-summary" [class.revisao-summary--done]="pronto()">
-  <div class="revisao-summary__info">
-    <span class="revisao-summary__count"
-      >{{ atendidos() }}
-      <small
-        style="font-size: 0.9rem; font-weight: var(--weight-normal); color: var(--text-secondary)"
-        >/ {{ totalRequisitos }}</small
-      ></span
-    ><span class="revisao-summary__detail">{{
-      pronto()
-        ? 'Tudo pronto para publicar!'
-        : pending() + ' item' + (pending() > 1 ? 'ns pendentes' : ' pendente')
-    }}</span>
+
+@if (store.motivoDeSomenteLeitura(); as motivo) {
+  <p class="alert alert--info" role="status">{{ motivo }}</p>
+}
+
+@if (snapshotConfirmado(); as snapshot) {
+  <div class="alert alert--success" role="status">
+    <!-- Destino de foco explícito: no último passo, `store.next()` não avança
+         (não há passo seguinte), então o efeito de troca de passo da página —
+         que move o foco ao título do passo novo em qualquer outra gravação —
+         nunca dispara aqui. Sem isto, fechar o diálogo de confirmação da
+         publicação deixa teclado e leitor de tela sem destino (achado do
+         Codex na #486, P1). -->
+    <p class="alert__title revisao-publicado-titulo" tabindex="-1">
+      Processo publicado — status confirmado em {{ store.remoteSnapshot()?.status }}.
+    </p>
+    <dl class="confirmacao-lista">
+      <div class="confirmacao-lista__linha">
+        <dt class="confirmacao-lista__rotulo">Snapshot da publicação</dt>
+        <dd class="confirmacao-lista__valor">{{ snapshot.snapshotPublicacaoId }}</dd>
+      </div>
+      <div class="confirmacao-lista__linha">
+        <dt class="confirmacao-lista__rotulo">Versão do schema</dt>
+        <dd class="confirmacao-lista__valor">{{ snapshot.schemaVersion }}</dd>
+      </div>
+      <div class="confirmacao-lista__linha">
+        <dt class="confirmacao-lista__rotulo">Hash da configuração</dt>
+        <dd class="confirmacao-lista__valor">{{ snapshot.hashConfiguracao.slice(0, 12) }}…</dd>
+      </div>
+      <div class="confirmacao-lista__linha">
+        <dt class="confirmacao-lista__rotulo">Hash do edital</dt>
+        <dd class="confirmacao-lista__valor">{{ snapshot.hashEdital.slice(0, 12) }}…</dd>
+      </div>
+    </dl>
   </div>
-  <div class="revisao-progress">
-    <div class="revisao-progress__bar" [style.width.%]="percent()"></div>
-  </div>
-  <span class="revisao-summary__pct">{{ percent() }}%</span>
-</div>
-<fieldset class="scroll-tabela">
-  <div class="revisao-list">
-    @for (name of names; track name; let index = $index) {
-      @let done = store.completedSteps().has(index);
-      <div
-        class="revisao-item"
-        [class.revisao-item--ok]="done"
-        [class.revisao-item--pending]="!done"
-      >
-        <div class="revisao-item__icon">
-          @if (done) {
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"
-            >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          } @else {
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-            >
-              <path d="M8 12h8" />
-            </svg>
-          }
-        </div>
-        <div class="revisao-item__meta">
-          <span class="revisao-item__num">Passo {{ stepNumber(index) }}</span
-          ><span class="revisao-item__name">{{ name }}</span>
-        </div>
-        <span
-          class="revisao-chip"
-          [class.revisao-chip--ok]="done"
-          [class.revisao-chip--pending]="!done"
-          >{{ done ? 'Concluído' : 'Pendente' }}</span
-        ><button
-          class="btn btn--sm btn--ghost revisao-item__go"
+}
+
+@if (precisaEscolherDocumento()) {
+  <p class="alert alert--info" role="status">
+    Há mais de um documento confirmado. Escolha o oficial abaixo antes de publicar.
+  </p>
+} @else if (documentoEditalId() === null) {
+  <p class="alert alert--info" role="status">
+    Anexe e confirme o edital em PDF para publicar o processo.
+  </p>
+}
+
+<!-- Fora do gate de `processoSeletivoId()`: o próprio anexo sabe lidar com o
+     processo ainda não criado — sempre foi assim, e um componente a menos no
+     DOM enquanto o preflight não carrega quebraria quem depende dele nesse
+     meio-tempo (retomada em curso, escolha de documento pendente). -->
+<sel-anexo-edital />
+
+@if (store.processoSeletivoId() === null) {
+  <p class="alert alert--info" role="status">
+    Conclua a identificação do processo para revisar a conformidade e publicar.
+  </p>
+} @else {
+  @if (preflight.erro(); as erro) {
+    <div class="alert alert--danger" role="alert">
+      <p>{{ erro }}</p>
+      <button class="btn btn--sm btn--secondary" type="button" (click)="recarregarPreflight()">
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (preflight.carregando() && gruposEstruturais() === null) {
+    <p class="alert alert--info" role="status">Carregando o checklist de conformidade…</p>
+  } @else {
+    <section class="step-section" aria-labelledby="revisao-estrutural-titulo">
+      <div class="step-section__header">
+        <h2 id="revisao-estrutural-titulo">Checklist estrutural</h2>
+        <!-- Desabilitado durante uma recarga: a chave de identidade do
+             preflight é determinística por processo+dataReferencia, então
+             dois cliques em sequência pedem exatamente a mesma coisa — a
+             segunda resposta apenas sobrescreve a primeira sem necessidade
+             (achado do Codex na #486). -->
+        <button
+          class="btn btn--sm btn--ghost"
           type="button"
-          (click)="store.goTo(index)"
+          [disabled]="preflight.carregando()"
+          (click)="recarregarPreflight()"
         >
-          Ir para
+          {{ preflight.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
         </button>
       </div>
-    }
-    <!-- O edital fecha a lista porque é requisito de publicação como os passos,
-         e não um anexo à parte: sem ele a publicação é recusada. Não tem "Ir
-         para" — o envio está logo abaixo, nesta mesma tela. -->
-    @let editalOk = editalConfirmado();
-    <div
-      class="revisao-item"
-      [class.revisao-item--ok]="editalOk"
-      [class.revisao-item--pending]="!editalOk"
-    >
-      <div class="revisao-item__icon">
-        @if (editalOk) {
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="3"
-            stroke-linecap="round"
-          >
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-        } @else {
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-          >
-            <path d="M8 12h8" />
-          </svg>
+
+      @if (estruturalOk()) {
+        <p class="alert alert--success" role="status">Nenhuma pendência estrutural.</p>
+      }
+
+      <div class="revisao-list">
+        @for (grupo of gruposEstruturais(); track grupo.dimensao) {
+          <details class="revisao-grupo" [open]="!grupo.ok">
+            <summary class="revisao-grupo__resumo">
+              <span
+                class="revisao-chip"
+                [class.revisao-chip--ok]="grupo.ok"
+                [class.revisao-chip--pending]="!grupo.ok"
+                >{{ grupo.ok ? 'Conforme' : 'Pendente' }}</span
+              ><span class="revisao-grupo__nome">{{ rotuloDaDimensao(grupo.dimensao) }}</span>
+            </summary>
+            <ul class="revisao-grupo__itens">
+              @for (item of grupo.itens; track item.codigo) {
+                <li
+                  class="revisao-item"
+                  [class.revisao-item--ok]="item.ok"
+                  [class.revisao-item--pending]="!item.ok"
+                >
+                  <div class="revisao-item__meta">
+                    <span class="revisao-item__name">{{ item.mensagem }}</span>
+                  </div>
+                  @if (!item.ok && passoDaDimensao(grupo.dimensao) !== null) {
+                    <!-- `revisao-item__ir`, não `revisao-item__go`: esse nome
+                         já é de um widget de resumo de progresso mais antigo
+                         (`.revisao-summary`/`.revisao-progress`), sem HTML
+                         nenhum que o use mais — mas o CSS dele continua no
+                         arquivo, com um `@media (max-width: 600px) { display:
+                         none }` pensado para AQUELE botão. Reusar o nome
+                         herdava esse `display: none` a 320px sem querer — o
+                         botão desaparecia do DOM renderizado, ainda que
+                         presente no template (achado do Codex na #486). Este
+                         botão é a única forma de agir numa pendência a partir
+                         do checklist, em qualquer largura — não pode
+                         desaparecer no mobile. -->
+                    <button
+                      class="btn btn--sm btn--ghost revisao-item__ir"
+                      type="button"
+                      (click)="irParaSecao(passoDaDimensao(grupo.dimensao)!)"
+                    >
+                      Ir para {{ rotuloDaDimensao(grupo.dimensao) }}
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          </details>
         }
       </div>
-      <div class="revisao-item__meta">
-        <span class="revisao-item__num">Edital</span
-        ><span class="revisao-item__name">Arquivo PDF do edital</span>
-      </div>
-      <span
-        class="revisao-chip"
-        [class.revisao-chip--ok]="editalOk"
-        [class.revisao-chip--pending]="!editalOk"
-        >{{ editalOk ? 'Anexado' : 'Pendente' }}</span
-      >
-    </div>
-  </div>
-</fieldset>
+    </section>
 
-<sel-anexo-edital />
+    <section class="step-section" aria-labelledby="revisao-legal-titulo">
+      <h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
+
+      @if (legalOk()) {
+        <p class="alert alert--success" role="status">
+          Nenhuma obrigatoriedade legal reprovada.
+        </p>
+      } @else {
+        <ul class="revisao-list">
+          @for (regra of regrasLegaisReprovadas(); track regra.regraCodigo) {
+            <li class="revisao-item revisao-item--pending">
+              <div class="revisao-item__meta">
+                <span class="revisao-item__name">{{ regra.descricaoHumana }}</span
+                ><span class="step-hint">{{ regra.baseLegal }}</span>
+                @if (regra.motivo) {
+                  <span class="revisao-item__name">{{ regra.motivo }}</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (preflight.legal(); as legal) {
+        @if (legal.avisos.length > 0) {
+          <ul class="revisao-list">
+            @for (aviso of legal.avisos; track aviso) {
+              <li class="step-hint">{{ aviso }}</li>
+            }
+          </ul>
+        }
+      }
+    </section>
+
+    <section class="step-section" aria-labelledby="revisao-documento-titulo">
+      <h2 id="revisao-documento-titulo" class="step-section__title">
+        Documento e ato de publicação
+      </h2>
+
+      @if (ultimaRecusa()?.documentoOuAto; as erroDoc) {
+        <p class="alert alert--danger" role="alert">{{ erroDoc }}</p>
+      }
+
+      <p class="step-hint">
+        O edital anexado acima é o documento que a publicação referencia — nada a repetir aqui.
+      </p>
+
+      <div class="form-grid" [formGroup]="form">
+        <div class="form-field">
+          <label class="label" for="rev-numero">Número do ato (opcional)</label>
+          <input class="input" id="rev-numero" type="text" formControlName="numero" />
+        </div>
+
+        <div class="form-field">
+          <label class="label" for="rev-tipo-ato">Tipo de ato</label>
+          <select class="input" id="rev-tipo-ato" formControlName="tipoAtoCodigo">
+            <option value="">— escolher —</option>
+            @for (tipo of preflight.tiposAto(); track tipo.codigo) {
+              <option [value]="tipo.codigo">{{ tipo.nome }} ({{ tipo.codigo }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label class="label" for="rev-orgao">Órgão</label>
+          <input class="input" id="rev-orgao" type="text" formControlName="orgao" />
+        </div>
+
+        <div class="form-field">
+          <label class="label" for="rev-serie">Série</label>
+          <input class="input" id="rev-serie" type="text" formControlName="serie" />
+        </div>
+
+        <div class="form-field">
+          <label class="label" for="rev-ano">Ano</label>
+          <!--
+            `type="text"` com `inputmode="numeric"`, e não `type="number"`: o
+            `NumberValueAccessor` do Angular grava número no controle, que é
+            declarado como texto igual aos seus seis irmãos deste formulário, e o
+            mapeador quebrava ao chamar `trim()` sobre número (#738). O teclado
+            numérico do celular vem do `inputmode`, e a validação do formato é do
+            próprio mapeador.
+          -->
+          <input
+            class="input"
+            id="rev-ano"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            formControlName="ano"
+          />
+        </div>
+
+        <div class="form-field">
+          <label class="label" for="rev-data-publicacao">Data de publicação do ato</label>
+          <input class="input" id="rev-data-publicacao" type="date" formControlName="dataPublicacao" />
+        </div>
+
+        <div class="form-field">
+          <label class="label" for="rev-assinante">Assinante</label>
+          <input class="input" id="rev-assinante" type="text" formControlName="assinante" />
+        </div>
+      </div>
+
+      @if (temFaseDeColeta()) {
+        <p class="alert alert--info" role="status">
+          O período de inscrição vem da janela da fase
+          <strong>{{ faseAncora()?.codigo }}</strong> do cronograma
+          @if (faseAncora()?.inicio && faseAncora()?.fim) {
+            ({{ faseAncora()?.inicio }} até {{ faseAncora()?.fim }})
+          }
+          — esta tela não pede o período porque o servidor o deriva do cronograma.
+        </p>
+      } @else {
+        <p class="step-hint">
+          O cronograma não tem fase que colete inscrição pelo sistema — informe o período de
+          inscrição do certame de origem importada.
+        </p>
+        <div class="form-grid" [formGroup]="form">
+          <div class="form-field">
+            <label class="label" for="rev-periodo-inicio">Início do período de inscrição</label>
+            <input
+              class="input"
+              id="rev-periodo-inicio"
+              type="datetime-local"
+              formControlName="periodoInscricaoInicio"
+            />
+          </div>
+          <div class="form-field">
+            <label class="label" for="rev-periodo-fim">Fim do período de inscrição</label>
+            <input
+              class="input"
+              id="rev-periodo-fim"
+              type="datetime-local"
+              formControlName="periodoInscricaoFim"
+            />
+          </div>
+        </div>
+        <p class="step-hint">
+          Depois de informar as duas datas, use "Atualizar checklist" para conferir a
+          conformidade legal na data de início declarada.
+        </p>
+      }
+    </section>
+  }
+}

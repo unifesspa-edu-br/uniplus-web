@@ -211,6 +211,29 @@ export class CascataRemanejamentoComponent {
     () => this.regraEscolhida() !== undefined && this.matriz() === null,
   );
 
+  /**
+   * Os rótulos ordinais das colunas — "1ª", "2ª", … —, um por posição de
+   * preferência. Sai do maior número de destinos entre as origens, e não de
+   * uma constante: a matriz é o que a regra do catálogo declara, e outra
+   * versão pode declarar outra largura.
+   */
+  readonly ordinaisDaMatriz = computed<readonly string[]>(() => {
+    const matriz = this.matriz();
+    if (matriz === null) return [];
+    const maior = matriz.ordens.reduce((maximo, ordem) => Math.max(maximo, ordem.destinos.length), 0);
+    return Array.from({ length: maior }, (_, indice) => `${indice + 1}ª`);
+  });
+
+  /**
+   * O destino de uma origem numa posição de preferência, ou o travessão quando
+   * aquela origem tem menos destinos que a mais larga da matriz. A checagem é
+   * por comprimento, e não por coalescência: o índice de um `readonly string[]`
+   * é tipado como `string`, então `?? ` seria código morto (NG8102).
+   */
+  destinoNaPosicao(destinos: readonly string[], posicao: number): string {
+    return posicao < destinos.length ? destinos[posicao] : '—';
+  }
+
   /** Encaixe entre a matriz e cada oferta federal — por oferta, nunca sobre a união (RN-CASCATA-1/2/2b). */
   readonly problemas = computed<readonly ProblemaDaCascata[]>(() => {
     const matriz = this.matriz();

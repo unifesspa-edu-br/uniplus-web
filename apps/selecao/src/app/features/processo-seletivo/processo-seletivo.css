@@ -1269,6 +1269,125 @@
   border-bottom: none;
 }
 
+/* ---- Matriz da cascata de remanejamento (passo Vagas) ----
+   Tabela própria, e não `.vagas-table`: aquela foi desenhada para a distribuição
+   de vagas, onde a última coluna é a de ação e mede 56 px. Aqui a última coluna é
+   o conteúdo principal — a ordem de destinos —, e herdar aquela largura espremia
+   a cadeia em cinco linhas enquanto a origem, de seis caracteres, ficava com o
+   resto da tabela (#732). */
+.cascata-matriz {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.cascata-matriz thead th {
+  background: var(--surface-subtle);
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.cascata-matriz tbody th[scope='row'] {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.cascata-matriz tbody td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.cascata-matriz tbody tr:last-child th[scope='row'],
+.cascata-matriz tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Uma coluna por posição de preferência, estreita e centrada — a leitura é de
+   comparação entre linhas, não de texto corrido.
+
+   O `nowrap` fica de fora daqui de propósito: abaixo de 768 px a célula vira
+   linha de um cartão, ao lado do rótulo "1ª PREFERÊNCIA", e o código de
+   modalidade admite até 60 caracteres. Impedi-lo de quebrar ali faria o texto
+   transbordar do cartão. */
+.cascata-matriz thead th.cascata-matriz__ordem,
+.cascata-matriz td.cascata-matriz__destino {
+  text-align: center;
+  padding-inline: var(--space-3);
+}
+
+/* Código de modalidade é um token só, sem espaço: retirar o `nowrap` não cria
+   oportunidade de quebra, porque `overflow-wrap: normal` não quebra dentro da
+   palavra. Como cartão, ao lado do rótulo "1ª PREFERÊNCIA", um código de até 60
+   caracteres transbordaria mesmo assim. `anywhere` — e não `break-word` —
+   porque só ele também reduz o tamanho mínimo intrínseco, que é o que impede o
+   transbordo dentro do flex do cartão.
+
+   Vale para os TRÊS lugares em que um código do catálogo é exibido: a origem
+   da linha, cada destino, e o destino final no parágrafo abaixo da matriz.
+   Proteger só um deles deixa os outros dois transbordando o mesmo texto.
+   Acima de 768 px o `nowrap` da media query prevalece na tabela; o parágrafo
+   não é tabela e mantém a quebra em qualquer largura. */
+.cascata-matriz tbody th[scope='row'],
+.cascata-matriz td.cascata-matriz__destino,
+.cascata-matriz__terminal {
+  overflow-wrap: anywhere;
+}
+
+.cascata-matriz td.cascata-matriz__destino {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A origem é a âncora da linha: fica presa à esquerda quando a matriz precisa
+   rolar na horizontal, senão o operador perde de quem é a linha que está lendo.
+
+   Só a partir de 768 px. Abaixo disso `.table-responsive` empilha cada linha
+   como cartão e dá `display: block` e `width: 100%` ao `th[scope="row"]`; como
+   as regras têm a mesma especificidade e esta vem depois, sem a media query ela
+   venceria e prenderia a origem dentro do cartão, sem deixá-la quebrar. */
+@media (min-width: 768px) {
+  /* Como tabela, a coluna é estreita e a quebra do código atrapalharia a
+     comparação vertical entre linhas. */
+  .cascata-matriz thead th.cascata-matriz__ordem,
+  .cascata-matriz td.cascata-matriz__destino {
+    white-space: nowrap;
+  }
+
+  .cascata-matriz thead th:first-child,
+  .cascata-matriz tbody th[scope='row'] {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface-card);
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  .cascata-matriz thead th:first-child {
+    background: var(--surface-subtle);
+  }
+}
+
+/* O destino final não é linha da matriz — a portaria o enuncia à parte, e
+   tratá-lo como origem sugeriria que ele também remaneja. */
+.cascata-matriz__terminal {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
 .vagas-table__curso-nome {
   font-weight: var(--weight-semibold);
 }
@@ -2281,88 +2400,12 @@ dialog.vagas-modal::backdrop {
   }
 }
 
-/* ---- Step 11: Locais de prova ---- */
-.polo-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.polo-item {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface-subtle);
-  overflow: hidden;
-  transition: border-color 120ms ease;
-}
-
-.polo-item:has(.polo-checkbox:checked) {
-  border-color: var(--color-primary);
-}
-
-.polo-item__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  cursor: pointer;
-  user-select: none;
-}
-
-.polo-checkbox {
-  flex-shrink: 0;
-  width: 17px;
-  height: 17px;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-}
-
-.polo-item__name {
-  flex: 1;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-}
-
-.polo-item:has(.polo-checkbox:checked) .polo-item__name {
-  color: var(--color-primary);
-}
-
-.polo-item__expand {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.polo-item__expand[hidden] {
-  display: none;
-}
-
-.polo-expand__label {
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.polo-expand__cap {
-  width: 130px;
-}
-
-.polo-expand__hint {
-  font-size: var(--text-xs, 0.75rem);
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-/* ---- Step 12: Atendimento especializado ----
+/* ---- Step 11: Atendimento especializado ----
    Reconstruído sobre os cadastros de Configuração (#543): usa só classes
    compartilhadas do passo (`.step-card`, `.form-section__title`,
    `.check-item`, `.field__hint`, `.tag`) — sem CSS próprio. */
 
-/* ---- Step 13: Revisão e publicação ---- */
+/* ---- Step 12: Revisão e publicação ---- */
 .revisao-summary {
   display: flex;
   align-items: center;
@@ -2484,6 +2527,10 @@ dialog.vagas-modal::backdrop {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-primary);
+  /* Mensagem de conformidade e descrição de regra legal vêm do servidor, sem
+     limite de tamanho — sem isto, um texto mais longo do que 320px cabe
+     mantém a linha inteira e transborda o container. */
+  overflow-wrap: anywhere;
 }
 
 .revisao-chip {
@@ -2519,6 +2566,70 @@ dialog.vagas-modal::backdrop {
   .revisao-item__go {
     display: none;
   }
+}
+
+/* ── Preflight de publicação (#486): cabeçalho de seção com ação ──── */
+
+.step-section__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.step-section__header h2 {
+  /* Sem `min-width: 0`, o título não encolhe abaixo da própria largura
+     intrínseca, e "Checklist estrutural" + o botão "Atualizar checklist" não
+     cabem lado a lado a 320px — o `flex-wrap` acima já permite empilhar,
+     isto garante que o título sozinho também não force a largura da linha. */
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
+  margin: 0;
+}
+
+/* Grupo de itens de conformidade por dimensão — grupo conforme fica
+   recolhido (`<details>` nativo, sem `open`); grupo pendente já abre. */
+.revisao-grupo {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.revisao-grupo__resumo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.revisao-grupo__resumo::-webkit-details-marker {
+  display: none;
+}
+
+.revisao-grupo__nome {
+  /* Mesma proteção de `.revisao-item__meta`: sem `min-width: 0`, um item flex
+     não encolhe abaixo da largura intrínseca do próprio conteúdo, e o rótulo
+     da dimensão — texto do servidor, sem limite — transborda o `<summary>`
+     a 320px. */
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.revisao-grupo__itens {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--space-3);
+  padding: 0 0 0 var(--space-6);
+  list-style: none;
 }
 
 /* ── Estados da retomada por endereço ────────────────────────────── */

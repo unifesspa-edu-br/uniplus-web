@@ -26,6 +26,7 @@ import {
   ProcessoSeletivoResumoDto,
   ProcessosSeletivosApi,
   PublicarProcessoSeletivoRequest,
+  SnapshotVigenteDto,
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
 import { OrigemCandidatos } from './schema';
@@ -678,6 +679,33 @@ describe('ProcessosSeletivosApi', () => {
     } satisfies ConformidadeLegalProcessoSeletivoDto);
 
     expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('obterSnapshotVigente() lê o snapshot congelado com o vendor MIME do recurso', async () => {
+    const snapshot: SnapshotVigenteDto = {
+      snapshotPublicacaoId: '01960000-0000-7000-0000-000000000519',
+      atoId: '01960000-0000-7000-0000-00000000051a',
+      schemaVersion: '1',
+      algoritmoHash: 'hash-algoritmo',
+      hashConfiguracao: 'hash-configuracao',
+      hashEdital: 'hash-edital',
+      configuracao: { qualquerCoisa: true },
+    };
+
+    const promise = firstValueFrom(api.obterSnapshotVigente(ID));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/snapshot-vigente`,
+    );
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('snapshot-vigente-processo-seletivo', 1),
+    );
+    req.flush(snapshot);
+
+    const result = (await promise) as ApiResult<SnapshotVigenteDto>;
+    expect(isApiOk(result)).toBe(true);
+    if (result.ok) expect(result.data.snapshotPublicacaoId).toBe(snapshot.snapshotPublicacaoId);
   });
 
   /**

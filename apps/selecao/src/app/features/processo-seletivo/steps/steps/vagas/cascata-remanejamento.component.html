@@ -28,7 +28,7 @@
     <h2 class="form-section__title">Cascata de remanejamento</h2>
     <p class="step-subtitle">
       Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do processo.
-      Escolha a regra: o fallback e a ordem de destinos vêm congelados na regra, e esta tela não os
+      Escolha a regra: a ordem de destinos e o destino final vêm congelados na regra, e esta tela não os
       compõe — apenas apresenta o que a regra declara para confirmação.
     </p>
 
@@ -43,7 +43,7 @@
         }
       </select>
       <p class="field__hint">
-        O frontend não propõe uma cascata institucional por padrão: a ausência de escolha é estado
+        O sistema não propõe uma cascata institucional por padrão: a ausência de escolha é estado
         válido enquanto rascunho.
       </p>
     </div>
@@ -95,31 +95,50 @@
 
     @if (matriz(); as matrizDaRegra) {
       <div class="table-responsive">
-        <table class="vagas-table">
+        <table class="cascata-matriz">
           <caption class="sr-only">
-            Matriz de remanejamento congelada pela regra escolhida: origem, ordem de preferência e
-            destino.
+            Matriz de remanejamento congelada pela regra escolhida. Cada linha é uma modalidade de
+            origem; as colunas são a ordem de preferência dos destinos, da primeira à última.
           </caption>
           <thead>
             <tr>
               <th scope="col">Origem</th>
-              <th scope="col">Ordem de destinos (1ª preferência primeiro)</th>
+              <!--
+                Uma coluna por posição de preferência, como o Anexo da portaria
+                publica a matriz. Os ordinais saem do maior número de destinos
+                declarado pela regra, não de uma constante.
+              -->
+              @for (ordinal of ordinaisDaMatriz(); track ordinal) {
+                <th scope="col" class="cascata-matriz__ordem">{{ ordinal }}</th>
+              }
             </tr>
           </thead>
           <tbody>
             @for (ordem of matrizDaRegra.ordens; track ordem.origem) {
               <tr>
                 <th scope="row">{{ ordem.origem }}</th>
-                <td>{{ ordem.destinos.join(' → ') }}</td>
+                @for (ordinal of ordinaisDaMatriz(); track ordinal; let posicao = $index) {
+                  <!--
+                    `data-label` não é decoração: até 767 px o design system
+                    esconde o `thead` e empilha a linha como cartão, usando este
+                    atributo como rótulo visível da célula. Sem ele o cartão
+                    mostraria só os códigos, e a ordem de preferência — que é o
+                    que a matriz existe para dizer — desapareceria.
+                  -->
+                  <td class="cascata-matriz__destino" [attr.data-label]="ordinal + ' preferência'">
+                    {{ destinoNaPosicao(ordem.destinos, posicao) }}
+                  </td>
+                }
               </tr>
             }
-            <tr>
-              <th scope="row">Fallback (esgotadas as origens)</th>
-              <td>{{ matrizDaRegra.fallbackCodigo }}</td>
-            </tr>
           </tbody>
         </table>
       </div>
+
+      <p class="cascata-matriz__terminal">
+        Esgotadas todas as origens acima, a vaga é revertida à ampla concorrência
+        (<strong>{{ matrizDaRegra.fallbackCodigo }}</strong>).
+      </p>
 
       @if (problemas().length > 0) {
         <div class="field__erro" role="alert">
@@ -140,7 +159,7 @@
           (change)="confirmado.set($any($event.target).checked)"
         />
         <span>
-          Confirmo que conferi a cascata de remanejamento: a regra, o fallback e a ordem de
+          Confirmo que conferi a cascata de remanejamento: a regra, o destino final e a ordem de
           destinos acima são os que este processo deve aplicar.
         </span>
       </label>
