@@ -843,8 +843,13 @@ export class ModalidadeFormPage {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
-    // Unicidade de código (409).
-    if (problem.status === 409 || problem.code === 'Modalidade.CodigoJaExiste') {
+    // Unicidade de código (409). O código comparado é o do WIRE — `problem.code`
+    // carrega a taxonomia `uniplus.<modulo>.<razao>`, e o código de domínio
+    // (`Modalidade.CodigoJaExiste`) é chave de lookup do servidor (`#743`).
+    if (
+      problem.status === 409 ||
+      problem.code === 'uniplus.configuracao.modalidade.codigo_ja_existe'
+    ) {
       this.renovarIdempotencyKey();
       const control = this.form.controls.codigo;
       control.setErrors({ backend: { code: problem.code, message: 'Código já utilizado por outra modalidade viva.' } });

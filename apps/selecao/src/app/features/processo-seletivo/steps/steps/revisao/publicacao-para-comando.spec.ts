@@ -329,15 +329,15 @@ describe('mensagensDePublicacao', () => {
 
 describe('eErroDeDocumentoOuAto', () => {
   it('reconhece os códigos nomeados que nenhum dos dois checklists cobre', () => {
-    expect(eErroDeDocumentoOuAto('ProcessoSeletivo.DocumentoNaoConfirmado')).toBe(true);
-    expect(eErroDeDocumentoOuAto('ProcessoSeletivo.TipoDeAtoNaoVigente')).toBe(true);
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.documento_nao_confirmado')).toBe(true);
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente')).toBe(true);
   });
 
   it('não reconhece código de conformidade estrutural nem legal', () => {
-    expect(eErroDeDocumentoOuAto('ProcessoSeletivo.ConformidadeEstruturalInsuficiente')).toBe(
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_insuficiente')).toBe(
       false,
     );
-    expect(eErroDeDocumentoOuAto('ProcessoSeletivo.ConformidadeLegalInsuficiente')).toBe(false);
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente')).toBe(false);
   });
 });
 
@@ -347,7 +347,7 @@ describe('comExtensoesDePublicacao', () => {
       type: 'about:blank',
       title: 'x',
       status: 422,
-      code: 'ProcessoSeletivo.ConformidadeEstruturalInsuficiente',
+      code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
       traceId: 't',
     };
     const comExtensoes = {

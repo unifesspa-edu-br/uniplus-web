@@ -55,7 +55,13 @@ interface RecusaDePublicacao {
   readonly documentoOuAto: string | null;
 }
 
-const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE = 'ProcessoSeletivo.ConformidadeLegalInsuficiente';
+/**
+ * O código do WIRE, não o de domínio: `problem.code` carrega a taxonomia
+ * `uniplus.<modulo>.<razao>` (`#743`). Comparado com `ProcessoSeletivo.*`, isto
+ * nunca casava, e `obrigatoriedadesReprovadas` do 422 era descartado sempre.
+ */
+const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE =
+  'uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente';
 
 /**
  * Passo Revisão e Publicação (`#486`). Substitui a contagem de passos

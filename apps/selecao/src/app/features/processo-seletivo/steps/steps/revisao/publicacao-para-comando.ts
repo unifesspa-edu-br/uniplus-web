@@ -182,13 +182,23 @@ export function passoDaDimensao(dimensao: string): number | null {
   return PASSO_POR_DIMENSAO[dimensao] ?? null;
 }
 
-/** Recusas nomeadas que nenhum dos dois checklists cobre (`#486`, Parte A, bloco 3). */
+/**
+ * Recusas nomeadas que nenhum dos dois checklists cobre (`#486`, Parte A, bloco 3).
+ *
+ * São os códigos do WIRE (`uniplus.<modulo>.<razao>`), que é o que
+ * `problem.code` carrega: `DomainErrorProblemDetailsFactory.Resolve` grava ali
+ * sempre o `DomainErrorMapping.Code`, e o código de domínio
+ * (`ProcessoSeletivo.*`) é chave de lookup do servidor — não trafega (`#743`).
+ *
+ * O conjunto é o que `PublicarProcessoSeletivoCommandHandler` e
+ * `ConferenciaDoTipoDeAto` de fato emitem sobre documento e ato.
+ */
 const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
-  'ProcessoSeletivo.DocumentoNaoEncontrado',
-  'ProcessoSeletivo.DocumentoNaoConfirmado',
-  'ProcessoSeletivo.TipoDeAtoNaoEncontrado',
-  'ProcessoSeletivo.TipoDeAtoNaoVigente',
-  'ProcessoSeletivo.VagaDeLinhagemIndisponivel',
+  'uniplus.selecao.processo_seletivo.documento_nao_encontrado',
+  'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
+  'uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente',
+  'uniplus.selecao.processo_seletivo.tipo_de_ato_nao_congela_configuracao',
+  'uniplus.selecao.processo_seletivo.objeto_ja_tem_ato_vivo_do_tipo',
 ]);
 
 export function eErroDeDocumentoOuAto(codigo: string): boolean {
