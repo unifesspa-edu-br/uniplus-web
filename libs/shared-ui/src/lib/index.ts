@@ -2,6 +2,9 @@
 export { A11yMenuComponent } from './components/a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from './components/alert/alert';
 export { AppShellComponent, type UiShellNavItem } from './components/app-shell/app-shell';
+export { BackToTopComponent } from './components/back-to-top/back-to-top';
+export { BackToTopContainerDirective } from './components/back-to-top/back-to-top-container.directive';
+export { BackToTopScrollService } from './components/back-to-top/back-to-top.service';
 export { BreadcrumbComponent, type UiBreadcrumbItem } from './components/breadcrumb/breadcrumb';
 export { ButtonComponent, type UiButtonSize, type UiButtonType, type UiButtonVariant } from './components/button/button';
 export { CardComponent } from './components/card/card';

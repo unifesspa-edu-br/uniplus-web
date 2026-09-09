@@ -1,5 +1,8 @@
 export { A11yMenuComponent } from './a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from './alert/alert';
+export { BackToTopComponent } from './back-to-top/back-to-top';
+export { BackToTopContainerDirective } from './back-to-top/back-to-top-container.directive';
+export { BackToTopScrollService } from './back-to-top/back-to-top.service';
 export { BreadcrumbComponent, type UiBreadcrumbItem } from './breadcrumb/breadcrumb';
 export {
   ButtonComponent,
