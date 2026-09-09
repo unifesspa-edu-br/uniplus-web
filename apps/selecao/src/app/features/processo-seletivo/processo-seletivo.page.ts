@@ -18,7 +18,12 @@ import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
-import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  BackToTopContainerDirective,
+  DialogComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
@@ -65,6 +70,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
   imports: [
     RouterLink,
     AlertComponent,
+    BackToTopContainerDirective,
     DialogComponent,
     SpinnerComponent,
     WizardStepperComponent,
@@ -145,7 +151,6 @@ export class ProcessoSeletivoPage {
   readonly ofereceAvanco = computed(() => this.store.edicaoPermitida() || !this.store.isLast());
 
   readonly stepsOverlayOpen = signal(false);
-  readonly showBackToTop = signal(false);
   @ViewChild('stepBarButton') private stepBarButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlayClose') private stepsOverlayClose?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
@@ -355,22 +360,6 @@ export class ProcessoSeletivoPage {
   protected tentarNovamente(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id !== null && !this.store.hidratando()) void this.retomar(id);
-  }
-
-  /**
-   * O scroller do wizard costuma ser `.wiz-content`, mas em telas baixas — ou
-   * com zoom alto — o conteúdo ultrapassa a viewport e quem rola é o documento.
-   * O botão precisa reagir aos dois, senão fica invisível justamente onde é
-   * mais útil.
-   */
-  onContentScroll(event: Event): void {
-    const scroller = event.target as HTMLElement;
-    this.showBackToTop.set(scroller.scrollTop > 500 || window.scrollY > 500);
-  }
-
-  @HostListener('window:scroll') onDocumentScroll(): void {
-    const scroller = this.wizContent?.nativeElement;
-    this.showBackToTop.set(window.scrollY > 500 || (scroller?.scrollTop ?? 0) > 500);
   }
 
   @HostListener('document:keydown.escape') onEscape(): void {
@@ -797,11 +786,6 @@ export class ProcessoSeletivoPage {
     }
 
     return pendencias;
-  }
-
-  scrollToTop(): void {
-    this.wizContent?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
