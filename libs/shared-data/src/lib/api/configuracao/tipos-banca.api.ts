@@ -17,8 +17,9 @@ export interface TiposBancaQuery {
 }
 
 /**
- * Código canônico dos 6 tipos de banca fixos (UNI-REQ-0139). Roster fechado —
- * usado só pelo `select` de criação; a edição trata `codigo` como imutável.
+ * Código canônico dos 6 tipos de banca fixos (UNI-REQ-0139). Roster fechado,
+ * provisionado pelo seed da API; a tela de Tipo de banca não cria tipos
+ * (issue #713) e a edição trata `codigo` como imutável.
  */
 export const CODIGOS_TIPO_BANCA = [
   'BANCA_ANALISE_DOCUMENTAL',
