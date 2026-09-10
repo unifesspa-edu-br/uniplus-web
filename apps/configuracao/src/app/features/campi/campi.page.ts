@@ -40,6 +40,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -74,6 +75,7 @@ interface CampusForm {
     DrawerComponent,
     EmptyStateComponent,
     EnderecoFormComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -140,22 +142,20 @@ interface CampusForm {
                   <td data-label="Cidade">{{ cidadeLabel(campus) }}</td>
                   <td data-label="Código e-MEC">{{ campus.codigoEmec || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(campus)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(campus)"
-                    >
-                      Remover
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar campus ' + campus.sigla"
+                      tooltip="Editar campus"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(campus)"
+                    />
+                    <ui-icon-button
+                      icon="pi-trash"
+                      [accessibleName]="'Remover campus ' + campus.sigla"
+                      tooltip="Remover campus"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirRemocao(campus)"
+                    />
                   </td>
                 </tr>
               }

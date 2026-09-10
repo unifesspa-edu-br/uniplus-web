@@ -53,6 +53,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -137,6 +138,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -229,22 +231,30 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(aresta)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading() || removendo()"
-                      (click)="pedirRemocao(aresta)"
-                    >
-                      Remover
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="
+                        'Editar precedência entre ' +
+                        aresta.antecessoraCodigo +
+                        ' e ' +
+                        aresta.sucessoraCodigo
+                      "
+                      tooltip="Editar precedência"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(aresta)"
+                    />
+                    <ui-icon-button
+                      icon="pi-trash"
+                      [accessibleName]="
+                        'Remover precedência entre ' +
+                        aresta.antecessoraCodigo +
+                        ' e ' +
+                        aresta.sucessoraCodigo
+                      "
+                      tooltip="Remover precedência"
+                      [isDisabled]="loading() || removendo()"
+                      (triggered)="pedirRemocao(aresta)"
+                    />
                   </td>
                 </tr>
               }

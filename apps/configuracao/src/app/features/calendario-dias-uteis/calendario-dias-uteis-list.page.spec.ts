@@ -93,11 +93,13 @@ describe('CalendarioDiasUteisListPage', async () => {
   });
 
   const getMarcarVigenteButtonEl = () =>
-    fixture.nativeElement.querySelector('.table-responsive__actions > button') as HTMLButtonElement;
+    fixture.nativeElement.querySelector(
+      '.table-responsive__actions button[aria-label^="Marcar vigente"]',
+    ) as HTMLButtonElement;
 
   const getRemoverButtonEl = () =>
     fixture.nativeElement.querySelector(
-      '.table-responsive__actions > button:last-child',
+      '.table-responsive__actions button[aria-label^="Remover calendário"]',
     ) as HTMLButtonElement;
 
   it('exibe o botão de marcar vigente habilitado em um registro que não é vigente', async () => {
@@ -139,9 +141,7 @@ describe('CalendarioDiasUteisListPage', async () => {
   it('marca vigente quando não é um registro vigente', async () => {
     await flushLista([CALENDARIO_DIAS_UTEIS]);
     await propagate();
-    const buttonEl = fixture.nativeElement.querySelector(
-      '.table-responsive__actions > button',
-    ) as HTMLButtonElement;
+    const buttonEl = getMarcarVigenteButtonEl();
     buttonEl.dispatchEvent(new Event('click'));
     fixture.detectChanges();
     const req = controller.expectOne(
