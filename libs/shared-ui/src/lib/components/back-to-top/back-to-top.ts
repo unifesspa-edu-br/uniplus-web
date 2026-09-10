@@ -72,32 +72,54 @@ export class BackToTopComponent {
 
   private observado: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private navTimer: ReturnType<typeof setTimeout> | null = null;
+  private destruido = false;
   private readonly aoRolar = (): void => this.recalcular();
 
   constructor() {
-    // Religa listener e observer sempre que o contêiner ativo muda — troca de
-    // rota que monta/desmonta um `uiBackToTopContainer`, ou o `main.page` do
-    // shell ficando disponível depois do primeiro render.
+    // Religa listener + observer e recalcula a visibilidade sempre que o
+    // contêiner ativo muda de referência — troca de rota que monta/desmonta um
+    // `uiBackToTopContainer`, ou o `main.page` do shell ficando disponível
+    // depois do primeiro render.
     effect(() => {
-      const alvo = this.containerAtivo();
-      untracked(() => {
-        this.religar(alvo);
-        // Fora do ciclo de detecção em curso: recalcular aqui gravaria `visivel`
-        // no meio da verificação de mudanças do Angular.
-        queueMicrotask(() => this.recalcular());
-      });
+      this.containerAtivo();
+      // Fora do ciclo de detecção em curso: `reconciliar()` grava `visivel`, o
+      // que no meio da verificação de mudanças do Angular dispararia NG0100.
+      untracked(() => queueMicrotask(() => this.reconciliar()));
     });
 
     const inscricao = this.router.events.subscribe((evento) => {
-      // O conteúdo da nova rota só entra no DOM no próximo tick; recalcular
-      // agora usaria as dimensões da rota anterior (CA-10).
-      if (evento instanceof NavigationEnd) queueMicrotask(() => this.recalcular());
+      // `main.page` é o mesmo elemento entre rotas do app (o `ui-app-shell` não
+      // é recriado), então o efeito acima não dispara na navegação. Ainda assim
+      // os filhos que o ResizeObserver acompanha foram trocados pelo conteúdo da
+      // rota nova — religa para reapontar o observer, além de recalcular (CA-10).
+      //
+      // `setTimeout`, não `queueMicrotask`: o conteúdo da rota nova só entra no
+      // DOM na detecção de mudanças que segue o `NavigationEnd`; medir/observar
+      // antes disso pegaria os filhos e as dimensões da rota anterior. Redirects
+      // encadeados coalescem num único religamento.
+      if (evento instanceof NavigationEnd) {
+        if (this.navTimer !== null) clearTimeout(this.navTimer);
+        this.navTimer = setTimeout(() => {
+          this.navTimer = null;
+          this.reconciliar();
+        });
+      }
     });
 
     this.destroyRef.onDestroy(() => {
+      this.destruido = true;
+      if (this.navTimer !== null) clearTimeout(this.navTimer);
       inscricao.unsubscribe();
       this.desligar();
     });
+  }
+
+  /** Religa listener + observer ao contêiner ativo e recalcula a visibilidade. */
+  private reconciliar(): void {
+    if (this.destruido) return;
+    this.religar(this.containerAtivo());
+    this.recalcular();
   }
 
   /** Recalcula a visibilidade pelo percentual rolado do contêiner ativo (CA-04/CA-05). */
@@ -115,9 +137,9 @@ export class BackToTopComponent {
     const alvo = this.containerAtivo();
     if (alvo === null) return;
     alvo.scrollTo({ top: 0, behavior: this.movimentoReduzido() ? 'auto' : 'smooth' });
-    // `main.page` é focável (`tabindex="-1"`): levar o foco ao topo dá ao leitor
-    // de tela um ponto de partida consistente. Contêineres não-focáveis (ex.:
-    // `.wiz-content`) apenas rolam.
+    // Leva o foco ao topo do contêiner para dar ao leitor de tela um ponto de
+    // chegada. Exige `tabindex` no contêiner — `main.page` já tem `-1`; contratos
+    // internos (`uiBackToTopContainer`) devem declarar o seu (ver `.wiz-content`).
     if (alvo.hasAttribute('tabindex')) alvo.focus({ preventScroll: true });
   }
 
