@@ -121,6 +121,9 @@ export class CatalogosDeDistribuicaoService {
             oferta.turnos.join(' e '),
             ...(oferta.programaDeOferta === 'REGULAR' ? [] : [oferta.programaDeOferta]),
             ...(oferta.formatoPedagogico === 'PRESENCIAL' ? [] : [oferta.formatoPedagogico]),
+            this.getCursoPelaOfertaCursoId(oferta.cursoId)
+              ? [this.getCursoPelaOfertaCursoId(oferta.cursoId)?.grau?.toLocaleUpperCase()]
+              : []
           ]
             .filter((parte) => parte !== '' && parte !== null)
             .join(' · '),
@@ -204,6 +207,10 @@ export class CatalogosDeDistribuicaoService {
       'Não foi possível carregar os catálogos de ofertas, modalidades e regras. Tente novamente.',
     );
     this.carregando.set(false);
+  }
+
+  private getCursoPelaOfertaCursoId(ofertaCursoId: string): CursoDto | null {
+    return this.cursos().find((curso) => curso.id === ofertaCursoId) ?? null;
   }
 }
 
