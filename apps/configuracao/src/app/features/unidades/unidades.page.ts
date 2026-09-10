@@ -59,19 +59,40 @@ const PAGE_SIZE = 100;
 /** Tamanho da janela do seletor de cidade (cursor pagination, ADR-0026). */
 const CIDADES_LIMIT = 20;
 
+/**
+ * Desfecho de uma busca de cidade na Geo, sempre carimbado com o termo que o
+ * originou. Termo, opções e erro andam juntos porque são partes do mesmo fato:
+ * separados, um reset que esquece um deles deixa o resultado de uma busca
+ * convivendo com o termo de outra — foi o que produziu o falso "nenhuma cidade
+ * encontrada" da #639, e é o que deixaria uma opção obsoleta clicável.
+ */
 interface RespostaCidade {
   readonly termo: string;
   readonly opcoes: readonly CidadeResumoDto[];
   readonly erro: string | null;
 }
 
+/** Emissão do pipeline de busca: a resposta da Geo com o termo que a originou. */
 interface BuscaCidadeEmissao {
   readonly busca: string;
   readonly result: ApiResult<readonly CidadeResumoDto[]>;
 }
 
+/**
+ * Debounce da busca textual — uma request por rajada de digitação, não por
+ * tecla (critério de aceite #397). Angular 22 trará `debounced()`; no 21.x o
+ * padrão oficial é a interop `toObservable → debounceTime → toSignal`.
+ */
 const BUSCA_DEBOUNCE_MS = 300;
 
+/**
+ * Ordinal numérico do enum `TipoUnidade` no backend (`TipoUnidade.cs`) —
+ * usado só pelo filtro `?tipo=` da listagem. Esse query param é bindado pelo
+ * controller como `int[]` bruto (`UnidadesController.Listar`), independente
+ * do enum string (`JsonStringEnumConverter` camelCase) que o corpo JSON de
+ * `Criar/AtualizarUnidadeCommand` usa — não decorre de `TIPOS_UNIDADE.value`
+ * porque o enum string não expõe ordinal em runtime.
+ */
 const TIPO_UNIDADE_FILTRO_ORDINAL: Readonly<Record<TipoUnidade, number>> = {
   [TipoUnidade.nenhum]: 0,
   [TipoUnidade.reitoria]: 1,
@@ -261,11 +282,6 @@ const BACKEND_FIELD_TO_CONTROL = {
       <div class="unit-node">
         <div
           class="unit-node__row"
-          role="button"
-          tabindex="0"
-          (click)="toggleExpand(node.unidade.id, $event)"
-          (keyup.enter)="toggleExpand(node.unidade.id, $event)"
-          (keyup.space)="toggleExpand(node.unidade.id, $event)"
         >
           @if (node.children.length > 0) {
             <button
