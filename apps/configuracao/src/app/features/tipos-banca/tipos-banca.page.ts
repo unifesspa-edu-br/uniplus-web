@@ -31,13 +31,11 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  CODIGOS_TIPO_BANCA,
   CONFIGURACAO_BASE_PATH,
   FasesCanonicasApi,
   TipoBancaDto,
   TiposBancaApi,
   type AtualizarTipoBancaCommand,
-  type CriarTipoBancaCommand,
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
@@ -51,11 +49,6 @@ import {
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
-
-/** Vendor code do DomainError `TipoBanca.CodigoJaExiste` (uniplus-api, 409 Conflict). */
-const TIPO_BANCA_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.tipo_banca.codigo_ja_existe';
-
-type ModoFormulario = 'criar' | 'editar';
 
 interface BancaForm {
   codigo: FormControl<string>;
@@ -96,10 +89,14 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
       </div>
     </div>
 
-    <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
-      O código de uma fase canônica ou de um tipo de banca não pode ser alterado após a criação —
-      pertence ao vocabulário canônico fixo e é congelado por snapshot nos cronogramas dos editais.
-      Para corrigir, crie uma nova entrada e inative a anterior.
+    <ui-alert
+      variant="info"
+      heading="Códigos definidos pelo catálogo institucional"
+      [dynamic]="false"
+    >
+      Os códigos dos tipos de banca pertencem ao catálogo institucional e não podem ser criados ou
+      alterados por esta interface. Os demais dados permitidos podem ser atualizados pela ação
+      Editar.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -126,10 +123,6 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
             <span class="cfg-tipos-banca__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-          Novo tipo de banca
-        </button>
       </div>
 
       <ui-filter-bar
@@ -193,13 +186,9 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
           </ui-empty-state>
         } @else {
           <ui-empty-state
-            heading="Nenhum tipo de banca cadastrado"
-            description="Cadastre o primeiro tipo de banca para montar o cronograma de processos seletivos."
-          >
-            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-              Novo tipo de banca
-            </button>
-          </ui-empty-state>
+            heading="Nenhum tipo de banca disponível"
+            description="O catálogo de tipos de banca é definido institucionalmente. Os tipos aparecem aqui quando o backend os provisiona."
+          />
         }
       }
 
@@ -219,7 +208,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
     <ui-drawer
       class="cfg-form-drawer"
       [(visible)]="formOpen"
-      [heading]="formHeading()"
+      heading="Editar tipo de banca"
       ariaLabel="Formulário de tipo de banca"
       position="right"
     >
@@ -237,34 +226,14 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
         <section aria-labelledby="cfg-banca-identificacao">
           <h3 id="cfg-banca-identificacao" class="form-section__title">Identificação</h3>
           <div class="form-grid form-grid--1col">
-            @if (modo() === 'criar') {
-              <label class="field" [class.is-error]="erroDoCampo('codigo')">
-                <span class="field__label is-required">Código</span>
-                <select
-                  class="select"
-                  formControlName="codigo"
-                  [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
-                >
-                  <option value="" disabled>Selecione o código</option>
-                  @for (codigo of codigosBanca; track codigo) {
-                    <option [value]="codigo">{{ codigo }}</option>
-                  }
-                </select>
-                <span class="field__hint">Imutável após a criação.</span>
-                @if (erroDoCampo('codigo')) {
-                  <span class="field__error">{{ erroDoCampo('codigo') }}</span>
-                }
-              </label>
-            } @else {
-              <label class="field" [class.is-error]="erroDoCampo('codigo')">
-                <span class="field__label is-required">Código</span>
-                <input class="input" type="text" formControlName="codigo" readonly />
-                <span class="field__hint">Imutável após criação.</span>
-                @if (erroDoCampo('codigo')) {
-                  <span class="field__error">{{ erroDoCampo('codigo') }}</span>
-                }
-              </label>
-            }
+            <label class="field" [class.is-error]="erroDoCampo('codigo')">
+              <span class="field__label is-required">Código</span>
+              <input class="input" type="text" formControlName="codigo" readonly />
+              <span class="field__hint">Imutável após criação.</span>
+              @if (erroDoCampo('codigo')) {
+                <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+              }
+            </label>
             <label class="field" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome</span>
               <input
@@ -316,13 +285,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
           @if (saving()) {
             <ui-spinner size="sm" />
           }
-          {{
-            saving()
-              ? 'Salvando...'
-              : modo() === 'criar'
-                ? 'Criar tipo de banca'
-                : 'Salvar tipo de banca'
-          }}
+          {{ saving() ? 'Salvando...' : 'Salvar tipo de banca' }}
         </button>
       </div>
     </ui-drawer>
@@ -346,13 +309,10 @@ export class TiposBancaPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  protected readonly codigosBanca = CODIGOS_TIPO_BANCA;
-
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);
   protected readonly formError = signal<string | null>(null);
-  protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly bancaEmEdicaoId = signal<string | null>(null);
   protected readonly bancaParaRemover = signal<TipoBancaDto | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
@@ -434,10 +394,6 @@ export class TiposBancaPage {
     return this.lista.error() ? 'Erro inesperado ao carregar tipos de banca.' : null;
   });
 
-  protected readonly formHeading = computed(() =>
-    this.modo() === 'criar' ? 'Novo tipo de banca' : 'Editar tipo de banca',
-  );
-
   protected readonly confirmMessage = computed(() => {
     const banca = this.bancaParaRemover();
     return banca
@@ -502,18 +458,7 @@ export class TiposBancaPage {
     this.termoBusca.set('');
   }
 
-  protected abrirCadastro(): void {
-    this.modo.set('criar');
-    this.bancaEmEdicaoId.set(null);
-    this.form.reset({ codigo: '', nome: '', faseTipica: '', descricao: '' });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.prepararSugestoesFaseTipica();
-    this.formOpen.set(true);
-  }
-
   protected abrirEdicao(banca: TipoBancaDto): void {
-    this.modo.set('editar');
     this.bancaEmEdicaoId.set(banca.id);
     this.form.reset({
       codigo: banca.codigo,
@@ -567,14 +512,6 @@ export class TiposBancaPage {
     this.saving.set(true);
     this.formError.set(null);
 
-    if (this.modo() === 'criar') {
-      this.api
-        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.handleSalvarResult(result));
-      return;
-    }
-
     this.api
       .atualizar(
         this.bancaEmEdicaoId() ?? '',
@@ -625,9 +562,7 @@ export class TiposBancaPage {
   private handleSalvarResult(result: ApiResult<string | void>): void {
     this.saving.set(false);
     if (result.ok) {
-      this.notifications.success(
-        this.modo() === 'criar' ? 'Tipo de banca criado' : 'Tipo de banca atualizado',
-      );
+      this.notifications.success('Tipo de banca atualizado');
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
       this.recarregar();
@@ -640,17 +575,6 @@ export class TiposBancaPage {
     if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
-      return;
-    }
-    // TipoBanca.CodigoJaExiste é um DomainError único (409, sem `errors[]` —
-    // esse array só existe no pipeline FluentValidation/422); mapeado ao
-    // campo manualmente para exibir o erro inline.
-    if (problem.code === TIPO_BANCA_CODIGO_JA_EXISTE_CODE) {
-      this.renovarIdempotencyKey();
-      this.form.controls.codigo.setErrors({
-        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-      });
-      this.form.controls.codigo.markAsTouched();
       return;
     }
     if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
@@ -682,16 +606,6 @@ export class TiposBancaPage {
       return;
     }
     this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
-  }
-
-  private criarCommand(): CriarTipoBancaCommand {
-    const raw = this.form.getRawValue();
-    return {
-      codigo: raw.codigo,
-      nome: raw.nome.trim(),
-      faseTipica: nullIfBlank(raw.faseTipica),
-      descricao: nullIfBlank(raw.descricao),
-    };
   }
 
   private atualizarCommand(): AtualizarTipoBancaCommand {
