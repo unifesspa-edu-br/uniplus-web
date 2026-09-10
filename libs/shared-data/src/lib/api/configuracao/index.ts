@@ -83,9 +83,7 @@ export {
 } from './precedencias-fase.api';
 export {
   TiposBancaApi,
-  CODIGOS_TIPO_BANCA,
   type AtualizarTipoBancaCommand,
-  type CodigoTipoBanca,
   type CriarTipoBancaCommand,
   type TipoBancaDto,
   type TiposBancaQuery,

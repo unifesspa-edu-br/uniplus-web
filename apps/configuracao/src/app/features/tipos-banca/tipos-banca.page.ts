@@ -187,7 +187,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
         } @else {
           <ui-empty-state
             heading="Nenhum tipo de banca disponível"
-            description="O catálogo de tipos de banca é definido institucionalmente. Os tipos aparecem aqui quando o backend os provisiona."
+            description="O catálogo de tipos de banca é definido institucionalmente. Os tipos passam a aparecer aqui assim que forem disponibilizados pelo catálogo."
           />
         }
       }
@@ -559,7 +559,7 @@ export class TiposBancaPage {
     }
   }
 
-  private handleSalvarResult(result: ApiResult<string | void>): void {
+  private handleSalvarResult(result: ApiResult<void>): void {
     this.saving.set(false);
     if (result.ok) {
       this.notifications.success('Tipo de banca atualizado');
