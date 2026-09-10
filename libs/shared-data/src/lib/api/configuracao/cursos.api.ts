@@ -23,11 +23,29 @@ export const GRUPOS_AREA_ENEM: readonly GrupoAreaEnemOption[] = [
   { value: 'Saúde e Biológicas', label: 'Saúde e Biológicas' },
 ] as const;
 
-/** Filtro de listagem de Cursos (cursor pagination, ADR-0026). */
+/** Filtro de listagem de Cursos (cursor pagination, ADR-0026; busca/ordenação, uniplus-api#1419). */
 export interface CursosQuery {
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
+  /**
+   * Busca textual por trecho em qualquer posição sobre nome e código, sem
+   * distinguir caixa nem acentuação. Vai em toda página — o cursor keyset
+   * carrega a âncora, não o predicado do filtro; os links `prev`/`next` do
+   * header `Link` já reanexam `q`. Acima de 200 caracteres → 422.
+   */
+  readonly q?: string;
+  /**
+   * Ordenação no formato JSON:API: campos separados por vírgula na ordem de
+   * prioridade, `-` prefixa o decrescente (`nome,-grau`). Campos aceitos:
+   * `nome`, `codigo`, `grau`, `nivelEnsino`, `criadoEm` (a lista canônica é a
+   * do OpenAPI da rota). Só é enviada na primeira página — o cursor carrega a
+   * ordenação assinada; trocar a ordenação recomeça a paginação sem cursor.
+   * Omitido = ordem alfabética padrão da API, que não deve receber `sort`
+   * explícito (a assinatura do cursor diferiria da consulta sem parâmetro).
+   * Campo fora da lista ou `sort` mal formado → 422 nomeando o campo recusado.
+   */
+  readonly sort?: string;
 }
 
 /**
@@ -48,10 +66,18 @@ export class CursosApi {
   /** GET `/api/configuracao/cursos` — lista paginada por cursor (ADR-0026). */
   listar(query: CursosQuery = {}): Observable<ApiResult<readonly CursoDto[]>> {
     let params = new HttpParams();
+    const q = query.q?.trim();
+    if (q) {
+      params = params.set('q', q);
+    }
     if (query.cursor !== undefined) {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
     } else {
       params = params.set('limit', String(query.limit ?? 100));
+      const sort = query.sort?.trim();
+      if (sort) {
+        params = params.set('sort', sort);
+      }
     }
     return this.http.get<ApiResult<readonly CursoDto[]>>(`${this.basePath}/api/configuracao/cursos`, {
       params,

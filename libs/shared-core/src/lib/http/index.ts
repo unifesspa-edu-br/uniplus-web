@@ -29,8 +29,12 @@ export type { ParsedLink } from './link-header';
 
 export {
   API_MAX_PAGE_SIZE,
+  CURSOR_EXPIRADO_CODE,
+  CURSOR_INVALIDO_CODE,
   createCursor,
   cursorToString,
+  ehCursorDePaginacaoExpirado,
+  ehCursorDePaginacaoObsoleto,
   extractNextCursor,
   extractPrevCursor,
 } from './pagination';
