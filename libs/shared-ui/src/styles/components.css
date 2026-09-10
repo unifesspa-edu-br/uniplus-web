@@ -393,7 +393,11 @@
  * múltiplas mensagens.
  * ========================================================================== */
 .alert {
-  display: flex; gap: var(--space-3); padding: var(--space-4);
+  /* `wrap`: um `<p class="alert">` com texto interpolado e elementos inline no
+     meio (ex.: `<strong>`) quebra o texto em vários itens flex anônimos — sem
+     wrap, cada um fica na mesma linha em vez de se comportar como um
+     parágrafo comum, e a soma deles estoura a largura do contêiner. */
+  display: flex; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-4);
   border-radius: var(--radius-md);
   background: var(--surface-subtle);
   border-left: 4px solid var(--border-default);
