@@ -48,6 +48,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  IconButtonComponent,
   LookupAlertComponent,
   LookupLabelComponent,
   PagerComponent,
@@ -87,6 +88,7 @@ interface LocalOfertaForm {
     DrawerComponent,
     EmptyStateComponent,
     EnderecoFormComponent,
+    IconButtonComponent,
     LookupAlertComponent,
     LookupLabelComponent,
     PagerComponent,
@@ -164,22 +166,30 @@ interface LocalOfertaForm {
                   </td>
                   <td data-label="Código e-MEC">{{ local.codigoEmec || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(local)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(local)"
-                    >
-                      Remover
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="
+                        'Editar local de oferta ' +
+                        tipoLabel(local.tipo) +
+                        ' — ' +
+                        cidadeLabel(local)
+                      "
+                      tooltip="Editar local de oferta"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(local)"
+                    />
+                    <ui-icon-button
+                      icon="pi-trash"
+                      [accessibleName]="
+                        'Remover local de oferta ' +
+                        tipoLabel(local.tipo) +
+                        ' — ' +
+                        cidadeLabel(local)
+                      "
+                      tooltip="Remover local de oferta"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirRemocao(local)"
+                    />
                   </td>
                 </tr>
               }

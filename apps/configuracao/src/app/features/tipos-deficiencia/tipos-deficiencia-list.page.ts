@@ -52,6 +52,7 @@ import {
   DialogComponent,
   FilterBarComponent,
   PagerComponent,
+  IconButtonComponent,
 } from "@uniplus/shared-ui/components";
 
 type ModoFormulario = "criar" | "editar";
@@ -111,6 +112,7 @@ const PAGE_SIZE = 50;
     DialogComponent,
     FilterBarComponent,
     PagerComponent,
+    IconButtonComponent,
   ],
   template: `
     <div class="page-header">
@@ -211,22 +213,20 @@ const PAGE_SIZE = 50;
                       <ui-tag variant="success">Ativa</ui-tag>
                     </td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading() || submitting()"
-                        (click)="abrirEdicao(tipoDeficiencia)"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading() || submitting()"
-                        (click)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
-                      >
-                        Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar tipo de deficiência ' + tipoDeficiencia.codigo"
+                        tooltip="Editar tipo de deficiência"
+                        [isDisabled]="loading() || submitting()"
+                        (triggered)="abrirEdicao(tipoDeficiencia)"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar tipo de deficiência ' + tipoDeficiencia.codigo"
+                        tooltip="Inativar tipo de deficiência"
+                        [isDisabled]="loading() || submitting()"
+                        (triggered)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
+                      />
                     </td>
                   </tr>
                 }

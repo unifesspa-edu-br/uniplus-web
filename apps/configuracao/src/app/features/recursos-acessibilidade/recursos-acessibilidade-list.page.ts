@@ -49,6 +49,7 @@ import {
   PagerComponent,
   DialogComponent,
   FilterBarComponent,
+  IconButtonComponent,
 } from "@uniplus/shared-ui/components";
 
 type ModoFormulario = "criar" | "editar";
@@ -102,6 +103,7 @@ const PAGE_SIZE = 50;
     PagerComponent,
     DialogComponent,
     FilterBarComponent,
+    IconButtonComponent,
   ],
   template: `
     <div class="page-header">
@@ -192,22 +194,22 @@ const PAGE_SIZE = 50;
                       <ui-tag variant="success">Ativa</ui-tag>
                     </td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading() || submitting()"
-                        (click)="abrirEdicao(recursoAcessibilidade)"
-                      >
-                        Editar
-                      </button>
-                        <button
-                          type="button"
-                          class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="loading() || submitting()"
-                          (click)="abrirInativarRecurso(recursoAcessibilidade)"
-                        >
-                          Inativar
-                        </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar recurso de acessibilidade ' + recursoAcessibilidade.nome"
+                        tooltip="Editar recurso de acessibilidade"
+                        [isDisabled]="loading() || submitting()"
+                        (triggered)="abrirEdicao(recursoAcessibilidade)"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="
+                          'Inativar recurso de acessibilidade ' + recursoAcessibilidade.nome
+                        "
+                        tooltip="Inativar recurso de acessibilidade"
+                        [isDisabled]="loading() || submitting()"
+                        (triggered)="abrirInativarRecurso(recursoAcessibilidade)"
+                      />
                     </td>
                   </tr>
                 }
