@@ -787,9 +787,8 @@ describe('OfertasCursoPage', () => {
     expect(alerta.textContent).toContain('Recarregar cursos');
     expect(alerta.textContent).not.toContain('Recarregar locais de oferta');
 
-    const botaoRecarregar: HTMLButtonElement = fixture.nativeElement.querySelector(
-      '.alert--warning button',
-    );
+    const botaoRecarregar: HTMLButtonElement =
+      fixture.nativeElement.querySelector('.alert--warning button');
     botaoRecarregar.click();
     await propagate();
     expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
@@ -851,20 +850,106 @@ describe('OfertasCursoPage', () => {
     expect(component['erroDoCampo']('regimeDeFuncionamento')).toContain('INTENSIVO');
   });
 
+  it('trocar itens por página recarrega a primeira página com o novo limit', async () => {
+    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
+    await flushCargaInicial([ofertaSeed]);
+
+    component['aoTrocarLimite'](50);
+    await propagate();
+
+    const req = controller.expectOne((r) => r.url === LISTA_URL);
+    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.has('cursor')).toBe(false);
+    req.flush([ofertaSeed]);
+    await propagate();
+    expect(component['limite']()).toBe(50);
+  });
+
+  it('CA-02/CA-14a: a listagem não envia sort e apresenta as linhas na ordem alfabética que a API devolve', async () => {
+    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
+    const listaReq = controller.expectOne((r) => r.url === LISTA_URL);
+    expect(listaReq.request.params.has('sort')).toBe(false);
+
+    const cursoZoo: CursoDto = {
+      ...cursoSeed,
+      id: '01960000-0000-7000-0000-0000000000c9',
+      codigo: 'ZOO',
+      nome: 'Zootecnia',
+    };
+    const cursoAdm: CursoDto = {
+      ...cursoSeed,
+      id: '01960000-0000-7000-0000-0000000000c8',
+      codigo: 'ADM',
+      nome: 'Administração',
+    };
+    // A API já devolve por nome do curso; a Web não reordena a página.
+    listaReq.flush([
+      { ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000d8', cursoId: cursoAdm.id },
+      { ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000d9', cursoId: cursoZoo.id },
+    ]);
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoZoo, cursoAdm]);
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    const celulasCurso = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        'td[data-label="Curso"]',
+      ) as NodeListOf<HTMLTableCellElement>,
+    ).map((td) => td.textContent?.trim());
+    expect(celulasCurso).toEqual(['Administração', 'Zootecnia']);
+  });
+
+  it('CA-14c: cursor recusado (400) na navegação recarrega a listagem do início', async () => {
+    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
+    const p1 = controller.expectOne((r) => r.url === LISTA_URL);
+    p1.flush([ofertaSeed], {
+      headers: { Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"` },
+    });
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+    await propagate();
+
+    component['proximaPagina']();
+    await propagate();
+    const p2 = controller.expectOne((r) => r.url === LISTA_URL);
+    expect(p2.request.params.get('cursor')).toBe('p2');
+    p2.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.cursor.invalido',
+        title: 'Cursor de paginação inválido',
+        status: 400,
+        code: 'uniplus.cursor.invalido',
+        traceId: 'test-trace',
+      }),
+      {
+        status: 400,
+        statusText: 'Bad Request',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    const recarga = controller.expectOne((r) => r.url === LISTA_URL);
+    expect(recarga.request.params.has('cursor')).toBe(false);
+    recarga.flush([ofertaSeed]);
+    await propagate();
+    expect(component['errorMessage']()).toBeNull();
+  });
+
   it('CA-01, CA-02, CA-03 e CA-07: apresenta a coluna Grau logo após Curso com valor resolvido e data-label', async () => {
     await flushCargaInicial([ofertaSeed]);
     fixture.detectChanges();
 
     const headers = Array.from(
-      fixture.nativeElement.querySelectorAll<HTMLTableCellElement>('th'),
+      fixture.nativeElement.querySelectorAll('th') as NodeListOf<HTMLTableCellElement>,
     ).map((th) => th.textContent?.trim());
 
     expect(headers[0]).toBe('Curso');
     expect(headers[1]).toBe('Grau');
 
-    const celulaGrau: HTMLElement | null = fixture.nativeElement.querySelector(
-      'td[data-label="Grau"]',
-    );
+    const celulaGrau: HTMLElement | null =
+      fixture.nativeElement.querySelector('td[data-label="Grau"]');
     expect(celulaGrau).toBeTruthy();
     expect(celulaGrau?.textContent?.trim()).toBe('Bacharelado');
   });
@@ -893,7 +978,9 @@ describe('OfertasCursoPage', () => {
     fixture.detectChanges();
 
     const celulasGrau = Array.from(
-      fixture.nativeElement.querySelectorAll<HTMLTableCellElement>('td[data-label="Grau"]'),
+      fixture.nativeElement.querySelectorAll(
+        'td[data-label="Grau"]',
+      ) as NodeListOf<HTMLTableCellElement>,
     ).map((td) => td.textContent?.trim());
 
     expect(celulasGrau).toEqual(['Bacharelado', 'Licenciatura']);
@@ -908,9 +995,8 @@ describe('OfertasCursoPage', () => {
     await flushCargaInicial([ofertaComCursoInexistente]);
     fixture.detectChanges();
 
-    const celulaGrau: HTMLElement | null = fixture.nativeElement.querySelector(
-      'td[data-label="Grau"]',
-    );
+    const celulaGrau: HTMLElement | null =
+      fixture.nativeElement.querySelector('td[data-label="Grau"]');
     expect(celulaGrau?.textContent?.trim()).toBe('—');
   });
 
@@ -926,9 +1012,8 @@ describe('OfertasCursoPage', () => {
     await propagate();
     fixture.detectChanges();
 
-    const celulaGrau: HTMLElement | null = fixture.nativeElement.querySelector(
-      'td[data-label="Grau"]',
-    );
+    const celulaGrau: HTMLElement | null =
+      fixture.nativeElement.querySelector('td[data-label="Grau"]');
     expect(celulaGrau?.textContent?.trim()).toBe('—');
   });
 });

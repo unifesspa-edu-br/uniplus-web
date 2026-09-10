@@ -10,8 +10,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import {
   ApiResult,
   Cursor,
@@ -20,6 +21,8 @@ import {
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
+  ehCursorDePaginacaoExpirado,
+  ehCursorDePaginacaoObsoleto,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
@@ -44,15 +47,25 @@ import {
 import {
   AlertComponent,
   ConfirmDialogComponent,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
-  PagerComponent,
+  IconButtonComponent,
+  ListFooterComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
-/** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
-const PAGE_SIZE = 50;
+/** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
+const PAGE_SIZE = 5;
+
+/**
+ * Debounce da busca textual — uma request por rajada de digitação, não por
+ * tecla (mesmo padrão de Unidades). No Angular 21.x o caminho oficial é a
+ * interop `toObservable → debounceTime → toSignal`.
+ */
+const BUSCA_DEBOUNCE_MS = 300;
 
 /** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
@@ -82,7 +95,8 @@ interface CursoForm {
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
-    PagerComponent,
+    IconButtonComponent,
+    ListFooterComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -133,7 +147,7 @@ interface CursoForm {
         [(searchValue)]="termoBusca"
       />
 
-      @if (cursosFiltrados().length > 0) {
+      @if (cursos().length > 0) {
         <div class="table-responsive">
           <table>
             <thead>
@@ -147,7 +161,7 @@ interface CursoForm {
               </tr>
             </thead>
             <tbody>
-              @for (curso of cursosFiltrados(); track curso.id) {
+              @for (curso of cursos(); track curso.id) {
                 <tr>
                   <td data-label="Código">
                     <code>{{ curso.codigo }}</code>
@@ -159,30 +173,27 @@ interface CursoForm {
                   <td data-label="Nível">{{ curso.nivelEnsino }}</td>
                   <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirOfertas(curso)"
-                    >
-                      Ofertas
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(curso)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(curso)"
-                    >
-                      Remover
-                    </button>
+                    <ui-icon-button
+                      icon="pi-briefcase"
+                      [accessibleName]="'Ofertas de ' + curso.codigo"
+                      tooltip="Ofertas do curso"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirOfertas(curso)"
+                    />
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar curso ' + curso.codigo"
+                      tooltip="Editar curso"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(curso)"
+                    />
+                    <ui-icon-button
+                      icon="pi-trash"
+                      [accessibleName]="'Remover curso ' + curso.codigo"
+                      tooltip="Remover curso"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirRemocao(curso)"
+                    />
                   </td>
                 </tr>
               }
@@ -190,27 +201,39 @@ interface CursoForm {
           </table>
         </div>
       } @else if (!loading() && !errorMessage()) {
-        <ui-empty-state
-          heading="Nenhum curso encontrado"
-          description="Cadastre o primeiro curso para vincular ofertas de curso."
-        >
-          <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-            Novo curso
-          </button>
-        </ui-empty-state>
+        @if (temBusca()) {
+          <ui-empty-state
+            heading="Nenhum curso encontrado"
+            description="Nenhum curso corresponde à busca. Ajuste o código ou o nome."
+          >
+            <button type="button" class="btn btn--secondary" (click)="limparBusca()">
+              Limpar busca
+            </button>
+          </ui-empty-state>
+        } @else {
+          <ui-empty-state
+            heading="Nenhum curso cadastrado"
+            description="Cadastre o primeiro curso para vincular ofertas de curso."
+          >
+            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+              Novo curso
+            </button>
+          </ui-empty-state>
+        }
       }
 
-      @if (prevCursor() !== null || nextCursor() !== null) {
-        <ui-pager
-          statusText="Navegação por páginas"
-          navigationLabel="Paginação de cursos"
-          [hasPrevious]="prevCursor() !== null"
-          [hasNext]="nextCursor() !== null"
-          [isDisabled]="loading()"
-          (previous)="paginaAnterior()"
-          (next)="proximaPagina()"
-        />
-      }
+      <ui-list-footer
+        navigationLabel="Paginação de cursos"
+        [pageSizeOptions]="opcoesLimite"
+        [pageSize]="limite()"
+        (pageSizeChange)="aoTrocarLimite($event)"
+        [hasRows]="cursos().length > 0"
+        [hasPrevious]="prevCursor() !== null"
+        [hasNext]="nextCursor() !== null"
+        [isDisabled]="loading()"
+        (previous)="paginaAnterior()"
+        (next)="proximaPagina()"
+      />
     </section>
 
     <ui-drawer
@@ -408,17 +431,14 @@ interface CursoForm {
         />
       }
 
-      @if (ofertasPrevCursor() !== null || ofertasNextCursor() !== null) {
-        <ui-pager
-          statusText="Navegação por páginas"
-          navigationLabel="Paginação de ofertas do curso"
-          [hasPrevious]="ofertasPrevCursor() !== null"
-          [hasNext]="ofertasNextCursor() !== null"
-          [isDisabled]="ofertasLoading()"
-          (previous)="paginaAnteriorOfertas()"
-          (next)="proximaPaginaOfertas()"
-        />
-      }
+      <ui-list-footer
+        navigationLabel="Paginação de ofertas do curso"
+        [hasPrevious]="ofertasPrevCursor() !== null"
+        [hasNext]="ofertasNextCursor() !== null"
+        [isDisabled]="ofertasLoading()"
+        (previous)="paginaAnteriorOfertas()"
+        (next)="proximaPaginaOfertas()"
+      />
     </ui-drawer>
   `,
   host: { class: 'cfg-page' },
@@ -443,6 +463,27 @@ export class CursosPage {
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
 
+  /** Itens por página escolhidos no rodapé; só em memória (volta ao padrão a cada visita). */
+  protected readonly limite = signal<number>(DEFAULT_PAGE_SIZE);
+  protected readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
+
+  /**
+   * Termo aplicado à busca server-side (`?q=`) — debounced: uma request por
+   * rajada, não por tecla. O backend filtra por código/nome; o cliente não
+   * filtra mais em memória (o filtro só valeria para a página carregada).
+   */
+  private readonly buscaAplicada = toSignal(
+    toObservable(this.termoBusca).pipe(
+      map((termo) => termo.trim()),
+      debounceTime(BUSCA_DEBOUNCE_MS),
+      distinctUntilChanged(),
+    ),
+    { initialValue: '' },
+  );
+
+  /** Há busca ativa? Distingue "sem cursos" de "busca sem resultado" no empty-state. */
+  protected readonly temBusca = computed(() => this.buscaAplicada().length > 0);
+
   // Drawer "Ofertas do curso" — inspeção sob demanda das ofertas vivas de um
   // curso via filtro `?cursoId` (api#755, issue #435).
   protected readonly ofertasOpen = signal(false);
@@ -452,9 +493,24 @@ export class CursosPage {
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
 
-  private readonly pagina = signal<
+  /** Chave do filtro vigente (busca + limite) — fonte do reset de paginação. */
+  private readonly filtroKey = computed(() =>
+    JSON.stringify([this.buscaAplicada(), this.limite()]),
+  );
+
+  /**
+   * Página de navegação atual (`undefined` = primeira). Volta para a primeira
+   * sempre que a busca ou o limite mudam (`linkedSignal` com `source` =
+   * `filtroKey`) — o cursor da página atual carrega o filtro/janela antigos,
+   * então navegar a partir dele ignoraria a mudança.
+   */
+  private readonly pagina = linkedSignal<
+    string,
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  >({
+    source: () => this.filtroKey(),
+    computation: () => undefined,
+  });
 
   private readonly lista = useApiResource<readonly CursoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/cursos`,
@@ -574,24 +630,37 @@ export class CursosPage {
     return curso ? `Ofertas de ${curso.codigo}` : 'Ofertas do curso';
   });
 
-  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
-  // por cursor, sem filtro de texto/código/nome no contrato.
-  protected readonly cursosFiltrados = computed(() => {
-    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
-    if (termo.length === 0) {
-      return this.cursos();
-    }
-    return this.cursos().filter(
-      (curso) =>
-        curso.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
-        curso.nome.toLocaleLowerCase('pt-BR').includes(termo),
+  /**
+   * Uma decisão só, consultada pelo `errorMessage` e pelo `effect` de
+   * recuperação (evita duas checagens que divergem): a resposta é de cursor
+   * obsoleto (400/410) **e** havia uma página navegada da qual recomeçar.
+   *
+   * Na primeira página (`pagina() === undefined`) isto é `false` de propósito:
+   * não há cursor a descartar nem para onde "voltar", então um 400/410 ali —
+   * que o contrato não prevê, mas que não queremos esconder — cai na mensagem
+   * genérica do `errorMessage`, não numa tela muda.
+   */
+  private readonly recuperandoDeCursorObsoleto = computed(() => {
+    const problem = this.lista.problem();
+    return (
+      problem != null && ehCursorDePaginacaoObsoleto(problem) && this.pagina() !== undefined
     );
   });
 
   protected readonly errorMessage = computed<string | null>(() => {
+    // Cursor obsoleto numa página navegada recarrega sozinho do começo (ver
+    // `effect` no construtor) e avisa por notificação — sem alerta vermelho de
+    // "não foi possível carregar", que descreveria mal um estado que já está se
+    // resolvendo.
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) {
-      return this.problemI18n.resolve(problem).title;
+      const { title, detail } = this.problemI18n.resolve(problem);
+      // 422 de `q`: a API nomeia o motivo (e, para `sort`, o campo recusado e os
+      // aceitos) no `detail` — é o texto que o operador precisa para corrigir.
+      return problem.status === 422 && detail ? detail : title;
     }
     return this.lista.error() ? 'Erro inesperado ao carregar cursos.' : null;
   });
@@ -639,6 +708,26 @@ export class CursosPage {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+
+    // Cursor que não continua esta consulta (400) ou que expirou (410):
+    // recomeça a paginação sem cursor e avisa o operador, em vez de deixar a
+    // tela vazia ou presa numa página que não existe mais (CA-14c). Mesma
+    // decisão do `errorMessage` (`recuperandoDeCursorObsoleto`).
+    effect(() => {
+      if (!this.recuperandoDeCursorObsoleto()) {
+        return;
+      }
+      const problem = untracked(() => this.lista.problem());
+      untracked(() => {
+        this.pagina.set(undefined);
+        this.notifications.info(
+          problem && ehCursorDePaginacaoExpirado(problem)
+            ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
+            : 'A paginação foi reiniciada porque a consulta mudou.',
+          'Recarregamos a listagem do começo.',
+        );
+      });
+    });
   }
 
   protected proximaPagina(): void {
@@ -653,6 +742,22 @@ export class CursosPage {
     if (anterior !== null && !this.loading()) {
       this.pagina.set({ cursor: anterior, direction: 'prev' });
     }
+  }
+
+  /**
+   * Troca o limite. `pagina` é `linkedSignal` com `source` = `filtroKey` (que
+   * inclui o limite), então a mudança já reseta para a primeira página e
+   * redispara o GET — sem `pagina.set` manual.
+   */
+  protected aoTrocarLimite(valor: number | null): void {
+    if (valor !== null && valor !== this.limite()) {
+      this.limite.set(valor);
+    }
+  }
+
+  /** Zera a busca — o `termoBusca` alimenta o `ui-filter-bar` por two-way binding. */
+  protected limparBusca(): void {
+    this.termoBusca.set('');
   }
 
   /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
@@ -846,13 +951,22 @@ export class CursosPage {
   }
 
   private montarParams(): HttpParams {
+    let params = new HttpParams();
+    // `q` acompanha toda página: o cursor keyset carrega a âncora e a ordem,
+    // não o predicado de filtro — omiti-lo na navegação traria itens fora da
+    // busca (mesmo contrato de Unidades).
+    const q = this.buscaAplicada();
+    if (q.length > 0) {
+      params = params.set('q', q);
+    }
     const pagina = this.pagina();
     if (pagina === undefined) {
-      return new HttpParams().set('limit', String(PAGE_SIZE));
+      // Sem `sort`: a apresentação padrão consome a ordem alfabética que a API
+      // já devolve por padrão (CA-14a). Mandar `sort=nome` produziria a mesma
+      // ordem, mas com assinatura de cursor divergente da consulta sem parâmetro.
+      return params.set('limit', String(this.limite()));
     }
-    return new HttpParams()
-      .set('cursor', cursorToString(pagina.cursor))
-      .set('direction', pagina.direction);
+    return params.set('cursor', cursorToString(pagina.cursor)).set('direction', pagina.direction);
   }
 
   /** Params da listagem de ofertas do curso — `cursoId` reanexado em toda página (api#755). */
