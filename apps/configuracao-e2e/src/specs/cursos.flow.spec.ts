@@ -64,10 +64,11 @@ interface Capturado {
   readonly posts: unknown[];
   readonly deletedIds: string[];
   readonly ofertaCursoIds: string[];
+  readonly listaUrls: string[];
 }
 
 function novoCapturado(): Capturado {
-  return { posts: [], deletedIds: [], ofertaCursoIds: [] };
+  return { posts: [], deletedIds: [], ofertaCursoIds: [], listaUrls: [] };
 }
 
 async function mockApi(
@@ -117,7 +118,12 @@ async function mockApi(
     }
     await jsonRoute(route, opcoes.ofertas ?? []);
   });
-  await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => jsonRoute(route, lista));
+  await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => {
+    if (route.request().method() === 'GET') {
+      capturado.listaUrls.push(route.request().url());
+    }
+    return jsonRoute(route, lista);
+  });
 }
 
 async function abrirPagina(page: Page): Promise<void> {
@@ -136,6 +142,28 @@ test.describe('Curso — CRUD (#389)', () => {
 
     await expect(page.getByText('ENG-CIV')).toBeVisible();
     await expect(page.getByText('Engenharia Civil')).toBeVisible();
+  });
+
+  test('CA-01/CA-14a: apresenta os cursos fora da ordem dos ids em ordem alfabética, sem enviar sort', async ({
+    page,
+  }) => {
+    const capturado = novoCapturado();
+    // A API devolve por nome (ordem alfabética padrão); a Web só apresenta.
+    await mockApi(page, capturado, [
+      { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c9', codigo: 'ADM', nome: 'Administração' },
+      { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c1', codigo: 'ZOO', nome: 'Zootecnia' },
+    ]);
+    await abrirPagina(page);
+
+    const nomes = await page.locator('table tbody td[data-label="Nome"]').allTextContents();
+    expect(nomes.map((n) => n.trim())).toEqual(['Administração', 'Zootecnia']);
+
+    // A apresentação padrão não envia sort (nem o parâmetro antigo ordenarPor).
+    for (const url of capturado.listaUrls) {
+      const params = new URL(url).searchParams;
+      expect(params.has('sort')).toBe(false);
+      expect(params.has('ordenarPor')).toBe(false);
+    }
   });
 
   test('CA-02: cria curso com código único, nome, grau e nível válidos', async ({ page }) => {
@@ -240,5 +268,72 @@ test.describe('Curso — CRUD (#389)', () => {
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(CURSO_ID);
+  });
+
+  test('Cenário BDD: voltar depois de a listagem expirar recarrega do começo e avisa', async ({
+    page,
+  }) => {
+    const cursoB = { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c2', codigo: 'ZOO', nome: 'Zootecnia' };
+    const listaUrls: string[] = [];
+    await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      const url = new URL(route.request().url());
+      listaUrls.push(url.toString());
+      // Cursor de continuação → 410 (expirado). Sem cursor → primeira página.
+      if (url.searchParams.has('cursor')) {
+        await route.fulfill({
+          status: 410,
+          contentType: 'application/problem+json',
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            type: 'https://uniplus.dev/erros/uniplus.cursor.expirado',
+            title: 'Cursor de paginação expirado',
+            status: 410,
+            code: 'uniplus.cursor.expirado',
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: {
+          ...CORS_HEADERS,
+          'access-control-expose-headers': 'link',
+          Link: `<${url.origin}/api/configuracao/cursos?cursor=pagina-2&direction=next>; rel="next"`,
+        },
+        body: JSON.stringify([cursoSeed, cursoB]),
+      });
+    });
+    await abrirPagina(page);
+    await expect(page.locator('table tbody tr')).toHaveCount(2);
+
+    await page.locator('[data-pager="next"]').click();
+
+    // Em vez de tela vazia: recarrega sem cursor e avisa que a consulta expirou.
+    await expect(page.getByText('a consulta expirou', { exact: false })).toBeVisible();
+    await expect(page.locator('table tbody tr')).toHaveCount(2);
+    expect(listaUrls.some((u) => !new URL(u).searchParams.has('cursor'))).toBe(true);
+  });
+
+  test('busca por código/nome dispara GET server-side com ?q após o debounce', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, [cursoSeed]);
+    await abrirPagina(page);
+    await expect(page.locator('table tbody tr')).toHaveCount(1);
+
+    await page.getByRole('searchbox', { name: 'Buscar curso' }).fill('civil');
+
+    await expect
+      .poll(() => capturado.listaUrls.some((u) => new URL(u).searchParams.get('q') === 'civil'))
+      .toBe(true);
+
+    // uma request por rajada, não uma por tecla digitada
+    const comQ = capturado.listaUrls.filter((u) => new URL(u).searchParams.has('q'));
+    expect(comQ.length).toBeLessThanOrEqual(2);
+    expect(new URL(comQ[comQ.length - 1]).searchParams.has('cursor')).toBe(false);
   });
 });
