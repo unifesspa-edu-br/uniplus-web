@@ -43,6 +43,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -74,6 +75,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -152,22 +154,20 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
                   <td data-label="Nome">{{ banca.nome }}</td>
                   <td data-label="Fase típica">{{ banca.faseTipica || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(banca)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(banca)"
-                    >
-                      Inativar
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar tipo de banca ' + banca.codigo"
+                      tooltip="Editar tipo de banca"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(banca)"
+                    />
+                    <ui-icon-button
+                      icon="pi-power-off"
+                      [accessibleName]="'Inativar tipo de banca ' + banca.codigo"
+                      tooltip="Inativar tipo de banca"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirRemocao(banca)"
+                    />
                   </td>
                 </tr>
               }

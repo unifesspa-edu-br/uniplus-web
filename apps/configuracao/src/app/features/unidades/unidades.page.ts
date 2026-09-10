@@ -48,6 +48,7 @@ import {
   EmptyStateComponent,
   FilterBarComponent,
   FilterChipsComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   type UiFilterChipOption,
@@ -159,6 +160,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    IconButtonComponent,
     NgTemplateOutlet,
     PagerComponent,
     SpinnerComponent,
@@ -305,22 +307,20 @@ const BACKEND_FIELD_TO_CONTROL = {
                       {{ unidadeSuperiorLabel(unidade.unidadeSuperiorId) }}
                     </td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="recarregandoLista()"
-                        (click)="abrirEdicao(unidade)"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="recarregandoLista()"
-                        (click)="pedirRemocao(unidade)"
-                      >
-                        Remover
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar ' + unidade.sigla"
+                        tooltip="Editar unidade"
+                        [isDisabled]="recarregandoLista()"
+                        (triggered)="abrirEdicao(unidade)"
+                      />
+                      <ui-icon-button
+                        icon="pi-trash"
+                        [accessibleName]="'Remover ' + unidade.sigla"
+                        tooltip="Remover unidade"
+                        [isDisabled]="recarregandoLista()"
+                        (triggered)="pedirRemocao(unidade)"
+                      />
                     </td>
                   </tr>
                 }
@@ -379,15 +379,13 @@ const BACKEND_FIELD_TO_CONTROL = {
           </button>
           <span class="unit-node__type">{{ node.unidade.nome }}</span>
           <div class="unit-node__actions">
-            <button
-              type="button"
-              class="btn btn--tertiary btn--sm btn--rect"
-              [attr.aria-label]="'Editar ' + node.unidade.sigla"
-              [disabled]="recarregandoLista()"
-              (click)="abrirEdicao(node.unidade)"
-            >
-              Editar
-            </button>
+            <ui-icon-button
+              icon="pi-pencil"
+              [accessibleName]="'Editar ' + node.unidade.sigla"
+              tooltip="Editar unidade"
+              [isDisabled]="recarregandoLista()"
+              (triggered)="abrirEdicao(node.unidade)"
+            />
           </div>
         </div>
         @if (node.children.length > 0) {
