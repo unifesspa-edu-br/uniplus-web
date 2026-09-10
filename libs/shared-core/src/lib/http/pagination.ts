@@ -1,4 +1,5 @@
 import { parseLink } from './link-header';
+import type { ProblemDetails } from './problem-details';
 
 /**
  * Helpers de paginação por cursor opaco do contrato V1 da `uniplus-api`
@@ -26,6 +27,45 @@ import { parseLink } from './link-header';
  * 422 `uniplus.cursor.limit_invalido`.
  */
 export const API_MAX_PAGE_SIZE = 100;
+
+/**
+ * Códigos que o binder de cursor pagination da `uniplus-api` emite quando a
+ * continuação não serve mais (`PaginationDomainErrorRegistration.cs`):
+ *
+ * - `uniplus.cursor.invalido` (**400**) — o cursor não continua ESTA consulta:
+ *   busca, ordenação ou filtro divergem do que o assinou.
+ * - `uniplus.cursor.expirado` (**410**) — o cursor passou da validade (15 min).
+ *
+ * Nos dois casos a listagem deve recomeçar do início, sem cursor (a #693 chama
+ * isso de CA-14c). `uniplus.cursor.limit_invalido`/`direcao_invalida` são 422 e
+ * NÃO entram aqui — são erro do parâmetro, não do cursor.
+ */
+export const CURSOR_INVALIDO_CODE = 'uniplus.cursor.invalido';
+export const CURSOR_EXPIRADO_CODE = 'uniplus.cursor.expirado';
+
+/**
+ * O erro veio de um cursor que não continua mais a consulta — a UI deve
+ * recarregar a listagem do começo.
+ *
+ * Casa primeiro pelo `code` do wire. O fallback por `status` 400/410 cobre o
+ * caso em que a resposta não é `problem+json` e o interceptor sintetiza o
+ * `ProblemDetails` com `code` em `uniplus.client.*` (o `code` do cursor não
+ * chega): as rotas paginadas da `uniplus-api` só devolvem 400/410 pelo binder
+ * de cursor, então o status sozinho já identifica o caso com segurança.
+ */
+export function ehCursorDePaginacaoObsoleto(problem: ProblemDetails): boolean {
+  return (
+    problem.code === CURSOR_INVALIDO_CODE ||
+    problem.code === CURSOR_EXPIRADO_CODE ||
+    problem.status === 400 ||
+    problem.status === 410
+  );
+}
+
+/** O cursor obsoleto é por expiração (410 / `uniplus.cursor.expirado`), não por divergência. */
+export function ehCursorDePaginacaoExpirado(problem: ProblemDetails): boolean {
+  return problem.code === CURSOR_EXPIRADO_CODE || problem.status === 410;
+}
 
 declare const cursorBrand: unique symbol;
 
