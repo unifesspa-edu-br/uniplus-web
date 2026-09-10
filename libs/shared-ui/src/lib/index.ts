@@ -19,10 +19,15 @@ export { FilterChipsComponent, type UiFilterChipOption } from './components/filt
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from './components/form-field/form-field';
 export { InstitutionalBarComponent } from './components/institutional-bar/institutional-bar';
-export { IconButtonComponent } from './components/icon-button/icon-button';
+export { IconButtonComponent, type UiTooltipPosition } from './components/icon-button/icon-button';
 export { LoadingOverlayComponent } from './components/loading-overlay/loading-overlay';
 export { NotificationHostComponent } from './components/notification-host/notification-host';
 export { PageHeaderComponent } from './components/page-header/page-header';
+export {
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  ListFooterComponent,
+} from './components/list-footer/list-footer';
 export { PagerComponent } from './components/pager/pager';
 export { SegmentedComponent, type UiSegmentedOption } from './components/segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './components/select/select';
