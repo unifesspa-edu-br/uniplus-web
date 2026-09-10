@@ -489,6 +489,17 @@ ui-vlibras-loader {
   display: contents;
 }
 
+/* Wrapper puro em volta do `ui-pager` — não introduz caixa própria. */
+ui-list-footer {
+  display: contents;
+}
+
+/* Wrapper puro em volta do `<button>` de ação só-ícone — o `<button>` participa
+   direto do flex da célula `.table-responsive__actions`. */
+ui-icon-button {
+  display: contents;
+}
+
 .institutional-bar {
   background: var(--color-primary-900);
   color: var(--text-on-inverse);
@@ -2387,6 +2398,12 @@ body.uni-drawer-open { overflow: hidden; }
 }
 
 .page {
+  /* `position: relative` faz o `.page` ser o bloco contêiner dos descendentes
+     `position: absolute` (ex.: o `span.sr-only` dentro de `<th>`). Sem isso eles
+     escapam do recorte de `overflow` e são posicionados contra o ICB — um
+     `.sr-only` fundo do conteúdo empurra o `scrollHeight` do `<html>` e a
+     página inteira volta a rolar. */
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
