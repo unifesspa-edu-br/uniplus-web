@@ -50,11 +50,12 @@ class HostComponent {
 }
 
 const microtask = (): Promise<void> => Promise.resolve();
+const macrotask = (): Promise<void> => new Promise((resolve) => setTimeout(resolve));
 
-/** Esgota a cadeia de microtasks do serviço + do efeito e repinta. */
+/** Esgota a cadeia de micro/macrotasks (serviço, efeito e `NavigationEnd`) e repinta. */
 async function estabilizar(fixture: ComponentFixture<unknown>): Promise<void> {
   for (let i = 0; i < 3; i += 1) {
-    await microtask();
+    await macrotask();
     fixture.detectChanges();
   }
 }
@@ -133,6 +134,29 @@ describe('BackToTopComponent', () => {
     expect(scroller.scrollTop).toBe(0);
   });
 
+  it('leva o foco ao topo de um contêiner focável ao acionar (CA-12)', async () => {
+    const focavel = scrollerFake({
+      scrollHeight: 1000,
+      clientHeight: 300,
+      scrollTop: 800,
+      tabindex: true,
+    });
+    const foco = vi.spyOn(focavel, 'focus');
+    const { botao } = await montar(focavel);
+
+    botao.click();
+    expect(foco).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('não tenta focar um contêiner sem tabindex ao acionar (CA-06)', async () => {
+    const semFoco = scrollerFake({ scrollHeight: 1000, clientHeight: 300, scrollTop: 800 });
+    const foco = vi.spyOn(semFoco, 'focus');
+    const { botao } = await montar(semFoco);
+
+    botao.click();
+    expect(foco).not.toHaveBeenCalled();
+  });
+
   it('ignora a rolagem de um contêiner auxiliar (CA-09)', async () => {
     const { fixture, botao } = await montar(
       scrollerFake({ scrollHeight: 1000, clientHeight: 300, scrollTop: 0 }),
@@ -175,6 +199,26 @@ describe('BackToTopComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/outra');
     await estabilizar(fixture);
     expect(visivel(botao)).toBe(false);
+  });
+
+  it('religa listener e observer do contêiner padrão a cada navegação (CA-10/CA-18)', async () => {
+    // `main.page` é o mesmo elemento entre rotas — o efeito não dispara —, mas os
+    // filhos que o ResizeObserver acompanha foram trocados pelo conteúdo novo.
+    const scroller = scrollerFake({ scrollHeight: 1000, clientHeight: 300, scrollTop: 0 });
+    const { fixture } = await montar(scroller);
+
+    const add = vi.spyOn(scroller, 'addEventListener');
+    const remove = vi.spyOn(scroller, 'removeEventListener');
+
+    await TestBed.inject(Router).navigateByUrl('/outra');
+    await estabilizar(fixture);
+
+    expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
+    expect(add).toHaveBeenCalledWith(
+      'scroll',
+      expect.any(Function),
+      expect.objectContaining({ passive: true }),
+    );
   });
 
   it('não anima o retorno sob prefers-reduced-motion (CA-16)', async () => {

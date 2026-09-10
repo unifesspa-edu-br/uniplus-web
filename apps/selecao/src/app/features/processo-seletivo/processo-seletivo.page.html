@@ -95,7 +95,7 @@
     <sel-wizard-stepper></sel-wizard-stepper>
   </nav>
   <div class="wiz-body">
-    <div class="wiz-content" #wizContent uiBackToTopContainer>
+    <div class="wiz-content" #wizContent uiBackToTopContainer tabindex="-1">
       <div aria-live="polite" aria-atomic="true">
         @if (store.stepError(); as errors) {
         <div class="step-error" role="alert">
