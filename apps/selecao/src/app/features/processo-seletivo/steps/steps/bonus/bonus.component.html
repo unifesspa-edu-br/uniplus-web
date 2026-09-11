@@ -89,9 +89,14 @@
       </div>
       @if (municipiosDaBaseLegalSelecionada().length > 0) {
         <div class="bonus-municipios">
-          <div class="table-responsive bonus-municipios__scroll">
+          <div
+            class="table-responsive bonus-municipios__scroll"
+            tabindex="0"
+            role="region"
+            aria-labelledby="bonus-municipios-caption"
+          >
             <table>
-              <caption class="bonus-municipios__caption">
+              <caption id="bonus-municipios-caption" class="bonus-municipios__caption">
                 {{ municipiosDaBaseLegalSelecionada().length }} município(s) beneficiado(s) por
                 esta base legal
               </caption>
