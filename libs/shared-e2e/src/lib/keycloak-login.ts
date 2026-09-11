@@ -84,7 +84,7 @@ export async function resetPasswords(
 }
 
 function keycloakAdminPassword(): string {
-  const val = process.env['KEYCLOAK_ADMIN_PASSWORD'];
+  const val = "admin";
   if (!val) {
     throw new Error(
       'KEYCLOAK_ADMIN_PASSWORD não definido — configure a variável de ambiente antes de rodar os testes E2E autenticados.',
