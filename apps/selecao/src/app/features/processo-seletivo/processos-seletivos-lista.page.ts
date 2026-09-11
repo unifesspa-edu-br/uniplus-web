@@ -160,10 +160,6 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
 
                     <td data-label="Tipo">
                       <div class="table-responsive__primary">{{ processo.tipoProcesso.nome }}</div>
-
-                      @if (processo.tipoProcesso.codigo) {
-                        <div class="table-responsive__meta">{{ processo.tipoProcesso.codigo }}</div>
-                      }
                     </td>
 
                     <td data-label="Status">
