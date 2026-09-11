@@ -112,7 +112,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova base legal' }).click();
+    await page.getByRole('button', { name: 'Nova base legal' }).first().click();
     await page.locator('[formControlName="tipoInstrumento"]').selectOption('PORTARIA');
     await page.locator('[formControlName="identificacao"]').fill('Portaria Unifesspa nº 2514/2023');
     await page.locator('[formControlName="descricao"]').fill('Institui inclusão regional.');
@@ -136,7 +136,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Nova base legal' }).click();
+    await page.getByRole('button', { name: 'Nova base legal' }).first().click();
     await page.locator('[formControlName="tipoInstrumento"]').selectOption('PORTARIA');
     await page.locator('[formControlName="identificacao"]').fill('Portaria de teste');
     await page.locator('[formControlName="descricao"]').fill('Descrição de teste válida.');

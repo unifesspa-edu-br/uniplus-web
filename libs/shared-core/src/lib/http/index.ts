@@ -41,6 +41,8 @@ export {
 export { coletarPaginas } from './coletar-paginas';
 export { lookupCompleto } from './lookup-completo';
 export type { LookupCompleto } from './lookup-completo';
+export { useCursorObsoletoRecovery } from './cursor-obsoleto-recovery';
+export type { UseCursorObsoletoRecoveryOptions } from './cursor-obsoleto-recovery';
 
 export { resolverVinculo } from './resolucao-de-vinculo';
 export type { EstadoDoVinculo, ResolucaoDeVinculo } from './resolucao-de-vinculo';
