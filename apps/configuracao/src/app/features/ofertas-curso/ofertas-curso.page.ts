@@ -30,13 +30,13 @@ import {
   ResolucaoDeVinculo,
   cursorToString,
   ehCursorDePaginacaoExpirado,
-  ehCursorDePaginacaoObsoleto,
   extractNextCursor,
   extractPrevCursor,
   idempotencyKey,
   lookupCompleto,
   resolverVinculo,
   useApiResource,
+  useCursorObsoletoRecovery,
   withIdempotencyKey,
   withVendorMime,
 } from '@uniplus/shared-core/http';
@@ -725,18 +725,20 @@ export class OfertasCursoPage {
     },
   });
 
-  /**
-   * Uma decisão só, consultada pelo `errorMessage` e pelo `effect` de
-   * recuperação (evita duas checagens que divergem): a resposta é de cursor
-   * obsoleto (400/410) **e** havia uma página navegada da qual recomeçar. Na
-   * primeira página (`pagina() === undefined`) é `false` — um 400/410 ali cai na
-   * mensagem genérica, não numa tela muda.
-   */
-  private readonly recuperandoDeCursorObsoleto = computed(() => {
-    const problem = this.lista.problem();
-    return (
-      problem != null && ehCursorDePaginacaoObsoleto(problem) && this.pagina() !== undefined
-    );
+  // Cursor que não continua esta consulta (400) ou que expirou (410):
+  // recomeça a paginação sem cursor e avisa o operador (CA-14c).
+  private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    reiniciarPagina: () => this.pagina.set(undefined),
+    aoRecuperar: (problem) => {
+      this.notifications.info(
+        problem && ehCursorDePaginacaoExpirado(problem)
+          ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
+          : 'A paginação foi reiniciada porque a consulta mudou.',
+        'Recarregamos a listagem do começo.',
+      );
+    },
   });
 
   protected readonly errorMessage = computed<string | null>(() => {
@@ -931,25 +933,6 @@ export class OfertasCursoPage {
         const titulo = this.problemI18n.resolve(problem).title;
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
-    });
-
-    // Cursor que não continua esta consulta (400) ou que expirou (410):
-    // recomeça a paginação sem cursor e avisa o operador (CA-14c). Mesma decisão
-    // do `errorMessage` (`recuperandoDeCursorObsoleto`).
-    effect(() => {
-      if (!this.recuperandoDeCursorObsoleto()) {
-        return;
-      }
-      const problem = untracked(() => this.lista.problem());
-      untracked(() => {
-        this.pagina.set(undefined);
-        this.notifications.info(
-          problem && ehCursorDePaginacaoExpirado(problem)
-            ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
-            : 'A paginação foi reiniciada porque a consulta mudou.',
-          'Recarregamos a listagem do começo.',
-        );
-      });
     });
 
     this.cursos.recarregar();
