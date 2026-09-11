@@ -95,7 +95,7 @@
     <sel-wizard-stepper></sel-wizard-stepper>
   </nav>
   <div class="wiz-body">
-    <div class="wiz-content" #wizContent (scroll)="onContentScroll($event)">
+    <div class="wiz-content" #wizContent uiBackToTopContainer tabindex="-1">
       <div aria-live="polite" aria-atomic="true">
         @if (store.stepError(); as errors) {
         <div class="step-error" role="alert">
@@ -206,17 +206,6 @@
     </div>
   </div>
 </div>
-<button
-  class="uni-back-to-top"
-  aria-label="Voltar ao topo da página"
-  type="button"
-  [hidden]="!showBackToTop()"
-  (click)="scrollToTop()"
->
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-    <path d="M18 15l-6-6-6 6" />
-  </svg>
-</button>
 }
 <!-- O diálogo permanece no DOM e é a visibilidade que muda. Destruí-lo por um
      @if pularia o caminho de fechamento do componente, que é quem devolve o

@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import type { ProblemDetails } from './problem-details';
 import {
   API_MAX_PAGE_SIZE,
   createCursor,
   cursorToString,
+  ehCursorDePaginacaoExpirado,
+  ehCursorDePaginacaoObsoleto,
   extractNextCursor,
   extractPrevCursor,
 } from './pagination';
+
+function problem(overrides: Partial<ProblemDetails>): ProblemDetails {
+  return {
+    type: 'about:blank',
+    title: 'x',
+    status: 500,
+    code: 'uniplus.x.y',
+    traceId: '',
+    ...overrides,
+  };
+}
 
 function extractRequiredNextCursor(linkHeader: string): string {
   const next = extractNextCursor(linkHeader);
@@ -200,5 +214,41 @@ describe('extractPrevCursor — header Link → cursor da página anterior (ADR-
 describe('API_MAX_PAGE_SIZE', () => {
   it('espelha o teto 1..100 do ADR-0026 do backend uniplus-api', () => {
     expect(API_MAX_PAGE_SIZE).toBe(100);
+  });
+});
+
+describe('ehCursorDePaginacaoObsoleto — cursor que não continua a consulta', () => {
+  it('casa pelo code uniplus.cursor.invalido (400)', () => {
+    expect(ehCursorDePaginacaoObsoleto(problem({ status: 400, code: 'uniplus.cursor.invalido' }))).toBe(true);
+  });
+
+  it('casa pelo code uniplus.cursor.expirado (410)', () => {
+    expect(ehCursorDePaginacaoObsoleto(problem({ status: 410, code: 'uniplus.cursor.expirado' }))).toBe(true);
+  });
+
+  it('casa pelo status 400/410 quando o corpo não é problem+json e o code veio sintetizado', () => {
+    expect(
+      ehCursorDePaginacaoObsoleto(problem({ status: 410, code: 'uniplus.client.unexpected_response' })),
+    ).toBe(true);
+    expect(
+      ehCursorDePaginacaoObsoleto(problem({ status: 400, code: 'uniplus.client.network_error' })),
+    ).toBe(true);
+  });
+
+  it('não casa 422 (erro de parâmetro: sort/q/limit) nem 5xx', () => {
+    expect(
+      ehCursorDePaginacaoObsoleto(problem({ status: 422, code: 'uniplus.configuracao.consulta.busca_muito_longa' })),
+    ).toBe(false);
+    expect(ehCursorDePaginacaoObsoleto(problem({ status: 500, code: 'uniplus.x.y' }))).toBe(false);
+  });
+});
+
+describe('ehCursorDePaginacaoExpirado — só expiração (410)', () => {
+  it('true para 410 / uniplus.cursor.expirado', () => {
+    expect(ehCursorDePaginacaoExpirado(problem({ status: 410, code: 'uniplus.cursor.expirado' }))).toBe(true);
+  });
+
+  it('false para 400 / uniplus.cursor.invalido (divergência, não expiração)', () => {
+    expect(ehCursorDePaginacaoExpirado(problem({ status: 400, code: 'uniplus.cursor.invalido' }))).toBe(false);
   });
 });

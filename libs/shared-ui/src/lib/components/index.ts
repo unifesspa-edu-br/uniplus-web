@@ -1,5 +1,8 @@
 export { A11yMenuComponent } from './a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from './alert/alert';
+export { BackToTopComponent } from './back-to-top/back-to-top';
+export { BackToTopContainerDirective } from './back-to-top/back-to-top-container.directive';
+export { BackToTopScrollService } from './back-to-top/back-to-top.service';
 export { BreadcrumbComponent, type UiBreadcrumbItem } from './breadcrumb/breadcrumb';
 export {
   ButtonComponent,
@@ -21,12 +24,17 @@ export {
   type UiFilterChipOption,
 } from './filter-chips/filter-chips';
 export { FormFieldComponent } from './form-field/form-field';
-export { IconButtonComponent } from './icon-button/icon-button';
+export { IconButtonComponent, type UiTooltipPosition } from './icon-button/icon-button';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';
 export { LoadingOverlayComponent } from './loading-overlay/loading-overlay';
 export { LookupAlertComponent, type UiLookupFalho } from './lookup-alert/lookup-alert';
 export { LookupLabelComponent } from './lookup-label/lookup-label';
 export { PageHeaderComponent } from './page-header/page-header';
+export {
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTIONS,
+  ListFooterComponent,
+} from './list-footer/list-footer';
 export { PagerComponent } from './pager/pager';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './select/select';

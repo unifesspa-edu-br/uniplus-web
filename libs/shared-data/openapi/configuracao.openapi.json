@@ -27,7 +27,9 @@
   "paths": {
     "/api/auth/me": {
       "get": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Retorna o usu\u00E1rio autenticado",
         "description": "Retorna informa\u00E7\u00F5es do usu\u00E1rio extra\u00EDdas do access token. Requer autentica\u00E7\u00E3o.",
         "operationId": "GetAuthenticatedUser",
@@ -62,7 +64,9 @@
     },
     "/api/profile/me": {
       "get": {
-        "tags": ["Profile"],
+        "tags": [
+          "Profile"
+        ],
         "summary": "Retorna o perfil do usu\u00E1rio autenticado",
         "description": "Retorna atributos de identidade e institucionais (CPF, NomeSocial) extra\u00EDdos do access token. Requer autentica\u00E7\u00E3o.",
         "operationId": "GetAuthenticatedUserProfile",
@@ -95,9 +99,11 @@
         ]
       }
     },
-    "/api/configuracao/calendarios-dias-uteis": {
+    "/api/configuracao/base-legal-bonus-regional": {
       "get": {
-        "tags": ["CalendariosDiasUteis"],
+        "tags": [
+          "BaseLegalBonusRegional"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -121,7 +127,489 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string",
+              "default": "next"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Link": {
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "description": "Quantidade de itens retornados na p\u00E1gina atual (sempre menor ou igual ao limit efetivo).",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.uniplus.base-legal-bonus-regional.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BaseLegalBonusRegionalDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-uniplus-paginated": true
+      }
+    },
+    "/api/configuracao/base-legal-bonus-regional/{id}": {
+      "get": {
+        "tags": [
+          "BaseLegalBonusRegional"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.base-legal-bonus-regional.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseLegalBonusRegionalDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracao/admin/base-legal-bonus-regional": {
+      "post": {
+        "tags": [
+          "BaseLegalBonusRegional"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarBaseLegalBonusRegionalCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarBaseLegalBonusRegionalCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarBaseLegalBonusRegionalCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Requisi\u00E7\u00E3o concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois \u2014 a opera\u00E7\u00E3o anterior ainda n\u00E3o concluiu.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/configuracao/admin/base-legal-bonus-regional/{id}": {
+      "put": {
+        "tags": [
+          "BaseLegalBonusRegional"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarBaseLegalBonusRegionalCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarBaseLegalBonusRegionalCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarBaseLegalBonusRegionalCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Requisi\u00E7\u00E3o concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois \u2014 a opera\u00E7\u00E3o anterior ainda n\u00E3o concluiu.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      },
+      "delete": {
+        "tags": [
+          "BaseLegalBonusRegional"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/configuracao/calendarios-dias-uteis": {
+      "get": {
+        "tags": [
+          "CalendariosDiasUteis"
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor opaco AES-GCM emitido pelo servidor no header Link da p\u00E1gina anterior. Ausente na primeira p\u00E1gina. Cliente trata como string opaca \u2014 n\u00E3o decodificar (ADR-0026, ADR-0031).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "schema": {
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -202,7 +690,9 @@
     },
     "/api/configuracao/calendarios-dias-uteis/{id}": {
       "get": {
-        "tags": ["CalendariosDiasUteis"],
+        "tags": [
+          "CalendariosDiasUteis"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -250,7 +740,9 @@
     },
     "/api/configuracao/admin/calendarios-dias-uteis": {
       "post": {
-        "tags": ["CalendariosDiasUteis"],
+        "tags": [
+          "CalendariosDiasUteis"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -380,7 +872,9 @@
     },
     "/api/configuracao/admin/calendarios-dias-uteis/{id}/vigente": {
       "post": {
-        "tags": ["CalendariosDiasUteis"],
+        "tags": [
+          "CalendariosDiasUteis"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -473,9 +967,179 @@
         "x-uniplus-idempotent": true
       }
     },
+    "/api/configuracao/admin/calendarios-dias-uteis/{id}/dias-nao-uteis": {
+      "post": {
+        "tags": [
+          "CalendariosDiasUteis"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DiaNaoUtilCommandItem"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DiaNaoUtilCommandItem"
+                  }
+                ]
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DiaNaoUtilCommandItem"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarioDiasUteisDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarioDiasUteisDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarioDiasUteisDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/configuracao/admin/calendarios-dias-uteis/{id}": {
       "delete": {
-        "tags": ["CalendariosDiasUteis"],
+        "tags": [
+          "CalendariosDiasUteis"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -541,7 +1205,9 @@
     },
     "/api/configuracao/campi": {
       "get": {
-        "tags": ["Campi"],
+        "tags": [
+          "Campi"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -565,7 +1231,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -646,7 +1315,9 @@
     },
     "/api/configuracao/campi/{id}": {
       "get": {
-        "tags": ["Campi"],
+        "tags": [
+          "Campi"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -694,7 +1365,9 @@
     },
     "/api/configuracao/admin/campi": {
       "post": {
-        "tags": ["Campi"],
+        "tags": [
+          "Campi"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -824,7 +1497,9 @@
     },
     "/api/configuracao/admin/campi/{id}": {
       "put": {
-        "tags": ["Campi"],
+        "tags": [
+          "Campi"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -951,7 +1626,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["Campi"],
+        "tags": [
+          "Campi"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1017,7 +1694,9 @@
     },
     "/api/configuracao/categorias-documento": {
       "get": {
-        "tags": ["CategoriasDocumento"],
+        "tags": [
+          "CategoriasDocumento"
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -1047,7 +1726,9 @@
     },
     "/api/configuracao/categorias-documento/{id}": {
       "get": {
-        "tags": ["CategoriasDocumento"],
+        "tags": [
+          "CategoriasDocumento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1095,7 +1776,9 @@
     },
     "/api/configuracao/admin/categorias-documento": {
       "post": {
-        "tags": ["CategoriasDocumento"],
+        "tags": [
+          "CategoriasDocumento"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -1225,7 +1908,9 @@
     },
     "/api/configuracao/admin/categorias-documento/{id}": {
       "put": {
-        "tags": ["CategoriasDocumento"],
+        "tags": [
+          "CategoriasDocumento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1352,7 +2037,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["CategoriasDocumento"],
+        "tags": [
+          "CategoriasDocumento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1408,7 +2095,9 @@
     },
     "/api/configuracao/condicoes-atendimento": {
       "get": {
-        "tags": ["CondicoesAtendimento"],
+        "tags": [
+          "CondicoesAtendimento"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -1432,7 +2121,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -1513,7 +2205,9 @@
     },
     "/api/configuracao/condicoes-atendimento/{id}": {
       "get": {
-        "tags": ["CondicoesAtendimento"],
+        "tags": [
+          "CondicoesAtendimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1561,7 +2255,9 @@
     },
     "/api/configuracao/admin/condicoes-atendimento": {
       "post": {
-        "tags": ["CondicoesAtendimento"],
+        "tags": [
+          "CondicoesAtendimento"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -1691,7 +2387,9 @@
     },
     "/api/configuracao/admin/condicoes-atendimento/{id}": {
       "put": {
-        "tags": ["CondicoesAtendimento"],
+        "tags": [
+          "CondicoesAtendimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1818,7 +2516,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["CondicoesAtendimento"],
+        "tags": [
+          "CondicoesAtendimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1884,8 +2584,26 @@
     },
     "/api/configuracao/cursos": {
       "get": {
-        "tags": ["Cursos"],
+        "tags": [
+          "Cursos"
+        ],
         "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Texto pesquisado. Insens\u00EDvel a caixa e a acentua\u00E7\u00E3o. At\u00E9 200 caracteres.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Campos de ordena\u00E7\u00E3o separados por v\u00EDrgula, na ordem de prioridade; \u0027-\u0027 prefixa o campo decrescente. Exemplo: sort=nome,-grau. Campos aceitos: nome, codigo, grau, nivelEnsino, criadoEm. Sem o par\u00E2metro, vale a ordem alfab\u00E9tica padr\u00E3o.",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "cursor",
             "in": "query",
@@ -1908,7 +2626,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -1989,7 +2710,9 @@
     },
     "/api/configuracao/cursos/{id}": {
       "get": {
-        "tags": ["Cursos"],
+        "tags": [
+          "Cursos"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2037,7 +2760,9 @@
     },
     "/api/configuracao/admin/cursos": {
       "post": {
-        "tags": ["Cursos"],
+        "tags": [
+          "Cursos"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -2167,7 +2892,9 @@
     },
     "/api/configuracao/admin/cursos/{id}": {
       "put": {
-        "tags": ["Cursos"],
+        "tags": [
+          "Cursos"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2294,7 +3021,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["Cursos"],
+        "tags": [
+          "Cursos"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2360,7 +3089,9 @@
     },
     "/api/configuracao/fases-canonicas": {
       "get": {
-        "tags": ["FasesCanonicas"],
+        "tags": [
+          "FasesCanonicas"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -2384,7 +3115,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -2465,7 +3199,9 @@
     },
     "/api/configuracao/fases-canonicas/{id}": {
       "get": {
-        "tags": ["FasesCanonicas"],
+        "tags": [
+          "FasesCanonicas"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2513,7 +3249,9 @@
     },
     "/api/configuracao/admin/fases-canonicas": {
       "post": {
-        "tags": ["FasesCanonicas"],
+        "tags": [
+          "FasesCanonicas"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -2643,7 +3381,9 @@
     },
     "/api/configuracao/admin/fases-canonicas/{id}": {
       "put": {
-        "tags": ["FasesCanonicas"],
+        "tags": [
+          "FasesCanonicas"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2770,7 +3510,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["FasesCanonicas"],
+        "tags": [
+          "FasesCanonicas"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2826,7 +3568,9 @@
     },
     "/api/configuracao/fatos-candidato": {
       "get": {
-        "tags": ["FatosCandidato"],
+        "tags": [
+          "FatosCandidato"
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -2856,7 +3600,9 @@
     },
     "/api/configuracao/fatos-candidato/{codigo}": {
       "get": {
-        "tags": ["FatosCandidato"],
+        "tags": [
+          "FatosCandidato"
+        ],
         "parameters": [
           {
             "name": "codigo",
@@ -2903,7 +3649,9 @@
     },
     "/api/configuracao/locais-oferta": {
       "get": {
-        "tags": ["LocaisOferta"],
+        "tags": [
+          "LocaisOferta"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -2927,7 +3675,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -3008,7 +3759,9 @@
     },
     "/api/configuracao/locais-oferta/{id}": {
       "get": {
-        "tags": ["LocaisOferta"],
+        "tags": [
+          "LocaisOferta"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3056,7 +3809,9 @@
     },
     "/api/configuracao/admin/locais-oferta": {
       "post": {
-        "tags": ["LocaisOferta"],
+        "tags": [
+          "LocaisOferta"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -3186,7 +3941,9 @@
     },
     "/api/configuracao/admin/locais-oferta/{id}": {
       "put": {
-        "tags": ["LocaisOferta"],
+        "tags": [
+          "LocaisOferta"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3313,7 +4070,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["LocaisOferta"],
+        "tags": [
+          "LocaisOferta"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3379,7 +4138,9 @@
     },
     "/api/configuracao/modalidades": {
       "get": {
-        "tags": ["Modalidades"],
+        "tags": [
+          "Modalidades"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -3403,7 +4164,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -3484,7 +4248,9 @@
     },
     "/api/configuracao/modalidades/{id}": {
       "get": {
-        "tags": ["Modalidades"],
+        "tags": [
+          "Modalidades"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3532,7 +4298,9 @@
     },
     "/api/configuracao/admin/modalidades": {
       "post": {
-        "tags": ["Modalidades"],
+        "tags": [
+          "Modalidades"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -3662,7 +4430,9 @@
     },
     "/api/configuracao/admin/modalidades/{id}": {
       "put": {
-        "tags": ["Modalidades"],
+        "tags": [
+          "Modalidades"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3789,7 +4559,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["Modalidades"],
+        "tags": [
+          "Modalidades"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3855,7 +4627,9 @@
     },
     "/api/configuracao/ofertas-curso": {
       "get": {
-        "tags": ["OfertasCurso"],
+        "tags": [
+          "OfertasCurso"
+        ],
         "parameters": [
           {
             "name": "cursoId",
@@ -3863,6 +4637,22 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Texto pesquisado. Insens\u00EDvel a caixa e a acentua\u00E7\u00E3o. At\u00E9 200 caracteres.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Campos de ordena\u00E7\u00E3o separados por v\u00EDrgula, na ordem de prioridade; \u0027-\u0027 prefixa o campo decrescente. Exemplo: sort=cursoNome,-programaDeOferta. Campos aceitos: cursoNome, cursoCodigo, unidadeOfertanteSigla, programaDeOferta, formatoPedagogico, regimeDeFuncionamento, regimeDeTurno, criadoEm. Sem o par\u00E2metro, vale a ordem alfab\u00E9tica padr\u00E3o.",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -3887,7 +4677,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -3968,7 +4761,9 @@
     },
     "/api/configuracao/ofertas-curso/{id}": {
       "get": {
-        "tags": ["OfertasCurso"],
+        "tags": [
+          "OfertasCurso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4016,7 +4811,9 @@
     },
     "/api/configuracao/admin/ofertas-curso": {
       "post": {
-        "tags": ["OfertasCurso"],
+        "tags": [
+          "OfertasCurso"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -4146,7 +4943,9 @@
     },
     "/api/configuracao/admin/ofertas-curso/{id}": {
       "put": {
-        "tags": ["OfertasCurso"],
+        "tags": [
+          "OfertasCurso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4273,7 +5072,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["OfertasCurso"],
+        "tags": [
+          "OfertasCurso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4329,7 +5130,9 @@
     },
     "/api/configuracao/pesos-area-enem": {
       "get": {
-        "tags": ["PesosAreaEnem"],
+        "tags": [
+          "PesosAreaEnem"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -4353,7 +5156,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -4434,7 +5240,9 @@
     },
     "/api/configuracao/pesos-area-enem/{id}": {
       "get": {
-        "tags": ["PesosAreaEnem"],
+        "tags": [
+          "PesosAreaEnem"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4482,7 +5290,9 @@
     },
     "/api/configuracao/admin/pesos-area-enem": {
       "post": {
-        "tags": ["PesosAreaEnem"],
+        "tags": [
+          "PesosAreaEnem"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -4612,7 +5422,9 @@
     },
     "/api/configuracao/admin/pesos-area-enem/{id}": {
       "put": {
-        "tags": ["PesosAreaEnem"],
+        "tags": [
+          "PesosAreaEnem"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4739,7 +5551,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["PesosAreaEnem"],
+        "tags": [
+          "PesosAreaEnem"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4795,7 +5609,9 @@
     },
     "/api/configuracao/precedencias-fase": {
       "get": {
-        "tags": ["PrecedenciasFase"],
+        "tags": [
+          "PrecedenciasFase"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -4819,7 +5635,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -4900,7 +5719,9 @@
     },
     "/api/configuracao/precedencias-fase/{id}": {
       "get": {
-        "tags": ["PrecedenciasFase"],
+        "tags": [
+          "PrecedenciasFase"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4948,7 +5769,9 @@
     },
     "/api/configuracao/admin/precedencias-fase": {
       "post": {
-        "tags": ["PrecedenciasFase"],
+        "tags": [
+          "PrecedenciasFase"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -5078,7 +5901,9 @@
     },
     "/api/configuracao/admin/precedencias-fase/{id}": {
       "put": {
-        "tags": ["PrecedenciasFase"],
+        "tags": [
+          "PrecedenciasFase"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -5205,7 +6030,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["PrecedenciasFase"],
+        "tags": [
+          "PrecedenciasFase"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -5261,7 +6088,9 @@
     },
     "/api/configuracao/recursos-acessibilidade": {
       "get": {
-        "tags": ["RecursosAcessibilidade"],
+        "tags": [
+          "RecursosAcessibilidade"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -5285,7 +6114,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -5366,7 +6198,9 @@
     },
     "/api/configuracao/recursos-acessibilidade/{id}": {
       "get": {
-        "tags": ["RecursosAcessibilidade"],
+        "tags": [
+          "RecursosAcessibilidade"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -5414,7 +6248,9 @@
     },
     "/api/configuracao/admin/recursos-acessibilidade": {
       "post": {
-        "tags": ["RecursosAcessibilidade"],
+        "tags": [
+          "RecursosAcessibilidade"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -5544,7 +6380,9 @@
     },
     "/api/configuracao/admin/recursos-acessibilidade/{id}": {
       "put": {
-        "tags": ["RecursosAcessibilidade"],
+        "tags": [
+          "RecursosAcessibilidade"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -5671,7 +6509,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["RecursosAcessibilidade"],
+        "tags": [
+          "RecursosAcessibilidade"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -5727,7 +6567,9 @@
     },
     "/api/configuracao/referencias-reserva-demografica": {
       "get": {
-        "tags": ["ReferenciasReservaDemografica"],
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -5751,7 +6593,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -5832,7 +6677,9 @@
     },
     "/api/configuracao/referencias-reserva-demografica/{id}": {
       "get": {
-        "tags": ["ReferenciasReservaDemografica"],
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -5880,7 +6727,9 @@
     },
     "/api/configuracao/admin/referencias-reserva-demografica": {
       "post": {
-        "tags": ["ReferenciasReservaDemografica"],
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -6010,7 +6859,9 @@
     },
     "/api/configuracao/admin/referencias-reserva-demografica/{id}": {
       "put": {
-        "tags": ["ReferenciasReservaDemografica"],
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6137,7 +6988,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["ReferenciasReservaDemografica"],
+        "tags": [
+          "ReferenciasReservaDemografica"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6193,7 +7046,9 @@
     },
     "/api/configuracao/termos-consentimento": {
       "get": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "q",
@@ -6225,7 +7080,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -6306,7 +7164,9 @@
     },
     "/api/configuracao/termos-consentimento/{id}": {
       "get": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6354,7 +7214,9 @@
     },
     "/api/configuracao/admin/termos-consentimento": {
       "post": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -6484,7 +7346,9 @@
     },
     "/api/configuracao/admin/termos-consentimento/{id}/rascunho": {
       "put": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6613,7 +7477,9 @@
     },
     "/api/configuracao/admin/termos-consentimento/{id}/revisar": {
       "post": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6715,7 +7581,9 @@
     },
     "/api/configuracao/admin/termos-consentimento/{id}/promover": {
       "post": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6817,7 +7685,9 @@
     },
     "/api/configuracao/admin/termos-consentimento/{id}": {
       "delete": {
-        "tags": ["TermosConsentimento"],
+        "tags": [
+          "TermosConsentimento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -6883,7 +7753,9 @@
     },
     "/api/configuracao/tipos-banca": {
       "get": {
-        "tags": ["TiposBanca"],
+        "tags": [
+          "TiposBanca"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -6907,7 +7779,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -6988,7 +7863,9 @@
     },
     "/api/configuracao/tipos-banca/{id}": {
       "get": {
-        "tags": ["TiposBanca"],
+        "tags": [
+          "TiposBanca"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7036,7 +7913,9 @@
     },
     "/api/configuracao/admin/tipos-banca": {
       "post": {
-        "tags": ["TiposBanca"],
+        "tags": [
+          "TiposBanca"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -7166,7 +8045,9 @@
     },
     "/api/configuracao/admin/tipos-banca/{id}": {
       "put": {
-        "tags": ["TiposBanca"],
+        "tags": [
+          "TiposBanca"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7293,7 +8174,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["TiposBanca"],
+        "tags": [
+          "TiposBanca"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7349,7 +8232,9 @@
     },
     "/api/configuracao/tipos-deficiencia": {
       "get": {
-        "tags": ["TiposDeficiencia"],
+        "tags": [
+          "TiposDeficiencia"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -7373,7 +8258,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -7454,7 +8342,9 @@
     },
     "/api/configuracao/tipos-deficiencia/{id}": {
       "get": {
-        "tags": ["TiposDeficiencia"],
+        "tags": [
+          "TiposDeficiencia"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7502,7 +8392,9 @@
     },
     "/api/configuracao/admin/tipos-deficiencia": {
       "post": {
-        "tags": ["TiposDeficiencia"],
+        "tags": [
+          "TiposDeficiencia"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -7632,7 +8524,9 @@
     },
     "/api/configuracao/admin/tipos-deficiencia/{id}": {
       "put": {
-        "tags": ["TiposDeficiencia"],
+        "tags": [
+          "TiposDeficiencia"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7759,7 +8653,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["TiposDeficiencia"],
+        "tags": [
+          "TiposDeficiencia"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7815,7 +8711,9 @@
     },
     "/api/configuracao/tipos-documento": {
       "get": {
-        "tags": ["TiposDocumento"],
+        "tags": [
+          "TiposDocumento"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -7839,7 +8737,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -7920,7 +8821,9 @@
     },
     "/api/configuracao/tipos-documento/{id}": {
       "get": {
-        "tags": ["TiposDocumento"],
+        "tags": [
+          "TiposDocumento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -7968,7 +8871,9 @@
     },
     "/api/configuracao/admin/tipos-documento": {
       "post": {
-        "tags": ["TiposDocumento"],
+        "tags": [
+          "TiposDocumento"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -8098,7 +9003,9 @@
     },
     "/api/configuracao/admin/tipos-documento/{id}": {
       "put": {
-        "tags": ["TiposDocumento"],
+        "tags": [
+          "TiposDocumento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -8225,7 +9132,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["TiposDocumento"],
+        "tags": [
+          "TiposDocumento"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -8281,7 +9190,9 @@
     },
     "/api/configuracao/tipos-etapa": {
       "get": {
-        "tags": ["TiposEtapa"],
+        "tags": [
+          "TiposEtapa"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -8305,7 +9216,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -8386,7 +9300,9 @@
     },
     "/api/configuracao/tipos-etapa/{id}": {
       "get": {
-        "tags": ["TiposEtapa"],
+        "tags": [
+          "TiposEtapa"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -8434,7 +9350,9 @@
     },
     "/api/configuracao/admin/tipos-etapa": {
       "post": {
-        "tags": ["TiposEtapa"],
+        "tags": [
+          "TiposEtapa"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -8564,7 +9482,9 @@
     },
     "/api/configuracao/admin/tipos-etapa/{id}": {
       "put": {
-        "tags": ["TiposEtapa"],
+        "tags": [
+          "TiposEtapa"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -8691,7 +9611,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["TiposEtapa"],
+        "tags": [
+          "TiposEtapa"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -8757,7 +9679,9 @@
     },
     "/api/configuracao/tipos-processo": {
       "get": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -8781,7 +9705,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -8862,7 +9789,9 @@
     },
     "/api/configuracao/tipos-processo/{id}": {
       "get": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -8910,7 +9839,9 @@
     },
     "/api/configuracao/admin/tipos-processo": {
       "get": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "apenasAtivos",
@@ -8942,7 +9873,10 @@
             "in": "query",
             "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
-              "enum": ["next", "prev"],
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string",
               "default": "next"
             }
@@ -9046,7 +9980,9 @@
         "x-uniplus-paginated": true
       },
       "post": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -9176,7 +10112,9 @@
     },
     "/api/configuracao/admin/tipos-processo/{id}": {
       "get": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "operationId": "ObterTipoProcessoParaManutencao",
         "parameters": [
           {
@@ -9248,7 +10186,9 @@
         ]
       },
       "put": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -9375,7 +10315,9 @@
         "x-uniplus-idempotent": true
       },
       "delete": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -9451,7 +10393,9 @@
     },
     "/api/configuracao/admin/tipos-processo/{id}/ativacao": {
       "post": {
-        "tags": ["TiposProcesso"],
+        "tags": [
+          "TiposProcesso"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -9553,7 +10497,9 @@
     },
     "/api/configuracao/vocabularios/tipos-banca": {
       "get": {
-        "tags": ["Vocabularios"],
+        "tags": [
+          "Vocabularios"
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -9583,7 +10529,9 @@
     },
     "/api/configuracao/vocabularios/fases-canonicas": {
       "get": {
-        "tags": ["Vocabularios"],
+        "tags": [
+          "Vocabularios"
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -9610,10 +10558,85 @@
           }
         }
       }
+    },
+    "/api/configuracao/vocabularios/tipos-instrumento-normativo": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.codigo-tipo-instrumento-normativo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoInstrumentoNormativoVocabularioDto"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AtualizarBaseLegalBonusRegionalCommand": {
+        "required": [
+          "id",
+          "tipoInstrumento",
+          "identificacao",
+          "descricao",
+          "municipios"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoInstrumento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "identificacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "municipios": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CriarBaseLegalBonusRegionalMunicipioCommand"
+            }
+          }
+        }
+      },
       "AtualizarCampusCommand": {
         "required": [
           "id",
@@ -9632,19 +10655,34 @@
             "format": "uuid"
           },
           "sigla": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeCodigoIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeNome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeUf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "endereco": {
             "oneOf": [
@@ -9657,12 +10695,19 @@
             ]
           },
           "codigoEmec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarCategoriaDocumentoCommand": {
-        "required": ["id", "codigo", "nome"],
+        "required": [
+          "id",
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9670,23 +10715,40 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ordem": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           }
         }
       },
       "AtualizarCondicaoAtendimentoCommand": {
-        "required": ["id", "codigo", "nome"],
+        "required": [
+          "id",
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9694,18 +10756,33 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarCursoCommand": {
-        "required": ["id", "codigo", "nome", "grau", "nivelEnsino"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "grau",
+          "nivelEnsino"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9713,24 +10790,41 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "grau": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nivelEnsino": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "grupoAreaEnem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarFaseCanonicaCommand": {
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9738,13 +10832,22 @@
             "format": "uuid"
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "donoTipico": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "agrupaEtapas": {
             "type": "boolean",
@@ -9755,7 +10858,10 @@
             "default": false
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "coletaInscricao": {
             "type": "boolean",
@@ -9766,7 +10872,10 @@
             "default": false
           },
           "origemData": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -9791,17 +10900,29 @@
             "$ref": "#/components/schemas/TipoLocalOferta"
           },
           "campusResponsavelId": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "cidadeCodigoIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeNome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeUf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "endereco": {
             "oneOf": [
@@ -9814,12 +10935,17 @@
             ]
           },
           "codigoEmec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarModalidadeCommand": {
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9827,45 +10953,84 @@
             "format": "uuid"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "naturezaLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "composicaoVagas": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "composicaoOrigem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regraRemanejamento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoDestino": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoPar": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoFallback": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criteriosCumulativos": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "type": "string"
             }
           },
           "acaoQuandoIndeferido": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarOfertaCursoCommand": {
-        "required": ["id", "programaDeOferta", "regimeDeFuncionamento", "regimeDeTurno", "turnos"],
+        "required": [
+          "id",
+          "programaDeOferta",
+          "regimeDeFuncionamento",
+          "regimeDeTurno",
+          "turnos"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9873,39 +11038,70 @@
             "format": "uuid"
           },
           "programaDeOferta": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regimeDeFuncionamento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regimeDeTurno": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "turnos": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "type": "string"
             }
           },
           "formatoPedagogico": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "eMecCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigoSga": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "atoAutorizacaoMec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -9928,41 +11124,65 @@
           },
           "pesoRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoCienciasNatureza": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoCienciasHumanas": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoLinguagens": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoMatematica": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "corteRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarPrecedenciaFaseCommand": {
-        "required": ["id", "permiteSobreposicao"],
+        "required": [
+          "id",
+          "permiteSobreposicao"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9975,7 +11195,10 @@
         }
       },
       "AtualizarRecursoAcessibilidadeCommand": {
-        "required": ["id", "nome"],
+        "required": [
+          "id",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -9983,10 +11206,16 @@
             "format": "uuid"
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10006,30 +11235,47 @@
             "format": "uuid"
           },
           "censoReferencia": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ppiPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "quilombolaPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pcdPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarTipoBancaCommand": {
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10037,18 +11283,32 @@
             "format": "uuid"
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "faseTipica": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarTipoDeficienciaCommand": {
-        "required": ["id", "codigo", "nome", "descricao"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "descricao"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10056,21 +11316,38 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "permanente": {
-            "type": ["null", "boolean"]
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
       "AtualizarTipoDocumentoCommand": {
-        "required": ["id", "codigo", "nome", "categoria"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "categoria"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10078,32 +11355,57 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoria": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "formatosAceitos": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "tamanhoMaximoMb": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "tipoEquivalente": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarTipoEtapaCommand": {
-        "required": ["id", "nome"],
+        "required": [
+          "id",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10111,15 +11413,24 @@
             "format": "uuid"
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AtualizarTipoProcessoCommand": {
-        "required": ["id", "nome"],
+        "required": [
+          "id",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10127,25 +11438,46 @@
             "format": "uuid"
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "AuthenticatedUserResponse": {
-        "required": ["userId", "name", "email", "roles", "timestamp"],
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "roles",
+          "timestamp"
+        ],
         "type": "object",
         "properties": {
           "userId": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "name": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "email": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "roles": {
             "type": "array",
@@ -10159,8 +11491,78 @@
           }
         }
       },
+      "BaseLegalBonusRegionalDto": {
+        "required": [
+          "id",
+          "tipoInstrumento",
+          "identificacao",
+          "descricao",
+          "municipios",
+          "criadoEm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoInstrumento": {
+            "type": "string"
+          },
+          "identificacao": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BaseLegalBonusRegionalMunicipioDto"
+            }
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "_links": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BaseLegalBonusRegionalMunicipioDto": {
+        "required": [
+          "codigoIbge",
+          "nome",
+          "uf"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoIbge": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
+          }
+        }
+      },
       "CalendarioDiasUteisDto": {
-        "required": ["id", "versaoDataset", "vigente", "diasNaoUteis", "criadoEm"],
+        "required": [
+          "id",
+          "versaoDataset",
+          "vigente",
+          "diasNaoUteis",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10184,7 +11586,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -10192,7 +11597,12 @@
         }
       },
       "CalendarioDiasUteisResumoDto": {
-        "required": ["id", "versaoDataset", "vigente", "criadoEm"],
+        "required": [
+          "id",
+          "versaoDataset",
+          "vigente",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10210,7 +11620,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -10218,7 +11631,15 @@
         }
       },
       "CampusDto": {
-        "required": ["id", "sigla", "nome", "cidade", "endereco", "codigoEmec", "criadoEm"],
+        "required": [
+          "id",
+          "sigla",
+          "nome",
+          "cidade",
+          "endereco",
+          "codigoEmec",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10245,14 +11666,20 @@
             ]
           },
           "codigoEmec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -10260,7 +11687,14 @@
         }
       },
       "CategoriaDocumentoDto": {
-        "required": ["id", "codigo", "nome", "descricao", "ordem", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "descricao",
+          "ordem",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10274,11 +11708,17 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ordem": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["integer", "string"],
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "criadoEm": {
@@ -10286,7 +11726,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -10294,7 +11737,11 @@
         }
       },
       "CidadeReferenciaDto": {
-        "required": ["codigoIbge", "nome", "uf"],
+        "required": [
+          "codigoIbge",
+          "nome",
+          "uf"
+        ],
         "type": "object",
         "properties": {
           "codigoIbge": {
@@ -10307,31 +11754,56 @@
             "type": "string"
           },
           "origem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "displayAtualizadoEm": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           }
         }
       },
       "CidadeReferenciaInput": {
-        "required": ["codigoIbge", "nome", "uf"],
+        "required": [
+          "codigoIbge",
+          "nome",
+          "uf"
+        ],
         "type": "object",
         "properties": {
           "codigoIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "uf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CondicaoAtendimentoDto": {
-        "required": ["id", "codigo", "nome", "descricao", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "descricao",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10345,29 +11817,110 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
           }
         }
       },
+      "CriarBaseLegalBonusRegionalCommand": {
+        "required": [
+          "tipoInstrumento",
+          "identificacao",
+          "descricao",
+          "municipios"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoInstrumento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "identificacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "municipios": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CriarBaseLegalBonusRegionalMunicipioCommand"
+            }
+          }
+        }
+      },
+      "CriarBaseLegalBonusRegionalMunicipioCommand": {
+        "required": [
+          "codigoIbge",
+          "nome",
+          "uf"
+        ],
+        "type": "object",
+        "properties": {
+          "codigoIbge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "uf": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "CriarCalendarioDiasUteisCommand": {
-        "required": ["versaoDataset", "diasNaoUteis"],
+        "required": [
+          "versaoDataset",
+          "diasNaoUteis"
+        ],
         "type": "object",
         "properties": {
           "versaoDataset": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "diasNaoUteis": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "$ref": "#/components/schemas/DiaNaoUtilCommandItem"
             }
@@ -10387,19 +11940,34 @@
         "type": "object",
         "properties": {
           "sigla": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeCodigoIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeNome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeUf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "endereco": {
             "oneOf": [
@@ -10412,81 +11980,146 @@
             ]
           },
           "codigoEmec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarCategoriaDocumentoCommand": {
-        "required": ["codigo", "nome"],
+        "required": [
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ordem": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           }
         }
       },
       "CriarCondicaoAtendimentoCommand": {
-        "required": ["codigo", "nome"],
+        "required": [
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarCursoCommand": {
-        "required": ["codigo", "nome", "grau", "nivelEnsino"],
+        "required": [
+          "codigo",
+          "nome",
+          "grau",
+          "nivelEnsino"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "grau": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nivelEnsino": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "grupoAreaEnem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarFaseCanonicaCommand": {
-        "required": ["codigo"],
+        "required": [
+          "codigo"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "donoTipico": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "agrupaEtapas": {
             "type": "boolean",
@@ -10497,7 +12130,10 @@
             "default": false
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "coletaInscricao": {
             "type": "boolean",
@@ -10508,7 +12144,10 @@
             "default": false
           },
           "origemData": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10528,17 +12167,29 @@
             "$ref": "#/components/schemas/TipoLocalOferta"
           },
           "campusResponsavelId": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "cidadeCodigoIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeNome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidadeUf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "endereco": {
             "oneOf": [
@@ -10551,52 +12202,93 @@
             ]
           },
           "codigoEmec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarModalidadeCommand": {
-        "required": ["codigo"],
+        "required": [
+          "codigo"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "naturezaLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "composicaoVagas": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "composicaoOrigem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regraRemanejamento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoDestino": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoPar": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoFallback": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criteriosCumulativos": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "type": "string"
             }
           },
           "acaoQuandoIndeferido": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10625,39 +12317,70 @@
             "format": "uuid"
           },
           "programaDeOferta": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regimeDeFuncionamento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regimeDeTurno": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "turnos": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "type": "string"
             }
           },
           "formatoPedagogico": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "eMecCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigoSga": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "atoAutorizacaoMec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10675,55 +12398,92 @@
         "type": "object",
         "properties": {
           "resolucao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "grupoCurso": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "pesoRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoCienciasNatureza": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoCienciasHumanas": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoLinguagens": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoMatematica": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "corteRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["null", "number", "string"],
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
             "format": "double"
           }
         }
       },
       "CriarPrecedenciaFaseCommand": {
-        "required": ["antecessoraCodigo", "sucessoraCodigo"],
+        "required": [
+          "antecessoraCodigo",
+          "sucessoraCodigo"
+        ],
         "type": "object",
         "properties": {
           "antecessoraCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sucessoraCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "permiteSobreposicao": {
             "type": "boolean",
@@ -10732,14 +12492,22 @@
         }
       },
       "CriarRecursoAcessibilidadeCommand": {
-        "required": ["nome"],
+        "required": [
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10754,143 +12522,263 @@
         "type": "object",
         "properties": {
           "censoReferencia": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ppiPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "quilombolaPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pcdPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarTermoConsentimentoCommand": {
-        "required": ["nome", "textoRascunho", "baseLegalRascunho", "formaAceiteRascunho"],
+        "required": [
+          "nome",
+          "textoRascunho",
+          "baseLegalRascunho",
+          "formaAceiteRascunho"
+        ],
         "type": "object",
         "properties": {
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "textoRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegalRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "formaAceiteRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarTipoBancaCommand": {
-        "required": ["codigo"],
+        "required": [
+          "codigo"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "faseTipica": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarTipoDeficienciaCommand": {
-        "required": ["codigo", "nome", "descricao"],
+        "required": [
+          "codigo",
+          "nome",
+          "descricao"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "permanente": {
-            "type": ["null", "boolean"]
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
       "CriarTipoDocumentoCommand": {
-        "required": ["codigo", "nome", "categoria"],
+        "required": [
+          "codigo",
+          "nome",
+          "categoria"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoria": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "formatosAceitos": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "tamanhoMaximoMb": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "tipoEquivalente": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarTipoEtapaCommand": {
-        "required": ["codigo", "nome"],
+        "required": [
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CriarTipoProcessoCommand": {
-        "required": ["codigo", "nome"],
+        "required": [
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "CursoDto": {
-        "required": ["id", "codigo", "nome", "grau", "nivelEnsino", "grupoAreaEnem", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "grau",
+          "nivelEnsino",
+          "grupoAreaEnem",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -10910,14 +12798,20 @@
             "type": "string"
           },
           "grupoAreaEnem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -10936,26 +12830,44 @@
         "type": "object",
         "properties": {
           "abrangencia": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "municipioIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "municipioNome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "municipioUf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "data": {
             "type": "string",
             "format": "date"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "uf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10980,16 +12892,28 @@
             "type": "string"
           },
           "municipioIbge": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "municipioNome": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "municipioUf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "uf": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "data": {
             "type": "string",
@@ -11001,7 +12925,12 @@
         }
       },
       "EditarRascunhoTermoConsentimentoCommand": {
-        "required": ["id", "textoRascunho", "baseLegalRascunho", "formaAceiteRascunho"],
+        "required": [
+          "id",
+          "textoRascunho",
+          "baseLegalRascunho",
+          "formaAceiteRascunho"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11009,13 +12938,22 @@
             "format": "uuid"
           },
           "textoRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegalRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "formaAceiteRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -11040,31 +12978,54 @@
             "type": "string"
           },
           "logradouro": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "numero": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "complemento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "bairro": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "distrito": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidade": {
             "$ref": "#/components/schemas/CidadeReferenciaDto"
           },
           "latitude": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["null", "number", "string"],
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "longitude": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["null", "number", "string"],
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "nivelResolucao": {
@@ -11074,7 +13035,10 @@
             "type": "string"
           },
           "displayAtualizadoEm": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           }
         }
@@ -11096,22 +13060,40 @@
         "type": "object",
         "properties": {
           "cep": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "logradouro": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "numero": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "complemento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "bairro": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "distrito": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cidade": {
             "oneOf": [
@@ -11125,19 +13107,33 @@
           },
           "latitude": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["null", "number", "string"],
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "longitude": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["null", "number", "string"],
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "nivelResolucao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "origem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -11169,7 +13165,10 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "donoTipico": {
             "type": "string"
@@ -11181,7 +13180,10 @@
             "type": "boolean"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "coletaInscricao": {
             "type": "boolean"
@@ -11197,7 +13199,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11205,7 +13210,10 @@
         }
       },
       "FaseCanonicaVocabularioDto": {
-        "required": ["codigo", "nome"],
+        "required": [
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
@@ -11243,7 +13251,10 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "dominio": {
             "type": "string"
@@ -11255,7 +13266,10 @@
             "type": "string"
           },
           "valoresDominio": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "type": "string"
             }
@@ -11267,7 +13281,10 @@
             "type": "string"
           },
           "valoresDominioDeclarados": {
-            "type": ["null", "array"],
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "$ref": "#/components/schemas/FatoValorDominioViewItem"
             }
@@ -11275,18 +13292,29 @@
         }
       },
       "FatoValorDominioViewItem": {
-        "required": ["codigo", "descricao", "ordem", "ativo"],
+        "required": [
+          "codigo",
+          "descricao",
+          "ordem",
+          "ativo"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ordem": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["integer", "string"],
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "ativo": {
@@ -11314,7 +13342,10 @@
             "$ref": "#/components/schemas/TipoLocalOferta"
           },
           "campusResponsavelId": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "cidade": {
@@ -11331,14 +13362,20 @@
             ]
           },
           "codigoEmec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11372,7 +13409,10 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "naturezaLegal": {
             "type": "string"
@@ -11381,19 +13421,34 @@
             "type": "string"
           },
           "composicaoOrigem": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "regraRemanejamento": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoDestino": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoPar": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "remanejamentoFallback": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criteriosCumulativos": {
             "type": "array",
@@ -11402,17 +13457,26 @@
             }
           },
           "acaoQuandoIndeferido": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11473,28 +13537,47 @@
             }
           },
           "eMecCodigo": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "codigoSga": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vagasAnuaisAutorizadas": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "baseLegal": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "atoAutorizacaoMec": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11529,32 +13612,50 @@
           },
           "pesoRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoCienciasNatureza": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoCienciasHumanas": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoLinguagens": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pesoMatematica": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "corteRedacao": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "baseLegal": {
@@ -11565,7 +13666,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11600,7 +13704,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11611,26 +13718,47 @@
         "type": "object",
         "properties": {
           "type": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "title": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "detail": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "instance": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
       "RecursoAcessibilidadeDto": {
-        "required": ["id", "nome", "descricao", "criadoEm"],
+        "required": [
+          "id",
+          "nome",
+          "descricao",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11641,14 +13769,20 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11676,17 +13810,26 @@
           },
           "ppiPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "quilombolaPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "pcdPercentual": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": ["number", "string"],
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           },
           "baseLegal": {
@@ -11697,7 +13840,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11726,10 +13872,16 @@
             "type": "string"
           },
           "textoRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegalRascunho": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "formaAceiteRascunho": {
             "type": "string"
@@ -11738,7 +13890,10 @@
             "type": "boolean"
           },
           "revisadoEm": {
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "versoes": {
@@ -11752,7 +13907,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11760,7 +13918,13 @@
         }
       },
       "TermoConsentimentoResumoDto": {
-        "required": ["id", "nome", "formaAceiteRascunho", "revisado", "criadoEm"],
+        "required": [
+          "id",
+          "nome",
+          "formaAceiteRascunho",
+          "revisado",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11781,7 +13945,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11789,7 +13956,14 @@
         }
       },
       "TermoConsentimentoVersaoDto": {
-        "required": ["id", "texto", "baseLegal", "formaAceite", "hash", "promovidaEm"],
+        "required": [
+          "id",
+          "texto",
+          "baseLegal",
+          "formaAceite",
+          "hash",
+          "promovidaEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11815,7 +13989,14 @@
         }
       },
       "TipoBancaDto": {
-        "required": ["id", "codigo", "nome", "faseTipica", "descricao", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "faseTipica",
+          "descricao",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11829,17 +14010,26 @@
             "type": "string"
           },
           "faseTipica": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11847,7 +14037,10 @@
         }
       },
       "TipoBancaVocabularioDto": {
-        "required": ["codigo", "nome"],
+        "required": [
+          "codigo",
+          "nome"
+        ],
         "type": "object",
         "properties": {
           "codigo": {
@@ -11859,7 +14052,14 @@
         }
       },
       "TipoDeficienciaDto": {
-        "required": ["id", "codigo", "nome", "descricao", "permanente", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "descricao",
+          "permanente",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11876,14 +14076,20 @@
             "type": "string"
           },
           "permanente": {
-            "type": ["null", "boolean"]
+            "type": [
+              "null",
+              "boolean"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11915,28 +14121,44 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoria": {
             "type": "string"
           },
           "formatosAceitos": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "tamanhoMaximoMb": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": ["null", "integer", "string"],
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "tipoEquivalente": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -11944,7 +14166,14 @@
         }
       },
       "TipoEtapaDto": {
-        "required": ["id", "codigo", "nome", "descricao", "ativo", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "descricao",
+          "ativo",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -11958,7 +14187,10 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ativo": {
             "type": "boolean"
@@ -11968,10 +14200,32 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "TipoInstrumentoNormativoVocabularioDto": {
+        "required": [
+          "codigo",
+          "nome",
+          "descricao"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
           }
         }
       },
@@ -11988,7 +14242,14 @@
         "type": "string"
       },
       "TipoProcessoDto": {
-        "required": ["id", "codigo", "nome", "descricao", "ativo", "criadoEm"],
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "descricao",
+          "ativo",
+          "criadoEm"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -12002,7 +14263,10 @@
             "type": "string"
           },
           "descricao": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "ativo": {
             "type": "boolean"
@@ -12012,7 +14276,10 @@
             "format": "date-time"
           },
           "_links": {
-            "type": ["null", "object"],
+            "type": [
+              "null",
+              "object"
+            ],
             "additionalProperties": {
               "type": "string"
             }
@@ -12020,7 +14287,12 @@
         }
       },
       "UnidadeOfertanteDto": {
-        "required": ["origemId", "sigla", "nome", "tipo"],
+        "required": [
+          "origemId",
+          "sigla",
+          "nome",
+          "tipo"
+        ],
         "type": "object",
         "properties": {
           "origemId": {
@@ -12039,25 +14311,48 @@
         }
       },
       "UserProfileResponse": {
-        "required": ["userId", "name", "email", "cpf", "nomeSocial", "roles", "timestamp"],
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "cpf",
+          "nomeSocial",
+          "roles",
+          "timestamp"
+        ],
         "type": "object",
         "properties": {
           "userId": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "name": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "email": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "cpf": {
             "pattern": "^\\d{11}$",
-            "type": ["null", "string"],
+            "type": [
+              "null",
+              "string"
+            ],
             "description": "CPF (apenas d\u00EDgitos, sem formata\u00E7\u00E3o). PII \u2014 sempre mascarar em logs (\u0027***.999.999-**\u0027, ADR-0011)."
           },
           "nomeSocial": {
-            "type": ["null", "string"]
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "roles": {
             "type": "array",
@@ -12087,6 +14382,9 @@
     },
     {
       "name": "Profile"
+    },
+    {
+      "name": "BaseLegalBonusRegional"
     },
     {
       "name": "CalendariosDiasUteis"
