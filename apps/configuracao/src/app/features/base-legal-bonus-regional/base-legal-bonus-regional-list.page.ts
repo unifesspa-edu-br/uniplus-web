@@ -244,7 +244,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             description="Cadastre a primeira base legal para referenciá-la no bônus regional de um processo."
           >
             <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-              Nova base legal
+              Cadastrar a primeira base legal
             </button>
           </ui-empty-state>
         }
