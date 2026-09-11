@@ -90,10 +90,11 @@
       @if (municipiosDaBaseLegalSelecionada().length > 0) {
         <div class="bonus-municipios">
           <div
+            #municipiosScroll
             class="table-responsive bonus-municipios__scroll"
-            tabindex="0"
-            role="region"
-            aria-labelledby="bonus-municipios-caption"
+            [attr.tabindex]="municipiosRolavel() ? 0 : null"
+            [attr.role]="municipiosRolavel() ? 'region' : null"
+            [attr.aria-labelledby]="municipiosRolavel() ? 'bonus-municipios-caption' : null"
           >
             <table>
               <caption id="bonus-municipios-caption" class="bonus-municipios__caption">

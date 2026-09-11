@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -259,7 +259,37 @@ describe('BonusStepComponent', () => {
       ]);
     });
 
-    it('a região com rolagem é alcançável por teclado e tem nome acessível', () => {
+    it('não expõe tabindex/role/aria-labelledby quando a tabela não transborda a caixa', () => {
+      componente['carregarBasesLegais']();
+      controller
+        .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
+        .flush([
+          {
+            id: BASE_LEGAL_ID,
+            tipoInstrumento: 'PORTARIA',
+            identificacao: 'Portaria Unifesspa nº 2514/2023',
+            descricao: 'Institui inclusão regional.',
+            municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+            criadoEm: '2026-01-01T00:00:00Z',
+          },
+        ]);
+
+      componente.alternarAtivo(true);
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
+      fixture.detectChanges();
+
+      // jsdom não faz layout de verdade — scrollHeight/clientHeight ficam
+      // ambos em 0, o mesmo estado de "cabe sem rolar" que uma base legal com
+      // poucos municípios produz numa tela real.
+      const regiao = fixture.nativeElement.querySelector<HTMLDivElement>(
+        '.bonus-municipios__scroll',
+      );
+      expect(regiao?.hasAttribute('tabindex')).toBe(false);
+      expect(regiao?.hasAttribute('role')).toBe(false);
+      expect(regiao?.hasAttribute('aria-labelledby')).toBe(false);
+    });
+
+    it('a região com rolagem é alcançável por teclado e tem nome acessível quando a tabela transborda a caixa', () => {
       componente['carregarBasesLegais']();
       controller
         .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
@@ -281,6 +311,11 @@ describe('BonusStepComponent', () => {
       const regiao = fixture.nativeElement.querySelector<HTMLDivElement>(
         '.bonus-municipios__scroll',
       );
+      vi.spyOn(regiao as HTMLDivElement, 'scrollHeight', 'get').mockReturnValue(500);
+      vi.spyOn(regiao as HTMLDivElement, 'clientHeight', 'get').mockReturnValue(256);
+      componente['medirRolagemDosMunicipios']();
+      fixture.detectChanges();
+
       expect(regiao?.getAttribute('tabindex')).toBe('0');
       expect(regiao?.getAttribute('role')).toBe('region');
 
