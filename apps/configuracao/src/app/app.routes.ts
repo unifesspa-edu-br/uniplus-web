@@ -110,6 +110,14 @@ export const appRoutes: Routes = [
           ),
       },
       {
+        path: 'base-legal-bonus-regional',
+        data: { breadcrumb: 'Base Legal de Bônus Regional' },
+        loadChildren: () =>
+          import('./features/base-legal-bonus-regional/base-legal-bonus-regional.routes').then(
+            (m) => m.BASE_LEGAL_BONUS_REGIONAL_ROUTES,
+          ),
+      },
+      {
         path: 'condicoes-atendimento',
         data: { breadcrumb: 'Condições de Atendimento' },
         loadChildren: () =>
