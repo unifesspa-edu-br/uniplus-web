@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
@@ -20,6 +20,7 @@ describe('BonusStepComponent', () => {
   let componente: BonusStepComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
+  let fixture: ComponentFixture<BonusStepComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -35,7 +36,7 @@ describe('BonusStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(BonusStepComponent);
+    fixture = TestBed.createComponent(BonusStepComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -256,6 +257,36 @@ describe('BonusStepComponent', () => {
         'Marabá',
         'Xinguara',
       ]);
+    });
+
+    it('a região com rolagem é alcançável por teclado e tem nome acessível', () => {
+      componente['carregarBasesLegais']();
+      controller
+        .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
+        .flush([
+          {
+            id: BASE_LEGAL_ID,
+            tipoInstrumento: 'PORTARIA',
+            identificacao: 'Portaria Unifesspa nº 2514/2023',
+            descricao: 'Institui inclusão regional.',
+            municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+            criadoEm: '2026-01-01T00:00:00Z',
+          },
+        ]);
+
+      componente.alternarAtivo(true);
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
+      fixture.detectChanges();
+
+      const regiao = fixture.nativeElement.querySelector<HTMLDivElement>(
+        '.bonus-municipios__scroll',
+      );
+      expect(regiao?.getAttribute('tabindex')).toBe('0');
+      expect(regiao?.getAttribute('role')).toBe('region');
+
+      const legendaId = regiao?.getAttribute('aria-labelledby');
+      const legenda = fixture.nativeElement.querySelector<HTMLElement>(`#${legendaId}`);
+      expect(legenda?.textContent).toContain('1 município(s) beneficiado(s)');
     });
   });
 });
