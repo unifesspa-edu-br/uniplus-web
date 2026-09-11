@@ -5304,8 +5304,17 @@ export interface components {
             readonly fator: number | string;
             /** Format: double */
             readonly teto: null | number | string;
-            readonly municipioConvenio: null | string;
-            readonly baseLegal: null | string;
+            /** Format: uuid */
+            readonly baseLegalBonusRegionalId: string;
+            readonly tipoInstrumento: string;
+            readonly identificacao: string;
+            readonly descricao: string;
+            readonly municipios: readonly components["schemas"]["ConfiguracaoBonusRegionalMunicipioDto"][];
+        };
+        readonly ConfiguracaoBonusRegionalMunicipioDto: {
+            readonly codigoIbge: string;
+            readonly nome: string;
+            readonly uf: string;
         };
         readonly ConfiguracaoCascataRemanejamentoDto: {
             /** Format: uuid */
@@ -5479,8 +5488,8 @@ export interface components {
             readonly fator: null | number | string;
             /** Format: double */
             readonly teto: null | number | string;
-            readonly municipioConvenio: null | string;
-            readonly baseLegal: null | string;
+            /** Format: uuid */
+            readonly baseLegalBonusRegionalId: null | string;
         };
         readonly DefinirCascataRemanejamentoRequest: {
             readonly regraCodigo: null | string;

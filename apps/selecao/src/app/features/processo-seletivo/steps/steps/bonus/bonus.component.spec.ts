@@ -2,6 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -13,6 +14,7 @@ import { BonusStepComponent } from './bonus.component';
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 const ROTA_BONUS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/bonus-regional`;
+const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
 describe('BonusStepComponent', () => {
   let componente: BonusStepComponent;
@@ -29,6 +31,7 @@ describe('BonusStepComponent', () => {
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -46,7 +49,7 @@ describe('BonusStepComponent', () => {
 
   afterEach(() => controller.verify());
 
-  it('é válido inativo, sem nenhum campo preenchido (RN05, toggle por presença)', () => {
+  it('é válido inativo, sem nenhum campo preenchido (toggle por presença)', () => {
     expect(componente.validate().valid).toBe(true);
   });
 
@@ -58,15 +61,25 @@ describe('BonusStepComponent', () => {
   it('recusa fator zero ou negativo', () => {
     componente.alternarAtivo(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
     componente.alterarFator('0');
 
     expect(componente.validate().valid).toBe(false);
   });
 
-  it('aceita ativo com regra e fator válidos, sem teto', () => {
+  it('recusa ativo sem base legal escolhida', () => {
     componente.alternarAtivo(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
+
+    expect(componente.validate().valid).toBe(false);
+  });
+
+  it('aceita ativo com regra, fator e base legal válidos, sem teto', () => {
+    componente.alternarAtivo(true);
+    componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+    componente.alterarFator('1.2');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
 
     expect(componente.validate().valid).toBe(true);
   });
@@ -75,6 +88,7 @@ describe('BonusStepComponent', () => {
     componente.alternarAtivo(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
     componente.alterarTeto('0');
 
     expect(componente.validate().valid).toBe(false);
@@ -92,8 +106,7 @@ describe('BonusStepComponent', () => {
         regraVersao: null,
         fator: null,
         teto: null,
-        municipioConvenio: null,
-        baseLegal: null,
+        baseLegalBonusRegionalId: null,
       });
 
       requisicao.flush(null, { status: 204, statusText: 'No Content' });
@@ -104,8 +117,7 @@ describe('BonusStepComponent', () => {
       componente.alternarAtivo(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
-      componente.alterarMunicipioConvenio('Marabá');
-      componente.alterarBaseLegal('Convênio 01/2026');
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
 
       const gravacao = componente.persistir();
 
@@ -115,8 +127,7 @@ describe('BonusStepComponent', () => {
         regraVersao: '1.0',
         fator: 1.2,
         teto: null,
-        municipioConvenio: 'Marabá',
-        baseLegal: 'Convênio 01/2026',
+        baseLegalBonusRegionalId: BASE_LEGAL_ID,
       });
 
       requisicao.flush(null, { status: 204, statusText: 'No Content' });
@@ -135,6 +146,7 @@ describe('BonusStepComponent', () => {
       componente.alternarAtivo(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
 
       const gravacao = componente.persistir();
 
@@ -171,9 +183,45 @@ describe('BonusStepComponent', () => {
       componente.alternarAtivo(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
 
       const confirmacao = componente.confirmacaoDeGravacao();
-      expect(confirmacao?.itens.map((item) => item.rotulo)).toContain('Fator');
+      expect(confirmacao?.itens.map((item) => item.rotulo)).toEqual([
+        'Regra',
+        'Fator',
+        'Teto',
+        'Base legal',
+      ]);
+    });
+
+    it('mostra a identificação da base legal do catálogo', () => {
+      // A carga inicial do beforeEach já foi flushada com [] — refaz a busca para
+      // interceptar esta com dados reais, sem alterar o setup compartilhado.
+      componente['carregarBasesLegais']();
+      const requisicaoBaseLegal = controller.expectOne(
+        (r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`,
+      );
+      requisicaoBaseLegal.flush([
+        {
+          id: BASE_LEGAL_ID,
+          tipoInstrumento: 'PORTARIA',
+          identificacao: 'Portaria Unifesspa nº 2514/2023',
+          descricao: 'Institui inclusão regional.',
+          municipios: [],
+          criadoEm: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      componente.alternarAtivo(true);
+      componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+      componente.alterarFator('1.2');
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
+
+      const confirmacao = componente.confirmacaoDeGravacao();
+      expect(confirmacao?.itens).toContainEqual({
+        rotulo: 'Base legal',
+        valor: 'Portaria Unifesspa nº 2514/2023',
+      });
     });
   });
 });

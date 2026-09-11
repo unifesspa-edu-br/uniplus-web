@@ -5,6 +5,7 @@ import { Subject, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  BaseLegalBonusRegionalApi,
   CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
@@ -75,6 +76,8 @@ const PAGE_PROVIDERS = [
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
+  // O passo de bônus carrega o catálogo de base legal ao montar.
+  { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
