@@ -57,18 +57,6 @@
             (input)="alterarFator($any($event.target).value)"
           /><span class="field-hint">Ex.: 1.20 multiplica a nota final por 1,20.</span>
         </div>
-        <div class="form-field">
-          <label class="label" for="f-bonus-teto">Teto (opcional)</label
-          ><input
-            class="input"
-            id="f-bonus-teto"
-            type="number"
-            min="0"
-            step="0.01"
-            [value]="store.draft().bonus.teto"
-            (input)="alterarTeto($any($event.target).value)"
-          />
-        </div>
       </div>
       <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
         <div class="form-field">
@@ -86,7 +74,47 @@
             }
           </select>
         </div>
+        <div class="form-field">
+          <label class="label" for="f-bonus-teto">Teto (opcional)</label
+          ><input
+            class="input"
+            id="f-bonus-teto"
+            type="number"
+            min="0"
+            step="0.01"
+            [value]="store.draft().bonus.teto"
+            (input)="alterarTeto($any($event.target).value)"
+          />
+        </div>
       </div>
+      @if (municipiosDaBaseLegalSelecionada().length > 0) {
+        <div class="bonus-municipios">
+          <div class="table-responsive bonus-municipios__scroll">
+            <table>
+              <caption class="bonus-municipios__caption">
+                {{ municipiosDaBaseLegalSelecionada().length }} município(s) beneficiado(s) por
+                esta base legal
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">UF</th>
+                  <th scope="col">Código IBGE</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (municipio of municipiosDaBaseLegalSelecionada(); track municipio.codigoIbge) {
+                  <tr>
+                    <td data-label="Nome">{{ municipio.nome }}</td>
+                    <td data-label="UF">{{ municipio.uf }}</td>
+                    <td data-label="Código IBGE"><code>{{ municipio.codigoIbge }}</code></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     </div>
   }
 </div>
