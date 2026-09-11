@@ -148,6 +148,12 @@ export class LayoutComponent {
           exact: true,
         },
         { label: 'Calendários', icon: 'pi-calendar', routerLink: '/calendario-dias-uteis' },
+        {
+          label: 'Base Legal de Bônus Regional',
+          icon: 'pi-gavel',
+          routerLink: '/base-legal-bonus-regional',
+          exact: true,
+        },
       ],
     },
   ];
