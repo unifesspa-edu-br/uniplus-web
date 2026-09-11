@@ -1,1160 +1,895 @@
-import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
-  TestRequest,
   provideHttpClientTesting,
+  type TestRequest,
 } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { GEO_BASE_PATH, type CidadeResumoDto } from '@uniplus/shared-data/geo';
-import { ORGANIZACAO_BASE_PATH, TipoUnidade, UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { provideHttpClient } from '@angular/common/http';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { of, Subject } from 'rxjs';
+import { vi } from 'vitest';
+
+import { ProblemI18nService, ApiResult } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import { GeoApi, CidadeResumoDto } from '@uniplus/shared-data/geo';
+import {
+  ORGANIZACAO_BASE_PATH,
+  TipoUnidade,
+  UnidadeDto,
+  UnidadesApi,
+} from '@uniplus/shared-data/organizacao';
+
 import { UnidadesPage } from './unidades.page';
 
-const BASE = 'http://localhost:5000';
-const REITORIA_ID = '01960000-0000-7000-0000-000000000001';
-const INSTITUTO_ID = '01960000-0000-7000-0000-000000000002';
+const mockUnidadeRaiz: UnidadeDto = {
+  id: 'u-1',
+  nome: 'Reitoria',
+  sigla: 'REIT',
+  codigo: '001',
+  slug: 'reitoria',
+  alias: null,
+  tipo: TipoUnidade.reitoria,
+  unidadeSuperiorId: null,
+  unidadeAcademica: false,
+  vigenciaInicio: '2020-01-01',
+  vigenciaFim: null,
+  cidadeCodigoIbge: '1504208',
+  cidadeNome: 'Marabá',
+  cidadeUf: 'PA',
+};
 
-const cidadesSeed: readonly CidadeResumoDto[] = [
-  { id: 'c-1500107', codigoIbge: '1500107', nome: 'Marabá', uf: 'PA', ddd: '94' },
-  { id: 'c-1501402', codigoIbge: '1501402', nome: 'Belém', uf: 'PA', ddd: '91' },
-];
-
-// Folga acima do debounce da busca (BUSCA_DEBOUNCE_MS = 300 na página).
-const DEBOUNCE_FOLGA_MS = 360;
-
-const unidadesSeed: readonly UnidadeDto[] = [
-  {
-    id: REITORIA_ID,
-    nome: 'Reitoria',
-    alias: null,
-    slug: 'reitoria',
-    sigla: 'REITORIA',
-    codigo: 'REITORIA',
-    unidadeSuperiorId: null,
-    tipo: 'Reitoria',
-    unidadeAcademica: false,
-    vigenciaInicio: '2026-01-01',
-    vigenciaFim: null,
-    criadoEm: '2026-06-10T12:00:00Z',
-    cidadeCodigoIbge: null,
-    cidadeNome: null,
-    cidadeUf: null,
-  },
-  {
-    id: INSTITUTO_ID,
-    nome: 'Instituto de Estudos em Desenvolvimento Agrário e Regional',
-    alias: 'IEDAR',
-    slug: 'iedar',
-    sigla: 'IEDAR',
-    codigo: 'IEDAR',
-    unidadeSuperiorId: REITORIA_ID,
-    tipo: 'Instituto',
-    unidadeAcademica: true,
-    vigenciaInicio: '2026-01-01',
-    vigenciaFim: null,
-    criadoEm: '2026-06-10T12:01:00Z',
-    cidadeCodigoIbge: '1500107',
-    cidadeNome: 'Marabá',
-    cidadeUf: 'PA',
-  },
-];
+const mockUnidadeFilho: UnidadeDto = {
+  id: 'u-2',
+  nome: 'Instituto de Ciências Exatas',
+  sigla: 'ICE',
+  codigo: '002',
+  slug: 'ice',
+  alias: 'Exatas',
+  tipo: TipoUnidade.instituto,
+  unidadeSuperiorId: 'u-1',
+  unidadeAcademica: true,
+  vigenciaInicio: '2021-01-01',
+  vigenciaFim: null,
+  cidadeCodigoIbge: '1504208',
+  cidadeNome: 'Marabá',
+  cidadeUf: 'PA',
+};
 
 describe('UnidadesPage', () => {
   let fixture: ComponentFixture<UnidadesPage>;
   let component: UnidadesPage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let httpMock: HttpTestingController;
+  let unidadesApiMock: vi.Mocked<UnidadesApi>;
+  let geoApiMock: vi.Mocked<GeoApi>;
+  let notificationMock: vi.Mocked<NotificationService>;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
+  beforeEach(async () => {
+    unidadesApiMock = {
+      criar: vi.fn(),
+      atualizar: vi.fn(),
+      remover: vi.fn(),
+    } as unknown as vi.Mocked<UnidadesApi>;
+
+    geoApiMock = {
+      listarCidades: vi.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: [],
+        }),
+      ),
+    } as unknown as vi.Mocked<GeoApi>;
+
+    notificationMock = {
+      success: vi.fn(),
+      errorFromProblem: vi.fn(),
+    } as unknown as vi.Mocked<NotificationService>;
+
+    await TestBed.configureTestingModule({
       imports: [UnidadesPage],
       providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
-        { provide: GEO_BASE_PATH, useValue: BASE },
+        provideNoopAnimations(),
+        {
+          provide: ORGANIZACAO_BASE_PATH,
+          useValue: '',
+        },
+        {
+          provide: UnidadesApi,
+          useValue: unidadesApiMock,
+        },
+        {
+          provide: GeoApi,
+          useValue: geoApiMock,
+        },
+        {
+          provide: NotificationService,
+          useValue: notificationMock,
+        },
+        {
+          provide: ProblemI18nService,
+          useValue: {
+            resolve: (p: { detail?: string; title?: string }) => ({
+              title: p.detail || p.title || 'Erro na requisição',
+            }),
+          },
+        },
       ],
-    });
+    }).compileComponents();
 
     fixture = TestBed.createComponent(UnidadesPage);
     component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    if (httpMock) {
+      httpMock.verify();
+    }
+  });
 
-  // Dreia o microtask queue + roda change detection para o `httpResource`
-  // propagar valores aos signals do resource (mesmo padrão de editais-detail).
-  const propagate = async (): Promise<void> => {
+  async function responderListaUnidades(
+    unidades: UnidadeDto[] = [mockUnidadeRaiz, mockUnidadeFilho],
+    linkHeader = '<.../unidades?cursor=next_123&direction=next>; rel="next"',
+  ) {
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    req.flush(
+      { ok: true, data: unidades },
+      { headers: { 'Content-Type': 'application/json', Link: linkHeader } },
+    );
+
+    TestBed.flushEffects();
     await Promise.resolve();
-    appRef.tick();
-  };
-
-  const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-  function expectListGet(matcher?: (request: HttpRequest<unknown>) => boolean): TestRequest {
-    const req = controller.expectOne(
-      (request) =>
-        request.url === `${BASE}/api/organizacao/unidades` &&
-        request.method === 'GET' &&
-        (matcher ? matcher(request) : true),
-    );
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('unidade', 1));
-    return req;
+    TestBed.flushEffects();
+    fixture.detectChanges();
   }
 
-  // Carga inicial (sem filtros). Opcionalmente injeta header Link (rel="next").
-  async function flushInicial(
-    unidades: readonly UnidadeDto[] = unidadesSeed,
-    headers?: Record<string, string>,
-  ): Promise<void> {
+  async function responderLookupSuperior(unidades: UnidadeDto[] = [mockUnidadeRaiz]) {
     fixture.detectChanges();
-    const request = expectListGet(
-      (r) =>
-        !r.params.has('q') &&
-        !r.params.has('tipo') &&
-        !r.params.has('cursor') &&
-        r.params.get('limit') === '100',
-    );
-    request.flush(unidades, headers ? { headers } : undefined);
-    await propagate();
+    TestBed.flushEffects();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    req.flush({ ok: true, data: unidades }, { headers: { 'Content-Type': 'application/json' } });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
   }
 
-  function expectCidadesGet(matcher?: (request: HttpRequest<unknown>) => boolean): TestRequest {
-    const req = controller.expectOne(
-      (request) =>
-        request.url === `${BASE}/api/cidades` &&
-        request.method === 'GET' &&
-        (matcher ? matcher(request) : true),
-    );
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('cidade', 1));
-    return req;
+  /**
+   * Simula uma falha da listagem (`lista`) — a API sempre responde 200 com o
+   * envelope `ApiResult` no corpo (mesmo padrão de `criar`/`atualizar`/
+   * `remover` mockados no resto do arquivo); erros de negócio vêm como
+   * `{ ok: false, problem }`, não como status HTTP não-2xx. Um flush com
+   * status 500 real faz o `lista.value()` simplesmente não atualizar (o
+   * `linkedSignal` preserva o valor anterior por não detectar mudança), então
+   * NÃO simule com `{ status: 500 }` no segundo argumento do `flush`.
+   */
+  function reqFlushErro(req: TestRequest): void {
+    req.flush({
+      ok: false,
+      problem: { type: 'server-error', title: 'Erro interno', status: 500 },
+    });
   }
 
-  // Abrir o formulário dispara o GET (sem filtro) das opções de "unidade
-  // superior" — desacoplado do filtro da listagem. Flush logo após o abrir*.
-  // A busca de cidade NÃO entra aqui: ela só dispara quando o operador digita
-  // (mesmo modelo do "município que rege os prazos" do Seleção — sem preload).
-  async function flushOpcoesSuperior(
-    unidades: readonly UnidadeDto[] = unidadesSeed,
-  ): Promise<void> {
-    await propagate();
-    expectListGet(
-      (r) => !r.params.has('q') && !r.params.has('tipo') && !r.params.has('cursor'),
-    ).flush(unidades);
-    await propagate();
-  }
+  it('deve carregar e renderizar a árvore de unidades organizadas hierarquicamente', async () => {
+    await responderListaUnidades();
 
-  it('carrega unidades na inicialização com limit 100 e monta hierarquia', async () => {
-    await flushInicial();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('REIT');
+    expect(compiled.textContent).toContain('Reitoria');
 
-    expect(component['unidades']()).toHaveLength(2);
-    expect(component['arvore']()).toHaveLength(1);
-    expect(component['arvore']()[0].children).toHaveLength(1);
-  });
+    const toggleRaiz = compiled.querySelector('.unit-node__toggle') as HTMLButtonElement | null;
+    expect(toggleRaiz).not.toBeNull();
+    toggleRaiz?.click();
 
-  it('busca server-side: digitação em rajada dispara um único GET com q após debounce', async () => {
-    await flushInicial();
-
-    component['busca'].set('i');
-    component['busca'].set('ie');
-    component['busca'].set('iedar');
-    appRef.tick();
-    // Antes do debounce, nenhuma request com q (não dispara por tecla).
-    controller.expectNone(
-      (request) => request.url === `${BASE}/api/organizacao/unidades` && request.params.has('q'),
-    );
-
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-
-    const request = expectListGet(
-      (r) => r.params.get('q') === 'iedar' && !r.params.has('cursor'),
-    );
-    request.flush([unidadesSeed[1]]);
-    await propagate();
-
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
-  });
-
-  it('filtro de tipo dispara GET imediato com tipo numérico do roster', async () => {
-    await flushInicial();
-
-    component['tipoFiltro'].set('4'); // Instituto
-    await propagate();
-
-    const request = expectListGet(
-      (r) => r.params.get('tipo') === '4' && !r.params.has('q'),
-    );
-    request.flush([unidadesSeed[1]]);
-    await propagate();
-
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].tipo).toBe('Instituto');
-  });
-
-  it('navega Próximo/Anterior por substituição, com direction casado e sem limit (ADR-0089)', async () => {
-    await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
-    });
-
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['nextCursor']()).not.toBeNull();
-    expect(component['prevCursor']()).toBeNull();
-
-    // Próximo: envia cursor + direction=next, sem limit; substitui a lista.
-    component['proximaPagina']();
-    await propagate();
-
-    const reqNext = expectListGet(
-      (r) =>
-        r.params.get('cursor') === 'pagina-2' &&
-        r.params.get('direction') === 'next' &&
-        !r.params.has('limit'),
-    );
-    reqNext.flush([unidadesSeed[1]], {
-      headers: { Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-1&direction=prev>; rel="prev"` },
-    });
-    await propagate();
-
-    // Substituição: a página 2 troca a 1 (1 item, não 2).
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
-    expect(component['prevCursor']()).not.toBeNull();
-    expect(component['nextCursor']()).toBeNull();
-
-    // Anterior: envia cursor + direction=prev, sem limit; substitui de volta.
-    component['paginaAnterior']();
-    await propagate();
-
-    const reqPrev = expectListGet(
-      (r) =>
-        r.params.get('cursor') === 'pagina-1' &&
-        r.params.get('direction') === 'prev' &&
-        !r.params.has('limit'),
-    );
-    reqPrev.flush([unidadesSeed[0]]);
-    await propagate();
-
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(REITORIA_ID);
-  });
-
-  it('mudar o filtro reseta a paginação para a primeira página e substitui a lista', async () => {
-    await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
-    });
-    component['proximaPagina']();
-    await propagate();
-    expectListGet((r) => r.params.get('cursor') === 'pagina-2').flush([unidadesSeed[1]]);
-    await propagate();
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
-
-    // Aplicar tipo volta à primeira página (sem cursor, com limit) e substitui.
-    component['tipoFiltro'].set('1'); // Reitoria
-    await propagate();
-    const request = expectListGet(
-      (r) =>
-        r.params.get('tipo') === '1' &&
-        !r.params.has('cursor') &&
-        !r.params.has('direction') &&
-        r.params.get('limit') === '100',
-    );
-    request.flush([unidadesSeed[0]]);
-    await propagate();
-
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(REITORIA_ID);
-  });
-
-  it('cria unidade com Idempotency-Key e recarrega a lista após sucesso', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-02-01',
-      vigenciaFim: '',
-      motivoMudancaIdentificador: '',
-    });
-    const key = component['idempotencyKeyAtual']();
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
-    expect(post.request.method).toBe('POST');
-    expect(post.request.headers.get('Idempotency-Key')).toBe(key);
-    expect(post.request.body).toMatchObject({
-      nome: 'Faculdade de Computação',
-      alias: null,
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-    });
-    post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
-    expect(component['formOpen']()).toBe(false);
-
-    await propagate();
-    expectListGet().flush(unidadesSeed); // refetch pós-mutação
-    await propagate();
-  });
-
-  it('cria unidade sem cidade selecionada enviando o trio como null (referência opcional)', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-02-01',
-      vigenciaFim: '',
-      motivoMudancaIdentificador: '',
-    });
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
-    expect(post.request.body).toMatchObject({
-      cidadeCodigoIbge: null,
-      cidadeNome: null,
-      cidadeUf: null,
-    });
-    post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('não busca cidade com menos de 3 letras mesmo após o debounce decorrer', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    component['buscaCidade'].set('ma');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-
-    controller.expectNone(`${BASE}/api/cidades`);
-    expect(component['cidadeOpcoes']()).toEqual([]);
-    expect(component['buscandoCidades']()).toBe(false);
-  });
-
-  it('busca cidade com debounce a partir de 3 letras e envia o trio inteiro no comando', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    // Abrir o form não dispara nenhuma requisição de cidade — só a digitação.
-    controller.expectNone(`${BASE}/api/cidades`);
-
-    // Rajada de digitação: uma única request após o debounce, não uma por tecla.
-    component['buscaCidade'].set('m');
-    component['buscaCidade'].set('ma');
-    component['buscaCidade'].set('mar');
-    appRef.tick();
-    controller.expectNone(`${BASE}/api/cidades`);
-
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-
-    const request = expectCidadesGet((r) => r.params.get('q') === 'mar');
-    expect(request.request.params.get('limit')).toBe('20');
-    request.flush([cidadesSeed[0]]);
-    await propagate();
-
-    expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[0]]);
-
-    component['selecionarCidade']({
-      codigoIbge: cidadesSeed[0].codigoIbge,
-      nome: cidadesSeed[0].nome,
-      uf: cidadesSeed[0].uf,
-    });
-
-    expect(component['cidadeSelecionada']()).toEqual({
-      codigoIbge: '1500107',
-      nome: 'Marabá',
-      uf: 'PA',
-    });
-    // A seleção limpa o termo e as opções — reabrir a busca não mostra a lista antiga.
-    expect(component['buscaCidade']()).toBe('');
-    expect(component['cidadeOpcoes']()).toEqual([]);
-
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-02-01',
-      vigenciaFim: '',
-      motivoMudancaIdentificador: '',
-    });
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
-    expect(post.request.body).toMatchObject({
-      cidadeCodigoIbge: '1500107',
-      cidadeNome: 'Marabá',
-      cidadeUf: 'PA',
-    });
-    post.flush('01960000-0000-7000-0000-000000000099', { status: 201, statusText: 'Created' });
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('cancela a busca de cidade anterior ao trocar o termo antes da resposta chegar', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    component['buscaCidade'].set('mar');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    const primeira = expectCidadesGet((r) => r.params.get('q') === 'mar');
-
-    // Novo termo, já com o debounce decorrido: `switchMap` cancela a busca em
-    // voo por 'mar' antes de abrir a de 'bel' — sem isso a resposta antiga
-    // ainda chegaria e poderia sobrescrever a mais recente.
-    component['buscaCidade'].set('bel');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-
-    expect(primeira.cancelled).toBe(true);
-    const segunda = expectCidadesGet((r) => r.params.get('q') === 'bel');
-    segunda.flush([cidadesSeed[1]]);
-    await propagate();
-
-    expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[1]]);
-  });
-
-  it('sinaliza erro na busca de cidade sem bloquear o restante do formulário', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    component['buscaCidade'].set('mar');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    expectCidadesGet((r) => r.params.get('q') === 'mar').flush(
-      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
-      {
-        status: 500,
-        statusText: 'Internal Server Error',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['buscandoCidades']()).toBe(false);
-    expect(component['cidadeOpcoes']()).toEqual([]);
-    expect(component['buscaCidadeErro']()).toBe('Erro interno');
-    // A falha na busca de cidade não impede o restante do cadastro.
-    expect(component['formError']()).toBeNull();
-  });
-
-  it('exibe a cidade da unidade no detalhe, e "Não informada" quando ausente', async () => {
-    await flushInicial();
-
-    component['abrirDetalhe'](unidadesSeed[1]);
-    expect(component['cidadeLabel'](unidadesSeed[1])).toBe('Marabá — PA');
-
-    component['abrirDetalhe'](unidadesSeed[0]);
-    expect(component['cidadeLabel'](unidadesSeed[0])).toBe('Não informada');
-  });
-
-  it('pré-preenche a cidade ao editar e permite trocá-la enviando null', async () => {
-    await flushInicial();
-    component['abrirEdicao'](unidadesSeed[1]);
-    await flushOpcoesSuperior();
-
-    expect(component['cidadeSelecionada']()).toEqual({
-      codigoIbge: '1500107',
-      nome: 'Marabá',
-      uf: 'PA',
-    });
-
-    component['limparCidade']();
-    expect(component['cidadeSelecionada']()).toBeNull();
-
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
-    expect(put.request.body).toMatchObject({
-      cidadeCodigoIbge: null,
-      cidadeNome: null,
-      cidadeUf: null,
-    });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('exibe erro 422 de referência de cidade inline, sem tocar o banner geral do formulário', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-02-01',
-      vigenciaFim: '',
-      motivoMudancaIdentificador: '',
-    });
-
-    component['salvar']();
-
-    controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
-        title: 'Erro de validação',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: '1af15c7793883f87ce943219ab8fd845',
-        errors: [
-          {
-            field: 'CidadeUf',
-            code: 'uf_incoerente',
-            message: 'A UF informada não corresponde à UF do código IBGE informado.',
-          },
-        ],
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-
-    expect(component['saving']()).toBe(false);
-    expect(component['formError']()).toBeNull();
-    expect(component['cidadeErro']()).toBe(
-      'A UF informada não corresponde à UF do código IBGE informado.',
-    );
-
-    // CA-13: a mensagem precisa estar associada ao campo, não só visível —
-    // um leitor de tela precisa anunciá-la ao focar o input, não só quando ela surge.
     fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector(
-      '#cfg-unidade-cidade-busca',
-    ) as HTMLInputElement;
-    expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(input.getAttribute('aria-describedby')).toContain('cfg-unidade-cidade-erro');
-    const erro = fixture.nativeElement.querySelector('#cfg-unidade-cidade-erro');
-    expect(erro?.textContent).toContain(
-      'A UF informada não corresponde à UF do código IBGE informado.',
-    );
-  });
-
-  it('não afirma "nenhuma cidade" enquanto o debounce ainda não disparou a busca', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    // Terceira letra recém-digitada: a request ainda não saiu (debounce de
-    // 300ms). Afirmar "nenhuma cidade" aqui é falso — e, num aria-live, o
-    // leitor de tela anuncia o falso negativo a cada busca (#639).
-    component['buscaCidade'].set('xyz');
-    appRef.tick();
+    TestBed.flushEffects();
     fixture.detectChanges();
 
-    controller.expectNone(`${BASE}/api/cidades`);
-    expect(component['buscandoCidades']()).toBe(false);
-    expect(component['buscaCidadeSemResultado']()).toBe(false);
-    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma cidade encontrada.');
+    expect(compiled.textContent).toContain('ICE');
+    expect(compiled.textContent).toContain('Instituto de Ciências Exatas');
   });
 
-  it('não afirma "nenhuma cidade" ao rebuscar um termo que já devolveu resultado', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
+  it('não deve renderizar a tabela antiga de unidades', async () => {
+    await responderListaUnidades();
+    const compiled = fixture.nativeElement as HTMLElement;
 
-    // 'mar' devolveu Marabá e a cidade foi escolhida — a seleção descarta as
-    // opções da tela, mas o fato "'mar' tem resultado" continua verdadeiro.
-    component['buscaCidade'].set('mar');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    expectCidadesGet((r) => r.params.get('q') === 'mar').flush([cidadesSeed[0]]);
-    await propagate();
-    component['selecionarCidade']({
-      codigoIbge: cidadesSeed[0].codigoIbge,
-      nome: cidadesSeed[0].nome,
-      uf: cidadesSeed[0].uf,
-    });
+    expect(compiled.querySelector('table')).toBeNull();
+    expect(compiled.querySelector('tbody')).toBeNull();
+  });
 
-    component['limparCidade']();
-    component['buscaCidade'].set('mar');
-    appRef.tick();
+  it('deve exibir o botão Nova unidade mesmo quando vazia', async () => {
+    await responderListaUnidades([]);
+    const compiled = fixture.nativeElement as HTMLElement;
+    const botoes = Array.from(compiled.querySelectorAll('button'));
+
+    expect(botoes.some((b) => b.textContent?.includes('Nova unidade'))).toBe(true);
+  });
+
+  it('deve exibir Editar e Remover para cada unidade da árvore', async () => {
+    await responderListaUnidades();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const toggleRaiz = compiled.querySelector('.unit-node__toggle') as HTMLButtonElement | null;
+    toggleRaiz!.click();
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
     fixture.detectChanges();
 
-    expect(component['buscaCidadeSemResultado']()).toBe(false);
-    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma cidade encontrada.');
+    const botoesEditar = compiled.querySelectorAll(
+      '.unit-node__actions button[aria-label^="Editar unidade"]',
+    );
+    const botoesRemover = compiled.querySelectorAll(
+      '.unit-node__actions button[aria-label^="Remover unidade"]',
+    );
+
+    expect(botoesEditar).toHaveLength(2);
+    expect(botoesRemover).toHaveLength(2);
   });
 
-  it('descarta a opção do termo anterior assim que o operador digita outro', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
+  it('deve permitir expandir e recolher um nó com filhos alterando aria-expanded', async () => {
+    await responderListaUnidades();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const toggle = compiled.querySelector('.unit-node__toggle') as HTMLButtonElement | null;
 
-    component['buscaCidade'].set('mar');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    expectCidadesGet((r) => r.params.get('q') === 'mar').flush([cidadesSeed[0]]);
-    await propagate();
-    expect(component['cidadeOpcoes']()).toEqual([cidadesSeed[0]]);
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
 
-    // Novo termo: a busca de 'bel' só sai depois do debounce, mas Marabá não
-    // pode seguir ofertada nesse intervalo — clicá-la gravaria a cidade errada.
-    component['buscaCidade'].set('bel');
-    appRef.tick();
+    toggle?.click();
+    fixture.detectChanges();
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+
+    toggle?.click();
+    fixture.detectChanges();
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('não deve exibir controle de expansão para unidade folha e deve renderizar ícone estático', async () => {
+    await responderListaUnidades();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const toggleRaiz = compiled.querySelector('.unit-node__toggle') as HTMLButtonElement | null;
+    toggleRaiz!.click();
     fixture.detectChanges();
 
-    expect(component['cidadeOpcoes']()).toEqual([]);
-    expect(component['buscaCidadeSemResultado']()).toBe(false);
-    expect(fixture.nativeElement.textContent).not.toContain('Marabá — PA');
-    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma cidade encontrada.');
+    const nodeFilho = compiled.querySelectorAll('.unit-node')[1] as HTMLElement;
+    expect(nodeFilho.querySelector('.unit-node__toggle')).toBeNull();
+    expect(nodeFilho.querySelector('.unit-node__icon')).not.toBeNull();
   });
 
-  it('não rotula com o termo novo o erro de uma busca anterior', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
+  it('deve solicitar remoção da unidade correta e emitir notificação de sucesso', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.remover.mockReturnValue(of({ ok: true, data: undefined }));
 
-    component['buscaCidade'].set('mar');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    const requisicaoMar = expectCidadesGet((r) => r.params.get('q') === 'mar');
-
-    // O campo muda antes de a resposta de 'mar' chegar; `switchMap` só cancela
-    // depois do debounce, então a falha de 'mar' ainda aterrissa aqui.
-    component['buscaCidade'].set('bel');
-    requisicaoMar.flush(
-      {
-        type: 'about:blank',
-        title: 'Erro interno',
-        status: 500,
-        code: 'uniplus.erro',
-        traceId: 'x',
-      },
-      {
-        status: 500,
-        statusText: 'Internal Server Error',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['buscaCidadeErro']()).toBeNull();
-  });
-
-  it('avisa quando a busca de cidade não encontra nenhum resultado', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-
-    component['buscaCidade'].set('xyz');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    expectCidadesGet((r) => r.params.get('q') === 'xyz').flush([]);
-    await propagate();
-    fixture.detectChanges();
-
-    expect(component['cidadeOpcoes']()).toEqual([]);
-    expect(fixture.nativeElement.textContent).toContain('Nenhuma cidade encontrada.');
-  });
-
-  it('trocar de cidade em edição envia o novo trio, sem resíduo do erro/busca anterior', async () => {
-    await flushInicial();
-    component['abrirEdicao'](unidadesSeed[1]); // já tem Marabá — PA selecionada
-    await flushOpcoesSuperior();
-
-    // Uma tentativa de salvar falhou antes de trocar — o erro fica visível...
-    component['cidadeErro'].set('A UF informada não corresponde à UF do código IBGE informado.');
-
-    component['limparCidade']();
-    // ...e some ao trocar, junto com qualquer resíduo de busca (S2).
-    expect(component['cidadeErro']()).toBeNull();
-    expect(component['buscaCidadeErro']()).toBeNull();
-    expect(component['buscaCidade']()).toBe('');
-    expect(component['cidadeOpcoes']()).toEqual([]);
-
-    component['buscaCidade'].set('bel');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    expectCidadesGet((r) => r.params.get('q') === 'bel').flush([cidadesSeed[1]]);
-    await propagate();
-
-    component['selecionarCidade']({
-      codigoIbge: cidadesSeed[1].codigoIbge,
-      nome: cidadesSeed[1].nome,
-      uf: cidadesSeed[1].uf,
-    });
-
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
-    expect(put.request.body).toMatchObject({
-      cidadeCodigoIbge: cidadesSeed[1].codigoIbge,
-      cidadeNome: cidadesSeed[1].nome,
-      cidadeUf: cidadesSeed[1].uf,
-    });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('submete regra de vigência ao backend e exibe erro 422 inline no campo correspondente', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-06-10',
-      vigenciaFim: '2026-06-02',
-      motivoMudancaIdentificador: '',
-    });
-
-    const primeiraChave = component['idempotencyKeyAtual']();
-    expect(component['form'].valid).toBe(true);
-
-    component['salvar']();
-
-    const req1 = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
-    expect(req1.request.method).toBe('POST');
-    expect(req1.request.headers.get('Idempotency-Key')).toBe(primeiraChave);
-    expect(req1.request.body).toMatchObject({
-      vigenciaInicio: '2026-06-10',
-      vigenciaFim: '2026-06-02',
-    });
-    req1.flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
-        title: 'Erro de validação',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: '1af15c7793883f87ce943219ab8fd845',
-        errors: [
-          {
-            field: 'VigenciaFim',
-            code: 'GreaterThanOrEqualValidator',
-            message: 'Data de encerramento deve ser igual ou posterior à data de início.',
-          },
-        ],
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-
-    expect(component['saving']()).toBe(false);
-    expect(component['formError']()).toBeNull();
-    expect(component['form'].controls.vigenciaFim.errors).toEqual({
-      backend: {
-        code: 'GreaterThanOrEqualValidator',
-        message: 'Data de encerramento deve ser igual ou posterior à data de início.',
-      },
-    });
-    expect(component['erroDoCampo']('vigenciaFim')).toBe(
-      'Data de encerramento deve ser igual ou posterior à data de início.',
-    );
-
-    const segundaChave = component['idempotencyKeyAtual']();
-    expect(segundaChave).not.toBe(primeiraChave);
-
-    component['form'].controls.vigenciaFim.setValue('2026-06-10');
-    component['salvar']();
-
-    const retry = controller.expectOne(`${BASE}/api/organizacao/admin/unidades`);
-    expect(retry.request.headers.get('Idempotency-Key')).toBe(segundaChave);
-    expect(retry.request.body).toMatchObject({
-      vigenciaInicio: '2026-06-10',
-      vigenciaFim: '2026-06-10',
-    });
-    retry.flush('01960000-0000-7000-0000-000000000100', {
-      status: 201,
-      statusText: 'Created',
-    });
-    expect(component['formOpen']()).toBe(false);
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('renova Idempotency-Key quando backend sinaliza body_mismatch', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-06-10',
-      vigenciaFim: '2026-06-10',
-      motivoMudancaIdentificador: '',
-    });
-
-    const primeiraChave = component['idempotencyKeyAtual']();
-    component['salvar']();
-
-    controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.idempotency.body_mismatch',
-        title: 'Mesma Idempotency-Key reusada com body diferente',
-        status: 422,
-        detail: 'Mesma Idempotency-Key reusada com body diferente.',
-        instance: 'urn:uuid:019eb1f6-4dd7-75dd-9265-385cadfdec34',
-        code: 'uniplus.idempotency.body_mismatch',
-        traceId: '9777091664fee51f7b8d83c63dc271b7',
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-
-    expect(component['saving']()).toBe(false);
-    expect(component['formError']()).toBe('Mesma Idempotency-Key reusada com body diferente');
-    expect(component['idempotencyKeyAtual']()).not.toBe(primeiraChave);
-  });
-
-  it('renova Idempotency-Key em 409 Conflict para permitir reenvio após corrigir identificador duplicado', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior();
-    component['form'].setValue({
-      nome: 'Faculdade de Computação',
-      alias: '',
-      slug: 'facom',
-      sigla: 'FACOM',
-      codigo: 'FACOM',
-      unidadeSuperiorId: INSTITUTO_ID,
-      tipo: TipoUnidade.faculdade,
-      unidadeAcademica: true,
-      vigenciaInicio: '2026-06-10',
-      vigenciaFim: '2026-06-10',
-      motivoMudancaIdentificador: '',
-    });
-
-    const primeiraChave = component['idempotencyKeyAtual']();
-    component['salvar']();
-
-    controller.expectOne(`${BASE}/api/organizacao/admin/unidades`).flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.unidade.sigla_duplicada',
-        title: 'Sigla já utilizada por outra unidade viva',
-        status: 409,
-        detail: 'A sigla FACOM já pertence a uma unidade vigente.',
-        code: 'uniplus.unidade.sigla_duplicada',
-        traceId: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
-      },
-      {
-        status: 409,
-        statusText: 'Conflict',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-
-    expect(component['saving']()).toBe(false);
-    expect(component['formError']()).toBe('Sigla já utilizada por outra unidade viva');
-    // Sem a renovação, o reenvio com sigla corrigida (body diferente) reusaria a
-    // chave e cairia em body_mismatch, forçando um terceiro submit.
-    expect(component['idempotencyKeyAtual']()).not.toBe(primeiraChave);
-  });
-
-  it('atualiza unidade sem enviar vigenciaInicio no command de update', async () => {
-    await flushInicial();
-    component['abrirEdicao'](unidadesSeed[1]);
-    await flushOpcoesSuperior();
-    component['form'].controls.nome.setValue('Instituto Renomeado');
-    const key = component['idempotencyKeyAtual']();
-
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.headers.get('Idempotency-Key')).toBe(key);
-    expect(put.request.body).not.toHaveProperty('vigenciaInicio');
-    expect(put.request.body).toMatchObject({
-      id: INSTITUTO_ID,
-      nome: 'Instituto Renomeado',
-      tipo: TipoUnidade.instituto,
-    });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    expect(component['formOpen']()).toBe(false);
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('preserva tipo Pro-Reitoria ao editar unidade', async () => {
-    await flushInicial();
-    component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'Pro-Reitoria' });
-    await flushOpcoesSuperior();
-    component['form'].controls.nome.setValue('Pró-Reitoria Renomeada');
-
-    expect(component['form'].controls.tipo.value).toBe(TipoUnidade.proReitoria);
-
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toMatchObject({
-      id: INSTITUTO_ID,
-      nome: 'Pró-Reitoria Renomeada',
-      tipo: TipoUnidade.proReitoria,
-    });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    expect(component['formOpen']()).toBe(false);
-
-    await propagate();
-    expectListGet().flush(unidadesSeed);
-    await propagate();
-  });
-
-  it('não coage tipo desconhecido para "Outro" ao editar — bloqueia o submit', async () => {
-    await flushInicial();
-
-    component['abrirEdicao']({ ...unidadesSeed[1], tipo: 'TipoInexistente' });
-    await flushOpcoesSuperior();
-
-    expect(component['form'].controls.tipo.value).toBe('');
-    expect(component['tipoNaoReconhecido']()).toBe(true);
-    expect(component['form'].controls.tipo.valid).toBe(false);
-
-    // Escolher um tipo válido limpa o estado de "não reconhecido".
-    component['form'].controls.tipo.setValue(TipoUnidade.faculdade);
-    expect(component['tipoNaoReconhecido']()).toBe(false);
-    expect(component['form'].controls.tipo.valid).toBe(true);
-  });
-
-  it('remove unidade sem Idempotency-Key porque o endpoint DELETE não exige o header', async () => {
-    await flushInicial();
-    component['pedirRemocao'](unidadesSeed[1]);
-
+    component['pedirRemocao'](mockUnidadeFilho);
     component['removerConfirmado']();
 
-    const del = controller.expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`);
-    expect(del.request.method).toBe('DELETE');
-    expect(del.request.headers.has('Idempotency-Key')).toBe(false);
-    del.flush(null, { status: 204, statusText: 'No Content' });
+    fixture.detectChanges();
+    TestBed.flushEffects();
 
-    await propagate();
-    expectListGet().flush([unidadesSeed[0]]);
-    await propagate();
+    const reqReload = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    reqReload.flush({ ok: true, data: [mockUnidadeRaiz] });
 
-    expect(component['unidadeParaRemover']()).toBeNull();
+    expect(unidadesApiMock.remover).toHaveBeenCalledWith('u-2');
+    expect(notificationMock.success).toHaveBeenCalledWith('Unidade removida', 'ICE');
   });
 
-  it('busca de unidade superior consulta o backend com q e atualiza as opções (escala além de 1 página)', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior(); // GET inicial das opções (sem q)
+  it('deve desabilitar as ações da linha durante o refetch pós-mutação (recarregandoLista)', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.remover.mockReturnValue(of({ ok: true, data: undefined }));
 
-    component['buscaPai'].set('inst');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-
-    const request = expectListGet(
-      (r) => r.params.get('q') === 'inst' && !r.params.has('cursor'),
-    );
-    request.flush([unidadesSeed[1]]);
-    await propagate();
-
-    expect(component['opcoesUnidadeSuperior']().map((u) => u.id)).toEqual([INSTITUTO_ID]);
-  });
-
-  it('permite tentar novamente quando a navegação falha, preservando a página atual', async () => {
-    await flushInicial([unidadesSeed[0]], {
-      Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
-    });
-    expect(component['unidades']()).toHaveLength(1);
-
-    component['proximaPagina']();
-    await propagate();
-    expectListGet((r) => r.params.get('cursor') === 'pagina-2').flush(
-      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
-      {
-        status: 500,
-        statusText: 'Internal Server Error',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['unidades']()).toHaveLength(1); // preserva a página atual
-    expect(component['errorMessage']()).not.toBeNull();
-    // Cursores preservados na falha (resposta de erro não traz Link): o pager
-    // não some, o usuário continua podendo navegar a partir da página exibida.
-    expect(component['nextCursor']()).toBe('pagina-2');
-
-    component['tentarNovamente']();
-    await propagate();
-    const retry = expectListGet((r) => r.params.get('cursor') === 'pagina-2');
-    retry.flush([unidadesSeed[1]]);
-    await propagate();
-
-    // Substitui a lista pela página recém-carregada (sem acumular).
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
-    expect(component['errorMessage']()).toBeNull();
-  });
-
-  it('limpa a lista quando o refetch pós-mutação falha, sem manter linhas desatualizadas', async () => {
-    await flushInicial();
-    expect(component['unidades']()).toHaveLength(2);
-
-    component['pedirRemocao'](unidadesSeed[1]);
+    component['pedirRemocao'](mockUnidadeRaiz);
     component['removerConfirmado']();
-    controller
-      .expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`)
-      .flush(null, { status: 204, statusText: 'No Content' });
 
-    await propagate();
-    expectListGet().flush(
-      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
-      {
-        status: 500,
-        statusText: 'Internal Server Error',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-    await propagate();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
 
-    expect(component['unidades']()).toHaveLength(0); // não mantém a linha removida
-    expect(component['errorMessage']()).not.toBeNull();
-  });
-
-  it('sinaliza falha ao carregar as opções de unidade superior e permite retry', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await propagate();
-    expectListGet((r) => !r.params.has('q') && !r.params.has('cursor')).flush(
-      { type: 'about:blank', title: 'Erro interno', status: 500, code: 'uniplus.erro', traceId: 'x' },
-      {
-        status: 500,
-        statusText: 'Internal Server Error',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['opcoesSuperiorComErro']()).toBe(true);
-    expect(component['opcoesUnidadeSuperior']()).toHaveLength(0);
-
-    component['recarregarOpcoesSuperior']();
-    await propagate();
-    expectListGet((r) => !r.params.has('q')).flush(unidadesSeed);
-    await propagate();
-
-    expect(component['opcoesSuperiorComErro']()).toBe(false);
-    expect(component['opcoesUnidadeSuperior']()).toHaveLength(2);
-  });
-
-  it('marca a lista em recarga durante o refetch pós-mutação (ações de linha desabilitam)', async () => {
-    await flushInicial();
-    expect(component['recarregandoLista']()).toBe(false);
-
-    component['pedirRemocao'](unidadesSeed[1]);
-    component['removerConfirmado']();
-    controller
-      .expectOne(`${BASE}/api/organizacao/admin/unidades/${INSTITUTO_ID}`)
-      .flush(null, { status: 204, statusText: 'No Content' });
-
-    await propagate();
-    // Refetch pós-remoção pendente: a lista ainda mostra dados, mas em recarga.
+    // O refetch pós-mutação já está em voo (é o que `httpMock.expectOne`
+    // confirma abaixo) — enquanto ele não responde, `recarregandoLista()`
+    // deve estar true e as ações da linha, desabilitadas.
     expect(component['recarregandoLista']()).toBe(true);
 
-    expectListGet().flush([unidadesSeed[0]]);
-    await propagate();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const botaoEditar = compiled.querySelector(
+      '.unit-node__actions button[aria-label="Editar unidade REIT"]',
+    ) as HTMLButtonElement | null;
+    expect(botaoEditar?.disabled).toBe(true);
+
+    const reqReload = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    reqReload.flush({ ok: true, data: [mockUnidadeRaiz] });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
 
     expect(component['recarregandoLista']()).toBe(false);
-    expect(component['unidades']()).toHaveLength(1);
+    expect(botaoEditar?.disabled).toBe(false);
   });
 
-  it('resolve o rótulo do pai mesmo quando ele é filtrado para fora da página atual', async () => {
-    await flushInicial(); // Reitoria + Instituto na carga inicial (alimenta o cache)
+  it('deve limpar a lista quando o refetch pós-mutação falha na primeira página', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.remover.mockReturnValue(of({ ok: true, data: undefined }));
 
-    component['tipoFiltro'].set('4'); // Instituto — o pai Reitoria sai da página
-    await propagate();
-    expectListGet((r) => r.params.get('tipo') === '4').flush([unidadesSeed[1]]);
-    await propagate();
+    component['pedirRemocao'](mockUnidadeRaiz);
+    component['removerConfirmado']();
 
-    expect(component['unidades']()).toHaveLength(1);
-    expect(component['unidades']()[0].id).toBe(INSTITUTO_ID);
-    // Reitoria não está na página filtrada, mas foi vista na carga inicial.
-    expect(component['unidadeSuperiorLabel'](REITORIA_ID)).toBe('REITORIA — Reitoria');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const reqReload = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    reqFlushErro(reqReload);
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['unidades']()).toEqual([]);
   });
 
-  it('ao reabrir o formulário não reusa a busca anterior de unidade superior', async () => {
-    await flushInicial();
-    component['abrirCadastro']();
-    await flushOpcoesSuperior(); // GET inicial das opções (sem q)
+  it('deve realizar busca server-side com debounce de 300ms na listagem principal', async () => {
+    vi.useFakeTimers();
+    await responderListaUnidades();
 
-    component['buscaPai'].set('inst');
-    await sleep(DEBOUNCE_FOLGA_MS);
-    await propagate();
-    expectListGet((r) => r.params.get('q') === 'inst').flush([unidadesSeed[1]]);
-    await propagate();
+    component['busca'].set('REIT');
+    fixture.detectChanges();
 
-    // Reabre: o termo é resetado de forma síncrona, então o GET não leva o q
-    // antigo enquanto o debounce não zera.
+    await vi.advanceTimersByTimeAsync(290);
+    httpMock.expectNone((r) => r.url.includes('/api/organizacao/unidades') && r.params.has('q'));
+
+    await vi.advanceTimersByTimeAsync(20);
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('q') === 'REIT',
+    );
+    req.flush({ ok: true, data: [mockUnidadeRaiz] });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['unidades']()).toEqual([mockUnidadeRaiz]);
+  });
+
+  it('deve filtrar por tipo de unidade enviando o ordinal numérico do backend', async () => {
+    await responderListaUnidades();
+
+    component['tipoFiltro'].set('4'); // Ordinal de TipoUnidade.instituto
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('tipo') === '4',
+    );
+    req.flush({ ok: true, data: [mockUnidadeFilho] });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['unidades']()).toEqual([mockUnidadeFilho]);
+  });
+
+  it('deve permitir navegar entre páginas por cursor e resetar ao alterar filtro', async () => {
+    await responderListaUnidades();
+
+    component['proximaPagina']();
+    fixture.detectChanges();
+
+    const reqNext = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('cursor') === 'next_123',
+    );
+    reqNext.flush(
+      { ok: true, data: [mockUnidadeFilho] },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Link: '<.../unidades?cursor=prev_123&direction=prev>; rel="prev"',
+        },
+      },
+    );
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['prevCursor']()).toBe('prev_123');
+
+    component['tipoFiltro'].set('1');
+    fixture.detectChanges();
+
+    const reqReset = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('tipo') === '1',
+    );
+    expect(reqReset.request.params.has('cursor')).toBe(false);
+  });
+
+  it('deve permitir navegar para a página anterior usando o cursor "prev"', async () => {
+    await responderListaUnidades();
+
+    component['proximaPagina']();
+    fixture.detectChanges();
+
+    const reqNext = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('cursor') === 'next_123',
+    );
+    reqNext.flush(
+      { ok: true, data: [mockUnidadeFilho] },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Link:
+            '<.../unidades?cursor=prev_123&direction=prev>; rel="prev", ' +
+            '<.../unidades?cursor=next_456&direction=next>; rel="next"',
+        },
+      },
+    );
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['prevCursor']()).toBe('prev_123');
+
+    component['paginaAnterior']();
+    fixture.detectChanges();
+
+    const reqPrev = httpMock.expectOne(
+      (r) =>
+        r.url.includes('/api/organizacao/unidades') &&
+        r.params.get('cursor') === 'prev_123' &&
+        r.params.get('direction') === 'prev',
+    );
+    reqPrev.flush(
+      { ok: true, data: [mockUnidadeRaiz, mockUnidadeFilho] },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['unidades']()).toEqual([mockUnidadeRaiz, mockUnidadeFilho]);
+  });
+
+  it('deve preservar cursores e lista quando a navegação falha, e o retry deve refazer a mesma página', async () => {
+    await responderListaUnidades(); // página 1: prev=null, next='next_123'
+
+    component['proximaPagina']();
+    fixture.detectChanges();
+
+    const reqNext = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('cursor') === 'next_123',
+    );
+    reqFlushErro(reqNext);
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    // Falha em navegação (não é a primeira página) preserva cursores e lista
+    // da página anterior, em vez de zerar o pager.
+    expect(component['prevCursor']()).toBeNull();
+    expect(component['nextCursor']()).toBe('next_123');
+    expect(component['unidades']()).toEqual([mockUnidadeRaiz, mockUnidadeFilho]);
+
+    // Retry refaz a MESMA página (mesmo cursor) — `pagina` não é resetado.
+    component['tentarNovamente']();
+    fixture.detectChanges();
+
+    const reqRetry = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('cursor') === 'next_123',
+    );
+    reqRetry.flush(
+      { ok: true, data: [mockUnidadeFilho] },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['unidades']()).toEqual([mockUnidadeFilho]);
+  });
+
+  it('deve limpar a lista e os cursores quando a primeira página falha', async () => {
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    reqFlushErro(req);
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(component['unidades']()).toEqual([]);
+    expect(component['prevCursor']()).toBeNull();
+    expect(component['nextCursor']()).toBeNull();
+  });
+
+  it('deve executar o fluxo completo de edição enviando payload correto e chave de idempotência', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.atualizar.mockReturnValue(of({ ok: true, data: undefined }));
+
+    component['abrirEdicao'](mockUnidadeFilho);
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['form'].patchValue({
+      nome: 'Instituto de Ciências Exatas e Tecnológicas',
+      alias: 'ICET',
+    });
+
+    component['salvar']();
+
+    expect(unidadesApiMock.atualizar).toHaveBeenCalledWith(
+      'u-2',
+      expect.objectContaining({
+        id: 'u-2',
+        nome: 'Instituto de Ciências Exatas e Tecnológicas',
+        alias: 'ICET',
+        sigla: 'ICE',
+        codigo: '002',
+        slug: 'ice',
+        tipo: TipoUnidade.instituto,
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('deve executar o fluxo completo de criação enviando payload correto, notificando sucesso e fechando o formulário', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.criar.mockReturnValue(of({ ok: true, data: 'u-novo-id' }));
+
     component['abrirCadastro']();
-    await propagate();
-    const reaberto = expectListGet();
-    expect(reaberto.request.params.has('q')).toBe(false);
-    reaberto.flush(unidadesSeed);
-    await propagate();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['form'].patchValue({
+      nome: 'Núcleo de Tecnologia',
+      sigla: 'NTEC',
+      slug: 'ntec',
+      codigo: '500',
+      tipo: TipoUnidade.nucleo,
+      unidadeSuperiorId: 'u-1',
+      unidadeAcademica: true,
+      vigenciaInicio: '2026-02-01',
+    });
+    component['selecionarCidade']({ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' });
+
+    const chaveOriginal = component['idempotencyKeyAtual']();
+    component['salvar']();
+
+    expect(unidadesApiMock.criar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nome: 'Núcleo de Tecnologia',
+        alias: null,
+        slug: 'ntec',
+        sigla: 'NTEC',
+        codigo: '500',
+        unidadeSuperiorId: 'u-1',
+        tipo: TipoUnidade.nucleo,
+        unidadeAcademica: true,
+        vigenciaInicio: '2026-02-01',
+        vigenciaFim: null,
+        cidadeCodigoIbge: '1504208',
+        cidadeNome: 'Marabá',
+        cidadeUf: 'PA',
+      }),
+      expect.anything(),
+    );
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const reqReload = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    reqReload.flush({ ok: true, data: [mockUnidadeRaiz] });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    expect(notificationMock.success).toHaveBeenCalledWith('Unidade criada');
+    expect(component['formOpen']()).toBe(false);
+    expect(component['idempotencyKeyAtual']()).not.toBe(chaveOriginal);
+  });
+
+  it('deve renovar a chave de idempotência em erro 409 de conflito', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.criar.mockReturnValue(
+      of({
+        ok: false,
+        problem: {
+          status: 409,
+          type: 'conflict-error',
+          title: 'Conflito de dados',
+          // `code` no nível raiz do problem (não só em `errors[].code`):
+          // `aplicarFalha` chama `ehErroDeEndereco(problem.code)` antes de
+          // checar o status 409, e essa função não trata `undefined`.
+          code: 'Conflict',
+          field: 'sigla',
+          errors: [
+            {
+              field: 'sigla',
+              code: 'Conflict',
+              message: 'Conflito de dados',
+            },
+          ],
+        },
+      }),
+    );
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['form'].patchValue({
+      nome: 'Nova Unidade',
+      sigla: 'NOVA',
+      slug: 'nova',
+      codigo: '100',
+      tipo: TipoUnidade.faculdade,
+      vigenciaInicio: '2026-01-01',
+    });
+
+    const chaveOriginal = component['idempotencyKeyAtual']();
+    component['salvar']();
+
+    expect(component['idempotencyKeyAtual']()).not.toBe(chaveOriginal);
+  });
+
+  it('deve renovar a chave de idempotência em erro 422 de validação de campo', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.criar.mockReturnValue(
+      of({
+        ok: false,
+        problem: {
+          status: 422,
+          type: 'validation-error',
+          title: 'Erro de validação',
+          errors: [{ field: 'Sigla', code: 'Duplicate', message: 'Sigla já está em uso.' }],
+        },
+      }),
+    );
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['form'].patchValue({
+      nome: 'Nova Unidade',
+      sigla: 'REIT',
+      slug: 'nova-unidade',
+      codigo: '999',
+      tipo: TipoUnidade.faculdade,
+      vigenciaInicio: '2026-01-01',
+    });
+
+    const chaveOriginal = component['idempotencyKeyAtual']();
+    component['salvar']();
+
+    expect(component['idempotencyKeyAtual']()).not.toBe(chaveOriginal);
+  });
+
+  it('deve renovar a chave de idempotência quando o backend reporta body_mismatch', async () => {
+    await responderListaUnidades();
+    unidadesApiMock.criar.mockReturnValue(
+      of({
+        ok: false,
+        problem: {
+          status: 400,
+          type: 'idempotency-error',
+          title: 'Requisição divergente da original',
+          code: 'uniplus.idempotency.body_mismatch',
+        },
+      }),
+    );
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['form'].patchValue({
+      nome: 'Nova Unidade',
+      sigla: 'NOVA2',
+      slug: 'nova2',
+      codigo: '101',
+      tipo: TipoUnidade.faculdade,
+      vigenciaInicio: '2026-01-01',
+    });
+
+    const chaveOriginal = component['idempotencyKeyAtual']();
+    component['salvar']();
+
+    expect(component['idempotencyKeyAtual']()).not.toBe(chaveOriginal);
+  });
+
+  it('deve resolver o rótulo da unidade superior mesmo quando filtrada para fora da página', async () => {
+    await responderListaUnidades([mockUnidadeRaiz, mockUnidadeFilho]);
+
+    component['tipoFiltro'].set('4');
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
+    req.flush({ ok: true, data: [mockUnidadeFilho] });
+    fixture.detectChanges();
+
+    expect(component['unidadeSuperiorLabel']('u-1')).toBe('REIT — Reitoria');
+  });
+
+  it('deve descartar resultados obsoletos de busca de cidade (proteção contra o bug #639)', async () => {
+    vi.useFakeTimers();
+    await responderListaUnidades();
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['buscaCidade'].set('Marab');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+
+    component['buscaCidade'].set('Belém');
+    fixture.detectChanges();
+
+    expect(component['buscaCidadeSemResultado']()).toBe(false);
+  });
+
+  it('não deve rotular o campo Cidade com o erro de uma busca de termo já abandonado', async () => {
+    vi.useFakeTimers();
+    await responderListaUnidades();
+
+    geoApiMock.listarCidades.mockReturnValueOnce(
+      of({
+        ok: false,
+        problem: { status: 500, type: 'server-error', title: 'Erro ao buscar cidade' },
+      }),
+    );
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['buscaCidade'].set('Marab');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+
+    // A resposta de erro do termo 'Marab' já chegou (o mock é síncrono); o
+    // usuário já trocou de termo antes de qualquer nova busca disparar —
+    // o erro de 'Marab' não pode aparecer sob 'Belém'.
+    component['buscaCidade'].set('Belém');
+    fixture.detectChanges();
+
+    expect(component['buscaCidadeErro']()).toBeNull();
+  });
+
+  it('deve cancelar uma busca de cidade em andamento ao digitar um novo termo (switchMap)', async () => {
+    vi.useFakeTimers();
+    await responderListaUnidades();
+
+    const respostaMarab = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
+    const respostaBelem = new Subject<ApiResult<readonly CidadeResumoDto[]>>();
+    geoApiMock.listarCidades.mockImplementation((params) =>
+      params.q === 'Marabá' ? respostaMarab.asObservable() : respostaBelem.asObservable(),
+    );
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['buscaCidade'].set('Marabá');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+
+    component['buscaCidade'].set('Belém');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+
+    // 'Belém' já disparou a request; a busca de 'Marabá' deveria ter sido
+    // cancelada pelo switchMap ao trocar de termo, então mesmo que sua
+    // resposta chegue depois, ela não deve mais ser aplicada.
+    respostaMarab.next({ ok: true, data: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }] });
+    respostaBelem.next({ ok: true, data: [{ codigoIbge: '1501402', nome: 'Belém', uf: 'PA' }] });
+    fixture.detectChanges();
+
+    expect(component['cidadeOpcoes']()).toEqual([
+      { codigoIbge: '1501402', nome: 'Belém', uf: 'PA' },
+    ]);
+  });
+
+  it('deve realizar busca por cidade com debounce de 300ms e mínimo de 3 caracteres', async () => {
+    vi.useFakeTimers();
+    await responderListaUnidades();
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['buscaCidade'].set('Ma');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(geoApiMock.listarCidades).not.toHaveBeenCalled();
+
+    component['buscaCidade'].set('Marabá');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(geoApiMock.listarCidades).toHaveBeenCalledWith({
+      q: 'Marabá',
+      limit: 20,
+    });
+  });
+
+  it('deve mapear erros 422 de validação retornados pelo backend para os controles do formulário', async () => {
+    await responderListaUnidades();
+
+    unidadesApiMock.criar.mockReturnValue(
+      of({
+        ok: false,
+        problem: {
+          status: 422,
+          type: 'validation-error',
+          title: 'Erro de validação',
+          errors: [
+            {
+              field: 'Sigla',
+              code: 'Duplicate',
+              message: 'Sigla já está em uso.',
+            },
+          ],
+        },
+      }),
+    );
+
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    await responderLookupSuperior();
+
+    component['form'].patchValue({
+      nome: 'Nova Unidade',
+      sigla: 'REIT',
+      slug: 'nova-unidade',
+      codigo: '999',
+      tipo: TipoUnidade.faculdade,
+      vigenciaInicio: '2026-01-01',
+    });
+
+    component['salvar']();
+
+    expect(unidadesApiMock.criar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nome: 'Nova Unidade',
+        sigla: 'REIT',
+        slug: 'nova-unidade',
+        codigo: '999',
+        tipo: TipoUnidade.faculdade,
+        vigenciaInicio: '2026-01-01',
+      }),
+      expect.anything(),
+    );
+
+    fixture.detectChanges();
+    expect(component['erroDoCampo']('sigla')).toBe('Sigla já está em uso.');
   });
 });
