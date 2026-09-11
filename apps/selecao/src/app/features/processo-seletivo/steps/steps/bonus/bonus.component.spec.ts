@@ -224,4 +224,38 @@ describe('BonusStepComponent', () => {
       });
     });
   });
+
+  describe('municipiosDaBaseLegalSelecionada()', () => {
+    it('não lista município nenhum quando não há base legal escolhida', () => {
+      expect(componente.municipiosDaBaseLegalSelecionada()).toEqual([]);
+    });
+
+    it('lista os municípios da base legal escolhida, ordenados por nome', () => {
+      componente['carregarBasesLegais']();
+      controller
+        .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
+        .flush([
+          {
+            id: BASE_LEGAL_ID,
+            tipoInstrumento: 'PORTARIA',
+            identificacao: 'Portaria Unifesspa nº 2514/2023',
+            descricao: 'Institui inclusão regional.',
+            municipios: [
+              { codigoIbge: '1500107', nome: 'Xinguara', uf: 'PA' },
+              { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+              { codigoIbge: '1500859', nome: 'Abel Figueiredo', uf: 'PA' },
+            ],
+            criadoEm: '2026-01-01T00:00:00Z',
+          },
+        ]);
+
+      componente.escolherBaseLegal(BASE_LEGAL_ID);
+
+      expect(componente.municipiosDaBaseLegalSelecionada().map((m) => m.nome)).toEqual([
+        'Abel Figueiredo',
+        'Marabá',
+        'Xinguara',
+      ]);
+    });
+  });
 });

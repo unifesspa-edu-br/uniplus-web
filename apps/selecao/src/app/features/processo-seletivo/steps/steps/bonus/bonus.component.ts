@@ -26,6 +26,14 @@ import { comoComandoDeBonus } from './bonus-para-comando';
 interface BaseLegalEscolhivel {
   readonly id: string;
   readonly identificacao: string;
+  readonly municipios: readonly MunicipioBeneficiado[];
+}
+
+/** Município de uma base legal — mesma forma tanto no catálogo quanto no snapshot congelado. */
+interface MunicipioBeneficiado {
+  readonly codigoIbge: string;
+  readonly nome: string;
+  readonly uf: string;
 }
 
 /**
@@ -74,6 +82,7 @@ export class BonusStepComponent {
     const catalogo = this.basesLegais().map((base) => ({
       id: base.id,
       identificacao: base.identificacao,
+      municipios: base.municipios,
     }));
     const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
     if (selecionadoId === '' || catalogo.some((base) => base.id === selecionadoId)) {
@@ -90,9 +99,29 @@ export class BonusStepComponent {
     }
 
     return [
-      { id: snapshot.baseLegalBonusRegionalId, identificacao: snapshot.identificacao },
+      {
+        id: snapshot.baseLegalBonusRegionalId,
+        identificacao: snapshot.identificacao,
+        municipios: snapshot.municipios,
+      },
       ...catalogo,
     ];
+  });
+
+  /**
+   * Municípios da base legal escolhida, ordenados por nome — o mesmo catálogo/snapshot
+   * de `basesLegaisEscolhiveis`, então uma base fora do catálogo (CA-03) continua
+   * mostrando os municípios do congelamento. Exibida junto ao select para o gestor
+   * confirmar visualmente a cobertura sem precisar abrir o cadastro em outra aba.
+   */
+  readonly municipiosDaBaseLegalSelecionada = computed<readonly MunicipioBeneficiado[]>(() => {
+    const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
+    if (selecionadoId === '') return [];
+
+    const base = this.basesLegaisEscolhiveis().find((b) => b.id === selecionadoId);
+    if (base === undefined) return [];
+
+    return [...base.municipios].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   });
 
   escolherRegra(valor: string): void {
