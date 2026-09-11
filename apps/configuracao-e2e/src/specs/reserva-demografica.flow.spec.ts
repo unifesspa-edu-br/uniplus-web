@@ -78,7 +78,7 @@ test.describe('Reserva demográfica — CRUD (#394)', () => {
     await abrirPagina(page);
 
     await expect(page.getByText('congelamento por snapshot')).toBeVisible();
-    await expect(page.getByRole('cell', { name: '2022' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '2022', exact: true })).toBeVisible();
     await expect(page.getByText('78.50')).toBeVisible();
   });
 

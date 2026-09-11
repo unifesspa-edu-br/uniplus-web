@@ -65,13 +65,13 @@ describe('RecursosAcessibilidadeListPage', () => {
 
   function getInativarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:last-child',
+      'td.table-responsive__actions ui-icon-button:last-child button',
     ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:first-child',
+      'td.table-responsive__actions ui-icon-button:first-child button',
     ) as HTMLButtonElement;
   }
 

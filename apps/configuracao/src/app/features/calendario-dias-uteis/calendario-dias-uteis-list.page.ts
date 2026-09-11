@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import {
   ApiResult,
@@ -29,6 +29,7 @@ import {
   AlertComponent,
   DialogComponent,
   EmptyStateComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -44,6 +45,7 @@ const PAGE_SIZE = 50;
     AlertComponent,
     SpinnerComponent,
     EmptyStateComponent,
+    IconButtonComponent,
     RouterLink,
     DateBrPipe,
     DialogComponent,
@@ -117,37 +119,34 @@ const PAGE_SIZE = 50;
                     {{ calendario.criadoEm | dateBr: 'short' }}
                   </td>
                   <td data-label="Ações" class="table-responsive__actions">
-                    <a
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [attr.aria-label]="'Visualizar calendário ' + calendario.versaoDataset"
-                      [routerLink]="[calendario.id]"
-                    >
-                      Visualizar calendário
-                    </a>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [title]="calendario.vigente ? 'Marque outro dataset como vigente' : ''"
-                      [disabled]="loading() || saving() || calendario.vigente"
-                      [attr.aria-label]="'Marcar vigente ' + calendario.versaoDataset"
-                      (click)="solicitarVigenteConfirmado(calendario)"
-                    >
-                      Marcar vigente
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [title]="
+                    <ui-icon-button
+                      icon="pi-eye"
+                      [accessibleName]="'Visualizar calendário ' + calendario.versaoDataset"
+                      tooltip="Visualizar calendário"
+                      (triggered)="abrirDetalhe(calendario)"
+                    />
+                    <ui-icon-button
+                      icon="pi-check-circle"
+                      [accessibleName]="'Marcar vigente ' + calendario.versaoDataset"
+                      [tooltip]="
+                        calendario.vigente
+                          ? 'Marque outro dataset como vigente'
+                          : 'Marcar como vigente'
+                      "
+                      [isDisabled]="loading() || saving() || calendario.vigente"
+                      (triggered)="solicitarVigenteConfirmado(calendario)"
+                    />
+                    <ui-icon-button
+                      icon="pi-trash"
+                      [accessibleName]="'Remover calendário ' + calendario.versaoDataset"
+                      [tooltip]="
                         calendario.vigente
                           ? 'Marque outro dataset como vigente antes de remover este'
-                          : ''
+                          : 'Remover calendário'
                       "
-                      [disabled]="loading() || saving() || calendario.vigente"
-                      [attr.aria-label]="'Remover calendário ' + calendario.versaoDataset"
-                      (click)="abrirRemoverCalendario(calendario)"
-                    >
-                      Remover calendário
-                    </button>
+                      [isDisabled]="loading() || saving() || calendario.vigente"
+                      (triggered)="abrirRemoverCalendario(calendario)"
+                    />
                   </td>
                 </tr>
               }
@@ -209,6 +208,8 @@ export class CalendarioDiasUteisListPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly pagina = signal<
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
@@ -313,6 +314,10 @@ export class CalendarioDiasUteisListPage {
         }
         this.aplicarFalha(result.problem);
       });
+  }
+
+  protected abrirDetalhe(calendario: CalendarioDiasUteisResumoDto): void {
+    void this.router.navigate([calendario.id], { relativeTo: this.route });
   }
 
   abrirRemoverCalendario(calendario: CalendarioDiasUteisResumoDto): void {

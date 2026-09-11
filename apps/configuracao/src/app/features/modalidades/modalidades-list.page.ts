@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   ApiResult,
   Cursor,
@@ -38,6 +38,7 @@ import {
   EmptyStateComponent,
   FilterBarComponent,
   FilterChipsComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
@@ -72,6 +73,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
     TagComponent,
@@ -211,22 +213,19 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                     </td>
                     <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <a
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [routerLink]="m.id"
-                        [attr.aria-label]="'Editar modalidade ' + m.codigo"
-                      >
-                        Editar
-                      </a>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading()"
-                        [attr.aria-label]="'Inativar modalidade ' + m.codigo"
-                        (click)="pedirRemocao(m)"
-                      >
-                        Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar modalidade ' + m.codigo"
+                        tooltip="Editar modalidade"
+                        (triggered)="abrirEdicao(m)"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar modalidade ' + m.codigo"
+                        tooltip="Inativar modalidade"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirRemocao(m)"
+                      />
                     </td>
                   </tr>
                 }
@@ -346,6 +345,8 @@ export class ModalidadesListPage {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly busca = signal('');
   protected readonly naturezaSelecionada = signal<string | null>(null);
@@ -537,6 +538,10 @@ export class ModalidadesListPage {
   protected limparFiltros(): void {
     this.busca.set('');
     this.naturezaSelecionada.set(null);
+  }
+
+  protected abrirEdicao(m: ModalidadeDto): void {
+    void this.router.navigate([m.id], { relativeTo: this.route });
   }
 
   protected pedirRemocao(m: ModalidadeDto): void {

@@ -41,6 +41,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -70,6 +71,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -175,22 +177,22 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                     <td data-label="Base legal">{{ ref.baseLegal }}</td>
                     <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading()"
-                        (click)="abrirEdicao(ref)"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading()"
-                        (click)="pedirRemocao(ref)"
-                      >
-                        Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar reserva demográfica do censo ' + ref.censoReferencia"
+                        tooltip="Editar reserva demográfica"
+                        [isDisabled]="loading()"
+                        (triggered)="abrirEdicao(ref)"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="
+                          'Inativar reserva demográfica do censo ' + ref.censoReferencia
+                        "
+                        tooltip="Inativar reserva demográfica"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirRemocao(ref)"
+                      />
                     </td>
                   </tr>
                 }
