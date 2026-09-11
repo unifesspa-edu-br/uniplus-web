@@ -2,9 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  afterRenderEffect,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
@@ -61,9 +64,41 @@ export class BonusStepComponent {
   readonly basesLegaisCarregando = signal(true);
   readonly basesLegaisErro = signal<string | null>(null);
 
+  private readonly municipiosScrollRef =
+    viewChild<ElementRef<HTMLDivElement>>('municipiosScroll');
+  protected readonly municipiosRolavel = signal(false);
+
   constructor() {
     this.catalogos.carregar();
     this.carregarBasesLegais();
+
+    afterRenderEffect(() => {
+      // Lido aqui só para a leitura virar dependência do efeito: a lista de
+      // municípios muda de tamanho (conteúdo da tabela) sem que o breakpoint
+      // mude, e a caixa precisa ser remedida quando isso acontece.
+      this.municipiosDaBaseLegalSelecionada();
+      this.medirRolagemDosMunicipios();
+    });
+
+    if (typeof window !== 'undefined') {
+      const remedir = (): void => this.medirRolagemDosMunicipios();
+      window.addEventListener('resize', remedir);
+      this.destroyRef.onDestroy(() => window.removeEventListener('resize', remedir));
+    }
+  }
+
+  /**
+   * `tabindex`/`role`/`aria-labelledby` só fazem sentido quando a tabela de
+   * fato transborda a caixa — decidir só pelo breakpoint (768px) marcava
+   * como focável até uma base legal com poucos municípios, que nunca chega a
+   * rolar mesmo em telas largas. Medido de novo a cada mudança de conteúdo e
+   * a cada redimensionamento da janela (o CSS que remove `max-height` abaixo
+   * de 768px já faz `scrollHeight` bater com `clientHeight` sozinho, sem
+   * precisar duplicar o valor do breakpoint aqui).
+   */
+  private medirRolagemDosMunicipios(): void {
+    const elemento = this.municipiosScrollRef()?.nativeElement;
+    this.municipiosRolavel.set(elemento !== undefined && elemento.scrollHeight > elemento.clientHeight);
   }
 
   readonly regrasBonus = computed(() => {
