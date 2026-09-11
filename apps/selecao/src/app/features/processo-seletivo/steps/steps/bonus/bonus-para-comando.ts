@@ -16,9 +16,9 @@ function decimal(texto: string): number | null {
 
 /**
  * Converte o rascunho de bônus no `DefinirBonusRegionalRequest`. Toggle por
- * presença (RN05, INV-B5): `ativo === false` grava os cinco campos `null` —
- * é assim que "sem bônus" se declara, não existe rota separada para
- * desligá-lo. CA-04: nenhum default é inventado quando ativo.
+ * presença: `ativo === false` grava os cinco campos `null` — é assim que "sem
+ * bônus" se declara, não existe rota separada para desligá-lo. CA-04: nenhum
+ * default é inventado quando ativo.
  */
 export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusRegionalRequest {
   if (!bonus.ativo) {
@@ -27,8 +27,7 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
       regraVersao: null,
       fator: null,
       teto: null,
-      municipioConvenio: null,
-      baseLegal: null,
+      baseLegalBonusRegionalId: null,
     };
   }
 
@@ -37,7 +36,6 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
     regraVersao: naoVazio(bonus.regraVersao),
     fator: decimal(bonus.fator),
     teto: naoVazio(bonus.teto) === null ? null : decimal(bonus.teto),
-    municipioConvenio: naoVazio(bonus.municipioConvenio),
-    baseLegal: naoVazio(bonus.baseLegal),
+    baseLegalBonusRegionalId: naoVazio(bonus.baseLegalBonusRegionalId),
   };
 }

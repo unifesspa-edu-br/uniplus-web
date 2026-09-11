@@ -5,6 +5,14 @@
 @if (catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
+@if (basesLegaisErro(); as erro) {
+  <p class="alert alert--danger" role="alert">
+    {{ erro }}
+    <button type="button" class="btn btn--secondary btn--sm" (click)="carregarBasesLegais()">
+      Tentar novamente
+    </button>
+  </p>
+}
 <div class="step-card">
   <label class="check-item"
     ><input
@@ -64,26 +72,19 @@
       </div>
       <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
         <div class="form-field">
-          <label class="label" for="f-bonus-municipio">Município do convênio (opcional)</label
-          ><input
-            class="input"
-            id="f-bonus-municipio"
-            type="text"
-            maxlength="200"
-            [value]="store.draft().bonus.municipioConvenio"
-            (input)="alterarMunicipioConvenio($any($event.target).value)"
-          />
-        </div>
-        <div class="form-field">
-          <label class="label" for="f-bonus-base-legal">Base legal (opcional)</label
-          ><input
+          <label class="label" for="f-bonus-base-legal">Base Legal do bônus</label
+          ><select
             class="input"
             id="f-bonus-base-legal"
-            type="text"
-            maxlength="500"
-            [value]="store.draft().bonus.baseLegal"
-            (input)="alterarBaseLegal($any($event.target).value)"
-          />
+            [disabled]="basesLegaisCarregando()"
+            [value]="store.draft().bonus.baseLegalBonusRegionalId"
+            (change)="escolherBaseLegal($any($event.target).value)"
+          >
+            <option value="">— escolher —</option>
+            @for (base of basesLegaisEscolhiveis(); track base.id) {
+              <option [value]="base.id">{{ base.identificacao }}</option>
+            }
+          </select>
         </div>
       </div>
     </div>

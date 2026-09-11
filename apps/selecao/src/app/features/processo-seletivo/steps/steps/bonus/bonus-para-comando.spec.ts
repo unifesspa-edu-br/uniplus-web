@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { WizardDraft } from '../../processo-seletivo.models';
 import { comoComandoDeBonus } from './bonus-para-comando';
 
+const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
+
 function bonus(patch: Partial<WizardDraft['bonus']>): WizardDraft['bonus'] {
   return {
     ativo: false,
@@ -10,14 +12,13 @@ function bonus(patch: Partial<WizardDraft['bonus']>): WizardDraft['bonus'] {
     regraVersao: '',
     fator: '',
     teto: '',
-    municipioConvenio: '',
-    baseLegal: '',
+    baseLegalBonusRegionalId: '',
     ...patch,
   };
 }
 
 describe('comoComandoDeBonus', () => {
-  it('grava os cinco campos null quando o bônus não está ativo (RN05, toggle por presença)', () => {
+  it('grava os cinco campos null quando o bônus não está ativo (toggle por presença)', () => {
     const comando = comoComandoDeBonus(
       bonus({
         ativo: false,
@@ -32,8 +33,7 @@ describe('comoComandoDeBonus', () => {
       regraVersao: null,
       fator: null,
       teto: null,
-      municipioConvenio: null,
-      baseLegal: null,
+      baseLegalBonusRegionalId: null,
     });
   });
 
@@ -45,8 +45,7 @@ describe('comoComandoDeBonus', () => {
         regraVersao: '1.0',
         fator: '1,20',
         teto: '10',
-        municipioConvenio: 'Marabá',
-        baseLegal: 'Convênio 01/2026',
+        baseLegalBonusRegionalId: BASE_LEGAL_ID,
       }),
     );
 
@@ -55,8 +54,7 @@ describe('comoComandoDeBonus', () => {
       regraVersao: '1.0',
       fator: 1.2,
       teto: 10,
-      municipioConvenio: 'Marabá',
-      baseLegal: 'Convênio 01/2026',
+      baseLegalBonusRegionalId: BASE_LEGAL_ID,
     });
   });
 
@@ -74,12 +72,11 @@ describe('comoComandoDeBonus', () => {
     expect(comando.teto).toBeNull();
   });
 
-  it('município e base legal vazios vão null — CA-04, sem default inventado', () => {
+  it('base legal vazia vai null — CA-04, sem default inventado', () => {
     const comando = comoComandoDeBonus(
       bonus({ ativo: true, regraCodigo: 'BONUS-MULTIPLICATIVO', regraVersao: '1.0', fator: '1.2' }),
     );
 
-    expect(comando.municipioConvenio).toBeNull();
-    expect(comando.baseLegal).toBeNull();
+    expect(comando.baseLegalBonusRegionalId).toBeNull();
   });
 });

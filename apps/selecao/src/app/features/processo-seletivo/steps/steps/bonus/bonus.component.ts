@@ -1,5 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import {
+  BaseLegalBonusRegionalApi,
+  BaseLegalBonusRegionalDto,
+} from '@uniplus/shared-data/configuracao';
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -10,13 +22,14 @@ import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-c
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import { comoComandoDeBonus } from './bonus-para-comando';
 
-/** Alinhado a `ConfiguracaoBonusRegional.MunicipioConvenioMaxLength` (varchar(200)). */
-const MUNICIPIO_CONVENIO_MAX_LENGTH = 200;
-/** Alinhado a `ConfiguracaoBonusRegional.BaseLegalMaxLength` (varchar(500)). */
-const BASE_LEGAL_MAX_LENGTH = 500;
+/** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
+interface BaseLegalEscolhivel {
+  readonly id: string;
+  readonly identificacao: string;
+}
 
 /**
- * Bônus regional (RN05, `PUT …/bonus-regional`) — toggle por presença: não
+ * Bônus regional (`PUT …/bonus-regional`) — toggle por presença: não
  * existe "BONUS-NENHUM", a ausência da entidade já significa sem bônus.
  * Reconstrução conforme o contrato: nenhum campo da tela anterior (`tipo`,
  * `valor`, `criterio`, `modalidades`) tem correspondente aqui.
@@ -31,11 +44,18 @@ const BASE_LEGAL_MAX_LENGTH = 500;
 export class BonusStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
+  private readonly baseLegalApi = inject(BaseLegalBonusRegionalApi);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
 
+  private readonly basesLegais = signal<readonly BaseLegalBonusRegionalDto[]>([]);
+  readonly basesLegaisCarregando = signal(true);
+  readonly basesLegaisErro = signal<string | null>(null);
+
   constructor() {
     this.catalogos.carregar();
+    this.carregarBasesLegais();
   }
 
   readonly regrasBonus = computed(() => {
@@ -43,9 +63,45 @@ export class BonusStepComponent {
     return regrasEscolhiveis(this.catalogos.regrasBonus(), bonus.regraCodigo, bonus.regraVersao);
   });
 
+  /**
+   * O catálogo ativo mais, quando faltar, a base legal que o processo já tem
+   * gravada — reabrir um processo cuja base legal foi desativada depois não
+   * pode mostrar o `<select>` em branco (CA-03, mesmo princípio de
+   * `regrasEscolhiveis`). O snapshot do próprio processo carrega
+   * `identificacao` mesmo quando a base legal já saiu do catálogo.
+   */
+  readonly basesLegaisEscolhiveis = computed<readonly BaseLegalEscolhivel[]>(() => {
+    const catalogo = this.basesLegais().map((base) => ({
+      id: base.id,
+      identificacao: base.identificacao,
+    }));
+    const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
+    if (selecionadoId === '' || catalogo.some((base) => base.id === selecionadoId)) {
+      return catalogo;
+    }
+
+    const snapshot = this.store.remoteSnapshot()?.bonusRegional;
+    if (
+      snapshot === null ||
+      snapshot === undefined ||
+      snapshot.baseLegalBonusRegionalId !== selecionadoId
+    ) {
+      return catalogo;
+    }
+
+    return [
+      { id: snapshot.baseLegalBonusRegionalId, identificacao: snapshot.identificacao },
+      ...catalogo,
+    ];
+  });
+
   escolherRegra(valor: string): void {
     const [codigo = '', versao = ''] = valor.split('|');
     this.store.patchObjectSection('bonus', { regraCodigo: codigo, regraVersao: versao });
+  }
+
+  escolherBaseLegal(id: string): void {
+    this.store.patchObjectSection('bonus', { baseLegalBonusRegionalId: id });
   }
 
   alternarAtivo(ativo: boolean): void {
@@ -58,14 +114,6 @@ export class BonusStepComponent {
 
   alterarTeto(teto: string): void {
     this.store.patchObjectSection('bonus', { teto });
-  }
-
-  alterarMunicipioConvenio(municipioConvenio: string): void {
-    this.store.patchObjectSection('bonus', { municipioConvenio });
-  }
-
-  alterarBaseLegal(baseLegal: string): void {
-    this.store.patchObjectSection('bonus', { baseLegal });
   }
 
   rotuloDeAvanco(): string {
@@ -85,6 +133,10 @@ export class BonusStepComponent {
       };
     }
 
+    const baseLegal = this.basesLegaisEscolhiveis().find(
+      (base) => base.id === bonus.baseLegalBonusRegionalId,
+    );
+
     return {
       titulo: 'Confirmar o bônus regional',
       aviso: 'Estes dados serão gravados como o bônus regional deste processo.',
@@ -93,11 +145,7 @@ export class BonusStepComponent {
         { rotulo: 'Regra', valor: bonus.regraCodigo },
         { rotulo: 'Fator', valor: bonus.fator },
         { rotulo: 'Teto', valor: bonus.teto === '' ? 'sem teto' : bonus.teto },
-        {
-          rotulo: 'Município do convênio',
-          valor: bonus.municipioConvenio === '' ? 'não informado' : bonus.municipioConvenio,
-        },
-        { rotulo: 'Base legal', valor: bonus.baseLegal === '' ? 'não informada' : bonus.baseLegal },
+        { rotulo: 'Base legal', valor: baseLegal?.identificacao ?? 'não selecionada' },
       ],
     };
   }
@@ -121,14 +169,8 @@ export class BonusStepComponent {
       }
     }
 
-    if (bonus.municipioConvenio.length > MUNICIPIO_CONVENIO_MAX_LENGTH) {
-      messages.push(
-        `Município do convênio deve ter no máximo ${MUNICIPIO_CONVENIO_MAX_LENGTH} caracteres.`,
-      );
-    }
-
-    if (bonus.baseLegal.length > BASE_LEGAL_MAX_LENGTH) {
-      messages.push(`Base legal deve ter no máximo ${BASE_LEGAL_MAX_LENGTH} caracteres.`);
+    if (!bonus.baseLegalBonusRegionalId) {
+      messages.push('Selecione a base legal do bônus regional.');
     }
 
     return messages.length ? { valid: false, messages } : { valid: true };
@@ -165,6 +207,25 @@ export class BonusStepComponent {
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  protected carregarBasesLegais(): void {
+    this.basesLegaisCarregando.set(true);
+    this.basesLegaisErro.set(null);
+
+    coletarPaginas((cursor) => this.baseLegalApi.listar({ cursor, direction: 'next' }))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => {
+        if (!isApiOk(resultado)) {
+          this.basesLegaisErro.set(
+            'Não foi possível carregar as bases legais de bônus regional. Tente novamente.',
+          );
+          this.basesLegaisCarregando.set(false);
+          return;
+        }
+        this.basesLegais.set(resultado.data);
+        this.basesLegaisCarregando.set(false);
+      });
   }
 }
 

@@ -382,13 +382,18 @@ const CLASSIFICACAO = {
   ],
 };
 
+const BASE_LEGAL_ID_SNAPSHOT = 'ba5e0000-0000-7000-8000-000000000001';
+
 const BONUS = {
   id: 'snapshot-bonus-1',
   regra: { codigo: 'BONUS-MULTIPLICATIVO', versao: '1.0' },
   fator: 1.2,
   teto: null,
-  municipioConvenio: 'Marabá',
-  baseLegal: 'Convênio 01/2026',
+  baseLegalBonusRegionalId: BASE_LEGAL_ID_SNAPSHOT,
+  tipoInstrumento: 'PORTARIA',
+  identificacao: 'Portaria Unifesspa nº 2514/2023',
+  descricao: 'Institui inclusão regional.',
+  municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
 };
 
 const CRITERIOS_DESEMPATE = [
@@ -472,12 +477,11 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       regraVersao: '1.0',
       fator: '1.2',
       teto: '',
-      municipioConvenio: 'Marabá',
-      baseLegal: 'Convênio 01/2026',
+      baseLegalBonusRegionalId: BASE_LEGAL_ID_SNAPSHOT,
     });
   });
 
-  /** Ausência é o próprio "sem bônus" (RN05) — não `ativo: false` com resíduo. */
+  /** Ausência é o próprio "sem bônus" — não `ativo: false` com resíduo. */
   it('trata processo sem bônus regional como ausência declarada', () => {
     const { bonus } = hidratarDraft(DRAFT, dtoComCronograma({ bonusRegional: null }));
 
@@ -487,8 +491,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       regraVersao: '',
       fator: '',
       teto: '',
-      municipioConvenio: '',
-      baseLegal: '',
+      baseLegalBonusRegionalId: '',
     });
   });
 

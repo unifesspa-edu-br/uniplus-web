@@ -38,7 +38,24 @@ const REGRAS_ORDEM_ALOCACAO = [regra('ALOCACAO-OPCOES-RN04', 'regra_ordem_alocac
 const REGRAS_ELIMINACAO = [
   regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
 ];
-const REGRAS_BONUS = [regra('BONUS-MULTIPLICATIVO', 'regra_bonus', 'RN05')];
+const REGRAS_BONUS = [
+  regra(
+    'BONUS-MULTIPLICATIVO',
+    'regra_bonus',
+    'Bônus multiplicativo aplicado à nota final após os pesos das áreas do ENEM, sem teto por padrão',
+  ),
+];
+const BASE_LEGAL_BONUS_REGIONAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
+const BASES_LEGAIS_BONUS_REGIONAL = [
+  {
+    id: BASE_LEGAL_BONUS_REGIONAL_ID,
+    tipoInstrumento: 'PORTARIA',
+    identificacao: 'Portaria Unifesspa nº 2514/2023',
+    descricao: 'Institui inclusão regional.',
+    municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+    criadoEm: '2026-01-01T00:00:00Z',
+  },
+];
 const CRITERIOS_DESEMPATE = [
   regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate', 'Costume administrativo'),
   regra('DESEMPATE-IDOSO', 'criterio_desempate', 'Lei 10.741/2003, art. 27'),
@@ -139,6 +156,9 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
         .getByLabel('Regra do bônus', { exact: true })
         .selectOption('BONUS-MULTIPLICATIVO|1.0');
       await page.getByLabel('Fator', { exact: true }).fill('1.2');
+      await page
+        .getByLabel('Base Legal do bônus', { exact: true })
+        .selectOption(BASE_LEGAL_BONUS_REGIONAL_ID);
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -298,4 +318,21 @@ async function mockarCatalogos(page: Page): Promise<void> {
       body: JSON.stringify(porTipo[tipo ?? ''] ?? []),
     });
   });
+
+  await page.route(
+    /\/api\/configuracao\/base-legal-bonus-regional(\?.*)?$/,
+    async (route: Route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: CORS_HEADERS,
+        body: JSON.stringify(BASES_LEGAIS_BONUS_REGIONAL),
+      });
+    },
+  );
 }
