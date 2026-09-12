@@ -277,6 +277,33 @@ export class CronogramaStepComponent {
       .map((regra) => ({ codigo: regra.codigo, versao: regra.versao, baseLegal: regra.baseLegal })),
   );
 
+  /**
+   * O que a convenção escolhida faz, na prosa que o próprio catálogo publica.
+   *
+   * O rótulo da opção trazia a base legal, e as três convenções de contagem têm a MESMA —
+   * quatrocentos e sessenta e nove caracteres idênticos repetidos em cada linha, que não
+   * distinguiam nada e ainda escondiam o fim do código. O que separa uma convenção da outra
+   * são os invariantes: cada um descreve um caso — âncora fora da meia-noite, âncora em dia
+   * não útil, contagem em dias úteis, contagem em horas — com o exemplo do resultado.
+   */
+  readonly invariantesDaContagem = computed<readonly string[]>(() => {
+    this.versaoDoFormulario();
+    const escolhida = this.formulario.controls.algoritmoContagemCodigo.value;
+    if (escolhida === '') return [];
+
+    const regra = this.catalogos.regrasContagem().find((item) => item.codigo === escolhida);
+    return textosDoCatalogo(regra?.invariantes);
+  });
+
+  /** A base legal da convenção escolhida — a mesma das três, mostrada uma vez só. */
+  readonly baseLegalDaContagem = computed<string>(() => {
+    this.versaoDoFormulario();
+    const escolhida = this.formulario.controls.algoritmoContagemCodigo.value;
+    if (escolhida === '') return '';
+
+    return this.catalogos.regrasContagem().find((item) => item.codigo === escolhida)?.baseLegal ?? '';
+  });
+
   /** Quantas etapas compõem a nota final — o que a fórmula vai dividir. */
   /**
    * Os controles de etapa que declaram pertencer a esta fase, com o índice que cada um
@@ -665,6 +692,9 @@ export class CronogramaStepComponent {
     const versao = this.regrasDeContagem().find((regra) => regra.codigo === codigo)?.versao ?? '';
     this.formulario.controls.algoritmoContagemCodigo.setValue(codigo);
     this.formulario.controls.algoritmoContagemVersao.setValue(versao);
+    // O valor de um FormControl não é signal: sem avisar, a descrição da convenção
+    // escolhida continuaria mostrando a anterior.
+    this.versaoDoFormulario.update((versaoAtual) => versaoAtual + 1);
   }
 
   // ── O que a etapa publica ──────────────────────────────────────────────────
@@ -1261,6 +1291,19 @@ function canonico(valor: unknown): string {
         )
       : conteudo,
   );
+}
+
+/**
+ * Lê uma lista de textos publicada pelo catálogo — os invariantes de uma regra chegam como
+ * JSON solto, e o contrato não promete a forma.
+ *
+ * Nada de inventar: o que não for texto dentro de um array é descartado em silêncio, e a
+ * tela mostra o que sobrou. Uma lista vazia esconde a seção inteira, que é melhor do que
+ * exibir um rótulo de seção sem nada embaixo.
+ */
+function textosDoCatalogo(conteudo: unknown): readonly string[] {
+  if (!Array.isArray(conteudo)) return [];
+  return conteudo.filter((item): item is string => typeof item === 'string' && item.trim() !== '');
 }
 
 /**
