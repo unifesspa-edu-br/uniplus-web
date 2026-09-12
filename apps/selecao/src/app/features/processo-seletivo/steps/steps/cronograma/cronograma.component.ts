@@ -425,18 +425,213 @@ export class CronogramaStepComponent {
    * agregado sem a fase que as avalia, e a publicação passaria a recusar por um
    * motivo que não aponta esta tela.
    */
+  /**
+   * As fases expandidas, por posição na linha do tempo.
+   *
+   * Todas fechadas ao chegar: o passo se chama linha do tempo, e sete cabeçalhos mostram a
+   * linha inteira numa tela só. Abrir é um clique; o que está fechado continua sendo
+   * gravado, e a conferência que recusa abre tudo de volta (ver `persistir`).
+   */
+  private readonly fasesExpandidas = signal<ReadonlySet<number>>(new Set());
+
+  faseExpandida(indice: number): boolean {
+    return this.fasesExpandidas().has(indice);
+  }
+
+  alternarFase(indice: number): void {
+    const abertas = new Set(this.fasesExpandidas());
+    if (!abertas.delete(indice)) abertas.add(indice);
+    this.fasesExpandidas.set(abertas);
+  }
+
+  /** Abre todas — é o que a recusa da conferência faz, para não esconder o erro. */
+  private expandirTodasAsFases(): void {
+    this.fasesExpandidas.set(new Set(this.linhaDoTempo().map((item) => item.indice)));
+  }
+
+  /**
+   * O que a fase fechada diz de si: quantas etapas acontecem nela e quantos documentos ela
+   * exige. É o bastante para o operador saber onde entrar sem abrir uma por uma.
+   */
+  marcasDaFase(indice: number): readonly string[] {
+    const { etapas, documentos } = this.dependentesDaFase(indice);
+    const marcas: string[] = [];
+    if (etapas > 0) marcas.push(etapas === 1 ? '1 etapa' : `${etapas} etapas`);
+    if (documentos > 0) {
+      marcas.push(documentos === 1 ? '1 documento' : `${documentos} documentos`);
+    }
+    return marcas;
+  }
+
+  /**
+   * As etapas abertas, por posição no formulário.
+   *
+   * Fechadas por padrão: cada etapa aberta passa de mil pixels, e a habilitação do certame
+   * regional tem oito. Mais de uma pode ficar aberta ao mesmo tempo — comparar duas etapas é
+   * pergunta legítima de quem monta o edital, e fechar a anterior a cada clique tiraria isso.
+   */
+  private readonly etapasAbertas = signal<ReadonlySet<number>>(new Set());
+
+  etapaAberta(posicao: number): boolean {
+    return this.etapasAbertas().has(posicao);
+  }
+
+  alternarEtapa(posicao: number): void {
+    const abertas = new Set(this.etapasAbertas());
+    if (!abertas.delete(posicao)) abertas.add(posicao);
+    this.etapasAbertas.set(abertas);
+  }
+
+  /** O nome que a etapa já tem, ou o que a linha fechada mostra enquanto ele não existe. */
+  nomeDaEtapa(grupo: FormGroup<EtapaForm>): string {
+    const nome = grupo.controls.nome.value.trim();
+    return nome === '' ? 'Etapa sem nome' : nome;
+  }
+
+  /**
+   * O que a linha fechada diz sobre a etapa, para o operador não precisar abrir para saber.
+   *
+   * Só o que está declarado aparece: uma etapa recém-acrescentada mostra o tipo e nada mais,
+   * e é assim que a lista distingue o que já foi configurado do que ainda não.
+   */
+  marcasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
+    const marcas: string[] = [];
+
+    const tipo = this.catalogos.rotuloDoTipoEtapa().get(grupo.controls.tipoEtapaOrigemId.value);
+    if (tipo !== undefined) marcas.push(tipo);
+
+    const publicacoes = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;
+    if (publicacoes > 0) {
+      marcas.push(publicacoes === 1 ? '1 publicação' : `${publicacoes} publicações`);
+    }
+
+    const bancas = this.bancasDaEtapa(grupo).length;
+    if (bancas > 0) marcas.push(bancas === 1 ? '1 banca' : `${bancas} bancas`);
+
+    const recursos = this.recursosDaEtapa(grupo).length;
+    if (recursos > 0) marcas.push(recursos === 1 ? '1 recurso' : `${recursos} recursos`);
+
+    if (grupo.controls.emiteParecerIndividual.value) marcas.push('parecer individual');
+
+    return marcas;
+  }
+
+  /**
+   * A fase cuja remoção espera confirmação — ninguém perde etapa e documento sem ler antes
+   * quanto vai junto.
+   */
+  readonly remocaoAConfirmar = signal<number | null>(null);
+
+  pedirRemocaoDaFase(indice: number): void {
+    if (!this.podeRemoverFase()) return;
+
+    // Fase sem nada pendurado não precisa de confirmação: não há o que avisar.
+    const dependentes = this.dependentesDaFase(indice);
+    if (dependentes.etapas === 0 && dependentes.documentos === 0) {
+      this.removerFase(indice);
+      return;
+    }
+
+    this.remocaoAConfirmar.set(indice);
+  }
+
+  desistirDaRemocao(): void {
+    this.remocaoAConfirmar.set(null);
+  }
+
+  confirmarRemocaoDaFase(indice: number): void {
+    this.remocaoAConfirmar.set(null);
+    this.removerFase(indice);
+  }
+
+  /** O que a confirmação enuncia, na língua de quem monta o edital. */
+  resumoDaRemocao(indice: number): string {
+    const { etapas, documentos } = this.dependentesDaFase(indice);
+    const partes: string[] = [];
+    if (etapas > 0) partes.push(etapas === 1 ? '1 etapa' : `${etapas} etapas`);
+    if (documentos > 0) {
+      partes.push(documentos === 1 ? '1 documento exigido' : `${documentos} documentos exigidos`);
+    }
+    return partes.join(' e ');
+  }
+
+  /**
+   * O que a remoção da fase leva junto, para a confirmação dizer antes de acontecer.
+   *
+   * Etapas e documentos existem por causa da fase: a etapa declara em que fase acontece, e a
+   * exigência documental declara em que fase é entregue. Some a fase, somem eles — mas o
+   * operador precisa saber disso antes de clicar, não depois de perder a configuração.
+   */
+  dependentesDaFase(indice: number): { etapas: number; documentos: number } {
+    const codigo = this.fases.at(indice)?.controls.codigo.value ?? '';
+    if (codigo === '') return { etapas: 0, documentos: 0 };
+
+    const etapas = this.etapas.controls.filter(
+      (grupo) => grupo.controls.faseCodigo.value === codigo,
+    ).length;
+
+    const documentos = Object.values(this.store.draft().documentos).filter(
+      (config) => config.included && !config.todasEtapas && config.etapas.includes(codigo),
+    ).length;
+
+    return { etapas, documentos };
+  }
+
+  /**
+   * Tira a fase da linha do tempo, com o que era só dela.
+   *
+   * Antes, a remoção limpava TODAS as etapas do processo quando a fase saída era a que o
+   * cadastro marca como agrupadora — apagava as etapas das outras fases junto — e, em
+   * qualquer outra fase, deixava as etapas dela órfãs, apontando para uma fase que não
+   * existe mais; a gravação seguinte era recusada pelo servidor sem dizer o que fazer.
+   */
   removerFase(indice: number): void {
     if (!this.podeRemoverFase()) return;
 
     const removida = this.fases.at(indice);
     if (removida === undefined) return;
 
-    const agrupavaEtapas = this.linhaDoTempo()[indice]?.exigencias?.agrupaEtapas === true;
+    const codigo = removida.controls.codigo.value;
 
+    this.remocaoAConfirmar.set(null);
     this.fases.removeAt(indice, { emitEvent: false });
-    if (agrupavaEtapas) this.etapas.clear({ emitEvent: false });
+    this.removerEtapasDaFase(codigo);
+    this.removerDocumentosDaFase(codigo);
     this.renumerarFases();
     this.avisoDeReordenacao.set(null);
+  }
+
+  /** As etapas daquela fase, e só elas — identificadas pelo código que cada uma declara. */
+  private removerEtapasDaFase(codigo: string): void {
+    for (let posicao = this.etapas.length - 1; posicao >= 0; posicao -= 1) {
+      if (this.etapas.at(posicao).controls.faseCodigo.value === codigo) {
+        this.etapas.removeAt(posicao, { emitEvent: false });
+      }
+    }
+  }
+
+  /**
+   * Tira a fase do alcance de cada documento. O documento que valia só ali deixa de ser
+   * exigido; o que valia em mais fases continua, sem ela.
+   */
+  private removerDocumentosDaFase(codigo: string): void {
+    const documentos = this.store.draft().documentos;
+    const seguintes: Record<string, (typeof documentos)[string]> = {};
+
+    for (const [id, config] of Object.entries(documentos)) {
+      const alcance = config.etapas.filter((fase) => fase !== codigo);
+      const etapaPorFase = Object.fromEntries(
+        Object.entries(config.etapaPorFase).filter(([fase]) => fase !== codigo),
+      );
+      seguintes[id] = {
+        ...config,
+        etapas: alcance,
+        etapaPorFase,
+        included: config.included && (config.todasEtapas || alcance.length > 0),
+      };
+    }
+
+    this.store.patchSection('documentos', seguintes);
   }
 
   /**
@@ -742,7 +937,12 @@ export class CronogramaStepComponent {
     }
 
     const conferencia = this.validate();
-    if (!conferencia.valid) return conferencia;
+    if (!conferencia.valid) {
+      // O que a conferência acusa pode estar numa fase fechada: abrir todas põe o problema à
+      // vista, em vez de deixar a mensagem apontar para um lugar que não está na tela.
+      this.expandirTodasAsFases();
+      return conferencia;
+    }
 
     const fases = this.fases.controls.map(faseDoFormulario);
     const etapas = this.etapas.controls.map(etapaDoFormulario);

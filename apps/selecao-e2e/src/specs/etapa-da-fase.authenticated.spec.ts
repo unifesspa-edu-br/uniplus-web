@@ -78,6 +78,9 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
     await page.getByLabel('Fase do catálogo').selectOption({ label: 'Habilitação' });
     await page.getByRole('button', { name: 'Acrescentar à linha do tempo' }).click();
+
+    // A fase entra fechada — a linha do tempo mostra os cabeçalhos, e configurar é abrir.
+    await page.locator('.fase-alternar').first().click();
   });
 
   /**
@@ -86,7 +89,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
    * onde existir.
    */
   test('fase não agrupadora recebe etapa', async ({ page }) => {
-    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await acrescentarEtapa(page);
 
     await expect(page.getByLabel('Nome', { exact: true }).last()).toBeVisible();
     await expect(page.getByRole('heading', { name: 'O que esta etapa publica' })).toBeVisible();
@@ -96,7 +99,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
   /** Só ato que o catálogo marca como resultado recebe papel no ciclo recursal. */
   test('a etapa declara o que publica, com papel', async ({ page }) => {
-    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await acrescentarEtapa(page);
 
     const bloco = blocoDaEtapa(page, 'O que esta etapa publica');
     await bloco.getByRole('button', { name: 'Acrescentar publicação' }).click();
@@ -113,7 +116,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
    * decisão individual que alcança cada candidato.
    */
   test('a etapa abre duas janelas recursais com prazos distintos', async ({ page }) => {
-    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await acrescentarEtapa(page);
 
     // Duas publicações preliminares: é contra cada uma que uma janela corre.
     const publica = blocoDaEtapa(page, 'O que esta etapa publica');
@@ -151,7 +154,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
    * rótulo diz isso em vez de deixar a opção falhar em silêncio.
    */
   test('o documento aponta a etapa da fase que o coleta', async ({ page }) => {
-    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await acrescentarEtapa(page);
     await page.getByLabel('Nome', { exact: true }).last().fill('Envio dos comprovantes de renda');
 
     await page.getByLabel('Documento a exigir').selectOption({ label: 'Contracheque' });
@@ -169,7 +172,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
    * mudava por baixo e a tela não respondia nada.
    */
   test('a banca traz a caixa que mostra a escolha', async ({ page }) => {
-    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await acrescentarEtapa(page);
 
     const bloco = blocoDaEtapa(page, 'Quem julga esta etapa');
     const banca = bloco.getByText('Banca de análise documental');
@@ -194,7 +197,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
   /** A ciência não tem publicação a apontar: o campo do ato sai junto com ela. */
   test('recurso por ciência individual não pede publicação-âncora', async ({ page }) => {
-    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await acrescentarEtapa(page);
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
@@ -205,6 +208,15 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(recursos.getByLabel('Contra qual publicação')).toHaveCount(0);
   });
 });
+
+/**
+ * Acrescenta uma etapa à fase aberta e a expande — ela entra fechada, resumida numa linha,
+ * porque aberta passa de mil pixels e oito delas enterravam o passo em rolagem.
+ */
+async function acrescentarEtapa(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+  await page.locator('.etapa-resumo').last().click();
+}
 
 /**
  * O bloco da ETAPA, não o da fase: a configuração da fase vive na mesma tela e tem campos

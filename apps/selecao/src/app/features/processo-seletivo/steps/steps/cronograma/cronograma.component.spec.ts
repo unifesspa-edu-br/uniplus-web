@@ -295,6 +295,29 @@ describe('CronogramaStepComponent', () => {
     detectar();
   }
 
+  /** Uma etapa por código de fase informado, na ordem em que chegam. */
+  function comEtapasEmFases(codigos: readonly string[]): void {
+    store.patchObjectSection('cronograma', {
+      etapas: codigos.map((faseCodigo, posicao) => ({
+        id: null,
+        nome: `Etapa ${posicao + 1}`,
+        carater: 'classificatoria' as const,
+        tipoEtapaOrigemId: TIPO_ETAPA,
+        peso: '1',
+        notaMinima: '',
+        ordem: posicao + 1,
+        faseCodigo,
+        produtos: [],
+        inicio: '',
+        fim: '',
+        emiteParecerIndividual: false,
+        bancas: [],
+        recursos: [],
+      })),
+    });
+    detectar();
+  }
+
   function comUmaEtapa(): void {
     store.patchObjectSection('cronograma', {
       etapas: [
@@ -445,9 +468,107 @@ describe('CronogramaStepComponent', () => {
    * etapas sem a fase que as avalia — e a recusa só apareceria na publicação,
    * apontando para outro lugar.
    */
-  it('remover a fase que agrupa etapas leva as etapas junto', () => {
+  // ── Linha do tempo colapsada ──
+
+  /**
+   * O passo se chama linha do tempo, e é isso que ele mostra ao abrir: os cabeçalhos das
+   * fases. Com tudo aberto, o certame com sete fases tinha trinta e sete telas de rolagem.
+   */
+  it('abre com todas as fases fechadas', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
+
+    expect(componente.faseExpandida(0)).toBe(false);
+    expect(componente.faseExpandida(1)).toBe(false);
+    expect(nativo.querySelectorAll('.fase-bloco--aberta')).toHaveLength(0);
+  });
+
+  it('abre e fecha a fase pelo cabeçalho', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+
+    componente.alternarFase(1);
+    detectar();
+    expect(componente.faseExpandida(1)).toBe(true);
+    expect(componente.faseExpandida(0)).toBe(false, 'abrir uma não fecha a outra');
+
+    componente.alternarFase(1);
+    expect(componente.faseExpandida(1)).toBe(false);
+  });
+
+  /** Fechada, a fase diz o que há dentro dela — senão abrir vira tentativa e erro. */
+  it('a fase fechada conta as etapas que acontecem nela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO', 'COLETA_INSCRICAO']);
+
+    expect(componente.marcasDaFase(1)).toEqual(['2 etapas']);
+    expect(componente.marcasDaFase(0)).toEqual(['1 etapa']);
+  });
+
+  /**
+   * A conferência acusa problemas em qualquer fase, e a mensagem aponta para uma que pode
+   * estar fechada. Recusar sem abrir deixaria o operador procurando o erro no escuro.
+   */
+  it('a recusa da conferência abre todas as fases', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
     comUmaEtapa();
+    componente.etapas.at(0).controls.nome.setValue('');
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(componente.faseExpandida(0)).toBe(true);
+    controller.expectNone(ROTA_ETAPAS);
+  });
+
+  it('abre a etapa pelo resumo, e mais de uma ao mesmo tempo', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
+    componente.alternarFase(0);
+    detectar();
+
+    expect(componente.etapaAberta(0)).toBe(false, 'a etapa chega fechada');
+
+    componente.alternarEtapa(0);
+    componente.alternarEtapa(1);
+    detectar();
+
+    expect(componente.etapaAberta(0)).toBe(true);
+    expect(componente.etapaAberta(1)).toBe(true);
+  });
+
+  /** Fechada, a etapa mostra só o que já está declarado — é assim que a lista distingue. */
+  it('a etapa fechada resume o que já declarou', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    componente.alternarFase(0);
+    detectar();
+
+    const etapa = componente.etapas.at(0);
+    expect(componente.marcasDaEtapa(etapa)).toEqual(['Prova objetiva']);
+
+    componente.acrescentarRecursoNaEtapa(etapa);
+    detectar();
+
+    expect(componente.marcasDaEtapa(etapa)).toContain('1 recurso');
+  });
+
+  it('a etapa sem nome aparece na lista mesmo assim', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    componente.etapas.at(0).controls.nome.setValue('   ');
+
+    expect(componente.nomeDaEtapa(componente.etapas.at(0))).toBe('Etapa sem nome');
+  });
+
+  /**
+   * A etapa existe por causa da fase em que acontece: some a fase, some ela. O que a
+   * gravação recusava antes — etapa apontando para uma fase que não está mais no cronograma
+   * — deixa de poder acontecer.
+   */
+  it('remover a fase leva junto as etapas que declaram acontecer nela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
 
     componente.removerFase(1);
 
@@ -455,12 +576,64 @@ describe('CronogramaStepComponent', () => {
     expect(store.draft().cronograma.etapas).toEqual([]);
   });
 
-  it('remover fase que não agrupa etapas preserva as etapas', () => {
+  /**
+   * O defeito que existia: remover a fase que o cadastro marca como agrupadora limpava todas
+   * as etapas do processo, inclusive as das outras fases.
+   */
+  it('remover a fase não toca nas etapas das outras', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'INSCRICAO', 'INSCRICAO']);
+
+    componente.removerFase(1);
+
+    expect(store.draft().cronograma.etapas).toHaveLength(2);
+    expect(store.draft().cronograma.etapas.map((e) => e.faseCodigo)).toEqual([
+      'INSCRICAO',
+      'INSCRICAO',
+    ]);
+  });
+
+  /** Etapa que não declara fase nenhuma não pertence a nenhuma, e não sai com a remoção. */
+  it('remover a fase preserva a etapa que não declara fase', () => {
     comFases(ID_AVALIACAO, ID_INSCRICAO);
     comUmaEtapa();
 
     componente.removerFase(1);
 
+    expect(store.draft().cronograma.etapas).toHaveLength(1);
+  });
+
+  it('conta o que a remoção leva junto antes de acontecer', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
+
+    componente.pedirRemocaoDaFase(1);
+    detectar();
+
+    expect(componente.remocaoAConfirmar()).toBe(1);
+    expect(componente.resumoDaRemocao(1)).toBe('2 etapas');
+    expect(store.draft().cronograma.fases).toHaveLength(2, 'nada sai antes de confirmar');
+    expect(nativo.textContent).toContain('apaga também 2 etapas desta fase');
+  });
+
+  /** Sem nada pendurado não há o que avisar: perguntar seria cerimônia vazia. */
+  it('remove direto a fase que não tem etapa nem documento', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+
+    componente.pedirRemocaoDaFase(1);
+
+    expect(componente.remocaoAConfirmar()).toBeNull();
+    expect(store.draft().cronograma.fases).toHaveLength(1);
+  });
+
+  it('desistir da remoção mantém a fase e o que é dela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+
+    componente.pedirRemocaoDaFase(1);
+    componente.desistirDaRemocao();
+
+    expect(store.draft().cronograma.fases).toHaveLength(2);
     expect(store.draft().cronograma.etapas).toHaveLength(1);
   });
 

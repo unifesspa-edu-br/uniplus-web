@@ -84,11 +84,28 @@
 
     <div formArrayName="fases">
       @for (item of linhaDoTempo(); track item.grupo) {
-        <div class="step-card" [formGroupName]="item.indice">
+        <div
+          class="step-card fase-bloco"
+          [class.fase-bloco--aberta]="faseExpandida(item.indice)"
+          [formGroupName]="item.indice"
+        >
           <div class="fase-cabecalho">
-            <h2 class="form-section__title">
-              {{ item.grupo.controls.ordem.value }}.
-              {{ item.nome }}
+            <h2 class="form-section__title fase-titulo">
+              <button
+                class="fase-alternar"
+                type="button"
+                [attr.aria-expanded]="faseExpandida(item.indice)"
+                [attr.aria-controls]="'cr-fase-corpo-' + item.indice"
+                (click)="alternarFase(item.indice)"
+              >
+                <span class="etapa-resumo__seta" aria-hidden="true"></span>
+                <span>{{ item.grupo.controls.ordem.value }}. {{ item.nome }}</span>
+                <span class="etapa-resumo__marcas">
+                  @for (marca of marcasDaFase(item.indice); track marca) {
+                    <span class="etapa-resumo__marca">{{ marca }}</span>
+                  }
+                </span>
+              </button>
             </h2>
             <div class="fase-acoes">
               <button
@@ -112,7 +129,7 @@
               <button
                 class="btn btn--tertiary"
                 type="button"
-                (click)="removerFase(item.indice)"
+                (click)="pedirRemocaoDaFase(item.indice)"
                 [disabled]="!edicaoLiberada() || !podeRemoverFase()"
                 [attr.aria-describedby]="podeRemoverFase() ? null : 'cr-ultima-fase'"
                 [attr.aria-label]="'Remover ' + item.nome"
@@ -122,552 +139,644 @@
             </div>
           </div>
 
+          <!--
+            Etapa e documento existem por causa da fase e saem com ela. A confirmação diz
+            quanto vai junto antes de acontecer, porque depois não há como desfazer.
+          -->
+          @if (remocaoAConfirmar() === item.indice) {
+            <div class="confirma-remocao" role="alert">
+              <p class="confirma-remocao__texto">
+                Remover <strong>{{ item.nome }}</strong> apaga também
+                {{ resumoDaRemocao(item.indice) }} desta fase.
+              </p>
+              <div class="confirma-remocao__acoes">
+                <button
+                  class="btn btn--danger btn--sm"
+                  type="button"
+                  (click)="confirmarRemocaoDaFase(item.indice)"
+                >
+                  Remover assim mesmo
+                </button>
+                <button
+                  class="btn btn--tertiary btn--sm"
+                  type="button"
+                  (click)="desistirDaRemocao()"
+                >
+                  Manter a fase
+                </button>
+              </div>
+            </div>
+          }
+
           @if (!podeRemoverFase()) {
             <p class="field__hint" id="cr-ultima-fase">
               O cronograma não pode ficar sem nenhuma fase. Acrescente outra antes de remover esta.
             </p>
           }
 
-          @if (item.foraDoCatalogo) {
-            <p class="field__hint" role="status">
-              Esta fase saiu do catálogo institucional depois de entrar neste processo. Ela continua
-              valendo aqui, com os atributos que congelou, e pode ser editada normalmente — mas não
-              é oferecida para outros processos.
-            </p>
-          }
-
-          @if (item.exigencias === null) {
-            <p class="field__erro" role="alert">
-              Não foi possível descrever esta fase: ela não está no catálogo carregado e o processo
-              não guardou os atributos dela. Recarregue a página antes de editar o cronograma.
-            </p>
-          } @else {
-            <p class="field__hint">
-              Responsável: {{ item.donoTipico }}.
-              @if (item.exigencias.admiteRecurso) {
-                Publica resultado preliminar, do qual cabe recurso.
-              } @else if (item.publicaResultadoDefinitivo) {
-                Publica resultado definitivo.
+          @if (faseExpandida(item.indice)) {
+            <div [attr.id]="'cr-fase-corpo-' + item.indice">
+              @if (item.foraDoCatalogo) {
+                <p class="field__hint" role="status">
+                  Esta fase saiu do catálogo institucional depois de entrar neste processo. Ela
+                  continua valendo aqui, com os atributos que congelou, e pode ser editada
+                  normalmente — mas não é oferecida para outros processos.
+                </p>
               }
-              @if (item.coletaInscricao) {
-                Coleta inscrições.
-              }
-            </p>
 
-            <div class="form-grid">
-              @if (item.exigencias.janelaObrigatoria) {
-                <div class="form-field">
-                  <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
-                  <input
-                    class="input"
-                    type="datetime-local"
-                    [attr.id]="'cr-inicio-' + item.indice"
-                    formControlName="inicio"
-                    [attr.aria-describedby]="'cr-fuso-' + item.indice"
-                  />
-                </div>
-                <div class="form-field">
-                  <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
-                  <input
-                    class="input"
-                    type="datetime-local"
-                    [attr.id]="'cr-fim-' + item.indice"
-                    formControlName="fim"
-                    [attr.aria-describedby]="'cr-fuso-' + item.indice"
-                  />
-                </div>
-                <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
-                  Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são
-                  contados.
+              @if (item.exigencias === null) {
+                <p class="field__erro" role="alert">
+                  Não foi possível descrever esta fase: ela não está no catálogo carregado e o
+                  processo não guardou os atributos dela. Recarregue a página antes de editar o
+                  cronograma.
                 </p>
               } @else {
-                <p class="field__hint form-grid__full">
-                  A janela desta fase é derivada de outra: o sistema a calcula, e ela não é
-                  declarada aqui.
+                <p class="field__hint">
+                  Responsável: {{ item.donoTipico }}.
+                  @if (item.exigencias.admiteRecurso) {
+                    Publica resultado preliminar, do qual cabe recurso.
+                  } @else if (item.publicaResultadoDefinitivo) {
+                    Publica resultado definitivo.
+                  }
+                  @if (item.coletaInscricao) {
+                    Coleta inscrições.
+                  }
                 </p>
-              }
 
-              @if (item.exigencias.publicaProduto) {
-                @let produtos = produtosDaFase(item.grupo);
-                <div class="form-field form-grid__full">
-                  <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">
-                    O que esta fase publica
-                  </h3>
-                  <ul class="field__hint" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
-                    @for (produto of produtos; track produto.atoCodigo) {
-                      <li>{{ produto.nome }} — {{ produto.papel }}.</li>
-                    }
-                  </ul>
+                <div class="form-grid">
+                  @if (item.exigencias.janelaObrigatoria) {
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
+                      <input
+                        class="input"
+                        type="datetime-local"
+                        [attr.id]="'cr-inicio-' + item.indice"
+                        formControlName="inicio"
+                        [attr.aria-describedby]="'cr-fuso-' + item.indice"
+                      />
+                    </div>
+                    <div class="form-field">
+                      <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
+                      <input
+                        class="input"
+                        type="datetime-local"
+                        [attr.id]="'cr-fim-' + item.indice"
+                        formControlName="fim"
+                        [attr.aria-describedby]="'cr-fuso-' + item.indice"
+                      />
+                    </div>
+                    <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
+                      Data e hora no horário de Belém, que é o fuso em que os prazos deste processo
+                      são contados.
+                    </p>
+                  } @else {
+                    <p class="field__hint form-grid__full">
+                      A janela desta fase é derivada de outra: o sistema a calcula, e ela não é
+                      declarada aqui.
+                    </p>
+                  }
+
+                  @if (item.exigencias.publicaProduto) {
+                    @let produtos = produtosDaFase(item.grupo);
+                    <div class="form-field form-grid__full">
+                      <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">
+                        O que esta fase publica
+                      </h3>
+                      <ul class="field__hint" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
+                        @for (produto of produtos; track produto.atoCodigo) {
+                          <li>{{ produto.nome }} — {{ produto.papel }}.</li>
+                        }
+                      </ul>
+                    </div>
+                  }
                 </div>
-              }
-            </div>
 
-            @if (true) {
-              <h3 class="form-section__title">Etapas desta fase</h3>
-              <p class="field__hint">
-                Em que esta fase se subdivide. Quando a fase não se subdivide, uma etapa
-                &ldquo;Única&rdquo; basta. As que produzem nota precisam ser classificatórias (ou
-                ambas) e ter peso maior que zero.
-                @if (etapas.length > 0) {
-                  No processo inteiro, {{ etapasQueCompoemNota() }} de {{ etapas.length }} compõem a
-                  nota final.
-                }
-              </p>
+                @if (true) {
+                  <h3 class="form-section__title">Etapas desta fase</h3>
+                  <p class="field__hint">
+                    Em que esta fase se subdivide. Quando a fase não se subdivide, uma etapa
+                    &ldquo;Única&rdquo; basta. As que produzem nota precisam ser classificatórias
+                    (ou ambas) e ter peso maior que zero.
+                    @if (etapas.length > 0) {
+                      No processo inteiro, {{ etapasQueCompoemNota() }} de
+                      {{ etapas.length }} compõem a nota final.
+                    }
+                  </p>
 
-              <!--
+                  <!--
                 A etapa é filha da fase no domínio, mas no formulário continua irmã de
                 `fases`: um `formArrayName` aninhado seria procurado dentro do grupo da
                 fase, que não a contém. Por isso a ligação é por referência, e o recorte
                 por fase acontece em `etapasDaFase`.
               -->
-              <div>
-                @for (
-                  linha of etapasDaFase(
-                    item.grupo.controls.codigo.value,
-                    item.exigencias.agrupaEtapas
-                  );
-                  track linha.indice
-                ) {
-                  @let etapa = linha.grupo;
-                  @let posicao = linha.indice;
-                  <div class="form-grid etapa-linha" [formGroup]="etapa">
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-etapa-nome-' + posicao">Nome</label>
-                      <input
-                        class="input"
-                        type="text"
-                        [attr.id]="'cr-etapa-nome-' + posicao"
-                        formControlName="nome"
-                      />
-                    </div>
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-etapa-tipo-' + posicao">Tipo</label>
-                      <select
-                        class="input"
-                        [attr.id]="'cr-etapa-tipo-' + posicao"
-                        formControlName="tipoEtapaOrigemId"
-                      >
-                        <option value="">Selecione…</option>
-                        @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
-                          <option [value]="tipo.id">{{ tipo.nome }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-etapa-carater-' + posicao"
-                        >Caráter</label
-                      >
-                      <select
-                        class="input"
-                        [attr.id]="'cr-etapa-carater-' + posicao"
-                        formControlName="carater"
-                      >
-                        <option value="">Selecione…</option>
-                        @for (opcao of careteres; track opcao.valor) {
-                          <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-etapa-peso-' + posicao">Peso</label>
-                      <input
-                        class="input"
-                        type="text"
-                        inputmode="decimal"
-                        [attr.id]="'cr-etapa-peso-' + posicao"
-                        formControlName="peso"
-                      />
-                    </div>
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
-                        >Nota mínima</label
-                      >
-                      <input
-                        class="input"
-                        type="text"
-                        inputmode="decimal"
-                        [attr.id]="'cr-etapa-nota-' + posicao"
-                        formControlName="notaMinima"
-                      />
-                    </div>
-                    @let rotuloDaEtapa =
-                      etapa.controls.nome.value === ''
-                        ? 'etapa ' + (posicao + 1)
-                        : etapa.controls.nome.value;
-                    <div class="form-field etapa-acoes">
-                      <button
-                        class="btn btn--tertiary"
-                        type="button"
-                        (click)="moverEtapa(posicao, -1)"
-                        [disabled]="!edicaoLiberada() || posicao === 0"
-                        [attr.aria-label]="'Subir ' + rotuloDaEtapa"
-                      >
-                        Subir
-                      </button>
-                      <button
-                        class="btn btn--tertiary"
-                        type="button"
-                        (click)="moverEtapa(posicao, 1)"
-                        [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
-                        [attr.aria-label]="'Descer ' + rotuloDaEtapa"
-                      >
-                        Descer
-                      </button>
-                      <button
-                        class="btn btn--tertiary"
-                        type="button"
-                        (click)="removerEtapa(posicao)"
-                        [disabled]="!edicaoLiberada()"
-                        [attr.aria-label]="'Remover ' + rotuloDaEtapa"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                    <!--
+                  <div>
+                    @for (
+                      linha of etapasDaFase(
+                        item.grupo.controls.codigo.value,
+                        item.exigencias.agrupaEtapas
+                      );
+                      track linha.indice
+                    ) {
+                      @let etapa = linha.grupo;
+                      @let posicao = linha.indice;
+                      <!--
+                    A etapa chega fechada, resumida numa linha. Aberta, ela ocupa mais de mil
+                    pixels — oito delas faziam a habilitação sozinha valer catorze telas de
+                    rolagem, e o que o operador procurava sumia no meio.
+                  -->
+                      <div class="etapa-bloco" [class.etapa-bloco--aberta]="etapaAberta(posicao)">
+                        <button
+                          class="etapa-resumo"
+                          type="button"
+                          [attr.aria-expanded]="etapaAberta(posicao)"
+                          [attr.aria-controls]="'cr-etapa-corpo-' + posicao"
+                          (click)="alternarEtapa(posicao)"
+                        >
+                          <span class="etapa-resumo__seta" aria-hidden="true"></span>
+                          <span class="etapa-resumo__nome">{{ nomeDaEtapa(etapa) }}</span>
+                          <span class="etapa-resumo__marcas">
+                            @for (marca of marcasDaEtapa(etapa); track marca) {
+                              <span class="etapa-resumo__marca">{{ marca }}</span>
+                            }
+                          </span>
+                        </button>
+
+                        @if (etapaAberta(posicao)) {
+                          <div
+                            class="form-grid etapa-linha"
+                            [formGroup]="etapa"
+                            [attr.id]="'cr-etapa-corpo-' + posicao"
+                          >
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'cr-etapa-nome-' + posicao"
+                                >Nome</label
+                              >
+                              <input
+                                class="input"
+                                type="text"
+                                [attr.id]="'cr-etapa-nome-' + posicao"
+                                formControlName="nome"
+                              />
+                            </div>
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'cr-etapa-tipo-' + posicao"
+                                >Tipo</label
+                              >
+                              <select
+                                class="input"
+                                [attr.id]="'cr-etapa-tipo-' + posicao"
+                                formControlName="tipoEtapaOrigemId"
+                              >
+                                <option value="">Selecione…</option>
+                                @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
+                                  <option [value]="tipo.id">{{ tipo.nome }}</option>
+                                }
+                              </select>
+                            </div>
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'cr-etapa-carater-' + posicao"
+                                >Caráter</label
+                              >
+                              <select
+                                class="input"
+                                [attr.id]="'cr-etapa-carater-' + posicao"
+                                formControlName="carater"
+                              >
+                                <option value="">Selecione…</option>
+                                @for (opcao of careteres; track opcao.valor) {
+                                  <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                                }
+                              </select>
+                            </div>
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'cr-etapa-peso-' + posicao"
+                                >Peso</label
+                              >
+                              <input
+                                class="input"
+                                type="text"
+                                inputmode="decimal"
+                                [attr.id]="'cr-etapa-peso-' + posicao"
+                                formControlName="peso"
+                              />
+                            </div>
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
+                                >Nota mínima</label
+                              >
+                              <input
+                                class="input"
+                                type="text"
+                                inputmode="decimal"
+                                [attr.id]="'cr-etapa-nota-' + posicao"
+                                formControlName="notaMinima"
+                              />
+                            </div>
+                            @let rotuloDaEtapa =
+                              etapa.controls.nome.value === ''
+                                ? 'etapa ' + (posicao + 1)
+                                : etapa.controls.nome.value;
+                            <div class="form-field etapa-acoes">
+                              <button
+                                class="btn btn--tertiary"
+                                type="button"
+                                (click)="moverEtapa(posicao, -1)"
+                                [disabled]="!edicaoLiberada() || posicao === 0"
+                                [attr.aria-label]="'Subir ' + rotuloDaEtapa"
+                              >
+                                Subir
+                              </button>
+                              <button
+                                class="btn btn--tertiary"
+                                type="button"
+                                (click)="moverEtapa(posicao, 1)"
+                                [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
+                                [attr.aria-label]="'Descer ' + rotuloDaEtapa"
+                              >
+                                Descer
+                              </button>
+                              <button
+                                class="btn btn--tertiary"
+                                type="button"
+                                (click)="removerEtapa(posicao)"
+                                [disabled]="!edicaoLiberada()"
+                                [attr.aria-label]="'Remover ' + rotuloDaEtapa"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                            <!--
                       O que a etapa publica. Mesmo desenho da fase um nível acima: só ato
                       que o catálogo marca como resultado admite papel, e é o papel
                       preliminar que abre o ciclo recursal.
                     -->
-                    <!-- Janela própria da etapa e promessa de devolutiva. -->
-                    <div class="form-grid__full etapa-publica">
-                      <h4 class="form-section__title">Quando acontece e o que devolve</h4>
-                      <div class="form-grid">
-                        <div class="form-field">
-                          <label class="label" [attr.for]="'cr-etapa-ini-' + posicao">Início</label>
-                          <input
-                            class="input"
-                            type="datetime-local"
-                            [attr.id]="'cr-etapa-ini-' + posicao"
-                            formControlName="inicio"
-                          />
-                        </div>
-                        <div class="form-field">
-                          <label class="label" [attr.for]="'cr-etapa-fim-' + posicao">Fim</label>
-                          <input
-                            class="input"
-                            type="datetime-local"
-                            [attr.id]="'cr-etapa-fim-' + posicao"
-                            formControlName="fim"
-                          />
-                        </div>
-                      </div>
-                      <p class="field__hint">
-                        Em branco, a etapa acontece na janela da fase. Declare só quando ela tem
-                        data própria — a prova e a entrevista não caem no mesmo dia.
-                      </p>
-                      <label class="checkbox">
-                        <input
-                          type="checkbox"
-                          [attr.id]="'cr-etapa-parecer-' + posicao"
-                          formControlName="emiteParecerIndividual"
-                        />
-                        <span class="checkbox__box" aria-hidden="true"></span>
-                        Esta etapa emite parecer individual
-                      </label>
-                      <p class="field__hint">
-                        O edital promete devolutiva a cada candidato. É dela que corre o prazo do
-                        recurso contra decisão individual.
-                      </p>
-                    </div>
-
-                    <!-- Quem julga a etapa. -->
-                    <div class="form-grid__full etapa-publica">
-                      <h4 class="form-section__title">Quem julga esta etapa</h4>
-                      @if (catalogos.bancas().length > 0) {
-                        <div class="checkbox-grid">
-                          @for (banca of catalogos.bancas(); track banca.id) {
-                            <label class="checkbox">
-                              <input
-                                type="checkbox"
-                                [checked]="bancasDaEtapa(etapa).includes(banca.id)"
-                                [disabled]="!edicaoLiberada()"
-                                (change)="
-                                  alternarBancaDaEtapa(etapa, banca.id, $any($event.target).checked)
-                                "
-                              />
-                              <span class="checkbox__box" aria-hidden="true"></span>
-                              {{ banca.nome }}
-                            </label>
-                          }
-                        </div>
-                      } @else {
-                        <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
-                      }
-                    </div>
-
-                    <!-- As janelas recursais que a etapa abre. -->
-                    <div class="form-grid__full etapa-publica">
-                      <h4 class="form-section__title">Recursos que esta etapa admite</h4>
-                      @for (recurso of recursosDaEtapa(etapa); track $index) {
-                        <div class="form-grid">
-                          <div class="form-field">
-                            <label
-                              class="label"
-                              [attr.for]="'cr-rec-anc-' + posicao + '-' + $index"
-                            >
-                              O prazo corre de
-                            </label>
-                            <select
-                              class="select"
-                              [attr.id]="'cr-rec-anc-' + posicao + '-' + $index"
-                              [disabled]="!edicaoLiberada()"
-                              (change)="
-                                alterarRecursoDaEtapa(
-                                  etapa,
-                                  $index,
-                                  'ancora',
-                                  $any($event.target).value
-                                )
-                              "
-                            >
-                              <option
-                                value="atoPublicado"
-                                [selected]="recurso.ancora === 'atoPublicado'"
-                              >
-                                Publicação do ato — um prazo para todos
-                              </option>
-                              <option
-                                value="cienciaIndividual"
-                                [selected]="recurso.ancora === 'cienciaIndividual'"
-                              >
-                                Ciência do candidato — um prazo por candidato
-                              </option>
-                            </select>
-                          </div>
-                          @if (recurso.ancora === 'atoPublicado') {
-                            <div class="form-field">
-                              <label
-                                class="label"
-                                [attr.for]="'cr-rec-ato-' + posicao + '-' + $index"
-                              >
-                                Contra qual publicação
-                              </label>
-                              <select
-                                class="select"
-                                [attr.id]="'cr-rec-ato-' + posicao + '-' + $index"
-                                [disabled]="!edicaoLiberada()"
-                                (change)="
-                                  alterarRecursoDaEtapa(
-                                    etapa,
-                                    $index,
-                                    'atoAncoraCodigo',
-                                    $any($event.target).value
-                                  )
-                                "
-                              >
-                                <option value="">Selecione…</option>
-                                @for (
-                                  preliminar of preliminaresDaEtapa(etapa);
-                                  track preliminar.atoCodigo
-                                ) {
-                                  <option
-                                    [value]="preliminar.atoCodigo"
-                                    [selected]="preliminar.atoCodigo === recurso.atoAncoraCodigo"
+                            <!-- Janela própria da etapa e promessa de devolutiva. -->
+                            <div class="form-grid__full etapa-publica">
+                              <h4 class="form-section__title">Quando acontece e o que devolve</h4>
+                              <div class="form-grid">
+                                <div class="form-field">
+                                  <label class="label" [attr.for]="'cr-etapa-ini-' + posicao"
+                                    >Início</label
                                   >
-                                    {{
-                                      catalogos.rotuloDoAto().get(preliminar.atoCodigo) ??
-                                        preliminar.atoCodigo
-                                    }}
-                                  </option>
-                                }
-                              </select>
-                              @if (preliminaresDaEtapa(etapa).length === 0) {
-                                <p class="field__hint">
-                                  Esta etapa ainda não publica resultado preliminar — é da
-                                  publicação dele que a janela corre.
-                                </p>
+                                  <input
+                                    class="input"
+                                    type="datetime-local"
+                                    [attr.id]="'cr-etapa-ini-' + posicao"
+                                    formControlName="inicio"
+                                  />
+                                </div>
+                                <div class="form-field">
+                                  <label class="label" [attr.for]="'cr-etapa-fim-' + posicao"
+                                    >Fim</label
+                                  >
+                                  <input
+                                    class="input"
+                                    type="datetime-local"
+                                    [attr.id]="'cr-etapa-fim-' + posicao"
+                                    formControlName="fim"
+                                  />
+                                </div>
+                              </div>
+                              <p class="field__hint">
+                                Em branco, a etapa acontece na janela da fase. Declare só quando ela
+                                tem data própria — a prova e a entrevista não caem no mesmo dia.
+                              </p>
+                              <label class="checkbox">
+                                <input
+                                  type="checkbox"
+                                  [attr.id]="'cr-etapa-parecer-' + posicao"
+                                  formControlName="emiteParecerIndividual"
+                                />
+                                <span class="checkbox__box" aria-hidden="true"></span>
+                                Esta etapa emite parecer individual
+                              </label>
+                              <p class="field__hint">
+                                O edital promete devolutiva a cada candidato. É dela que corre o
+                                prazo do recurso contra decisão individual.
+                              </p>
+                            </div>
+
+                            <!-- Quem julga a etapa. -->
+                            <div class="form-grid__full etapa-publica">
+                              <h4 class="form-section__title">Quem julga esta etapa</h4>
+                              @if (catalogos.bancas().length > 0) {
+                                <div class="checkbox-grid">
+                                  @for (banca of catalogos.bancas(); track banca.id) {
+                                    <label class="checkbox">
+                                      <input
+                                        type="checkbox"
+                                        [checked]="bancasDaEtapa(etapa).includes(banca.id)"
+                                        [disabled]="!edicaoLiberada()"
+                                        (change)="
+                                          alternarBancaDaEtapa(
+                                            etapa,
+                                            banca.id,
+                                            $any($event.target).checked
+                                          )
+                                        "
+                                      />
+                                      <span class="checkbox__box" aria-hidden="true"></span>
+                                      {{ banca.nome }}
+                                    </label>
+                                  }
+                                </div>
+                              } @else {
+                                <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
                               }
                             </div>
-                          }
-                          <div class="form-field">
-                            <label
-                              class="label"
-                              [attr.for]="'cr-rec-prazo-' + posicao + '-' + $index"
-                              >Prazo</label
-                            >
-                            <input
-                              class="input"
-                              type="text"
-                              inputmode="numeric"
-                              [attr.id]="'cr-rec-prazo-' + posicao + '-' + $index"
-                              [value]="recurso.prazoValor"
-                              [disabled]="!edicaoLiberada()"
-                              (input)="
-                                alterarRecursoDaEtapa(
-                                  etapa,
-                                  $index,
-                                  'prazoValor',
-                                  $any($event.target).value
-                                )
-                              "
-                            />
-                          </div>
-                          <div class="form-field">
-                            <label class="label" [attr.for]="'cr-rec-un-' + posicao + '-' + $index"
-                              >Unidade</label
-                            >
-                            <select
-                              class="select"
-                              [attr.id]="'cr-rec-un-' + posicao + '-' + $index"
-                              [disabled]="!edicaoLiberada()"
-                              (change)="
-                                alterarRecursoDaEtapa(
-                                  etapa,
-                                  $index,
-                                  'prazoUnidade',
-                                  $any($event.target).value
-                                )
-                              "
-                            >
-                              <option
-                                value="diasUteis"
-                                [selected]="recurso.prazoUnidade === 'diasUteis'"
-                              >
-                                dias úteis
-                              </option>
-                              <option value="horas" [selected]="recurso.prazoUnidade === 'horas'">
-                                horas
-                              </option>
-                            </select>
-                          </div>
-                          <button
-                            class="btn btn--tertiary"
-                            type="button"
-                            (click)="removerRecursoDaEtapa(etapa, $index)"
-                            [disabled]="!edicaoLiberada()"
-                          >
-                            Remover recurso
-                          </button>
-                        </div>
-                      } @empty {
-                        <p class="field__hint">Esta etapa não admite recurso.</p>
-                      }
-                      <button
-                        class="btn btn--secondary"
-                        type="button"
-                        (click)="acrescentarRecursoNaEtapa(etapa)"
-                        [disabled]="!edicaoLiberada() || !temRegraDeRecurso()"
-                      >
-                        Acrescentar recurso
-                      </button>
-                    </div>
 
-                    <div class="form-grid__full etapa-publica">
-                      <h4 class="form-section__title">O que esta etapa publica</h4>
-                      @for (produto of produtosDaEtapa(etapa); track $index) {
-                        <div class="form-grid">
-                          <div class="form-field">
-                            <label
-                              class="label"
-                              [attr.for]="'cr-etapa-ato-' + posicao + '-' + $index"
-                              >Ato</label
-                            >
-                            <select
-                              class="select"
-                              [attr.id]="'cr-etapa-ato-' + posicao + '-' + $index"
-                              [value]="produto.atoCodigo"
-                              [disabled]="!edicaoLiberada()"
-                              (change)="
-                                escolherAtoDaEtapa(etapa, $index, $any($event.target).value)
-                              "
-                            >
-                              <option value="" [selected]="produto.atoCodigo === ''">
-                                Selecione o ato…
-                              </option>
-                              <!--
+                            <!-- As janelas recursais que a etapa abre. -->
+                            <div class="form-grid__full etapa-publica">
+                              <h4 class="form-section__title">Recursos que esta etapa admite</h4>
+                              @for (recurso of recursosDaEtapa(etapa); track $index) {
+                                <div class="form-grid">
+                                  <div class="form-field">
+                                    <label
+                                      class="label"
+                                      [attr.for]="'cr-rec-anc-' + posicao + '-' + $index"
+                                    >
+                                      O prazo corre de
+                                    </label>
+                                    <select
+                                      class="select"
+                                      [attr.id]="'cr-rec-anc-' + posicao + '-' + $index"
+                                      [disabled]="!edicaoLiberada()"
+                                      (change)="
+                                        alterarRecursoDaEtapa(
+                                          etapa,
+                                          $index,
+                                          'ancora',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                    >
+                                      <option
+                                        value="atoPublicado"
+                                        [selected]="recurso.ancora === 'atoPublicado'"
+                                      >
+                                        Publicação do ato — um prazo para todos
+                                      </option>
+                                      <option
+                                        value="cienciaIndividual"
+                                        [selected]="recurso.ancora === 'cienciaIndividual'"
+                                      >
+                                        Ciência do candidato — um prazo por candidato
+                                      </option>
+                                    </select>
+                                  </div>
+                                  @if (recurso.ancora === 'atoPublicado') {
+                                    <div class="form-field">
+                                      <label
+                                        class="label"
+                                        [attr.for]="'cr-rec-ato-' + posicao + '-' + $index"
+                                      >
+                                        Contra qual publicação
+                                      </label>
+                                      <select
+                                        class="select"
+                                        [attr.id]="'cr-rec-ato-' + posicao + '-' + $index"
+                                        [disabled]="!edicaoLiberada()"
+                                        (change)="
+                                          alterarRecursoDaEtapa(
+                                            etapa,
+                                            $index,
+                                            'atoAncoraCodigo',
+                                            $any($event.target).value
+                                          )
+                                        "
+                                      >
+                                        <option value="">Selecione…</option>
+                                        @for (
+                                          preliminar of preliminaresDaEtapa(etapa);
+                                          track preliminar.atoCodigo
+                                        ) {
+                                          <option
+                                            [value]="preliminar.atoCodigo"
+                                            [selected]="
+                                              preliminar.atoCodigo === recurso.atoAncoraCodigo
+                                            "
+                                          >
+                                            {{
+                                              catalogos.rotuloDoAto().get(preliminar.atoCodigo) ??
+                                                preliminar.atoCodigo
+                                            }}
+                                          </option>
+                                        }
+                                      </select>
+                                      @if (preliminaresDaEtapa(etapa).length === 0) {
+                                        <p class="field__hint">
+                                          Esta etapa ainda não publica resultado preliminar — é da
+                                          publicação dele que a janela corre.
+                                        </p>
+                                      }
+                                    </div>
+                                  }
+                                  <div class="form-field">
+                                    <label
+                                      class="label"
+                                      [attr.for]="'cr-rec-prazo-' + posicao + '-' + $index"
+                                      >Prazo</label
+                                    >
+                                    <input
+                                      class="input"
+                                      type="text"
+                                      inputmode="numeric"
+                                      [attr.id]="'cr-rec-prazo-' + posicao + '-' + $index"
+                                      [value]="recurso.prazoValor"
+                                      [disabled]="!edicaoLiberada()"
+                                      (input)="
+                                        alterarRecursoDaEtapa(
+                                          etapa,
+                                          $index,
+                                          'prazoValor',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                    />
+                                  </div>
+                                  <div class="form-field">
+                                    <label
+                                      class="label"
+                                      [attr.for]="'cr-rec-un-' + posicao + '-' + $index"
+                                      >Unidade</label
+                                    >
+                                    <select
+                                      class="select"
+                                      [attr.id]="'cr-rec-un-' + posicao + '-' + $index"
+                                      [disabled]="!edicaoLiberada()"
+                                      (change)="
+                                        alterarRecursoDaEtapa(
+                                          etapa,
+                                          $index,
+                                          'prazoUnidade',
+                                          $any($event.target).value
+                                        )
+                                      "
+                                    >
+                                      <option
+                                        value="diasUteis"
+                                        [selected]="recurso.prazoUnidade === 'diasUteis'"
+                                      >
+                                        dias úteis
+                                      </option>
+                                      <option
+                                        value="horas"
+                                        [selected]="recurso.prazoUnidade === 'horas'"
+                                      >
+                                        horas
+                                      </option>
+                                    </select>
+                                  </div>
+                                  <button
+                                    class="btn btn--tertiary"
+                                    type="button"
+                                    (click)="removerRecursoDaEtapa(etapa, $index)"
+                                    [disabled]="!edicaoLiberada()"
+                                  >
+                                    Remover recurso
+                                  </button>
+                                </div>
+                              } @empty {
+                                <p class="field__hint">Esta etapa não admite recurso.</p>
+                              }
+                              <button
+                                class="btn btn--secondary"
+                                type="button"
+                                (click)="acrescentarRecursoNaEtapa(etapa)"
+                                [disabled]="!edicaoLiberada() || !temRegraDeRecurso()"
+                              >
+                                Acrescentar recurso
+                              </button>
+                            </div>
+
+                            <div class="form-grid__full etapa-publica">
+                              <h4 class="form-section__title">O que esta etapa publica</h4>
+                              @for (produto of produtosDaEtapa(etapa); track $index) {
+                                <div class="form-grid">
+                                  <div class="form-field">
+                                    <label
+                                      class="label"
+                                      [attr.for]="'cr-etapa-ato-' + posicao + '-' + $index"
+                                      >Ato</label
+                                    >
+                                    <select
+                                      class="select"
+                                      [attr.id]="'cr-etapa-ato-' + posicao + '-' + $index"
+                                      [value]="produto.atoCodigo"
+                                      [disabled]="!edicaoLiberada()"
+                                      (change)="
+                                        escolherAtoDaEtapa(etapa, $index, $any($event.target).value)
+                                      "
+                                    >
+                                      <option value="" [selected]="produto.atoCodigo === ''">
+                                        Selecione o ato…
+                                      </option>
+                                      <!--
                                 `selected` na option, não `value` no select: as options nascem
                                 no mesmo ciclo do @for, e o select ainda não as conhece quando
                                 o valor é atribuído.
                               -->
-                              @for (ato of catalogos.atosVigentes(); track ato.codigo) {
-                                <option
-                                  [value]="ato.codigo"
-                                  [selected]="ato.codigo === produto.atoCodigo"
-                                >
-                                  {{ ato.nome }}
-                                </option>
-                              }
-                            </select>
-                          </div>
-                          <div class="form-field">
-                            <label
-                              class="label"
-                              [attr.for]="'cr-etapa-papel-' + posicao + '-' + $index"
-                              >Papel</label
-                            >
-                            <select
-                              class="select"
-                              [attr.id]="'cr-etapa-papel-' + posicao + '-' + $index"
-                              [value]="produto.papel ?? ''"
-                              [disabled]="!edicaoLiberada() || !atoEhResultado(produto.atoCodigo)"
-                              (change)="
-                                escolherPapelDaEtapa(etapa, $index, $any($event.target).value)
-                              "
-                            >
-                              <option value="" [selected]="produto.papel === null">
-                                Sem papel &mdash; não decide sobre candidato
-                              </option>
-                              <!-- O mesmo vocabulário que a fase já usa um nível acima. -->
-                              @for (papel of papeis; track papel.valor) {
-                                @if (papel.valor !== '') {
-                                  <option
-                                    [value]="papel.valor"
-                                    [selected]="produto.papel === papel.valor"
+                                      @for (ato of catalogos.atosVigentes(); track ato.codigo) {
+                                        <option
+                                          [value]="ato.codigo"
+                                          [selected]="ato.codigo === produto.atoCodigo"
+                                        >
+                                          {{ ato.nome }}
+                                        </option>
+                                      }
+                                    </select>
+                                  </div>
+                                  <div class="form-field">
+                                    <label
+                                      class="label"
+                                      [attr.for]="'cr-etapa-papel-' + posicao + '-' + $index"
+                                      >Papel</label
+                                    >
+                                    <select
+                                      class="select"
+                                      [attr.id]="'cr-etapa-papel-' + posicao + '-' + $index"
+                                      [value]="produto.papel ?? ''"
+                                      [disabled]="
+                                        !edicaoLiberada() || !atoEhResultado(produto.atoCodigo)
+                                      "
+                                      (change)="
+                                        escolherPapelDaEtapa(
+                                          etapa,
+                                          $index,
+                                          $any($event.target).value
+                                        )
+                                      "
+                                    >
+                                      <option value="" [selected]="produto.papel === null">
+                                        Sem papel &mdash; não decide sobre candidato
+                                      </option>
+                                      <!-- O mesmo vocabulário que a fase já usa um nível acima. -->
+                                      @for (papel of papeis; track papel.valor) {
+                                        @if (papel.valor !== '') {
+                                          <option
+                                            [value]="papel.valor"
+                                            [selected]="produto.papel === papel.valor"
+                                          >
+                                            {{ papel.rotulo }}
+                                          </option>
+                                        }
+                                      }
+                                    </select>
+                                    @if (
+                                      produto.atoCodigo !== '' && !atoEhResultado(produto.atoCodigo)
+                                    ) {
+                                      <p class="field__hint">
+                                        Este ato não é resultado no catálogo, então não recebe papel
+                                        no ciclo recursal.
+                                      </p>
+                                    }
+                                  </div>
+                                  <button
+                                    class="btn btn--tertiary"
+                                    type="button"
+                                    (click)="removerProdutoDaEtapa(etapa, $index)"
+                                    [disabled]="!edicaoLiberada()"
                                   >
-                                    {{ papel.rotulo }}
-                                  </option>
-                                }
+                                    Remover publicação
+                                  </button>
+                                </div>
+                              } @empty {
+                                <p class="field__hint">Esta etapa não publica nada.</p>
                               }
-                            </select>
-                            @if (produto.atoCodigo !== '' && !atoEhResultado(produto.atoCodigo)) {
-                              <p class="field__hint">
-                                Este ato não é resultado no catálogo, então não recebe papel no
-                                ciclo recursal.
-                              </p>
-                            }
+                              <button
+                                class="btn btn--secondary"
+                                type="button"
+                                (click)="acrescentarProdutoNaEtapa(etapa)"
+                                [disabled]="!edicaoLiberada()"
+                              >
+                                Acrescentar publicação
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            class="btn btn--tertiary"
-                            type="button"
-                            (click)="removerProdutoDaEtapa(etapa, $index)"
-                            [disabled]="!edicaoLiberada()"
-                          >
-                            Remover publicação
-                          </button>
-                        </div>
-                      } @empty {
-                        <p class="field__hint">Esta etapa não publica nada.</p>
-                      }
-                      <button
-                        class="btn btn--secondary"
-                        type="button"
-                        (click)="acrescentarProdutoNaEtapa(etapa)"
-                        [disabled]="!edicaoLiberada()"
-                      >
-                        Acrescentar publicação
-                      </button>
-                    </div>
+                        }
+                      </div>
+                    }
                   </div>
-                }
-              </div>
 
-              <button
-                class="btn btn--secondary acao-de-etapa"
-                type="button"
-                (click)="acrescentarEtapa(item.grupo.controls.codigo.value)"
-                [disabled]="!edicaoLiberada()"
-              >
-                Acrescentar etapa nesta fase
-              </button>
+                  <button
+                    class="btn btn--secondary acao-de-etapa"
+                    type="button"
+                    (click)="acrescentarEtapa(item.grupo.controls.codigo.value)"
+                    [disabled]="!edicaoLiberada()"
+                  >
+                    Acrescentar etapa nesta fase
+                  </button>
 
-              <!--
+                  <!--
                 A configuração da fase mora dentro da própria fase: o que ela publica, o
                 ciclo recursal, o recurso, as bancas e os documentos. Antes isso vivia num
                 bloco à parte, com um segundo seletor de fase — a mesma fase aparecia duas
                 vezes na tela, e configurá-la exigia escolhê-la de novo.
               -->
-              <sel-step-fase [faseFixada]="item.grupo.controls.faseCanonicaId.value" />
-            }
+                  <sel-step-fase [faseFixada]="item.grupo.controls.faseCanonicaId.value" />
+                }
+              }
+            </div>
           }
         </div>
       }
