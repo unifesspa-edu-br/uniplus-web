@@ -680,19 +680,94 @@ describe('FaseStepComponent', () => {
      * tomada numa só.
      */
     /**
-     * O rascunho nasce sem documento nenhum — quais existem é o cadastro que diz —, e a
-     * caixa de um documento ainda não tocado precisa estar habilitada e desmarcada. Ler
-     * `todasEtapas` sozinho deixava o processo novo com os documentos desabilitados sob o
-     * texto de que já eram exigidos em toda parte: o oposto do estado real.
+     * A fase lista o que exige, e o seletor oferece o resto: com setenta e quatro tipos no
+     * cadastro, uma caixa por documento em cada fase punha centenas de controles numa
+     * rolagem só, e o que o certame de fato exige ficava perdido entre eles.
      */
-    it('deixa marcar o documento que o processo novo ainda não exige', () => {
+    it('oferece no seletor o documento que a fase ainda não exige', () => {
       comCronograma(fase({}));
 
-      const caixa = nativo.querySelector<HTMLInputElement>(`#fase-doc-${ID_CPF}`);
+      expect(componente.documentosDaFase()).toEqual([]);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).toContainEqual(
+        expect.objectContaining({ id: ID_CPF }),
+      );
+      expect(nativo.textContent).toContain('Esta fase ainda não exige documento nenhum.');
+    });
 
-      expect(caixa?.disabled).toBe(false);
-      expect(caixa?.checked).toBe(false);
-      expect(nativo.textContent).not.toContain('Exigido em todas as fases do edital.');
+    it('acrescenta o documento escolhido e o tira do seletor', () => {
+      comCronograma(fase({}));
+
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).not.toContainEqual(
+        expect.objectContaining({ id: ID_CPF }),
+      );
+      // O seletor volta ao estado neutro: o próximo documento começa do zero.
+      expect(componente.documentoAAcrescentar()).toBe('');
+    });
+
+    /**
+     * Setenta e quatro tipos em nove categorias não se acham rolando um dropdown. A busca
+     * alcança nome e categoria, e ignora acento e caixa — é como as pessoas digitam.
+     */
+    it('filtra o catálogo por nome, sem depender de acento nem de caixa', () => {
+      comCronograma(fase({}));
+
+      componente.filtrarDocumentos('cpf');
+      detectar();
+
+      expect(componente.documentosAlcancados()).toBe(1);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).toEqual([
+        expect.objectContaining({ id: ID_CPF }),
+      ]);
+    });
+
+    it('filtra também pela categoria do cadastro', () => {
+      comCronograma(fase({}));
+
+      componente.filtrarDocumentos('IDENTIFICAÇÃO');
+      detectar();
+
+      expect(componente.documentosAlcancados()).toBe(1);
+    });
+
+    it('anuncia quando o termo não alcança documento nenhum', () => {
+      comCronograma(fase({}));
+
+      componente.filtrarDocumentos('inexistente');
+      detectar();
+
+      expect(componente.documentosAlcancados()).toBe(0);
+      expect(nativo.textContent).toContain('Nenhum documento do catálogo casa com');
+    });
+
+    it('devolve o catálogo inteiro depois de acrescentar', () => {
+      comCronograma(fase({}));
+      componente.filtrarDocumentos('cpf');
+      componente.escolherDocumento(ID_CPF);
+
+      componente.acrescentarDocumento();
+      detectar();
+
+      expect(componente.filtroDeDocumento()).toBe('');
+    });
+
+    it('remove o documento e o devolve ao seletor', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      componente.removerDocumento(ID_CPF);
+      detectar();
+
+      expect(componente.documentosDaFase()).toEqual([]);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).toContainEqual(
+        expect.objectContaining({ id: ID_CPF }),
+      );
     });
 
     it('recorta por fase partindo das fases que o edital tem hoje', () => {

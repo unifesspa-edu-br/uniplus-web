@@ -19,6 +19,8 @@ import {
   PAPEL_PRELIMINAR,
   type BancaRequeridaDaFase,
   type DocumentoConfig,
+  type DocumentoDefinicao,
+  type DocumentoGrupo,
   type FaseDoCronograma,
   type ProdutoDaFase,
   type StepValidation,
@@ -506,6 +508,94 @@ export class FaseStepComponent {
    * do rascunho deixou de nascer semeado por um catálogo fixo — o cadastro cresce sem
    * deploy, e semear a partir dele faria o rascunho guardar documento que ninguém marcou.
    */
+  /** O documento escolhido no seletor, ainda não acrescentado. */
+  readonly documentoAAcrescentar = signal('');
+
+  /**
+   * Os documentos que esta fase exige, na ordem do catálogo.
+   *
+   * A tela lista o que foi declarado, não o catálogo inteiro: com setenta e quatro tipos
+   * em nove categorias, uma caixa por documento em cada fase punha centenas de controles
+   * numa rolagem só, e o que o certame de fato exige — dois, três por fase — ficava
+   * perdido no meio deles.
+   */
+  readonly documentosDaFase = computed<readonly DocumentoDefinicao[]>(() => {
+    this.versaoDoFormulario();
+    const fase = this.faseDoRascunho();
+    if (fase === null) return [];
+
+    const documentos = this.store.draft().documentos;
+    return this.catalogos
+      .documentosPorCategoria()
+      .flatMap((grupo) => grupo.docs)
+      .filter((doc) => {
+        const config = documentos[doc.id];
+        if (config === undefined || !config.included) return false;
+        return config.todasEtapas || config.etapas.includes(fase.codigo);
+      });
+  });
+
+  /** O que o operador digitou para encontrar o documento no catálogo. */
+  readonly filtroDeDocumento = signal('');
+
+  /**
+   * O que o seletor ainda oferece: o catálogo menos o que esta fase já exige, reduzido
+   * pelo que o operador digitou.
+   *
+   * O filtro existe porque setenta e quatro tipos em nove categorias não se acham rolando
+   * um dropdown: quem monta o edital sabe o nome do documento, e digitá-lo é mais curto
+   * do que procurá-lo. A busca alcança o nome e a categoria — "renda" encontra tanto o
+   * grupo quanto cada comprovante dele.
+   */
+  readonly documentosDisponiveis = computed<readonly DocumentoGrupo[]>(() => {
+    const jaExigidos = new Set(this.documentosDaFase().map((doc) => doc.id));
+    const busca = normalizar(this.filtroDeDocumento());
+
+    return this.catalogos
+      .documentosPorCategoria()
+      .map((grupo) => ({
+        ...grupo,
+        docs: grupo.docs.filter(
+          (doc) =>
+            !jaExigidos.has(doc.id) &&
+            (busca === '' ||
+              normalizar(doc.nome).includes(busca) ||
+              normalizar(grupo.label).includes(busca)),
+        ),
+      }))
+      .filter((grupo) => grupo.docs.length > 0);
+  });
+
+  /** Quantos documentos o filtro corrente alcança — o que o aviso de vazio anuncia. */
+  readonly documentosAlcancados = computed(() =>
+    this.documentosDisponiveis().reduce((total, grupo) => total + grupo.docs.length, 0),
+  );
+
+  filtrarDocumentos(termo: string): void {
+    this.filtroDeDocumento.set(termo);
+  }
+
+  /** Acrescenta à fase o documento escolhido, e devolve o seletor ao estado neutro. */
+  acrescentarDocumento(): void {
+    const id = this.documentoAAcrescentar();
+    if (id === '') return;
+
+    this.alternarExigencia(id, true);
+    // O seletor e a busca voltam ao estado neutro: o próximo documento começa do zero,
+    // sem o filtro do anterior escondendo o catálogo.
+    this.documentoAAcrescentar.set('');
+    this.filtroDeDocumento.set('');
+  }
+
+  escolherDocumento(id: string): void {
+    this.documentoAAcrescentar.set(id);
+  }
+
+  /** Tira o documento desta fase; das outras, só se ele não valer em nenhuma mais. */
+  removerDocumento(id: string): void {
+    this.alternarExigencia(id, false);
+  }
+
   configuracaoDoDocumento(id: string): DocumentoConfig {
     return (
       this.store.draft().documentos[id] ?? {
@@ -823,4 +913,13 @@ function canonico(valor: unknown): string {
         )
       : conteudo,
   );
+}
+
+/** Compara sem depender de acento nem de caixa — é como as pessoas digitam. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
 }
