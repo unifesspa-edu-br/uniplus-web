@@ -707,6 +707,42 @@
 }
 
 /*
+ * Escolher e acrescentar, numa linha só.
+ *
+ * O campo tinha a largura inteira do passo — mil e trezentos pixels para um seletor cujo
+ * rótulo mais longo não passa de trinta caracteres — e a ação caía na linha de baixo, longe
+ * do que ela age. Agora o campo ocupa o que o conteúdo pede e a ação fica ao lado.
+ *
+ * O alinhamento é pela base, porque a ação não tem rótulo acima: alinhada pelo topo, ela
+ * flutuaria na altura do rótulo do campo. É pela base também que a dica precisa sair de
+ * dentro do campo e virar uma linha própria abaixo — dentro, ela empurraria a ação para
+ * baixo a altura do texto.
+ */
+.sel-processo .escolher-e-acrescentar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.sel-processo .escolher-e-acrescentar > .form-field {
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 34rem;
+  margin: 0;
+}
+
+.sel-processo .escolher-e-acrescentar > .btn {
+  flex: 0 0 auto;
+}
+
+/* A dica e o aviso de contagem, agora abaixo da linha inteira. */
+.sel-processo .escolher-e-acrescentar__ajuda {
+  margin-top: 0;
+}
+
+/*
  * A fase fechada: só o cabeçalho, com o que há dentro dela resumido ao lado. Sete fases
  * fechadas cabem numa tela — que é o que o passo promete ao se chamar linha do tempo.
  */

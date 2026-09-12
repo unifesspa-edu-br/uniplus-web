@@ -533,7 +533,7 @@
           que devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
         </p>
 
-        <div class="form-grid">
+        <div class="escolher-e-acrescentar">
           <div class="form-field">
             <label class="label" [attr.for]="'fase-doc-busca-' + faseAberta()">
               Encontrar documento
@@ -542,21 +542,12 @@
               class="input"
               type="search"
               [attr.id]="'fase-doc-busca-' + faseAberta()"
+              [attr.aria-describedby]="'fase-doc-contagem-' + faseAberta()"
               [value]="filtroDeDocumento()"
               [disabled]="!store.aceitaEdicao()"
               placeholder="Nome do documento ou categoria"
               (input)="filtrarDocumentos($any($event.target).value)"
             />
-            <p class="field__hint" role="status">
-              @if (filtroDeDocumento() === '') {
-                O catálogo tem {{ documentosAlcancados() }} documentos ainda não exigidos nesta
-                fase.
-              } @else if (documentosAlcancados() === 0) {
-                Nenhum documento do catálogo casa com “{{ filtroDeDocumento() }}”.
-              } @else {
-                {{ documentosAlcancados() }} documentos casam com “{{ filtroDeDocumento() }}”.
-              }
-            </p>
           </div>
           <div class="form-field">
             <!-- O id carrega o código da fase: a mesma tela renderiza um seletor por fase,
@@ -588,17 +579,28 @@
               }
             </select>
           </div>
-          <div class="form-field">
-            <button
-              class="btn btn--secondary"
-              type="button"
-              [disabled]="!store.aceitaEdicao() || documentoAAcrescentar() === ''"
-              (click)="acrescentarDocumento()"
-            >
-              Acrescentar documento
-            </button>
-          </div>
+          <button
+            class="btn btn--secondary"
+            type="button"
+            [disabled]="!store.aceitaEdicao() || documentoAAcrescentar() === ''"
+            (click)="acrescentarDocumento()"
+          >
+            Acrescentar documento
+          </button>
         </div>
+        <p
+          class="field__hint escolher-e-acrescentar__ajuda"
+          role="status"
+          [attr.id]="'fase-doc-contagem-' + faseAberta()"
+        >
+          @if (filtroDeDocumento() === '') {
+            O catálogo tem {{ documentosAlcancados() }} documentos ainda não exigidos nesta fase.
+          } @else if (documentosAlcancados() === 0) {
+            Nenhum documento do catálogo casa com “{{ filtroDeDocumento() }}”.
+          } @else {
+            {{ documentosAlcancados() }} documentos casam com “{{ filtroDeDocumento() }}”.
+          }
+        </p>
 
         @for (doc of documentosDaFase(); track doc.id) {
           <div class="doc-item doc-item--exigido">
