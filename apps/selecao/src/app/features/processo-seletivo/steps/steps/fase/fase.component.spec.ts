@@ -690,8 +690,8 @@ describe('FaseStepComponent', () => {
       comCronograma(fase({}));
 
       expect(componente.documentosDaFase()).toEqual([]);
-      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).toContainEqual(
-        expect.objectContaining({ id: ID_CPF }),
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
       );
       expect(nativo.textContent).toContain('Esta fase ainda não exige documento nenhum.');
     });
@@ -704,57 +704,28 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
-      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).not.toContainEqual(
-        expect.objectContaining({ id: ID_CPF }),
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).not.toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
       );
       // O seletor volta ao estado neutro: o próximo documento começa do zero.
       expect(componente.documentoAAcrescentar()).toBe('');
     });
 
     /**
-     * Setenta e quatro tipos em nove categorias não se acham rolando um dropdown. A busca
-     * alcança nome e categoria, e ignora acento e caixa — é como as pessoas digitam.
+     * A busca deixou de ser um campo à parte: quem filtra é o próprio campo de escolha
+     * (`ui-combobox`, coberto no spec dele). O que a fase ainda responde é o que sobra do
+     * catálogo para oferecer.
      */
-    it('filtra o catálogo por nome, sem depender de acento nem de caixa', () => {
+    it('tira do catálogo oferecido o que a fase já exige', () => {
       comCronograma(fase({}));
+      const antes = componente.documentosAlcancados();
 
-      componente.filtrarDocumentos('cpf');
-      detectar();
-
-      expect(componente.documentosAlcancados()).toBe(1);
-      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).toEqual([
-        expect.objectContaining({ id: ID_CPF }),
-      ]);
-    });
-
-    it('filtra também pela categoria do cadastro', () => {
-      comCronograma(fase({}));
-
-      componente.filtrarDocumentos('IDENTIFICAÇÃO');
-      detectar();
-
-      expect(componente.documentosAlcancados()).toBe(1);
-    });
-
-    it('anuncia quando o termo não alcança documento nenhum', () => {
-      comCronograma(fase({}));
-
-      componente.filtrarDocumentos('inexistente');
-      detectar();
-
-      expect(componente.documentosAlcancados()).toBe(0);
-      expect(nativo.textContent).toContain('Nenhum documento do catálogo casa com');
-    });
-
-    it('devolve o catálogo inteiro depois de acrescentar', () => {
-      comCronograma(fase({}));
-      componente.filtrarDocumentos('cpf');
       componente.escolherDocumento(ID_CPF);
-
       componente.acrescentarDocumento();
       detectar();
 
-      expect(componente.filtroDeDocumento()).toBe('');
+      expect(componente.documentosAlcancados()).toBe(antes - 1);
+      expect(componente.documentoAAcrescentar()).toBe('', 'o campo volta ao estado neutro');
     });
 
     it('remove o documento e o devolve ao seletor', () => {
@@ -767,8 +738,8 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(componente.documentosDaFase()).toEqual([]);
-      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.docs)).toContainEqual(
-        expect.objectContaining({ id: ID_CPF }),
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
       );
     });
 

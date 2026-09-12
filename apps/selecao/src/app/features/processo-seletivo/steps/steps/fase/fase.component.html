@@ -533,51 +533,23 @@
           que devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
         </p>
 
+        <!--
+          Um campo só: buscar num e escolher noutro obrigava a pessoa a correlacionar os
+          dois — ela digitava, olhava para o lado, e o que digitou não dizia o que sobrou.
+        -->
         <div class="escolher-e-acrescentar">
           <div class="form-field">
-            <label class="label" [attr.for]="'fase-doc-busca-' + faseAberta()">
-              Encontrar documento
-            </label>
-            <input
-              class="input"
-              type="search"
-              [attr.id]="'fase-doc-busca-' + faseAberta()"
-              [attr.aria-describedby]="'fase-doc-contagem-' + faseAberta()"
-              [value]="filtroDeDocumento()"
-              [disabled]="!store.aceitaEdicao()"
-              placeholder="Nome do documento ou categoria"
-              (input)="filtrarDocumentos($any($event.target).value)"
-            />
-          </div>
-          <div class="form-field">
-            <!-- O id carrega o código da fase: a mesma tela renderiza um seletor por fase,
-                 e um id repetido deixaria o rótulo apontando sempre para o primeiro. -->
-            <label class="label" [attr.for]="'fase-doc-seletor-' + faseAberta()">
-              Documento a exigir
-            </label>
-            <select
-              class="input"
-              [attr.id]="'fase-doc-seletor-' + faseAberta()"
+            <label class="label" [attr.for]="seletorDeDocumento.campoId">Documento a exigir</label>
+            <ui-combobox
+              #seletorDeDocumento
+              rotulo="Documentos do catálogo"
+              placeholder="Digite o nome do documento ou a categoria"
+              textoSemResultado="Nenhum documento do catálogo casa com o que você digitou."
+              [grupos]="documentosDisponiveis()"
               [value]="documentoAAcrescentar()"
               [disabled]="!store.aceitaEdicao()"
-              (change)="escolherDocumento($any($event.target).value)"
-            >
-              <option value="" [selected]="documentoAAcrescentar() === ''">
-                Selecione o documento…
-              </option>
-              <!-- Agrupado pela categoria do cadastro: é assim que quem monta o edital
-                   procura o documento, e a lista de setenta e quatro sem agrupamento
-                   vira uma rolagem cega. -->
-              @for (grupo of documentosDisponiveis(); track grupo.label) {
-                <optgroup [label]="grupo.label">
-                  @for (doc of grupo.docs; track doc.id) {
-                    <option [value]="doc.id" [selected]="doc.id === documentoAAcrescentar()">
-                      {{ doc.nome }}
-                    </option>
-                  }
-                </optgroup>
-              }
-            </select>
+              (valueChange)="escolherDocumento($event)"
+            />
           </div>
           <button
             class="btn btn--secondary"
@@ -588,19 +560,6 @@
             Acrescentar documento
           </button>
         </div>
-        <p
-          class="field__hint escolher-e-acrescentar__ajuda"
-          role="status"
-          [attr.id]="'fase-doc-contagem-' + faseAberta()"
-        >
-          @if (filtroDeDocumento() === '') {
-            O catálogo tem {{ documentosAlcancados() }} documentos ainda não exigidos nesta fase.
-          } @else if (documentosAlcancados() === 0) {
-            Nenhum documento do catálogo casa com “{{ filtroDeDocumento() }}”.
-          } @else {
-            {{ documentosAlcancados() }} documentos casam com “{{ filtroDeDocumento() }}”.
-          }
-        </p>
 
         @for (doc of documentosDaFase(); track doc.id) {
           <div class="doc-item doc-item--exigido">

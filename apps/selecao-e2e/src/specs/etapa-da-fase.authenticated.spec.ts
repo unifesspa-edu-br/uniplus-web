@@ -157,7 +157,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
     await page.getByLabel('Nome', { exact: true }).last().fill('Envio dos comprovantes de renda');
 
-    await page.getByLabel('Documento a exigir').selectOption({ label: 'Contracheque' });
+    await escolherDocumento(page, 'Contracheque');
     await page.getByRole('button', { name: 'Acrescentar documento' }).click();
 
     const coletadoEm = page.getByLabel('Coletado em');
@@ -188,7 +188,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
   /** A fase que não se subdivide não tem onde coletar senão ela própria. */
   test('fase sem etapa não oferece onde coletar', async ({ page }) => {
-    await page.getByLabel('Documento a exigir').selectOption({ label: 'Contracheque' });
+    await escolherDocumento(page, 'Contracheque');
     await page.getByRole('button', { name: 'Acrescentar documento' }).click();
 
     await expect(page.getByText('Contracheque')).toBeVisible();
@@ -208,6 +208,15 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(recursos.getByLabel('Contra qual publicação')).toHaveCount(0);
   });
 });
+
+/**
+ * Escolhe um documento no campo de busca: digitar filtra a lista, e a opção é escolhida com
+ * o teclado — é o caminho de quem usa a tela, e o controle não é um `select` nativo.
+ */
+async function escolherDocumento(page: Page, nome: string): Promise<void> {
+  await page.getByLabel('Documento a exigir').fill(nome);
+  await page.getByRole('option', { name: nome, exact: true }).click();
+}
 
 /**
  * Acrescenta uma etapa à fase aberta e a expande — ela entra fechada, resumida numa linha,
