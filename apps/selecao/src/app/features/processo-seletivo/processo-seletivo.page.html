@@ -130,28 +130,31 @@
         <section class="step-pane" [hidden]="store.currentStep() !== 3">
           <sel-step-vagas></sel-step-vagas>
         </section>
+        <!--
+          Cronograma e configuração das fases num passo só: montar a linha do tempo e
+          declarar o que cada fase publica são a mesma decisão, e separá-las obrigava o
+          operador a ir e voltar entre dois passos para configurar uma fase.
+        -->
         <section class="step-pane" [hidden]="store.currentStep() !== 4">
           <sel-step-cronograma></sel-step-cronograma>
-        </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 5">
           <sel-step-fase></sel-step-fase>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 6">
+        <section class="step-pane" [hidden]="store.currentStep() !== 5">
           <sel-step-formula></sel-step-formula>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 7">
+        <section class="step-pane" [hidden]="store.currentStep() !== 6">
           <sel-step-bonus></sel-step-bonus>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 8">
+        <section class="step-pane" [hidden]="store.currentStep() !== 7">
           <sel-step-desempate></sel-step-desempate>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 9">
+        <section class="step-pane" [hidden]="store.currentStep() !== 8">
           <sel-step-eliminacao></sel-step-eliminacao>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 10">
+        <section class="step-pane" [hidden]="store.currentStep() !== 9">
           <sel-step-atendimento></sel-step-atendimento>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 11">
+        <section class="step-pane" [hidden]="store.currentStep() !== 10">
           <sel-step-revisao></sel-step-revisao>
         </section>
       </div>
