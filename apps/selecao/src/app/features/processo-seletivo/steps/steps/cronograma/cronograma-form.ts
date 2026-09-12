@@ -67,6 +67,8 @@ export interface EtapaForm {
   readonly peso: FormControl<string>;
   readonly notaMinima: FormControl<string>;
   readonly ordem: FormControl<number>;
+  /** Código canônico da fase a que a etapa pertence; vazio enquanto não declarada. */
+  readonly faseCodigo: FormControl<string>;
 }
 
 export interface CronogramaForm {
@@ -118,6 +120,9 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     peso: controle(etapa.peso),
     notaMinima: controle(etapa.notaMinima),
     ordem: controle(etapa.ordem),
+    // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
+    // "não declara fase", e undefined num FormControl quebraria a comparação.
+    faseCodigo: controle(etapa.faseCodigo ?? ''),
   });
 }
 

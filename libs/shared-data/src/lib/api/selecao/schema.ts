@@ -4792,6 +4792,15 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         readonly put?: never;
@@ -5606,6 +5615,7 @@ export interface components {
             readonly notaMinima: null | number | string;
             /** Format: int32 */
             readonly ordem: null | number | string;
+            readonly faseCodigo: null | string;
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
@@ -5620,6 +5630,7 @@ export interface components {
             readonly ordem: null | number | string;
             /** Format: uuid */
             readonly id?: null | string;
+            readonly faseCodigo?: null | string;
         };
         readonly FaseCronogramaDto: {
             /** Format: uuid */

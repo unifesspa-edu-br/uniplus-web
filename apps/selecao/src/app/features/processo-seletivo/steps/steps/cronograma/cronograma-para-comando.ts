@@ -78,5 +78,6 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
     ordem: etapa.ordem,
+    faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
   };
 }

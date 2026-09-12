@@ -183,6 +183,7 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     peso: comoTexto(etapa.peso),
     notaMinima: comoTexto(etapa.notaMinima),
     ordem: comoInteiro(etapa.ordem),
+    faseCodigo: etapa.faseCodigo ?? '',
   };
 }
 
