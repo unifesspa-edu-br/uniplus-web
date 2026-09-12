@@ -180,11 +180,17 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
 
     await expect(page.getByLabel('Publicação', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Papel', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('Cabe recurso do que esta fase publica')).toBeVisible();
     await expect(page.getByLabel('Prazo de interposição')).toBeVisible();
     await expect(page.getByLabel('Unidade do prazo')).toBeVisible();
     await expect(page.getByLabel('Tipo de banca')).toBeVisible();
-    await expect(page.getByLabel('Raça e etnia')).toBeVisible();
+
+    // Caixa de seleção: a anatomia do design system esconde o controle nativo e desenha a
+    // caixa ao lado, então o que se confere é o par — o controle alcançável pelo nome que
+    // o operador lê, e o rótulo visível que ele lê.
+    for (const nome of ['Cabe recurso do que esta fase publica', 'Raça e etnia']) {
+      await expect(page.getByLabel(nome)).toHaveCount(1);
+      await expect(page.getByText(nome)).toBeVisible();
+    }
   });
 
   /**
@@ -231,13 +237,15 @@ async function declararPublicacao(page: Page, ato: string): Promise<void> {
 
 /** Liga o recurso e requer uma banca com recorte — o estado mais cheio da tela. */
 async function ligarRecursoComBanca(page: Page): Promise<void> {
-  await page.getByLabel('Cabe recurso do que esta fase publica').check();
+  // O controle nativo é escondido pela anatomia do design system — quem recebe o clique
+  // é o rótulo, como acontece com quem usa a tela.
+  await page.getByText('Cabe recurso do que esta fase publica').click();
   await page.getByLabel('Prazo de interposição').fill('2');
   await page.getByLabel('Unidade do prazo').selectOption({ label: 'dias úteis' });
 
   await page.getByRole('button', { name: 'Acrescentar banca' }).click();
   await page.getByLabel('Tipo de banca').selectOption({ label: 'Banca de heteroidentificação' });
-  await page.getByLabel('Raça e etnia').check();
+  await page.getByText('Raça e etnia').click();
 }
 
 /**
