@@ -89,13 +89,16 @@ function problemasDosProdutos(
     });
   }
 
+  // A chave é o par ato + papel, e não o ato sozinho: o catálogo nomeia a matéria,
+  // e a mesma matéria é publicada uma vez como preliminar — que abre o ciclo
+  // recursal — e outra como definitiva, que o encerra.
   const declarados = fase.produtos
-    .map((produto) => produto.atoCodigo)
-    .filter((codigo) => codigo !== '');
+    .filter((produto) => produto.atoCodigo !== '')
+    .map((produto) => `${produto.atoCodigo}\u0000${produto.papel ?? ''}`);
   if (new Set(declarados).size !== declarados.length) {
     problemas.push({
       campo: 'produtos',
-      mensagem: 'A fase não pode declarar o mesmo tipo de ato mais de uma vez.',
+      mensagem: 'A fase não pode declarar a mesma publicação duas vezes no mesmo papel.',
     });
   }
 
@@ -469,7 +472,7 @@ const MENSAGEM_POR_CODIGO: ReadonlyMap<string, { campo: CampoDaFase; mensagem: s
     'uniplus.selecao.fase_cronograma.ato_duplicado_na_fase',
     {
       campo: 'produtos' as CampoDaFase,
-      mensagem: 'A fase declara o mesmo tipo de ato mais de uma vez.',
+      mensagem: 'A fase declara a mesma publicação mais de uma vez no mesmo papel.',
     },
   ],
   [
