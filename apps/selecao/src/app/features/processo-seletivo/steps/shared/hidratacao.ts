@@ -1,3 +1,4 @@
+import { campoDoInstante } from './fuso-institucional';
 import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type {
@@ -187,6 +188,18 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     produtos: (etapa.produtos ?? []).map((produto) => ({
       atoCodigo: produto.atoCodigo,
       papel: produto.papel ?? null,
+    })),
+    inicio: etapa.inicio === null || etapa.inicio === undefined ? '' : campoDoInstante(etapa.inicio),
+    fim: etapa.fim === null || etapa.fim === undefined ? '' : campoDoInstante(etapa.fim),
+    emiteParecerIndividual: etapa.emiteParecerIndividual ?? false,
+    bancas: (etapa.bancas ?? []).map((banca) => banca.tipoBancaOrigemId),
+    recursos: (etapa.recursos ?? []).map((recurso) => ({
+      ancora: recurso.ancora as unknown as 'atoPublicado' | 'cienciaIndividual',
+      regraCodigo: recurso.regra.codigo,
+      regraVersao: recurso.regra.versao,
+      prazoValor: comoTexto(recurso.args.prazoValor),
+      prazoUnidade: recurso.args.prazoUnidade,
+      atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
     })),
   };
 }

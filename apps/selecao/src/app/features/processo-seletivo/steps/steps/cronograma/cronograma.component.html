@@ -323,6 +323,161 @@
                       que o catálogo marca como resultado admite papel, e é o papel
                       preliminar que abre o ciclo recursal.
                     -->
+                    <!-- Janela própria da etapa e promessa de devolutiva. -->
+                    <div class="form-grid__full etapa-publica">
+                      <h4 class="form-section__title">Quando acontece e o que devolve</h4>
+                      <div class="form-grid">
+                        <div class="form-field">
+                          <label class="label" [attr.for]="'cr-etapa-ini-' + posicao">Início</label>
+                          <input
+                            class="input"
+                            type="datetime-local"
+                            [attr.id]="'cr-etapa-ini-' + posicao"
+                            formControlName="inicio"
+                          />
+                        </div>
+                        <div class="form-field">
+                          <label class="label" [attr.for]="'cr-etapa-fim-' + posicao">Fim</label>
+                          <input
+                            class="input"
+                            type="datetime-local"
+                            [attr.id]="'cr-etapa-fim-' + posicao"
+                            formControlName="fim"
+                          />
+                        </div>
+                      </div>
+                      <p class="field__hint">
+                        Em branco, a etapa acontece na janela da fase. Declare só quando ela tem
+                        data própria — a prova e a entrevista não caem no mesmo dia.
+                      </p>
+                      <label class="checkbox">
+                        <input type="checkbox" formControlName="emiteParecerIndividual" />
+                        Esta etapa emite parecer individual
+                      </label>
+                      <p class="field__hint">
+                        O edital promete devolutiva a cada candidato. É dela que corre o prazo do
+                        recurso contra decisão individual.
+                      </p>
+                    </div>
+
+                    <!-- Quem julga a etapa. -->
+                    <div class="form-grid__full etapa-publica">
+                      <h4 class="form-section__title">Quem julga esta etapa</h4>
+                      @for (banca of catalogos.bancas(); track banca.id) {
+                        <label class="checkbox">
+                          <input
+                            type="checkbox"
+                            [checked]="bancasDaEtapa(etapa).includes(banca.id)"
+                            [disabled]="!edicaoLiberada()"
+                            (change)="alternarBancaDaEtapa(etapa, banca.id, $any($event.target).checked)"
+                          />
+                          {{ banca.nome }}
+                        </label>
+                      } @empty {
+                        <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
+                      }
+                    </div>
+
+                    <!-- As janelas recursais que a etapa abre. -->
+                    <div class="form-grid__full etapa-publica">
+                      <h4 class="form-section__title">Recursos que esta etapa admite</h4>
+                      @for (recurso of recursosDaEtapa(etapa); track $index) {
+                        <div class="form-grid">
+                          <div class="form-field">
+                            <label class="label" [attr.for]="'cr-rec-anc-' + posicao + '-' + $index">
+                              O prazo corre de
+                            </label>
+                            <select
+                              class="select"
+                              [attr.id]="'cr-rec-anc-' + posicao + '-' + $index"
+                              [disabled]="!edicaoLiberada()"
+                              (change)="alterarRecursoDaEtapa(etapa, $index, 'ancora', $any($event.target).value)"
+                            >
+                              <option value="atoPublicado" [selected]="recurso.ancora === 'atoPublicado'">
+                                Publicação do ato — um prazo para todos
+                              </option>
+                              <option value="cienciaIndividual" [selected]="recurso.ancora === 'cienciaIndividual'">
+                                Ciência do candidato — um prazo por candidato
+                              </option>
+                            </select>
+                          </div>
+                          @if (recurso.ancora === 'atoPublicado') {
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'cr-rec-ato-' + posicao + '-' + $index">
+                                Contra qual publicação
+                              </label>
+                              <select
+                                class="select"
+                                [attr.id]="'cr-rec-ato-' + posicao + '-' + $index"
+                                [disabled]="!edicaoLiberada()"
+                                (change)="alterarRecursoDaEtapa(etapa, $index, 'atoAncoraCodigo', $any($event.target).value)"
+                              >
+                                <option value="">Selecione…</option>
+                                @for (preliminar of preliminaresDaEtapa(etapa); track preliminar.atoCodigo) {
+                                  <option
+                                    [value]="preliminar.atoCodigo"
+                                    [selected]="preliminar.atoCodigo === recurso.atoAncoraCodigo"
+                                  >
+                                    {{ catalogos.rotuloDoAto().get(preliminar.atoCodigo) ?? preliminar.atoCodigo }}
+                                  </option>
+                                }
+                              </select>
+                              @if (preliminaresDaEtapa(etapa).length === 0) {
+                                <p class="field__hint">
+                                  Esta etapa ainda não publica resultado preliminar — é da publicação
+                                  dele que a janela corre.
+                                </p>
+                              }
+                            </div>
+                          }
+                          <div class="form-field">
+                            <label class="label" [attr.for]="'cr-rec-prazo-' + posicao + '-' + $index">Prazo</label>
+                            <input
+                              class="input"
+                              type="text"
+                              inputmode="numeric"
+                              [attr.id]="'cr-rec-prazo-' + posicao + '-' + $index"
+                              [value]="recurso.prazoValor"
+                              [disabled]="!edicaoLiberada()"
+                              (input)="alterarRecursoDaEtapa(etapa, $index, 'prazoValor', $any($event.target).value)"
+                            />
+                          </div>
+                          <div class="form-field">
+                            <label class="label" [attr.for]="'cr-rec-un-' + posicao + '-' + $index">Unidade</label>
+                            <select
+                              class="select"
+                              [attr.id]="'cr-rec-un-' + posicao + '-' + $index"
+                              [disabled]="!edicaoLiberada()"
+                              (change)="alterarRecursoDaEtapa(etapa, $index, 'prazoUnidade', $any($event.target).value)"
+                            >
+                              <option value="diasUteis" [selected]="recurso.prazoUnidade === 'diasUteis'">
+                                dias úteis
+                              </option>
+                              <option value="horas" [selected]="recurso.prazoUnidade === 'horas'">horas</option>
+                            </select>
+                          </div>
+                          <button
+                            class="btn btn--tertiary"
+                            type="button"
+                            (click)="removerRecursoDaEtapa(etapa, $index)"
+                            [disabled]="!edicaoLiberada()"
+                          >
+                            Remover recurso
+                          </button>
+                        </div>
+                      } @empty {
+                        <p class="field__hint">Esta etapa não admite recurso.</p>
+                      }
+                      <button
+                        class="btn btn--secondary"
+                        type="button"
+                        (click)="acrescentarRecursoNaEtapa(etapa)"
+                        [disabled]="!edicaoLiberada() || !temRegraDeRecurso()"
+                      >
+                        Acrescentar recurso
+                      </button>
+                    </div>
+
                     <div class="form-grid__full etapa-publica">
                       <h4 class="form-section__title">O que esta etapa publica</h4>
                       @for (produto of produtosDaEtapa(etapa); track $index) {
@@ -363,12 +518,14 @@
                               <option value="" [selected]="produto.papel === null">
                                 Sem papel &mdash; não decide sobre candidato
                               </option>
-                              <option value="preliminar" [selected]="produto.papel === 'preliminar'">
-                                Preliminar &mdash; abre recurso
-                              </option>
-                              <option value="definitivo" [selected]="produto.papel === 'definitivo'">
-                                Definitivo &mdash; encerra a matéria
-                              </option>
+              <!-- O mesmo vocabulário que a fase já usa um nível acima. -->
+                              @for (papel of papeis; track papel.valor) {
+                                @if (papel.valor !== '') {
+                                  <option [value]="papel.valor" [selected]="produto.papel === papel.valor">
+                                    {{ papel.rotulo }}
+                                  </option>
+                                }
+                              }
                             </select>
                             @if (produto.atoCodigo !== '' && !atoEhResultado(produto.atoCodigo)) {
                               <p class="field__hint">

@@ -8,6 +8,7 @@ import type {
   EtapaPontuada,
   FaseDoCronograma,
   ProdutoDaFase,
+  RecursoDaEtapa,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 import { campoDoInstante, instanteDoCampo } from '../../shared/fuso-institucional';
@@ -75,6 +76,11 @@ export interface EtapaForm {
    * peso, o que a etapa declara publicar.
    */
   readonly produtos: FormControl<readonly ProdutoDaFase[]>;
+  readonly inicio: FormControl<string>;
+  readonly fim: FormControl<string>;
+  readonly emiteParecerIndividual: FormControl<boolean>;
+  readonly bancas: FormControl<readonly string[]>;
+  readonly recursos: FormControl<readonly RecursoDaEtapa[]>;
 }
 
 export interface CronogramaForm {
@@ -130,6 +136,11 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     // "não declara fase", e undefined num FormControl quebraria a comparação.
     faseCodigo: controle(etapa.faseCodigo ?? ''),
     produtos: controle<readonly ProdutoDaFase[]>(etapa.produtos ?? []),
+    inicio: controle(etapa.inicio ?? ''),
+    fim: controle(etapa.fim ?? ''),
+    emiteParecerIndividual: controle(etapa.emiteParecerIndividual ?? false),
+    bancas: controle<readonly string[]>(etapa.bancas ?? []),
+    recursos: controle<readonly RecursoDaEtapa[]>(etapa.recursos ?? []),
   });
 }
 

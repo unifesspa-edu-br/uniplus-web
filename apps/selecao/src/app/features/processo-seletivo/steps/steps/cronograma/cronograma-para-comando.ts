@@ -1,6 +1,7 @@
 import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 
 /**
@@ -86,6 +87,26 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
           ? T
           : never
         : never,
+    })),
+    inicio: etapa.inicio === '' ? null : instanteDoCampo(etapa.inicio),
+    fim: etapa.fim === '' ? null : instanteDoCampo(etapa.fim),
+    emiteParecerIndividual: etapa.emiteParecerIndividual,
+    bancas: etapa.bancas.map((tipoBancaId) => ({ tipoBancaId })),
+    // Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
+    // devolveria uma recusa de campo que o operador não sabe ligar ao que fez.
+    recursos: etapa.recursos
+      .filter((recurso) => recurso.regraCodigo !== '' && recurso.regraVersao !== '')
+      .map((recurso) => ({
+      ancora: recurso.ancora as NonNullable<EtapaProcessoInput['recursos']>[number]['ancora'],
+      regraCodigo: recurso.regraCodigo,
+      regraVersao: recurso.regraVersao,
+      prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
+      prazoUnidade: recurso.prazoUnidade as NonNullable<EtapaProcessoInput['recursos']>[number]['prazoUnidade'],
+      atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
+      suspensividadePrimeiraInstanciaValor: null,
+      suspensividadePrimeiraInstanciaUnidade: null,
+      suspensividadeSegundaInstanciaValor: null,
+      suspensividadeSegundaInstanciaUnidade: null,
     })),
   };
 }

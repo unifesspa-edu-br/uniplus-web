@@ -5174,6 +5174,8 @@ export interface components {
         readonly AlterarMotivoRetificacaoRequest: {
             readonly motivo: string;
         };
+        /** @enum {string} */
+        readonly AncoraDoRecurso: AncoraDoRecurso;
         readonly ArgsRegraAjusteDistribuicao: components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirDe"] | components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm"];
         readonly ArgsRegraAjusteDistribuicaoArgsReduzirDe: {
             /** @enum {string} */
@@ -5224,6 +5226,17 @@ export interface components {
             readonly roles: readonly string[];
             /** Format: date-time */
             readonly timestamp: string;
+        };
+        readonly BancaDaEtapaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly tipoBancaOrigemId: string;
+            readonly codigo: string;
+        };
+        readonly BancaDaEtapaInput: {
+            /** Format: uuid */
+            readonly tipoBancaId: string;
         };
         readonly BancaRequeridaDto: {
             /** Format: uuid */
@@ -5617,6 +5630,13 @@ export interface components {
             readonly ordem: null | number | string;
             readonly faseCodigo: null | string;
             readonly produtos: readonly components["schemas"]["ProdutoDaEtapaDto"][];
+            /** Format: date-time */
+            readonly inicio: null | string;
+            /** Format: date-time */
+            readonly fim: null | string;
+            readonly emiteParecerIndividual: boolean;
+            readonly bancas: readonly components["schemas"]["BancaDaEtapaDto"][];
+            readonly recursos: readonly components["schemas"]["RecursoDaEtapaDto"][];
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
@@ -5633,6 +5653,14 @@ export interface components {
             readonly id?: null | string;
             readonly faseCodigo?: null | string;
             readonly produtos?: null | readonly components["schemas"]["ProdutoDaEtapaInput"][];
+            /** Format: date-time */
+            readonly inicio?: null | string;
+            /** Format: date-time */
+            readonly fim?: null | string;
+            /** @default false */
+            readonly emiteParecerIndividual: boolean;
+            readonly bancas?: null | readonly components["schemas"]["BancaDaEtapaInput"][];
+            readonly recursos?: null | readonly components["schemas"]["RecursoDaEtapaInput"][];
         };
         readonly FaseCronogramaDto: {
             /** Format: uuid */
@@ -5893,8 +5921,6 @@ export interface components {
         };
         /** @enum {string} */
         readonly OrigemCandidatos: OrigemCandidatos;
-        /** @enum {string} */
-        readonly PapelProdutoFase: "preliminar" | "definitivo" | null;
         readonly PredicadoObrigatoriedade: components["schemas"]["PredicadoObrigatoriedadeEtapaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeModalidadesMinimas"] | components["schemas"]["PredicadoObrigatoriedadeDesempateDeveIncluir"] | components["schemas"]["PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade"] | components["schemas"]["PredicadoObrigatoriedadeAtendimentoDisponivel"] | components["schemas"]["PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeCustomizado"];
         readonly PredicadoObrigatoriedadeAtendimentoDisponivel: {
             /** @enum {string} */
@@ -5985,11 +6011,11 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly atoCodigo: string;
-            readonly papel: null | components["schemas"]["PapelProdutoFase"];
+            readonly papel: null | string;
         };
         readonly ProdutoDaEtapaInput: {
             readonly atoCodigo: string;
-            readonly papel: null | components["schemas"]["PapelProdutoFase"];
+            readonly papel: null | string;
         };
         readonly ProdutoDaFaseDto: {
             /** Format: uuid */
@@ -6016,6 +6042,31 @@ export interface components {
             readonly modalidadeId: string;
             /** Format: int32 */
             readonly quantidade: number | string;
+        };
+        readonly RecursoDaEtapaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly ancora: components["schemas"]["AncoraDoRecurso"];
+            readonly regra: components["schemas"]["ReferenciaRegraDto"];
+            readonly args: components["schemas"]["ArgsRegraPrazoRecursoDto"];
+            /** Format: uuid */
+            readonly produtoAncoraId: string;
+            readonly atoAncoraCodigo: null | string;
+        };
+        readonly RecursoDaEtapaInput: {
+            readonly ancora: components["schemas"]["AncoraDoRecurso"];
+            readonly regraCodigo: string;
+            readonly regraVersao: string;
+            /** Format: double */
+            readonly prazoValor: number | string;
+            readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
+            readonly atoAncoraCodigo: null | string;
+            /** Format: double */
+            readonly suspensividadePrimeiraInstanciaValor: null | number | string;
+            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            /** Format: double */
+            readonly suspensividadeSegundaInstanciaValor: null | number | string;
+            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
         };
         readonly ReferenciaRegraDto: {
             readonly codigo: string;
@@ -6303,6 +6354,11 @@ export enum PathsApiSelecaoProcessosSeletivosGetParametersQueryDirection {
 export enum PathsApiSelecaoRegrasCatalogoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum AncoraDoRecurso {
+    nenhuma = "nenhuma",
+    atoPublicado = "atoPublicado",
+    cienciaIndividual = "cienciaIndividual"
 }
 export enum ArgsRegraAjusteDistribuicaoArgsReduzirDe$tipo {
     reduzirDe = "reduzirDe"
