@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import { DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.data';
+import { STEP_LABELS } from './processo-seletivo.data';
 import { hidratarDraft } from './shared/hidratacao';
 import {
   DocumentoConfig,
@@ -10,24 +10,13 @@ import {
   WizardDraft,
 } from './processo-seletivo.models';
 
+/**
+ * O rascunho nasce sem documento nenhum: quais existem é o cadastro de Configuração que
+ * diz, e ele cresce sem deploy. Semear a partir de uma lista local fazia o rascunho
+ * carregar entradas de documentos que ninguém marcou — e envelhecer junto com a lista.
+ */
 function initialDocumentos(): Record<string, DocumentoConfig> {
-  return Object.fromEntries(
-    DOCUMENTO_GRUPOS.flatMap((group) => group.docs).map((doc) => [
-      doc.id,
-      {
-        included: false,
-        todasEtapas: true,
-        // Vazia até o certame ter cronograma: a fase que a exigência aponta é
-        // decisão de quem configura, e semear a partir de um vocabulário fixo
-        // fazia todo processo nascer apontando para fases que não existem nele.
-        etapas: [],
-        // Vazio enquanto o documento acompanha o quadro de vagas; só o recorte
-        // no passo de documentos preenche esta lista.
-        modalidades: [],
-        modalidadesRecortadas: false,
-      },
-    ]),
-  );
+  return {};
 }
 
 const INITIAL_DRAFT: WizardDraft = {

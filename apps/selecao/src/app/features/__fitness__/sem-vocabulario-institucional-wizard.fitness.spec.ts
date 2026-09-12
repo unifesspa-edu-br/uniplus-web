@@ -29,10 +29,9 @@ import { describe, expect, it } from 'vitest';
  *    (usado só dentro do próprio arquivo) ou reexportado com outro nome
  *    local — as três formas contam como reintrodução.
  *
- * `DOCUMENTO_GRUPOS` é exceção nomeada e temporária: pertence à `#483`, que
- * não está nesta frente (ver comentário no próprio export, em
- * `processo-seletivo.data.ts`). Sem essa exceção o gate nasceria vermelho
- * por causa de uma Story fora da fila.
+ * A exceção que `DOCUMENTO_GRUPOS` tinha aqui saiu junto com ele: os tipos de
+ * documento passaram a vir de `TiposDocumentoApi`, e o gate volta a valer inteiro
+ * para `processo-seletivo.data.ts`.
  *
  * Estratégia: glob + readFileSync + regex sobre exports, no molde de
  * `no-direct-http-in-pages.fitness.spec.ts`. Não bane por substring
@@ -82,12 +81,7 @@ const CATALOGO_BANIDO: Readonly<Record<string, { fonte: string; story: string }>
 };
 
 /** Rótulos de navegação e a exceção temporária — decisão 2 do plano da frente. */
-const EXPORTS_PERMITIDOS_EM_DATA_TS = new Set([
-  'PASSOS',
-  'STEP_LABELS',
-  'REVIEW_NAMES',
-  'DOCUMENTO_GRUPOS',
-]);
+const EXPORTS_PERMITIDOS_EM_DATA_TS = new Set(['PASSOS', 'STEP_LABELS', 'REVIEW_NAMES']);
 
 function listarArquivosTs(root: string): string[] {
   const arquivos: string[] = [];
@@ -192,7 +186,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
     expect(fs.existsSync(path.join(STEPS_ROOT, 'steps', 'polos'))).toBe(false);
   });
 
-  describe('processo-seletivo.data.ts só exporta rótulo de navegação (mais a exceção temporária DOCUMENTO_GRUPOS — #483)', () => {
+  describe('processo-seletivo.data.ts só exporta rótulo de navegação', () => {
     const source = semComentarios(fs.readFileSync(DATA_FILE, 'utf-8'));
     const exportados = todosOsExportsDe(source);
 
@@ -205,7 +199,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
       expect(
         EXPORTS_PERMITIDOS_EM_DATA_TS.has(nome),
         `\nprocesso-seletivo.data.ts exporta "${nome}", que não é rótulo de navegação ` +
-          `(PASSOS/STEP_LABELS/REVIEW_NAMES) nem a exceção temporária DOCUMENTO_GRUPOS (#483).\n` +
+          `(PASSOS/STEP_LABELS/REVIEW_NAMES).\n` +
           `Se "${nome}" é uma lista de valores aceitos de um catálogo institucional, ela pertence a um ` +
           `client de API (uniplus/shared-data) — confira o inventário reconciliado na issue #511.\n` +
           `Se é rótulo de apresentação legítimo, adicione o nome a EXPORTS_PERMITIDOS_EM_DATA_TS neste fitness test.`,
@@ -300,7 +294,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
       expect(nomesBanidosDeclaradosEm(fonteSintetica)).toEqual([]);
     });
 
-    it('NÃO sinaliza rótulo de navegação nem a exceção temporária DOCUMENTO_GRUPOS', () => {
+    it('NÃO sinaliza rótulo de navegação', () => {
       const fonteSintetica = `
         export const PASSOS = [];
         export const STEP_LABELS = [];

@@ -14,7 +14,6 @@ import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
-import { DOCUMENTO_GRUPOS } from '../../processo-seletivo.data';
 import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
@@ -91,7 +90,8 @@ export class FaseStepComponent {
 
   readonly papeis = PAPEIS_ESCOLHIVEIS;
   readonly unidades = UNIDADES;
-  readonly gruposDeDocumento = DOCUMENTO_GRUPOS;
+  /** Do cadastro vivo de Configuração, não de uma lista escrita nesta tela. */
+  readonly gruposDeDocumento = this.catalogos.documentosPorCategoria;
 
   /**
    * Quando declarada, a configuração pertence a essa fase e o seletor próprio some: é o
@@ -501,8 +501,21 @@ export class FaseStepComponent {
   /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
 
+  /**
+   * A configuração de um documento, ou o padrão de quem ainda não foi tocado. O registro
+   * do rascunho deixou de nascer semeado por um catálogo fixo — o cadastro cresce sem
+   * deploy, e semear a partir dele faria o rascunho guardar documento que ninguém marcou.
+   */
   configuracaoDoDocumento(id: string): DocumentoConfig {
-    return this.store.draft().documentos[id];
+    return (
+      this.store.draft().documentos[id] ?? {
+        included: false,
+        todasEtapas: false,
+        etapas: [],
+        modalidades: [],
+        modalidadesRecortadas: false,
+      }
+    );
   }
 
   /**
