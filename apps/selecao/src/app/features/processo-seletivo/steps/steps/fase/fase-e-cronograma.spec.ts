@@ -18,6 +18,7 @@ const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
 const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etapas`;
 const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
+const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-exigidos`;
 
 /** O interceptor só lê o corpo como ProblemDetails sob este media type. */
 const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
@@ -332,6 +333,14 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+
+    // A última gravação do passo: relê as fases para traduzir o código canônico que o
+    // rascunho guarda no id que a exigência referencia, e substitui a árvore documental.
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
     expect((await gravacao).valid).toBe(true);
   });
 

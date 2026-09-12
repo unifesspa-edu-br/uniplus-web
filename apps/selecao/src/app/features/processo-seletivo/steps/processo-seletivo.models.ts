@@ -374,6 +374,15 @@ export interface DocumentoConfig {
    * — depois de uma remoção no quadro — com o padrão.
    */
   modalidadesRecortadas: boolean;
+  /**
+   * A etapa que coleta o documento, indexada pelo código da fase — vazio quando o
+   * documento é da fase inteira, que é o caso de toda fase sem etapa.
+   *
+   * Indexado por fase porque o mesmo documento pode valer em mais de uma: o
+   * comprovante de renda é coletado na etapa de análise documental da habilitação e
+   * na fase de isenção inteira, e uma etapa só não diria as duas coisas.
+   */
+  etapaPorFase: Record<string, string>;
 }
 
 /**

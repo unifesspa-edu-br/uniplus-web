@@ -5615,6 +5615,8 @@ export interface components {
             readonly formatosPermitidos: components["schemas"]["JsonElement"];
             /** Format: int32 */
             readonly tamanhoMaximoBytes: null | number | string;
+            /** Format: uuid */
+            readonly exigidoNaEtapaId: null | string;
         };
         readonly EtapaProcessoDto: {
             /** Format: uuid */
@@ -5799,6 +5801,8 @@ export interface components {
             readonly formatosPermitidos: null | components["schemas"]["JsonElement"];
             /** Format: int32 */
             readonly tamanhoMaximoBytes: null | number | string;
+            /** Format: uuid */
+            readonly exigidoNaEtapaId?: null | string;
         };
         readonly JsonElement: unknown;
         readonly JsonNode: unknown;

@@ -24,13 +24,14 @@ import {
   ehRamoFederal,
   quantidadeEhDeclarada,
 } from '../steps/vagas/distribuicao-de-vagas';
+import { documentosDe } from './exigencias-documentais';
 import { formatarValorEmReais } from './valor-em-reais';
 
 /**
  * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável,
  * só nos campos que já têm modelo de edição no wizard (issue #478, D4 do
- * design da fundação). As demais dimensões do DTO — etapas, cronograma,
- * documentos exigidos, coleta de fatos etc. — ainda não têm seção própria e
+ * design da fundação). As demais dimensões do DTO — coleta de fatos etc. —
+ * ainda não têm seção própria e
  * por isso não são mapeadas aqui; nada as descarta, elas simplesmente
  * permanecem fora do rascunho local até a Story que as implementa
  * (`#479–#485`, `#504`, `#534`) estender este adaptador.
@@ -49,6 +50,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     bonus: bonusDe(dto),
     desempate: desempateDe(dto),
     atendimento: atendimentoDe(dto),
+    documentos: documentosDe(dto),
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,

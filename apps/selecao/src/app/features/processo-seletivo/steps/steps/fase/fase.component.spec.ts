@@ -86,6 +86,8 @@ const BANCAS = [
 
 /** O cadastro de onde a tela tira os documentos — antes era uma lista escrita nela. */
 const ID_CPF = '01960000-0000-7000-0000-0000000000f1';
+const ID_ETAPA_DOCUMENTAL = '01960000-0000-7000-0000-0000000000c1';
+const ID_TIPO_ETAPA = '01960000-0000-7000-0000-0000000000c2';
 const TIPOS_DOCUMENTO = [
   {
     id: ID_CPF,
@@ -780,6 +782,72 @@ describe('FaseStepComponent', () => {
 
       expect(store.draft().documentos[ID_CPF].etapas).toEqual(['AVALIACAO', 'RECURSOS']);
       expect(store.draft().documentos[ID_CPF].todasEtapas).toBe(false);
+    });
+
+    /**
+     * A habilitação do certame regional tem oito etapas e cada uma pede o seu comprovante.
+     * Sem dizer qual etapa coleta, os oito documentos apareceriam nas oito.
+     */
+    it('declara em qual etapa da fase o documento é coletado', () => {
+      comCronograma(fase({}));
+      store.patchObjectSection('cronograma', {
+        etapas: [
+          {
+            id: ID_ETAPA_DOCUMENTAL,
+            nome: 'Análise documental',
+            carater: 'Eliminatoria',
+            tipoEtapaOrigemId: ID_TIPO_ETAPA,
+            peso: '',
+            notaMinima: '',
+            ordem: 1,
+            faseCodigo: 'AVALIACAO',
+            produtos: [],
+            inicio: '',
+            fim: '',
+            emiteParecerIndividual: false,
+            bancas: [],
+            recursos: [],
+          },
+        ],
+      });
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      expect(componente.etapasDaFaseAberta().map((etapa) => etapa.nome)).toEqual([
+        'Análise documental',
+      ]);
+
+      componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      detectar();
+
+      expect(componente.etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
+      expect(store.draft().documentos[ID_CPF].etapaPorFase).toEqual({
+        AVALIACAO: ID_ETAPA_DOCUMENTAL,
+      });
+    });
+
+    /**
+     * Voltar o documento à fase inteira tira a etapa do registro: guardá-la como texto
+     * vazio faria o comando declarar uma etapa que ninguém escolheu.
+     */
+    it('devolver o documento à fase inteira apaga a etapa declarada', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      detectar();
+
+      componente.escolherEtapaDoDocumento(ID_CPF, '');
+      detectar();
+
+      expect(store.draft().documentos[ID_CPF].etapaPorFase).toEqual({});
+    });
+
+    it('a fase sem etapa não oferece onde coletar', () => {
+      comCronograma(fase({}));
+
+      expect(componente.etapasDaFaseAberta()).toEqual([]);
     });
 
     it('tira o documento do processo ao desmarcar a última fase que o exigia', () => {
