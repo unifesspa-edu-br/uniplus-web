@@ -5,6 +5,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   untracked,
 } from '@angular/core';
@@ -92,6 +93,13 @@ export class FaseStepComponent {
   readonly unidades = UNIDADES;
   readonly gruposDeDocumento = DOCUMENTO_GRUPOS;
 
+  /**
+   * Quando declarada, a configuração pertence a essa fase e o seletor próprio some: é o
+   * modo em que o passo Cronograma embute este bloco dentro de cada fase da linha do
+   * tempo, em vez de repetir a fase num combo no rodapé.
+   */
+  readonly faseFixada = input<string | null>(null);
+
   /** Fase aberta, pelo id da fase canônica — o identificador sempre presente. */
   readonly faseAberta = signal('');
 
@@ -129,7 +137,13 @@ export class FaseStepComponent {
     // uma fase que saiu mostraria um formulário sem dono.
     effect(() => {
       const fases = this.fasesDoCronograma();
+      const fixada = this.faseFixada();
       untracked(() => {
+        if (fixada !== null) {
+          this.faseAberta.set(fixada);
+          return;
+        }
+
         if (fases.some((fase) => fase.faseCanonicaId === this.faseAberta())) return;
         this.faseAberta.set(fases[0]?.faseCanonicaId ?? '');
       });
@@ -656,6 +670,11 @@ export class FaseStepComponent {
    * a recusa de uma troca de posições que nem dá para desfazer daqui.
    */
   async persistir(): Promise<StepValidation> {
+    // Embutido na linha do tempo, a gravação é do passo que contém: as duas leem as
+    // mesmas fases do rascunho, e gravar de novo por fase mandaria o cronograma inteiro
+    // uma vez para cada uma.
+    if (this.faseFixada() !== null) return { valid: true };
+
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

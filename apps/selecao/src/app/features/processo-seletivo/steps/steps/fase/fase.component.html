@@ -1,8 +1,9 @@
-<p class="step-subtitle">
-  Tudo o que pertence a uma fase do certame num só lugar: o que ela publica, quem conclui o ciclo
-  recursal dela, o prazo de recurso, as bancas que ela requer e os documentos que exige. A janela e
-  a posição na linha do tempo continuam no passo Cronograma.
-</p>
+@if (faseFixada() === null) {
+  <p class="step-subtitle">
+    Tudo o que pertence a uma fase do certame num só lugar: o que ela publica, quem conclui o
+    ciclo recursal dela, o prazo de recurso, as bancas que ela requer e os documentos que exige.
+  </p>
+}
 
 @if (catalogos.carregando()) {
   <p class="field__hint" role="status">
@@ -21,6 +22,7 @@
     o que cada uma publica, julga e exige.
   </p>
 } @else {
+  @if (faseFixada() === null) {
   <div class="step-card">
     <div class="form-grid">
       <div class="form-field form-grid__full">
@@ -43,6 +45,7 @@
       </div>
     </div>
   </div>
+  }
 
   @if (formulario(); as form) {
     <div aria-live="polite" aria-atomic="true">
@@ -59,17 +62,23 @@
     </div>
 
     <form [formGroup]="form">
-      <div class="step-card">
-        <h2 class="form-section__title">{{ nomeDaFaseAberta() }}</h2>
-        <p class="field__hint">
-          @if (form.controls.inicio.value === null && form.controls.fim.value === null) {
-            Esta fase não declara janela própria — o sistema a deriva de outra.
-          } @else {
-            Janela declarada no passo Cronograma: de {{ form.controls.inicio.value ?? '—' }} até
-            {{ form.controls.fim.value ?? '—' }}.
-          }
-        </p>
-      </div>
+      <!--
+        Embutida na fase, a identificação e a janela já estão logo acima, no cabeçalho da
+        própria fase: repeti-las aqui faria a mesma fase aparecer duas vezes seguidas.
+      -->
+      @if (faseFixada() === null) {
+        <div class="step-card">
+          <h2 class="form-section__title">{{ nomeDaFaseAberta() }}</h2>
+          <p class="field__hint">
+            @if (form.controls.inicio.value === null && form.controls.fim.value === null) {
+              Esta fase não declara janela própria — o sistema a deriva de outra.
+            } @else {
+              Janela declarada no passo Cronograma: de {{ form.controls.inicio.value ?? '—' }} até
+              {{ form.controls.fim.value ?? '—' }}.
+            }
+          </p>
+        </div>
+      }
 
       <!-- Publicações -->
       <div class="step-card">
