@@ -20,6 +20,7 @@ import {
   type StepValidation,
   type WizardDraft,
 } from '../../processo-seletivo.models';
+import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -75,7 +76,7 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 
 @Component({
   selector: 'sel-step-cronograma',
-  imports: [FormsModule, ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule, FaseStepComponent],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(CronogramaStepComponent)],
