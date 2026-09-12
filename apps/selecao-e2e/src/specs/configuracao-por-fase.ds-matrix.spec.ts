@@ -222,6 +222,9 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
 async function acrescentarFase(page: Page): Promise<void> {
   await page.getByLabel('Fase do catálogo').selectOption({ label: 'Heteroidentificação' });
   await page.getByRole('button', { name: 'Acrescentar à linha do tempo' }).click();
+
+  // A fase entra fechada — a linha do tempo mostra os cabeçalhos, e configurar é abrir.
+  await page.locator('.fase-alternar').first().click();
 }
 
 /** Declara uma publicação da fase aberta, com o papel que o nome do ato indica. */

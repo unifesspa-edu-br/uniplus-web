@@ -707,6 +707,207 @@
 }
 
 /*
+ * A fase fechada: só o cabeçalho, com o que há dentro dela resumido ao lado. Sete fases
+ * fechadas cabem numa tela — que é o que o passo promete ao se chamar linha do tempo.
+ */
+
+/*
+ * Título e ações na mesma linha. Empilhados, as ações de reordenar e remover — secundárias —
+ * gastavam uma linha inteira por fase e apareciam com mais peso que o nome da fase.
+ */
+.sel-processo .fase-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.sel-processo .fase-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+  /* Sem encolher e sem quebrar, os três botões somam quase trezentos pixels e empurram o
+     cabeçalho para fora da tela estreita. */
+  min-width: 0;
+}
+.sel-processo .fase-titulo {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.sel-processo .fase-alternar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  /* Item de grid e de flex tem piso intrínseco: sem isto o nome da fase estica o cabeçalho
+     e o passo transborda na horizontal, nas cinco larguras da matriz. */
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .fase-alternar > span:not([aria-hidden]) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .fase-alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .fase-bloco--aberta {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-5);
+}
+
+/*
+ * A etapa fechada em uma linha: nome à esquerda, o que já está declarado à direita. Aberta,
+ * ela passa de mil pixels — oito delas faziam a habilitação valer catorze telas de rolagem.
+ */
+.sel-processo .etapa-bloco {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: var(--space-3);
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.sel-processo .etapa-bloco--aberta {
+  border-color: var(--color-primary);
+}
+
+.sel-processo .etapa-resumo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .etapa-resumo:hover {
+  background: var(--color-primary-50);
+}
+
+.sel-processo .etapa-resumo:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+}
+
+/* Triângulo que gira: é o estado aberto/fechado visível sem depender de cor. */
+.sel-processo .etapa-resumo__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+
+.sel-processo .etapa-bloco--aberta .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sel-processo .etapa-resumo__seta {
+    transition: none;
+  }
+}
+
+.sel-processo .etapa-resumo__nome {
+  font-weight: var(--weight-semibold);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .etapa-resumo__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.sel-processo .etapa-resumo__marca {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Abaixo do estreito, as marcas descem para a linha de baixo em vez de espremer o nome. */
+@media (max-width: 767px) {
+  .sel-processo .etapa-resumo {
+    flex-wrap: wrap;
+  }
+
+  .sel-processo .etapa-resumo__marcas {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.sel-processo .etapa-bloco .etapa-linha {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+
+/*
+ * A confirmação da remoção da fase, ancorada logo abaixo do cabeçalho dela: quem lê a
+ * contagem do que vai junto está olhando a fase que a provocou.
+ */
+.sel-processo .confirma-remocao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger-500);
+  border-left: 3px solid var(--color-danger-solid);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--color-danger-500) 6%, var(--surface-card));
+}
+
+.sel-processo .confirma-remocao__texto {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.sel-processo .confirma-remocao__acoes {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/*
  * O botão fecha a lista de etapas, e a configuração da fase começa logo abaixo:
  * encostado no título seguinte, ele parecia pertencer a ele.
  */
