@@ -750,7 +750,9 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-2);
+  /* Respiro acima: o rótulo do campo vem logo abaixo do texto que explica a seção, e
+     colado nele os dois se leem como um parágrafo só. */
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 .sel-processo .escolher-e-acrescentar > .form-field {
@@ -762,6 +764,35 @@
 
 .sel-processo .escolher-e-acrescentar > .btn {
   flex: 0 0 auto;
+}
+
+/*
+ * Campo e ação quando o próprio campo carrega o seu aviso embaixo — o de busca conta o que o
+ * termo alcança. Aqui o alinhamento é pelo TOPO, que é onde o controle começa: pela base, a
+ * ação descia a altura do aviso e deixava de parecer da mesma linha.
+ */
+.sel-processo .campo-com-acao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-4);
+}
+
+.sel-processo .campo-com-acao > ui-combobox {
+  display: block;
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 34rem;
+}
+
+.sel-processo .campo-com-acao > .btn {
+  flex: 0 0 auto;
+}
+
+/* O campo que abriga a própria ação não tem teto: quem o tem é o controle dentro dele. */
+.sel-processo .escolher-e-acrescentar > .form-field:has(.campo-com-acao) {
+  max-width: none;
+  flex-basis: 100%;
 }
 
 /* A dica e o aviso de contagem, agora abaixo da linha inteira. */
