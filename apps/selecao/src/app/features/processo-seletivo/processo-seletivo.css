@@ -663,6 +663,31 @@
  * não o que ela é — e misturá-las nos mesmos campos fazia a linha parecer um
  * formulário só, sem hierarquia.
  */
+/*
+ * O documento já exigido é um objeto próprio na lista: o seletor acrescenta, e é aqui
+ * que ele ganha modalidades, alcance entre fases e a ação de remover.
+ */
+.sel-processo .doc-item--exigido {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--surface-subtle);
+}
+
+/* O nome e a ação ficam na mesma linha, com a ação encostada à direita. */
+.sel-processo .doc-item--exigido .doc-item__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sel-processo .doc-item--exigido .doc-item__info {
+  display: grid;
+  min-width: 0;
+}
+
 .sel-processo .etapa-publica {
   margin-top: var(--space-3);
   padding: var(--space-3) var(--space-4);
