@@ -31,6 +31,7 @@ import {
   PERMUTACAO_DE_ORDEM,
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
+import { arvoreDeExigencias } from '../../shared/exigencias-documentais';
 import { etapasDe } from '../../shared/hidratacao';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
@@ -812,6 +813,13 @@ export class CronogramaStepComponent {
         }
       }
 
+      // As exigências documentais vão por último e dependem das duas gravações
+      // anteriores: a exigência referencia a fase pelo id que o servidor atribui, e
+      // a etapa que a coleta pelo id que a reconciliação acabou de recolher.
+      const exigencias = await this.gravarExigenciasDocumentais(processoId);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!exigencias.valid) return exigencias;
+
       // Ausência é estado válido em rascunho (CA-05): a chamada só acontece
       // quando há escolha. O código e a versão do formulário sempre andam
       // juntos — `escolherAlgoritmo` os grava ao mesmo tempo —, então checar
@@ -846,6 +854,48 @@ export class CronogramaStepComponent {
 
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
+  }
+
+  /**
+   * Grava os documentos que cada fase exige.
+   *
+   * A conversão precisa do id de cada fase, que o rascunho não guarda — ele identifica
+   * a fase pelo código canônico, que é o que sobrevive à reconciliação do servidor. A
+   * releitura aqui é a que traduz um no outro; sem ela, a exigência sairia apontando
+   * para uma fase que só existe no rascunho.
+   */
+  private async gravarExigenciasDocumentais(processoId: string): Promise<StepValidation> {
+    const geracao = this.store.geracao();
+    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (!isApiOk(detalhe)) {
+      return {
+        valid: false,
+        messages: [
+          'As etapas e o cronograma foram gravados, mas não foi possível reler as fases para gravar os documentos exigidos. Tente gravar de novo.',
+        ],
+      };
+    }
+
+    const faseIdPorCodigo = new Map(detalhe.data.cronogramaFases.map((f) => [f.codigo, f.id]));
+    const raizes = arvoreDeExigencias(
+      this.store.draft().documentos,
+      faseIdPorCodigo,
+      this.store.modalidadesDoProcesso(),
+    );
+
+    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (!gravacao.ok) {
+      return {
+        valid: false,
+        messages: [
+          `As etapas e o cronograma foram gravados. ${this.problemI18n.resolve(gravacao.problem).title}`,
+        ],
+      };
+    }
+
+    return { valid: true };
   }
 
   /**

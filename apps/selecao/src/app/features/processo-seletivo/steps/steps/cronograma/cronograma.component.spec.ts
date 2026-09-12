@@ -19,6 +19,7 @@ const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etap
 const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
 const ROTA_ALGORITMO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/algoritmo-contagem-prazo`;
 const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
+const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-exigidos`;
 const ID_ETAPA_GRAVADA = '01960000-0000-7000-0000-0000000000ee';
 
 /** O interceptor só lê o corpo como ProblemDetails sob este media type. */
@@ -185,6 +186,17 @@ describe('CronogramaStepComponent', () => {
 
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  /**
+   * A última gravação do passo: relê as fases para traduzir o código canônico que o
+   * rascunho guarda no id que a exigência referencia, e substitui a árvore documental.
+   */
+  const gravouExigencias = async () => {
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+  };
 
   /** As ordens que o corpo do comando de cronograma declara. */
   const ordensDe = (corpo: unknown): number[] =>
@@ -506,6 +518,7 @@ describe('CronogramaStepComponent', () => {
     expect(ordensDe(final.request.body)).toEqual([1, 2]);
     final.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    await gravouExigencias();
 
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
@@ -602,6 +615,7 @@ describe('CronogramaStepComponent', () => {
     expect(fases.request.method).toBe('PUT');
     fases.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    await gravouExigencias();
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
@@ -730,6 +744,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    await gravouExigencias();
     await segunda;
   });
 
@@ -893,6 +908,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
     await gravacao;
   });
 
@@ -929,6 +945,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
     await gravacao;
   });
 
@@ -1009,6 +1026,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    await gravouExigencias();
 
     await gravacao;
 
@@ -1142,6 +1160,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
     controller.expectOne(ROTA_ALGORITMO).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     await gravacao;
@@ -1167,6 +1186,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
     controller.expectOne(ROTA_ALGORITMO).flush(
       {
         type: 'about:blank',
@@ -1256,6 +1276,7 @@ describe('CronogramaStepComponent', () => {
 
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
 
     const algoritmo = controller.expectOne(ROTA_ALGORITMO);
     expect(algoritmo.request.method).toBe('PUT');
@@ -1281,6 +1302,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
 
     controller.expectNone(ROTA_ALGORITMO);
     await expect(gravacao).resolves.toEqual({ valid: true });
@@ -1303,6 +1325,7 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
 
     controller.expectOne(ROTA_ALGORITMO).flush(
       {

@@ -45,6 +45,17 @@ const TIPOS_ATO = [
     vigenciaFim: null, baseLegal: null },
 ] as const;
 
+const CATEGORIAS_DOCUMENTO = [
+  { id: '01960000-0000-7000-0000-0000000000c1', codigo: 'RENDA', nome: 'Comprovação de renda',
+    descricao: null, ativo: true },
+] as const;
+
+const TIPOS_DOCUMENTO = [
+  { id: '01960000-0000-7000-0000-0000000000b1', codigo: 'CONTRACHEQUE', nome: 'Contracheque',
+    descricao: null, categoria: 'RENDA', tipoEquivalente: null, ativo: true,
+    formatosAceitos: null, criadoEm: '2026-08-30T12:00:00Z' },
+] as const;
+
 const REGRAS_RECURSO = [
   { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: 'v1', tipo: 'regra_prazo_recurso',
     esquemaArgs: {}, invariantes: {}, baseLegal: 'Lei 9.784/1999, art. 59',
@@ -125,6 +136,36 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(recursos.getByLabel('Contra qual publicação').nth(1)).toHaveValue('RESULTADO_FINAL');
   });
 
+  /**
+   * A habilitação do certame regional tem oito etapas e cada uma pede o seu comprovante.
+   * Sem dizer qual delas coleta, os oito documentos apareceriam nas oito.
+   *
+   * A etapa ainda não gravada aparece sem poder ser escolhida: a exigência a referencia
+   * pelo identificador que o servidor atribui, e ele só existe depois da gravação. O
+   * rótulo diz isso em vez de deixar a opção falhar em silêncio.
+   */
+  test('o documento aponta a etapa da fase que o coleta', async ({ page }) => {
+    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+    await page.getByLabel('Nome', { exact: true }).last().fill('Envio dos comprovantes de renda');
+
+    await page.getByLabel('Documento a exigir').selectOption({ label: 'Contracheque' });
+    await page.getByRole('button', { name: 'Acrescentar documento' }).click();
+
+    const coletadoEm = page.getByLabel('Coletado em');
+    await expect(coletadoEm).toHaveValue('');
+    await expect(coletadoEm).toContainText('Envio dos comprovantes de renda');
+    await expect(coletadoEm).toContainText('grave o passo para poder escolher');
+  });
+
+  /** A fase que não se subdivide não tem onde coletar senão ela própria. */
+  test('fase sem etapa não oferece onde coletar', async ({ page }) => {
+    await page.getByLabel('Documento a exigir').selectOption({ label: 'Contracheque' });
+    await page.getByRole('button', { name: 'Acrescentar documento' }).click();
+
+    await expect(page.getByText('Contracheque')).toBeVisible();
+    await expect(page.getByLabel('Coletado em')).toHaveCount(0);
+  });
+
   /** A ciência não tem publicação a apontar: o campo do ato sai junto com ela. */
   test('recurso por ciência individual não pede publicação-âncora', async ({ page }) => {
     await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
@@ -152,9 +193,9 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
   await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, []);
   await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, []);
-  await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, []);
+  await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, CATEGORIAS_DOCUMENTO);
   await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA);
-  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, []);
+  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO);
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO);
 
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {

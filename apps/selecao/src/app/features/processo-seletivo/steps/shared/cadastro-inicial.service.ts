@@ -21,6 +21,7 @@ import {
   EtapaProcessoInput,
   FaseCronogramaInput,
   IniciarUploadDocumentoEditalDto,
+  NoExigenciaInput,
   ProcessosSeletivosApi,
   PublicarProcessoSeletivoRequest,
 } from '@uniplus/shared-data/selecao';
@@ -120,6 +121,8 @@ export class CadastroInicialService {
   private readonly chaveDistribuicao = new ChaveDeSubstituicao();
   private readonly chaveCascata = new ChaveDeSubstituicao();
   private readonly chaveEtapas = new ChaveDeSubstituicao();
+
+  private readonly chaveDocumentosExigidos = new ChaveDeSubstituicao();
   private readonly chaveCronograma = new ChaveDeSubstituicao();
   private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
   private readonly chaveClassificacao = new ChaveDeSubstituicao();
@@ -335,6 +338,39 @@ export class CadastroInicialService {
     }
 
     this.chaveEtapas.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Grava as exigências documentais do processo. Substitui a árvore inteira: uma
+   * exigência ausente do envio deixa de existir, e é isso que permite tirar um
+   * documento de uma fase. Árvore vazia é estado válido — certame que não coleta
+   * documento nenhum.
+   *
+   * Chave própria, pela mesma razão das etapas: uma recusa aqui não pode invalidar
+   * a chave de outra dimensão em curso.
+   */
+  async definirDocumentosExigidos(
+    processoSeletivoId: string,
+    raizes: readonly NoExigenciaInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirDocumentosExigidos(
+        processoSeletivoId,
+        raizes,
+        this.chaveDocumentosExigidos.contextoPara(raizes),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveDocumentosExigidos.renovar();
+      return { ok: true };
+    }
+
+    this.chaveDocumentosExigidos.recusada(result);
     return { ok: false, problem: result.problem };
   }
 

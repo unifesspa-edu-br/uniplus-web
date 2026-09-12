@@ -21,6 +21,7 @@ import {
   type DocumentoConfig,
   type DocumentoDefinicao,
   type DocumentoGrupo,
+  type EtapaPontuada,
   type FaseDoCronograma,
   type ProdutoDaFase,
   type StepValidation,
@@ -604,8 +605,48 @@ export class FaseStepComponent {
         etapas: [],
         modalidades: [],
         modalidadesRecortadas: false,
+        etapaPorFase: {},
       }
     );
+  }
+
+  /**
+   * As etapas em que esta fase se subdivide, na ordem em que acontecem — vazio quando
+   * a fase não tem nenhuma, que é quando o documento só pode ser da fase inteira.
+   */
+  readonly etapasDaFaseAberta = computed<readonly EtapaPontuada[]>(() => {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return [];
+
+    return [...this.store.draft().cronograma.etapas]
+      .filter((etapa) => etapa.faseCodigo === fase.codigo)
+      .sort((uma, outra) => uma.ordem - outra.ordem);
+  });
+
+  /** A etapa que coleta o documento nesta fase; vazio quando ele é da fase inteira. */
+  etapaDoDocumento(id: string): string {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return '';
+    return this.configuracaoDoDocumento(id).etapaPorFase[fase.codigo] ?? '';
+  }
+
+  /**
+   * Declara em que etapa desta fase o documento é coletado. Vazio devolve o documento
+   * à fase inteira — a etapa sai do registro em vez de ficar guardada como texto vazio,
+   * que o contrato leria como declaração.
+   */
+  escolherEtapaDoDocumento(id: string, etapaId: string): void {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return;
+
+    const semEsta = Object.fromEntries(
+      Object.entries(this.configuracaoDoDocumento(id).etapaPorFase).filter(
+        ([codigo]) => codigo !== fase.codigo,
+      ),
+    );
+    this.escreverDocumento(id, {
+      etapaPorFase: etapaId === '' ? semEsta : { ...semEsta, [fase.codigo]: etapaId },
+    });
   }
 
   /**

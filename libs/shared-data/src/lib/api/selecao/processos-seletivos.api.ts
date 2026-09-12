@@ -28,6 +28,9 @@ export type ConfiguracaoDistribuicaoVagasDto =
 export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
 export type EtapaProcessoDto = components['schemas']['EtapaProcessoDto'];
 export type FaseCronogramaInput = components['schemas']['FaseCronogramaInput'];
+export type NoExigenciaInput = components['schemas']['NoExigenciaInput'];
+export type ItemDocumentoExigidoInput = components['schemas']['ItemDocumentoExigidoInput'];
+export type DocumentoExigidoDto = components['schemas']['DocumentoExigidoDto'];
 export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
 export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
 export type DefinirAlgoritmoContagemPrazoRequest =
@@ -180,6 +183,33 @@ export class ProcessosSeletivosApi {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/cronograma-fases`,
       fases,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/documentos-exigidos` — substitui
+   * a árvore de exigências documentais inteira.
+   *
+   * A entrada é uma árvore: cada raiz é um nó `FOLHA` (um documento), `E` (todos
+   * os filhos) ou `OU` (quantos `quantidadeMinima` disser). Uma lista simples de
+   * documentos é uma lista de folhas, sem grupo nenhum.
+   *
+   * O documento em si vem por `tipoDocumentoId` — o servidor resolve o cadastro e
+   * congela nome, código e categoria. `exigidoNaFaseId` é a fase em que ele é
+   * exigido, e `exigidoNaEtapaId`, quando presente, a etapa daquela fase que o
+   * coleta.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirDocumentosExigidos(
+    processoSeletivoId: string,
+    raizes: readonly NoExigenciaInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-exigidos`,
+      raizes,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }

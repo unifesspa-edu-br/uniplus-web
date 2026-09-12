@@ -632,6 +632,36 @@
               </p>
             }
 
+            @if (etapasDaFaseAberta().length > 0) {
+              <div class="field">
+                <label class="label" [attr.for]="'fase-doc-etapa-' + doc.id">Coletado em</label>
+                <!--
+                  `selected` por opção, não `value` no seletor: o valor é aplicado antes de
+                  as opções existirem, e o seletor voltaria sempre em "A fase inteira" —
+                  escondendo a etapa que o processo já declarou.
+                -->
+                <select
+                  class="select"
+                  [attr.id]="'fase-doc-etapa-' + doc.id"
+                  [disabled]="!store.aceitaEdicao()"
+                  (change)="escolherEtapaDoDocumento(doc.id, $any($event.target).value)"
+                >
+                  <option value="" [selected]="etapaDoDocumento(doc.id) === ''">
+                    A fase inteira
+                  </option>
+                  @for (etapa of etapasDaFaseAberta(); track etapa.id ?? etapa.nome) {
+                    <option
+                      [value]="etapa.id ?? ''"
+                      [disabled]="etapa.id === null"
+                      [selected]="etapa.id === etapaDoDocumento(doc.id)"
+                    >
+                      {{ etapa.nome }}{{ etapa.id === null ? ' — grave o passo para poder escolher' : '' }}
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+
             <fieldset class="doc-expand">
               <legend class="label">Modalidades que devem entregar</legend>
               @if (modalidades().length === 0) {
