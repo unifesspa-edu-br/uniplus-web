@@ -569,6 +569,48 @@ describe('CronogramaStepComponent', () => {
     expect(componente.marcasDaEtapa(etapa)).toContain('1 recurso');
   });
 
+  /**
+   * Terceiro nível do mesmo padrão: o bloco que cresce com o que se declara nele também
+   * chega recolhido, com a contagem no cabeçalho.
+   */
+  it('os blocos que crescem dentro da etapa chegam recolhidos', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    componente.alternarFase(0);
+    componente.alternarEtapa(0);
+    detectar();
+
+    expect(componente.blocoAberto(0, 'recursos')).toBe(false);
+    expect(componente.blocoAberto(0, 'publica')).toBe(false);
+    expect(componente.resumoDosRecursos(componente.etapas.at(0))).toBe('nenhum recurso');
+    expect(componente.resumoDasPublicacoes(componente.etapas.at(0))).toBe('não publica nada');
+  });
+
+  it('o cabeçalho do bloco conta o que há dentro dele', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+
+    componente.acrescentarRecursoNaEtapa(etapa);
+    componente.acrescentarRecursoNaEtapa(etapa);
+    detectar();
+
+    expect(componente.resumoDosRecursos(etapa)).toBe('2 recursos');
+  });
+
+  it('abrir um bloco de uma etapa não abre o da outra', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
+    componente.alternarFase(0);
+    detectar();
+
+    componente.alternarBloco(0, 'recursos');
+
+    expect(componente.blocoAberto(0, 'recursos')).toBe(true);
+    expect(componente.blocoAberto(1, 'recursos')).toBe(false);
+    expect(componente.blocoAberto(0, 'publica')).toBe(false, 'cada bloco tem o seu estado');
+  });
+
   it('a etapa sem nome aparece na lista mesmo assim', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);

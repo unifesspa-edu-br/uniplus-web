@@ -1049,6 +1049,53 @@
 }
 
 /*
+ * Bloco da etapa que cresce com o que se declara nele — as janelas recursais e as
+ * publicações — recolhido como a etapa e a fase, com a contagem no cabeçalho.
+ */
+.sel-processo .etapa-publica--recolhivel {
+  gap: 0;
+}
+
+.sel-processo .etapa-publica__cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .etapa-publica__cabecalho:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .etapa-publica__cabecalho .form-section__title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .etapa-publica--recolhivel.is-aberto > div {
+  margin-top: var(--space-3);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sel-processo .etapa-publica--recolhivel.is-aberto > .etapa-publica__cabecalho .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+/*
  * A ação não tem rótulo acima: alinhada pelo topo, ela flutuaria na altura dos rótulos
  * dos campos vizinhos em vez de na altura dos controles.
  */
