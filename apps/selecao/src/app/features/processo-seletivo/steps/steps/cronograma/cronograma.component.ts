@@ -509,6 +509,39 @@ export class CronogramaStepComponent {
     this.etapasAbertas.set(abertas);
   }
 
+  /**
+   * Os blocos abertos dentro de cada etapa, na chave `posição:bloco`.
+   *
+   * Recolhidos por padrão, como a etapa e a fase: cada janela recursal declarada ocupa uma
+   * grade inteira, e a prova objetiva do certame qualificado abre duas.
+   */
+  private readonly blocosAbertos = signal<ReadonlySet<string>>(new Set());
+
+  blocoAberto(posicao: number, bloco: 'recursos' | 'publica'): boolean {
+    return this.blocosAbertos().has(`${posicao}:${bloco}`);
+  }
+
+  alternarBloco(posicao: number, bloco: 'recursos' | 'publica'): void {
+    const abertos = new Set(this.blocosAbertos());
+    const chave = `${posicao}:${bloco}`;
+    if (!abertos.delete(chave)) abertos.add(chave);
+    this.blocosAbertos.set(abertos);
+  }
+
+  /** O que o cabeçalho recolhido diz sobre as janelas recursais da etapa. */
+  resumoDosRecursos(grupo: FormGroup<EtapaForm>): string {
+    const total = this.recursosDaEtapa(grupo).length;
+    if (total === 0) return 'nenhum recurso';
+    return total === 1 ? '1 recurso' : `${total} recursos`;
+  }
+
+  /** O que o cabeçalho recolhido diz sobre o que a etapa publica. */
+  resumoDasPublicacoes(grupo: FormGroup<EtapaForm>): string {
+    const total = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;
+    if (total === 0) return 'não publica nada';
+    return total === 1 ? '1 publicação' : `${total} publicações`;
+  }
+
   /** O nome que a etapa já tem, ou o que a linha fechada mostra enquanto ele não existe. */
   nomeDaEtapa(grupo: FormGroup<EtapaForm>): string {
     const nome = grupo.controls.nome.value.trim();

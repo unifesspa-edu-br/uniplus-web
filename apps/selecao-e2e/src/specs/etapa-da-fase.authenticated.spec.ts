@@ -101,6 +101,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
   test('a etapa declara o que publica, com papel', async ({ page }) => {
     await acrescentarEtapa(page);
 
+    await abrirBloco(page, 'O que esta etapa publica');
     const bloco = blocoDaEtapa(page, 'O que esta etapa publica');
     await bloco.getByRole('button', { name: 'Acrescentar publicação' }).click();
     await bloco.getByLabel('Ato').selectOption('RESULTADO_PRELIMINAR');
@@ -119,6 +120,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
 
     // Duas publicações preliminares: é contra cada uma que uma janela corre.
+    await abrirBloco(page, 'O que esta etapa publica');
     const publica = blocoDaEtapa(page, 'O que esta etapa publica');
     await publica.getByRole('button', { name: 'Acrescentar publicação' }).click();
     await publica.getByLabel('Ato').nth(0).selectOption('RESULTADO_PRELIMINAR');
@@ -127,6 +129,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await publica.getByLabel('Ato').nth(1).selectOption('RESULTADO_FINAL');
     await publica.getByLabel('Papel').nth(1).selectOption('PRELIMINAR');
 
+    await abrirBloco(page, 'Recursos que esta etapa admite');
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await recursos.getByLabel('Prazo', { exact: true }).nth(0).fill('24');
@@ -198,6 +201,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
   /** A ciência não tem publicação a apontar: o campo do ato sai junto com ela. */
   test('recurso por ciência individual não pede publicação-âncora', async ({ page }) => {
     await acrescentarEtapa(page);
+    await abrirBloco(page, 'Recursos que esta etapa admite');
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
@@ -208,6 +212,14 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(recursos.getByLabel('Contra qual publicação')).toHaveCount(0);
   });
 });
+
+/**
+ * Abre um dos blocos que a etapa traz recolhidos — as janelas recursais e as publicações
+ * crescem com o que se declara nelas, e chegam contadas no cabeçalho.
+ */
+async function abrirBloco(page: Page, titulo: string): Promise<void> {
+  await page.locator('.etapa-publica__cabecalho', { hasText: titulo }).first().click();
+}
 
 /**
  * Escolhe um documento no campo de busca: digitar filtra a lista, e a opção é escolhida com
