@@ -350,6 +350,15 @@
   padding: var(--space-8);
   overflow-y: auto;
 
+  /*
+   * Bloco de contenção da própria rolagem. Os controles que o passo esconde do olho
+   * mas mantém para o leitor de tela (`.sr-only`) são posicionados em absoluto, e sem
+   * um ancestral posicionado aqui o ancestral deles vira `main.page` — que então
+   * crescia com o passo inteiro e abria uma segunda barra de rolagem, com espaço morto
+   * abaixo do rodapé.
+   */
+  position: relative;
+
   /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
@@ -688,6 +697,14 @@
   min-width: 0;
 }
 
+/*
+ * O botão fecha a lista de etapas, e a configuração da fase começa logo abaixo:
+ * encostado no título seguinte, ele parecia pertencer a ele.
+ */
+.sel-processo .acao-de-etapa {
+  margin: var(--space-3) 0 var(--space-6);
+}
+
 .sel-processo .etapa-publica {
   margin-top: var(--space-3);
   padding: var(--space-3) var(--space-4);
@@ -699,8 +716,22 @@
   gap: var(--space-3);
 }
 
+/*
+ * Campos alinham pelo topo: o rótulo e o controle de cada coluna ficam na mesma linha,
+ * e a dica de um campo desce por baixo dele em vez de empurrar o vizinho para cima.
+ * Alinhar pela base fazia o campo com dica — "Contra qual publicação" — subir o próprio
+ * seletor a altura da dica, deixando as duas colunas desencontradas.
+ */
 .sel-processo .etapa-publica > .form-grid {
-  align-items: end;
+  align-items: start;
+}
+
+/*
+ * A ação não tem rótulo acima: alinhada pelo topo, ela flutuaria na altura dos rótulos
+ * dos campos vizinhos em vez de na altura dos controles.
+ */
+.sel-processo .etapa-publica > .form-grid > .btn {
+  align-self: end;
 }
 
 /*
