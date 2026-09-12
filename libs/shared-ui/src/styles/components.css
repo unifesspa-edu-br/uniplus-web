@@ -70,13 +70,20 @@
 }
 .btn--secondary:hover:not([disabled]):not(:disabled) { color: var(--text-on-primary-tint); border-color: var(--color-primary-700); }
 
+/*
+ * Hover com a mesma tinta e o mesmo texto do secundário: sobre `--surface-subtle`, o
+ * azul de `--color-primary` rendia 4,07:1 no tema escuro — abaixo do mínimo de 4,5:1
+ * que a WCAG 2.1 AA exige, e o botão terciário é comum o bastante para a falha
+ * aparecer em qualquer tela.
+ */
 .btn--tertiary {
   --btn-bg: transparent;
   --btn-fg: var(--color-primary);
   --btn-bd: transparent;
-  --btn-bg-hover: var(--surface-subtle);
-  --btn-bg-active: var(--surface-disabled);
+  --btn-bg-hover: var(--color-primary-50);
+  --btn-bg-active: var(--color-primary-100);
 }
+.btn--tertiary:hover:not([disabled]):not(:disabled) { color: var(--text-on-primary-tint); }
 
 .btn--danger {
   --btn-bg: var(--color-danger-solid);
