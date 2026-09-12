@@ -284,6 +284,26 @@ export interface EtapaPontuada {
   readonly faseCodigo: string;
   /** O que a etapa publica: ato e papel no ciclo recursal. */
   readonly produtos: readonly ProdutoDaFase[];
+  /** Janela própria da etapa, em hora de parede; vazio quando ela herda a da fase. */
+  readonly inicio: string;
+  readonly fim: string;
+  readonly emiteParecerIndividual: boolean;
+  readonly bancas: readonly string[];
+  readonly recursos: readonly RecursoDaEtapa[];
+}
+
+/**
+ * Uma janela recursal da etapa. `ancora` diz de que instante o prazo corre: da publicação
+ * do ato — e aí `atoAncoraCodigo` nomeia qual — ou da ciência do candidato, que não tem
+ * publicação a referenciar.
+ */
+export interface RecursoDaEtapa {
+  readonly ancora: 'atoPublicado' | 'cienciaIndividual';
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+  readonly prazoValor: string;
+  readonly prazoUnidade: string;
+  readonly atoAncoraCodigo: string;
 }
 
 /**

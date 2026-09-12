@@ -17,9 +17,11 @@ import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
   type ProdutoDaFase,
+  type RecursoDaEtapa,
   type StepValidation,
   type WizardDraft,
 } from '../../processo-seletivo.models';
+import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -205,6 +207,9 @@ export class CronogramaStepComponent {
   get fases() {
     return this.formulario.controls.fases;
   }
+
+  /** Os papéis escolhíveis, no mesmo vocabulário que a configuração da fase usa. */
+  readonly papeis = PAPEIS_ESCOLHIVEIS;
 
   get etapas() {
     return this.formulario.controls.etapas;
@@ -521,6 +526,115 @@ export class CronogramaStepComponent {
     grupo.controls.produtos.markAsDirty();
   }
 
+  // ── Bancas e janelas recursais da etapa ────────────────────────────────────
+
+  bancasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
+    this.versaoDoFormulario();
+    return grupo.controls.bancas.value;
+  }
+
+  alternarBancaDaEtapa(grupo: FormGroup<EtapaForm>, tipoBancaId: string, marcada: boolean): void {
+    const atuais = grupo.controls.bancas.value;
+    const proximas = marcada
+      ? [...new Set([...atuais, tipoBancaId])]
+      : atuais.filter((id) => id !== tipoBancaId);
+    grupo.controls.bancas.setValue(proximas);
+    grupo.controls.bancas.markAsDirty();
+  }
+
+  recursosDaEtapa(grupo: FormGroup<EtapaForm>): readonly RecursoDaEtapa[] {
+    this.versaoDoFormulario();
+    return grupo.controls.recursos.value;
+  }
+
+  /**
+   * A janela nasce ancorada no primeiro produto preliminar da etapa, quando existe: é o
+   * caso comum, e deixar o campo vazio obrigaria o operador a escolher de novo o que a
+   * própria etapa já declarou publicar.
+   */
+  acrescentarRecursoNaEtapa(grupo: FormGroup<EtapaForm>): void {
+    const preliminar = grupo.controls.produtos.value.find((p) => p.papel === PAPEL_PRELIMINAR);
+    const regra = this.regraDoCatalogo('atoPublicado');
+    this.escreverRecursos(grupo, [
+      ...grupo.controls.recursos.value,
+      {
+        ancora: 'atoPublicado',
+        regraCodigo: regra?.codigo ?? '',
+        regraVersao: regra?.versao ?? '',
+        prazoValor: '',
+        prazoUnidade: 'diasUteis',
+        atoAncoraCodigo: preliminar?.atoCodigo ?? '',
+      },
+    ]);
+  }
+
+  /**
+   * A regra de prazo que o catálogo oferece para cada âncora. São duas regras distintas
+   * porque são dois relógios: um conta da publicação do ato, o outro da ciência de cada
+   * candidato.
+   */
+  private regraDoCatalogo(ancora: RecursoDaEtapa['ancora']) {
+    const alvo = ancora === 'atoPublicado' ? 'ANCORADO-EM-ATO' : 'ANCORADO-EM-CIENCIA';
+    return (
+      this.catalogos.regrasRecurso().find((regra) => regra.codigo.includes(alvo)) ??
+      this.catalogos.regrasRecurso()[0]
+    );
+  }
+
+  /** Sem regra de prazo no catálogo, não há janela recursal declarável. */
+  temRegraDeRecurso(): boolean {
+    return this.catalogos.regrasRecurso().length > 0;
+  }
+
+  removerRecursoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number): void {
+    this.escreverRecursos(grupo, grupo.controls.recursos.value.filter((_, i) => i !== posicao));
+  }
+
+  alterarRecursoDaEtapa(
+    grupo: FormGroup<EtapaForm>,
+    posicao: number,
+    campo: keyof RecursoDaEtapa,
+    valor: string,
+  ): void {
+    this.escreverRecursos(
+      grupo,
+      grupo.controls.recursos.value.map((recurso, i) => {
+        if (i !== posicao) return recurso;
+        if (campo === 'ancora') {
+          const ancora = valor as RecursoDaEtapa['ancora'];
+          const regra = this.regraDoCatalogo(ancora);
+          // A ciência não tem publicação a referenciar: o ato âncora sai junto, e a regra
+          // de prazo muda, porque o relógio é outro.
+          return {
+            ...recurso,
+            ancora,
+            regraCodigo: regra?.codigo ?? recurso.regraCodigo,
+            regraVersao: regra?.versao ?? recurso.regraVersao,
+            atoAncoraCodigo: ancora === 'atoPublicado' ? recurso.atoAncoraCodigo : '',
+          };
+        }
+
+        if (campo === 'regraCodigo') {
+          const regra = this.catalogos.regrasRecurso().find((r) => r.codigo === valor);
+          return { ...recurso, regraCodigo: valor, regraVersao: regra?.versao ?? '' };
+        }
+
+        return { ...recurso, [campo]: valor };
+      }),
+    );
+  }
+
+  /** Os produtos preliminares da etapa — os únicos em que uma janela pode ancorar. */
+  preliminaresDaEtapa(grupo: FormGroup<EtapaForm>): readonly ProdutoDaFase[] {
+    this.versaoDoFormulario();
+    return grupo.controls.produtos.value.filter((p) => p.papel === PAPEL_PRELIMINAR);
+  }
+
+  private escreverRecursos(grupo: FormGroup<EtapaForm>, recursos: readonly RecursoDaEtapa[]): void {
+    grupo.controls.recursos.setValue(recursos);
+    grupo.controls.recursos.markAsDirty();
+  }
+
   acrescentarEtapa(faseCodigo = ''): void {
     this.etapas.push(
       grupoDaEtapa({
@@ -533,6 +647,11 @@ export class CronogramaStepComponent {
         ordem: this.etapas.length + 1,
         faseCodigo,
         produtos: [],
+        inicio: '',
+        fim: '',
+        emiteParecerIndividual: false,
+        bancas: [],
+        recursos: [],
       }),
     );
   }
