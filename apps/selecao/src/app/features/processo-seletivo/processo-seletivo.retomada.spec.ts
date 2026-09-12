@@ -17,6 +17,7 @@ import {
   FasesCanonicasApi,
   PrecedenciasFaseApi,
   TiposBancaApi,
+  TiposDocumentoApi,
   TiposEtapaApi,
   CategoriasDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
@@ -170,6 +171,7 @@ function montar(opts: CenarioOpts = {}) {
   { provide: TiposBancaApi, useValue: catalogoVazioStub },
   { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
+  { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; esta suíte cobre a retomada do processo, não as escolhas.

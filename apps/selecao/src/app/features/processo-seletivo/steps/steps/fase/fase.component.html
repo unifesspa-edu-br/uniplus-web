@@ -523,7 +523,7 @@
           devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
         </p>
 
-        @for (grupo of gruposDeDocumento; track grupo.label) {
+        @for (grupo of gruposDeDocumento(); track grupo.label) {
           <div class="docs-group">
             <h3 class="docs-group__label">{{ grupo.label }}</h3>
             @for (doc of grupo.docs; track doc.id) {

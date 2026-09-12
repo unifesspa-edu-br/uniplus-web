@@ -84,6 +84,22 @@ const BANCAS = [
   },
 ];
 
+/** O cadastro de onde a tela tira os documentos — antes era uma lista escrita nela. */
+const ID_CPF = '01960000-0000-7000-0000-0000000000f1';
+const TIPOS_DOCUMENTO = [
+  {
+    id: ID_CPF,
+    codigo: 'CPF',
+    nome: 'CPF',
+    descricao: null,
+    categoria: 'IDENTIFICACAO',
+    formatosAceitos: 'pdf,jpg',
+    tamanhoMaximoMb: 10,
+    tipoEquivalente: null,
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
+];
+
 const CATEGORIAS = [
   {
     id: ID_CATEGORIA_RACA,
@@ -170,6 +186,7 @@ describe('FaseStepComponent', () => {
       if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
       else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
       else if (url.includes('categorias-documento')) requisicao.flush(CATEGORIAS);
+      else if (url.includes('tipos-documento')) requisicao.flush(TIPOS_DOCUMENTO);
       else if (url.includes('tipos-ato')) requisicao.flush(ATOS);
       else if (url.includes('regras')) requisicao.flush(REGRAS);
       else requisicao.flush([]);
@@ -648,13 +665,13 @@ describe('FaseStepComponent', () => {
     it('exige o documento na fase aberta, e só nela', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
-      componente.alternarExigencia('cpf', true);
+      componente.alternarExigencia(ID_CPF, true);
       detectar();
 
-      expect(componente.exigidoNestaFase('cpf')).toBe(true);
+      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
       componente.abrirFase(ID_RECURSOS);
       detectar();
-      expect(componente.exigidoNestaFase('cpf')).toBe(false);
+      expect(componente.exigidoNestaFase(ID_CPF)).toBe(false);
     });
 
     /**
@@ -663,17 +680,15 @@ describe('FaseStepComponent', () => {
      * tomada numa só.
      */
     /**
-     * O rascunho nasce com `todasEtapas: true` e `included: false` em todo
-     * documento — é o padrão de "acompanha o edital", não uma exigência. Travar
-     * a caixa por `todasEtapas` sozinho deixava o processo novo com quinze
-     * documentos desmarcados, desabilitados e anunciando "exigido em todas as
-     * fases": o operador lia o oposto do estado real e não tinha como marcar
-     * nenhum.
+     * O rascunho nasce sem documento nenhum — quais existem é o cadastro que diz —, e a
+     * caixa de um documento ainda não tocado precisa estar habilitada e desmarcada. Ler
+     * `todasEtapas` sozinho deixava o processo novo com os documentos desabilitados sob o
+     * texto de que já eram exigidos em toda parte: o oposto do estado real.
      */
     it('deixa marcar o documento que o processo novo ainda não exige', () => {
       comCronograma(fase({}));
 
-      const caixa = nativo.querySelector<HTMLInputElement>('#fase-doc-cpf');
+      const caixa = nativo.querySelector<HTMLInputElement>(`#fase-doc-${ID_CPF}`);
 
       expect(caixa?.disabled).toBe(false);
       expect(caixa?.checked).toBe(false);
@@ -683,24 +698,24 @@ describe('FaseStepComponent', () => {
     it('recorta por fase partindo das fases que o edital tem hoje', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
-      componente.valerEmTodasAsFases('cpf');
+      componente.valerEmTodasAsFases(ID_CPF);
       detectar();
-      componente.recortarPorFase('cpf');
+      componente.recortarPorFase(ID_CPF);
       detectar();
 
-      expect(store.draft().documentos['cpf'].etapas).toEqual(['AVALIACAO', 'RECURSOS']);
-      expect(store.draft().documentos['cpf'].todasEtapas).toBe(false);
+      expect(store.draft().documentos[ID_CPF].etapas).toEqual(['AVALIACAO', 'RECURSOS']);
+      expect(store.draft().documentos[ID_CPF].todasEtapas).toBe(false);
     });
 
     it('tira o documento do processo ao desmarcar a última fase que o exigia', () => {
       comCronograma(fase({}));
 
-      componente.alternarExigencia('cpf', true);
+      componente.alternarExigencia(ID_CPF, true);
       detectar();
-      componente.alternarExigencia('cpf', false);
+      componente.alternarExigencia(ID_CPF, false);
       detectar();
 
-      expect(store.draft().documentos['cpf'].included).toBe(false);
+      expect(store.draft().documentos[ID_CPF].included).toBe(false);
     });
   });
 });
