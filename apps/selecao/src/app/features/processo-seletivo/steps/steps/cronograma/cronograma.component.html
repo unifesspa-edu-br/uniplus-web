@@ -351,7 +351,11 @@
                         data própria — a prova e a entrevista não caem no mesmo dia.
                       </p>
                       <label class="checkbox">
-                        <input type="checkbox" formControlName="emiteParecerIndividual" />
+                        <input
+                          type="checkbox"
+                          [attr.id]="'cr-etapa-parecer-' + posicao"
+                          formControlName="emiteParecerIndividual"
+                        />
                         Esta etapa emite parecer individual
                       </label>
                       <p class="field__hint">
