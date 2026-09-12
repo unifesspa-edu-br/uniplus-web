@@ -282,6 +282,8 @@ export interface EtapaPontuada {
    * cadastro marcava como agrupadora. Vazio enquanto a etapa não declara fase.
    */
   readonly faseCodigo: string;
+  /** O que a etapa publica: ato e papel no ciclo recursal. */
+  readonly produtos: readonly ProdutoDaFase[];
 }
 
 /**

@@ -5616,6 +5616,7 @@ export interface components {
             /** Format: int32 */
             readonly ordem: null | number | string;
             readonly faseCodigo: null | string;
+            readonly produtos: readonly components["schemas"]["ProdutoDaEtapaDto"][];
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
@@ -5631,6 +5632,7 @@ export interface components {
             /** Format: uuid */
             readonly id?: null | string;
             readonly faseCodigo?: null | string;
+            readonly produtos?: null | readonly components["schemas"]["ProdutoDaEtapaInput"][];
         };
         readonly FaseCronogramaDto: {
             /** Format: uuid */
@@ -5891,6 +5893,8 @@ export interface components {
         };
         /** @enum {string} */
         readonly OrigemCandidatos: OrigemCandidatos;
+        /** @enum {string} */
+        readonly PapelProdutoFase: "preliminar" | "definitivo" | null;
         readonly PredicadoObrigatoriedade: components["schemas"]["PredicadoObrigatoriedadeEtapaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeModalidadesMinimas"] | components["schemas"]["PredicadoObrigatoriedadeDesempateDeveIncluir"] | components["schemas"]["PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade"] | components["schemas"]["PredicadoObrigatoriedadeAtendimentoDisponivel"] | components["schemas"]["PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeCustomizado"];
         readonly PredicadoObrigatoriedadeAtendimentoDisponivel: {
             /** @enum {string} */
@@ -5976,6 +5980,16 @@ export interface components {
             readonly status: components["schemas"]["StatusProcesso"];
             /** Format: date-time */
             readonly criadoEm: string;
+        };
+        readonly ProdutoDaEtapaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly atoCodigo: string;
+            readonly papel: null | components["schemas"]["PapelProdutoFase"];
+        };
+        readonly ProdutoDaEtapaInput: {
+            readonly atoCodigo: string;
+            readonly papel: null | components["schemas"]["PapelProdutoFase"];
         };
         readonly ProdutoDaFaseDto: {
             /** Format: uuid */

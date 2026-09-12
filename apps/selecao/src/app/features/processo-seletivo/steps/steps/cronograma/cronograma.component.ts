@@ -16,6 +16,7 @@ import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
+  type ProdutoDaFase,
   type StepValidation,
   type WizardDraft,
 } from '../../processo-seletivo.models';
@@ -464,6 +465,61 @@ export class CronogramaStepComponent {
     this.formulario.controls.algoritmoContagemVersao.setValue(versao);
   }
 
+  // ── O que a etapa publica ──────────────────────────────────────────────────
+  // Mesmo desenho que a fase já usa um nível acima: a coleção é substituída por
+  // inteiro, e trocar o ato zera o papel, porque só ato que o catálogo marca como
+  // resultado o recebe.
+
+  produtosDaEtapa(grupo: FormGroup<EtapaForm>): readonly ProdutoDaFase[] {
+    this.versaoDoFormulario();
+    return grupo.controls.produtos.value;
+  }
+
+  acrescentarProdutoNaEtapa(grupo: FormGroup<EtapaForm>): void {
+    this.escreverProdutosDaEtapa(grupo, [
+      ...grupo.controls.produtos.value,
+      { atoCodigo: '', papel: null },
+    ]);
+  }
+
+  removerProdutoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number): void {
+    this.escreverProdutosDaEtapa(
+      grupo,
+      grupo.controls.produtos.value.filter((_, indice) => indice !== posicao),
+    );
+  }
+
+  escolherAtoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number, atoCodigo: string): void {
+    this.escreverProdutosDaEtapa(
+      grupo,
+      grupo.controls.produtos.value.map((produto, indice) =>
+        indice === posicao ? { atoCodigo, papel: null } : produto,
+      ),
+    );
+  }
+
+  escolherPapelDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number, papel: string): void {
+    const escolhido = papel === '' ? null : (papel as ProdutoDaFase['papel']);
+    this.escreverProdutosDaEtapa(
+      grupo,
+      grupo.controls.produtos.value.map((produto, indice) =>
+        indice === posicao ? { ...produto, papel: escolhido } : produto,
+      ),
+    );
+  }
+
+  /** Só ato que o catálogo marca como resultado admite papel no ciclo recursal. */
+  atoEhResultado(atoCodigo: string): boolean {
+    return this.catalogos.atoPorCodigo().get(atoCodigo)?.ehResultado === true;
+  }
+
+  private escreverProdutosDaEtapa(grupo: FormGroup<EtapaForm>, produtos: readonly ProdutoDaFase[]): void {
+    // `valueChanges` do formulário já propaga para o rascunho e incrementa a versão —
+    // não há o que marcar aqui além do próprio controle.
+    grupo.controls.produtos.setValue(produtos);
+    grupo.controls.produtos.markAsDirty();
+  }
+
   acrescentarEtapa(faseCodigo = ''): void {
     this.etapas.push(
       grupoDaEtapa({
@@ -475,6 +531,7 @@ export class CronogramaStepComponent {
         notaMinima: '',
         ordem: this.etapas.length + 1,
         faseCodigo,
+        produtos: [],
       }),
     );
   }

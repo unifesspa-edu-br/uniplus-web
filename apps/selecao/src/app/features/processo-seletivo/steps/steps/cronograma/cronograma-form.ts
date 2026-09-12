@@ -69,6 +69,12 @@ export interface EtapaForm {
   readonly ordem: FormControl<number>;
   /** Código canônico da fase a que a etapa pertence; vazio enquanto não declarada. */
   readonly faseCodigo: FormControl<string>;
+  /**
+   * Os produtos viajam no formulário sem serem editados campo a campo: a gravação
+   * substitui a coleção inteira, e deixá-los de fora apagaria, a cada mudança de nome ou
+   * peso, o que a etapa declara publicar.
+   */
+  readonly produtos: FormControl<readonly ProdutoDaFase[]>;
 }
 
 export interface CronogramaForm {
@@ -123,6 +129,7 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
     // "não declara fase", e undefined num FormControl quebraria a comparação.
     faseCodigo: controle(etapa.faseCodigo ?? ''),
+    produtos: controle<readonly ProdutoDaFase[]>(etapa.produtos ?? []),
   });
 }
 
