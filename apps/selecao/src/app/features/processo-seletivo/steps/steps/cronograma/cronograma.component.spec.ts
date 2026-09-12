@@ -88,9 +88,25 @@ const REGRAS_CONTAGEM = [
     versao: 'v1',
     tipo: 'algoritmo_contagem_prazo',
     esquemaArgs: {},
-    invariantes: {},
+    // O catálogo publica os invariantes como lista de prosa — é deles que sai a descrição
+    // do que a convenção faz, e é o que separa uma convenção da outra.
+    invariantes: [
+      'o dia da âncora não conta',
+      'em horas, a contagem começa no primeiro dia útil seguinte',
+    ],
     baseLegal: 'Lei 9.784/1999, art. 66',
     hash: 'xyz',
+    modalidadesAdmitidas: null,
+  },
+  {
+    codigo: 'SEM-INVARIANTE',
+    versao: 'v1',
+    tipo: 'algoritmo_contagem_prazo',
+    esquemaArgs: {},
+    // O contrato tipa o campo como JSON solto: o que não for lista de texto é descartado.
+    invariantes: {},
+    baseLegal: 'Lei 9.784/1999, art. 66',
+    hash: 'abc',
     modalidadesAdmitidas: null,
   },
 ];
@@ -1378,21 +1394,51 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * O `RegraCatalogoDto` não tem `nome` nem `descricao` — só `codigo` e
-   * `baseLegal` são legíveis, e inventar um mapa código→rótulo no frontend é
-   * achado bloqueante (#511). O seletor mostra exatamente os dois campos.
+   * O `RegraCatalogoDto` não tem `nome` nem `descricao` — inventar um mapa código→rótulo no
+   * frontend é achado bloqueante (#511). A opção mostra o código e a versão, que são o que
+   * identifica a convenção; a base legal saiu do rótulo porque as três convenções de
+   * contagem do catálogo têm a MESMA, com quatrocentos e sessenta e nove caracteres, e
+   * repeti-la em cada linha empurrava o código para fora da largura do campo.
    */
-  it('oferece cada convenção do catálogo pelo código e pela base legal', () => {
-    expect(componente.regrasDeContagem()).toEqual([
-      {
-        codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
-        versao: 'v1',
-        baseLegal: 'Lei 9.784/1999, art. 66',
-      },
-    ]);
-    expect(nativo.textContent ?? '').toContain(
+  it('oferece cada convenção do catálogo pelo código e pela versão', () => {
+    expect(componente.regrasDeContagem()).toContainEqual({
+      codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+      versao: 'v1',
+      baseLegal: 'Lei 9.784/1999, art. 66',
+    });
+    expect(nativo.textContent ?? '').toContain('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1)');
+    expect(nativo.textContent ?? '').not.toContain(
       'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1) — Lei 9.784/1999, art. 66',
     );
+  });
+
+  /**
+   * O que separa uma convenção da outra são os invariantes que o catálogo publica — cada um
+   * descreve um caso, com o exemplo do resultado. Aparecem depois da escolha, porque
+   * descrevem a convenção escolhida, não as disponíveis.
+   */
+  it('mostra o que a convenção escolhida faz, na prosa do catálogo', () => {
+    expect(componente.invariantesDaContagem()).toEqual([], 'sem escolha, não há o que descrever');
+
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    expect(componente.invariantesDaContagem()).toEqual([
+      'o dia da âncora não conta',
+      'em horas, a contagem começa no primeiro dia útil seguinte',
+    ]);
+    expect(componente.baseLegalDaContagem()).toBe('Lei 9.784/1999, art. 66');
+    expect(nativo.textContent ?? '').toContain('O que esta convenção faz');
+    expect(nativo.textContent ?? '').toContain('o dia da âncora não conta');
+  });
+
+  /** Catálogo que não publica invariante nenhum não ganha uma seção vazia. */
+  it('esconde a descrição quando o catálogo não publica invariante', () => {
+    componente.escolherAlgoritmo('SEM-INVARIANTE');
+    detectar();
+
+    expect(componente.invariantesDaContagem()).toEqual([]);
+    expect(nativo.textContent ?? '').not.toContain('O que esta convenção faz');
   });
 
   /**

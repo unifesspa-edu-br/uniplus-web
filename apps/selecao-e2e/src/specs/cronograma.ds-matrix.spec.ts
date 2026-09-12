@@ -47,14 +47,20 @@ const REGRAS_CONTAGEM = [
     versao: 'v1',
     tipo: 'algoritmo_contagem_prazo',
     esquemaArgs: {},
-    invariantes: {},
+    invariantes: ['o dia da âncora não conta'],
     baseLegal: 'Lei 9.784/1999, art. 66',
     hash: 'xyz',
     modalidadesAdmitidas: null,
   },
 ] as const;
 
-const ROTULO_CONVENCAO = 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1) — Lei 9.784/1999, art. 66';
+/**
+ * A opção traz só o que identifica a convenção. A base legal saiu do rótulo porque as três
+ * convenções de contagem do catálogo têm a MESMA, e repeti-la em cada linha empurrava o
+ * código para fora da largura do campo; ela aparece uma vez, abaixo, junto do que a
+ * convenção escolhida faz.
+ */
+const ROTULO_CONVENCAO = 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1)';
 
 /**
  * Matriz do Uni+ DS para o passo Cronograma, com foco no seletor da convenção
@@ -111,11 +117,26 @@ test.describe('Cronograma — matriz DS @ds', () => {
    * Nome acessível do seletor pelo rótulo visível (SC 2.5.3), e o texto que o
    * catálogo entrega — código e base legal, nunca um rótulo inventado.
    */
-  test('nomeia o seletor pelo rótulo visível e exibe código e base legal', async ({ page }) => {
+  test('nomeia o seletor pelo rótulo visível e identifica a convenção pelo código', async ({
+    page,
+  }) => {
     await acrescentarFase(page);
 
     await expect(page.getByLabel('Convenção de contagem')).toBeVisible();
     await expect(page.locator('#cr-algoritmo-contagem')).toContainText(ROTULO_CONVENCAO);
+  });
+
+  /**
+   * O que separa uma convenção da outra são os invariantes que o catálogo publica, e é
+   * depois da escolha que eles importam — descrevem a convenção escolhida, não as
+   * disponíveis.
+   */
+  test('descreve a convenção escolhida com o que o catálogo publica', async ({ page }) => {
+    await acrescentarFase(page);
+    await declararConvencaoDeContagem(page);
+
+    await expect(page.getByText('O que esta convenção faz')).toBeVisible();
+    await expect(page.getByText('o dia da âncora não conta')).toBeVisible();
   });
 
   test('não transborda horizontalmente', async ({ page }) => {
