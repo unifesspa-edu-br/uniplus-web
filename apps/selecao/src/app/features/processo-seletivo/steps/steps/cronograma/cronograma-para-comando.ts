@@ -79,5 +79,13 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     notaMinima: decimalDoCampo(etapa.notaMinima),
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
+    produtos: etapa.produtos.map((produto) => ({
+      atoCodigo: produto.atoCodigo,
+      papel: produto.papel as EtapaProcessoInput['produtos'] extends readonly (infer P)[]
+        ? P extends { papel: infer T }
+          ? T
+          : never
+        : never,
+    })),
   };
 }

@@ -658,6 +658,27 @@
 }
 
 /*
+ * O que a etapa publica fica num bloco próprio dentro da linha da etapa: são
+ * declarações de outra natureza que nome, peso e caráter — o que sai da etapa,
+ * não o que ela é — e misturá-las nos mesmos campos fazia a linha parecer um
+ * formulário só, sem hierarquia.
+ */
+.sel-processo .etapa-publica {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-subtle);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sel-processo .etapa-publica > .form-grid {
+  align-items: end;
+}
+
+/*
  * Item de grid tem `min-width: auto`, então o conteúdo intrínseco decide o piso
  * da largura: um `<select>` com opção longa — nome de unidade, rótulo de origem
  * dos candidatos — esticava a coluna e o passo transbordava na horizontal em

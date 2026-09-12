@@ -184,6 +184,10 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     notaMinima: comoTexto(etapa.notaMinima),
     ordem: comoInteiro(etapa.ordem),
     faseCodigo: etapa.faseCodigo ?? '',
+    produtos: (etapa.produtos ?? []).map((produto) => ({
+      atoCodigo: produto.atoCodigo,
+      papel: produto.papel ?? null,
+    })),
   };
 }
 
