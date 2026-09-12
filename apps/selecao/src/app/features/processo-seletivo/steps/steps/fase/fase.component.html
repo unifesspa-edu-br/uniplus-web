@@ -540,25 +540,32 @@
         <div class="escolher-e-acrescentar">
           <div class="form-field">
             <label class="label" [attr.for]="seletorDeDocumento.campoId">Documento a exigir</label>
-            <ui-combobox
-              #seletorDeDocumento
-              rotulo="Documentos do catálogo"
-              placeholder="Digite o nome do documento ou a categoria"
-              textoSemResultado="Nenhum documento do catálogo casa com o que você digitou."
-              [grupos]="documentosDisponiveis()"
-              [value]="documentoAAcrescentar()"
-              [disabled]="!store.aceitaEdicao()"
-              (valueChange)="escolherDocumento($event)"
-            />
+            <!--
+              A ação alinha pelo TOPO desta linha, que é o topo do campo: a contagem do que a
+              busca alcança mora dentro do campo, e alinhar pela base do conjunto empurrava a
+              ação para baixo a altura dela.
+            -->
+            <div class="campo-com-acao">
+              <ui-combobox
+                #seletorDeDocumento
+                rotulo="Documentos do catálogo"
+                placeholder="Digite o nome do documento ou a categoria"
+                textoSemResultado="Nenhum documento do catálogo casa com o que você digitou."
+                [grupos]="documentosDisponiveis()"
+                [value]="documentoAAcrescentar()"
+                [disabled]="!store.aceitaEdicao()"
+                (valueChange)="escolherDocumento($event)"
+              />
+              <button
+                class="btn btn--secondary"
+                type="button"
+                [disabled]="!store.aceitaEdicao() || documentoAAcrescentar() === ''"
+                (click)="acrescentarDocumento()"
+              >
+                Acrescentar documento
+              </button>
+            </div>
           </div>
-          <button
-            class="btn btn--secondary"
-            type="button"
-            [disabled]="!store.aceitaEdicao() || documentoAAcrescentar() === ''"
-            (click)="acrescentarDocumento()"
-          >
-            Acrescentar documento
-          </button>
         </div>
 
         @for (doc of documentosDaFase(); track doc.id) {
