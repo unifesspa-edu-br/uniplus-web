@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui';
 import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
@@ -20,7 +21,6 @@ import {
   type BancaRequeridaDaFase,
   type DocumentoConfig,
   type DocumentoDefinicao,
-  type DocumentoGrupo,
   type EtapaPontuada,
   type FaseDoCronograma,
   type ProdutoDaFase,
@@ -80,7 +80,7 @@ interface FaseNoSeletor {
  */
 @Component({
   selector: 'sel-step-fase',
-  imports: [FormsModule, ReactiveFormsModule],
+  imports: [ComboboxComponent, FormsModule, ReactiveFormsModule],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FaseStepComponent)],
@@ -536,45 +536,31 @@ export class FaseStepComponent {
       });
   });
 
-  /** O que o operador digitou para encontrar o documento no catálogo. */
-  readonly filtroDeDocumento = signal('');
-
   /**
-   * O que o seletor ainda oferece: o catálogo menos o que esta fase já exige, reduzido
-   * pelo que o operador digitou.
+   * O que o campo ainda oferece: o catálogo menos o que esta fase já exige, agrupado pela
+   * categoria do cadastro.
    *
-   * O filtro existe porque setenta e quatro tipos em nove categorias não se acham rolando
-   * um dropdown: quem monta o edital sabe o nome do documento, e digitá-lo é mais curto
-   * do que procurá-lo. A busca alcança o nome e a categoria — "renda" encontra tanto o
-   * grupo quanto cada comprovante dele.
+   * A busca é do próprio campo — setenta e quatro tipos em nove categorias não se acham
+   * rolando uma lista, e quem monta o edital sabe o nome do documento.
    */
-  readonly documentosDisponiveis = computed<readonly DocumentoGrupo[]>(() => {
+  readonly documentosDisponiveis = computed<readonly UiComboboxGroup[]>(() => {
     const jaExigidos = new Set(this.documentosDaFase().map((doc) => doc.id));
-    const busca = normalizar(this.filtroDeDocumento());
 
     return this.catalogos
       .documentosPorCategoria()
       .map((grupo) => ({
-        ...grupo,
-        docs: grupo.docs.filter(
-          (doc) =>
-            !jaExigidos.has(doc.id) &&
-            (busca === '' ||
-              normalizar(doc.nome).includes(busca) ||
-              normalizar(grupo.label).includes(busca)),
-        ),
+        label: grupo.label,
+        options: grupo.docs
+          .filter((doc) => !jaExigidos.has(doc.id))
+          .map((doc) => ({ value: doc.id, label: doc.nome })),
       }))
-      .filter((grupo) => grupo.docs.length > 0);
+      .filter((grupo) => grupo.options.length > 0);
   });
 
-  /** Quantos documentos o filtro corrente alcança — o que o aviso de vazio anuncia. */
+  /** Quantos documentos o catálogo ainda oferece a esta fase. */
   readonly documentosAlcancados = computed(() =>
-    this.documentosDisponiveis().reduce((total, grupo) => total + grupo.docs.length, 0),
+    this.documentosDisponiveis().reduce((total, grupo) => total + grupo.options.length, 0),
   );
-
-  filtrarDocumentos(termo: string): void {
-    this.filtroDeDocumento.set(termo);
-  }
 
   /** Acrescenta à fase o documento escolhido, e devolve o seletor ao estado neutro. */
   acrescentarDocumento(): void {
@@ -582,10 +568,8 @@ export class FaseStepComponent {
     if (id === '') return;
 
     this.alternarExigencia(id, true);
-    // O seletor e a busca voltam ao estado neutro: o próximo documento começa do zero,
-    // sem o filtro do anterior escondendo o catálogo.
+    // O campo volta ao estado neutro: o próximo documento começa do zero.
     this.documentoAAcrescentar.set('');
-    this.filtroDeDocumento.set('');
   }
 
   escolherDocumento(id: string): void {
@@ -956,11 +940,3 @@ function canonico(valor: unknown): string {
   );
 }
 
-/** Compara sem depender de acento nem de caixa — é como as pessoas digitam. */
-function normalizar(texto: string): string {
-  return texto
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .trim();
-}
