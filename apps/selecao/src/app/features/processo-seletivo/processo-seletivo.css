@@ -631,6 +631,15 @@
   gap: var(--space-3) var(--space-6);
 }
 
+/*
+ * Escolhas de rótulo curto — código de modalidade, sigla — cabem em colunas mais
+ * estreitas: com a largura de 18rem da grade padrão, uma lista de "AC", "LB_PPI" e
+ * "LI_Q" gastava a linha inteira em três itens.
+ */
+.sel-processo .checkbox-grid--enxuta {
+  grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr));
+}
+
 /* Check item (reutilizável em outros passos) */
 .check-item {
   display: flex;

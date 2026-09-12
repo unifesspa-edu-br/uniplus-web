@@ -45,6 +45,12 @@ const TIPOS_ATO = [
     vigenciaFim: null, baseLegal: null },
 ] as const;
 
+const TIPOS_BANCA = [
+  { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'ANALISE_DOCUMENTAL',
+    nome: 'Banca de análise documental', faseTipica: 'HABILITACAO', descricao: null,
+    criadoEm: '2026-08-30T12:00:00Z' },
+] as const;
+
 const CATEGORIAS_DOCUMENTO = [
   { id: '01960000-0000-7000-0000-0000000000c1', codigo: 'RENDA', nome: 'Comprovação de renda',
     descricao: null, ativo: true },
@@ -157,6 +163,26 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(coletadoEm).toContainText('grave o passo para poder escolher');
   });
 
+  /**
+   * A escolha da banca precisa de um indicador desenhado. O controle nativo fica
+   * escondido — é a caixa que mostra o estado —, e sem ela o operador clicava, o valor
+   * mudava por baixo e a tela não respondia nada.
+   */
+  test('a banca traz a caixa que mostra a escolha', async ({ page }) => {
+    await page.getByRole('button', { name: 'Acrescentar etapa nesta fase' }).click();
+
+    const bloco = blocoDaEtapa(page, 'Quem julga esta etapa');
+    const banca = bloco.getByText('Banca de análise documental');
+    await expect(banca).toBeVisible();
+
+    await expect(bloco.locator('.checkbox__box')).toHaveCount(1);
+    await expect(bloco.locator('.checkbox__box')).toBeVisible();
+
+    await banca.click();
+
+    await expect(bloco.locator('input[type="checkbox"]')).toBeChecked();
+  });
+
   /** A fase que não se subdivide não tem onde coletar senão ela própria. */
   test('fase sem etapa não oferece onde coletar', async ({ page }) => {
     await page.getByLabel('Documento a exigir').selectOption({ label: 'Contracheque' });
@@ -192,7 +218,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO);
   await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
   await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, []);
-  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, []);
+  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA);
   await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, CATEGORIAS_DOCUMENTO);
   await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA);
   await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO);

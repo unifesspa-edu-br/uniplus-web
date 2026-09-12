@@ -1,7 +1,7 @@
 @if (faseFixada() === null) {
   <p class="step-subtitle">
-    Tudo o que pertence a uma fase do certame num só lugar: o que ela publica, quem conclui o
-    ciclo recursal dela, o prazo de recurso, as bancas que ela requer e os documentos que exige.
+    Tudo o que pertence a uma fase do certame num só lugar: o que ela publica, quem conclui o ciclo
+    recursal dela, o prazo de recurso, as bancas que ela requer e os documentos que exige.
   </p>
 }
 
@@ -23,28 +23,28 @@
   </p>
 } @else {
   @if (faseFixada() === null) {
-  <div class="step-card">
-    <div class="form-grid">
-      <div class="form-field form-grid__full">
-        <label class="label" for="fase-aberta">Fase a configurar</label>
-        <select
-          class="input"
-          id="fase-aberta"
-          [ngModel]="faseAberta()"
-          [ngModelOptions]="{ standalone: true }"
-          (ngModelChange)="abrirFase($event)"
-        >
-          @for (fase of fasesNoSeletor(); track fase.faseCanonicaId) {
-            <option [value]="fase.faseCanonicaId">{{ fase.ordem }}. {{ fase.nome }}</option>
-          }
-        </select>
-        <p class="field__hint">
-          A ordem é a da linha do tempo. Trocar de fase aqui não perde o que já foi declarado nas
-          outras — a gravação envia todas.
-        </p>
+    <div class="step-card">
+      <div class="form-grid">
+        <div class="form-field form-grid__full">
+          <label class="label" for="fase-aberta">Fase a configurar</label>
+          <select
+            class="input"
+            id="fase-aberta"
+            [ngModel]="faseAberta()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="abrirFase($event)"
+          >
+            @for (fase of fasesNoSeletor(); track fase.faseCanonicaId) {
+              <option [value]="fase.faseCanonicaId">{{ fase.ordem }}. {{ fase.nome }}</option>
+            }
+          </select>
+          <p class="field__hint">
+            A ordem é a da linha do tempo. Trocar de fase aqui não perde o que já foi declarado nas
+            outras — a gravação envia todas.
+          </p>
+        </div>
       </div>
     </div>
-  </div>
   }
 
   @if (formulario(); as form) {
@@ -205,7 +205,7 @@
           }
 
           <div class="form-field form-grid__full">
-            <label class="check" for="fase-parecer">
+            <label class="checkbox" for="fase-parecer">
               <input
                 type="checkbox"
                 id="fase-parecer"
@@ -213,6 +213,7 @@
                 aria-describedby="fase-parecer-ajuda"
                 [attr.aria-invalid]="erroDoCampo('emiteParecerIndividual') ? 'true' : null"
               />
+              <span class="checkbox__box" aria-hidden="true"></span>
               Esta fase emite parecer individual
             </label>
             <p class="field__hint" id="fase-parecer-ajuda">
@@ -230,13 +231,14 @@
       <div class="step-card">
         <h2 class="form-section__title">Recurso contra o que esta fase publica</h2>
 
-        <label class="check" for="fase-admite-recurso">
+        <label class="checkbox" for="fase-admite-recurso">
           <input
             type="checkbox"
             id="fase-admite-recurso"
             formControlName="admiteRecurso"
             aria-describedby="fase-recurso-ajuda"
           />
+          <span class="checkbox__box" aria-hidden="true"></span>
           Cabe recurso do que esta fase publica
         </label>
         <p class="field__hint" id="fase-recurso-ajuda">
@@ -469,18 +471,26 @@
                   declarado.
                 </p>
               }
-              @for (categoria of categorias(); track categoria.id) {
-                <label class="check" [attr.for]="'fase-recorte-' + $index + '-' + categoria.id">
-                  <input
-                    type="checkbox"
-                    [attr.id]="'fase-recorte-' + $index + '-' + categoria.id"
-                    [checked]="categoriaMarcada($index, categoria.id)"
-                    [disabled]="!store.aceitaEdicao()"
-                    (change)="alternarCategoria($index, categoria.id, $any($event.target).checked)"
-                  />
-                  {{ categoria.nome }}
-                </label>
-              }
+              <div class="checkbox-grid">
+                @for (categoria of categorias(); track categoria.id) {
+                  <label
+                    class="checkbox"
+                    [attr.for]="'fase-recorte-' + $index + '-' + categoria.id"
+                  >
+                    <input
+                      type="checkbox"
+                      [attr.id]="'fase-recorte-' + $index + '-' + categoria.id"
+                      [checked]="categoriaMarcada($index, categoria.id)"
+                      [disabled]="!store.aceitaEdicao()"
+                      (change)="
+                        alternarCategoria($index, categoria.id, $any($event.target).checked)
+                      "
+                    />
+                    <span class="checkbox__box" aria-hidden="true"></span>
+                    {{ categoria.nome }}
+                  </label>
+                }
+              </div>
             </fieldset>
 
             <div class="form-field">
@@ -519,9 +529,8 @@
       <div class="step-card">
         <h2 class="form-section__title">Documentos exigidos nesta fase</h2>
         <p class="field__hint">
-          Acrescente o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As
-          modalidades que devem entregar acompanham o quadro de vagas, e podem ser recortadas
-          por documento.
+          Acrescente o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades
+          que devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
         </p>
 
         <div class="form-grid">
@@ -562,7 +571,9 @@
               [disabled]="!store.aceitaEdicao()"
               (change)="escolherDocumento($any($event.target).value)"
             >
-              <option value="" [selected]="documentoAAcrescentar() === ''">Selecione o documento…</option>
+              <option value="" [selected]="documentoAAcrescentar() === ''">
+                Selecione o documento…
+              </option>
               <!-- Agrupado pela categoria do cadastro: é assim que quem monta o edital
                    procura o documento, e a lista de setenta e quatro sem agrupamento
                    vira uma rolagem cega. -->
@@ -655,7 +666,8 @@
                       [disabled]="etapa.id === null"
                       [selected]="etapa.id === etapaDoDocumento(doc.id)"
                     >
-                      {{ etapa.nome }}{{ etapa.id === null ? ' — grave o passo para poder escolher' : '' }}
+                      {{ etapa.nome
+                      }}{{ etapa.id === null ? ' — grave o passo para poder escolher' : '' }}
                     </option>
                   }
                 </select>
@@ -670,24 +682,26 @@
                   passo Vagas.
                 </p>
               }
-              @for (codigo of modalidades(); track codigo) {
-                <label class="check" [attr.for]="'fase-mod-' + doc.id + '-' + codigo">
-                  <input
-                    type="checkbox"
-                    [attr.id]="'fase-mod-' + doc.id + '-' + codigo"
-                    [checked]="modalidadesEfetivas(doc.id).includes(codigo)"
-                    [disabled]="!store.aceitaEdicao()"
-                    (change)="alternarModalidade(doc.id, codigo, $any($event.target).checked)"
-                  />
-                  {{ codigo }}
-                </label>
-              }
+              <div class="checkbox-grid checkbox-grid--enxuta">
+                @for (codigo of modalidades(); track codigo) {
+                  <label class="checkbox" [attr.for]="'fase-mod-' + doc.id + '-' + codigo">
+                    <input
+                      type="checkbox"
+                      [attr.id]="'fase-mod-' + doc.id + '-' + codigo"
+                      [checked]="modalidadesEfetivas(doc.id).includes(codigo)"
+                      [disabled]="!store.aceitaEdicao()"
+                      (change)="alternarModalidade(doc.id, codigo, $any($event.target).checked)"
+                    />
+                    <span class="checkbox__box" aria-hidden="true"></span>
+                    {{ codigo }}
+                  </label>
+                }
+              </div>
             </fieldset>
           </div>
         } @empty {
           <p class="field__hint">Esta fase ainda não exige documento nenhum.</p>
         }
-
       </div>
     </form>
   }
