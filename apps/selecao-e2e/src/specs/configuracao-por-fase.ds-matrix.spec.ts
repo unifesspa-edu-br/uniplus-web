@@ -133,8 +133,12 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
 
     await irAoPasso(page, 'Cronograma', testInfo);
     await acrescentarFase(page);
-    await irAoPasso(page, 'Config. por fase', testInfo);
-    await expect(page.getByLabel('Fase a configurar')).toBeVisible();
+
+    // A configuração da fase vive dentro do passo do cronograma, sob a própria fase da
+    // linha do tempo — não há mais seletor de "fase a configurar" a atravessar.
+    await expect(
+      page.getByRole('heading', { name: 'O que esta fase publica', exact: true }),
+    ).toBeVisible();
   });
 
   /**
@@ -174,7 +178,6 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
     await declararPublicacao(page, 'Resultado definitivo');
     await ligarRecursoComBanca(page);
 
-    await expect(page.getByLabel('Fase a configurar')).toBeVisible();
     await expect(page.getByLabel('Publicação', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Papel', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Cabe recurso do que esta fase publica')).toBeVisible();
