@@ -779,6 +779,45 @@ describe('CronogramaStepComponent', () => {
     expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(false);
   });
 
+  /**
+   * O que a reformulação do eixo fase→etapa habilita: uma fase que o cadastro NÃO marca
+   * como agrupadora passa a poder subdividir-se, porque é a etapa que declara a fase a
+   * que pertence. Sem isso, a habilitação com oito etapas — que todas as três planilhas
+   * do CEPS descrevem — não tem onde existir.
+   */
+  it('acrescenta etapa em fase que o cadastro não marca como agrupadora', () => {
+    comFases(ID_INSCRICAO);
+    detectar();
+
+    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    detectar();
+
+    expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
+    expect(componente.etapasOrfas()).toEqual([]);
+  });
+
+  it('mantém cada etapa na fase que ela declara', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    detectar();
+
+    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    componente.acrescentarEtapa('AVALIACAO');
+    detectar();
+
+    expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
+    expect(componente.etapasDaFase('AVALIACAO', true)).toHaveLength(1);
+  });
+
+  it('envia ao comando a fase que a etapa declara', () => {
+    comFases(ID_INSCRICAO);
+    detectar();
+
+    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    detectar();
+
+    expect(store.draft().cronograma.etapas[0].faseCodigo).toBe('COLETA_INSCRICAO');
+  });
+
   it('não repete como órfã a etapa que a fase de avaliação já agrupa', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();

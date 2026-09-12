@@ -276,6 +276,12 @@ export interface EtapaPontuada {
   readonly peso: string;
   readonly notaMinima: string;
   readonly ordem: number;
+  /**
+   * Código canônico da fase a que a etapa pertence. É o que permite qualquer fase
+   * subdividir-se — a habilitação com oito etapas, por exemplo — em vez de só a que o
+   * cadastro marcava como agrupadora. Vazio enquanto a etapa não declara fase.
+   */
+  readonly faseCodigo: string;
 }
 
 /**

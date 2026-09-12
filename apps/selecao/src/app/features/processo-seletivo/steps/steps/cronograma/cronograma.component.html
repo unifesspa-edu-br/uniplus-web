@@ -196,24 +196,34 @@
               }
             </div>
 
-            @if (item.exigencias.agrupaEtapas) {
-              <h3 class="form-section__title">Etapas pontuadas desta fase</h3>
+            @if (true) {
+              <h3 class="form-section__title">Etapas desta fase</h3>
               <p class="field__hint">
-                As etapas que produzem nota. Ao menos uma precisa compor a nota final — ser
-                classificatória (ou ambas) e ter peso maior que zero.
+                Em que esta fase se subdivide. Quando a fase não se subdivide, uma etapa
+                &ldquo;Única&rdquo; basta. As que produzem nota precisam ser classificatórias (ou
+                ambas) e ter peso maior que zero.
                 @if (etapas.length > 0) {
-                  Hoje {{ etapasQueCompoemNota() }} de {{ etapas.length }} compõem.
+                  No processo inteiro, {{ etapasQueCompoemNota() }} de {{ etapas.length }} compõem
+                  a nota final.
                 }
               </p>
 
               <!--
-                As etapas são do processo, não da fase: no formulário elas são
-                irmãs de `fases`, e é a tela que as mostra dentro da fase que as
-                agrupa. Cada grupo se liga por referência justamente por isso —
-                um `formArrayName` aqui seria procurado dentro do grupo da fase.
+                A etapa é filha da fase no domínio, mas no formulário continua irmã de
+                `fases`: um `formArrayName` aninhado seria procurado dentro do grupo da
+                fase, que não a contém. Por isso a ligação é por referência, e o recorte
+                por fase acontece em `etapasDaFase`.
               -->
               <div>
-                @for (etapa of etapas.controls; track etapa; let posicao = $index) {
+                @for (
+                  linha of etapasDaFase(
+                    item.grupo.controls.codigo.value,
+                    item.exigencias?.agrupaEtapas === true
+                  );
+                  track linha.indice
+                ) {
+                  @let etapa = linha.grupo;
+                  @let posicao = linha.indice;
                   <div class="form-grid etapa-linha" [formGroup]="etapa">
                     <div class="form-field">
                       <label class="label" [attr.for]="'cr-etapa-nome-' + posicao">Nome</label>
@@ -314,10 +324,10 @@
               <button
                 class="btn btn--secondary"
                 type="button"
-                (click)="acrescentarEtapa()"
+                (click)="acrescentarEtapa(item.grupo.controls.codigo.value)"
                 [disabled]="!edicaoLiberada()"
               >
-                Acrescentar etapa
+                Acrescentar etapa nesta fase
               </button>
             }
           }

@@ -270,6 +270,29 @@ export class CronogramaStepComponent {
   );
 
   /** Quantas etapas compõem a nota final — o que a fórmula vai dividir. */
+  /**
+   * Os controles de etapa que declaram pertencer a esta fase, com o índice que cada um
+   * ocupa no FormArray — é por ele que o template liga rótulo, `id` e remoção.
+   *
+   * A etapa é filha da fase no domínio, mas no formulário continua irmã de `fases`: um
+   * `formArrayName` aninhado seria procurado dentro do grupo da fase, que não a contém.
+   * Por isso a ligação é por referência, e o recorte acontece aqui.
+   */
+  etapasDaFase(
+    codigo: string,
+    agrupaEtapas: boolean,
+  ): readonly { indice: number; grupo: FormGroup<EtapaForm> }[] {
+    this.versaoDoFormulario();
+    return this.etapas.controls
+      .map((grupo, indice) => ({ indice, grupo }))
+      .filter(({ grupo }) => {
+        const declarada = grupo.controls.faseCodigo.value;
+        // Etapa gravada antes do vínculo não declara fase: continua aparecendo sob a
+        // fase que o cadastro marca como agrupadora, que é onde ela sempre esteve.
+        return declarada === '' ? agrupaEtapas : declarada === codigo;
+      });
+  }
+
   readonly etapasQueCompoemNota = computed(() => {
     this.versaoDoFormulario();
     return this.etapas.controls.map(etapaDoFormulario).filter(componeNota).length;
@@ -290,13 +313,22 @@ export class CronogramaStepComponent {
    */
   readonly etapasOrfas = computed<readonly { indice: number; rotulo: string }[]>(() => {
     this.versaoDoFormulario();
-    const agrupadas = this.linhaDoTempo().some((item) => item.exigencias?.agrupaEtapas === true);
-    if (agrupadas) return [];
+    const codigosNaLinha = new Set(
+      this.fases.controls.map((grupo) => grupo.controls.codigo.value),
+    );
+    const haAgrupadora = this.linhaDoTempo().some((item) => item.exigencias?.agrupaEtapas === true);
 
-    return this.etapas.controls.map((grupo, indice) => {
-      const nome = grupo.controls.nome.value.trim();
-      return { indice, rotulo: nome === '' ? `Etapa ${indice + 1}, ainda sem nome` : nome };
-    });
+    return this.etapas.controls
+      .map((grupo, indice) => ({ indice, grupo }))
+      .filter(({ grupo }) => {
+        const codigo = grupo.controls.faseCodigo.value;
+        // Sem fase declarada, a etapa só é órfã quando nenhuma fase a agruparia.
+        return codigo === '' ? !haAgrupadora : !codigosNaLinha.has(codigo);
+      })
+      .map(({ indice, grupo }) => {
+        const nome = grupo.controls.nome.value.trim();
+        return { indice, rotulo: nome === '' ? `Etapa ${indice + 1}, ainda sem nome` : nome };
+      });
   });
 
   /**
@@ -432,7 +464,7 @@ export class CronogramaStepComponent {
     this.formulario.controls.algoritmoContagemVersao.setValue(versao);
   }
 
-  acrescentarEtapa(): void {
+  acrescentarEtapa(faseCodigo = ''): void {
     this.etapas.push(
       grupoDaEtapa({
         id: null,
@@ -442,6 +474,7 @@ export class CronogramaStepComponent {
         peso: '',
         notaMinima: '',
         ordem: this.etapas.length + 1,
+        faseCodigo,
       }),
     );
   }
