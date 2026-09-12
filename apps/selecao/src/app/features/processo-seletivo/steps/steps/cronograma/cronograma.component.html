@@ -1,6 +1,7 @@
 <p class="step-subtitle">
   A linha do tempo do certame. Cada fase vem do catálogo institucional e pede só o que os seus
-  atributos exigem — a fase que agrupa as etapas pontuadas as recebe aqui mesmo.
+  atributos exigem. Qualquer fase pode subdividir-se em etapas — e é a etapa que diz a que fase
+  pertence.
 </p>
 
 @if (catalogos.carregando()) {
@@ -218,7 +219,7 @@
                 @for (
                   linha of etapasDaFase(
                     item.grupo.controls.codigo.value,
-                    item.exigencias?.agrupaEtapas === true
+                    item.exigencias.agrupaEtapas
                   );
                   track linha.indice
                 ) {

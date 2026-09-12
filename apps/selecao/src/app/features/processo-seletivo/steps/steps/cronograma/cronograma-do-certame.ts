@@ -351,15 +351,20 @@ function problemasDasEtapas(
     (fase) => descreverFase(fase, fasePorId).exigencias?.agrupaEtapas === true,
   );
 
+  // As duas direções da bicondicional alcançam só a etapa que NÃO declara a própria
+  // fase — o formato anterior ao vínculo. A que declara pertence à fase que nomeou, e
+  // qualquer fase pode recebê-la.
+  const semFaseDeclarada = etapas.filter((etapa) => (etapa.faseCodigo ?? '') === '');
+
   if (faseQueAgrupa !== undefined && etapas.length === 0) {
     problemas.push(
       'A fase de avaliação agrupa as etapas pontuadas e precisa de ao menos uma. Declare a etapa, ou remova a fase.',
     );
   }
 
-  if (faseQueAgrupa === undefined && etapas.length > 0) {
+  if (faseQueAgrupa === undefined && semFaseDeclarada.length > 0) {
     problemas.push(
-      'As etapas pontuadas precisam da fase de avaliação que as agrupa. Acrescente a fase, ou remova as etapas.',
+      'Estas etapas não dizem a que fase pertencem. Declare a fase de cada uma, ou remova-as.',
     );
   }
 
@@ -402,7 +407,11 @@ function problemasDasEtapas(
     problemas.push('O peso de uma etapa, quando declarado, precisa ser maior que zero.');
   }
 
-  if (!etapas.some(componeNota)) {
+  // A guarda do divisor da média só faz sentido quando o certame de fato pontua. Uma
+  // fase inteiramente operacional — envio de comprovante, análise documental — tem
+  // etapas sem caráter nem peso, e cobrar nota delas recusaria configuração legítima.
+  const algumaPontua = etapas.some((etapa) => etapa.carater !== '' || etapa.peso.trim() !== '');
+  if (algumaPontua && !etapas.some(componeNota)) {
     problemas.push(
       'Ao menos uma etapa precisa compor a nota final: ser classificatória (ou ambas) e ter peso maior que zero.',
     );

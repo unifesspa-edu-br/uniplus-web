@@ -413,7 +413,7 @@ describe('o que impede gravar o cronograma', () => {
    * O caminho oposto só seria recusado na publicação — tarde demais para quem
    * já saiu deste passo.
    */
-  it('etapas sem a fase que as agrupa também são recusadas', () => {
+  it('etapa que não diz a que fase pertence é recusada', () => {
     const semAvaliacao = fase({
       faseCanonicaId: RESULTADO.id,
       codigo: 'RESULTADO_PRELIMINAR',
@@ -422,7 +422,9 @@ describe('o que impede gravar o cronograma', () => {
 
     const problemas = problemasDe([semAvaliacao], [etapaValida], catalogo, []);
 
-    expect(problemas).toContainEqual(expect.stringContaining('fase de avaliação que as agrupa'));
+    expect(problemas).toContainEqual(
+      expect.stringContaining('não dizem a que fase pertencem'),
+    );
   });
 
   it('fase com janela própria exige data e hora de início e de fim', () => {

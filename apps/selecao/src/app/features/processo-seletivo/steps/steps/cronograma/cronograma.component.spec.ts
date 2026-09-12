@@ -769,14 +769,14 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
     expect(nativo.textContent ?? '').toContain('Etapas sem a fase que as agrupa');
-    expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(true);
+    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(true);
 
     componente.removerTodasAsEtapas();
     detectar();
 
     expect(componente.etapasOrfas()).toEqual([]);
     expect(store.draft().cronograma.etapas).toEqual([]);
-    expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(false);
+    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(false);
   });
 
   /**
