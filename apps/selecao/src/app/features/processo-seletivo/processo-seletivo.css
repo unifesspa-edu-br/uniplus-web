@@ -693,6 +693,23 @@
   background: var(--surface-subtle);
 }
 
+/*
+ * Os três eixos da exigência lado a lado enquanto a largura permite: em que fases vale, em
+ * que ponto desta fase é coletada, e de quem é cobrada. Empilhados, um documento gastava
+ * trezentos pixels de altura, e a fase com cinco deles virava rolagem.
+ */
+.sel-processo .doc-item__eixos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.sel-processo .doc-item__eixos > .form-field {
+  margin: 0;
+  min-width: 0;
+}
+
 /* O nome e a ação ficam na mesma linha, com a ação encostada à direita. */
 .sel-processo .doc-item--exigido .doc-item__row {
   display: flex;

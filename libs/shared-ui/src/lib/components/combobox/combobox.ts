@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  booleanAttribute,
   computed,
   inject,
   input,
@@ -66,7 +67,13 @@ let comboboxIdSeed = 0;
       />
 
       @if (aberto()) {
-        <ul class="combobox__lista" role="listbox" [id]="listaId" [attr.aria-label]="rotulo()">
+        <ul
+          class="combobox__lista"
+          role="listbox"
+          [id]="listaId"
+          [attr.aria-label]="rotulo()"
+          [attr.aria-multiselectable]="multiplo() ? 'true' : null"
+        >
           @for (grupo of gruposVisiveis(); track grupo.label) {
             <li role="presentation">
               <p class="combobox__grupo" [id]="grupoId(grupo.label)">{{ grupo.label }}</p>
@@ -77,7 +84,7 @@ let comboboxIdSeed = 0;
                     role="option"
                     [id]="opcaoId(opcao.value)"
                     [class.is-destacada]="destacada() === opcao.value"
-                    [attr.aria-selected]="value() === opcao.value"
+                    [attr.aria-selected]="marcada(opcao.value)"
                     (mousedown)="escolherComOMouse($event, opcao.value)"
                     (mousemove)="destacada.set(opcao.value)"
                   >
@@ -118,7 +125,15 @@ export class ComboboxComponent {
   /** O que dizer quando a busca não alcança nada — o assunto é de quem usa o campo. */
   readonly textoSemResultado = input<string>('Nada encontrado.');
 
+  /**
+   * Aceita mais de uma escolha. Neste modo a lista não fecha ao escolher — quem marca três
+   * modalidades não quer reabrir a lista três vezes — e o campo mostra o que já foi marcado.
+   */
+  readonly multiplo = input(false, { transform: booleanAttribute });
+  readonly values = input<readonly string[]>([]);
+
   readonly valueChange = output<string>();
+  readonly valuesChange = output<readonly string[]>();
 
   protected readonly aberto = signal(false);
   protected readonly destacada = signal<string | null>(null);
@@ -130,10 +145,25 @@ export class ComboboxComponent {
     const digitado = this.busca();
     if (digitado !== null) return digitado;
 
+    if (this.multiplo()) {
+      // Os rótulos do que está marcado, na ordem em que a lista os apresenta: o campo
+      // fechado é o resumo da escolha, e é por ele que se confere sem reabrir.
+      const marcados = new Set(this.values());
+      return this.todasAsOpcoes()
+        .filter((opcao) => marcados.has(opcao.value))
+        .map((opcao) => opcao.label)
+        .join(', ');
+    }
+
     const escolhido = this.value();
     if (escolhido === '') return '';
     return this.todasAsOpcoes().find((opcao) => opcao.value === escolhido)?.label ?? '';
   });
+
+  /** Se a opção está marcada — no modo simples, a escolha; no múltiplo, uma das escolhas. */
+  protected marcada(value: string): boolean {
+    return this.multiplo() ? this.values().includes(value) : this.value() === value;
+  }
 
   private readonly todasAsOpcoes = computed<readonly UiComboboxOption[]>(() =>
     this.grupos().flatMap((grupo) => grupo.options),
@@ -261,6 +291,18 @@ export class ComboboxComponent {
   }
 
   private escolher(value: string): void {
+    if (this.multiplo()) {
+      const marcados = this.values();
+      this.valuesChange.emit(
+        marcados.includes(value)
+          ? marcados.filter((item) => item !== value)
+          : [...marcados, value],
+      );
+      // A lista fica aberta e o termo é limpo: marcar a próxima parte da lista inteira.
+      this.busca.set(null);
+      return;
+    }
+
     this.valueChange.emit(value);
     this.busca.set(null);
     this.destacada.set(null);

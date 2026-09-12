@@ -586,86 +586,96 @@
               </button>
             </div>
 
-            @if (valeEmTodasAsFases(doc.id)) {
-              <p class="field__hint">
-                Exigido em todas as fases do edital.
-                <button
-                  class="btn btn--tertiary"
-                  type="button"
-                  [disabled]="!store.aceitaEdicao()"
-                  (click)="recortarPorFase(doc.id)"
-                >
-                  Recortar por fase
-                </button>
-              </p>
-            } @else {
-              <p class="field__hint">
-                <button
-                  class="btn btn--tertiary"
-                  type="button"
-                  [disabled]="!store.aceitaEdicao()"
-                  (click)="valerEmTodasAsFases(doc.id)"
-                >
-                  Exigir em todas as fases
-                </button>
-              </p>
-            }
-
-            @if (etapasDaFaseAberta().length > 0) {
-              <div class="field">
-                <label class="label" [attr.for]="'fase-doc-etapa-' + doc.id">Coletado em</label>
+            <!--
+              Os três eixos da exigência, lado a lado enquanto a largura permite: em que
+              fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
+            -->
+            <div class="doc-item__eixos">
+              <div class="form-field">
+                <label class="label" [attr.for]="'fase-doc-alcance-' + doc.id">Exigido em</label>
                 <!--
-                  `selected` por opção, não `value` no seletor: o valor é aplicado antes de
-                  as opções existirem, e o seletor voltaria sempre em "A fase inteira" —
-                  escondendo a etapa que o processo já declarou.
+                  Alcance entre fases, que é outro eixo do "Coletado em" ao lado: este diz em
+                  QUAIS fases o documento é exigido; aquele, em que ponto DESTA fase ele é
+                  coletado — e a resposta do segundo continua sendo por fase mesmo quando o
+                  primeiro diz "todas".
                 -->
                 <select
                   class="select"
-                  [attr.id]="'fase-doc-etapa-' + doc.id"
+                  [attr.id]="'fase-doc-alcance-' + doc.id"
                   [disabled]="!store.aceitaEdicao()"
-                  (change)="escolherEtapaDoDocumento(doc.id, $any($event.target).value)"
+                  (change)="escolherAlcanceDoDocumento(doc.id, $any($event.target).value)"
                 >
-                  <option value="" [selected]="etapaDoDocumento(doc.id) === ''">
-                    A fase inteira
+                  <option value="fase" [selected]="!valeEmTodasAsFases(doc.id)">
+                    Só em {{ nomeDaFaseAberta() }}
                   </option>
-                  @for (etapa of etapasDaFaseAberta(); track etapa.id ?? etapa.nome) {
-                    <option
-                      [value]="etapa.id ?? ''"
-                      [disabled]="etapa.id === null"
-                      [selected]="etapa.id === etapaDoDocumento(doc.id)"
-                    >
-                      {{ etapa.nome
-                      }}{{ etapa.id === null ? ' — grave o passo para poder escolher' : '' }}
-                    </option>
-                  }
+                  <option value="todas" [selected]="valeEmTodasAsFases(doc.id)">
+                    Todas as fases do edital
+                  </option>
                 </select>
               </div>
-            }
 
-            <fieldset class="doc-expand">
-              <legend class="label">Modalidades que devem entregar</legend>
-              @if (modalidades().length === 0) {
-                <p class="field__hint">
-                  O quadro de vagas ainda não seleciona modalidade alguma. Declare as ofertas no
-                  passo Vagas.
-                </p>
+              @if (etapasDaFaseAberta().length > 0) {
+                <div class="form-field">
+                  <label class="label" [attr.for]="'fase-doc-etapa-' + doc.id">Coletado em</label>
+                  <!--
+                    `selected` por opção, não `value` no seletor: o valor é aplicado antes de
+                    as opções existirem, e o seletor voltaria sempre em "A fase inteira" —
+                    escondendo a etapa que o processo já declarou.
+                  -->
+                  <select
+                    class="select"
+                    [attr.id]="'fase-doc-etapa-' + doc.id"
+                    [disabled]="!store.aceitaEdicao()"
+                    (change)="escolherEtapaDoDocumento(doc.id, $any($event.target).value)"
+                  >
+                    <option value="" [selected]="etapaDoDocumento(doc.id) === ''">
+                      A fase inteira
+                    </option>
+                    @for (etapa of etapasDaFaseAberta(); track etapa.id ?? etapa.nome) {
+                      <option
+                        [value]="etapa.id ?? ''"
+                        [disabled]="etapa.id === null"
+                        [selected]="etapa.id === etapaDoDocumento(doc.id)"
+                      >
+                        {{ etapa.nome
+                        }}{{ etapa.id === null ? ' — grave o passo para poder escolher' : '' }}
+                      </option>
+                    }
+                  </select>
+                </div>
               }
-              <div class="checkbox-grid checkbox-grid--enxuta">
-                @for (codigo of modalidades(); track codigo) {
-                  <label class="checkbox" [attr.for]="'fase-mod-' + doc.id + '-' + codigo">
-                    <input
-                      type="checkbox"
-                      [attr.id]="'fase-mod-' + doc.id + '-' + codigo"
-                      [checked]="modalidadesEfetivas(doc.id).includes(codigo)"
-                      [disabled]="!store.aceitaEdicao()"
-                      (change)="alternarModalidade(doc.id, codigo, $any($event.target).checked)"
-                    />
-                    <span class="checkbox__box" aria-hidden="true"></span>
-                    {{ codigo }}
+
+              <!--
+                Sem modalidade no quadro não há o que escolher: um campo vazio e desabilitado
+                ao lado do aviso seria só mais uma coisa a ignorar.
+              -->
+              @if (modalidades().length === 0) {
+                <div class="form-field">
+                  <span class="label">Quem deve entregar</span>
+                  <p class="field__hint">
+                    O quadro de vagas ainda não seleciona modalidade alguma. Declare as ofertas
+                    no passo Vagas.
+                  </p>
+                </div>
+              } @else {
+                <div class="form-field">
+                  <label class="label" [attr.for]="modalidadesDoDoc.campoId">
+                    Quem deve entregar
                   </label>
-                }
-              </div>
-            </fieldset>
+                  <ui-combobox
+                    #modalidadesDoDoc
+                    multiplo
+                    rotulo="Modalidades que devem entregar"
+                    placeholder="Todas as modalidades ofertadas"
+                    textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
+                    [grupos]="modalidadesEscolhiveis()"
+                    [values]="modalidadesEfetivas(doc.id)"
+                    [disabled]="!store.aceitaEdicao()"
+                    (valuesChange)="definirModalidades(doc.id, $event)"
+                  />
+                </div>
+              }
+            </div>
           </div>
         } @empty {
           <p class="field__hint">Esta fase ainda não exige documento nenhum.</p>

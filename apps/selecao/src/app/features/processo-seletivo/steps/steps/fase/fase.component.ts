@@ -716,6 +716,44 @@ export class FaseStepComponent {
     return config.modalidades.filter((codigo) => conjunto.has(codigo));
   }
 
+  /** As modalidades que o quadro de vagas oferta, como a lista de escolha as apresenta. */
+  readonly modalidadesEscolhiveis = computed<readonly UiComboboxGroup[]>(() => {
+    const codigos = this.modalidades();
+    if (codigos.length === 0) return [];
+    return [{ label: 'Modalidades do quadro de vagas', options: codigos.map((codigo) => ({ value: codigo, label: codigo })) }];
+  });
+
+  /**
+   * Substitui de uma vez o recorte de quem entrega o documento.
+   *
+   * Marcar todas as ofertadas volta ao padrão — o documento acompanha o quadro de vagas —
+   * em vez de gravar uma lista que por acaso coincide com ele: a diferença aparece quando o
+   * quadro muda depois, e o que acompanha o quadro acompanha a mudança.
+   */
+  definirModalidades(id: string, escolhidas: readonly string[]): void {
+    const ofertadas = this.modalidades();
+    const acompanhaOQuadro =
+      escolhidas.length === ofertadas.length && ofertadas.every((codigo) => escolhidas.includes(codigo));
+
+    this.escreverDocumento(id, {
+      modalidades: acompanhaOQuadro ? [] : [...escolhidas],
+      modalidadesRecortadas: !acompanhaOQuadro,
+    });
+  }
+
+  /**
+   * Em que fases o documento é exigido. É outro eixo do "Coletado em": este diz em QUAIS
+   * fases, aquele em que ponto DESTA fase — e a resposta do segundo continua sendo por fase
+   * mesmo quando o primeiro diz "todas".
+   */
+  escolherAlcanceDoDocumento(id: string, alcance: string): void {
+    if (alcance === 'todas') {
+      this.valerEmTodasAsFases(id);
+      return;
+    }
+    this.recortarPorFase(id);
+  }
+
   alternarModalidade(id: string, codigo: string, marcada: boolean): void {
     const config = this.configuracaoDoDocumento(id);
     // A primeira personalização parte do que está marcado na tela — a lista
