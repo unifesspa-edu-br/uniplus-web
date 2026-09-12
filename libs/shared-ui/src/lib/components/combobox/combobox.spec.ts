@@ -201,6 +201,102 @@ describe('ComboboxComponent', () => {
     expect(campo().getAttribute('aria-expanded')).toBe('false');
   });
 
+  describe('múltipla escolha', () => {
+    @Component({
+      standalone: true,
+      imports: [ComboboxComponent],
+      template: `
+        <ui-combobox
+          rotulo="Modalidades"
+          multiplo
+          [grupos]="grupos()"
+          [values]="escolhidas()"
+          (valuesChange)="escolhidas.set($event)"
+        />
+      `,
+    })
+    class HospedeiroMultiplo {
+      readonly grupos = signal(GRUPOS);
+      readonly escolhidas = signal<readonly string[]>([]);
+    }
+
+    let multi: ComponentFixture<HospedeiroMultiplo>;
+    let nativoMulti: HTMLElement;
+
+    beforeEach(async () => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({ imports: [HospedeiroMultiplo] }).compileComponents();
+      multi = TestBed.createComponent(HospedeiroMultiplo);
+      multi.detectChanges();
+      nativoMulti = multi.nativeElement as HTMLElement;
+    });
+
+    function campoMulti(): HTMLInputElement {
+      return nativoMulti.querySelector('input[role="combobox"]') as HTMLInputElement;
+    }
+
+    function marcar(rotulo: string): void {
+      const alvo = [...nativoMulti.querySelectorAll<HTMLElement>('[role="option"]')].find(
+        (o) => o.textContent?.trim() === rotulo,
+      );
+      alvo?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      multi.detectChanges();
+    }
+
+    function abrir(): void {
+      campoMulti().dispatchEvent(new Event('focus'));
+      multi.detectChanges();
+    }
+
+    it('anuncia que a lista aceita mais de uma escolha', () => {
+      abrir();
+      expect(nativoMulti.querySelector('[role="listbox"]')?.getAttribute('aria-multiselectable')).toBe(
+        'true',
+      );
+    });
+
+    /** Marcar três não pode custar reabrir a lista três vezes. */
+    it('a lista continua aberta a cada escolha', () => {
+      abrir();
+
+      marcar('Contracheque');
+      expect(campoMulti().getAttribute('aria-expanded')).toBe('true');
+
+      marcar('RG');
+      expect(multi.componentInstance.escolhidas()).toEqual(['contracheque', 'rg']);
+    });
+
+    it('clicar de novo desmarca', () => {
+      abrir();
+      marcar('CPF');
+      expect(multi.componentInstance.escolhidas()).toEqual(['cpf']);
+
+      marcar('CPF');
+      expect(multi.componentInstance.escolhidas()).toEqual([]);
+    });
+
+    it('o campo fechado resume o que está marcado', () => {
+      multi.componentInstance.escolhidas.set(['rg', 'contracheque']);
+      multi.detectChanges();
+
+      expect(campoMulti().value).toBe(
+        'Contracheque, RG',
+        'na ordem da lista, não na ordem em que foram marcadas',
+      );
+    });
+
+    it('marca na lista tudo o que está escolhido', () => {
+      multi.componentInstance.escolhidas.set(['cpf', 'irpf']);
+      multi.detectChanges();
+      abrir();
+
+      const marcadas = [...nativoMulti.querySelectorAll<HTMLElement>('[role="option"]')]
+        .filter((o) => o.getAttribute('aria-selected') === 'true')
+        .map((o) => o.textContent?.trim());
+      expect(marcadas).toEqual(['Declaração de IRPF', 'CPF']);
+    });
+  });
+
   function rotuloApontado(): string {
     const id = campo().getAttribute('aria-activedescendant');
     return nativo.querySelector(`#${id}`)?.textContent?.trim() ?? '';
