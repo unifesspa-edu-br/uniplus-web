@@ -47,6 +47,7 @@ import {
   grupoDaEtapa,
   grupoDaFase,
   novoFormularioDoCronograma,
+  type CaraterEscolhido,
   type EtapaForm,
   type FaseForm,
 } from './cronograma-form';
@@ -540,6 +541,40 @@ export class CronogramaStepComponent {
     const total = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;
     if (total === 0) return 'não publica nada';
     return total === 1 ? '1 publicação' : `${total} publicações`;
+  }
+
+  /**
+   * A etapa entra no cálculo da nota final — e, por isso, o peso dela tem efeito.
+   *
+   * Quem decide é o caráter, não o tipo: `CalcularDivisorMedia` soma o peso das etapas
+   * classificatórias e das que são ambas, e ignora as puramente eliminatórias. Peso numa
+   * eliminatória é dado morto que o operador acredita estar declarando.
+   */
+  etapaComponeNota(grupo: FormGroup<EtapaForm>): boolean {
+    this.versaoDoFormulario();
+    const carater = grupo.controls.carater.value;
+    return carater === 'classificatoria' || carater === 'ambas';
+  }
+
+  /** A etapa corta candidato — é onde a nota mínima tem o que fazer. */
+  etapaElimina(grupo: FormGroup<EtapaForm>): boolean {
+    this.versaoDoFormulario();
+    const carater = grupo.controls.carater.value;
+    return carater === 'eliminatoria' || carater === 'ambas';
+  }
+
+  /**
+   * Troca o caráter e apaga o que deixou de valer.
+   *
+   * Sem isto, quem declara peso 3 e depois muda para eliminatória fica com o 3 gravado e
+   * invisível: o campo some da tela, o valor continua no rascunho e vai para o servidor a
+   * cada gravação, sem que nada o use.
+   */
+  escolherCarater(grupo: FormGroup<EtapaForm>, carater: string): void {
+    grupo.controls.carater.setValue(carater as CaraterEscolhido);
+    if (!this.etapaComponeNota(grupo)) grupo.controls.peso.setValue('');
+    if (!this.etapaElimina(grupo)) grupo.controls.notaMinima.setValue('');
+    this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
   /** O nome que a etapa já tem, ou o que a linha fechada mostra enquanto ele não existe. */
