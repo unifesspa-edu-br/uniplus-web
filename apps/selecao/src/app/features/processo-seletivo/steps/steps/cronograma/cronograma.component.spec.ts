@@ -611,6 +611,49 @@ describe('CronogramaStepComponent', () => {
     expect(componente.blocoAberto(0, 'publica')).toBe(false, 'cada bloco tem o seu estado');
   });
 
+  /**
+   * Quem decide se peso e nota mínima têm o que fazer é o CARÁTER, não o tipo: o divisor da
+   * média soma o peso de quem compõe nota e ignora a eliminatória pura.
+   */
+  it('peso só aparece na etapa que compõe a nota final', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+
+    componente.escolherCarater(etapa, 'classificatoria');
+    expect(componente.etapaComponeNota(etapa)).toBe(true);
+    expect(componente.etapaElimina(etapa)).toBe(false);
+
+    componente.escolherCarater(etapa, 'eliminatoria');
+    expect(componente.etapaComponeNota(etapa)).toBe(false);
+    expect(componente.etapaElimina(etapa)).toBe(true);
+
+    componente.escolherCarater(etapa, 'ambas');
+    expect(componente.etapaComponeNota(etapa)).toBe(true);
+    expect(componente.etapaElimina(etapa)).toBe(true);
+  });
+
+  /**
+   * Sem isto, quem declara peso e depois muda para eliminatória fica com o valor gravado e
+   * invisível — indo ao servidor a cada gravação, sem que nada o use.
+   */
+  it('trocar o caráter apaga o campo que deixou de valer', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+    etapa.controls.peso.setValue('3');
+    etapa.controls.notaMinima.setValue('5');
+
+    componente.escolherCarater(etapa, 'eliminatoria');
+
+    expect(etapa.controls.peso.value).toBe('', 'a eliminatória não entra no divisor da média');
+    expect(etapa.controls.notaMinima.value).toBe('5', 'o corte continua sendo dela');
+
+    componente.escolherCarater(etapa, 'classificatoria');
+
+    expect(etapa.controls.notaMinima.value).toBe('', 'quem não elimina não tem corte');
+  });
+
   it('a etapa sem nome aparece na lista mesmo assim', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);

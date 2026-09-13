@@ -343,38 +343,62 @@
                               <select
                                 class="input"
                                 [attr.id]="'cr-etapa-carater-' + posicao"
-                                formControlName="carater"
+                                [value]="etapa.controls.carater.value"
+                                (change)="escolherCarater(etapa, $any($event.target).value)"
                               >
-                                <option value="">Selecione…</option>
+                                <!--
+                                  `selected` por opção: o seletor deixou de ser ligado pelo
+                                  nome do controle — quem escreve é `escolherCarater`, que
+                                  também apaga o campo que o novo caráter tornou sem efeito.
+                                -->
+                                <option value="" [selected]="etapa.controls.carater.value === ''">
+                                  Selecione…
+                                </option>
                                 @for (opcao of careteres; track opcao.valor) {
-                                  <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                                  <option
+                                    [value]="opcao.valor"
+                                    [selected]="opcao.valor === etapa.controls.carater.value"
+                                  >
+                                    {{ opcao.rotulo }}
+                                  </option>
                                 }
                               </select>
                             </div>
-                            <div class="form-field">
-                              <label class="label" [attr.for]="'cr-etapa-peso-' + posicao"
-                                >Peso</label
-                              >
-                              <input
-                                class="input"
-                                type="text"
-                                inputmode="decimal"
-                                [attr.id]="'cr-etapa-peso-' + posicao"
-                                formControlName="peso"
-                              />
-                            </div>
-                            <div class="form-field">
-                              <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
-                                >Nota mínima</label
-                              >
-                              <input
-                                class="input"
-                                type="text"
-                                inputmode="decimal"
-                                [attr.id]="'cr-etapa-nota-' + posicao"
-                                formControlName="notaMinima"
-                              />
-                            </div>
+                            <!--
+                              Peso e nota mínima seguem o caráter da etapa, não o tipo: é o
+                              caráter que diz se ela compõe a nota final e se ela elimina. O
+                              tipo é cadastro de Configuração e não declara nenhum dos dois —
+                              deduzir "análise documental não avalia" de uma lista aqui
+                              quebraria no dia em que o CEPS cadastrar um tipo novo.
+                            -->
+                            @if (etapaComponeNota(etapa)) {
+                              <div class="form-field">
+                                <label class="label" [attr.for]="'cr-etapa-peso-' + posicao"
+                                  >Peso</label
+                                >
+                                <input
+                                  class="input"
+                                  type="text"
+                                  inputmode="decimal"
+                                  [attr.id]="'cr-etapa-peso-' + posicao"
+                                  formControlName="peso"
+                                />
+                              </div>
+                            }
+                            @if (etapaElimina(etapa)) {
+                              <div class="form-field">
+                                <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
+                                  >Nota mínima</label
+                                >
+                                <input
+                                  class="input"
+                                  type="text"
+                                  inputmode="decimal"
+                                  [attr.id]="'cr-etapa-nota-' + posicao"
+                                  formControlName="notaMinima"
+                                />
+                              </div>
+                            }
                             @let rotuloDaEtapa =
                               etapa.controls.nome.value === ''
                                 ? 'etapa ' + (posicao + 1)
