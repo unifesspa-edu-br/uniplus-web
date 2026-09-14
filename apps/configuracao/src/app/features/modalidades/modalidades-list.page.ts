@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   ApiResult,
   Cursor,
@@ -217,7 +217,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                         icon="pi-pencil"
                         [accessibleName]="'Editar modalidade ' + m.codigo"
                         tooltip="Editar modalidade"
-                        (triggered)="abrirEdicao(m)"
+                        [link]="[m.id]"
                       />
                       <ui-icon-button
                         icon="pi-power-off"
@@ -345,8 +345,6 @@ export class ModalidadesListPage {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
   protected readonly busca = signal('');
   protected readonly naturezaSelecionada = signal<string | null>(null);
@@ -538,10 +536,6 @@ export class ModalidadesListPage {
   protected limparFiltros(): void {
     this.busca.set('');
     this.naturezaSelecionada.set(null);
-  }
-
-  protected abrirEdicao(m: ModalidadeDto): void {
-    void this.router.navigate([m.id], { relativeTo: this.route });
   }
 
   protected pedirRemocao(m: ModalidadeDto): void {

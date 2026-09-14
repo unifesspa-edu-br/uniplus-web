@@ -225,6 +225,11 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                             ? 'A condição PCD não pode ser inativada.'
                             : 'Inativar condição de atendimento'
                         "
+                        [description]="
+                          condicao.codigo === 'PCD'
+                            ? 'A condição PCD não pode ser inativada.'
+                            : ''
+                        "
                         [isDisabled]="loading() || submitting() || condicao.codigo === 'PCD'"
                         (triggered)="abrirInativarCondicao(condicao)"
                       />

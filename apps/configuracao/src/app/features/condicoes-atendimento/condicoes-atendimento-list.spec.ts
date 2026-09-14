@@ -67,13 +67,13 @@ describe('CondicoesAtendimentoListPage', () => {
 
   function getInativarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions ui-icon-button:last-child button',
+      'td.table-responsive__actions button[aria-label^="Inativar condição de atendimento"]',
     ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions ui-icon-button:first-child button',
+      'td.table-responsive__actions button[aria-label^="Editar condição de atendimento"]',
     ) as HTMLButtonElement;
   }
 

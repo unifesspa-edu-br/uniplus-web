@@ -309,14 +309,14 @@ const BACKEND_FIELD_TO_CONTROL = {
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
-                        [accessibleName]="'Editar ' + unidade.sigla"
+                        [accessibleName]="'Editar unidade ' + unidade.sigla"
                         tooltip="Editar unidade"
                         [isDisabled]="recarregandoLista()"
                         (triggered)="abrirEdicao(unidade)"
                       />
                       <ui-icon-button
                         icon="pi-trash"
-                        [accessibleName]="'Remover ' + unidade.sigla"
+                        [accessibleName]="'Remover unidade ' + unidade.sigla"
                         tooltip="Remover unidade"
                         [isDisabled]="recarregandoLista()"
                         (triggered)="pedirRemocao(unidade)"
@@ -381,7 +381,7 @@ const BACKEND_FIELD_TO_CONTROL = {
           <div class="unit-node__actions">
             <ui-icon-button
               icon="pi-pencil"
-              [accessibleName]="'Editar ' + node.unidade.sigla"
+              [accessibleName]="'Editar unidade ' + node.unidade.sigla"
               tooltip="Editar unidade"
               [isDisabled]="recarregandoLista()"
               (triggered)="abrirEdicao(node.unidade)"

@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import {
   ApiResult,
@@ -123,7 +123,7 @@ const PAGE_SIZE = 50;
                       icon="pi-eye"
                       [accessibleName]="'Visualizar calendário ' + calendario.versaoDataset"
                       tooltip="Visualizar calendário"
-                      (triggered)="abrirDetalhe(calendario)"
+                      [link]="[calendario.id]"
                     />
                     <ui-icon-button
                       icon="pi-check-circle"
@@ -131,7 +131,10 @@ const PAGE_SIZE = 50;
                       [tooltip]="
                         calendario.vigente
                           ? 'Marque outro dataset como vigente'
-                          : 'Marcar como vigente'
+                          : 'Marcar vigente'
+                      "
+                      [description]="
+                        calendario.vigente ? 'Marque outro dataset como vigente' : ''
                       "
                       [isDisabled]="loading() || saving() || calendario.vigente"
                       (triggered)="solicitarVigenteConfirmado(calendario)"
@@ -143,6 +146,11 @@ const PAGE_SIZE = 50;
                         calendario.vigente
                           ? 'Marque outro dataset como vigente antes de remover este'
                           : 'Remover calendário'
+                      "
+                      [description]="
+                        calendario.vigente
+                          ? 'Marque outro dataset como vigente antes de remover este'
+                          : ''
                       "
                       [isDisabled]="loading() || saving() || calendario.vigente"
                       (triggered)="abrirRemoverCalendario(calendario)"
@@ -208,8 +216,6 @@ export class CalendarioDiasUteisListPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly pagina = signal<
     { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
   >(undefined);
@@ -314,10 +320,6 @@ export class CalendarioDiasUteisListPage {
         }
         this.aplicarFalha(result.problem);
       });
-  }
-
-  protected abrirDetalhe(calendario: CalendarioDiasUteisResumoDto): void {
-    void this.router.navigate([calendario.id], { relativeTo: this.route });
   }
 
   abrirRemoverCalendario(calendario: CalendarioDiasUteisResumoDto): void {
