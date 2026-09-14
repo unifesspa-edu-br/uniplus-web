@@ -105,11 +105,13 @@ describe('ProcessosSeletivosListaPage', () => {
     await flushLista([processo()]);
 
     const linha = host().querySelector('tbody tr');
-
+    const celulaTipo = linha?.querySelector('[data-label="Tipo"]')?.textContent;
     expect(linha?.querySelector('[data-label="Processo"]')?.textContent).toContain(
       'Vestibular 2026.1',
     );
-    expect(linha?.querySelector('[data-label="Tipo"]')?.textContent).toContain('Vestibular');
+    // O código do tipo é identificador técnico: serve à integração, não ao operador (#759).
+    expect(celulaTipo).toContain('Vestibular');
+    expect(celulaTipo).not.toContain('VESTIBULAR');
     expect(linha?.querySelector('[data-label="Data de criação"]')?.textContent?.trim()).toMatch(
       /^\d{2}\/\d{2}\/\d{4}/,
     );
