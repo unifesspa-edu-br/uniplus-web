@@ -28,6 +28,20 @@
   <h2 class="form-section__title">Condições aceitas</h2>
 
   @if (catalogos.condicoes().length > 0 || condicoesInativas().length > 0) {
+    @if (catalogos.condicoes().length > 0) {
+      <div class="atendimento__atalhos">
+        <label class="check-item">
+          <input
+            type="checkbox"
+            [checked]="todasAsCondicoesSelecionadas()"
+            [indeterminate]="condicoesParcialmenteSelecionadas()"
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (change)="marcarTodasAsCondicoes($any($event.target).checked)"
+          />
+          <span>Marcar todas as {{ catalogos.condicoes().length }} condições aceitas</span>
+        </label>
+      </div>
+    }
     <div class="checkbox-grid">
       @for (condicao of catalogos.condicoes(); track condicao.id) {
         <label class="check-item">
@@ -107,6 +121,20 @@
   <h2 class="form-section__title">Recursos de acessibilidade oferecidos</h2>
 
   @if (catalogos.recursos().length > 0 || recursosInativos().length > 0) {
+    @if (catalogos.recursos().length > 0) {
+      <div class="atendimento__atalhos">
+        <label class="check-item">
+          <input
+            type="checkbox"
+            [checked]="todosOsRecursosSelecionados()"
+            [indeterminate]="recursosParcialmenteSelecionados()"
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (change)="marcarTodosOsRecursos($any($event.target).checked)"
+          />
+          <span>Marcar todos os {{ catalogos.recursos().length }} recursos de acessibilidade</span>
+        </label>
+      </div>
+    }
     <div class="checkbox-grid">
       @for (recurso of catalogos.recursos(); track recurso.id) {
         <label class="check-item">

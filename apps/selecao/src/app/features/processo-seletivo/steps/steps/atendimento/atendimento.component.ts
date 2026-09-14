@@ -136,6 +136,29 @@ export class AtendimentoStepComponent {
     return this.atendimento().tiposDeficiencia.filter((item) => !ativos.has(item.id));
   });
 
+  /** "Marcar todas" (#788) só olha para as condições ativas — referências inativas não entram na conta (CA-06). */
+  readonly todasAsCondicoesSelecionadas = computed(() => {
+    const ativas = this.catalogos.condicoes();
+    return ativas.length > 0 && ativas.every((item) => this.condicaoMarcada(item.id));
+  });
+
+  readonly condicoesParcialmenteSelecionadas = computed(() => {
+    const ativas = this.catalogos.condicoes();
+    const marcadas = ativas.filter((item) => this.condicaoMarcada(item.id)).length;
+    return marcadas > 0 && marcadas < ativas.length;
+  });
+
+  readonly todosOsRecursosSelecionados = computed(() => {
+    const ativos = this.catalogos.recursos();
+    return ativos.length > 0 && ativos.every((item) => this.recursoMarcado(item.id));
+  });
+
+  readonly recursosParcialmenteSelecionados = computed(() => {
+    const ativos = this.catalogos.recursos();
+    const marcados = ativos.filter((item) => this.recursoMarcado(item.id)).length;
+    return marcados > 0 && marcados < ativos.length;
+  });
+
   condicaoMarcada(id: string): boolean {
     return this.atendimento().condicoes.some((item) => item.id === id);
   }
@@ -174,6 +197,45 @@ export class AtendimentoStepComponent {
     const proximo = marcado
       ? [...atual, { id: recurso.id, nome: recurso.nome }]
       : atual.filter((item) => item.id !== recurso.id);
+    this.store.patchObjectSection('atendimento', { recursos: proximo });
+  }
+
+  /**
+   * Marca ou desmarca de uma vez só as condições ativas do catálogo (#788).
+   * Referências inativas preservadas no rascunho não são tocadas (CA-06) —
+   * seguem removíveis apenas individualmente, por `removerCondicaoInativa`.
+   * Espelha a regra do PcD em `toggleCondicao`: só esvazia os tipos de
+   * deficiência se, depois da alteração, não restar nenhuma condição de
+   * código PcD marcada.
+   */
+  marcarTodasAsCondicoes(marcar: boolean): void {
+    const inativas = this.condicoesInativas();
+    const proximo = marcar
+      ? [
+          ...inativas,
+          ...this.catalogos
+            .condicoes()
+            .map((item) => ({ id: item.id, codigo: item.codigo, nome: item.nome })),
+        ]
+      : [...inativas];
+
+    const restaPcd = proximo.some((item) => item.codigo.toUpperCase() === CODIGO_CONDICAO_PCD);
+    if (!restaPcd) {
+      this.store.patchObjectSection('atendimento', { condicoes: proximo, tiposDeficiencia: [] });
+      return;
+    }
+    this.store.patchObjectSection('atendimento', { condicoes: proximo });
+  }
+
+  /**
+   * Marca ou desmarca de uma vez só os recursos ativos do catálogo (#788).
+   * Referências inativas preservadas no rascunho não são tocadas (CA-06).
+   */
+  marcarTodosOsRecursos(marcar: boolean): void {
+    const inativos = this.recursosInativos();
+    const proximo = marcar
+      ? [...inativos, ...this.catalogos.recursos().map((item) => ({ id: item.id, nome: item.nome }))]
+      : [...inativos];
     this.store.patchObjectSection('atendimento', { recursos: proximo });
   }
 

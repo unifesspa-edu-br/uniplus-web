@@ -1335,9 +1335,17 @@
 }
 
 /* ---- Step 11: Atendimento especializado ----
-   Reconstruído sobre os cadastros de Configuração (#543): usa só classes
-   compartilhadas do passo (`.step-card`, `.form-section__title`,
-   `.check-item`, `.field__hint`, `.tag`) — sem CSS próprio. */
+   Reconstruído sobre os cadastros de Configuração (#543): usa quase só
+   classes compartilhadas do passo (`.step-card`, `.form-section__title`,
+   `.check-item`, `.field__hint`, `.tag`) — `.atendimento__atalhos` (#788) é
+   a única classe própria, espelhando `.vagas-modalidades__atalhos`. */
+.atendimento__atalhos {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
 
 /* ---- Step 12: Revisão e publicação ---- */
 .revisao-summary {
