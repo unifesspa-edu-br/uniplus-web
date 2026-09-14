@@ -458,4 +458,12 @@ describe('IdentificacaoStepComponent', () => {
     expect(store.processoSeletivoId()).toBeNull();
     expect(componente.rotuloDeAvanco()).toBe('Repetir a gravação');
   });
+
+  it('orienta o passo sem citar PDF, requisito interno ou LGPD', () => {
+    const subtitulo = host.querySelector('.step-subtitle')?.textContent?.trim();
+
+    expect(subtitulo).toBe('Informe os dados de identificação do Processo Seletivo.');
+    // O documento oficial passou a ser tratado na publicação (#609); o passo não o exige.
+    expect(subtitulo).not.toMatch(/PDF|edital|LGPD|RN[o]?\d+|UNI-REQ-\d{4}/i);
+  });
 });
