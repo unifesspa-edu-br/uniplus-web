@@ -120,8 +120,7 @@ type EstadoOperacao = 'ok' | 'erro';
       <div class="page-header__content">
         <h1 class="page-header__title">Peso por Área</h1>
         <p class="page-header__desc">
-          Pesos das cinco áreas previstas na LDB por grupo de curso, versionados por resolução INEP
-          · UNI-REQ-0066.
+          Pesos das cinco áreas do ENEM por grupo de curso, versionados por resolução INEP.
         </p>
       </div>
       @if (!isLoading() && resolucoes().length === 0) {
@@ -141,9 +140,9 @@ type EstadoOperacao = 'ok' | 'erro';
 
     <ui-alert variant="info" heading="Chave composta: resolução + grupo de curso" [dynamic]="false">
       Cada linha representa um dos 4 grupos de curso de uma resolução INEP. Os pesos das áreas são
-      definidos pela instituição em cada edital — não há soma fixa; o sistema registra os valores
+      definidos pela instituição em cada processo seletivo — não há soma fixa; o sistema registra os valores
       informados sem bloquear. O corte de redação é a nota mínima exigida na redação (padrão 400;
-      não entra em cálculo de soma). Estes parâmetros também são congelados por edital (RN08).
+      não entra em cálculo de soma). Estes parâmetros também são congelados por processo seletivo.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -469,7 +468,7 @@ type EstadoOperacao = 'ok' | 'erro';
           }
 
           <p class="grid-note">
-            Os pesos das áreas são definidos pela instituição em cada edital — não há soma fixa; o
+            Os pesos das áreas são definidos pela instituição em cada processo seletivo — não há soma fixa; o
             sistema registra os valores informados sem bloquear. O corte de redação é a nota mínima
             exigida na redação (valor padrão 400; não entra em cálculo de soma).
           </p>
