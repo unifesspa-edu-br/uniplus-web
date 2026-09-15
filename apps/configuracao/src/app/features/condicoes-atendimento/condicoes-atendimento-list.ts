@@ -173,6 +173,9 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         @if (condicoesFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Condições de atendimento especializado, com código, nome e situação
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>

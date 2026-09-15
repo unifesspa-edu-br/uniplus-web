@@ -272,6 +272,9 @@ const BACKEND_FIELD_TO_CONTROL = {
         @if (unidades().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Unidades da instituição, com sigla, tipo e unidade superior na hierarquia
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Sigla</th>

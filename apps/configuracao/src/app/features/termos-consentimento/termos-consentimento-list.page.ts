@@ -134,6 +134,9 @@ const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
       @if (termosFiltrados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Termos de consentimento, com forma de aceite e status de revisão
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Nome</th>

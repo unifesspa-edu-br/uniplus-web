@@ -200,6 +200,10 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
       @if (arestasFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Precedências entre fases, com fase antecessora, fase sucessora e permissão de
+              sobreposição
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Fase antecessora</th>

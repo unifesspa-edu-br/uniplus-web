@@ -141,6 +141,9 @@ interface LocalOfertaForm {
       @if (locais().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Locais de oferta, com tipo, cidade, campus responsável e código e-MEC
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Tipo</th>

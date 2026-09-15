@@ -164,6 +164,10 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
         @if (modalidadesFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Modalidades de concorrência, com natureza, composição de vagas, remanejamento e
+                situação
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>

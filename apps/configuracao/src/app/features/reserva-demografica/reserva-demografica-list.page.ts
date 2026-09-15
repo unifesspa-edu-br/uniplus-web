@@ -152,6 +152,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         @if (referenciasFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base legal e situação
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Censo</th>

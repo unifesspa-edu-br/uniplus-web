@@ -170,6 +170,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
       @if (fasesFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Fases canônicas, com dono típico, agrupamento de etapas e permissão de complementação documental
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>

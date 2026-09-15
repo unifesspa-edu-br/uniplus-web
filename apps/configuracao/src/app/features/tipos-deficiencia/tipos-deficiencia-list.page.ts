@@ -186,6 +186,9 @@ const PAGE_SIZE = 50;
         @if (tiposDeficienciaFiltrados().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Tipos de deficiência, com código, descrição e situação
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>

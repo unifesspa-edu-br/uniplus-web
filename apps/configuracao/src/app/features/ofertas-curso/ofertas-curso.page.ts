@@ -179,6 +179,9 @@ interface OfertaCursoForm {
       @if (ofertas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e turno, e vagas e-MEC
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Curso</th>
