@@ -116,6 +116,29 @@ describe('PesosEnemPage', () => {
     await propagate();
   }
 
+  it('PesosEnemPage_TextoDeApoio_DescreveOCadastroSemRotuloInterno', async () => {
+    await carregarUmaPagina([...linhas805]);
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement.textContent as string).replace(/\s+/g, ' ');
+
+    // São cinco áreas com peso — Linguagens, Matemática, Ciências da Natureza,
+    // Ciências Humanas e Redação —, e o conjunto não decorre da LDB. O corte de
+    // redação é campo à parte, e por isso não entra nesta contagem.
+    expect(texto).toContain('Pesos das cinco áreas do ENEM por grupo de curso');
+    expect(texto).not.toContain('LDB');
+
+    // Identificador de requisito e rótulo de regra são rastreabilidade interna:
+    // não dizem nada a quem opera a tela e envelhecem sem ninguém perceber.
+    expect(texto).not.toMatch(/UNI-REQ-\d{4}/);
+    expect(texto).not.toMatch(/\bRN\s?\d{2}\b/);
+
+    // O congelamento é do processo seletivo, que é a entidade; "edital" é o
+    // documento que o publica, e trocar um pelo outro confunde o operador.
+    expect(texto).toContain('congelados por processo seletivo');
+    expect(texto).not.toContain('edital');
+  });
+
   it('PesosEnemPage_CarregamentoInicial_EsgotaCursorEAgrupaPorResolucao', async () => {
     fixture.detectChanges();
     const pagina1 = expectListagem();
