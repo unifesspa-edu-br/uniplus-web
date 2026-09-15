@@ -338,7 +338,7 @@ const BACKEND_FIELD_TO_CONTROL = {
             />
             <ui-icon-button
               icon="pi-trash"
-              danger
+              [danger]="true"
               [accessibleName]="'Remover unidade ' + node.unidade.sigla"
               tooltip="Remover unidade"
               [isDisabled]="recarregandoLista()"
