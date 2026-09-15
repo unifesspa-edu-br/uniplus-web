@@ -95,6 +95,19 @@ describe('BaseLegalBonusRegionalListPage', () => {
     expect(component['registrosBuscados']()[0].municipios.length).toBe(1);
   });
 
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([portariaBase]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    // Sem `sr-only` a legenda vira texto visível acima da tabela e quebra o layout.
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Bases legais do bônus regional, com tipo de instrumento, identificação e quantidade de municípios beneficiados',
+    );
+  });
+
   it('identifica a base pelo texto da linha no nome acessível das ações', async () => {
     await flushLista([portariaBase]);
     fixture.detectChanges();

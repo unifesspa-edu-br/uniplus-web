@@ -189,6 +189,9 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
       @if (registrosBuscados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Bases legais do bônus regional, com tipo de instrumento, identificação e quantidade de municípios beneficiados
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Tipo</th>

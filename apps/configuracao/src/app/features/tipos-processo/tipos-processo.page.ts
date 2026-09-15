@@ -145,6 +145,9 @@ interface TipoProcessoForm {
       @if (tiposFiltrados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Tipos de processo seletivo, com código, descrição e situação de uso
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
