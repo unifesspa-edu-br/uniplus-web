@@ -94,15 +94,23 @@ export class CatalogosDeDistribuicaoService {
       ),
   );
 
-  /** Curso e unidade: o que nomeia a oferta, antes do que a distingue. */
+  /** Curso, grau e unidade: o que nomeia a oferta, antes do que a distingue. */
   readonly nomeDaOferta = computed<ReadonlyMap<string, string>>(() => {
-    const nomes = new Map(this.cursos().map((curso) => [curso.id, curso.nome]));
+    const cursoPorId = new Map(this.cursos().map((curso) => [curso.id, curso]));
 
     return new Map(
-      this.ofertas().map((oferta) => [
-        oferta.id,
-        `${nomes.get(oferta.cursoId) ?? 'Curso não identificado'} · ${oferta.unidadeOfertante.sigla}`,
-      ]),
+      this.ofertas().map((oferta) => {
+        const curso = cursoPorId.get(oferta.cursoId);
+        const grau = curso?.grau?.trim();
+        return [
+          oferta.id,
+          [
+            curso?.nome ?? 'Curso não identificado',
+            ...(grau ? [grau] : []),
+            oferta.unidadeOfertante.sigla,
+          ].join(' · '),
+        ];
+      }),
     );
   });
 
