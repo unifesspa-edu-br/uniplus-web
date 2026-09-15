@@ -298,6 +298,32 @@ describe('IdentificacaoStepComponent', () => {
     );
   });
 
+  /**
+   * O texto de ajuda já foi corrigido para não sugerir que a unidade define a
+   * localidade/prazos (#539), mas nada travava essa explicação: bastava uma
+   * revisão editorial descuidada para a dedução automática voltar em
+   * silêncio. As asserções checam o papel de cada campo pelo id do hint em
+   * `aria-describedby` — não por posição no DOM — e a negação explícita da
+   * dedução, sem fixar o parágrafo inteiro.
+   */
+  it('descreve a unidade como responsável administrativa, sem definir a localidade', () => {
+    const campo = host.querySelector('#f-unidade');
+    const hint = host.querySelector('#f-unidade-hint');
+
+    expect(campo?.getAttribute('aria-describedby')).toBe('f-unidade-hint');
+    expect(hint?.textContent).toMatch(/responsável pela administração do certame/i);
+    expect(hint?.textContent).toMatch(/não decorre dela/i);
+  });
+
+  it('descreve o município como fonte dos feriados aplicáveis, sem decorrer da unidade', () => {
+    const campo = host.querySelector('#f-localidade');
+    const hint = host.querySelector('#f-localidade-hint');
+
+    expect(campo?.getAttribute('aria-describedby')).toBe('f-localidade-hint');
+    expect(hint?.textContent).toMatch(/feriados municipais e estaduais/i);
+    expect(hint?.textContent).toMatch(/não decorre dela/i);
+  });
+
   it('envia o trio da localidade escolhida no cadastro inicial', async () => {
     preencherCamposDoComando();
 
