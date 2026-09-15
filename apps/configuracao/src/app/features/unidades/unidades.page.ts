@@ -243,9 +243,9 @@ const BACKEND_FIELD_TO_CONTROL = {
           }
         </div>
 
-        @if (arvore().length === 0 && !loading()) {
+        @if (arvore().length === 0 && !loading() && !errorMessage()) {
           <ui-empty-state
-            heading="Nenhuma unidade encontrada"
+            [heading]="temFiltro() ? 'Nenhuma unidade encontrada' : 'Nenhuma unidade cadastrada'"
             [description]="
               temFiltro()
                 ? 'Tente ajustar os termos de busca ou limpar os filtros.'
@@ -259,19 +259,30 @@ const BACKEND_FIELD_TO_CONTROL = {
             }
           </ui-empty-state>
         } @else if (arvore().length > 0) {
-          <nav class="unit-tree" aria-label="Hierarquia de unidades da Unifesspa">
+          <!--
+            Listas aninhadas, e não role de árvore: a hierarquia precisa ser
+            programaticamente determinável (WCAG SC 1.3.1), e ul/li já entregam
+            isso — o leitor de tela anuncia o nível e o tamanho de cada ramo.
+            Declarar role="tree" levaria o leitor ao modo de widget, em que se
+            espera navegação por setas; esta tela opera por tabulação entre os
+            botões de cada nó, então o papel prometeria o que a tela não faz.
+          -->
+          <ul class="unit-tree" aria-label="Hierarquia de unidades da Unifesspa">
             @for (node of arvore(); track node.unidade.id) {
               <ng-container
                 [ngTemplateOutlet]="treeNode"
                 [ngTemplateOutletContext]="{ $implicit: node }"
               />
             }
-          </nav>
+          </ul>
 
           @if (prevCursor() !== null || nextCursor() !== null) {
             <ui-pager
-              [hasPrevious]="prevCursor() !== null && !loading()"
-              [hasNext]="nextCursor() !== null && !loading()"
+              statusText="Navegação por páginas"
+              navigationLabel="Paginação de unidades"
+              [hasPrevious]="prevCursor() !== null"
+              [hasNext]="nextCursor() !== null"
+              [isDisabled]="loading()"
               (previous)="paginaAnterior()"
               (next)="proximaPagina()"
             />
@@ -281,7 +292,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     </div>
 
     <ng-template #treeNode let-node>
-      <div class="unit-node">
+      <li class="unit-node">
         <div
           class="unit-node__row"
         >
@@ -293,7 +304,7 @@ const BACKEND_FIELD_TO_CONTROL = {
               [attr.aria-label]="
                 (isExpanded(node.unidade.id) ? 'Recolher ' : 'Expandir ') + node.unidade.sigla
               "
-              (click)="toggleExpand(node.unidade.id, $event)"
+              (click)="toggleExpand(node.unidade.id)"
             >
               <i
                 class="pi"
@@ -311,11 +322,12 @@ const BACKEND_FIELD_TO_CONTROL = {
             type="button"
             class="unit-node__name"
             [disabled]="recarregandoLista()"
-            (click)="abrirDetalheComEvent(node.unidade, $event)"
+            (click)="abrirDetalhe(node.unidade)"
           >
             {{ node.unidade.sigla }}
           </button>
           <span class="unit-node__type">{{ node.unidade.nome }}</span>
+          <span class="tag">{{ node.unidade.tipo }}</span>
           <div class="unit-node__actions">
             <ui-icon-button
               icon="pi-pencil"
@@ -335,16 +347,16 @@ const BACKEND_FIELD_TO_CONTROL = {
           </div>
         </div>
         @if (node.children.length > 0 && isExpanded(node.unidade.id)) {
-          <div class="unit-node__children">
+          <ul class="unit-node__children">
             @for (child of node.children; track child.unidade.id) {
               <ng-container
                 [ngTemplateOutlet]="treeNode"
                 [ngTemplateOutletContext]="{ $implicit: child }"
               />
             }
-          </div>
+          </ul>
         }
-      </div>
+      </li>
     </ng-template>
 
     <ui-drawer
@@ -730,8 +742,26 @@ export class UnidadesPage {
   protected readonly unidadeEmEdicaoId = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
-  /** Conjunto de IDs dos nós expandidos manualmente na árvore. */
-  protected readonly nodesExpandidos = signal<Set<string>>(new Set());
+  /**
+   * IDs dos nós expandidos na árvore.
+   *
+   * Semeado a partir da árvore que chega, não do filtro: a listagem é filtrada
+   * no servidor, então o resultado da busca só existe depois da resposta. Com
+   * filtro aplicado todo nó com filhos entra expandido, senão um resultado
+   * dentro de ramo recolhido ficaria invisível (CA-19). Sem filtro, o que o
+   * operador expandiu continua valendo.
+   *
+   * Semear, em vez de forçar `isExpanded` a devolver `true` sob filtro, é o que
+   * mantém o botão de expandir honesto: ele opera sobre este conjunto, então
+   * recolher durante a busca recolhe de verdade e `aria-expanded` acompanha.
+   */
+  protected readonly nodesExpandidos = linkedSignal<readonly UnidadeTreeNode[], Set<string>>({
+    source: () => this.arvore(),
+    computation: (arvore, anterior) =>
+      untracked(() => this.temFiltro())
+        ? idsDosNosComFilhos(arvore)
+        : new Set(anterior?.value ?? []),
+  });
 
   private readonly buscaAplicada = toSignal(
     toObservable(this.busca).pipe(
@@ -1115,18 +1145,11 @@ export class UnidadesPage {
    * Quando um filtro está ativo, expande automaticamente.
    */
   protected isExpanded(id: string): boolean {
-    if (this.temFiltro()) {
-      return true;
-    }
     return this.nodesExpandidos().has(id);
   }
 
   /** Alterna a expansão visual do nó. */
-  protected toggleExpand(id: string, event?: Event): void {
-    if (event && event.target !== event.currentTarget && event.type.startsWith('key')) {
-      return;
-    }
-    event?.stopPropagation();
+  protected toggleExpand(id: string): void {
     this.nodesExpandidos.update((set) => {
       const next = new Set(set);
       if (next.has(id)) {
@@ -1140,10 +1163,6 @@ export class UnidadesPage {
 
 
 
-  protected abrirDetalheComEvent(unidade: UnidadeDto, event: Event): void {
-    event.stopPropagation();
-    this.abrirDetalhe(unidade);
-  }
 
   protected proximaPagina(): void {
     const proximo = this.nextCursor();
@@ -1550,6 +1569,21 @@ export class UnidadesPage {
       cidadeUf: cidade?.uf ?? null,
     };
   }
+}
+
+/** IDs de todo nó que tem filhos — os únicos que o botão de expandir alcança. */
+function idsDosNosComFilhos(nodes: readonly UnidadeTreeNode[]): Set<string> {
+  const ids = new Set<string>();
+  const visitar = (lista: readonly UnidadeTreeNode[]): void => {
+    for (const node of lista) {
+      if (node.children.length > 0) {
+        ids.add(node.unidade.id);
+        visitar(node.children);
+      }
+    }
+  };
+  visitar(nodes);
+  return ids;
 }
 
 function montarArvore(unidades: readonly UnidadeDto[]): readonly UnidadeTreeNode[] {
