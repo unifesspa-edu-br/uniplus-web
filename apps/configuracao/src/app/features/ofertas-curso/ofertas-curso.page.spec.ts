@@ -8,6 +8,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   CursoDto,
@@ -16,7 +17,7 @@ import {
   TipoLocalOferta,
 } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OfertasCursoPage } from './ofertas-curso.page';
 
 const BASE = 'http://localhost:5000';
@@ -901,6 +902,9 @@ describe('OfertasCursoPage', () => {
   });
 
   it('CA-14c: cursor recusado (400) na navegação recarrega a listagem do início', async () => {
+    const notifications = TestBed.inject(NotificationService);
+    const info = vi.spyOn(notifications, 'info');
+
     const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
     const p1 = controller.expectOne((r) => r.url === LISTA_URL);
     p1.flush([ofertaSeed], {
@@ -935,6 +939,12 @@ describe('OfertasCursoPage', () => {
     recarga.flush([ofertaSeed]);
     await propagate();
     expect(component['errorMessage']()).toBeNull();
+    // 400 (uniplus.cursor.invalido) é "consulta mudou", não "expirou" — a
+    // distinção que o aoRecuperar do composable precisa preservar (CA-14c).
+    expect(info).toHaveBeenCalledExactlyOnceWith(
+      'A paginação foi reiniciada porque a consulta mudou.',
+      'Recarregamos a listagem do começo.',
+    );
   });
 
   it('CA-01, CA-02, CA-03 e CA-07: apresenta a coluna Grau logo após Curso com valor resolvido e data-label', async () => {
