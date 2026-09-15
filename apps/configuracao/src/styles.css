@@ -145,7 +145,13 @@ cfg-pesos-enem-page {
   padding: var(--space-5);
 }
 
+.unit-tree,
+.unit-node__children {
+  list-style: none;
+}
+
 .unit-tree {
+  margin: 0;
   padding: var(--space-4) var(--space-5);
 }
 
@@ -208,6 +214,7 @@ cfg-pesos-enem-page {
 .unit-node__children {
   padding-left: var(--space-6);
   margin-top: var(--space-1);
+  margin-bottom: 0;
   margin-left: var(--space-4);
   border-left: 2px solid var(--border-subtle);
 }

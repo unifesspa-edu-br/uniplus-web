@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of, Subject } from 'rxjs';
-import { vi } from 'vitest';
+import { vi, type Mocked } from 'vitest';
 
 import { ProblemI18nService, ApiResult } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -59,16 +59,16 @@ describe('UnidadesPage', () => {
   let fixture: ComponentFixture<UnidadesPage>;
   let component: UnidadesPage;
   let httpMock: HttpTestingController;
-  let unidadesApiMock: vi.Mocked<UnidadesApi>;
-  let geoApiMock: vi.Mocked<GeoApi>;
-  let notificationMock: vi.Mocked<NotificationService>;
+  let unidadesApiMock: Mocked<UnidadesApi>;
+  let geoApiMock: Mocked<GeoApi>;
+  let notificationMock: Mocked<NotificationService>;
 
   beforeEach(async () => {
     unidadesApiMock = {
       criar: vi.fn(),
       atualizar: vi.fn(),
       remover: vi.fn(),
-    } as unknown as vi.Mocked<UnidadesApi>;
+    } as unknown as Mocked<UnidadesApi>;
 
     geoApiMock = {
       listarCidades: vi.fn().mockReturnValue(
@@ -77,12 +77,12 @@ describe('UnidadesPage', () => {
           data: [],
         }),
       ),
-    } as unknown as vi.Mocked<GeoApi>;
+    } as unknown as Mocked<GeoApi>;
 
     notificationMock = {
       success: vi.fn(),
       errorFromProblem: vi.fn(),
-    } as unknown as vi.Mocked<NotificationService>;
+    } as unknown as Mocked<NotificationService>;
 
     await TestBed.configureTestingModule({
       imports: [UnidadesPage],
@@ -892,14 +892,72 @@ describe('UnidadesPage', () => {
     fixture.detectChanges();
     expect(component['erroDoCampo']('sigla')).toBe('Sigla já está em uso.');
   });
-  it('expõe nome acessível na região que lista as unidades', async () => {
+  it('expõe a hierarquia em listas aninhadas, com nome acessível', async () => {
     await responderListaUnidades();
     const compiled = fixture.nativeElement as HTMLElement;
 
     // Sem a listagem tabular, o nome acessível que a legenda da tabela dava
-    // passa a vir do `aria-label` da região de navegação.
-    const arvore = compiled.querySelector('nav.unit-tree');
+    // passa a vir do `aria-label` da lista.
+    const arvore = compiled.querySelector('ul.unit-tree');
     expect(arvore).not.toBeNull();
     expect(arvore?.getAttribute('aria-label')).toBe('Hierarquia de unidades da Unifesspa');
+
+    // A relação pai/filho precisa ser programaticamente determinável, e não
+    // apenas sugerida pelo recuo: cada nó é um `li`, e os filhos vivem numa
+    // `ul` aninhada dentro do `li` do pai (WCAG SC 1.3.1).
+    const raiz = arvore?.querySelector(':scope > li.unit-node');
+    expect(raiz).not.toBeNull();
+
+    raiz?.querySelector<HTMLButtonElement>('.unit-node__toggle')?.click();
+    fixture.detectChanges();
+
+    const filhos = raiz?.querySelectorAll(':scope > ul.unit-node__children > li.unit-node');
+    expect(filhos?.length).toBeGreaterThan(0);
+  });
+  it('CA-19: com busca aplicada, o resultado dentro de ramo recolhido fica visível', async () => {
+    vi.useFakeTimers();
+    await responderListaUnidades();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    // Estado inicial: a raiz vem recolhida, então o filho não está na tela.
+    expect(compiled.textContent).not.toContain('Instituto de Ciências Exatas');
+
+    component['busca'].set('exatas');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(310);
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne(
+      (r) => r.url.includes('/api/organizacao/unidades') && r.params.get('q') === 'exatas',
+    );
+    req.flush({ ok: true, data: [mockUnidadeRaiz, mockUnidadeFilho] });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    // Ninguém clicou no toggle: o ramo abre porque há filtro, senão o próprio
+    // resultado da busca ficaria escondido.
+    expect(compiled.textContent).toContain('Instituto de Ciências Exatas');
+
+    // E o botão continua honesto — o estado que ele anuncia é o estado real.
+    const toggle = compiled.querySelector<HTMLButtonElement>('.unit-node__toggle');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle?.getAttribute('aria-label')).toContain('Recolher');
+
+    toggle?.click();
+    fixture.detectChanges();
+
+    // Recolher durante a busca recolhe de verdade, em vez de mudar o conjunto
+    // interno em segredo e reaparecer invertido quando o filtro sai.
+    expect(compiled.querySelector('.unit-node__toggle')?.getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    expect(compiled.querySelector('.unit-node__toggle')?.getAttribute('aria-label')).toContain(
+      'Expandir',
+    );
+    expect(compiled.textContent).not.toContain('Instituto de Ciências Exatas');
   });
 });

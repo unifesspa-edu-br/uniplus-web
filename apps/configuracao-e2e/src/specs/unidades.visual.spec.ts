@@ -144,6 +144,24 @@ test.describe('Unidade — cobertura visual DS', () => {
       }),
     ).toBeVisible();
 
+    // Busca e filtro por tipo operam sobre a árvore (CA-18). O resultado de uma
+    // busca precisa ficar visível mesmo estando dentro de ramo recolhido (CA-19):
+    // ninguém clica em toggle aqui.
+    await page.getByRole('searchbox', { name: 'Buscar unidade' }).fill('ceps');
+
+    await expect(tree.getByText('Centro de Processos Seletivos')).toBeVisible();
+    await expect(tree.getByText('Centro de Tecnologia da Informação e Comunicação')).toBeHidden();
+
+    await page.getByRole('button', { name: 'Limpar', exact: true }).click();
+
+    await page.getByRole('button', { name: 'Centro', exact: true }).click();
+
+    await expect(tree.getByText('Centro de Processos Seletivos')).toBeVisible();
+    await expect(tree.getByText('Centro de Tecnologia da Informação e Comunicação')).toBeVisible();
+    await expect(tree.getByText('Pró-Reitoria de Ensino de Graduação')).toBeHidden();
+
+    await page.getByRole('button', { name: 'Limpar', exact: true }).click();
+
     const nodeProeg = tree
       .locator('.unit-node')
       .filter({
