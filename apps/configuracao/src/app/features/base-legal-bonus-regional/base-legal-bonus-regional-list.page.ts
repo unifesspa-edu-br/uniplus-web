@@ -210,14 +210,14 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-pencil"
-                      [accessibleName]="'Editar base legal ' + base.id"
+                      [accessibleName]="'Editar base legal ' + base.identificacao"
                       tooltip="Editar base legal"
                       [isDisabled]="loading()"
                       (triggered)="abrirEdicao(base)"
                     />
                     <ui-icon-button
                       icon="pi-power-off"
-                      [accessibleName]="'Desativar base legal ' + base.id"
+                      [accessibleName]="'Desativar base legal ' + base.identificacao"
                       tooltip="Desativar base legal"
                       [isDisabled]="loading()"
                       (triggered)="pedirDesativacao(base)"
@@ -372,9 +372,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                   autocomplete="off"
                   placeholder="Digite o nome completo do município…"
                   aria-labelledby="cfg-blbr-municipios-label"
-                  [attr.aria-invalid]="
-                    municipiosErro() !== null || buscaMunicipioErro() ? 'true' : null
-                  "
+                  [attr.aria-invalid]="municipiosErro() !== null || buscaMunicipioErro() ? 'true' : null"
                   [attr.aria-describedby]="municipioBuscaDescribedBy()"
                   [value]="buscaMunicipioTermo()"
                   [disabled]="savingForm()"
@@ -429,9 +427,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             }
 
             @if (municipiosErro(); as erro) {
-              <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{
-                erro
-              }}</span>
+              <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{ erro }}</span>
             }
           </div>
         </div>
@@ -456,11 +452,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             <ui-spinner size="sm" />
           }
           {{
-            savingForm()
-              ? 'Salvando...'
-              : modo() === 'criar'
-                ? 'Criar base legal'
-                : 'Salvar base legal'
+            savingForm() ? 'Salvando...' : modo() === 'criar' ? 'Criar base legal' : 'Salvar base legal'
           }}
         </button>
       </div>

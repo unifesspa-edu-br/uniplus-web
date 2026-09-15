@@ -95,6 +95,27 @@ describe('BaseLegalBonusRegionalListPage', () => {
     expect(component['registrosBuscados']()[0].municipios.length).toBe(1);
   });
 
+  it('identifica a base pelo texto da linha no nome acessível das ações', async () => {
+    await flushLista([portariaBase]);
+    fixture.detectChanges();
+
+    const acoes = Array.from(
+      fixture.nativeElement.querySelectorAll('.table-responsive__actions button'),
+    ) as HTMLButtonElement[];
+    const nomes = acoes.map((b) => b.getAttribute('aria-label') ?? '');
+
+    // Botão só-ícone perde o texto visível, então o nome acessível é o que
+    // distingue uma linha da outra — e precisa ser legível para quem ouve.
+    expect(nomes).toContain('Editar base legal Portaria Unifesspa nº 2514/2023');
+    expect(nomes).toContain('Desativar base legal Portaria Unifesspa nº 2514/2023');
+
+    // O identificador técnico não serve de rótulo: anunciado por leitor de
+    // tela, um UUID não diz ao operador de que base se trata.
+    for (const nome of nomes) {
+      expect(nome).not.toContain(portariaBase.id);
+    }
+  });
+
   it('bloqueia identificação e descrição em branco ou curtas demais após remover os espaços', async () => {
     await flushLista([]);
     component['abrirCadastro']();
