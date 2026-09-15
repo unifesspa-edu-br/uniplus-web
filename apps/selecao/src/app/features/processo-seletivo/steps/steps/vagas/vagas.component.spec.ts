@@ -50,8 +50,8 @@ const MODALIDADES = [
 ];
 
 const CURSOS = [
-  { id: 'curso-1', nome: 'Medicina' },
-  { id: 'curso-2', nome: 'Letras' },
+  { id: 'curso-1', nome: 'Medicina', grau: 'Bacharelado' },
+  { id: 'curso-2', nome: 'Letras', grau: 'Licenciatura' },
 ];
 
 const OFERTAS = [
@@ -61,7 +61,8 @@ const OFERTAS = [
     unidadeOfertante: { sigla: 'IGE' },
     programaDeOferta: 'REGULAR',
     formatoPedagogico: 'PRESENCIAL',
-    turnos: ['MATUTINO'],
+    regimeDeTurno: 'INTEGRAL',
+    turnos: ['MATUTINO', 'VESPERTINO'],
     vagasAnuaisAutorizadas: 40,
   },
   {
@@ -1617,5 +1618,26 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
 
     expect(componente.selecaoBateComORol()).toBe(true);
     expect(componente.reaplicarRolTemEfeito()).toBe(true);
+  });
+  it('apresenta o grau junto ao curso, uma única vez no rótulo', () => {
+    // O grau é atributo do curso, não da oferta: duas ofertas do mesmo curso
+    // têm o mesmo grau, então ele identifica e nunca distingue. Por isso entra
+    // no nome, ao lado do curso, e não no detalhe.
+    expect(componente.nomeDaOferta(OFERTA)).toBe('Medicina · Bacharelado · IGE');
+    expect(componente.detalheDaOferta(OFERTA)).toBe('INTEGRAL · MATUTINO e VESPERTINO');
+
+    expect(componente.rotuloDaOferta(OFERTA)).toBe(
+      'Medicina · Bacharelado · IGE · INTEGRAL · MATUTINO e VESPERTINO',
+    );
+
+    // Uma única vez: o grau entra pelo nome e não se repete no detalhe.
+    expect(componente.rotuloDaOferta(OFERTA).match(/Bacharelado/g)).toHaveLength(1);
+  });
+
+  it('omite o grau sem deixar separador pendurado quando o curso não o declara', () => {
+    // 'curso-9' não está no catálogo: nome desconhecido e grau ausente não
+    // podem produzir "Curso não identificado ·  · IGE".
+    expect(componente.nomeDaOferta('oferta-inexistente')).not.toContain('·  ·');
+    expect(componente.nomeDaOferta('oferta-inexistente')).not.toMatch(/·\s*$/);
   });
 });
