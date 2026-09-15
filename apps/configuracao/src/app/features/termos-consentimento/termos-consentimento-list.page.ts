@@ -12,11 +12,11 @@ import { RouterLink } from '@angular/router';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemI18nService,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 
 import {
@@ -233,9 +233,7 @@ export class TermosConsentimentoListPage {
     this.carregarPagina();
   }
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = signal<ApiResult<readonly TermoConsentimentoResumoDto[]> | undefined>(
     undefined,

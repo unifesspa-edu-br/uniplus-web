@@ -15,20 +15,20 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angula
 import {
   ApiResult,
   Cursor,
+  CursorPagina,
   cursorToString,
   deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
   IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
-} from "@uniplus/shared-core/http";
+} from '@uniplus/shared-core/http';
 import {NotificationService } from "@uniplus/shared-core/notifications";
 import {
   CODIGO_CADASTRO_FORMATO,
@@ -62,11 +62,6 @@ interface TipoDeficienciaForm {
   descricao: FormControl<string>;
   codigo: FormControl<string>;
 }
-
-type PaginaProps = {
- readonly cursor: Cursor;
- readonly direction: PaginationDirection
-} | undefined;
 
 const TIPO_DEFICIENCIA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDeficienciaForm>([
   'nome',
@@ -301,9 +296,7 @@ const PAGE_SIZE = 50;
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
                 [attr.aria-describedby]="
-                  erroDoCampo('nome')
-                    ? 'cfg-td-nome-dica cfg-td-nome-erro'
-                    : 'cfg-td-nome-dica'
+                  erroDoCampo('nome') ? 'cfg-td-nome-dica cfg-td-nome-erro' : 'cfg-td-nome-dica'
                 "
               />
               <span class="field__hint" id="cfg-td-nome-dica">
@@ -409,7 +402,7 @@ export class TiposDeficienciaListPage {
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  private readonly pagina = signal<PaginaProps>(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
   private readonly lista = useApiResource<readonly TipoDeficienciaDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/tipos-deficiencia`,
     params: this.montarParams(),

@@ -15,13 +15,13 @@ import { RouterLink } from '@angular/router';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemI18nService,
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
   useApiResource,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -364,9 +364,7 @@ export class ModalidadesListPage {
     'Esta modalidade não pode ser inativada porque outra modalidade viva a referencia ' +
     '(possivelmente fora desta página). Ajuste ou remova essas referências antes de inativar.';
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly ModalidadeDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/modalidades`,

@@ -25,7 +25,6 @@ import { Subject, map, of, switchMap, timer } from 'rxjs';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ResolucaoDeVinculo,
@@ -39,6 +38,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -375,7 +375,9 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                   autocomplete="off"
                   placeholder="Digite o nome completo do município…"
                   aria-labelledby="cfg-blbr-municipios-label"
-                  [attr.aria-invalid]="municipiosErro() !== null || buscaMunicipioErro() ? 'true' : null"
+                  [attr.aria-invalid]="
+                    municipiosErro() !== null || buscaMunicipioErro() ? 'true' : null
+                  "
                   [attr.aria-describedby]="municipioBuscaDescribedBy()"
                   [value]="buscaMunicipioTermo()"
                   [disabled]="savingForm()"
@@ -430,7 +432,9 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             }
 
             @if (municipiosErro(); as erro) {
-              <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{ erro }}</span>
+              <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{
+                erro
+              }}</span>
             }
           </div>
         </div>
@@ -455,7 +459,11 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             <ui-spinner size="sm" />
           }
           {{
-            savingForm() ? 'Salvando...' : modo() === 'criar' ? 'Criar base legal' : 'Salvar base legal'
+            savingForm()
+              ? 'Salvando...'
+              : modo() === 'criar'
+                ? 'Criar base legal'
+                : 'Salvar base legal'
           }}
         </button>
       </div>
@@ -623,9 +631,7 @@ export class BaseLegalBonusRegionalListPage {
     return this.tiposInstrumento.porCodigo().has(escolhido) ? null : escolhido;
   });
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly BaseLegalBonusRegionalDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/base-legal-bonus-regional`,
