@@ -225,4 +225,15 @@ describe('TermosConsentimentoListPage', () => {
     expect(component['errorMessage']()).toBeNull();
     expect(component['termosFiltrados']().length).toBe(1);
   });
+  it('expõe legenda acessível descrevendo a tabela', () => {
+    montar();
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+      'Termos de consentimento, com forma de aceite e status de revisão',
+    );
+  });
 });

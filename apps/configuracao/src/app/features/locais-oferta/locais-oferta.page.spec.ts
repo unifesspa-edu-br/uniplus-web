@@ -339,4 +339,17 @@ describe('LocaisOfertaPage', () => {
     controller.expectNone(`${BASE}/api/configuracao/admin/locais-oferta`);
     expect(component['enderecoErro']()).toContain('cidade');
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([localSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    // Sem `sr-only` a legenda vira texto visível acima da tabela e quebra o layout.
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Locais de oferta, com tipo, cidade, campus responsável e código e-MEC',
+    );
+  });
 });

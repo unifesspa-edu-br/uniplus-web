@@ -550,4 +550,17 @@ describe('CursosPage', () => {
     p2.flush([cursoSeed]);
     await propagate();
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([cursoSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    // Sem `sr-only` a legenda vira texto visível acima da tabela e quebra o layout.
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Cursos cadastrados, com código, grau, nível e grupo ENEM',
+    );
+  });
 });
