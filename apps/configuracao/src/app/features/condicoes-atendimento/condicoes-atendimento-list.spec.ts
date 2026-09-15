@@ -334,4 +334,17 @@ describe('CondicoesAtendimentoListPage', () => {
       .flush([condicaoAtiva]);
     await propagate();
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([condicao_atendimento_seed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    // Sem `sr-only` a legenda vira texto visível acima da tabela e quebra o layout.
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Condições de atendimento especializado, com código, nome e situação',
+    );
+  });
 });

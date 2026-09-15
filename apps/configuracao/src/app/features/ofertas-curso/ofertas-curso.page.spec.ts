@@ -1016,4 +1016,16 @@ describe('OfertasCursoPage', () => {
       fixture.nativeElement.querySelector('td[data-label="Grau"]');
     expect(celulaGrau?.textContent?.trim()).toBe('—');
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e turno, e vagas e-MEC',
+    );
+  });
 });

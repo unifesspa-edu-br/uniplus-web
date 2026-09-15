@@ -758,4 +758,15 @@ describe('TiposDocumentoListPage', () => {
     expect(component['filtroCategoria']()).toBe('');
     expect(component['documentosFiltrados']()).toHaveLength(2);
   });
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([rgSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+      'Tipos de documento, com categoria, formatos aceitos e tamanho máximo de arquivo',
+    );
+  });
 });

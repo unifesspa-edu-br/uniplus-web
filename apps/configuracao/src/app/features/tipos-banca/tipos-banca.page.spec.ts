@@ -262,4 +262,15 @@ describe('TiposBancaPage', () => {
     await propagate();
     await flushLista([]);
   });
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([bancaSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+      'Tipos de banca do catálogo institucional, com código e fase típica de atuação',
+    );
+  });
 });

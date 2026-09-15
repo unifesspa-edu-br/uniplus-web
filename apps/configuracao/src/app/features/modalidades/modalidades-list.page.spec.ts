@@ -150,4 +150,16 @@ describe('ModalidadesListPage', () => {
     expect(component['mensagemBloqueioServidor']()).toBeTruthy();
     await flushLista([AC, V]);
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Modalidades de concorrência, com natureza, composição de vagas, remanejamento e situação',
+    );
+  });
 });

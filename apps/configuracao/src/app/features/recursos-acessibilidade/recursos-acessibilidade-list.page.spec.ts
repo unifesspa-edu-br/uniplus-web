@@ -280,4 +280,16 @@ describe('RecursosAcessibilidadeListPage', () => {
       .flush([recurso_acessibilidade_seed]);
     await propagate();
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([recurso_acessibilidade_seed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Recursos de acessibilidade, com descrição e situação de uso',
+    );
+  });
 });
