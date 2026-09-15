@@ -96,6 +96,9 @@ const PAGE_SIZE = 50;
       @if (calendarios().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Calendários de dias úteis, com versão, período de vigência e data de criação
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Versão</th>

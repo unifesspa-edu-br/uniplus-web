@@ -194,6 +194,9 @@ interface TipoDocumentoForm {
       @if (documentosFiltrados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Tipos de documento, com categoria, formatos aceitos e tamanho máximo de arquivo
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>

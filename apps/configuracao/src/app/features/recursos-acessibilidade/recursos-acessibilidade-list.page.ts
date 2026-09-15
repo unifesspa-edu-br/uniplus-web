@@ -171,6 +171,9 @@ const PAGE_SIZE = 50;
         @if (recursosFiltrados().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Recursos de acessibilidade, com descrição e situação de uso
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Nome</th>

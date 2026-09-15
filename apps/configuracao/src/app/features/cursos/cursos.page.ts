@@ -150,6 +150,9 @@ interface CursoForm {
       @if (cursos().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Cursos cadastrados, com código, grau, nível e grupo ENEM
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>

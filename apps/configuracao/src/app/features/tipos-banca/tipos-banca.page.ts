@@ -137,6 +137,9 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
       @if (bancasFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Tipos de banca do catálogo institucional, com código e fase típica de atuação
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>

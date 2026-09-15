@@ -123,6 +123,9 @@ interface CampusForm {
       @if (campi().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Campi da instituição, com sigla, cidade e código e-MEC
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Sigla</th>
