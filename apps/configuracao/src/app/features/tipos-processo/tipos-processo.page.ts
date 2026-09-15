@@ -15,7 +15,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -27,6 +26,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -385,9 +385,7 @@ export class TiposProcessoPage {
   /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
   private ultimaSugestaoAplicada = '';
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   // Listagem de manutenção (plataforma-admin): traz ativos e desativados
   // (`apenasAtivos` default `false` no contrato), para permitir a reativação.

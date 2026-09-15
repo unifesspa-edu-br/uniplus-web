@@ -11,7 +11,6 @@ import { RouterLink } from '@angular/router';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   cursorToString,
@@ -19,6 +18,7 @@ import {
   extractPrevCursor,
   idempotencyKey,
   withIdempotencyKey,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -132,13 +132,9 @@ const PAGE_SIZE = 50;
                       icon="pi-check-circle"
                       [accessibleName]="'Marcar vigente ' + calendario.versaoDataset"
                       [tooltip]="
-                        calendario.vigente
-                          ? 'Marque outro dataset como vigente'
-                          : 'Marcar vigente'
+                        calendario.vigente ? 'Marque outro dataset como vigente' : 'Marcar vigente'
                       "
-                      [description]="
-                        calendario.vigente ? 'Marque outro dataset como vigente' : ''
-                      "
+                      [description]="calendario.vigente ? 'Marque outro dataset como vigente' : ''"
                       [isDisabled]="loading() || saving() || calendario.vigente"
                       (triggered)="solicitarVigenteConfirmado(calendario)"
                     />
@@ -219,9 +215,7 @@ export class CalendarioDiasUteisListPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
   private readonly lista = signal<ApiResult<readonly CalendarioDiasUteisResumoDto[]> | undefined>(
     undefined,
   );

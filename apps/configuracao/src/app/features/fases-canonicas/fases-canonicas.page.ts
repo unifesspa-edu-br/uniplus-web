@@ -15,7 +15,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
+  CursorPagina,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -171,7 +171,8 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         <div class="table-responsive">
           <table>
             <caption class="sr-only">
-              Fases canônicas, com dono típico, agrupamento de etapas e permissão de complementação documental
+              Fases canônicas, com dono típico, agrupamento de etapas e permissão de complementação
+              documental
             </caption>
             <thead>
               <tr>
@@ -477,9 +478,7 @@ export class FasesCanonicasPage {
   protected readonly termoBusca = signal('');
   protected readonly donoTipicoFiltro = signal('');
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly FaseCanonicaDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/fases-canonicas`,
@@ -564,22 +563,21 @@ export class FasesCanonicasPage {
       : 'Deseja inativar esta fase canônica?';
   });
 
-  protected readonly form: FormGroup<FaseForm> = new FormGroup<FaseForm>(
-    {
-      codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      donoTipico: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      nome: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required, Validators.maxLength(255)],
-      }),
-      descricao: new FormControl('', { nonNullable: true }),
-      baseLegal: new FormControl('', { nonNullable: true }),
-      agrupaEtapas: new FormControl(false, { nonNullable: true }),
-      permiteComplementacao: new FormControl(false, { nonNullable: true }),
-      origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      coletaInscricao: new FormControl(false, { nonNullable: true }),
-      coletaSolicitacaoIsencao: new FormControl(false, { nonNullable: true }),
-    });
+  protected readonly form: FormGroup<FaseForm> = new FormGroup<FaseForm>({
+    codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    donoTipico: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    nome: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(255)],
+    }),
+    descricao: new FormControl('', { nonNullable: true }),
+    baseLegal: new FormControl('', { nonNullable: true }),
+    agrupaEtapas: new FormControl(false, { nonNullable: true }),
+    permiteComplementacao: new FormControl(false, { nonNullable: true }),
+    origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    coletaInscricao: new FormControl(false, { nonNullable: true }),
+    coletaSolicitacaoIsencao: new FormControl(false, { nonNullable: true }),
+  });
 
   // Código da fase em edição — carregado pelo `form.reset()` de `abrirEdicao` e
   // usado para controlar a visibilidade dos grupos condicionais (ADR de UI da

@@ -15,7 +15,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -26,6 +25,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -153,7 +153,8 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base legal e situação
+                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base
+                legal e situação
               </caption>
               <thead>
                 <tr>
@@ -182,7 +183,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
-                        [accessibleName]="'Editar reserva demográfica do censo ' + ref.censoReferencia"
+                        [accessibleName]="
+                          'Editar reserva demográfica do censo ' + ref.censoReferencia
+                        "
                         tooltip="Editar reserva demográfica"
                         [isDisabled]="loading()"
                         (triggered)="abrirEdicao(ref)"
@@ -406,9 +409,7 @@ export class ReservaDemograficaListPage {
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly busca = signal('');
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly ReferenciaReservaDemograficaDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/referencias-reserva-demografica`,

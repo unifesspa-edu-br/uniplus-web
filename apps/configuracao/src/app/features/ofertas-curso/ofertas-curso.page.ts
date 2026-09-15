@@ -23,7 +23,6 @@ import {
   API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -39,6 +38,7 @@ import {
   useCursorObsoletoRecovery,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -180,7 +180,8 @@ interface OfertaCursoForm {
         <div class="table-responsive">
           <table>
             <caption class="sr-only">
-              Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e turno, e vagas e-MEC
+              Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e
+              turno, e vagas e-MEC
             </caption>
             <thead>
               <tr>
@@ -619,9 +620,7 @@ export class OfertasCursoPage {
   protected readonly ofertaParaRemover = signal<OfertaCursoDto | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   /** Itens por página escolhidos no rodapé; só em memória (volta ao padrão a cada visita). */
   protected readonly limite = signal<number>(DEFAULT_PAGE_SIZE);

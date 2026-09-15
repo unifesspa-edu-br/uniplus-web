@@ -15,7 +15,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -26,6 +25,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -299,9 +299,7 @@ export class CampiPage {
   protected readonly campusParaRemover = signal<CampusDto | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly CampusDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/campi`,

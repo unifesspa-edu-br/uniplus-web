@@ -16,7 +16,6 @@ import { map } from 'rxjs';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -29,6 +28,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -210,18 +210,28 @@ interface TipoDocumentoForm {
             <tbody>
               @for (tipo of documentosFiltrados(); track tipo.id) {
                 <tr>
-                  <td data-label="Código"><code>{{ tipo.codigo }}</code></td>
+                  <td data-label="Código">
+                    <code>{{ tipo.codigo }}</code>
+                  </td>
                   <td data-label="Nome">
                     {{ tipo.nome }}
                     @if (tipo.tipoEquivalente) {
-                      <div class="table-responsive__meta">Equiv.: <code>{{ tipo.tipoEquivalente }}</code></div>
+                      <div class="table-responsive__meta">
+                        Equiv.: <code>{{ tipo.tipoEquivalente }}</code>
+                      </div>
                     }
                   </td>
                   <td data-label="Categoria">
-                    <ui-tag><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" /></ui-tag>
+                    <ui-tag
+                      ><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)"
+                    /></ui-tag>
                   </td>
-                  <td data-label="Formatos aceitos" class="u-caption">{{ tipo.formatosAceitos || '—' }}</td>
-                  <td data-label="Tam. máx." class="u-caption">{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</td>
+                  <td data-label="Formatos aceitos" class="u-caption">
+                    {{ tipo.formatosAceitos || '—' }}
+                  </td>
+                  <td data-label="Tam. máx." class="u-caption">
+                    {{ tamanhoLabel(tipo.tamanhoMaximoMb) }}
+                  </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-pencil"
@@ -322,7 +332,9 @@ interface TipoDocumentoForm {
               formControlName="codigo"
               [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
               [attr.aria-describedby]="
-                erroCampoCodigo ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro' : 'cfg-tdoc-codigo-dica'
+                erroCampoCodigo
+                  ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro'
+                  : 'cfg-tdoc-codigo-dica'
               "
             />
             <span class="field__hint" id="cfg-tdoc-codigo-dica">
@@ -498,9 +510,7 @@ export class TiposDocumentoListPage {
   protected readonly tipoParaInativar = signal<TipoDocumentoDto | null>(null);
   protected readonly confirmError = signal<string | null>(null);
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly TipoDocumentoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/tipos-documento`,

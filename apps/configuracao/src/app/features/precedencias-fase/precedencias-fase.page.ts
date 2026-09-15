@@ -24,7 +24,6 @@ import {
   API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -36,6 +35,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -513,9 +513,7 @@ export class PrecedenciasFasePage {
    */
   private readonly contextoDaAbertura = signal(0);
 
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly lista = useApiResource<readonly PrecedenciaFaseDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/precedencias-fase`,
