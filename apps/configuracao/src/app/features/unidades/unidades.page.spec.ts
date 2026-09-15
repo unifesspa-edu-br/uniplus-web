@@ -892,17 +892,14 @@ describe('UnidadesPage', () => {
     fixture.detectChanges();
     expect(component['erroDoCampo']('sigla')).toBe('Sigla já está em uso.');
   });
-  it('expõe legenda acessível descrevendo a tabela de unidades', async () => {
-    await flushInicial();
-    fixture.detectChanges();
+  it('expõe nome acessível na região que lista as unidades', async () => {
+    await responderListaUnidades();
+    const compiled = fixture.nativeElement as HTMLElement;
 
-    // A hierarquia é um `nav`, não uma tabela: a legenda cobrada é a da
-    // listagem tabular.
-    const caption = fixture.nativeElement.querySelector('table > caption');
-    expect(caption).not.toBeNull();
-    expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
-      'Unidades da instituição, com sigla, tipo e unidade superior na hierarquia',
-    );
+    // Sem a listagem tabular, o nome acessível que a legenda da tabela dava
+    // passa a vir do `aria-label` da região de navegação.
+    const arvore = compiled.querySelector('nav.unit-tree');
+    expect(arvore).not.toBeNull();
+    expect(arvore?.getAttribute('aria-label')).toBe('Hierarquia de unidades da Unifesspa');
   });
 });
