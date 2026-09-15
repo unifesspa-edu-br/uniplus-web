@@ -60,6 +60,7 @@ import {
   PagerComponent,
   SpinnerComponent,
   type UiLookupFalho,
+  IconButtonComponent,
 } from '@uniplus/shared-ui/components';
 import { CatalogoTiposInstrumentoNormativo } from '../../shared/tipos-instrumento-normativo';
 
@@ -131,6 +132,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
     LookupLabelComponent,
     PagerComponent,
     SpinnerComponent,
+    IconButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -206,22 +208,20 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                   <td data-label="Identificação">{{ base.identificacao }}</td>
                   <td data-label="Municípios" class="u-caption">{{ base.municipios.length }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(base)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirDesativacao(base)"
-                    >
-                      Desativar
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar base legal ' + base.id"
+                      tooltip="Editar base legal"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(base)"
+                    />
+                    <ui-icon-button
+                      icon="pi-power-off"
+                      [accessibleName]="'Desativar base legal ' + base.id"
+                      tooltip="Desativar base legal"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirDesativacao(base)"
+                    />
                   </td>
                 </tr>
               }
@@ -372,7 +372,9 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                   autocomplete="off"
                   placeholder="Digite o nome completo do município…"
                   aria-labelledby="cfg-blbr-municipios-label"
-                  [attr.aria-invalid]="municipiosErro() !== null || buscaMunicipioErro() ? 'true' : null"
+                  [attr.aria-invalid]="
+                    municipiosErro() !== null || buscaMunicipioErro() ? 'true' : null
+                  "
                   [attr.aria-describedby]="municipioBuscaDescribedBy()"
                   [value]="buscaMunicipioTermo()"
                   [disabled]="savingForm()"
@@ -427,7 +429,9 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             }
 
             @if (municipiosErro(); as erro) {
-              <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{ erro }}</span>
+              <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{
+                erro
+              }}</span>
             }
           </div>
         </div>
@@ -452,7 +456,11 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             <ui-spinner size="sm" />
           }
           {{
-            savingForm() ? 'Salvando...' : modo() === 'criar' ? 'Criar base legal' : 'Salvar base legal'
+            savingForm()
+              ? 'Salvando...'
+              : modo() === 'criar'
+                ? 'Criar base legal'
+                : 'Salvar base legal'
           }}
         </button>
       </div>
