@@ -2014,6 +2014,34 @@ dialog.vagas-modal::backdrop {
   }
 }
 
+/*
+ * Base legal com dezenas de municípios (a Portaria Unifesspa nº 2514/2023 tem
+ * ~150) transbordaria a página inteira se a tabela crescesse livremente — a
+ * rolagem fica contida na própria tabela, não no restante do passo. Só no
+ * layout de tabela: abaixo de 768px `.table-responsive` já vira lista de
+ * cartões empilhados (ADR-0023), e travar isso numa caixa de rolagem própria
+ * seria pior no toque — encaixa no fluxo normal de rolagem da página.
+ */
+.bonus-municipios__scroll {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+  .bonus-municipios__scroll {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+.bonus-municipios__caption {
+  caption-side: top;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding-bottom: var(--space-2);
+}
+
 .field-hint {
   display: block;
   font-size: var(--text-xs);

@@ -5,6 +5,7 @@ import { Subject, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  BaseLegalBonusRegionalApi,
   CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
@@ -75,6 +76,8 @@ const PAGE_PROVIDERS = [
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
+  // O passo de bônus carrega o catálogo de base legal ao montar.
+  { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -150,6 +153,15 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('.wiz-shell')).not.toBeNull();
     expect(host.querySelector('.wiz-content')).not.toBeNull();
+  });
+
+  it('deixa .wiz-content focável para o botão global "Voltar ao topo" (uiBackToTopContainer)', () => {
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.detectChanges();
+
+    const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
+    expect(wizContent?.hasAttribute('uiBackToTopContainer')).toBe(true);
+    expect(wizContent?.getAttribute('tabindex')).toBe('-1');
   });
 });
 
@@ -330,7 +342,10 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const { fixture, page, store } = montar();
     const persistirDoPassoAnterior = vi.fn().mockResolvedValue({ valid: true });
     const stubSemPersistir = { validate: () => ({ valid: true }) };
-    const stubComPersistir = { validate: () => ({ valid: true }), persistir: persistirDoPassoAnterior };
+    const stubComPersistir = {
+      validate: () => ({ valid: true }),
+      persistir: persistirDoPassoAnterior,
+    };
 
     vi.spyOn(
       page as unknown as { stepValidatorAt: (index: number) => unknown },
@@ -350,7 +365,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const stubSemPersistir = { validate: () => ({ valid: true }) };
     const stubComFalha = {
       validate: () => ({ valid: true }),
-      persistir: vi.fn().mockResolvedValue({ valid: false, messages: ['Falha ao gravar de novo.'] }),
+      persistir: vi
+        .fn()
+        .mockResolvedValue({ valid: false, messages: ['Falha ao gravar de novo.'] }),
     };
 
     vi.spyOn(
@@ -363,9 +380,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
     await page.nextOrPublish();
 
     const erros = store.stepError() ?? [];
-    expect(erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.'))).toBe(
-      true,
-    );
+    expect(
+      erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.')),
+    ).toBe(true);
   });
 
   /**
@@ -384,14 +401,18 @@ describe('ProcessoSeletivoPage — publicação', () => {
     });
     const stubRevisao = {
       validate: () =>
-        checklistRecarregado ? { valid: true } : { valid: false, messages: ['Checklist desatualizado.'] },
+        checklistRecarregado
+          ? { valid: true }
+          : { valid: false, messages: ['Checklist desatualizado.'] },
       recarregarChecklist,
     };
 
     vi.spyOn(
       page as unknown as { stepValidatorAt: (index: number) => unknown },
       'stepValidatorAt',
-    ).mockImplementation((index: number) => (index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir));
+    ).mockImplementation((index: number) =>
+      index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir,
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();

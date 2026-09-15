@@ -47,6 +47,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
@@ -80,6 +81,7 @@ interface TipoProcessoForm {
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
     TagComponent,
@@ -169,40 +171,28 @@ interface TipoProcessoForm {
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     @if (tipo.ativo) {
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [attr.aria-label]="'Editar tipo de processo ' + tipo.codigo"
-                        data-tooltip="Editar tipo de processo"
-                        data-tooltip-position="left"
-                        [disabled]="loading()"
-                        (click)="abrirEdicao(tipo)"
-                      >
-                        <i class="pi pi-pencil" aria-hidden="true"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [attr.aria-label]="'Inativar tipo de processo ' + tipo.codigo"
-                        data-tooltip="Inativar tipo de processo"
-                        data-tooltip-position="left"
-                        [disabled]="loading()"
-                        (click)="pedirRemocao(tipo)"
-                      >
-                        <i class="pi pi-power-off" aria-hidden="true"></i>
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar tipo de processo ' + tipo.codigo"
+                        tooltip="Editar tipo de processo"
+                        [isDisabled]="loading()"
+                        (triggered)="abrirEdicao(tipo)"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar tipo de processo ' + tipo.codigo"
+                        tooltip="Inativar tipo de processo"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirRemocao(tipo)"
+                      />
                     } @else {
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [attr.aria-label]="'Reativar tipo de processo ' + tipo.codigo"
-                        data-tooltip="Reativar tipo de processo"
-                        data-tooltip-position="left"
-                        [disabled]="loading()"
-                        (click)="pedirReativacao(tipo)"
-                      >
-                        <i class="pi pi-replay" aria-hidden="true"></i>
-                      </button>
+                      <ui-icon-button
+                        icon="pi-replay"
+                        [accessibleName]="'Reativar tipo de processo ' + tipo.codigo"
+                        tooltip="Reativar tipo de processo"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirReativacao(tipo)"
+                      />
                     }
                   </td>
                 </tr>

@@ -52,6 +52,8 @@ export type DefinirClassificacaoRequest = components['schemas']['DefinirClassifi
 export type RegraEliminacaoDto = components['schemas']['RegraEliminacaoDto'];
 export type RegraEliminacaoInput = components['schemas']['RegraEliminacaoInput'];
 export type ConfiguracaoBonusRegionalDto = components['schemas']['ConfiguracaoBonusRegionalDto'];
+export type ConfiguracaoBonusRegionalMunicipioDto =
+  components['schemas']['ConfiguracaoBonusRegionalMunicipioDto'];
 export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
 export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
 export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];

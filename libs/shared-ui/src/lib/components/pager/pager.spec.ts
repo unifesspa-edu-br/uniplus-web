@@ -58,6 +58,59 @@ describe('PagerComponent (Anterior / Próximo)', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
+  function seletorLimite(): HTMLSelectElement | null {
+    const el = fixture.debugElement.query(By.css('[data-pager="page-size"]'));
+    return el ? (el.nativeElement as HTMLSelectElement) : null;
+  }
+
+  it('sem pageSizeOptions, o rodapé mostra só o texto de status (sem seletor)', () => {
+    fixture.componentRef.setInput('statusText', 'Navegação por páginas');
+    fixture.detectChanges();
+
+    expect(seletorLimite()).toBeNull();
+    expect(fixture.debugElement.query(By.css('.pager__status')).nativeElement.textContent).toContain(
+      'Navegação por páginas',
+    );
+  });
+
+  it('com pageSizeOptions, o texto de status dá lugar ao seletor de itens por página', () => {
+    fixture.componentRef.setInput('pageSizeOptions', [10, 25, 50, 100]);
+    fixture.componentRef.setInput('pageSize', 25);
+    fixture.componentRef.setInput('statusText', 'Navegação por páginas');
+    fixture.detectChanges();
+
+    const select = seletorLimite();
+    expect(select).not.toBeNull();
+    expect(select?.value).toBe('25');
+    expect([...(select?.options ?? [])].map((o) => o.value)).toEqual(['10', '25', '50', '100']);
+    expect(fixture.nativeElement.textContent).not.toContain('Navegação por páginas');
+  });
+
+  it('escolher um valor emite pageSizeChange com o número', () => {
+    fixture.componentRef.setInput('pageSizeOptions', [10, 25, 50, 100]);
+    fixture.componentRef.setInput('pageSize', 25);
+    fixture.detectChanges();
+
+    const emitido: Array<number | null> = [];
+    fixture.componentInstance.pageSize.subscribe((v) => emitido.push(v));
+
+    const select = seletorLimite();
+    if (!select) throw new Error('seletor ausente');
+    select.value = '100';
+    select.dispatchEvent(new Event('change'));
+
+    expect(emitido).toEqual([100]);
+  });
+
+  it('isDisabled também desabilita o seletor de itens por página', () => {
+    fixture.componentRef.setInput('pageSizeOptions', [10, 25, 50, 100]);
+    fixture.componentRef.setInput('pageSize', 25);
+    fixture.componentRef.setInput('isDisabled', true);
+    fixture.detectChanges();
+
+    expect(seletorLimite()?.disabled).toBe(true);
+  });
+
   it('expõe statusText e navigationLabel acessíveis', () => {
     fixture.componentRef.setInput('statusText', 'Página 2');
     fixture.componentRef.setInput('navigationLabel', 'Paginação de unidades');

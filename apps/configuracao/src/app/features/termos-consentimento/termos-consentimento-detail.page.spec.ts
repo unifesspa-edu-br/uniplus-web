@@ -220,4 +220,28 @@ describe('TermosConsentimentoDetailPage', () => {
       fixture.nativeElement.querySelector('#cfg-termo-consentimento-motivo-remocao')?.textContent,
     ).toContain('Termo com versão promovida');
   });
+
+  it('expõe legenda acessível descrevendo a tabela de versões promovidas', async () => {
+    await carregarTermo(
+      termo({
+        versoes: [
+          {
+            id: '01960000-0000-7000-0000-0000000000a2',
+            texto: 'Declaro que as informações são verdadeiras.',
+            baseLegal: 'Lei nº 13.709/2018',
+            formaAceite: 'A_DEFINIR',
+            hash: 'abc123',
+            promovidaEm: '2026-08-11T13:00:00Z',
+          },
+        ],
+      }),
+    );
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Versões promovidas deste termo de consentimento',
+    );
+  });
 });

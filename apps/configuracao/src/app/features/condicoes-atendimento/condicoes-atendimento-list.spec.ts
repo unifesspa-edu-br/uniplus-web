@@ -67,13 +67,13 @@ describe('CondicoesAtendimentoListPage', () => {
 
   function getInativarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:last-child',
+      'td.table-responsive__actions button[aria-label^="Inativar condição de atendimento"]',
     ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:first-child',
+      'td.table-responsive__actions button[aria-label^="Editar condição de atendimento"]',
     ) as HTMLButtonElement;
   }
 
@@ -333,5 +333,18 @@ describe('CondicoesAtendimentoListPage', () => {
       .expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`)
       .flush([condicaoAtiva]);
     await propagate();
+  });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([condicao_atendimento_seed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    // Sem `sr-only` a legenda vira texto visível acima da tabela e quebra o layout.
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Condições de atendimento especializado, com código, nome e situação',
+    );
   });
 });

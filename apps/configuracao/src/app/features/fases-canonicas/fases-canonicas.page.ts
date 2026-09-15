@@ -42,6 +42,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -92,6 +93,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -168,6 +170,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
       @if (fasesFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Fases canônicas, com dono típico, agrupamento de etapas e permissão de complementação documental
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -205,22 +210,20 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(fase)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(fase)"
-                    >
-                      Inativar
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar fase canônica ' + fase.codigo"
+                      tooltip="Editar fase canônica"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(fase)"
+                    />
+                    <ui-icon-button
+                      icon="pi-power-off"
+                      [accessibleName]="'Inativar fase canônica ' + fase.codigo"
+                      tooltip="Inativar fase canônica"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirRemocao(fase)"
+                    />
                   </td>
                 </tr>
               }

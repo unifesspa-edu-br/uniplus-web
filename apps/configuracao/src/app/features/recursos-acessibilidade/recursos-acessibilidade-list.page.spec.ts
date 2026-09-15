@@ -65,13 +65,13 @@ describe('RecursosAcessibilidadeListPage', () => {
 
   function getInativarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:last-child',
+      'td.table-responsive__actions button[aria-label^="Inativar recurso de acessibilidade"]',
     ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:first-child',
+      'td.table-responsive__actions button[aria-label^="Editar recurso de acessibilidade"]',
     ) as HTMLButtonElement;
   }
 
@@ -279,5 +279,17 @@ describe('RecursosAcessibilidadeListPage', () => {
       .expectOne((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`)
       .flush([recurso_acessibilidade_seed]);
     await propagate();
+  });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([recurso_acessibilidade_seed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Recursos de acessibilidade, com descrição e situação de uso',
+    );
   });
 });

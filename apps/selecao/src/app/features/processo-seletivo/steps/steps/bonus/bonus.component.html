@@ -5,6 +5,14 @@
 @if (catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
+@if (basesLegaisErro(); as erro) {
+  <p class="alert alert--danger" role="alert">
+    {{ erro }}
+    <button type="button" class="btn btn--secondary btn--sm" (click)="carregarBasesLegais()">
+      Tentar novamente
+    </button>
+  </p>
+}
 <div class="step-card">
   <label class="check-item"
     ><input
@@ -49,6 +57,23 @@
             (input)="alterarFator($any($event.target).value)"
           /><span class="field-hint">Ex.: 1.20 multiplica a nota final por 1,20.</span>
         </div>
+      </div>
+      <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
+        <div class="form-field">
+          <label class="label" for="f-bonus-base-legal">Base Legal do bônus</label
+          ><select
+            class="input"
+            id="f-bonus-base-legal"
+            [disabled]="basesLegaisCarregando()"
+            [value]="store.draft().bonus.baseLegalBonusRegionalId"
+            (change)="escolherBaseLegal($any($event.target).value)"
+          >
+            <option value="">— escolher —</option>
+            @for (base of basesLegaisEscolhiveis(); track base.id) {
+              <option [value]="base.id">{{ base.identificacao }}</option>
+            }
+          </select>
+        </div>
         <div class="form-field">
           <label class="label" for="f-bonus-teto">Teto (opcional)</label
           ><input
@@ -62,30 +87,40 @@
           />
         </div>
       </div>
-      <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
-        <div class="form-field">
-          <label class="label" for="f-bonus-municipio">Município do convênio (opcional)</label
-          ><input
-            class="input"
-            id="f-bonus-municipio"
-            type="text"
-            maxlength="200"
-            [value]="store.draft().bonus.municipioConvenio"
-            (input)="alterarMunicipioConvenio($any($event.target).value)"
-          />
+      @if (municipiosDaBaseLegalSelecionada().length > 0) {
+        <div class="bonus-municipios">
+          <div
+            #municipiosScroll
+            class="table-responsive bonus-municipios__scroll"
+            [attr.tabindex]="municipiosRolavel() ? 0 : null"
+            [attr.role]="municipiosRolavel() ? 'region' : null"
+            [attr.aria-labelledby]="municipiosRolavel() ? 'bonus-municipios-caption' : null"
+          >
+            <table>
+              <caption id="bonus-municipios-caption" class="bonus-municipios__caption">
+                {{ municipiosDaBaseLegalSelecionada().length }} município(s) beneficiado(s) por
+                esta base legal
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">UF</th>
+                  <th scope="col">Código IBGE</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (municipio of municipiosDaBaseLegalSelecionada(); track municipio.codigoIbge) {
+                  <tr>
+                    <td data-label="Nome">{{ municipio.nome }}</td>
+                    <td data-label="UF">{{ municipio.uf }}</td>
+                    <td data-label="Código IBGE"><code>{{ municipio.codigoIbge }}</code></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="form-field">
-          <label class="label" for="f-bonus-base-legal">Base legal (opcional)</label
-          ><input
-            class="input"
-            id="f-bonus-base-legal"
-            type="text"
-            maxlength="500"
-            [value]="store.draft().bonus.baseLegal"
-            (input)="alterarBaseLegal($any($event.target).value)"
-          />
-        </div>
-      </div>
+      }
     </div>
   }
 </div>

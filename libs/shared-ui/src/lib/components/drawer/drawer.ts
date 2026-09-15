@@ -36,6 +36,7 @@ let openDrawerCount = 0;
             type="button"
             class="btn btn--tertiary btn--icon-only btn--rect"
             aria-label="Fechar"
+            [disabled]="!closable()"
             (click)="close()"
           >
             &times;
@@ -54,6 +55,12 @@ export class DrawerComponent implements OnDestroy {
   readonly heading = input<string>('Detalhes');
   readonly ariaLabel = input<string>('Painel lateral');
   readonly position = input<'left' | 'right'>('right');
+  /**
+   * `false` recusa fechar pelo X, por Esc ou por um clique fora — usado por telas com uma
+   * mutação em voo, onde fechar perderia o resultado dela (a resposta chegaria com o
+   * formulário já desmontado). O consumidor ainda fecha programaticamente via `visible`.
+   */
+  readonly closable = input<boolean>(true);
   readonly closed = output<void>();
 
   private readonly drawerRef = viewChild<ElementRef<HTMLDialogElement>>('drawer');
@@ -82,6 +89,9 @@ export class DrawerComponent implements OnDestroy {
 
   protected close(event?: Event): void {
     event?.preventDefault();
+    if (!this.closable()) {
+      return;
+    }
     this.visible.set(false);
   }
 

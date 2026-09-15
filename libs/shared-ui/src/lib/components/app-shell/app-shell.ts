@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { A11yMenuComponent } from '../a11y-menu/a11y-menu';
+import { BackToTopComponent } from '../back-to-top/back-to-top';
 import { DrawerComponent } from '../drawer/drawer';
 import { InstitutionalBarComponent } from '../institutional-bar/institutional-bar';
 import { SkipLinkComponent } from '../skip-link/skip-link';
@@ -42,6 +43,7 @@ let shellIdSeed = 0;
     RouterLink,
     RouterLinkActive,
     A11yMenuComponent,
+    BackToTopComponent,
     DrawerComponent,
     InstitutionalBarComponent,
     SkipLinkComponent,
@@ -154,49 +156,52 @@ let shellIdSeed = 0;
             </div>
           </header>
 
-          <main class="page" [id]="mainId" tabindex="-1">
+          <main #conteudoPrincipal class="page" [id]="mainId" tabindex="-1">
             <ng-content />
           </main>
         </div>
       </div>
 
+      <ui-back-to-top [defaultContainer]="conteudoPrincipal" />
+
       <!-- Drawer mobile (contrato DS: <dialog class="uni-drawer">) — só montado quando aberto
-      para não duplicar dialog.uni-drawer em apps que já usam ui-drawer. -->      @if (mobileMenuOpen()) {
-      <ui-drawer
-        [id]="mobileDrawerId"
-        [visible]="mobileMenuOpen()"
-        heading="Menu"
-        ariaLabel="Menu de navegação"
-        position="left"
-        (closed)="closeMobileMenu()"
-      >
-        <nav class="uni-drawer__nav" aria-label="Navegação principal">
-          @for (group of navGroups(); track group.label) {
-            <div class="sidebar__label">{{ group.label }}</div>
-            @for (item of group.items; track item.label) {
-              @if (item.routerLink && !item.disabled) {
-                <a
-                  [routerLink]="item.routerLink"
-                  routerLinkActive="is-active"
-                  [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-                  ariaCurrentWhenActive="page"
-                  (click)="closeMobileMenu()"
-                >
-                  @if (item.icon) {
-                    <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
-                  }
-                  <span>{{ item.label }}</span>
-                </a>
-              } @else {
-                <span class="sidebar__link is-disabled" aria-disabled="true">
-                  <i [class]="'pi ' + (item.icon ?? 'pi-circle')" aria-hidden="true"></i>
-                  <span>{{ item.label }}</span>
-                </span>
+      para não duplicar dialog.uni-drawer em apps que já usam ui-drawer. -->
+      @if (mobileMenuOpen()) {
+        <ui-drawer
+          [id]="mobileDrawerId"
+          [visible]="mobileMenuOpen()"
+          heading="Menu"
+          ariaLabel="Menu de navegação"
+          position="left"
+          (closed)="closeMobileMenu()"
+        >
+          <nav class="uni-drawer__nav" aria-label="Navegação principal">
+            @for (group of navGroups(); track group.label) {
+              <div class="sidebar__label">{{ group.label }}</div>
+              @for (item of group.items; track item.label) {
+                @if (item.routerLink && !item.disabled) {
+                  <a
+                    [routerLink]="item.routerLink"
+                    routerLinkActive="is-active"
+                    [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+                    ariaCurrentWhenActive="page"
+                    (click)="closeMobileMenu()"
+                  >
+                    @if (item.icon) {
+                      <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
+                    }
+                    <span>{{ item.label }}</span>
+                  </a>
+                } @else {
+                  <span class="sidebar__link is-disabled" aria-disabled="true">
+                    <i [class]="'pi ' + (item.icon ?? 'pi-circle')" aria-hidden="true"></i>
+                    <span>{{ item.label }}</span>
+                  </span>
+                }
               }
             }
-          }
-        </nav>
-      </ui-drawer>
+          </nav>
+        </ui-drawer>
       }
 
       <ui-vlibras-loader />

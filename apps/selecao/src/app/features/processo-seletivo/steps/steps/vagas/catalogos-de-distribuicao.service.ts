@@ -147,6 +147,9 @@ export class CatalogosDeDistribuicaoService {
     this.carregando.set(true);
     this.erro.set(null);
 
+    // Ofertas e cursos entram em ordem alfabética: a primeira página não manda
+    // `sort` e a API já devolve por nome (uniplus-api#1371); `coletarPaginas`
+    // segue o cursor, que carrega a ordenação assinada. Nada é reordenado aqui.
     forkJoin({
       ofertas: coletarPaginas((cursor) => this.ofertasApi.listar({ cursor })),
       cursos: coletarPaginas((cursor) => this.cursosApi.listar({ cursor })),

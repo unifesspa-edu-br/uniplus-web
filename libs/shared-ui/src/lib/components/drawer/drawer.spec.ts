@@ -46,6 +46,22 @@ describe('DrawerComponent', () => {
     expect(document.body.classList.contains('uni-drawer-open')).toBe(false);
   });
 
+  it('recusa fechar pelo botão quando closable é false', () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.componentRef.setInput('closable', false);
+    fixture.detectChanges();
+
+    const closeButton = fixture.debugElement.query(By.css('.uni-drawer__header button'))
+      .nativeElement as HTMLButtonElement;
+    expect(closeButton.disabled).toBe(true);
+    closeButton.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.visible()).toBe(true);
+    const dialog = fixture.debugElement.query(By.css('dialog')).nativeElement as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+  });
+
   it('usa o id informado pelo consumidor em vez do autogerado', () => {
     fixture.componentRef.setInput('id', 'meu-drawer-fixo');
     fixture.detectChanges();

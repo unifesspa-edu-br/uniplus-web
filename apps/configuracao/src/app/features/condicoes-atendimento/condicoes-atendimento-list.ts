@@ -45,7 +45,8 @@ import {
   TagComponent,
   DialogComponent,
   PagerComponent,
-  FilterBarComponent
+  FilterBarComponent,
+  IconButtonComponent
 } from "@uniplus/shared-ui/components";
 
 type ModoFormulario = 'criar' | 'editar';
@@ -101,6 +102,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
     DialogComponent,
     PagerComponent,
     FilterBarComponent,
+    IconButtonComponent,
   ],
   template: `
     <div class="page-header">
@@ -171,6 +173,9 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         @if (condicoesFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Condições de atendimento especializado, com código, nome e situação
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>
@@ -208,23 +213,29 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                       }
                     </td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading() || submitting()"
-                        (click)="abrirEdicao(condicao)"
-                      >
-                        Editar
-                      </button>
-                      <button
-                          type="button"
-                          class="btn btn--tertiary btn--sm btn--rect"
-                          [disabled]="loading() || submitting() || condicao.codigo === 'PCD'"
-                          [title]="condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''"
-                          (click)="abrirInativarCondicao(condicao)"
-                        >
-                          Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar condição de atendimento ' + condicao.codigo"
+                        tooltip="Editar condição de atendimento"
+                        [isDisabled]="loading() || submitting()"
+                        (triggered)="abrirEdicao(condicao)"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar condição de atendimento ' + condicao.codigo"
+                        [tooltip]="
+                          condicao.codigo === 'PCD'
+                            ? 'A condição PCD não pode ser inativada.'
+                            : 'Inativar condição de atendimento'
+                        "
+                        [description]="
+                          condicao.codigo === 'PCD'
+                            ? 'A condição PCD não pode ser inativada.'
+                            : ''
+                        "
+                        [isDisabled]="loading() || submitting() || condicao.codigo === 'PCD'"
+                        (triggered)="abrirInativarCondicao(condicao)"
+                      />
                     </td>
                   </tr>
                 }

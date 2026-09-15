@@ -38,6 +38,7 @@ import {
   EmptyStateComponent,
   FilterBarComponent,
   FilterChipsComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
@@ -72,6 +73,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
     TagComponent,
@@ -162,6 +164,10 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
         @if (modalidadesFiltradas().length > 0) {
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">
+                Modalidades de concorrência, com natureza, composição de vagas, remanejamento e
+                situação
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>
@@ -211,22 +217,19 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                     </td>
                     <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
                     <td class="table-responsive__actions" data-label="Ações">
-                      <a
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [routerLink]="m.id"
-                        [attr.aria-label]="'Editar modalidade ' + m.codigo"
-                      >
-                        Editar
-                      </a>
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading()"
-                        [attr.aria-label]="'Inativar modalidade ' + m.codigo"
-                        (click)="pedirRemocao(m)"
-                      >
-                        Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar modalidade ' + m.codigo"
+                        tooltip="Editar modalidade"
+                        [link]="[m.id]"
+                      />
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar modalidade ' + m.codigo"
+                        tooltip="Inativar modalidade"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirRemocao(m)"
+                      />
                     </td>
                   </tr>
                 }

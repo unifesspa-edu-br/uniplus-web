@@ -485,11 +485,11 @@ export interface WizardDraft {
     regrasEliminacao: readonly RegraEliminacaoConfigurada[];
   };
   /**
-   * Bônus regional (RN05, `PUT …/bonus-regional`) — toggle por presença: a
-   * ausência da entidade no processo já significa sem bônus, e por isso
-   * `ativo === false` não impede persistir; grava o corpo com os cinco campos
-   * `null` (CA-04). Nenhum campo coincide com a tela anterior — é
-   * reconstrução conforme o contrato, não adaptação.
+   * Bônus regional (`PUT …/bonus-regional`) — toggle por presença: a ausência
+   * da entidade no processo já significa sem bônus, e por isso `ativo ===
+   * false` não impede persistir; grava o corpo com os cinco campos `null`
+   * (CA-04). A base legal referencia um cadastro tipado por id, não mais
+   * município/base legal em texto livre.
    */
   bonus: {
     ativo: boolean;
@@ -497,8 +497,7 @@ export interface WizardDraft {
     regraVersao: string;
     fator: string;
     teto: string;
-    municipioConvenio: string;
-    baseLegal: string;
+    baseLegalBonusRegionalId: string;
   };
   /**
    * Critérios de desempate (`PUT …/criterios-desempate`), na ordem em que

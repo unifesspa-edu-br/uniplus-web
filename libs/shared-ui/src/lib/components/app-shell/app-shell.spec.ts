@@ -88,6 +88,13 @@ describe('AppShellComponent', () => {
     expect(host.querySelector('ui-skip-link')).toBeTruthy();
   });
 
+  it('monta o botão global "Voltar ao topo" ancorado em main.page', async () => {
+    const { host } = await montarShell();
+    const botao = host.querySelector('ui-back-to-top .uni-back-to-top');
+    expect(botao).toBeTruthy();
+    expect(botao?.getAttribute('aria-label')).toBe('Voltar ao topo do conteúdo');
+  });
+
   it('abre um unico drawer mobile, sem duplicar a sidebar fixa como segundo painel', async () => {
     const { fixture, host } = await montarShell();
     fixture.componentRef.setInput('navGroups', groups);

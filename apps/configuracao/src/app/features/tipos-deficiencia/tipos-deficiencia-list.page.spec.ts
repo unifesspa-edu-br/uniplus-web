@@ -79,13 +79,13 @@ describe('TiposDeficienciaListPage', () => {
 
   function getInativarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:last-child',
+      'td.table-responsive__actions button[aria-label^="Inativar tipo de deficiência"]',
     ) as HTMLButtonElement;
   }
 
   function getEditarButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions > button:first-child',
+      'td.table-responsive__actions button[aria-label^="Editar tipo de deficiência"]',
     ) as HTMLButtonElement;
   }
 
@@ -542,5 +542,16 @@ describe('TiposDeficienciaListPage', () => {
 
     // O backend pede retry do MESMO comando: chave nova viraria um comando novo.
     expect(component['idempotencyKeyAtual']()).toBe(chave);
+  });
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+      'Tipos de deficiência, com código, descrição e situação',
+    );
   });
 });

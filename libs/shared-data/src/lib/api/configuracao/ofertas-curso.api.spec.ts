@@ -105,6 +105,47 @@ describe('OfertasCursoApi', () => {
     await promise;
   });
 
+  it('listar({ q }) envia o termo (trim) em toda página, junto do cursor', async () => {
+    const pagina1 = firstValueFrom(api.listar({ q: '  Direito  ', limit: 25 }));
+    const r1 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(r1.request.params.get('q')).toBe('Direito');
+    r1.flush([ofertaSeed]);
+    await pagina1;
+
+    const pagina2 = firstValueFrom(api.listar({ q: 'Direito', cursor: 'abc', direction: 'next' }));
+    const r2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(r2.request.params.get('q')).toBe('Direito');
+    expect(r2.request.params.get('cursor')).toBe('abc');
+    r2.flush([ofertaSeed]);
+    await pagina2;
+  });
+
+  it('listar({ sort }) envia sort só na 1ª página; o cursor carrega a ordenação assinada', async () => {
+    const pagina1 = firstValueFrom(
+      api.listar({ sort: 'cursoNome,unidadeOfertanteSigla', limit: 25 }),
+    );
+    const r1 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(r1.request.params.get('sort')).toBe('cursoNome,unidadeOfertanteSigla');
+    r1.flush([ofertaSeed]);
+    await pagina1;
+
+    const pagina2 = firstValueFrom(
+      api.listar({ sort: 'cursoNome', cursor: 'abc', direction: 'next' }),
+    );
+    const r2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(r2.request.params.has('sort')).toBe(false);
+    r2.flush([ofertaSeed]);
+    await pagina2;
+  });
+
+  it('listar() sem sort não envia o parâmetro — a apresentação padrão consome a ordem alfabética da API', async () => {
+    const promise = firstValueFrom(api.listar({ limit: 25 }));
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`);
+    expect(req.request.params.has('sort')).toBe(false);
+    req.flush([ofertaSeed]);
+    await promise;
+  });
+
   it('obter() faz GET /api/configuracao/ofertas-curso/{id}', async () => {
     const promise = firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/ofertas-curso/${ID}`);

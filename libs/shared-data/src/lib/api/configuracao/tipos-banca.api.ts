@@ -17,21 +17,6 @@ export interface TiposBancaQuery {
 }
 
 /**
- * Código canônico dos 6 tipos de banca fixos (UNI-REQ-0139). Roster fechado —
- * usado só pelo `select` de criação; a edição trata `codigo` como imutável.
- */
-export const CODIGOS_TIPO_BANCA = [
-  'BANCA_ANALISE_DOCUMENTAL',
-  'BANCA_ENTREVISTA',
-  'BANCA_CORRECAO_REDACOES',
-  'BANCA_ANALISE_RECURSOS',
-  'BANCA_HETEROIDENTIFICACAO',
-  'BANCA_BIOPSICOSSOCIAL',
-] as const;
-
-export type CodigoTipoBanca = (typeof CODIGOS_TIPO_BANCA)[number];
-
-/**
  * Cliente Angular standalone do recurso Tipo de banca (módulo Configuração).
  * Vocabulário fechado de cronograma — código imutável após a criação
  * (`Atualizar*Command` não aceita `codigo`). `faseTipica` é texto livre

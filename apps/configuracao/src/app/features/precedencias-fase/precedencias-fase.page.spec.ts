@@ -605,4 +605,17 @@ describe('PrecedenciasFasePage', () => {
     expect(component['formError']()).toBeNull();
     expect(component['erroDoCampo']('sucessoraCodigo')).toBeNull();
   });
+
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushFases([faseCanonica('INSCRICAO', 'Inscrição')]);
+    await flushLista([arestaSeed]);
+    fixture.detectChanges();
+
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Precedências entre fases, com fase antecessora, fase sucessora e permissão de sobreposição',
+    );
+  });
 });

@@ -4,6 +4,7 @@ export type {
   ConfiguracaoDistribuicaoVagasDto,
   ConfiguracaoDistribuicaoVagasInput,
   ConfiguracaoBonusRegionalDto,
+  ConfiguracaoBonusRegionalMunicipioDto,
   ConfiguracaoClassificacaoDto,
   ConformidadeLegalProcessoSeletivoDto,
   ConformidadeProcessoSeletivoDto,

@@ -237,7 +237,7 @@ function regraEliminacaoDe(
 }
 
 /**
- * Projeta o bônus regional já gravado. Ausente é sem bônus (RN05, toggle por
+ * Projeta o bônus regional já gravado. Ausente é sem bônus (toggle por
  * presença) — não `ativo: false` com campos residuais de uma configuração
  * antiga, e sim os cinco campos vazios que a criação já usa.
  */
@@ -250,8 +250,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
       regraVersao: '',
       fator: '',
       teto: '',
-      municipioConvenio: '',
-      baseLegal: '',
+      baseLegalBonusRegionalId: '',
     };
   }
 
@@ -261,8 +260,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
     regraVersao: bonus.regra.versao,
     fator: comoTexto(bonus.fator),
     teto: comoTexto(bonus.teto),
-    municipioConvenio: bonus.municipioConvenio ?? '',
-    baseLegal: bonus.baseLegal ?? '',
+    baseLegalBonusRegionalId: bonus.baseLegalBonusRegionalId,
   };
 }
 

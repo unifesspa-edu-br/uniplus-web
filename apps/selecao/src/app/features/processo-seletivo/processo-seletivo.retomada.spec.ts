@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
+  BaseLegalBonusRegionalApi,
   CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
@@ -160,6 +161,8 @@ function montar(opts: CenarioOpts = {}) {
       { provide: OfertasCursoApi, useValue: catalogoVazioStub },
       { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
       { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
+  // O passo de bônus carrega o catálogo de base legal ao montar.
+  { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },

@@ -143,15 +143,34 @@ export function ordenarTurnosCanonicamente(turnos: readonly string[]): readonly 
 }
 
 /**
- * Filtro de listagem de Ofertas de Curso (cursor pagination, ADR-0026).
- * `cursoId` (opcional, api#755) restringe às ofertas vivas de um curso; viaja
- * como query param e combina com o cursor — reanexado a cada página.
+ * Filtro de listagem de Ofertas de Curso (cursor pagination, ADR-0026;
+ * busca/ordenação, uniplus-api#1419). `cursoId` (opcional, api#755) restringe
+ * às ofertas vivas de um curso; viaja como query param e combina com o cursor —
+ * reanexado a cada página.
  */
 export interface OfertasCursoQuery {
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
   readonly cursoId?: string;
+  /**
+   * Busca textual por trecho em qualquer posição sobre nome e código do curso
+   * ofertado e sigla da unidade ofertante, sem distinguir caixa nem acentuação.
+   * Vai em toda página (o header `Link` já a reanexa). Acima de 200 caracteres
+   * → 422.
+   */
+  readonly q?: string;
+  /**
+   * Ordenação no formato JSON:API: campos separados por vírgula na ordem de
+   * prioridade, `-` prefixa o decrescente (`cursoNome,-programaDeOferta`).
+   * Campos aceitos: `cursoNome`, `cursoCodigo`, `unidadeOfertanteSigla`,
+   * `programaDeOferta`, `formatoPedagogico`, `regimeDeFuncionamento`,
+   * `regimeDeTurno`, `criadoEm` (a lista canônica é a do OpenAPI da rota). Só é
+   * enviada na primeira página — o cursor carrega a ordenação assinada. Omitido
+   * = ordem alfabética padrão pelo nome do curso, que não deve receber `sort`
+   * explícito. Campo fora da lista ou `sort` mal formado → 422.
+   */
+  readonly sort?: string;
 }
 
 /**
@@ -174,10 +193,18 @@ export class OfertasCursoApi {
   /** GET `/api/configuracao/ofertas-curso` — lista paginada por cursor (ADR-0026). */
   listar(query: OfertasCursoQuery = {}): Observable<ApiResult<readonly OfertaCursoDto[]>> {
     let params = new HttpParams();
+    const q = query.q?.trim();
+    if (q) {
+      params = params.set('q', q);
+    }
     if (query.cursor !== undefined) {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
     } else {
       params = params.set('limit', String(query.limit ?? 100));
+      const sort = query.sort?.trim();
+      if (sort) {
+        params = params.set('sort', sort);
+      }
     }
     if (query.cursoId !== undefined) {
       params = params.set('cursoId', query.cursoId);

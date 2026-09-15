@@ -303,6 +303,17 @@ describe('ProcessosSeletivosListaPage', () => {
     expect(rotulos).toEqual(cabecalhos);
   });
 
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await flushLista([processo()]);
+
+    const caption = host().querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+      'Processos seletivos, com tipo, situação e data de criação',
+    );
+  });
+
   it('não expõe âncoras sem destino', async () => {
     await flushLista([processo()]);
 

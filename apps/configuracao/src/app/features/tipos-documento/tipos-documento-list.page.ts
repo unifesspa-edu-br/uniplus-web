@@ -50,6 +50,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterChipsComponent,
+  IconButtonComponent,
   LookupAlertComponent,
   LookupLabelComponent,
   PagerComponent,
@@ -121,6 +122,7 @@ interface TipoDocumentoForm {
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    IconButtonComponent,
     LookupAlertComponent,
     LookupLabelComponent,
     PagerComponent,
@@ -192,6 +194,9 @@ interface TipoDocumentoForm {
       @if (documentosFiltrados().length > 0) {
         <div class="table-responsive">
           <table>
+            <caption class="sr-only">
+              Tipos de documento, com categoria, formatos aceitos e tamanho máximo de arquivo
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -218,22 +223,20 @@ interface TipoDocumentoForm {
                   <td data-label="Formatos aceitos" class="u-caption">{{ tipo.formatosAceitos || '—' }}</td>
                   <td data-label="Tam. máx." class="u-caption">{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="abrirEdicao(tipo)"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirInativacao(tipo)"
-                    >
-                      Inativar
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar tipo de documento ' + tipo.codigo"
+                      tooltip="Editar tipo de documento"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(tipo)"
+                    />
+                    <ui-icon-button
+                      icon="pi-power-off"
+                      [accessibleName]="'Inativar tipo de documento ' + tipo.codigo"
+                      tooltip="Inativar tipo de documento"
+                      [isDisabled]="loading()"
+                      (triggered)="pedirInativacao(tipo)"
+                    />
                   </td>
                 </tr>
               }
