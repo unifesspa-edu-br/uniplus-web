@@ -1,7 +1,13 @@
-import { HttpHeaders } from '@angular/common/http';
+import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
-import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
+import {
+  IDEMPOTENCY_KEY_TOKEN,
+  apiOk,
+  errorResult,
+  mockProblemDetails,
+  okResult,
+} from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
@@ -795,6 +801,50 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
 
     expect(cenario.componente.rascunhoSalvoEm()).toBe('2026-09-14T14:32:00Z');
     expect(cenario.componente.salvandoRascunho()).toBe(false);
+  });
+
+  /**
+   * A chave de idempotência do rascunho só gira sozinha quando o corpo muda, e dois processos
+   * cujo bloco do ato está em branco produzem o MESMO documento serializado. Sem renová-la na
+   * troca, a gravação do processo novo sairia com a chave que o servidor já viu e receberia de
+   * volta o replay do anterior — a tela diria "salvo" sobre um rascunho que ninguém gravou.
+   */
+  it('não reaproveita a chave do rascunho de um processo no seguinte', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+
+    const chaves: (string | undefined)[] = [];
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
+      chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
+      return of(okResult(undefined));
+    });
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+    };
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    await pagina.salvarRascunhoDaPublicacao();
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+    await propagar();
+
+    // Corpo idêntico ao do processo anterior: é o caso em que a chave não giraria sozinha.
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    await pagina.salvarRascunhoDaPublicacao();
+
+    expect(chaves).toHaveLength(2);
+    expect(chaves[1]).not.toBe(chaves[0]);
   });
 });
 

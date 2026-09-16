@@ -680,6 +680,12 @@ export class ProcessoSeletivoPage {
     this.rascunhoSalvoEm.set(null);
     this.avisoDoRascunho.set(null);
     this.falhaDoRascunho.set(null);
+
+    // A chave também é do processo que saiu. Ela só gira sozinha quando o corpo muda, e dois
+    // processos em branco produzem o MESMO documento serializado: sem renovar aqui, a primeira
+    // gravação do processo novo sairia com a chave que o servidor já viu, receberia o replay do
+    // anterior e a tela marcaria como salvo um rascunho que ninguém gravou.
+    this.chaveDoRascunho.renovar();
   }
 
   /** Foca o título "Processo publicado" — só existe quando `persistir()` da Revisão confirmou o snapshot. */
