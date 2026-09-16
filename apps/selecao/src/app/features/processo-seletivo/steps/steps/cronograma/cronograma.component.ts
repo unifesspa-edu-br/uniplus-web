@@ -1379,6 +1379,8 @@ export class CronogramaStepComponent {
     dependenciasDaDerivacao: readonly string[],
   ): Promise<StepValidation | null> {
     const draft = this.store.draft();
+    const antes = new Set(draft.formulario.fatos.map((campo) => campo.fatoCodigo));
+
     // Este caminho só ACRESCENTA — o conjunto de "postos por exigência" vai vazio de propósito.
     // Quem decide TIRAR campo é o passo do formulário, que sabe distinguir o que entrou por
     // causa de um gatilho do que foi declarado de propósito.
@@ -1391,6 +1393,19 @@ export class CronogramaStepComponent {
     );
 
     if (reconciliado !== draft.formulario) {
+      // O que entrou aqui entrou SOZINHO, e precisa ficar registrado como tal: sem isso, o
+      // formulário não reconhece o campo como posto por exigência e o preserva mesmo depois
+      // de o gatilho que o pediu ser apagado — a inscrição seguiria coletando dado pessoal
+      // que já não tem finalidade declarada.
+      const acrescentados = reconciliado.fatos
+        .map((campo) => campo.fatoCodigo)
+        .filter((codigo) => !antes.has(codigo));
+      if (acrescentados.length > 0) {
+        this.store.camposPostosPelasExigencias.update(
+          (atual) => new Set([...atual, ...acrescentados]),
+        );
+      }
+
       this.store.patchSection('formulario', reconciliado);
     }
 

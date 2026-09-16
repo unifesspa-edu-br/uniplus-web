@@ -2,7 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -1769,6 +1769,57 @@ describe('CronogramaStepComponent', () => {
       });
       detectar();
     }
+
+    /**
+     * O campo que o cronograma acrescenta sozinho precisa ficar registrado como tal. Sem o
+     * registro, o passo do formulário não o reconhece como posto por exigência e o preserva
+     * mesmo depois de o gatilho que o pediu ser apagado — a inscrição segue coletando dado
+     * pessoal que já não tem finalidade declarada.
+     */
+    it('registra como posto por exigência o campo que acrescenta sozinho', async () => {
+      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      catalogos.fatos.set([
+        {
+          codigo: 'SEXO',
+          nome: 'Sexo',
+          dominio: 'CATEGORICO',
+          origem: 'DECLARADO',
+          cardinalidade: 'UNIVALORADO',
+          binding: 'CAMPO_INSCRICAO:SEXO',
+          valoresDominio: null,
+        } as unknown as FatoCandidatoView,
+      ]);
+
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        {
+          aplicabilidade: 'CONDICIONAL',
+          condicoes: [{ clausula: 0, ordem: 0, fato: 'SEXO', operador: 'IGUAL', valor: '"MASCULINO"' }],
+        },
+      );
+
+      expect(store.camposPostosPelasExigencias().has('SEXO')).toBe(false);
+
+      const garantir = (
+        componente as unknown as {
+          garantirCamposQueAsExigenciasPressupoem(
+            processoId: string,
+            servidor: unknown,
+            dependencias: readonly string[],
+          ): Promise<unknown>;
+        }
+      ).garantirCamposQueAsExigenciasPressupoem(PROCESSO_ID, { fatosColetados: [] }, []);
+
+      const gravacao = controller.expectOne((r) => r.url.includes('fatos-coletados'));
+      gravacao.flush(null, { status: 204, statusText: 'No Content' });
+      await garantir;
+
+      expect(store.draft().formulario.fatos.map((c) => c.fatoCodigo)).toContain('SEXO');
+      expect(store.camposPostosPelasExigencias().has('SEXO')).toBe(
+        true,
+        'o campo entrou sozinho, e é esse registro que autoriza tirá-lo quando o gatilho sair',
+      );
+    });
 
     it('acusa a exigência que decide o resultado e está sem norma resolvida', () => {
       comExigenciaDeclarada([
