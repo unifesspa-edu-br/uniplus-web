@@ -874,9 +874,15 @@ export function exigenciasDe(dto: ProcessoSeletivoDto): ExigenciasDoRascunho {
  * reconstruí-la, reabrir o processo a rebaixava a uma escolha fase a fase — e a fase criada
  * depois disso ficava sem o documento, sem nada na tela denunciando a ausência.
  *
- * O sinal é estar em TODAS as fases, o que exige ao menos duas para significar alguma coisa:
- * com uma fase só, "vale em todas" e "vale nesta" são a mesma configuração, e inferir a
- * primeira acrescentaria à segunda um alcance que ninguém pediu.
+ * O sinal é estar em todas as fases DA MESMA MANEIRA. Estar em todas não basta: o certame pode
+ * exigir o mesmo documento em cada fase por razões próprias, com condições, consequência ou
+ * norma diferentes em cada uma. Lê-las como um alcance global faria a fase criada depois
+ * receber uma cópia arbitrária de uma dessas declarações — configuração que ninguém pediu, e
+ * pior do que a intenção perdida. Declarações idênticas não têm esse risco: a cópia reproduz o
+ * que já está lá.
+ *
+ * Exige ainda ao menos duas fases: com uma só, "vale em todas" e "vale nesta" são a mesma
+ * configuração, e inferir a primeira daria à segunda um alcance que ninguém declarou.
  */
 function alcanceDeTodasAsFasesReconstruido(
   exigencias: ExigenciasDoRascunho,
@@ -884,16 +890,40 @@ function alcanceDeTodasAsFasesReconstruido(
 ): readonly string[] {
   if (fases.length < 2) return [];
 
-  const daRaiz = exigenciasDaRaiz(exigencias);
-  const candidatos = new Set(daRaiz.map((exigencia) => exigencia.tipoDocumentoId));
+  const candidatos = new Set(exigenciasDaRaiz(exigencias).map((e) => e.tipoDocumentoId));
 
-  return [...candidatos].filter((tipoDocumentoId) =>
-    fases.every((faseCodigo) =>
-      exigenciasDaFase(exigencias, faseCodigo).some(
-        (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
-      ),
-    ),
-  );
+  return [...candidatos].filter((tipoDocumentoId) => {
+    const porFase = fases.map((faseCodigo) =>
+      exigenciasDaFase(exigencias, faseCodigo).filter((e) => e.tipoDocumentoId === tipoDocumentoId),
+    );
+
+    // Uma declaração por fase, em todas elas — duas na mesma fase já são configuração que o
+    // alcance global não sabe reproduzir.
+    if (!porFase.every((declaracoes) => declaracoes.length === 1)) return false;
+
+    const referencia = assinaturaDaDeclaracao(porFase[0][0]);
+    return porFase.every(([declaracao]) => assinaturaDaDeclaracao(declaracao) === referencia);
+  });
+}
+
+/**
+ * O que precisa coincidir entre fases para as declarações serem a MESMA coisa dita em cada uma.
+ *
+ * Fica de fora o que é por definição próprio de cada fase — a fase e a etapa que coleta. O
+ * resto é o conteúdo da exigência: se algum deles diverge, são declarações independentes.
+ */
+function assinaturaDaDeclaracao(exigencia: ExigenciaDeDocumento): string {
+  return JSON.stringify({
+    tipoDocumentoId: exigencia.tipoDocumentoId,
+    aplicabilidade: exigencia.aplicabilidade,
+    obrigatorio: exigencia.obrigatorio,
+    consequenciaIndeferimento: exigencia.consequenciaIndeferimento,
+    condicoes: exigencia.condicoes,
+    basesLegais: exigencia.basesLegais,
+    idadeMaximaEmissao: exigencia.idadeMaximaEmissao,
+    formatosPermitidos: exigencia.formatosPermitidos,
+    tamanhoMaximoBytes: exigencia.tamanhoMaximoBytes,
+  });
 }
 
 function noDe(no: NoExigenciaDto, codigoPorFaseId: ReadonlyMap<string, string>): NoDeExigencia | null {
