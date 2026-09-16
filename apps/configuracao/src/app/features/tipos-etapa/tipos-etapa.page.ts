@@ -176,16 +176,21 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                     <button
                       type="button"
                       class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
+                      [disabled]="loading() || saving()"
                       (click)="abrirEdicao(tipo)"
                     >
                       Editar
                     </button>
                     @if (tipo.ativo) {
+                      <!--
+                        Também desabilitado durante uma gravação em voo: o diálogo abriria, a
+                        confirmação fecharia, e a inativação seria descartada em silêncio: a
+                        remoção desiste enquanto há outra mutação correndo.
+                      -->
                       <button
                         type="button"
                         class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading()"
+                        [disabled]="loading() || saving()"
                         (click)="pedirRemocao(tipo)"
                       >
                         Inativar
