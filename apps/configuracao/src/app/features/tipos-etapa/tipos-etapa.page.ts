@@ -355,6 +355,14 @@ export class TiposEtapaPage {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   protected readonly saving = signal(false);
+
+  /**
+   * Vez do editor. O drawer é um só para todos os registros, e nada impede o operador de
+   * mandar salvar o tipo A e abrir o B antes de a resposta chegar. Sem o carimbo, o sucesso
+   * de A fecharia o drawer de B — descartando o que ele tinha acabado de digitar — e a recusa
+   * de A marcaria de vermelho os campos de B.
+   */
+  private vezDoEditor = 0;
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);
   protected readonly formError = signal<string | null>(null);
@@ -505,6 +513,7 @@ export class TiposEtapaPage {
   }
 
   protected abrirCadastro(): void {
+    this.vezDoEditor += 1;
     this.modo.set('criar');
     this.tipoEmEdicaoId.set(null);
     this.form.reset({
@@ -520,6 +529,7 @@ export class TiposEtapaPage {
   }
 
   protected abrirEdicao(tipo: TipoEtapaDto): void {
+    this.vezDoEditor += 1;
     this.modo.set('editar');
     this.tipoEmEdicaoId.set(tipo.id);
     this.form.reset({
@@ -574,11 +584,16 @@ export class TiposEtapaPage {
     this.saving.set(true);
     this.formError.set(null);
 
-    if (this.modo() === 'criar') {
+    // O modo vai junto da vez: quem responde depois não pode perguntar à tela se era criação
+    // ou edição, porque a tela já pode estar tratando de outro registro.
+    const vez = this.vezDoEditor;
+    const modoDoEnvio = this.modo();
+
+    if (modoDoEnvio === 'criar') {
       this.api
         .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.handleSalvarResult(result));
+        .subscribe((result) => this.handleSalvarResult(result, vez, modoDoEnvio));
       return;
     }
 
@@ -589,7 +604,7 @@ export class TiposEtapaPage {
         withIdempotencyKey(this.idempotencyKeyAtual()),
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => this.handleSalvarResult(result));
+      .subscribe((result) => this.handleSalvarResult(result, vez, modoDoEnvio));
   }
 
   protected erroDoCampo(nome: keyof EtapaForm): string | null {
@@ -625,12 +640,32 @@ export class TiposEtapaPage {
     }
   }
 
-  private handleSalvarResult(result: ApiResult<string | void>): void {
+  private handleSalvarResult(
+    result: ApiResult<string | void>,
+    vez: number,
+    modoDoEnvio: ModoFormulario,
+  ): void {
     this.saving.set(false);
+    const aviso = modoDoEnvio === 'criar' ? 'Tipo de etapa criado' : 'Tipo de etapa atualizado';
+
+    // O editor passou a tratar de outro registro. A resposta ainda vale como notícia, e o
+    // sucesso ainda obriga a reler a lista — o que ela não pode é tocar no formulário em tela,
+    // fechando o drawer de quem está sendo editado agora ou marcando os campos dele com um
+    // erro que é de outro tipo de etapa.
+    if (vez !== this.vezDoEditor) {
+      if (result.ok) {
+        this.notifications.success(aviso);
+        this.recarregar();
+        return;
+      }
+      this.notifications.errorFromProblem(result.problem, {
+        title: this.problemI18n.resolve(result.problem).title,
+      });
+      return;
+    }
+
     if (result.ok) {
-      this.notifications.success(
-        this.modo() === 'criar' ? 'Tipo de etapa criado' : 'Tipo de etapa atualizado',
-      );
+      this.notifications.success(aviso);
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
       this.recarregar();

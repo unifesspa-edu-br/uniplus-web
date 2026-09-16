@@ -21,6 +21,17 @@ const analiseDocumental: TipoEtapaDto = {
   criadoEm: '2026-08-11T00:00:00Z',
 };
 
+const provaObjetiva: TipoEtapaDto = {
+  id: '01960000-0000-7000-0000-0000000000e2',
+  codigo: 'PROVA_OBJETIVA',
+  nome: 'Prova Objetiva',
+  descricao: null,
+  ativo: true,
+  admitePontuacao: true,
+  admiteEliminacao: true,
+  criadoEm: '2026-08-11T00:00:00Z',
+};
+
 describe('TiposEtapaPage', () => {
   let fixture: ComponentFixture<TiposEtapaPage>;
   let component: TiposEtapaPage;
@@ -175,5 +186,36 @@ describe('TiposEtapaPage', () => {
     await propagate();
     await flushLista([]);
     expect(component['confirmOpen']()).toBe(false);
+  });
+  /**
+   * O drawer é um só para todos os registros: dá para mandar salvar um tipo, fechá-lo e abrir
+   * outro antes de a resposta chegar. Ela não pode então fechar o editor de quem está em tela
+   * nem marcar os campos dele com um erro que é de outro tipo de etapa.
+   */
+  it('a resposta de um tipo não mexe no editor que já abriu outro', async () => {
+    await flushLista([analiseDocumental, provaObjetiva]);
+
+    component['abrirEdicao'](analiseDocumental);
+    await propagate();
+    component['form'].controls.nome.setValue('Análise Documental revisada');
+    component['salvar']();
+
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
+    );
+
+    // Com a gravação em voo, o operador abre outro registro e começa a editá-lo.
+    component['abrirEdicao'](provaObjetiva);
+    await propagate();
+    component['form'].controls.nome.setValue('Prova Objetiva revisada');
+
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['tipoEmEdicaoId']()).toBe(provaObjetiva.id);
+    expect(component['form'].controls.nome.value).toBe('Prova Objetiva revisada');
+    // O sucesso do primeiro relê a lista — o dado no servidor mudou de verdade.
+    await flushLista([analiseDocumental, provaObjetiva]);
   });
 });
