@@ -817,6 +817,56 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
   });
 
   /**
+   * A chave acompanha o rascunho que ela gravou. Descartado ele, reescrever a mesma transcrição
+   * sairia com a chave que o servidor já viu e receberia o replay da gravação que este descarte
+   * acabou de anular — a tela diria "salvo" sobre um rascunho que não foi recriado.
+   */
+  it('não reaproveita a chave de um rascunho que foi descartado', async () => {
+    const cenario = montar();
+    await propagar();
+
+    const chaves: (string | undefined)[] = [];
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
+      chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
+      return of(okResult(undefined));
+    });
+    api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+      descartarRascunhoDaPublicacao(): Promise<void>;
+    };
+
+    // O bloco INTEIRO nas duas vezes, e igual: é o caso em que a chave não gira sozinha, porque
+    // ela só gira quando o corpo enviado muda.
+    const transcricao = {
+      numero: '07/2027',
+      periodoInscricaoInicio: '',
+      periodoInscricaoFim: '',
+      ato: {
+        orgao: 'REITORIA',
+        serie: 'EDITAL',
+        ano: '2027',
+        dataPublicacao: '2027-01-15',
+        assinante: 'Reitor',
+        tipoAtoCodigo: 'EDITAL_ABERTURA',
+      },
+    };
+
+    cenario.store.projetarSecao('publicacao', transcricao);
+    await pagina.salvarRascunhoDaPublicacao();
+
+    await pagina.descartarRascunhoDaPublicacao();
+
+    cenario.store.projetarSecao('publicacao', transcricao);
+    await pagina.salvarRascunhoDaPublicacao();
+
+    expect(chaves).toHaveLength(2);
+    expect(chaves[1]).not.toBe(chaves[0]);
+  });
+
+  /**
    * Depois de publicar, o servidor apagou o rascunho e o que sobra em tela é a declaração que
    * virou publicação. Zerar a referência fazia a guarda de saída ler esses campos como
    * transcrição por gravar, e avisar de perda a quem acabou de publicar.
