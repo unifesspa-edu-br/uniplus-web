@@ -863,7 +863,37 @@ export function exigenciasDe(dto: ProcessoSeletivoDto): ExigenciasDoRascunho {
     .map((no) => noDe(no, codigoPorFaseId))
     .filter((no): no is NoDeExigencia => no !== null);
 
-  return { raizes, emTodasAsFases: [] };
+  const fases = [...codigoPorFaseId.values()];
+  return { raizes, emTodasAsFases: alcanceDeTodasAsFasesReconstruido({ raizes, emTodasAsFases: [] }, fases) };
+}
+
+/**
+ * Relê, do que voltou do servidor, quais documentos o operador declarou valer em todas as fases.
+ *
+ * A intenção não trafega: o contrato recebe as folhas já materializadas, uma por fase. Sem
+ * reconstruí-la, reabrir o processo a rebaixava a uma escolha fase a fase — e a fase criada
+ * depois disso ficava sem o documento, sem nada na tela denunciando a ausência.
+ *
+ * O sinal é estar em TODAS as fases, o que exige ao menos duas para significar alguma coisa:
+ * com uma fase só, "vale em todas" e "vale nesta" são a mesma configuração, e inferir a
+ * primeira acrescentaria à segunda um alcance que ninguém pediu.
+ */
+function alcanceDeTodasAsFasesReconstruido(
+  exigencias: ExigenciasDoRascunho,
+  fases: readonly string[],
+): readonly string[] {
+  if (fases.length < 2) return [];
+
+  const daRaiz = exigenciasDaRaiz(exigencias);
+  const candidatos = new Set(daRaiz.map((exigencia) => exigencia.tipoDocumentoId));
+
+  return [...candidatos].filter((tipoDocumentoId) =>
+    fases.every((faseCodigo) =>
+      exigenciasDaFase(exigencias, faseCodigo).some(
+        (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
+      ),
+    ),
+  );
 }
 
 function noDe(no: NoExigenciaDto, codigoPorFaseId: ReadonlyMap<string, string>): NoDeExigencia | null {
