@@ -402,6 +402,29 @@ describe('VagasStepComponent — gravação da distribuição', () => {
   });
 
   /**
+   * Sob a Lei 12.711 a suplementar ACRESCE ao total da oferta, então o que o edital publica
+   * pode ser maior que a soma das vagas informadas. O diálogo diz representar o quadro
+   * publicado, e pedia confirmação do número menor — com o rótulo do maior.
+   */
+  it('confirma os dois totais quando o publicado difere do informado', () => {
+    simular([OFERTA, OUTRA_OFERTA]);
+
+    const confirmacao = componente.confirmacaoDeGravacao();
+    if (confirmacao === null) throw new Error('o quadro simulado e sem pendência deve confirmar');
+
+    const informadas = confirmacao.itens.find((i) => i.rotulo === 'Vagas informadas nas ofertas');
+    const publicado = confirmacao.itens.find((i) =>
+      i.rotulo.startsWith('Total publicado'),
+    );
+
+    expect(informadas?.valor).toBe('80', 'duas ofertas de 40 vagas informadas');
+    expect(publicado?.valor).toBe(
+      '84',
+      'duas ofertas cujo cálculo da regra publica 42 — é este o total do edital',
+    );
+  });
+
+  /**
    * Editar o quadro invalida a simulação — e é a simulação, não uma marca do operador, que o
    * passo exige antes de gravar. Era isso que o checkbox protegia indiretamente; agora a
    * invariante está sozinha, e sem estado que possa envelhecer entre o clique e a gravação.
