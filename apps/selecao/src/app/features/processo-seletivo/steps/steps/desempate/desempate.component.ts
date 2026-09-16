@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   Injector,
   signal,
@@ -75,6 +76,7 @@ export class DesempateStepComponent {
 
   private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   /**
    * O vocabulário de fatos do candidato, como o critério de desempate pode citá-lo.
@@ -92,14 +94,40 @@ export class DesempateStepComponent {
     () => new Map(this.fatosEscolhiveis().map((fato) => [fato.codigo, fato])),
   );
 
+  /**
+   * A falha ao buscar o vocabulário de fatos, dita na tela em vez de engolida.
+   *
+   * Sem isto, um 500 passageiro deixava o catálogo vazio para sempre: todo critério por
+   * predicado já configurado aparecia como fato fora do cadastro, `validate()` o recusava, e
+   * não havia na tela nem a explicação nem um caminho de volta que não fosse recarregar a
+   * página. É a mesma política dos catálogos de regra, que já tinham erro e nova tentativa.
+   */
+  readonly falhaDoCatalogoDeFatos = signal<string | null>(null);
+
   constructor() {
     this.catalogos.carregar();
+    this.carregarFatos();
+  }
 
+  /** Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa. */
+  carregarFatos(): void {
+    this.falhaDoCatalogoDeFatos.set(null);
     this.fatosApi
       .listar()
-      .pipe(takeUntilDestroyed())
-      .subscribe((resultado) => {
-        if (isApiOk(resultado)) this.catalogoDeFatos.set(resultado.data);
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultado) => {
+          if (isApiOk(resultado)) {
+            this.catalogoDeFatos.set(resultado.data);
+            return;
+          }
+
+          this.falhaDoCatalogoDeFatos.set(this.problemI18n.resolve(resultado.problem).title);
+        },
+        error: () =>
+          this.falhaDoCatalogoDeFatos.set(
+            'Não foi possível carregar os dados do candidato que um critério pode citar. Tente novamente.',
+          ),
       });
   }
 

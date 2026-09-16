@@ -5,6 +5,16 @@
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 
+@if (falhaDoCatalogoDeFatos(); as falha) {
+  <p class="alert alert--danger" role="alert">
+    {{ falha }} Sem esses dados, um critério que cita um fato do candidato aparece como
+    desconhecido e a gravação do passo é recusada.
+    <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarFatos()">
+      Tentar novamente
+    </button>
+  </p>
+}
+
 @if (regrasSemSuporte() > 0) {
   <!--
     O catálogo de regras cresce por migration, e uma regra nova aparece aqui assim que é
