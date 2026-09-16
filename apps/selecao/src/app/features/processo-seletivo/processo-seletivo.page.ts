@@ -140,8 +140,15 @@ export class ProcessoSeletivoPage {
    */
   readonly rascunhoPendente = computed(() => {
     const publicacao = this.store.draft().publicacao;
-    if (!temAlgoAGuardar(publicacao)) return false;
-    return JSON.stringify(documentoDoRascunho(publicacao)) !== this.documentoNoServidor();
+    const noServidor = this.documentoNoServidor();
+
+    // Nada gravado ainda: a tela em branco não é edição pendente — é a tela como nasceu.
+    if (noServidor === null) return temAlgoAGuardar(publicacao);
+
+    // Com rascunho gravado, esvaziar os campos É a edição a proteger. Tratar o bloco vazio
+    // como "nada a guardar" também aqui faria o apagamento sair sem aviso, e a volta ao
+    // processo reporia do servidor justamente o que o operador tinha acabado de limpar.
+    return JSON.stringify(documentoDoRascunho(publicacao)) !== noServidor;
   });
 
   readonly store = inject(ProcessoSeletivoStore);
