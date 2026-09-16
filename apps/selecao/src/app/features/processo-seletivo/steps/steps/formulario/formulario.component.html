@@ -6,7 +6,12 @@
 @if (catalogoCarregando()) {
   <p class="alert alert--info" role="status">Carregando os dados que o candidato pode declarar…</p>
 } @else if (catalogoErro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+  <p class="alert alert--danger" role="alert">
+    {{ erro }} Sem esses dados não é possível acrescentar campo nenhum ao formulário.
+    <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarCatalogo()">
+      Tentar novamente
+    </button>
+  </p>
 }
 
 <section class="step-section" aria-labelledby="form-cabecalho-titulo">

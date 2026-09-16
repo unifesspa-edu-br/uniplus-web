@@ -65,7 +65,6 @@ export class FormularioStepComponent {
    * esvaziaria o formulário — nenhum gatilho tinha sido lido ainda —, e a gravação seguinte
    * apagaria no servidor uma configuração que ninguém pediu para tirar.
    */
-  private readonly postosPelasExigencias = signal<ReadonlySet<string>>(new Set());
 
   readonly fatoAAcrescentar = signal('');
 
@@ -75,7 +74,14 @@ export class FormularioStepComponent {
     this.carregarCatalogo();
   }
 
-  private carregarCatalogo(): void {
+  /**
+   * Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa: sem ela, uma
+   * falha passageira deixava o catálogo vazio pelo resto da sessão, e não havia como
+   * acrescentar campo nenhum ao formulário sem recarregar a página inteira.
+   */
+  carregarCatalogo(): void {
+    this.catalogoCarregando.set(true);
+    this.catalogoErro.set(null);
     this.fatosApi
       .listar()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -103,7 +109,7 @@ export class FormularioStepComponent {
       draft.formulario,
       draft.documentos,
       this.catalogo(),
-      this.postosPelasExigencias(),
+      this.store.camposPostosPelasExigencias(),
       // As regras que derivam a modalidade também pressupõem campos — se o candidato quer
       // concorrer a cada cota, se veio de escola pública. Sem contá-los aqui, um campo que
       // entrou por um gatilho e depois passou a sustentar a matriz sairia quando o gatilho
@@ -118,7 +124,7 @@ export class FormularioStepComponent {
       .map((campo) => campo.fatoCodigo)
       .filter((codigo) => !antes.has(codigo));
     if (acrescentados.length > 0) {
-      this.postosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
+      this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
     }
 
     this.store.patchSection('formulario', reconciliado);
@@ -213,7 +219,7 @@ export class FormularioStepComponent {
     });
     // Declarado à mão: sai da memória do que foi posto por exigência, se lá estava — a partir
     // de agora ele permanece mesmo que nenhum gatilho o cite.
-    this.postosPelasExigencias.update((atual) => {
+    this.store.camposPostosPelasExigencias.update((atual) => {
       const seguinte = new Set(atual);
       seguinte.delete(fato.codigo);
       return seguinte;
@@ -258,7 +264,7 @@ export class FormularioStepComponent {
       ...formulario,
       fatos: renumerar(formulario.fatos.filter((campo) => campo.fatoCodigo !== codigo)),
     });
-    this.postosPelasExigencias.update((atual) => {
+    this.store.camposPostosPelasExigencias.update((atual) => {
       const seguinte = new Set(atual);
       seguinte.delete(codigo);
       return seguinte;
