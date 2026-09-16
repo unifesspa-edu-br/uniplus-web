@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
@@ -72,6 +72,18 @@ export class FormularioStepComponent {
 
   constructor() {
     this.carregarCatalogo();
+
+    // Reconcilia a cada mudança das exigências, e não só quando o catálogo responde. Os passos
+    // do wizard ficam todos montados, então "abrir o passo" não executa nada: sem este efeito,
+    // o campo que um gatilho trouxe sobrevivia à remoção desse gatilho pelo resto da sessão —
+    // inclusive o que o passo do cronograma acrescenta, já que aquele caminho só acrescenta.
+    // Sobra dado pessoal no formulário sem nada que o justifique.
+    effect(() => {
+      const exigencias = this.store.draft().documentos;
+      if (exigencias !== null && this.catalogo().length > 0) {
+        untracked(() => this.reconciliar());
+      }
+    });
   }
 
   /**
