@@ -147,6 +147,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                 <th scope="col">Código</th>
                 <th scope="col">Nome</th>
                 <th scope="col">O que admite</th>
+                <th scope="col">Situação</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -158,6 +159,19 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                   </td>
                   <td data-label="Nome">{{ tipo.nome }}</td>
                   <td data-label="O que admite">{{ resumoDoQueAdmite(tipo) }}</td>
+                  <!--
+                    O cadastro devolve ativos e inativos na mesma lista, e o inativo continua
+                    sendo editável — o que ele não admite mais é processo novo. Sem dizer a
+                    situação, a lista mostrava os dois iguais, e a ação de inativar seguia
+                    oferecida para quem já estava inativo.
+                  -->
+                  <td data-label="Situação">
+                    @if (tipo.ativo) {
+                      <span class="tag tag--success">Ativo</span>
+                    } @else {
+                      <span class="tag">Inativo</span>
+                    }
+                  </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <button
                       type="button"
@@ -167,14 +181,16 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                     >
                       Editar
                     </button>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading()"
-                      (click)="pedirRemocao(tipo)"
-                    >
-                      Inativar
-                    </button>
+                    @if (tipo.ativo) {
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm btn--rect"
+                        [disabled]="loading()"
+                        (click)="pedirRemocao(tipo)"
+                      >
+                        Inativar
+                      </button>
+                    }
                   </td>
                 </tr>
               }
