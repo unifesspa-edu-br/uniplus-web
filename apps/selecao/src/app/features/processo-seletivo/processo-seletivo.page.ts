@@ -665,10 +665,11 @@ export class ProcessoSeletivoPage {
       // de publicar. Sem este destino explícito, fechar o diálogo de
       // confirmação da publicação deixa o foco sem lugar nenhum.
       if (sucesso && this.store.isLast()) {
-        // O ato foi registrado e o servidor já apagou o rascunho — esquecê-lo aqui também é o
-        // que impede a guarda de saída de barrar quem acabou de publicar, achando que há
-        // transcrição por gravar quando o que sobrou em tela é a declaração já publicada.
-        this.esquecerRascunhoDaPublicacao();
+        // O ato foi registrado e o servidor já apagou o rascunho. O que sobra em tela é a
+        // declaração publicada, e ela é a nova referência: zerá-la faria a guarda de saída ler
+        // os campos publicados como transcrição por gravar e barrar quem acabou de publicar —
+        // o oposto do que esta linha existe para evitar.
+        this.fixarRascunhoComoJaGravado();
         this.focarConfirmacaoDePublicacao();
       }
     } finally {
@@ -683,6 +684,23 @@ export class ProcessoSeletivoPage {
    * rastro do anterior faria a guarda de saída perguntar sobre um rascunho que não é mais o
    * desta tela.
    */
+  /**
+   * Toma o que está em tela como já guardado, sem gravar nada.
+   *
+   * É o estado de quem publicou: o rascunho no servidor sumiu junto com o ato, e os campos que
+   * restam são a declaração que virou publicação — não há nada pendente a proteger.
+   */
+  private fixarRascunhoComoJaGravado(): void {
+    this.salvandoRascunho.set(false);
+    this.documentoNoServidor.set(
+      JSON.stringify(documentoDoRascunho(this.store.draft().publicacao)),
+    );
+    this.rascunhoSalvoEm.set(null);
+    this.avisoDoRascunho.set(null);
+    this.falhaDoRascunho.set(null);
+    this.chaveDoRascunho.renovar();
+  }
+
   private esquecerRascunhoDaPublicacao(): void {
     // O indicador de gravação sai junto: uma resposta em voo desiste ao descobrir que foi
     // superada, e é aqui que o processo novo começa com o botão liberado em vez de preso
