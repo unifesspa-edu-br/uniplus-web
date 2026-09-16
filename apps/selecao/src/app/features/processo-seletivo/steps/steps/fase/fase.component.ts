@@ -1231,6 +1231,14 @@ export class FaseStepComponent {
     const fase = this.faseDoRascunho();
     if (fase === null) return;
 
+    // Editar numa fase só é dizer que a declaração dela é própria — e "vale em todas" quer
+    // dizer a MESMA declaração em toda fase. Mantendo a marca, as fases passavam a divergir
+    // com o regime global ainda ligado: a releitura ao reabrir o processo não reconhecia mais
+    // a intenção, e a fase criada depois ficava sem o documento, em silêncio. O recorte
+    // congela o que valia em cada fase antes de aplicar a edição nesta, e a tela passa a
+    // mostrar o documento no regime por fase, que é o que ele de fato virou.
+    if (this.valeEmTodasAsFases(id)) this.recortarPorFase(id);
+
     this.store.patchSection(
       'documentos',
       comExigencia(this.store.draft().documentos, {
