@@ -25,14 +25,10 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),
       },
-    ],
-  },
-  {
-    path: '',
-    loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
-    children: [
       {
-        // Áreas autenticadas do candidato — exigem authGuard.
+        // "Minhas inscrições" e "Resultados" ficam no shell público, como o
+        // resto da navegação do topo — exigem authGuard mesmo aqui, o shell
+        // em si continua sem restrição de rota.
         path: 'inscricao',
         canActivate: [authGuard],
         loadChildren: () =>
@@ -46,7 +42,14 @@ export const appRoutes: Routes = [
             (m) => m.ACOMPANHAMENTO_ROUTES,
           ),
       },
+    ],
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
+    children: [
       {
+        // Áreas autenticadas do candidato — exigem authGuard.
         path: 'recursos',
         canActivate: [authGuard],
         loadChildren: () =>
