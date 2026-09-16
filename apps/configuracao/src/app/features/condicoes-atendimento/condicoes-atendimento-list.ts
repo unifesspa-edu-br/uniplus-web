@@ -21,12 +21,12 @@ import {
   ApiResult,
   ProblemValidationError,
   withIdempotencyKey,
-  PaginationDirection,
   useApiResource,
   cursorToString,
   withVendorMime,
   extractPrevCursor,
   extractNextCursor,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import {NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -56,11 +56,6 @@ interface CondicaoAtendimentoForm {
   nome: FormControl<string>;
   descricao: FormControl<string>;
 }
-
-type PaginaProps = {
-  readonly cursor: Cursor;
-  readonly direction: PaginationDirection
-} | undefined;
 
 /** Tamanho de página ao esgotar o cursor (ADR-0015/0026). */
 const PAGE_SIZE = 50;
@@ -229,9 +224,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                             : 'Inativar condição de atendimento'
                         "
                         [description]="
-                          condicao.codigo === 'PCD'
-                            ? 'A condição PCD não pode ser inativada.'
-                            : ''
+                          condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''
                         "
                         [isDisabled]="loading() || submitting() || condicao.codigo === 'PCD'"
                         (triggered)="abrirInativarCondicao(condicao)"
@@ -381,8 +374,8 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
       <p>
         Você está prestes a inativar a condição
         <strong>{{ condicaoParaInativar()?.nome }}/{{ condicaoParaInativar()?.codigo }}.</strong>
-        A inativação impede novos editais de utilizá-lo, mas não altera ofertas já congeladas —
-        a cópia por valor de cada processo permanece íntegra.
+        A inativação impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a
+        cópia por valor de cada processo permanece íntegra.
       </p>
       <div uiDialogFooter>
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
@@ -403,7 +396,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  private readonly pagina = signal<PaginaProps>(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
   private readonly lista = useApiResource<readonly CondicaoAtendimentoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/condicoes-atendimento`,
     params: this.montarParams(),
@@ -500,7 +493,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
         nonNullable: true,
         validators: [Validators.maxLength(1000)],
       }),
-  });
+    });
   protected readonly formError = signal<string | null>(null);
 
   constructor() {
@@ -514,10 +507,10 @@ export class CondicoesAtendimentoListPage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.form.get('codigo')?.valueChanges.subscribe(val => {
+    this.form.get('codigo')?.valueChanges.subscribe((val) => {
       this.form.get('codigo')?.setValue(val.toUpperCase(), {
         emitEvent: false,
-        emitModelToViewChange: false
+        emitModelToViewChange: false,
       });
     });
   }
@@ -716,7 +709,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
       return backend.message;
     }
     if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength']) return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
+    if (control.errors['minlength'])
+      return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     if (control.errors['pattern'])
       return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: DISLEXIA, TDAH).';

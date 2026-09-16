@@ -17,7 +17,6 @@ import { debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -28,6 +27,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { GeoApi, type CidadeResumoDto } from '@uniplus/shared-data/geo';
@@ -293,9 +293,7 @@ const BACKEND_FIELD_TO_CONTROL = {
 
     <ng-template #treeNode let-node>
       <li class="unit-node">
-        <div
-          class="unit-node__row"
-        >
+        <div class="unit-node__row">
           @if (node.children.length > 0) {
             <button
               type="button"
@@ -785,10 +783,7 @@ export class UnidadesPage {
    * substituição sobre o cursor bidirecional (ADR-0089 do `uniplus-api`); o
    * cliente não mantém pilha de cursores.
    */
-  private readonly pagina = linkedSignal<
-    string,
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >({
+  private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () => this.filtroKey(),
     computation: () => undefined,
   });
@@ -1160,9 +1155,6 @@ export class UnidadesPage {
       return next;
     });
   }
-
-
-
 
   protected proximaPagina(): void {
     const proximo = this.nextCursor();

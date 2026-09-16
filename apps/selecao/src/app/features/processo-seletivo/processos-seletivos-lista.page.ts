@@ -15,7 +15,7 @@ import {
   extractNextCursor,
   extractPrevCursor,
   type Cursor,
-  type PaginationDirection,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
@@ -225,9 +225,7 @@ export class ProcessosSeletivosListaPage {
   private readonly destroyRef = inject(DestroyRef);
 
   /** `undefined` é a primeira página — sem cursor e sem `direction`. */
-  private readonly pagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   private readonly itens = signal<readonly ProcessoSeletivoResumoDto[]>([]);
   private readonly cursores = signal<{

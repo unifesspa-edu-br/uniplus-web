@@ -16,7 +16,6 @@ import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import {
   ApiResult,
   Cursor,
-  PaginationDirection,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -29,6 +28,7 @@ import {
   useCursorObsoletoRecovery,
   withIdempotencyKey,
   withVendorMime,
+  CursorPagina,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -492,9 +492,7 @@ export class CursosPage {
   protected readonly ofertasOpen = signal(false);
   protected readonly cursoParaOfertas = signal<CursoDto | null>(null);
   protected readonly ofertasBloqueio = signal<string | null>(null);
-  private readonly ofertasPagina = signal<
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >(undefined);
+  private readonly ofertasPagina = signal<CursorPagina | undefined>(undefined);
 
   /** Chave do filtro vigente (busca + limite) — fonte do reset de paginação. */
   private readonly filtroKey = computed(() =>
@@ -507,10 +505,7 @@ export class CursosPage {
    * `filtroKey`) — o cursor da página atual carrega o filtro/janela antigos,
    * então navegar a partir dele ignoraria a mudança.
    */
-  private readonly pagina = linkedSignal<
-    string,
-    { readonly cursor: Cursor; readonly direction: PaginationDirection } | undefined
-  >({
+  private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () => this.filtroKey(),
     computation: () => undefined,
   });
