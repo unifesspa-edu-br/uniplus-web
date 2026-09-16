@@ -247,7 +247,10 @@ export class ComboboxComponent {
     if (evento.key === 'ArrowDown' || evento.key === 'ArrowUp') {
       evento.preventDefault();
       if (!this.aberto()) {
-        this.aberto.set(true);
+        // Pela mesma porta do foco: a seta reabre a lista, e reabrir devolve o campo vazio.
+        // Fechada com Escape sem tirar o foco, ela era reaberta aqui com o rótulo escolhido
+        // ainda no input, e a consulta seguinte era digitada dentro dele.
+        this.abrir();
         return;
       }
       this.andar(evento.key === 'ArrowDown' ? 1 : -1);
