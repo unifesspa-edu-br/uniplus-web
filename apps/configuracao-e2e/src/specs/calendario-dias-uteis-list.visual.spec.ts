@@ -73,6 +73,15 @@ test.describe('Calendário de dias úteis — Lista', () => {
     await expect(page.getByRole('heading', { name: 'Calendários', level: 1 })).toBeVisible();
   });
 
+  test('a ação de cadastro não exibe sublinhado', async ({ page }) => {
+    // Este arquivo roda nos três temas suportados, então a asserção cobre de
+    // uma vez só o que o padrão de botão precisa preservar em todos eles.
+    await expect(page.getByRole('link', { name: 'Novo dataset' })).toHaveCSS(
+      'text-decoration-line',
+      'none',
+    );
+  });
+
   test('lista não viola WCAG 2.1 A/AA', async ({ page }) => {
     const resultado = await runAxeWcagAA(page);
 

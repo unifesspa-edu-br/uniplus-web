@@ -172,6 +172,20 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect(page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1 })).toBeVisible();
   });
 
+  test('"Nova modalidade" tem aparência de botão, sem o sublinhado de link', async ({ page }) => {
+    await mockApi(page, novoCapturado(), [acSeed, vSeed]);
+    await abrirLista(page);
+
+    // A ação é uma âncora, e a folha base sublinha toda âncora — quem desfaz
+    // isso é o padrão compartilhado `.btn`. Sem esta asserção, retirar a regra
+    // de lá volta a sublinhar a ação sem que nada acuse: lint, teste unitário
+    // e build não avaliam estilo computado.
+    await expect(page.getByRole('link', { name: 'Nova modalidade' }).first()).toHaveCSS(
+      'text-decoration-line',
+      'none',
+    );
+  });
+
   test('CA-03: AMPLA oculta remanejamento; COTA_RESERVADA fixa cascata; SUPLEMENTAR oferta destino/cruzado', async ({
     page,
   }) => {
