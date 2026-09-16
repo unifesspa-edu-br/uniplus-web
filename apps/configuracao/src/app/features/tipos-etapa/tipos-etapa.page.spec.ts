@@ -171,6 +171,28 @@ describe('TiposEtapaPage', () => {
     expect(component['formOpen']()).toBe(true);
   });
 
+  /**
+   * O cadastro devolve ativos e inativos juntos. Renderizados iguais, o administrador não tem
+   * como saber quais estão disponíveis para processo novo — e a ação de inativar seguia
+   * oferecida para quem já estava inativo, mandando outro DELETE.
+   */
+  it('mostra a situação e não oferece inativar o que já está inativo', async () => {
+    await flushLista([analiseDocumental, { ...provaObjetiva, ativo: false }]);
+    fixture.detectChanges();
+
+    const linhas = [...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
+    const ativa = linhas.find((l) => l.textContent?.includes('ANALISE_DOCUMENTAL'));
+    const inativa = linhas.find((l) => l.textContent?.includes('PROVA_OBJETIVA'));
+
+    expect(ativa?.textContent).toContain('Ativo');
+    expect(inativa?.textContent).toContain('Inativo');
+
+    const acoesDaInativa = [...(inativa?.querySelectorAll('button') ?? [])].map((b) =>
+      b.textContent?.trim(),
+    );
+    expect(acoesDaInativa).toEqual(['Editar']);
+  });
+
   it('inativar pede confirmação e chama o DELETE', async () => {
     await flushLista([analiseDocumental]);
     component['pedirRemocao'](analiseDocumental);
