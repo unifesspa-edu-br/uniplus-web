@@ -17,6 +17,7 @@ import {
   fatosCitadosPelaDerivacao,
   fatosCitadosPelasExigencias,
   problemasDoFormulario,
+  regrasQueDependemDoFato,
   renderizacaoDe,
 } from './formulario-de-inscricao';
 
@@ -492,6 +493,61 @@ describe('campos que nada no certame usa', () => {
     };
 
     expect(camposSemUsoDeclarado(formulario, { raizes: [], emTodasAsFases: [] })).toEqual([]);
+  });
+
+  /**
+   * O que sustenta o campo é o que impede removê-lo. A remoção olhava só o gatilho de
+   * documento: um campo citado apenas por uma regra de derivação saía, a regra ficava
+   * apontando um fato que ninguém coleta mais, e a incoerência só aparecia no gate da
+   * publicação — longe de quem a criou.
+   */
+  it('nomeia a derivação e a condição que dependem do campo', () => {
+    const formulario: FormularioDeInscricao = {
+      ...formularioVazio(),
+      fatos: [
+        { fatoCodigo: 'CONCORRER_PPI', ordem: 0, rotulo: 'Concorrer PPI', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao: null },
+        {
+          fatoCodigo: 'AUTODECLARACAO',
+          ordem: 1,
+          rotulo: 'Autodeclaração',
+          tipoRenderizacao: 'TEXTO',
+          obrigatorio: false,
+          precondicao: [[{ fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true }]],
+        },
+      ],
+      derivacao: [
+        {
+          codigoFato: 'MODALIDADE',
+          regras: [
+            { ordem: 0, contribui: 'LB_PPI', quando: [[{ fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true }]] },
+          ],
+        },
+      ],
+    };
+
+    expect(regrasQueDependemDoFato(formulario, 'CONCORRER_PPI')).toEqual([
+      'a derivação de MODALIDADE',
+      'a condição de "Autodeclaração"',
+    ]);
+  });
+
+  /** O campo não segura a si mesmo: a condição que ele declara sai junto com ele. */
+  it('não conta a dependência que o próprio campo declara', () => {
+    const formulario: FormularioDeInscricao = {
+      ...formularioVazio(),
+      fatos: [
+        {
+          fatoCodigo: 'AUTODECLARACAO',
+          ordem: 0,
+          rotulo: 'Autodeclaração',
+          tipoRenderizacao: 'TEXTO',
+          obrigatorio: false,
+          precondicao: [[{ fato: 'AUTODECLARACAO', operador: 'IGUAL', valor: true }]],
+        },
+      ],
+    };
+
+    expect(regrasQueDependemDoFato(formulario, 'AUTODECLARACAO')).toEqual([]);
   });
 
   /** Campo que só existe para decidir se outro aparece continua tendo finalidade. */

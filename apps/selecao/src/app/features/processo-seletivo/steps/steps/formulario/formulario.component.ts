@@ -15,15 +15,16 @@ import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import {
   ANCORAS_DA_IDADE,
+  camposSemUsoDeclarado,
   camposSemValoresOfertados,
   comCamposQueAsExigenciasPressupoem,
   comoComandoDeFatosColetados,
   comoComandoDeReferenciaTemporal,
   ehColetavel,
-  fatosCitadosPelasExigencias,
-  camposSemUsoDeclarado,
   fatosCitadosPelaDerivacao,
+  fatosCitadosPelasExigencias,
   problemasDoFormulario,
+  regrasQueDependemDoFato,
   renderizacaoDe,
   renumerar,
 } from './formulario-de-inscricao';
@@ -237,11 +238,20 @@ export class FormularioStepComponent {
   });
 
   /**
-   * Tira o campo do formulário. Recusado enquanto alguma exigência o citar: removê-lo deixaria
-   * aquela exigência sem como resolver, e o operador não veria a relação.
+   * As regras do próprio formulário que dependem deste dado. O gatilho de documento é a outra
+   * razão para o campo não poder sair, e tem aviso próprio porque se resolve noutro passo.
+   */
+  regrasQueDependem(codigo: string): readonly string[] {
+    return regrasQueDependemDoFato(this.store.draft().formulario, codigo);
+  }
+
+  /**
+   * Tira o campo do formulário. Recusado enquanto alguma exigência o citar OU alguma regra do
+   * formulário depender dele: removê-lo deixaria a regra citando um fato que ninguém coleta
+   * mais, e a incoerência só apareceria lá no gate da publicação.
    */
   removerCampo(codigo: string): void {
-    if (this.exigidoPorDocumento(codigo)) return;
+    if (this.exigidoPorDocumento(codigo) || this.regrasQueDependem(codigo).length > 0) return;
 
     const formulario = this.store.draft().formulario;
     this.store.patchSection('formulario', {
