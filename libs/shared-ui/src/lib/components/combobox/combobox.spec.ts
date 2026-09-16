@@ -201,6 +201,24 @@ describe('ComboboxComponent', () => {
     expect(campo().getAttribute('aria-expanded')).toBe('false');
   });
 
+  /**
+   * Quem já escolheu e reabre a lista costuma querer trocar a escolha, e digita por cima. Se o
+   * campo abrisse com o rótulo anterior, a consulta seria inserida nele — o filtro passaria a
+   * procurar por "RGcpf" e não acharia nada até o rótulo velho ser apagado à mão.
+   */
+  it('abre com o campo vazio quando já há escolha, e devolve o rótulo ao fechar', () => {
+    fixture.componentInstance.escolhido.set('rg');
+    fixture.detectChanges();
+    expect(campo().value).toBe('RG');
+
+    campo().dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    expect(campo().value).toBe('');
+
+    teclar('Escape');
+    expect(campo().value).toBe('RG', 'fechada, a lista devolve ao campo o que está escolhido');
+  });
+
   describe('múltipla escolha', () => {
     @Component({
       standalone: true,

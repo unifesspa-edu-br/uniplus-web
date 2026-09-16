@@ -217,6 +217,11 @@ export class ComboboxComponent {
 
   protected abrir(): void {
     if (this.disabled()) return;
+    // Abrir com o campo já vazio, e não com o rótulo do que está escolhido: quem usa teclado
+    // digita a consulta ali mesmo, e ela seria inserida no rótulo — o filtro passaria a
+    // procurar por "RGcpf" e não acharia nada até apagar o antigo à mão. O rótulo volta ao
+    // fechar. Só na abertura: chamado de novo com a lista já aberta, apagaria a busca em curso.
+    if (!this.aberto()) this.busca.set('');
     this.aberto.set(true);
   }
 
