@@ -462,6 +462,22 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     expect(lido.emTodasAsFases).toEqual([ID_RG]);
   });
 
+  /**
+   * Estar em todas as fases não é declarar alcance global: o certame pode exigir o mesmo
+   * documento em cada uma por razões próprias. Lidas como alcance global, a fase criada depois
+   * receberia uma cópia arbitrária de uma dessas declarações — configuração que ninguém pediu.
+   */
+  it('não infere alcance global quando as declarações por fase divergem', () => {
+    const lido = exigenciasDe(
+      detalhe([
+        folhaDto({ exigidoNaFaseId: ID_ISENCAO, obrigatorio: true }),
+        folhaDto({ exigidoNaFaseId: ID_HABILITACAO, obrigatorio: false }),
+      ]),
+    );
+
+    expect(lido.emTodasAsFases).toEqual([]);
+  });
+
   /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */
   it('não inventa alcance de todas as fases para o documento de uma fase só', () => {
     const lido = exigenciasDe(detalhe([folhaDto({ exigidoNaFaseId: ID_HABILITACAO })]));
