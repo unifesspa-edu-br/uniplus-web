@@ -4,43 +4,97 @@ import {
   computed,
   DestroyRef,
   inject,
+  model,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  idempotencyKey,
+  ProblemDetails,
+  ProblemI18nService,
+  useApiResource,
+  withIdempotencyKey,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import { formatIsoDateBr, formatIsoDateLong } from '@uniplus/shared-data/utils';
 import {
   ABRANGENCIAS,
+  CalendarioDiasUteisApi,
   CalendarioDiasUteisDto,
   CONFIGURACAO_BASE_PATH,
+  DiaNaoUtilCommandItem,
   DiaNaoUtilDto,
   UNIDADES_FEDERATIVAS,
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
+  DialogComponent,
   DrawerComponent,
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
-import { tap } from 'rxjs';
+import { debounceTime, groupBy, map, mergeMap, Subject, switchMap, tap } from 'rxjs';
 
-import { agruparPorMes, anosDoCalendario, type CelulaCalendarioMensal } from './calendario-mensal.util';
+import {
+  agruparPorMes,
+  anosDoCalendario,
+  type CelulaCalendarioMensal,
+} from './calendario-mensal.util';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { NotificationService } from '@uniplus/shared-core';
+import {
+  CODIGO_MUNICIPIO_PATTERN,
+  DIAS_SEMANA,
+  MUNICIPIO_BUSCA_DEBOUNCE_MS,
+  MUNICIPIO_BUSCA_VAZIA,
+  MunicipioBuscaRequest,
+  MunicipioBuscaState,
+  MunicipioOpcao,
+  MUNICIPIOS_LIMIT,
+  nullIfBlank,
+  PARA_SIGLA,
+  PREFIXO_IBGE_POR_UF,
+  textoNormalizado,
+} from './calendario-dias-uteis.util';
+import {
+  CIDADE_REFERENCIA_CODE_PREFIX,
+  DATA_DUPLICADA_DATASET_CODE,
+} from './calendario-dias-uteis-novo.page';
+import { DATA_PATTERN } from './calendario-dias-uteis.util';
+import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 
-const DIAS_SEMANA = [
-  { abrev: 'Dom', nome: 'Domingo' },
-  { abrev: 'Seg', nome: 'Segunda-feira' },
-  { abrev: 'Ter', nome: 'Terça-feira' },
-  { abrev: 'Qua', nome: 'Quarta-feira' },
-  { abrev: 'Qui', nome: 'Quinta-feira' },
-  { abrev: 'Sex', nome: 'Sexta-feira' },
-  { abrev: 'Sáb', nome: 'Sábado' },
-] as const;
+interface DiaNaoUtilFormGroup {
+  uf: FormControl<string | null>;
+  codigoMunicipio: FormControl<string | null>;
+  municipioNome: FormControl<string | null>;
+  municipioUf: FormControl<string | null>;
+  buscaMunicipio: FormControl<string>;
+  abrangencia: FormControl<string>;
+  data: FormControl<string>;
+  descricao: FormControl<string>;
+}
 
 @Component({
   selector: 'cfg-calendario-dias-uteis-detalhe',
-  imports: [RouterLink, AlertComponent, SpinnerComponent, DrawerComponent, TagComponent],
+  imports: [
+    RouterLink,
+    AlertComponent,
+    SpinnerComponent,
+    DrawerComponent,
+    TagComponent,
+    ReactiveFormsModule,
+    DialogComponent,
+  ],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -150,7 +204,12 @@ const DIAS_SEMANA = [
                               }
                             </button>
                           } @else {
-                            <span class="cfg-calendario-mensal__dia">{{ celula.dia }}</span>
+                            <button
+                              class="cfg-calendario-mensal__dia"
+                              (click)="abrirDrawer(celula)"
+                            >
+                              {{ celula.dia }}
+                            </button>
                           }
                         }
                       </td>
@@ -167,7 +226,7 @@ const DIAS_SEMANA = [
         [(visible)]="drawerVisivel"
         [heading]="tituloDrawer()"
         [ariaLabel]="tituloDrawer()"
-        (closed)="ocultarPreview()"
+        (closed)="resetaFormulario()"
       >
         @for (ocorrencia of ocorrenciasSelecionadas(); track ocorrencia.id) {
           <article class="cfg-calendario-mensal__ocorrencia">
@@ -198,235 +257,228 @@ const DIAS_SEMANA = [
               }
             </dl>
           </article>
+        } @empty {
+          <div class="cfg-calendario-mensal__ocorrencia_vazia">Não há feriados cadastrados.</div>
         }
+        <div class="cfg-calendario-mensal__actions">
+          <button type="button" class="btn btn--primary btn--rect" (click)="abrirDialog()">
+            <i class="pi pi-plus" aria-hidden="true"></i>
+            Adicionar feriado
+          </button>
+        </div>
       </ui-drawer>
+      <ui-dialog
+        [(visible)]="dialogOpen"
+        [heading]="'Adicionar novo feriado ao calendário'"
+        (closed)="ocultarPreview()"
+        (close)="resetaFormulario(); dialogOpen.set(false)"
+        [hasFooter]="true"
+      >
+        <form
+          id="cfg-calendario-dias-uteis-form"
+          [formGroup]="form"
+          class="cfg-form cfg-calendario-form"
+          (ngSubmit)="salvar()"
+        >
+          <section
+            class="form-section cfg-calendario-dias"
+            aria-labelledby="cfg-mod-dias-nao-uteis"
+          >
+            <article class="cfg-dia-card">
+              <div class="form-grid form-grid--1col">
+                <label
+                  class="field field--full"
+                  [class.is-error]="erroDoCampoDiasNaoUteis('abrangencia')"
+                  [attr.for]="'abrangencia'"
+                >
+                  <span class="field__label is-required">Abrangência</span>
+                  <select
+                    [id]="'abrangencia'"
+                    class="select"
+                    [attr.aria-invalid]="erroDoCampoDiasNaoUteis('abrangencia') ? 'true' : null"
+                    (change)="mudaAbrangencia()"
+                    formControlName="abrangencia"
+                  >
+                    @for (abrangencia of abrangencias(); track abrangencia.value) {
+                      <option [value]="abrangencia.value">{{ abrangencia.label }}</option>
+                    }
+                  </select>
+                  @if (erroDoCampoDiasNaoUteis('abrangencia')) {
+                    <span class="field__error">{{ erroDoCampoDiasNaoUteis('abrangencia') }}</span>
+                  }
+                </label>
+
+                @if (
+                  form.controls.abrangencia.value === 'MUNICIPAL' ||
+                  form.controls.abrangencia.value === 'ESTADUAL'
+                ) {
+                  <label class="field field--full" [class.is-error]="erroDoCampoDiasNaoUteis('uf')">
+                    <span class="field__label is-required">
+                      {{
+                        form.controls.abrangencia.value === 'MUNICIPAL'
+                          ? 'Estado para busca'
+                          : 'Unidade Federativa (UF)'
+                      }}
+                    </span>
+                    <select
+                      [id]="'uf'"
+                      class="select"
+                      [attr.aria-invalid]="erroDoCampoDiasNaoUteis('uf') ? 'true' : null"
+                      formControlName="uf"
+                      (change)="mudaUf()"
+                    >
+                      @for (
+                        unidadeFederativa of unidadesFederativas();
+                        track unidadeFederativa.id
+                      ) {
+                        <option [value]="unidadeFederativa.sigla">
+                          {{ unidadeFederativa.nome }} - {{ unidadeFederativa.sigla }}
+                        </option>
+                      }
+                    </select>
+                    @if (erroDoCampoDiasNaoUteis('uf')) {
+                      <span class="field__error">{{ erroDoCampoDiasNaoUteis('uf') }}</span>
+                    }
+                  </label>
+                }
+
+                @if (this.form.controls.abrangencia.value === 'MUNICIPAL') {
+                  <div
+                    class="field field--full cfg-dia-card__municipio"
+                    [class.is-error]="erroDoCampoDiasNaoUteis('codigoMunicipio')"
+                  >
+                    <label [for]="'busca-municipio-'" class="field__label is-required">
+                      Município
+                    </label>
+                    <div class="cfg-municipio-busca">
+                      <div class="cfg-municipio-busca__input">
+                        <i class="pi pi-search" aria-hidden="true"></i>
+                        <input
+                          [id]="'busca-municipio-'"
+                          type="search"
+                          autocomplete="off"
+                          class="input"
+                          formControlName="buscaMunicipio"
+                          placeholder="Digite ao menos 2 letras"
+                          (input)="buscarMunicipios(valorDoInput($event))"
+                        />
+                      </div>
+                      <select
+                        [id]="'codigo-municipio-'"
+                        class="select"
+                        formControlName="codigoMunicipio"
+                        aria-label="Selecionar município"
+                        [attr.aria-invalid]="
+                          erroDoCampoDiasNaoUteis('codigoMunicipio') ? 'true' : null
+                        "
+                        (change)="selecionarMunicipio()"
+                      >
+                        <option value="" disabled>
+                          {{
+                            estadoBuscaMunicipio().carregando
+                              ? 'Buscando…'
+                              : 'Selecione o município'
+                          }}
+                        </option>
+                        @for (
+                          municipio of estadoBuscaMunicipio().opcoes;
+                          track municipio.codigoIbge
+                        ) {
+                          <option [value]="municipio.codigoIbge">
+                            {{ municipio.nome }} — {{ municipio.uf }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                    @if (estadoBuscaMunicipio().carregando) {
+                      <span class="field__hint" role="status">Consultando a API Geo…</span>
+                    } @else if (estadoBuscaMunicipio().erro) {
+                      <span class="field__error" role="alert">
+                        Não foi possível buscar os municípios.
+                        <button
+                          type="button"
+                          class="cfg-link-button"
+                          (click)="recarregarMunicipios()"
+                        >
+                          Tentar novamente
+                        </button>
+                      </span>
+                    } @else if (buscaSemResultado()) {
+                      <span class="field__hint">Nenhum município encontrado para essa busca.</span>
+                    } @else if (municipioSelecionado(); as municipio) {
+                      <span class="field__hint">
+                        Selecionado: {{ municipio.nome }} — {{ municipio.uf }}
+                      </span>
+                    } @else {
+                      <span class="field__hint">
+                        A busca usa o nome; o código IBGE é preenchido automaticamente.
+                      </span>
+                    }
+                    @if (erroDoCampoDiasNaoUteis('codigoMunicipio')) {
+                      <span class="field__error">{{
+                        erroDoCampoDiasNaoUteis('codigoMunicipio')
+                      }}</span>
+                    }
+                  </div>
+                }
+
+                <label class="field" [class.is-error]="erroDoCampoDiasNaoUteis('data')">
+                  <span class="field__label is-required">Data</span>
+                  <input [id]="'data-'" class="input" type="date" formControlName="data" />
+                  <span class="field__hint">Não repita a mesma data, abrangência e região.</span>
+                  @if (erroDoCampoDiasNaoUteis('data')) {
+                    <span class="field__error">{{ erroDoCampoDiasNaoUteis('data') }}</span>
+                  }
+                </label>
+                @let erroDoCampoDescricao = erroDoCampoDiasNaoUteis('descricao');
+                <label
+                  class="field field--full cfg-dia-card__descricao-field"
+                  [class.is-error]="erroDoCampoDescricao"
+                >
+                  <span class="field__label is-required">Descrição</span>
+                  <textarea
+                    class="textarea cfg-dia-card__descricao"
+                    formControlName="descricao"
+                    placeholder="Ex.: Aniversário do município"
+                  ></textarea>
+                  <span class="field__hint">Até 200 caracteres.</span>
+                  @if (erroDoCampoDescricao) {
+                    <span class="field__error">{{ erroDoCampoDescricao }}</span>
+                  }
+                </label>
+              </div>
+            </article>
+          </section>
+        </form>
+        <div uiDialogFooter>
+          <button
+            class="btn btn--tertiary"
+            type="button"
+            [disabled]="saving()"
+            (click)="dialogOpen.set(false)"
+          >
+            Cancelar
+          </button>
+          <!-- Continua habilitado enquanto grava, e de propósito: é o único controle
+               que resta no diálogo nesse estado, e desabilitá-lo deixaria a janela
+               aberta sem destino de foco nem de Tab. O acionamento repetido é
+               inofensivo — \`confirmarGravacao()\` sai cedo com a gravação em curso —
+               e \`aria-busy\` com \`aria-disabled\` dizem ao leitor de tela que ele está
+               ocupado e não aceita nova ação. -->
+          <button
+            class="btn btn--primary"
+            type="submit"
+            [attr.aria-busy]="saving()"
+            [attr.aria-disabled]="saving()"
+            (click)="salvar()"
+          >
+            Adicionar
+          </button>
+        </div>
+      </ui-dialog>
     }
   `,
-  styles: `
-    .cfg-calendario-resumo {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-6);
-      margin: 0 0 var(--space-6);
-      padding: var(--space-4) var(--space-5);
-      background: var(--surface-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-    }
-
-    .cfg-calendario-resumo__item {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
-      min-width: 0;
-    }
-
-    .cfg-calendario-resumo__item dt {
-      font-size: var(--text-xs);
-      color: var(--text-muted);
-    }
-
-    .cfg-calendario-resumo__item dd {
-      margin: 0;
-      font-size: var(--text-base);
-      font-weight: var(--weight-bold);
-      color: var(--text-heading);
-      overflow-wrap: anywhere;
-    }
-
-    .cfg-calendario-mensal__lista {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
-      gap: var(--space-6);
-      /* stretch (padrão do grid) em vez de start: meses com menos semanas
-         esticam para a altura do mais alto da mesma linha, alinhando as
-         bordas inferiores dos cards em vez de deixá-las escalonadas. */
-    }
-
-    .cfg-calendario-mensal {
-      background: var(--surface-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4);
-    }
-
-    .cfg-calendario-mensal__titulo {
-      margin: 0 0 var(--space-3);
-      font-size: var(--text-base);
-      font-weight: var(--weight-bold);
-      color: var(--text-heading);
-    }
-
-    .cfg-calendario-mensal__tabela {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-
-    .cfg-calendario-mensal__tabela th {
-      padding: var(--space-1) 0;
-      font-size: var(--text-xs);
-      font-weight: var(--weight-medium);
-      color: var(--text-muted);
-    }
-
-    .cfg-calendario-mensal__tabela td {
-      padding: 2px 0;
-      text-align: center;
-    }
-
-    .cfg-calendario-mensal__dia {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 2.25rem;
-      height: 2.25rem;
-      margin: 0 auto;
-      font-size: var(--text-sm);
-      color: var(--text-secondary);
-    }
-
-    button.cfg-calendario-mensal__dia {
-      position: relative;
-      border: 1px solid transparent;
-      border-radius: var(--radius-md);
-      background: none;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    button.cfg-calendario-mensal__dia--feriado {
-      color: var(--color-primary);
-      font-weight: var(--weight-bold);
-      background: var(--color-primary-100);
-    }
-
-    /* Não usar --color-primary-200 aqui: no tema contraste ela colapsa para o
-       mesmo #ffff00 de --color-primary (texto do botão), texto some sobre o
-       próprio fundo no hover. --color-primary-50 + --text-on-primary-tint é o
-       par semântico do DS para fundo tintado + texto legível, já
-       contrast-safe nos três temas (mesmo par usado em .uni-drawer__nav
-       a.is-active). */
-    .cfg-calendario-mensal__dia--feriado:hover {
-      background: var(--color-primary-50);
-      color: var(--text-on-primary-tint);
-    }
-
-    .cfg-calendario-mensal__dia--feriado:focus-visible {
-      outline: var(--focus-ring-width) solid var(--focus-ring-color);
-      outline-offset: var(--focus-ring-offset);
-    }
-
-    .cfg-calendario-mensal__marcador {
-      position: absolute;
-      bottom: 3px;
-      width: 4px;
-      height: 4px;
-      border-radius: var(--radius-circle);
-      background: currentColor;
-    }
-
-    .cfg-calendario-mensal__contador {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      padding: 1px 3px;
-      font-size: 0.625rem;
-      line-height: 1;
-      font-weight: var(--weight-bold);
-      border-radius: var(--radius-pill);
-      background: var(--color-primary);
-      color: var(--text-on-primary);
-    }
-    /* O contador é decorativo e duplica o que o aria-label do botão já diz por
-     * extenso ("N ocorrências"). Como nó de texto ele comporia o rótulo
-     * VISÍVEL do botão ("15×2"), que o nome acessível não conteria — o SC
-     * 2.5.3 compara com o texto lido na tela, e aria-hidden esconde do leitor,
-     * não da vista. Daí o dado vir por atributo e o "×" morar aqui, na camada
-     * que já é dona da apresentação. */
-    .cfg-calendario-mensal__contador::before {
-      content: '×' attr(data-contador);
-    }
-
-    .cfg-calendario-mensal__preview {
-      position: absolute;
-      bottom: calc(100% + var(--space-2));
-      left: 50%;
-      transform: translateX(-50%);
-      width: max-content;
-      max-width: min(80vw, 12rem);
-      padding: var(--space-2) var(--space-3);
-      background: var(--surface-inverse);
-      color: var(--text-on-inverse);
-      font-size: var(--text-xs);
-      font-weight: var(--weight-regular);
-      white-space: normal;
-      overflow-wrap: anywhere;
-      border-radius: var(--radius-md);
-      z-index: 10;
-    }
-
-    /*
-     * Domingo/segunda (colunas 1-2): centralizar estouraria a borda esquerda
-     * da viewport em telas estreitas. Sexta/sábado (colunas 6-7): o mesmo à
-     * direita. Só as colunas centrais mantêm a prévia centralizada no dia.
-     */
-    .cfg-calendario-mensal__tabela td:nth-child(-n + 2) .cfg-calendario-mensal__preview {
-      left: 0;
-      transform: none;
-    }
-
-    .cfg-calendario-mensal__tabela td:nth-child(n + 6) .cfg-calendario-mensal__preview {
-      left: auto;
-      right: 0;
-      transform: none;
-    }
-
-    /* .uni-drawer__body (DS compartilhado) só tem padding vertical — foi
-       desenhado para .uni-drawer__nav a, que traz o próprio padding
-       horizontal. Conteúdo genérico projetado aqui precisa da margem lateral
-       explicitamente, ou cola nas bordas do painel. */
-    .cfg-calendario-mensal__ocorrencia {
-      padding: 0 var(--space-5);
-    }
-
-    .cfg-calendario-mensal__ocorrencia + .cfg-calendario-mensal__ocorrencia {
-      margin-top: var(--space-5);
-      padding-top: var(--space-5);
-      border-top: 1px solid var(--border-subtle);
-    }
-
-    .cfg-calendario-mensal__ocorrencia h3 {
-      margin: 0 0 var(--space-2);
-      font-size: var(--text-base);
-      color: var(--text-heading);
-      overflow-wrap: anywhere;
-    }
-
-    .cfg-calendario-mensal__ocorrencia dl {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-      margin: 0;
-    }
-
-    .cfg-calendario-mensal__ocorrencia dt {
-      font-size: var(--text-xs);
-      color: var(--text-muted);
-    }
-
-    .cfg-calendario-mensal__ocorrencia dd {
-      margin: 0;
-      color: var(--text-secondary);
-    }
-
-    /* Angular remove o espaço em branco insignificante entre os dois <span>
-       do template (preserveWhitespaces: false) — sem isto, o hint de
-       Código IBGE cola visualmente no nome do município. */
-    .cfg-calendario-mensal__ocorrencia dd .field__hint {
-      margin-left: var(--space-1);
-    }
-  `,
+  styleUrls: ['./calendario-dias-uteis.css', './calendario-dias-uteis-detalhe.page.css'],
   host: { class: 'cfg-page' },
 })
 export class CalendarioDiasUteisDetalhePage {
@@ -434,8 +486,11 @@ export class CalendarioDiasUteisDetalhePage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  private readonly api = inject(CalendarioDiasUteisApi);
+  private readonly geo = inject(GeoApi);
   protected readonly calendarioDiaUtilId = signal(this.route.snapshot.paramMap.get('id') ?? '');
   protected readonly diasSemana = DIAS_SEMANA;
+  private readonly notifications = inject(NotificationService);
 
   protected readonly calendarioResource = useApiResource<CalendarioDiasUteisDto>(() => ({
     url: `${this.basePath}/api/configuracao/calendarios-dias-uteis/${this.calendarioDiaUtilId()}`,
@@ -461,6 +516,33 @@ export class CalendarioDiasUteisDetalhePage {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+    this.buscaMunicipioRequests
+      .pipe(
+        // Debounce e cancelamento são por linha:' com um fluxo único, digitar
+        // numa segunda linha municipal descartava a busca da primeira, que
+        // ficava em "Buscando…" para sempre — e sem snapshot não há como salvar.
+        //
+        // O grupo de cada linha vive enquanto a página viver (encerrado em bloco
+        // pelo `takeUntilDestroyed`). Expirá-lo por inatividade quebraria o
+        // cancelamento: uma requisição ainda em voo sobreviveria ao grupo, e a
+        // busca seguinte nasceria noutro `switchMap`, sem cancelá-la — duas
+        // respostas para a mesma linha, com a antiga podendo chegar por último.
+        // O preço é reter o grupo de uma linha removida, que é irrisório perto
+        // de aceitar resultado obsoleto.
+        groupBy((request) => request),
+        mergeMap((linha) =>
+          linha.pipe(
+            debounceTime(MUNICIPIO_BUSCA_DEBOUNCE_MS),
+            switchMap((request) =>
+              this.geo
+                .listarCidades({ uf: request.uf, q: request.termo, limit: MUNICIPIOS_LIMIT })
+                .pipe(map((result) => ({ request, result }))),
+            ),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ request, result }) => this.aplicarResultadoMunicipios(request, result));
   }
 
   protected calendario = computed(() => {
@@ -490,7 +572,7 @@ export class CalendarioDiasUteisDetalhePage {
   );
 
   protected readonly diaEmPreview = signal<string | null>(null);
-  protected readonly drawerVisivel = signal(false);
+  protected readonly drawerVisivel = model(false);
   protected readonly diaSelecionado = signal<CelulaCalendarioMensal | null>(null);
 
   protected readonly ocorrenciasSelecionadas = computed(
@@ -500,6 +582,128 @@ export class CalendarioDiasUteisDetalhePage {
     const celula = this.diaSelecionado();
     return celula ? formatIsoDateLong(celula.data) : '';
   });
+  protected readonly formError = signal<string | null>(null);
+  protected readonly saving = signal(false);
+  readonly submitting = signal(false);
+  protected readonly formOpen = signal(false);
+  readonly form = this.criaDiaNaoUtilFormGroup();
+  protected readonly abrangencias = signal(ABRANGENCIAS);
+  protected readonly unidadesFederativas = signal(UNIDADES_FEDERATIVAS);
+  private readonly buscaMunicipioRequests = new Subject<MunicipioBuscaRequest>();
+  protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
+
+  readonly dialogOpen = signal(false);
+  private criaDiaNaoUtilFormGroup(): FormGroup<DiaNaoUtilFormGroup> {
+    return new FormGroup<DiaNaoUtilFormGroup>(
+      {
+        abrangencia: new FormControl('ESTADUAL', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+        codigoMunicipio: new FormControl('', {
+          nonNullable: false,
+          validators: [],
+        }),
+        municipioNome: new FormControl(null, { nonNullable: false }),
+        municipioUf: new FormControl(null, { nonNullable: false }),
+        buscaMunicipio: new FormControl('', {
+          nonNullable: true,
+        }),
+        uf: new FormControl(PARA_SIGLA, {
+          nonNullable: false,
+          validators: [Validators.required, Validators.pattern(/^[A-Z]{2}$/)],
+        }),
+        data: new FormControl('', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+        descricao: new FormControl('', {
+          nonNullable: true,
+          validators: [textoNormalizado(200)],
+        }),
+      },
+      { validators: [snapshotMunicipalCoerente] },
+    );
+  }
+
+  protected readonly estadosBuscaMunicipio = signal<readonly MunicipioBuscaState[]>([]);
+
+  protected mudaAbrangencia(): void {
+    const abrangencia = this.form.controls.abrangencia.value;
+    const municipio = this.form.controls.codigoMunicipio;
+    const uf = this.form.controls.uf;
+    const buscaMunicipio = this.form.controls.buscaMunicipio;
+
+    municipio.clearValidators();
+    uf.clearValidators();
+    this.limparSnapshotMunicipal();
+
+    if (abrangencia === 'MUNICIPAL') {
+      // A UF aqui é só o filtro da busca na Geo — não é persistida (o backend
+      // recusa `uf` fora de ESTADUAL); a UF do município vem no snapshot.
+      uf.setValue(PARA_SIGLA);
+      uf.setValidators([Validators.required, Validators.pattern(/^[A-Z]{2}$/)]);
+      municipio.setValidators([Validators.required, Validators.pattern(CODIGO_MUNICIPIO_PATTERN)]);
+      this.atualizarEstadoMunicipio(MUNICIPIO_BUSCA_VAZIA);
+    } else if (abrangencia === 'ESTADUAL') {
+      uf.setValue(PARA_SIGLA);
+      buscaMunicipio.reset('');
+      uf.setValidators([Validators.required, Validators.pattern(/^[A-Z]{2}$/)]);
+      this.atualizarEstadoMunicipio(MUNICIPIO_BUSCA_VAZIA);
+    } else {
+      uf.reset('');
+      buscaMunicipio.reset('');
+      this.atualizarEstadoMunicipio(MUNICIPIO_BUSCA_VAZIA);
+    }
+
+    municipio.updateValueAndValidity();
+    uf.updateValueAndValidity();
+  }
+
+  /**
+   * Descarta a tripla inteira — código, nome e UF andam juntos, sob pena de
+   * sobrar um display cache de um município que não é mais o selecionado.
+   */
+  private limparSnapshotMunicipal(): void {
+    this.form.controls.codigoMunicipio.reset('');
+    this.form.controls.municipioNome.reset(null);
+    this.form.controls.municipioUf.reset(null);
+  }
+
+  protected mudaUf(): void {
+    if (
+      !this.form.controls.abrangencia.value ||
+      this.form.controls.abrangencia.value !== 'MUNICIPAL'
+    ) {
+      return;
+    }
+
+    // Trocar o estado da busca invalida o município escolhido no estado anterior.
+    this.limparSnapshotMunicipal();
+    this.form.controls.buscaMunicipio.reset('');
+    this.atualizarEstadoMunicipio(MUNICIPIO_BUSCA_VAZIA);
+    this.form.controls.codigoMunicipio.updateValueAndValidity();
+  }
+
+  private atualizarEstadoMunicipio(state: MunicipioBuscaState): void {
+    this.estadosBuscaMunicipio.update((estados) => {
+      const atualizados = [...estados];
+      atualizados[0] = state;
+      return atualizados;
+    });
+  }
+
+  protected estadoBuscaMunicipio(): MunicipioBuscaState {
+    return this.estadosBuscaMunicipio()[0] ?? MUNICIPIO_BUSCA_VAZIA;
+  }
+
+  /** Snapshot já gravado na linha — independe da lista de busca vigente. */
+  protected municipioSelecionado(): MunicipioOpcao | null {
+    const codigoIbge = this.form.controls.codigoMunicipio.value?.trim();
+    const nome = this.form.controls.municipioNome.value?.trim();
+    const uf = this.form.controls.municipioUf.value?.trim();
+    return codigoIbge && nome && uf ? { codigoIbge, nome, uf } : null;
+  }
 
   protected tentarNovamente(): void {
     if (!this.calendarioResource.isLoading()) {
@@ -584,4 +788,260 @@ export class CalendarioDiasUteisDetalhePage {
     const unidade = UNIDADES_FEDERATIVAS.find((candidata) => candidata.sigla === uf);
     return unidade ? `${unidade.nome} — ${unidade.sigla}` : (uf ?? '');
   }
+
+  protected erroDoCampoDiasNaoUteis(nome: keyof DiaNaoUtilFormGroup): string | null {
+    const control = this.form.controls[nome];
+    const shouldShowError = control.touched || control.dirty;
+    if (!shouldShowError || control.errors === null) {
+      return null;
+    }
+    if (control.errors['backend']) {
+      const backend = control.errors['backend'] as { code: string; message: string };
+      return backend.message;
+    }
+    if (control.errors['required']) return 'Campo obrigatório.';
+    if (control.errors['minlength'])
+      return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
+    if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
+    return 'Valor inválido.';
+  }
+
+  protected salvar(): void {
+    if (this.saving()) {
+      return;
+    }
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.saving.set(true);
+    const abrangencia = this.form.controls.abrangencia.value;
+    const municipio = abrangencia === 'MUNICIPAL' ? this.municipioSelecionado() : null;
+    const command: DiaNaoUtilCommandItem = {
+      abrangencia: this.form.controls.abrangencia.value,
+      data: this.form.controls.data.value,
+      uf:
+        this.form.controls.abrangencia.value === 'ESTADUAL'
+          ? this.form.controls.uf.value || null
+          : null,
+      municipioIbge: municipio?.codigoIbge ?? null,
+      municipioNome: municipio?.nome ?? null,
+      municipioUf: municipio?.uf ?? null,
+      descricao: nullIfBlank(this.form.controls.descricao.value),
+    };
+    this.api
+      .criaNovaData(
+        this.calendarioDiaUtilId(),
+        command,
+        withIdempotencyKey(this.idempotencyKeyAtual()),
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => this.handleSalvarResult(result));
+  }
+
+  resetaFormulario(): void {
+    this.form.reset({
+      data: '',
+      abrangencia: 'ESTADUAL',
+      codigoMunicipio: '',
+      uf: PARA_SIGLA,
+      buscaMunicipio: '',
+      descricao: '',
+      municipioNome: null,
+      municipioUf: null,
+    });
+    this.form.updateValueAndValidity();
+  }
+
+  private handleSalvarResult(result: ApiResult<CalendarioDiasUteisDto | void>): void {
+    this.saving.set(false);
+    if (result.ok) {
+      this.notifications.success('Dia não útil adicionado');
+      this.dialogOpen.set(false);
+      this.drawerVisivel.set(false);
+      this.calendarioResource.reload();
+      return;
+    }
+    this.aplicarFalha(result.problem);
+  }
+
+  private aplicarResultadoMunicipios(
+    request: MunicipioBuscaRequest,
+    result: ApiResult<readonly CidadeResumoDto[]>,
+  ): void {
+    const termoAtual = request.grupo.controls.buscaMunicipio.value.trim();
+    const ufAtual = request.grupo.controls.uf.value?.trim().toUpperCase();
+    if (termoAtual !== request.termo || ufAtual !== request.uf) {
+      return;
+    }
+
+    const state = this.estadoBuscaMunicipio();
+    const selecionado = this.municipioSelecionado();
+    const opcoes: MunicipioOpcao[] = result.ok ? [...result.data] : [...state.opcoes];
+    if (selecionado && !opcoes.some((opcao) => opcao.codigoIbge === selecionado.codigoIbge)) {
+      opcoes.unshift(selecionado);
+    }
+    this.atualizarEstadoMunicipio({
+      opcoes,
+      carregando: false,
+      erro: !result.ok,
+    });
+  }
+
+  private extrairData(problem: ProblemDetails): string | null {
+    return problem.detail?.match(DATA_PATTERN)?.[0] ?? null;
+  }
+
+  private aplicarFalha(problem: ProblemDetails): void {
+    if (problem.status === 422 && problem.code === DATA_DUPLICADA_DATASET_CODE) {
+      this.notifications.errorFromProblem(problem);
+      this.renovarIdempotencyKey();
+      this.marcarDatasDuplicadasComoTocadas(problem);
+      return;
+    }
+
+    if (problem.status === 422 && problem.code?.startsWith(CIDADE_REFERENCIA_CODE_PREFIX)) {
+      this.notifications.errorFromProblem(problem);
+      this.renovarIdempotencyKey();
+      // O erro da referência de cidade não carrega a data no `detail`, então só
+      // dá para apontar a linha quando existe uma única municipal no dataset.
+      if (this.form.controls.abrangencia.value === 'MUNICIPAL') {
+        const municipioControl = this.form.controls.codigoMunicipio;
+        municipioControl.setErrors({
+          ...municipioControl.errors,
+          backend: { code: problem.code, message: problem.detail },
+        });
+        municipioControl.markAsTouched();
+      }
+      return;
+    }
+
+    this.notifications.errorFromProblem(problem);
+    if (problem.status === 422) {
+      this.renovarIdempotencyKey();
+    }
+  }
+
+  protected recarregarMunicipios(): void {
+    const termo = this.form.controls.buscaMunicipio.value.trim();
+    const uf = this.form.controls.uf.value?.trim().toUpperCase() ?? '';
+    if (termo.length < 2 || uf.length !== 2) {
+      return;
+    }
+    this.atualizarEstadoMunicipio({
+      ...this.estadoBuscaMunicipio(),
+      carregando: true,
+      erro: false,
+    });
+    this.buscaMunicipioRequests.next({ grupo: new FormGroup(this.form.controls), termo, uf });
+  }
+
+  private renovarIdempotencyKey(): void {
+    this.idempotencyKeyAtual.set(idempotencyKey.create());
+  }
+
+  /**
+   * Grava a tripla da opção escolhida no `<select>` alimentado pela Geo. É o
+   * único ponto que escreve o snapshot: nome e UF nunca vêm do que foi digitado.
+   */
+  protected selecionarMunicipio(): void {
+    const codigo = this.form.controls.codigoMunicipio.value;
+    const opcao = this.estadoBuscaMunicipio().opcoes.find(
+      (candidata) => candidata.codigoIbge === codigo,
+    );
+    if (!opcao) {
+      this.limparSnapshotMunicipal();
+      return;
+    }
+    this.form.controls.municipioNome.setValue(opcao.nome);
+    this.form.controls.municipioUf.setValue(opcao.uf);
+    this.form.controls.buscaMunicipio.setValue(opcao.nome);
+    this.form.updateValueAndValidity();
+  }
+
+  protected valorDoInput(event: Event): string {
+    return event.target instanceof HTMLInputElement ? event.target.value : '';
+  }
+
+  protected buscaSemResultado(): boolean {
+    const state = this.estadoBuscaMunicipio();
+    return (
+      (this.form?.controls.buscaMunicipio.value.trim().length ?? 0) >= 2 &&
+      !state.carregando &&
+      !state.erro &&
+      state.opcoes.length === 0
+    );
+  }
+  protected buscarMunicipios(termo: string): void {
+    const uf = this.form?.controls.uf.value?.trim().toUpperCase() ?? '';
+    const normalizado = termo.trim();
+    if (
+      !this.form.controls.abrangencia.value ||
+      this.form.controls.abrangencia.value !== 'MUNICIPAL'
+    ) {
+      return;
+    }
+
+    this.form.controls.buscaMunicipio.setValue(termo, { emitEvent: false });
+    const selecionado = this.municipioSelecionado();
+    if (
+      selecionado &&
+      normalizado.localeCompare(selecionado.nome, 'pt-BR', { sensitivity: 'base' }) !== 0
+    ) {
+      this.limparSnapshotMunicipal();
+    }
+    if (normalizado.length < 2 || uf.length !== 2) {
+      this.atualizarEstadoMunicipio({
+        opcoes: [],
+        carregando: false,
+        erro: false,
+      });
+      return;
+    }
+
+    this.atualizarEstadoMunicipio({
+      ...this.estadoBuscaMunicipio(),
+      carregando: true,
+      erro: false,
+    });
+    const grupo = new FormGroup(this.form.controls);
+    this.buscaMunicipioRequests.next({ grupo, termo: normalizado, uf });
+  }
+
+  abrirDialog(): void {
+    this.form.controls.data.setValue(this.diaSelecionado()?.data ?? '');
+    this.form.controls.data.disable();
+    this.dialogOpen.set(true);
+  }
+
+  private marcarDatasDuplicadasComoTocadas(problem: ProblemDetails): void {
+    const data = this.extrairData(problem);
+    if (!data) {
+      return;
+    }
+    if (this.form.controls.data.value === data) {
+      this.form.controls.data.markAsTouched();
+    }
+  }
+}
+
+/**
+ * Exige, na linha municipal, o snapshot inteiro da opção escolhida na Geo:
+ * código IBGE de 7 dígitos, nome e UF cujo prefixo IBGE bate com o código. É a
+ * mesma coerência que `ReferenciaCidadeGeo.Validar` cobra no backend — validada
+ * aqui para que uma tripla incompleta não vire 422.
+ */
+function snapshotMunicipalCoerente(control: AbstractControl): ValidationErrors | null {
+  const grupo = control as FormGroup<DiaNaoUtilFormGroup>;
+  if (grupo.controls.abrangencia.value !== 'MUNICIPAL') {
+    return null;
+  }
+  const codigo = grupo.controls.codigoMunicipio.value?.trim() ?? '';
+  const nome = grupo.controls.municipioNome.value?.trim() ?? '';
+  const uf = grupo.controls.municipioUf.value?.trim().toUpperCase() ?? '';
+  if (!CODIGO_MUNICIPIO_PATTERN.test(codigo) || nome.length === 0) {
+    return { snapshotMunicipal: true };
+  }
+  return PREFIXO_IBGE_POR_UF[uf] === codigo.slice(0, 2) ? null : { snapshotMunicipal: true };
 }
