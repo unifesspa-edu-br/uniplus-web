@@ -521,6 +521,12 @@ export class ProcessoSeletivoPage {
     this.documentoNoServidor.set(null);
     this.rascunhoSalvoEm.set(null);
     this.avisoDoRascunho.set(null);
+
+    // A chave sai junto com o rascunho que ela acompanhou. Ela só gira sozinha quando o corpo
+    // muda: sem renovar aqui, reescrever depois exatamente a mesma transcrição sairia com a
+    // chave que o servidor já viu, receberia o replay da gravação anterior — anulada por este
+    // descarte — e a tela diria "salvo" sobre um rascunho que não foi recriado.
+    this.chaveDoRascunho.renovar();
   }
 
   /**
