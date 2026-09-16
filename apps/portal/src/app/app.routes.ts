@@ -11,17 +11,26 @@ export const appRoutes: Routes = [
     // onde a raiz é protegida pelo mesmo guard que traz o usuário até esta tela.
     data: { rotaDeVolta: '/processos' },
   },
+  { path: '', pathMatch: 'full', redirectTo: 'processos' },
   {
+    // Área pública do portal — shell próprio (ADR-0023 §2), sem menu lateral,
+    // com rolagem natural da página (header e rodapé acompanham o scroll).
     path: '',
-    loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
+    loadComponent: () => import('./layout/portal-shell').then((m) => m.PortalShellComponent),
     children: [
-      { path: '', redirectTo: 'processos', pathMatch: 'full' },
       {
-        // Consulta pública de processos seletivos — sem autenticação.
+        // Consulta pública de processos seletivos — sem autenticação. Traz o
+        // destaque de hero e a lista de certames (issue #779) na mesma tela.
         path: 'processos',
         loadChildren: () =>
           import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),
       },
+    ],
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
+    children: [
       {
         // Áreas autenticadas do candidato — exigem authGuard.
         path: 'inscricao',

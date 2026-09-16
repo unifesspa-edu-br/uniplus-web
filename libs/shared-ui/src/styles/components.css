@@ -472,7 +472,10 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 .card__meta { font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .card__desc { font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-normal); }
 .card__footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; padding-top: var(--space-3); border-top: 1px solid var(--border-subtle); }
-.card__footer a {
+/* :not(.btn): esta regra alveja o link nu (ex.: "Ver edital"), que sem ela
+   fica sem raio ou alvo de toque — não deve vazar para um `.btn` aninhado
+   aqui, cujo próprio --btn-radius (pill por padrão) tem que prevalecer. */
+.card__footer a:not(.btn) {
   display: inline-flex;
   align-items: center;
   min-width: var(--touch-min);
@@ -1986,7 +1989,9 @@ body.uni-drawer-open { overflow: hidden; }
   border: none;
   border-radius: var(--radius-pill);
   font-family: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium);
-  color: var(--text-secondary);
+  /* --text-secondary sobre --surface-subtle mede 6.91:1 — abaixo do 7:1 AAA;
+     --text-primary é a alternativa mais escura já usada pra texto de corpo. */
+  color: var(--text-primary);
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-standard),
               color var(--duration-fast) var(--ease-standard);
@@ -1994,7 +1999,11 @@ body.uni-drawer-open { overflow: hidden; }
 .segmented__btn:hover { color: var(--text-primary); }
 .segmented__btn[aria-pressed="true"] {
   background: var(--surface-card);
-  color: var(--color-primary);
+  /* --color-primary é pensado pra fundo de botão, não pra texto — no tema
+     escuro (#60a5fa sobre --surface-card) mede 5.75:1, abaixo do 7:1 AAA.
+     --text-link é o token do DS pra texto colorido sobre fundo (7.7:1 claro,
+     9.9:1 escuro) e coincide com --color-primary no tema claro (sem mudança). */
+  color: var(--text-link);
   box-shadow: var(--shadow-1);
   font-weight: var(--weight-semibold);
 }
@@ -2029,7 +2038,9 @@ body.uni-drawer-open { overflow: hidden; }
 }
 .edital-row__meta strong { color: var(--text-primary); font-weight: var(--weight-semibold); }
 .edital-row__actions { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
-.edital-row__actions a {
+/* :not(.btn): mesmo motivo do .card__footer acima — só o link nu precisa
+   deste raio/alvo de toque; um `.btn` aninhado usa o próprio --btn-radius. */
+.edital-row__actions a:not(.btn) {
   display: inline-flex;
   align-items: center;
   min-width: var(--touch-min);
@@ -2079,7 +2090,9 @@ body.uni-drawer-open { overflow: hidden; }
   border-radius: var(--radius-pill);
   background: var(--surface-card);
   font-size: var(--text-sm); font-weight: var(--weight-medium);
-  color: var(--text-secondary);
+  /* --text-secondary sobre --surface-subtle (usada por .filter-chip__count)
+     mede abaixo do 7:1 AAA — mesmo ajuste já feito em .segmented__btn. */
+  color: var(--text-primary);
   cursor: pointer;
   min-height: var(--touch-min);
   transition: all var(--duration-fast) var(--ease-standard);

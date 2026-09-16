@@ -329,7 +329,10 @@ export async function assertAaaVisualContract(
       function minimumFontSize(element: HTMLElement): number {
         if (
           element.matches(
-            '.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *',
+            // .tag/.filter-chip__count/.u-eyebrow: rótulos curtos e decorativos
+            // (status, contagem, legenda em caixa alta), mesmo racional de .card__meta
+            // e .u-caption — não são texto de corpo.
+            '.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *, .tag, .filter-chip__count, .u-eyebrow',
           )
         ) {
           return 12;
@@ -587,7 +590,11 @@ export async function assertReflowContract(page: Page): Promise<void> {
   const viewportWidth =
     page.viewportSize()?.width ?? (await page.evaluate(() => window.innerWidth));
   if (viewportWidth <= 340) {
-    await assertDrawerNavigation(page);
+    // Mesma checagem flexível que assertTextSpacingResilience já usa: exige
+    // a gaveta só quando o shell expõe um botão "Abrir menu" (padrão do shell
+    // administrativo) — um shell público sem gaveta, como o do portal, só
+    // precisa manter a <nav> "Navegação principal" visível e sem overflow.
+    await assertNavigationUsable(page);
     return;
   }
 

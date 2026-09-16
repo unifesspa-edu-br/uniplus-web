@@ -1718,7 +1718,7 @@
   color: var(--text-secondary);
 }
 
-   o browser controla `display: none` (fechado) vs `block` (aberto). */
+   /* o browser controla `display: none` (fechado) vs `block` (aberto). */
 
 /* ---- Step 7: Bônus ---- */
 .bonus-info {

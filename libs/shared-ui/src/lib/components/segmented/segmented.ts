@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
 export interface UiSegmentedOption<T extends string = string> {
   value: T;
   label: string;
+  /** Classe do PrimeIcon (ex.: `pi-list`), opcional — renderizado antes do rótulo. */
+  icon?: string;
 }
 
 @Component({
@@ -18,6 +20,9 @@ export interface UiSegmentedOption<T extends string = string> {
           [attr.aria-pressed]="selectedValue() === option.value ? 'true' : 'false'"
           (click)="selectedValue.set(option.value)"
         >
+          @if (option.icon) {
+            <i class="pi {{ option.icon }} btn__icon" aria-hidden="true"></i>
+          }
           {{ option.label }}
         </button>
       }
