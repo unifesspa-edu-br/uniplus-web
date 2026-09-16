@@ -1107,9 +1107,20 @@ describe('UnidadesPage', () => {
     component['selecionarCidade']({ codigoIbge: '9999999', nome: 'Cidade Fantasma', uf: 'XX' });
 
     component['salvar']();
+    fixture.detectChanges();
 
     expect(component['cidadeErro']()).toBe('Cidade inválida');
     expect(component['formError']()).toBeNull();
+
+    // O sinal certo não basta: o que o operador enxerga é o `<span>` do campo.
+    // Sem afirmar o DOM, apagar do template o bloco que renderiza `cidadeErro()`
+    // deixa a suíte verde com o erro invisível na tela.
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#cfg-unidade-cidade-erro')?.textContent).toContain(
+      'Cidade inválida',
+    );
+    // A outra metade do contrato: o banner geral do formulário não aparece.
+    expect(compiled.textContent).not.toContain('Não foi possível salvar');
   });
 
   it('exibe a cidade no detalhe e "Não informada" quando ausente', async () => {
@@ -1173,6 +1184,16 @@ describe('UnidadesPage', () => {
       'Fim de vigência deve ser posterior ao início.',
     );
     expect(component['formError']()).toBeNull();
+
+    // "No campo correspondente" é posicional: não basta existir um `.field__error`
+    // na tela, ele tem de estar no rótulo do próprio `vigenciaFim`.
+    const compiled = fixture.nativeElement as HTMLElement;
+    const erroInline = compiled
+      .querySelector('input[formcontrolname="vigenciaFim"]')
+      ?.closest('label')
+      ?.querySelector('.field__error');
+    expect(erroInline?.textContent).toContain('Fim de vigência deve ser posterior ao início.');
+    expect(compiled.textContent).not.toContain('Não foi possível salvar');
   });
 
   it('não envia vigenciaInicio no update — campo read-only na edição', async () => {
