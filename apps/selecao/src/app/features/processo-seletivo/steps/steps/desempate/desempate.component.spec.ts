@@ -108,6 +108,62 @@ describe('DesempateStepComponent', () => {
 
   afterEach(() => controller.verify());
 
+  /**
+   * O catálogo de fatos governa o que o predicado pode citar. Falhando a busca sem aviso nem
+   * nova tentativa, todo critério já configurado por predicado aparecia como fato fora do
+   * cadastro e a gravação do passo era recusada — sem explicação e sem caminho de volta que
+   * não fosse recarregar a página.
+   */
+  it('anuncia a falha do catálogo de fatos e busca de novo quando pedido', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [DesempateStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        CatalogosDeClassificacaoService,
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(DesempateStepComponent);
+    const local = fixture.componentInstance;
+    const controllerLocal = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+
+    for (const requisicao of controllerLocal.match(() => true)) {
+      if (requisicao.request.url.includes('fatos-candidato')) {
+        requisicao.flush(
+          { type: 'about:blank', title: 'Falha ao consultar o cadastro', status: 500 },
+          {
+            status: 500,
+            statusText: 'Internal Server Error',
+            headers: { 'content-type': 'application/problem+json' },
+          },
+        );
+        continue;
+      }
+      requisicao.flush([]);
+    }
+    fixture.detectChanges();
+
+    expect(local.falhaDoCatalogoDeFatos()).not.toBeNull();
+    expect(local.fatosEscolhiveis()).toHaveLength(0);
+
+    // A nova tentativa existe, e é ela que devolve o vocabulário sem recarregar a página.
+    local.carregarFatos();
+    const retentativa = controllerLocal.expectOne((r) => r.url.includes('fatos-candidato'));
+    retentativa.flush(FATOS);
+    fixture.detectChanges();
+
+    expect(local.falhaDoCatalogoDeFatos()).toBeNull();
+    expect(local.fatosEscolhiveis().length).toBeGreaterThan(0);
+    controllerLocal.verify();
+  });
+
   it('é válido sem nenhum critério (desempate é opcional)', () => {
     expect(componente.validate().valid).toBe(true);
   });
