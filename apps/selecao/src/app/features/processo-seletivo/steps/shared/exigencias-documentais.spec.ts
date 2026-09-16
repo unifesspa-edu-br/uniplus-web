@@ -9,17 +9,16 @@ import type {
 import {
   arvoreDeExigencias,
   baseLegalNova,
+  comAlcanceDeTodasAsFases,
   comExigencia,
   comModalidades,
   exigenciaNova,
   exigenciasDaFase,
+  exigenciasDe,
   exigenciasLocalizadasDaFase,
   folhaDe,
-  semAExigencia,
-  semAFase,
-  gruposSemNormaResolvida,
-  exigenciasDe,
   formatosDeclarados,
+  gruposSemNormaResolvida,
   modalidadesDaExigencia,
   semAEtapa,
   semAExigencia,
@@ -289,6 +288,45 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
     expect(raizes[0].quantidadeMinima).toBe(1);
     expect(raizes[0].basesLegais).toHaveLength(1);
     expect(raizes[0].filhos).toHaveLength(1);
+  });
+
+  /**
+   * "Vale em todas as fases" é exigência em cada uma. O mesmo documento pode estar na fase como
+   * ALTERNATIVA dentro de um grupo OU — ali ele é uma das saídas possíveis, não uma exigência.
+   * Aceitar essa folha como satisfeita transformava "este documento é exigido" em "este
+   * documento serve", sem nada na tela dizendo.
+   */
+  it('materializa o alcance global mesmo onde o documento só aparece dentro de um grupo OU', () => {
+    const comGrupo: ExigenciasDoRascunho = {
+      emTodasAsFases: [ID_RG],
+      raizes: [
+        { tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'ISENCAO'), quantidadeMinima: null, consequencia: null, basesLegais: null, filhos: null, chaveDistincao: null, dataReferencia: null, ocorrenciasEsperadas: null, repetePorEntidade: null },
+        {
+          tipo: 'OU',
+          documento: null,
+          quantidadeMinima: 1,
+          consequencia: null,
+          basesLegais: null,
+          filhos: [
+            { tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'HABILITACAO'), quantidadeMinima: null, consequencia: null, basesLegais: null, filhos: null, chaveDistincao: null, dataReferencia: null, ocorrenciasEsperadas: null, repetePorEntidade: null },
+          ],
+          chaveDistincao: null,
+          dataReferencia: null,
+          ocorrenciasEsperadas: null,
+          repetePorEntidade: null,
+        },
+      ],
+    };
+
+    const completas = comAlcanceDeTodasAsFases(comGrupo, ['ISENCAO', 'HABILITACAO']);
+
+    // A folha do grupo continua onde estava, e a exigência de raiz passa a existir ao lado.
+    expect(exigenciasDaFase(completas, 'HABILITACAO')).toHaveLength(2);
+    expect(
+      completas.raizes.filter(
+        (no) => no.tipo === 'FOLHA' && no.documento?.faseCodigo === 'HABILITACAO',
+      ),
+    ).toHaveLength(1);
   });
 
   /** Grupo que perdeu todos os filhos sai junto — o servidor recusa grupo vazio. */
