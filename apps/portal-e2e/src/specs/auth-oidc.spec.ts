@@ -109,12 +109,13 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await page.goto('/perfil');
       await keycloakLogin(page, user.username, user.password);
 
-      // Navegar para outra rota protegida
-      await page.click('a[href="/acompanhamento"]');
+      // Navegar para outra rota protegida — /acompanhamento vive no shell
+      // público (sem link na sidebar admin), por isso via goto direto.
+      await page.goto('/acompanhamento');
       await expect(page).toHaveURL(/acompanhamento/);
 
-      // Navegar para documentos
-      await page.click('a[href="/documentos"]');
+      // Navegar para documentos (shell administrativo)
+      await page.goto('/documentos');
       await expect(page).toHaveURL(/documentos/);
 
       // Header continua mostrando user info
