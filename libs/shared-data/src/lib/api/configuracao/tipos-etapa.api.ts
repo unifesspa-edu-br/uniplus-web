@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
@@ -6,6 +6,8 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type TipoEtapaDto = components['schemas']['TipoEtapaDto'];
+export type CriarTipoEtapaCommand = components['schemas']['CriarTipoEtapaCommand'];
+export type AtualizarTipoEtapaCommand = components['schemas']['AtualizarTipoEtapaCommand'];
 
 /** Filtro da listagem de tipos de etapa (cursor pagination, ADR-0026). */
 export interface TiposEtapaQuery {
@@ -27,6 +29,10 @@ export interface TiposEtapaQuery {
  * duas metades: um tipo inativo não pode ser oferecido como escolha nova, mas
  * precisa continuar visível quando já referenciado por uma etapa gravada, senão
  * a tela exibiria um vínculo existente sem rótulo.
+ *
+ * Cada tipo declara também se admite compor a nota final e se admite eliminar
+ * candidato. É desse par que o wizard tira quais caracteres oferecer numa etapa
+ * daquele tipo — e, por consequência, se ela pode ter peso e nota mínima.
  */
 @Injectable({ providedIn: 'root' })
 export class TiposEtapaApi {
@@ -53,6 +59,35 @@ export class TiposEtapaApi {
     return this.http.get<ApiResult<TipoEtapaDto>>(
       `${this.basePath}/api/configuracao/tipos-etapa/${encodeURIComponent(id)}`,
       { context: withVendorMime('tipo-etapa', 1) },
+    );
+  }
+
+  /** POST `/api/configuracao/admin/tipos-etapa` — cria. Idempotency-Key obrigatório. */
+  criar(command: CriarTipoEtapaCommand, context: HttpContext): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/configuracao/admin/tipos-etapa`,
+      command,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /** PUT `/api/configuracao/admin/tipos-etapa/{id}` — atualiza (sem `codigo`, imutável). */
+  atualizar(
+    id: string,
+    command: AtualizarTipoEtapaCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/configuracao/admin/tipos-etapa/${encodeURIComponent(id)}`,
+      command,
+      { context },
+    );
+  }
+
+  /** DELETE `/api/configuracao/admin/tipos-etapa/{id}` — desativa; o código fica reservado. */
+  remover(id: string): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(
+      `${this.basePath}/api/configuracao/admin/tipos-etapa/${encodeURIComponent(id)}`,
     );
   }
 }

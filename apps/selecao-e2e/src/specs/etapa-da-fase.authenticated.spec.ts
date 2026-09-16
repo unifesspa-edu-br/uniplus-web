@@ -31,7 +31,11 @@ const FASES_CANONICAS = [
 
 const TIPOS_ETAPA = [
   { id: '01960000-0000-7000-0000-0000000000e1', codigo: 'ANALISE_DOCUMENTAL',
-    nome: 'Análise Documental', descricao: null, ativo: true },
+    nome: 'Análise Documental', descricao: null, ativo: true,
+    admitePontuacao: false, admiteEliminacao: true },
+  { id: '01960000-0000-7000-0000-0000000000e2', codigo: 'PROVA_OBJETIVA',
+    nome: 'Prova Objetiva', descricao: null, ativo: true,
+    admitePontuacao: true, admiteEliminacao: true },
 ] as const;
 
 const TIPOS_ATO = [
@@ -97,6 +101,47 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(page.getByRole('heading', { name: 'Recursos que esta etapa admite' })).toBeVisible();
   });
 
+  /**
+   * Peso só aparece quando a etapa pode compor a nota final, e quem diz isso é o tipo, no
+   * cadastro: uma análise documental confere conformidade e não atribui nota que entre na média.
+   * Antes disso a tela pedia peso em toda etapa, inclusive nas que o cálculo ignora.
+   */
+  test('tipo que não compõe a nota final não oferece caráter que pontua, nem peso', async ({
+    page,
+  }) => {
+    await acrescentarEtapa(page);
+    const etapa = page.locator('.etapa-bloco--aberta').last();
+
+    await etapa.getByLabel('Tipo').selectOption({ label: 'Análise Documental' });
+
+    const carater = etapa.getByLabel('Caráter');
+    await expect(carater.getByRole('option', { name: 'Eliminatória' })).toHaveCount(1);
+    await expect(carater.getByRole('option', { name: 'Classificatória', exact: true })).toHaveCount(
+      0,
+    );
+    await expect(
+      carater.getByRole('option', { name: 'Classificatória e eliminatória' }),
+    ).toHaveCount(0);
+
+    await carater.selectOption({ label: 'Eliminatória' });
+    await expect(etapa.getByLabel('Peso')).toHaveCount(0);
+    await expect(etapa.getByLabel('Nota mínima')).toBeVisible();
+  });
+
+  /** Trocar para um tipo que pontua devolve as três escolhas, e o peso volta a fazer sentido. */
+  test('tipo que compõe a nota final oferece os três caracteres', async ({ page }) => {
+    await acrescentarEtapa(page);
+    const etapa = page.locator('.etapa-bloco--aberta').last();
+
+    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
+
+    const carater = etapa.getByLabel('Caráter');
+    await expect(carater.getByRole('option')).toHaveCount(4, 'as três escolhas mais "Selecione…"');
+
+    await carater.selectOption({ label: 'Classificatória' });
+    await expect(etapa.getByLabel('Peso')).toBeVisible();
+  });
+
   /** Só ato que o catálogo marca como resultado recebe papel no ciclo recursal. */
   test('a etapa declara o que publica, com papel', async ({ page }) => {
     await acrescentarEtapa(page);
@@ -149,6 +194,53 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
   });
 
   /**
+   * O efeito suspensivo da janela da etapa. O servidor guarda os quatro valores em colunas
+   * próprias e os devolve na leitura, mas a tela não tinha onde declará-los e o comando saía
+   * com os quatro em branco: bastava mexer numa data do cronograma para o que estivesse
+   * gravado desaparecer. A fase sempre teve estes campos — a etapa recorre nas mesmas
+   * condições.
+   */
+  test('a janela da etapa declara por quanto tempo suspende o efeito do ato', async ({ page }) => {
+    await acrescentarEtapa(page);
+
+    await abrirBloco(page, 'Recursos que esta etapa admite');
+    const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
+    await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
+
+    await recursos.getByLabel('Suspensividade da 1ª instância — prazo').fill('3');
+    await recursos
+      .getByLabel('Suspensividade da 1ª instância — unidade')
+      .selectOption('diasUteis');
+    await recursos.getByLabel('Suspensividade da 2ª instância — prazo').fill('48');
+    await recursos.getByLabel('Suspensividade da 2ª instância — unidade').selectOption('horas');
+
+    await expect(recursos.getByLabel('Suspensividade da 1ª instância — prazo')).toHaveValue('3');
+    await expect(recursos.getByLabel('Suspensividade da 1ª instância — unidade')).toHaveValue(
+      'diasUteis',
+    );
+    await expect(recursos.getByLabel('Suspensividade da 2ª instância — prazo')).toHaveValue('48');
+    await expect(recursos.getByLabel('Suspensividade da 2ª instância — unidade')).toHaveValue(
+      'horas',
+    );
+  });
+
+  /** Instância sem os dois campos é desativação declarada, e a tela nomeia isso. */
+  test('a janela da etapa admite instância sem suspensividade', async ({ page }) => {
+    await acrescentarEtapa(page);
+
+    await abrirBloco(page, 'Recursos que esta etapa admite');
+    const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
+    await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
+
+    await expect(recursos.getByLabel('Suspensividade da 1ª instância — unidade')).toHaveValue('');
+    await expect(
+      recursos.getByLabel('Suspensividade da 1ª instância — unidade').getByRole('option', {
+        name: 'Sem suspensividade',
+      }),
+    ).toHaveCount(1);
+  });
+
+  /**
    * A habilitação do certame regional tem oito etapas e cada uma pede o seu comprovante.
    * Sem dizer qual delas coleta, os oito documentos apareceriam nas oito.
    *
@@ -194,7 +286,8 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await escolherDocumento(page, 'Contracheque');
     await page.getByRole('button', { name: 'Acrescentar documento' }).click();
 
-    await expect(page.getByText('Contracheque')).toBeVisible();
+    // Escopado ao item: a conferência do passo também nomeia o documento, ao cobrar a norma.
+    await expect(page.locator('.doc-item__name').filter({ hasText: 'Contracheque' })).toBeVisible();
     await expect(page.getByLabel('Coletado em')).toHaveCount(0);
   });
 

@@ -5,6 +5,26 @@
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 
+@if (regrasSemSuporte() > 0) {
+  <!--
+    O catálogo de regras cresce por migration, e uma regra nova aparece aqui assim que é
+    semeada. Oferecê-la sem saber montar os argumentos dela produzia uma recusa depois da
+    escolha, sem campo na tela para consertar.
+  -->
+  <p class="field__hint">
+    O catálogo tem {{ regrasSemSuporte() === 1 ? 'uma regra' : regrasSemSuporte() + ' regras' }}
+    que esta tela ainda não sabe configurar, e que por isso não {{ regrasSemSuporte() === 1 ? 'é
+    oferecida' : 'são oferecidas' }} aqui.
+  </p>
+}
+
+<!--
+  Reordenar, acrescentar e remover mudavam a lista em silêncio para quem usa leitor de tela. A
+  região fica fora do `@for` de propósito: dentro dele, ser recriada a cada mudança impediria o
+  anúncio de ser lido.
+-->
+<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
 <div class="desempate-list">
   @for (
     criterio of criterios();
@@ -13,7 +33,16 @@
     let first = $first;
     let last = $last
   ) {
-    <section class="step-section" [attr.aria-label]="'Critério de desempate ' + (indice + 1)">
+    <!--
+      `role="group"`, não `<section>` com nome: `<section>` nomeada vira landmark `region`, e
+      dez critérios punham dez landmarks na lista de navegação do leitor de tela, competindo
+      com os landmarks reais da página.
+    -->
+    <div
+      class="step-section"
+      role="group"
+      [attr.aria-label]="'Critério de desempate ' + (indice + 1)"
+    >
       <div class="desempate-item">
         <span class="desempate-num">{{ indice + 1 }}º</span>
         <div class="form-grid form-grid--3" style="flex: 1">
@@ -68,43 +97,143 @@
           }
 
           @if (usaPredicadoFato(criterio)) {
+            <!--
+              Fato, comparação e valor vêm do catálogo institucional, não de texto livre: os
+              três são vocabulário fechado do lado do servidor, e digitar "=" onde ele espera
+              "IGUAL" era recusado no 422 sem dizer qual dos três campos estava errado.
+            -->
             <div class="form-field">
-              <label class="label" [attr.for]="'desemp-fato-' + indice">Fato</label
-              ><input
-                class="input"
+              <label class="label" [attr.for]="'desemp-fato-' + indice">Fato do candidato</label
+              ><select
+                class="select"
                 [id]="'desemp-fato-' + indice"
-                type="text"
-                [value]="criterio.fato"
-                (input)="alterarFato(indice, $any($event.target).value)"
-              />
+                [disabled]="!store.aceitaEdicao()"
+                (change)="alterarFato(indice, $any($event.target).value)"
+              >
+                <option value="" [selected]="criterio.fato === ''">Escolha o fato</option>
+                @for (fato of fatosEscolhiveis(); track fato.codigo) {
+                  <option [value]="fato.codigo" [selected]="fato.codigo === criterio.fato">
+                    {{ fato.nome }}
+                  </option>
+                }
+                @if (criterio.fato !== '' && fatoDoCriterio(criterio.fato) === undefined) {
+                  <option [value]="criterio.fato" selected>
+                    {{ criterio.fato }} — fora do catálogo
+                  </option>
+                }
+              </select>
             </div>
+
+            @if (criterio.fato !== '') {
             <div class="form-field">
-              <label class="label" [attr.for]="'desemp-operador-' + indice">Operador</label
-              ><input
-                class="input"
+              <label class="label" [attr.for]="'desemp-operador-' + indice">Comparação</label
+              ><select
+                class="select"
                 [id]="'desemp-operador-' + indice"
-                type="text"
-                [value]="criterio.operador"
-                (input)="alterarOperador(indice, $any($event.target).value)"
-              />
+                [disabled]="!store.aceitaEdicao()"
+                (change)="alterarOperador(indice, $any($event.target).value)"
+              >
+                @for (opcao of operadoresDoCriterio(criterio.fato); track opcao.valor) {
+                  <option [value]="opcao.valor" [selected]="opcao.valor === criterio.operador">
+                    {{ opcao.rotulo }}
+                  </option>
+                }
+              </select>
             </div>
-            <div class="form-field">
-              <label class="label" [attr.for]="'desemp-valor-' + indice">Valor</label
-              ><input
-                class="input"
-                [id]="'desemp-valor-' + indice"
-                type="text"
-                [value]="criterio.valor"
-                (input)="alterarValor(indice, $any($event.target).value)"
-              />
-            </div>
+
+            @if (criterioComparaComLista(criterio.operador)) {
+              <div class="form-field">
+                <label class="label" [attr.for]="valoresDoCriterioCampo.campoId">Valores</label>
+                <ui-combobox
+                  #valoresDoCriterioCampo
+                  multiplo
+                  rotulo="Valores que satisfazem o critério"
+                  placeholder="Escolha ao menos um"
+                  textoSemResultado="Nenhum valor do domínio casa com o que você digitou."
+                  [grupos]="valoresDoFato(criterio.fato)"
+                  [values]="valoresDoCriterio(criterio)"
+                  [disabled]="!store.aceitaEdicao()"
+                  (valuesChange)="alterarValores(indice, $event)"
+                />
+              </div>
+            } @else if (ehBooleano(criterio.fato)) {
+              <div class="form-field">
+                <label class="label" [attr.for]="'desemp-valor-' + indice">Resposta</label
+                ><select
+                  class="select"
+                  [id]="'desemp-valor-' + indice"
+                  [disabled]="!store.aceitaEdicao()"
+                  (change)="alterarValor(indice, $any($event.target).value)"
+                >
+                  <option value="" [selected]="valorDoCriterio(criterio) === ''">
+                    Escolha a resposta
+                  </option>
+                  @for (resposta of respostasBooleanas; track resposta.valor) {
+                    <option
+                      [value]="resposta.valor"
+                      [selected]="resposta.valor === valorDoCriterio(criterio)"
+                    >
+                      {{ resposta.rotulo }}
+                    </option>
+                  }
+                </select>
+              </div>
+            } @else if (valoresEscolhiveis(criterio.fato).length > 0) {
+              <div class="form-field">
+                <label class="label" [attr.for]="'desemp-valor-' + indice">Valor</label
+                ><select
+                  class="select"
+                  [id]="'desemp-valor-' + indice"
+                  [disabled]="!store.aceitaEdicao()"
+                  (change)="alterarValor(indice, $any($event.target).value)"
+                >
+                  <option value="" [selected]="valorDoCriterio(criterio) === ''">
+                    Escolha o valor
+                  </option>
+                  @for (valor of valoresEscolhiveis(criterio.fato); track valor) {
+                    <option [value]="valor" [selected]="valor === valorDoCriterio(criterio)">
+                      {{ valor }}
+                    </option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <!-- Fato numérico: o domínio não tem lista de valores, e o que ele aceita é um
+                   inteiro — decimal é recusado pelo servidor. -->
+              <div class="form-field">
+                <label class="label" [attr.for]="'desemp-valor-' + indice">Valor</label
+                ><input
+                  class="input"
+                  type="text"
+                  inputmode="numeric"
+                  [id]="'desemp-valor-' + indice"
+                  [value]="valorDoCriterio(criterio)"
+                  [disabled]="!store.aceitaEdicao()"
+                  (input)="alterarValor(indice, $any($event.target).value)"
+                />
+              </div>
+            }
+
+            @if (alcanceDoCriterio(criterio) !== '') {
+              <p class="field__hint">{{ alcanceDoCriterio(criterio) }}</p>
+            }
+            } @else {
+              <!--
+                Sem fato escolhido não há o que comparar nem com o quê: um seletor de comparação
+                sem opção nenhuma, rotulado, é caixa inerte que não explica a si mesma.
+              -->
+              <p class="field__hint">
+                Escolha o fato do candidato para declarar a comparação e o valor.
+              </p>
+            }
           }
         </div>
         <div class="desempate-actions">
           <button
             class="desempate-btn"
             type="button"
-            aria-label="Mover para cima"
+            [id]="'desemp-subir-' + indice"
+            [attr.aria-label]="'Mover o critério ' + (indice + 1) + ' para cima'"
             [disabled]="first"
             (click)="mover(indice, -1)"
           >
@@ -122,7 +251,8 @@
           ><button
             class="desempate-btn"
             type="button"
-            aria-label="Mover para baixo"
+            [id]="'desemp-descer-' + indice"
+            [attr.aria-label]="'Mover o critério ' + (indice + 1) + ' para baixo'"
             [disabled]="last"
             (click)="mover(indice, 1)"
           >
@@ -140,6 +270,7 @@
           ><button
             class="desempate-btn"
             type="button"
+            [id]="'desemp-remover-' + indice"
             [attr.aria-label]="'Remover critério de desempate ' + (indice + 1)"
             (click)="remover(indice)"
           >
@@ -157,10 +288,15 @@
           </button>
         </div>
       </div>
-    </section>
+    </div>
   }
 </div>
 
-<button class="btn btn--outline btn--sm" type="button" (click)="acrescentar()">
+<button
+  class="btn btn--outline btn--sm"
+  type="button"
+  id="desempate-acrescentar"
+  (click)="acrescentar()"
+>
   + Acrescentar critério
 </button>

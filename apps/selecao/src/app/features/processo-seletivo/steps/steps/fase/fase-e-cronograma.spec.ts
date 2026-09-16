@@ -63,7 +63,14 @@ const FASES_CANONICAS = [
 ];
 
 const TIPOS_ETAPA = [
-  { id: ID_TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva', ativo: true },
+  {
+    id: ID_TIPO_ETAPA,
+    codigo: 'PROVA_OBJETIVA',
+    nome: 'Prova objetiva',
+    ativo: true,
+    admitePontuacao: true,
+    admiteEliminacao: true,
+  },
 ];
 
 const ATOS = [
@@ -196,7 +203,8 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
 
     for (const requisicao of controller.match(() => true)) {
       const { url } = requisicao.request;
-      if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
+      if (url.includes('fatos-candidato')) requisicao.flush([]);
+      else if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
       else if (url.includes('tipos-etapa')) requisicao.flush(TIPOS_ETAPA);
       else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
       else if (url.includes('categorias-documento')) requisicao.flush(CATEGORIAS);
@@ -306,11 +314,8 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     // 4. Grava pela linha do tempo — é ela que leva as etapas junto.
     const gravacao = cronograma.persistir();
 
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
-
+    // O cronograma vai primeiro: a etapa declara a fase e o servidor recusa etapa cuja fase
+    // ainda não esteja lá.
     const enviadas = controller.expectOne(ROTA_FASES);
     const corpo = enviadas.request.body as Record<string, unknown>[];
 
@@ -332,6 +337,10 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     });
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
 
     // A última gravação do passo: relê as fases para traduzir o código canônico que o

@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessosSeletivosListaPage } from './processos-seletivos-lista.page';
+import { rascunhoNaoGravadoGuard } from './steps/shared/rascunho-nao-gravado.guard';
 
 /**
  * As duas rotas do editor são a mesma tela: a criação acontece no meio do
@@ -27,6 +28,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   {
     path: 'novo',
     component: ProcessoSeletivoPage,
+    canDeactivate: [rascunhoNaoGravadoGuard],
     data: {
       breadcrumb: 'Novo Processo Seletivo',
       [ROTA_REUSE_KEY]: EDITOR_PROCESSO_SELETIVO,
@@ -35,6 +37,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   {
     path: ':id',
     component: ProcessoSeletivoPage,
+    canDeactivate: [rascunhoNaoGravadoGuard],
     data: {
       breadcrumb: 'Processo Seletivo',
       [ROTA_REUSE_KEY]: EDITOR_PROCESSO_SELETIVO,

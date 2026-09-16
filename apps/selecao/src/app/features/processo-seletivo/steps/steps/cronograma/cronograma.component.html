@@ -112,7 +112,7 @@
             </h2>
             <div class="fase-acoes">
               <button
-                class="btn btn--tertiary"
+                class="btn btn--tertiary btn--sm"
                 type="button"
                 (click)="mover(item.indice, -1)"
                 [disabled]="!edicaoLiberada() || item.indice === 0"
@@ -121,7 +121,7 @@
                 Subir
               </button>
               <button
-                class="btn btn--tertiary"
+                class="btn btn--tertiary btn--sm"
                 type="button"
                 (click)="mover(item.indice, 1)"
                 [disabled]="!edicaoLiberada() || item.indice === linhaDoTempo().length - 1"
@@ -130,11 +130,10 @@
                 Descer
               </button>
               <button
-                class="btn btn--tertiary"
+                class="btn btn--tertiary btn--sm"
                 type="button"
                 (click)="pedirRemocaoDaFase(item.indice)"
-                [disabled]="!edicaoLiberada() || !podeRemoverFase()"
-                [attr.aria-describedby]="podeRemoverFase() ? null : 'cr-ultima-fase'"
+                [disabled]="!edicaoLiberada()"
                 [attr.aria-label]="'Remover ' + item.nome"
               >
                 Remover
@@ -169,12 +168,6 @@
                 </button>
               </div>
             </div>
-          }
-
-          @if (!podeRemoverFase()) {
-            <p class="field__hint" id="cr-ultima-fase">
-              O cronograma não pode ficar sem nenhuma fase. Acrescente outra antes de remover esta.
-            </p>
           }
 
           @if (faseExpandida(item.indice)) {
@@ -215,6 +208,7 @@
                         type="datetime-local"
                         [attr.id]="'cr-inicio-' + item.indice"
                         formControlName="inicio"
+                        [attr.min]="pisoDeData(item.grupo.controls.inicio.value)"
                         [attr.aria-describedby]="'cr-fuso-' + item.indice"
                       />
                     </div>
@@ -225,6 +219,9 @@
                         type="datetime-local"
                         [attr.id]="'cr-fim-' + item.indice"
                         formControlName="fim"
+                        [attr.min]="
+                          pisoDeData(item.grupo.controls.fim.value, item.grupo.controls.inicio.value)
+                        "
                         [attr.aria-describedby]="'cr-fuso-' + item.indice"
                       />
                     </div>
@@ -288,21 +285,63 @@
                     rolagem, e o que o operador procurava sumia no meio.
                   -->
                       <div class="etapa-bloco" [class.etapa-bloco--aberta]="etapaAberta(posicao)">
-                        <button
-                          class="etapa-resumo"
-                          type="button"
-                          [attr.aria-expanded]="etapaAberta(posicao)"
-                          [attr.aria-controls]="'cr-etapa-corpo-' + posicao"
-                          (click)="alternarEtapa(posicao)"
-                        >
-                          <span class="etapa-resumo__seta" aria-hidden="true"></span>
-                          <span class="etapa-resumo__nome">{{ nomeDaEtapa(etapa) }}</span>
-                          <span class="etapa-resumo__marcas">
-                            @for (marca of marcasDaEtapa(etapa); track marca) {
-                              <span class="etapa-resumo__marca">{{ marca }}</span>
-                            }
-                          </span>
-                        </button>
+                        @let rotuloDaEtapa =
+                          etapa.controls.nome.value === ''
+                            ? 'etapa ' + (posicao + 1)
+                            : etapa.controls.nome.value;
+                        <!--
+                      Reordenar e remover moram no cabeçalho, ao lado do nome, e não no corpo:
+                      no corpo elas só existiam com o cartão aberto, e mover a terceira de oito
+                      etapas obrigava a abrir a etapa para só então empurrá-la. As ações são
+                      irmãs do botão que abre o cartão — não podem estar dentro dele, porque
+                      botão não aninha botão. Mesmo desenho que a fase um nível acima.
+                    -->
+                        <div class="etapa-cabecalho">
+                          <button
+                            class="etapa-resumo"
+                            type="button"
+                            [attr.aria-expanded]="etapaAberta(posicao)"
+                            [attr.aria-controls]="'cr-etapa-corpo-' + posicao"
+                            (click)="alternarEtapa(posicao)"
+                          >
+                            <span class="etapa-resumo__seta" aria-hidden="true"></span>
+                            <span class="etapa-resumo__nome">{{ nomeDaEtapa(etapa) }}</span>
+                            <span class="etapa-resumo__marcas">
+                              @for (marca of marcasDaEtapa(etapa); track marca) {
+                                <span class="etapa-resumo__marca">{{ marca }}</span>
+                              }
+                            </span>
+                          </button>
+                          <div class="etapa-acoes">
+                            <button
+                              class="btn btn--tertiary btn--sm"
+                              type="button"
+                              (click)="moverEtapa(posicao, -1)"
+                              [disabled]="!edicaoLiberada() || posicao === 0"
+                              [attr.aria-label]="'Subir ' + rotuloDaEtapa"
+                            >
+                              Subir
+                            </button>
+                            <button
+                              class="btn btn--tertiary btn--sm"
+                              type="button"
+                              (click)="moverEtapa(posicao, 1)"
+                              [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
+                              [attr.aria-label]="'Descer ' + rotuloDaEtapa"
+                            >
+                              Descer
+                            </button>
+                            <button
+                              class="btn btn--tertiary btn--sm"
+                              type="button"
+                              (click)="removerEtapa(posicao)"
+                              [disabled]="!edicaoLiberada()"
+                              [attr.aria-label]="'Remover ' + rotuloDaEtapa"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </div>
 
                         @if (etapaAberta(posicao)) {
                           <div
@@ -325,14 +364,30 @@
                               <label class="label" [attr.for]="'cr-etapa-tipo-' + posicao"
                                 >Tipo</label
                               >
+                              <!--
+                                `selected` por opção, e não `formControlName`: trocar o tipo
+                                muda quais caracteres o cadastro admite, e o seletor de caráter
+                                ao lado precisa ser redesenhado na mesma interação.
+                              -->
                               <select
                                 class="input"
                                 [attr.id]="'cr-etapa-tipo-' + posicao"
-                                formControlName="tipoEtapaOrigemId"
+                                [value]="etapa.controls.tipoEtapaOrigemId.value"
+                                (change)="escolherTipoEtapa(etapa, $any($event.target).value)"
                               >
-                                <option value="">Selecione…</option>
+                                <option
+                                  value=""
+                                  [selected]="etapa.controls.tipoEtapaOrigemId.value === ''"
+                                >
+                                  Selecione…
+                                </option>
                                 @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
-                                  <option [value]="tipo.id">{{ tipo.nome }}</option>
+                                  <option
+                                    [value]="tipo.id"
+                                    [selected]="tipo.id === etapa.controls.tipoEtapaOrigemId.value"
+                                  >
+                                    {{ tipo.nome }}
+                                  </option>
                                 }
                               </select>
                             </div>
@@ -354,7 +409,7 @@
                                 <option value="" [selected]="etapa.controls.carater.value === ''">
                                   Selecione…
                                 </option>
-                                @for (opcao of careteres; track opcao.valor) {
+                                @for (opcao of caracteresPara(etapa); track opcao.valor) {
                                   <option
                                     [value]="opcao.valor"
                                     [selected]="opcao.valor === etapa.controls.carater.value"
@@ -365,11 +420,11 @@
                               </select>
                             </div>
                             <!--
-                              Peso e nota mínima seguem o caráter da etapa, não o tipo: é o
-                              caráter que diz se ela compõe a nota final e se ela elimina. O
-                              tipo é cadastro de Configuração e não declara nenhum dos dois —
-                              deduzir "análise documental não avalia" de uma lista aqui
-                              quebraria no dia em que o CEPS cadastrar um tipo novo.
+                              Peso e nota mínima seguem o caráter da etapa: é ele que diz se ela
+                              compõe a nota final e se ela elimina. O tipo entra um passo antes,
+                              recortando quais caracteres o cadastro admite — é assim que uma
+                              análise documental deixa de oferecer peso sem que esta tela
+                              carregue uma lista de códigos que envelhece a cada tipo novo.
                             -->
                             @if (etapaComponeNota(etapa)) {
                               <div class="form-field">
@@ -399,39 +454,6 @@
                                 />
                               </div>
                             }
-                            @let rotuloDaEtapa =
-                              etapa.controls.nome.value === ''
-                                ? 'etapa ' + (posicao + 1)
-                                : etapa.controls.nome.value;
-                            <div class="form-field etapa-acoes">
-                              <button
-                                class="btn btn--tertiary"
-                                type="button"
-                                (click)="moverEtapa(posicao, -1)"
-                                [disabled]="!edicaoLiberada() || posicao === 0"
-                                [attr.aria-label]="'Subir ' + rotuloDaEtapa"
-                              >
-                                Subir
-                              </button>
-                              <button
-                                class="btn btn--tertiary"
-                                type="button"
-                                (click)="moverEtapa(posicao, 1)"
-                                [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
-                                [attr.aria-label]="'Descer ' + rotuloDaEtapa"
-                              >
-                                Descer
-                              </button>
-                              <button
-                                class="btn btn--tertiary"
-                                type="button"
-                                (click)="removerEtapa(posicao)"
-                                [disabled]="!edicaoLiberada()"
-                                [attr.aria-label]="'Remover ' + rotuloDaEtapa"
-                              >
-                                Remover
-                              </button>
-                            </div>
                             <!--
                       O que a etapa publica. Mesmo desenho da fase um nível acima: só ato
                       que o catálogo marca como resultado admite papel, e é o papel
@@ -450,6 +472,10 @@
                                     type="datetime-local"
                                     [attr.id]="'cr-etapa-ini-' + posicao"
                                     formControlName="inicio"
+                                    [attr.min]="
+                                      pisoDeData(etapa.controls.inicio.value, item.grupo.controls.inicio.value)
+                                    "
+                                    [attr.max]="item.grupo.controls.fim.value || null"
                                   />
                                 </div>
                                 <div class="form-field">
@@ -461,6 +487,14 @@
                                     type="datetime-local"
                                     [attr.id]="'cr-etapa-fim-' + posicao"
                                     formControlName="fim"
+                                    [attr.min]="
+                                      pisoDeData(
+                                        etapa.controls.fim.value,
+                                        etapa.controls.inicio.value,
+                                        item.grupo.controls.inicio.value
+                                      )
+                                    "
+                                    [attr.max]="item.grupo.controls.fim.value || null"
                                   />
                                 </div>
                               </div>
@@ -518,6 +552,137 @@
                               declarada ocupa uma grade inteira, e a prova objetiva do certame
                               qualificado abre duas.
                             -->
+                            <div
+                              class="form-grid__full etapa-publica etapa-publica--recolhivel"
+                              [class.is-aberto]="blocoAberto(posicao, 'publica')"
+                            >
+                              <button
+                                class="etapa-publica__cabecalho"
+                                type="button"
+                                [attr.aria-expanded]="blocoAberto(posicao, 'publica')"
+                                [attr.aria-controls]="'cr-etapa-publica-' + posicao"
+                                (click)="alternarBloco(posicao, 'publica')"
+                              >
+                                <span class="etapa-resumo__seta" aria-hidden="true"></span>
+                                <h4 class="form-section__title">O que esta etapa publica</h4>
+                                <span class="etapa-resumo__marcas">
+                                  <span class="etapa-resumo__marca">{{
+                                    resumoDasPublicacoes(etapa)
+                                  }}</span>
+                                </span>
+                              </button>
+
+                              @if (blocoAberto(posicao, 'publica')) {
+                                <div [attr.id]="'cr-etapa-publica-' + posicao">
+                                  @for (produto of produtosDaEtapa(etapa); track $index) {
+                                    <div class="form-grid">
+                                      <div class="form-field">
+                                        <label
+                                          class="label"
+                                          [attr.for]="'cr-etapa-ato-' + posicao + '-' + $index"
+                                          >Ato</label
+                                        >
+                                        <select
+                                          class="select"
+                                          [attr.id]="'cr-etapa-ato-' + posicao + '-' + $index"
+                                          [value]="produto.atoCodigo"
+                                          [disabled]="!edicaoLiberada()"
+                                          (change)="
+                                            escolherAtoDaEtapa(
+                                              etapa,
+                                              $index,
+                                              $any($event.target).value
+                                            )
+                                          "
+                                        >
+                                          <option value="" [selected]="produto.atoCodigo === ''">
+                                            Selecione o ato…
+                                          </option>
+                                          <!--
+                                `selected` na option, não `value` no select: as options nascem
+                                no mesmo ciclo do @for, e o select ainda não as conhece quando
+                                o valor é atribuído.
+                              -->
+                                          @for (ato of catalogos.atosVigentes(); track ato.codigo) {
+                                            <option
+                                              [value]="ato.codigo"
+                                              [selected]="ato.codigo === produto.atoCodigo"
+                                            >
+                                              {{ ato.nome }}
+                                            </option>
+                                          }
+                                        </select>
+                                      </div>
+                                      <div class="form-field">
+                                        <label
+                                          class="label"
+                                          [attr.for]="'cr-etapa-papel-' + posicao + '-' + $index"
+                                          >Papel</label
+                                        >
+                                        <select
+                                          class="select"
+                                          [attr.id]="'cr-etapa-papel-' + posicao + '-' + $index"
+                                          [value]="produto.papel ?? ''"
+                                          [disabled]="
+                                            !edicaoLiberada() || !atoEhResultado(produto.atoCodigo)
+                                          "
+                                          (change)="
+                                            escolherPapelDaEtapa(
+                                              etapa,
+                                              $index,
+                                              $any($event.target).value
+                                            )
+                                          "
+                                        >
+                                          <option value="" [selected]="produto.papel === null">
+                                            Sem papel &mdash; não decide sobre candidato
+                                          </option>
+                                          <!-- O mesmo vocabulário que a fase já usa um nível acima. -->
+                                          @for (papel of papeis; track papel.valor) {
+                                            @if (papel.valor !== '') {
+                                              <option
+                                                [value]="papel.valor"
+                                                [selected]="produto.papel === papel.valor"
+                                              >
+                                                {{ papel.rotulo }}
+                                              </option>
+                                            }
+                                          }
+                                        </select>
+                                        @if (
+                                          produto.atoCodigo !== '' &&
+                                          !atoEhResultado(produto.atoCodigo)
+                                        ) {
+                                          <p class="field__hint">
+                                            Este ato não é resultado no catálogo, então não recebe
+                                            papel no ciclo recursal.
+                                          </p>
+                                        }
+                                      </div>
+                                      <button
+                                        class="btn btn--tertiary"
+                                        type="button"
+                                        (click)="removerProdutoDaEtapa(etapa, $index)"
+                                        [disabled]="!edicaoLiberada()"
+                                      >
+                                        Remover publicação
+                                      </button>
+                                    </div>
+                                  } @empty {
+                                    <p class="field__hint">Esta etapa não publica nada.</p>
+                                  }
+                                  <button
+                                    class="btn btn--secondary"
+                                    type="button"
+                                    (click)="acrescentarProdutoNaEtapa(etapa)"
+                                    [disabled]="!edicaoLiberada()"
+                                  >
+                                    Acrescentar publicação
+                                  </button>
+                                </div>
+                              }
+                            </div>
+
                             <div
                               class="form-grid__full etapa-publica etapa-publica--recolhivel"
                               [class.is-aberto]="blocoAberto(posicao, 'recursos')"
@@ -681,6 +846,142 @@
                                           </option>
                                         </select>
                                       </div>
+                                      <div class="form-field">
+                                        <label
+                                          class="label"
+                                          [attr.for]="'cr-rec-susp1-val-' + posicao + '-' + $index"
+                                          >Suspensividade da 1ª instância — prazo</label
+                                        >
+                                        <input
+                                          class="input"
+                                          type="text"
+                                          inputmode="decimal"
+                                          [attr.id]="'cr-rec-susp1-val-' + posicao + '-' + $index"
+                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                          [value]="recurso.suspensividadePrimeiraInstanciaValor"
+                                          [disabled]="!edicaoLiberada()"
+                                          (input)="
+                                            alterarRecursoDaEtapa(
+                                              etapa,
+                                              $index,
+                                              'suspensividadePrimeiraInstanciaValor',
+                                              $any($event.target).value
+                                            )
+                                          "
+                                        />
+                                      </div>
+                                      <div class="form-field">
+                                        <label
+                                          class="label"
+                                          [attr.for]="'cr-rec-susp1-un-' + posicao + '-' + $index"
+                                          >Suspensividade da 1ª instância — unidade</label
+                                        >
+                                        <select
+                                          class="select"
+                                          [attr.id]="'cr-rec-susp1-un-' + posicao + '-' + $index"
+                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                          [disabled]="!edicaoLiberada()"
+                                          (change)="
+                                            alterarRecursoDaEtapa(
+                                              etapa,
+                                              $index,
+                                              'suspensividadePrimeiraInstanciaUnidade',
+                                              $any($event.target).value
+                                            )
+                                          "
+                                        >
+                                          <option
+                                            value=""
+                                            [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === ''"
+                                          >
+                                            Sem suspensividade
+                                          </option>
+                                          <option
+                                            value="diasUteis"
+                                            [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'diasUteis'"
+                                          >
+                                            dias úteis
+                                          </option>
+                                          <option
+                                            value="horas"
+                                            [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'horas'"
+                                          >
+                                            horas
+                                          </option>
+                                        </select>
+                                      </div>
+                                      <div class="form-field">
+                                        <label
+                                          class="label"
+                                          [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + $index"
+                                          >Suspensividade da 2ª instância — prazo</label
+                                        >
+                                        <input
+                                          class="input"
+                                          type="text"
+                                          inputmode="decimal"
+                                          [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + $index"
+                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                          [value]="recurso.suspensividadeSegundaInstanciaValor"
+                                          [disabled]="!edicaoLiberada()"
+                                          (input)="
+                                            alterarRecursoDaEtapa(
+                                              etapa,
+                                              $index,
+                                              'suspensividadeSegundaInstanciaValor',
+                                              $any($event.target).value
+                                            )
+                                          "
+                                        />
+                                      </div>
+                                      <div class="form-field">
+                                        <label
+                                          class="label"
+                                          [attr.for]="'cr-rec-susp2-un-' + posicao + '-' + $index"
+                                          >Suspensividade da 2ª instância — unidade</label
+                                        >
+                                        <select
+                                          class="select"
+                                          [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + $index"
+                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                          [disabled]="!edicaoLiberada()"
+                                          (change)="
+                                            alterarRecursoDaEtapa(
+                                              etapa,
+                                              $index,
+                                              'suspensividadeSegundaInstanciaUnidade',
+                                              $any($event.target).value
+                                            )
+                                          "
+                                        >
+                                          <option
+                                            value=""
+                                            [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''"
+                                          >
+                                            Sem suspensividade
+                                          </option>
+                                          <option
+                                            value="diasUteis"
+                                            [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'diasUteis'"
+                                          >
+                                            dias úteis
+                                          </option>
+                                          <option
+                                            value="horas"
+                                            [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'horas'"
+                                          >
+                                            horas
+                                          </option>
+                                        </select>
+                                      </div>
+                                      <p
+                                        class="field__hint"
+                                        [attr.id]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                      >
+                                        O prazo em que o recurso suspende o efeito do que foi
+                                        publicado. Valor e unidade são declarados juntos; deixar os
+                                        dois em branco desativa a suspensividade daquela instância.
+                                      </p>
                                       <button
                                         class="btn btn--tertiary"
                                         type="button"
@@ -700,137 +1001,6 @@
                                     [disabled]="!edicaoLiberada() || !temRegraDeRecurso()"
                                   >
                                     Acrescentar recurso
-                                  </button>
-                                </div>
-                              }
-                            </div>
-
-                            <div
-                              class="form-grid__full etapa-publica etapa-publica--recolhivel"
-                              [class.is-aberto]="blocoAberto(posicao, 'publica')"
-                            >
-                              <button
-                                class="etapa-publica__cabecalho"
-                                type="button"
-                                [attr.aria-expanded]="blocoAberto(posicao, 'publica')"
-                                [attr.aria-controls]="'cr-etapa-publica-' + posicao"
-                                (click)="alternarBloco(posicao, 'publica')"
-                              >
-                                <span class="etapa-resumo__seta" aria-hidden="true"></span>
-                                <h4 class="form-section__title">O que esta etapa publica</h4>
-                                <span class="etapa-resumo__marcas">
-                                  <span class="etapa-resumo__marca">{{
-                                    resumoDasPublicacoes(etapa)
-                                  }}</span>
-                                </span>
-                              </button>
-
-                              @if (blocoAberto(posicao, 'publica')) {
-                                <div [attr.id]="'cr-etapa-publica-' + posicao">
-                                  @for (produto of produtosDaEtapa(etapa); track $index) {
-                                    <div class="form-grid">
-                                      <div class="form-field">
-                                        <label
-                                          class="label"
-                                          [attr.for]="'cr-etapa-ato-' + posicao + '-' + $index"
-                                          >Ato</label
-                                        >
-                                        <select
-                                          class="select"
-                                          [attr.id]="'cr-etapa-ato-' + posicao + '-' + $index"
-                                          [value]="produto.atoCodigo"
-                                          [disabled]="!edicaoLiberada()"
-                                          (change)="
-                                            escolherAtoDaEtapa(
-                                              etapa,
-                                              $index,
-                                              $any($event.target).value
-                                            )
-                                          "
-                                        >
-                                          <option value="" [selected]="produto.atoCodigo === ''">
-                                            Selecione o ato…
-                                          </option>
-                                          <!--
-                                `selected` na option, não `value` no select: as options nascem
-                                no mesmo ciclo do @for, e o select ainda não as conhece quando
-                                o valor é atribuído.
-                              -->
-                                          @for (ato of catalogos.atosVigentes(); track ato.codigo) {
-                                            <option
-                                              [value]="ato.codigo"
-                                              [selected]="ato.codigo === produto.atoCodigo"
-                                            >
-                                              {{ ato.nome }}
-                                            </option>
-                                          }
-                                        </select>
-                                      </div>
-                                      <div class="form-field">
-                                        <label
-                                          class="label"
-                                          [attr.for]="'cr-etapa-papel-' + posicao + '-' + $index"
-                                          >Papel</label
-                                        >
-                                        <select
-                                          class="select"
-                                          [attr.id]="'cr-etapa-papel-' + posicao + '-' + $index"
-                                          [value]="produto.papel ?? ''"
-                                          [disabled]="
-                                            !edicaoLiberada() || !atoEhResultado(produto.atoCodigo)
-                                          "
-                                          (change)="
-                                            escolherPapelDaEtapa(
-                                              etapa,
-                                              $index,
-                                              $any($event.target).value
-                                            )
-                                          "
-                                        >
-                                          <option value="" [selected]="produto.papel === null">
-                                            Sem papel &mdash; não decide sobre candidato
-                                          </option>
-                                          <!-- O mesmo vocabulário que a fase já usa um nível acima. -->
-                                          @for (papel of papeis; track papel.valor) {
-                                            @if (papel.valor !== '') {
-                                              <option
-                                                [value]="papel.valor"
-                                                [selected]="produto.papel === papel.valor"
-                                              >
-                                                {{ papel.rotulo }}
-                                              </option>
-                                            }
-                                          }
-                                        </select>
-                                        @if (
-                                          produto.atoCodigo !== '' &&
-                                          !atoEhResultado(produto.atoCodigo)
-                                        ) {
-                                          <p class="field__hint">
-                                            Este ato não é resultado no catálogo, então não recebe
-                                            papel no ciclo recursal.
-                                          </p>
-                                        }
-                                      </div>
-                                      <button
-                                        class="btn btn--tertiary"
-                                        type="button"
-                                        (click)="removerProdutoDaEtapa(etapa, $index)"
-                                        [disabled]="!edicaoLiberada()"
-                                      >
-                                        Remover publicação
-                                      </button>
-                                    </div>
-                                  } @empty {
-                                    <p class="field__hint">Esta etapa não publica nada.</p>
-                                  }
-                                  <button
-                                    class="btn btn--secondary"
-                                    type="button"
-                                    (click)="acrescentarProdutoNaEtapa(etapa)"
-                                    [disabled]="!edicaoLiberada()"
-                                  >
-                                    Acrescentar publicação
                                   </button>
                                 </div>
                               }
@@ -974,6 +1144,21 @@
       <ul>
         @for (problema of problemas(); track $index) {
           <li>{{ problema }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (avisosDeGrupo().length > 0) {
+    <!--
+      Aviso, não impedimento: a norma de um grupo não se edita nesta tela, e travar a gravação
+      por causa dela deixaria o passo sem saída. Quem recusa é a publicação.
+    -->
+    <div class="field__hint" role="status">
+      <p>Para publicar depois:</p>
+      <ul>
+        @for (aviso of avisosDeGrupo(); track $index) {
+          <li>{{ aviso }}</li>
         }
       </ul>
     </div>

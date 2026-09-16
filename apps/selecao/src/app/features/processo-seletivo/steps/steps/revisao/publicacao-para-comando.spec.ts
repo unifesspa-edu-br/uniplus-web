@@ -2,6 +2,7 @@ import { ProblemDetails } from '@uniplus/shared-core/http';
 import { ItemConformidadeDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { PASSOS } from '../../processo-seletivo.data';
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
 import {
   agruparPorDimensao,
@@ -11,8 +12,10 @@ import {
   eErroDeDocumentoOuAto,
   faseQueAncoraOPeriodoDeInscricao,
   mensagensDePublicacao,
-  passoDaDimensao,
+  ondeResolverItem,
+  passoDoItem,
   rotuloDaDimensao,
+  rotuloDoPasso,
   temFaseDeColetaInscricao,
 } from './publicacao-para-comando';
 
@@ -132,6 +135,8 @@ const congeladosBase = {
   origemData: '',
   agrupaEtapas: false,
   coletaInscricao: false,
+  permiteComplementacao: false,
+  coletaSolicitacaoIsencao: false,
   bancas: [],
 };
 
@@ -270,20 +275,131 @@ describe('rotuloDaDimensao', () => {
   });
 });
 
-describe('passoDaDimensao', () => {
-  it('conhece as seis dimensões com passo implementado', () => {
-    expect(passoDaDimensao('taxa_inscricao')).toBe(2);
-    expect(passoDaDimensao('distribuicao_vagas')).toBe(3);
-    expect(passoDaDimensao('cascata_remanejamento')).toBe(3);
-    expect(passoDaDimensao('cronograma')).toBe(4);
-    expect(passoDaDimensao('contagem_de_prazos')).toBe(4);
-    expect(passoDaDimensao('classificacao')).toBe(9);
-    expect(passoDaDimensao('atendimento_especializado')).toBe(10);
+describe('passoDoItem', () => {
+  /**
+   * O rótulo do passo, e não o índice, é o que se afirma aqui: o índice literal já se
+   * desalinhou quando "Locais de prova" saiu do wizard, e um teste escrito contra o índice
+   * teria acompanhado o erro em vez de apanhá-lo.
+   */
+  function rotuloDoItem(codigo: string, dimensao: string): string | null {
+    const passo = passoDoItem(codigo, dimensao);
+    return passo === null ? null : PASSOS[passo].rotulo;
+  }
+
+  it('leva cada dimensão ao passo que a grava', () => {
+    expect(rotuloDoItem('taxa_inscricao_nao_declarada', 'taxa_inscricao')).toBe('Pagamento');
+    expect(rotuloDoItem('distribuicao_vagas_ausente', 'distribuicao_vagas')).toBe('Vagas');
+    expect(rotuloDoItem('cascata_pendente', 'cascata_remanejamento')).toBe('Vagas');
+    expect(rotuloDoItem('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma');
+    expect(rotuloDoItem('algoritmo_contagem_prazo_nao_declarado', 'contagem_de_prazos')).toBe(
+      'Cronograma',
+    );
+    expect(rotuloDoItem('classificacao_ausente', 'classificacao')).toBe('Eliminação');
+    expect(
+      rotuloDoItem('atendimento_especializado_ausente', 'atendimento_especializado'),
+    ).toBe('Atend. especial');
   });
 
-  it('não inventa passo para dimensão fora do núcleo desta frente', () => {
-    expect(passoDaDimensao('exigencias_documentais')).toBeNull();
-    expect(passoDaDimensao('coleta_de_fatos')).toBeNull();
+  /** A exigência documental é declarada na superfície da fase, dentro do passo do cronograma. */
+  it('leva ao cronograma a pendência de exigência documental', () => {
+    expect(rotuloDoItem('exigencias_base_legal_nao_resolvida', 'exigencias_documentais')).toBe(
+      'Cronograma',
+    );
+  });
+
+  /**
+   * Os fatos coletados, as regras de derivação e a âncora da apuração de idade são declarados
+   * no formulário de inscrição — antes de ele existir como passo, esta dimensão inteira ficava
+   * sem destino e o operador lia a pendência sem ter para onde ir.
+   */
+  it('leva ao formulário de inscrição a pendência de coleta de fatos', () => {
+    expect(rotuloDoItem('derivacao_fatos_citados_inexistentes', 'coleta_de_fatos')).toBe(
+      'Formulário',
+    );
+    expect(rotuloDoItem('referencia_temporal_ausente_com_gatilho_etario', 'coleta_de_fatos')).toBe(
+      'Formulário',
+    );
+    expect(rotuloDoItem('grafo_dependencia_com_ciclo', 'coleta_de_fatos')).toBe('Formulário');
+  });
+
+  /**
+   * A decisão é por item, não por dimensão: escolher QUAL fase ancora a apuração da idade é do
+   * formulário, mas dar data à fase escolhida é do cronograma. Mandar quem tem fase sem data
+   * para o formulário mostraria a âncora já declarada, sem nada a corrigir ali.
+   */
+  it('manda ao cronograma o que depende da data da fase, e ao atendimento o que depende da oferta', () => {
+    expect(rotuloDoItem('referencia_temporal_extremo_da_fase_ausente', 'coleta_de_fatos')).toBe(
+      'Cronograma',
+    );
+    expect(rotuloDoItem('referencia_temporal_fim_inscricao_indisponivel', 'coleta_de_fatos')).toBe(
+      'Cronograma',
+    );
+    expect(rotuloDoItem('fato_coletavel_sem_valores_ofertados', 'coleta_de_fatos')).toBe(
+      'Atend. especial',
+    );
+  });
+
+  /**
+   * Os três itens de contagem de prazos que o cronograma não resolve. Antes da decisão por
+   * item eles herdavam o passo da dimensão e ofereciam "Ir para Cronograma", onde não há
+   * nada sobre calendário, localidade nem fuso.
+   */
+  it('não oferece passo para o que se resolve fora do wizard, e diz onde se resolve', () => {
+    for (const codigo of [
+      'calendario_vigente_ausente',
+      'localidade_nao_declarada',
+      'fuso_institucional_nao_reconhecido',
+    ]) {
+      expect(passoDoItem(codigo, 'contagem_de_prazos')).toBeNull();
+      expect(ondeResolverItem(codigo)).not.toBeNull();
+    }
+
+    expect(ondeResolverItem('calendario_vigente_ausente')).toContain('Configuração');
+  });
+
+  it('não diz "onde resolver" para item que tem passo', () => {
+    expect(ondeResolverItem('cronograma_fases_ausente')).toBeNull();
+    expect(ondeResolverItem('algoritmo_contagem_prazo_nao_declarado')).toBeNull();
+  });
+
+  /**
+   * O defeito que motivou trocar o índice literal pelo rótulo: todo destino do mapa tem de
+   * existir em PASSOS. Um passo retirado ou renomeado quebra aqui, e não em produção.
+   */
+  it('todo destino do mapa resolve para um passo existente', () => {
+    const dimensoes = [
+      ['taxa_inscricao_nao_declarada', 'taxa_inscricao'],
+      ['distribuicao_vagas_ausente', 'distribuicao_vagas'],
+      ['cascata_pendente', 'cascata_remanejamento'],
+      ['cronograma_fases_ausente', 'cronograma'],
+      ['exigencias_base_legal_nao_resolvida', 'exigencias_documentais'],
+      ['algoritmo_contagem_prazo_nao_declarado', 'contagem_de_prazos'],
+      ['classificacao_ausente', 'classificacao'],
+      ['atendimento_especializado_ausente', 'atendimento_especializado'],
+      ['derivacao_fatos_citados_inexistentes', 'coleta_de_fatos'],
+      ['referencia_temporal_extremo_da_fase_ausente', 'coleta_de_fatos'],
+      ['fato_coletavel_sem_valores_ofertados', 'coleta_de_fatos'],
+    ] as const;
+
+    for (const [codigo, dimensao] of dimensoes) {
+      const passo = passoDoItem(codigo, dimensao);
+      expect(passo, `dimensão ${dimensao} sem passo resolvido`).not.toBeNull();
+      expect(passo).toBeGreaterThanOrEqual(0);
+      expect(passo).toBeLessThan(PASSOS.length);
+    }
+  });
+
+  /** O painel nomeia o passo, não a dimensão — é o nome que o operador reconhece na lista. */
+  it('nomeia o passo pelo rótulo de revisão', () => {
+    function nomeDoPasso(codigo: string, dimensao: string): string | null {
+      const passo = passoDoItem(codigo, dimensao);
+      return passo === null ? null : rotuloDoPasso(passo);
+    }
+
+    expect(nomeDoPasso('taxa_inscricao_nao_declarada', 'taxa_inscricao')).toBe(
+      'Taxa de inscrição',
+    );
+    expect(nomeDoPasso('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma e etapas');
   });
 });
 
@@ -311,6 +427,55 @@ describe('mensagensDePublicacao', () => {
     const mensagens = mensagensDePublicacao(draft, DOCUMENTO_ID);
 
     expect(mensagens.some((m) => m.includes('período'))).toBe(false);
+  });
+
+  /**
+   * Ano zero atravessava a conferência porque `0` é número válido — e só era recusado pelo
+   * servidor, depois de o operador confirmar a publicação num diálogo que exibia "Ano: 0".
+   * Publicar é o único clique do wizard que não se desfaz.
+   */
+  it('cobra o ano do ato quando ele é zero, não só quando está vazio', () => {
+    const draft = draftVazio();
+    draft.publicacao = {
+      numero: '',
+      periodoInscricaoInicio: '2027-05-01T08:00',
+      periodoInscricaoFim: '2027-05-10T18:00',
+      ato: { ...atoCompleto(), ano: '0' },
+    };
+
+    expect(mensagensDePublicacao(draft, DOCUMENTO_ID)).toContain(
+      'Informe o ano do ato de publicação.',
+    );
+  });
+
+  it('acusa o período de inscrição invertido antes de publicar', () => {
+    const draft = draftVazio();
+    draft.publicacao = {
+      numero: '',
+      periodoInscricaoInicio: '2027-05-10T18:00',
+      periodoInscricaoFim: '2027-05-01T08:00',
+      ato: atoCompleto(),
+    };
+
+    expect(mensagensDePublicacao(draft, DOCUMENTO_ID)).toContain(
+      'O fim do período de inscrição não pode anteceder o início.',
+    );
+  });
+
+  /** Os limites são de coluna: o nome de um órgão com a hierarquia inteira passa de 200. */
+  it('acusa o campo do ato que passa do limite do registro', () => {
+    const draft = draftVazio();
+    draft.publicacao = {
+      numero: 'N'.repeat(61),
+      periodoInscricaoInicio: '2027-05-01T08:00',
+      periodoInscricaoFim: '2027-05-10T18:00',
+      ato: { ...atoCompleto(), orgao: 'O'.repeat(201) },
+    };
+
+    const mensagens = mensagensDePublicacao(draft, DOCUMENTO_ID);
+
+    expect(mensagens).toContain('O número do ato passa de 60 caracteres, que é o limite do registro.');
+    expect(mensagens).toContain('O órgão do ato passa de 200 caracteres, que é o limite do registro.');
   });
 
   it('vazio quando documento escolhido, ato completo e período preenchido', () => {

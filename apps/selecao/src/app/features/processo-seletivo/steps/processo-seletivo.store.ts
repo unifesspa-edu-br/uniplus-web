@@ -2,9 +2,10 @@ import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { STEP_LABELS } from './processo-seletivo.data';
+import { exigenciasVazias } from './shared/exigencias-documentais';
 import { hidratarDraft } from './shared/hidratacao';
 import {
-  DocumentoConfig,
+  ExigenciasDoRascunho,
   FalhaDeLeitura,
   StepStatus,
   WizardDraft,
@@ -15,8 +16,8 @@ import {
  * diz, e ele cresce sem deploy. Semear a partir de uma lista local fazia o rascunho
  * carregar entradas de documentos que ninguém marcou — e envelhecer junto com a lista.
  */
-function initialDocumentos(): Record<string, DocumentoConfig> {
-  return {};
+function initialDocumentos(): ExigenciasDoRascunho {
+  return exigenciasVazias();
 }
 
 const INITIAL_DRAFT: WizardDraft = {
@@ -62,6 +63,15 @@ const INITIAL_DRAFT: WizardDraft = {
   },
   desempate: [],
   documentos: initialDocumentos(),
+  // O formulário nasce vazio: título, termo e campos são declaração do certame, e semear
+  // qualquer coisa aqui poria no formulário do candidato um campo que ninguém escolheu.
+  formulario: {
+    titulo: '',
+    termoAceiteTexto: '',
+    fatos: [],
+    referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+    derivacao: [],
+  },
   atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   publicacao: {
     numero: '',

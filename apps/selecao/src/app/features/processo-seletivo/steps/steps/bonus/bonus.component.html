@@ -51,7 +51,8 @@
             id="f-bonus-fator"
             type="number"
             min="0"
-            step="0.01"
+            max="99.9999"
+            step="0.0001"
             placeholder="1.20"
             [value]="store.draft().bonus.fator"
             (input)="alterarFator($any($event.target).value)"
@@ -70,9 +71,33 @@
           >
             <option value="">— escolher —</option>
             @for (base of basesLegaisEscolhiveis(); track base.id) {
-              <option [value]="base.id">{{ base.identificacao }}</option>
+              <option [value]="base.id">
+                {{ rotuloDoTipo(base.tipoInstrumento) }} {{ base.identificacao }}
+              </option>
             }
           </select>
+          <!-- O que a norma diz, fora do seletor: dentro da opção, o texto se repetiria em
+               cada linha da lista. É por ele que se distinguem duas portarias parecidas. -->
+          @if (descricaoDaBaseLegal(); as descricao) {
+            <span class="field__hint">{{ descricao }}</span>
+          }
+          @if (tiposInstrumentoErro(); as erro) {
+            <!--
+              `role="alert"` como o carregamento vizinho: sem ele, quem usa leitor de tela
+              clica em "Tentar novamente", a segunda tentativa falha, e nada o diz.
+            -->
+            <span class="field__hint" role="alert">
+              {{ erro }} O tipo de cada norma aparece pelo código até o catálogo responder.
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [disabled]="tiposInstrumentoCarregando()"
+                (click)="carregarTiposDeInstrumento()"
+              >
+                {{ tiposInstrumentoCarregando() ? 'Carregando…' : 'Tentar novamente' }}
+              </button>
+            </span>
+          }
         </div>
         <div class="form-field">
           <label class="label" for="f-bonus-teto">Teto (opcional)</label
@@ -81,7 +106,8 @@
             id="f-bonus-teto"
             type="number"
             min="0"
-            step="0.01"
+            max="99.9999"
+            step="0.0001"
             [value]="store.draft().bonus.teto"
             (input)="alterarTeto($any($event.target).value)"
           />

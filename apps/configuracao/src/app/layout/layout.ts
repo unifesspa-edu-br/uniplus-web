@@ -123,6 +123,7 @@ export class LayoutComponent {
           exact: true,
         },
         { label: 'Tipo de Banca', icon: 'pi-shield', routerLink: '/tipos-banca', exact: true },
+        { label: 'Tipo de Etapa', icon: 'pi-list-check', routerLink: '/tipos-etapa', exact: true },
         {
           label: 'Tipo de Processo',
           icon: 'pi-flag',

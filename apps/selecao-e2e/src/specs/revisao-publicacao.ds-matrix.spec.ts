@@ -299,7 +299,10 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
       page.locator('.revisao-list').getByText('Declare se o processo cobra taxa de inscrição.'),
     ).toBeVisible();
     await expect(page.getByText('Reserva de vagas da Lei de Cotas')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Ir para Taxa inscricao/ })).toBeVisible();
+    // O botão nomeia o PASSO, não a dimensão: com a decisão por item, dois itens da mesma
+    // dimensão podem levar a passos diferentes, e "Taxa inscricao" era a grafia mecânica do
+    // código da dimensão, não o nome que o operador vê no stepper.
+    await expect(page.getByRole('button', { name: /Ir para Taxa de inscrição/ })).toBeVisible();
 
     const resultado = await runAxeWcagAA(page);
     expect(identificadoresDe(resultado)).toEqual([]);

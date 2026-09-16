@@ -26,6 +26,25 @@ export function desempateUsaPredicadoFato(regraCodigo: string): boolean {
   return regraCodigo === DESEMPATE_PREDICADO_FATO;
 }
 
+const DESEMPATE_MAIOR_IDADE = 'DESEMPATE-MAIOR-IDADE';
+
+/**
+ * Se a tela sabe montar os argumentos desta regra.
+ *
+ * O catálogo cresce por migration, e uma regra nova aparece no seletor assim que é semeada —
+ * mas os argumentos dela ficam nulos, e o servidor recusa com um erro que fala de tipo de
+ * regra. Oferecer o que não se sabe configurar é pior que não oferecer: a recusa chega depois
+ * de a pessoa ter escolhido, e não há campo na tela para consertar.
+ */
+export function desempateTemShapeConhecido(regraCodigo: string): boolean {
+  return (
+    regraCodigo === DESEMPATE_MAIOR_NOTA_ETAPA ||
+    regraCodigo === DESEMPATE_IDOSO ||
+    regraCodigo === DESEMPATE_PREDICADO_FATO ||
+    regraCodigo === DESEMPATE_MAIOR_IDADE
+  );
+}
+
 function naoVazio(texto: string): string | null {
   const limpo = texto.trim();
   return limpo === '' ? null : limpo;

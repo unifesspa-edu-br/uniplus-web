@@ -17,8 +17,9 @@ import { StepValidation } from '../../processo-seletivo.models';
 import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.component';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import {
@@ -31,8 +32,10 @@ import {
   eErroDeDocumentoOuAto,
   faseQueAncoraOPeriodoDeInscricao,
   mensagensDePublicacao,
-  passoDaDimensao,
+  ondeResolverItem,
+  passoDoItem,
   rotuloDaDimensao as rotularDimensao,
+  rotuloDoPasso,
   temFaseDeColetaInscricao,
 } from './publicacao-para-comando';
 
@@ -79,7 +82,7 @@ const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE =
 @Component({
   selector: 'sel-step-revisao',
   standalone: true,
-  imports: [AnexoEditalComponent, ReactiveFormsModule],
+  imports: [AnexoEditalComponent, DateBrPipe, ReactiveFormsModule],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(RevisaoStepComponent), PreflightDaPublicacaoService],
@@ -330,8 +333,24 @@ export class RevisaoStepComponent {
         descricaoHumana: regra.descricaoHumana,
         baseLegal: regra.baseLegal,
         motivo: regra.motivo,
+        atoNormativoUrl: regra.atoNormativoUrl,
+        portariaInterna: regra.portariaInterna,
+        vigenciaInicio: regra.vigenciaInicio,
       }));
   });
+
+  /**
+   * Se a citação da norma é um endereço que o navegador sabe abrir.
+   *
+   * O campo é texto livre de citação normativa — pode ser um DOI (`10.1590/abc`) ou uma URN
+   * (`urn:lex:br:federal:lei:2012-08-29;12711`), que o cadastro guarda como o administrador
+   * escreveu. Um DOI nu como `href` abriria uma rota da própria aplicação, e a URN é barrada
+   * pelo sanitizador — nos dois casos o único caminho até a norma que reprovou a publicação
+   * seria um beco sem saída.
+   */
+  ehEnderecoNavegavel(citacao: string | null | undefined): boolean {
+    return citacao !== null && citacao !== undefined && /^https?:\/\//i.test(citacao.trim());
+  }
 
   readonly legalOk = computed(() => {
     const daUltimaRecusa = this.ultimaRecusa()?.obrigatoriedadesReprovadas;
@@ -358,9 +377,11 @@ export class RevisaoStepComponent {
   });
 
   readonly rotuloDaDimensao = rotularDimensao;
-  readonly passoDaDimensao = passoDaDimensao;
+  readonly passoDoItem = passoDoItem;
+  readonly rotuloDoPasso = rotuloDoPasso;
+  readonly ondeResolverItem = ondeResolverItem;
 
-  /** Navega ao passo dono da dimensão, pelo código estável — nunca por comparação de frase (CA-04). */
+  /** Navega ao passo dono do item, pelo código estável — nunca por comparação de frase (CA-04). */
   irParaSecao(index: number): void {
     this.store.goTo(index);
   }
@@ -605,8 +626,4 @@ export class RevisaoStepComponent {
     return detalhe.data.status === StatusProcesso.publicado;
   }
 
-  /** O `<input type="datetime-local">` só existe fora do ramo de fase de coleta — este helper valida o formato antes de exibir feedback. */
-  periodoValido(valor: string): boolean {
-    return instanteDoCampo(valor) !== null;
-  }
 }

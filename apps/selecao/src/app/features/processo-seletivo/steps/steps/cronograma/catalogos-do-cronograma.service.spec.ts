@@ -11,6 +11,7 @@ import {
   PrecedenciaFaseDto,
   PrecedenciasFaseApi,
   TiposBancaApi,
+  FatosCandidatoApi,
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
@@ -93,6 +94,9 @@ function montar(cenario: Cenario = {}) {
       { provide: CategoriasDocumentoApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposEtapaApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposDocumentoApi, useValue: { listar: () => pagina([]) } },
+  // O catálogo de fatos entra junto: é dele que sai o campo de formulário que uma exigência
+  // condicionada pressupõe.
+  { provide: FatosCandidatoApi, useValue: { listar: () => of({ ok: true, data: [] }) } },
       { provide: TiposAtoApi, useValue: { listar: listarAtos } },
       { provide: RegrasCatalogoApi, useValue: { listar: () => pagina([]) } },
     ],

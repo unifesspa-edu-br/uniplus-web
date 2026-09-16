@@ -241,8 +241,6 @@ describe('CascataRemanejamentoComponent', () => {
     detectar();
 
     expect(componente.problemas().length).toBeGreaterThan(0);
-    const checkbox = elemento.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    expect(checkbox?.disabled).toBe(true);
     expect(componente.pronta()).toBe(false);
   });
 
@@ -261,17 +259,10 @@ describe('CascataRemanejamentoComponent', () => {
     componente.escolherRegra('REMANEJ-CASCATA-LEI-12711|v1');
     detectar();
     expect(componente.problemas()).toEqual([]);
-
-    const checkbox = elemento.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    expect(checkbox?.disabled).toBe(false);
-
-    componente.confirmado.set(true);
-    detectar();
-
     expect(componente.pronta()).toBe(true);
   });
 
-  it('descarta a confirmação ao trocar de regra', () => {
+  it('limpar o seletor de regra zera a cascata do rascunho', () => {
     store.patchObjectSection('vagas', {
       ofertas: [
         distribuicaoFederal([
@@ -283,15 +274,14 @@ describe('CascataRemanejamentoComponent', () => {
     });
     detectar();
     componente.escolherRegra('REMANEJ-CASCATA-LEI-12711|v1');
-    componente.confirmado.set(true);
     detectar();
-    expect(componente.confirmado()).toBe(true);
+    expect(store.draft().vagas.cascata).not.toBeNull();
 
     componente.escolherRegra('|');
     detectar();
 
-    expect(componente.confirmado()).toBe(false);
     expect(store.draft().vagas.cascata).toBeNull();
+    expect(componente.pronta()).toBe(false);
   });
 
   it('reconhece que o servidor tem uma cascata a partir da hidratação, não do seletor', () => {
@@ -330,15 +320,12 @@ describe('CascataRemanejamentoComponent', () => {
       },
     } as unknown as ProcessoSeletivoDto);
     detectar();
-    componente.confirmado.set(true);
-    expect(componente.confirmado()).toBe(true);
     expect(componente.existeNoServidor()).toBe(true);
 
     // Processo B, sem cascata gravada.
     store.remoteSnapshot.set({ cascata: null } as unknown as ProcessoSeletivoDto);
     detectar();
 
-    expect(componente.confirmado()).toBe(false);
     expect(componente.existeNoServidor()).toBe(false);
   });
 

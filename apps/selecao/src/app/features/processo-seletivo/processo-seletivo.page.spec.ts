@@ -6,12 +6,14 @@ import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
+  TiposInstrumentoNormativoApi,
   CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
   OfertasCursoApi,
   RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
+  FatosCandidatoApi,
   TipoDeficienciaApi,
   TipoProcessoDto,
   TiposProcessoApi,
@@ -77,8 +79,10 @@ const PAGE_PROVIDERS = [
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
-  // O passo de bônus carrega o catálogo de base legal ao montar.
+  // O passo de bônus carrega o catálogo de base legal ao montar, e o vocabulário que traduz o
+  // tipo de instrumento da norma.
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
+  { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -93,6 +97,9 @@ const PAGE_PROVIDERS = [
   { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },
   { provide: RecursoAcessibilidadeApi, useValue: catalogoVazioStub },
   { provide: TipoDeficienciaApi, useValue: catalogoVazioStub },
+  // O passo do formulário carrega o catálogo de fatos do candidato ao montar — é dele que
+  // saem os dados que o certame pode coletar.
+  { provide: FatosCandidatoApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
 ];
 
@@ -128,6 +135,55 @@ describe('ProcessoSeletivoPage — estrutura', () => {
         `painel de passo vazio em "${painel.outerHTML.slice(0, 80)}"`,
       ).toBeGreaterThan(0);
     }
+  });
+
+  /**
+   * O painel e o validador de cada passo são resolvidos por ÍNDICE, mas o índice de cada um vem
+   * de duas fontes diferentes: o rótulo sai de `PASSOS`, e o painel e o validador saem da ordem
+   * em que o template declara as seções — doze literais `currentStep() !== N` escritos à mão e
+   * um `viewChildren` que lê a ordem de declaração.
+   *
+   * Reordenar um passo mexendo só em `PASSOS` dessincroniza os dois lados **sem erro de
+   * compilação**: o stepper anuncia um passo e a tela mostra outro, e `validate()`/`persistir()`
+   * operam no componente errado. Este teste amarra os dois.
+   */
+  it('o painel visível em cada índice é o do passo que o stepper anuncia', () => {
+    const componentePorRotulo: Readonly<Record<string, string>> = {
+      'Tipo do processo': 'sel-step-tipo-processo',
+      Identificação: 'sel-step-identificacao',
+      Pagamento: 'sel-step-pagamento',
+      Vagas: 'sel-step-vagas',
+      Cronograma: 'sel-step-cronograma',
+      'Fórmula e precisão': 'sel-step-formula',
+      Bônus: 'sel-step-bonus',
+      Desempate: 'sel-step-desempate',
+      Eliminação: 'sel-step-eliminacao',
+      'Atend. especial': 'sel-step-atendimento',
+      Formulário: 'sel-step-formulario',
+      'Revisão e publicação': 'sel-step-revisao',
+    };
+
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const store = fixture.componentInstance.store;
+
+    expect(Object.keys(componentePorRotulo)).toEqual([...STEP_LABELS]);
+
+    STEP_LABELS.forEach((rotulo, indice) => {
+      store.goTo(indice);
+      fixture.detectChanges();
+
+      const visiveis = [...host.querySelectorAll('.step-pane')].filter(
+        (painel) => !painel.hasAttribute('hidden'),
+      );
+
+      expect(visiveis, `nenhum painel visível no passo ${indice} ("${rotulo}")`).toHaveLength(1);
+      expect(
+        visiveis[0].firstElementChild?.tagName.toLowerCase(),
+        `no passo ${indice} o stepper anuncia "${rotulo}", mas o painel visível é outro`,
+      ).toBe(componentePorRotulo[rotulo]);
+    });
   });
 
   it('não declara landmark main próprio', () => {

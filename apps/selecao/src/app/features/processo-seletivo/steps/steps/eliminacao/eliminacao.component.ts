@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  Injector,
+  signal,
+} from '@angular/core';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 
 import {
@@ -97,16 +105,41 @@ export class EliminacaoStepComponent {
     () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
   );
 
+  /**
+   * O que mudou na lista, para quem não vê a tela. Acrescentar e remover eram mudanças
+   * silenciosas para leitor de tela.
+   */
+  readonly anuncio = signal('');
+
+  private readonly injector = inject(Injector);
+
   acrescentarRegra(): void {
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: [...this.regras(), REGRA_ELIMINACAO_VAZIA],
     });
+    this.anuncio.set(`Regra ${this.regras().length} acrescentada ao fim da lista.`);
   }
 
   removerRegra(indice: number): void {
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().filter((_, item) => item !== indice),
     });
+    this.anuncio.set(`Regra ${indice + 1} removida.`);
+
+    // O botão clicado sai do DOM junto com a regra, e o foco cairia no corpo da página — quem
+    // navega por teclado perderia o lugar a cada remoção.
+    //
+    // A espera é por renderização, não por microtask: o ciclo de detecção do Angular roda
+    // depois que a fila de microtasks drena, e consultar o DOM antigo acharia o botão que está
+    // prestes a sair — pôr o foco nele e vê-lo ser arrancado em seguida é o mesmo que não
+    // fazer nada. Removida a última regra, é a queda para "Acrescentar" que vale.
+    afterNextRender(
+      () => {
+        const anterior = document.getElementById(`elim-remover-${Math.max(0, indice - 1)}`);
+        (anterior ?? document.getElementById('eliminacao-acrescentar'))?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   escolherRegra(indice: number, valor: string): void {
