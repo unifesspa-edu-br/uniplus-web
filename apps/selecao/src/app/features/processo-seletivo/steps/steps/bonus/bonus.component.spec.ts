@@ -95,6 +95,43 @@ describe('BonusStepComponent', () => {
     expect(componente.validate().valid).toBe(false);
   });
 
+  /**
+   * O registro guarda fator e teto com dois dígitos inteiros e quatro decimais. Num certame
+   * cuja nota é em base 100, "teto de 100 pontos" é o primeiro valor que quem monta o edital
+   * escreve — e voltava recusado pelo servidor sem que o campo dissesse nada sobre faixa.
+   */
+  it('recusa o teto acima da precisão com que ele é guardado', () => {
+    componente.alternarAtivo(true);
+    componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+    componente.alterarFator('1.2');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
+    componente.alterarTeto('100');
+
+    const resultado = componente.validate();
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('99,9999');
+  });
+
+  it('recusa o fator com mais casas decimais do que o registro guarda', () => {
+    componente.alternarAtivo(true);
+    componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+    componente.alterarFator('1.23456');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
+
+    const resultado = componente.validate();
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('4 casas decimais');
+  });
+
+  it('aceita o valor no limite da precisão', () => {
+    componente.alternarAtivo(true);
+    componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
+    componente.alterarFator('99.9999');
+    componente.escolherBaseLegal(BASE_LEGAL_ID);
+
+    expect(componente.validate().valid).toBe(true);
+  });
+
   describe('persistir()', () => {
     it('grava os cinco campos null quando inativo', async () => {
       const gravacao = componente.persistir();

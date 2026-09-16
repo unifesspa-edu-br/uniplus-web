@@ -13,6 +13,8 @@ import {
   TipoDocumentoDto,
   TipoEtapaDto,
   TiposBancaApi,
+  FatoCandidatoView,
+  FatosCandidatoApi,
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
@@ -53,6 +55,7 @@ export class CatalogosDoCronogramaService {
   private readonly atosApi = inject(TiposAtoApi);
   private readonly regrasApi = inject(RegrasCatalogoApi);
   private readonly tiposDocumentoApi = inject(TiposDocumentoApi);
+  private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly fases = signal<readonly FaseCanonicaDto[]>([]);
@@ -64,6 +67,12 @@ export class CatalogosDoCronogramaService {
   readonly regrasRecurso = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasContagem = signal<readonly RegraCatalogoDto[]>([]);
   readonly tiposDocumento = signal<readonly TipoDocumentoDto[]>([]);
+  /**
+   * O catálogo de fatos do candidato. Carregado aqui, e não só no passo do formulário, porque
+   * é a gravação das exigências que precisa dele: um gatilho que cita um fato obriga o certame
+   * a coletá-lo, e sintetizar esse campo exige saber o nome e o domínio do fato.
+   */
+  readonly fatos = signal<readonly FatoCandidatoView[]>([]);
 
   /**
    * Os tipos de documento agrupados pela categoria do cadastro — o que a tela de
@@ -128,6 +137,16 @@ export class CatalogosDoCronogramaService {
   );
 
   /**
+   * O tipo de etapa pelo id, ativo ou não. É por aqui que a tela sabe quais caracteres aquele
+   * tipo admite — e, por consequência, se a etapa pode ter peso e nota mínima. A série completa
+   * importa: uma etapa já gravada num tipo desde então desativado continua tendo de exibir o
+   * que aquele tipo admitia.
+   */
+  readonly tipoEtapaPorId = computed<ReadonlyMap<string, TipoEtapaDto>>(
+    () => new Map(this.tiposEtapa().map((tipo) => [tipo.id, tipo])),
+  );
+
+  /**
    * Atos que podem ser escolhidos hoje. A vigência é semiaberta — `[início,
    * fim)` —, e é ela que o servidor confere ao resolver o ato declarado: um
    * código fora de vigência é recusado na gravação.
@@ -156,6 +175,14 @@ export class CatalogosDoCronogramaService {
    */
   readonly atoPorCodigo = computed<ReadonlyMap<string, TipoAtoPublicadoDto>>(
     () => new Map(this.atos().map((ato) => [ato.codigo, ato])),
+  );
+
+  /**
+   * O tipo de documento pelo id do cadastro. É dele que a exigência tira formato aceito e
+   * tamanho máximo — os mesmos valores que a tela já mostra ao lado do seletor de documento.
+   */
+  readonly tipoDocumentoPorId = computed<ReadonlyMap<string, TipoDocumentoDto>>(
+    () => new Map(this.tiposDocumento().map((tipo) => [tipo.id, tipo])),
   );
 
   /** Tipo de banca por id — o rótulo que a superfície da fase mostra. */
@@ -255,6 +282,8 @@ export class CatalogosDoCronogramaService {
       categorias: this.categoriasApi.listar(),
       tiposEtapa: coletarPaginas((cursor) => this.tiposEtapaApi.listar({ cursor })),
       tiposDocumento: coletarPaginas((cursor) => this.tiposDocumentoApi.listar({ cursor })),
+      // Conjunto fechado, semeado e governado por código — o servidor o devolve inteiro.
+      fatos: this.fatosApi.listar(),
       // `vigentes` assume `true` no servidor, e a série completa é o que
       // resolve o rótulo de um ato já referenciado cuja versão encerrou. Quais
       // podem ser escolhidos é recorte da tela, em `atosVigentes`.
@@ -276,6 +305,7 @@ export class CatalogosDoCronogramaService {
             categorias,
             tiposEtapa,
             tiposDocumento,
+            fatos,
             atos,
             recurso,
             contagem,
@@ -290,6 +320,7 @@ export class CatalogosDoCronogramaService {
             !isApiOk(tiposDocumento) ||
             !isApiOk(categorias) ||
             !isApiOk(tiposEtapa) ||
+            !isApiOk(fatos) ||
             !isApiOk(atos) ||
             !isApiOk(recurso) ||
             !isApiOk(contagem)
@@ -304,6 +335,7 @@ export class CatalogosDoCronogramaService {
           this.categorias.set(categorias.data);
           this.tiposEtapa.set(tiposEtapa.data);
           this.tiposDocumento.set(tiposDocumento.data);
+          this.fatos.set(fatos.data);
           this.atos.set(atos.data);
           this.regrasRecurso.set(recurso.data);
           this.regrasContagem.set(contagem.data);

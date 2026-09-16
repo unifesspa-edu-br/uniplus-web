@@ -14,6 +14,7 @@ import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-cor
 import {
   BaseLegalBonusRegionalApi,
   BaseLegalBonusRegionalDto,
+  TiposInstrumentoNormativoApi,
 } from '@uniplus/shared-data/configuracao';
 
 import { StepValidation } from '../../processo-seletivo.models';
@@ -29,6 +30,16 @@ import { comoComandoDeBonus } from './bonus-para-comando';
 interface BaseLegalEscolhivel {
   readonly id: string;
   readonly identificacao: string;
+  /**
+   * O que a norma é e o que ela diz. Sem os dois, escolher entre duas portarias de
+   * identificação parecida é adivinhar — e é a norma que sustenta o bônus. Vêm do cadastro, e
+   * também do snapshot congelado no processo, que guarda os dois.
+   *
+   * `tipoInstrumento` é o código canônico do vocabulário fechado, não o rótulo: quem traduz é
+   * o próprio vocabulário, servido pela API.
+   */
+  readonly tipoInstrumento: string;
+  readonly descricao: string;
   readonly municipios: readonly MunicipioBeneficiado[];
 }
 
@@ -71,6 +82,8 @@ export class BonusStepComponent {
   constructor() {
     this.catalogos.carregar();
     this.carregarBasesLegais();
+
+    this.carregarTiposDeInstrumento();
 
     afterRenderEffect(() => {
       // Lido aqui só para a leitura virar dependência do efeito: a lista de
@@ -117,6 +130,8 @@ export class BonusStepComponent {
     const catalogo = this.basesLegais().map((base) => ({
       id: base.id,
       identificacao: base.identificacao,
+      tipoInstrumento: base.tipoInstrumento,
+      descricao: base.descricao,
       municipios: base.municipios,
     }));
     const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
@@ -137,10 +152,79 @@ export class BonusStepComponent {
       {
         id: snapshot.baseLegalBonusRegionalId,
         identificacao: snapshot.identificacao,
+        // O snapshot congela os quatro campos, não só dois — e é exatamente quando a norma
+        // saiu do cadastro que o tipo e a descrição fazem falta para reconhecê-la.
+        tipoInstrumento: snapshot.tipoInstrumento,
+        descricao: snapshot.descricao,
         municipios: snapshot.municipios,
       },
       ...catalogo,
     ];
+  });
+
+  private readonly tiposInstrumentoApi = inject(TiposInstrumentoNormativoApi);
+
+  /**
+   * Os rótulos dos tipos de instrumento normativo, indexados pelo código.
+   *
+   * O código é UPPER_SNAKE — `INSTRUCAO_NORMATIVA` —, e exibi-lo cru numa tela em português
+   * mostra a grafia da máquina a quem monta o edital. A lista não se escreve aqui: é
+   * vocabulário fechado derivado de enum no servidor, e é ele quem publica o rótulo.
+   */
+  private readonly rotuloDoTipoInstrumento = signal<ReadonlyMap<string, string>>(new Map());
+
+  /**
+   * Se o vocabulário não pôde ser carregado.
+   *
+   * Engolir a falha deixaria o código da máquina — `INSTRUCAO_NORMATIVA` — permanente na tela,
+   * sem nada dizendo que algo falhou nem como tentar de novo. É a mesma conduta do
+   * carregamento das bases legais, ao lado.
+   */
+  readonly tiposInstrumentoErro = signal<string | null>(null);
+
+  /** Se o vocabulário está sendo buscado — trava o botão e evita duas chamadas concorrentes. */
+  readonly tiposInstrumentoCarregando = signal(false);
+
+  carregarTiposDeInstrumento(): void {
+    if (this.tiposInstrumentoCarregando()) return;
+
+    this.tiposInstrumentoErro.set(null);
+    this.tiposInstrumentoCarregando.set(true);
+
+    this.tiposInstrumentoApi
+      .listar()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultado) => {
+          this.tiposInstrumentoCarregando.set(false);
+          if (isApiOk(resultado)) {
+            this.rotuloDoTipoInstrumento.set(
+              new Map(resultado.data.map((tipo) => [tipo.codigo, tipo.nome])),
+            );
+            return;
+          }
+          this.tiposInstrumentoErro.set(this.problemI18n.resolve(resultado.problem).title);
+        },
+        error: () => {
+          this.tiposInstrumentoCarregando.set(false);
+          this.tiposInstrumentoErro.set(
+            'Não foi possível carregar como se lê o tipo de cada norma.',
+          );
+        },
+      });
+  }
+
+  /** O tipo da norma como se lê, ou o código quando o vocabulário ainda não chegou. */
+  rotuloDoTipo(codigo: string): string {
+    if (codigo === '') return '';
+    return this.rotuloDoTipoInstrumento().get(codigo) ?? codigo;
+  }
+
+  /** O que a norma escolhida diz. */
+  readonly descricaoDaBaseLegal = computed<string>(() => {
+    const escolhida = this.store.draft().bonus.baseLegalBonusRegionalId;
+    const base = this.basesLegaisEscolhiveis().find((item) => item.id === escolhida);
+    return base?.descricao ?? '';
   });
 
   /**
@@ -219,17 +303,24 @@ export class BonusStepComponent {
     const bonus = this.store.draft().bonus;
     if (!bonus.ativo) return { valid: true };
 
+
     const messages: string[] = [];
 
     if (!bonus.regraCodigo) messages.push('Selecione a regra do bônus.');
 
     const fator = decimal(bonus.fator);
-    if (fator === null || fator <= 0) messages.push('Informe o fator do bônus, maior que zero.');
+    if (fator === null || fator <= 0) {
+      messages.push('Informe o fator do bônus, maior que zero.');
+    } else {
+      messages.push(...foraDaPrecisao(bonus.fator, 'O fator do bônus'));
+    }
 
     if (bonus.teto.trim() !== '') {
       const teto = decimal(bonus.teto);
       if (teto === null || teto <= 0) {
         messages.push('O teto do bônus, quando informado, deve ser maior que zero.');
+      } else {
+        messages.push(...foraDaPrecisao(bonus.teto, 'O teto do bônus'));
       }
     }
 
@@ -296,4 +387,30 @@ export class BonusStepComponent {
 function decimal(texto: string): number | null {
   const limpo = texto.trim().replace(',', '.');
   return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
+}
+
+/**
+ * O registro guarda fator e teto com dois dígitos inteiros e quatro decimais — teto efetivo de
+ * 99,9999. Não é limite arbitrário da tela: é a precisão da coluna, e o servidor recusa o que
+ * passa dela.
+ *
+ * Num certame cuja nota final é em base 100 ou 1000, "teto de 100 pontos" é o primeiro valor
+ * que quem monta o edital escreve — e era o que voltava recusado sem que o campo dissesse
+ * qualquer coisa sobre faixa.
+ */
+const DIGITOS_INTEIROS = 2;
+const CASAS_DECIMAIS = 4;
+
+function foraDaPrecisao(valor: string, rotulo: string): readonly string[] {
+  const [inteira = '', decimal = ''] = valor.trim().replace('-', '').replace(',', '.').split('.');
+  const problemas: string[] = [];
+
+  if (inteira.replace(/^0+(?=\d)/, '').length > DIGITOS_INTEIROS) {
+    problemas.push(`${rotulo} não pode passar de 99,9999 — é a precisão com que ele é guardado.`);
+  }
+  if (decimal.length > CASAS_DECIMAIS) {
+    problemas.push(`${rotulo} aceita no máximo ${CASAS_DECIMAIS} casas decimais.`);
+  }
+
+  return problemas;
 }

@@ -28,6 +28,17 @@ const DEFINICOES: readonly DefinicaoDePasso[] = [
   { rotulo: 'Desempate', revisao: 'Critérios de desempate' },
   { rotulo: 'Eliminação', revisao: 'Regras de eliminação' },
   { rotulo: 'Atend. especial', titulo: 'Atendimento especializado' },
+  // Penúltimo porque é a superfície de COLETA de tudo que veio antes: bônus, desempate,
+  // eliminação e atendimento especializado podem depender de um fato do candidato, e o domínio
+  // de campos como a condição de atendimento sai da oferta declarada no passo anterior.
+  // Continua, como sempre esteve, depois do Cronograma — a política que ancora a apuração de
+  // idade pode apontar o início ou o fim de uma fase, e parte dos campos sai dos fatos que as
+  // exigências documentais citam.
+  {
+    rotulo: 'Formulário',
+    titulo: 'Formulário de inscrição',
+    revisao: 'Formulário de inscrição',
+  },
   { rotulo: 'Revisão e publicação' },
 ];
 

@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { ProcessosSeletivosApi, type ConfiguracaoDerivacaoInput } from '@uniplus/shared-data/selecao';
 
 import {
   PAPEL_DEFINITIVO,
@@ -23,6 +23,7 @@ import {
 } from '../../processo-seletivo.models';
 import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
+import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -31,8 +32,33 @@ import {
   PERMUTACAO_DE_ORDEM,
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
-import { arvoreDeExigencias } from '../../shared/exigencias-documentais';
+import {
+  CONSEQUENCIA_REENVIO,
+  STATUS_BASE_LEGAL_RESOLVIDO,
+  arvoreDeExigencias,
+  FATO_MODALIDADE,
+  gruposSemNormaResolvida,
+  modalidadesDaExigencia,
+  semAEtapa,
+  semAFase,
+  todasAsExigencias,
+} from '../../shared/exigencias-documentais';
+import {
+  fatosParaGatilho,
+  nomesDoCatalogo,
+  problemasDoGatilho,
+} from '../../shared/gatilho-de-exigencia';
 import { etapasDe } from '../../shared/hidratacao';
+import {
+  comCamposQueAsExigenciasPressupoem,
+  fatosCitadosPelaDerivacao,
+  comoComandoDeFatosColetados,
+  divergeDoServidor,
+} from '../formulario/formulario-de-inscricao';
+import {
+  inicioDeHojeNoFusoInstitucional,
+  pisoDoCampoDeData,
+} from '../../shared/fuso-institucional';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
   componeNota,
@@ -40,6 +66,9 @@ import {
   problemasDoCronograma,
   renumerar,
   type DescricaoDaFase,
+  type ExigenciaDeclarada,
+  type GrupoDeclarado,
+  avisosDosGrupos,
 } from './cronograma-do-certame';
 import {
   etapaDoFormulario,
@@ -263,7 +292,87 @@ export class CronogramaStepComponent {
       this.catalogos.precedencias(),
       this.catalogos.atoPorCodigo(),
       (tipoBancaId) => this.catalogos.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
+      (tipoEtapaOrigemId) => this.catalogos.tipoEtapaPorId().get(tipoEtapaOrigemId),
+      this.exigenciasDeclaradas(),
     );
+  });
+
+  /**
+   * O que a publicação vai cobrar dos grupos, dito como aviso: eles não se editam aqui, e
+   * bloquear a gravação por causa deles prenderia o passo sem saída.
+   */
+  readonly avisosDeGrupo = computed(() => avisosDosGrupos(this.gruposDeclarados()));
+
+  /**
+   * Os grupos de exigências que o rascunho carrega. A tela não os edita — eles chegam da
+   * configuração do processo —, mas a publicação cobra deles a norma quando decidem o
+   * resultado, e é melhor dizer isso aqui do que no último passo.
+   */
+  private readonly gruposDeclarados = computed<readonly GrupoDeclarado[]>(() => {
+    const nomePorId = new Map(this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
+
+    return gruposSemNormaResolvida(this.store.draft().documentos).map((grupo) => ({
+      decideResultado: true,
+      normaResolvida: false,
+      documentos: grupo.documentos.map((id) => nomePorId.get(id) ?? id),
+    }));
+  });
+
+  /**
+   * As exigências que o rascunho declara, na forma que a conferência entende: o nome que a
+   * pessoa lê, se a exigência decide o resultado e se a norma que a sustenta está resolvida.
+   */
+  private readonly exigenciasDeclaradas = computed<readonly ExigenciaDeclarada[]>(() => {
+    const nomePorId = new Map(
+      this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]),
+    );
+    // Percorre as exigências, não os tipos de documento: a norma é declarada POR exigência,
+    // e o mesmo documento pode decidir o resultado numa fase e não na outra. Conferir por
+    // documento aprovaria a fase cuja norma ficou pendente por causa da outra.
+    const fases = this.fases.controls.map(faseDoFormulario);
+    const fasePorCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
+    const ofertadas = new Set(this.store.modalidadesDoProcesso());
+    // O gatilho é conferido contra o MESMO catálogo que a superfície da fase oferece: o que a
+    // tela não soube propor, ela também não sabe validar, e apontar um fato que o editor não
+    // mostra deixaria o operador sem o que fazer.
+    const fatoPorCodigo = new Map(
+      fatosParaGatilho(
+        this.catalogos.fatos(),
+        new Map([
+          [
+            'CONDICAO_ATENDIMENTO',
+            this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
+          ],
+        ]),
+      ).map((fato) => [fato.codigo, fato]),
+    );
+    const nomePorCodigo = nomesDoCatalogo(this.catalogos.fatos());
+
+    return todasAsExigencias(this.store.draft().documentos).map((exigencia) => {
+      const fase = fasePorCodigo.get(exigencia.faseCodigo);
+      const recorte = modalidadesDaExigencia(exigencia);
+      const admiteComplementacao =
+        fase === undefined
+          ? false
+          : descreverFase(fase, this.catalogos.fasePorId()).permiteComplementacao;
+
+      return {
+        nome: nomePorId.get(exigencia.tipoDocumentoId) ?? exigencia.tipoDocumentoId,
+        decideResultado: exigencia.obrigatorio || exigencia.consequenciaIndeferimento !== '',
+        normaResolvida: exigencia.basesLegais.some(
+          (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
+        ),
+        faseCodigo: exigencia.faseCodigo,
+        faseViva: fase !== undefined,
+        alcancaModalidade:
+          recorte === null
+            ? ofertadas.size > 0
+            : recorte.some((codigo) => ofertadas.has(codigo)),
+        reenvioSemComplementacao:
+          exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
+        problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
+      };
+    });
   });
 
   /**
@@ -443,11 +552,6 @@ export class CronogramaStepComponent {
    * A última fase não sai: o cronograma gravado não aceita ficar vazio, e a
    * recusa chegaria só depois de o operador perder o que preencheu.
    */
-  podeRemoverFase(): boolean {
-    this.versaoDoFormulario();
-    return this.fases.length > 1;
-  }
-
   /**
    * Remover a fase que agrupa etapas leva as etapas junto: elas continuariam no
    * agregado sem a fase que as avalia, e a publicação passaria a recusar por um
@@ -544,6 +648,50 @@ export class CronogramaStepComponent {
   }
 
   /**
+   * Os caracteres que a etapa pode ter, dado o tipo escolhido.
+   *
+   * O recorte vem do cadastro de Configuração, onde cada tipo declara se compõe a nota final e
+   * se elimina candidato — e não de uma lista de códigos escrita aqui, que envelheceria no dia
+   * em que o CEPS cadastrasse um tipo novo. É esse recorte que faz peso e nota mínima
+   * desaparecerem de uma análise documental sem que a tela precise saber o que ela é.
+   */
+  caracteresPara(grupo: FormGroup<EtapaForm>): readonly { valor: string; rotulo: string }[] {
+    this.versaoDoFormulario();
+    const tipo = this.catalogos.tipoEtapaPorId().get(grupo.controls.tipoEtapaOrigemId.value);
+
+    // Sem tipo escolhido não há o que restringir: a etapa ainda não disse de que natureza é.
+    const admitidos: readonly { valor: string; rotulo: string }[] =
+      tipo === undefined
+        ? CARATERES
+        : CARATERES.filter(
+            (opcao) =>
+              (opcao.valor === 'classificatoria' && tipo.admitePontuacao) ||
+              (opcao.valor === 'eliminatoria' && tipo.admiteEliminacao) ||
+              (opcao.valor === 'ambas' && tipo.admitePontuacao && tipo.admiteEliminacao),
+          );
+
+    const escolhido = grupo.controls.carater.value;
+    if (escolhido === '' || admitidos.some((opcao) => opcao.valor === escolhido)) {
+      return admitidos;
+    }
+
+    // Caráter que o cadastro deixou de admitir depois de a etapa ter sido gravada: continua na
+    // lista, nomeado. Sumir seria o formulário mentindo sobre o que está gravado, e a gravação
+    // seguinte recusaria sem que ninguém tivesse visto o quê.
+    const rotulo = CARATERES.find((opcao) => opcao.valor === escolhido)?.rotulo ?? escolhido;
+    return [...admitidos, { valor: escolhido, rotulo: `${rotulo} (não mais admitido)` }];
+  }
+
+  /**
+   * Troca o tipo da etapa. Não mexe no caráter de propósito: se o tipo novo não o admitir, ele
+   * permanece visível e marcado por `caracteresPara`, e a recusa vem na gravação com o motivo.
+   */
+  escolherTipoEtapa(grupo: FormGroup<EtapaForm>, tipoEtapaOrigemId: string): void {
+    grupo.controls.tipoEtapaOrigemId.setValue(tipoEtapaOrigemId);
+    this.versaoDoFormulario.update((versao) => versao + 1);
+  }
+
+  /**
    * A etapa entra no cálculo da nota final — e, por isso, o peso dela tem efeito.
    *
    * Quem decide é o caráter, não o tipo: `CalcularDivisorMedia` soma o peso das etapas
@@ -618,8 +766,6 @@ export class CronogramaStepComponent {
   readonly remocaoAConfirmar = signal<number | null>(null);
 
   pedirRemocaoDaFase(indice: number): void {
-    if (!this.podeRemoverFase()) return;
-
     // Fase sem nada pendurado não precisa de confirmação: não há o que avisar.
     const dependentes = this.dependentesDaFase(indice);
     if (dependentes.etapas === 0 && dependentes.documentos === 0) {
@@ -681,8 +827,6 @@ export class CronogramaStepComponent {
    * existe mais; a gravação seguinte era recusada pelo servidor sem dizer o que fazer.
    */
   removerFase(indice: number): void {
-    if (!this.podeRemoverFase()) return;
-
     const removida = this.fases.at(indice);
     if (removida === undefined) return;
 
@@ -710,23 +854,7 @@ export class CronogramaStepComponent {
    * exigido; o que valia em mais fases continua, sem ela.
    */
   private removerDocumentosDaFase(codigo: string): void {
-    const documentos = this.store.draft().documentos;
-    const seguintes: Record<string, (typeof documentos)[string]> = {};
-
-    for (const [id, config] of Object.entries(documentos)) {
-      const alcance = config.etapas.filter((fase) => fase !== codigo);
-      const etapaPorFase = Object.fromEntries(
-        Object.entries(config.etapaPorFase).filter(([fase]) => fase !== codigo),
-      );
-      seguintes[id] = {
-        ...config,
-        etapas: alcance,
-        etapaPorFase,
-        included: config.included && (config.todasEtapas || alcance.length > 0),
-      };
-    }
-
-    this.store.patchSection('documentos', seguintes);
+    this.store.patchSection('documentos', semAFase(this.store.draft().documentos, codigo));
   }
 
   /**
@@ -858,6 +986,12 @@ export class CronogramaStepComponent {
         prazoValor: '',
         prazoUnidade: 'diasUteis',
         atoAncoraCodigo: preliminar?.atoCodigo ?? '',
+        // Nasce sem suspensividade — declarar o par é escolha do operador, e os dois em
+        // branco são a desativação prevista daquela instância.
+        suspensividadePrimeiraInstanciaValor: '',
+        suspensividadePrimeiraInstanciaUnidade: '',
+        suspensividadeSegundaInstanciaValor: '',
+        suspensividadeSegundaInstanciaUnidade: '',
       },
     ]);
   }
@@ -951,8 +1085,22 @@ export class CronogramaStepComponent {
   }
 
   removerEtapa(indice: number): void {
+    const removida = this.etapas.at(indice).controls.id.value;
     this.etapas.removeAt(indice, { emitEvent: false });
     this.renumerarEtapas();
+    this.desvincularDocumentosDaEtapa(removida);
+  }
+
+  /**
+   * Tira a etapa removida do registro de quem a apontava como ponto de coleta. Sem isto o
+   * rascunho reenviaria o identificador de uma etapa que não existe mais, e a gravação
+   * seguinte seria recusada — sem que a tela mostrasse onde está o problema, porque o
+   * seletor "Coletado em" não tem opção para um id que sumiu e exibe "A fase inteira".
+   */
+  private desvincularDocumentosDaEtapa(etapaId: string | null): void {
+    if (etapaId === null || etapaId === '') return;
+
+    this.store.patchSection('documentos', semAEtapa(this.store.draft().documentos, etapaId));
   }
 
   /**
@@ -1047,31 +1195,24 @@ export class CronogramaStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      // A ordem segue a direção da mudança, porque a bicondicional do agregado
-      // recusa os dois estados intermediários — mas em momentos opostos.
+      // O cronograma vai primeiro, sempre: a etapa declara a fase em que acontece, e o
+      // servidor recusa etapa cuja fase ainda não está no cronograma. Um certame montado do
+      // zero — nenhuma fase gravada ainda — não teria como gravar etapa nenhuma na ordem
+      // inversa.
       //
-      // Enquanto houver fase que agrupa etapas, as etapas vão primeiro: gravar
-      // o cronograma antes deixaria essa fase sem nenhuma etapa, o que é
-      // recusado na hora.
-      //
-      // Quando ela sai, é o inverso. Zerar as etapas primeiro deixaria a fase
-      // agrupadora que ainda está no servidor sem etapa alguma, e a recusa
-      // impediria a própria gravação que a removeria — a remoção da fase de
-      // avaliação seria impossível de concluir. Removê-la antes deixa etapas
-      // órfãs por um instante, e isso o agregado tolera: só a publicação recusa.
-      const gravaEtapasPrimeiro = this.linhaDoTempo().some(
-        (item) => item.exigencias?.agrupaEtapas === true,
-      );
-
-      if (!gravaEtapasPrimeiro) {
-        const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
-        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-        if (!cronograma.ok) {
-          return {
-            valid: false,
-            messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
-          };
-        }
+      // A ordem oposta existia para proteger a bicondicional por sinalizador: enquanto a fase
+      // agrupadora era a única que podia ter etapas, gravar o cronograma antes a deixava sem
+      // nenhuma, e o agregado recusava na hora. Desde que a etapa passou a declarar a própria
+      // fase, essa recusa saiu — qualquer fase se subdivide, e é o vínculo que responde por
+      // onde a etapa vive. Remover uma fase também é seguro por aqui: o agregado poda as
+      // etapas dela junto.
+      const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!cronograma.ok) {
+        return {
+          valid: false,
+          messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
+        };
       }
 
       const gravacaoDeEtapas = await this.cadastro.definirEtapas(
@@ -1098,17 +1239,6 @@ export class CronogramaStepComponent {
         // servidor acabou de criar.
         this.reconciliacaoPendente.set(true);
         return { valid: false, messages: [AGUARDA_RELEITURA] };
-      }
-
-      if (gravaEtapasPrimeiro) {
-        const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
-        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-        if (!cronograma.ok) {
-          return {
-            valid: false,
-            messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
-          };
-        }
       }
 
       // As exigências documentais vão por último e dependem das duas gravações
@@ -1150,6 +1280,18 @@ export class CronogramaStepComponent {
     }
   }
 
+  /**
+   * O piso do campo de data e hora: nunca antes de hoje, e nunca depois do que o campo já
+   * carrega.
+   *
+   * Recebe os limites que valem para aquele campo — o início da fase, para uma etapa que precisa
+   * caber nela; o início da própria janela, para um fim. Passar o valor atual é o que impede o
+   * piso de invalidar cronograma já em curso, que é o caso da retificação.
+   */
+  pisoDeData(valorAtual: string, ...limites: readonly (string | null | undefined)[]): string | null {
+    return pisoDoCampoDeData(valorAtual, inicioDeHojeNoFusoInstitucional(), ...limites);
+  }
+
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
   }
@@ -1180,7 +1322,35 @@ export class CronogramaStepComponent {
       this.store.draft().documentos,
       faseIdPorCodigo,
       this.store.modalidadesDoProcesso(),
+      new Set(detalhe.data.etapas.map((etapa) => etapa.id)),
     );
+
+    // Os campos do formulário saem ANTES das exigências, e não é preferência de ordem: uma
+    // exigência condicionada a um fato só se resolve se o certame coletar aquele fato. Quem
+    // declara a condição é este passo, então é ele que garante o campo — o operador não
+    // deveria precisar lembrar que decidir de quem o documento é cobrado mexe no formulário.
+    // A matriz de derivação é buscada ANTES de os campos serem gravados: as regras dela
+    // perguntam ao candidato se ele quer concorrer a cada cota, e uma regra que cita fato que o
+    // processo não coleta é recusada. Os dois comandos gravam em seguida, nessa ordem.
+    const proposta = await this.propostaDeDerivacaoDeModalidade(processoId, detalhe.data);
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (!proposta.ok) return proposta.recusa;
+
+    const campos = await this.garantirCamposQueAsExigenciasPressupoem(
+      processoId,
+      detalhe.data,
+      proposta.dependencias,
+    );
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (campos !== null) return campos;
+
+    const derivacao = await this.gravarDerivacaoDeModalidade(
+      processoId,
+      proposta.matriz,
+      detalhe.data,
+    );
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (derivacao !== null) return derivacao;
 
     const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
     if (geracao !== this.store.geracao()) return { valid: true };
@@ -1188,12 +1358,171 @@ export class CronogramaStepComponent {
       return {
         valid: false,
         messages: [
-          `As etapas e o cronograma foram gravados. ${this.problemI18n.resolve(gravacao.problem).title}`,
+          `As etapas, o cronograma, o formulário de inscrição e as regras de modalidade foram gravados. ${this.problemI18n.resolve(gravacao.problem).title}`,
         ],
       };
     }
 
     return { valid: true };
+  }
+
+  /**
+   * Põe no formulário de inscrição os campos que as exigências deste cronograma pressupõem, e
+   * grava. Devolve `null` quando deu certo, ou a recusa a ser exibida.
+   *
+   * Nada é gravado quando não há o que mudar: o comando substitui a coleção inteira, e uma
+   * chamada por gravação de cronograma seria escrita à toa na maioria das vezes.
+   */
+  private async garantirCamposQueAsExigenciasPressupoem(
+    processoId: string,
+    servidor: ProcessoSeletivoDto,
+    dependenciasDaDerivacao: readonly string[],
+  ): Promise<StepValidation | null> {
+    const draft = this.store.draft();
+    // Este caminho só ACRESCENTA — o conjunto de "postos por exigência" vai vazio de propósito.
+    // Quem decide TIRAR campo é o passo do formulário, que sabe distinguir o que entrou por
+    // causa de um gatilho do que foi declarado de propósito.
+    const reconciliado = comCamposQueAsExigenciasPressupoem(
+      draft.formulario,
+      draft.documentos,
+      this.catalogos.fatos(),
+      new Set(),
+      dependenciasDaDerivacao,
+    );
+
+    if (reconciliado !== draft.formulario) {
+      this.store.patchSection('formulario', reconciliado);
+    }
+
+    // A decisão de gravar é contra o SERVIDOR, não contra o rascunho. Comparando com o
+    // rascunho, a retentativa pulava justamente o comando que tinha falhado: a primeira
+    // tentativa já havia aplicado a mudança localmente, e a segunda não via mais diferença.
+    const desejados = comoComandoDeFatosColetados(reconciliado);
+    if (!divergeDoServidor(desejados, servidor.fatosColetados ?? [])) return null;
+
+    const gravacao = await this.cadastro.definirFatosColetados(processoId, desejados);
+    if (gravacao.ok) return null;
+
+    return {
+      valid: false,
+      messages: [
+        `As etapas e o cronograma foram gravados. ${this.problemI18n.resolve(gravacao.problem).title}`,
+      ],
+    };
+  }
+
+  /**
+   * A matriz de derivação de modalidade a gravar, e os campos de formulário de que ela
+   * depende. Devolve matriz vazia quando não há o que fazer.
+   *
+   * A modalidade não é declarada pelo candidato: ela RESULTA da avaliação dos opt-ins e das
+   * elegibilidades dele contra as regras do certame. Sem essas regras, dizer "este documento é
+   * de quem concorre na cota tal" é escrever uma condição que nunca resolverá — e é por isso
+   * que o servidor recusa a gravação, não porque o recorte esteja errado.
+   *
+   * A matriz vem do próprio servidor, recortada para as modalidades que este processo oferta.
+   * Ela não é escrita aqui de propósito: de que opt-ins e de que elegibilidades cada cota se
+   * compõe é matéria da Lei 12.711/2012, e uma segunda cópia dela no wizard divergiria em
+   * silêncio da que classifica os candidatos.
+   *
+   * As dependências saem daqui junto com a matriz porque as duas coisas se gravam em ordem: as
+   * regras perguntam ao candidato se ele quer concorrer a cada cota e se veio de escola
+   * pública, e uma regra que cite fato que o processo não coleta é recusada. Buscá-las depois
+   * de gravar os campos deixaria o certame com uma matriz que o servidor não aceita.
+   */
+  private async propostaDeDerivacaoDeModalidade(
+    processoId: string,
+    servidor: ProcessoSeletivoDto,
+  ): Promise<
+    | { ok: true; matriz: readonly ConfiguracaoDerivacaoInput[]; dependencias: readonly string[] }
+    | { ok: false; recusa: StepValidation }
+  > {
+    const vazia = { ok: true, matriz: [], dependencias: [] } as const;
+
+    const recorta = todasAsExigencias(this.store.draft().documentos).some(
+      (exigencia) => modalidadesDaExigencia(exigencia) !== null,
+    );
+    if (!recorta) return vazia;
+
+    // Quem já declara como deriva a modalidade não tem a matriz substituída pela proposta a
+    // cada gravação de cronograma: o ajuste que fez é dele.
+    const jaDeriva = (servidor.regrasDerivacao ?? []).some(
+      (config) => config.codigoFato === FATO_MODALIDADE,
+    );
+    if (jaDeriva) return vazia;
+
+    const proposta = await firstValueFrom(this.api.obterRegrasDerivacaoNormativas(processoId));
+    if (!isApiOk(proposta)) {
+      return {
+        ok: false,
+        recusa: {
+          valid: false,
+          messages: [
+            `As etapas e o cronograma foram gravados. ${this.problemI18n.resolve(proposta.problem).title}`,
+          ],
+        },
+      };
+    }
+
+    // Proposta vazia é o processo que ainda não declarou quadro de vagas. A exigência que
+    // recorta modalidade nenhuma já é acusada pela conferência de alcance, com uma mensagem
+    // que fala do quadro de vagas — a que viria daqui falaria de regra de derivação, que é
+    // consequência, não causa.
+    if (proposta.data.length === 0) return vazia;
+
+    return {
+      ok: true,
+      matriz: proposta.data,
+      dependencias: [
+        ...new Set(
+          proposta.data.flatMap((config) => fatosCitadosPelaDerivacao(config.regras)),
+        ),
+      ],
+    };
+  }
+
+  /** Grava a matriz proposta. Devolve `null` quando deu certo, ou a recusa a ser exibida. */
+  private async gravarDerivacaoDeModalidade(
+    processoId: string,
+    matriz: readonly ConfiguracaoDerivacaoInput[],
+    servidor: ProcessoSeletivoDto,
+  ): Promise<StepValidation | null> {
+    if (matriz.length === 0) return null;
+
+    // O comando SUBSTITUI a coleção inteira. Enviar só a matriz de modalidade apagaria a
+    // derivação de qualquer outro fato que o processo já declarasse — hoje não há um segundo
+    // fato derivável no catálogo, e é justamente por isso que o dia em que houver a perda
+    // seria silenciosa.
+    const preservadas = (servidor.regrasDerivacao ?? []).filter(
+      (config) => config.codigoFato !== FATO_MODALIDADE,
+    );
+
+    const gravacao = await this.cadastro.definirRegrasDerivacao(processoId, [
+      ...preservadas,
+      ...matriz,
+    ]);
+    if (!gravacao.ok) {
+      return {
+        valid: false,
+        messages: [
+          `As etapas e o cronograma foram gravados, e o formulário de inscrição está com os campos que as regras de modalidade pressupõem. ${this.problemI18n.resolve(gravacao.problem).title}`,
+        ],
+      };
+    }
+
+    // O rascunho acompanha o que foi gravado — sem isto, os campos que a matriz acabou de
+    // pressupor apareceriam no passo do formulário como campos que nada no certame usa, e a
+    // tela pediria para conferir se ainda há motivo para pedi-los ao candidato.
+    const formulario = this.store.draft().formulario;
+    this.store.patchSection('formulario', {
+      ...formulario,
+      derivacao: [...preservadas, ...matriz].map((config) => ({
+        codigoFato: config.codigoFato,
+        regras: config.regras,
+      })),
+    });
+
+    return null;
   }
 
   /**

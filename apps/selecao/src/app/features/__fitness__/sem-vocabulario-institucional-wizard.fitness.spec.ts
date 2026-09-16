@@ -78,6 +78,33 @@ const CATALOGO_BANIDO: Readonly<Record<string, { fonte: string; story: string }>
       'nenhuma — "local de prova" fica fora do MVP (Feature #477) até decisão própria do CEPS/PO',
     story: 'remoção/reconciliação em #481',
   },
+  // O vocabulário de fatos do candidato é fechado e semeado por migration: um fato só serve
+  // se existir o código que sabe resolver o valor dele, de modo que acrescentar um é mudança
+  // de software, nunca cadastro. Escrevê-lo no wizard criaria uma segunda lista que envelhece
+  // em silêncio — e é dela que dependem as condições que dizem de quem um documento é
+  // cobrado.
+  FATOS_CANDIDATO: {
+    fonte: 'FatosCandidatoApi — GET /api/configuracao/fatos-candidato',
+    story: '#554',
+  },
+  FATOS_DO_CANDIDATO: {
+    fonte: 'FatosCandidatoApi — GET /api/configuracao/fatos-candidato',
+    story: '#554',
+  },
+  // Os valores de cada fato categórico vêm com o próprio fato, no mesmo GET. Escrevê-los à
+  // parte faria a tela oferecer valor que o servidor recusa por não estar no domínio.
+  SEXOS: {
+    fonte: 'valoresDominio do fato SEXO, no catálogo de fatos do candidato',
+    story: '#554',
+  },
+  NACIONALIDADES: {
+    fonte: 'valoresDominio do fato NACIONALIDADE, no catálogo de fatos do candidato',
+    story: '#554',
+  },
+  CORES_RACA: {
+    fonte: 'valoresDominio do fato COR_RACA, no catálogo de fatos do candidato',
+    story: '#554',
+  },
 };
 
 /** Rótulos de navegação e a exceção temporária — decisão 2 do plano da frente. */

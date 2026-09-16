@@ -58,6 +58,42 @@ export function instanteDoCampo(valorLocal: string): string | null {
 }
 
 /**
+ * A primeira hora de hoje no fuso institucional, no formato que o campo de data e hora usa.
+ *
+ * É o piso que faz sentido oferecer a quem monta um cronograma: certame não se agenda para
+ * ontem. O dia vem do fuso de Belém, e não do relógio do navegador — quem configura de outro
+ * estado, ou depois das 21h, veria "hoje" um dia à frente e o campo ofereceria uma data que
+ * ainda não chegou para o certame.
+ */
+export function inicioDeHojeNoFusoInstitucional(agora: Date = new Date()): string {
+  return `${hojeNoFusoInstitucional(agora)}T00:00`;
+}
+
+/**
+ * O menor valor que um campo de data e hora deve aceitar, dados os limites que se aplicam a ele.
+ *
+ * Devolve o mais restritivo dos limites — o mais tardio —, <b>exceto</b> quando o campo já
+ * carrega um valor anterior a ele. Essa exceção é o ponto: um certame publicado em janeiro tem
+ * a inscrição de fevereiro no passado, e retificá-lo em março não pode esbarrar num piso que
+ * invalida o que já aconteceu. O piso governa a escolha de data nova, nunca condena a antiga.
+ *
+ * Compara como texto porque o formato é ordenável por natureza — `AAAA-MM-DDTHH:mm` cresce da
+ * esquerda para a direita —, e converter para `Date` só para comparar traria de volta a questão
+ * de fuso que o formato já resolve.
+ */
+export function pisoDoCampoDeData(
+  valorAtual: string,
+  ...limites: readonly (string | null | undefined)[]
+): string | null {
+  const aplicaveis = limites.filter((limite): limite is string => !!limite && limite !== '');
+  if (aplicaveis.length === 0) return null;
+
+  const maisTardio = aplicaveis.reduce((maior, limite) => (limite > maior ? limite : maior));
+
+  return valorAtual !== '' && valorAtual < maisTardio ? valorAtual : maisTardio;
+}
+
+/**
  * O que o campo de data e hora precisa exibir para um instante gravado: a hora
  * de parede no fuso institucional, que é como ela foi declarada.
  */

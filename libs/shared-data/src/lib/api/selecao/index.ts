@@ -21,9 +21,18 @@ export type {
   EtapaProcessoInput,
   FaseCronogramaDto,
   FaseCronogramaInput,
+  BaseLegalDto,
   DocumentoExigidoDto,
   ItemConformidadeDto,
   ItemDocumentoExigidoInput,
+  ConfiguracaoDerivacaoDto,
+  ConfiguracaoDerivacaoInput,
+  DefinirFormularioRequest,
+  DefinirReferenciaTemporalFatosRequest,
+  FatoColetadoDto,
+  FatoColetadoInput,
+  NoExigenciaDto,
+  ReferenciaTemporalFatosDto,
   NoExigenciaInput,
   PublicarProcessoSeletivoRequest,
   ReferenciaRegraDto,
@@ -32,6 +41,8 @@ export type {
   RegraEliminacaoInput,
   RegraRecursoFaseInput,
   SnapshotVigenteDto,
+  RascunhoDaPublicacaoDto,
+  SalvarRascunhoDaPublicacaoRequest,
 } from './processos-seletivos.api';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
 export {

@@ -5,6 +5,20 @@ import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 
 /**
+ * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
+ * comando.
+ *
+ * Exportada porque o preflight do passo precisa do MESMO predicado para avisar o operador:
+ * quando a conferência e o mapeador divergem, a tela aprova o que a gravação descarta.
+ */
+export function recursoResolvido(recurso: {
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+}): boolean {
+  return recurso.regraCodigo !== '' && recurso.regraVersao !== '';
+}
+
+/**
  * A fase como o comando a recebe.
  *
  * Os produtos, a fase concluinte, o parecer individual, as bancas requeridas e
@@ -93,20 +107,33 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     emiteParecerIndividual: etapa.emiteParecerIndividual,
     bancas: etapa.bancas.map((tipoBancaId) => ({ tipoBancaId })),
     // Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
-    // devolveria uma recusa de campo que o operador não sabe ligar ao que fez.
-    recursos: etapa.recursos
-      .filter((recurso) => recurso.regraCodigo !== '' && recurso.regraVersao !== '')
-      .map((recurso) => ({
+    // devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
+    // que ela ficou de fora é `problemasDasEtapas`, no preflight do passo — sumir com o
+    // trabalho do operador em silêncio era o defeito anterior.
+    recursos: etapa.recursos.filter(recursoResolvido).map((recurso) => ({
       ancora: recurso.ancora as NonNullable<EtapaProcessoInput['recursos']>[number]['ancora'],
       regraCodigo: recurso.regraCodigo,
       regraVersao: recurso.regraVersao,
       prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
       prazoUnidade: recurso.prazoUnidade as NonNullable<EtapaProcessoInput['recursos']>[number]['prazoUnidade'],
       atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
-      suspensividadePrimeiraInstanciaValor: null,
-      suspensividadePrimeiraInstanciaUnidade: null,
-      suspensividadeSegundaInstanciaValor: null,
-      suspensividadeSegundaInstanciaUnidade: null,
+      // A etapa recorre nas mesmas condições da fase, e o servidor guarda os quatro valores
+      // em colunas próprias — mandar `null` fixo apagava o efeito suspensivo declarado a
+      // cada gravação do cronograma.
+      suspensividadePrimeiraInstanciaValor: decimalDoCampo(
+        recurso.suspensividadePrimeiraInstanciaValor,
+      ),
+      suspensividadePrimeiraInstanciaUnidade:
+        recurso.suspensividadePrimeiraInstanciaUnidade === ''
+          ? null
+          : recurso.suspensividadePrimeiraInstanciaUnidade,
+      suspensividadeSegundaInstanciaValor: decimalDoCampo(
+        recurso.suspensividadeSegundaInstanciaValor,
+      ),
+      suspensividadeSegundaInstanciaUnidade:
+        recurso.suspensividadeSegundaInstanciaUnidade === ''
+          ? null
+          : recurso.suspensividadeSegundaInstanciaUnidade,
     })),
   };
 }

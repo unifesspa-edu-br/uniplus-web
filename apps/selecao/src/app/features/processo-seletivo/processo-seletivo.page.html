@@ -153,7 +153,16 @@
         <section class="step-pane" [hidden]="store.currentStep() !== 9">
           <sel-step-atendimento></sel-step-atendimento>
         </section>
+        <!--
+          O formulário de inscrição é a superfície de COLETA do que os passos anteriores
+          declaram: bônus, desempate, eliminação e atendimento especializado podem todos
+          depender de um fato do candidato, e o domínio de alguns desses campos sai da oferta
+          declarada em Atend. especial. Declará-lo antes obrigava a adivinhar o que viria.
+        -->
         <section class="step-pane" [hidden]="store.currentStep() !== 10">
+          <sel-step-formulario></sel-step-formulario>
+        </section>
+        <section class="step-pane" [hidden]="store.currentStep() !== 11">
           <sel-step-revisao></sel-step-revisao>
         </section>
       </div>
@@ -175,7 +184,34 @@
         >
           <path d="M19 12H5M12 19l-7-7 7-7" /></svg
         >Anterior</button
-      >@if (ofereceAvanco()) {
+      >@if (store.isLast() && store.processoSeletivoId() !== null) {
+      <!-- A Revisão é o único passo sem "Gravar e avançar": o botão principal dela publica de
+           verdade. Sem uma ação de gravação própria, os sete campos transcritos do Diário
+           Oficial só existiam no navegador, e um F5 os apagava. -->
+      <div class="rascunho-publicacao">
+        <button
+          class="btn btn--tertiary"
+          type="button"
+          [disabled]="salvandoRascunho() || store.operacaoEmAndamento()"
+          (click)="salvarRascunhoDaPublicacao()"
+        >
+          @if (salvandoRascunho()) { Salvando rascunho… } @else { Salvar rascunho }
+        </button>
+        @if (rascunhoSalvoEm(); as salvoEm) {
+        <span class="rascunho-publicacao__carimbo">
+          Rascunho salvo às {{ salvoEm | date: 'HH:mm' }}
+        </span>
+        <button
+          class="btn btn--tertiary"
+          type="button"
+          [disabled]="salvandoRascunho() || store.operacaoEmAndamento()"
+          (click)="descartarRascunhoDaPublicacao()"
+        >
+          Descartar rascunho
+        </button>
+        }
+      </div>
+      } @if (ofereceAvanco()) {
       <!-- `operacaoEmAndamento()`, não só `salvando()`: publicar() grava
            vários passos em sequência e recarrega o checklist entre eles — a
            orquestração inteira ainda está em curso mesmo nos instantes em

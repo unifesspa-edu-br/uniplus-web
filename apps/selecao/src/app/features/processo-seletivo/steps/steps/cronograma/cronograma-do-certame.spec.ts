@@ -12,15 +12,28 @@ import {
   componeNota,
   descreverFase,
   exigenciasDe,
+  avisosDosGrupos,
   problemasDoCronograma,
   renumerar,
   trocaFechaCiclo,
   violacoesDePrecedencia,
+  type ExigenciaDeclarada,
+  type TipoDeEtapaDoCatalogo,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
 const SEM_CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map();
 const nomeDaBanca = (id: string): string => id;
+
+/**
+ * Tipo de etapa que admite qualquer caráter — o caso comum dos cenários de outro assunto. Quem
+ * testa o recorte do cadastro passa o seu por `problemasDoCronograma` diretamente.
+ */
+const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
+  nome: 'Prova objetiva',
+  admitePontuacao: true,
+  admiteEliminacao: true,
+});
 
 /** A conferência do cronograma, com os catálogos que ela consulta. */
 function problemasDe(
@@ -29,7 +42,16 @@ function problemasDe(
   fasePorId: Parameters<typeof problemasDoCronograma>[2],
   precedencias: Parameters<typeof problemasDoCronograma>[3],
 ): readonly string[] {
-  return problemasDoCronograma(fases, etapas, fasePorId, precedencias, SEM_CATALOGO, nomeDaBanca);
+  return problemasDoCronograma(
+    fases,
+    etapas,
+    fasePorId,
+    precedencias,
+    SEM_CATALOGO,
+    nomeDaBanca,
+    tipoQueAdmiteTudo,
+    [],
+  );
 }
 
 function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
@@ -77,6 +99,12 @@ function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto {
   } as PrecedenciaFaseDto;
 }
 
+/**
+ * Espalhar um `Partial` faz o TypeScript aceitar o objeto mesmo sem as propriedades
+ * obrigatórias, então o fixture as declara todas à mão: antes disto ele devolvia uma etapa
+ * sem `recursos`, e qualquer conferência que percorresse a coleção estourava no teste em vez
+ * de reprovar de verdade.
+ */
 function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
   return {
     id: null,
@@ -86,6 +114,32 @@ function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
     peso: '2',
     notaMinima: '',
     ordem: 1,
+    faseCodigo: '',
+    produtos: [],
+    inicio: '',
+    fim: '',
+    emiteParecerIndividual: false,
+    bancas: [],
+    recursos: [],
+    ...parcial,
+  };
+}
+
+/**
+ * Uma exigência declarada, ancorada e conforme — os testes de norma partem daqui e mexem só
+ * no que estão medindo. Montar o objeto à mão deixava `faseViva` indefinido, e a conferência
+ * de ancoragem acusava "fase que saiu do cronograma" em teste que falava de outra coisa.
+ */
+function exigenciaDeclarada(parcial: Partial<ExigenciaDeclarada>): ExigenciaDeclarada {
+  return {
+    nome: 'Documento',
+    decideResultado: false,
+    normaResolvida: false,
+    faseCodigo: 'AVALIACAO',
+    faseViva: true,
+    alcancaModalidade: true,
+    reenvioSemComplementacao: false,
+    problemasDeGatilho: [],
     ...parcial,
   };
 }
@@ -150,6 +204,8 @@ describe('exigências da fase', () => {
         origemData: 'PROPRIA',
         agrupaEtapas: false,
         coletaInscricao: false,
+        permiteComplementacao: false,
+        coletaSolicitacaoIsencao: false,
         bancas: [],
       },
     });
@@ -465,6 +521,181 @@ describe('o que impede gravar o cronograma', () => {
     expect(problemas).toContainEqual(expect.stringContaining('compor a nota final'));
   });
 
+  /**
+   * O servidor confere o caráter declarado contra o que o tipo admite no cadastro. Sem espelhar
+   * isso, a tela deixaria gravar para receber uma recusa que a pessoa não pediu — e o caso
+   * acontece sem ninguém errar nada: basta o cadastro estreitar o tipo depois.
+   */
+  it('caráter que o tipo de etapa não admite é recusado antes de gravar', () => {
+    const classificatoria = etapa({
+      nome: 'Análise documental',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+    });
+
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [classificatoria],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      () => ({ nome: 'Análise Documental', admitePontuacao: false, admiteEliminacao: true }),
+      [],
+    );
+
+    expect(problemas).toContainEqual(
+      expect.stringContaining('não compõe a nota final'),
+    );
+    expect(problemas).toContainEqual(expect.stringContaining('Análise documental'));
+  });
+
+  /** Tipo fora do catálogo carregado não autoriza inventar restrição nenhuma. */
+  it('tipo que a tela não conhece não gera recusa de caráter', () => {
+    const classificatoria = etapa({
+      nome: 'Prova',
+      carater: 'classificatoria',
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+    });
+
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [classificatoria],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      () => undefined,
+      [],
+    );
+
+    expect(problemas).not.toContainEqual(expect.stringContaining('não compõe a nota final'));
+  });
+
+  /**
+   * A publicação recusa exigência que decide o resultado sem norma resolvida. Descobrir isso
+   * só no último passo custa o certame inteiro montado.
+   */
+  it('exigência que decide o resultado sem norma resolvida é acusada antes de gravar', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ nome: 'Histórico do ensino médio', decideResultado: true })],
+    );
+
+    expect(problemas).toContainEqual(expect.stringContaining('Histórico do ensino médio'));
+    expect(problemas).toContainEqual(expect.stringContaining('norma'));
+  });
+
+  /**
+   * A conferência de ancoragem: fase que saiu do cronograma, exigência que não alcança
+   * modalidade nenhuma, e reenvio onde a fase não admite complementação. Ela mora aqui porque
+   * é o `validate()` do Cronograma que o wizard chama — escrita na superfície da fase, que é
+   * embutida com `faseFixada`, a conferência existia e nunca rodava.
+   */
+  it('acusa a exigência cuja fase saiu do cronograma, nomeando o documento', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ nome: 'Comprovante de renda', faseViva: false })],
+    );
+
+    expect(problemas).toContainEqual(expect.stringContaining('saiu do cronograma'));
+    expect(problemas).toContainEqual(expect.stringContaining('Comprovante de renda'));
+  });
+
+  it('acusa a exigência que não alcança modalidade nenhuma', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ alcancaModalidade: false })],
+    );
+
+    expect(problemas).toContainEqual(expect.stringContaining('modalidade'));
+  });
+
+  /** Exigência já acusada de órfã não é acusada de novo por não alcançar modalidade. */
+  it('não repete a queixa de modalidade sobre exigência de fase morta', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ faseViva: false, alcancaModalidade: false })],
+    );
+
+    expect(problemas).not.toContainEqual(expect.stringContaining('modalidade'));
+  });
+
+  it('acusa o reenvio declarado em fase que não admite complementação', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ nome: 'Contracheque', reenvioSemComplementacao: true })],
+    );
+
+    expect(problemas).toContainEqual(expect.stringContaining('complementação'));
+    expect(problemas).toContainEqual(expect.stringContaining('Contracheque'));
+  });
+
+  /** Controle negativo: exigência conforme não produz nenhuma das três queixas. */
+  it('exigência ancorada, com modalidade e sem reenvio indevido não é acusada', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ normaResolvida: true })],
+    );
+
+    expect(problemas).not.toContainEqual(expect.stringContaining('saiu do cronograma'));
+    expect(problemas).not.toContainEqual(expect.stringContaining('modalidade'));
+    expect(problemas).not.toContainEqual(expect.stringContaining('complementação'));
+  });
+
+  it('exigência que não decide o resultado segue sem norma', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ nome: 'Foto 3x4', decideResultado: false })],
+    );
+
+    expect(problemas).not.toContainEqual(expect.stringContaining('norma'));
+  });
+
   it('mesma posição em duas fases é recusada', () => {
     const outra = fase({
       faseCanonicaId: RESULTADO.id,
@@ -587,4 +818,259 @@ describe('o que impede gravar o cronograma', () => {
       'Na fase Resultado preliminar: Escolha a publicação preliminar de cuja divulgação corre o prazo de recurso. Corrija em Configuração por fase.',
     );
   });
+
+
+  /**
+   * A janela recursal da etapa. O prazo é obrigatório no comando e o mapeador converte o que
+   * não casa para 0 — janela de prazo zero fecha no instante em que abre, e o servidor aceita.
+   */
+  describe('janela de recurso da etapa', () => {
+    function comRecurso(patch: Record<string, string>): readonly string[] {
+      return problemasDoCronograma(
+        [faseDeAvaliacao],
+        [
+          etapa({
+            nome: 'Prova Objetiva',
+            faseCodigo: 'AVALIACAO',
+            recursos: [
+              {
+                ancora: 'atoPublicado',
+                regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+                regraVersao: '1.0.0',
+                prazoValor: '2',
+                prazoUnidade: 'diasUteis',
+                atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+                suspensividadePrimeiraInstanciaValor: '',
+                suspensividadePrimeiraInstanciaUnidade: '',
+                suspensividadeSegundaInstanciaValor: '',
+                suspensividadeSegundaInstanciaUnidade: '',
+                ...patch,
+              },
+            ],
+          }),
+        ],
+        catalogo,
+        [],
+        SEM_CATALOGO,
+        nomeDaBanca,
+        tipoQueAdmiteTudo,
+        [],
+      );
+    }
+
+    it('acusa prazo em branco', () => {
+      expect(comRecurso({ prazoValor: '' })).toContainEqual(
+        expect.stringContaining('prazo maior que zero'),
+      );
+    });
+
+    it('acusa prazo que a gramática numérica não aceita', () => {
+      expect(comRecurso({ prazoValor: '2,5 dias' })).toContainEqual(
+        expect.stringContaining('prazo maior que zero'),
+      );
+    });
+
+    it('acusa prazo zero declarado', () => {
+      expect(comRecurso({ prazoValor: '0' })).toContainEqual(
+        expect.stringContaining('prazo maior que zero'),
+      );
+    });
+
+    it('não acusa prazo válido', () => {
+      expect(comRecurso({})).not.toContainEqual(expect.stringContaining('prazo maior que zero'));
+    });
+
+    /**
+     * As duas conferências que só a fase tinha. O prazo e a suspensividade vivem no MESMO value
+     * object nos dois donos, e o servidor passou a prová-las nos dois — a tela que aprovasse
+     * aqui mandaria o operador colher um 422 que a fase nunca deixaria acontecer.
+     */
+    it('acusa fração de dia útil no prazo', () => {
+      expect(comRecurso({ prazoValor: '2.5', prazoUnidade: 'diasUteis' })).toContainEqual(
+        expect.stringContaining('fração de dia útil'),
+      );
+    });
+
+    it('não acusa dia útil inteiro', () => {
+      expect(comRecurso({ prazoValor: '2', prazoUnidade: 'diasUteis' })).not.toContainEqual(
+        expect.stringContaining('fração de dia útil'),
+      );
+    });
+
+    it('acusa suspensividade com valor e sem unidade', () => {
+      expect(comRecurso({ suspensividadePrimeiraInstanciaValor: '3' })).toContainEqual(
+        expect.stringContaining('suspensividade'),
+      );
+    });
+
+    it('acusa suspensividade com unidade e sem valor', () => {
+      expect(comRecurso({ suspensividadeSegundaInstanciaUnidade: 'horas' })).toContainEqual(
+        expect.stringContaining('suspensividade'),
+      );
+    });
+
+    it('acusa suspensividade não positiva', () => {
+      expect(
+        comRecurso({
+          suspensividadePrimeiraInstanciaValor: '0',
+          suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+        }),
+      ).toContainEqual(expect.stringContaining('suspensividade'));
+    });
+
+    it('aceita o par completo, e aceita a instância desativada', () => {
+      const comPar = comRecurso({
+        suspensividadePrimeiraInstanciaValor: '3',
+        suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+      });
+      expect(comPar).not.toContainEqual(expect.stringContaining('suspensividade'));
+      expect(comRecurso({})).not.toContainEqual(expect.stringContaining('suspensividade'));
+    });
+
+    /** Janela sem regra resolvida é descartada na gravação — e isso precisa ser dito. */
+    it('acusa a janela cuja regra o catálogo ainda não resolveu', () => {
+      expect(comRecurso({ regraCodigo: '', regraVersao: '' })).toContainEqual(
+        expect.stringContaining('sem a regra de prazo'),
+      );
+    });
+  });
 });
+
+describe('o que a publicação vai cobrar dos grupos', () => {
+  /**
+   * Aviso, não impedimento. A norma de um grupo não se edita no wizard — bloquear a gravação
+   * por causa dela prenderia o passo sem saída, e a única fuga seria remover os documentos do
+   * grupo um a um até ele desaparecer, destruindo a configuração. Quem recusa é a publicação.
+   */
+  it('avisa sobre o grupo que decide o resultado sem norma, nomeando o que ele reúne', () => {
+    const avisos = avisosDosGrupos([
+      { decideResultado: true, normaResolvida: false, documentos: ['Contracheque', 'Extrato'] },
+    ]);
+
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0]).toContain('Contracheque, Extrato');
+    expect(avisos[0]).toContain('A publicação vai cobrá-la.');
+  });
+
+  it('não avisa sobre grupo com norma resolvida nem sobre grupo transparente', () => {
+    expect(
+      avisosDosGrupos([
+        { decideResultado: true, normaResolvida: true, documentos: ['Contracheque'] },
+        { decideResultado: false, normaResolvida: false, documentos: ['Extrato'] },
+      ]),
+    ).toEqual([]);
+  });
+
+  /** Sem documentos nomeáveis a frase não pode terminar em "reúne ." */
+  it('avisa mesmo quando não há documento a nomear', () => {
+    const avisos = avisosDosGrupos([
+      { decideResultado: true, normaResolvida: false, documentos: [] },
+    ]);
+
+    expect(avisos[0]).not.toContain('reúne');
+    expect(avisos[0]).toContain('A publicação vai cobrá-la.');
+  });
+});
+
+describe('a janela própria da etapa', () => {
+  const CATALOGO = new Map([['id-aval', faseCanonica({ id: 'id-aval', codigo: 'AVALIACAO', nome: 'Avaliação', agrupaEtapas: true })]]);
+
+  /** Fase de 10 a 20 de março, a janela contra a qual a etapa é conferida. */
+  const avaliacao = fase({
+    faseCanonicaId: 'id-aval',
+    codigo: 'AVALIACAO',
+    inicio: '2027-03-10T08:00',
+    fim: '2027-03-20T18:00',
+  });
+
+  const naAvaliacao = (inicio: string, fim: string, nome = 'Prova') =>
+    etapa({ nome, faseCodigo: 'AVALIACAO', inicio, fim });
+
+  const conferir = (e: EtapaPontuada, f: FaseDoCronograma = avaliacao) =>
+    problemasDe([f], [e], CATALOGO, []);
+
+  it('aceita a etapa inteiramente dentro da fase', () => {
+    const problemas = conferir(naAvaliacao('2027-03-12T09:00', '2027-03-14T17:00'));
+
+    expect(problemas.filter((p) => p.includes('Prova'))).toEqual([]);
+  });
+
+  /** Refinar não obriga a encolher: a etapa pode ocupar a fase inteira. */
+  it('aceita a etapa que coincide com as bordas da fase', () => {
+    const problemas = conferir(naAvaliacao('2027-03-10T08:00', '2027-03-20T18:00'));
+
+    expect(problemas.filter((p) => p.includes('Prova'))).toEqual([]);
+  });
+
+  it('acusa a etapa cujo fim vem antes do próprio início', () => {
+    const problemas = conferir(naAvaliacao('2027-03-14T17:00', '2027-03-12T09:00'));
+
+    expect(problemas).toContain('Na etapa "Prova", o fim não pode vir antes do início.');
+  });
+
+  /** Com a janela invertida, comparar com a fase só somaria ruído ao mesmo defeito. */
+  it('não soma a queixa de contenção quando a própria janela está invertida', () => {
+    const problemas = conferir(naAvaliacao('2027-03-30T17:00', '2027-03-01T09:00'));
+
+    expect(problemas.filter((p) => p.includes('Prova'))).toHaveLength(1);
+  });
+
+  it('acusa a etapa que começa antes da fase', () => {
+    const problemas = conferir(naAvaliacao('2027-03-09T08:00', '2027-03-14T17:00'));
+
+    expect(problemas).toContain(
+      'A etapa "Prova" começa antes da fase Avaliação. A janela da etapa precisa caber na da fase.',
+    );
+  });
+
+  it('acusa a etapa que termina depois da fase', () => {
+    const problemas = conferir(naAvaliacao('2027-03-12T09:00', '2027-03-21T09:00'));
+
+    expect(problemas).toContain(
+      'A etapa "Prova" termina depois da fase Avaliação. A janela da etapa precisa caber na da fase.',
+    );
+  });
+
+  it('acusa as duas pontas quando a etapa transborda dos dois lados', () => {
+    const problemas = conferir(naAvaliacao('2027-03-09T08:00', '2027-03-21T09:00'));
+
+    expect(problemas.filter((p) => p.includes('Prova'))).toHaveLength(2);
+  });
+
+  /** Em branco, a etapa acontece na janela da fase — é o que a dica do campo promete. */
+  it('não confere nada quando a etapa não declara janela', () => {
+    const problemas = conferir(naAvaliacao('', ''));
+
+    expect(problemas.filter((p) => p.includes('Prova'))).toEqual([]);
+  });
+
+  it('confere a ponta declarada quando só uma das duas datas existe', () => {
+    expect(conferir(naAvaliacao('2027-03-09T08:00', ''))).toContain(
+      'A etapa "Prova" começa antes da fase Avaliação. A janela da etapa precisa caber na da fase.',
+    );
+    expect(conferir(naAvaliacao('', '2027-03-21T09:00'))).toContain(
+      'A etapa "Prova" termina depois da fase Avaliação. A janela da etapa precisa caber na da fase.',
+    );
+  });
+
+  /**
+   * Fase sem janela não tem o que conter, e exigir data dela por causa da etapa inventaria uma
+   * obrigação que o cadastro não faz. A coerência interna da etapa continua valendo.
+   */
+  it('tolera a etapa com janela própria quando a fase não declara a dela', () => {
+    const semJanela = fase({ faseCanonicaId: 'id-aval', codigo: 'AVALIACAO', inicio: null, fim: null });
+
+    const problemas = conferir(naAvaliacao('2027-03-12T09:00', '2027-03-14T17:00'), semJanela);
+
+    expect(problemas.filter((p) => p.includes('Prova'))).toEqual([]);
+  });
+
+  it('nomeia a etapa sem nome em vez de deixar a mensagem sem sujeito', () => {
+    const problemas = conferir(naAvaliacao('2027-03-09T08:00', '2027-03-14T17:00', ''));
+
+    expect(problemas).toContain(
+      'A etapa sem nome começa antes da fase Avaliação. A janela da etapa precisa caber na da fase.',
+    );
+  });
+});
+

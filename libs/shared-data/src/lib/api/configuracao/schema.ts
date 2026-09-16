@@ -8831,6 +8831,8 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly nome: null | string;
+            readonly admitePontuacao: null | boolean;
+            readonly admiteEliminacao: null | boolean;
             readonly descricao?: null | string;
         };
         readonly AtualizarTipoProcessoCommand: {
@@ -9111,6 +9113,8 @@ export interface components {
         readonly CriarTipoEtapaCommand: {
             readonly codigo: null | string;
             readonly nome: null | string;
+            readonly admitePontuacao: null | boolean;
+            readonly admiteEliminacao: null | boolean;
             readonly descricao?: null | string;
         };
         readonly CriarTipoProcessoCommand: {
@@ -9463,6 +9467,8 @@ export interface components {
             readonly nome: string;
             readonly descricao: null | string;
             readonly ativo: boolean;
+            readonly admitePontuacao: boolean;
+            readonly admiteEliminacao: boolean;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {

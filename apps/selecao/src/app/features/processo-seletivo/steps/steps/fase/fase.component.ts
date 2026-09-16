@@ -1,4 +1,45 @@
 import {
+  ABRANGENCIAS_ESCOLHIVEIS,
+  CONSEQUENCIAS_ESCOLHIVEIS,
+  CONSEQUENCIA_REENVIO,
+  STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  baseLegalNova,
+  comAlcanceDeTodasAsFases,
+  comExigencia,
+  comExigidoDeTodos,
+  comRecorteEscolhido,
+  exigenciaNova,
+  exigidoDeTodos,
+  exigenciasDaFase,
+  exigenciasDaRaiz,
+  exigenciasLocalizadasDaFase,
+  formatosDeclarados,
+  modalidadesDaExigencia,
+  semAExigencia,
+  type ExigenciaLocalizada,
+} from '../../shared/exigencias-documentais';
+import {
+  alcanceDaCondicao,
+  clausulasDoGatilho,
+  comCondicao,
+  comCondicaoTrocada,
+  comClausula,
+  comOperador,
+  comValorEscalar,
+  comValoresDeLista,
+  comparaComLista,
+  condicaoNova,
+  fatosParaGatilho,
+  operadoresDoFato,
+  RESPOSTAS_BOOLEANAS,
+  semClausula,
+  semCondicao,
+  valorEscalarDe,
+  valoresDeListaDe,
+  type ClausulaDeGatilho,
+  type FatoEscolhivel,
+} from '../../shared/gatilho-de-exigencia';
+import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -10,7 +51,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui';
+import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
@@ -19,8 +60,10 @@ import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
   type BancaRequeridaDaFase,
-  type DocumentoConfig,
+  type BaseLegalConfig,
+  type CondicaoGatilhoConfig,
   type DocumentoDefinicao,
+  type ExigenciaDeDocumento,
   type EtapaPontuada,
   type FaseDoCronograma,
   type ProdutoDaFase,
@@ -513,6 +556,67 @@ export class FaseStepComponent {
   readonly documentoAAcrescentar = signal('');
 
   /**
+   * Como cada documento desta fase está declarado na árvore — solto, ou dentro de um grupo
+   * que o combina com outros.
+   *
+   * Indexado pelo tipo de documento porque é por ele que a tela endereça a exigência. Quando o
+   * mesmo tipo é declarado mais de uma vez na fase, guarda todas: a lista mostra uma linha só,
+   * e é preciso dizer isso em vez de deixar o operador editar uma das declarações sem saber
+   * que há outra.
+   */
+  private readonly declaracoesPorDocumento = computed(() => {
+    this.versaoDoFormulario();
+    const fase = this.faseDoRascunho();
+    if (fase === null) return new Map<string, readonly ExigenciaLocalizada[]>();
+
+    const porTipo = new Map<string, ExigenciaLocalizada[]>();
+    for (const achada of exigenciasLocalizadasDaFase(this.store.draft().documentos, fase.codigo)) {
+      const atuais = porTipo.get(achada.documento.tipoDocumentoId) ?? [];
+      atuais.push(achada);
+      porTipo.set(achada.documento.tipoDocumentoId, atuais);
+    }
+    return porTipo;
+  });
+
+  /**
+   * Como o documento é exigido: por si, ou como alternativa dentro de um grupo. Vazio quando
+   * está solto, que é o caso comum e não precisa de explicação.
+   */
+  posicaoNaArvore(id: string): string {
+    const declaracoes = this.declaracoesPorDocumento().get(id) ?? [];
+    const grupo = declaracoes[0]?.grupo;
+    if (grupo === undefined || grupo === null) return '';
+
+    // Grupo de um filho só não oferece alternativa nenhuma: satisfazê-lo é satisfazer aquele
+    // filho, e a folha é materialmente igual a uma exigência solta. Anunciá-la como grupo
+    // informaria errado antes de informar mal.
+    if (grupo.alternativas < 2) return '';
+
+    if (grupo.tipo === 'E') {
+      return `Faz parte de um conjunto de ${grupo.alternativas} documentos que valem juntos.`;
+    }
+
+    const minima = grupo.quantidadeMinima ?? 1;
+    return minima === 1
+      ? `É uma das ${grupo.alternativas} alternativas de um grupo — basta entregar uma delas.`
+      : `É uma das ${grupo.alternativas} alternativas de um grupo que pede ${minima} delas.`;
+  }
+
+  /**
+   * O aviso de que este documento está declarado mais de uma vez nesta fase.
+   *
+   * A tela mostra uma linha por tipo de documento, e editar essa linha mexe na primeira
+   * declaração. Enquanto isso ficava calado, o operador acreditava estar editando a exigência
+   * que estava vendo.
+   */
+  declaradoMaisDeUmaVez(id: string): string {
+    const quantas = (this.declaracoesPorDocumento().get(id) ?? []).length;
+    if (quantas <= 1) return '';
+
+    return `Este documento está declarado ${quantas} vezes nesta fase, em posições diferentes da árvore. O que se edita aqui é a primeira declaração.`;
+  }
+
+  /**
    * Os documentos que esta fase exige, na ordem do catálogo.
    *
    * A tela lista o que foi declarado, não o catálogo inteiro: com setenta e quatro tipos
@@ -525,15 +629,18 @@ export class FaseStepComponent {
     const fase = this.faseDoRascunho();
     if (fase === null) return [];
 
-    const documentos = this.store.draft().documentos;
+    const exigencias = this.store.draft().documentos;
+    // Inclui o que vale em todas as fases: a intenção só se materializa na gravação, e sem
+    // isto a fase acrescentada depois não mostraria o documento que o operador já declarou
+    // valer nela.
+    const declarados = new Set([
+      ...exigenciasDaFase(exigencias, fase.codigo).map((e) => e.tipoDocumentoId),
+      ...exigencias.emTodasAsFases,
+    ]);
     return this.catalogos
       .documentosPorCategoria()
       .flatMap((grupo) => grupo.docs)
-      .filter((doc) => {
-        const config = documentos[doc.id];
-        if (config === undefined || !config.included) return false;
-        return config.todasEtapas || config.etapas.includes(fase.codigo);
-      });
+      .filter((doc) => declarados.has(doc.id));
   });
 
   /**
@@ -581,17 +688,30 @@ export class FaseStepComponent {
     this.alternarExigencia(id, false);
   }
 
-  configuracaoDoDocumento(id: string): DocumentoConfig {
-    return (
-      this.store.draft().documentos[id] ?? {
-        included: false,
-        todasEtapas: false,
-        etapas: [],
-        modalidades: [],
-        modalidadesRecortadas: false,
-        etapaPorFase: {},
-      }
+  /**
+   * A exigência deste documento NESTA fase — a unidade que o contrato guarda. Duas fases que
+   * pedem o mesmo documento são duas exigências, com entrega, consequência e normas próprias:
+   * antes, o rascunho guardava um registro por documento e a segunda fase herdava, calada, o
+   * que a primeira declarasse.
+   */
+  exigenciaDoDocumento(id: string): ExigenciaDeDocumento {
+    const fase = this.faseDoRascunho();
+    const codigo = fase?.codigo ?? '';
+    const exigencias = this.store.draft().documentos;
+    const achada = exigenciasDaFase(exigencias, codigo).find(
+      (exigencia) => exigencia.tipoDocumentoId === id,
     );
+    if (achada !== undefined) return achada;
+
+    // Fase alcançada por "vale em todas as fases" mas ainda não materializada: mostra o que
+    // será gravado — o modelo de raiz nesta fase —, não um formulário em branco que mentiria
+    // sobre o que o operador já declarou.
+    const modelo = exigencias.emTodasAsFases.includes(id)
+      ? exigenciasDaRaiz(exigencias).find((exigencia) => exigencia.tipoDocumentoId === id)
+      : undefined;
+    if (modelo !== undefined) return { ...modelo, faseCodigo: codigo, etapaId: null };
+
+    return exigenciaNova(id, codigo, this.catalogos.tipoDocumentoPorId().get(id));
   }
 
   /**
@@ -609,111 +729,248 @@ export class FaseStepComponent {
 
   /** A etapa que coleta o documento nesta fase; vazio quando ele é da fase inteira. */
   etapaDoDocumento(id: string): string {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return '';
-    return this.configuracaoDoDocumento(id).etapaPorFase[fase.codigo] ?? '';
+    return this.exigenciaDoDocumento(id).etapaId ?? '';
   }
 
   /**
-   * Declara em que etapa desta fase o documento é coletado. Vazio devolve o documento
-   * à fase inteira — a etapa sai do registro em vez de ficar guardada como texto vazio,
-   * que o contrato leria como declaração.
+   * O que a tela oferece como consequência NESTA fase.
+   *
+   * "Abre pendência para reenvio" só é aceita em fase que admite complementação — quem decide
+   * é o cadastro da fase canônica, não este passo. Oferecê-la onde a fase não admite produzia
+   * uma recusa na gravação que o operador não sabia ligar ao que fez, e sem remédio à mão: o
+   * sinalizador não é editável aqui.
+   */
+  consequenciasDaFase(): readonly { readonly valor: string; readonly rotulo: string }[] {
+    if (this.faseAdmiteComplementacao()) return CONSEQUENCIAS_ESCOLHIVEIS;
+    return CONSEQUENCIAS_ESCOLHIVEIS.filter((opcao) => opcao.valor !== CONSEQUENCIA_REENVIO);
+  }
+
+  /** Se a fase aberta admite reenvio de documento depois da análise. */
+  faseAdmiteComplementacao(): boolean {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return false;
+    return descreverFase(fase, this.catalogos.fasePorId()).permiteComplementacao;
+  }
+
+  protected readonly consequencias = CONSEQUENCIAS_ESCOLHIVEIS;
+  protected readonly abrangencias = ABRANGENCIAS_ESCOLHIVEIS;
+  protected readonly statusBaseLegal = STATUS_BASE_LEGAL_ESCOLHIVEIS;
+
+  ehObrigatorio(id: string): boolean {
+    return this.exigenciaDoDocumento(id).obrigatorio;
+  }
+
+  /**
+   * Exigência obrigatória decide sozinha o resultado da análise — e é por isso que a publicação
+   * cobra a norma dela. A facultativa segue sem norma declarada.
+   */
+  escolherObrigatoriedade(id: string, valor: string): void {
+    this.escreverExigencia(id, { obrigatorio: valor === 'sim' });
+  }
+
+  consequenciaDoDocumento(id: string): string {
+    return this.exigenciaDoDocumento(id).consequenciaIndeferimento;
+  }
+
+  /**
+   * A consequência é o que faz a exigência decidir sozinha o resultado. Quem declara uma
+   * consequência está dizendo que ela decide, e a publicação vai cobrar a norma.
+   */
+  escolherConsequencia(id: string, consequencia: string): void {
+    this.escreverExigencia(id, { consequenciaIndeferimento: consequencia });
+  }
+
+  /** As normas que sustentam a exigência nesta fase — são N por exigência (ADR-0074). */
+  basesLegaisDoDocumento(id: string): readonly BaseLegalConfig[] {
+    return this.exigenciaDoDocumento(id).basesLegais;
+  }
+
+  /**
+   * Escreve um campo de UMA das normas, endereçada pela posição.
+   *
+   * Antes havia três campos escalares por documento e uma união fechada de três literais: a
+   * segunda norma não tinha onde existir, e a observação não tinha campo nenhum — ela era
+   * escrita como `null` fixo e nunca lida de volta.
+   */
+  escreverBaseLegal(
+    id: string,
+    posicao: number,
+    campo: keyof BaseLegalConfig,
+    valor: string,
+  ): void {
+    const bases = this.basesLegaisDoDocumento(id).map((base, i) =>
+      i === posicao ? { ...base, [campo]: valor } : base,
+    );
+    this.escreverExigencia(id, { basesLegais: bases });
+  }
+
+  /** Acrescenta uma norma à exigência — uma lei federal somada à cláusula do edital. */
+  acrescentarBaseLegal(id: string): void {
+    this.escreverExigencia(id, {
+      basesLegais: [...this.basesLegaisDoDocumento(id), baseLegalNova()],
+    });
+  }
+
+  /**
+   * Remove uma norma. A última não sai: a exigência que decide o resultado precisa de norma
+   * resolvida para publicar, e deixar a lista vazia tiraria da tela o campo que a publicação
+   * cobra — a linha em branco não viaja no comando de qualquer forma.
+   */
+  removerBaseLegal(id: string, posicao: number): void {
+    const bases = this.basesLegaisDoDocumento(id);
+    if (bases.length <= 1) return;
+    this.escreverExigencia(id, { basesLegais: bases.filter((_, i) => i !== posicao) });
+  }
+
+  /**
+   * Formatos que o cadastro do tipo de documento declara e o contrato da exigência não
+   * expressa. Dizer isso é o que evita o edital prometer ao candidato um arquivo que a
+   * exigência recusaria na entrega.
+   */
+  formatosForaDoContrato(id: string): readonly string[] {
+    const tipo = this.catalogos.tipoDocumentoPorId().get(id);
+    return formatosDeclarados(tipo?.formatosAceitos).naoExpressos;
+  }
+
+  /**
+   * Declara em que etapa desta fase o documento é coletado. Vazio devolve o documento à fase
+   * inteira — a etapa sai do registro em vez de ficar guardada como texto vazio, que o
+   * contrato leria como declaração.
    */
   escolherEtapaDoDocumento(id: string, etapaId: string): void {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return;
-
-    const semEsta = Object.fromEntries(
-      Object.entries(this.configuracaoDoDocumento(id).etapaPorFase).filter(
-        ([codigo]) => codigo !== fase.codigo,
-      ),
-    );
-    this.escreverDocumento(id, {
-      etapaPorFase: etapaId === '' ? semEsta : { ...semEsta, [fase.codigo]: etapaId },
-    });
+    this.escreverExigencia(id, { etapaId: etapaId === '' ? null : etapaId });
   }
 
   /**
    * O documento acompanha todas as fases do edital.
    *
-   * `todasEtapas` sozinho não basta: o rascunho nasce com ele ligado e
-   * `included` desligado, que é o padrão de "acompanha o edital quando for
-   * incluído", não uma exigência. Ler só o sinalizador travava a caixa de todo
-   * documento de um processo novo, sob o texto de que ele já era exigido em
-   * toda parte — o oposto do estado real, e sem caminho para marcar nenhum.
+   * É intenção de UI, não dado da exigência: o contrato só conhece a exigência materializada
+   * em cada fase. Guardar a intenção é o que faz uma fase acrescentada depois receber o
+   * documento, em vez de ficar de fora em silêncio.
    */
   valeEmTodasAsFases(id: string): boolean {
-    const config = this.configuracaoDoDocumento(id);
-    return config.included && config.todasEtapas;
+    return this.store.draft().documentos.emTodasAsFases.includes(id);
   }
 
-  /**
-   * O documento é exigido nesta fase. Enquanto ele acompanha todas as fases do
-   * edital, a resposta é sim para qualquer uma — e é por isso que a caixa fica
-   * marcada e travada, com o recorte oferecido à parte.
-   */
+  /** O documento é exigido nesta fase. */
   exigidoNestaFase(id: string): boolean {
-    const config = this.configuracaoDoDocumento(id);
-    if (!config.included) return false;
-    if (config.todasEtapas) return true;
-
     const fase = this.faseDoRascunho();
-    return fase !== null && config.etapas.includes(fase.codigo);
+    if (fase === null) return false;
+    const exigencias = this.store.draft().documentos;
+    if (exigencias.emTodasAsFases.includes(id)) return true;
+    return exigenciasDaFase(exigencias, fase.codigo).some(
+      (exigencia) => exigencia.tipoDocumentoId === id,
+    );
   }
 
   /**
    * Marca ou desmarca a exigência do documento nesta fase.
    *
-   * Desmarcar a última fase tira o documento do processo: documento incluído sem
-   * nenhuma fase é recusado pela conferência, e deixá-lo assim faria a tela
-   * cobrar um recorte que o operador acabou de zerar aqui.
+   * Desmarcar tira a exigência DESTA fase; a mesma exigência em outra fase continua, porque
+   * são exigências distintas, com entrega e norma próprias.
    */
   alternarExigencia(id: string, marcada: boolean): void {
     const fase = this.faseDoRascunho();
     if (fase === null) return;
 
-    const config = this.configuracaoDoDocumento(id);
-    const semEsta = config.etapas.filter((codigo) => codigo !== fase.codigo);
-    const declaradas = marcada ? [...semEsta, fase.codigo] : semEsta;
+    const exigencias = this.store.draft().documentos;
+    if (!marcada) {
+      // Documento que valia em todas as fases é materializado ANTES de sair desta: largar o
+      // alcance sem materializar tiraria o documento também de toda fase que ainda só o tinha
+      // por herança — o operador desmarca numa fase e perde em outras, sem nada dizer.
+      const materializadas = exigencias.emTodasAsFases.includes(id)
+        ? comAlcanceDeTodasAsFases(
+            exigencias,
+            this.fasesDoCronograma().map((outra) => outra.codigo),
+          )
+        : exigencias;
 
-    this.escreverDocumento(id, {
-      included: declaradas.length > 0,
-      todasEtapas: false,
-      etapas: declaradas,
-    });
+      this.store.patchSection('documentos', {
+        ...semAExigencia(materializadas, id, fase.codigo),
+        emTodasAsFases: materializadas.emTodasAsFases.filter((item) => item !== id),
+      });
+      return;
+    }
+
+    this.store.patchSection(
+      'documentos',
+      comExigencia(
+        exigencias,
+        exigenciaNova(id, fase.codigo, this.catalogos.tipoDocumentoPorId().get(id)),
+      ),
+    );
   }
 
   /**
-   * Troca "vale para todas as fases" pelo recorte explícito, partindo das fases
-   * que o edital tem hoje. Congelar o conjunto atual preserva o que estava
-   * valendo; começar do zero apagaria a exigência de todas as outras fases por
-   * causa de uma decisão tomada numa só.
+   * Troca "vale para todas as fases" pelo recorte explícito, partindo das fases que o edital
+   * tem hoje. Congelar o conjunto atual preserva o que estava valendo; começar do zero
+   * apagaria a exigência de todas as outras fases por causa de uma decisão tomada numa só.
    */
   recortarPorFase(id: string): void {
-    this.escreverDocumento(id, {
-      included: true,
-      todasEtapas: false,
-      etapas: this.fasesDoCronograma().map((fase) => fase.codigo),
+    const exigencias = this.store.draft().documentos;
+    this.store.patchSection('documentos', {
+      ...this.materializarEmTodasAsFases(exigencias, id),
+      emTodasAsFases: exigencias.emTodasAsFases.filter((item) => item !== id),
     });
   }
 
   /** Devolve o documento ao regime de acompanhar todas as fases do edital. */
   valerEmTodasAsFases(id: string): void {
-    this.escreverDocumento(id, { included: true, todasEtapas: true });
+    const exigencias = this.store.draft().documentos;
+    const materializadas = this.materializarEmTodasAsFases(exigencias, id);
+    this.store.patchSection('documentos', {
+      ...materializadas,
+      emTodasAsFases: exigencias.emTodasAsFases.includes(id)
+        ? exigencias.emTodasAsFases
+        : [...exigencias.emTodasAsFases, id],
+    });
   }
 
   /**
-   * Modalidades que valem para o documento. Sem recorte, ele acompanha o que o
-   * quadro de vagas oferta — derivado, não copiado: uma lista própria ficaria
-   * vazia no documento recém-incluído e dependeria de alguém sincronizá-la.
+   * Garante uma exigência do documento em cada fase do cronograma, copiando o que já foi
+   * declarado numa delas.
+   *
+   * Copiar, e não criar em branco, é o que preserva entrega, consequência e normas já
+   * escritas: quem marcou "todas as fases" depois de configurar a exigência numa delas está
+   * dizendo que é a mesma exigência, não uma nova.
+   */
+  private materializarEmTodasAsFases(
+    exigencias: ReturnType<ProcessoSeletivoStore['draft']>['documentos'],
+    id: string,
+  ) {
+    const fases = this.fasesDoCronograma().map((fase) => fase.codigo);
+    // Garante um modelo de raiz antes de espalhar: sem nenhuma exigência declarada na raiz,
+    // não há o que copiar, e `comAlcanceDeTodasAsFases` não inventa uma.
+    //
+    // O modelo nasce na fase ABERTA, não na primeira do cronograma: é nela que o operador
+    // está, e é o que ele vê ali que ele espera ver replicado. Semear noutra fase punha uma
+    // exigência em branco num lugar que ele não estava olhando.
+    const temModelo = exigenciasDaRaiz(exigencias).some(
+      (exigencia) => exigencia.tipoDocumentoId === id,
+    );
+    const aberta = this.faseDoRascunho()?.codigo ?? fases[0] ?? '';
+    const base = temModelo
+      ? exigencias
+      : comExigencia(
+          exigencias,
+          exigenciaNova(id, aberta, this.catalogos.tipoDocumentoPorId().get(id)),
+        );
+
+    return comAlcanceDeTodasAsFases({ ...base, emTodasAsFases: [id] }, fases);
+  }
+
+  /**
+   * Modalidades que valem para o documento. Sem recorte, ele acompanha o que o quadro de
+   * vagas oferta — derivado, não copiado: uma lista própria ficaria vazia no documento
+   * recém-incluído e dependeria de alguém sincronizá-la.
    */
   modalidadesEfetivas(id: string): readonly string[] {
     const aceitas = this.modalidades();
-    const config = this.configuracaoDoDocumento(id);
-    if (!config.modalidadesRecortadas) return aceitas;
+    const recorte = modalidadesDaExigencia(this.exigenciaDoDocumento(id));
+    if (recorte === null) return aceitas;
 
     const conjunto = new Set(aceitas);
-    return config.modalidades.filter((codigo) => conjunto.has(codigo));
+    return recorte.filter((codigo) => conjunto.has(codigo));
   }
 
   /** As modalidades que o quadro de vagas oferta, como a lista de escolha as apresenta. */
@@ -731,15 +988,53 @@ export class FaseStepComponent {
    * quadro muda depois, e o que acompanha o quadro acompanha a mudança.
    */
   definirModalidades(id: string, escolhidas: readonly string[]): void {
-    const ofertadas = this.modalidades();
-    const acompanhaOQuadro =
-      escolhidas.length === ofertadas.length && ofertadas.every((codigo) => escolhidas.includes(codigo));
-
-    this.escreverDocumento(id, {
-      modalidades: acompanhaOQuadro ? [] : [...escolhidas],
-      modalidadesRecortadas: !acompanhaOQuadro,
-    });
+    this.escreverGatilho(
+      id,
+      comRecorteEscolhido(this.exigenciaDoDocumento(id), escolhidas, this.modalidades()),
+    );
   }
+
+  /**
+   * O que o operador perde ao dizer que o documento é de todo candidato: o recorte por
+   * modalidade e as condições declaradas saem junto, porque uma exigência geral que carrega
+   * gatilho é recusada pelo servidor.
+   */
+  avisoDeDescarteDoGatilho(id: string): string {
+    if (this.ehExigidoDeTodos(id)) return '';
+
+    const exigencia = this.exigenciaDoDocumento(id);
+    const recorte = modalidadesDaExigencia(exigencia) !== null;
+    const condicoes = clausulasDoGatilho(exigencia).length > 0;
+    if (!recorte && !condicoes) return '';
+
+    if (recorte && condicoes) {
+      return 'Passar para "todo candidato" descarta o recorte por modalidade e as condições declaradas abaixo.';
+    }
+    return recorte
+      ? 'Passar para "todo candidato" descarta o recorte por modalidade.'
+      : 'Passar para "todo candidato" descarta as condições declaradas abaixo.';
+  }
+
+  /**
+   * O que a exigência alcança quando nenhuma condição foi declarada no editor: ou o recorte
+   * por modalidade a sustenta, ou ela não é cobrada de ninguém. As duas situações têm a mesma
+   * tela vazia, e dizer "de ninguém" nas duas fazia o operador desfazer o recorte que acabara
+   * de declarar.
+   */
+  gatilhoSemCondicaoDiz(id: string): string {
+    const recorte = modalidadesDaExigencia(this.exigenciaDoDocumento(id));
+    if (recorte === null) {
+      return 'Sem condição declarada, este documento não é cobrado de ninguém.';
+    }
+    return 'Este documento é cobrado de quem concorre nas modalidades escolhidas acima. Acrescente condição para restringir mais.';
+  }
+
+  /** Se o fato é de sim-ou-não — a tela oferece as duas respostas, nunca texto livre. */
+  fatoEhBooleano(codigo: string): boolean {
+    return this.fatoDaCondicao(codigo)?.tipoDominio === 'BOOLEANO';
+  }
+
+  protected readonly respostasBooleanas = RESPOSTAS_BOOLEANAS;
 
   /**
    * Em que fases o documento é exigido. É outro eixo do "Coletado em": este diz em QUAIS
@@ -754,24 +1049,195 @@ export class FaseStepComponent {
     this.recortarPorFase(id);
   }
 
-  alternarModalidade(id: string, codigo: string, marcada: boolean): void {
-    const config = this.configuracaoDoDocumento(id);
-    // A primeira personalização parte do que está marcado na tela — a lista
-    // guardada está vazia enquanto o documento acompanha o quadro, e desmarcar
-    // uma modalidade apagaria todas as outras.
-    const atual = config.modalidadesRecortadas ? config.modalidades : this.modalidadesEfetivas(id);
+  // ─── Gatilho por fato do candidato ──────────────────────────────────────
+  //
+  // Há documento que só se cobra de quem tem certo fato: o título de eleitor não se pede a
+  // estrangeiro, a mulher nem a menor de dezoito; a quitação com o serviço militar só se pede
+  // a homem maior de dezoito, e nem dele quando é indígena. É isto que estes controles
+  // escrevem — e a modalidade fica de fora deles, porque tem o seu próprio ali ao lado.
 
-    this.escreverDocumento(id, {
-      modalidades: marcada ? [...atual, codigo] : atual.filter((item) => item !== codigo),
-      modalidadesRecortadas: true,
-    });
+  /**
+   * Os fatos que o editor oferece, vindos do catálogo institucional.
+   *
+   * A lista não se escreve aqui: acrescentar um fato é mudança de software — só serve o fato
+   * que exista código sabendo resolver — e o catálogo é semeado por migration. O domínio das
+   * condições de atendimento é a exceção que vem do próprio processo, porque é o que ele
+   * oferta que vale, não um catálogo global.
+   */
+  readonly fatosDoGatilho = computed<readonly FatoEscolhivel[]>(() =>
+    fatosParaGatilho(
+      this.catalogos.fatos(),
+      new Map([
+        [
+          'CONDICAO_ATENDIMENTO',
+          this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
+        ],
+      ]),
+    ),
+  );
+
+  private readonly fatoPorCodigo = computed(
+    () => new Map(this.fatosDoGatilho().map((fato) => [fato.codigo, fato])),
+  );
+
+  /** O fato de uma condição, ou `undefined` quando ele saiu do catálogo. */
+  fatoDaCondicao(codigo: string): FatoEscolhivel | undefined {
+    return this.fatoPorCodigo().get(codigo);
   }
 
-  private escreverDocumento(id: string, patch: Partial<DocumentoConfig>): void {
-    this.store.patchSection('documentos', {
-      ...this.store.draft().documentos,
-      [id]: { ...this.configuracaoDoDocumento(id), ...patch },
-    });
+  /** Se a exigência é cobrada de todo candidato — é DECLARADO, não deduzido do gatilho. */
+  ehExigidoDeTodos(id: string): boolean {
+    return exigidoDeTodos(this.exigenciaDoDocumento(id));
+  }
+
+  /**
+   * Declara de quem o documento é cobrado. Passar a "de todos" descarta o gatilho: o servidor
+   * recusa a exigência geral que carrega condição, e guardá-la escondida a faria ressurgir na
+   * próxima troca sem que ninguém a tivesse reescrito.
+   */
+  escolherExigidoDe(id: string, valor: string): void {
+    this.escreverGatilho(id, comExigidoDeTodos(this.exigenciaDoDocumento(id), valor === 'todos'));
+  }
+
+  /** As alternativas do gatilho — cada uma é uma via pela qual o documento passa a ser cobrado. */
+  clausulasDoDocumento(id: string): readonly ClausulaDeGatilho[] {
+    return clausulasDoGatilho(this.exigenciaDoDocumento(id));
+  }
+
+  /** As comparações que o domínio daquele fato admite. */
+  operadoresDaCondicao(codigo: string): readonly { readonly valor: string; readonly rotulo: string }[] {
+    const fato = this.fatoDaCondicao(codigo);
+    return fato === undefined ? [] : operadoresDoFato(fato);
+  }
+
+  /** Se a condição compara contra vários valores de uma vez. */
+  condicaoComparaComLista(operador: string): boolean {
+    return comparaComLista(operador);
+  }
+
+  /** Os valores do domínio daquele fato, como a lista de escolha os apresenta. */
+  valoresDoFato(codigo: string): readonly UiComboboxGroup[] {
+    const fato = this.fatoDaCondicao(codigo);
+    if (fato === undefined || fato.valores.length === 0) return [];
+    return [
+      {
+        label: fato.nome,
+        options: fato.valores.map((valor) => ({ value: valor, label: valor })),
+      },
+    ];
+  }
+
+  /** Os valores que o domínio do fato declara — vazio quando ele não é categórico. */
+  valoresEscolhiveis(codigo: string): readonly string[] {
+    return this.fatoDaCondicao(codigo)?.valores ?? [];
+  }
+
+  valorDaCondicao(condicao: CondicaoGatilhoConfig): string {
+    return valorEscalarDe(condicao);
+  }
+
+  valoresDaCondicao(condicao: CondicaoGatilhoConfig): readonly string[] {
+    return valoresDeListaDe(condicao);
+  }
+
+  /** O que a condição alcança, para que "não é feminino" e "é masculino" não se confundam. */
+  alcanceDe(condicao: CondicaoGatilhoConfig): string {
+    const fato = this.fatoDaCondicao(condicao.fato);
+    return fato === undefined ? '' : alcanceDaCondicao(condicao, fato);
+  }
+
+  /** Acrescenta uma condição à alternativa — ela precisa valer JUNTO com as outras de lá. */
+  acrescentarCondicao(id: string, clausula: number): void {
+    const [primeiro] = this.fatosDoGatilho();
+    if (primeiro === undefined) return;
+    this.escreverGatilho(id, comCondicao(this.exigenciaDoDocumento(id), clausula, primeiro));
+  }
+
+  /**
+   * Acrescenta uma alternativa: o documento passa a ser cobrado de quem satisfaz ESTA ou
+   * aquela combinação. É o que escreve "homem maior de dezoito, salvo indígena" sem precisar
+   * de uma segunda exigência do mesmo documento.
+   */
+  acrescentarAlternativa(id: string): void {
+    const [primeiro] = this.fatosDoGatilho();
+    if (primeiro === undefined) return;
+    this.escreverGatilho(id, comClausula(this.exigenciaDoDocumento(id), primeiro));
+  }
+
+  removerCondicao(id: string, indice: number): void {
+    this.escreverGatilho(id, semCondicao(this.exigenciaDoDocumento(id), indice));
+  }
+
+  removerAlternativa(id: string, numero: number): void {
+    this.escreverGatilho(id, semClausula(this.exigenciaDoDocumento(id), numero));
+  }
+
+  /**
+   * Troca o fato da condição. O operador e o valor recomeçam: eles pertenciam ao domínio do
+   * fato anterior, e carregá-los para outro domínio gravaria uma comparação que o servidor
+   * recusa.
+   */
+  escolherFatoDaCondicao(id: string, indice: number, codigo: string): void {
+    const fato = this.fatoDaCondicao(codigo);
+    if (fato === undefined) return;
+
+    const exigencia = this.exigenciaDoDocumento(id);
+    const atual = exigencia.condicoes[indice];
+    if (atual === undefined) return;
+
+    this.escreverGatilho(
+      id,
+      comCondicaoTrocada(exigencia, indice, condicaoNova(fato, atual.clausula)),
+    );
+  }
+
+  escolherOperadorDaCondicao(id: string, indice: number, operador: string): void {
+    const exigencia = this.exigenciaDoDocumento(id);
+    const atual = exigencia.condicoes[indice];
+    const fato = atual === undefined ? undefined : this.fatoDaCondicao(atual.fato);
+    if (atual === undefined || fato === undefined) return;
+
+    this.escreverGatilho(id, comCondicaoTrocada(exigencia, indice, comOperador(atual, fato, operador)));
+  }
+
+  escreverValorDaCondicao(id: string, indice: number, valor: string): void {
+    const exigencia = this.exigenciaDoDocumento(id);
+    const atual = exigencia.condicoes[indice];
+    const fato = atual === undefined ? undefined : this.fatoDaCondicao(atual.fato);
+    if (atual === undefined || fato === undefined) return;
+
+    this.escreverGatilho(
+      id,
+      comCondicaoTrocada(exigencia, indice, comValorEscalar(atual, fato, valor)),
+    );
+  }
+
+  escreverValoresDaCondicao(id: string, indice: number, valores: readonly string[]): void {
+    const exigencia = this.exigenciaDoDocumento(id);
+    const atual = exigencia.condicoes[indice];
+    if (atual === undefined) return;
+
+    this.escreverGatilho(id, comCondicaoTrocada(exigencia, indice, comValoresDeLista(atual, valores)));
+  }
+
+  private escreverGatilho(id: string, exigencia: ExigenciaDeDocumento): void {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return;
+
+    this.store.patchSection('documentos', comExigencia(this.store.draft().documentos, exigencia));
+  }
+
+  private escreverExigencia(id: string, patch: Partial<ExigenciaDeDocumento>): void {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return;
+
+    this.store.patchSection(
+      'documentos',
+      comExigencia(this.store.draft().documentos, {
+        ...this.exigenciaDoDocumento(id),
+        ...patch,
+      }),
+    );
   }
 
   // ─── Conferência e gravação ─────────────────────────────────────────────
@@ -791,35 +1257,20 @@ export class FaseStepComponent {
       ),
     );
 
-    mensagens.push(...this.problemasDasExigencias());
 
     return mensagens.length === 0 ? { valid: true } : { valid: false, messages: mensagens };
   }
 
-  /** Documento exigido precisa dizer em que fase e para quem ele vale. */
-  private problemasDasExigencias(): readonly string[] {
-    const problemas: string[] = [];
-    const documentos = Object.entries(this.store.draft().documentos);
-    const fasesVivas = this.fasesDoCronograma().map((fase) => fase.codigo);
-
-    const semFase = documentos.some(([, config]) => {
-      if (!config.included) return false;
-      if (config.todasEtapas) return fasesVivas.length === 0;
-      return config.etapas.filter((codigo) => fasesVivas.includes(codigo)).length === 0;
-    });
-    if (semFase) {
-      problemas.push('Todo documento exigido precisa valer em ao menos uma fase do cronograma.');
-    }
-
-    const semModalidade = documentos.some(
-      ([id, config]) => config.included && this.modalidadesEfetivas(id).length === 0,
-    );
-    if (semModalidade) {
-      problemas.push('Todo documento exigido precisa valer para ao menos uma modalidade aceita.');
-    }
-
-    return problemas;
-  }
+  /**
+   * As conferências das exigências NÃO moram aqui.
+   *
+   * Esta superfície é embutida no passo do Cronograma com `faseFixada`, e a página do wizard
+   * coleta os passos por `viewChildren` — só o Cronograma é um passo declarado, então este
+   * `validate()` nunca é chamado. Conferência escrita aqui é conferência que não roda: as três
+   * que existiam (fase fora do cronograma, exigência sem modalidade, reenvio sem
+   * complementação) estão em `problemasDeAncoragem`, alimentadas por `exigenciasDeclaradas`
+   * do Cronograma.
+   */
 
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';

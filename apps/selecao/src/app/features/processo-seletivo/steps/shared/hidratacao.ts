@@ -10,6 +10,7 @@ import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.mo
 import {
   AtendimentoCondicaoSelecionada,
   CascataSelecionada,
+  FormularioDeInscricao,
   CriterioDesempateConfigurado,
   DistribuicaoDeVagas,
   EtapaPontuada,
@@ -24,17 +25,16 @@ import {
   ehRamoFederal,
   quantidadeEhDeclarada,
 } from '../steps/vagas/distribuicao-de-vagas';
-import { documentosDe } from './exigencias-documentais';
+import { exigenciasDe } from './exigencias-documentais';
 import { formatarValorEmReais } from './valor-em-reais';
 
 /**
- * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável,
- * só nos campos que já têm modelo de edição no wizard (issue #478, D4 do
- * design da fundação). As demais dimensões do DTO — coleta de fatos etc. —
- * ainda não têm seção própria e
- * por isso não são mapeadas aqui; nada as descarta, elas simplesmente
- * permanecem fora do rascunho local até a Story que as implementa
- * (`#479–#485`, `#504`, `#534`) estender este adaptador.
+ * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável.
+ *
+ * Toda dimensão que o wizard grava precisa ser lida de volta aqui. O que não for mapeado é
+ * reescrito em branco na gravação seguinte, porque os comandos substituem a coleção inteira —
+ * foi assim que a exigência documental perdia entrega, consequência e norma, e é por isso que
+ * a coleta de fatos entrou junto quando o formulário de inscrição ganhou passo.
  */
 export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): WizardDraft {
   return {
@@ -50,7 +50,8 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     bonus: bonusDe(dto),
     desempate: desempateDe(dto),
     atendimento: atendimentoDe(dto),
-    documentos: documentosDe(dto),
+    documentos: exigenciasDe(dto),
+    formulario: formularioDe(dto),
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
@@ -62,6 +63,45 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
         uf: dto.localidade.uf,
       },
     },
+  };
+}
+
+/**
+ * O formulário de inscrição: o cabeçalho que o candidato lê, os campos que ele preenche, a
+ * política que ancora a apuração de idade e as regras de derivação.
+ *
+ * A fase da referência temporal volta traduzida para CÓDIGO — o rascunho não guarda id de fase,
+ * porque ele não sobrevive a uma gravação de cronograma que remova e reacrescente a fase.
+ */
+function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
+  const codigoPorFaseId = new Map((dto.cronogramaFases ?? []).map((f) => [f.id, f.codigo]));
+  const referencia = dto.referenciaTemporalFatos;
+
+  return {
+    titulo: dto.formularioTitulo ?? '',
+    termoAceiteTexto: dto.formularioTermoAceiteTexto ?? '',
+    fatos: [...(dto.fatosColetados ?? [])]
+      .sort((um, outro) => comoInteiro(um.ordem) - comoInteiro(outro.ordem))
+      .map((fato) => ({
+        fatoCodigo: fato.fatoCodigo,
+        ordem: comoInteiro(fato.ordem),
+        rotulo: fato.rotulo,
+        tipoRenderizacao: fato.tipoRenderizacao,
+        obrigatorio: fato.obrigatorio,
+        precondicao: fato.precondicao,
+      })),
+    referenciaTemporal: {
+      tipo: referencia?.tipo ?? '',
+      data: referencia?.data ?? '',
+      faseCodigo:
+        referencia?.faseId === null || referencia?.faseId === undefined
+          ? ''
+          : (codigoPorFaseId.get(referencia.faseId) ?? ''),
+    },
+    derivacao: (dto.regrasDerivacao ?? []).map((config) => ({
+      codigoFato: config.codigoFato,
+      regras: config.regras,
+    })),
   };
 }
 
@@ -109,6 +149,8 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
       origemData: fase.origemData,
       agrupaEtapas: fase.agrupaEtapas,
       coletaInscricao: fase.coletaInscricao,
+      permiteComplementacao: fase.permiteComplementacao,
+      coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
       bancas: fase.bancasRequeridas.map((banca) => ({
         id: banca.tipoBancaOrigemId,
         codigo: banca.codigo,
@@ -202,6 +244,16 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
       prazoValor: comoTexto(recurso.args.prazoValor),
       prazoUnidade: recurso.args.prazoUnidade,
       atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
+      // Mesma leitura que `recursoDe` faz para a fase. Sem ela, a gravação seguinte
+      // reenviava os quatro em branco e apagava o efeito suspensivo declarado.
+      suspensividadePrimeiraInstanciaValor: comoTexto(
+        recurso.args.suspensividadePrimeiraInstanciaValor,
+      ),
+      suspensividadePrimeiraInstanciaUnidade: recurso.args.suspensividadePrimeiraInstanciaUnidade ?? '',
+      suspensividadeSegundaInstanciaValor: comoTexto(
+        recurso.args.suspensividadeSegundaInstanciaValor,
+      ),
+      suspensividadeSegundaInstanciaUnidade: recurso.args.suspensividadeSegundaInstanciaUnidade ?? '',
     })),
   };
 }

@@ -23,9 +23,19 @@
     </p>
   }
 
+  <p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
   <div class="eliminacao-list">
     @for (regra of regras(); track $index; let indice = $index) {
-      <section class="step-section" [attr.aria-label]="'Regra de eliminação ' + (indice + 1)">
+      <!--
+        `role="group"`, não `<section>` com nome: `<section>` nomeada vira landmark `region`,
+        e uma lista de regras punha uma landmark por item na navegação do leitor de tela.
+      -->
+      <div
+        class="step-section"
+        role="group"
+        [attr.aria-label]="'Regra de eliminação ' + (indice + 1)"
+      >
         <div class="form-grid form-grid--3">
           <div class="form-field">
             <label class="label" [attr.for]="'elim-regra-' + indice">Regra de eliminação</label
@@ -88,20 +98,32 @@
             </div>
           }
         </div>
+        <!--
+          O nome acessível COMEÇA pelo texto visível e acrescenta qual regra ele remove: dez
+          botões chamados só "Remover" ficam indistinguíveis na lista de elementos do leitor de
+          tela, e o grupo que envolve cada regra não aparece lá. Quem dita por voz continua
+          dizendo "Remover", porque é assim que o nome começa.
+        -->
         <button
           class="btn btn--outline btn--sm"
           type="button"
           style="margin-top: var(--space-3)"
+          [id]="'elim-remover-' + indice"
           [attr.aria-label]="'Remover regra de eliminação ' + (indice + 1)"
           (click)="removerRegra(indice)"
         >
           Remover
         </button>
-      </section>
+      </div>
     }
   </div>
 
-  <button class="btn btn--outline btn--sm" type="button" (click)="acrescentarRegra()">
+  <button
+    class="btn btn--outline btn--sm"
+    type="button"
+    id="eliminacao-acrescentar"
+    (click)="acrescentarRegra()"
+  >
     + Acrescentar regra de eliminação
   </button>
 }

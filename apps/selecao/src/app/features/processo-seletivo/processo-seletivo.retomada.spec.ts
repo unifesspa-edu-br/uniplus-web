@@ -6,11 +6,13 @@ import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
   CondicoesAtendimentoApi,
+  TiposInstrumentoNormativoApi,
   CursosApi,
   ModalidadesApi,
   OfertasCursoApi,
   RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
+  FatosCandidatoApi,
   TipoDeficienciaApi,
   TipoProcessoDto,
   TiposProcessoApi,
@@ -126,6 +128,8 @@ interface CenarioOpts {
   readonly id?: string | null;
   readonly obter?: ReturnType<typeof vi.fn>;
   readonly listarDocumentos?: ReturnType<typeof vi.fn>;
+  /** O rascunho da publicação que o servidor devolve — 404 por padrão (não há nenhum). */
+  readonly obterRascunho?: ReturnType<typeof vi.fn>;
   /** Simula catálogo de tipos indisponível. */
   readonly tiposFalham?: boolean;
   /** Simula catálogo de unidades indisponível. */
@@ -138,6 +142,8 @@ function montar(opts: CenarioOpts = {}) {
   const obter = opts.obter ?? vi.fn(() => of(okResult(detalhe())));
   const definirTaxaInscricao = vi.fn(() => of(okResult(undefined)));
   const listarDocumentos = opts.listarDocumentos ?? vi.fn(() => of(okResult([])));
+  const obterRascunho =
+    opts.obterRascunho ?? vi.fn(() => of(errorResult(mockProblemDetails({ status: 404 }))));
   const id = opts.id === undefined ? PROCESSO_ID : opts.id;
 
   TestBed.configureTestingModule({
@@ -162,8 +168,10 @@ function montar(opts: CenarioOpts = {}) {
       { provide: OfertasCursoApi, useValue: catalogoVazioStub },
       { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
       { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
-  // O passo de bônus carrega o catálogo de base legal ao montar.
+  // O passo de bônus carrega o catálogo de base legal ao montar, e o vocabulário que traduz o
+  // tipo de instrumento da norma.
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
+  { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -178,11 +186,14 @@ function montar(opts: CenarioOpts = {}) {
   { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },
   { provide: RecursoAcessibilidadeApi, useValue: catalogoVazioStub },
   { provide: TipoDeficienciaApi, useValue: catalogoVazioStub },
+  // O passo do formulário carrega o catálogo de fatos do candidato ao montar.
+  { provide: FatosCandidatoApi, useValue: catalogoVazioStub },
       {
         provide: ProcessosSeletivosApi,
         useValue: {
           obter,
           listarDocumentosEdital: listarDocumentos,
+          obterRascunhoDaPublicacao: obterRascunho,
           listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
           definirTaxaInscricao,
         },
@@ -209,6 +220,7 @@ function montar(opts: CenarioOpts = {}) {
     fixture,
     obter,
     listarDocumentos,
+    obterRascunho,
     definirTaxaInscricao,
     navigate,
     componente: fixture.componentInstance,
@@ -219,6 +231,10 @@ function montar(opts: CenarioOpts = {}) {
 }
 
 const propagar = async (): Promise<void> => {
+  // Uma volta por await encadeado de `retomar`: o detalhe, os documentos do edital e o rascunho
+  // da publicação. Sobra de volta não atrapalha quem precisa de menos.
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
 };
@@ -583,6 +599,127 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     const titulo = cenario.host.querySelector('.step-head h1');
     expect(titulo).not.toBeNull();
     expect(document.activeElement).toBe(titulo);
+  });
+});
+
+describe('ProcessoSeletivoPage — rascunho da publicação', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const rascunho = (conteudo: unknown, versao = 1) =>
+    vi.fn(() =>
+      of(okResult({ versao, conteudo, salvoEm: '2026-09-14T14:32:00Z' })),
+    );
+
+  /**
+   * O defeito que motivou a entrega: o operador transcreve sete campos do Diário Oficial e um
+   * recarregamento os apaga. Antes desta rota, `publicacao` voltava vazia de qualquer retomada.
+   */
+  it('repõe o bloco do ato ao reabrir o processo por endereço', async () => {
+    const cenario = montar({
+      obterRascunho: rascunho({
+        numero: '07/2027',
+        periodoInscricaoInicio: '',
+        periodoInscricaoFim: '',
+        ato: {
+          orgao: 'REITORIA',
+          serie: 'EDITAL',
+          ano: '2027',
+          dataPublicacao: '2027-01-15',
+          assinante: 'Reitor',
+          tipoAtoCodigo: 'EDITAL_ABERTURA',
+        },
+      }),
+    });
+    await propagar();
+
+    const publicacao = cenario.store.draft().publicacao;
+    expect(publicacao.numero).toBe('07/2027');
+    expect(publicacao.ato.orgao).toBe('REITORIA');
+    expect(publicacao.ato.assinante).toBe('Reitor');
+    expect(cenario.componente.rascunhoSalvoEm()).toBe('2026-09-14T14:32:00Z');
+  });
+
+  /**
+   * `projetarSecao` é patch raso e a seção tem QUATRO chaves de topo. Repor só `ato` deixaria
+   * `numero` e o par de período do processo ANTERIOR em tela — o vazamento entre processos que
+   * a limpeza do editor existe para impedir.
+   */
+  it('repõe as quatro chaves da seção, e não só o ato', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    const publicacao = cenario.store.draft().publicacao;
+    expect(publicacao.numero).toBe('');
+    expect(publicacao.periodoInscricaoInicio).toBe('');
+    expect(publicacao.periodoInscricaoFim).toBe('');
+    expect(publicacao.ato.orgao).toBe('REITORIA');
+  });
+
+  /**
+   * Meio preenchido com campos de um formato que a tela não entende é pior que vazio: o
+   * operador publicaria acreditando ter conferido.
+   */
+  it('descarta com aviso o rascunho de outro formato, em vez de reidratá-lo', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }, 99) });
+    await propagar();
+
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+    expect(cenario.componente.avisoDoRascunho()).toContain('formato anterior');
+  });
+
+  /** Não ter rascunho é o caso comum — e não merece aviso nenhum. */
+  it('abre sem aviso quando não há rascunho guardado', async () => {
+    const cenario = montar();
+    await propagar();
+
+    expect(cenario.componente.avisoDoRascunho()).toBeNull();
+    expect(cenario.componente.rascunhoSalvoEm()).toBeNull();
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+  });
+
+  /**
+   * A invariante que impede o conserto de virar o defeito: `retomar()` limpa o editor ANTES de
+   * hidratar, e uma gravação disparada nessa limpeza apagaria no servidor exatamente o que ela
+   * ia buscar em seguida.
+   */
+  it('retomar não grava nada — só lê', async () => {
+    const salvar = vi.fn();
+    const descartar = vi.fn();
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = salvar;
+    api['descartarRascunhoDaPublicacao'] = descartar;
+
+    await propagar();
+
+    expect(salvar).not.toHaveBeenCalled();
+    expect(descartar).not.toHaveBeenCalled();
+    expect(cenario.obterRascunho).toHaveBeenCalledWith(PROCESSO_ID);
+  });
+
+  /** Reposto do servidor não é edição pendente — a guarda de saída não pode disparar aí. */
+  it('o bloco reposto não conta como edição por gravar', async () => {
+    const cenario = montar({
+      obterRascunho: rascunho({
+        numero: '07/2027',
+        periodoInscricaoInicio: '',
+        periodoInscricaoFim: '',
+        ato: {
+          orgao: 'REITORIA',
+          serie: '',
+          ano: '',
+          dataPublicacao: '',
+          assinante: '',
+          tipoAtoCodigo: '',
+        },
+      }),
+    });
+    await propagar();
+
+    expect(cenario.componente.rascunhoPendente()).toBe(false);
+
+    cenario.store.projetarSecao('publicacao', { numero: '08/2027' });
+    expect(cenario.componente.rascunhoPendente()).toBe(true);
   });
 });
 

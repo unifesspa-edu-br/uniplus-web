@@ -254,10 +254,14 @@ describe('VagasStepComponent — gravação da distribuição', () => {
 
   afterEach(() => controller.verify());
 
-  /** A gravação exige a conferência: o passo simula antes de enviar o comando. */
+  /**
+   * A gravação exige a simulação: gravar sem simular é declarar um quadro que ninguém viu.
+   *
+   * A conferência do operador deixou de ser estado do componente e virou o diálogo que a página
+   * abre no instante de gravar — por isso não há mais nada a marcar aqui.
+   */
   function simularEConferir(ofertas: readonly string[]): void {
     simular(ofertas);
-    componente.conferenciaConfirmada.set(true);
   }
 
   function simular(ofertas: readonly string[]): void {
@@ -353,25 +357,63 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     expect(componente.simulacaoCobreOQuadro()).toBe(false);
   });
 
-  /** Simular não é conferir: o operador declara que leu o resultado. */
-  it('recusa gravar sem a declaração de conferência', async () => {
-    simular([OFERTA, OUTRA_OFERTA]);
-
+  /**
+   * Gravar sem simular é declarar um quadro que ninguém viu — e essa continua sendo a recusa do
+   * passo. A conferência do operador saiu de `persistir()` e virou o diálogo que a página abre
+   * antes de chamar aqui: enquanto era estado do componente, um recarregamento a derrubava e a
+   * gravação falhava num passo que o operador não tinha aberto.
+   */
+  it('recusa gravar sem simular o quadro', async () => {
     const resultado = await componente.persistir();
 
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.some((m) => m.includes('Confirme que conferiu'))).toBe(true);
+    expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
     controller.expectNone(ROTA_DISTRIBUICAO);
   });
 
-  /** Confirmar um quadro e gravar outro seria pior do que não confirmar nada. */
-  it('descarta a declaração ao editar o quadro', () => {
+  /** Simulado e sem pendência, o passo grava — sem pedir marca nenhuma. */
+  it('grava depois de simular, sem exigir declaração do operador', async () => {
+    simular([OFERTA, OUTRA_OFERTA]);
+
+    expect(componente.validate().valid).toBe(true);
+  });
+
+  /** Ninguém confirma um quadro que o passo não vai gravar. */
+  it('não oferece confirmação enquanto há pendência', () => {
+    expect(componente.confirmacaoDeGravacao()).toBeNull();
+  });
+
+  /**
+   * O diálogo distingue as linhas pelo rótulo, e duas modalidades de descrição parecida
+   * colidiriam — o código de domínio é o que garante a unicidade.
+   */
+  it('resume o quadro com rótulos únicos e totais que batem com as colunas', () => {
+    simular([OFERTA, OUTRA_OFERTA]);
+
+    const confirmacao = componente.confirmacaoDeGravacao();
+    if (confirmacao === null) throw new Error('o quadro simulado e sem pendência deve confirmar');
+
+    const rotulos = confirmacao.itens.map((item) => item.rotulo);
+    expect(new Set(rotulos).size).toBe(rotulos.length);
+    expect(rotulos).toContain('Ofertas de curso no quadro');
+    expect(confirmacao.itens.find((i) => i.rotulo === 'Ofertas de curso no quadro')?.valor).toBe(
+      String(componente.distribuicoes().length),
+    );
+  });
+
+  /**
+   * Editar o quadro invalida a simulação — e é a simulação, não uma marca do operador, que o
+   * passo exige antes de gravar. Era isso que o checkbox protegia indiretamente; agora a
+   * invariante está sozinha, e sem estado que possa envelhecer entre o clique e a gravação.
+   */
+  it('editar o quadro derruba a simulação e volta a impedir a gravação', () => {
     simularEConferir([OFERTA, OUTRA_OFERTA]);
-    expect(componente.conferenciaConfirmada()).toBe(true);
+    expect(componente.validate().valid).toBe(true);
 
     componente.alterarVoBase(OFERTA, '35');
 
-    expect(componente.conferenciaConfirmada()).toBe(false);
+    expect(componente.simulacaoCobreOQuadro()).toBe(false);
+    expect(componente.validate().valid).toBe(false);
   });
 
   /**
@@ -431,7 +473,6 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     trocarDeProcesso();
 
     expect(componente.simulacaoCobreOQuadro()).toBe(false);
-    expect(componente.conferenciaConfirmada()).toBe(false);
   });
 
   /** O padrão guardado pertence ao processo em que foi guardado. */
@@ -714,7 +755,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
         totalPublicado: 100,
       },
     ]);
-    componente.conferenciaConfirmada.set(true);
   }
 
   /** Interage com o `<select>` real da seção da cascata, no molde do teste do seletor de regra da distribuição. */
@@ -726,24 +766,12 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     detectar();
   }
 
-  /** Marca a confirmação da cascata pelo checkbox real, dentro do custom element da seção. */
-  function confirmarCascataNaTela(): void {
-    const checkbox = elementoRaiz.querySelector<HTMLInputElement>(
-      'sel-cascata-remanejamento input[type="checkbox"]',
-    );
-    if (checkbox === null) throw new Error('Checkbox de confirmação da cascata não encontrado.');
-    checkbox.checked = true;
-    checkbox.dispatchEvent(new Event('change'));
-    detectar();
-  }
-
   it('grava a cascata depois da distribuição, com a matriz inteira da regra', async () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
     detectar();
     simularEConferirDistribuicao();
 
     escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
-    confirmarCascataNaTela();
     detectar();
 
     const gravacao = componente.persistir();
@@ -785,7 +813,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     controller
       .expectOne(ROTA_SIMULACAO_TESTE)
       .flush([{ ofertaCursoOrigemId: OFERTA_CASCATA, quadro: [], totalPublicado: 100 }]);
-    componente.conferenciaConfirmada.set(true);
 
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
@@ -798,13 +825,17 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
 
-  it('recusa gravar sem confirmar a cascata, e não chama nenhuma das duas rotas', async () => {
+  /**
+   * A cascata exigida e sem regra escolhida continua bloqueando — isso é erro, não conferência.
+   *
+   * O que saiu daqui foi a marca do operador. Enquanto ela existia, o efeito que a zerava a
+   * cada hidratação fazia a gravação da publicação falhar com "confirme a matriz" num passo que
+   * o operador não tinha aberto — bastava um recarregamento antes de publicar.
+   */
+  it('recusa gravar com a cascata exigida e sem regra escolhida', async () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
     detectar();
     simularEConferirDistribuicao();
-
-    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
-    detectar();
 
     const resultado = await componente.persistir();
 
@@ -812,6 +843,24 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     expect(resultado.messages?.some((m) => m.includes('cascata'))).toBe(true);
     controller.expectNone(ROTA_DISTRIBUICAO_TESTE);
     controller.expectNone(ROTA_CASCATA_TESTE);
+  });
+
+  /**
+   * O defeito que esta entrega conserta: depois de hidratar, a gravação da cascata falhava
+   * porque o efeito de `remoteSnapshot` zerava a marca de conferência a cada leitura.
+   */
+  it('grava a cascata logo depois de hidratar, sem marca nenhuma a repor', async () => {
+    store.patchObjectSection('vagas', { ofertas: [distribuicaoComCascata()] });
+    detectar();
+    simularEConferirDistribuicao();
+    escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
+    detectar();
+
+    // O que a retomada faz: reprojeta o snapshot remoto por cima do que está em tela.
+    store.remoteSnapshot.set({ cascata: null } as unknown as ProcessoSeletivoDto);
+    detectar();
+
+    expect(componente.validate().valid).toBe(true);
   });
 
   /**
@@ -935,7 +984,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     detectar();
     simularEConferirDistribuicao();
     escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
-    confirmarCascataNaTela();
     detectar();
 
     const gravacao = componente.persistir();
@@ -960,7 +1008,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     detectar();
     simularEConferirDistribuicao();
     escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
-    confirmarCascataNaTela();
     detectar();
 
     const gravacao = componente.persistir();
@@ -998,7 +1045,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     detectar();
     simularEConferirDistribuicao();
     escolherRegraCascataNaTela('REMANEJ-CASCATA-LEI-12711|v1');
-    confirmarCascataNaTela();
     detectar();
 
     const primeiraGravacao = componente.persistir();
@@ -1040,7 +1086,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     controller
       .expectOne(ROTA_SIMULACAO_TESTE)
       .flush([{ ofertaCursoOrigemId: OFERTA_CASCATA, quadro: [], totalPublicado: 100 }]);
-    componente.conferenciaConfirmada.set(true);
 
     const segundaGravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
@@ -1091,7 +1136,6 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     controller
       .expectOne(ROTA_SIMULACAO_TESTE)
       .flush([{ ofertaCursoOrigemId: OFERTA_CASCATA, quadro: [], totalPublicado: 100 }]);
-    componente.conferenciaConfirmada.set(true);
 
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO_TESTE).flush(null, {
