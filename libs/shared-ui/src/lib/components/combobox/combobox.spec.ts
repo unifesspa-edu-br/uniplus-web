@@ -219,6 +219,20 @@ describe('ComboboxComponent', () => {
     expect(campo().value).toBe('RG', 'fechada, a lista devolve ao campo o que está escolhido');
   });
 
+  /** A seta é a outra porta de reabertura, e precisa deixar o campo tão vazio quanto o foco. */
+  it('reabrir pela seta também esvazia o campo', () => {
+    fixture.componentInstance.escolhido.set('rg');
+    fixture.detectChanges();
+
+    campo().dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    teclar('Escape');
+    expect(campo().value).toBe('RG', 'pré-condição: fechada, a lista devolveu o rótulo');
+
+    teclar('ArrowDown');
+    expect(campo().value).toBe('');
+  });
+
   describe('múltipla escolha', () => {
     @Component({
       standalone: true,
