@@ -407,7 +407,19 @@ export class ProcessoSeletivoPage {
     const resultado = await firstValueFrom(this.api.obterRascunhoDaPublicacao(processoSeletivoId));
     if (superada()) return;
 
-    if (!isApiOk(resultado)) return;
+    if (!isApiOk(resultado)) {
+      // 404 é ausência: não há rascunho, ou o que havia venceu. Qualquer outra recusa é
+      // ignorância, não ausência — o rascunho pode existir no servidor e a tela não o
+      // recebeu. Abrir em branco calado convidaria a gravar por cima do que o operador nunca
+      // viu, então o aviso fica, e é ele que dá a chance de recarregar antes de salvar.
+      if (resultado.problem.status !== 404) {
+        this.avisoDoRascunho.set(
+          'Não foi possível verificar se há rascunho da publicação guardado para este processo. ' +
+            'Recarregue antes de salvar: gravar agora substitui o que estiver lá.',
+        );
+      }
+      return;
+    }
 
     if (resultado.data.versao !== VERSAO_DO_RASCUNHO) {
       this.avisoDoRascunho.set(
