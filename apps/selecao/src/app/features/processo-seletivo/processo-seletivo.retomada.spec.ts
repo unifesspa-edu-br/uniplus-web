@@ -817,6 +817,34 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
   });
 
   /**
+   * Depois de publicar, o servidor apagou o rascunho e o que sobra em tela é a declaração que
+   * virou publicação. Zerar a referência fazia a guarda de saída ler esses campos como
+   * transcrição por gravar, e avisar de perda a quem acabou de publicar.
+   */
+  it('não avisa de edição pendente quem acabou de publicar', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', {
+      numero: '07/2027',
+      ato: {
+        orgao: 'REITORIA',
+        serie: 'EDITAL',
+        ano: '2027',
+        dataPublicacao: '2027-01-15',
+        assinante: 'Reitor',
+        tipoAtoCodigo: 'EDITAL_ABERTURA',
+      },
+    });
+    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há transcrição por gravar');
+
+    (cenario.componente as unknown as { fixarRascunhoComoJaGravado(): void })
+      .fixarRascunhoComoJaGravado();
+
+    expect(cenario.componente.rascunhoPendente()).toBe(false);
+  });
+
+  /**
    * A chave de idempotência do rascunho só gira sozinha quando o corpo muda, e dois processos
    * cujo bloco do ato está em branco produzem o MESMO documento serializado. Sem renová-la na
    * troca, a gravação do processo novo sairia com a chave que o servidor já viu e receberia de
