@@ -25,9 +25,14 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('main')).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Processos Seletivos', level: 1 }),
+      page.getByRole('heading', { name: 'MEDICINA 2026.2 — Cursos de Graduação', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText('Nenhum processo aberto')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Editais abertos', level: 2 }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'SISU 2026.1 — Cursos de graduação', level: 3 }),
+    ).toBeVisible();
     await expect(page.locator('.institutional-bar')).toBeVisible();
     await expect(page.locator('.gov-bar')).toHaveCount(0);
 

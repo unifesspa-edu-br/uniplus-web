@@ -25,7 +25,6 @@ export class LayoutComponent {
     {
       label: 'Navegação',
       items: [
-        { label: 'Processos', routerLink: '/processos' },
         { label: 'Acompanhamento', routerLink: '/acompanhamento' },
         { label: 'Documentos', routerLink: '/documentos' },
         { label: 'Meu Perfil', routerLink: '/perfil' },
