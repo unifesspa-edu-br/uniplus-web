@@ -27,8 +27,11 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-
-type DiaNaoUtilFormGroupCampoNome = 'codigoMunicipio' | 'uf' | 'abrangencia' | 'descricao' | 'data';
+import {
+  DATA_PATTERN,
+  nullIfBlank,
+  CODIGO_MUNICIPIO_PATTERN,
+} from './calendario-dias-uteis.util';
 
 interface DiaNaoUtilFormGroup {
   uf: FormControl<string | null>;
@@ -78,8 +81,6 @@ export const DATA_DUPLICADA_DATASET_CODE =
  * prefixo, e não uma lista fechada, porque o registro cresce no backend.
  */
 export const CIDADE_REFERENCIA_CODE_PREFIX = 'uniplus.cidade_referencia.';
-
-const CODIGO_MUNICIPIO_PATTERN = /^(?:1[1-7]|2[1-9]|3[1-35]|4[1-3]|5[0-3])\d{5}$/;
 /**
  * Prefixo do código IBGE (dois primeiros dígitos) de cada UF — a mesma
  * correspondência que `ReferenciaCidadeGeo` cobra no backend. Fica nesta página
@@ -820,7 +821,7 @@ export class CalendarioDiasUteisNovoPage {
   }
 
   private extrairData(problem: ProblemDetails): string | null {
-    return problem.detail?.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? null;
+    return problem.detail?.match(DATA_PATTERN)?.[0] ?? null;
   }
 
   private handleSalvarResult(result: ApiResult<string | void>): void {
@@ -1133,39 +1134,4 @@ export class CalendarioDiasUteisNovoPage {
     this.form.controls.diasNaoUteis.push(this.criaDiaNaoUtilFormGroup());
     this.estadosBuscaMunicipio.update((estados) => [...estados, MUNICIPIO_BUSCA_VAZIA]);
   }
-
-  protected erroDoCampoDiaNaoUtil(
-    index: number,
-    nome: DiaNaoUtilFormGroupCampoNome,
-  ): string | null {
-    const grupo = this.form.controls.diasNaoUteis.at(index);
-    if (!grupo) {
-      return null;
-    }
-    return this.erroDeControle(grupo.controls[nome]);
-  }
-
-  private erroDeControle(control: AbstractControl): string | null {
-    const shouldShowError = control.touched || control.dirty;
-    if (!shouldShowError || control.errors === null) {
-      return null;
-    }
-    if (control.errors['backend']) {
-      const backend = control.errors['backend'] as { code: string; message: string };
-      return backend.message;
-    }
-    if (control.errors['required']) {
-      return 'Campo obrigatório.';
-    }
-
-    if (control.errors['maxlength']) {
-      return 'Valor acima do tamanho permitido.';
-    }
-    return 'Valor inválido.';
-  }
-}
-
-function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
