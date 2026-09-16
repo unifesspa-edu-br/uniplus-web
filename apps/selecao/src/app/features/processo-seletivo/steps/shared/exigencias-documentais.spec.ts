@@ -516,6 +516,36 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     expect(lido.emTodasAsFases).toEqual([]);
   });
 
+  /**
+   * Exigido numa fase e apenas ALTERNATIVO noutra não é alcance global. Lido como se fosse, a
+   * gravação seguinte materializaria exigências novas — a alternativa do grupo viraria
+   * documento cobrado, e uma fase criada depois também o cobraria.
+   */
+  it('não infere alcance global de documento que noutra fase é só alternativa de grupo', () => {
+    const lido = exigenciasDe(
+      detalhe([
+        folhaDto({ exigidoNaFaseId: ID_ISENCAO }),
+        {
+          id: 'grupo-1',
+          tipo: 'OU',
+          quantidadeMinima: 1,
+          consequencia: null,
+          basesLegais: [],
+          chaveDistincao: null,
+          dataReferencia: null,
+          ocorrenciasEsperadas: null,
+          repetePorEntidade: null,
+          documento: null,
+          filhos: [folhaDto({ exigidoNaFaseId: ID_HABILITACAO })],
+        },
+      ]),
+    );
+
+    // A folha do grupo foi lida — a árvore está inteira —, mas não conta como declaração.
+    expect(exigenciasDaFase(lido, 'HABILITACAO')).toHaveLength(1);
+    expect(lido.emTodasAsFases).toEqual([]);
+  });
+
   /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */
   it('não inventa alcance de todas as fases para o documento de uma fase só', () => {
     const lido = exigenciasDe(detalhe([folhaDto({ exigidoNaFaseId: ID_HABILITACAO })]));

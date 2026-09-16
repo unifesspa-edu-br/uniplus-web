@@ -903,9 +903,16 @@ function alcanceDeTodasAsFasesReconstruido(
 
   const candidatos = new Set(exigenciasDaRaiz(exigencias).map((e) => e.tipoDocumentoId));
 
+
+  // Só declarações de RAIZ, pela mesma razão que a materialização: a folha dentro de um grupo
+  // OU é alternativa, não exigência. Contá-la como presença fazia o documento que é exigido
+  // numa fase e apenas alternativo noutra ser lido como global — e a gravação seguinte
+  // materializaria exigências novas, transformando a alternativa em documento cobrado.
+  const daRaiz = exigenciasDaRaiz(exigencias);
+
   return [...candidatos].filter((tipoDocumentoId) => {
     const porFase = fases.map((faseCodigo) =>
-      exigenciasDaFase(exigencias, faseCodigo).filter((e) => e.tipoDocumentoId === tipoDocumentoId),
+      daRaiz.filter((e) => e.tipoDocumentoId === tipoDocumentoId && e.faseCodigo === faseCodigo),
     );
 
     // Uma declaração por fase, em todas elas — duas na mesma fase já são configuração que o
