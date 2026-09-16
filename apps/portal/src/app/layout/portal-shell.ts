@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import {
@@ -28,9 +27,10 @@ interface PortalFooterGroup {
 
 /**
  * Shell público do Portal do Candidato — layout próprio (ADR-0023 §2),
- * distinto do `ui-app-shell` administrativo: sem menu lateral, com rolagem
- * natural da página (header e rodapé acompanham o scroll, como um site
- * institucional comum).
+ * distinto do `ui-app-shell` administrativo por não ter menu lateral. A
+ * altura trava no viewport (mesmo contrato do `ui-app-shell`) e só
+ * `.portal-scroll` (main + rodapé) rola — a faixa institucional, o topo e a
+ * navegação por abas ficam sempre visíveis, sem acompanhar o scroll.
  */
 @Component({
   selector: 'ptl-portal-shell',
@@ -99,48 +99,46 @@ interface PortalFooterGroup {
       }
     </nav>
 
-    <main id="portal-main" class="portal-main" tabindex="-1">
-      <router-outlet />
-    </main>
+    <div class="portal-scroll" #portalScroll>
+      <main id="portal-main" class="portal-main" tabindex="-1">
+        <router-outlet />
+      </main>
 
-    <footer class="portal-footer">
-      <div class="portal-footer__top">
-        <div class="portal-footer__brand">
-          <span class="portal-footer__brand-mark" aria-hidden="true">U+</span>
-          <p>Sistema Unificado de Seleção e Ingresso da UNIFESSPA.</p>
-        </div>
-        @for (group of footerGroups; track group.label) {
-          <div class="portal-footer__group">
-            <p class="portal-footer__group-title">{{ group.label }}</p>
-            <ul>
-              @for (link of group.links; track link.label) {
-                <li>
-                  @if (link.routerLink) {
-                    <a [routerLink]="link.routerLink">{{ link.label }}</a>
-                  } @else {
-                    <span class="is-disabled" aria-disabled="true">{{ link.label }}</span>
-                  }
-                </li>
-              }
-            </ul>
+      <footer class="portal-footer">
+        <div class="portal-footer__top">
+          <div class="portal-footer__brand">
+            <span class="portal-footer__brand-mark" aria-hidden="true">U+</span>
+            <p>Sistema Unificado de Seleção e Ingresso da UNIFESSPA.</p>
           </div>
-        }
-      </div>
-      <div class="portal-footer__bottom">
-        <span>© 2026 Unifesspa — Sistema Uni+ · CTIC</span>
-        <span class="portal-footer__badges">WCAG 2.1 AA · e-MAG 3.1 · Gov.br DS</span>
-      </div>
-    </footer>
+          @for (group of footerGroups; track group.label) {
+            <div class="portal-footer__group">
+              <p class="portal-footer__group-title">{{ group.label }}</p>
+              <ul>
+                @for (link of group.links; track link.label) {
+                  <li>
+                    @if (link.routerLink) {
+                      <a [routerLink]="link.routerLink">{{ link.label }}</a>
+                    } @else {
+                      <span class="is-disabled" aria-disabled="true">{{ link.label }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+        <div class="portal-footer__bottom">
+          <span>© 2026 Unifesspa — Sistema Uni+ · CTIC</span>
+          <span class="portal-footer__badges">WCAG 2.1 AA · e-MAG 3.1 · Gov.br DS</span>
+        </div>
+      </footer>
+    </div>
 
-    <ui-back-to-top [defaultContainer]="scrollContainer" />
+    <ui-back-to-top [defaultContainer]="portalScroll" />
     <ui-vlibras-loader />
   `,
 })
 export class PortalShellComponent {
-  private readonly document = inject(DOCUMENT);
-
-  protected readonly scrollContainer = this.document.documentElement;
-
   protected readonly navItems: readonly PortalNavItem[] = [
     { label: 'Editais abertos', icon: 'pi-calendar', routerLink: '/processos' },
     { label: 'Minhas inscrições', icon: 'pi-check-square', routerLink: '/inscricao' },
