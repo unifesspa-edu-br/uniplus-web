@@ -281,6 +281,40 @@ export function camposSemUsoDeclarado(
 }
 
 /**
+ * O que, dentro do próprio formulário, depende deste dado — a derivação de outro fato ou a
+ * condição de exibição de outro campo. Devolve uma frase por dependência, para a recusa de
+ * remoção dizer onde mexer em vez de só dizer que não dá.
+ *
+ * A dependência que o próprio campo declara não conta: ela sai junto com ele.
+ */
+export function regrasQueDependemDoFato(
+  formulario: FormularioDeInscricao,
+  codigo: string,
+): readonly string[] {
+  const dependem: string[] = [];
+
+  for (const config of formulario.derivacao) {
+    if (config.codigoFato === codigo) continue;
+    if (fatosCitadosPelaDerivacao(config.regras).includes(codigo)) {
+      dependem.push(`a derivação de ${config.codigoFato}`);
+    }
+  }
+
+  for (const campo of formulario.fatos) {
+    if (campo.fatoCodigo === codigo) continue;
+    if (fatosCitadosPelaPrecondicao(campo.precondicao).includes(codigo)) {
+      dependem.push(`a condição de "${nomeDoCampo(campo)}"`);
+    }
+  }
+
+  return dependem;
+}
+
+function nomeDoCampo(campo: FatoColetadoConfig): string {
+  return campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo;
+}
+
+/**
  * Os fatos que as regras de derivação de um fato citam, lidas na forma opaca em que elas
  * trafegam — a mesma do contrato, uma lista de cláusulas por regra.
  */

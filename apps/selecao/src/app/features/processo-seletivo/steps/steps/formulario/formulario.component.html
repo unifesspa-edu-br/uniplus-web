@@ -128,6 +128,11 @@
             cobrado a partir deste dado. Retire a condição no passo do cronograma para poder
             remover o campo.
           </p>
+        } @else if (regrasQueDependem(campo.fatoCodigo).length > 0) {
+          <p class="field__hint">
+            Não pode sair: {{ regrasQueDependem(campo.fatoCodigo).join(', ') }} depende deste
+            dado. Desfaça essa dependência antes de remover o campo.
+          </p>
         } @else {
           <button
             class="btn btn--tertiary btn--sm"
