@@ -1,9 +1,14 @@
 /* ── Shell público do Portal do Candidato ────────────────────────── */
 
+/* Trava a altura no viewport — mesmo contrato do `.ui-app-shell` admin — pra
+   que só `.portal-scroll` role. Sem isso a faixa institucional, o topo e a
+   navegação por abas rolariam junto com o resto da página. */
 :host {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100vh; /* fallback para navegadores sem dvh */
+  height: 100dvh;
+  overflow: hidden;
   background: var(--surface-page);
 }
 
@@ -71,6 +76,29 @@
   color: var(--text-disabled);
   cursor: not-allowed;
 }
+
+/* ── Rolagem de conteúdo (main + rodapé) ─────────────────────────── */
+
+/* Único contêiner de rolagem do shell — mesmo tratamento de `.page` no
+   `ui-app-shell` (scrollbar fina, transparente até passar o mouse). */
+.portal-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.portal-scroll::-webkit-scrollbar { width: 10px; }
+.portal-scroll::-webkit-scrollbar-track { background: transparent; }
+.portal-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+.portal-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ── Conteúdo principal ──────────────────────────────────────────── */
 
