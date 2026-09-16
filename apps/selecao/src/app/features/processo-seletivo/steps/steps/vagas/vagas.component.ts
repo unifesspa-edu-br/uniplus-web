@@ -1004,7 +1004,18 @@ export class VagasStepComponent {
       rotuloDeConfirmar: 'Gravar quadro de vagas',
       itens: [
         { rotulo: 'Ofertas de curso no quadro', valor: String(ofertas.length) },
-        { rotulo: 'Total de vagas ofertadas', valor: String(this.totalDeVagasOfertadas()) },
+        // Os dois totais, nomeados pelo que cada um é. Sob a Lei 12.711 a suplementar ACRESCE
+        // ao total da oferta, então o que o edital publica pode ser maior que a soma das vagas
+        // informadas — e o diálogo, que diz representar o quadro publicado, pedia confirmação
+        // do número menor. O total publicado só entra quando difere: repetir o mesmo número em
+        // duas linhas faria o operador procurar uma diferença que não existe.
+        { rotulo: 'Vagas informadas nas ofertas', valor: String(this.totalDeVagasOfertadas()) },
+        ...(this.totalGeralPublicado() === this.totalDeVagasOfertadas()
+          ? []
+          : [{
+              rotulo: 'Total publicado (com a suplementar da regra)',
+              valor: String(this.totalGeralPublicado()),
+            }]),
         ...this.totaisPorModalidade(),
         { rotulo: 'Regra de distribuição', valor: this.rotuloDaRegraDeDistribuicao() },
         ...(cascata === null ? [] : [{ rotulo: 'Regra de remanejamento', valor: cascata }]),
@@ -1012,7 +1023,7 @@ export class VagasStepComponent {
     };
   }
 
-  /** A soma das vagas que as ofertas declaram — o número que o edital publica como total. */
+  /** A soma das vagas que as ofertas declaram — a base sobre a qual a regra calcula. */
   private totalDeVagasOfertadas(): number {
     return this.distribuicoes().reduce((soma, item) => soma + inteiroOuZero(item.voBase), 0);
   }
