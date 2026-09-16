@@ -298,8 +298,12 @@ export class ComboboxComponent {
           ? marcados.filter((item) => item !== value)
           : [...marcados, value],
       );
-      // A lista fica aberta e o termo é limpo: marcar a próxima parte da lista inteira.
-      this.busca.set(null);
+      // A lista fica aberta e o termo volta a VAZIO — não a "sem busca". São estados
+      // diferentes: sem busca, o campo mostra o resumo do que já está marcado, e quem digita
+      // a próxima consulta a acrescenta a "RG, CPF", filtrando por essa frase inteira e não
+      // achando nada. O resumo volta quando a lista fecha, que é quando ele serve para
+      // conferir a escolha sem reabrir.
+      this.busca.set('');
       return;
     }
 
