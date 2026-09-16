@@ -1224,6 +1224,11 @@ export class FaseStepComponent {
     const fase = this.faseDoRascunho();
     if (fase === null) return;
 
+    // Mexer no gatilho é editar a declaração desta fase, como qualquer outro campo: modalidade,
+    // aplicabilidade e condições passam por aqui, e não pelo caminho que já recortava. Mantendo
+    // a marca, a tela seguia dizendo "todas as fases" sobre declarações que já divergiam.
+    if (this.valeEmTodasAsFases(id)) this.recortarPorFase(id);
+
     this.store.patchSection('documentos', comExigencia(this.store.draft().documentos, exigencia));
   }
 
