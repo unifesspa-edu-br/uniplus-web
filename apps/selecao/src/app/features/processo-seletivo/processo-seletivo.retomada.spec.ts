@@ -721,6 +721,39 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     cenario.store.projetarSecao('publicacao', { numero: '08/2027' });
     expect(cenario.componente.rascunhoPendente()).toBe(true);
   });
+
+  /**
+   * Apagar o que estava guardado é edição como qualquer outra. Tratar o bloco vazio como
+   * "nada a guardar" deixava o apagamento sair sem aviso, e a volta ao processo repunha do
+   * servidor exatamente o que o operador tinha acabado de limpar.
+   */
+  it('esvaziar um rascunho já gravado conta como edição por gravar', async () => {
+    const cenario = montar({
+      obterRascunho: rascunho({
+        numero: '07/2027',
+        periodoInscricaoInicio: '',
+        periodoInscricaoFim: '',
+        ato: {
+          orgao: 'REITORIA',
+          serie: '',
+          ano: '',
+          dataPublicacao: '',
+          assinante: '',
+          tipoAtoCodigo: '',
+        },
+      }),
+    });
+    await propagar();
+    expect(cenario.componente.rascunhoPendente()).toBe(false);
+
+    cenario.store.projetarSecao('publicacao', {
+      numero: '',
+      ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+    });
+
+    expect(cenario.componente.rascunhoPendente()).toBe(true);
+  });
+
 });
 
 describe('ProcessoSeletivoPage — falhas de leitura', () => {
