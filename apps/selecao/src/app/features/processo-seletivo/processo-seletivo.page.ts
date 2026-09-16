@@ -453,11 +453,19 @@ export class ProcessoSeletivoPage {
     const documento = documentoDoRascunho(this.store.draft().publicacao);
     const corpo = { versao: VERSAO_DO_RASCUNHO, conteudo: documento };
 
+    // A página é reusada entre processos, e sair daqui só pede confirmação — o operador pode
+    // confirmar com a gravação em voo e carregar outro processo antes de a resposta chegar.
+    // Sem o carimbo, essa resposta atrasada escreveria o documento e o horário de A sobre o
+    // estado de B, e a guarda de saída de B passaria a comparar contra o rascunho errado.
+    const leitura = this.leituraEmCurso;
+    const superada = (): boolean => leitura !== this.leituraEmCurso;
+
     this.salvandoRascunho.set(true);
     this.falhaDoRascunho.set(null);
     const resultado = await firstValueFrom(
       this.api.salvarRascunhoDaPublicacao(processoId, corpo, this.chaveDoRascunho.contextoPara(corpo)),
     );
+    if (superada()) return;
     this.salvandoRascunho.set(false);
 
     if (!isApiOk(resultado)) {
@@ -481,9 +489,15 @@ export class ProcessoSeletivoPage {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null || this.salvandoRascunho()) return;
 
+    // Mesmo carimbo da gravação: a resposta que chega depois da troca de processo não pode
+    // apagar o bloco em tela nem o horário do rascunho de quem está aberto agora.
+    const leitura = this.leituraEmCurso;
+    const superada = (): boolean => leitura !== this.leituraEmCurso;
+
     this.salvandoRascunho.set(true);
     this.falhaDoRascunho.set(null);
     const resultado = await firstValueFrom(this.api.descartarRascunhoDaPublicacao(processoId));
+    if (superada()) return;
     this.salvandoRascunho.set(false);
 
     if (!isApiOk(resultado)) {
@@ -658,6 +672,10 @@ export class ProcessoSeletivoPage {
    * desta tela.
    */
   private esquecerRascunhoDaPublicacao(): void {
+    // O indicador de gravação sai junto: uma resposta em voo desiste ao descobrir que foi
+    // superada, e é aqui que o processo novo começa com o botão liberado em vez de preso
+    // esperando a resposta de um rascunho que não é mais o dele.
+    this.salvandoRascunho.set(false);
     this.documentoNoServidor.set(null);
     this.rascunhoSalvoEm.set(null);
     this.avisoDoRascunho.set(null);

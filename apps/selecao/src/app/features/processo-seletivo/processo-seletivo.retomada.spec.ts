@@ -754,6 +754,48 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     expect(cenario.componente.rascunhoPendente()).toBe(true);
   });
 
+  /**
+   * A página é reusada entre processos, e sair daqui só pede confirmação: dá para confirmar
+   * com a gravação em voo e abrir outro processo antes de a resposta chegar. Sem carimbo de
+   * vez, essa resposta escreveria o documento e o horário do processo anterior sobre o novo.
+   */
+  it('a gravação que responde depois da troca de processo não escreve sobre o novo', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }),
+      paramMap,
+    });
+    await propagar();
+
+    let concluir: (resposta: unknown) => void = () => undefined;
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn(
+      () => from(new Promise((resolve) => (concluir = resolve))),
+    );
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+    };
+    const gravacao = pagina.salvarRascunhoDaPublicacao();
+
+    // O operador confirma a saída e abre outro processo com a gravação ainda pendente.
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+    await propagar();
+    expect(cenario.store.processoSeletivoId()).toBe(OUTRO_ID);
+
+    concluir(okResult(undefined));
+    await gravacao;
+    await propagar();
+
+    expect(cenario.componente.rascunhoSalvoEm()).toBe('2026-09-14T14:32:00Z');
+    expect(cenario.componente.salvandoRascunho()).toBe(false);
+  });
 });
 
 describe('ProcessoSeletivoPage — falhas de leitura', () => {
