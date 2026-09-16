@@ -34,9 +34,10 @@ import {
 } from '../../shared/gravacao-do-cronograma';
 import {
   CONSEQUENCIA_REENVIO,
+  FATO_MODALIDADE,
   STATUS_BASE_LEGAL_RESOLVIDO,
   arvoreDeExigencias,
-  FATO_MODALIDADE,
+  exigenciasDaFase,
   gruposSemNormaResolvida,
   modalidadesDaExigencia,
   semAEtapa,
@@ -811,9 +812,11 @@ export class CronogramaStepComponent {
       (grupo) => grupo.controls.faseCodigo.value === codigo,
     ).length;
 
-    const documentos = Object.values(this.store.draft().documentos).filter(
-      (config) => config.included && !config.todasEtapas && config.etapas.includes(codigo),
-    ).length;
+    // A contagem varre a ÁRVORE de exigências, que é como o rascunho as guarda. Enquanto ela
+    // percorria os valores do objeto como se fossem os registros planos do modelo anterior,
+    // dava sempre zero: a fase com documentos e sem etapa era removida sem confirmação
+    // nenhuma, levando as exigências junto, e com etapas a confirmação omitia o que se perdia.
+    const documentos = exigenciasDaFase(this.store.draft().documentos, codigo).length;
 
     return { etapas, documentos };
   }

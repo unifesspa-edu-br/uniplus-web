@@ -1821,6 +1821,32 @@ describe('CronogramaStepComponent', () => {
       );
     });
 
+    /**
+     * A fase com documento exigido e sem etapa nenhuma era removida sem confirmação: a
+     * contagem varria os valores do rascunho como se fossem os registros planos do modelo
+     * anterior e dava sempre zero, então as exigências sumiam junto com a fase sem que
+     * ninguém fosse avisado.
+     */
+    it('conta os documentos da fase antes de removê-la', () => {
+      comExigenciaDeclarada([
+        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+      ]);
+
+      const indice = componente.fases.controls.findIndex(
+        (grupo) => grupo.controls.codigo.value === FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo,
+      );
+      expect(indice).toBeGreaterThanOrEqual(0);
+
+      expect(componente.dependentesDaFase(indice).documentos).toBe(1);
+
+      componente.pedirRemocaoDaFase(indice);
+      expect(componente.remocaoAConfirmar()).toBe(
+        indice,
+        'a remoção precisa passar pela confirmação, porque leva o documento junto',
+      );
+      expect(componente.resumoDaRemocao(indice)).toContain('1 documento exigido');
+    });
+
     it('acusa a exigência que decide o resultado e está sem norma resolvida', () => {
       comExigenciaDeclarada([
         { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
