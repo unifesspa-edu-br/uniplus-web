@@ -148,6 +148,18 @@ export class ProcessoSeletivoStore {
    * não elege o oficial: fica vazio enquanto o administrador não decide, e a
    * decisão zera a lista.
    */
+  /**
+   * Os campos que ESTA sessão acrescentou ao formulário por causa de uma exigência — memória de
+   * quem entrou sozinho, e por isso pode sair sozinho quando a exigência que o pediu deixar de
+   * existir. Campo declarado à mão, ou vindo da configuração gravada, nunca entra aqui.
+   *
+   * Vive no store porque dois passos acrescentam: o formulário, ao reconciliar, e o cronograma,
+   * ao gravar um gatilho que pressupõe um dado. Guardada só no formulário, a que o cronograma
+   * punha ficava sem dono — o campo sobrevivia à remoção do gatilho, e a inscrição seguia
+   * coletando dado pessoal sem finalidade declarada.
+   */
+  readonly camposPostosPelasExigencias = signal<ReadonlySet<string>>(new Set());
+
   readonly documentosParaEscolha = signal<readonly DocumentoEditalDto[]>([]);
 
   /**
@@ -399,6 +411,7 @@ export class ProcessoSeletivoStore {
     this.hidratando.set(false);
     this.falhaDeLeitura.set(null);
     this.documentosParaEscolha.set([]);
+    this.camposPostosPelasExigencias.set(new Set());
     this.avisoDocumentos.set(null);
     this.geracao.update((valor) => valor + 1);
   }
