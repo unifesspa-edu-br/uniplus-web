@@ -171,17 +171,14 @@ export class CadastroInicialService {
     this.chaveCriacao = idempotencyKey.create();
     this.chaveIniciacao = idempotencyKey.create();
     this.chaveConfirmacao = idempotencyKey.create();
-    this.chaveTaxa.renovar();
-    this.chaveDistribuicao.renovar();
-    this.chaveCascata.renovar();
-    this.chaveEtapas.renovar();
-    this.chaveCronograma.renovar();
-    this.chaveAlgoritmoContagem.renovar();
-    this.chaveClassificacao.renovar();
-    this.chaveBonus.renovar();
-    this.chaveDesempate.renovar();
-    this.chaveAtendimento.renovar();
-    this.chavePublicacao.renovar();
+    // Varredura, não lista nominal: uma enumeração à mão já deixou cinco chaves
+    // para trás, e a chave esquecida é invisível — o comando do processo novo sai
+    // com a chave que o servidor viu no anterior, e o replay devolve o resultado
+    // errado em vez de aplicar o que foi pedido. Uma chave de substituição criada
+    // daqui em diante entra sozinha.
+    for (const campo of Object.values(this)) {
+      if (campo instanceof ChaveDeSubstituicao) campo.renovar();
+    }
   }
 
   /**
