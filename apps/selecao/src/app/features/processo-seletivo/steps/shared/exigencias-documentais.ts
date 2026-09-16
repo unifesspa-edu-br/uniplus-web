@@ -674,12 +674,23 @@ export function comAlcanceDeTodasAsFases(
     if (modelo === undefined) continue;
 
     for (const faseCodigo of fasesVivas) {
-      const jaTem = exigenciasDaFase(resultado, faseCodigo).some(
-        (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
+      // Só declaração de RAIZ conta como "já tem". O mesmo documento pode estar na fase como
+      // alternativa dentro de um grupo OU, e isso é outra coisa: ali ele é uma das saídas
+      // possíveis, não uma exigência. Aceitar a folha do grupo como satisfeita transformava
+      // "este documento é exigido" em "este documento serve", sem nada na tela dizendo.
+      const jaTemNaRaiz = exigenciasDaRaiz(resultado).some(
+        (exigencia) =>
+          exigencia.tipoDocumentoId === tipoDocumentoId && exigencia.faseCodigo === faseCodigo,
       );
-      if (jaTem) continue;
+      if (jaTemNaRaiz) continue;
 
-      resultado = comExigencia(resultado, { ...modelo, faseCodigo, etapaId: null });
+      // Acrescenta na RAIZ, sem passar por `comExigencia`: ela troca a primeira folha que casa
+      // por (documento, fase), e essa primeira pode ser a alternativa dentro do grupo — a
+      // materialização sobrescreveria a alternativa em vez de criar a exigência ao lado dela.
+      resultado = {
+        ...resultado,
+        raizes: [...resultado.raizes, folhaDe({ ...modelo, faseCodigo, etapaId: null })],
+      };
     }
   }
 
