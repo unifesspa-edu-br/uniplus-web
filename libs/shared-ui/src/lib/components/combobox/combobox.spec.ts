@@ -248,6 +248,11 @@ describe('ComboboxComponent', () => {
       multi.detectChanges();
     }
 
+    function teclarNoMulti(key: string): void {
+      campoMulti().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      multi.detectChanges();
+    }
+
     it('anuncia que a lista aceita mais de uma escolha', () => {
       abrir();
       expect(nativoMulti.querySelector('[role="listbox"]')?.getAttribute('aria-multiselectable')).toBe(
@@ -264,6 +269,37 @@ describe('ComboboxComponent', () => {
 
       marcar('RG');
       expect(multi.componentInstance.escolhidas()).toEqual(['contracheque', 'rg']);
+    });
+
+    /**
+     * Quem marca pelo teclado digita a consulta seguinte no mesmo campo. Se a escolha
+     * devolvesse ali o resumo do que já está marcado, a consulta seria acrescentada a
+     * "Contracheque, RG" e filtraria por essa frase inteira — nenhum resultado, e é preciso
+     * apagar o resumo à mão depois de cada escolha.
+     */
+    it('o campo fica vazio entre uma escolha e a seguinte, com a lista aberta', () => {
+      abrir();
+      marcar('Contracheque');
+
+      expect(campoMulti().value).toBe('');
+
+      campoMulti().value = 'RG';
+      campoMulti().dispatchEvent(new Event('input'));
+      multi.detectChanges();
+
+      const visiveis = [...nativoMulti.querySelectorAll<HTMLElement>('[role="option"]')].map((o) =>
+        o.textContent?.trim(),
+      );
+      expect(visiveis).toEqual(['RG']);
+    });
+
+    /** Fechada, a lista devolve ao campo o resumo — é por ele que se confere sem reabrir. */
+    it('ao fechar, o campo volta a resumir o que está marcado', () => {
+      abrir();
+      marcar('Contracheque');
+      teclarNoMulti('Escape');
+
+      expect(campoMulti().value).toBe('Contracheque');
     });
 
     it('clicar de novo desmarca', () => {
