@@ -446,6 +446,29 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     expect(naHabilitacao[0].consequenciaIndeferimento).toBe('');
   });
 
+  /**
+   * "Vale em todas as fases" não trafega — o contrato recebe as folhas já materializadas. Sem
+   * reler a intenção, reabrir o processo a rebaixava a uma escolha fase a fase, e a fase criada
+   * depois disso ficava sem o documento, sem nada na tela denunciando a ausência.
+   */
+  it('relê o alcance de todas as fases do documento presente em cada uma', () => {
+    const lido = exigenciasDe(
+      detalhe([
+        folhaDto({ exigidoNaFaseId: ID_ISENCAO }),
+        folhaDto({ exigidoNaFaseId: ID_HABILITACAO }),
+      ]),
+    );
+
+    expect(lido.emTodasAsFases).toEqual([ID_RG]);
+  });
+
+  /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */
+  it('não inventa alcance de todas as fases para o documento de uma fase só', () => {
+    const lido = exigenciasDe(detalhe([folhaDto({ exigidoNaFaseId: ID_HABILITACAO })]));
+
+    expect(lido.emTodasAsFases).toEqual([]);
+  });
+
   /** As normas 2..N eram descartadas: a leitura lia só `basesLegais[0]`. */
   it('lê todas as normas da exigência, e a observação de cada uma', () => {
     const lido = exigenciasDe(
