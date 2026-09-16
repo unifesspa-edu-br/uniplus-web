@@ -673,6 +673,19 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     expect(cenario.componente.avisoDoRascunho()).toContain('formato anterior');
   });
 
+  /**
+   * Falha não é ausência. Um 500 passageiro deixava o editor abrir em branco e calado, e
+   * gravar dali substituía um rascunho que o operador nunca viu.
+   */
+  it('avisa quando não conseguiu ler o rascunho, em vez de abrir em branco calado', async () => {
+    const cenario = montar({
+      obterRascunho: vi.fn(() => of(errorResult(mockProblemDetails({ status: 500 })))),
+    });
+    await propagar();
+
+    expect(cenario.componente.avisoDoRascunho()).toContain('Recarregue antes de salvar');
+  });
+
   /** Não ter rascunho é o caso comum — e não merece aviso nenhum. */
   it('abre sem aviso quando não há rascunho guardado', async () => {
     const cenario = montar();
