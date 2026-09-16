@@ -396,16 +396,28 @@ function coubeNoGrupo(quantidadeMinima: number | null, filhos: number): number |
  * — a recusa do servidor falaria de um campo que a tela não mostra.
  */
 export function semAFase(exigencias: ExigenciasDoRascunho, faseCodigo: string): ExigenciasDoRascunho {
+  const raizes = transformar(exigencias.raizes, (documento) => {
+    if (documento.faseCodigo === faseCodigo) return null;
+    if (documento.idadeMaximaEmissao?.referenciaFaseCodigo !== faseCodigo) return documento;
+    return {
+      ...documento,
+      idadeMaximaEmissao: { ...documento.idadeMaximaEmissao, referenciaFaseCodigo: null },
+    };
+  });
+
+  // A marca de alcance global cai junto com a última declaração de raiz que lhe servia de
+  // modelo. Sem isso ela fica órfã: a tela segue anunciando o documento como exigido, a
+  // materialização não tem de onde copiá-lo, e a gravação sai sem a exigência — sem nada
+  // dizendo que ela deixou de existir.
+  const comModelo = new Set(
+    raizes
+      .filter((no) => no.tipo === 'FOLHA' && no.documento !== null)
+      .map((no) => (no.documento as ExigenciaDeDocumento).tipoDocumentoId),
+  );
+
   return {
-    ...exigencias,
-    raizes: transformar(exigencias.raizes, (documento) => {
-      if (documento.faseCodigo === faseCodigo) return null;
-      if (documento.idadeMaximaEmissao?.referenciaFaseCodigo !== faseCodigo) return documento;
-      return {
-        ...documento,
-        idadeMaximaEmissao: { ...documento.idadeMaximaEmissao, referenciaFaseCodigo: null },
-      };
-    }),
+    raizes,
+    emTodasAsFases: exigencias.emTodasAsFases.filter((tipo) => comModelo.has(tipo)),
   };
 }
 

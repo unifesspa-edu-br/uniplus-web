@@ -546,6 +546,39 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     expect(lido.emTodasAsFases).toEqual([]);
   });
 
+  /**
+   * A marca de alcance global precisa de um modelo de onde copiar. Removida a última fase que
+   * tinha a declaração de raiz, ela fica órfã: a tela segue anunciando o documento como
+   * exigido, a materialização não tem de onde copiá-lo, e a gravação sai sem ele — sem nada
+   * dizendo que a exigência deixou de existir.
+   */
+  it('a marca de todas as fases cai com a última declaração que lhe servia de modelo', () => {
+    const global: ExigenciasDoRascunho = {
+      emTodasAsFases: [ID_RG],
+      raizes: [
+        { tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'HABILITACAO'), quantidadeMinima: null, consequencia: null, basesLegais: null, filhos: null, chaveDistincao: null, dataReferencia: null, ocorrenciasEsperadas: null, repetePorEntidade: null },
+      ],
+    };
+
+    const semHabilitacao = semAFase(global, 'HABILITACAO');
+
+    expect(semHabilitacao.raizes).toEqual([]);
+    expect(semHabilitacao.emTodasAsFases).toEqual([]);
+  });
+
+  /** Havendo outra declaração de raiz, a marca continua: ainda há de onde copiar. */
+  it('a marca de todas as fases sobrevive enquanto resta uma declaração de raiz', () => {
+    const global: ExigenciasDoRascunho = {
+      emTodasAsFases: [ID_RG],
+      raizes: [
+        { tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'HABILITACAO'), quantidadeMinima: null, consequencia: null, basesLegais: null, filhos: null, chaveDistincao: null, dataReferencia: null, ocorrenciasEsperadas: null, repetePorEntidade: null },
+        { tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'ISENCAO'), quantidadeMinima: null, consequencia: null, basesLegais: null, filhos: null, chaveDistincao: null, dataReferencia: null, ocorrenciasEsperadas: null, repetePorEntidade: null },
+      ],
+    };
+
+    expect(semAFase(global, 'HABILITACAO').emTodasAsFases).toEqual([ID_RG]);
+  });
+
   /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */
   it('não inventa alcance de todas as fases para o documento de uma fase só', () => {
     const lido = exigenciasDe(detalhe([folhaDto({ exigidoNaFaseId: ID_HABILITACAO })]));
