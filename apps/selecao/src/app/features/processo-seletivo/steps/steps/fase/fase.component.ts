@@ -64,6 +64,7 @@ import {
   type BaseLegalConfig,
   type CondicaoGatilhoConfig,
   type DocumentoDefinicao,
+  type ExigenciasDoRascunho,
   type ExigenciaDeDocumento,
   type EtapaPontuada,
   type FaseDoCronograma,
