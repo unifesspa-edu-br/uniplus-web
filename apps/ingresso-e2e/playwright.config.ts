@@ -9,6 +9,12 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4201';
 // webkit requer libs Ubuntu (libicudata.so.74, libxml2.so.2 etc.) — só executa em CI.
 // Localmente em distros não-Debian, defina CI=true para incluir webkit.
 const isCI = !!process.env['CI'];
+
+// GITHUB_ACTIONS (setado só pelo runner do GitHub) distingue do runner Docker
+// local (tools/e2e-docker/run.sh), que também exporta CI=true mas pré-inicia
+// os apps antes do Playwright subir — lá reusar o servidor é obrigatório, ou
+// o Playwright tenta subir de novo na porta já ocupada e aborta.
+const isGithubActions = !!process.env['GITHUB_ACTIONS'];
 const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
 
 const EXCLUDED_FROM_DEFAULT_PROJECTS = /(.*\.aaa\.spec\.ts|auth\.setup\.ts)$/;
@@ -49,7 +55,7 @@ export default defineConfig({
   webServer: {
     command: 'npx nx run ingresso:serve',
     url: 'http://localhost:4201',
-    reuseExistingServer: !isCI,
+    reuseExistingServer: !isGithubActions,
     cwd: workspaceRoot,
   },
   projects: [

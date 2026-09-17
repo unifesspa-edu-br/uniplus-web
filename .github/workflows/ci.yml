@@ -123,30 +123,6 @@ jobs:
             echo "PR sem mudancas em codigo frontend - pulando gates"
           fi
 
-      - name: Iniciar Keycloak
-        if: steps.gate.outputs.run == 'true'
-        # Imagem composta uniplus-keycloak: base quay.io/keycloak/keycloak:26.7.2
-        # + JAR cpf-matcher embutido. Mesma imagem do uniplus-api e do compose
-        # E2E local (tools/e2e-docker/docker-compose.e2e.yml). Patch fixo para
-        # reprodutibilidade — bump é PR explícito. Política em
-        # uniplus-api/docker/keycloak/README.md#imagem-do-keycloak.
-        run: |
-          docker run -d \
-            --name keycloak \
-            --network host \
-            -e KC_HEALTH_ENABLED=true \
-            -e KC_HOSTNAME_STRICT=false \
-            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
-            -e KC_BOOTSTRAP_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }} \
-            -v $PWD/tools/e2e-docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro \
-            ghcr.io/unifesspa-edu-br/uniplus-keycloak:26.7.2-0 start-dev --import-realm
-
-      - name: Aguardar Keycloak ficar saudável
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          timeout 120 bash -c \
-            'until curl -sf http://localhost:9000/health/ready | grep -q "\"UP\""; do sleep 5; done'
-
       # This enables task distribution via Nx Cloud.
       # Keep --stop-agents-after aligned with every target executed below so the
       # distributed run cannot finish before all blocking gates are reconciled.
@@ -167,25 +143,6 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: bash tools/test-nginx-base-href.sh
 
-      - name: Extrair versão do Playwright
-        id: pw-version
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          VERSION=$(node -e "const l=require('./package-lock.json'); console.log(l.packages['node_modules/@playwright/test'].version)")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Cache de browsers do Playwright
-        if: steps.gate.outputs.run == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - if: steps.gate.outputs.run == 'true'
-        run: npx playwright install --with-deps
-
       - if: steps.gate.outputs.run == 'true'
         run: npx nx record -- echo Hello World
 
@@ -205,14 +162,10 @@ jobs:
       - name: Rodar gates (nx affected — pull_request)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
         run: npx nx affected -t lint test build typecheck --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
-        env:
-          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
       - name: Rodar gates (nx run-many — push em main)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
         run: npx nx run-many -t lint test build typecheck --nxBail --outputStyle=static
-        env:
-          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
       - if: always() && steps.gate.outputs.run == 'true'
         run: npx nx fix-ci
