@@ -44,6 +44,7 @@ import { BehaviorSubject, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
+import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
@@ -859,6 +860,63 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     ).descartarRascunhoDaPublicacao();
 
     expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+  });
+
+  /**
+   * Mudar só o `:id` reusa a rota: o componente nunca é desativado, e a guarda da rota não
+   * roda. Sem perguntar no próprio editor, a promessa dela valia para sair da tela e não para
+   * trocar de processo — e é a retomada quem apaga a transcrição, logo em seguida.
+   */
+  it('pergunta antes de trocar de processo com transcrição por gravar', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há o que perder');
+
+    const confirmacao = TestBed.inject(ConfirmacaoDeSaida);
+    const perguntar = vi.spyOn(confirmacao, 'confirmar').mockReturnValue(false);
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+
+    expect(perguntar).toHaveBeenCalled();
+    expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID, 'a troca foi recusada');
+    expect(cenario.store.draft().publicacao.numero).toBe('07/2027', 'a transcrição ficou');
+    expect(cenario.navigate).toHaveBeenCalledWith(['/processo-seletivo', PROCESSO_ID], {
+      replaceUrl: true,
+    });
+  });
+
+  /** Aceita a perda, a troca segue: quem confirmou sabe o que está deixando para trás. */
+  it('troca de processo quando a perda da transcrição é confirmada', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    vi.spyOn(TestBed.inject(ConfirmacaoDeSaida), 'confirmar').mockReturnValue(true);
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+    await propagar();
+
+    expect(cenario.store.processoSeletivoId()).toBe(OUTRO_ID);
   });
 
   /**

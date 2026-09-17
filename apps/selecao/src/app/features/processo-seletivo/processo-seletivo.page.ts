@@ -54,6 +54,10 @@ import {
   documentoDoRascunho,
   temAlgoAGuardar,
 } from './steps/shared/rascunho-da-publicacao';
+import {
+  AVISO_DE_RASCUNHO_NAO_GRAVADO,
+  ConfirmacaoDeSaida,
+} from './steps/shared/rascunho-nao-gravado.guard';
 import { ChaveDeSubstituicao } from './steps/shared/chave-de-substituicao';
 import type { MotivoFalhaDeLeitura } from './steps/processo-seletivo.models';
 
@@ -168,6 +172,7 @@ export class ProcessoSeletivoPage {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
 
@@ -278,6 +283,11 @@ export class ProcessoSeletivoPage {
           this.store.hidratando();
 
         if (tinhaProcesso) {
+          if (!this.podeTrocarDeProcesso()) {
+            this.voltarAoProcessoAberto();
+            return;
+          }
+
           this.leituraEmCurso += 1;
           this.limparEditor();
         }
@@ -294,6 +304,14 @@ export class ProcessoSeletivoPage {
         if (this.store.falhaDeLeitura() !== null || this.store.hidratando()) {
           void this.retomar(id);
         }
+        return;
+      }
+
+      // A guarda da rota não roda aqui: mudar só o `:id` reusa a rota, e o componente nunca é
+      // desativado. Sem perguntar neste ponto, a promessa dela valia para sair do editor e não
+      // para trocar de processo — e é `retomar()` quem apaga a transcrição, logo em seguida.
+      if (!this.podeTrocarDeProcesso()) {
+        this.voltarAoProcessoAberto();
         return;
       }
 
@@ -565,6 +583,25 @@ export class ProcessoSeletivoPage {
     // Mesmo motivo do resumo: o rastro do rascunho descreve o processo que estava aberto. Sem
     // esquecê-lo, a guarda de saída perguntaria sobre a transcrição do processo anterior.
     this.esquecerRascunhoDaPublicacao();
+  }
+
+  /** Há transcrição por gravar, e quem está trocando de processo concordou em perdê-la? */
+  private podeTrocarDeProcesso(): boolean {
+    if (!this.rascunhoPendente()) return true;
+    return this.confirmacaoDeSaida.confirmar(AVISO_DE_RASCUNHO_NAO_GRAVADO);
+  }
+
+  /**
+   * Devolve o endereço ao processo que continua em tela.
+   *
+   * A assinatura do parâmetro dispara de novo, e o ramo que reconhece o processo já aberto não
+   * relê nada — é por isso que voltar aqui não custa a transcrição que a recusa acabou de
+   * proteger.
+   */
+  private voltarAoProcessoAberto(): void {
+    const aberto = this.store.processoSeletivoId();
+    if (aberto === null) return;
+    void this.router.navigate(['/processo-seletivo', aberto], { replaceUrl: true });
   }
 
   /** Repete a leitura do endereço atual, para as falhas que admitem retentativa. */
