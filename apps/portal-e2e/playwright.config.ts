@@ -56,7 +56,7 @@ export default defineConfig({
   webServer: {
     command: 'npx nx run portal:serve',
     url: 'http://localhost:4202',
-    reuseExistingServer: true,
+    reuseExistingServer: !isCI,
     cwd: workspaceRoot,
   },
   projects: [
