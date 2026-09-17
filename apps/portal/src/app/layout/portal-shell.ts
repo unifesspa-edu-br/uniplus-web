@@ -99,7 +99,7 @@ interface PortalFooterGroup {
       }
     </nav>
 
-    <div class="portal-scroll" #portalScroll>
+    <div class="portal-scroll" tabindex="-1" #portalScroll>
       <main id="portal-main" class="portal-main" tabindex="-1">
         <router-outlet />
       </main>
@@ -139,10 +139,17 @@ interface PortalFooterGroup {
   `,
 })
 export class PortalShellComponent {
+  // "Meu perfil" completa o caminho de volta pro shell administrativo — sem
+  // ele, quem chega em /processos via link direto não alcançava essa área
+  // por nenhum menu (achado de revisão, issue #776). "Documentos" fica de
+  // fora por ora: é placeholder vazio, sem funcionalidade real ainda; a
+  // rota continua existindo e acessível por URL direta, e ganha link aqui
+  // quando houver conteúdo de verdade por trás.
   protected readonly navItems: readonly PortalNavItem[] = [
-    { label: 'Editais abertos', icon: 'pi-calendar', routerLink: '/processos' },
+    { label: 'Editais', icon: 'pi-calendar', routerLink: '/processos' },
     { label: 'Minhas inscrições', icon: 'pi-check-square', routerLink: '/inscricao' },
     { label: 'Resultados', icon: 'pi-chart-bar', routerLink: '/acompanhamento' },
+    { label: 'Meu perfil', icon: 'pi-user', routerLink: '/perfil' },
     { label: 'Ajuda', icon: 'pi-question-circle' },
   ];
 
@@ -150,7 +157,7 @@ export class PortalShellComponent {
     {
       label: 'Candidato',
       links: [
-        { label: 'Editais abertos', routerLink: '/processos' },
+        { label: 'Editais', routerLink: '/processos' },
         { label: 'Minhas inscrições', routerLink: '/inscricao' },
         { label: 'Resultados', routerLink: '/acompanhamento' },
       ],

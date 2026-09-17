@@ -94,6 +94,39 @@ describe('ProcessosComponent', () => {
     expect(status?.textContent).toContain('1 certame encontrado');
   });
 
+  it('busca ignora acento — "tecnico" encontra o mesmo que "técnico"', async () => {
+    await carregar();
+
+    component['busca'].set('tecnico');
+    fixture.detectChanges();
+
+    expect(component['certamesFiltrados']().length).toBe(2);
+  });
+
+  it('lista por urgência (CA-01): abertos/últimos dias antes de encerrados, prazo mais próximo primeiro', async () => {
+    await carregar();
+
+    const titulos = component['certamesFiltrados']().map((certame) => certame.titulo);
+    expect(titulos).toEqual([
+      'Pós-graduação em Educação',
+      'Técnico em Enfermagem',
+      'SISU 2026.1 — Cursos de graduação',
+      'Vestibular Indígena 2026',
+      'Mestrado em Ciência da Computação',
+      'Técnico em Informática',
+      'SISU 2025.2 — Vagas remanescentes',
+      'Vestibular Quilombola 2026',
+    ]);
+  });
+
+  it('o hero exibe o certame marcado como destaque no mock, não um literal solto', async () => {
+    await carregar();
+
+    expect(component['destaque']()?.titulo).toBe('SISU 2026.1 — Cursos de graduação');
+    const heroTitle = host().querySelector('#portal-hero-title');
+    expect(heroTitle?.textContent?.trim()).toBe('SISU 2026.1 — Cursos de graduação');
+  });
+
   it('filtro por modalidade também combina com a busca e a situação', async () => {
     await carregar();
 

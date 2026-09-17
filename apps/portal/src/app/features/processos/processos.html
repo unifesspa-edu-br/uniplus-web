@@ -1,42 +1,46 @@
-<section class="portal-hero" aria-labelledby="portal-hero-title">
-  <div class="portal-hero__content">
-    <ui-tag variant="success" [solid]="true">Inscrições abertas</ui-tag>
-    <h1 id="portal-hero-title" class="portal-hero__title">MEDICINA 2026.2 — Cursos de Graduação</h1>
-    <p class="portal-hero__desc">
-      As inscrições vão até <strong>16 de abril</strong>. Você pode se inscrever em 5 etapas curtas
-      e voltar quando quiser para concluir.
-    </p>
-    <div class="portal-hero__actions">
-      <a class="btn btn--primary btn--lg" routerLink="/inscricao">
-        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-        Inscrever-me agora
-      </a>
-      <a class="btn btn--secondary btn--lg" href="#certames-lista">Ver todos os editais</a>
+@if (destaque(); as certameDestaque) {
+  <section class="portal-hero" aria-labelledby="portal-hero-title">
+    <div class="portal-hero__content">
+      <ui-tag [variant]="statusVariant(certameDestaque.status)" [solid]="true">
+        {{ statusLabel(certameDestaque.status) }}
+      </ui-tag>
+      <h1 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.titulo }}</h1>
+      <p class="portal-hero__desc">
+        As inscrições vão até <strong>{{ certameDestaque.encerraEm | dateBr: 'long' }}</strong>. Você
+        pode se inscrever em 5 etapas curtas e voltar quando quiser para concluir.
+      </p>
+      <div class="portal-hero__actions">
+        <a class="btn btn--primary btn--lg" routerLink="/inscricao">
+          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+          Inscrever-me agora
+        </a>
+        <a class="btn btn--secondary btn--lg" href="#certames-lista">Ver todos os editais</a>
+      </div>
     </div>
-  </div>
-  <div class="portal-hero__art" aria-hidden="true">
-    <svg width="220" height="180" viewBox="0 0 240 200" fill="none">
-      <rect x="60" y="20" width="120" height="160" rx="8" fill="var(--color-neutral-0)"
-        stroke="var(--color-primary-800)" stroke-width="2"></rect>
-      <line x1="78" y1="56" x2="162" y2="56" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
-      </line>
-      <line x1="78" y1="76" x2="162" y2="76" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
-      </line>
-      <line x1="78" y1="96" x2="142" y2="96" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
-      </line>
-      <line x1="78" y1="116" x2="162" y2="116" stroke="var(--color-neutral-200)" stroke-width="4"
-        stroke-linecap="round"></line>
-      <circle cx="170" cy="156" r="24" fill="var(--color-success-600)"></circle>
-      <path d="M159 156l7 7 14-14" stroke="var(--color-neutral-0)" stroke-width="3.5" stroke-linecap="round"
-        stroke-linejoin="round"></path>
-    </svg>
-  </div>
-</section>
+    <div class="portal-hero__art" aria-hidden="true">
+      <svg width="220" height="180" viewBox="0 0 240 200" fill="none">
+        <rect x="60" y="20" width="120" height="160" rx="8" fill="var(--color-neutral-0)"
+          stroke="var(--color-primary-800)" stroke-width="2"></rect>
+        <line x1="78" y1="56" x2="162" y2="56" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
+        </line>
+        <line x1="78" y1="76" x2="162" y2="76" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
+        </line>
+        <line x1="78" y1="96" x2="142" y2="96" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
+        </line>
+        <line x1="78" y1="116" x2="162" y2="116" stroke="var(--color-neutral-200)" stroke-width="4"
+          stroke-linecap="round"></line>
+        <circle cx="170" cy="156" r="24" fill="var(--color-success-600)"></circle>
+        <path d="M159 156l7 7 14-14" stroke="var(--color-neutral-0)" stroke-width="3.5" stroke-linecap="round"
+          stroke-linejoin="round"></path>
+      </svg>
+    </div>
+  </section>
+}
 
 <ui-page-header
   id="certames-lista"
-  heading="Editais abertos"
-  description="Veja todos os certames com inscrições no momento."
+  heading="Editais"
+  description="Veja todos os certames publicados."
   [level]="2"
 />
 
@@ -132,7 +136,7 @@
               <h3 class="edital-row__title">{{ certame.titulo }}</h3>
               <p class="edital-row__desc">{{ certame.resumo }}</p>
               <div class="edital-row__meta">
-                <span><strong>Encerra:</strong> {{ certame.encerraEm }}</span>
+                <span><strong>Encerra:</strong> {{ certame.encerraEm | dateBr: 'shortMonth' }}</span>
                 <span><strong>Vagas:</strong> {{ certame.vagas }}</span>
               </div>
             </div>
@@ -158,7 +162,7 @@
             <h3 class="card__title">{{ certame.titulo }}</h3>
             <p class="card__desc">{{ certame.resumo }}</p>
             <div class="edital-row__meta">
-              <span><strong>Encerra:</strong> {{ certame.encerraEm }}</span>
+              <span><strong>Encerra:</strong> {{ certame.encerraEm | dateBr: 'shortMonth' }}</span>
               <span><strong>Vagas:</strong> {{ certame.vagas }}</span>
             </div>
             <div class="card__footer">
