@@ -944,7 +944,7 @@ export class FaseStepComponent {
 
   /** Devolve o documento ao regime de acompanhar todas as fases do edital. */
   valerEmTodasAsFases(id: string): void {
-    const exigencias = this.store.draft().documentos;
+    const exigencias = this.normalizarDeclaracoesDoDocumento(this.store.draft().documentos, id);
     const materializadas = this.materializarEmTodasAsFases(exigencias, id);
     this.store.patchSection('documentos', {
       ...materializadas,
@@ -952,6 +952,41 @@ export class FaseStepComponent {
         ? exigencias.emTodasAsFases
         : [...exigencias.emTodasAsFases, id],
     });
+  }
+
+  /**
+   * Alinha todas as declarações de raiz do documento à da fase aberta.
+   *
+   * "Vale em todas as fases" quer dizer a MESMA declaração em toda fase. Ligar o regime sobre
+   * declarações que já divergiam deixava a tela anunciando uma coisa e a gravação enviando
+   * outra: condições e consequência diferentes por fase, a fase criada depois recebendo a
+   * primeira que aparecesse, e a releitura ao reabrir o processo perdendo a marca porque as
+   * declarações não batem. Alinhar pela fase aberta é o que o operador vê ao ligar o regime.
+   *
+   * Fase e etapa ficam como estão: são próprias de cada declaração, e é por isso que a
+   * comparação que relê a intenção também as ignora.
+   */
+  private normalizarDeclaracoesDoDocumento(
+    exigencias: ExigenciasDoRascunho,
+    id: string,
+  ): ExigenciasDoRascunho {
+    const modelo = this.exigenciaDoDocumento(id);
+
+    return {
+      ...exigencias,
+      raizes: exigencias.raizes.map((no) =>
+        no.tipo === 'FOLHA' && no.documento !== null && no.documento.tipoDocumentoId === id
+          ? {
+              ...no,
+              documento: {
+                ...modelo,
+                faseCodigo: no.documento.faseCodigo,
+                etapaId: no.documento.etapaId,
+              },
+            }
+          : no,
+      ),
+    };
   }
 
   /**
