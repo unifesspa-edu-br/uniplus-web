@@ -24,8 +24,22 @@
   </p>
 }
 
+<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+
+@if (fatosQueDependemDaOferta().length > 0) {
+  <!--
+    O formulário de inscrição pergunta ao candidato algo cujo domínio sai desta tela. Sem este
+    aviso, quem chega aqui pelo botão do checklist de publicação não sabe por que foi trazido.
+  -->
+  <p class="field__hint" role="status">
+    O formulário de inscrição pergunta {{ fatosQueDependemDaOferta().join(' e ') }} ao
+    candidato. É desta oferta que saem os valores que ele poderá escolher — declare ao menos um
+    de cada, ou retire o campo do formulário.
+  </p>
+}
+
 <div class="step-card">
-  <h2 class="form-section__title">Condições aceitas</h2>
+  <h2 class="form-section__title" id="atend-secao-condicoes" tabindex="-1">Condições aceitas</h2>
 
   @if (catalogos.condicoes().length > 0 || condicoesInativas().length > 0) {
     @if (catalogos.condicoes().length > 0) {
@@ -54,16 +68,25 @@
           <span>{{ condicao.nome }}</span>
         </label>
       }
+      <!--
+        Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
+        ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
+        "caixa de seleção, marcada" e fazia parecer reversível o que não é.
+      -->
       @for (inativa of condicoesInativas(); track inativa.id) {
-        <label class="check-item">
-          <input
-            type="checkbox"
-            checked
-            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-            (change)="removerCondicaoInativa(inativa.id)"
-          />
+        <div class="check-item">
           <span>{{ inativa.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
-        </label>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="'atend-cond-inativa-' + $index"
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            [attr.aria-label]="'Remover definitivamente ' + inativa.nome"
+            (click)="removerCondicaoInativa(inativa.id)"
+          >
+            Remover
+          </button>
+        </div>
       }
     </div>
   } @else if (catalogoConfirmado()) {
@@ -76,7 +99,7 @@
 
 @if (pcdSelecionada()) {
   <div class="step-card">
-    <h2 class="form-section__title">Tipos de deficiência reconhecidos</h2>
+    <h2 class="form-section__title" id="atend-secao-tipos" tabindex="-1">Tipos de deficiência reconhecidos</h2>
     <p class="field__hint">
       Só pode ser preenchido com a condição "Pessoa com deficiência" marcada acima.
     </p>
@@ -94,18 +117,25 @@
             <span>{{ tipo.nome }}</span>
           </label>
         }
+        <!--
+          Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
+          ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
+          "caixa de seleção, marcada" e fazia parecer reversível o que não é.
+        -->
         @for (inativo of tiposDeficienciaInativos(); track inativo.id) {
-          <label class="check-item">
-            <input
-              type="checkbox"
-              checked
+          <div class="check-item">
+            <span>{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              [id]="'atend-tipo-inativo-' + $index"
               [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-              (change)="removerTipoDeficienciaInativo(inativo.id)"
-            />
-            <span
-              >{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span
+              [attr.aria-label]="'Remover definitivamente ' + inativo.nome"
+              (click)="removerTipoDeficienciaInativo(inativo.id)"
             >
-          </label>
+              Remover
+            </button>
+          </div>
         }
       </div>
     } @else if (catalogoConfirmado()) {
@@ -118,7 +148,7 @@
 }
 
 <div class="step-card">
-  <h2 class="form-section__title">Recursos de acessibilidade oferecidos</h2>
+  <h2 class="form-section__title" id="atend-secao-recursos" tabindex="-1">Recursos de acessibilidade oferecidos</h2>
 
   @if (catalogos.recursos().length > 0 || recursosInativos().length > 0) {
     @if (catalogos.recursos().length > 0) {
@@ -147,16 +177,25 @@
           <span>{{ recurso.nome }}</span>
         </label>
       }
+      <!--
+        Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
+        ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
+        "caixa de seleção, marcada" e fazia parecer reversível o que não é.
+      -->
       @for (inativo of recursosInativos(); track inativo.id) {
-        <label class="check-item">
-          <input
-            type="checkbox"
-            checked
-            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-            (change)="removerRecursoInativo(inativo.id)"
-          />
+        <div class="check-item">
           <span>{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
-        </label>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="'atend-rec-inativo-' + $index"
+            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            [attr.aria-label]="'Remover definitivamente ' + inativo.nome"
+            (click)="removerRecursoInativo(inativo.id)"
+          >
+            Remover
+          </button>
+        </div>
       }
     </div>
   } @else if (catalogoConfirmado()) {

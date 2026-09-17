@@ -368,6 +368,14 @@ cfg-pesos-enem-page {
   gap: var(--space-4);
 }
 
+/* As duas escolhas do tipo de etapa: lado a lado onde couber, empilhadas quando não. */
+.cfg-tipos-etapa__opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-block: var(--space-2);
+}
+
 .field__readonly {
   display: flex;
   align-items: center;

@@ -14,6 +14,11 @@ export {
   type UiButtonVariant,
 } from '../../src/lib/components/button/button';
 export { CardComponent } from '../../src/lib/components/card/card';
+export {
+  ComboboxComponent,
+  type UiComboboxGroup,
+  type UiComboboxOption,
+} from '../../src/lib/components/combobox/combobox';
 export { CpfInputComponent } from '../../src/lib/components/cpf-input/cpf-input';
 export {
   DataTableComponent,

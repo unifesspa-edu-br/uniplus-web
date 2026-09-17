@@ -1,22 +1,31 @@
-import { HttpHeaders } from '@angular/common/http';
+import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
-import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
+import {
+  IDEMPOTENCY_KEY_TOKEN,
+  apiOk,
+  errorResult,
+  mockProblemDetails,
+  okResult,
+} from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
   CondicoesAtendimentoApi,
+  TiposInstrumentoNormativoApi,
   CursosApi,
   ModalidadesApi,
   OfertasCursoApi,
   RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
+  FatosCandidatoApi,
   TipoDeficienciaApi,
   TipoProcessoDto,
   TiposProcessoApi,
   FasesCanonicasApi,
   PrecedenciasFaseApi,
   TiposBancaApi,
+  TiposDocumentoApi,
   TiposEtapaApi,
   CategoriasDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
@@ -35,6 +44,7 @@ import { BehaviorSubject, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
+import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
@@ -125,6 +135,8 @@ interface CenarioOpts {
   readonly id?: string | null;
   readonly obter?: ReturnType<typeof vi.fn>;
   readonly listarDocumentos?: ReturnType<typeof vi.fn>;
+  /** O rascunho da publicação que o servidor devolve — 404 por padrão (não há nenhum). */
+  readonly obterRascunho?: ReturnType<typeof vi.fn>;
   /** Simula catálogo de tipos indisponível. */
   readonly tiposFalham?: boolean;
   /** Simula catálogo de unidades indisponível. */
@@ -137,6 +149,8 @@ function montar(opts: CenarioOpts = {}) {
   const obter = opts.obter ?? vi.fn(() => of(okResult(detalhe())));
   const definirTaxaInscricao = vi.fn(() => of(okResult(undefined)));
   const listarDocumentos = opts.listarDocumentos ?? vi.fn(() => of(okResult([])));
+  const obterRascunho =
+    opts.obterRascunho ?? vi.fn(() => of(errorResult(mockProblemDetails({ status: 404 }))));
   const id = opts.id === undefined ? PROCESSO_ID : opts.id;
 
   TestBed.configureTestingModule({
@@ -161,8 +175,10 @@ function montar(opts: CenarioOpts = {}) {
       { provide: OfertasCursoApi, useValue: catalogoVazioStub },
       { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
       { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
-  // O passo de bônus carrega o catálogo de base legal ao montar.
+  // O passo de bônus carrega o catálogo de base legal ao montar, e o vocabulário que traduz o
+  // tipo de instrumento da norma.
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
+  { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -170,17 +186,21 @@ function montar(opts: CenarioOpts = {}) {
   { provide: TiposBancaApi, useValue: catalogoVazioStub },
   { provide: CategoriasDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
+  { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; esta suíte cobre a retomada do processo, não as escolhas.
   { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },
   { provide: RecursoAcessibilidadeApi, useValue: catalogoVazioStub },
   { provide: TipoDeficienciaApi, useValue: catalogoVazioStub },
+  // O passo do formulário carrega o catálogo de fatos do candidato ao montar.
+  { provide: FatosCandidatoApi, useValue: catalogoVazioStub },
       {
         provide: ProcessosSeletivosApi,
         useValue: {
           obter,
           listarDocumentosEdital: listarDocumentos,
+          obterRascunhoDaPublicacao: obterRascunho,
           listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
           definirTaxaInscricao,
         },
@@ -207,6 +227,7 @@ function montar(opts: CenarioOpts = {}) {
     fixture,
     obter,
     listarDocumentos,
+    obterRascunho,
     definirTaxaInscricao,
     navigate,
     componente: fixture.componentInstance,
@@ -217,6 +238,10 @@ function montar(opts: CenarioOpts = {}) {
 }
 
 const propagar = async (): Promise<void> => {
+  // Uma volta por await encadeado de `retomar`: o detalhe, os documentos do edital e o rascunho
+  // da publicação. Sobra de volta não atrapalha quem precisa de menos.
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
 };
@@ -581,6 +606,494 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     const titulo = cenario.host.querySelector('.step-head h1');
     expect(titulo).not.toBeNull();
     expect(document.activeElement).toBe(titulo);
+  });
+});
+
+describe('ProcessoSeletivoPage — rascunho da publicação', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const rascunho = (conteudo: unknown, versao = 1) =>
+    vi.fn(() =>
+      of(okResult({ versao, conteudo, salvoEm: '2026-09-14T14:32:00Z' })),
+    );
+
+  /**
+   * O defeito que motivou a entrega: o operador transcreve sete campos do Diário Oficial e um
+   * recarregamento os apaga. Antes desta rota, `publicacao` voltava vazia de qualquer retomada.
+   */
+  it('repõe o bloco do ato ao reabrir o processo por endereço', async () => {
+    const cenario = montar({
+      obterRascunho: rascunho({
+        numero: '07/2027',
+        periodoInscricaoInicio: '',
+        periodoInscricaoFim: '',
+        ato: {
+          orgao: 'REITORIA',
+          serie: 'EDITAL',
+          ano: '2027',
+          dataPublicacao: '2027-01-15',
+          assinante: 'Reitor',
+          tipoAtoCodigo: 'EDITAL_ABERTURA',
+        },
+      }),
+    });
+    await propagar();
+
+    const publicacao = cenario.store.draft().publicacao;
+    expect(publicacao.numero).toBe('07/2027');
+    expect(publicacao.ato.orgao).toBe('REITORIA');
+    expect(publicacao.ato.assinante).toBe('Reitor');
+    expect(cenario.componente.rascunhoSalvoEm()).toBe('2026-09-14T14:32:00Z');
+  });
+
+  /**
+   * `projetarSecao` é patch raso e a seção tem QUATRO chaves de topo. Repor só `ato` deixaria
+   * `numero` e o par de período do processo ANTERIOR em tela — o vazamento entre processos que
+   * a limpeza do editor existe para impedir.
+   */
+  it('repõe as quatro chaves da seção, e não só o ato', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    const publicacao = cenario.store.draft().publicacao;
+    expect(publicacao.numero).toBe('');
+    expect(publicacao.periodoInscricaoInicio).toBe('');
+    expect(publicacao.periodoInscricaoFim).toBe('');
+    expect(publicacao.ato.orgao).toBe('REITORIA');
+  });
+
+  /**
+   * Meio preenchido com campos de um formato que a tela não entende é pior que vazio: o
+   * operador publicaria acreditando ter conferido.
+   */
+  it('descarta com aviso o rascunho de outro formato, em vez de reidratá-lo', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }, 99) });
+    await propagar();
+
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+    expect(cenario.componente.avisoDoRascunho()).toContain('formato anterior');
+  });
+
+  /**
+   * Falha não é ausência. Um 500 passageiro deixava o editor abrir em branco e calado, e
+   * gravar dali substituía um rascunho que o operador nunca viu.
+   */
+  it('avisa quando não conseguiu ler o rascunho, em vez de abrir em branco calado', async () => {
+    const cenario = montar({
+      obterRascunho: vi.fn(() => of(errorResult(mockProblemDetails({ status: 500 })))),
+    });
+    await propagar();
+
+    expect(cenario.componente.avisoDoRascunho()).toContain('Recarregue antes de salvar');
+  });
+
+  /** Não ter rascunho é o caso comum — e não merece aviso nenhum. */
+  it('abre sem aviso quando não há rascunho guardado', async () => {
+    const cenario = montar();
+    await propagar();
+
+    expect(cenario.componente.avisoDoRascunho()).toBeNull();
+    expect(cenario.componente.rascunhoSalvoEm()).toBeNull();
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+  });
+
+  /**
+   * A invariante que impede o conserto de virar o defeito: `retomar()` limpa o editor ANTES de
+   * hidratar, e uma gravação disparada nessa limpeza apagaria no servidor exatamente o que ela
+   * ia buscar em seguida.
+   */
+  it('retomar não grava nada — só lê', async () => {
+    const salvar = vi.fn();
+    const descartar = vi.fn();
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = salvar;
+    api['descartarRascunhoDaPublicacao'] = descartar;
+
+    await propagar();
+
+    expect(salvar).not.toHaveBeenCalled();
+    expect(descartar).not.toHaveBeenCalled();
+    expect(cenario.obterRascunho).toHaveBeenCalledWith(PROCESSO_ID);
+  });
+
+  /** Reposto do servidor não é edição pendente — a guarda de saída não pode disparar aí. */
+  it('o bloco reposto não conta como edição por gravar', async () => {
+    const cenario = montar({
+      obterRascunho: rascunho({
+        numero: '07/2027',
+        periodoInscricaoInicio: '',
+        periodoInscricaoFim: '',
+        ato: {
+          orgao: 'REITORIA',
+          serie: '',
+          ano: '',
+          dataPublicacao: '',
+          assinante: '',
+          tipoAtoCodigo: '',
+        },
+      }),
+    });
+    await propagar();
+
+    expect(cenario.componente.rascunhoPendente()).toBe(false);
+
+    cenario.store.projetarSecao('publicacao', { numero: '08/2027' });
+    expect(cenario.componente.rascunhoPendente()).toBe(true);
+  });
+
+  /**
+   * Apagar o que estava guardado é edição como qualquer outra. Tratar o bloco vazio como
+   * "nada a guardar" deixava o apagamento sair sem aviso, e a volta ao processo repunha do
+   * servidor exatamente o que o operador tinha acabado de limpar.
+   */
+  it('esvaziar um rascunho já gravado conta como edição por gravar', async () => {
+    const cenario = montar({
+      obterRascunho: rascunho({
+        numero: '07/2027',
+        periodoInscricaoInicio: '',
+        periodoInscricaoFim: '',
+        ato: {
+          orgao: 'REITORIA',
+          serie: '',
+          ano: '',
+          dataPublicacao: '',
+          assinante: '',
+          tipoAtoCodigo: '',
+        },
+      }),
+    });
+    await propagar();
+    expect(cenario.componente.rascunhoPendente()).toBe(false);
+
+    cenario.store.projetarSecao('publicacao', {
+      numero: '',
+      ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+    });
+
+    expect(cenario.componente.rascunhoPendente()).toBe(true);
+  });
+
+  /**
+   * A página é reusada entre processos, e sair daqui só pede confirmação: dá para confirmar
+   * com a gravação em voo e abrir outro processo antes de a resposta chegar. Sem carimbo de
+   * vez, essa resposta escreveria o documento e o horário do processo anterior sobre o novo.
+   */
+  it('a gravação que responde depois da troca de processo não escreve sobre o novo', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }),
+      paramMap,
+    });
+    await propagar();
+
+    let concluir: (resposta: unknown) => void = () => undefined;
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn(
+      () => from(new Promise((resolve) => (concluir = resolve))),
+    );
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+    };
+    const gravacao = pagina.salvarRascunhoDaPublicacao();
+
+    // O operador confirma a saída e abre outro processo com a gravação ainda pendente.
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+    await propagar();
+    expect(cenario.store.processoSeletivoId()).toBe(OUTRO_ID);
+
+    concluir(okResult(undefined));
+    await gravacao;
+    await propagar();
+
+    expect(cenario.componente.rascunhoSalvoEm()).toBe('2026-09-14T14:32:00Z');
+    expect(cenario.componente.salvandoRascunho()).toBe(false);
+  });
+
+  /**
+   * O formulário da Revisão segue editável enquanto o descarte não responde. Esvaziar o bloco
+   * sem olhar apagaria a transcrição que o operador começou nesse intervalo — ele pediu para
+   * descartar o que havia, não o que escreveu depois.
+   */
+  it('não apaga a transcrição começada enquanto o descarte estava em voo', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    let concluir: (resposta: unknown) => void = () => undefined;
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['descartarRascunhoDaPublicacao'] = vi.fn(
+      () => from(new Promise((resolve) => (concluir = resolve))),
+    );
+
+    const pagina = cenario.componente as unknown as {
+      descartarRascunhoDaPublicacao(): Promise<void>;
+    };
+    const descarte = pagina.descartarRascunhoDaPublicacao();
+
+    // O operador começa outra transcrição antes de a resposta chegar.
+    cenario.store.projetarSecao('publicacao', { numero: '09/2027' });
+
+    concluir(okResult(undefined));
+    await descarte;
+    await propagar();
+
+    expect(cenario.store.draft().publicacao.numero).toBe('09/2027');
+  });
+
+  /** Sem edição no intervalo, descartar continua esvaziando o bloco — é o que a ação promete. */
+  it('esvazia o bloco quando nada foi digitado durante o descarte', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
+
+    await (
+      cenario.componente as unknown as { descartarRascunhoDaPublicacao(): Promise<void> }
+    ).descartarRascunhoDaPublicacao();
+
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+  });
+
+  /**
+   * Mudar só o `:id` reusa a rota: o componente nunca é desativado, e a guarda da rota não
+   * roda. Sem perguntar no próprio editor, a promessa dela valia para sair da tela e não para
+   * trocar de processo — e é a retomada quem apaga a transcrição, logo em seguida.
+   */
+  it('pergunta antes de trocar de processo com transcrição por gravar', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há o que perder');
+
+    const confirmacao = TestBed.inject(ConfirmacaoDeSaida);
+    const perguntar = vi.spyOn(confirmacao, 'confirmar').mockReturnValue(false);
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+
+    expect(perguntar).toHaveBeenCalled();
+    expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID, 'a troca foi recusada');
+    expect(cenario.store.draft().publicacao.numero).toBe('07/2027', 'a transcrição ficou');
+    expect(cenario.navigate).toHaveBeenCalledWith(['/processo-seletivo', PROCESSO_ID], {
+      replaceUrl: true,
+    });
+  });
+
+  /**
+   * Recusada a troca a partir do cadastro novo, não há processo aberto para onde voltar — o
+   * endereço precisa voltar a `/novo`. Deixá-lo no `:id` recusado punha o cadastro em andamento
+   * sob o endereço de outro processo, e a criação seguinte não corrigiria a URL: o efeito que a
+   * ajusta desiste quando ela já traz um id.
+   */
+  it('devolve o endereço a /novo quando a troca é recusada sem processo aberto', async () => {
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => null,
+    });
+    const cenario = montar({ id: null, paramMap });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há o que perder');
+    vi.spyOn(TestBed.inject(ConfirmacaoDeSaida), 'confirmar').mockReturnValue(false);
+
+    paramMap.next({ get: () => PROCESSO_ID });
+    await propagar();
+
+    expect(cenario.navigate).toHaveBeenCalledWith(['/processo-seletivo', 'novo'], {
+      replaceUrl: true,
+    });
+    expect(cenario.store.draft().publicacao.numero).toBe('07/2027');
+  });
+
+  /** Aceita a perda, a troca segue: quem confirmou sabe o que está deixando para trás. */
+  it('troca de processo quando a perda da transcrição é confirmada', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    vi.spyOn(TestBed.inject(ConfirmacaoDeSaida), 'confirmar').mockReturnValue(true);
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+    await propagar();
+
+    expect(cenario.store.processoSeletivoId()).toBe(OUTRO_ID);
+  });
+
+  /**
+   * A chave acompanha o rascunho que ela gravou. Descartado ele, reescrever a mesma transcrição
+   * sairia com a chave que o servidor já viu e receberia o replay da gravação que este descarte
+   * acabou de anular — a tela diria "salvo" sobre um rascunho que não foi recriado.
+   */
+  it('não reaproveita a chave de um rascunho que foi descartado', async () => {
+    const cenario = montar();
+    await propagar();
+
+    const chaves: (string | undefined)[] = [];
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
+      chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
+      return of(okResult(undefined));
+    });
+    api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+      descartarRascunhoDaPublicacao(): Promise<void>;
+    };
+
+    // O bloco INTEIRO nas duas vezes, e igual: é o caso em que a chave não gira sozinha, porque
+    // ela só gira quando o corpo enviado muda.
+    const transcricao = {
+      numero: '07/2027',
+      periodoInscricaoInicio: '',
+      periodoInscricaoFim: '',
+      ato: {
+        orgao: 'REITORIA',
+        serie: 'EDITAL',
+        ano: '2027',
+        dataPublicacao: '2027-01-15',
+        assinante: 'Reitor',
+        tipoAtoCodigo: 'EDITAL_ABERTURA',
+      },
+    };
+
+    cenario.store.projetarSecao('publicacao', transcricao);
+    await pagina.salvarRascunhoDaPublicacao();
+
+    await pagina.descartarRascunhoDaPublicacao();
+
+    cenario.store.projetarSecao('publicacao', transcricao);
+    await pagina.salvarRascunhoDaPublicacao();
+
+    expect(chaves).toHaveLength(2);
+    expect(chaves[1]).not.toBe(chaves[0]);
+  });
+
+  /**
+   * A chave termina com a gravação que a usou. Retida, um clique posterior em "Salvar rascunho"
+   * com o mesmo conteúdo repetia a gravação anterior: o servidor devolve o resultado guardado
+   * em vez de gravar de novo, e o que outra aba tenha posto lá permanece — com a tela
+   * anunciando que salvou.
+   */
+  it('não reaproveita a chave entre duas gravações do mesmo conteúdo', async () => {
+    const cenario = montar();
+    await propagar();
+
+    const chaves: (string | undefined)[] = [];
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
+      chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
+      return of(okResult(undefined));
+    });
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+    };
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    await pagina.salvarRascunhoDaPublicacao();
+    await pagina.salvarRascunhoDaPublicacao();
+
+    expect(chaves).toHaveLength(2);
+    expect(chaves[1]).not.toBe(chaves[0]);
+  });
+
+  /**
+   * Depois de publicar, o servidor apagou o rascunho e o que sobra em tela é a declaração que
+   * virou publicação. Zerar a referência fazia a guarda de saída ler esses campos como
+   * transcrição por gravar, e avisar de perda a quem acabou de publicar.
+   */
+  it('não avisa de edição pendente quem acabou de publicar', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', {
+      numero: '07/2027',
+      ato: {
+        orgao: 'REITORIA',
+        serie: 'EDITAL',
+        ano: '2027',
+        dataPublicacao: '2027-01-15',
+        assinante: 'Reitor',
+        tipoAtoCodigo: 'EDITAL_ABERTURA',
+      },
+    });
+    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há transcrição por gravar');
+
+    (cenario.componente as unknown as { fixarRascunhoComoJaGravado(): void })
+      .fixarRascunhoComoJaGravado();
+
+    expect(cenario.componente.rascunhoPendente()).toBe(false);
+  });
+
+  /**
+   * A chave de idempotência do rascunho só gira sozinha quando o corpo muda, e dois processos
+   * cujo bloco do ato está em branco produzem o MESMO documento serializado. Sem renová-la na
+   * troca, a gravação do processo novo sairia com a chave que o servidor já viu e receberia de
+   * volta o replay do anterior — a tela diria "salvo" sobre um rascunho que ninguém gravou.
+   */
+  it('não reaproveita a chave do rascunho de um processo no seguinte', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+
+    const chaves: (string | undefined)[] = [];
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
+      chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
+      return of(okResult(undefined));
+    });
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+    };
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    await pagina.salvarRascunhoDaPublicacao();
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+    await propagar();
+
+    // Corpo idêntico ao do processo anterior: é o caso em que a chave não giraria sozinha.
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    await pagina.salvarRascunhoDaPublicacao();
+
+    expect(chaves).toHaveLength(2);
+    expect(chaves[1]).not.toBe(chaves[0]);
   });
 });
 
@@ -1229,6 +1742,28 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       expect(motivo).toContain('não está em rascunho');
       expect(motivo).not.toContain('cancelado');
       expect(motivo).not.toContain('encerrado');
+    });
+
+    /**
+     * No processo publicado, cancelado ou encerrado os campos são de leitura. Gravar rascunho
+     * dali ou colheria recusa do servidor ou guardaria uma transcrição que esta jornada não
+     * tem mais como usar — e a tela anunciaria sucesso.
+     */
+    it('não oferece gravar rascunho em processo que não aceita edição', async () => {
+      const cenario = montar({
+        obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))),
+      });
+      await propagar();
+
+      expect(cenario.store.edicaoPermitida()).toBe(false, 'pré-condição: o processo é de leitura');
+
+      cenario.store.goTo(cenario.store.totalSteps - 1);
+      cenario.fixture.detectChanges();
+
+      const botao = [...cenario.host.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === 'Salvar rascunho',
+      );
+      expect(botao?.disabled).toBe(true);
     });
 
     it('mantém a edição liberada enquanto o detalhe não chegou', () => {

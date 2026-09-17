@@ -1,7 +1,22 @@
 import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
+
+/**
+ * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
+ * comando.
+ *
+ * Exportada porque o preflight do passo precisa do MESMO predicado para avisar o operador:
+ * quando a conferência e o mapeador divergem, a tela aprova o que a gravação descarta.
+ */
+export function recursoResolvido(recurso: {
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+}): boolean {
+  return recurso.regraCodigo !== '' && recurso.regraVersao !== '';
+}
 
 /**
  * A fase como o comando a recebe.
@@ -78,5 +93,47 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
     ordem: etapa.ordem,
+    faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
+    produtos: etapa.produtos.map((produto) => ({
+      atoCodigo: produto.atoCodigo,
+      papel: produto.papel as EtapaProcessoInput['produtos'] extends readonly (infer P)[]
+        ? P extends { papel: infer T }
+          ? T
+          : never
+        : never,
+    })),
+    inicio: etapa.inicio === '' ? null : instanteDoCampo(etapa.inicio),
+    fim: etapa.fim === '' ? null : instanteDoCampo(etapa.fim),
+    emiteParecerIndividual: etapa.emiteParecerIndividual,
+    bancas: etapa.bancas.map((tipoBancaId) => ({ tipoBancaId })),
+    // Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
+    // devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
+    // que ela ficou de fora é `problemasDasEtapas`, no preflight do passo — sumir com o
+    // trabalho do operador em silêncio era o defeito anterior.
+    recursos: etapa.recursos.filter(recursoResolvido).map((recurso) => ({
+      ancora: recurso.ancora as NonNullable<EtapaProcessoInput['recursos']>[number]['ancora'],
+      regraCodigo: recurso.regraCodigo,
+      regraVersao: recurso.regraVersao,
+      prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
+      prazoUnidade: recurso.prazoUnidade as NonNullable<EtapaProcessoInput['recursos']>[number]['prazoUnidade'],
+      atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
+      // A etapa recorre nas mesmas condições da fase, e o servidor guarda os quatro valores
+      // em colunas próprias — mandar `null` fixo apagava o efeito suspensivo declarado a
+      // cada gravação do cronograma.
+      suspensividadePrimeiraInstanciaValor: decimalDoCampo(
+        recurso.suspensividadePrimeiraInstanciaValor,
+      ),
+      suspensividadePrimeiraInstanciaUnidade:
+        recurso.suspensividadePrimeiraInstanciaUnidade === ''
+          ? null
+          : recurso.suspensividadePrimeiraInstanciaUnidade,
+      suspensividadeSegundaInstanciaValor: decimalDoCampo(
+        recurso.suspensividadeSegundaInstanciaValor,
+      ),
+      suspensividadeSegundaInstanciaUnidade:
+        recurso.suspensividadeSegundaInstanciaUnidade === ''
+          ? null
+          : recurso.suspensividadeSegundaInstanciaUnidade,
+    })),
   };
 }

@@ -10,13 +10,18 @@ import {
   PrecedenciaFaseDto,
   PrecedenciasFaseApi,
   TipoBancaDto,
+  TipoDocumentoDto,
   TipoEtapaDto,
   TiposBancaApi,
+  FatoCandidatoView,
+  FatosCandidatoApi,
+  TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
+import type { DocumentoDefinicao, DocumentoGrupo } from '../../processo-seletivo.models';
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
 
 /** Tipo do `rol_de_regras` que a convenção de contagem referencia. */
@@ -49,6 +54,8 @@ export class CatalogosDoCronogramaService {
   private readonly tiposEtapaApi = inject(TiposEtapaApi);
   private readonly atosApi = inject(TiposAtoApi);
   private readonly regrasApi = inject(RegrasCatalogoApi);
+  private readonly tiposDocumentoApi = inject(TiposDocumentoApi);
+  private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly fases = signal<readonly FaseCanonicaDto[]>([]);
@@ -59,6 +66,42 @@ export class CatalogosDoCronogramaService {
   readonly atos = signal<readonly TipoAtoPublicadoDto[]>([]);
   readonly regrasRecurso = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasContagem = signal<readonly RegraCatalogoDto[]>([]);
+  readonly tiposDocumento = signal<readonly TipoDocumentoDto[]>([]);
+  /**
+   * O catálogo de fatos do candidato. Carregado aqui, e não só no passo do formulário, porque
+   * é a gravação das exigências que precisa dele: um gatilho que cita um fato obriga o certame
+   * a coletá-lo, e sintetizar esse campo exige saber o nome e o domínio do fato.
+   */
+  readonly fatos = signal<readonly FatoCandidatoView[]>([]);
+
+  /**
+   * Os tipos de documento agrupados pela categoria do cadastro — o que a tela de
+   * exigência documental oferece. Derivado do cadastro vivo, e não de uma lista escrita
+   * à mão: o catálogo cresce sem deploy, e uma cópia local envelheceria em silêncio.
+   */
+  readonly documentosPorCategoria = computed<readonly DocumentoGrupo[]>(() => {
+    const rotulo = new Map(this.categorias().map((c) => [c.codigo, c.nome]));
+    const porCategoria = new Map<string, DocumentoDefinicao[]>();
+
+    for (const tipo of this.tiposDocumento()) {
+      const chave = tipo.categoria ?? 'OUTROS';
+      const lista = porCategoria.get(chave) ?? [];
+      lista.push({
+        id: tipo.id,
+        nome: tipo.nome,
+        // O cadastro traz a descrição opcional; sem ela, o que orienta é o formato aceito.
+        desc: tipo.descricao ?? formatosDe(tipo),
+      });
+      porCategoria.set(chave, lista);
+    }
+
+    return [...porCategoria.entries()]
+      .map(([codigo, docs]): DocumentoGrupo => ({
+        label: rotulo.get(codigo) ?? codigo,
+        docs: [...docs].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+  });
 
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
@@ -94,6 +137,16 @@ export class CatalogosDoCronogramaService {
   );
 
   /**
+   * O tipo de etapa pelo id, ativo ou não. É por aqui que a tela sabe quais caracteres aquele
+   * tipo admite — e, por consequência, se a etapa pode ter peso e nota mínima. A série completa
+   * importa: uma etapa já gravada num tipo desde então desativado continua tendo de exibir o
+   * que aquele tipo admitia.
+   */
+  readonly tipoEtapaPorId = computed<ReadonlyMap<string, TipoEtapaDto>>(
+    () => new Map(this.tiposEtapa().map((tipo) => [tipo.id, tipo])),
+  );
+
+  /**
    * Atos que podem ser escolhidos hoje. A vigência é semiaberta — `[início,
    * fim)` —, e é ela que o servidor confere ao resolver o ato declarado: um
    * código fora de vigência é recusado na gravação.
@@ -122,6 +175,14 @@ export class CatalogosDoCronogramaService {
    */
   readonly atoPorCodigo = computed<ReadonlyMap<string, TipoAtoPublicadoDto>>(
     () => new Map(this.atos().map((ato) => [ato.codigo, ato])),
+  );
+
+  /**
+   * O tipo de documento pelo id do cadastro. É dele que a exigência tira formato aceito e
+   * tamanho máximo — os mesmos valores que a tela já mostra ao lado do seletor de documento.
+   */
+  readonly tipoDocumentoPorId = computed<ReadonlyMap<string, TipoDocumentoDto>>(
+    () => new Map(this.tiposDocumento().map((tipo) => [tipo.id, tipo])),
   );
 
   /** Tipo de banca por id — o rótulo que a superfície da fase mostra. */
@@ -220,6 +281,9 @@ export class CatalogosDoCronogramaService {
       // Conjunto de referência fechado, que o backend devolve inteiro.
       categorias: this.categoriasApi.listar(),
       tiposEtapa: coletarPaginas((cursor) => this.tiposEtapaApi.listar({ cursor })),
+      tiposDocumento: coletarPaginas((cursor) => this.tiposDocumentoApi.listar({ cursor })),
+      // Conjunto fechado, semeado e governado por código — o servidor o devolve inteiro.
+      fatos: this.fatosApi.listar(),
       // `vigentes` assume `true` no servidor, e a série completa é o que
       // resolve o rótulo de um ato já referenciado cuja versão encerrou. Quais
       // podem ser escolhidos é recorte da tela, em `atosVigentes`.
@@ -234,8 +298,18 @@ export class CatalogosDoCronogramaService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resultados) => {
-          const { fases, precedencias, bancas, categorias, tiposEtapa, atos, recurso, contagem } =
-            resultados;
+          const {
+            fases,
+            precedencias,
+            bancas,
+            categorias,
+            tiposEtapa,
+            tiposDocumento,
+            fatos,
+            atos,
+            recurso,
+            contagem,
+          } = resultados;
 
           // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
           // o operador não teria como saber. Ou vêm todos, ou nenhum.
@@ -243,8 +317,10 @@ export class CatalogosDoCronogramaService {
             !isApiOk(fases) ||
             !isApiOk(precedencias) ||
             !isApiOk(bancas) ||
+            !isApiOk(tiposDocumento) ||
             !isApiOk(categorias) ||
             !isApiOk(tiposEtapa) ||
+            !isApiOk(fatos) ||
             !isApiOk(atos) ||
             !isApiOk(recurso) ||
             !isApiOk(contagem)
@@ -258,6 +334,8 @@ export class CatalogosDoCronogramaService {
           this.bancas.set(bancas.data);
           this.categorias.set(categorias.data);
           this.tiposEtapa.set(tiposEtapa.data);
+          this.tiposDocumento.set(tiposDocumento.data);
+          this.fatos.set(fatos.data);
           this.atos.set(atos.data);
           this.regrasRecurso.set(recurso.data);
           this.regrasContagem.set(contagem.data);
@@ -276,4 +354,13 @@ export class CatalogosDoCronogramaService {
     );
     this.carregando.set(false);
   }
+}
+
+/** O que orienta o candidato quando o cadastro não traz descrição. */
+function formatosDe(tipo: TipoDocumentoDto): string {
+  const formatos = tipo.formatosAceitos ?? '';
+  const tamanho = tipo.tamanhoMaximoMb;
+  if (formatos === '' && tamanho === null) return '';
+  if (tamanho === null) return `Formatos aceitos: ${formatos}.`;
+  return `Formatos aceitos: ${formatos}. Até ${tamanho} MB.`;
 }

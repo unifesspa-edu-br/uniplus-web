@@ -11,6 +11,18 @@ permissions:
   contents: read
   pull-requests: read
 
+# Um run por referência. O push seguinte ao mesmo PR cancela o anterior, que já não
+# descreve o que será integrado: sem isto, uma sequência de correções de revisão deixou
+# SEIS runs da mesma branch vivos ao mesmo tempo, cada um carregando as quatro suítes de
+# e2e com Keycloak, e todos disputando os mesmos runners — o gate passou de 20 minutos
+# para quase três horas sem que o código tivesse mudado de tamanho.
+#
+# Em `main` é o contrário: cada commit integrado precisa da própria validação, e cancelar
+# a anterior deixaria buraco no histórico de verificação. Daí a condição no valor.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   adr-lint:
     name: ADR lint (MADR 4.0)
@@ -68,6 +80,10 @@ jobs:
 
   main:
     runs-on: ubuntu-latest
+    # Os gates completos levam de 16 a 23 minutos quando rodam sozinhos; o teto dá folga
+    # para o pior caso sem deixar um run travado ocupar runner por horas. Os outros dois
+    # jobs já declaravam o seu — este, que é o pesado, era o único sem.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -107,36 +123,12 @@ jobs:
             echo "PR sem mudancas em codigo frontend - pulando gates"
           fi
 
-      - name: Iniciar Keycloak
-        if: steps.gate.outputs.run == 'true'
-        # Imagem composta uniplus-keycloak: base quay.io/keycloak/keycloak:26.7.2
-        # + JAR cpf-matcher embutido. Mesma imagem do uniplus-api e do compose
-        # E2E local (tools/e2e-docker/docker-compose.e2e.yml). Patch fixo para
-        # reprodutibilidade — bump é PR explícito. Política em
-        # uniplus-api/docker/keycloak/README.md#imagem-do-keycloak.
-        run: |
-          docker run -d \
-            --name keycloak \
-            --network host \
-            -e KC_HEALTH_ENABLED=true \
-            -e KC_HOSTNAME_STRICT=false \
-            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
-            -e KC_BOOTSTRAP_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }} \
-            -v $PWD/tools/e2e-docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro \
-            ghcr.io/unifesspa-edu-br/uniplus-keycloak:26.7.2-0 start-dev --import-realm
-
-      - name: Aguardar Keycloak ficar saudável
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          timeout 120 bash -c \
-            'until curl -sf http://localhost:9000/health/ready | grep -q "\"UP\""; do sleep 5; done'
-
       # This enables task distribution via Nx Cloud.
       # Keep --stop-agents-after aligned with every target executed below so the
       # distributed run cannot finish before all blocking gates are reconciled.
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       - if: steps.gate.outputs.run == 'true'
-        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,e2e"
+        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck"
 
       - if: steps.gate.outputs.run == 'true'
         uses: actions/setup-node@v4
@@ -151,25 +143,6 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: bash tools/test-nginx-base-href.sh
 
-      - name: Extrair versão do Playwright
-        id: pw-version
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          VERSION=$(node -e "const l=require('./package-lock.json'); console.log(l.packages['node_modules/@playwright/test'].version)")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Cache de browsers do Playwright
-        if: steps.gate.outputs.run == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - if: steps.gate.outputs.run == 'true'
-        run: npx playwright install --with-deps
-
       - if: steps.gate.outputs.run == 'true'
         run: npx nx record -- echo Hello World
 
@@ -179,20 +152,20 @@ jobs:
       # Em pull_request, usamos `nx affected` para rodar apenas os projects
       # impactados pelo diff contra a branch base. Em push para main, fazemos
       # sweep completo via `nx run-many` como rede de segurança.
-      # Em pull_request, usamos `nx affected` para rodar apenas os projects
-      # impactados pelo diff contra a branch base. Em push para main, fazemos
-      # sweep completo via `nx run-many` como rede de segurança.
+      #
+      # `e2e` fora do gate obrigatório (issue #814): os 4 e2e sobem cada um seu
+      # próprio dev-server Angular sequencialmente no mesmo runner, e o último
+      # da fila trava sem erro explícito até o teto de 45min cancelar o job —
+      # reproduzido tanto em push na main quanto em PR, mesmo depois do fix do
+      # webServer (#812). Rodar via `npx nx e2e <app>-e2e` manualmente/local
+      # enquanto a causa (recursos do runner) não é resolvida.
       - name: Rodar gates (nx affected — pull_request)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npx nx affected -t lint test build typecheck e2e --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
-        env:
-          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
+        run: npx nx affected -t lint test build typecheck --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
 
       - name: Rodar gates (nx run-many — push em main)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
-        run: npx nx run-many -t lint test build typecheck e2e --nxBail --outputStyle=static
-        env:
-          KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
+        run: npx nx run-many -t lint test build typecheck --nxBail --outputStyle=static
 
       - if: always() && steps.gate.outputs.run == 'true'
         run: npx nx fix-ci

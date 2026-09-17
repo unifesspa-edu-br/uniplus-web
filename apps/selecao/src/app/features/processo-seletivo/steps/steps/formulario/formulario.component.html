@@ -1,0 +1,248 @@
+<p class="step-subtitle">
+  O que o candidato lê e preenche ao se inscrever. Os campos são os dados que o certame coleta:
+  é essa lista que a inscrição pública renderiza.
+</p>
+
+@if (catalogoCarregando()) {
+  <p class="alert alert--info" role="status">Carregando os dados que o candidato pode declarar…</p>
+} @else if (catalogoErro(); as erro) {
+  <p class="alert alert--danger" role="alert">
+    {{ erro }} Sem esses dados não é possível acrescentar campo nenhum ao formulário.
+    <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarCatalogo()">
+      Tentar novamente
+    </button>
+  </p>
+}
+
+<section class="step-section" aria-labelledby="form-cabecalho-titulo">
+  <h2 id="form-cabecalho-titulo" class="step-section__title">O que o candidato lê</h2>
+
+  <div class="form-grid">
+    <div class="form-field">
+      <label class="label" for="form-titulo">Título do formulário</label>
+      <input
+        class="input"
+        id="form-titulo"
+        type="text"
+        placeholder="Inscrição — Processo Seletivo 2027"
+        [value]="titulo()"
+        [disabled]="!store.aceitaEdicao()"
+        (input)="escreverTitulo($any($event.target).value)"
+      />
+    </div>
+
+    <div class="form-field form-grid__full">
+      <label class="label" for="form-termo">Termo de aceite</label>
+      <textarea
+        class="input"
+        id="form-termo"
+        rows="4"
+        placeholder="O que o candidato declara aceitar ao enviar a inscrição."
+        [value]="termoAceite()"
+        [disabled]="!store.aceitaEdicao()"
+        (input)="escreverTermo($any($event.target).value)"
+      ></textarea>
+      <span class="field__hint">
+        Aparece no formulário público, acima dos campos. Deixar em branco não exibe termo algum.
+      </span>
+    </div>
+  </div>
+</section>
+
+<section class="step-section" aria-labelledby="form-campos-titulo">
+  <h2 id="form-campos-titulo" class="step-section__title">O que o candidato preenche</h2>
+
+  <p class="field__hint">
+    Cada campo é um dado que o certame coleta na inscrição. O que alguma exigência documental
+    pede para decidir de quem o documento é cobrado entra aqui sozinho — e não sai enquanto ela
+    existir.
+  </p>
+
+  <div class="form-grid">
+    <div class="form-field">
+      <label class="label" [attr.for]="fatoDisponivel.campoId">Acrescentar um dado</label>
+      <ui-combobox
+        #fatoDisponivel
+        rotulo="Dados que o candidato pode declarar"
+        placeholder="Escolha um dado"
+        textoSemResultado="Nenhum dado do catálogo casa com o que você digitou."
+        [grupos]="fatosDisponiveis()"
+        [value]="fatoAAcrescentar()"
+        [disabled]="!store.aceitaEdicao()"
+        (valueChange)="escolherFato($event)"
+      />
+    </div>
+    <div class="form-field">
+      <button
+        class="btn btn--secondary"
+        type="button"
+        [disabled]="!store.aceitaEdicao() || fatoAAcrescentar() === ''"
+        (click)="acrescentarCampo()"
+      >
+        Acrescentar ao formulário
+      </button>
+    </div>
+  </div>
+
+  <ul class="doc-list">
+    @for (campo of campos(); track campo.fatoCodigo) {
+      <li class="doc-item doc-item--exigido">
+        <div class="doc-item__head">
+          <span class="doc-item__name">{{ campo.rotulo }}</span>
+          @if (exigidoPorDocumento(campo.fatoCodigo)) {
+            <span class="tag tag--info">Exigido pela configuração</span>
+          }
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="label" [attr.for]="'form-rotulo-' + campo.fatoCodigo">
+              Como o candidato lê este campo
+            </label>
+            <input
+              class="input"
+              [attr.id]="'form-rotulo-' + campo.fatoCodigo"
+              type="text"
+              [value]="campo.rotulo"
+              [disabled]="!store.aceitaEdicao()"
+              (input)="escreverCampo(campo.fatoCodigo, { rotulo: $any($event.target).value })"
+            />
+          </div>
+
+          <div class="form-field">
+            <label class="label" [attr.for]="'form-obrig-' + campo.fatoCodigo">Resposta</label>
+            <select
+              class="select"
+              [attr.id]="'form-obrig-' + campo.fatoCodigo"
+              [disabled]="!store.aceitaEdicao()"
+              (change)="
+                escreverCampo(campo.fatoCodigo, {
+                  obrigatorio: $any($event.target).value === 'sim',
+                })
+              "
+            >
+              <option value="sim" [selected]="campo.obrigatorio">Obrigatória</option>
+              <option value="nao" [selected]="!campo.obrigatorio">Opcional</option>
+            </select>
+          </div>
+        </div>
+
+        @if (exigidoPorDocumento(campo.fatoCodigo)) {
+          <p class="field__hint">
+            Não pode sair: {{ documentosQueCitam(campo.fatoCodigo).join(', ') }} decide de quem é
+            cobrado a partir deste dado. Retire a condição no passo do cronograma para poder
+            remover o campo.
+          </p>
+        } @else if (regrasQueDependem(campo.fatoCodigo).length > 0) {
+          <p class="field__hint">
+            Não pode sair: {{ regrasQueDependem(campo.fatoCodigo).join(', ') }} depende deste
+            dado. Desfaça essa dependência antes de remover o campo.
+          </p>
+        } @else {
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [disabled]="!store.aceitaEdicao()"
+            (click)="removerCampo(campo.fatoCodigo)"
+          >
+            Remover campo
+          </button>
+        }
+      </li>
+    } @empty {
+      <li class="field__hint">
+        O formulário ainda não pede dado nenhum. Acrescente o que o certame precisa saber, ou
+        declare uma exigência condicionada no cronograma — o campo entra aqui sozinho.
+      </li>
+    }
+  </ul>
+
+  @if (camposSemUso().length > 0) {
+    <!--
+      Pedir dado pessoal sem finalidade declarada é coleta indevida, e o caso mais comum é o
+      campo que entrou por causa de um gatilho apagado depois, noutra sessão — a saída
+      automática só alcança o que a sessão em curso acrescentou.
+    -->
+    <p class="field__hint">
+      Nada no certame usa {{ camposSemUso().join(', ') }}: nenhuma exigência documental, nenhuma
+      regra de modalidade e nenhum outro campo depende desse dado. Confira se ainda há motivo
+      para pedi-lo ao candidato.
+    </p>
+  }
+</section>
+
+<section class="step-section" aria-labelledby="form-idade-titulo">
+  <h2 id="form-idade-titulo" class="step-section__title">Apuração da idade</h2>
+
+  <p class="field__hint">
+    A idade não é respondida pelo candidato: é apurada contra um instante, e uma única política
+    vale para todo o certame.
+    @if (exigeApuracaoDeIdade()) {
+      Há documento exigido por faixa etária, então declará-la é obrigatório.
+    }
+  </p>
+
+  <div class="form-grid">
+    <div class="form-field">
+      <label class="label" for="form-ancora">Apurar a idade em</label>
+      <select
+        class="select"
+        id="form-ancora"
+        [disabled]="!store.aceitaEdicao()"
+        (change)="escreverReferencia({ tipo: $any($event.target).value })"
+      >
+        @for (opcao of ancoras; track opcao.valor) {
+          <option [value]="opcao.valor" [selected]="opcao.valor === referencia().tipo">
+            {{ opcao.rotulo }}
+          </option>
+        }
+      </select>
+    </div>
+
+    @if (referencia().tipo === 'DATA_ESPECIFICA') {
+      <div class="form-field">
+        <label class="label" for="form-data">Data de apuração</label>
+        <input
+          class="input"
+          id="form-data"
+          type="date"
+          [value]="referencia().data"
+          [disabled]="!store.aceitaEdicao()"
+          (input)="escreverReferencia({ data: $any($event.target).value })"
+        />
+      </div>
+    }
+
+    @if (ancoraEmFase()) {
+      <div class="form-field">
+        <label class="label" for="form-fase">Fase que ancora a apuração</label>
+        <select
+          class="select"
+          id="form-fase"
+          [disabled]="!store.aceitaEdicao()"
+          (change)="escreverReferencia({ faseCodigo: $any($event.target).value })"
+        >
+          <option value="">Escolha a fase</option>
+          @for (codigo of fasesEscolhiveis(); track codigo) {
+            <option [value]="codigo" [selected]="codigo === referencia().faseCodigo">
+              {{ codigo }}
+            </option>
+          }
+        </select>
+      </div>
+    }
+  </div>
+</section>
+
+@if (camposSemValoresOfertados().length > 0) {
+  <!--
+    O campo foi acrescentado aqui, e os valores que o candidato poderia escolher saem da oferta
+    declarada no passo anterior. Dizê-lo agora evita que o operador descubra só na revisão, com
+    o caminho inteiro a refazer.
+  -->
+  <p class="field__hint" role="status">
+    O formulário pergunta {{ camposSemValoresOfertados().join(' e ') }} ao candidato, e a oferta
+    de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um de
+    cada em "Atend. especial", ou retire o campo daqui.
+  </p>
+}

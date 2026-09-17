@@ -6,6 +6,7 @@ import {
   PublicarProcessoSeletivoRequest,
 } from '@uniplus/shared-data/selecao';
 
+import { PASSOS } from '../../processo-seletivo.data';
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
 import { hojeNoFusoInstitucional, instanteDoCampo } from '../../shared/fuso-institucional';
 
@@ -153,33 +154,105 @@ export function rotuloDaDimensao(dimensao: string): string {
 }
 
 /**
- * O passo do wizard dono de cada dimensão estrutural — `DimensaoConformidade`
- * é um conjunto FECHADO de oito valores (`DimensaoConformidade.cs`), e a
- * navegação da Parte A usa esta identidade estável, nunca o texto da
- * mensagem (CA-04).
+ * O passo do wizard dono de cada dimensão estrutural, nomeado pelo RÓTULO do passo e não
+ * pelo índice: `DimensaoConformidade` é um conjunto fechado, e a navegação usa essa
+ * identidade estável, nunca o texto da mensagem.
  *
- * `exigencias_documentais` e `coleta_de_fatos` ficam de fora de propósito: são
- * as duas dimensões que a Feature já marca como fora do núcleo desta frente
- * (`#483`/`#484`, plano §3) — nenhum passo do wizard as grava ainda. Uma
- * pendência nelas mostra o grupo normalmente, sem um "Ir para" que levaria a
- * lugar nenhum.
+ * O rótulo é a chave porque o índice literal já se desalinhou uma vez — quando "Locais de
+ * prova" saiu do wizard, todos os passos seguintes andaram uma casa e este mapa ficou para
+ * trás, mandando a classificação para "Atend. especial" e o atendimento para a própria tela
+ * de revisão. Com o rótulo, retirar ou reordenar um passo ou quebra o teste que resolve o
+ * mapa, ou continua certo sozinho.
+ *
+ * `coleta_de_fatos` é a dimensão cujos itens NÃO caem todos no mesmo passo — por isso o mapa
+ * por item logo abaixo tem precedência sobre este.
  */
-const PASSO_POR_DIMENSAO: Readonly<Record<string, number>> = {
-  taxa_inscricao: 2,
-  distribuicao_vagas: 3,
-  // A cascata é seção do próprio passo Vagas (#481, plano §7) — não um passo à parte.
-  cascata_remanejamento: 3,
-  cronograma: 4,
-  contagem_de_prazos: 4,
-  // A classificação inteira — regra de cálculo, precisão e eliminação — é gravada
-  // no persistir() do passo Eliminação (#482, plano §7, decisão registrada ali).
-  classificacao: 9,
-  // Locais de prova saiu do wizard (#511) — Atendimento herdou o índice 10.
-  atendimento_especializado: 10,
+const PASSO_POR_DIMENSAO: Readonly<Record<string, string>> = {
+  taxa_inscricao: 'Pagamento',
+  distribuicao_vagas: 'Vagas',
+  // A cascata é seção do próprio passo Vagas — não um passo à parte.
+  cascata_remanejamento: 'Vagas',
+  cronograma: 'Cronograma',
+  // A exigência documental é declarada na superfície da fase, dentro do passo do cronograma.
+  exigencias_documentais: 'Cronograma',
+  // A convenção de contagem é declarada no cronograma; os demais itens desta dimensão se
+  // resolvem fora do wizard e estão em RESOLUCAO_FORA_DO_WIZARD.
+  contagem_de_prazos: 'Cronograma',
+  // A classificação inteira — regra de cálculo, precisão e eliminação — é gravada no
+  // persistir() do passo Eliminação.
+  classificacao: 'Eliminação',
+  atendimento_especializado: 'Atend. especial',
+  // O formulário de inscrição é onde os fatos coletados, as regras de derivação e a
+  // referência temporal são declarados. Três itens desta dimensão se resolvem noutro passo, e
+  // estão nomeados em PASSO_POR_ITEM.
+  coleta_de_fatos: 'Formulário',
 };
 
-export function passoDaDimensao(dimensao: string): number | null {
-  return PASSO_POR_DIMENSAO[dimensao] ?? null;
+/**
+ * O passo dono de um ITEM específico, quando ele não é o passo dono da dimensão inteira.
+ *
+ * A referência temporal ilustra por que a decisão às vezes é por item: escolher QUAL fase
+ * ancora a apuração da idade é do formulário, mas dar data à fase escolhida é do cronograma —
+ * e mandar quem tem uma fase sem data para o formulário mostraria a âncora já declarada, sem
+ * nada a corrigir ali.
+ *
+ * A oferta de condições de atendimento é do passo que a declara: um fato coletável de escopo
+ * do processo que não tem valor nenhum ofertado se resolve ampliando a oferta, não mexendo no
+ * formulário que o pergunta.
+ */
+const PASSO_POR_ITEM: Readonly<Record<string, string>> = {
+  referencia_temporal_extremo_da_fase_ausente: 'Cronograma',
+  referencia_temporal_fim_inscricao_indisponivel: 'Cronograma',
+  fato_coletavel_sem_valores_ofertados: 'Atend. especial',
+};
+
+/**
+ * Itens que a dimensão manda para um passo onde não há o que fazer, e onde o operador
+ * realmente os resolve.
+ *
+ * A decisão é por ITEM, não por dimensão: em `contagem_de_prazos`, o algoritmo de contagem é
+ * declarado no cronograma, mas o calendário de dias úteis é cadastro de outro módulo, a
+ * localidade vem do cadastro inicial que esta jornada não reabre, e o fuso não reconhecido é
+ * defeito de instalação — quem publica não tem o que corrigir. Mandar os três para o
+ * cronograma é oferecer uma saída que não resolve.
+ */
+const RESOLUCAO_FORA_DO_WIZARD: Readonly<Record<string, string>> = {
+  calendario_vigente_ausente:
+    'Cadastre e marque como vigente um calendário de dias úteis, em Configuração.',
+  localidade_nao_declarada:
+    'A localidade que rege os prazos vem do cadastro inicial do processo, que esta jornada não reabre.',
+  fuso_institucional_nao_reconhecido:
+    'O fuso institucional não foi reconhecido pelo servidor. Acione o suporte técnico.',
+};
+
+/**
+ * Onde o item se resolve, quando não é num passo do wizard — `null` quando o passo dá conta.
+ */
+export function ondeResolverItem(codigo: string): string | null {
+  return RESOLUCAO_FORA_DO_WIZARD[codigo] ?? null;
+}
+
+/**
+ * O índice do passo dono do item, ou `null` quando nenhum passo o resolve. O índice é
+ * derivado de `PASSOS`, que é a única fonte da ordem.
+ */
+export function passoDoItem(codigo: string, dimensao: string): number | null {
+  if (codigo in RESOLUCAO_FORA_DO_WIZARD) return null;
+
+  const rotulo = PASSO_POR_ITEM[codigo] ?? PASSO_POR_DIMENSAO[dimensao];
+  if (rotulo === undefined) return null;
+
+  const indice = PASSOS.findIndex((passo) => passo.rotulo === rotulo);
+  return indice === -1 ? null : indice;
+}
+
+/**
+ * O nome do passo como o painel de revisão o chama — é esse o nome que o operador reconhece
+ * na lista de pendências, e não o da dimensão: dois itens da mesma dimensão podem levar a
+ * passos diferentes.
+ */
+export function rotuloDoPasso(indice: number): string {
+  return PASSOS[indice]?.revisao ?? '';
 }
 
 /**
@@ -264,6 +337,15 @@ export interface ObrigatoriedadeReprovadaProblem {
   readonly descricaoHumana: string;
   readonly baseLegal: string;
   readonly motivo: string | null;
+  /**
+   * Onde a norma pode ser lida, e desde quando ela vige. Só existem quando a reprovação vem da
+   * consulta de conformidade legal — a extension do 422 carrega os quatro campos acima e mais
+   * nada. Sem eles, quem monta o edital lê "reprovada — Lei 12.711/2012" e não tem por onde
+   * chegar ao texto que o reprovou.
+   */
+  readonly atoNormativoUrl?: string | null;
+  readonly portariaInterna?: string | null;
+  readonly vigenciaInicio?: string | null;
 }
 
 /**
@@ -315,27 +397,70 @@ export function mensagensDePublicacao(
   }
 
   if (!temFaseDeColetaInscricao(draft, fasePorId)) {
-    if (instanteDoCampo(publicacao.periodoInscricaoInicio) === null) {
+    const inicio = instanteDoCampo(publicacao.periodoInscricaoInicio);
+    const fim = instanteDoCampo(publicacao.periodoInscricaoFim);
+
+    if (inicio === null) {
       mensagens.push(
         'Informe o início do período de inscrição — o cronograma não tem fase que colete inscrição pelo sistema.',
       );
     }
-    if (instanteDoCampo(publicacao.periodoInscricaoFim) === null) {
+    if (fim === null) {
       mensagens.push(
         'Informe o fim do período de inscrição — o cronograma não tem fase que colete inscrição pelo sistema.',
       );
+    }
+    // Descobrir que o período está invertido DEPOIS de confirmar a publicação é o pior
+    // momento possível: é o único clique do wizard que não se desfaz.
+    if (inicio !== null && fim !== null && fim < inicio) {
+      mensagens.push('O fim do período de inscrição não pode anteceder o início.');
     }
   }
 
   if (!publicacao.ato.orgao.trim()) mensagens.push('Informe o órgão do ato de publicação.');
   if (!publicacao.ato.serie.trim()) mensagens.push('Informe a série do ato de publicação.');
-  if (inteiro(publicacao.ato.ano) === null) mensagens.push('Informe o ano do ato de publicação.');
+
+  // Ano precisa ser POSITIVO, não apenas legível: `0` atravessa `inteiro()` como número
+  // válido e só é recusado pelo servidor, depois de o operador ter confirmado a publicação
+  // num diálogo que exibia "Ano: 0".
+  const ano = inteiro(publicacao.ato.ano);
+  if (ano === null || ano <= 0) mensagens.push('Informe o ano do ato de publicação.');
+
   if (!publicacao.ato.dataPublicacao.trim())
     mensagens.push('Informe a data de publicação do ato.');
   if (!publicacao.ato.assinante.trim()) mensagens.push('Informe quem assina o ato.');
   if (!publicacao.ato.tipoAtoCodigo.trim()) mensagens.push('Selecione o tipo do ato.');
 
+  mensagens.push(...excessosDeComprimento(publicacao));
+
   return mensagens;
+}
+
+/**
+ * Os comprimentos que o servidor recusa. São limites de coluna, e colar o nome completo de um
+ * órgão com a hierarquia inteira estoura o de duzentos — hoje só no 422, depois de confirmada
+ * a publicação.
+ */
+const COMPRIMENTO_MAXIMO: readonly { readonly campo: string; readonly rotulo: string; readonly maximo: number }[] = [
+  { campo: 'numero', rotulo: 'O número do ato', maximo: 60 },
+  { campo: 'orgao', rotulo: 'O órgão do ato', maximo: 200 },
+  { campo: 'serie', rotulo: 'A série do ato', maximo: 100 },
+  { campo: 'assinante', rotulo: 'O nome de quem assina o ato', maximo: 200 },
+];
+
+function excessosDeComprimento(publicacao: WizardDraft['publicacao']): readonly string[] {
+  const valores: Readonly<Record<string, string>> = {
+    numero: publicacao.numero,
+    orgao: publicacao.ato.orgao,
+    serie: publicacao.ato.serie,
+    assinante: publicacao.ato.assinante,
+  };
+
+  return COMPRIMENTO_MAXIMO.filter(
+    ({ campo, maximo }) => (valores[campo] ?? '').trim().length > maximo,
+  ).map(
+    ({ rotulo, maximo }) => `${rotulo} passa de ${maximo} caracteres, que é o limite do registro.`,
+  );
 }
 
 /**

@@ -223,6 +223,15 @@ export interface AtributosCongeladosDaFase {
   readonly origemData: string;
   readonly agrupaEtapas: boolean;
   readonly coletaInscricao: boolean;
+  /**
+   * Se a fase admite reenvio de documento depois da análise. Não é editável aqui — é
+   * snapshot-copy da fase canônica, decidido no cadastro —, mas a tela precisa lê-lo: a
+   * consequência "abre pendência para reenvio" só é aceita em fase que permite
+   * complementação, e sem isso o operador só descobria no 422 da gravação.
+   */
+  readonly permiteComplementacao: boolean;
+  /** Se é nela que o candidato pede isenção da taxa. */
+  readonly coletaSolicitacaoIsencao: boolean;
   /** Código de cada banca exigida, como a fase o congelou. */
   readonly bancas: readonly { readonly id: string; readonly codigo: string }[];
 }
@@ -276,6 +285,47 @@ export interface EtapaPontuada {
   readonly peso: string;
   readonly notaMinima: string;
   readonly ordem: number;
+  /**
+   * Código canônico da fase a que a etapa pertence. É o que permite qualquer fase
+   * subdividir-se — a habilitação com oito etapas, por exemplo — em vez de só a que o
+   * cadastro marcava como agrupadora. Vazio enquanto a etapa não declara fase.
+   */
+  readonly faseCodigo: string;
+  /** O que a etapa publica: ato e papel no ciclo recursal. */
+  readonly produtos: readonly ProdutoDaFase[];
+  /** Janela própria da etapa, em hora de parede; vazio quando ela herda a da fase. */
+  readonly inicio: string;
+  readonly fim: string;
+  readonly emiteParecerIndividual: boolean;
+  readonly bancas: readonly string[];
+  readonly recursos: readonly RecursoDaEtapa[];
+}
+
+/**
+ * Uma janela recursal da etapa. `ancora` diz de que instante o prazo corre: da publicação
+ * do ato — e aí `atoAncoraCodigo` nomeia qual — ou da ciência do candidato, que não tem
+ * publicação a referenciar.
+ */
+export interface RecursoDaEtapa {
+  readonly ancora: 'atoPublicado' | 'cienciaIndividual';
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+  readonly prazoValor: string;
+  readonly prazoUnidade: string;
+  readonly atoAncoraCodigo: string;
+  /**
+   * Por quanto tempo o recurso suspende o efeito do ato, por instância — mesma gramática
+   * de `RecursoDaFase`: texto porque é o que o campo edita, par declarado inteiro ou
+   * inteiro em branco, e a ausência dos dois desativa aquela instância.
+   *
+   * A etapa recorre nas mesmas condições da fase, e o servidor persiste os quatro valores
+   * em colunas próprias; sem estes campos o rascunho não tinha onde guardá-los e a
+   * gravação os zerava a cada salvamento do cronograma.
+   */
+  readonly suspensividadePrimeiraInstanciaValor: string;
+  readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';
+  readonly suspensividadeSegundaInstanciaValor: string;
+  readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
 }
 
 /**
@@ -327,25 +377,173 @@ export interface DocumentoGrupo {
   docs: DocumentoDefinicao[];
 }
 
-export interface DocumentoConfig {
-  included: boolean;
-  todasEtapas: boolean;
-  etapas: string[];
+/**
+ * Uma norma que sustenta a exigência — espelho de `BaseLegalInput`. São N por exigência
+ * (ADR-0074): uma lei federal somada à cláusula do edital é o caso comum, e só as
+ * `RESOLVIDO` congelam no snapshot da publicação.
+ *
+ * `observacao` é texto livre opcional; `''` é a ausência, que vira `null` no envio.
+ */
+export interface BaseLegalConfig {
+  readonly referencia: string;
+  readonly abrangencia: string;
+  readonly status: string;
+  readonly observacao: string;
+}
+
+/** Uma cláusula do gatilho, na forma em que o contrato a guarda. */
+export interface CondicaoGatilhoConfig {
+  readonly clausula: number;
+  readonly fato: string;
+  readonly operador: string;
+  readonly valor: string;
+}
+
+/**
+ * A idade máxima de emissão aceita para o documento.
+ *
+ * A fase âncora entra por CÓDIGO, não por identificador: o id da fase não sobrevive a uma
+ * gravação de cronograma que remova e reacrescente a fase, e reenviar o id velho faria o
+ * servidor recusar uma exigência que a tela sequer mostra. A resolução para id acontece no
+ * envio, junto com a da própria exigência.
+ */
+export interface IdadeMaximaEmissaoConfig {
+  readonly valor: number | null;
+  readonly unidade: string | null;
+  readonly referenciaTipo: string | null;
+  readonly data: string | null;
+  readonly referenciaFaseCodigo: string | null;
+}
+
+/**
+ * A exigência de um documento numa fase — a unidade que o contrato guarda, e por isso a
+ * unidade que o rascunho guarda.
+ *
+ * Antes, o rascunho tinha um registro por TIPO DE DOCUMENTO com a lista de fases dentro, e o
+ * contrato tem um por (documento, fase, etapa). O mesmo documento exigido em duas fases
+ * voltava achatado num registro só na releitura, e a gravação seguinte reescrevia as duas
+ * fases com o valor da primeira: entrega, consequência e norma da segunda desapareciam.
+ *
+ * A fase entra por CÓDIGO pela mesma razão da idade máxima — é o que sobrevive à
+ * reconciliação do servidor, e é o que o envelope congela.
+ */
+export interface ExigenciaDeDocumento {
+  readonly tipoDocumentoId: string;
   /**
-   * O recorte do operador — vazio enquanto o documento acompanha o quadro de
-   * vagas. Não é a lista que vale: quem for persistir este passo precisa
-   * enviar `modalidadesEfetivas()`, que resolve o padrão contra o quadro.
+   * O nome que o processo guardou do tipo de documento, como o detalhe o devolve.
    *
-   * Código do contrato — a API é a fonte de verdade do vocabulário.
+   * Existe para o caso em que o cadastro inativa o tipo depois de ele já estar exigido: o
+   * catálogo vivo deixa de trazê-lo, e sem este rótulo a linha sumiria da tela enquanto a
+   * gravação seguiria reenviando a exigência — invisível e intocável. Ausente no que a própria
+   * tela acabou de declarar, porque aí o nome vem do catálogo.
    */
-  modalidades: string[];
+  readonly tipoDocumentoNome?: string;
+  readonly faseCodigo: string;
+  /** A etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
+  readonly etapaId: string | null;
+  readonly aplicabilidade: string;
+  readonly obrigatorio: boolean;
+  readonly consequenciaIndeferimento: string;
+  readonly condicoes: readonly CondicaoGatilhoConfig[];
+  readonly basesLegais: readonly BaseLegalConfig[];
+  readonly idadeMaximaEmissao: IdadeMaximaEmissaoConfig | null;
   /**
-   * `false` enquanto o documento acompanha as modalidades que o quadro de
-   * vagas oferta; `true` depois que o operador recorta a lista. Registrar o
-   * estado evita confundir um recorte que por acaso coincide com as ofertadas
-   * — depois de uma remoção no quadro — com o padrão.
+   * Formato e tamanho vêm do cadastro do tipo de documento, que é onde o CEPS os declara.
+   * Viajam como valor JSON polimórfico — a string `QUALQUER` ou a lista de formatos.
    */
-  modalidadesRecortadas: boolean;
+  readonly formatosPermitidos: unknown;
+  readonly tamanhoMaximoBytes: number | null;
+}
+
+/**
+ * Um nó da árvore de satisfação, como o rascunho a guarda — espelho de `NoExigenciaInput`.
+ *
+ * O rascunho guarda a árvore porque o `PUT` a substitui INTEIRA: o que o wizard não souber
+ * expressar e mesmo assim regravar é apagado. Guardando o que veio, o que a tela não edita
+ * — grupo `OU`, cardinalidade qualificada, repetição por entidade — sobrevive por
+ * construção, sem uma lista de campos a preservar que envelheceria ao primeiro campo novo
+ * do contrato.
+ */
+export interface NoDeExigencia {
+  readonly tipo: 'FOLHA' | 'E' | 'OU';
+  readonly documento: ExigenciaDeDocumento | null;
+  readonly quantidadeMinima: number | null;
+  readonly consequencia: string | null;
+  readonly basesLegais: readonly BaseLegalConfig[] | null;
+  readonly filhos: readonly NoDeExigencia[] | null;
+  readonly chaveDistincao: string | null;
+  readonly dataReferencia: string | null;
+  readonly ocorrenciasEsperadas: readonly string[] | null;
+  readonly repetePorEntidade: string | null;
+}
+
+/**
+ * Um fato que o certame coleta do candidato — um campo do formulário de inscrição.
+ *
+ * A lista destes fatos É o formulário: a renderização pública projeta exatamente estes, na
+ * ordem declarada, juntando os valores de domínio do catálogo. Só fato declarado pelo candidato
+ * é coletável; modalidade e faixa etária são derivados e resolvem por outro caminho.
+ */
+export interface FatoColetadoConfig {
+  readonly fatoCodigo: string;
+  readonly ordem: number;
+  readonly rotulo: string;
+  readonly tipoRenderizacao: string;
+  readonly obrigatorio: boolean;
+  /**
+   * Campo que só aparece quando outro foi respondido de certa forma. A tela ainda não edita
+   * isso, e o rascunho o carrega como veio: o `PUT` substitui a coleção inteira, e sintetizá-la
+   * do zero apagaria a pré-condição de quem a tivesse declarado por outro caminho.
+   */
+  readonly precondicao: unknown;
+}
+
+/**
+ * O instante contra o qual a idade do candidato é apurada — uma política por certame, que
+ * ancora todos os gatilhos etários dele.
+ *
+ * A fase entra por CÓDIGO, não por identificador, pela mesma razão da exigência documental: o
+ * id da fase não sobrevive a uma gravação de cronograma que a remova e reacrescente.
+ * `tipo` vazio é a ausência da política, que é estado legítimo enquanto nenhum gatilho citar
+ * faixa etária.
+ */
+export interface ReferenciaTemporalConfig {
+  readonly tipo: string;
+  readonly data: string;
+  readonly faseCodigo: string;
+}
+
+/**
+ * Como um fato derivado é calculado a partir dos coletados. A tela semeia as regras de
+ * modalidade a partir do recorte declarado; o resto é carregado como veio.
+ */
+export interface DerivacaoDeFato {
+  readonly codigoFato: string;
+  readonly regras: unknown;
+}
+
+/**
+ * O formulário de inscrição do certame: o que o candidato lê no topo, e os campos que preenche.
+ */
+export interface FormularioDeInscricao {
+  readonly titulo: string;
+  readonly termoAceiteTexto: string;
+  readonly fatos: readonly FatoColetadoConfig[];
+  readonly referenciaTemporal: ReferenciaTemporalConfig;
+  readonly derivacao: readonly DerivacaoDeFato[];
+}
+
+/**
+ * As exigências do rascunho e a intenção de alcance que a tela oferece.
+ *
+ * `emTodasAsFases` é intenção de UI, não dado da exigência: marca os tipos de documento que
+ * o operador declarou valer em toda fase, para que uma fase acrescentada depois receba a
+ * exigência em vez de ficar de fora em silêncio. O contrato não tem esse conceito — ele só
+ * conhece a exigência materializada em cada fase.
+ */
+export interface ExigenciasDoRascunho {
+  readonly raizes: readonly NoDeExigencia[];
+  readonly emTodasAsFases: readonly string[];
 }
 
 /**
@@ -505,7 +703,8 @@ export interface WizardDraft {
    * a própria posição, reescrita pelo reorder.
    */
   desempate: readonly CriterioDesempateConfigurado[];
-  documentos: Record<string, DocumentoConfig>;
+  documentos: ExigenciasDoRascunho;
+  formulario: FormularioDeInscricao;
   /**
    * A oferta de atendimento especializado (UNI-REQ-0012), gravada por `PUT
    * …/oferta-atendimento`. As três listas vêm dos cadastros de Configuração —
@@ -520,9 +719,15 @@ export interface WizardDraft {
   };
   /**
    * O que o passo Revisão coleta para `POST …/publicacao` (UNI-REQ, Story
-   * #486). Não é projetado por `hidratarDraft`: publicar não é uma dimensão
+   * #486). Continua **fora de `hidratarDraft`**: publicar não é uma dimensão
    * que o `ProcessoSeletivoDto` devolva editável — depois do `204` o processo
    * vira somente leitura, e não há "reabrir para editar o número do ato".
+   *
+   * Mas **é projetável**, e é a única seção que volta de outra rota: o bloco
+   * sobrevive a um recarregamento porque a página o repõe de
+   * `GET …/rascunho-da-publicacao` depois de hidratar. Rascunho é o que o
+   * operador transcreveu e ainda não declarou; publicar continua lendo o que
+   * está em tela, nunca o que está guardado.
    *
    * `periodoInscricaoInicio`/`…Fim` só têm sentido quando o cronograma NÃO tem
    * fase com `coletaInscricao` (armadilha do período — `#486`, `ResolucaoDoPe-
@@ -561,3 +766,38 @@ export interface FalhaDeLeitura {
   /** Texto já resolvido para exibição — vem do `ProblemDetails` quando há um. */
   readonly mensagem: string;
 }
+
+/**
+ * Todas as seções do rascunho, nomeadas uma a uma.
+ *
+ * Existe para que a cobertura de readback seja aferível: o defeito que motivou esta lista foi
+ * uma seção que ninguém relia do servidor e que, por isso, um recarregamento apagava — e ela
+ * passou despercebida porque não havia onde comparar o que o wizard grava com o que ele
+ * recupera.
+ *
+ * O `satisfies` garante que todo nome aqui é uma seção de verdade; o assert de tipo logo abaixo
+ * garante o contrário, que nenhuma seção ficou de fora. Seção nova sem entrada aqui não compila.
+ */
+export const SECOES_DO_RASCUNHO = [
+  'tipoProcesso',
+  'pagamento',
+  'identificacao',
+  'vagas',
+  'cronograma',
+  'classificacao',
+  'bonus',
+  'desempate',
+  'documentos',
+  'formulario',
+  'atendimento',
+  'publicacao',
+] as const satisfies readonly (keyof WizardDraft)[];
+
+type SecaoNaoListada = Exclude<keyof WizardDraft, (typeof SECOES_DO_RASCUNHO)[number]>;
+
+/**
+ * Quebra a compilação quando uma seção nova do rascunho não entra em `SECOES_DO_RASCUNHO` — o
+ * tipo vira `never` e nenhum valor o satisfaz.
+ */
+const TODAS_AS_SECOES_LISTADAS: [SecaoNaoListada] extends [never] ? true : never = true;
+void TODAS_AS_SECOES_LISTADAS;

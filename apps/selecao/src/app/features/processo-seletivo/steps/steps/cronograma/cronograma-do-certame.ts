@@ -7,6 +7,7 @@ import {
   type ProdutoDaFase,
 } from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
+import { recursoResolvido } from './cronograma-para-comando';
 import {
   problemasDaFase,
   publicaResultadoDefinitivo,
@@ -80,6 +81,7 @@ export function descreverFase(
       donoTipico: congelados.donoTipico,
       publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
       coletaInscricao: congelados.coletaInscricao,
+      permiteComplementacao: congelados.permiteComplementacao,
       exigencias: exigenciasDe(congelados, fase.produtos),
       foraDoCatalogo: canonica === undefined,
     };
@@ -90,6 +92,7 @@ export function descreverFase(
     donoTipico: canonica?.donoTipico ?? '—',
     publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
     coletaInscricao: canonica?.coletaInscricao ?? false,
+    permiteComplementacao: canonica?.permiteComplementacao ?? false,
     exigencias: canonica === undefined ? null : exigenciasDe(canonica, fase.produtos),
     foraDoCatalogo: canonica === undefined,
   };
@@ -101,6 +104,12 @@ export interface DescricaoDaFase {
   readonly donoTipico: string;
   readonly publicaResultadoDefinitivo: boolean;
   readonly coletaInscricao: boolean;
+  /**
+   * Se a fase admite reenvio depois da análise. O que a fase congelou tem precedência sobre o
+   * catálogo, pela mesma razão dos demais atributos: editar a fase canônica depois não pode
+   * mudar o que um edital já congelou.
+   */
+  readonly permiteComplementacao: boolean;
   /** `null` quando nem o catálogo nem o congelado descrevem a fase. */
   readonly exigencias: ExigenciasDaFase | null;
   readonly foraDoCatalogo: boolean;
@@ -238,6 +247,125 @@ export function renumerar(fases: readonly FaseDoCronograma[]): readonly FaseDoCr
  * recusado no servidor por outro motivo — com uma mensagem que fala do peso de
  * uma etapa, não da nota final que ficou sem divisor.
  */
+/** O que a conferência precisa saber de uma exigência documental declarada. */
+export interface ExigenciaDeclarada {
+  readonly nome: string;
+  readonly decideResultado: boolean;
+  readonly normaResolvida: boolean;
+  /** Código da fase em que a exigência foi declarada. */
+  readonly faseCodigo: string;
+  /** Se essa fase ainda está no cronograma. */
+  readonly faseViva: boolean;
+  /** Se a exigência alcança ao menos uma modalidade que o quadro de vagas oferta. */
+  readonly alcancaModalidade: boolean;
+  /** Se pede reenvio numa fase que não admite complementação. */
+  readonly reenvioSemComplementacao: boolean;
+  /**
+   * O que impede o gatilho de ser gravado — fato fora do catálogo, comparação que o domínio
+   * não admite, condição sem valor. Vazio quando o gatilho está íntegro, ou quando não há
+   * gatilho nenhum.
+   */
+  readonly problemasDeGatilho: readonly string[];
+}
+
+/**
+ * O que impede a exigência de ser gravada: a fase que a ancora saiu do cronograma, ela não
+ * alcança modalidade nenhuma, ou pede reenvio onde a fase não admite complementação.
+ *
+ * Mora aqui, e não na superfície da fase, porque é o passo do Cronograma que grava as
+ * exigências e é o `validate()` dele que o wizard chama — a superfície da fase é embutida com
+ * `faseFixada` e o `validate()` dela nunca é invocado pela página.
+ */
+function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
+  const problemas: string[] = [];
+
+  const orfas = exigencias.filter((e) => !e.faseViva).map((e) => e.nome);
+  if (orfas.length > 0) {
+    problemas.push(
+      `Há documento exigido numa fase que saiu do cronograma: ${[...new Set(orfas)].join(', ')}. Declare-o em outra fase, ou remova a exigência.`,
+    );
+  }
+
+  if (exigencias.some((e) => e.faseViva && !e.alcancaModalidade)) {
+    problemas.push('Todo documento exigido precisa valer para ao menos uma modalidade aceita.');
+  }
+
+  const comGatilhoIncompleto = exigencias.filter(
+    (e) => e.faseViva && e.problemasDeGatilho.length > 0,
+  );
+  for (const exigencia of comGatilhoIncompleto) {
+    problemas.push(
+      `A condição de "${exigencia.nome}" ainda não está completa: ${exigencia.problemasDeGatilho.join('; ')}.`,
+    );
+  }
+
+  const semComplementacao = exigencias
+    .filter((e) => e.faseViva && e.reenvioSemComplementacao)
+    .map((e) => e.nome);
+  if (semComplementacao.length > 0) {
+    problemas.push(
+      `A consequência "abre pendência para reenvio" só vale em fase que admite complementação, e ${[...new Set(semComplementacao)].join(', ')} está em fase que não admite. Escolha outra consequência, ou declare o documento em outra fase.`,
+    );
+  }
+
+  return problemas;
+}
+
+/**
+ * O que a publicação vai cobrar de um GRUPO de exigências, dito como AVISO.
+ *
+ * Não bloqueia a gravação, e a diferença em relação à exigência individual é o que a torna
+ * corrigível: a norma de uma exigência se edita nesta mesma tela, a de um grupo não — o wizard
+ * não tem controle que a alcance. Bloquear aqui prenderia quem tem um grupo com norma pendente
+ * num passo sem saída, e a única fuga seria remover os documentos do grupo um a um até ele
+ * desaparecer, destruindo a configuração.
+ *
+ * O `PUT` aceita esse estado; quem o recusa é a publicação, e é lá que ele trava.
+ */
+export function avisosDosGrupos(grupos: readonly GrupoDeclarado[]): readonly string[] {
+  return grupos
+    .filter((grupo) => grupo.decideResultado && !grupo.normaResolvida)
+    .map((grupo) =>
+      grupo.documentos.length === 0
+        ? 'Um grupo de documentos decide o resultado da análise e ainda não tem norma resolvida. A publicação vai cobrá-la.'
+        : `Um grupo de documentos decide o resultado da análise e ainda não tem norma resolvida — o que reúne ${grupo.documentos.join(', ')}. A publicação vai cobrá-la.`,
+    );
+}
+
+function problemasDasExigencias(
+  exigencias: readonly ExigenciaDeclarada[],
+): readonly string[] {
+  const problemas: string[] = [...problemasDeAncoragem(exigencias)];
+
+  const semNorma = exigencias.filter((e) => e.decideResultado && !e.normaResolvida);
+  if (semNorma.length === 0) return problemas;
+
+  return [
+    ...problemas,
+    semNorma.length === 1
+      ? `A exigência "${semNorma[0].nome}" decide o resultado da análise e precisa da norma que a sustenta.`
+      : `${semNorma.length} exigências decidem o resultado da análise e precisam da norma que as sustenta: ${semNorma
+          .map((e) => e.nome)
+          .join(', ')}.`,
+  ];
+}
+
+/** O que a conferência precisa saber de um grupo de exigências. */
+export interface GrupoDeclarado {
+  /** O grupo tem consequência própria — é ele que decide, não cada documento de dentro. */
+  readonly decideResultado: boolean;
+  readonly normaResolvida: boolean;
+  /** Os documentos que ele reúne, para nomear o grupo numa tela que não o edita. */
+  readonly documentos: readonly string[];
+}
+
+/** O que a conferência precisa saber de um tipo de etapa do cadastro. */
+export interface TipoDeEtapaDoCatalogo {
+  readonly nome: string;
+  readonly admitePontuacao: boolean;
+  readonly admiteEliminacao: boolean;
+}
+
 export function componeNota(etapa: EtapaPontuada): boolean {
   const pontua = etapa.carater === 'classificatoria' || etapa.carater === 'ambas';
   const peso = decimalDoCampo(etapa.peso);
@@ -268,6 +396,8 @@ export function problemasDoCronograma(
   precedencias: readonly PrecedenciaFaseDto[],
   atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
   nomeDaBanca: (tipoBancaId: string) => string,
+  tipoDaEtapa: (tipoEtapaOrigemId: string) => TipoDeEtapaDoCatalogo | undefined,
+  exigencias: readonly ExigenciaDeclarada[],
 ): readonly string[] {
   const problemas: string[] = [];
 
@@ -317,7 +447,9 @@ export function problemasDoCronograma(
     }
   }
 
-  problemas.push(...problemasDasEtapas(fases, etapas, fasePorId));
+  problemas.push(...problemasDasEtapas(fases, etapas, fasePorId, tipoDaEtapa));
+  problemas.push(...problemasDasJanelasDasEtapas(fases, etapas, fasePorId));
+  problemas.push(...problemasDasExigencias(exigencias));
 
   for (const violacao of violacoesDePrecedencia(fases, precedencias)) {
     problemas.push(
@@ -338,10 +470,75 @@ export function problemasDoCronograma(
  * Os dois casos entram aqui porque a diferença — recusa agora ou depois — não
  * ajuda quem preenche: os dois descrevem um cronograma que não se sustenta.
  */
+/**
+ * A janela própria da etapa: coerente consigo mesma, e cabendo na janela da fase.
+ *
+ * A etapa não precisa declarar datas — em branco ela acontece na janela da fase, e é isso que a
+ * dica do campo promete ao operador. Declarada, a janela da etapa é um REFINAMENTO da janela da
+ * fase: a prova e a entrevista caem em dias diferentes, mas ambas dentro da avaliação. Uma etapa
+ * que começasse antes da fase ou terminasse depois dela desmentiria o cronograma que o edital
+ * publica.
+ *
+ * As bordas coincidentes passam: a etapa pode começar no instante em que a fase começa e
+ * terminar no instante em que ela termina — refinar não obriga a encolher.
+ *
+ * Fase sem janela declarada não é conferida: não há o que conter, e exigir data da fase por
+ * causa da etapa inventaria uma obrigação que o cadastro não faz. A etapa nesse caso responde
+ * só pela própria coerência.
+ *
+ * <b>Esta regra vive só aqui, no cliente.</b> `EtapaProcesso` não valida datas, então um
+ * chamador que vá direto à API ainda consegue gravar etapa fora da janela — decisão consciente
+ * de escopo, registrada como pendência.
+ */
+function problemasDasJanelasDasEtapas(
+  fases: readonly FaseDoCronograma[],
+  etapas: readonly EtapaPontuada[],
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): readonly string[] {
+  const problemas: string[] = [];
+  const faseDoCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
+
+  for (const etapa of etapas) {
+    const inicio = etapa.inicio === '' ? null : instanteDe(etapa.inicio);
+    const fim = etapa.fim === '' ? null : instanteDe(etapa.fim);
+    if (inicio === null && fim === null) continue;
+
+    const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
+
+    if (inicio !== null && fim !== null && fim < inicio) {
+      problemas.push(`Na etapa ${nome}, o fim não pode vir antes do início.`);
+      // Sem coerência interna, comparar com a fase só somaria ruído ao mesmo defeito.
+      continue;
+    }
+
+    const fase = faseDoCodigo.get(etapa.faseCodigo);
+    if (fase === undefined) continue;
+
+    const nomeDaFase = descreverFase(fase, fasePorId).nome;
+    const faseInicio = fase.inicio === null ? null : instanteDe(fase.inicio);
+    const faseFim = fase.fim === null ? null : instanteDe(fase.fim);
+
+    if (inicio !== null && faseInicio !== null && inicio < faseInicio) {
+      problemas.push(
+        `A etapa ${nome} começa antes da fase ${nomeDaFase}. A janela da etapa precisa caber na da fase.`,
+      );
+    }
+
+    if (fim !== null && faseFim !== null && fim > faseFim) {
+      problemas.push(
+        `A etapa ${nome} termina depois da fase ${nomeDaFase}. A janela da etapa precisa caber na da fase.`,
+      );
+    }
+  }
+
+  return problemas;
+}
+
 function problemasDasEtapas(
   fases: readonly FaseDoCronograma[],
   etapas: readonly EtapaPontuada[],
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+  tipoDaEtapa: (tipoEtapaOrigemId: string) => TipoDeEtapaDoCatalogo | undefined,
 ): readonly string[] {
   const problemas: string[] = [];
   // Pela mesma resolução da tela: uma fase de avaliação cuja entrada saiu do
@@ -351,15 +548,20 @@ function problemasDasEtapas(
     (fase) => descreverFase(fase, fasePorId).exigencias?.agrupaEtapas === true,
   );
 
+  // As duas direções da bicondicional alcançam só a etapa que NÃO declara a própria
+  // fase — o formato anterior ao vínculo. A que declara pertence à fase que nomeou, e
+  // qualquer fase pode recebê-la.
+  const semFaseDeclarada = etapas.filter((etapa) => (etapa.faseCodigo ?? '') === '');
+
   if (faseQueAgrupa !== undefined && etapas.length === 0) {
     problemas.push(
       'A fase de avaliação agrupa as etapas pontuadas e precisa de ao menos uma. Declare a etapa, ou remova a fase.',
     );
   }
 
-  if (faseQueAgrupa === undefined && etapas.length > 0) {
+  if (faseQueAgrupa === undefined && semFaseDeclarada.length > 0) {
     problemas.push(
-      'As etapas pontuadas precisam da fase de avaliação que as agrupa. Acrescente a fase, ou remova as etapas.',
+      'Estas etapas não dizem a que fase pertencem. Declare a fase de cada uma, ou remova-as.',
     );
   }
 
@@ -370,11 +572,33 @@ function problemasDasEtapas(
   }
 
   if (etapas.some((etapa) => etapa.tipoEtapaOrigemId === '')) {
-    problemas.push('Toda etapa precisa do tipo que a classifica.');
+    problemas.push('Toda etapa precisa do tipo que diz de que natureza ela é.');
   }
 
   if (etapas.some((etapa) => etapa.carater === '')) {
-    problemas.push('Toda etapa precisa declarar se é classificatória, eliminatória ou ambas.');
+    problemas.push('Toda etapa precisa declarar o caráter dela, entre os que o tipo admite.');
+  }
+
+  // Espelha a recusa do servidor, que confere o caráter declarado contra o que o tipo admite no
+  // cadastro. Sem isto a tela deixaria gravar para receber um 422 que a pessoa não pediu — e o
+  // caso acontece sem ninguém errar nada: basta o cadastro estreitar um tipo depois de a etapa
+  // ter sido declarada.
+  for (const etapa of etapas) {
+    const tipo = tipoDaEtapa(etapa.tipoEtapaOrigemId);
+    if (tipo === undefined || etapa.carater === '') continue;
+
+    const pontua = etapa.carater === 'classificatoria' || etapa.carater === 'ambas';
+    const elimina = etapa.carater === 'eliminatoria' || etapa.carater === 'ambas';
+    if (pontua && !tipo.admitePontuacao) {
+      problemas.push(
+        `O tipo ${tipo.nome} não compõe a nota final: a etapa "${etapa.nome.trim()}" não pode ter caráter que pontua.`,
+      );
+    }
+    if (elimina && !tipo.admiteEliminacao) {
+      problemas.push(
+        `O tipo ${tipo.nome} não elimina candidato: a etapa "${etapa.nome.trim()}" não pode ter caráter que reprova.`,
+      );
+    }
   }
 
   if (repetidos(etapas.map((etapa) => etapa.ordem)).length > 0) {
@@ -402,13 +626,138 @@ function problemasDasEtapas(
     problemas.push('O peso de uma etapa, quando declarado, precisa ser maior que zero.');
   }
 
-  if (!etapas.some(componeNota)) {
+  // A guarda do divisor da média só faz sentido quando o certame de fato pontua. Uma
+  // fase inteiramente operacional — envio de comprovante, análise documental — tem
+  // etapas sem caráter nem peso, e cobrar nota delas recusaria configuração legítima.
+  const algumaPontua = etapas.some((etapa) => etapa.carater !== '' || etapa.peso.trim() !== '');
+  if (algumaPontua && !etapas.some(componeNota)) {
     problemas.push(
       'Ao menos uma etapa precisa compor a nota final: ser classificatória (ou ambas) e ter peso maior que zero.',
     );
   }
 
+  // A janela recursal sem regra resolvida é descartada pelo mapeador — o catálogo de regras
+  // ainda não respondeu, ou o código escolhido não está nele. Descartar é o certo (o servidor
+  // recusaria um campo que o operador não liga ao que fez); calar não é: sem este aviso, a
+  // janela que a pessoa acabou de declarar some na gravação e nada explica.
+  // Prazo que não converte vira 0 na gravação — o campo é obrigatório no comando —, e janela
+  // com prazo zero fecha no instante em que abre. O servidor aceita; quem perde é o candidato.
+  //
+  // Três casos com a mesma consequência: em branco, texto que a gramática numérica não aceita
+  // ("2,5 dias", "dois"), e zero declarado. É o mesmo conjunto que a conferência da FASE já
+  // cobre — a da etapa era um subconjunto estrito da irmã.
+  for (const etapa of etapas) {
+    const invalidos = etapa.recursos.filter(
+      (recurso) => recursoResolvido(recurso) && !prazoUtilizavel(recurso.prazoValor),
+    ).length;
+    if (invalidos === 0) continue;
+
+    const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
+    problemas.push(
+      `A janela de recurso da etapa ${nome} precisa de um prazo maior que zero — informe por quanto tempo o recurso pode ser apresentado.`,
+    );
+  }
+
+  // As duas conferências que só a fase tinha. O value object do prazo é o mesmo nas duas, e o
+  // servidor passou a prová-las nos dois donos — a tela que aprovasse aqui mandaria o operador
+  // colher um 422 que a fase nunca deixaria acontecer.
+  for (const etapa of etapas) {
+    const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
+
+    if (etapa.recursos.some((r) => recursoResolvido(r) && fracaoDeDiaUtil(r.prazoValor, r.prazoUnidade))) {
+      problemas.push(
+        `O prazo de recurso da etapa ${nome} está em fração de dia útil. Use valor inteiro, ou declare o prazo em horas.`,
+      );
+    }
+
+    const suspensividadeQuebrada = etapa.recursos.some(
+      (r) =>
+        recursoResolvido(r) &&
+        (suspensividadeIncoerente(
+          r.suspensividadePrimeiraInstanciaValor,
+          r.suspensividadePrimeiraInstanciaUnidade,
+        ) ||
+          suspensividadeIncoerente(
+            r.suspensividadeSegundaInstanciaValor,
+            r.suspensividadeSegundaInstanciaUnidade,
+          )),
+    );
+    if (suspensividadeQuebrada) {
+      problemas.push(
+        `A suspensividade do recurso da etapa ${nome} exige valor e unidade juntos, e maior que zero — ou nenhum dos dois, que desativa aquela instância.`,
+      );
+    }
+  }
+
+  // A janela ancorada em ato aponta para uma publicação preliminar DA PRÓPRIA etapa, e os
+  // produtos mudam por outro caminho: retirar o preliminar, ou trocar-lhe o ato ou o papel,
+  // deixava a janela apontando para o que não existe mais. A gravação seguia, e o servidor
+  // recusava a etapa inteira — sem dizer que o problema era a âncora, nem em qual etapa.
+  for (const etapa of etapas) {
+    const preliminares = new Set(
+      etapa.produtos.filter((p) => p.papel === PAPEL_PRELIMINAR).map((p) => p.atoCodigo),
+    );
+    const orfas = etapa.recursos.filter(
+      (recurso) =>
+        recurso.ancora === 'atoPublicado' &&
+        recursoResolvido(recurso) &&
+        !preliminares.has(recurso.atoAncoraCodigo),
+    );
+    if (orfas.length === 0) continue;
+
+    const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
+    problemas.push(
+      `A janela de recurso da etapa ${nome} corre da publicação de um resultado preliminar que a etapa não declara mais. Escolha outra publicação, ou remova a janela.`,
+    );
+  }
+
+  for (const etapa of etapas) {
+    const pendentes = etapa.recursos.filter((recurso) => !recursoResolvido(recurso)).length;
+    if (pendentes === 0) continue;
+
+    const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
+    problemas.push(
+      pendentes === 1
+        ? `A janela de recurso da etapa ${nome} está sem a regra de prazo. Escolha a regra, ou remova a janela.`
+        : `${pendentes} janelas de recurso da etapa ${nome} estão sem a regra de prazo. Escolha a regra de cada uma, ou remova-as.`,
+    );
+  }
+
   return problemas;
+}
+
+/** Prazo que a gravação consegue usar: converte e é maior que zero. */
+function prazoUtilizavel(prazo: string): boolean {
+  const valor = decimalDoCampo(prazo);
+  return valor !== null && valor > 0;
+}
+
+/**
+ * Fração de dia útil não tem leitura unívoca — meio expediente, doze horas dentro do dia, ou
+ * metade de um dia civil que numa transição de fuso nem sempre tem vinte e quatro horas. As
+ * três fecham a janela em instantes diferentes, e o servidor recusa em vez de eleger uma.
+ * Prazo menor que um dia se declara em horas.
+ */
+function fracaoDeDiaUtil(prazo: string, unidade: string): boolean {
+  if (unidade !== 'diasUteis') return false;
+  const valor = decimalDoCampo(prazo);
+  return valor !== null && !Number.isInteger(valor);
+}
+
+/**
+ * A suspensividade é par valor-unidade: um lado sem o outro não descreve janela alguma, e a
+ * ausência dos dois é a desativação prevista daquela instância. Meio par é recusado pelo
+ * servidor — antes desta conferência, na etapa, era gravado calado.
+ */
+function suspensividadeIncoerente(valor: string, unidade: string): boolean {
+  const temValor = valor.trim() !== '';
+  const temUnidade = unidade !== '';
+
+  if (!temValor && !temUnidade) return false;
+  if (temValor !== temUnidade) return true;
+
+  const numero = decimalDoCampo(valor);
+  return numero === null || numero <= 0;
 }
 
 /** Peso escrito na etapa que não é maior que zero. */

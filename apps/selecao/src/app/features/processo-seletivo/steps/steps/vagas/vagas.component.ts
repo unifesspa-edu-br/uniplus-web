@@ -27,6 +27,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { DestroyRef } from '@angular/core';
+import type { ConfirmacaoDeGravacao, ItemDeConfirmacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { comandoDaCascata, comandoDeRemocaoDaCascata } from './cascata-de-remanejamento';
@@ -862,18 +863,6 @@ export class VagasStepComponent {
    * em tela.
    */
   /**
-   * O operador declara que conferiu o quadro.
-   *
-   * O que sai daqui é o número de vagas que o edital publica, e boa parte dele
-   * vem do cálculo do servidor: a marca é o registro de que alguém leu o
-   * resultado, e não de que clicou em avançar.
-   *
-   * Cai junto com a simulação a cada edição — confirmar um quadro e gravar
-   * outro seria pior do que não confirmar nada.
-   */
-  readonly conferenciaConfirmada = signal(false);
-
-  /**
    * Ofertas gravadas com regra, percentual ou modalidades diferentes do que a
    * tela apresenta como padrão do edital.
    *
@@ -935,7 +924,6 @@ export class VagasStepComponent {
     // o botão de simular em vez de esperar por um resultado que será ignorado.
     this.abandonarSimulacaoEmVoo();
     if (this.simulacao().size > 0) this.simulacao.set(new Map());
-    this.conferenciaConfirmada.set(false);
   }
 
   problemasDe(distribuicao: DistribuicaoDeVagas): readonly ProblemaDaDistribuicao[] {
@@ -990,6 +978,92 @@ export class VagasStepComponent {
 
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
+  }
+
+  /**
+   * O que a página confirma antes de gravar o quadro — o mesmo contrato que Identificação,
+   * Bônus, Desempate, Eliminação e Revisão já usam.
+   *
+   * Substituiu o checkbox "Confirmo que conferi o quadro". A intenção era a mesma; o mecanismo é
+   * que era o errado: uma marca guardada envelhece entre o clique e a gravação, e fechar essa
+   * janela à mão custava um reset a cada edição. O diálogo é montado do estado no instante em
+   * que se grava, então não há janela nenhuma.
+   *
+   * `null` quando há pendência: ninguém confirma um quadro que o passo não vai gravar.
+   */
+  confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
+    if (!this.validate().valid) return null;
+
+    const ofertas = this.distribuicoes();
+    const cascata = this.resumoDaCascata();
+
+    return {
+      titulo: 'Confirmar o quadro de vagas',
+      aviso:
+        'Este é o quadro de vagas que o edital publica. Boa parte dele vem do cálculo da regra — confira os totais antes de gravar.',
+      rotuloDeConfirmar: 'Gravar quadro de vagas',
+      itens: [
+        { rotulo: 'Ofertas de curso no quadro', valor: String(ofertas.length) },
+        // Os dois totais, nomeados pelo que cada um é. Sob a Lei 12.711 a suplementar ACRESCE
+        // ao total da oferta, então o que o edital publica pode ser maior que a soma das vagas
+        // informadas — e o diálogo, que diz representar o quadro publicado, pedia confirmação
+        // do número menor. O total publicado só entra quando difere: repetir o mesmo número em
+        // duas linhas faria o operador procurar uma diferença que não existe.
+        { rotulo: 'Vagas informadas nas ofertas', valor: String(this.totalDeVagasOfertadas()) },
+        ...(this.totalGeralPublicado() === this.totalDeVagasOfertadas()
+          ? []
+          : [{
+              rotulo: 'Total publicado (com a suplementar da regra)',
+              valor: String(this.totalGeralPublicado()),
+            }]),
+        ...this.totaisPorModalidade(),
+        { rotulo: 'Regra de distribuição', valor: this.rotuloDaRegraDeDistribuicao() },
+        ...(cascata === null ? [] : [{ rotulo: 'Regra de remanejamento', valor: cascata }]),
+      ],
+    };
+  }
+
+  /** A soma das vagas que as ofertas declaram — a base sobre a qual a regra calcula. */
+  private totalDeVagasOfertadas(): number {
+    return this.distribuicoes().reduce((soma, item) => soma + inteiroOuZero(item.voBase), 0);
+  }
+
+  /**
+   * Uma linha por modalidade, declarada ou calculada.
+   *
+   * O rótulo leva o CÓDIGO da modalidade na frente, e não só a descrição: o diálogo distingue as
+   * linhas por rótulo, e duas modalidades de descrição parecida colidiriam. O código é o
+   * identificador de domínio e não se repete dentro de um quadro.
+   */
+  private totaisPorModalidade(): readonly ItemDeConfirmacao[] {
+    const declaradas = this.colunasDeQuantidade().map((modalidade) => ({
+      rotulo: `${modalidade.codigo} — vagas declaradas`,
+      valor: String(this.totalDeclaradoDe(modalidade.id)),
+    }));
+    const calculadas = this.modalidadesCalculadas().map((modalidade) => ({
+      rotulo: `${modalidade.codigo} — vagas calculadas pela regra`,
+      valor: String(this.totalCalculadoDe(modalidade.id)),
+    }));
+
+    return [...declaradas, ...calculadas];
+  }
+
+  private rotuloDaRegraDeDistribuicao(): string {
+    const padrao = this.padrao();
+    return `${padrao.regraDistribuicaoCodigo} (versão ${padrao.regraDistribuicaoVersao})`;
+  }
+
+  /**
+   * A regra de remanejamento, quando a seção se aplica — código e versão, nunca a matriz: uma
+   * tabela de destinos não cabe num par rótulo/valor, e o que o operador precisa reconhecer
+   * aqui é qual regra vai reger o remanejamento.
+   */
+  private resumoDaCascata(): string | null {
+    const secao = this.cascataSecao();
+    if (secao === undefined || !secao.precisaExibir()) return null;
+
+    const cascata = this.store.draft().vagas.cascata;
+    return cascata === null ? null : `${cascata.regraCodigo} (versão ${cascata.regraVersao})`;
   }
 
   /**
@@ -1124,13 +1198,11 @@ export class VagasStepComponent {
    * oferta vira contagem — a célula pendente já está marcada no quadro.
    */
   /**
-   * O que impede de gravar, tirando a declaração de conferência.
-   *
-   * Separado dela para a tela saber quando a marca é a única coisa que falta —
-   * e só então destacá-la, em vez de pedir atenção enquanto ainda há campo
-   * vazio no quadro.
+   * O que impede de gravar o quadro — tudo aqui é erro a corrigir, e não declaração do operador
+   * sobre ter lido a tela. A conferência mudou de natureza: virou o diálogo que a página abre
+   * no instante da gravação.
    */
-  private readonly pendenciasAlemDaConferencia = computed<readonly string[]>(() => {
+  private readonly pendenciasQueImpedemGravar = computed<readonly string[]>(() => {
     const distribuicoes = this.distribuicoes();
     if (distribuicoes.length === 0) {
       return ['Configure a distribuição de vagas de ao menos uma oferta de curso.'];
@@ -1156,11 +1228,6 @@ export class VagasStepComponent {
       ),
     ];
   });
-
-  /** O quadro está pronto e resta declarar que foi conferido. */
-  readonly soFaltaConferir = computed(
-    () => !this.conferenciaConfirmada() && this.pendenciasAlemDaConferencia().length === 0,
-  );
 
   /**
    * O que a seção de cascata ainda pede antes de gravar — vazio quando ela
@@ -1209,18 +1276,15 @@ export class VagasStepComponent {
       .map((problema) => `Cascata — ${secao.rotuloDoProblema(problema)}`);
     if (problemas.length > 0) return [...pendenciasForaDoRegime, ...problemas];
 
-    return [
-      ...pendenciasForaDoRegime,
-      ...(secao.confirmado() ? [] : ['Confirme que conferiu a cascata de remanejamento.']),
-    ];
+    return pendenciasForaDoRegime;
   });
 
   validate(): StepValidation {
+    // A conferência saiu daqui: ela virou o diálogo que a página abre ANTES de gravar, como nos
+    // outros cinco passos. O que fica são erros — pendências que impedem gravar, não declarações
+    // do operador sobre ter lido a tela.
     const mensagens = [
-      ...this.pendenciasAlemDaConferencia(),
-      ...(this.conferenciaConfirmada() || this.distribuicoes().length === 0
-        ? []
-        : ['Confirme que conferiu o quadro de vagas antes de gravar.']),
+      ...this.pendenciasQueImpedemGravar(),
       ...this.pendenciasDaCascata(),
     ];
 
@@ -1288,8 +1352,5 @@ export class VagasStepComponent {
   private substituir(ofertas: readonly DistribuicaoDeVagas[]): void {
     this.descartarSimulacao();
     this.store.patchObjectSection('vagas', { ofertas: [...ofertas] });
-    // O encaixe da cascata é por oferta: mudar o quadro pode alterar o que
-    // faltava ou sobrava, e uma confirmação anterior não vale mais.
-    this.cascataSecao()?.confirmado.set(false);
   }
 }

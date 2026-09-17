@@ -21,8 +21,13 @@ import {
   EtapaProcessoInput,
   FaseCronogramaInput,
   IniciarUploadDocumentoEditalDto,
+  NoExigenciaInput,
   ProcessosSeletivosApi,
   PublicarProcessoSeletivoRequest,
+  ConfiguracaoDerivacaoInput,
+  DefinirFormularioRequest,
+  DefinirReferenciaTemporalFatosRequest,
+  FatoColetadoInput,
 } from '@uniplus/shared-data/selecao';
 
 import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
@@ -120,6 +125,8 @@ export class CadastroInicialService {
   private readonly chaveDistribuicao = new ChaveDeSubstituicao();
   private readonly chaveCascata = new ChaveDeSubstituicao();
   private readonly chaveEtapas = new ChaveDeSubstituicao();
+
+  private readonly chaveDocumentosExigidos = new ChaveDeSubstituicao();
   private readonly chaveCronograma = new ChaveDeSubstituicao();
   private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
   private readonly chaveClassificacao = new ChaveDeSubstituicao();
@@ -127,6 +134,12 @@ export class CadastroInicialService {
   private readonly chaveDesempate = new ChaveDeSubstituicao();
   private readonly chaveAtendimento = new ChaveDeSubstituicao();
   private readonly chavePublicacao = new ChaveDeSubstituicao();
+  // Cada comando tem a sua: a chave é de substituição por recurso, e compartilhá-la faria a
+  // gravação de um recurso invalidar a do outro.
+  private readonly chaveFatosColetados = new ChaveDeSubstituicao();
+  private readonly chaveRegrasDerivacao = new ChaveDeSubstituicao();
+  private readonly chaveReferenciaTemporal = new ChaveDeSubstituicao();
+  private readonly chaveFormulario = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -158,17 +171,14 @@ export class CadastroInicialService {
     this.chaveCriacao = idempotencyKey.create();
     this.chaveIniciacao = idempotencyKey.create();
     this.chaveConfirmacao = idempotencyKey.create();
-    this.chaveTaxa.renovar();
-    this.chaveDistribuicao.renovar();
-    this.chaveCascata.renovar();
-    this.chaveEtapas.renovar();
-    this.chaveCronograma.renovar();
-    this.chaveAlgoritmoContagem.renovar();
-    this.chaveClassificacao.renovar();
-    this.chaveBonus.renovar();
-    this.chaveDesempate.renovar();
-    this.chaveAtendimento.renovar();
-    this.chavePublicacao.renovar();
+    // Varredura, não lista nominal: uma enumeração à mão já deixou cinco chaves
+    // para trás, e a chave esquecida é invisível — o comando do processo novo sai
+    // com a chave que o servidor viu no anterior, e o replay devolve o resultado
+    // errado em vez de aplicar o que foi pedido. Uma chave de substituição criada
+    // daqui em diante entra sozinha.
+    for (const campo of Object.values(this)) {
+      if (campo instanceof ChaveDeSubstituicao) campo.renovar();
+    }
   }
 
   /**
@@ -339,6 +349,39 @@ export class CadastroInicialService {
   }
 
   /**
+   * Grava as exigências documentais do processo. Substitui a árvore inteira: uma
+   * exigência ausente do envio deixa de existir, e é isso que permite tirar um
+   * documento de uma fase. Árvore vazia é estado válido — certame que não coleta
+   * documento nenhum.
+   *
+   * Chave própria, pela mesma razão das etapas: uma recusa aqui não pode invalidar
+   * a chave de outra dimensão em curso.
+   */
+  async definirDocumentosExigidos(
+    processoSeletivoId: string,
+    raizes: readonly NoExigenciaInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirDocumentosExigidos(
+        processoSeletivoId,
+        raizes,
+        this.chaveDocumentosExigidos.contextoPara(raizes),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveDocumentosExigidos.renovar();
+      return { ok: true };
+    }
+
+    this.chaveDocumentosExigidos.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /**
    * Grava o cronograma de fases. Substitui a coleção inteira: uma fase ausente
    * do envio deixa de existir no processo.
    *
@@ -435,6 +478,111 @@ export class CadastroInicialService {
    * `null` é a forma de declarar "sem bônus" — não existe rota separada para
    * desligá-lo.
    */
+  /**
+   * Declara os campos do formulário de inscrição — quais fatos do candidato o certame coleta.
+   *
+   * Precisa sair ANTES da gravação das exigências documentais: um gatilho que cita um fato só
+   * é aceito quando o processo resolve aquele fato, e quem o torna resolvível é esta lista.
+   */
+  async definirFatosColetados(
+    processoSeletivoId: string,
+    fatos: readonly FatoColetadoInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirFatosColetados(
+        processoSeletivoId,
+        fatos,
+        this.chaveFatosColetados.contextoPara(fatos),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveFatosColetados.renovar();
+      return { ok: true };
+    }
+
+    this.chaveFatosColetados.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /** Declara como os fatos derivados do certame são calculados a partir dos coletados. */
+  async definirRegrasDerivacao(
+    processoSeletivoId: string,
+    regras: readonly ConfiguracaoDerivacaoInput[],
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirRegrasDerivacao(
+        processoSeletivoId,
+        regras,
+        this.chaveRegrasDerivacao.contextoPara(regras),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveRegrasDerivacao.renovar();
+      return { ok: true };
+    }
+
+    this.chaveRegrasDerivacao.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /** Declara o instante contra o qual a idade do candidato é apurada. */
+  async definirReferenciaTemporalFatos(
+    processoSeletivoId: string,
+    request: DefinirReferenciaTemporalFatosRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirReferenciaTemporalFatos(
+        processoSeletivoId,
+        request,
+        this.chaveReferenciaTemporal.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveReferenciaTemporal.renovar();
+      return { ok: true };
+    }
+
+    this.chaveReferenciaTemporal.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
+  /** Título e termo de aceite do formulário — os campos vêm por `definirFatosColetados`. */
+  async definirFormulario(
+    processoSeletivoId: string,
+    request: DefinirFormularioRequest,
+  ): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirFormulario(
+        processoSeletivoId,
+        request,
+        this.chaveFormulario.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveFormulario.renovar();
+      return { ok: true };
+    }
+
+    this.chaveFormulario.recusada(result);
+    return { ok: false, problem: result.problem };
+  }
+
   async definirBonusRegional(
     processoSeletivoId: string,
     request: DefinirBonusRegionalRequest,

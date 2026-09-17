@@ -2,7 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -19,6 +19,7 @@ const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etap
 const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cronograma-fases`;
 const ROTA_ALGORITMO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/algoritmo-contagem-prazo`;
 const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
+const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-exigidos`;
 const ID_ETAPA_GRAVADA = '01960000-0000-7000-0000-0000000000ee';
 
 /** O interceptor só lê o corpo como ProblemDetails sob este media type. */
@@ -76,8 +77,25 @@ const FASES_CANONICAS = [
   },
 ];
 
+const TIPO_ETAPA_SO_ELIMINA = '01960000-0000-7000-0000-0000000000e2';
+
 const TIPOS_ETAPA = [
-  { id: TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva', ativo: true },
+  {
+    id: TIPO_ETAPA,
+    codigo: 'PROVA_OBJETIVA',
+    nome: 'Prova objetiva',
+    ativo: true,
+    admitePontuacao: true,
+    admiteEliminacao: true,
+  },
+  {
+    id: TIPO_ETAPA_SO_ELIMINA,
+    codigo: 'ANALISE_DOCUMENTAL',
+    nome: 'Análise documental',
+    ativo: true,
+    admitePontuacao: false,
+    admiteEliminacao: true,
+  },
 ];
 
 /** O catálogo não tem `nome` nem `descricao` — só `codigo` e `baseLegal` são legíveis. */
@@ -87,9 +105,25 @@ const REGRAS_CONTAGEM = [
     versao: 'v1',
     tipo: 'algoritmo_contagem_prazo',
     esquemaArgs: {},
-    invariantes: {},
+    // O catálogo publica os invariantes como lista de prosa — é deles que sai a descrição
+    // do que a convenção faz, e é o que separa uma convenção da outra.
+    invariantes: [
+      'o dia da âncora não conta',
+      'em horas, a contagem começa no primeiro dia útil seguinte',
+    ],
     baseLegal: 'Lei 9.784/1999, art. 66',
     hash: 'xyz',
+    modalidadesAdmitidas: null,
+  },
+  {
+    codigo: 'SEM-INVARIANTE',
+    versao: 'v1',
+    tipo: 'algoritmo_contagem_prazo',
+    esquemaArgs: {},
+    // O contrato tipa o campo como JSON solto: o que não for lista de texto é descartado.
+    invariantes: {},
+    baseLegal: 'Lei 9.784/1999, art. 66',
+    hash: 'abc',
     modalidadesAdmitidas: null,
   },
 ];
@@ -172,7 +206,8 @@ describe('CronogramaStepComponent', () => {
 
     for (const requisicao of controller.match(() => true)) {
       const { url } = requisicao.request;
-      if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
+      if (url.includes('fatos-candidato')) requisicao.flush([]);
+      else if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
       else if (url.includes('tipos-etapa')) requisicao.flush(TIPOS_ETAPA);
       else if (requisicao.request.params.get('tipo') === 'algoritmo_contagem_prazo') {
         requisicao.flush(REGRAS_CONTAGEM);
@@ -185,6 +220,29 @@ describe('CronogramaStepComponent', () => {
 
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  /**
+   * A última gravação do passo: relê as fases para traduzir o código canônico que o
+   * rascunho guarda no id que a exigência referencia, e substitui a árvore documental.
+   */
+  const gravouExigencias = async () => {
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+    controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+  };
+
+  /**
+   * As etapas e a releitura que recolhe os identificadores que o servidor atribuiu. Vem DEPOIS
+   * do cronograma: a etapa declara a fase em que acontece, e o servidor recusa etapa cuja fase
+   * ainda não esteja lá.
+   */
+  const gravouEtapas = async () => {
+    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    await proximoPasso();
+  };
 
   /** As ordens que o corpo do comando de cronograma declara. */
   const ordensDe = (corpo: unknown): number[] =>
@@ -247,6 +305,8 @@ describe('CronogramaStepComponent', () => {
             origemData: 'PROPRIA',
             agrupaEtapas: false,
             coletaInscricao: false,
+            permiteComplementacao: false,
+            coletaSolicitacaoIsencao: false,
             bancas: [],
           },
         },
@@ -276,8 +336,33 @@ describe('CronogramaStepComponent', () => {
           origemData: 'PROPRIA',
           agrupaEtapas: fase.agrupaEtapas,
           coletaInscricao: false,
+          permiteComplementacao: fase.permiteComplementacao,
+          coletaSolicitacaoIsencao: false,
           bancas: [],
         },
+      })),
+    });
+    detectar();
+  }
+
+  /** Uma etapa por código de fase informado, na ordem em que chegam. */
+  function comEtapasEmFases(codigos: readonly string[]): void {
+    store.patchObjectSection('cronograma', {
+      etapas: codigos.map((faseCodigo, posicao) => ({
+        id: null,
+        nome: `Etapa ${posicao + 1}`,
+        carater: 'classificatoria' as const,
+        tipoEtapaOrigemId: TIPO_ETAPA,
+        peso: '1',
+        notaMinima: '',
+        ordem: posicao + 1,
+        faseCodigo,
+        produtos: [],
+        inicio: '',
+        fim: '',
+        emiteParecerIndividual: false,
+        bancas: [],
+        recursos: [],
       })),
     });
     detectar();
@@ -416,16 +501,20 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * O cronograma gravado não aceita ficar vazio. Deixar o botão ativo levaria a
-   * uma recusa do servidor depois de o operador já ter perdido a fase da tela.
+   * A última fase sai como qualquer outra.
+   *
+   * Travar o botão obrigava a acrescentar a fase certa ANTES de tirar a errada — ordem
+   * invertida para quem escolheu a fase errada e só tem aquela. O cronograma vazio continua
+   * recusado, mas pela conferência do passo, que é onde as demais faltas também aparecem:
+   * a tela deixa editar e diz o que falta antes de gravar, em vez de impedir a edição.
    */
-  it('não deixa remover a última fase, e diz por quê', () => {
+  it('deixa remover a última fase, e a conferência é quem cobra o cronograma vazio', () => {
     comFases(ID_INSCRICAO);
 
-    expect(componente.podeRemoverFase()).toBe(false);
-
     componente.removerFase(0);
-    expect(store.draft().cronograma.fases).toHaveLength(1);
+
+    expect(store.draft().cronograma.fases).toHaveLength(0);
+    expect(componente.validate().messages).toContain('O cronograma precisa de ao menos uma fase.');
   });
 
   /**
@@ -433,9 +522,245 @@ describe('CronogramaStepComponent', () => {
    * etapas sem a fase que as avalia — e a recusa só apareceria na publicação,
    * apontando para outro lugar.
    */
-  it('remover a fase que agrupa etapas leva as etapas junto', () => {
+  // ── Linha do tempo colapsada ──
+
+  /**
+   * O passo se chama linha do tempo, e é isso que ele mostra ao abrir: os cabeçalhos das
+   * fases. Com tudo aberto, o certame com sete fases tinha trinta e sete telas de rolagem.
+   */
+  it('abre com todas as fases fechadas', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
+
+    expect(componente.faseExpandida(0)).toBe(false);
+    expect(componente.faseExpandida(1)).toBe(false);
+    expect(nativo.querySelectorAll('.fase-bloco--aberta')).toHaveLength(0);
+  });
+
+  it('abre e fecha a fase pelo cabeçalho', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+
+    componente.alternarFase(1);
+    detectar();
+    expect(componente.faseExpandida(1)).toBe(true);
+    expect(componente.faseExpandida(0)).toBe(false, 'abrir uma não fecha a outra');
+
+    componente.alternarFase(1);
+    expect(componente.faseExpandida(1)).toBe(false);
+  });
+
+  /** Fechada, a fase diz o que há dentro dela — senão abrir vira tentativa e erro. */
+  it('a fase fechada conta as etapas que acontecem nela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO', 'COLETA_INSCRICAO']);
+
+    expect(componente.marcasDaFase(1)).toEqual(['2 etapas']);
+    expect(componente.marcasDaFase(0)).toEqual(['1 etapa']);
+  });
+
+  /**
+   * A conferência acusa problemas em qualquer fase, e a mensagem aponta para uma que pode
+   * estar fechada. Recusar sem abrir deixaria o operador procurando o erro no escuro.
+   */
+  it('a recusa da conferência abre todas as fases', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
     comUmaEtapa();
+    componente.etapas.at(0).controls.nome.setValue('');
+    detectar();
+
+    const resultado = await componente.persistir();
+
+    expect(resultado.valid).toBe(false);
+    expect(componente.faseExpandida(0)).toBe(true);
+    controller.expectNone(ROTA_ETAPAS);
+  });
+
+  /**
+   * O recorte vem do cadastro, não de uma lista de códigos na tela: um tipo que não compõe a
+   * nota final não pode oferecer caráter que pontua, e é isso que faz o peso desaparecer.
+   */
+  it('o caráter oferecido segue o que o tipo de etapa admite', () => {
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    const etapa = componente.etapas.at(0);
+
+    expect(componente.caracteresPara(etapa).map((o) => o.valor)).toEqual([
+      'classificatoria',
+      'eliminatoria',
+      'ambas',
+    ]);
+
+    componente.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
+    detectar();
+
+    expect(componente.caracteresPara(etapa).map((o) => o.valor)).toContain('eliminatoria');
+    expect(componente.caracteresPara(etapa).map((o) => o.valor)).not.toContain('ambas');
+  });
+
+  /**
+   * Trocar o tipo não apaga o caráter já declarado: o campo continuaria mostrando um valor que
+   * o cadastro recusa, e a recusa da gravação não diria qual. Ele fica na lista, nomeado.
+   */
+  it('o caráter que o tipo deixou de admitir permanece visível, marcado', () => {
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    const etapa = componente.etapas.at(0);
+
+    componente.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
+    detectar();
+
+    expect(etapa.controls.carater.value).toBe('classificatoria', 'o valor declarado permanece');
+    const marcada = componente
+      .caracteresPara(etapa)
+      .find((opcao) => opcao.valor === 'classificatoria');
+    expect(marcada?.rotulo).toContain('não mais admitido');
+  });
+
+  /** Sem tipo escolhido o cadastro não tem o que restringir — a etapa ainda não se declarou. */
+  it('sem tipo escolhido, oferece os três caracteres', () => {
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    const etapa = componente.etapas.at(0);
+
+    componente.escolherTipoEtapa(etapa, '');
+    detectar();
+
+    expect(componente.caracteresPara(etapa)).toHaveLength(3);
+  });
+
+  it('abre a etapa pelo resumo, e mais de uma ao mesmo tempo', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
+    componente.alternarFase(0);
+    detectar();
+
+    expect(componente.etapaAberta(0)).toBe(false, 'a etapa chega fechada');
+
+    componente.alternarEtapa(0);
+    componente.alternarEtapa(1);
+    detectar();
+
+    expect(componente.etapaAberta(0)).toBe(true);
+    expect(componente.etapaAberta(1)).toBe(true);
+  });
+
+  /** Fechada, a etapa mostra só o que já está declarado — é assim que a lista distingue. */
+  it('a etapa fechada resume o que já declarou', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    componente.alternarFase(0);
+    detectar();
+
+    const etapa = componente.etapas.at(0);
+    expect(componente.marcasDaEtapa(etapa)).toEqual(['Prova objetiva']);
+
+    componente.acrescentarRecursoNaEtapa(etapa);
+    detectar();
+
+    expect(componente.marcasDaEtapa(etapa)).toContain('1 recurso');
+  });
+
+  /**
+   * Terceiro nível do mesmo padrão: o bloco que cresce com o que se declara nele também
+   * chega recolhido, com a contagem no cabeçalho.
+   */
+  it('os blocos que crescem dentro da etapa chegam recolhidos', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    componente.alternarFase(0);
+    componente.alternarEtapa(0);
+    detectar();
+
+    expect(componente.blocoAberto(0, 'recursos')).toBe(false);
+    expect(componente.blocoAberto(0, 'publica')).toBe(false);
+    expect(componente.resumoDosRecursos(componente.etapas.at(0))).toBe('nenhum recurso');
+    expect(componente.resumoDasPublicacoes(componente.etapas.at(0))).toBe('não publica nada');
+  });
+
+  it('o cabeçalho do bloco conta o que há dentro dele', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+
+    componente.acrescentarRecursoNaEtapa(etapa);
+    componente.acrescentarRecursoNaEtapa(etapa);
+    detectar();
+
+    expect(componente.resumoDosRecursos(etapa)).toBe('2 recursos');
+  });
+
+  it('abrir um bloco de uma etapa não abre o da outra', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
+    componente.alternarFase(0);
+    detectar();
+
+    componente.alternarBloco(0, 'recursos');
+
+    expect(componente.blocoAberto(0, 'recursos')).toBe(true);
+    expect(componente.blocoAberto(1, 'recursos')).toBe(false);
+    expect(componente.blocoAberto(0, 'publica')).toBe(false, 'cada bloco tem o seu estado');
+  });
+
+  /**
+   * Quem decide se peso e nota mínima têm o que fazer é o CARÁTER, não o tipo: o divisor da
+   * média soma o peso de quem compõe nota e ignora a eliminatória pura.
+   */
+  it('peso só aparece na etapa que compõe a nota final', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+
+    componente.escolherCarater(etapa, 'classificatoria');
+    expect(componente.etapaComponeNota(etapa)).toBe(true);
+    expect(componente.etapaElimina(etapa)).toBe(false);
+
+    componente.escolherCarater(etapa, 'eliminatoria');
+    expect(componente.etapaComponeNota(etapa)).toBe(false);
+    expect(componente.etapaElimina(etapa)).toBe(true);
+
+    componente.escolherCarater(etapa, 'ambas');
+    expect(componente.etapaComponeNota(etapa)).toBe(true);
+    expect(componente.etapaElimina(etapa)).toBe(true);
+  });
+
+  /**
+   * Sem isto, quem declara peso e depois muda para eliminatória fica com o valor gravado e
+   * invisível — indo ao servidor a cada gravação, sem que nada o use.
+   */
+  it('trocar o caráter apaga o campo que deixou de valer', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+    etapa.controls.peso.setValue('3');
+    etapa.controls.notaMinima.setValue('5');
+
+    componente.escolherCarater(etapa, 'eliminatoria');
+
+    expect(etapa.controls.peso.value).toBe('', 'a eliminatória não entra no divisor da média');
+    expect(etapa.controls.notaMinima.value).toBe('5', 'o corte continua sendo dela');
+
+    componente.escolherCarater(etapa, 'classificatoria');
+
+    expect(etapa.controls.notaMinima.value).toBe('', 'quem não elimina não tem corte');
+  });
+
+  it('a etapa sem nome aparece na lista mesmo assim', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    componente.etapas.at(0).controls.nome.setValue('   ');
+
+    expect(componente.nomeDaEtapa(componente.etapas.at(0))).toBe('Etapa sem nome');
+  });
+
+  /**
+   * A etapa existe por causa da fase em que acontece: some a fase, some ela. O que a
+   * gravação recusava antes — etapa apontando para uma fase que não está mais no cronograma
+   * — deixa de poder acontecer.
+   */
+  it('remover a fase leva junto as etapas que declaram acontecer nela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
 
     componente.removerFase(1);
 
@@ -443,12 +768,64 @@ describe('CronogramaStepComponent', () => {
     expect(store.draft().cronograma.etapas).toEqual([]);
   });
 
-  it('remover fase que não agrupa etapas preserva as etapas', () => {
+  /**
+   * O defeito que existia: remover a fase que o cadastro marca como agrupadora limpava todas
+   * as etapas do processo, inclusive as das outras fases.
+   */
+  it('remover a fase não toca nas etapas das outras', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'INSCRICAO', 'INSCRICAO']);
+
+    componente.removerFase(1);
+
+    expect(store.draft().cronograma.etapas).toHaveLength(2);
+    expect(store.draft().cronograma.etapas.map((e) => e.faseCodigo)).toEqual([
+      'INSCRICAO',
+      'INSCRICAO',
+    ]);
+  });
+
+  /** Etapa que não declara fase nenhuma não pertence a nenhuma, e não sai com a remoção. */
+  it('remover a fase preserva a etapa que não declara fase', () => {
     comFases(ID_AVALIACAO, ID_INSCRICAO);
     comUmaEtapa();
 
     componente.removerFase(1);
 
+    expect(store.draft().cronograma.etapas).toHaveLength(1);
+  });
+
+  it('conta o que a remoção leva junto antes de acontecer', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
+
+    componente.pedirRemocaoDaFase(1);
+    detectar();
+
+    expect(componente.remocaoAConfirmar()).toBe(1);
+    expect(componente.resumoDaRemocao(1)).toBe('2 etapas');
+    expect(store.draft().cronograma.fases).toHaveLength(2, 'nada sai antes de confirmar');
+    expect(nativo.textContent).toContain('apaga também 2 etapas desta fase');
+  });
+
+  /** Sem nada pendurado não há o que avisar: perguntar seria cerimônia vazia. */
+  it('remove direto a fase que não tem etapa nem documento', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+
+    componente.pedirRemocaoDaFase(1);
+
+    expect(componente.remocaoAConfirmar()).toBeNull();
+    expect(store.draft().cronograma.fases).toHaveLength(1);
+  });
+
+  it('desistir da remoção mantém a fase e o que é dela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+
+    componente.pedirRemocaoDaFase(1);
+    componente.desistirDaRemocao();
+
+    expect(store.draft().cronograma.fases).toHaveLength(2);
     expect(store.draft().cronograma.etapas).toHaveLength(1);
   });
 
@@ -480,10 +857,6 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
 
     const pretendida = controller.expectOne(ROTA_FASES);
     expect(ordensDe(pretendida.request.body)).toEqual([1, 2]);
@@ -506,6 +879,8 @@ describe('CronogramaStepComponent', () => {
     expect(ordensDe(final.request.body)).toEqual([1, 2]);
     final.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
 
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
@@ -520,10 +895,6 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
 
     // Duas tentativas: a ordem pretendida e a faixa livre — as duas recusadas.
     for (let tentativa = 0; tentativa < 2; tentativa += 1) {
@@ -534,6 +905,7 @@ describe('CronogramaStepComponent', () => {
       });
       await proximoPasso();
     }
+    controller.expectNone(ROTA_ETAPAS);
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
@@ -574,54 +946,51 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * A fase que agrupa etapas é recusada de imediato quando não há etapa, então
-   * gravar o cronograma antes das etapas derrubaria uma gravação válida.
+   * A etapa declara a fase em que acontece, e o servidor recusa etapa cuja fase ainda não esteja
+   * no cronograma. Quem monta um certame do zero — nenhuma fase gravada — não conseguiria
+   * gravar etapa nenhuma na ordem inversa.
    */
-  it('grava as etapas antes do cronograma de fases', async () => {
+  it('grava o cronograma de fases antes das etapas', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
 
     const gravacao = componente.persistir();
 
+    const fases = controller.expectOne(ROTA_FASES);
+    expect(fases.request.method).toBe('PUT');
+    controller.expectNone(ROTA_ETAPAS);
+    fases.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
     const etapas = controller.expectOne(ROTA_ETAPAS);
     expect(etapas.request.method).toBe('PUT');
-    controller.expectNone(ROTA_FASES);
     etapas.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
     // A gravação de etapas responde 204 sem corpo, e o `id` de uma etapa nova é
-    // atribuído pelo servidor: a releitura vem logo aqui, porque as etapas já
-    // mudaram no servidor mesmo que o cronograma venha a ser recusado.
+    // atribuído pelo servidor: a releitura vem logo em seguida para recolhê-los.
     const releitura = controller.expectOne(ROTA_PROCESSO);
     expect(releitura.request.method).toBe('GET');
     releitura.flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
-
-    const fases = controller.expectOne(ROTA_FASES);
-    expect(fases.request.method).toBe('PUT');
-    fases.flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
+    await gravouExigencias();
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
   });
 
   /**
-   * As etapas já mudaram no servidor quando o cronograma é recusado. Sem
-   * recolher os identificadores aqui, a tentativa seguinte reenviaria etapas que
-   * já existem sem o `id`, e o servidor as recriaria.
+   * O cronograma vem primeiro: recusado ele, as etapas não chegam a ser enviadas. É o que
+   * evita deixar no servidor etapas apontando para uma fase que a recusa impediu de existir —
+   * e é por isso que o rascunho segue sem os identificadores que só a gravação atribui.
    */
-  it('recolhe os identificadores das etapas mesmo quando o cronograma é recusado', async () => {
+  it('não envia as etapas quando o cronograma é recusado', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
 
     const gravacao = componente.persistir();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
 
     controller.expectOne(ROTA_FASES).flush(
       {
@@ -634,10 +1003,13 @@ describe('CronogramaStepComponent', () => {
       { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
     );
     await proximoPasso();
+    controller.expectNone(ROTA_ETAPAS);
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+    expect(store.draft().cronograma.etapas[0].id).toBeNull(
+      'sem gravação de etapas não há identificador a recolher',
+    );
   });
 
   /**
@@ -653,6 +1025,8 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller
@@ -680,6 +1054,8 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller
@@ -704,6 +1080,8 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller
@@ -722,14 +1100,15 @@ describe('CronogramaStepComponent', () => {
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
 
     const segunda = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
     const reenvio = controller.expectOne(ROTA_ETAPAS);
     expect((reenvio.request.body as { id: string | null }[])[0].id).toBe(ID_ETAPA_GRAVADA);
     reenvio.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
-    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
+    await gravouExigencias();
     await segunda;
   });
 
@@ -743,6 +1122,8 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller
@@ -769,14 +1150,53 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
     expect(nativo.textContent ?? '').toContain('Etapas sem a fase que as agrupa');
-    expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(true);
+    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(true);
 
     componente.removerTodasAsEtapas();
     detectar();
 
     expect(componente.etapasOrfas()).toEqual([]);
     expect(store.draft().cronograma.etapas).toEqual([]);
-    expect(componente.problemas().some((p) => p.includes('remova as etapas'))).toBe(false);
+    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(false);
+  });
+
+  /**
+   * O que a reformulação do eixo fase→etapa habilita: uma fase que o cadastro NÃO marca
+   * como agrupadora passa a poder subdividir-se, porque é a etapa que declara a fase a
+   * que pertence. Sem isso, a habilitação com oito etapas — que todas as três planilhas
+   * do CEPS descrevem — não tem onde existir.
+   */
+  it('acrescenta etapa em fase que o cadastro não marca como agrupadora', () => {
+    comFases(ID_INSCRICAO);
+    detectar();
+
+    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    detectar();
+
+    expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
+    expect(componente.etapasOrfas()).toEqual([]);
+  });
+
+  it('mantém cada etapa na fase que ela declara', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    detectar();
+
+    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    componente.acrescentarEtapa('AVALIACAO');
+    detectar();
+
+    expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
+    expect(componente.etapasDaFase('AVALIACAO', true)).toHaveLength(1);
+  });
+
+  it('envia ao comando a fase que a etapa declara', () => {
+    comFases(ID_INSCRICAO);
+    detectar();
+
+    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    detectar();
+
+    expect(store.draft().cronograma.etapas[0].faseCodigo).toBe('COLETA_INSCRICAO');
   });
 
   it('não repete como órfã a etapa que a fase de avaliação já agrupa', () => {
@@ -850,10 +1270,8 @@ describe('CronogramaStepComponent', () => {
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
     await gravacao;
   });
 
@@ -886,19 +1304,20 @@ describe('CronogramaStepComponent', () => {
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
     await gravacao;
   });
 
-  it('não tenta gravar o cronograma quando as etapas são recusadas', async () => {
+  /** Etapa recusada interrompe o passo: as exigências documentais dependem dela e não vão. */
+  it('não tenta gravar as exigências quando as etapas são recusadas', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
 
     const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
 
     controller.expectOne(ROTA_ETAPAS).flush(
       {
@@ -914,7 +1333,7 @@ describe('CronogramaStepComponent', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    controller.expectNone(ROTA_FASES);
+    controller.expectNone(ROTA_DOCUMENTOS);
   });
 
   /**
@@ -928,6 +1347,8 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
@@ -964,12 +1385,10 @@ describe('CronogramaStepComponent', () => {
     store.patchObjectSection('identificacao', { nome: 'Nome ainda não gravado' });
 
     const gravacao = componente.persistir();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
 
     await gravacao;
 
@@ -1099,10 +1518,8 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
     controller.expectOne(ROTA_ALGORITMO).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     await gravacao;
@@ -1124,10 +1541,8 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
     controller.expectOne(ROTA_ALGORITMO).flush(
       {
         type: 'about:blank',
@@ -1146,21 +1561,51 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * O `RegraCatalogoDto` não tem `nome` nem `descricao` — só `codigo` e
-   * `baseLegal` são legíveis, e inventar um mapa código→rótulo no frontend é
-   * achado bloqueante (#511). O seletor mostra exatamente os dois campos.
+   * O `RegraCatalogoDto` não tem `nome` nem `descricao` — inventar um mapa código→rótulo no
+   * frontend é achado bloqueante (#511). A opção mostra o código e a versão, que são o que
+   * identifica a convenção; a base legal saiu do rótulo porque as três convenções de
+   * contagem do catálogo têm a MESMA, com quatrocentos e sessenta e nove caracteres, e
+   * repeti-la em cada linha empurrava o código para fora da largura do campo.
    */
-  it('oferece cada convenção do catálogo pelo código e pela base legal', () => {
-    expect(componente.regrasDeContagem()).toEqual([
-      {
-        codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
-        versao: 'v1',
-        baseLegal: 'Lei 9.784/1999, art. 66',
-      },
-    ]);
-    expect(nativo.textContent ?? '').toContain(
+  it('oferece cada convenção do catálogo pelo código e pela versão', () => {
+    expect(componente.regrasDeContagem()).toContainEqual({
+      codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
+      versao: 'v1',
+      baseLegal: 'Lei 9.784/1999, art. 66',
+    });
+    expect(nativo.textContent ?? '').toContain('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1)');
+    expect(nativo.textContent ?? '').not.toContain(
       'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL (v1) — Lei 9.784/1999, art. 66',
     );
+  });
+
+  /**
+   * O que separa uma convenção da outra são os invariantes que o catálogo publica — cada um
+   * descreve um caso, com o exemplo do resultado. Aparecem depois da escolha, porque
+   * descrevem a convenção escolhida, não as disponíveis.
+   */
+  it('mostra o que a convenção escolhida faz, na prosa do catálogo', () => {
+    expect(componente.invariantesDaContagem()).toEqual([], 'sem escolha, não há o que descrever');
+
+    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    detectar();
+
+    expect(componente.invariantesDaContagem()).toEqual([
+      'o dia da âncora não conta',
+      'em horas, a contagem começa no primeiro dia útil seguinte',
+    ]);
+    expect(componente.baseLegalDaContagem()).toBe('Lei 9.784/1999, art. 66');
+    expect(nativo.textContent ?? '').toContain('O que esta convenção faz');
+    expect(nativo.textContent ?? '').toContain('o dia da âncora não conta');
+  });
+
+  /** Catálogo que não publica invariante nenhum não ganha uma seção vazia. */
+  it('esconde a descrição quando o catálogo não publica invariante', () => {
+    componente.escolherAlgoritmo('SEM-INVARIANTE');
+    detectar();
+
+    expect(componente.invariantesDaContagem()).toEqual([]);
+    expect(nativo.textContent ?? '').not.toContain('O que esta convenção faz');
   });
 
   /**
@@ -1217,6 +1662,7 @@ describe('CronogramaStepComponent', () => {
 
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await proximoPasso();
+    await gravouExigencias();
 
     const algoritmo = controller.expectOne(ROTA_ALGORITMO);
     expect(algoritmo.request.method).toBe('PUT');
@@ -1238,10 +1684,8 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
 
     controller.expectNone(ROTA_ALGORITMO);
     await expect(gravacao).resolves.toEqual({ valid: true });
@@ -1260,10 +1704,8 @@ describe('CronogramaStepComponent', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
+    await gravouExigencias();
 
     controller.expectOne(ROTA_ALGORITMO).flush(
       {
@@ -1281,5 +1723,176 @@ describe('CronogramaStepComponent', () => {
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('etapas e o cronograma de fases foram gravados');
     expect(resultado.messages?.[0]).toContain('Convenção de contagem recusada');
+  });
+
+  /**
+   * O preflight do passo espelha a recusa da publicação sobre a norma da exigência. A
+   * conferência em si é função pura e já tinha teste; o que faltava — e por isso a ligação
+   * entre o rascunho e ela pôde quebrar em silêncio numa refatoração — era provar que o
+   * componente de fato ENXERGA as exigências declaradas.
+   */
+  describe('conferência da norma das exigências', () => {
+    function comExigenciaDeclarada(
+      bases: readonly unknown[],
+      patch: Record<string, unknown> = {},
+    ): void {
+      comFases(ID_AVALIACAO);
+      store.patchSection('documentos', {
+        emTodasAsFases: [],
+        raizes: [
+          {
+            tipo: 'FOLHA',
+            quantidadeMinima: null,
+            consequencia: null,
+            basesLegais: null,
+            filhos: null,
+            chaveDistincao: null,
+            dataReferencia: null,
+            ocorrenciasEsperadas: null,
+            repetePorEntidade: null,
+            documento: {
+              tipoDocumentoId: '01960000-0000-7000-0000-0000000000d9',
+              faseCodigo: FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo ?? '',
+              etapaId: null,
+              aplicabilidade: 'GERAL',
+              obrigatorio: true,
+              consequenciaIndeferimento: '',
+              condicoes: [],
+              basesLegais: bases,
+              idadeMaximaEmissao: null,
+              formatosPermitidos: 'QUALQUER',
+              tamanhoMaximoBytes: null,
+              ...patch,
+            },
+          },
+        ],
+      });
+      detectar();
+    }
+
+    /**
+     * O campo que o cronograma acrescenta sozinho precisa ficar registrado como tal. Sem o
+     * registro, o passo do formulário não o reconhece como posto por exigência e o preserva
+     * mesmo depois de o gatilho que o pediu ser apagado — a inscrição segue coletando dado
+     * pessoal que já não tem finalidade declarada.
+     */
+    it('registra como posto por exigência o campo que acrescenta sozinho', async () => {
+      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      catalogos.fatos.set([
+        {
+          codigo: 'SEXO',
+          nome: 'Sexo',
+          dominio: 'CATEGORICO',
+          origem: 'DECLARADO',
+          cardinalidade: 'UNIVALORADO',
+          binding: 'CAMPO_INSCRICAO:SEXO',
+          valoresDominio: null,
+        } as unknown as FatoCandidatoView,
+      ]);
+
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        {
+          aplicabilidade: 'CONDICIONAL',
+          condicoes: [{ clausula: 0, ordem: 0, fato: 'SEXO', operador: 'IGUAL', valor: '"MASCULINO"' }],
+        },
+      );
+
+      expect(store.camposPostosPelasExigencias().has('SEXO')).toBe(false);
+
+      const garantir = (
+        componente as unknown as {
+          garantirCamposQueAsExigenciasPressupoem(
+            processoId: string,
+            servidor: unknown,
+            dependencias: readonly string[],
+          ): Promise<unknown>;
+        }
+      ).garantirCamposQueAsExigenciasPressupoem(PROCESSO_ID, { fatosColetados: [] }, []);
+
+      const gravacao = controller.expectOne((r) => r.url.includes('fatos-coletados'));
+      gravacao.flush(null, { status: 204, statusText: 'No Content' });
+      await garantir;
+
+      expect(store.draft().formulario.fatos.map((c) => c.fatoCodigo)).toContain('SEXO');
+      expect(store.camposPostosPelasExigencias().has('SEXO')).toBe(
+        true,
+        'o campo entrou sozinho, e é esse registro que autoriza tirá-lo quando o gatilho sair',
+      );
+    });
+
+    /**
+     * A fase com documento exigido e sem etapa nenhuma era removida sem confirmação: a
+     * contagem varria os valores do rascunho como se fossem os registros planos do modelo
+     * anterior e dava sempre zero, então as exigências sumiam junto com a fase sem que
+     * ninguém fosse avisado.
+     */
+    it('conta os documentos da fase antes de removê-la', () => {
+      comExigenciaDeclarada([
+        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+      ]);
+
+      const indice = componente.fases.controls.findIndex(
+        (grupo) => grupo.controls.codigo.value === FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo,
+      );
+      expect(indice).toBeGreaterThanOrEqual(0);
+
+      expect(componente.dependentesDaFase(indice).documentos).toBe(1);
+
+      componente.pedirRemocaoDaFase(indice);
+      expect(componente.remocaoAConfirmar()).toBe(
+        indice,
+        'a remoção precisa passar pela confirmação, porque leva o documento junto',
+      );
+      expect(componente.resumoDaRemocao(indice)).toContain('1 documento exigido');
+    });
+
+    it('acusa a exigência que decide o resultado e está sem norma resolvida', () => {
+      comExigenciaDeclarada([
+        { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
+      ]);
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('norma');
+    });
+
+    it('não acusa quando alguma das normas declaradas está resolvida', () => {
+      comExigenciaDeclarada([
+        { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
+        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+      ]);
+
+      expect(componente.validate().messages?.join(' ') ?? '').not.toContain('norma');
+    });
+
+    /**
+     * A recusa de complementação é do passo do CRONOGRAMA, não da superfície da fase: aquela
+     * é embutida com `faseFixada` e o `validate()` dela nunca é chamado pela página. Escrita
+     * lá, a conferência existia e não rodava.
+     */
+    it('acusa o reenvio declarado em fase que não admite complementação', () => {
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        { consequenciaIndeferimento: 'PENDENCIA_REENVIO' },
+      );
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('complementação');
+    });
+
+    /** Exigência ancorada em fase que saiu do cronograma é nomeada, não descartada em silêncio. */
+    it('acusa a exigência cuja fase saiu do cronograma', () => {
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+      );
+      // A fase sai depois de a exigência ter sido declarada nela.
+      comFases(ID_INSCRICAO);
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('saiu do cronograma');
+    });
   });
 });

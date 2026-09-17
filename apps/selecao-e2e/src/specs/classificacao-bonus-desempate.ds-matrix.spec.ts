@@ -197,9 +197,12 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
       await regraDoCriterio.nth(2).selectOption('DESEMPATE-PREDICADO-FATO|1.0');
-      await page.getByLabel('Fato', { exact: true }).fill('RENDA_PER_CAPITA');
-      await page.getByLabel('Operador', { exact: true }).fill('lte');
-      await page.getByLabel('Valor', { exact: true }).fill('1.5');
+      // Fato, comparação e valor vêm do catálogo institucional: os três são vocabulário
+      // fechado do servidor, e antes eram campos de texto que aceitavam "lte" para ser
+      // recusado no 422.
+      await page.getByLabel('Fato do candidato', { exact: true }).selectOption('RENDA_PER_CAPITA');
+      await page.getByLabel('Comparação', { exact: true }).selectOption('MENOR_IGUAL');
+      await page.getByLabel('Valor', { exact: true }).fill('1');
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
@@ -211,7 +214,11 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await irAoPasso(page, 'Desempate', testInfo);
 
       await page.getByRole('button', { name: '+ Acrescentar critério' }).click();
-      await expect(page.getByRole('button', { name: 'Mover para cima' })).toBeDisabled();
+      // O rótulo diz QUAL critério move: numa lista de sete, sete botões "Mover para cima"
+      // idênticos não dizem ao leitor de tela o que cada um opera.
+      await expect(
+        page.getByRole('button', { name: 'Mover o critério 1 para cima' }),
+      ).toBeDisabled();
     });
   });
 
@@ -292,6 +299,40 @@ function temaDoProject(projectName: string): DsTheme {
   return parte === 'dark' || parte === 'contrast' ? parte : 'light';
 }
 
+/**
+ * O vocabulário fechado de fatos do candidato, como o catálogo institucional o publica. O
+ * critério de desempate por predicado cita um destes — e só estes, porque o comando resolve o
+ * vocabulário sem os fatos de domínio dinâmico.
+ */
+const FATOS_CANDIDATO = [
+  {
+    id: '01960000-0000-7000-0000-0000000000f1',
+    codigo: 'RENDA_PER_CAPITA',
+    nome: 'Renda familiar per capita',
+    descricao: null,
+    dominio: 'NUMERICO',
+    origem: 'DERIVADO',
+    cardinalidade: 'ESCALAR',
+    valoresDominio: null,
+    pontoResolucao: 'INSCRICAO',
+    binding: 'ATRIBUTO_CANDIDATO:RENDA_PER_CAPITA',
+    valoresDominioDeclarados: null,
+  },
+  {
+    id: '01960000-0000-7000-0000-0000000000f2',
+    codigo: 'COR_RACA',
+    nome: 'Cor ou raça',
+    descricao: null,
+    dominio: 'CATEGORICO',
+    origem: 'DECLARADO',
+    cardinalidade: 'ESCALAR',
+    valoresDominio: ['BRANCA', 'PRETA', 'PARDA', 'INDIGENA', 'AMARELA'],
+    pontoResolucao: 'INSCRICAO',
+    binding: 'CAMPO_INSCRICAO:COR_RACA',
+    valoresDominioDeclarados: null,
+  },
+];
+
 /** Os catálogos de regra que as quatro telas consultam, todos do mesmo `rol_de_regras`. */
 async function mockarCatalogos(page: Page): Promise<void> {
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {
@@ -316,6 +357,21 @@ async function mockarCatalogos(page: Page): Promise<void> {
       contentType: 'application/json',
       headers: CORS_HEADERS,
       body: JSON.stringify(porTipo[tipo ?? ''] ?? []),
+    });
+  });
+
+  // O vocabulário de fatos que o critério de desempate por predicado pode citar.
+  await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, async (route: Route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: CORS_HEADERS,
+      body: JSON.stringify(FATOS_CANDIDATO),
     });
   });
 

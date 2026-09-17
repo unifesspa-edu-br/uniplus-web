@@ -42,11 +42,14 @@ export function hojeNoFusoInstitucional(agora: Date = new Date()): string {
  * publicado.
  */
 export function instanteDoCampo(valorLocal: string): string | null {
-  const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(valorLocal.trim());
+  // Os segundos são opcionais: o campo os devolve quando o valor hidratado os trazia, e não
+  // os devolve quando o operador editou. Recusá-los faria a janela declarada com segundos
+  // voltar como "não declarada" na gravação seguinte.
+  const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(valorLocal.trim());
   if (partes === null) return null;
 
-  const [, ano, mes, dia, hora, minuto] = partes.map(Number);
-  const comoSeFosseUtc = Date.UTC(ano, mes - 1, dia, hora, minuto);
+  const [, ano, mes, dia, hora, minuto, segundo] = partes.map(Number);
+  const comoSeFosseUtc = Date.UTC(ano, mes - 1, dia, hora, minuto, Number.isNaN(segundo) ? 0 : segundo);
 
   // Duas passagens: a primeira estima o deslocamento pela data lida como se
   // fosse UTC, a segunda o confirma no instante já corrigido — o bastante para
@@ -54,7 +57,44 @@ export function instanteDoCampo(valorLocal: string): string | null {
   const estimado = deslocamentoEmMinutos(new Date(comoSeFosseUtc));
   const deslocamento = deslocamentoEmMinutos(new Date(comoSeFosseUtc - estimado * 60_000));
 
-  return `${valorLocal.trim()}:00${sufixoDoDeslocamento(deslocamento)}`;
+  const relogio = `${partes[4]}:${partes[5]}:${Number.isNaN(segundo) ? '00' : partes[6]}`;
+  return `${partes[1]}-${partes[2]}-${partes[3]}T${relogio}${sufixoDoDeslocamento(deslocamento)}`;
+}
+
+/**
+ * A primeira hora de hoje no fuso institucional, no formato que o campo de data e hora usa.
+ *
+ * É o piso que faz sentido oferecer a quem monta um cronograma: certame não se agenda para
+ * ontem. O dia vem do fuso de Belém, e não do relógio do navegador — quem configura de outro
+ * estado, ou depois das 21h, veria "hoje" um dia à frente e o campo ofereceria uma data que
+ * ainda não chegou para o certame.
+ */
+export function inicioDeHojeNoFusoInstitucional(agora: Date = new Date()): string {
+  return `${hojeNoFusoInstitucional(agora)}T00:00`;
+}
+
+/**
+ * O menor valor que um campo de data e hora deve aceitar, dados os limites que se aplicam a ele.
+ *
+ * Devolve o mais restritivo dos limites — o mais tardio —, <b>exceto</b> quando o campo já
+ * carrega um valor anterior a ele. Essa exceção é o ponto: um certame publicado em janeiro tem
+ * a inscrição de fevereiro no passado, e retificá-lo em março não pode esbarrar num piso que
+ * invalida o que já aconteceu. O piso governa a escolha de data nova, nunca condena a antiga.
+ *
+ * Compara como texto porque o formato é ordenável por natureza — `AAAA-MM-DDTHH:mm` cresce da
+ * esquerda para a direita —, e converter para `Date` só para comparar traria de volta a questão
+ * de fuso que o formato já resolve.
+ */
+export function pisoDoCampoDeData(
+  valorAtual: string,
+  ...limites: readonly (string | null | undefined)[]
+): string | null {
+  const aplicaveis = limites.filter((limite): limite is string => !!limite && limite !== '');
+  if (aplicaveis.length === 0) return null;
+
+  const maisTardio = aplicaveis.reduce((maior, limite) => (limite > maior ? limite : maior));
+
+  return valorAtual !== '' && valorAtual < maisTardio ? valorAtual : maisTardio;
 }
 
 /**
@@ -66,7 +106,15 @@ export function campoDoInstante(instanteIso: string): string {
   if (Number.isNaN(instante.getTime())) return '';
 
   const partes = partesNoFuso(instante);
-  return `${partes.ano}-${partes.mes}-${partes.dia}T${partes.hora}:${partes.minuto}`;
+  const relogio = `${partes.hora}:${partes.minuto}`;
+
+  // Os segundos entram quando existem. O prazo que termina às 23:59:59 é declaração comum, e
+  // truncá-lo para 23:59 encurtava a janela em 59 segundos a cada regravação — inclusive na
+  // varredura que a publicação faz dos passos anteriores, sem ninguém ter editado nada. O
+  // campo aceita o valor com segundos; ao editar, o navegador devolve sem eles, que é
+  // exatamente a intenção de quem editou.
+  const segundos = partes.segundo ?? '00';
+  return `${partes.ano}-${partes.mes}-${partes.dia}T${segundos === '00' ? relogio : `${relogio}:${segundos}`}`;
 }
 
 function sufixoDoDeslocamento(minutos: number): string {

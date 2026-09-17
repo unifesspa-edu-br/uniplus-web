@@ -1,33 +1,23 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import { DOCUMENTO_GRUPOS, STEP_LABELS } from './processo-seletivo.data';
+import { STEP_LABELS } from './processo-seletivo.data';
+import { exigenciasVazias } from './shared/exigencias-documentais';
 import { hidratarDraft } from './shared/hidratacao';
 import {
-  DocumentoConfig,
+  ExigenciasDoRascunho,
   FalhaDeLeitura,
   StepStatus,
   WizardDraft,
 } from './processo-seletivo.models';
 
-function initialDocumentos(): Record<string, DocumentoConfig> {
-  return Object.fromEntries(
-    DOCUMENTO_GRUPOS.flatMap((group) => group.docs).map((doc) => [
-      doc.id,
-      {
-        included: false,
-        todasEtapas: true,
-        // Vazia até o certame ter cronograma: a fase que a exigência aponta é
-        // decisão de quem configura, e semear a partir de um vocabulário fixo
-        // fazia todo processo nascer apontando para fases que não existem nele.
-        etapas: [],
-        // Vazio enquanto o documento acompanha o quadro de vagas; só o recorte
-        // no passo de documentos preenche esta lista.
-        modalidades: [],
-        modalidadesRecortadas: false,
-      },
-    ]),
-  );
+/**
+ * O rascunho nasce sem documento nenhum: quais existem é o cadastro de Configuração que
+ * diz, e ele cresce sem deploy. Semear a partir de uma lista local fazia o rascunho
+ * carregar entradas de documentos que ninguém marcou — e envelhecer junto com a lista.
+ */
+function initialDocumentos(): ExigenciasDoRascunho {
+  return exigenciasVazias();
 }
 
 const INITIAL_DRAFT: WizardDraft = {
@@ -73,6 +63,15 @@ const INITIAL_DRAFT: WizardDraft = {
   },
   desempate: [],
   documentos: initialDocumentos(),
+  // O formulário nasce vazio: título, termo e campos são declaração do certame, e semear
+  // qualquer coisa aqui poria no formulário do candidato um campo que ninguém escolheu.
+  formulario: {
+    titulo: '',
+    termoAceiteTexto: '',
+    fatos: [],
+    referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+    derivacao: [],
+  },
   atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   publicacao: {
     numero: '',
@@ -149,6 +148,18 @@ export class ProcessoSeletivoStore {
    * não elege o oficial: fica vazio enquanto o administrador não decide, e a
    * decisão zera a lista.
    */
+  /**
+   * Os campos que ESTA sessão acrescentou ao formulário por causa de uma exigência — memória de
+   * quem entrou sozinho, e por isso pode sair sozinho quando a exigência que o pediu deixar de
+   * existir. Campo declarado à mão, ou vindo da configuração gravada, nunca entra aqui.
+   *
+   * Vive no store porque dois passos acrescentam: o formulário, ao reconciliar, e o cronograma,
+   * ao gravar um gatilho que pressupõe um dado. Guardada só no formulário, a que o cronograma
+   * punha ficava sem dono — o campo sobrevivia à remoção do gatilho, e a inscrição seguia
+   * coletando dado pessoal sem finalidade declarada.
+   */
+  readonly camposPostosPelasExigencias = signal<ReadonlySet<string>>(new Set());
+
   readonly documentosParaEscolha = signal<readonly DocumentoEditalDto[]>([]);
 
   /**
@@ -400,6 +411,7 @@ export class ProcessoSeletivoStore {
     this.hidratando.set(false);
     this.falhaDeLeitura.set(null);
     this.documentosParaEscolha.set([]);
+    this.camposPostosPelasExigencias.set(new Set());
     this.avisoDocumentos.set(null);
     this.geracao.update((valor) => valor + 1);
   }

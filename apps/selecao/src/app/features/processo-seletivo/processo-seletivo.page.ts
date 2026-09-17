@@ -13,6 +13,7 @@ import {
   untracked,
   viewChildren,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -38,7 +39,7 @@ import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.compon
 import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
 import { CatalogosDoCronogramaService } from './steps/steps/cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
-import { FaseStepComponent } from './steps/steps/fase/fase.component';
+import { FormularioStepComponent } from './steps/steps/formulario/formulario.component';
 import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
@@ -47,6 +48,17 @@ import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.com
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
 import { classificarDocumentos } from './steps/shared/hidratacao';
+import {
+  VERSAO_DO_RASCUNHO,
+  blocoDoDocumento,
+  documentoDoRascunho,
+  temAlgoAGuardar,
+} from './steps/shared/rascunho-da-publicacao';
+import {
+  AVISO_DE_RASCUNHO_NAO_GRAVADO,
+  ConfirmacaoDeSaida,
+} from './steps/shared/rascunho-nao-gravado.guard';
+import { ChaveDeSubstituicao } from './steps/shared/chave-de-substituicao';
 import type { MotivoFalhaDeLeitura } from './steps/processo-seletivo.models';
 
 /** Formato do `:id` na rota — recusar aqui poupa uma ida ao servidor com lixo. */
@@ -66,8 +78,9 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
 @Component({
   selector: 'sel-processo-seletivo',
   standalone: true,
-  host: { class: 'sel-processo' },
+  host: { 'class': 'sel-processo', '(window:beforeunload)': 'aoFecharAJanela($event)' },
   imports: [
+    DatePipe,
     RouterLink,
     AlertComponent,
     BackToTopContainerDirective,
@@ -79,7 +92,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     PagamentoStepComponent,
     VagasStepComponent,
     CronogramaStepComponent,
-    FaseStepComponent,
+    FormularioStepComponent,
     FormulaStepComponent,
     BonusStepComponent,
     DesempateStepComponent,
@@ -102,6 +115,54 @@ export class ProcessoSeletivoPage {
 
   readonly passoCorrente = computed(() => PASSOS[this.store.currentStep()]);
 
+  /** Quando o rascunho da publicação foi gravado, para o carimbo do passo de Revisão. */
+  readonly rascunhoSalvoEm = signal<string | null>(null);
+
+  /** Aviso de rascunho descartado por mudança de formato — some assim que outro é gravado. */
+  readonly avisoDoRascunho = signal<string | null>(null);
+
+  /** Enquanto a gravação do rascunho está em voo — o botão não aceita um segundo clique. */
+  readonly salvandoRascunho = signal(false);
+
+  /** A recusa da última gravação de rascunho, dita na tela em vez de engolida. */
+  readonly falhaDoRascunho = signal<string | null>(null);
+
+  /**
+   * O documento que o servidor tem, para saber se há edição não gravada. `null` enquanto nada
+   * foi gravado nesta sessão — e aí qualquer coisa preenchida já conta como pendente.
+   */
+  private readonly documentoNoServidor = signal<string | null>(null);
+
+  private readonly chaveDoRascunho = new ChaveDeSubstituicao();
+
+  /**
+   * Vez do rascunho. Muda sempre que o rascunho de antes deixa de valer — na troca de processo
+   * e na publicação, que apaga o rascunho no servidor. A resposta de uma gravação ou de um
+   * descarte que chega depois disso descreve algo que não existe mais: sem o carimbo, ela
+   * escrevia "salvo às …" sobre um rascunho que a publicação tinha acabado de apagar.
+   */
+  private vezDoRascunho = 0;
+
+  /**
+   * Há transcrição do ato que o servidor ainda não tem.
+   *
+   * É a condição da guarda de saída, e é deliberadamente "não gravado", não "algo digitado": um
+   * aviso que dispara sempre que existe texto na tela é o aviso que todo operador aprende a
+   * descartar sem ler, e aí ele não protege mais nada.
+   */
+  readonly rascunhoPendente = computed(() => {
+    const publicacao = this.store.draft().publicacao;
+    const noServidor = this.documentoNoServidor();
+
+    // Nada gravado ainda: a tela em branco não é edição pendente — é a tela como nasceu.
+    if (noServidor === null) return temAlgoAGuardar(publicacao);
+
+    // Com rascunho gravado, esvaziar os campos É a edição a proteger. Tratar o bloco vazio
+    // como "nada a guardar" também aqui faria o apagamento sair sem aviso, e a volta ao
+    // processo reporia do servidor justamente o que o operador tinha acabado de limpar.
+    return JSON.stringify(documentoDoRascunho(publicacao)) !== noServidor;
+  });
+
   readonly store = inject(ProcessoSeletivoStore);
   private readonly root = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly overlayScroll = inject(OverlayScrollService);
@@ -111,6 +172,7 @@ export class ProcessoSeletivoPage {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
 
@@ -221,6 +283,11 @@ export class ProcessoSeletivoPage {
           this.store.hidratando();
 
         if (tinhaProcesso) {
+          if (!this.podeTrocarDeProcesso()) {
+            this.voltarAoProcessoAberto();
+            return;
+          }
+
           this.leituraEmCurso += 1;
           this.limparEditor();
         }
@@ -237,6 +304,14 @@ export class ProcessoSeletivoPage {
         if (this.store.falhaDeLeitura() !== null || this.store.hidratando()) {
           void this.retomar(id);
         }
+        return;
+      }
+
+      // A guarda da rota não roda aqui: mudar só o `:id` reusa a rota, e o componente nunca é
+      // desativado. Sem perguntar neste ponto, a promessa dela valia para sair do editor e não
+      // para trocar de processo — e é `retomar()` quem apaga a transcrição, logo em seguida.
+      if (!this.podeTrocarDeProcesso()) {
+        this.voltarAoProcessoAberto();
         return;
       }
 
@@ -301,6 +376,8 @@ export class ProcessoSeletivoPage {
     this.store.hidratar(detalhe.data);
     await this.restaurarDocumentoEdital(id, superada);
     if (superada()) return;
+    await this.restaurarRascunhoDaPublicacao(id, superada);
+    if (superada()) return;
 
     this.store.hidratando.set(false);
   }
@@ -339,6 +416,161 @@ export class ProcessoSeletivoPage {
   }
 
   /**
+   * Repõe o bloco do ato que o operador tinha transcrito e ainda não publicou.
+   *
+   * Vem DEPOIS de `hidratar`, como o edital: a hidratação reescreve o rascunho inteiro a partir
+   * do detalhe, e projetar antes dela seria projetar sobre o que ela substitui em seguida.
+   *
+   * Rascunho de outro formato é descartado com aviso, nunca reidratado pela metade — meio
+   * preenchido com campos que a tela não entende é pior que vazio, porque o operador publicaria
+   * acreditando ter conferido. 404 é o caso comum (não há rascunho, ou o que havia venceu) e não
+   * merece aviso nenhum.
+   */
+  private async restaurarRascunhoDaPublicacao(
+    processoSeletivoId: string,
+    superada: () => boolean,
+  ): Promise<void> {
+    const resultado = await firstValueFrom(this.api.obterRascunhoDaPublicacao(processoSeletivoId));
+    if (superada()) return;
+
+    if (!isApiOk(resultado)) {
+      // 404 é ausência: não há rascunho, ou o que havia venceu. Qualquer outra recusa é
+      // ignorância, não ausência — o rascunho pode existir no servidor e a tela não o
+      // recebeu. Abrir em branco calado convidaria a gravar por cima do que o operador nunca
+      // viu, então o aviso fica, e é ele que dá a chance de recarregar antes de salvar.
+      if (resultado.problem.status !== 404) {
+        this.avisoDoRascunho.set(
+          'Não foi possível verificar se há rascunho da publicação guardado para este processo. ' +
+            'Recarregue antes de salvar: gravar agora substitui o que estiver lá.',
+        );
+      }
+      return;
+    }
+
+    if (resultado.data.versao !== VERSAO_DO_RASCUNHO) {
+      this.avisoDoRascunho.set(
+        'Havia um rascunho da publicação gravado num formato anterior desta tela, e ele foi descartado. Preencha o bloco do ato novamente.',
+      );
+      return;
+    }
+
+    this.avisoDoRascunho.set(null);
+    const bloco = blocoDoDocumento(resultado.data.conteudo);
+    this.store.projetarSecao('publicacao', bloco);
+    this.documentoNoServidor.set(JSON.stringify(documentoDoRascunho(bloco)));
+    this.rascunhoSalvoEm.set(resultado.data.salvoEm);
+  }
+
+  /**
+   * A guarda de saída — a rede que torna o botão de gravar suficiente.
+   *
+   * São dois mecanismos, e não três: trocar de passo dentro do wizard não perde nada, porque
+   * `goTo` mexe só no passo corrente e o rascunho continua no store. O que perde é sair do
+   * editor (tratado pelo `CanDeactivate` da rota) e recarregar ou fechar a aba, que é este.
+   *
+   * O navegador ignora qualquer texto que se ponha aqui e mostra o aviso genérico dele — por
+   * isso não há mensagem a escrever, só o `preventDefault` que pede a confirmação.
+   */
+  protected aoFecharAJanela(evento: BeforeUnloadEvent): void {
+    if (!this.rascunhoPendente()) return;
+    evento.preventDefault();
+  }
+
+  /**
+   * Guarda no servidor o bloco do ato que está em tela.
+   *
+   * Só sai daqui, do botão — nunca de `reset()`, de hidratação ou de `valueChanges`. É essa
+   * regra que impede o conserto de virar o defeito: `retomar()` limpa o rascunho ANTES de
+   * hidratar, e uma gravação automática pendurada no draft dispararia nessa limpeza, apagando no
+   * servidor o que ela ia buscar em seguida.
+   */
+  protected async salvarRascunhoDaPublicacao(): Promise<void> {
+    const processoId = this.store.processoSeletivoId();
+    if (processoId === null || this.salvandoRascunho()) return;
+
+    const documento = documentoDoRascunho(this.store.draft().publicacao);
+    const corpo = { versao: VERSAO_DO_RASCUNHO, conteudo: documento };
+
+    // A página é reusada entre processos, e sair daqui só pede confirmação — o operador pode
+    // confirmar com a gravação em voo e carregar outro processo antes de a resposta chegar.
+    // Publicar tem o mesmo efeito por outro caminho: apaga o rascunho no servidor. Sem o
+    // carimbo, a resposta atrasada escreveria o documento e o horário sobre um estado que já
+    // é de outro processo — ou de um rascunho que deixou de existir.
+    const vez = this.vezDoRascunho;
+    const superada = (): boolean => vez !== this.vezDoRascunho;
+
+    this.salvandoRascunho.set(true);
+    this.falhaDoRascunho.set(null);
+    const resultado = await firstValueFrom(
+      this.api.salvarRascunhoDaPublicacao(processoId, corpo, this.chaveDoRascunho.contextoPara(corpo)),
+    );
+    if (superada()) return;
+    this.salvandoRascunho.set(false);
+
+    if (!isApiOk(resultado)) {
+      this.chaveDoRascunho.recusada(resultado);
+      this.falhaDoRascunho.set(this.problemI18n.resolve(resultado.problem).title);
+      return;
+    }
+
+    this.avisoDoRascunho.set(null);
+    this.documentoNoServidor.set(JSON.stringify(documento));
+    this.rascunhoSalvoEm.set(new Date().toISOString());
+
+    // A chave termina com a gravação que a usou. Retê-la faz de um clique posterior em "Salvar
+    // rascunho" a repetição do anterior: com o mesmo corpo, o servidor devolve o resultado que
+    // guardou em vez de gravar de novo — e o que estiver lá agora, posto por outra aba ou por
+    // outra sessão, permanece, enquanto a tela anuncia que salvou. Cada clique é uma
+    // substituição nova, e cada substituição pede chave própria.
+    this.chaveDoRascunho.renovar();
+  }
+
+  /**
+   * Retira do servidor o rascunho deste operador e esvazia o bloco em tela.
+   *
+   * Esvaziar junto é o que faz a ação dizer a verdade: descartar e deixar os campos preenchidos
+   * daria ao operador a impressão de que ainda há algo guardado.
+   */
+  protected async descartarRascunhoDaPublicacao(): Promise<void> {
+    const processoId = this.store.processoSeletivoId();
+    if (processoId === null || this.salvandoRascunho()) return;
+
+    // Mesmo carimbo da gravação: a resposta que chega depois da troca de processo — ou depois
+    // de publicar — não pode apagar o bloco em tela nem o horário do rascunho de agora.
+    const vez = this.vezDoRascunho;
+    const superada = (): boolean => vez !== this.vezDoRascunho;
+
+    // O bloco como estava quando o descarte saiu. O formulário da Revisão segue editável
+    // enquanto a resposta não chega, e esvaziá-lo sem olhar apagaria a transcrição que o
+    // operador começou nesse intervalo — ele pediu para descartar o que havia, não o que
+    // escreveu depois.
+    const aoPedir = JSON.stringify(documentoDoRascunho(this.store.draft().publicacao));
+
+    this.salvandoRascunho.set(true);
+    this.falhaDoRascunho.set(null);
+    const resultado = await firstValueFrom(this.api.descartarRascunhoDaPublicacao(processoId));
+    if (superada()) return;
+    this.salvandoRascunho.set(false);
+
+    if (!isApiOk(resultado)) {
+      this.falhaDoRascunho.set(this.problemI18n.resolve(resultado.problem).title);
+      return;
+    }
+
+    const intocado = JSON.stringify(documentoDoRascunho(this.store.draft().publicacao)) === aoPedir;
+    if (intocado) this.store.projetarSecao('publicacao', blocoDoDocumento(null));
+    this.documentoNoServidor.set(null);
+    this.rascunhoSalvoEm.set(null);
+    this.avisoDoRascunho.set(null);
+
+    // A chave sai junto com o rascunho que ela acompanhou. Ela só gira sozinha quando o corpo
+    // muda: sem renovar aqui, reescrever depois exatamente a mesma transcrição sairia com a
+    // chave que o servidor já viu, receberia o replay da gravação anterior — anulada por este
+    // descarte — e a tela diria "salvo" sobre um rascunho que não foi recriado.
+    this.chaveDoRascunho.renovar();
+  }
+
+  /**
    * Limpa o editor por inteiro. O store guarda o que está em tela; o serviço de
    * cadastro guarda o comando retido e as chaves de idempotência da criação em
    * andamento. Os dois descrevem o mesmo processo e precisam ser esquecidos
@@ -354,6 +586,35 @@ export class ProcessoSeletivoPage {
     // pelo estado novo enquanto exibia os dados do editor anterior — o resumo
     // vale para o rascunho que o produziu, e esse rascunho acabou de sumir.
     this.confirmacaoPendente.set(null);
+
+    // Mesmo motivo do resumo: o rastro do rascunho descreve o processo que estava aberto. Sem
+    // esquecê-lo, a guarda de saída perguntaria sobre a transcrição do processo anterior.
+    this.esquecerRascunhoDaPublicacao();
+  }
+
+  /** Há transcrição por gravar, e quem está trocando de processo concordou em perdê-la? */
+  private podeTrocarDeProcesso(): boolean {
+    if (!this.rascunhoPendente()) return true;
+    return this.confirmacaoDeSaida.confirmar(AVISO_DE_RASCUNHO_NAO_GRAVADO);
+  }
+
+  /**
+   * Devolve o endereço ao processo que continua em tela.
+   *
+   * A assinatura do parâmetro dispara de novo, e o ramo que reconhece o processo já aberto não
+   * relê nada — é por isso que voltar aqui não custa a transcrição que a recusa acabou de
+   * proteger.
+   */
+  private voltarAoProcessoAberto(): void {
+    const aberto = this.store.processoSeletivoId();
+
+    // Sem processo aberto, o editor está no cadastro novo: é para lá que o endereço volta.
+    // Deixá-lo no `:id` recusado punha o cadastro em andamento sob o endereço de outro
+    // processo — e, ao criar, o efeito que ajusta a URL desistiria, porque ela já traz um id.
+    void this.router.navigate(
+      aberto === null ? ['/processo-seletivo', 'novo'] : ['/processo-seletivo', aberto],
+      { replaceUrl: true },
+    );
   }
 
   /** Repete a leitura do endereço atual, para as falhas que admitem retentativa. */
@@ -476,11 +737,61 @@ export class ProcessoSeletivoPage {
       // de publicar. Sem este destino explícito, fechar o diálogo de
       // confirmação da publicação deixa o foco sem lugar nenhum.
       if (sucesso && this.store.isLast()) {
+        // O ato foi registrado e o servidor já apagou o rascunho. O que sobra em tela é a
+        // declaração publicada, e ela é a nova referência: zerá-la faria a guarda de saída ler
+        // os campos publicados como transcrição por gravar e barrar quem acabou de publicar —
+        // o oposto do que esta linha existe para evitar.
+        this.fixarRascunhoComoJaGravado();
         this.focarConfirmacaoDePublicacao();
       }
     } finally {
       this.confirmacaoPendente.set(null);
     }
+  }
+
+  /**
+   * Esquece o rastro local do rascunho, sem tocar no que está em tela.
+   *
+   * Serve a quem publicou (o servidor já apagou a linha) e a quem troca de processo, onde o
+   * rastro do anterior faria a guarda de saída perguntar sobre um rascunho que não é mais o
+   * desta tela.
+   */
+  /**
+   * Toma o que está em tela como já guardado, sem gravar nada.
+   *
+   * É o estado de quem publicou: o rascunho no servidor sumiu junto com o ato, e os campos que
+   * restam são a declaração que virou publicação — não há nada pendente a proteger.
+   */
+  private fixarRascunhoComoJaGravado(): void {
+    // O rascunho de antes deixou de existir no servidor: o que estiver em voo não descreve
+    // mais nada, e sua resposta não pode escrever na tela.
+    this.vezDoRascunho += 1;
+    this.salvandoRascunho.set(false);
+    this.documentoNoServidor.set(
+      JSON.stringify(documentoDoRascunho(this.store.draft().publicacao)),
+    );
+    this.rascunhoSalvoEm.set(null);
+    this.avisoDoRascunho.set(null);
+    this.falhaDoRascunho.set(null);
+    this.chaveDoRascunho.renovar();
+  }
+
+  private esquecerRascunhoDaPublicacao(): void {
+    this.vezDoRascunho += 1;
+    // O indicador de gravação sai junto: uma resposta em voo desiste ao descobrir que foi
+    // superada, e é aqui que o processo novo começa com o botão liberado em vez de preso
+    // esperando a resposta de um rascunho que não é mais o dele.
+    this.salvandoRascunho.set(false);
+    this.documentoNoServidor.set(null);
+    this.rascunhoSalvoEm.set(null);
+    this.avisoDoRascunho.set(null);
+    this.falhaDoRascunho.set(null);
+
+    // A chave também é do processo que saiu. Ela só gira sozinha quando o corpo muda, e dois
+    // processos em branco produzem o MESMO documento serializado: sem renovar aqui, a primeira
+    // gravação do processo novo sairia com a chave que o servidor já viu, receberia o replay do
+    // anterior e a tela marcaria como salvo um rascunho que ninguém gravou.
+    this.chaveDoRascunho.renovar();
   }
 
   /** Foca o título "Processo publicado" — só existe quando `persistir()` da Revisão confirmou o snapshot. */

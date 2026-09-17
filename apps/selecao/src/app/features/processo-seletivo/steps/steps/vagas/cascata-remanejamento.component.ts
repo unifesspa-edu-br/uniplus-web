@@ -241,9 +241,6 @@ export class CascataRemanejamentoComponent {
     return problemasDaCascata(this.ofertas(), this.catalogos.modalidadePorId(), matriz);
   });
 
-  /** Confirmação transitiva de UI — não é campo do rascunho, some a cada escolha de regra nova. */
-  readonly confirmado = signal(false);
-
   /**
    * O servidor pode ter uma cascata gravada — de hidratação ou de uma
    * gravação anterior nesta mesma sessão do editor. É rastreado à parte do
@@ -261,12 +258,11 @@ export class CascataRemanejamentoComponent {
   constructor() {
     // As rotas do editor reusam a mesma instância de componente ao trocar de
     // processo (`ProcessoSeletivoStore.reset()` muda a geração, não destrói
-    // a página) — sem isto, a confirmação e o rastro de "existe no servidor"
-    // do processo anterior vazariam para o processo que acabou de hidratar.
+    // a página) — sem isto, o rastro de "existe no servidor" do processo
+    // anterior vazaria para o processo que acabou de hidratar.
     effect(() => {
       const snapshot = this.store.remoteSnapshot();
       this.existeNoServidor.set(snapshot?.cascata !== null && snapshot?.cascata !== undefined);
-      this.confirmado.set(false);
     });
 
     // Empurra o rascunho para o controle sem disparar `valueChanges` — quem
@@ -370,13 +366,16 @@ export class CascataRemanejamentoComponent {
     );
   }
 
-  /** A cascata está pronta para gravar: regra escolhida, matriz reconhecida, sem pendência e conferida. */
+  /**
+   * A cascata está pronta para gravar: regra escolhida, matriz reconhecida e sem pendência.
+   *
+   * Não depende mais de o operador ter marcado nada. Enquanto dependia, um simples
+   * recarregamento a derrubava — o efeito acima zerava a marca a cada hidratação — e a varredura
+   * de gravação da publicação falhava com "confirme a matriz" num passo que o operador não
+   * tinha aberto.
+   */
   readonly pronta = computed(
-    () =>
-      this.cascata() !== null &&
-      this.matriz() !== null &&
-      this.problemas().length === 0 &&
-      this.confirmado(),
+    () => this.cascata() !== null && this.matriz() !== null && this.problemas().length === 0,
   );
 
   escolherRegra(valor: string): void {
@@ -384,7 +383,6 @@ export class CascataRemanejamentoComponent {
     this.store.patchObjectSection('vagas', {
       cascata: codigo === '' || versao === undefined || versao === '' ? null : { regraCodigo: codigo, regraVersao: versao },
     });
-    this.confirmado.set(false);
   }
 
   rotuloDaOferta(ofertaCursoId: string): string {

@@ -7,9 +7,14 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
-import type { FaseDoCronograma } from '../../processo-seletivo.models';
+import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import {
+  arvoreDeExigencias,
+  exigenciasDaFase,
+  todasAsExigencias,
+} from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
 
@@ -84,6 +89,24 @@ const BANCAS = [
   },
 ];
 
+/** O cadastro de onde a tela tira os documentos — antes era uma lista escrita nela. */
+const ID_CPF = '01960000-0000-7000-0000-0000000000f1';
+const ID_ETAPA_DOCUMENTAL = '01960000-0000-7000-0000-0000000000c1';
+const ID_TIPO_ETAPA = '01960000-0000-7000-0000-0000000000c2';
+const TIPOS_DOCUMENTO = [
+  {
+    id: ID_CPF,
+    codigo: 'CPF',
+    nome: 'CPF',
+    descricao: null,
+    categoria: 'IDENTIFICACAO',
+    formatosAceitos: 'pdf,jpg',
+    tamanhoMaximoMb: 10,
+    tipoEquivalente: null,
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
+];
+
 const CATEGORIAS = [
   {
     id: ID_CATEGORIA_RACA,
@@ -115,6 +138,25 @@ const REGRAS = [
     modalidadesAdmitidas: null,
   },
 ];
+
+/**
+ * O que a fase congelou na gravação — tem precedência sobre o catálogo vivo, porque editar a
+ * fase canônica depois não pode mudar o que um edital já congelou.
+ */
+function congeladosDaFase(
+  parcial: Partial<AtributosCongeladosDaFase> = {},
+): AtributosCongeladosDaFase {
+  return {
+    donoTipico: 'CEPS',
+    origemData: 'PROPRIA',
+    agrupaEtapas: false,
+    coletaInscricao: false,
+    permiteComplementacao: false,
+    coletaSolicitacaoIsencao: false,
+    bancas: [],
+    ...parcial,
+  };
+}
 
 /** Uma fase do rascunho, com o que este passo não edita já preenchido. */
 function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
@@ -170,6 +212,7 @@ describe('FaseStepComponent', () => {
       if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
       else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
       else if (url.includes('categorias-documento')) requisicao.flush(CATEGORIAS);
+      else if (url.includes('tipos-documento')) requisicao.flush(TIPOS_DOCUMENTO);
       else if (url.includes('tipos-ato')) requisicao.flush(ATOS);
       else if (url.includes('regras')) requisicao.flush(REGRAS);
       else requisicao.flush([]);
@@ -648,13 +691,13 @@ describe('FaseStepComponent', () => {
     it('exige o documento na fase aberta, e só nela', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
-      componente.alternarExigencia('cpf', true);
+      componente.alternarExigencia(ID_CPF, true);
       detectar();
 
-      expect(componente.exigidoNestaFase('cpf')).toBe(true);
+      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
       componente.abrirFase(ID_RECURSOS);
       detectar();
-      expect(componente.exigidoNestaFase('cpf')).toBe(false);
+      expect(componente.exigidoNestaFase(ID_CPF)).toBe(false);
     });
 
     /**
@@ -663,44 +706,345 @@ describe('FaseStepComponent', () => {
      * tomada numa só.
      */
     /**
-     * O rascunho nasce com `todasEtapas: true` e `included: false` em todo
-     * documento — é o padrão de "acompanha o edital", não uma exigência. Travar
-     * a caixa por `todasEtapas` sozinho deixava o processo novo com quinze
-     * documentos desmarcados, desabilitados e anunciando "exigido em todas as
-     * fases": o operador lia o oposto do estado real e não tinha como marcar
-     * nenhum.
+     * A fase lista o que exige, e o seletor oferece o resto: com setenta e quatro tipos no
+     * cadastro, uma caixa por documento em cada fase punha centenas de controles numa
+     * rolagem só, e o que o certame de fato exige ficava perdido entre eles.
      */
-    it('deixa marcar o documento que o processo novo ainda não exige', () => {
+    it('oferece no seletor o documento que a fase ainda não exige', () => {
       comCronograma(fase({}));
 
-      const caixa = nativo.querySelector<HTMLInputElement>('#fase-doc-cpf');
+      expect(componente.documentosDaFase()).toEqual([]);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
+      );
+      expect(nativo.textContent).toContain('Esta fase ainda não exige documento nenhum.');
+    });
 
-      expect(caixa?.disabled).toBe(false);
-      expect(caixa?.checked).toBe(false);
-      expect(nativo.textContent).not.toContain('Exigido em todas as fases do edital.');
+    it('acrescenta o documento escolhido e o tira do seletor', () => {
+      comCronograma(fase({}));
+
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).not.toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
+      );
+      // O seletor volta ao estado neutro: o próximo documento começa do zero.
+      expect(componente.documentoAAcrescentar()).toBe('');
+    });
+
+    /**
+     * A busca deixou de ser um campo à parte: quem filtra é o próprio campo de escolha
+     * (`ui-combobox`, coberto no spec dele). O que a fase ainda responde é o que sobra do
+     * catálogo para oferecer.
+     */
+    it('tira do catálogo oferecido o que a fase já exige', () => {
+      comCronograma(fase({}));
+      const antes = componente.documentosAlcancados();
+
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      expect(componente.documentosAlcancados()).toBe(antes - 1);
+      expect(componente.documentoAAcrescentar()).toBe('', 'o campo volta ao estado neutro');
+    });
+
+    /**
+     * O tipo inativado no cadastro sai do catálogo vivo, e a exigência que o cita continua no
+     * rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da
+     * tela: não dava para conferir nem remover o que continuava sendo exigido.
+     */
+    it('mantém à vista o documento cujo tipo saiu do cadastro', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+
+      // O cadastro inativa o tipo: ele deixa de vir no catálogo.
+      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set(
+        TIPOS_DOCUMENTO.filter((tipo) => tipo.id !== ID_CPF),
+      );
+      detectar();
+
+      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual(
+        [ID_CPF],
+        'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista',
+      );
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).not.toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
+        'e não volta a ser oferecida para quem ainda não a exige',
+      );
+    });
+
+    it('remove o documento e o devolve ao seletor', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      componente.removerDocumento(ID_CPF);
+      detectar();
+
+      expect(componente.documentosDaFase()).toEqual([]);
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
+      );
     });
 
     it('recorta por fase partindo das fases que o edital tem hoje', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
-      componente.valerEmTodasAsFases('cpf');
+      componente.valerEmTodasAsFases(ID_CPF);
       detectar();
-      componente.recortarPorFase('cpf');
+      componente.recortarPorFase(ID_CPF);
       detectar();
 
-      expect(store.draft().documentos['cpf'].etapas).toEqual(['AVALIACAO', 'RECURSOS']);
-      expect(store.draft().documentos['cpf'].todasEtapas).toBe(false);
+      // Recortar materializa a exigência em cada fase do edital — congelar o conjunto atual
+      // preserva o que valia, em vez de apagar tudo por causa de uma decisão numa fase só.
+      expect(
+        todasAsExigencias(store.draft().documentos)
+          .filter((exigencia) => exigencia.tipoDocumentoId === ID_CPF)
+          .map((exigencia) => exigencia.faseCodigo),
+      ).toEqual(['AVALIACAO', 'RECURSOS']);
+      expect(store.draft().documentos.emTodasAsFases).not.toContain(ID_CPF);
+    });
+
+    /**
+     * A habilitação do certame regional tem oito etapas e cada uma pede o seu comprovante.
+     * Sem dizer qual etapa coleta, os oito documentos apareceriam nas oito.
+     */
+    it('declara em qual etapa da fase o documento é coletado', () => {
+      comCronograma(fase({}));
+      store.patchObjectSection('cronograma', {
+        etapas: [
+          {
+            id: ID_ETAPA_DOCUMENTAL,
+            nome: 'Análise documental',
+            carater: 'Eliminatoria',
+            tipoEtapaOrigemId: ID_TIPO_ETAPA,
+            peso: '',
+            notaMinima: '',
+            ordem: 1,
+            faseCodigo: 'AVALIACAO',
+            produtos: [],
+            inicio: '',
+            fim: '',
+            emiteParecerIndividual: false,
+            bancas: [],
+            recursos: [],
+          },
+        ],
+      });
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      expect(componente.etapasDaFaseAberta().map((etapa) => etapa.nome)).toEqual([
+        'Análise documental',
+      ]);
+
+      componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      detectar();
+
+      expect(componente.etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
+      // A etapa é campo da exigência daquela fase, que é onde ela vive no contrato.
+      expect(
+        exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId,
+      ).toBe(ID_ETAPA_DOCUMENTAL);
+    });
+
+    /**
+     * Voltar o documento à fase inteira tira a etapa do registro: guardá-la como texto
+     * vazio faria o comando declarar uma etapa que ninguém escolheu.
+     */
+    it('devolver o documento à fase inteira apaga a etapa declarada', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      detectar();
+
+      componente.escolherEtapaDoDocumento(ID_CPF, '');
+      detectar();
+
+      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId).toBeNull();
+    });
+
+    it('a fase sem etapa não oferece onde coletar', () => {
+      comCronograma(fase({}));
+
+      expect(componente.etapasDaFaseAberta()).toEqual([]);
     });
 
     it('tira o documento do processo ao desmarcar a última fase que o exigia', () => {
       comCronograma(fase({}));
 
-      componente.alternarExigencia('cpf', true);
+      componente.alternarExigencia(ID_CPF, true);
       detectar();
-      componente.alternarExigencia('cpf', false);
+      componente.alternarExigencia(ID_CPF, false);
       detectar();
 
-      expect(store.draft().documentos['cpf'].included).toBe(false);
+      // Desmarcar tira a exigência DESTA fase; o mesmo documento em outra continua, porque
+      // são exigências distintas.
+      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')).toEqual([]);
+    });
+  });
+
+  /**
+   * A consequência "abre pendência para reenvio" só é aceita em fase que admite
+   * complementação. O sinalizador vem do cadastro da fase canônica e este passo não o edita —
+   * antes disto a opção era oferecida em qualquer fase e o operador só descobria no 422 da
+   * gravação, sobre um campo que a tela não deixava corrigir.
+   */
+  describe('consequência de reenvio e complementação da fase', () => {
+    it('não oferece o reenvio em fase que não admite complementação', () => {
+      comCronograma(fase({}));
+
+      expect(componente.faseAdmiteComplementacao()).toBe(false);
+      expect(componente.consequenciasDaFase().map((opcao) => opcao.valor)).not.toContain(
+        'PENDENCIA_REENVIO',
+      );
+    });
+
+    it('oferece o reenvio na fase que admite', () => {
+      comCronograma(fase({ congelados: congeladosDaFase({ permiteComplementacao: true }) }));
+
+      expect(componente.faseAdmiteComplementacao()).toBe(true);
+      expect(componente.consequenciasDaFase().map((opcao) => opcao.valor)).toContain(
+        'PENDENCIA_REENVIO',
+      );
+    });
+
+    /**
+     * A recusa de quem JÁ tem o reenvio gravado é conferida no preflight do Cronograma, não
+     * aqui: esta superfície é embutida com `faseFixada` e o `validate()` dela nunca é chamado
+     * pela página. O teste correspondente vive em `cronograma.component.spec.ts`.
+     */
+    it('deixa escrever o reenvio quando ele já está no rascunho', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+      componente.escolherConsequencia(ID_CPF, 'PENDENCIA_REENVIO');
+      detectar();
+
+      expect(componente.consequenciaDoDocumento(ID_CPF)).toBe('PENDENCIA_REENVIO');
+    });
+  });
+
+  /**
+   * Formato e tamanho da exigência vêm do cadastro do tipo de documento — é lá que o CEPS os
+   * declara, e é de lá que a própria tela tira o texto que mostra ao operador. A tradução
+   * "texto livre do cadastro → vocabulário fechado da exigência" é código do browser: nenhum
+   * teste da API a alcança, e antes desta cobertura o único tipo restrito do catálogo local
+   * era resíduo de smoke que nenhum certame usava.
+   */
+  describe('formato e tamanho derivados do cadastro', () => {
+    it('a exigência nasce com o que o cadastro do tipo declara', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      const declarada = componente.exigenciaDoDocumento(ID_CPF);
+      // O cadastro diz "pdf,jpg"; o contrato da exigência fala PDF e JPEG.
+      expect(declarada.formatosPermitidos).toEqual(['PDF', 'JPEG']);
+      expect(declarada.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
+    });
+
+    it('a conversão para o comando preserva o que veio do cadastro', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      const raizes = arvoreDeExigencias(
+        store.draft().documentos,
+        new Map([['AVALIACAO', ID_AVALIACAO]]),
+        [],
+        new Set<string>(),
+      );
+
+      expect(raizes[0].documento?.formatosPermitidos).toEqual(['PDF', 'JPEG']);
+      expect(raizes[0].documento?.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
+    });
+
+    it('não inventa restrição para tipo cujo cadastro não declara nenhuma', () => {
+      comCronograma(fase({}));
+      const semRestricao = componente.exigenciaDoDocumento('tipo-fora-do-catalogo');
+
+      expect(semRestricao.formatosPermitidos).toBe('QUALQUER');
+      expect(semRestricao.tamanhoMaximoBytes).toBeNull();
+    });
+  });
+
+  /**
+   * O alcance "vale em todas as fases" é intenção de UI: o contrato só conhece a exigência
+   * materializada em cada fase. O que a tela precisa garantir é que a intenção não vire perda
+   * — nem ao semear, nem ao desmarcar.
+   */
+  describe('alcance de todas as fases na tela', () => {
+    it('semeia o modelo na fase ABERTA, não na primeira do cronograma', () => {
+      comCronograma(
+        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 1 }),
+        fase({ ordem: 2 }),
+      );
+      // A fase aberta é a AVALIACAO (a fixada do componente), não a primeira da lista.
+      componente.valerEmTodasAsFases(ID_CPF);
+      detectar();
+
+      const naAvaliacao = exigenciasDaFase(store.draft().documentos, 'AVALIACAO');
+      expect(naAvaliacao).toHaveLength(1);
+      expect(naAvaliacao[0].tipoDocumentoId).toBe(ID_CPF);
+    });
+
+    /**
+     * Desmarcar numa fase que só tinha o documento por herança não pode apagá-lo das demais
+     * que também o tinham por herança — o operador age numa fase e perderia em outras.
+     */
+    it('desmarcar numa fase preserva o documento nas outras que o herdavam', () => {
+      // O alcance é declarado com UMA fase no cronograma; a segunda entra depois, e só existe
+      // para o documento por herança — é esse o caso em que largar o alcance sem materializar
+      // apagaria o documento de uma fase que o operador nem estava olhando.
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+      componente.valerEmTodasAsFases(ID_CPF);
+      detectar();
+
+      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')).toEqual([]);
+
+      componente.alternarExigencia(ID_CPF, false);
+      detectar();
+
+      // Saiu da AVALIACAO, que é a fase aberta; continua em RECURSOS.
+      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')).toEqual([]);
+      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')).toHaveLength(1);
+      expect(store.draft().documentos.emTodasAsFases).not.toContain(ID_CPF);
+    });
+
+    /** A fase alcançada mas ainda não materializada mostra o que será gravado. */
+    it('mostra na fase herdada o que o modelo declara, não um formulário em branco', () => {
+      comCronograma(
+        fase({}),
+        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+      );
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+      componente.escolherObrigatoriedade(ID_CPF, 'nao');
+      detectar();
+      componente.valerEmTodasAsFases(ID_CPF);
+      detectar();
+
+      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
+      expect(componente.exigenciaDoDocumento(ID_CPF).obrigatorio).toBe(false);
     });
   });
 });

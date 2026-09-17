@@ -28,6 +28,19 @@ export type ConfiguracaoDistribuicaoVagasDto =
 export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
 export type EtapaProcessoDto = components['schemas']['EtapaProcessoDto'];
 export type FaseCronogramaInput = components['schemas']['FaseCronogramaInput'];
+export type NoExigenciaInput = components['schemas']['NoExigenciaInput'];
+export type ItemDocumentoExigidoInput = components['schemas']['ItemDocumentoExigidoInput'];
+export type DocumentoExigidoDto = components['schemas']['DocumentoExigidoDto'];
+export type NoExigenciaDto = components['schemas']['NoExigenciaDto'];
+export type FatoColetadoDto = components['schemas']['FatoColetadoDto'];
+export type FatoColetadoInput = components['schemas']['FatoColetadoInput'];
+export type ConfiguracaoDerivacaoDto = components['schemas']['ConfiguracaoDerivacaoDto'];
+export type ConfiguracaoDerivacaoInput = components['schemas']['ConfiguracaoDerivacaoInput'];
+export type ReferenciaTemporalFatosDto = components['schemas']['ReferenciaTemporalFatosDto'];
+export type DefinirReferenciaTemporalFatosRequest =
+  components['schemas']['DefinirReferenciaTemporalFatosRequest'];
+export type DefinirFormularioRequest = components['schemas']['DefinirFormularioRequest'];
+export type BaseLegalDto = components['schemas']['BaseLegalDto'];
 export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
 export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
 export type DefinirAlgoritmoContagemPrazoRequest =
@@ -58,6 +71,9 @@ export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusReg
 export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
 export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
 export type SnapshotVigenteDto = components['schemas']['SnapshotVigenteDto'];
+export type RascunhoDaPublicacaoDto = components['schemas']['RascunhoDaPublicacaoDto'];
+export type SalvarRascunhoDaPublicacaoRequest =
+  components['schemas']['SalvarRascunhoDaPublicacaoRequest'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -180,6 +196,144 @@ export class ProcessosSeletivosApi {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/cronograma-fases`,
       fases,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/documentos-exigidos` — substitui
+   * a árvore de exigências documentais inteira.
+   *
+   * A entrada é uma árvore: cada raiz é um nó `FOLHA` (um documento), `E` (todos
+   * os filhos) ou `OU` (quantos `quantidadeMinima` disser). Uma lista simples de
+   * documentos é uma lista de folhas, sem grupo nenhum.
+   *
+   * O documento em si vem por `tipoDocumentoId` — o servidor resolve o cadastro e
+   * congela nome, código e categoria. `exigidoNaFaseId` é a fase em que ele é
+   * exigido, e `exigidoNaEtapaId`, quando presente, a etapa daquela fase que o
+   * coleta.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirDocumentosExigidos(
+    processoSeletivoId: string,
+    raizes: readonly NoExigenciaInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-exigidos`,
+      raizes,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/fatos-coletados` — declara QUAIS fatos do
+   * candidato o certame coleta na inscrição, e como cada um é apresentado.
+   *
+   * É a lista de campos do formulário público: `GET /processos-seletivos/{id}/formulario`
+   * renderiza exatamente estes fatos, na ordem declarada, juntando os valores de domínio do
+   * catálogo. Só fato DECLARADO com binding de campo de inscrição é coletável — derivado
+   * (modalidade, faixa etária) resolve por outro caminho e o servidor o recusa aqui.
+   *
+   * Substitui a coleção inteira. Responde 204 sem corpo.
+   */
+  definirFatosColetados(
+    processoSeletivoId: string,
+    fatos: readonly FatoColetadoInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/fatos-coletados`,
+      fatos,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/regras-derivacao` — declara como os fatos
+   * derivados do certame são calculados a partir dos coletados.
+   *
+   * É o que faz a modalidade de concorrência existir para um candidato: sem regra declarada,
+   * um gatilho que cita modalidade não resolve. `quando: null` é a regra âncora incondicional
+   * — nunca lista vazia, que diria "sob nenhuma condição".
+   *
+   * Substitui a coleção inteira. Responde 204 sem corpo.
+   */
+  definirRegrasDerivacao(
+    processoSeletivoId: string,
+    regras: readonly ConfiguracaoDerivacaoInput[],
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/regras-derivacao`,
+      regras,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/regras-derivacao/normativas` — a matriz de
+   * derivação de modalidade do ramo da Lei 12.711/2012, recortada para o que este processo
+   * oferta.
+   *
+   * É **proposta**, não configuração: nada fica gravado por esta leitura, e o cliente a envia
+   * de volta pelo `PUT` acima sem transformação nenhuma. Vem do servidor porque é lá que vive
+   * a lei — de que opt-ins e de que elegibilidades cada cota se compõe —, e uma segunda cópia
+   * escrita aqui divergiria em silêncio, aparecendo só na classificação de um candidato real.
+   *
+   * Lista vazia é resposta legítima: processo sem quadro de vagas declarado não tem o que
+   * propor.
+   */
+  obterRegrasDerivacaoNormativas(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<readonly ConfiguracaoDerivacaoInput[]>> {
+    return this.http.get<ApiResult<readonly ConfiguracaoDerivacaoInput[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/regras-derivacao/normativas`,
+      { context: withVendorMime('regras-derivacao-normativas', 1) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/referencia-temporal-fatos` — declara o instante
+   * contra o qual a idade do candidato é apurada.
+   *
+   * Uma política por certame, e ela ancora TODOS os gatilhos por idade dele. Exigida quando
+   * alguma exigência condiciona por faixa etária: sem ela, a publicação é recusada, porque não
+   * há fallback implícito para "quantos anos o candidato tinha". Enviar tudo nulo remove.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirReferenciaTemporalFatos(
+    processoSeletivoId: string,
+    request: DefinirReferenciaTemporalFatosRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/referencia-temporal-fatos`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/admin/processos-seletivos/{id}/formulario` — título e termo de aceite do
+   * formulário de inscrição.
+   *
+   * **A rota é outra**: mora sob `admin/` e exige o papel de administração da plataforma,
+   * enquanto a leitura do formulário é pública e anônima. Os CAMPOS do formulário não vêm por
+   * aqui — são os fatos coletados.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirFormulario(
+    processoSeletivoId: string,
+    request: DefinirFormularioRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formulario`,
+      request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
@@ -349,6 +503,59 @@ export class ProcessosSeletivosApi {
     return this.http.get<ApiResult<SnapshotVigenteDto>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/snapshot-vigente`,
       { params, context: withVendorMime('snapshot-vigente-processo-seletivo', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao` — o bloco
+   * do ato que o operador já transcreveu e ainda não publicou.
+   *
+   * 404 quando não há rascunho, inclusive quando o que havia venceu: é a leitura
+   * que cobra o prazo, porque não há tarefa recorrente varrendo a tabela.
+   */
+  obterRascunhoDaPublicacao(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<RascunhoDaPublicacaoDto>> {
+    return this.http.get<ApiResult<RascunhoDaPublicacaoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/rascunho-da-publicacao`,
+      { context: withVendorMime('rascunho-da-publicacao', 1) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao` —
+   * substitui por inteiro o rascunho do operador corrente.
+   *
+   * É substituição, não mesclagem: um campo que o operador apagou tem de sumir
+   * do servidor também, e por isso o corpo carrega a seção completa. O conteúdo
+   * não é validado campo a campo — rascunho pela metade é o caso de uso, e a
+   * validação forte continua no ato de publicar.
+   *
+   * Responde 204 sem corpo.
+   */
+  salvarRascunhoDaPublicacao(
+    processoSeletivoId: string,
+    request: SalvarRascunhoDaPublicacaoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/rascunho-da-publicacao`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * DELETE `/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao` —
+   * joga fora o rascunho do operador corrente.
+   *
+   * Idempotente: descartar o que não existe responde 204, porque o pedido era
+   * que não houvesse rascunho.
+   */
+  descartarRascunhoDaPublicacao(processoSeletivoId: string): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/rascunho-da-publicacao`,
+      { headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 

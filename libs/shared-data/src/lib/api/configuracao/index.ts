@@ -167,7 +167,13 @@ export {
   UNIDADES_FEDERATIVAS,
   type AbrangenciasToken,
 } from './calendario-dias-uteis.api';
-export { TiposEtapaApi, type TipoEtapaDto, type TiposEtapaQuery } from './tipos-etapa.api';
+export {
+  TiposEtapaApi,
+  type AtualizarTipoEtapaCommand,
+  type CriarTipoEtapaCommand,
+  type TipoEtapaDto,
+  type TiposEtapaQuery,
+} from './tipos-etapa.api';
 export {
   BaseLegalBonusRegionalApi,
   type AtualizarBaseLegalBonusRegionalCommand,
@@ -181,3 +187,6 @@ export {
   TiposInstrumentoNormativoApi,
   type TipoInstrumentoNormativoVocabularioDto,
 } from './tipos-instrumento-normativo.api';
+
+export { FatosCandidatoApi } from './fatos-candidato.api';
+export type { FatoCandidatoView, FatoValorDominioViewItem } from './fatos-candidato.api';

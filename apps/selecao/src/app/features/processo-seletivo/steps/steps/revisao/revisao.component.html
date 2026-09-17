@@ -110,10 +110,17 @@
                   [class.revisao-item--ok]="item.ok"
                   [class.revisao-item--pending]="!item.ok"
                 >
+                  <span class="revisao-item__estado">{{ item.ok ? 'Conforme' : 'Pendente' }}</span>
                   <div class="revisao-item__meta">
                     <span class="revisao-item__name">{{ item.mensagem }}</span>
+                    <!-- Pendência que nenhum passo do wizard resolve não fica muda: sem
+                         isto o item aparece sem botão e sem saída, e o operador lê
+                         "calendário vigente ausente" sem ter para onde ir. -->
+                    @if (!item.ok && ondeResolverItem(item.codigo) !== null) {
+                      <span class="revisao-item__onde">{{ ondeResolverItem(item.codigo) }}</span>
+                    }
                   </div>
-                  @if (!item.ok && passoDaDimensao(grupo.dimensao) !== null) {
+                  @if (!item.ok && passoDoItem(item.codigo, grupo.dimensao) !== null) {
                     <!-- `revisao-item__ir`, não `revisao-item__go`: esse nome
                          já é de um widget de resumo de progresso mais antigo
                          (`.revisao-summary`/`.revisao-progress`), sem HTML
@@ -129,9 +136,9 @@
                     <button
                       class="btn btn--sm btn--ghost revisao-item__ir"
                       type="button"
-                      (click)="irParaSecao(passoDaDimensao(grupo.dimensao)!)"
+                      (click)="irParaSecao(passoDoItem(item.codigo, grupo.dimensao)!)"
                     >
-                      Ir para {{ rotuloDaDimensao(grupo.dimensao) }}
+                      Ir para {{ rotuloDoPasso(passoDoItem(item.codigo, grupo.dimensao)!) }}
                     </button>
                   }
                 </li>
@@ -144,6 +151,18 @@
 
     <section class="step-section" aria-labelledby="revisao-legal-titulo">
       <h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
+
+      <!--
+        A conformidade legal é avaliada CONTRA UMA DATA — a norma vigente naquele dia. Sem
+        dizer qual, o aviso de que a data mudou pedia para atualizar o checklist sem nunca
+        dizer de que data para qual.
+      -->
+      @if (preflight.legal(); as legal) {
+        <p class="field__hint">
+          Avaliada contra a data de {{ legal.dataReferencia | dateBr }}, que é a da publicação
+          do ato.
+        </p>
+      }
 
       @if (preflight.legalIndisponivel(); as motivo) {
         <!-- Pendência do rascunho, não falha de carga: o servidor respondeu por
@@ -161,9 +180,35 @@
             <li class="revisao-item revisao-item--pending">
               <div class="revisao-item__meta">
                 <span class="revisao-item__name">{{ regra.descricaoHumana }}</span
-                ><span class="step-hint">{{ regra.baseLegal }}</span>
+                ><span class="step-hint">
+                  {{ regra.baseLegal }}
+                  @if (regra.vigenciaInicio) {
+                    — vigente desde {{ regra.vigenciaInicio | dateBr }}
+                  }
+                </span>
                 @if (regra.motivo) {
                   <span class="revisao-item__name">{{ regra.motivo }}</span>
+                }
+                <!-- Sem o endereço da norma, quem monta o edital lê o nome dela e não tem por
+                     onde chegar ao texto que reprovou a publicação. -->
+                @if (regra.atoNormativoUrl) {
+                  @if (ehEnderecoNavegavel(regra.atoNormativoUrl)) {
+                    <a
+                      class="step-hint"
+                      [href]="regra.atoNormativoUrl"
+                      target="_blank"
+                      rel="noopener"
+                      >Ler a norma (abre em nova aba)</a
+                    >
+                  } @else {
+                    <!-- Citação que não é endereço — um DOI, uma URN — é mostrada como texto:
+                         vira identificador para procurar, não um link que não leva a lugar
+                         nenhum. -->
+                    <span class="step-hint">Citação da norma: {{ regra.atoNormativoUrl }}</span>
+                  }
+                }
+                @if (regra.portariaInterna) {
+                  <span class="step-hint">Portaria interna: {{ regra.portariaInterna }}</span>
                 }
               </div>
             </li>

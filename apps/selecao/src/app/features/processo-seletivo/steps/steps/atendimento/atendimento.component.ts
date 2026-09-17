@@ -1,9 +1,11 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
   inject,
+  Injector,
   signal,
   untracked,
 } from '@angular/core';
@@ -248,6 +250,41 @@ export class AtendimentoStepComponent {
   }
 
   /**
+   * O que mudou, para quem não vê a tela — a remoção de uma referência inativa tirava a linha
+   * do DOM em silêncio.
+   */
+  readonly anuncio = signal('');
+
+  private readonly injector = inject(Injector);
+
+  /**
+   * Anuncia a remoção e devolve o foco à lista. Sem isto o botão clicado sai do DOM e o foco
+   * cai no corpo da página — numa ação que não tem desfazer, perder o lugar dói mais.
+   *
+   * A espera é por renderização, não por microtask: o ciclo de detecção do Angular roda depois
+   * que a fila de microtasks drena, e consultar o DOM antes disso acharia o botão que está
+   * prestes a sair.
+   */
+  private anunciarRemocao(
+    nome: string | undefined,
+    prefixoDoId: string,
+    indice: number,
+    tituloDaSecao: string,
+  ): void {
+    this.anuncio.set(nome === undefined ? 'Item removido.' : `${nome} removido da oferta.`);
+
+    afterNextRender(
+      () => {
+        const anterior = document.getElementById(`${prefixoDoId}-${Math.max(0, indice - 1)}`);
+        // Removido o último da lista, o foco volta ao título da seção — que existe sempre e
+        // diz onde a pessoa está.
+        (anterior ?? document.getElementById(tituloDaSecao))?.focus();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  /**
    * Remove uma referência que já saiu do cadastro ativo — a única ação
    * disponível para ela. Espelha `toggleCondicao`: se a condição removida
    * for a de código PcD, os tipos de deficiência também são esvaziados — sem
@@ -263,6 +300,12 @@ export class AtendimentoStepComponent {
   removerCondicaoInativa(id: string): void {
     const atual = this.atendimento().condicoes;
     const removida = atual.find((item) => item.id === id);
+    this.anunciarRemocao(
+      removida?.nome,
+      'atend-cond-inativa',
+      this.condicoesInativas().findIndex((item) => item.id === id),
+      'atend-secao-condicoes',
+    );
     const proximo = atual.filter((item) => item.id !== id);
 
     const restaPcd = proximo.some((item) => item.codigo.toUpperCase() === CODIGO_CONDICAO_PCD);
@@ -274,14 +317,28 @@ export class AtendimentoStepComponent {
   }
 
   removerRecursoInativo(id: string): void {
+    const atual = this.atendimento().recursos;
+    this.anunciarRemocao(
+      atual.find((item) => item.id === id)?.nome,
+      'atend-rec-inativo',
+      this.recursosInativos().findIndex((item) => item.id === id),
+      'atend-secao-recursos',
+    );
     this.store.patchObjectSection('atendimento', {
-      recursos: this.atendimento().recursos.filter((item) => item.id !== id),
+      recursos: atual.filter((item) => item.id !== id),
     });
   }
 
   removerTipoDeficienciaInativo(id: string): void {
+    const atual = this.atendimento().tiposDeficiencia;
+    this.anunciarRemocao(
+      atual.find((item) => item.id === id)?.nome,
+      'atend-tipo-inativo',
+      this.tiposDeficienciaInativos().findIndex((item) => item.id === id),
+      'atend-secao-tipos',
+    );
     this.store.patchObjectSection('atendimento', {
-      tiposDeficiencia: this.atendimento().tiposDeficiencia.filter((item) => item.id !== id),
+      tiposDeficiencia: atual.filter((item) => item.id !== id),
     });
   }
 
@@ -305,9 +362,45 @@ export class AtendimentoStepComponent {
     return 'Gravar e avançar';
   }
 
+  /**
+   * Os fatos que o formulário de inscrição pergunta ao candidato e cujo domínio sai DESTA
+   * tela — a condição de atendimento e o tipo de deficiência que o processo oferta.
+   *
+   * O acoplamento é real e a publicação o cobra: um campo de seleção sobre um desses fatos com
+   * oferta vazia é pendência estrutural. Sem dizê-lo aqui, o operador grava três listas vazias
+   * sem nada indicando o problema, descobre na revisão, e o botão "Ir para Atend. especial" o
+   * traz de volta a uma tela que não menciona por que ele veio.
+   */
+  readonly fatosQueDependemDaOferta = computed<readonly string[]>(() => {
+    const perguntados = new Set(
+      this.store
+        .draft()
+        .formulario.fatos.filter((campo) => campo.tipoRenderizacao.startsWith('SELECAO'))
+        .map((campo) => campo.fatoCodigo),
+    );
+
+    const pendentes: string[] = [];
+    if (perguntados.has('CONDICAO_ATENDIMENTO') && this.atendimento().condicoes.length === 0) {
+      pendentes.push('a condição de atendimento');
+    }
+    if (perguntados.has('TIPO_DEFICIENCIA') && this.atendimento().tiposDeficiencia.length === 0) {
+      pendentes.push('o tipo de deficiência');
+    }
+    return pendentes;
+  });
+
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
     const mensagens: string[] = [];
+
+    // Espelha o gate de publicação: o formulário pergunta ao candidato algo cujo domínio sai
+    // desta oferta, e a oferta não declara valor nenhum. Descobrir isso na revisão obriga a
+    // refazer o caminho, e a mensagem de lá fala de "fato coletável", não do que preencher.
+    for (const pendente of this.fatosQueDependemDaOferta()) {
+      mensagens.push(
+        `O formulário de inscrição pergunta ${pendente} ao candidato, e esta oferta não declara nenhum valor para escolher. Declare ao menos um, ou retire o campo do formulário.`,
+      );
+    }
 
     if (this.atendimento().tiposDeficiencia.length > 0 && !this.pcdSelecionada()) {
       mensagens.push(

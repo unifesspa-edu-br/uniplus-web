@@ -79,8 +79,20 @@ test.describe('Cadastro inicial do processo seletivo', () => {
 
     // Concluir a identificação é o que cria o processo — o anexo do edital não
     // participa disso e vive no passo de publicação.
-    await page.getByRole('button', { name: 'Próximo' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: /Modalidades/i })).toBeVisible();
+    //
+    // O rótulo do avanço muda com o estado: enquanto não há processo criado ele diz "Gravar e
+    // avançar", e só vira "Próximo" depois, quando o passo passa a ser navegação como os
+    // outros. Esperar "Próximo" aqui é esperar o botão que só existe DEPOIS da gravação.
+    await page.getByRole('button', { name: 'Gravar e avançar' }).click();
+
+    // Nenhum destes campos é alterável depois de gravado — o contrato não expõe atualização
+    // deles —, e por isso o passo confirma antes de enviar.
+    await expect(page.getByRole('heading', { name: /Confirmar o cadastro/i })).toBeVisible();
+    await page.getByRole('button', { name: 'Gravar processo' }).click();
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: /Taxa de inscrição/i }),
+    ).toBeVisible({ timeout: 15_000 });
 
     // Criado o processo, os campos do comando não aceitam mais alteração.
     await page.getByRole('button', { name: 'Anterior' }).click();

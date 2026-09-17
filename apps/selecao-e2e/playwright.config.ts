@@ -10,6 +10,12 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
 // Localmente em distros não-Debian, defina CI=true para incluir webkit.
 const isCI = !!process.env['CI'];
 
+// GITHUB_ACTIONS (setado só pelo runner do GitHub) distingue do runner Docker
+// local (tools/e2e-docker/run.sh), que também exporta CI=true mas pré-inicia
+// os apps antes do Playwright subir — lá reusar o servidor é obrigatório, ou
+// o Playwright tenta subir de novo na porta já ocupada e aborta.
+const isGithubActions = !!process.env['GITHUB_ACTIONS'];
+
 const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
 
 /**
@@ -105,7 +111,7 @@ export default defineConfig({
   webServer: {
     command: 'npx nx run selecao:serve',
     url: 'http://localhost:4200',
-    reuseExistingServer: true,
+    reuseExistingServer: !isGithubActions,
     cwd: workspaceRoot,
   },
   projects: [

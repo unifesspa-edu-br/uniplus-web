@@ -8,6 +8,7 @@ import type {
   EtapaPontuada,
   FaseDoCronograma,
   ProdutoDaFase,
+  RecursoDaEtapa,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 import { campoDoInstante, instanteDoCampo } from '../../shared/fuso-institucional';
@@ -67,6 +68,19 @@ export interface EtapaForm {
   readonly peso: FormControl<string>;
   readonly notaMinima: FormControl<string>;
   readonly ordem: FormControl<number>;
+  /** Código canônico da fase a que a etapa pertence; vazio enquanto não declarada. */
+  readonly faseCodigo: FormControl<string>;
+  /**
+   * Os produtos viajam no formulário sem serem editados campo a campo: a gravação
+   * substitui a coleção inteira, e deixá-los de fora apagaria, a cada mudança de nome ou
+   * peso, o que a etapa declara publicar.
+   */
+  readonly produtos: FormControl<readonly ProdutoDaFase[]>;
+  readonly inicio: FormControl<string>;
+  readonly fim: FormControl<string>;
+  readonly emiteParecerIndividual: FormControl<boolean>;
+  readonly bancas: FormControl<readonly string[]>;
+  readonly recursos: FormControl<readonly RecursoDaEtapa[]>;
 }
 
 export interface CronogramaForm {
@@ -118,6 +132,15 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     peso: controle(etapa.peso),
     notaMinima: controle(etapa.notaMinima),
     ordem: controle(etapa.ordem),
+    // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
+    // "não declara fase", e undefined num FormControl quebraria a comparação.
+    faseCodigo: controle(etapa.faseCodigo ?? ''),
+    produtos: controle<readonly ProdutoDaFase[]>(etapa.produtos ?? []),
+    inicio: controle(etapa.inicio ?? ''),
+    fim: controle(etapa.fim ?? ''),
+    emiteParecerIndividual: controle(etapa.emiteParecerIndividual ?? false),
+    bancas: controle<readonly string[]>(etapa.bancas ?? []),
+    recursos: controle<readonly RecursoDaEtapa[]>(etapa.recursos ?? []),
   });
 }
 

@@ -592,3 +592,135 @@ describe('hidratarDraft — oferta de atendimento especializado', () => {
     expect(atendimento).toEqual({ condicoes: [], recursos: [], tiposDeficiencia: [] });
   });
 });
+
+/**
+ * O formulário de inscrição. Toda dimensão que o wizard grava precisa ser lida de volta: os
+ * comandos substituem a coleção inteira, então o que a hidratação não trouxer é reescrito em
+ * branco na gravação seguinte — foi assim que a exigência documental perdia entrega,
+ * consequência e norma.
+ */
+describe('hidratarDraft — formulário de inscrição', () => {
+  const ID_INSCRICAO = '01960000-0000-7000-0000-0000000000f1';
+
+  /** Reusa a fixture do cronograma, trocando só o id e o código da fase que a idade ancora. */
+  function dtoComFormulario(extra: Record<string, unknown>): ProcessoSeletivoDto {
+    return dtoComCronograma({
+      cronogramaFases: [{ ...FASE_COM_RECURSO, id: ID_INSCRICAO, codigo: 'INSCRICAO' }],
+      ...extra,
+    });
+  }
+
+  it('lê título, termo de aceite e os campos declarados', () => {
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({
+        formularioTitulo: 'Inscrição 2027',
+        formularioTermoAceiteTexto: 'Declaro que li o edital.',
+        fatosColetados: [
+          {
+            fatoCodigo: 'SEXO',
+            ordem: 1,
+            rotulo: 'Sexo',
+            tipoRenderizacao: 'SELECAO_UNICA',
+            obrigatorio: true,
+            precondicao: null,
+          },
+        ],
+      }),
+    );
+
+    expect(draft.formulario.titulo).toBe('Inscrição 2027');
+    expect(draft.formulario.termoAceiteTexto).toBe('Declaro que li o edital.');
+    expect(draft.formulario.fatos).toHaveLength(1);
+    expect(draft.formulario.fatos[0]).toMatchObject({
+      fatoCodigo: 'SEXO',
+      rotulo: 'Sexo',
+      tipoRenderizacao: 'SELECAO_UNICA',
+      obrigatorio: true,
+    });
+  });
+
+  it('devolve os campos na ordem declarada, não na ordem em que vieram', () => {
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({
+        fatosColetados: [
+          { fatoCodigo: 'B', ordem: 2, rotulo: 'B', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao: null },
+          { fatoCodigo: 'A', ordem: 1, rotulo: 'A', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao: null },
+        ],
+      }),
+    );
+
+    expect(draft.formulario.fatos.map((f) => f.fatoCodigo)).toEqual(['A', 'B']);
+  });
+
+  /** A pré-condição não é editável na tela, e por isso mesmo precisa sobreviver intocada. */
+  it('carrega a pré-condição que a tela não edita', () => {
+    const precondicao = [[{ fato: 'COR_RACA', operador: 'IGUAL', valor: 'PRETA' }]];
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({
+        fatosColetados: [
+          { fatoCodigo: 'BAIXA_RENDA', ordem: 1, rotulo: 'Baixa renda', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao },
+        ],
+      }),
+    );
+
+    expect(draft.formulario.fatos[0].precondicao).toEqual(precondicao);
+  });
+
+  /** A fase volta por CÓDIGO — o id não sobrevive a uma gravação de cronograma. */
+  it('traduz a fase da referência temporal de identificador para código', () => {
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({
+        referenciaTemporalFatos: { tipo: 'INICIO_FASE', data: null, faseId: ID_INSCRICAO },
+      }),
+    );
+
+    expect(draft.formulario.referenciaTemporal).toEqual({
+      tipo: 'INICIO_FASE',
+      data: '',
+      faseCodigo: 'INSCRICAO',
+    });
+  });
+
+  it('lê a referência ancorada em data específica', () => {
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({
+        referenciaTemporalFatos: { tipo: 'DATA_ESPECIFICA', data: '2027-01-31', faseId: null },
+      }),
+    );
+
+    expect(draft.formulario.referenciaTemporal).toEqual({
+      tipo: 'DATA_ESPECIFICA',
+      data: '2027-01-31',
+      faseCodigo: '',
+    });
+  });
+
+  it('ausência de política é estado legítimo, não erro', () => {
+    const draft = hidratarDraft(DRAFT, dtoComFormulario({ referenciaTemporalFatos: null }));
+    expect(draft.formulario.referenciaTemporal.tipo).toBe('');
+  });
+
+  it('carrega as regras de derivação que a tela não edita', () => {
+    const regras = [{ ordem: 0, contribui: 'LB_PPI', quando: null }];
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({ regrasDerivacao: [{ codigoFato: 'MODALIDADE', regras }] }),
+    );
+
+    expect(draft.formulario.derivacao).toEqual([{ codigoFato: 'MODALIDADE', regras }]);
+  });
+
+  it('processo sem formulário declarado hidrata vazio, sem quebrar', () => {
+    const draft = hidratarDraft(DRAFT, dtoComFormulario({}));
+
+    expect(draft.formulario.titulo).toBe('');
+    expect(draft.formulario.fatos).toEqual([]);
+    expect(draft.formulario.derivacao).toEqual([]);
+  });
+});
+

@@ -30,6 +30,11 @@ export {
 } from './components/list-footer/list-footer';
 export { PagerComponent } from './components/pager/pager';
 export { SegmentedComponent, type UiSegmentedOption } from './components/segmented/segmented';
+export {
+  ComboboxComponent,
+  type UiComboboxGroup,
+  type UiComboboxOption,
+} from './components/combobox/combobox';
 export { SelectComponent, type UiSelectOption } from './components/select/select';
 export { SkeletonComponent } from './components/skeleton/skeleton';
 export { SkipLinkComponent } from './components/skip-link/skip-link';

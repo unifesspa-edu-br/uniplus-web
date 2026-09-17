@@ -151,18 +151,6 @@
         </div>
       }
 
-      <label class="check-item" [class.vagas-conferencia--pendente]="problemas().length === 0 && !confirmado()">
-        <input
-          type="checkbox"
-          [checked]="confirmado()"
-          [disabled]="!store.aceitaEdicao() || problemas().length > 0"
-          (change)="confirmado.set($any($event.target).checked)"
-        />
-        <span>
-          Confirmo que conferi a cascata de remanejamento: a regra, o destino final e a ordem de
-          destinos acima são os que este processo deve aplicar.
-        </span>
-      </label>
     }
   </div>
 }

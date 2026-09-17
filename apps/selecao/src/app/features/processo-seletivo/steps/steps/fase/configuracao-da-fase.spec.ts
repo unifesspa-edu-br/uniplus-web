@@ -82,8 +82,28 @@ describe('publicações que a fase declara', () => {
     );
 
     expect(problemas.map((problema) => problema.mensagem)).toContain(
-      'A fase não pode declarar o mesmo tipo de ato mais de uma vez.',
+      'A fase não pode declarar a mesma publicação duas vezes no mesmo papel.',
     );
+  });
+
+  /**
+   * O catálogo nomeia a matéria, não o papel: "Resultado da homologação das inscrições" é
+   * um código só, publicado uma vez como preliminar — que abre o ciclo recursal — e outra
+   * como definitiva, que o encerra. Recusar o par tornava esse ciclo inexprimível.
+   */
+  it('aceita a mesma matéria publicada como preliminar e como definitiva', () => {
+    const problemas = conferir(
+      fase({
+        produtos: [
+          { atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' },
+          { atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'DEFINITIVO' },
+        ],
+      }),
+    );
+
+    expect(
+      problemas.filter((problema) => /mais de uma vez|duas vezes/.test(problema.mensagem)),
+    ).toEqual([]);
   });
 
   /** Papel só existe em ato que o catálogo marca como resultado. */

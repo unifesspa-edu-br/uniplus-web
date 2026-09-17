@@ -350,6 +350,15 @@
   padding: var(--space-8);
   overflow-y: auto;
 
+  /*
+   * Bloco de contenção da própria rolagem. Os controles que o passo esconde do olho
+   * mas mantém para o leitor de tela (`.sr-only`) são posicionados em absoluto, e sem
+   * um ancestral posicionado aqui o ancestral deles vira `main.page` — que então
+   * crescia com o passo inteiro e abria uma segunda barra de rolagem, com espaço morto
+   * abaixo do rodapé.
+   */
+  position: relative;
+
   /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
@@ -599,6 +608,32 @@
   }
 }
 
+/* As ações do rascunho da publicação ficam à ESQUERDA do botão que publica: são a gravação
+   reversível, e encostá-las no botão irreversível convidaria ao clique errado. O `margin-right:
+   auto` é o que as empurra para lá dentro do rodapé alinhado à direita. */
+.rascunho-publicacao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-right: auto;
+  flex-wrap: wrap;
+}
+
+.rascunho-publicacao__carimbo {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 767px) {
+  /* Empilhado, o `margin-right: auto` não tem o que empurrar e a linha de ações ocupa a largura
+     toda, acima dos botões de navegação. */
+  .rascunho-publicacao {
+    width: 100%;
+    margin-right: 0;
+    justify-content: center;
+  }
+}
+
 /* ---- Step section (step 3+) ---- */
 .step-section {
   margin-bottom: var(--space-6);
@@ -620,6 +655,15 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
   gap: var(--space-3) var(--space-6);
+}
+
+/*
+ * Escolhas de rótulo curto — código de modalidade, sigla — cabem em colunas mais
+ * estreitas: com a largura de 18rem da grade padrão, uma lista de "AC", "LB_PPI" e
+ * "LI_Q" gastava a linha inteira em três itens.
+ */
+.sel-processo .checkbox-grid--enxuta {
+  grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr));
 }
 
 /* Check item (reutilizável em outros passos) */
@@ -655,6 +699,539 @@
 
 .sel-processo .form-grid__full {
   grid-column: 1 / -1;
+}
+
+/*
+ * O que a etapa publica fica num bloco próprio dentro da linha da etapa: são
+ * declarações de outra natureza que nome, peso e caráter — o que sai da etapa,
+ * não o que ela é — e misturá-las nos mesmos campos fazia a linha parecer um
+ * formulário só, sem hierarquia.
+ */
+/*
+ * O documento já exigido é um objeto próprio na lista: o seletor acrescenta, e é aqui
+ * que ele ganha modalidades, alcance entre fases e a ação de remover.
+ */
+.sel-processo .doc-item--exigido {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--surface-subtle);
+}
+
+/*
+ * Os três eixos da exigência lado a lado enquanto a largura permite: em que fases vale, em
+ * que ponto desta fase é coletada, e de quem é cobrada. Empilhados, um documento gastava
+ * trezentos pixels de altura, e a fase com cinco deles virava rolagem.
+ */
+.sel-processo .doc-item__eixos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.sel-processo .doc-item__eixos > .form-field {
+  margin: 0;
+  min-width: 0;
+}
+
+/*
+ * O gatilho atravessa o grid dos eixos: ele não é um quarto campo curto, é um bloco com
+ * tantas linhas quantas forem as condições, e espremê-lo numa coluna de dezesseis rem deixava
+ * fato, comparação e valor em três linhas cada.
+ */
+.sel-processo .doc-item__gatilho {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+/*
+ * Uma alternativa do gatilho. A borda à esquerda é o que mostra, sem legenda repetida, que
+ * as condições de dentro valem juntas — e o "ou" entre duas caixas, que elas são caminhos
+ * independentes.
+ */
+.sel-processo .gatilho__clausula {
+  width: 100%;
+  display: grid;
+  gap: var(--space-3);
+  border-left: 3px solid var(--border-subtle);
+  padding-left: var(--space-3);
+}
+
+.sel-processo .gatilho__ou {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+
+.sel-processo .gatilho__condicao {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--space-2) var(--space-3);
+  align-items: end;
+}
+
+.sel-processo .gatilho__condicao > .form-field {
+  margin: 0;
+  min-width: 0;
+}
+
+/* O que a condição alcança ocupa a linha inteira: é prosa, não um campo ao lado dos outros. */
+.sel-processo .gatilho__alcance {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.sel-processo .gatilho__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* O nome e a ação ficam na mesma linha, com a ação encostada à direita. */
+.sel-processo .doc-item--exigido .doc-item__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sel-processo .doc-item--exigido .doc-item__info {
+  display: grid;
+  min-width: 0;
+}
+
+/*
+ * O que a convenção de contagem escolhida faz, na prosa do catálogo. Fica fora do seletor
+ * porque descreve a escolha feita, não as disponíveis — dentro da opção, o mesmo texto de
+ * quatrocentos e sessenta e nove caracteres se repetia em cada linha da lista.
+ */
+.sel-processo .convencao-detalhe {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius-md, 8px) var(--radius-md, 8px) 0;
+  background: var(--surface-subtle);
+  max-width: 70ch;
+}
+
+.sel-processo .convencao-detalhe__lista {
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.sel-processo .convencao-detalhe .field__hint {
+  margin: 0;
+}
+
+/*
+ * Escolher e acrescentar, numa linha só.
+ *
+ * O campo tinha a largura inteira do passo — mil e trezentos pixels para um seletor cujo
+ * rótulo mais longo não passa de trinta caracteres — e a ação caía na linha de baixo, longe
+ * do que ela age. Agora o campo ocupa o que o conteúdo pede e a ação fica ao lado.
+ *
+ * O alinhamento é pela base, porque a ação não tem rótulo acima: alinhada pelo topo, ela
+ * flutuaria na altura do rótulo do campo. É pela base também que a dica precisa sair de
+ * dentro do campo e virar uma linha própria abaixo — dentro, ela empurraria a ação para
+ * baixo a altura do texto.
+ */
+.sel-processo .escolher-e-acrescentar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+  /* Respiro acima: o rótulo do campo vem logo abaixo do texto que explica a seção, e
+     colado nele os dois se leem como um parágrafo só. */
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.sel-processo .escolher-e-acrescentar > .form-field {
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 34rem;
+  margin: 0;
+}
+
+.sel-processo .escolher-e-acrescentar > .btn {
+  flex: 0 0 auto;
+}
+
+/*
+ * Campo e ação quando o próprio campo carrega o seu aviso embaixo — o de busca conta o que o
+ * termo alcança. Aqui o alinhamento é pelo TOPO, que é onde o controle começa: pela base, a
+ * ação descia a altura do aviso e deixava de parecer da mesma linha.
+ */
+.sel-processo .campo-com-acao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-4);
+}
+
+.sel-processo .campo-com-acao > ui-combobox {
+  display: block;
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 34rem;
+}
+
+.sel-processo .campo-com-acao > .btn {
+  flex: 0 0 auto;
+}
+
+/* O campo que abriga a própria ação não tem teto: quem o tem é o controle dentro dele. */
+.sel-processo .escolher-e-acrescentar > .form-field:has(.campo-com-acao) {
+  max-width: none;
+  flex-basis: 100%;
+}
+
+/* A dica e o aviso de contagem, agora abaixo da linha inteira. */
+.sel-processo .escolher-e-acrescentar__ajuda {
+  margin-top: 0;
+}
+
+/*
+ * A fase fechada: só o cabeçalho, com o que há dentro dela resumido ao lado. Sete fases
+ * fechadas cabem numa tela — que é o que o passo promete ao se chamar linha do tempo.
+ */
+
+/*
+ * Título e ações na mesma linha. Empilhados, as ações de reordenar e remover — secundárias —
+ * gastavam uma linha inteira por fase e apareciam com mais peso que o nome da fase.
+ */
+.sel-processo .fase-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.sel-processo .fase-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+  /* Sem encolher e sem quebrar, os três botões somam quase trezentos pixels e empurram o
+     cabeçalho para fora da tela estreita. */
+  min-width: 0;
+}
+.sel-processo .fase-titulo {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.sel-processo .fase-alternar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  /* Item de grid e de flex tem piso intrínseco: sem isto o nome da fase estica o cabeçalho
+     e o passo transborda na horizontal, nas cinco larguras da matriz. */
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .fase-alternar > span:not([aria-hidden]) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .fase-alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .fase-bloco--aberta {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-5);
+}
+
+/*
+ * A etapa fechada em uma linha: nome à esquerda, o que já está declarado à direita. Aberta,
+ * ela passa de mil pixels — oito delas faziam a habilitação valer catorze telas de rolagem.
+ */
+.sel-processo .etapa-bloco {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: var(--space-3);
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.sel-processo .etapa-bloco--aberta {
+  border-color: var(--color-primary);
+}
+
+/*
+ * Nome e ações na mesma linha, como no cabeçalho da fase. As ações ficam FORA do botão que
+ * abre o cartão — botão não aninha botão — e por isso o invólucro é quem alinha os dois.
+ */
+.sel-processo .etapa-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sel-processo .etapa-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+  padding-right: var(--space-4);
+  /* Sem encolher, os três botões empurram o nome da etapa para fora da tela estreita. */
+  min-width: 0;
+}
+
+/*
+ * Subir, Descer e Remover são o mesmo controle, e precisam parecer o mesmo controle.
+ *
+ * Eles já eram todos terciários; o que os separava era o ESTADO. O terciário habilitado tem
+ * fundo transparente e lê como texto, enquanto o desabilitado recebe `--surface-disabled` e
+ * vira pílula cinza — de modo que, numa etapa que não pode subir, "Subir" e "Descer" viravam
+ * dois blocos sólidos e só "Remover" continuava texto. O que está indisponível ganhava mais
+ * peso visual que a única ação disponível.
+ *
+ * Aqui o desabilitado mantém o fundo transparente e apenas esmaece: os três leem como a mesma
+ * coisa, e a diferença passa a ser a cor do texto. Também segue a intenção já registrada no
+ * cabeçalho da fase — estas ações são secundárias e não devem pesar mais que o nome.
+ */
+.sel-processo .fase-acoes .btn[disabled],
+.sel-processo .etapa-acoes .btn[disabled] {
+  background: transparent;
+}
+
+/* O botão do resumo deixa de ocupar a linha inteira: agora divide com as ações. */
+.sel-processo .etapa-cabecalho > .etapa-resumo {
+  width: auto;
+  flex: 1 1 auto;
+}
+
+.sel-processo .etapa-resumo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .etapa-resumo:hover {
+  background: var(--color-primary-50);
+}
+
+.sel-processo .etapa-resumo:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+}
+
+/* Triângulo que gira: é o estado aberto/fechado visível sem depender de cor. */
+.sel-processo .etapa-resumo__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+
+.sel-processo .etapa-bloco--aberta > .etapa-cabecalho > .etapa-resumo .etapa-resumo__seta,
+.sel-processo .fase-bloco--aberta > .fase-cabecalho .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sel-processo .etapa-resumo__seta {
+    transition: none;
+  }
+}
+
+.sel-processo .etapa-resumo__nome {
+  font-weight: var(--weight-semibold);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .etapa-resumo__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.sel-processo .etapa-resumo__marca {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Abaixo do estreito, as marcas descem para a linha de baixo em vez de espremer o nome. */
+@media (max-width: 767px) {
+  .sel-processo .etapa-resumo {
+    flex-wrap: wrap;
+  }
+
+  .sel-processo .etapa-resumo__marcas {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.sel-processo .etapa-bloco .etapa-linha {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+
+/*
+ * A confirmação da remoção da fase, ancorada logo abaixo do cabeçalho dela: quem lê a
+ * contagem do que vai junto está olhando a fase que a provocou.
+ */
+.sel-processo .confirma-remocao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger-500);
+  border-left: 3px solid var(--color-danger-solid);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--color-danger-500) 6%, var(--surface-card));
+}
+
+.sel-processo .confirma-remocao__texto {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.sel-processo .confirma-remocao__acoes {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/*
+ * O botão fecha a lista de etapas, e a configuração da fase começa logo abaixo:
+ * encostado no título seguinte, ele parecia pertencer a ele.
+ */
+.sel-processo .acao-de-etapa {
+  margin: var(--space-3) 0 var(--space-6);
+}
+
+.sel-processo .etapa-publica {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-subtle);
+  display: grid;
+  gap: var(--space-3);
+}
+
+/*
+ * Campos alinham pelo topo: o rótulo e o controle de cada coluna ficam na mesma linha,
+ * e a dica de um campo desce por baixo dele em vez de empurrar o vizinho para cima.
+ * Alinhar pela base fazia o campo com dica — "Contra qual publicação" — subir o próprio
+ * seletor a altura da dica, deixando as duas colunas desencontradas.
+ */
+.sel-processo .etapa-publica > .form-grid {
+  align-items: start;
+}
+
+/*
+ * Bloco da etapa que cresce com o que se declara nele — as janelas recursais e as
+ * publicações — recolhido como a etapa e a fase, com a contagem no cabeçalho.
+ */
+.sel-processo .etapa-publica--recolhivel {
+  gap: 0;
+}
+
+.sel-processo .etapa-publica__cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .etapa-publica__cabecalho:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .etapa-publica__cabecalho .form-section__title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .etapa-publica--recolhivel.is-aberto > div {
+  margin-top: var(--space-3);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sel-processo .etapa-publica--recolhivel.is-aberto > .etapa-publica__cabecalho .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+/*
+ * A ação não tem rótulo acima: alinhada pelo topo, ela flutuaria na altura dos rótulos
+ * dos campos vizinhos em vez de na altura dos controles.
+ */
+.sel-processo .etapa-publica > .form-grid > .btn {
+  align-self: end;
 }
 
 /*
@@ -1381,6 +1958,33 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/*
+ * O estado de cada item é dito por TEXTO, não por cor: o marcador colorido que existia aqui
+ * mirava um elemento que o template não renderiza, e item conforme e item pendente saíam
+ * idênticos — sem ícone, sem cor e sem nada no acessível.
+ */
+.revisao-item__estado {
+  align-self: flex-start;
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.revisao-item--ok .revisao-item__estado {
+  background: var(--color-success-50);
+  border: 1px solid var(--color-success-100);
+  color: var(--color-success-700);
+}
+
+.revisao-item--pending .revisao-item__estado {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
 .revisao-item__meta {
   flex: 1;
   min-width: 0;
@@ -1397,6 +2001,17 @@
   overflow-wrap: anywhere;
 }
 
+/* Onde a pendência se resolve, quando não é num passo do wizard. Mora sob a mensagem, no
+   mesmo bloco de texto, porque `.revisao-item` é uma linha flex — como irmão do botão, a
+   frase disputaria a linha com ele. */
+.revisao-item__onde {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
 .revisao-chip {
   flex-shrink: 0;
   display: inline-block;
@@ -1407,8 +2022,15 @@
   white-space: nowrap;
 }
 
+/*
+ * O tom 700 é o declarado para texto sobre fundo claro; o 500 é de preenchimento e fica em
+ * torno de 2,3:1 sobre a superfície do cartão — abaixo do mínimo de 4,5:1 para texto pequeno.
+ * O fundo acompanha o do chip pendente para os dois terem o mesmo peso visual.
+ */
 .revisao-chip--ok {
-  color: var(--color-success-500);
+  background: var(--color-success-50);
+  border: 1px solid var(--color-success-100);
+  color: var(--color-success-700);
 }
 
 .revisao-chip--pending {
@@ -1429,6 +2051,19 @@
 
   .revisao-item__go {
     display: none;
+  }
+
+  /* O botão de navegar é largo — "Ir para Cronograma e etapas" nomeia o passo inteiro — e
+     `.revisao-item` é uma linha flex com o texto em `flex: 1`. Sem quebrar a linha, a 320px
+     o botão come a largura toda e a mensagem da pendência fica com caixa de largura zero:
+     continua na árvore de acessibilidade, mas invisível na tela. Quebrando, o botão desce
+     para a própria linha e os dois cabem. */
+  .revisao-item {
+    flex-wrap: wrap;
+  }
+
+  .revisao-item__meta {
+    flex: 1 1 100%;
   }
 }
 
@@ -1686,12 +2321,6 @@
     white-space: normal;
     vertical-align: bottom;
   }
-}
-
-/* Fecha o passo, depois do quadro e da simulação: é o que se confirma. */
-.vagas-conferencia {
-  margin-top: var(--space-4);
-  align-items: start;
 }
 
 /* Segue um alerta, que já tem peso visual próprio: sem o afastamento a nota

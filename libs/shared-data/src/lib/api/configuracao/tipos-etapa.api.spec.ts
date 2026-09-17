@@ -8,6 +8,7 @@ import {
   apiResultInterceptor,
   buildVendorMimeAccept,
   isApiOk,
+  withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import { TipoEtapaDto, TiposEtapaApi } from './tipos-etapa.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
@@ -20,6 +21,8 @@ const provaObjetiva: TipoEtapaDto = {
   nome: 'Prova Objetiva',
   descricao: null,
   ativo: true,
+  admitePontuacao: true,
+  admiteEliminacao: true,
   criadoEm: '2026-08-30T12:00:00Z',
 };
 
@@ -29,6 +32,7 @@ const bancaAposentada: TipoEtapaDto = {
   codigo: 'BANCA_HETEROIDENTIFICACAO',
   nome: 'Banca de Heteroidentificação',
   ativo: false,
+  admitePontuacao: false,
 };
 
 describe('TiposEtapaApi', () => {
@@ -109,6 +113,68 @@ describe('TiposEtapaApi', () => {
     expect(req.request.method).toBe('GET');
     req.flush(provaObjetiva);
     await promise;
+  });
+
+  it('criar() faz POST no recurso administrativo com Idempotency-Key e Accept JSON', async () => {
+    const promise = firstValueFrom(
+      api.criar(
+        {
+          codigo: 'ANALISE_SOCIOECONOMICA',
+          nome: 'Análise socioeconômica',
+          admitePontuacao: false,
+          admiteEliminacao: true,
+          descricao: null,
+        },
+        withIdempotencyKey('k'),
+      ),
+    );
+
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+    expect(req.request.headers.get('Accept')).toBe('application/json');
+    expect(req.request.body).toMatchObject({ admitePontuacao: false, admiteEliminacao: true });
+    req.flush(provaObjetiva.id, { status: 201, statusText: 'Created' });
+
+    expect(isApiOk((await promise) as ApiResult<string>)).toBe(true);
+  });
+
+  it('atualizar() faz PUT no recurso administrativo sem o campo codigo, que é imutável', async () => {
+    const promise = firstValueFrom(
+      api.atualizar(
+        provaObjetiva.id,
+        {
+          id: provaObjetiva.id,
+          nome: 'Prova Objetiva',
+          admitePontuacao: true,
+          admiteEliminacao: false,
+          descricao: null,
+        },
+        withIdempotencyKey('k'),
+      ),
+    );
+
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-etapa/${provaObjetiva.id}`,
+    );
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).not.toHaveProperty('codigo');
+    expect(req.request.body).toMatchObject({ admiteEliminacao: false });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
+  });
+
+  it('remover() faz DELETE no recurso administrativo', async () => {
+    const promise = firstValueFrom(api.remover(provaObjetiva.id));
+
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-etapa/${provaObjetiva.id}`,
+    );
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
   });
 
   it('propaga ProblemDetails sem lançar', async () => {

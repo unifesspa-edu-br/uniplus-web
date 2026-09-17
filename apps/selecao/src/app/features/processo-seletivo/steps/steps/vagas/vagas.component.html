@@ -512,21 +512,6 @@
         </div>
       }
 
-      <label
-        class="check-item vagas-conferencia"
-        [class.vagas-conferencia--pendente]="soFaltaConferir()"
-      >
-        <input
-          type="checkbox"
-          [checked]="conferenciaConfirmada()"
-          [disabled]="!store.aceitaEdicao()"
-          (change)="conferenciaConfirmada.set($any($event.target).checked)"
-        />
-        <span>
-          Confirmo que conferi o quadro de vagas: os totais informados e as quantidades que a regra
-          calculou estão corretos.
-        </span>
-      </label>
     }
 
     <sel-cascata-remanejamento />
