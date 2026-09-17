@@ -6,6 +6,7 @@ import {
   baseLegalNova,
   comAlcanceDeTodasAsFases,
   comExigencia,
+  comExigenciaNaRaiz,
   comExigidoDeTodos,
   comRecorteEscolhido,
   exigenciaNova,
@@ -1012,9 +1013,13 @@ export class FaseStepComponent {
       (exigencia) => exigencia.tipoDocumentoId === id,
     );
     const aberta = this.faseDoRascunho()?.codigo ?? fases[0] ?? '';
+    // O modelo é semeado na RAIZ, não por `comExigencia`: quando o documento só existe como
+    // alternativa dentro de um grupo OU, aquela substituiria a folha do grupo e a raiz
+    // continuaria sem modelo — a marca ficaria posta sem nada para espalhar, e a gravação
+    // sairia com a alternativa de sempre, sem as exigências prometidas.
     const base = temModelo
       ? exigencias
-      : comExigencia(
+      : comExigenciaNaRaiz(
           exigencias,
           exigenciaNova(id, aberta, this.catalogos.tipoDocumentoPorId().get(id)),
         );

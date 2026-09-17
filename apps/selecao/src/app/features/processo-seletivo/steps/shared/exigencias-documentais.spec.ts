@@ -11,9 +11,11 @@ import {
   baseLegalNova,
   comAlcanceDeTodasAsFases,
   comExigencia,
+  comExigenciaNaRaiz,
   comModalidades,
   exigenciaNova,
   exigenciasDaFase,
+  exigenciasDaRaiz,
   exigenciasDe,
   exigenciasLocalizadasDaFase,
   folhaDe,
@@ -577,6 +579,41 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     };
 
     expect(semAFase(global, 'HABILITACAO').emTodasAsFases).toEqual([ID_RG]);
+  });
+
+  /**
+   * O acréscimo em raiz não pode passar pela substituição que percorre a árvore: ela troca a
+   * PRIMEIRA folha que casa por (documento, fase), e essa primeira pode ser a alternativa
+   * dentro de um grupo OU. Sobrescrevê-la transformaria "este documento serve" em "este
+   * documento é exigido" — e a raiz continuaria sem a declaração prometida.
+   */
+  it('acrescenta na raiz sem tocar na alternativa homônima do grupo', () => {
+    const comGrupo: ExigenciasDoRascunho = {
+      emTodasAsFases: [],
+      raizes: [
+        {
+          tipo: 'OU',
+          documento: null,
+          quantidadeMinima: 1,
+          consequencia: null,
+          basesLegais: null,
+          filhos: [
+            { tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'HABILITACAO'), quantidadeMinima: null, consequencia: null, basesLegais: null, filhos: null, chaveDistincao: null, dataReferencia: null, ocorrenciasEsperadas: null, repetePorEntidade: null },
+          ],
+          chaveDistincao: null,
+          dataReferencia: null,
+          ocorrenciasEsperadas: null,
+          repetePorEntidade: null,
+        },
+      ],
+    };
+
+    const comRaiz = comExigenciaNaRaiz(comGrupo, exigenciaNova(ID_RG, 'HABILITACAO'));
+
+    expect(comRaiz.raizes).toHaveLength(2, 'o grupo continua, e a declaração de raiz nasce ao lado');
+    expect(comRaiz.raizes[0].tipo).toBe('OU');
+    expect(comRaiz.raizes[0].filhos).toHaveLength(1);
+    expect(exigenciasDaRaiz(comRaiz).map((e) => e.tipoDocumentoId)).toEqual([ID_RG]);
   });
 
   /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */
