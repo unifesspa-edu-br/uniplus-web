@@ -187,12 +187,17 @@
       >@if (store.isLast() && store.processoSeletivoId() !== null) {
       <!-- A Revisão é o único passo sem "Gravar e avançar": o botão principal dela publica de
            verdade. Sem uma ação de gravação própria, os sete campos transcritos do Diário
-           Oficial só existiam no navegador, e um F5 os apagava. -->
+           Oficial só existiam no navegador, e um F5 os apagava.
+
+           As duas ações seguem `edicaoPermitida()` como o resto do formulário: no processo já
+           publicado, cancelado ou encerrado os campos são de leitura, e gravar rascunho dali
+           ou colheria recusa do servidor ou guardaria uma transcrição que esta jornada não
+           tem mais como usar. -->
       <div class="rascunho-publicacao">
         <button
           class="btn btn--tertiary"
           type="button"
-          [disabled]="salvandoRascunho() || store.operacaoEmAndamento()"
+          [disabled]="salvandoRascunho() || store.operacaoEmAndamento() || !store.edicaoPermitida()"
           (click)="salvarRascunhoDaPublicacao()"
         >
           @if (salvandoRascunho()) { Salvando rascunho… } @else { Salvar rascunho }
@@ -204,7 +209,7 @@
         <button
           class="btn btn--tertiary"
           type="button"
-          [disabled]="salvandoRascunho() || store.operacaoEmAndamento()"
+          [disabled]="salvandoRascunho() || store.operacaoEmAndamento() || !store.edicaoPermitida()"
           (click)="descartarRascunhoDaPublicacao()"
         >
           Descartar rascunho

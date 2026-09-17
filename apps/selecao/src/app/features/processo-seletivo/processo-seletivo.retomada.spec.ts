@@ -896,6 +896,32 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     });
   });
 
+  /**
+   * Recusada a troca a partir do cadastro novo, não há processo aberto para onde voltar — o
+   * endereço precisa voltar a `/novo`. Deixá-lo no `:id` recusado punha o cadastro em andamento
+   * sob o endereço de outro processo, e a criação seguinte não corrigiria a URL: o efeito que a
+   * ajusta desiste quando ela já traz um id.
+   */
+  it('devolve o endereço a /novo quando a troca é recusada sem processo aberto', async () => {
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => null,
+    });
+    const cenario = montar({ id: null, paramMap });
+    await propagar();
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há o que perder');
+    vi.spyOn(TestBed.inject(ConfirmacaoDeSaida), 'confirmar').mockReturnValue(false);
+
+    paramMap.next({ get: () => PROCESSO_ID });
+    await propagar();
+
+    expect(cenario.navigate).toHaveBeenCalledWith(['/processo-seletivo', 'novo'], {
+      replaceUrl: true,
+    });
+    expect(cenario.store.draft().publicacao.numero).toBe('07/2027');
+  });
+
   /** Aceita a perda, a troca segue: quem confirmou sabe o que está deixando para trás. */
   it('troca de processo quando a perda da transcrição é confirmada', async () => {
     const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
@@ -1716,6 +1742,28 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       expect(motivo).toContain('não está em rascunho');
       expect(motivo).not.toContain('cancelado');
       expect(motivo).not.toContain('encerrado');
+    });
+
+    /**
+     * No processo publicado, cancelado ou encerrado os campos são de leitura. Gravar rascunho
+     * dali ou colheria recusa do servidor ou guardaria uma transcrição que esta jornada não
+     * tem mais como usar — e a tela anunciaria sucesso.
+     */
+    it('não oferece gravar rascunho em processo que não aceita edição', async () => {
+      const cenario = montar({
+        obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))),
+      });
+      await propagar();
+
+      expect(cenario.store.edicaoPermitida()).toBe(false, 'pré-condição: o processo é de leitura');
+
+      cenario.store.goTo(cenario.store.totalSteps - 1);
+      cenario.fixture.detectChanges();
+
+      const botao = [...cenario.host.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === 'Salvar rascunho',
+      );
+      expect(botao?.disabled).toBe(true);
     });
 
     it('mantém a edição liberada enquanto o detalhe não chegou', () => {
