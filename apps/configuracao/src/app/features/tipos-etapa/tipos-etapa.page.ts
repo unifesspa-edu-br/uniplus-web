@@ -40,7 +40,7 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
-  FilterBarComponent,
+  FilterBarComponent, IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -81,6 +81,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
     FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
+    IconButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -173,28 +174,26 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading() || saving()"
-                      (click)="abrirEdicao(tipo)"
-                    >
-                      Editar
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar tipo de etapa: ' + tipo.codigo"
+                      tooltip="Editar tipo de etapa"
+                      [isDisabled]="loading() || saving()"
+                      (triggered)="abrirEdicao(tipo)"
+                    />
                     @if (tipo.ativo) {
                       <!--
                         Também desabilitado durante uma gravação em voo: o diálogo abriria, a
                         confirmação fecharia, e a inativação seria descartada em silêncio: a
                         remoção desiste enquanto há outra mutação correndo.
                       -->
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading() || saving()"
-                        (click)="pedirRemocao(tipo)"
-                      >
-                        Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar tipo de etapa ' + tipo.codigo"
+                        tooltip="Inativar tipo de etapa"
+                        [isDisabled]="loading() || saving()"
+                        (triggered)="pedirRemocao(tipo)"
+                      />
                     }
                   </td>
                 </tr>
@@ -283,7 +282,9 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
               />
-              <span class="field__hint">Como o tipo aparece para quem monta o processo seletivo.</span>
+              <span class="field__hint"
+                >Como o tipo aparece para quem monta o processo seletivo.</span
+              >
               @if (erroDoCampo('nome')) {
                 <span class="field__error">{{ erroDoCampo('nome') }}</span>
               }

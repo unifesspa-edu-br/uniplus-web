@@ -187,10 +187,12 @@ describe('TiposEtapaPage', () => {
     expect(ativa?.textContent).toContain('Ativo');
     expect(inativa?.textContent).toContain('Inativo');
 
-    const acoesDaInativa = [...(inativa?.querySelectorAll('button') ?? [])].map((b) =>
-      b.textContent?.trim(),
+    const botoesDaInativa = [...(inativa?.querySelectorAll('button') ?? [])];
+
+    expect(botoesDaInativa).toHaveLength(1);
+    expect(botoesDaInativa[0].getAttribute('aria-label')).toBe(
+      'Editar tipo de etapa: PROVA_OBJETIVA',
     );
-    expect(acoesDaInativa).toEqual(['Editar']);
   });
 
   it('inativar pede confirmação e chama o DELETE', async () => {
