@@ -429,6 +429,15 @@ export interface IdadeMaximaEmissaoConfig {
  */
 export interface ExigenciaDeDocumento {
   readonly tipoDocumentoId: string;
+  /**
+   * O nome que o processo guardou do tipo de documento, como o detalhe o devolve.
+   *
+   * Existe para o caso em que o cadastro inativa o tipo depois de ele já estar exigido: o
+   * catálogo vivo deixa de trazê-lo, e sem este rótulo a linha sumiria da tela enquanto a
+   * gravação seguiria reenviando a exigência — invisível e intocável. Ausente no que a própria
+   * tela acabou de declarar, porque aí o nome vem do catálogo.
+   */
+  readonly tipoDocumentoNome?: string;
   readonly faseCodigo: string;
   /** A etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
   readonly etapaId: string | null;
