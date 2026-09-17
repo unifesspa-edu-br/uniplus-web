@@ -970,6 +970,35 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
   });
 
   /**
+   * A chave termina com a gravação que a usou. Retida, um clique posterior em "Salvar rascunho"
+   * com o mesmo conteúdo repetia a gravação anterior: o servidor devolve o resultado guardado
+   * em vez de gravar de novo, e o que outra aba tenha posto lá permanece — com a tela
+   * anunciando que salvou.
+   */
+  it('não reaproveita a chave entre duas gravações do mesmo conteúdo', async () => {
+    const cenario = montar();
+    await propagar();
+
+    const chaves: (string | undefined)[] = [];
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
+      chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
+      return of(okResult(undefined));
+    });
+
+    const pagina = cenario.componente as unknown as {
+      salvarRascunhoDaPublicacao(): Promise<void>;
+    };
+
+    cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
+    await pagina.salvarRascunhoDaPublicacao();
+    await pagina.salvarRascunhoDaPublicacao();
+
+    expect(chaves).toHaveLength(2);
+    expect(chaves[1]).not.toBe(chaves[0]);
+  });
+
+  /**
    * Depois de publicar, o servidor apagou o rascunho e o que sobra em tela é a declaração que
    * virou publicação. Zerar a referência fazia a guarda de saída ler esses campos como
    * transcrição por gravar, e avisar de perda a quem acabou de publicar.

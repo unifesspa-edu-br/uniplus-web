@@ -516,6 +516,13 @@ export class ProcessoSeletivoPage {
     this.avisoDoRascunho.set(null);
     this.documentoNoServidor.set(JSON.stringify(documento));
     this.rascunhoSalvoEm.set(new Date().toISOString());
+
+    // A chave termina com a gravação que a usou. Retê-la faz de um clique posterior em "Salvar
+    // rascunho" a repetição do anterior: com o mesmo corpo, o servidor devolve o resultado que
+    // guardou em vez de gravar de novo — e o que estiver lá agora, posto por outra aba ou por
+    // outra sessão, permanece, enquanto a tela anuncia que salvou. Cada clique é uma
+    // substituição nova, e cada substituição pede chave própria.
+    this.chaveDoRascunho.renovar();
   }
 
   /**
