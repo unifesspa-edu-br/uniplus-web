@@ -145,6 +145,21 @@ export function baseLegalNova(): BaseLegalConfig {
 }
 
 /** A folha do rascunho que envolve uma exigência. */
+/**
+ * Acrescenta a exigência como declaração de RAIZ, sem tocar no resto da árvore.
+ *
+ * É a operação que o alcance por todas as fases precisa, e que `comExigencia` não faz: aquela
+ * substitui a PRIMEIRA folha que casa por (documento, fase), e essa primeira pode ser a
+ * alternativa dentro de um grupo OU — sobrescrevê-la transformaria "este documento serve" em
+ * "este documento é exigido", que é outra coisa.
+ */
+export function comExigenciaNaRaiz(
+  exigencias: ExigenciasDoRascunho,
+  documento: ExigenciaDeDocumento,
+): ExigenciasDoRascunho {
+  return { ...exigencias, raizes: [...exigencias.raizes, folhaDe(documento)] };
+}
+
 export function folhaDe(documento: ExigenciaDeDocumento): NoDeExigencia {
   return {
     tipo: 'FOLHA',
@@ -696,13 +711,7 @@ export function comAlcanceDeTodasAsFases(
       );
       if (jaTemNaRaiz) continue;
 
-      // Acrescenta na RAIZ, sem passar por `comExigencia`: ela troca a primeira folha que casa
-      // por (documento, fase), e essa primeira pode ser a alternativa dentro do grupo — a
-      // materialização sobrescreveria a alternativa em vez de criar a exigência ao lado dela.
-      resultado = {
-        ...resultado,
-        raizes: [...resultado.raizes, folhaDe({ ...modelo, faseCodigo, etapaId: null })],
-      };
+      resultado = comExigenciaNaRaiz(resultado, { ...modelo, faseCodigo, etapaId: null });
     }
   }
 
