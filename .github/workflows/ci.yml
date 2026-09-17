@@ -152,7 +152,7 @@ jobs:
       # distributed run cannot finish before all blocking gates are reconciled.
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       - if: steps.gate.outputs.run == 'true'
-        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,e2e"
+        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck"
 
       - if: steps.gate.outputs.run == 'true'
         uses: actions/setup-node@v4
@@ -195,18 +195,22 @@ jobs:
       # Em pull_request, usamos `nx affected` para rodar apenas os projects
       # impactados pelo diff contra a branch base. Em push para main, fazemos
       # sweep completo via `nx run-many` como rede de segurança.
-      # Em pull_request, usamos `nx affected` para rodar apenas os projects
-      # impactados pelo diff contra a branch base. Em push para main, fazemos
-      # sweep completo via `nx run-many` como rede de segurança.
+      #
+      # `e2e` fora do gate obrigatório (issue #814): os 4 e2e sobem cada um seu
+      # próprio dev-server Angular sequencialmente no mesmo runner, e o último
+      # da fila trava sem erro explícito até o teto de 45min cancelar o job —
+      # reproduzido tanto em push na main quanto em PR, mesmo depois do fix do
+      # webServer (#812). Rodar via `npx nx e2e <app>-e2e` manualmente/local
+      # enquanto a causa (recursos do runner) não é resolvida.
       - name: Rodar gates (nx affected — pull_request)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npx nx affected -t lint test build typecheck e2e --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
+        run: npx nx affected -t lint test build typecheck --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
         env:
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
       - name: Rodar gates (nx run-many — push em main)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
-        run: npx nx run-many -t lint test build typecheck e2e --nxBail --outputStyle=static
+        run: npx nx run-many -t lint test build typecheck --nxBail --outputStyle=static
         env:
           KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD || 'admin' }}
 
