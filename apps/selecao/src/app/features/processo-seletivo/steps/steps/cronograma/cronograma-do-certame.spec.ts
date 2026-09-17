@@ -858,6 +858,55 @@ describe('o que impede gravar o cronograma', () => {
       );
     }
 
+    /**
+     * A janela ancorada em ato corre da publicação preliminar DA PRÓPRIA etapa, e os produtos
+     * mudam por outro caminho: retirar o preliminar deixava a janela apontando para o que não
+     * existe mais. A gravação seguia, e o servidor recusava a etapa inteira sem dizer que o
+     * problema era a âncora — nem em qual etapa.
+     */
+    it('acusa a janela que corre de uma publicação que a etapa não declara mais', () => {
+      expect(comRecurso({})).toContainEqual(
+        expect.stringContaining('resultado preliminar que a etapa não declara mais'),
+      );
+    });
+
+    it('não acusa quando a etapa declara a publicação de que a janela corre', () => {
+      const problemas = problemasDoCronograma(
+        [faseDeAvaliacao],
+        [
+          etapa({
+            nome: 'Prova Objetiva',
+            faseCodigo: 'AVALIACAO',
+            produtos: [PRELIMINAR],
+            recursos: [
+              {
+                ancora: 'atoPublicado',
+                regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+                regraVersao: '1.0.0',
+                prazoValor: '2',
+                prazoUnidade: 'diasUteis',
+                atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+                suspensividadePrimeiraInstanciaValor: '',
+                suspensividadePrimeiraInstanciaUnidade: '',
+                suspensividadeSegundaInstanciaValor: '',
+                suspensividadeSegundaInstanciaUnidade: '',
+              },
+            ],
+          }),
+        ],
+        catalogo,
+        [],
+        SEM_CATALOGO,
+        nomeDaBanca,
+        tipoQueAdmiteTudo,
+        [],
+      );
+
+      expect(problemas).not.toContainEqual(
+        expect.stringContaining('resultado preliminar que a etapa não declara mais'),
+      );
+    });
+
     it('acusa prazo em branco', () => {
       expect(comRecurso({ prazoValor: '' })).toContainEqual(
         expect.stringContaining('prazo maior que zero'),

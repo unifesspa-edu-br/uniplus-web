@@ -689,6 +689,28 @@ function problemasDasEtapas(
     }
   }
 
+  // A janela ancorada em ato aponta para uma publicação preliminar DA PRÓPRIA etapa, e os
+  // produtos mudam por outro caminho: retirar o preliminar, ou trocar-lhe o ato ou o papel,
+  // deixava a janela apontando para o que não existe mais. A gravação seguia, e o servidor
+  // recusava a etapa inteira — sem dizer que o problema era a âncora, nem em qual etapa.
+  for (const etapa of etapas) {
+    const preliminares = new Set(
+      etapa.produtos.filter((p) => p.papel === PAPEL_PRELIMINAR).map((p) => p.atoCodigo),
+    );
+    const orfas = etapa.recursos.filter(
+      (recurso) =>
+        recurso.ancora === 'atoPublicado' &&
+        recursoResolvido(recurso) &&
+        !preliminares.has(recurso.atoAncoraCodigo),
+    );
+    if (orfas.length === 0) continue;
+
+    const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
+    problemas.push(
+      `A janela de recurso da etapa ${nome} corre da publicação de um resultado preliminar que a etapa não declara mais. Escolha outra publicação, ou remova a janela.`,
+    );
+  }
+
   for (const etapa of etapas) {
     const pendentes = etapa.recursos.filter((recurso) => !recursoResolvido(recurso)).length;
     if (pendentes === 0) continue;
