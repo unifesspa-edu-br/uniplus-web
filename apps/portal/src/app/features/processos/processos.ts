@@ -22,6 +22,7 @@ import {
   type UiSegmentedOption,
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
+import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 type CertameStatus = 'aberto' | 'ultimos-dias' | 'encerrado';
 type CertameModalidade = 'graduacao' | 'pos-graduacao' | 'vagas-reservadas' | 'cursos-tecnicos';
@@ -64,8 +65,11 @@ interface Certame {
   readonly status: CertameStatus;
   readonly modalidade: CertameModalidade;
   readonly modalidadeLabel: string;
+  /** ISO (aaaa-mm-dd) — precisa ser ordenável, não só exibível (ver `compararPorUrgencia`). */
   readonly encerraEm: string;
   readonly vagas: string;
+  /** Certame exibido no hero de destaque. No máximo um `true` no conjunto. */
+  readonly destaque?: boolean;
 }
 
 const STATUS_LABEL: Record<CertameStatus, string> = {
@@ -115,8 +119,9 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'aberto',
     modalidade: 'graduacao',
     modalidadeLabel: MODALIDADE_LABEL.graduacao,
-    encerraEm: '16 abr 2026',
+    encerraEm: '2026-04-16',
     vagas: '1.234',
+    destaque: true,
   },
   {
     id: 'pos-educacao-2026',
@@ -128,7 +133,7 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'ultimos-dias',
     modalidade: 'pos-graduacao',
     modalidadeLabel: MODALIDADE_LABEL['pos-graduacao'],
-    encerraEm: '22 mar 2026',
+    encerraEm: '2026-03-22',
     vagas: '47',
   },
   {
@@ -141,7 +146,7 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'aberto',
     modalidade: 'vagas-reservadas',
     modalidadeLabel: MODALIDADE_LABEL['vagas-reservadas'],
-    encerraEm: '30 abr 2026',
+    encerraEm: '2026-04-30',
     vagas: '86',
   },
   {
@@ -154,7 +159,7 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'aberto',
     modalidade: 'cursos-tecnicos',
     modalidadeLabel: MODALIDADE_LABEL['cursos-tecnicos'],
-    encerraEm: '10 mai 2026',
+    encerraEm: '2026-05-10',
     vagas: '120',
   },
   {
@@ -167,7 +172,7 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'aberto',
     modalidade: 'pos-graduacao',
     modalidadeLabel: MODALIDADE_LABEL['pos-graduacao'],
-    encerraEm: '05 mai 2026',
+    encerraEm: '2026-05-05',
     vagas: '30',
   },
   {
@@ -180,7 +185,7 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'ultimos-dias',
     modalidade: 'cursos-tecnicos',
     modalidadeLabel: MODALIDADE_LABEL['cursos-tecnicos'],
-    encerraEm: '25 mar 2026',
+    encerraEm: '2026-03-25',
     vagas: '60',
   },
   {
@@ -193,7 +198,7 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'encerrado',
     modalidade: 'vagas-reservadas',
     modalidadeLabel: MODALIDADE_LABEL['vagas-reservadas'],
-    encerraEm: '15 fev 2026',
+    encerraEm: '2026-02-15',
     vagas: '40',
   },
   {
@@ -206,13 +211,32 @@ const CERTAMES_MOCK: readonly Certame[] = [
     status: 'encerrado',
     modalidade: 'graduacao',
     modalidadeLabel: MODALIDADE_LABEL.graduacao,
-    encerraEm: '20 jan 2026',
+    encerraEm: '2026-01-20',
     vagas: '300',
   },
 ];
 
+function grupoUrgencia(status: CertameStatus): number {
+  return status === 'encerrado' ? 1 : 0;
+}
+
+/**
+ * Abertos e em últimos dias antes de encerrados; dentro de cada grupo, prazo
+ * mais próximo primeiro (CA-01 da story #776 — "quem encerra antes no topo").
+ * `encerraEm` em ISO ordena cronologicamente por comparação de string.
+ */
+function compararPorUrgencia(a: Certame, b: Certame): number {
+  const grupo = grupoUrgencia(a.status) - grupoUrgencia(b.status);
+  return grupo !== 0 ? grupo : a.encerraEm.localeCompare(b.encerraEm);
+}
+
+/** Mesmo tratamento de diacríticos já usado em `unidades.page.ts` — sem isso,
+ * buscar "tecnico" ou "graduacao" (sem acento) não encontra nada. */
 function normalizar(texto: string): string {
-  return texto.toLowerCase();
+  return texto
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLocaleLowerCase('pt-BR');
 }
 
 function readVisao(): VisaoCertames {
@@ -245,6 +269,7 @@ function writeVisao(visao: VisaoCertames): void {
   imports: [
     RouterLink,
     RouterOutlet,
+    DateBrPipe,
     AlertComponent,
     EmptyStateComponent,
     FilterBarComponent,
@@ -314,10 +339,16 @@ export class ProcessosComponent {
   });
 
   protected readonly certamesFiltrados = computed(() =>
-    this.certames()
+    [...this.certames()]
       .filter((certame) => this.combinaBusca(certame))
       .filter((certame) => this.combinaStatus(certame))
-      .filter((certame) => this.combinaModalidade(certame)),
+      .filter((certame) => this.combinaModalidade(certame))
+      .sort(compararPorUrgencia),
+  );
+
+  /** Certame do hero — fonte única com a listagem, não um literal solto no template. */
+  protected readonly destaque = computed<Certame | null>(
+    () => this.certames().find((certame) => certame.destaque) ?? null,
   );
 
   protected readonly totalFiltrados = computed(() => this.certamesFiltrados().length);
@@ -403,11 +434,14 @@ export class ProcessosComponent {
     this.erro.set(null);
     // Deferido para o próximo tick do event loop: exercita o estado
     // "carregando" de fato, no mesmo formato assíncrono que uma chamada de
-    // API real teria.
-    setTimeout(() => {
+    // API real teria. Sem caminho de falha porque o dado é mockado — ao
+    // trocar por uma chamada real, o catch precisa chamar
+    // `this.erro.set(mensagem)`; isso não acontece sozinho.
+    const temporizador = setTimeout(() => {
       this.certames.set(CERTAMES_MOCK);
       this.carregando.set(false);
     });
+    this.destroyRef.onDestroy(() => clearTimeout(temporizador));
   }
 
   private combinaBusca(certame: Certame): boolean {

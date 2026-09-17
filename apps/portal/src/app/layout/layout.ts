@@ -25,8 +25,11 @@ export class LayoutComponent {
     {
       label: 'Navegação',
       items: [
-        { label: 'Documentos', routerLink: '/documentos' },
-        { label: 'Meu Perfil', routerLink: '/perfil' },
+        // De volta ao shell público — sem isso, quem entra por /recursos (única
+        // rota que ainda vive neste shell) não tem como voltar à vitrine
+        // exceto editando a URL. Documentos e Meu Perfil migraram pro shell
+        // público (mesmo motivo de Minhas inscrições/Resultados).
+        { label: 'Editais', routerLink: '/processos' },
       ],
     },
   ];
