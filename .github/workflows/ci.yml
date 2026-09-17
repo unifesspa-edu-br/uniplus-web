@@ -11,6 +11,18 @@ permissions:
   contents: read
   pull-requests: read
 
+# Um run por referência. O push seguinte ao mesmo PR cancela o anterior, que já não
+# descreve o que será integrado: sem isto, uma sequência de correções de revisão deixou
+# SEIS runs da mesma branch vivos ao mesmo tempo, cada um carregando as quatro suítes de
+# e2e com Keycloak, e todos disputando os mesmos runners — o gate passou de 20 minutos
+# para quase três horas sem que o código tivesse mudado de tamanho.
+#
+# Em `main` é o contrário: cada commit integrado precisa da própria validação, e cancelar
+# a anterior deixaria buraco no histórico de verificação. Daí a condição no valor.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   adr-lint:
     name: ADR lint (MADR 4.0)
@@ -68,6 +80,10 @@ jobs:
 
   main:
     runs-on: ubuntu-latest
+    # Os gates completos levam de 16 a 23 minutos quando rodam sozinhos; o teto dá folga
+    # para o pior caso sem deixar um run travado ocupar runner por horas. Os outros dois
+    # jobs já declaravam o seu — este, que é o pesado, era o único sem.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
