@@ -607,8 +607,14 @@ export class ProcessoSeletivoPage {
    */
   private voltarAoProcessoAberto(): void {
     const aberto = this.store.processoSeletivoId();
-    if (aberto === null) return;
-    void this.router.navigate(['/processo-seletivo', aberto], { replaceUrl: true });
+
+    // Sem processo aberto, o editor está no cadastro novo: é para lá que o endereço volta.
+    // Deixá-lo no `:id` recusado punha o cadastro em andamento sob o endereço de outro
+    // processo — e, ao criar, o efeito que ajusta a URL desistiria, porque ela já traz um id.
+    void this.router.navigate(
+      aberto === null ? ['/processo-seletivo', 'novo'] : ['/processo-seletivo', aberto],
+      { replaceUrl: true },
+    );
   }
 
   /** Repete a leitura do endereço atual, para as falhas que admitem retentativa. */
