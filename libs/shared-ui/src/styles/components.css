@@ -85,6 +85,27 @@
 }
 .btn--tertiary:hover:not([disabled]):not(:disabled) { color: var(--text-on-primary-tint); }
 
+/*
+ * A terciária é a única variante sem caixa — fundo e borda transparentes — e desde
+ * a remoção do sublinhado de `.btn` uma âncora só de texto se distingue do corpo ao
+ * redor apenas pela cor. O SC 1.4.1 da WCAG 2.1 não aceita a cor sozinha, e a saída
+ * da técnica G183 (3:1 entre o controle e o texto vizinho) não é alcançada em
+ * nenhuma das três paletas: no tema de contraste `--text-primary` e `--color-primary`
+ * são o mesmo `#ffff00`, e a âncora fica idêntica ao que a cerca.
+ *
+ * Havendo ícone, ele já é a pista não-cromática e a regra se cala: o sublinhado se
+ * propagaria ao item flex e desenharia um traço solto sob o glifo — decoração
+ * propagada não pode ser desfeita por regra no descendente, então excluir aqui é o
+ * único ponto em que dá para evitá-lo.
+ *
+ * `text-decoration-line` e não o atalho: `text-decoration` reposicionaria
+ * `text-decoration-thickness` em `auto`, e como este seletor supera `a:hover` em
+ * especificidade, levaria junto o reforço de 2px que base.css dá a todo link.
+ */
+a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
+  text-decoration-line: underline;
+}
+
 .btn--danger {
   --btn-bg: var(--color-danger-solid);
   --btn-fg: var(--color-neutral-0);
