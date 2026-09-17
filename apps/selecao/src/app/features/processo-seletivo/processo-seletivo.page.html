@@ -224,7 +224,7 @@
         class="btn btn--primary"
         type="button"
         [attr.aria-busy]="store.operacaoEmAndamento() || null"
-        [disabled]="store.operacaoEmAndamento()"
+        [disabled]="store.operacaoEmAndamento() || salvandoRascunho()"
         (click)="nextOrPublish()"
       >
         @if (store.operacaoEmAndamento()) { Salvando… } @else { {{ rotuloDeAvanco() }} } @if

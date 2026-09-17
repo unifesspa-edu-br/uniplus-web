@@ -132,6 +132,14 @@ export class ProcessoSeletivoPage {
   private readonly chaveDoRascunho = new ChaveDeSubstituicao();
 
   /**
+   * Vez do rascunho. Muda sempre que o rascunho de antes deixa de valer — na troca de processo
+   * e na publicação, que apaga o rascunho no servidor. A resposta de uma gravação ou de um
+   * descarte que chega depois disso descreve algo que não existe mais: sem o carimbo, ela
+   * escrevia "salvo às …" sobre um rascunho que a publicação tinha acabado de apagar.
+   */
+  private vezDoRascunho = 0;
+
+  /**
    * Há transcrição do ato que o servidor ainda não tem.
    *
    * É a condição da guarda de saída, e é deliberadamente "não gravado", não "algo digitado": um
@@ -467,10 +475,11 @@ export class ProcessoSeletivoPage {
 
     // A página é reusada entre processos, e sair daqui só pede confirmação — o operador pode
     // confirmar com a gravação em voo e carregar outro processo antes de a resposta chegar.
-    // Sem o carimbo, essa resposta atrasada escreveria o documento e o horário de A sobre o
-    // estado de B, e a guarda de saída de B passaria a comparar contra o rascunho errado.
-    const leitura = this.leituraEmCurso;
-    const superada = (): boolean => leitura !== this.leituraEmCurso;
+    // Publicar tem o mesmo efeito por outro caminho: apaga o rascunho no servidor. Sem o
+    // carimbo, a resposta atrasada escreveria o documento e o horário sobre um estado que já
+    // é de outro processo — ou de um rascunho que deixou de existir.
+    const vez = this.vezDoRascunho;
+    const superada = (): boolean => vez !== this.vezDoRascunho;
 
     this.salvandoRascunho.set(true);
     this.falhaDoRascunho.set(null);
@@ -501,10 +510,10 @@ export class ProcessoSeletivoPage {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null || this.salvandoRascunho()) return;
 
-    // Mesmo carimbo da gravação: a resposta que chega depois da troca de processo não pode
-    // apagar o bloco em tela nem o horário do rascunho de quem está aberto agora.
-    const leitura = this.leituraEmCurso;
-    const superada = (): boolean => leitura !== this.leituraEmCurso;
+    // Mesmo carimbo da gravação: a resposta que chega depois da troca de processo — ou depois
+    // de publicar — não pode apagar o bloco em tela nem o horário do rascunho de agora.
+    const vez = this.vezDoRascunho;
+    const superada = (): boolean => vez !== this.vezDoRascunho;
 
     this.salvandoRascunho.set(true);
     this.falhaDoRascunho.set(null);
@@ -697,6 +706,9 @@ export class ProcessoSeletivoPage {
    * restam são a declaração que virou publicação — não há nada pendente a proteger.
    */
   private fixarRascunhoComoJaGravado(): void {
+    // O rascunho de antes deixou de existir no servidor: o que estiver em voo não descreve
+    // mais nada, e sua resposta não pode escrever na tela.
+    this.vezDoRascunho += 1;
     this.salvandoRascunho.set(false);
     this.documentoNoServidor.set(
       JSON.stringify(documentoDoRascunho(this.store.draft().publicacao)),
@@ -708,6 +720,7 @@ export class ProcessoSeletivoPage {
   }
 
   private esquecerRascunhoDaPublicacao(): void {
+    this.vezDoRascunho += 1;
     // O indicador de gravação sai junto: uma resposta em voo desiste ao descobrir que foi
     // superada, e é aqui que o processo novo começa com o botão liberado em vez de preso
     // esperando a resposta de um rascunho que não é mais o dele.
