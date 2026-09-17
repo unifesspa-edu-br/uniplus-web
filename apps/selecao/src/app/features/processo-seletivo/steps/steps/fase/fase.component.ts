@@ -9,13 +9,14 @@ import {
   comExigidoDeTodos,
   comRecorteEscolhido,
   exigenciaNova,
-  exigidoDeTodos,
   exigenciasDaFase,
   exigenciasDaRaiz,
   exigenciasLocalizadasDaFase,
+  exigidoDeTodos,
   formatosDeclarados,
   modalidadesDaExigencia,
   semAExigencia,
+  todasAsExigencias,
   type ExigenciaLocalizada,
 } from '../../shared/exigencias-documentais';
 import {
@@ -637,11 +638,37 @@ export class FaseStepComponent {
       ...exigenciasDaFase(exigencias, fase.codigo).map((e) => e.tipoDocumentoId),
       ...exigencias.emTodasAsFases,
     ]);
-    return this.catalogos
+    const doCatalogo = this.catalogos
       .documentosPorCategoria()
       .flatMap((grupo) => grupo.docs)
       .filter((doc) => declarados.has(doc.id));
+
+    // O tipo inativado no cadastro sai do catálogo vivo, e a exigência que o cita continua no
+    // rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da
+    // tela: o operador não conseguia nem conferir nem remover o que continuava sendo exigido.
+    const visiveis = new Set(doCatalogo.map((doc) => doc.id));
+    const foraDoCadastro = [...declarados]
+      .filter((id) => !visiveis.has(id))
+      .map((id) => this.documentoForaDoCadastro(id, exigencias));
+
+    return [...doCatalogo, ...foraDoCadastro];
   });
+
+  /** A linha do tipo que o cadastro não oferece mais, nomeada pelo que o processo guardou. */
+  private documentoForaDoCadastro(
+    tipoDocumentoId: string,
+    exigencias: ExigenciasDoRascunho,
+  ): DocumentoDefinicao {
+    const declarada = todasAsExigencias(exigencias).find(
+      (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
+    );
+
+    return {
+      id: tipoDocumentoId,
+      nome: declarada?.tipoDocumentoNome ?? 'Documento fora do cadastro ativo',
+      desc: 'Este tipo saiu do cadastro depois de ser exigido aqui. Continua valendo enquanto estiver na lista — remova-o se não for mais pedido.',
+    };
+  }
 
   /**
    * O que o campo ainda oferece: o catálogo menos o que esta fase já exige, agrupado pela

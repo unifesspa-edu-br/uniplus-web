@@ -752,6 +752,34 @@ describe('FaseStepComponent', () => {
       expect(componente.documentoAAcrescentar()).toBe('', 'o campo volta ao estado neutro');
     });
 
+    /**
+     * O tipo inativado no cadastro sai do catálogo vivo, e a exigência que o cita continua no
+     * rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da
+     * tela: não dava para conferir nem remover o que continuava sendo exigido.
+     */
+    it('mantém à vista o documento cujo tipo saiu do cadastro', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+
+      // O cadastro inativa o tipo: ele deixa de vir no catálogo.
+      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set(
+        TIPOS_DOCUMENTO.filter((tipo) => tipo.id !== ID_CPF),
+      );
+      detectar();
+
+      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual(
+        [ID_CPF],
+        'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista',
+      );
+      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).not.toContainEqual(
+        expect.objectContaining({ value: ID_CPF }),
+        'e não volta a ser oferecida para quem ainda não a exige',
+      );
+    });
+
     it('remove o documento e o devolve ao seletor', () => {
       comCronograma(fase({}));
       componente.escolherDocumento(ID_CPF);

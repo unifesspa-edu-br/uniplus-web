@@ -1006,6 +1006,7 @@ function documentoDe(
     // O DTO de leitura nomeia o tipo como `origemId`; a escrita o recebe como
     // `tipoDocumentoId`. É a única renomeação entre os dois lados.
     tipoDocumentoId: dto.tipoDocumentoOrigemId,
+    tipoDocumentoNome: dto.tipoDocumentoNome,
     faseCodigo,
     etapaId: dto.exigidoNaEtapaId ?? null,
     aplicabilidade: dto.aplicabilidade,
