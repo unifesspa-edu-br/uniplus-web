@@ -246,21 +246,20 @@ interface CursoForm {
       ariaLabel="Formulário de curso"
       position="right"
     >
-      @if (formError()) {
-        <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
-      }
-
-      <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
-        Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à
-        Oferta de Curso, não ao Curso.
-      </ui-alert>
+      <div class="cfg-form-drawer">
+        @if (formError()) {
+          <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
+        }
+        <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
+          Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à
+          Oferta de Curso, não ao Curso.
+        </ui-alert>
 
       <form
         [formGroup]="form"
         id="cfg-curso-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
       >
         <section aria-labelledby="cfg-curso-identificacao">
           <h3 id="cfg-curso-identificacao" class="form-section__title">Dados curriculares</h3>
@@ -362,6 +361,8 @@ interface CursoForm {
           {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar curso' : 'Salvar curso' }}
         </button>
       </div>
+
+      </div>
     </ui-drawer>
 
     <ui-confirm-dialog
@@ -374,77 +375,80 @@ interface CursoForm {
     />
 
     <ui-drawer
-      class="cfg-ofertas-drawer"
+      class="cfg-form-drawer"
       [(visible)]="ofertasOpen"
       [heading]="ofertasHeading()"
       ariaLabel="Ofertas de curso do curso selecionado"
       position="right"
       (closed)="aoFecharOfertas()"
     >
-      @if (ofertasBloqueio()) {
-        <ui-alert variant="danger" heading="Remoção bloqueada">
-          {{ ofertasBloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
-        </ui-alert>
-      } @else {
-        <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
-          Instâncias regulatórias (Oferta de curso) que referenciam este curso. Enquanto houver
-          ofertas ativas, a remoção do curso é bloqueada.
-        </ui-alert>
-      }
+      <div class="cfg-detail-drawer">
+        @if (ofertasBloqueio()) {
+          <ui-alert variant="danger" heading="Remoção bloqueada">
+            {{ ofertasBloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
+          </ui-alert>
+        } @else {
+          <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
+            Instâncias regulatórias (Oferta de curso) que referenciam este curso. Enquanto houver
+            ofertas ativas, a remoção do curso é bloqueada.
+          </ui-alert>
+        }
 
-      @if (ofertasErrorMessage()) {
-        <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
-          {{ ofertasErrorMessage() }}
-          <div class="cfg-ofertas__retry">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [disabled]="ofertasLoading()"
-              (click)="recarregarOfertas()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </ui-alert>
-      }
+        @if (ofertasErrorMessage()) {
+          <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
+            {{ ofertasErrorMessage() }}
+            <div class="cfg-ofertas__retry">
+              <button
+                type="button"
+                class="btn btn--secondary btn--sm"
+                [disabled]="ofertasLoading()"
+                (click)="recarregarOfertas()"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </ui-alert>
+        }
 
-      @if (ofertasLoading()) {
-        <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
-      }
+        @if (ofertasLoading()) {
+          <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
+        }
 
-      @if (ofertas().length > 0) {
-        <ul class="cfg-ofertas-list">
-          @for (oferta of ofertas(); track oferta.id) {
-            <li class="cfg-ofertas-list__item">
-              <p class="cfg-ofertas-list__unidade">
-                {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
-              </p>
-              <p class="cfg-ofertas-list__meta">
-                <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
-                <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
-                <span>{{ turnosLabel(oferta.turnos) }}</span>
-              </p>
-            </li>
-          }
-        </ul>
-      } @else if (!ofertasLoading() && !ofertasErrorMessage()) {
-        <ui-empty-state
-          heading="Nenhuma oferta ativa"
-          description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
+        @if (ofertas().length > 0) {
+          <ul class="cfg-ofertas-list">
+            @for (oferta of ofertas(); track oferta.id) {
+              <li class="cfg-ofertas-list__item">
+                <p class="cfg-ofertas-list__unidade">
+                  {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
+                </p>
+                <p class="cfg-ofertas-list__meta">
+                  <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
+                  <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
+                  <span>{{ turnosLabel(oferta.turnos) }}</span>
+                </p>
+              </li>
+            }
+          </ul>
+        } @else if (!ofertasLoading() && !ofertasErrorMessage()) {
+          <ui-empty-state
+            heading="Nenhuma oferta ativa"
+            description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
+          />
+        }
+
+        <ui-list-footer
+          navigationLabel="Paginação de ofertas do curso"
+          [hasPrevious]="ofertasPrevCursor() !== null"
+          [hasNext]="ofertasNextCursor() !== null"
+          [isDisabled]="ofertasLoading()"
+          (previous)="paginaAnteriorOfertas()"
+          (next)="proximaPaginaOfertas()"
         />
-      }
-
-      <ui-list-footer
-        navigationLabel="Paginação de ofertas do curso"
-        [hasPrevious]="ofertasPrevCursor() !== null"
-        [hasNext]="ofertasNextCursor() !== null"
-        [isDisabled]="ofertasLoading()"
-        (previous)="paginaAnteriorOfertas()"
-        (next)="proximaPaginaOfertas()"
-      />
+      </div>
     </ui-drawer>
   `,
   host: { class: 'cfg-page' },
+  styleUrls: ['./cursos.page.css'],
 })
 export class CursosPage {
   private readonly api = inject(CursosApi);
