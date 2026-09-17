@@ -42,11 +42,14 @@ export function hojeNoFusoInstitucional(agora: Date = new Date()): string {
  * publicado.
  */
 export function instanteDoCampo(valorLocal: string): string | null {
-  const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(valorLocal.trim());
+  // Os segundos são opcionais: o campo os devolve quando o valor hidratado os trazia, e não
+  // os devolve quando o operador editou. Recusá-los faria a janela declarada com segundos
+  // voltar como "não declarada" na gravação seguinte.
+  const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(valorLocal.trim());
   if (partes === null) return null;
 
-  const [, ano, mes, dia, hora, minuto] = partes.map(Number);
-  const comoSeFosseUtc = Date.UTC(ano, mes - 1, dia, hora, minuto);
+  const [, ano, mes, dia, hora, minuto, segundo] = partes.map(Number);
+  const comoSeFosseUtc = Date.UTC(ano, mes - 1, dia, hora, minuto, Number.isNaN(segundo) ? 0 : segundo);
 
   // Duas passagens: a primeira estima o deslocamento pela data lida como se
   // fosse UTC, a segunda o confirma no instante já corrigido — o bastante para
@@ -54,7 +57,8 @@ export function instanteDoCampo(valorLocal: string): string | null {
   const estimado = deslocamentoEmMinutos(new Date(comoSeFosseUtc));
   const deslocamento = deslocamentoEmMinutos(new Date(comoSeFosseUtc - estimado * 60_000));
 
-  return `${valorLocal.trim()}:00${sufixoDoDeslocamento(deslocamento)}`;
+  const relogio = `${partes[4]}:${partes[5]}:${Number.isNaN(segundo) ? '00' : partes[6]}`;
+  return `${partes[1]}-${partes[2]}-${partes[3]}T${relogio}${sufixoDoDeslocamento(deslocamento)}`;
 }
 
 /**
@@ -102,7 +106,15 @@ export function campoDoInstante(instanteIso: string): string {
   if (Number.isNaN(instante.getTime())) return '';
 
   const partes = partesNoFuso(instante);
-  return `${partes.ano}-${partes.mes}-${partes.dia}T${partes.hora}:${partes.minuto}`;
+  const relogio = `${partes.hora}:${partes.minuto}`;
+
+  // Os segundos entram quando existem. O prazo que termina às 23:59:59 é declaração comum, e
+  // truncá-lo para 23:59 encurtava a janela em 59 segundos a cada regravação — inclusive na
+  // varredura que a publicação faz dos passos anteriores, sem ninguém ter editado nada. O
+  // campo aceita o valor com segundos; ao editar, o navegador devolve sem eles, que é
+  // exatamente a intenção de quem editou.
+  const segundos = partes.segundo ?? '00';
+  return `${partes.ano}-${partes.mes}-${partes.dia}T${segundos === '00' ? relogio : `${relogio}:${segundos}`}`;
 }
 
 function sufixoDoDeslocamento(minutos: number): string {

@@ -98,5 +98,26 @@ describe('o piso dos campos de data e hora', () => {
     // Etapa que começou antes da fase num processo já em curso: o campo continua editável.
     expect(pisoDoCampoDeData('2026-02-01T08:00', HOJE, '2026-03-01T08:00')).toBe('2026-02-01T08:00');
   });
+  /**
+   * O prazo que termina às 23:59:59 é declaração comum. Truncá-lo para 23:59 encurtava a
+   * janela a cada regravação — inclusive na varredura que a publicação faz dos passos
+   * anteriores, sem ninguém ter editado nada.
+   */
+  it('preserva os segundos no ida e volta do campo', () => {
+    const fimDoDia = '2027-03-15T23:59:59-03:00';
+
+    const campo = campoDoInstante(fimDoDia);
+    expect(campo).toBe('2027-03-15T23:59:59');
+    expect(instanteDoCampo(campo)).toBe(fimDoDia);
+  });
+
+  /** Sem segundos, nada muda: é o valor que o campo devolve depois de editado. */
+  it('mantém o campo sem segundos quando o instante não os tem', () => {
+    const campo = campoDoInstante('2027-03-15T08:30:00-03:00');
+
+    expect(campo).toBe('2027-03-15T08:30');
+    expect(instanteDoCampo(campo)).toBe('2027-03-15T08:30:00-03:00');
+  });
+
 });
 
