@@ -1,0 +1,6 @@
+.cfg-form-drawer, .cfg-detail-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5);
+}
