@@ -817,6 +817,51 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
   });
 
   /**
+   * O formulário da Revisão segue editável enquanto o descarte não responde. Esvaziar o bloco
+   * sem olhar apagaria a transcrição que o operador começou nesse intervalo — ele pediu para
+   * descartar o que havia, não o que escreveu depois.
+   */
+  it('não apaga a transcrição começada enquanto o descarte estava em voo', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    let concluir: (resposta: unknown) => void = () => undefined;
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['descartarRascunhoDaPublicacao'] = vi.fn(
+      () => from(new Promise((resolve) => (concluir = resolve))),
+    );
+
+    const pagina = cenario.componente as unknown as {
+      descartarRascunhoDaPublicacao(): Promise<void>;
+    };
+    const descarte = pagina.descartarRascunhoDaPublicacao();
+
+    // O operador começa outra transcrição antes de a resposta chegar.
+    cenario.store.projetarSecao('publicacao', { numero: '09/2027' });
+
+    concluir(okResult(undefined));
+    await descarte;
+    await propagar();
+
+    expect(cenario.store.draft().publicacao.numero).toBe('09/2027');
+  });
+
+  /** Sem edição no intervalo, descartar continua esvaziando o bloco — é o que a ação promete. */
+  it('esvazia o bloco quando nada foi digitado durante o descarte', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
+
+    await (
+      cenario.componente as unknown as { descartarRascunhoDaPublicacao(): Promise<void> }
+    ).descartarRascunhoDaPublicacao();
+
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+  });
+
+  /**
    * A chave acompanha o rascunho que ela gravou. Descartado ele, reescrever a mesma transcrição
    * sairia com a chave que o servidor já viu e receberia o replay da gravação que este descarte
    * acabou de anular — a tela diria "salvo" sobre um rascunho que não foi recriado.

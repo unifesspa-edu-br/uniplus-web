@@ -515,6 +515,12 @@ export class ProcessoSeletivoPage {
     const vez = this.vezDoRascunho;
     const superada = (): boolean => vez !== this.vezDoRascunho;
 
+    // O bloco como estava quando o descarte saiu. O formulário da Revisão segue editável
+    // enquanto a resposta não chega, e esvaziá-lo sem olhar apagaria a transcrição que o
+    // operador começou nesse intervalo — ele pediu para descartar o que havia, não o que
+    // escreveu depois.
+    const aoPedir = JSON.stringify(documentoDoRascunho(this.store.draft().publicacao));
+
     this.salvandoRascunho.set(true);
     this.falhaDoRascunho.set(null);
     const resultado = await firstValueFrom(this.api.descartarRascunhoDaPublicacao(processoId));
@@ -526,7 +532,8 @@ export class ProcessoSeletivoPage {
       return;
     }
 
-    this.store.projetarSecao('publicacao', blocoDoDocumento(null));
+    const intocado = JSON.stringify(documentoDoRascunho(this.store.draft().publicacao)) === aoPedir;
+    if (intocado) this.store.projetarSecao('publicacao', blocoDoDocumento(null));
     this.documentoNoServidor.set(null);
     this.rascunhoSalvoEm.set(null);
     this.avisoDoRascunho.set(null);
