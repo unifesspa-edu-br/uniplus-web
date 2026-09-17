@@ -105,7 +105,7 @@ export default defineConfig({
   webServer: {
     command: 'npx nx run selecao:serve',
     url: 'http://localhost:4200',
-    reuseExistingServer: true,
+    reuseExistingServer: !isCI,
     cwd: workspaceRoot,
   },
   projects: [
