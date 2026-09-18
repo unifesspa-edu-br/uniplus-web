@@ -260,7 +260,7 @@ interface DiaNaoUtilFormGroup {
             </dl>
           </article>
         } @empty {
-          <div class="cfg-calendario-mensal__ocorrencia_vazia">Não há feriados cadastrados.</div>
+          <div class="cfg-calendario-mensal__ocorrencia-vazia">Não há feriados cadastrados.</div>
         }
         <div class="cfg-calendario-mensal__actions">
           <button type="button" class="btn btn--primary btn--rect" (click)="abrirDialog()">
@@ -480,7 +480,11 @@ interface DiaNaoUtilFormGroup {
       </ui-dialog>
     }
   `,
-  styleUrls: ['./calendario-dias-uteis.css', './calendario-dias-uteis-detalhe.page.css'],
+  styleUrls: [
+    './calendario-dias-uteis.css',
+    './calendario-mensal.css',
+    './calendario-dias-uteis-detalhe.page.css',
+  ],
   host: { class: 'cfg-page' },
 })
 export class CalendarioDiasUteisDetalhePage {
