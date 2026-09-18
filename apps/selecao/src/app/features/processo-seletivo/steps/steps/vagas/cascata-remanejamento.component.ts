@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { isApiOk } from '@uniplus/shared-core/http';
+import { isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -344,7 +344,7 @@ export class CascataRemanejamentoComponent {
         // Qualquer outra falha (rede, 5xx, autorização) não prova nada
         // sobre a regra — só que a consulta não deu certo agora.
         this.buscaDaVersaoFora.set(
-          resultado.problem.status === 404
+          resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO
             ? { estado: 'nao_encontrada', codigo, versao }
             : { estado: 'falha', codigo, versao },
         );

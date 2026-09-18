@@ -36,6 +36,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -747,7 +748,10 @@ export class PrecedenciasFasePage {
         // Removida por outro administrador entre a leitura e a confirmação: a
         // linha já não existe, então fechar o modal e recarregar deixa a tela
         // coerente em vez de insistir num alvo inexistente.
-        if (result.problem.code === ERRO_NAO_ENCONTRADA || result.problem.status === 404) {
+        if (
+          result.problem.code === ERRO_NAO_ENCONTRADA ||
+          result.problem.status === STATUS_HTTP.NAO_ENCONTRADO
+        ) {
           this.confirmOpen.set(false);
           this.arestaParaRemover.set(null);
           this.recarregar();
@@ -903,7 +907,7 @@ export class PrecedenciasFasePage {
     // sendo o mesmo comando.
     if (
       problem.code !== ERRO_IDEMPOTENCIA_EM_PROCESSAMENTO &&
-      (problem.status === 422 || problem.status === 409)
+      (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO || problem.status === STATUS_HTTP.CONFLITO)
     ) {
       this.renovarIdempotencyKey();
     }
@@ -921,7 +925,7 @@ export class PrecedenciasFasePage {
     }
 
     // A aresta sumiu entre abrir o formulário e salvar.
-    if (problem.code === ERRO_NAO_ENCONTRADA || problem.status === 404) {
+    if (problem.code === ERRO_NAO_ENCONTRADA || problem.status === STATUS_HTTP.NAO_ENCONTRADO) {
       this.formOpen.set(false);
       this.notifications.errorFromProblem(problem, {
         title: this.problemI18n.resolve(problem).title,
@@ -955,7 +959,11 @@ export class PrecedenciasFasePage {
       return;
     }
 
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }

@@ -29,6 +29,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -657,7 +658,7 @@ export class CursosPage {
       const { title, detail } = this.problemI18n.resolve(problem);
       // 422 de `q`: a API nomeia o motivo (e, para `sort`, o campo recusado e os
       // aceitos) no `detail` — é o texto que o operador precisa para corrigir.
-      return problem.status === 422 && detail ? detail : title;
+      return problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && detail ? detail : title;
     }
     return this.lista.error() ? 'Erro inesperado ao carregar cursos.' : null;
   });
@@ -865,7 +866,7 @@ export class CursosPage {
         // oferta viva. Em vez de só reexibir o texto, fecha o confirm e abre o
         // drawer de Ofertas com o preview das ofertas que bloqueiam a remoção
         // (issue #435, CA2) — o operador vê exatamente o que impede a exclusão.
-        if (result.problem.status === 409) {
+        if (result.problem.status === STATUS_HTTP.CONFLITO) {
           this.confirmOpen.set(false);
           this.cursoParaRemover.set(null);
           this.ofertasBloqueio.set(titulo);
@@ -979,7 +980,11 @@ export class CursosPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -995,7 +1000,10 @@ export class CursosPage {
       this.form.controls.codigo.markAsTouched();
       return;
     }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);

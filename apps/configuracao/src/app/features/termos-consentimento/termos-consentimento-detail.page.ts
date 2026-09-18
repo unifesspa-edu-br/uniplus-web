@@ -20,6 +20,7 @@ import {
   ProblemValidationError,
   idempotencyKey,
   withIdempotencyKey,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -727,7 +728,11 @@ export class TermosConsentimentoDetailPage {
 
   private aplicarFalhaCriacao(problem: ProblemDetails): void {
     this.renovarIdempotencyKeySeNecessario(problem);
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
@@ -757,8 +762,8 @@ export class TermosConsentimentoDetailPage {
 
   private renovarIdempotencyKeySeNecessario(problem: ProblemDetails): void {
     if (
-      problem.status === 409 ||
-      problem.status === 422 ||
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ||
       problem.code === 'uniplus.idempotency.body_mismatch'
     ) {
       this.renovarIdempotencyKey();
