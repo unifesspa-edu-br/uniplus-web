@@ -159,11 +159,16 @@ describe('TiposEtapaPage', () => {
           {
             field: 'admitePontuacao',
             code: 'uniplus.configuracao.tipo_etapa.sem_carater_admitido',
-            message: 'O tipo de etapa deve admitir compor a nota final, eliminar candidato, ou os dois.',
+            message:
+              'O tipo de etapa deve admitir compor a nota final, eliminar candidato, ou os dois.',
           },
         ],
       },
-      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
     );
     await propagate();
 
@@ -191,7 +196,7 @@ describe('TiposEtapaPage', () => {
 
     expect(botoesDaInativa).toHaveLength(1);
     expect(botoesDaInativa[0].getAttribute('aria-label')).toBe(
-      'Editar tipo de etapa: PROVA_OBJETIVA',
+      'Editar tipo de etapa PROVA_OBJETIVA',
     );
   });
 
