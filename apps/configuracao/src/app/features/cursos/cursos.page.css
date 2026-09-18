@@ -1,8 +1,7 @@
-.cfg-form-drawer, .cfg-detail-drawer {
+.cfg-ofertas-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
-  padding: var(--space-5);
+  gap: var(--space-8);
 }
 
 .cfg-ofertas-list__item {

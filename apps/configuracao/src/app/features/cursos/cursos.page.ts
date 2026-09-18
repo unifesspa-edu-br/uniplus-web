@@ -246,7 +246,13 @@ interface CursoForm {
       ariaLabel="Formulário de curso"
       position="right"
     >
-      <div class="cfg-form-drawer">
+      <form
+        [formGroup]="form"
+        id="cfg-curso-form"
+        (ngSubmit)="salvar()"
+        novalidate
+        class="cfg-form"
+      >
         @if (formError()) {
           <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
         }
@@ -254,13 +260,6 @@ interface CursoForm {
           Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à
           Oferta de Curso, não ao Curso.
         </ui-alert>
-
-      <form
-        [formGroup]="form"
-        id="cfg-curso-form"
-        (ngSubmit)="salvar()"
-        novalidate
-      >
         <section aria-labelledby="cfg-curso-identificacao">
           <h3 id="cfg-curso-identificacao" class="form-section__title">Dados curriculares</h3>
           <div class="form-grid form-grid--1col">
@@ -361,8 +360,6 @@ interface CursoForm {
           {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar curso' : 'Salvar curso' }}
         </button>
       </div>
-
-      </div>
     </ui-drawer>
 
     <ui-confirm-dialog
@@ -375,14 +372,14 @@ interface CursoForm {
     />
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="cfg-detail-drawer"
       [(visible)]="ofertasOpen"
       [heading]="ofertasHeading()"
       ariaLabel="Ofertas de curso do curso selecionado"
       position="right"
       (closed)="aoFecharOfertas()"
     >
-      <div class="cfg-detail-drawer">
+      <div class="cfg-ofertas-drawer">
         @if (ofertasBloqueio()) {
           <ui-alert variant="danger" heading="Remoção bloqueada">
             {{ ofertasBloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
