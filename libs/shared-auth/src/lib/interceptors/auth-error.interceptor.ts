@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
-import { STATUS_HTTP } from '@uniplus/shared-core';
+import { STATUS_HTTP } from '@uniplus/shared-core/http';
 
 /**
  * Reage a respostas já envelopadas pelo `apiResultInterceptor` de
