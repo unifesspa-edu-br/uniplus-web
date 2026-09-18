@@ -205,7 +205,9 @@ interface DiaNaoUtilFormGroup {
                             </button>
                           } @else {
                             <button
+                              type="button"
                               class="cfg-calendario-mensal__dia"
+                              [attr.aria-label]="ariaLabelDiaSemOcorrencia(celula)"
                               (click)="abrirDrawer(celula)"
                             >
                               {{ celula.dia }}
@@ -754,6 +756,15 @@ export class CalendarioDiasUteisDetalhePage {
       )
       .join(', ');
     return `${dataPorExtenso}: ${celula.ocorrencias.length} ocorrências — ${resumo}`;
+  }
+
+  /**
+   * Dia sem ocorrência também é acionável — abre o painel para cadastrar. Sem
+   * rótulo próprio o nome acessível seria só o número do dia, que não diz nem a
+   * data completa nem o que o botão faz.
+   */
+  protected ariaLabelDiaSemOcorrencia(celula: CelulaCalendarioMensal): string {
+    return `${formatIsoDateLong(celula.data)}: sem dia não útil cadastrado`;
   }
 
   protected previewTexto(celula: CelulaCalendarioMensal): string {
