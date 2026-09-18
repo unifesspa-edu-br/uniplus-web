@@ -40,7 +40,8 @@ import {
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
-  FilterBarComponent, IconButtonComponent,
+  FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -79,9 +80,9 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
-    IconButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -176,7 +177,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-pencil"
-                      [accessibleName]="'Editar tipo de etapa: ' + tipo.codigo"
+                      [accessibleName]="'Editar tipo de etapa ' + tipo.codigo"
                       tooltip="Editar tipo de etapa"
                       [isDisabled]="loading() || saving()"
                       (triggered)="abrirEdicao(tipo)"
