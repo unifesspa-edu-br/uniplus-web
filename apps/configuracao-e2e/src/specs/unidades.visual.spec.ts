@@ -207,7 +207,7 @@ test.describe('Unidade — cobertura visual DS', () => {
       .locator('.unit-node')
       .filter({ has: page.getByRole('button', { name: 'Editar unidade PROEG', exact: true }) })
       .last();
-    await nodeProeg.locator('.unit-node__toggle').click();
+    await nodeProeg.locator('> .unit-node__row .unit-node__toggle').click();
 
     const removerReitoria = tree.getByRole('button', {
       name: 'Remover unidade REITORIA',
@@ -287,7 +287,7 @@ test.describe('Unidade — cobertura visual DS', () => {
 
     expect(bgPressedRemover).toBe(bgPressedEditar);
 
-    // CA-05 — disabled: `recarregandoLista()` (unidades.page.ts:810) fica
+    // CA-05 — disabled: `recarregandoLista()` da página fica
     // true durante o refetch da lista que segue uma remoção bem-sucedida —
     // não durante o DELETE em si. Resolve o DELETE na hora e atrasa só o GET
     // de recarregamento, para capturar a janela em que a ação fica desabilitada.
