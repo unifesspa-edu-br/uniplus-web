@@ -105,6 +105,47 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     return botao as HTMLButtonElement;
   };
 
+  const POST_URL = `${BASE}/api/configuracao/admin/calendarios-dias-uteis/${CALENDARIO_ID}/dias-nao-uteis`;
+
+  const botaoDoDiaVazio = (rotuloInicio: string): HTMLButtonElement => {
+    const botao = (fixture.nativeElement as HTMLElement).querySelector(
+      `button.cfg-calendario-mensal__dia:not(.cfg-calendario-mensal__dia--feriado)[aria-label^="${rotuloInicio}"]`,
+    );
+    if (!botao) throw new Error(`Nenhum dia sem ocorrência encontrado para ${rotuloInicio}`);
+    return botao as HTMLButtonElement;
+  };
+
+  const abrirCadastroDoDia = async (rotuloInicio: string): Promise<void> => {
+    botaoDoDiaVazio(rotuloInicio).click();
+    fixture.detectChanges();
+    const abrir = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
+      (b) => b.textContent?.includes('Adicionar feriado'),
+    ) as HTMLButtonElement;
+    abrir.click();
+    fixture.detectChanges();
+    await propagate();
+  };
+
+  const preencherDescricao = (texto: string): void => {
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '[formcontrolname="descricao"]',
+    ) as HTMLInputElement;
+    campo.value = texto;
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  };
+
+  const submeter = (): void => {
+    const adicionar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('dialog button'),
+    ].find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
+    adicionar.click();
+    fixture.detectChanges();
+  };
+
+  const campoDescricao = (): HTMLInputElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('[formcontrolname="descricao"]');
+
   it('exibe erro de carregamento e permite tentar novamente', async () => {
     controller
       .expectOne(URL)
@@ -341,4 +382,59 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     expect(fixture.componentInstance.drawerVisivel()).toBe(false);
     expect(fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
   });
+
+  it('não herda a descrição da inclusão anterior ao abrir outra data (CA-06/CA-07)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Primeira data');
+    submeter();
+
+    controller.expectOne(POST_URL).flush({
+      id: CALENDARIO_ID,
+      versaoDataset: '2026.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+    // A gravação dispara a recarga do dataset.
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('23 de setembro de 2026');
+
+    expect(campoDescricao()?.value).toBe('');
+    expect(fixture.componentInstance.form.controls.descricao.value).toBe('');
+  });
+
+  it('mantém a grade à vista durante a recarga que sucede a inclusão (CA-13)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    const diasAntes = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      'button.cfg-calendario-mensal__dia',
+    ).length;
+    expect(diasAntes).toBeGreaterThan(0);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Data qualquer');
+    submeter();
+
+    controller.expectOne(POST_URL).flush({
+      id: CALENDARIO_ID,
+      versaoDataset: '2026.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+
+    // Recarga em curso: o dataset novo ainda não chegou.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.cfg-loading')).toBeNull();
+    expect(raiz.querySelectorAll('button.cfg-calendario-mensal__dia').length).toBe(diasAntes);
+
+    await carregar([DIA_ESTADUAL]);
+  });
+
+
 });
