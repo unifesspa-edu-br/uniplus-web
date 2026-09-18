@@ -88,7 +88,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
         <h1 class="page-header__title" tabindex="-1">Detalhes</h1>
       </div>
     </div>
-    @if (calendarioResource.isLoading()) {
+    @if (carregandoPrimeiraVez()) {
       <div class="cfg-loading" role="status"><ui-spinner /> Carregando calendário</div>
     } @else if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar o calendário">
@@ -526,6 +526,17 @@ export class CalendarioDiasUteisDetalhePage {
   protected calendario = computed(() => {
     return this.calendarioResource.data();
   });
+
+  /**
+   * `isLoading` também cobre a recarga, e trocar a grade pelo spinner a cada
+   * inclusão desmontaria a subárvore: o mês em que a pessoa estava, a posição
+   * de rolagem e o foco do dia se perderiam, e o diálogo morreria antes de
+   * emitir o próprio fechamento. Na recarga a grade anterior continua à vista
+   * até o dataset novo chegar.
+   */
+  protected readonly carregandoPrimeiraVez = computed(
+    () => this.calendarioResource.isLoading() && this.calendario() === null,
+  );
 
   protected readonly errorMessage = computed<string | null>(() => {
     const problem = this.calendarioResource.problem();
