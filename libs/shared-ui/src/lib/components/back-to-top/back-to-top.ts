@@ -71,6 +71,14 @@ export class BackToTopComponent {
   );
 
   private observado: HTMLElement | null = null;
+  /**
+   * Alvo real do listener de 'scroll' — geralmente o próprio `observado`, mas
+   * quando este é `document.documentElement` (rolagem natural da página,
+   * como no shell público), o evento nativo não dispara no elemento `<html>`;
+   * dispara em `window`/`document`. Guardado à parte porque `desligar()`
+   * precisa remover do mesmo alvo em que foi registrado.
+   */
+  private listenerTarget: EventTarget | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private navTimer: ReturnType<typeof setTimeout> | null = null;
   private destruido = false;
@@ -150,7 +158,9 @@ export class BackToTopComponent {
     // religação — inclusive para `alvo === null`.
     if (alvo === null) return;
 
-    alvo.addEventListener('scroll', this.aoRolar, { passive: true });
+    const alvoEhDocumento = typeof document !== 'undefined' && alvo === document.documentElement;
+    this.listenerTarget = alvoEhDocumento ? window : alvo;
+    this.listenerTarget.addEventListener('scroll', this.aoRolar, { passive: true });
 
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.recalcular());
@@ -162,7 +172,8 @@ export class BackToTopComponent {
   }
 
   private desligar(): void {
-    this.observado?.removeEventListener('scroll', this.aoRolar);
+    this.listenerTarget?.removeEventListener('scroll', this.aoRolar);
+    this.listenerTarget = null;
     this.observado = null;
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;

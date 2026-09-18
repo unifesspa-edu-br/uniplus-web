@@ -1,0 +1,227 @@
+@if (destaque(); as certameDestaque) {
+  <section class="portal-hero" aria-labelledby="portal-hero-title">
+    <div class="portal-hero__content">
+      <ui-tag [variant]="statusVariant(certameDestaque.status)" [solid]="true">
+        {{ statusLabel(certameDestaque.status) }}
+      </ui-tag>
+      <h1 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.titulo }}</h1>
+      <p class="portal-hero__desc">
+        As inscrições vão até <strong>{{ certameDestaque.encerraEm | dateBr: 'long' }}</strong>. Você
+        pode se inscrever em 5 etapas curtas e voltar quando quiser para concluir.
+      </p>
+      <div class="portal-hero__actions">
+        <a class="btn btn--primary btn--lg" routerLink="/inscricao">
+          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+          Inscrever-me agora
+        </a>
+        <a class="btn btn--secondary btn--lg" href="#certames-lista">Ver todos os editais</a>
+      </div>
+    </div>
+    <div class="portal-hero__art" aria-hidden="true">
+      <svg width="220" height="180" viewBox="0 0 240 200" fill="none">
+        <rect x="60" y="20" width="120" height="160" rx="8" fill="var(--color-neutral-0)"
+          stroke="var(--color-primary-800)" stroke-width="2"></rect>
+        <line x1="78" y1="56" x2="162" y2="56" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
+        </line>
+        <line x1="78" y1="76" x2="162" y2="76" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
+        </line>
+        <line x1="78" y1="96" x2="142" y2="96" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
+        </line>
+        <line x1="78" y1="116" x2="162" y2="116" stroke="var(--color-neutral-200)" stroke-width="4"
+          stroke-linecap="round"></line>
+        <circle cx="170" cy="156" r="24" fill="var(--color-success-600)"></circle>
+        <path d="M159 156l7 7 14-14" stroke="var(--color-neutral-0)" stroke-width="3.5" stroke-linecap="round"
+          stroke-linejoin="round"></path>
+      </svg>
+    </div>
+  </section>
+}
+
+<ui-page-header
+  id="certames-lista"
+  heading="Editais"
+  description="Veja todos os certames publicados."
+  [level]="2"
+/>
+
+@if (erro(); as mensagem) {
+  <ui-alert variant="danger" heading="Não foi possível carregar os certames">
+    {{ mensagem }}
+    <div class="certames-retry">
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        [disabled]="carregando()"
+        (click)="tentarNovamente()"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  </ui-alert>
+} @else {
+  <div class="certames-toolbar">
+    <span class="certames-count" role="status" aria-live="polite">
+      @if (carregando()) {
+        Carregando certames…
+      } @else {
+        {{ totalFiltrados() }}
+        {{ totalFiltrados() === 1 ? 'certame encontrado' : 'certames encontrados' }}
+      }
+    </span>
+    @if (!isCompacto()) {
+      <ui-segmented
+        accessibleName="Alternar entre lista e cards"
+        [choices]="viewOptions"
+        [selectedValue]="visao()"
+        (selectedValueChange)="setVisao($event)"
+      />
+    }
+  </div>
+
+  <ui-filter-bar
+    ariaLabel="Buscar certames"
+    searchPlaceholder="Buscar por edital, modalidade, curso..."
+    searchAriaLabel="Buscar por edital, modalidade ou curso"
+    [(searchValue)]="busca"
+    secondaryRole="group"
+    secondaryAriaLabel="Filtrar certames"
+  >
+    <button
+      uiFilterBarActions
+      type="button"
+      class="btn btn--tertiary btn--sm"
+      [disabled]="!temFiltrosAtivos()"
+      (click)="limparFiltros()"
+    >
+      Limpar filtros
+    </button>
+    <ng-container uiFilterBarSecondary>
+      <div class="certames-filter-group">
+        <span class="u-eyebrow">Situação</span>
+        <ui-filter-chips
+          ariaLabel="Filtrar por situação"
+          [options]="statusChips()"
+          [(selected)]="statusSelecionado"
+        />
+      </div>
+      <div class="certames-filter-group">
+        <span class="u-eyebrow">Modalidade</span>
+        <ui-filter-chips
+          ariaLabel="Filtrar por modalidade"
+          [options]="modalidadeChips()"
+          [(selected)]="modalidadeSelecionada"
+        />
+      </div>
+    </ng-container>
+  </ui-filter-bar>
+
+  @if (carregando()) {
+    <div class="certames-loading" role="status">
+      <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
+      Carregando certames…
+    </div>
+  } @else if (itensPagina().length > 0) {
+    @if (visaoEfetiva() === 'lista') {
+      <ul class="certames-list" role="list">
+        @for (certame of itensPagina(); track certame.id) {
+          <li class="edital-row">
+            <div class="edital-row__body">
+              <div class="edital-row__head">
+                <ui-tag [variant]="statusVariant(certame.status)" [solid]="true">
+                  {{ statusLabel(certame.status) }}
+                </ui-tag>
+                <span class="card__meta">{{ certame.numero }}</span>
+                <ui-tag>{{ certame.modalidadeLabel }}</ui-tag>
+              </div>
+              <h3 class="edital-row__title">{{ certame.titulo }}</h3>
+              <p class="edital-row__desc">{{ certame.resumo }}</p>
+              <div class="edital-row__meta">
+                <span><strong>Encerra:</strong> {{ certame.encerraEm | dateBr: 'shortMonth' }}</span>
+                <span><strong>Vagas:</strong> {{ certame.vagas }}</span>
+              </div>
+            </div>
+            <div class="edital-row__actions">
+              <a class="btn btn--primary" routerLink="/inscricao">
+                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+                Inscrever-me
+              </a>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="certames-grid">
+        @for (certame of itensPagina(); track certame.id) {
+          <article class="card">
+            <div class="card__header">
+              <ui-tag [variant]="statusVariant(certame.status)" [solid]="true">
+                {{ statusLabel(certame.status) }}
+              </ui-tag>
+              <span class="card__meta">{{ certame.numero }}</span>
+            </div>
+            <h3 class="card__title">{{ certame.titulo }}</h3>
+            <p class="card__desc">{{ certame.resumo }}</p>
+            <div class="edital-row__meta">
+              <span><strong>Encerra:</strong> {{ certame.encerraEm | dateBr: 'shortMonth' }}</span>
+              <span><strong>Vagas:</strong> {{ certame.vagas }}</span>
+            </div>
+            <div class="card__footer">
+              <ui-tag variant="neutral">{{ certame.modalidadeLabel }}</ui-tag>
+              <a class="btn btn--primary btn--sm" routerLink="/inscricao">
+                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+                Inscrever-me
+              </a>
+            </div>
+          </article>
+        }
+      </div>
+    }
+
+    <ui-list-footer
+      navigationLabel="Paginação de certames"
+      [statusText]="statusPaginacao()"
+      [hasRows]="itensPagina().length > 0"
+      [hasPrevious]="hasPrevious()"
+      [hasNext]="hasNext()"
+      (previous)="paginaAnterior()"
+      (next)="proximaPagina()"
+    />
+  } @else {
+    @if (temFiltrosAtivos()) {
+      <ui-empty-state
+        heading="Nenhum certame encontrado"
+        description="Ajuste a busca ou limpe os filtros para ver todos os certames."
+      >
+        <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum certame publicado no momento"
+        description="Volte em breve — novos editais aparecem aqui assim que forem publicados."
+      />
+    }
+  }
+}
+
+<section class="portal-section" aria-labelledby="portal-como-funciona-title">
+  <div class="portal-section__head">
+    <div>
+      <h2 id="portal-como-funciona-title" class="portal-section__title">Como funciona</h2>
+      <p class="portal-section__desc">Da inscrição até a matrícula, em etapas curtas.</p>
+    </div>
+  </div>
+
+  <ol class="portal-steps" role="list">
+    @for (passo of passos; track passo.numero) {
+      <li class="portal-steps__item card">
+        <span class="portal-steps__number" aria-hidden="true">{{ passo.numero }}</span>
+        <h3 class="portal-steps__title">{{ passo.titulo }}</h3>
+        <p class="portal-steps__desc">{{ passo.descricao }}</p>
+      </li>
+    }
+  </ol>
+</section>
+
+<router-outlet />

@@ -174,8 +174,8 @@
 
   /* "Solid" feedback — kept dark in BOTH themes so #fff text stays ≥4.5:1.
    * Used on .tag--solid, .toast--*, .timeline solid bars, etc. */
-  --color-success-solid: #168821; /* 4.9:1 with #fff */
-  --color-warning-solid: #845a0a; /* 6.1:1 with #fff */
+  --color-success-solid: #0d6416; /* 7.36:1 with #fff (AAA) — era #168821 (4.9:1, só AA) */
+  --color-warning-solid: #734b09; /* 7.67:1 with #fff (AAA) — era #845a0a (6.1:1, só AA) */
   --color-danger-solid:  #991b1b; /* 8.3:1 with #fff */
   --color-info-solid:    #1351b4; /* 7.1:1 with #fff */
   --color-primary-solid: #1351b4;

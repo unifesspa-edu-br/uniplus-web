@@ -22,7 +22,9 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
 
       // Não deve redirecionar ao provedor OIDC (rota pública)
       await expect(page).toHaveURL(/processos/);
-      await expect(page.getByRole('heading', { name: 'Processos Seletivos', level: 1 })).toBeVisible();
+      // Hero derivado do certame `destaque: true` do mock — checa a
+      // estrutura, não o literal (issue #776).
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     });
 
     test('header não exibe user info em rota pública', async ({ page }) => {
@@ -107,12 +109,13 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await page.goto('/perfil');
       await keycloakLogin(page, user.username, user.password);
 
-      // Navegar para outra rota protegida
-      await page.click('a[href="/acompanhamento"]');
+      // Navegar para outra rota protegida — /acompanhamento vive no shell
+      // público (sem link na sidebar admin), por isso via goto direto.
+      await page.goto('/acompanhamento');
       await expect(page).toHaveURL(/acompanhamento/);
 
-      // Navegar para documentos
-      await page.click('a[href="/documentos"]');
+      // Navegar para documentos (shell administrativo)
+      await page.goto('/documentos');
       await expect(page).toHaveURL(/documentos/);
 
       // Header continua mostrando user info
