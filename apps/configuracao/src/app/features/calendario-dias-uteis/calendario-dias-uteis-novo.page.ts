@@ -23,6 +23,7 @@ import {
   ApiResult,
   idempotencyKey,
   ProblemDetails,
+  STATUS_HTTP,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -666,14 +667,14 @@ export class CalendarioDiasUteisNovoPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.code === DATA_DUPLICADA_DATASET_CODE) {
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.code === DATA_DUPLICADA_DATASET_CODE) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
       this.marcarDatasDuplicadasComoTocadas(problem);
       return;
     }
 
-    if (problem.status === 422 && problem.code?.startsWith(CIDADE_REFERENCIA_CODE_PREFIX)) {
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.code?.startsWith(CIDADE_REFERENCIA_CODE_PREFIX)) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
       // O erro da referência de cidade não carrega a data no `detail`, então só
@@ -693,7 +694,7 @@ export class CalendarioDiasUteisNovoPage {
     }
 
     this.notifications.errorFromProblem(problem);
-    if (problem.status === 422) {
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO) {
       this.renovarIdempotencyKey();
     }
   }
