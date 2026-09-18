@@ -49,6 +49,8 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CIDADE_REFERENCIA_CODE_PREFIX,
   CODIGO_MUNICIPIO_PATTERN,
+  DATA_DUPLICADA_DATASET_CODE,
+  DATA_DUPLICADA_MESSAGE,
   DIAS_SEMANA,
   type DiaNaoUtilFormGroup,
   MUNICIPIO_BUSCA_DEBOUNCE_MS,
@@ -263,6 +265,11 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
             class="cfg-form cfg-calendario-form"
             (ngSubmit)="salvar()"
           >
+            @if (erroDeFormulario(); as recusa) {
+              <ui-alert variant="danger" heading="Não foi possível adicionar a data">
+                {{ recusa }}
+              </ui-alert>
+            }
             <section class="form-section cfg-calendario-dias">
               <article class="cfg-dia-card">
                 <div class="form-grid form-grid--1col">
@@ -560,6 +567,9 @@ export class CalendarioDiasUteisDetalhePage {
     () => this.calendario()?.diasNaoUteis.length ?? 0,
   );
 
+  /** Recusa que vale para o formulário inteiro, sem campo próprio onde caber. */
+  protected readonly erroDeFormulario = signal<string | null>(null);
+
   protected readonly diaEmPreview = signal<string | null>(null);
   protected readonly drawerVisivel = signal(false);
   protected readonly diaSelecionado = signal<CelulaCalendarioMensal | null>(null);
@@ -803,6 +813,10 @@ export class CalendarioDiasUteisDetalhePage {
       return;
     }
 
+    // A recusa anterior vale para o que foi enviado antes; a tentativa nova
+    // responde por si.
+    this.erroDeFormulario.set(null);
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -833,6 +847,7 @@ export class CalendarioDiasUteisDetalhePage {
   }
 
   resetaFormulario(): void {
+    this.erroDeFormulario.set(null);
     this.form.reset({
       data: '',
       abrangencia: 'ESTADUAL',
@@ -891,6 +906,17 @@ export class CalendarioDiasUteisDetalhePage {
 
   private aplicarFalha(problem: ProblemDetails): void {
     this.notifications.errorFromProblem(problem);
+
+    // A data vem do dia clicado e não se edita aqui, então a recusa por
+    // duplicidade não tem campo próprio onde aparecer: sem uma mensagem no
+    // formulário, quem cadastra vê o aviso sumir com o toast e fica diante de
+    // um diálogo que só permite cancelar. O texto diz o que ainda dá para
+    // mudar — abrangência e região — para a tentativa seguinte ser diferente.
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.code === DATA_DUPLICADA_DATASET_CODE) {
+      this.erroDeFormulario.set(
+        `${DATA_DUPLICADA_MESSAGE} Escolha outra abrangência ou região, ou cancele para manter o que já está cadastrado.`,
+      );
+    }
     // Qualquer recusa abaixo de 500 fica gravada contra o hash do corpo, não só
     // a de 422 — reenviar corrigido com a mesma chave devolveria
     // `body_mismatch`. O helper compartilhado já isola as exceções.

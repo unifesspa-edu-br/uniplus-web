@@ -437,4 +437,33 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   });
 
 
+  it('mostra a recusa por data duplicada no próprio formulário (CA-11)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Repetida');
+    submeter();
+
+    controller.expectOne(POST_URL).flush(
+      mockProblemDetails({
+        status: 422,
+        title: 'Data duplicada',
+        code: 'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset',
+        detail: 'Data duplicada no dataset (mesma abrangência, município e UF).',
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    const dialogo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#cfg-calendario-dias-uteis-form',
+    ) as HTMLElement;
+    expect(dialogo.textContent).toContain('duplicada');
+    expect(dialogo.textContent).toContain('abrangência');
+  });
+
 });
