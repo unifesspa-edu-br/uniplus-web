@@ -40,11 +40,25 @@ export interface MunicipioBuscaRequest {
   readonly uf: string;
 }
 
+export const DATA_DUPLICADA_DATASET_CODE =
+  'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset';
+
+/**
+ * Prefixo dos erros que o backend devolve ao validar a referência de cidade do
+ * Geo (`uniplus.cidade_referencia.*`, ADR-0090): código obrigatório/inválido,
+ * nome obrigatório/longo demais, UF obrigatória/incoerente com o prefixo. É
+ * prefixo, e não uma lista fechada, porque o registro cresce no backend.
+ */
+export const CIDADE_REFERENCIA_CODE_PREFIX = 'uniplus.cidade_referencia.';
+
+export const DATA_DUPLICADA_MESSAGE = 'Esta data está duplicada para a mesma abrangência e região.';
+export const MUNICIPIO_OBRIGATORIO_MESSAGE = 'Selecione um município na busca.';
+
 /**
  * Prefixo do código IBGE (dois primeiros dígitos) de cada UF — a mesma
- * correspondência que `ReferenciaCidadeGeo` cobra no backend. Fica nesta página
- * (chunk lazy) em vez do roster compartilhado, que é carregado no bundle
- * inicial do painel.
+ * correspondência que `ReferenciaCidadeGeo` cobra no backend. Fica neste módulo
+ * das páginas de calendário (chunk lazy) em vez do roster compartilhado, que é
+ * carregado no bundle inicial do painel.
  */
 export const PREFIXO_IBGE_POR_UF: Readonly<Record<string, string>> = {
   RO: '11',
@@ -111,6 +125,28 @@ export function textoNormalizado(maxLength: number): ValidatorFn {
       ? { maxlength: { requiredLength: maxLength, actualLength: value.length } }
       : null;
   };
+}
+
+/**
+ * Exige, na linha municipal, o snapshot inteiro da opção escolhida na Geo:
+ * código IBGE de 7 dígitos, nome e UF cujo prefixo IBGE bate com o código. É a
+ * mesma coerência que `ReferenciaCidadeGeo.Validar` cobra no backend — validada
+ * aqui para que uma tripla incompleta não vire 422.
+ */
+export function snapshotMunicipalCoerente(control: AbstractControl): ValidationErrors | null {
+  const grupo = control as FormGroup<DiaNaoUtilFormGroup>;
+  if (grupo.controls.abrangencia.value !== 'MUNICIPAL') {
+    return null;
+  }
+
+  const codigo = grupo.controls.codigoMunicipio.value?.trim() ?? '';
+  const nome = grupo.controls.municipioNome.value?.trim() ?? '';
+  const uf = grupo.controls.municipioUf.value?.trim().toUpperCase() ?? '';
+  if (!CODIGO_MUNICIPIO_PATTERN.test(codigo) || nome.length === 0) {
+    return { snapshotMunicipal: true };
+  }
+
+  return PREFIXO_IBGE_POR_UF[uf] === codigo.slice(0, 2) ? null : { snapshotMunicipal: true };
 }
 
 export const DATA_PATTERN = /\d{4}-\d{2}-\d{2}/;
