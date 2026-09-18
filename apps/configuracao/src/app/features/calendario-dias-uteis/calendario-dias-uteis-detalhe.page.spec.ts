@@ -99,7 +99,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
 
   const botaoDoDia = (data: string): HTMLButtonElement => {
     const botao = (fixture.nativeElement as HTMLElement).querySelector(
-      `button[aria-label*="${data.split('-')[2].replace(/^0/, '')} de "]`,
+      `button.cfg-calendario-mensal__dia--feriado[aria-label^="${data.split('-')[2].replace(/^0/, '')} de "]`,
     );
     if (!botao) throw new Error(`Nenhum botão de dia encontrado para ${data}`);
     return botao as HTMLButtonElement;
