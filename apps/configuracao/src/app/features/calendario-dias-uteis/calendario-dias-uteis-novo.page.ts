@@ -7,7 +7,6 @@ import {
   FormGroup,
   ReactiveFormsModule,
   ValidationErrors,
-  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -28,115 +27,28 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  DATA_PATTERN,
-  nullIfBlank,
+  CIDADE_REFERENCIA_CODE_PREFIX,
   CODIGO_MUNICIPIO_PATTERN,
+  DATA_DUPLICADA_DATASET_CODE,
+  DATA_DUPLICADA_MESSAGE,
+  DATA_PATTERN,
+  type DiaNaoUtilFormGroup,
+  MUNICIPIO_BUSCA_DEBOUNCE_MS,
+  MUNICIPIO_BUSCA_VAZIA,
+  MUNICIPIO_OBRIGATORIO_MESSAGE,
+  type MunicipioBuscaRequest,
+  type MunicipioBuscaState,
+  type MunicipioOpcao,
+  MUNICIPIOS_LIMIT,
+  nullIfBlank,
+  PARA_SIGLA,
+  snapshotMunicipalCoerente,
+  textoNormalizado,
 } from './calendario-dias-uteis.util';
-
-interface DiaNaoUtilFormGroup {
-  uf: FormControl<string | null>;
-  codigoMunicipio: FormControl<string | null>;
-  municipioNome: FormControl<string | null>;
-  municipioUf: FormControl<string | null>;
-  buscaMunicipio: FormControl<string>;
-  abrangencia: FormControl<string>;
-  data: FormControl<string>;
-  descricao: FormControl<string>;
-}
-
-/**
- * Snapshot municipal da ADR-0090 tal como o formulário o mantém: código IBGE,
- * nome e UF chegam juntos da API Geo e são gravados juntos — nenhum dos três
- * nasce de digitação livre nem de constante do código.
- */
-interface MunicipioOpcao {
-  readonly codigoIbge: string;
-  readonly nome: string;
-  readonly uf: string;
-}
-
-interface MunicipioBuscaState {
-  readonly opcoes: readonly MunicipioOpcao[];
-  readonly carregando: boolean;
-  readonly erro: boolean;
-}
-
-interface MunicipioBuscaRequest {
-  readonly grupo: FormGroup<DiaNaoUtilFormGroup>;
-  readonly termo: string;
-  readonly uf: string;
-}
 
 interface CalendarioDiaUtilFormGroup {
   versaoDataset: FormControl<string>;
   diasNaoUteis: FormArray<FormGroup<DiaNaoUtilFormGroup>>;
-}
-
-export const DATA_DUPLICADA_DATASET_CODE =
-  'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset';
-/**
- * Prefixo dos erros que o backend devolve ao validar a referência de cidade do
- * Geo (`uniplus.cidade_referencia.*`, ADR-0090): código obrigatório/inválido,
- * nome obrigatório/longo demais, UF obrigatória/incoerente com o prefixo. É
- * prefixo, e não uma lista fechada, porque o registro cresce no backend.
- */
-export const CIDADE_REFERENCIA_CODE_PREFIX = 'uniplus.cidade_referencia.';
-/**
- * Prefixo do código IBGE (dois primeiros dígitos) de cada UF — a mesma
- * correspondência que `ReferenciaCidadeGeo` cobra no backend. Fica nesta página
- * (chunk lazy) em vez do roster compartilhado, que é carregado no bundle
- * inicial do painel.
- */
-const PREFIXO_IBGE_POR_UF: Readonly<Record<string, string>> = {
-  RO: '11',
-  AC: '12',
-  AM: '13',
-  RR: '14',
-  PA: '15',
-  AP: '16',
-  TO: '17',
-  MA: '21',
-  PI: '22',
-  CE: '23',
-  RN: '24',
-  PB: '25',
-  PE: '26',
-  AL: '27',
-  SE: '28',
-  BA: '29',
-  MG: '31',
-  ES: '32',
-  RJ: '33',
-  SP: '35',
-  PR: '41',
-  SC: '42',
-  RS: '43',
-  MS: '50',
-  MT: '51',
-  GO: '52',
-  DF: '53',
-};
-const DATA_DUPLICADA_MESSAGE = 'Esta data está duplicada para a mesma abrangência e região.';
-const MUNICIPIO_OBRIGATORIO_MESSAGE = 'Selecione um município na busca.';
-const PARA_SIGLA = 'PA';
-const MUNICIPIOS_LIMIT = 20;
-const MUNICIPIO_BUSCA_DEBOUNCE_MS = 300;
-const MUNICIPIO_BUSCA_VAZIA: MunicipioBuscaState = {
-  opcoes: [],
-  carregando: false,
-  erro: false,
-};
-
-function textoNormalizado(maxLength: number): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const value = typeof control.value === 'string' ? control.value.trim() : '';
-    if (value.length === 0) {
-      return { required: true };
-    }
-    return value.length > maxLength
-      ? { maxlength: { requiredLength: maxLength, actualLength: value.length } }
-      : null;
-  };
 }
 
 function chaveDuplicidade(grupo: FormGroup<DiaNaoUtilFormGroup>): string | null {
@@ -155,28 +67,6 @@ function chaveDuplicidade(grupo: FormGroup<DiaNaoUtilFormGroup>): string | null 
     return uf ? `${data}|${abrangencia}|${uf}` : null;
   }
   return `${data}|${abrangencia}`;
-}
-
-/**
- * Exige, na linha municipal, o snapshot inteiro da opção escolhida na Geo:
- * código IBGE de 7 dígitos, nome e UF cujo prefixo IBGE bate com o código. É a
- * mesma coerência que `ReferenciaCidadeGeo.Validar` cobra no backend — validada
- * aqui para que uma tripla incompleta não vire 422.
- */
-function snapshotMunicipalCoerente(control: AbstractControl): ValidationErrors | null {
-  const grupo = control as FormGroup<DiaNaoUtilFormGroup>;
-  if (grupo.controls.abrangencia.value !== 'MUNICIPAL') {
-    return null;
-  }
-
-  const codigo = grupo.controls.codigoMunicipio.value?.trim() ?? '';
-  const nome = grupo.controls.municipioNome.value?.trim() ?? '';
-  const uf = grupo.controls.municipioUf.value?.trim().toUpperCase() ?? '';
-  if (!CODIGO_MUNICIPIO_PATTERN.test(codigo) || nome.length === 0) {
-    return { snapshotMunicipal: true };
-  }
-
-  return PREFIXO_IBGE_POR_UF[uf] === codigo.slice(0, 2) ? null : { snapshotMunicipal: true };
 }
 
 function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors | null {
