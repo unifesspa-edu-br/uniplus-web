@@ -39,6 +39,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -755,7 +756,7 @@ export class OfertasCursoPage {
       const { title, detail } = this.problemI18n.resolve(problem);
       // 422 de `q`/`sort`: a API nomeia o campo recusado e lista os aceitos no
       // `detail` — é o texto que o operador precisa para corrigir (CA-14b).
-      return problem.status === 422 && detail ? detail : title;
+      return problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && detail ? detail : title;
     }
     return this.lista.error() ? 'Erro inesperado ao carregar ofertas de curso.' : null;
   });
@@ -1312,7 +1313,11 @@ export class OfertasCursoPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -1329,7 +1334,10 @@ export class OfertasCursoPage {
       control.markAsTouched();
       return;
     }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);

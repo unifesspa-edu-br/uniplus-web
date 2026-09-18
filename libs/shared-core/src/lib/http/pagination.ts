@@ -1,5 +1,6 @@
 import { parseLink } from './link-header';
 import type { ProblemDetails } from './problem-details';
+import { STATUS_HTTP } from './status-http';
 
 /**
  * Helpers de paginação por cursor opaco do contrato V1 da `uniplus-api`
@@ -57,14 +58,16 @@ export function ehCursorDePaginacaoObsoleto(problem: ProblemDetails): boolean {
   return (
     problem.code === CURSOR_INVALIDO_CODE ||
     problem.code === CURSOR_EXPIRADO_CODE ||
-    problem.status === 400 ||
-    problem.status === 410
+    problem.status === STATUS_HTTP.REQUISICAO_INVALIDA ||
+    problem.status === STATUS_HTTP.REMOVIDO_EM_DEFINITIVO
   );
 }
 
 /** O cursor obsoleto é por expiração (410 / `uniplus.cursor.expirado`), não por divergência. */
 export function ehCursorDePaginacaoExpirado(problem: ProblemDetails): boolean {
-  return problem.code === CURSOR_EXPIRADO_CODE || problem.status === 410;
+  return (
+    problem.code === CURSOR_EXPIRADO_CODE || problem.status === STATUS_HTTP.REMOVIDO_EM_DEFINITIVO
+  );
 }
 
 declare const cursorBrand: unique symbol;

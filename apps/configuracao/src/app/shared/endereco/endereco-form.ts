@@ -20,7 +20,7 @@ import {
   type Validator,
 } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
-import { ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
+import { ApiResult, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
 import {
   CepResolvidoDto,
   CidadeResumoDto,
@@ -549,7 +549,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
           this.aplicarCepResolvido(result.data, digitos);
           return;
         }
-        if (result.status === 404) {
+        if (result.status === STATUS_HTTP.NAO_ENCONTRADO) {
           // CEP não encontrado. Sem resolução anterior, mantém os campos
           // editáveis para entrada manual. Em correção de um CEP já resolvido
           // (editandoCep), preserva a última resolução válida em vez de
@@ -562,7 +562,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
           this.cepErro.set('CEP não encontrado. Verifique ou preencha o endereço manualmente.');
           return;
         }
-        if (result.status === 400) {
+        if (result.status === STATUS_HTTP.REQUISICAO_INVALIDA) {
           this.cepErro.set('CEP em formato inválido.');
           return;
         }

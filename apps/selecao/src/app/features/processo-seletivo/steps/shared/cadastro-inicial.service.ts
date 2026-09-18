@@ -7,6 +7,7 @@ import {
   idempotencyKey,
   isApiOk,
   withIdempotencyKey,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
   ConfiguracaoDistribuicaoVagasInput,
@@ -757,7 +758,7 @@ export class CadastroInicialService {
         },
         error: (erro: unknown) => {
           const status = statusDe(erro);
-          resolve({ ok: false, status, expirada: status === 403 });
+          resolve({ ok: false, status, expirada: status === STATUS_HTTP.SEM_PERMISSAO });
         },
         complete: () => {
           onProgresso(100);

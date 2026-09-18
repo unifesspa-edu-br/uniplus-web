@@ -27,6 +27,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -775,7 +776,11 @@ export class TiposProcessoPage {
     if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarIdempotencyKey();
     }
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }

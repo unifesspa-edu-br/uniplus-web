@@ -26,6 +26,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -695,14 +696,18 @@ export class ReservaDemograficaListPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
     // Conflito de unicidade de Censo (409) — inline no campo censoReferencia.
     if (
-      problem.status === 409 ||
+      problem.status === STATUS_HTTP.CONFLITO ||
       problem.code.includes('censo') ||
       problem.code.includes('duplic')
     ) {

@@ -26,6 +26,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -698,7 +699,11 @@ export class TiposEtapaPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -713,7 +718,10 @@ export class TiposEtapaPage {
       this.form.controls.codigo.markAsTouched();
       return;
     }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);

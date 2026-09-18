@@ -22,6 +22,7 @@ import {
   useApiResource,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -572,7 +573,7 @@ export class ModalidadesListPage {
         }
         // 409 = bloqueio autoritativo do servidor (corrida ou referência fora da página):
         // mantém o diálogo em modo bloqueio e mostra a mensagem do servidor.
-        if (result.problem.status === 409) {
+        if (result.problem.status === STATUS_HTTP.CONFLITO) {
           this.bloqueioServidor.set(true);
           this.mensagemBloqueioServidor.set(this.problemI18n.resolve(result.problem).title);
           this.recarregar();
