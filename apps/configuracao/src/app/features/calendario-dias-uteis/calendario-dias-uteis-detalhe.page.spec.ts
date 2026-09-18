@@ -105,6 +105,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     return botao as HTMLButtonElement;
   };
 
+
   const POST_URL = `${BASE}/api/configuracao/admin/calendarios-dias-uteis/${CALENDARIO_ID}/dias-nao-uteis`;
 
   const botaoDoDiaVazio = (rotuloInicio: string): HTMLButtonElement => {
@@ -436,7 +437,6 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     await carregar([DIA_ESTADUAL]);
   });
 
-
   it('mostra a recusa por data duplicada no próprio formulário (CA-11)', async () => {
     await carregar([DIA_ESTADUAL]);
 
@@ -464,6 +464,32 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     ) as HTMLElement;
     expect(dialogo.textContent).toContain('duplicada');
     expect(dialogo.textContent).toContain('abrangência');
+  });
+
+  it('não se deixa dispensar enquanto a gravação está em curso (CA-16)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Em voo');
+    submeter();
+
+    const dialogoDeCadastro = (fixture.nativeElement as HTMLElement)
+      .querySelector('#cfg-calendario-dias-uteis-form')
+      ?.closest('dialog') as HTMLElement;
+    const fechar = [...dialogoDeCadastro.querySelectorAll('button')].find(
+      (b) => b.getAttribute('aria-label') === 'Fechar',
+    ) as HTMLButtonElement;
+    expect(fechar.disabled).toBe(true);
+
+    controller.expectOne(POST_URL).flush({
+      id: CALENDARIO_ID,
+      versaoDataset: '2026.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+    await carregar([DIA_ESTADUAL]);
   });
 
 });

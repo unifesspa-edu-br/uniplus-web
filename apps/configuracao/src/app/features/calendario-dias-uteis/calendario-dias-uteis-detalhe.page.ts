@@ -257,6 +257,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
         [heading]="'Adicionar novo feriado ao calendário'"
         (closed)="aoFecharDialogo()"
         [hasFooter]="true"
+        [dismissible]="!saving()"
       >
         @if (dialogOpen()) {
           <form
@@ -457,7 +458,8 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
                aberta sem destino de foco nem de Tab. O acionamento repetido é
                inofensivo — \`salvar()\` sai cedo com a gravação em curso — e
                \`aria-busy\` com \`aria-disabled\` dizem ao leitor de tela que ele está
-               ocupado e não aceita nova ação. -->
+               ocupado e não aceita nova ação. Sair, esse sim, fica fechado pelo
+               \`dismissible\` enquanto a resposta não chega. -->
           <button
             class="btn btn--primary"
             type="button"
