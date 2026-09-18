@@ -300,26 +300,31 @@ cfg-pesos-enem-page {
   padding: 0 var(--space-5) var(--space-5);
 }
 
-.cfg-form-drawer .uni-drawer__panel {
+.cfg-form-drawer .uni-drawer__panel,
+.cfg-detail-drawer .uni-drawer__panel {
   max-width: min(480px, 100vw);
 }
 
-.cfg-form-drawer .uni-drawer__body {
+.cfg-form-drawer .uni-drawer__body,
+.cfg-detail-drawer .uni-drawer__body
+{
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  padding: 0;
+  padding: var(--space-5);
+  gap: var(--space-5);
 }
 
-.cfg-form {
+.cfg-form,
+.cfg-ofertas-drawer
+  {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   gap: var(--space-6);
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-5);
 }
 
 /*
@@ -390,7 +395,7 @@ cfg-pesos-enem-page {
   border-radius: var(--radius-sm);
 }
 
-.cfg-form-drawer .form-grid--compact {
+.cfg-form-drawer .form-grid--compact, .cfg-detail-drawer .form-grid--compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -429,7 +434,7 @@ cfg-pesos-enem-page {
 }
 
 @media (min-width: 1200px) {
-  .cfg-form-drawer .uni-drawer__panel {
+  .cfg-form-drawer .uni-drawer__panel, .cfg-detail-drawer .uni-drawer__panel {
     max-width: min(760px, 100vw);
   }
 
@@ -437,14 +442,14 @@ cfg-pesos-enem-page {
     max-width: min(760px, 100vw);
   }
 
-  .cfg-form-drawer .form-grid {
+  .cfg-form-drawer .form-grid, .cfg-detail-drawer .form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 /* Vocabulários fechados (Fase canônica, Tipo de banca): formulário compacto
    com poucos campos — mantém 1 coluna mesmo em telas largas (issue #393). */
-.cfg-form-drawer .form-grid--1col {
+.cfg-form-drawer .form-grid--1col, .cfg-detail-drawer .form-grid--1col {
   grid-template-columns: 1fr;
 }
 
