@@ -262,11 +262,15 @@ describe('UnidadesPage', () => {
     for (const botao of Array.from(botoesRemover)) {
       expect(botao.classList.contains('btn--tertiary')).toBe(true);
       expect(botao.classList.contains('btn--danger')).toBe(false);
+      // Sem o fundo vermelho, o glifo é o que resta identificando a ação como
+      // destrutiva — trocá-lo apagaria o último sinal visual da remoção.
+      expect(botao.querySelector('i')?.classList.contains('pi-trash')).toBe(true);
     }
 
     for (const botao of Array.from(botoesEditar)) {
       expect(botao.classList.contains('btn--tertiary')).toBe(true);
       expect(botao.classList.contains('btn--danger')).toBe(false);
+      expect(botao.querySelector('i')?.classList.contains('pi-pencil')).toBe(true);
     }
   });
 
