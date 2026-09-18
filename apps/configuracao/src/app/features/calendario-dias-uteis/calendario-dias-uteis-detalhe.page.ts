@@ -51,7 +51,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { NotificationService } from '@uniplus/shared-core';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CODIGO_MUNICIPIO_PATTERN,
   DIAS_SEMANA,
