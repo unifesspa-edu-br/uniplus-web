@@ -379,73 +379,71 @@ interface CursoForm {
       position="right"
       (closed)="aoFecharOfertas()"
     >
-      <div class="cfg-ofertas-drawer">
-        @if (ofertasBloqueio()) {
-          <ui-alert variant="danger" heading="Remoção bloqueada">
-            {{ ofertasBloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
-          </ui-alert>
-        } @else {
-          <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
-            Instâncias regulatórias (Oferta de curso) que referenciam este curso. Enquanto houver
-            ofertas ativas, a remoção do curso é bloqueada.
-          </ui-alert>
-        }
+      @if (ofertasBloqueio()) {
+        <ui-alert variant="danger" heading="Remoção bloqueada">
+          {{ ofertasBloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
+        </ui-alert>
+      } @else {
+        <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
+          Instâncias regulatórias (Oferta de curso) que referenciam este curso. Enquanto houver
+          ofertas ativas, a remoção do curso é bloqueada.
+        </ui-alert>
+      }
 
-        @if (ofertasErrorMessage()) {
-          <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
-            {{ ofertasErrorMessage() }}
-            <div class="cfg-ofertas__retry">
-              <button
-                type="button"
-                class="btn btn--secondary btn--sm"
-                [disabled]="ofertasLoading()"
-                (click)="recarregarOfertas()"
-              >
-                Tentar novamente
-              </button>
-            </div>
-          </ui-alert>
-        }
+      @if (ofertasErrorMessage()) {
+        <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
+          {{ ofertasErrorMessage() }}
+          <div class="cfg-ofertas__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [disabled]="ofertasLoading()"
+              (click)="recarregarOfertas()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
 
-        @if (ofertasLoading()) {
-          <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
-        }
+      @if (ofertasLoading()) {
+        <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
+      }
 
-        @if (ofertas().length > 0) {
-          <ul class="cfg-ofertas-list">
-            @for (oferta of ofertas(); track oferta.id) {
-              <li class="cfg-ofertas-list__item">
-                <p class="cfg-ofertas-list__unidade">
-                  {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
-                </p>
-                <p class="cfg-ofertas-list__meta">
-                  <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
-                  <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
-                  <span>{{ turnosLabel(oferta.turnos) }}</span>
-                </p>
-              </li>
-            }
-          </ul>
-        } @else if (!ofertasLoading() && !ofertasErrorMessage()) {
-          <ui-empty-state
-            heading="Nenhuma oferta ativa"
-            description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
-          />
-        }
-
-        <ui-list-footer
-          navigationLabel="Paginação de ofertas do curso"
-          [hasPrevious]="ofertasPrevCursor() !== null"
-          [hasNext]="ofertasNextCursor() !== null"
-          [isDisabled]="ofertasLoading()"
-          (previous)="paginaAnteriorOfertas()"
-          (next)="proximaPaginaOfertas()"
+      @if (ofertas().length > 0) {
+        <ul class="cfg-ofertas-list" role="list">
+          @for (oferta of ofertas(); track oferta.id) {
+            <li class="cfg-ofertas-list__item">
+              <p class="cfg-ofertas-list__unidade">
+                {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
+              </p>
+              <p class="cfg-ofertas-list__meta">
+                <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
+                <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
+                <span>{{ turnosLabel(oferta.turnos) }}</span>
+              </p>
+            </li>
+          }
+        </ul>
+      } @else if (!ofertasLoading() && !ofertasErrorMessage()) {
+        <ui-empty-state
+          heading="Nenhuma oferta ativa"
+          description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
         />
-      </div>
+      }
+
+      <ui-list-footer
+        navigationLabel="Paginação de ofertas do curso"
+        [hasPrevious]="ofertasPrevCursor() !== null"
+        [hasNext]="ofertasNextCursor() !== null"
+        [isDisabled]="ofertasLoading()"
+        (previous)="paginaAnteriorOfertas()"
+        (next)="proximaPaginaOfertas()"
+      />
     </ui-drawer>
   `,
   host: { class: 'cfg-page' },
-  styleUrls: ['./cursos.page.css'],
+  styleUrl: './cursos.page.css',
 })
 export class CursosPage {
   private readonly api = inject(CursosApi);

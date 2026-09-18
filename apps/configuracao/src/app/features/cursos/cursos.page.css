@@ -1,3 +1,6 @@
+/* O <ul> é display: flex, o que derruba a semântica de lista em parte dos
+   navegadores — daí o role="list" no template, que também aciona o reset de
+   base.css. */
 .cfg-ofertas-list {
   display: flex;
   flex-direction: column;
@@ -10,7 +13,12 @@
   gap: var(--space-2);
 }
 
+/* Linha de tags: sem o wrap os três itens se espremem até a largura mínima em
+   telas estreitas e cada tag quebra por dentro, virando um bloco de três
+   linhas no lugar da pílula de uma. */
 .cfg-ofertas-list__meta {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
 }
