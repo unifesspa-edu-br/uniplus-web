@@ -15,6 +15,7 @@ import {
   idempotencyKey,
   ProblemDetails,
   ProblemI18nService,
+  STATUS_HTTP,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -887,7 +888,7 @@ export class CalendarioDiasUteisDetalhePage {
     }
 
     if (
-      problem.status === 422 &&
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
       problem.code.startsWith(CIDADE_REFERENCIA_CODE_PREFIX) &&
       problem.detail &&
       this.form.controls.abrangencia.value === 'MUNICIPAL'
