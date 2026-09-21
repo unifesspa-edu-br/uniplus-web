@@ -184,8 +184,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({ codigo: 'DECL_LIDERANCA', categoria: 'OUTROS' });
 
-    // Inativar
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page.getByRole('button', { name: `Inativar tipo de documento ${rgSeed.codigo}`, exact: true }).click();
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog.getByText('RN08')).toBeVisible();
     await dialog.getByRole('button', { name: 'Inativar' }).click();
@@ -219,7 +218,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await mockApi(page, capturado, [rgSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page.getByRole('button', { name: `Inativar tipo de documento ${rgSeed.codigo}`, exact: true }).click();
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText(/bloque/i)).toHaveCount(0);
@@ -297,7 +296,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
   test('modal de inativação aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [rgSeed]);
     await abrirPagina(page);
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page.getByRole('button', { name: `Inativar tipo de documento ${rgSeed.codigo}`, exact: true }).click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });

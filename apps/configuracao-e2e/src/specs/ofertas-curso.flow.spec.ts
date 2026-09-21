@@ -279,7 +279,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, [ofertaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page.getByRole('button', { name: `Editar oferta de curso ${OFERTA_ID}`, exact: true }).click();
 
     await expect(page.locator('[formControlName="cursoId"]')).toHaveCount(0);
     await expect(page.getByText('Bacharelado · Graduação')).toBeVisible();
