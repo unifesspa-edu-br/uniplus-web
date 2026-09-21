@@ -50,6 +50,10 @@ import {
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 100;
 
+/** Vendor code do DomainError `ReferenciaReservaDemografica.CensoJaExiste` (uniplus-api, 409 Conflict). */
+const RESERVA_DEMOGRAFICA_CENSO_JA_EXISTE_CODE =
+  'uniplus.configuracao.referencia_reserva_demografica.censo_ja_existe';
+
 type ModoFormulario = 'criar' | 'editar';
 
 interface ReservaForm {
@@ -706,11 +710,7 @@ export class ReservaDemograficaListPage {
       return;
     }
     // Conflito de unicidade de Censo (409) — inline no campo censoReferencia.
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code.includes('censo') ||
-      problem.code.includes('duplic')
-    ) {
+    if (problem.code === RESERVA_DEMOGRAFICA_CENSO_JA_EXISTE_CODE) {
       this.renovarIdempotencyKey();
       const control = this.form.controls.censoReferencia;
       control.setErrors({

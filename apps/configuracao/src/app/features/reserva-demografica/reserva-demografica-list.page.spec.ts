@@ -150,6 +150,78 @@ describe('ReservaDemograficaListPage', () => {
     expect(ppi.valid).toBe(true);
   });
 
+  it('censo_ja_existe (409) é mapeado ao campo censoReferencia sem fechar o drawer', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].setValue({
+      censoReferencia: '2022',
+      ppiPercentual: 78.5,
+      quilombolaPercentual: 1.2,
+      pcdPercentual: 8.4,
+      baseLegal: 'Lei 12.711/2012, art. 10, III',
+    });
+    component['salvar']();
+
+    const post = controller.expectOne(
+      `${BASE}/api/configuracao/admin/referencias-reserva-demografica`,
+    );
+    post.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.referencia_reserva_demografica.censo_ja_existe',
+        title: 'Já existe uma referência ativa para este Censo',
+        status: 409,
+        code: 'uniplus.configuracao.referencia_reserva_demografica.censo_ja_existe',
+        traceId: 'test-trace',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.censoReferencia.errors?.['backend']).toBeTruthy();
+    expect(component['formError']()).toBeNull();
+  });
+
+  it('outro 409 (processing_conflict) não hijacka censoReferencia e preserva o title do servidor', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    component['form'].setValue({
+      censoReferencia: '2022',
+      ppiPercentual: 78.5,
+      quilombolaPercentual: 1.2,
+      pcdPercentual: 8.4,
+      baseLegal: 'Lei 12.711/2012, art. 10, III',
+    });
+    component['salvar']();
+
+    const post = controller.expectOne(
+      `${BASE}/api/configuracao/admin/referencias-reserva-demografica`,
+    );
+    post.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.idempotency.processing_conflict',
+        title: 'Requisição original ainda está em processamento',
+        status: 409,
+        code: 'uniplus.idempotency.processing_conflict',
+        traceId: 'test-trace',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.censoReferencia.errors).toBeNull();
+    expect(component['formError']()).toBe('Requisição original ainda está em processamento');
+  });
+
   it('CA-06: na edição, censoReferencia fica disabled', async () => {
     await flushLista([seed]);
     component['abrirEdicao'](seed);
