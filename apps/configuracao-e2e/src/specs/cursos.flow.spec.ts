@@ -223,7 +223,7 @@ test.describe('Curso — CRUD (#389)', () => {
     });
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Remover' }).first().click();
+    await page.getByRole('button', { name: `Remover curso ${cursoSeed.codigo}`, exact: true }).click();
     const confirm = page.locator('dialog.uni-dialog');
     await confirm.getByRole('button', { name: 'Remover' }).click();
 
@@ -247,7 +247,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, [cursoSeed], { ofertas: [ofertaSeed] });
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Ofertas' }).first().click();
+    await page.getByRole('button', { name: `Ofertas de ${cursoSeed.codigo}`, exact: true }).click();
 
     const drawer = page.locator('dialog.uni-drawer');
     await expect(drawer.getByRole('heading', { name: 'Ofertas de ENG-CIV' })).toBeVisible();
@@ -260,7 +260,7 @@ test.describe('Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, [cursoSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Remover' }).first().click();
+    await page.getByRole('button', { name: `Remover curso ${cursoSeed.codigo}`, exact: true }).click();
     await page
       .locator('dialog.uni-dialog')
       .getByRole('button', { name: 'Remover' })

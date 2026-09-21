@@ -148,7 +148,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await mockApi(page, capturado, [faseSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page.getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true }).click();
     await expect(page.getByText('Editar fase canônica')).toBeVisible();
 
     const codigoInput = page.locator('[formControlName="codigo"]');
@@ -171,7 +171,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await mockApi(page, capturado, [faseIsencaoSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page.getByRole('button', { name: `Editar fase canônica ${faseIsencaoSeed.codigo}`, exact: true }).click();
 
     // A marca de isenção pertence a essa fase e só a ela, e as duas janelas são
     // exclusivas — o formulário deriva ambas do código.
@@ -193,7 +193,7 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await mockApi(page, capturado, [faseSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page.getByRole('button', { name: `Inativar fase canônica ${faseSeed.codigo}`, exact: true }).click();
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Inativar' }).click();
 

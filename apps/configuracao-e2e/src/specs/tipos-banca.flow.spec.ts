@@ -142,7 +142,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await mockApi(page, capturado, [bancaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page.getByRole('button', { name: `Editar tipo de banca ${bancaSeed.codigo}`, exact: true }).click();
     await expect(page.getByText('Editar tipo de banca')).toBeVisible();
 
     const codigoInput = page.locator('[formControlName="codigo"]');
@@ -165,10 +165,8 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await mockApi(page, capturado, [bancaSeed], [{ id: 'f1', codigo: 'AVALIACAO', nome: 'Avaliação' }]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
-    await page
-      .locator('[formControlName="faseTipica"]')
-      .fill('Uma fase qualquer sem correspondência');
+    await page.getByRole('button', { name: `Editar tipo de banca ${bancaSeed.codigo}`, exact: true }).click();
+    await page.locator('[formControlName="faseTipica"]').fill('Uma fase qualquer sem correspondência');
     await page.getByRole('button', { name: 'Salvar tipo de banca' }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(1);
@@ -183,7 +181,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await mockApi(page, capturado, [bancaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page.getByRole('button', { name: `Inativar tipo de banca ${bancaSeed.codigo}`, exact: true }).click();
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Inativar' }).click();
 

@@ -167,7 +167,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
     await mockApi(page, capturado, [arestaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page.getByRole('button', { name: `Editar precedência entre ${arestaSeed.antecessoraCodigo} e ${arestaSeed.sucessoraCodigo}`, exact: true }).click();
     await expect(page.locator('#cfg-precedencia-antecessora')).toHaveValue('INSCRICAO');
     await page.getByRole('button', { name: 'Cancelar' }).click();
 
@@ -259,7 +259,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
     await mockApi(page, capturado, [arestaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page.getByRole('button', { name: `Editar precedência entre ${arestaSeed.antecessoraCodigo} e ${arestaSeed.sucessoraCodigo}`, exact: true }).click();
     const antecessora = page.locator('#cfg-precedencia-antecessora');
     const sucessora = page.locator('#cfg-precedencia-sucessora');
     await expect(antecessora).toHaveAttribute('readonly', '');
@@ -279,7 +279,7 @@ test.describe('Precedência de fase — CRUD (#497)', () => {
     await mockApi(page, capturado, [arestaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Remover' }).first().click();
+    await page.getByRole('button', { name: `Remover precedência entre ${arestaSeed.antecessoraCodigo} e ${arestaSeed.sucessoraCodigo}`, exact: true }).click();
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
@@ -323,7 +323,7 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-    test('lista não tem violações serious/critical', async ({ page }) => {
+  test('lista não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [arestaSeed]);
     await abrirPagina(page);
     await assertSemViolacoesGraves(page);
@@ -353,7 +353,7 @@ test.describe('Precedência de fase — acessibilidade axe-core (#497)', () => {
   test('modal de remoção aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [arestaSeed]);
     await abrirPagina(page);
-    await page.getByRole('button', { name: 'Remover' }).first().click();
+    await page.getByRole('button', { name: `Remover precedência entre ${arestaSeed.antecessoraCodigo} e ${arestaSeed.sucessoraCodigo}`, exact: true }).click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
