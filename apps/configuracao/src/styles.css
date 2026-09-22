@@ -836,3 +836,14 @@ cfg-pesos-enem-page {
     gap: var(--space-5);
   }
 }
+
+/* Tipo de ato */
+.cfg-tipos-ato__historico {
+  padding: 0 var(--space-5) var(--space-4);
+}
+
+/* Duas ações de 44px não cabem no padding da célula quando a linha tem cinco
+   colunas, e a quebra empilha os botões dobrando a altura da linha. */
+.cfg-tipos-ato__acoes {
+  flex-wrap: nowrap;
+}

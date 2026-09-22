@@ -131,6 +131,12 @@ export class LayoutComponent {
           exact: true,
         },
         {
+          label: 'Tipo de Ato',
+          icon: 'pi-megaphone',
+          routerLink: '/tipos-ato',
+          exact: true,
+        },
+        {
           label: 'Precedência de Fase',
           icon: 'pi-sort-alt',
           routerLink: '/precedencias-fase',
