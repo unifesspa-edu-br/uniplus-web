@@ -81,7 +81,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
 
     // Localidade é conteúdo do drawer (#525), não mais texto direto na página
     // nem controle de formulário desabilitado.
-    await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
+    await page.getByRole('button', { name: /^5 de abril de 2026/ }).click();
     const drawerMunicipal = page.getByRole('dialog', { name: '5 de abril de 2026' });
     await expect(drawerMunicipal).toBeVisible();
     await expect(drawerMunicipal.getByText('Marabá — PA', { exact: true })).toBeVisible();
@@ -89,7 +89,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await page.keyboard.press('Escape');
     await expect(drawerMunicipal).toBeHidden();
 
-    await page.getByRole('button', { name: /15 de agosto de 2026/ }).click();
+    await page.getByRole('button', { name: /^15 de agosto de 2026/ }).click();
     const drawerEstadual = page.getByRole('dialog', { name: '15 de agosto de 2026' });
     await expect(drawerEstadual).toBeVisible();
     await expect(drawerEstadual.getByText('Pará — PA', { exact: true })).toBeVisible();
@@ -108,7 +108,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     // coberta em calendario-dias-uteis-mensal.visual.spec.ts (#525) —
     // aqui bastaria duplicar a asserção sem cobertura adicional.
     await page.setViewportSize({ width: 320, height: 720 });
-    await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
+    await page.getByRole('button', { name: /^5 de abril de 2026/ }).click();
     await expect(page.getByRole('dialog', { name: '5 de abril de 2026' })).toBeVisible();
     await testInfo.attach(`${testInfo.project.name}-calendario-detalhe-320`, {
       body: await page.screenshot({ fullPage: true }),
@@ -118,7 +118,7 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
 
   test('detalhe não tem violações serious/critical', async ({ page }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
-    await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
 
     await assertSemViolacoesGraves(page);
   });
