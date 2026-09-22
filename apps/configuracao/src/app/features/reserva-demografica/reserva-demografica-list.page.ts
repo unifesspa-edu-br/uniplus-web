@@ -19,8 +19,10 @@ import {
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
+  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
+  IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
   useApiResource,
   withIdempotencyKey,
@@ -700,29 +702,43 @@ export class ReservaDemograficaListPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
+    // Rotação antes de ramificar: a política é única e vale para toda falha, não
+    // só para os códigos que esta tela trata inline.
+    if (deveRotacionarIdempotencyKey(problem)) {
+      this.renovarIdempotencyKey();
+    }
+
     if (
       problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
       problem.errors &&
       problem.errors.length > 0
     ) {
-      this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
+
     // Conflito de unicidade de Censo (409) — inline no campo censoReferencia.
-    if (problem.code === RESERVA_DEMOGRAFICA_CENSO_JA_EXISTE_CODE) {
-      this.renovarIdempotencyKey();
+    // Só no modo criar: na edição o campo está desabilitado, e um erro ancorado
+    // num controle desabilitado não invalida o formulário nem pode ser corrigido
+    // pelo operador — a mensagem tem de aparecer no alerta do drawer.
+    if (problem.code === RESERVA_DEMOGRAFICA_CENSO_JA_EXISTE_CODE && this.modo() === 'criar') {
+      this.notifications.errorFromProblem(problem);
       const control = this.form.controls.censoReferencia;
       control.setErrors({
-        backend: { code: problem.code, message: 'Censo de referência já cadastrado.' },
+        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
       });
       control.markAsTouched();
       this.formError.set(null);
       return;
     }
-    if (problem.code === 'uniplus.idempotency.body_mismatch') {
-      this.renovarIdempotencyKey();
+
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH
+    ) {
+      this.notifications.errorFromProblem(problem);
     }
+
     this.formError.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
