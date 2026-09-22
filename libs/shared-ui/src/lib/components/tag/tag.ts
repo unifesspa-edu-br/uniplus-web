@@ -9,6 +9,7 @@ export type UiTagVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'dang
   template: `
     <span
       class="tag"
+      [class.tag--neutral]="variant() === 'neutral'"
       [class.tag--primary]="variant() === 'primary'"
       [class.tag--success]="variant() === 'success'"
       [class.tag--warning]="variant() === 'warning'"

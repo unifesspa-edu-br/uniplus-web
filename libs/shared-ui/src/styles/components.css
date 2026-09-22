@@ -400,6 +400,9 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 .tag--solid.tag--danger  { background: var(--color-danger-solid);  color: var(--color-neutral-0); }
 .tag--solid.tag--info    { background: var(--color-info-solid);    color: var(--color-neutral-0); }
 .tag--solid.tag--primary { background: var(--color-primary-solid); color: var(--color-neutral-0); }
+/* Sem esta regra a etiqueta neutra sólida fica com o fundo claro de `.tag` e o
+   texto branco de `.tag--solid` — 1,1:1, ilegível. */
+.tag--solid.tag--neutral { background: var(--color-neutral-solid); color: var(--color-neutral-0); }
 [data-theme="contrast"] .tag--solid { color: var(--text-on-primary); }
 
 /* ============================================================================
@@ -506,7 +509,10 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 }
 .alert__body { flex: 1; }
 .alert__title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); margin: 0 0 var(--space-1); }
-.alert__msg { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+/* --text-secondary sobre os tints de alerta mede entre 6,68:1 e 6,96:1 no tema
+   claro — abaixo do 7:1 AAA nos quatro variantes. --text-primary é a alternativa
+   mais escura já usada para texto de corpo e mede 11:1 ou mais. */
+.alert__msg { font-size: var(--text-sm); color: var(--text-primary); margin: 0; line-height: var(--leading-normal); }
 
 .alert--success { background: var(--color-success-50); border-left-color: var(--color-success-600); }
 .alert--success .alert__icon { color: var(--color-success-600); }
@@ -527,6 +533,15 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 .alert--info { background: var(--color-info-50); border-left-color: var(--color-primary); }
 .alert--info .alert__icon { color: var(--color-primary); }
 .alert--info .alert__title { color: var(--color-info-700); }
+
+/* O --btn-fg padrão do secundário (--color-primary) mede 6,57:1 sobre o tint do
+   alerta no tema claro e 6,34:1 no escuro — abaixo do 7:1 AAA. Mesmo tratamento
+   do secundário sobre o tint do hero: --text-on-primary-tint é o token do DS
+   para texto sobre fundo tingido, e mede 8:1 ou mais nos quatro variantes. */
+.alert .btn--secondary {
+  --btn-fg: var(--text-on-primary-tint);
+  --btn-bd: var(--text-on-primary-tint);
+}
 
 /* ============================================================================
  * INSTITUTIONAL BAR + ACCESSIBILITY BAR + TOPBAR (mobile-first)
