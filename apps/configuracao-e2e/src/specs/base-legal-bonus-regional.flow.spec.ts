@@ -154,7 +154,12 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await mockApi(page, capturado, [portariaSeed]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: `Desativar base legal ${portariaSeed.identificacao}`, exact: true }).click();
+    await page
+      .getByRole('button', {
+        name: `Desativar base legal ${portariaSeed.identificacao}`,
+        exact: true,
+      })
+      .click();
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog).toBeVisible();
     expect(capturado.deletedIds).toHaveLength(0);
