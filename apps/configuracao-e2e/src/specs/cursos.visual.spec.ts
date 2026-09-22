@@ -195,7 +195,7 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
     page,
   }, testInfo) => {
     await page.goto('/cursos');
-    await page.getByRole('button', { name: 'Ofertas' }).first().click();
+    await page.getByRole('button', { name: `Ofertas de ${CURSO.codigo}`, exact: true }).click();
 
     const drawer = page.getByRole('dialog', { name: 'Ofertas de curso do curso selecionado' });
     await expect(drawer).toBeVisible();
@@ -257,7 +257,7 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
     page,
   }) => {
     await page.goto('/cursos');
-    await page.getByRole('button', { name: 'Ofertas' }).first().click();
+    await page.getByRole('button', { name: `Ofertas de ${CURSO.codigo}`, exact: true }).click();
 
     const drawer = page.getByRole('dialog', { name: 'Ofertas de curso do curso selecionado' });
     await expect(drawer).toBeVisible();

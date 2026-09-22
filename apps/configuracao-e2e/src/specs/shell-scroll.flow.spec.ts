@@ -43,6 +43,11 @@ const CAMPI = Array.from({ length: 40 }, (_, i) => ({
 }));
 
 const ULTIMO_CAMPUS = CAMPI[CAMPI.length - 1].nome;
+/**
+ * A ação de linha é um `ui-icon-button` sem rótulo visível: quem a identifica é o nome
+ * acessível, que carrega a sigla do campus.
+ */
+const EDITAR_ULTIMO_CAMPUS = `Editar campus ${CAMPI[CAMPI.length - 1].sigla}`;
 /** Último item do menu lateral declarado em `cfg-layout`. */
 const ULTIMO_MENU = 'Calendários';
 
@@ -113,7 +118,9 @@ test.describe('Shell administrativo — rolagem vertical', () => {
     const ultimaLinha = page.getByRole('row', { name: new RegExp(ULTIMO_CAMPUS) });
     await ultimaLinha.scrollIntoViewIfNeeded();
     await expect(ultimaLinha).toBeVisible();
-    await expect(ultimaLinha.getByRole('button', { name: 'Editar' })).toBeInViewport();
+    await expect(
+      ultimaLinha.getByRole('button', { name: EDITAR_ULTIMO_CAMPUS, exact: true }),
+    ).toBeInViewport();
   });
 
   test('CA-02/CA-03: a navegação lateral rola até o último item, independente da área principal', async ({
@@ -153,7 +160,7 @@ test.describe('Shell administrativo — rolagem vertical', () => {
     // CA-05: um controle abaixo da dobra, ao receber foco, é trazido para a viewport.
     const ultimoEditar = page
       .getByRole('row', { name: new RegExp(ULTIMO_CAMPUS) })
-      .getByRole('button', { name: 'Editar' });
+      .getByRole('button', { name: EDITAR_ULTIMO_CAMPUS, exact: true });
     await ultimoEditar.focus();
     await expect(ultimoEditar).toBeFocused();
     await expect(ultimoEditar).toBeInViewport();
