@@ -662,7 +662,7 @@ export class ReservaDemograficaListPage {
       const backend = control.errors['backend'] as { code: string; message: string };
       return backend.message;
     }
-    if (control.errors['duplicado']) return 'Censo de referência já cadastrado.';
+    if (control.errors['duplicado']) return 'Já existe uma referência ativa para este Censo.';
     if (control.errors['required']) return 'Campo obrigatório.';
     if (control.errors['min'] || control.errors['max']) return 'Informe um valor entre 0 e 100.';
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';

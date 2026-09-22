@@ -150,6 +150,11 @@ describe('ReservaDemograficaListPage', () => {
     component['verificarCensoDuplicado']();
 
     expect(component['form'].controls.censoReferencia.hasError('duplicado')).toBe(true);
+    // Mesma qualificação do title da API: o índice único é parcial, e só as ativas
+    // colidem — pré-check e recusa do servidor não podem dizer coisas diferentes.
+    expect(component['erroDoCampo']('censoReferencia')).toBe(
+      'Já existe uma referência ativa para este Censo.',
+    );
     component['salvar']();
     controller.expectNone(`${BASE}/api/configuracao/admin/referencias-reserva-demografica`);
   });
