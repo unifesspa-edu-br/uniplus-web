@@ -18,6 +18,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -700,7 +701,7 @@ export class InstituicaoPage {
           this.loadError.set(null);
           return;
         }
-        if (result.status === 404) {
+        if (result.status === STATUS_HTTP.NAO_ENCONTRADO) {
           // Nenhuma Instituição viva — modo criação (empty-state), sem banner.
           this.instituicao.set(null);
           this.loadError.set(null);
@@ -878,7 +879,11 @@ export class InstituicaoPage {
 
   private aplicarFalha(problem: ProblemDetails): void {
     // 1) Validação FluentValidation com errors[] por campo (fallback do backend).
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -903,7 +908,10 @@ export class InstituicaoPage {
       return;
     }
     // 3) Conflito singleton (409) — banner de bloqueio, não inline (CA-06).
-    if (problem.status === 409 || problem.code === 'uniplus.organizacao.instituicao.ja_existe') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.organizacao.instituicao.ja_existe'
+    ) {
       this.renovarIdempotencyKey();
       this.submitError.set(SINGLETON_CONFLITO_MSG);
       return;

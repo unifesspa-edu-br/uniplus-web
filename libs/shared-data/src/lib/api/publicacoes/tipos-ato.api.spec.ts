@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpContext, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
@@ -9,7 +9,12 @@ import {
   buildVendorMimeAccept,
   isApiOk,
 } from '@uniplus/shared-core/http';
-import { TipoAtoPublicadoDto, TiposAtoApi } from './tipos-ato.api';
+import {
+  AtualizarTipoAtoPublicadoCommand,
+  CriarTipoAtoPublicadoCommand,
+  TipoAtoPublicadoDto,
+  TiposAtoApi,
+} from './tipos-ato.api';
 import { PUBLICACOES_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -21,6 +26,7 @@ const atoSeed: TipoAtoPublicadoDto = {
   congelaConfiguracao: false,
   unicoPorObjeto: false,
   efeitoIrreversivel: false,
+  ehResultado: false,
   vigenciaInicio: '2020-01-01',
   vigenciaFim: null,
   baseLegal: null,
@@ -165,5 +171,96 @@ describe('TiposAtoApi', () => {
     const result = (await promise) as ApiResult<TipoAtoPublicadoDto>;
     expect(isApiOk(result)).toBe(false);
     if (!result.ok) expect(result.problem.status).toBe(404);
+  });
+
+  // ── Escrita ───────────────────────────────────────────────────────────────
+
+  const comando: CriarTipoAtoPublicadoCommand = {
+    codigo: 'RESULTADO_PRELIMINAR',
+    nome: 'Resultado preliminar',
+    congelaConfiguracao: false,
+    unicoPorObjeto: false,
+    efeitoIrreversivel: false,
+    ehResultado: true,
+    vigenciaInicio: '2026-01-01',
+    vigenciaFim: null,
+    baseLegal: null,
+  };
+
+  it('criar envia POST para a rota administrativa com o corpo do comando', async () => {
+    const promise = firstValueFrom(api.criar(comando, new HttpContext()));
+
+    const req = controller.expectOne(`${BASE}/api/publicacoes/admin/tipos-ato`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(comando);
+    expect(req.request.body.ehResultado).toBe(true);
+
+    req.flush(atoSeed.id, { status: 201, statusText: 'Created' });
+    expect(isApiOk((await promise) as ApiResult<string>)).toBe(true);
+  });
+
+  // A ADR-0027 dispensa PUT puro, e a rota não declara o header.
+  it('atualizar envia PUT por id e NÃO manda Idempotency-Key', async () => {
+    const atualizacao: AtualizarTipoAtoPublicadoCommand = { ...comando, id: atoSeed.id };
+    const promise = firstValueFrom(api.atualizar(atoSeed.id, atualizacao));
+
+    const req = controller.expectOne(`${BASE}/api/publicacoes/admin/tipos-ato/${atoSeed.id}`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.has('Idempotency-Key')).toBe(false);
+    // O servidor recusa quando o id do corpo diverge do da rota.
+    expect(req.request.body.id).toBe(atoSeed.id);
+
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
+  });
+
+  it('remover envia DELETE por id', async () => {
+    const promise = firstValueFrom(api.remover(atoSeed.id));
+
+    const req = controller.expectOne(`${BASE}/api/publicacoes/admin/tipos-ato/${atoSeed.id}`);
+    expect(req.request.method).toBe('DELETE');
+
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
+  });
+
+  it('obter busca uma versão pelo id', async () => {
+    const promise = firstValueFrom(api.obter(atoSeed.id));
+
+    const req = controller.expectOne(
+      (request) => request.url === `${BASE}/api/publicacoes/tipos-ato/${atoSeed.id}`,
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('tipo-ato', 1));
+
+    req.flush(atoSeed);
+    const result = (await promise) as ApiResult<TipoAtoPublicadoDto>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('a sobreposição de vigência chega ao chamador como 409 tratável', async () => {
+    const promise = firstValueFrom(api.criar(comando, new HttpContext()));
+
+    controller.expectOne(`${BASE}/api/publicacoes/admin/tipos-ato`).flush(
+      {
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.publicacoes.tipo_ato.vigencia_sobreposta',
+        title: 'Vigência sobreposta',
+        status: 409,
+        code: 'uniplus.publicacoes.tipo_ato.vigencia_sobreposta',
+        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+      },
+      {
+        status: 409,
+        statusText: 'Conflict',
+        // Sem este header o interceptor sintetiza `unexpected_response` em vez de ler o problema.
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+
+    const result = (await promise) as ApiResult<string>;
+    expect(isApiOk(result)).toBe(false);
+    if (!result.ok) {
+      expect(result.problem.code).toBe('uniplus.publicacoes.tipo_ato.vigencia_sobreposta');
+    }
   });
 });

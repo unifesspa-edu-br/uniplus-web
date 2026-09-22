@@ -18,6 +18,7 @@ import {
   extractNextCursor,
   idempotencyKey,
   withIdempotencyKey,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -1409,7 +1410,11 @@ export class PesosEnemPage {
     problem: ProblemDetails,
   ): void {
     const controls = grupo.controls as unknown as Record<PesoCampoComum, AbstractControl>;
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       let aplicouAlgum = false;
       for (const erro of problem.errors) {
         const nome = controlNameFromBackendField(erro.field);

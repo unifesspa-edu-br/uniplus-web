@@ -1,0 +1,31 @@
+.cfg-municipio-busca {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.cfg-municipio-busca__input {
+  position: relative;
+}
+
+.cfg-municipio-busca__input > i {
+  position: absolute;
+  top: 50%;
+  left: var(--space-3);
+  z-index: 1;
+  color: var(--text-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.cfg-municipio-busca__input .input {
+  padding-left: calc(var(--space-3) + 1.25rem);
+}
+
+/* Campo de busca e seletor lado a lado só quando há largura para os dois; em
+   tela estreita a regra de uma coluna acima é que vale. */
+@media (min-width: 720px) {
+  .cfg-municipio-busca {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -19,13 +19,16 @@ import {
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
+  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
+  IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -48,6 +51,10 @@ import {
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 100;
+
+/** Vendor code do DomainError `ReferenciaReservaDemografica.CensoJaExiste` (uniplus-api, 409 Conflict). */
+const RESERVA_DEMOGRAFICA_CENSO_JA_EXISTE_CODE =
+  'uniplus.configuracao.referencia_reserva_demografica.censo_ja_existe';
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -655,7 +662,7 @@ export class ReservaDemograficaListPage {
       const backend = control.errors['backend'] as { code: string; message: string };
       return backend.message;
     }
-    if (control.errors['duplicado']) return 'Censo de referência já cadastrado.';
+    if (control.errors['duplicado']) return 'Já existe uma referência ativa para este Censo.';
     if (control.errors['required']) return 'Campo obrigatório.';
     if (control.errors['min'] || control.errors['max']) return 'Informe um valor entre 0 e 100.';
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
@@ -695,29 +702,43 @@ export class ReservaDemograficaListPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    // Rotação antes de ramificar: a política é única e vale para toda falha, não
+    // só para os códigos que esta tela trata inline.
+    if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarIdempotencyKey();
+    }
+
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
+
     // Conflito de unicidade de Censo (409) — inline no campo censoReferencia.
-    if (
-      problem.status === 409 ||
-      problem.code.includes('censo') ||
-      problem.code.includes('duplic')
-    ) {
-      this.renovarIdempotencyKey();
+    // Só no modo criar: na edição o campo está desabilitado, e um erro ancorado
+    // num controle desabilitado não invalida o formulário nem pode ser corrigido
+    // pelo operador — a mensagem tem de aparecer no alerta do drawer.
+    if (problem.code === RESERVA_DEMOGRAFICA_CENSO_JA_EXISTE_CODE && this.modo() === 'criar') {
+      this.notifications.errorFromProblem(problem);
       const control = this.form.controls.censoReferencia;
       control.setErrors({
-        backend: { code: problem.code, message: 'Censo de referência já cadastrado.' },
+        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
       });
       control.markAsTouched();
       this.formError.set(null);
       return;
     }
-    if (problem.code === 'uniplus.idempotency.body_mismatch') {
-      this.renovarIdempotencyKey();
+
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH
+    ) {
+      this.notifications.errorFromProblem(problem);
     }
+
     this.formError.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);

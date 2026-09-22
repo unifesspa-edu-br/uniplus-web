@@ -5,6 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Subject } from 'rxjs';
 
@@ -62,6 +63,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: GEO_BASE_PATH, useValue: BASE },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -97,11 +99,53 @@ describe('CalendarioDiasUteisDetalhePage', () => {
 
   const botaoDoDia = (data: string): HTMLButtonElement => {
     const botao = (fixture.nativeElement as HTMLElement).querySelector(
-      `button[aria-label*="${data.split('-')[2].replace(/^0/, '')} de "]`,
+      `button.cfg-calendario-mensal__dia--feriado[aria-label^="${data.split('-')[2].replace(/^0/, '')} de "]`,
     );
     if (!botao) throw new Error(`Nenhum botão de dia encontrado para ${data}`);
     return botao as HTMLButtonElement;
   };
+
+
+  const POST_URL = `${BASE}/api/configuracao/admin/calendarios-dias-uteis/${CALENDARIO_ID}/dias-nao-uteis`;
+
+  const botaoDoDiaVazio = (rotuloInicio: string): HTMLButtonElement => {
+    const botao = (fixture.nativeElement as HTMLElement).querySelector(
+      `button.cfg-calendario-mensal__dia:not(.cfg-calendario-mensal__dia--feriado)[aria-label^="${rotuloInicio}"]`,
+    );
+    if (!botao) throw new Error(`Nenhum dia sem ocorrência encontrado para ${rotuloInicio}`);
+    return botao as HTMLButtonElement;
+  };
+
+  const abrirCadastroDoDia = async (rotuloInicio: string): Promise<void> => {
+    botaoDoDiaVazio(rotuloInicio).click();
+    fixture.detectChanges();
+    const abrir = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
+      (b) => b.textContent?.includes('Adicionar feriado'),
+    ) as HTMLButtonElement;
+    abrir.click();
+    fixture.detectChanges();
+    await propagate();
+  };
+
+  const preencherDescricao = (texto: string): void => {
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '[formcontrolname="descricao"]',
+    ) as HTMLInputElement;
+    campo.value = texto;
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  };
+
+  const submeter = (): void => {
+    const adicionar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('dialog button'),
+    ].find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
+    adicionar.click();
+    fixture.detectChanges();
+  };
+
+  const campoDescricao = (): HTMLInputElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('[formcontrolname="descricao"]');
 
   it('exibe erro de carregamento e permite tentar novamente', async () => {
     controller
@@ -339,4 +383,113 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     expect(fixture.componentInstance.drawerVisivel()).toBe(false);
     expect(fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
   });
+
+  it('não herda a descrição da inclusão anterior ao abrir outra data (CA-06/CA-07)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Primeira data');
+    submeter();
+
+    controller.expectOne(POST_URL).flush({
+      id: CALENDARIO_ID,
+      versaoDataset: '2026.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+    // A gravação dispara a recarga do dataset.
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('23 de setembro de 2026');
+
+    expect(campoDescricao()?.value).toBe('');
+    expect(fixture.componentInstance.form.controls.descricao.value).toBe('');
+  });
+
+  it('mantém a grade à vista durante a recarga que sucede a inclusão (CA-13)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    const diasAntes = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      'button.cfg-calendario-mensal__dia',
+    ).length;
+    expect(diasAntes).toBeGreaterThan(0);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Data qualquer');
+    submeter();
+
+    controller.expectOne(POST_URL).flush({
+      id: CALENDARIO_ID,
+      versaoDataset: '2026.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+
+    // Recarga em curso: o dataset novo ainda não chegou.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.cfg-loading')).toBeNull();
+    expect(raiz.querySelectorAll('button.cfg-calendario-mensal__dia').length).toBe(diasAntes);
+
+    await carregar([DIA_ESTADUAL]);
+  });
+
+  it('mostra a recusa por data duplicada no próprio formulário (CA-11)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Repetida');
+    submeter();
+
+    controller.expectOne(POST_URL).flush(
+      mockProblemDetails({
+        status: 422,
+        title: 'Data duplicada',
+        code: 'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset',
+        detail: 'Data duplicada no dataset (mesma abrangência, município e UF).',
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    const dialogo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#cfg-calendario-dias-uteis-form',
+    ) as HTMLElement;
+    expect(dialogo.textContent).toContain('duplicada');
+    expect(dialogo.textContent).toContain('abrangência');
+  });
+
+  it('não se deixa dispensar enquanto a gravação está em curso (CA-16)', async () => {
+    await carregar([DIA_ESTADUAL]);
+
+    await abrirCadastroDoDia('16 de setembro de 2026');
+    preencherDescricao('Em voo');
+    submeter();
+
+    const dialogoDeCadastro = (fixture.nativeElement as HTMLElement)
+      .querySelector('#cfg-calendario-dias-uteis-form')
+      ?.closest('dialog') as HTMLElement;
+    const fechar = [...dialogoDeCadastro.querySelectorAll('button')].find(
+      (b) => b.getAttribute('aria-label') === 'Fechar',
+    ) as HTMLButtonElement;
+    expect(fechar.disabled).toBe(true);
+
+    controller.expectOne(POST_URL).flush({
+      id: CALENDARIO_ID,
+      versaoDataset: '2026.1',
+      vigente: false,
+      criadoEm: '2026-08-13T00:00:00Z',
+      diasNaoUteis: [DIA_ESTADUAL],
+    });
+    await propagate();
+    await carregar([DIA_ESTADUAL]);
+  });
+
 });

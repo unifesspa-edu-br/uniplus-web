@@ -7,6 +7,7 @@ import {
   idempotencyKey,
   isApiOk,
   withIdempotencyKey,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
   ConfiguracaoDistribuicaoVagasInput,
@@ -86,10 +87,19 @@ export type ResultadoEnvio = { readonly ok: true } | EnvioFalhou;
  * que está em tela, e por isso não pode virar mensagem para o operador nem
  * mexer nas chaves do cadastro atual.
  */
+/**
+ * O PUT ao storage não passa pelos interceptors nem pelo contrato REST do Uni+: quem
+ * responde é o object store, e ele recusa assinatura inválida com 403. `STATUS_HTTP`
+ * cataloga o que a `uniplus-api` devolve, e lá 403 é falta de papel na rota — outra
+ * coisa. O nome fica local para não afirmar a autorização da aplicação onde ela não
+ * está em jogo.
+ */
+const STATUS_ASSINATURA_RECUSADA_PELO_STORAGE = 403;
+
 const SUPERADO: ProblemDetails = {
   type: 'about:blank',
   title: 'Operação abandonada ao trocar de processo.',
-  status: 409,
+  status: STATUS_HTTP.CONFLITO,
   code: 'uniplus.client.operacao_superada',
   traceId: '',
 };
@@ -757,7 +767,11 @@ export class CadastroInicialService {
         },
         error: (erro: unknown) => {
           const status = statusDe(erro);
-          resolve({ ok: false, status, expirada: status === 403 });
+          resolve({
+            ok: false,
+            status,
+            expirada: status === STATUS_ASSINATURA_RECUSADA_PELO_STORAGE,
+          });
         },
         complete: () => {
           onProgresso(100);

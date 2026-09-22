@@ -144,4 +144,20 @@ export class CalendarioDiasUteisApi {
       `${this.basePath}/api/configuracao/admin/calendarios-dias-uteis/${encodeURIComponent(id)}`,
     );
   }
+
+  /** POST `/api/configuracao/admin/calendarios-dias-uteis/{id}/dias-nao-uteis` — acrescenta um dia não útil a um calendário já existente. Idempotency-Key obrigatório (ADR-0027). */
+  criaNovaData(
+    id: string,
+    command: DiaNaoUtilCommandItem,
+    context: HttpContext,
+  ): Observable<ApiResult<CalendarioDiasUteisDto>> {
+    return this.http.post<ApiResult<CalendarioDiasUteisDto>>(
+      `${this.basePath}/api/configuracao/admin/calendarios-dias-uteis/${encodeURIComponent(id)}/dias-nao-uteis`,
+      command,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
+  }
 }

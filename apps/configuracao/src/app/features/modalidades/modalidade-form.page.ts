@@ -27,6 +27,7 @@ import {
   idempotencyKey,
   lookupCompleto,
   withIdempotencyKey,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -838,7 +839,11 @@ export class ModalidadeFormPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -847,7 +852,7 @@ export class ModalidadeFormPage {
     // carrega a taxonomia `uniplus.<modulo>.<razao>`, e o código de domínio
     // (`Modalidade.CodigoJaExiste`) é chave de lookup do servidor (`#743`).
     if (
-      problem.status === 409 ||
+      problem.status === STATUS_HTTP.CONFLITO ||
       problem.code === 'uniplus.configuracao.modalidade.codigo_ja_existe'
     ) {
       this.renovarIdempotencyKey();

@@ -61,6 +61,9 @@ export type {
 
 export { SignedUploadClient } from './signed-upload';
 
+export { STATUS_HTTP } from './status-http';
+export type { StatusHttp } from './status-http';
+
 export { ProblemI18nService } from './problem-i18n.service';
 export type {
   ProblemAction,

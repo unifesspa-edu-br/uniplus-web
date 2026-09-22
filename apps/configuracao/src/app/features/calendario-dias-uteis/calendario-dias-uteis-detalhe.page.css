@@ -1,0 +1,85 @@
+.cfg-calendario-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.cfg-calendario-resumo__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.cfg-calendario-resumo__item dt {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.cfg-calendario-resumo__item dd {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  overflow-wrap: anywhere;
+}
+
+/* .uni-drawer__body (DS compartilhado) só tem padding vertical — foi
+   desenhado para .uni-drawer__nav a, que traz o próprio padding
+   horizontal. Conteúdo genérico projetado aqui precisa da margem lateral
+   explicitamente, ou cola nas bordas do painel. */
+.cfg-calendario-mensal__ocorrencia {
+  padding: 0 var(--space-5);
+}
+
+.cfg-calendario-mensal__ocorrencia + .cfg-calendario-mensal__ocorrencia {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cfg-calendario-mensal__ocorrencia h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+  color: var(--text-heading);
+  overflow-wrap: anywhere;
+}
+
+.cfg-calendario-mensal__ocorrencia dl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.cfg-calendario-mensal__ocorrencia dt {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.cfg-calendario-mensal__ocorrencia dd {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Angular remove o espaço em branco insignificante entre os dois <span>
+   do template (preserveWhitespaces: false) — sem isto, o hint de
+   Código IBGE cola visualmente no nome do município. */
+.cfg-calendario-mensal__ocorrencia dd .field__hint {
+  margin-left: var(--space-1);
+}
+
+.cfg-calendario-mensal__actions {
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.cfg-calendario-mensal__ocorrencia-vazia {
+  padding: var(--space-3);
+}

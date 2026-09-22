@@ -69,6 +69,24 @@ describe('TiposEtapaPage', () => {
     await propagate();
   }
 
+  /**
+   * As ações são botões de ícone: não há rótulo visível para procurar, e a posição
+   * dentro da célula muda quando a linha ganha outra ação. O nome acessível é o que
+   * identifica cada uma, e é por ele que o operador de leitor de tela a encontra.
+   */
+  function botaoDeAcao(linha: Element, acao: string): HTMLButtonElement {
+    return linha.querySelector(
+      `td.table-responsive__actions button[aria-label^="${acao} tipo de etapa "]`,
+    ) as HTMLButtonElement;
+  }
+
+  function linhaDe(codigo: string): HTMLElement {
+    const linhas = [...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
+    const linha = linhas.find((l) => l.textContent?.includes(codigo));
+    expect(linha, `linha de ${codigo}`).toBeTruthy();
+    return linha as HTMLElement;
+  }
+
   it('renderiza a lista com o que cada tipo admite, em prosa', async () => {
     await flushLista([analiseDocumental]);
     fixture.detectChanges();
@@ -159,11 +177,16 @@ describe('TiposEtapaPage', () => {
           {
             field: 'admitePontuacao',
             code: 'uniplus.configuracao.tipo_etapa.sem_carater_admitido',
-            message: 'O tipo de etapa deve admitir compor a nota final, eliminar candidato, ou os dois.',
+            message:
+              'O tipo de etapa deve admitir compor a nota final, eliminar candidato, ou os dois.',
           },
         ],
       },
-      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
     );
     await propagate();
 
@@ -180,17 +203,84 @@ describe('TiposEtapaPage', () => {
     await flushLista([analiseDocumental, { ...provaObjetiva, ativo: false }]);
     fixture.detectChanges();
 
-    const linhas = [...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
-    const ativa = linhas.find((l) => l.textContent?.includes('ANALISE_DOCUMENTAL'));
-    const inativa = linhas.find((l) => l.textContent?.includes('PROVA_OBJETIVA'));
+    const ativa = linhaDe('ANALISE_DOCUMENTAL');
+    const inativa = linhaDe('PROVA_OBJETIVA');
 
-    expect(ativa?.textContent).toContain('Ativo');
-    expect(inativa?.textContent).toContain('Inativo');
+    expect(ativa.textContent).toContain('Ativo');
+    expect(inativa.textContent).toContain('Inativo');
 
-    const acoesDaInativa = [...(inativa?.querySelectorAll('button') ?? [])].map((b) =>
-      b.textContent?.trim(),
+    expect(botaoDeAcao(ativa, 'Inativar')).toBeTruthy();
+    expect(botaoDeAcao(inativa, 'Inativar')).toBeNull();
+    expect(botaoDeAcao(inativa, 'Editar').getAttribute('aria-label')).toBe(
+      'Editar tipo de etapa PROVA_OBJETIVA',
     );
-    expect(acoesDaInativa).toEqual(['Editar']);
+  });
+
+  /**
+   * As duas ações deixaram de ser botões de texto com `(click)` próprio e passaram a
+   * delegar ao `ui-icon-button`, que emite `(triggered)`. Acionar pela instância não
+   * exercita essa ligação: sem clicar no DOM, um binding trocado ou ausente passa por
+   * lint, teste e build sem nada acusar.
+   */
+  it('o ícone de editar abre a edição do tipo daquela linha', async () => {
+    await flushLista([analiseDocumental, provaObjetiva]);
+    fixture.detectChanges();
+
+    botaoDeAcao(linhaDe('PROVA_OBJETIVA'), 'Editar').click();
+    await propagate();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.codigo.value).toBe('PROVA_OBJETIVA');
+  });
+
+  it('o ícone de inativar pede confirmação para o tipo daquela linha', async () => {
+    await flushLista([analiseDocumental, provaObjetiva]);
+    fixture.detectChanges();
+
+    botaoDeAcao(linhaDe('PROVA_OBJETIVA'), 'Inativar').click();
+    await propagate();
+
+    expect(component['confirmOpen']()).toBe(true);
+    expect(component['tipoParaRemover']()?.codigo).toBe('PROVA_OBJETIVA');
+  });
+
+  /**
+   * Sem rótulo visível, o glifo é a única pista de qual ação é qual para quem enxerga,
+   * e a dica é o que a nomeia no hover e no foco. Um erro de digitação em qualquer um
+   * dos dois rende um botão mudo que nenhum outro teste percebe.
+   */
+  it('cada ação mostra seu ícone e sua dica', async () => {
+    await flushLista([analiseDocumental]);
+    fixture.detectChanges();
+
+    const linha = linhaDe('ANALISE_DOCUMENTAL');
+    const editar = botaoDeAcao(linha, 'Editar');
+    const inativar = botaoDeAcao(linha, 'Inativar');
+
+    expect(editar.querySelector('i')?.className).toContain('pi-pencil');
+    expect(editar.getAttribute('data-tooltip')).toBe('Editar tipo de etapa');
+    expect(inativar.querySelector('i')?.className).toContain('pi-power-off');
+    expect(inativar.getAttribute('data-tooltip')).toBe('Inativar tipo de etapa');
+  });
+
+  it('as ações ficam indisponíveis enquanto a lista recarrega', async () => {
+    await flushLista([analiseDocumental]);
+    fixture.detectChanges();
+
+    const linha = linhaDe('ANALISE_DOCUMENTAL');
+    expect(botaoDeAcao(linha, 'Editar').disabled).toBe(false);
+    expect(botaoDeAcao(linha, 'Inativar').disabled).toBe(false);
+
+    component['tentarNovamente']();
+    await propagate();
+    fixture.detectChanges();
+
+    const recarregando = linhaDe('ANALISE_DOCUMENTAL');
+    expect(botaoDeAcao(recarregando, 'Editar').disabled).toBe(true);
+    expect(botaoDeAcao(recarregando, 'Inativar').disabled).toBe(true);
+
+    // Encerra o GET em voo para o controller.verify() do afterEach.
+    await flushLista([analiseDocumental]);
   });
 
   it('inativar pede confirmação e chama o DELETE', async () => {

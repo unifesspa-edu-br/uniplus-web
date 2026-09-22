@@ -30,6 +30,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from "@uniplus/shared-core/notifications";
 import {
@@ -602,7 +603,11 @@ export class RecursosAcessibilidadeListPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
@@ -618,7 +623,10 @@ export class RecursosAcessibilidadeListPage {
       this.notifications.errorFromProblem(problem);
       return;
     }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();
     }

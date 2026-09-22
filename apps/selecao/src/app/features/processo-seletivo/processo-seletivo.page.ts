@@ -17,7 +17,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
+import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -70,15 +70,17 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * resultado, então a saída é voltar à listagem. O resto admite retentativa.
  */
 function motivoDe(status: number): MotivoFalhaDeLeitura {
-  if (status === 404) return 'naoEncontrado';
-  if (status === 403 || status === 401) return 'semPermissao';
+  if (status === STATUS_HTTP.NAO_ENCONTRADO) return 'naoEncontrado';
+  if (status === STATUS_HTTP.SEM_PERMISSAO || status === STATUS_HTTP.NAO_AUTENTICADO) {
+    return 'semPermissao';
+  }
   return 'falhaTemporaria';
 }
 
 @Component({
   selector: 'sel-processo-seletivo',
   standalone: true,
-  host: { 'class': 'sel-processo', '(window:beforeunload)': 'aoFecharAJanela($event)' },
+  host: { class: 'sel-processo', '(window:beforeunload)': 'aoFecharAJanela($event)' },
   imports: [
     DatePipe,
     RouterLink,
@@ -438,7 +440,7 @@ export class ProcessoSeletivoPage {
       // ignorância, não ausência — o rascunho pode existir no servidor e a tela não o
       // recebeu. Abrir em branco calado convidaria a gravar por cima do que o operador nunca
       // viu, então o aviso fica, e é ele que dá a chance de recarregar antes de salvar.
-      if (resultado.problem.status !== 404) {
+      if (resultado.problem.status !== STATUS_HTTP.NAO_ENCONTRADO) {
         this.avisoDoRascunho.set(
           'Não foi possível verificar se há rascunho da publicação guardado para este processo. ' +
             'Recarregue antes de salvar: gravar agora substitui o que estiver lá.',
@@ -502,7 +504,11 @@ export class ProcessoSeletivoPage {
     this.salvandoRascunho.set(true);
     this.falhaDoRascunho.set(null);
     const resultado = await firstValueFrom(
-      this.api.salvarRascunhoDaPublicacao(processoId, corpo, this.chaveDoRascunho.contextoPara(corpo)),
+      this.api.salvarRascunhoDaPublicacao(
+        processoId,
+        corpo,
+        this.chaveDoRascunho.contextoPara(corpo),
+      ),
     );
     if (superada()) return;
     this.salvandoRascunho.set(false);

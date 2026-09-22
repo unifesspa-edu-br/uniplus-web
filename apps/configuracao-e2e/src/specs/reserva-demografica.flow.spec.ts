@@ -109,7 +109,12 @@ test.describe('Reserva demográfica — CRUD (#394)', () => {
     await mockApi(page, capturado, [SEED]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page
+      .getByRole('button', {
+        name: `Inativar reserva demográfica do censo ${SEED.censoReferencia}`,
+        exact: true,
+      })
+      .click();
     // confirma no dialog (escopo ao <dialog> para não pegar o botão da linha)
     await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Inativar' }).click();
 

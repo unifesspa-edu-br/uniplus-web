@@ -26,6 +26,7 @@ import {
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -41,6 +42,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -79,6 +81,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
+    IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -173,28 +176,26 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [disabled]="loading() || saving()"
-                      (click)="abrirEdicao(tipo)"
-                    >
-                      Editar
-                    </button>
+                    <ui-icon-button
+                      icon="pi-pencil"
+                      [accessibleName]="'Editar tipo de etapa ' + tipo.codigo"
+                      tooltip="Editar tipo de etapa"
+                      [isDisabled]="loading() || saving()"
+                      (triggered)="abrirEdicao(tipo)"
+                    />
                     @if (tipo.ativo) {
                       <!--
                         Também desabilitado durante uma gravação em voo: o diálogo abriria, a
                         confirmação fecharia, e a inativação seria descartada em silêncio: a
                         remoção desiste enquanto há outra mutação correndo.
                       -->
-                      <button
-                        type="button"
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [disabled]="loading() || saving()"
-                        (click)="pedirRemocao(tipo)"
-                      >
-                        Inativar
-                      </button>
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Inativar tipo de etapa ' + tipo.codigo"
+                        tooltip="Inativar tipo de etapa"
+                        [isDisabled]="loading() || saving()"
+                        (triggered)="pedirRemocao(tipo)"
+                      />
                     }
                   </td>
                 </tr>
@@ -283,7 +284,9 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
                 formControlName="nome"
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
               />
-              <span class="field__hint">Como o tipo aparece para quem monta o processo seletivo.</span>
+              <span class="field__hint"
+                >Como o tipo aparece para quem monta o processo seletivo.</span
+              >
               @if (erroDoCampo('nome')) {
                 <span class="field__error">{{ erroDoCampo('nome') }}</span>
               }
@@ -696,7 +699,11 @@ export class TiposEtapaPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -711,7 +718,10 @@ export class TiposEtapaPage {
       this.form.controls.codigo.markAsTouched();
       return;
     }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);

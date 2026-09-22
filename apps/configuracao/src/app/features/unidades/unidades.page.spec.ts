@@ -238,6 +238,42 @@ describe('UnidadesPage', () => {
     expect(botoesRemover).toHaveLength(2);
   });
 
+  it('não deve pintar o botão Remover de vermelho permanente em nenhum nível, e o Editar segue intocado', async () => {
+    await responderListaUnidades();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const toggleRaiz = compiled.querySelector('.unit-node__toggle') as HTMLButtonElement | null;
+    toggleRaiz!.click();
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const botoesEditar = compiled.querySelectorAll(
+      '.unit-node__actions button[aria-label^="Editar unidade"]',
+    );
+    const botoesRemover = compiled.querySelectorAll(
+      '.unit-node__actions button[aria-label^="Remover unidade"]',
+    );
+
+    expect(botoesEditar).toHaveLength(2);
+    expect(botoesRemover).toHaveLength(2);
+
+    for (const botao of Array.from(botoesRemover)) {
+      expect(botao.classList.contains('btn--tertiary')).toBe(true);
+      expect(botao.classList.contains('btn--danger')).toBe(false);
+      // Sem o fundo vermelho, o glifo é o que resta identificando a ação como
+      // destrutiva — trocá-lo apagaria o último sinal visual da remoção.
+      expect(botao.querySelector('i')?.classList.contains('pi-trash')).toBe(true);
+    }
+
+    for (const botao of Array.from(botoesEditar)) {
+      expect(botao.classList.contains('btn--tertiary')).toBe(true);
+      expect(botao.classList.contains('btn--danger')).toBe(false);
+      expect(botao.querySelector('i')?.classList.contains('pi-pencil')).toBe(true);
+    }
+  });
+
   it('deve permitir expandir e recolher um nó com filhos alterando aria-expanded', async () => {
     await responderListaUnidades();
     const compiled = fixture.nativeElement as HTMLElement;
@@ -304,7 +340,11 @@ describe('UnidadesPage', () => {
     const botaoEditar = compiled.querySelector(
       '.unit-node__actions button[aria-label="Editar unidade REIT"]',
     ) as HTMLButtonElement | null;
+    const botaoRemover = compiled.querySelector(
+      '.unit-node__actions button[aria-label="Remover unidade REIT"]',
+    ) as HTMLButtonElement | null;
     expect(botaoEditar?.disabled).toBe(true);
+    expect(botaoRemover?.disabled).toBe(true);
 
     const reqReload = httpMock.expectOne((r) => r.url.includes('/api/organizacao/unidades'));
     reqReload.flush({ ok: true, data: [mockUnidadeRaiz] });
@@ -316,6 +356,7 @@ describe('UnidadesPage', () => {
 
     expect(component['recarregandoLista']()).toBe(false);
     expect(botaoEditar?.disabled).toBe(false);
+    expect(botaoRemover?.disabled).toBe(false);
   });
 
   it('deve limpar a lista quando o refetch pós-mutação falha na primeira página', async () => {

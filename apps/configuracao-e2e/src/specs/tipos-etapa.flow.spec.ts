@@ -140,7 +140,12 @@ test.describe('Tipo de etapa — CRUD', () => {
     await mockApi(page, capturado, [analiseDocumental]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar' }).first().click();
+    await page
+      .getByRole('button', {
+        name: `Editar tipo de etapa ${analiseDocumental.codigo}`,
+        exact: true,
+      })
+      .click();
     const codigoInput = page.locator('[formControlName="codigo"]');
     await expect(codigoInput).toHaveAttribute('readonly', '');
     await expect(codigoInput).toHaveValue('ANALISE_DOCUMENTAL');
@@ -158,7 +163,12 @@ test.describe('Tipo de etapa — CRUD', () => {
     await mockApi(page, capturado, [analiseDocumental]);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Inativar' }).first().click();
+    await page
+      .getByRole('button', {
+        name: `Inativar tipo de etapa ${analiseDocumental.codigo}`,
+        exact: true,
+      })
+      .click();
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Inativar' }).click();
 

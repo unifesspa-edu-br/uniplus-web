@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
@@ -6,6 +6,9 @@ import type { components } from './schema';
 import { PUBLICACOES_BASE_PATH } from './tokens';
 
 export type TipoAtoPublicadoDto = components['schemas']['TipoAtoPublicadoDto'];
+export type CriarTipoAtoPublicadoCommand = components['schemas']['CriarTipoAtoPublicadoCommand'];
+export type AtualizarTipoAtoPublicadoCommand =
+  components['schemas']['AtualizarTipoAtoPublicadoCommand'];
 
 /** Filtro da listagem do catálogo de tipos de ato (cursor opaco, ADR-0026). */
 export interface TiposAtoQuery {
@@ -26,18 +29,20 @@ export interface TiposAtoQuery {
 }
 
 /**
- * Cliente de leitura do catálogo de tipos de ato publicado.
+ * Cliente do catálogo de tipos de ato publicado.
  *
  * O catálogo importa fora do momento de publicar: uma fase do cronograma que
  * produz resultado declara **qual ato produz**, e a API resolve esse código
  * contra este catálogo já na gravação do cronograma — não na publicação do
  * edital. Sem ele, nenhuma fase que produz resultado é configurável.
  *
- * Os três sinalizadores de `TipoAtoPublicadoDto` são dados lidos, nunca ramos de
- * comportamento (ADR-0103 da API): `congelaConfiguracao` diz se o ato produz
- * nova versão congelada da configuração, `unicoPorObjeto` se o objeto admite um
- * único ato vivo daquele tipo, e `efeitoIrreversivel` se a publicação não pode
- * ser desfeita. Quem consome não ramifica por código de ato.
+ * Os **quatro** sinalizadores de `TipoAtoPublicadoDto` são dados lidos, nunca
+ * ramos de comportamento (ADR-0103 da API): `congelaConfiguracao` diz se o ato
+ * produz nova versão congelada da configuração, `unicoPorObjeto` se o objeto
+ * admite um único ato vivo daquele tipo, `efeitoIrreversivel` se a publicação
+ * não pode ser desfeita, e `ehResultado` se o ato determina a situação do
+ * candidato — é este que habilita o ciclo recursal, e era o que este texto
+ * esquecia. Quem consome não ramifica por código de ato.
  */
 @Injectable({ providedIn: 'root' })
 export class TiposAtoApi {
@@ -66,6 +71,55 @@ export class TiposAtoApi {
     return this.http.get<ApiResult<readonly TipoAtoPublicadoDto[]>>(
       `${this.basePath}/api/publicacoes/tipos-ato`,
       { params, context: withVendorMime('tipo-ato', 1) },
+    );
+  }
+
+  /** GET `/api/publicacoes/tipos-ato/{id}` — uma versão pelo identificador dela. */
+  obter(id: string): Observable<ApiResult<TipoAtoPublicadoDto>> {
+    return this.http.get<ApiResult<TipoAtoPublicadoDto>>(
+      `${this.basePath}/api/publicacoes/tipos-ato/${encodeURIComponent(id)}`,
+      { context: withVendorMime('tipo-ato', 1) },
+    );
+  }
+
+  /**
+   * POST `/api/publicacoes/admin/tipos-ato` — nova versão do catálogo.
+   *
+   * **Exige `Idempotency-Key`**, e por isso recebe o contexto. O `PUT` logo
+   * abaixo **não** exige: a ADR-0027 dispensa `PUT` puro, cuja semântica já é
+   * idempotente. A assimetria é do contrato, não descuido — mandar o header no
+   * `PUT` contraria o que o servidor declara.
+   */
+  criar(
+    command: CriarTipoAtoPublicadoCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/publicacoes/admin/tipos-ato`,
+      command,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/publicacoes/admin/tipos-ato/{id}` — substitui uma versão.
+   *
+   * O corpo reapresenta o `id`, e o servidor recusa quando ele diverge do que
+   * está na rota. O `codigo` é **imutável**: é a identidade da série de
+   * vigências, e o agregado recusa qualquer divergência — o payload o
+   * reapresenta igual.
+   */
+  atualizar(id: string, command: AtualizarTipoAtoPublicadoCommand): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/publicacoes/admin/tipos-ato/${encodeURIComponent(id)}`,
+      command,
+    );
+  }
+
+  /** DELETE `/api/publicacoes/admin/tipos-ato/{id}` — remove uma versão da série. */
+  remover(id: string): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(
+      `${this.basePath}/api/publicacoes/admin/tipos-ato/${encodeURIComponent(id)}`,
     );
   }
 

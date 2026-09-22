@@ -304,6 +304,12 @@ cfg-pesos-enem-page {
   max-width: min(480px, 100vw);
 }
 
+/*
+ * O body é padding: 0 + overflow: hidden de propósito: quem rola é o .cfg-form
+ * e o .cfg-form-footer fica como barra full-bleed ancorada no fundo do painel,
+ * com o border-top atravessando a largura toda. Dar padding ao body recua essa
+ * barra e quebra as 21 páginas do módulo que a usam.
+ */
 .cfg-form-drawer .uni-drawer__body {
   display: flex;
   flex-direction: column;
@@ -312,6 +318,11 @@ cfg-pesos-enem-page {
   padding: 0;
 }
 
+/*
+ * Único container de rolagem do drawer de formulário, e quem carrega o recuo
+ * do conteúdo. Alerta, aviso e seções de campos vão dentro do <form> para
+ * receberem esse recuo — fora dele ficam colados na borda do painel.
+ */
 .cfg-form {
   display: flex;
   flex: 1 1 auto;
@@ -319,6 +330,29 @@ cfg-pesos-enem-page {
   gap: var(--space-6);
   min-height: 0;
   overflow-y: auto;
+  padding: var(--space-5);
+}
+
+/*
+ * Drawer de detalhe (Ofertas de curso): não tem formulário nem rodapé
+ * full-bleed, então mantém a rolagem no body — o default do design system
+ * (components.css: .uni-drawer__body { overflow-y: auto }) — e só acrescenta o
+ * recuo lateral que o default não traz. Lá o padding horizontal é zero porque
+ * o default atende o drawer de navegação mobile, cujas linhas são full-bleed.
+ */
+.cfg-detail-drawer .uni-drawer__panel {
+  /*
+   * Largura fluida, sem o degrau de breakpoint do drawer de formulário: no
+   * piso de 320px ocupa o painel inteiro e daí cresce com a viewport até o
+   * teto de 760px, que é o limite de linha legível do módulo.
+   */
+  max-width: clamp(20rem, 55vw, 47.5rem);
+}
+
+.cfg-detail-drawer .uni-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
   padding: var(--space-5);
 }
 
@@ -430,10 +464,6 @@ cfg-pesos-enem-page {
 
 @media (min-width: 1200px) {
   .cfg-form-drawer .uni-drawer__panel {
-    max-width: min(760px, 100vw);
-  }
-
-  .cfg-ofertas-drawer .uni-drawer__panel {
     max-width: min(760px, 100vw);
   }
 
@@ -805,4 +835,15 @@ cfg-pesos-enem-page {
     justify-content: space-between;
     gap: var(--space-5);
   }
+}
+
+/* Tipo de ato */
+.cfg-tipos-ato__historico {
+  padding: 0 var(--space-5) var(--space-4);
+}
+
+/* Duas ações de 44px não cabem no padding da célula quando a linha tem cinco
+   colunas, e a quebra empilha os botões dobrando a altura da linha. */
+.cfg-tipos-ato__acoes {
+  flex-wrap: nowrap;
 }

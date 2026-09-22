@@ -29,6 +29,7 @@ import {
   withIdempotencyKey,
   withVendorMime,
   CursorPagina,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -246,15 +247,6 @@ interface CursoForm {
       ariaLabel="Formulário de curso"
       position="right"
     >
-      @if (formError()) {
-        <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
-      }
-
-      <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
-        Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à
-        Oferta de Curso, não ao Curso.
-      </ui-alert>
-
       <form
         [formGroup]="form"
         id="cfg-curso-form"
@@ -262,6 +254,13 @@ interface CursoForm {
         novalidate
         class="cfg-form"
       >
+        @if (formError()) {
+          <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
+        }
+        <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
+          Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à
+          Oferta de Curso, não ao Curso.
+        </ui-alert>
         <section aria-labelledby="cfg-curso-identificacao">
           <h3 id="cfg-curso-identificacao" class="form-section__title">Dados curriculares</h3>
           <div class="form-grid form-grid--1col">
@@ -374,7 +373,7 @@ interface CursoForm {
     />
 
     <ui-drawer
-      class="cfg-ofertas-drawer"
+      class="cfg-detail-drawer"
       [(visible)]="ofertasOpen"
       [heading]="ofertasHeading()"
       ariaLabel="Ofertas de curso do curso selecionado"
@@ -413,7 +412,7 @@ interface CursoForm {
       }
 
       @if (ofertas().length > 0) {
-        <ul class="cfg-ofertas-list">
+        <ul class="cfg-ofertas-list" role="list">
           @for (oferta of ofertas(); track oferta.id) {
             <li class="cfg-ofertas-list__item">
               <p class="cfg-ofertas-list__unidade">
@@ -445,6 +444,7 @@ interface CursoForm {
     </ui-drawer>
   `,
   host: { class: 'cfg-page' },
+  styleUrl: './cursos.page.css',
 })
 export class CursosPage {
   private readonly api = inject(CursosApi);
@@ -658,7 +658,7 @@ export class CursosPage {
       const { title, detail } = this.problemI18n.resolve(problem);
       // 422 de `q`: a API nomeia o motivo (e, para `sort`, o campo recusado e os
       // aceitos) no `detail` — é o texto que o operador precisa para corrigir.
-      return problem.status === 422 && detail ? detail : title;
+      return problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && detail ? detail : title;
     }
     return this.lista.error() ? 'Erro inesperado ao carregar cursos.' : null;
   });
@@ -866,7 +866,7 @@ export class CursosPage {
         // oferta viva. Em vez de só reexibir o texto, fecha o confirm e abre o
         // drawer de Ofertas com o preview das ofertas que bloqueiam a remoção
         // (issue #435, CA2) — o operador vê exatamente o que impede a exclusão.
-        if (result.problem.status === 409) {
+        if (result.problem.status === STATUS_HTTP.CONFLITO) {
           this.confirmOpen.set(false);
           this.cursoParaRemover.set(null);
           this.ofertasBloqueio.set(titulo);
@@ -980,7 +980,11 @@ export class CursosPage {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.status === 422 && problem.errors && problem.errors.length > 0) {
+    if (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      problem.errors &&
+      problem.errors.length > 0
+    ) {
       this.renovarIdempotencyKey();
       this.aplicarErrosDeValidacao(problem.errors);
       return;
@@ -996,7 +1000,10 @@ export class CursosPage {
       this.form.controls.codigo.markAsTouched();
       return;
     }
-    if (problem.status === 409 || problem.code === 'uniplus.idempotency.body_mismatch') {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === 'uniplus.idempotency.body_mismatch'
+    ) {
       this.renovarIdempotencyKey();
     }
     this.formError.set(this.problemI18n.resolve(problem).title);

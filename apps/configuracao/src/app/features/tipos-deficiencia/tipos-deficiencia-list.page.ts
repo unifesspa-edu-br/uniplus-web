@@ -25,6 +25,7 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
+  STATUS_HTTP,
   useApiResource,
   withIdempotencyKey,
   withVendorMime,
@@ -751,7 +752,10 @@ export class TiposDeficienciaListPage {
       return;
     }
 
-    if (problem.status === 409 || problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH) {
+    if (
+      problem.status === STATUS_HTTP.CONFLITO ||
+      problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH
+    ) {
       this.notifications.errorFromProblem(problem);
     }
 
