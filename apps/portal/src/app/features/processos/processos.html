@@ -1,13 +1,14 @@
 @if (destaque(); as certameDestaque) {
   <section class="portal-hero" aria-labelledby="portal-hero-title">
     <div class="portal-hero__content">
-      <ui-tag [variant]="statusVariant(certameDestaque.status)" [solid]="true">
-        {{ statusLabel(certameDestaque.status) }}
+      <ui-tag [variant]="statusVariant(certameDestaque.situacao)" [solid]="true">
+        {{ statusLabel(certameDestaque.situacao) }}
       </ui-tag>
-      <h1 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.titulo }}</h1>
+      <h1 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.nome }}</h1>
       <p class="portal-hero__desc">
-        As inscrições vão até <strong>{{ certameDestaque.encerraEm | dateBr: 'long' }}</strong>. Você
-        pode se inscrever em 5 etapas curtas e voltar quando quiser para concluir.
+        As inscrições vão até
+        <strong>{{ certameDestaque.inscricoesAte | dateBr: 'long' }}</strong>. Você pode se
+        inscrever em 5 etapas curtas e voltar quando quiser para concluir.
       </p>
       <div class="portal-hero__actions">
         <a class="btn btn--primary btn--lg" routerLink="/inscricao">
@@ -64,8 +65,8 @@
       @if (carregando()) {
         Carregando certames…
       } @else {
-        {{ totalFiltrados() }}
-        {{ totalFiltrados() === 1 ? 'certame encontrado' : 'certames encontrados' }}
+        {{ certames().length }}
+        {{ certames().length === 1 ? 'certame nesta página' : 'certames nesta página' }}
       }
     </span>
     @if (!isCompacto()) {
@@ -80,9 +81,9 @@
 
   <ui-filter-bar
     ariaLabel="Buscar certames"
-    searchPlaceholder="Buscar por edital, modalidade, curso..."
-    searchAriaLabel="Buscar por edital, modalidade ou curso"
-    [(searchValue)]="busca"
+    searchPlaceholder="Buscar por edital ou título..."
+    searchAriaLabel="Buscar por edital ou título"
+    [(searchValue)]="termoBusca"
     secondaryRole="group"
     secondaryAriaLabel="Filtrar certames"
   >
@@ -101,15 +102,7 @@
         <ui-filter-chips
           ariaLabel="Filtrar por situação"
           [options]="statusChips()"
-          [(selected)]="statusSelecionado"
-        />
-      </div>
-      <div class="certames-filter-group">
-        <span class="u-eyebrow">Modalidade</span>
-        <ui-filter-chips
-          ariaLabel="Filtrar por modalidade"
-          [options]="modalidadeChips()"
-          [(selected)]="modalidadeSelecionada"
+          [(selected)]="situacaoSelecionada"
         />
       </div>
     </ng-container>
@@ -120,24 +113,25 @@
       <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
       Carregando certames…
     </div>
-  } @else if (itensPagina().length > 0) {
+  } @else if (certames().length > 0) {
     @if (visaoEfetiva() === 'lista') {
       <ul class="certames-list" role="list">
-        @for (certame of itensPagina(); track certame.id) {
+        @for (certame of certames(); track certame.processoSeletivoId) {
           <li class="edital-row">
             <div class="edital-row__body">
               <div class="edital-row__head">
-                <ui-tag [variant]="statusVariant(certame.status)" [solid]="true">
-                  {{ statusLabel(certame.status) }}
+                <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
+                  {{ statusLabel(certame.situacao) }}
                 </ui-tag>
-                <span class="card__meta">{{ certame.numero }}</span>
-                <ui-tag>{{ certame.modalidadeLabel }}</ui-tag>
+                @if (certame.numero) {
+                  <span class="card__meta">{{ certame.numero }}</span>
+                }
+                <ui-tag>{{ certame.tipoProcesso.nome }}</ui-tag>
               </div>
-              <h3 class="edital-row__title">{{ certame.titulo }}</h3>
-              <p class="edital-row__desc">{{ certame.resumo }}</p>
+              <h3 class="edital-row__title">{{ certame.nome }}</h3>
               <div class="edital-row__meta">
-                <span><strong>Encerra:</strong> {{ certame.encerraEm | dateBr: 'shortMonth' }}</span>
-                <span><strong>Vagas:</strong> {{ certame.vagas }}</span>
+                <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
+                <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
               </div>
             </div>
             <div class="edital-row__actions">
@@ -151,22 +145,23 @@
       </ul>
     } @else {
       <div class="certames-grid">
-        @for (certame of itensPagina(); track certame.id) {
+        @for (certame of certames(); track certame.processoSeletivoId) {
           <article class="card">
             <div class="card__header">
-              <ui-tag [variant]="statusVariant(certame.status)" [solid]="true">
-                {{ statusLabel(certame.status) }}
+              <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
+                {{ statusLabel(certame.situacao) }}
               </ui-tag>
-              <span class="card__meta">{{ certame.numero }}</span>
+              @if (certame.numero) {
+                <span class="card__meta">{{ certame.numero }}</span>
+              }
             </div>
-            <h3 class="card__title">{{ certame.titulo }}</h3>
-            <p class="card__desc">{{ certame.resumo }}</p>
+            <h3 class="card__title">{{ certame.nome }}</h3>
             <div class="edital-row__meta">
-              <span><strong>Encerra:</strong> {{ certame.encerraEm | dateBr: 'shortMonth' }}</span>
-              <span><strong>Vagas:</strong> {{ certame.vagas }}</span>
+              <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
+              <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
             </div>
             <div class="card__footer">
-              <ui-tag variant="neutral">{{ certame.modalidadeLabel }}</ui-tag>
+              <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
               <a class="btn btn--primary btn--sm" routerLink="/inscricao">
                 <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
                 Inscrever-me
@@ -179,10 +174,10 @@
 
     <ui-list-footer
       navigationLabel="Paginação de certames"
-      [statusText]="statusPaginacao()"
-      [hasRows]="itensPagina().length > 0"
+      [hasRows]="certames().length > 0"
       [hasPrevious]="hasPrevious()"
       [hasNext]="hasNext()"
+      [isDisabled]="carregando()"
       (previous)="paginaAnterior()"
       (next)="proximaPagina()"
     />

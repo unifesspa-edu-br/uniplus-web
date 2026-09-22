@@ -24,15 +24,11 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
 
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('main')).toBeVisible();
-    // O hero é derivado do certame marcado `destaque: true` no mock — checa
-    // a estrutura (um único h1), não o texto, pra não acoplar o teste ao
-    // literal (achado de revisão, issue #776).
+    // O hero é derivado do primeiro certame da vitrine (dado real, via API) —
+    // checa a estrutura (um único h1), não o texto, pra não acoplar o teste a
+    // um título de seed que varia por ambiente (achado de revisão, issue #776).
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Editais', level: 2 })).toBeVisible();
-    // Primeiro item da lista após o CA-01 (situação, depois prazo mais próximo).
-    await expect(
-      page.getByRole('heading', { name: 'Pós-graduação em Educação', level: 3 }),
-    ).toBeVisible();
     await expect(page.locator('.institutional-bar')).toBeVisible();
     await expect(page.locator('.gov-bar')).toHaveCount(0);
 

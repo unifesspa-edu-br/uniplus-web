@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -5,9 +6,30 @@ import {
   computed,
   effect,
   inject,
+  linkedSignal,
   signal,
+  untracked,
 } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
+import {
+  ApiResult,
+  Cursor,
+  CursorPagina,
+  ProblemI18nService,
+  cursorToString,
+  extractNextCursor,
+  extractPrevCursor,
+  useApiResource,
+  useCursorObsoletoRecovery,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
+import {
+  CertameNaVitrineDto,
+  SELECAO_BASE_PATH,
+  SituacaoDoCertame,
+} from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
   EmptyStateComponent,
@@ -24,8 +46,6 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
-type CertameStatus = 'aberto' | 'ultimos-dias' | 'encerrado';
-type CertameModalidade = 'graduacao' | 'pos-graduacao' | 'vagas-reservadas' | 'cursos-tecnicos';
 type VisaoCertames = 'lista' | 'cards';
 
 interface PassoComoFunciona {
@@ -57,39 +77,32 @@ const PASSOS: readonly PassoComoFunciona[] = [
   },
 ];
 
-interface Certame {
-  readonly id: string;
-  readonly numero: string;
-  readonly titulo: string;
-  readonly resumo: string;
-  readonly status: CertameStatus;
-  readonly modalidade: CertameModalidade;
-  readonly modalidadeLabel: string;
-  /** ISO (aaaa-mm-dd) — precisa ser ordenável, não só exibível (ver `compararPorUrgencia`). */
-  readonly encerraEm: string;
-  readonly vagas: string;
-  /** Certame exibido no hero de destaque. No máximo um `true` no conjunto. */
-  readonly destaque?: boolean;
+/** Ordem de exibição dos chips — não é a ordem alfabética do enum gerado. */
+const SITUACOES_EXIBIDAS: readonly SituacaoDoCertame[] = [
+  SituacaoDoCertame.emBreve,
+  SituacaoDoCertame.inscricoesAbertas,
+  SituacaoDoCertame.ultimosDias,
+  SituacaoDoCertame.encerradas,
+];
+
+const SITUACAO_LABEL: Record<SituacaoDoCertame, string> = {
+  [SituacaoDoCertame.emBreve]: 'Em breve',
+  [SituacaoDoCertame.inscricoesAbertas]: 'Inscrições abertas',
+  [SituacaoDoCertame.ultimosDias]: 'Últimos dias',
+  [SituacaoDoCertame.encerradas]: 'Encerrado',
+};
+
+const SITUACAO_VARIANT: Record<SituacaoDoCertame, UiTagVariant> = {
+  [SituacaoDoCertame.emBreve]: 'info',
+  [SituacaoDoCertame.inscricoesAbertas]: 'success',
+  [SituacaoDoCertame.ultimosDias]: 'warning',
+  [SituacaoDoCertame.encerradas]: 'neutral',
+};
+
+/** Contagem por situação (headers `X-Certames-*`, só vem com `incluir_contadores=true`). */
+interface ContadoresSituacao {
+  readonly [situacao: string]: number;
 }
-
-const STATUS_LABEL: Record<CertameStatus, string> = {
-  aberto: 'Inscrições abertas',
-  'ultimos-dias': 'Últimos dias',
-  encerrado: 'Encerrado',
-};
-
-const STATUS_VARIANT: Record<CertameStatus, UiTagVariant> = {
-  aberto: 'success',
-  'ultimos-dias': 'warning',
-  encerrado: 'neutral',
-};
-
-const MODALIDADE_LABEL: Record<CertameModalidade, string> = {
-  graduacao: 'Graduação',
-  'pos-graduacao': 'Pós-graduação',
-  'vagas-reservadas': 'Vagas reservadas',
-  'cursos-tecnicos': 'Cursos técnicos',
-};
 
 const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
   { value: 'lista', label: 'Lista', icon: 'pi-list' },
@@ -99,145 +112,13 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
 /** Abaixo desta largura a lista é a forma canônica (decisão do design system). */
 const COMPACT_MEDIA_QUERY = '(max-width: 599.98px)';
 
-const PAGE_SIZE = 5;
+/** Janela da vitrine por página (cursor pagination, ADR-0026). */
+const PAGE_SIZE = 10;
+
+/** Debounce da busca textual — uma request por rajada de digitação, não por tecla. */
+const BUSCA_DEBOUNCE_MS = 300;
 
 const VISAO_STORE_KEY = 'uniplus.portal.certames-visao';
-
-/**
- * Dados de exemplo — ainda não existe endpoint público de certames (só o
- * client administrativo `ProcessosSeletivosApi`, sem filtros de busca).
- * Troque `carregarCertames()` por uma chamada real quando o endpoint existir.
- */
-const CERTAMES_MOCK: readonly Certame[] = [
-  {
-    id: 'sisu-2026-1',
-    numero: 'Edital 12/2026',
-    titulo: 'SISU 2026.1 — Cursos de graduação',
-    resumo:
-      'Sistema de Seleção Unificada para vagas remanescentes da UNIFESSPA, semestre 2026.1. ' +
-      'Inclui modalidades de ampla concorrência e cotas PPI, escola pública e PcD.',
-    status: 'aberto',
-    modalidade: 'graduacao',
-    modalidadeLabel: MODALIDADE_LABEL.graduacao,
-    encerraEm: '2026-04-16',
-    vagas: '1.234',
-    destaque: true,
-  },
-  {
-    id: 'pos-educacao-2026',
-    numero: 'Edital 09/2026',
-    titulo: 'Pós-graduação em Educação',
-    resumo:
-      'Mestrado e doutorado — Programa de Pós-Graduação em Educação na Amazônia, com linhas de ' +
-      'pesquisa em educação indígena, formação de professores e políticas públicas.',
-    status: 'ultimos-dias',
-    modalidade: 'pos-graduacao',
-    modalidadeLabel: MODALIDADE_LABEL['pos-graduacao'],
-    encerraEm: '2026-03-22',
-    vagas: '47',
-  },
-  {
-    id: 'vestibular-indigena-2026',
-    numero: 'Edital 04/2026',
-    titulo: 'Vestibular Indígena 2026',
-    resumo:
-      'Vagas reservadas para candidatos autodeclarados indígenas. Inscrição em modalidade ' +
-      'específica, com etapas adaptadas para comunidades originárias do Sul e Sudeste do Pará.',
-    status: 'aberto',
-    modalidade: 'vagas-reservadas',
-    modalidadeLabel: MODALIDADE_LABEL['vagas-reservadas'],
-    encerraEm: '2026-04-30',
-    vagas: '86',
-  },
-  {
-    id: 'tecnico-informatica-2026',
-    numero: 'Edital 15/2026',
-    titulo: 'Técnico em Informática',
-    resumo:
-      'Curso técnico integrado, oferta noturna, com aulas práticas em laboratório e estágio ' +
-      'supervisionado no último semestre.',
-    status: 'aberto',
-    modalidade: 'cursos-tecnicos',
-    modalidadeLabel: MODALIDADE_LABEL['cursos-tecnicos'],
-    encerraEm: '2026-05-10',
-    vagas: '120',
-  },
-  {
-    id: 'mestrado-computacao-2026',
-    numero: 'Edital 11/2026',
-    titulo: 'Mestrado em Ciência da Computação',
-    resumo:
-      'Programa de Pós-Graduação stricto sensu, linhas de pesquisa em inteligência artificial, ' +
-      'sistemas distribuídos e engenharia de software.',
-    status: 'aberto',
-    modalidade: 'pos-graduacao',
-    modalidadeLabel: MODALIDADE_LABEL['pos-graduacao'],
-    encerraEm: '2026-05-05',
-    vagas: '30',
-  },
-  {
-    id: 'tecnico-enfermagem-2026',
-    numero: 'Edital 07/2026',
-    titulo: 'Técnico em Enfermagem',
-    resumo:
-      'Curso técnico subsequente, oferta vespertina, com estágio em unidades de saúde parceiras ' +
-      'da rede municipal.',
-    status: 'ultimos-dias',
-    modalidade: 'cursos-tecnicos',
-    modalidadeLabel: MODALIDADE_LABEL['cursos-tecnicos'],
-    encerraEm: '2026-03-25',
-    vagas: '60',
-  },
-  {
-    id: 'vestibular-quilombola-2026',
-    numero: 'Edital 02/2026',
-    titulo: 'Vestibular Quilombola 2026',
-    resumo:
-      'Vagas reservadas para candidatos autodeclarados quilombolas, com etapas de heteroidentificação ' +
-      'e cronograma próprio.',
-    status: 'encerrado',
-    modalidade: 'vagas-reservadas',
-    modalidadeLabel: MODALIDADE_LABEL['vagas-reservadas'],
-    encerraEm: '2026-02-15',
-    vagas: '40',
-  },
-  {
-    id: 'sisu-2025-2-remanescente',
-    numero: 'Edital 28/2025',
-    titulo: 'SISU 2025.2 — Vagas remanescentes',
-    resumo:
-      'Chamada complementar para preenchimento de vagas remanescentes do semestre 2025.2, cursos ' +
-      'de graduação diversos.',
-    status: 'encerrado',
-    modalidade: 'graduacao',
-    modalidadeLabel: MODALIDADE_LABEL.graduacao,
-    encerraEm: '2026-01-20',
-    vagas: '300',
-  },
-];
-
-function grupoUrgencia(status: CertameStatus): number {
-  return status === 'encerrado' ? 1 : 0;
-}
-
-/**
- * Abertos e em últimos dias antes de encerrados; dentro de cada grupo, prazo
- * mais próximo primeiro (CA-01 da story #776 — "quem encerra antes no topo").
- * `encerraEm` em ISO ordena cronologicamente por comparação de string.
- */
-function compararPorUrgencia(a: Certame, b: Certame): number {
-  const grupo = grupoUrgencia(a.status) - grupoUrgencia(b.status);
-  return grupo !== 0 ? grupo : a.encerraEm.localeCompare(b.encerraEm);
-}
-
-/** Mesmo tratamento de diacríticos já usado em `unidades.page.ts` — sem isso,
- * buscar "tecnico" ou "graduacao" (sem acento) não encontra nada. */
-function normalizar(texto: string): string {
-  return texto
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase('pt-BR');
-}
 
 function readVisao(): VisaoCertames {
   try {
@@ -256,12 +137,19 @@ function writeVisao(visao: VisaoCertames): void {
   }
 }
 
+function numeroDoHeader(headers: { get(name: string): string | null } | undefined, nome: string): number {
+  const valor = Number(headers?.get(nome));
+  return Number.isFinite(valor) ? valor : 0;
+}
+
 /**
- * Lista de certames do portal público (issue #779) — busca, filtros por
- * situação/modalidade com contadores, paginação e três estados (carregando,
- * vazio, erro). Abaixo de 600px a lista é a forma canônica: o controle de
- * alternância some e a visão fica travada em "lista", independente da
- * preferência lembrada (ADR de design system referenciada na issue).
+ * Vitrine pública de certames (issue #779) — consome `GET /api/selecao/certames`
+ * do módulo Seleção (ADR-0131/ADR-0133 da `uniplus-api`; anônimo, sem passar
+ * pela `portal-api`, que ainda é esqueleto). Busca e situação viram parâmetros
+ * de request; contadores dos chips vêm dos headers `X-Certames-*`; paginação é
+ * por cursor opaco (Anterior/Próximo, sem "Página X de Y" — o contrato não
+ * expõe total). Abaixo de 600px a lista é a forma canônica: o controle de
+ * alternância some e a visão fica travada em "lista".
  */
 @Component({
   selector: 'ptl-processos',
@@ -286,19 +174,134 @@ function writeVisao(visao: VisaoCertames): void {
 })
 export class ProcessosComponent {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly basePath = inject(SELECAO_BASE_PATH);
+  private readonly problemI18n = inject(ProblemI18nService);
 
   protected readonly viewOptions = VIEW_OPTIONS;
   protected readonly passos = PASSOS;
 
-  protected readonly carregando = signal(true);
-  protected readonly erro = signal<string | null>(null);
-  protected readonly certames = signal<readonly Certame[]>([]);
-
-  protected readonly busca = signal('');
-  protected readonly statusSelecionado = signal<string | null>(null);
-  protected readonly modalidadeSelecionada = signal<string | null>(null);
+  /** Valor bruto do campo de busca — o que o `ui-filter-bar` lê/escreve a cada tecla. */
+  protected readonly termoBusca = signal('');
+  protected readonly situacaoSelecionada = signal<string | null>(null);
   protected readonly visao = signal<VisaoCertames>(readVisao());
-  protected readonly paginaAtual = signal(0);
+
+  /** Termo aplicado à busca server-side (`?q=`) — debounced: uma request por rajada. */
+  private readonly buscaAplicada = toSignal(
+    toObservable(this.termoBusca).pipe(
+      map((termo) => termo.trim()),
+      debounceTime(BUSCA_DEBOUNCE_MS),
+      distinctUntilChanged(),
+    ),
+    { initialValue: '' },
+  );
+
+  /** Chave do filtro vigente — fonte do reset de paginação (o cursor carrega o filtro antigo). */
+  private readonly filtroKey = computed(() =>
+    JSON.stringify([this.buscaAplicada(), this.situacaoSelecionada()]),
+  );
+
+  /** Página de navegação atual (`undefined` = primeira). Volta à primeira quando o filtro muda. */
+  private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
+    source: () => this.filtroKey(),
+    computation: () => undefined,
+  });
+
+  private readonly lista = useApiResource<readonly CertameNaVitrineDto[]>(() => ({
+    url: `${this.basePath}/api/selecao/certames`,
+    params: this.montarParams(),
+    context: withVendorMime('certame', 1),
+  }));
+
+  protected readonly carregando = this.lista.isLoading;
+
+  private readonly cursores = linkedSignal<
+    ApiResult<readonly CertameNaVitrineDto[]> | undefined,
+    { readonly prev: Cursor | null; readonly next: Cursor | null }
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? { prev: null, next: null };
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.pagina() === undefined);
+      if (!envelope.ok) {
+        return primeiraPagina ? { prev: null, next: null } : atual;
+      }
+      const link = untracked(() => this.lista.headers()?.get('Link') ?? null);
+      return { prev: extractPrevCursor(link), next: extractNextCursor(link) };
+    },
+  });
+
+  protected readonly hasPrevious = computed(() => this.cursores().prev !== null);
+  protected readonly hasNext = computed(() => this.cursores().next !== null);
+
+  protected readonly certames = linkedSignal<
+    ApiResult<readonly CertameNaVitrineDto[]> | undefined,
+    readonly CertameNaVitrineDto[]
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? [];
+      if (envelope === undefined) {
+        return atual;
+      }
+      const primeiraPagina = untracked(() => this.pagina() === undefined);
+      if (!envelope.ok) {
+        return primeiraPagina ? [] : atual;
+      }
+      return envelope.data;
+    },
+  });
+
+  /** Contadores dos chips de situação — sempre pedidos, cobrem a vitrine inteira, não só a página. */
+  private readonly contadores = linkedSignal<
+    ApiResult<readonly CertameNaVitrineDto[]> | undefined,
+    ContadoresSituacao | null
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? null;
+      if (envelope === undefined || !envelope.ok) {
+        return atual;
+      }
+      const headers = untracked(() => this.lista.headers());
+      return {
+        [SituacaoDoCertame.emBreve]: numeroDoHeader(headers, 'X-Certames-Em-Breve'),
+        [SituacaoDoCertame.inscricoesAbertas]: numeroDoHeader(headers, 'X-Certames-Inscricoes-Abertas'),
+        [SituacaoDoCertame.ultimosDias]: numeroDoHeader(headers, 'X-Certames-Ultimos-Dias'),
+        [SituacaoDoCertame.encerradas]: numeroDoHeader(headers, 'X-Certames-Encerrados'),
+      };
+    },
+  });
+
+  protected readonly statusChips = computed<readonly UiFilterChipOption[]>(() => {
+    const contadores = this.contadores();
+    return SITUACOES_EXIBIDAS.map((situacao) => ({
+      value: situacao,
+      label: SITUACAO_LABEL[situacao],
+      count: contadores?.[situacao],
+    }));
+  });
+
+  /**
+   * Certame do hero — só na primeira página sem filtro ativo (a API já ordena
+   * por urgência por padrão, então o primeiro item é o mais urgente).
+   */
+  protected readonly destaque = computed<CertameNaVitrineDto | null>(() => {
+    if (
+      this.pagina() !== undefined ||
+      this.buscaAplicada().length > 0 ||
+      this.situacaoSelecionada() !== null
+    ) {
+      return null;
+    }
+    return this.certames()[0] ?? null;
+  });
+
+  protected readonly temFiltrosAtivos = computed(
+    () => this.buscaAplicada().length > 0 || this.situacaoSelecionada() !== null,
+  );
 
   /** Detecta a largura canônica de lista (<600px) via matchMedia (ADR-0002-like). */
   protected readonly isCompacto = signal(this.mediaCompacta()?.matches ?? false);
@@ -308,95 +311,46 @@ export class ProcessosComponent {
     this.isCompacto() ? 'lista' : this.visao(),
   );
 
-  private readonly porBuscaEModalidade = computed(() =>
-    this.certames()
-      .filter((certame) => this.combinaBusca(certame))
-      .filter((certame) => this.combinaModalidade(certame)),
-  );
-
-  private readonly porBuscaEStatus = computed(() =>
-    this.certames()
-      .filter((certame) => this.combinaBusca(certame))
-      .filter((certame) => this.combinaStatus(certame)),
-  );
-
-  protected readonly statusChips = computed<readonly UiFilterChipOption[]>(() => {
-    const base = this.porBuscaEModalidade();
-    return (Object.keys(STATUS_LABEL) as CertameStatus[]).map((status) => ({
-      value: status,
-      label: STATUS_LABEL[status],
-      count: base.filter((certame) => certame.status === status).length,
-    }));
+  // Cursor que não continua esta consulta (400) ou que expirou (410): recomeça
+  // a paginação sem cursor. Sem aviso ao candidato — o portal não tem um host
+  // de notificação global (diferente dos apps administrativos), e para uma
+  // navegação pública somente-leitura recarregar em silêncio do começo é uma
+  // degradação aceitável, não uma perda de trabalho.
+  private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    reiniciarPagina: () => this.pagina.set(undefined),
+    aoRecuperar: () => undefined,
   });
 
-  protected readonly modalidadeChips = computed<readonly UiFilterChipOption[]>(() => {
-    const base = this.porBuscaEStatus();
-    return (Object.keys(MODALIDADE_LABEL) as CertameModalidade[]).map((modalidade) => ({
-      value: modalidade,
-      label: MODALIDADE_LABEL[modalidade],
-      count: base.filter((certame) => certame.modalidade === modalidade).length,
-    }));
+  protected readonly erro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
+    const problem = this.lista.problem();
+    if (problem) {
+      const { title, detail } = this.problemI18n.resolve(problem);
+      return problem.status === 422 && detail ? detail : title;
+    }
+    return this.lista.error() ? 'Erro inesperado ao carregar os certames.' : null;
   });
-
-  protected readonly certamesFiltrados = computed(() =>
-    [...this.certames()]
-      .filter((certame) => this.combinaBusca(certame))
-      .filter((certame) => this.combinaStatus(certame))
-      .filter((certame) => this.combinaModalidade(certame))
-      .sort(compararPorUrgencia),
-  );
-
-  /** Certame do hero — fonte única com a listagem, não um literal solto no template. */
-  protected readonly destaque = computed<Certame | null>(
-    () => this.certames().find((certame) => certame.destaque) ?? null,
-  );
-
-  protected readonly totalFiltrados = computed(() => this.certamesFiltrados().length);
-  protected readonly totalPaginas = computed(() =>
-    Math.max(1, Math.ceil(this.totalFiltrados() / PAGE_SIZE)),
-  );
-
-  protected readonly itensPagina = computed(() => {
-    const inicio = this.paginaAtual() * PAGE_SIZE;
-    return this.certamesFiltrados().slice(inicio, inicio + PAGE_SIZE);
-  });
-
-  protected readonly hasPrevious = computed(() => this.paginaAtual() > 0);
-  protected readonly hasNext = computed(() => this.paginaAtual() < this.totalPaginas() - 1);
-
-  protected readonly statusPaginacao = computed(
-    () => `Página ${this.paginaAtual() + 1} de ${this.totalPaginas()}`,
-  );
-
-  protected readonly temFiltrosAtivos = computed(
-    () =>
-      this.busca().trim().length > 0 ||
-      this.statusSelecionado() !== null ||
-      this.modalidadeSelecionada() !== null,
-  );
 
   constructor() {
-    this.carregarCertames();
     this.escutarBreakpoint();
-
-    // Qualquer mudança de busca/filtro invalida a página atual (evita cair
-    // numa página vazia quando o total de resultados encolhe).
-    effect(() => {
-      this.busca();
-      this.statusSelecionado();
-      this.modalidadeSelecionada();
-      this.paginaAtual.set(0);
-    });
-
     effect(() => writeVisao(this.visao()));
   }
 
-  protected statusLabel(status: CertameStatus): string {
-    return STATUS_LABEL[status];
+  protected statusLabel(situacao: SituacaoDoCertame): string {
+    return SITUACAO_LABEL[situacao];
   }
 
-  protected statusVariant(status: CertameStatus): UiTagVariant {
-    return STATUS_VARIANT[status];
+  protected statusVariant(situacao: SituacaoDoCertame): UiTagVariant {
+    return SITUACAO_VARIANT[situacao];
+  }
+
+  /** `totalDeVagas` chega como `number | string` (contrato usa `pattern` no int32). */
+  protected vagasFormatadas(totalDeVagas: number | string): string {
+    return Number(totalDeVagas).toLocaleString('pt-BR');
   }
 
   protected setVisao(visao: VisaoCertames | null): void {
@@ -406,63 +360,50 @@ export class ProcessosComponent {
   }
 
   protected limparFiltros(): void {
-    this.busca.set('');
-    this.statusSelecionado.set(null);
-    this.modalidadeSelecionada.set(null);
+    this.termoBusca.set('');
+    this.situacaoSelecionada.set(null);
   }
 
   protected proximaPagina(): void {
-    if (this.hasNext()) {
-      this.paginaAtual.update((pagina) => pagina + 1);
+    const proximo = this.cursores().next;
+    if (proximo !== null && !this.carregando()) {
+      this.pagina.set({ cursor: proximo, direction: 'next' });
     }
   }
 
   protected paginaAnterior(): void {
-    if (this.hasPrevious()) {
-      this.paginaAtual.update((pagina) => pagina - 1);
+    const anterior = this.cursores().prev;
+    if (anterior !== null && !this.carregando()) {
+      this.pagina.set({ cursor: anterior, direction: 'prev' });
     }
   }
 
   protected tentarNovamente(): void {
-    if (!this.carregando()) {
-      this.carregarCertames();
+    if (this.carregando()) {
+      return;
+    }
+    if (this.pagina() === undefined) {
+      this.lista.reload();
+    } else {
+      this.pagina.set(undefined);
     }
   }
 
-  private carregarCertames(): void {
-    this.carregando.set(true);
-    this.erro.set(null);
-    // Deferido para o próximo tick do event loop: exercita o estado
-    // "carregando" de fato, no mesmo formato assíncrono que uma chamada de
-    // API real teria. Sem caminho de falha porque o dado é mockado — ao
-    // trocar por uma chamada real, o catch precisa chamar
-    // `this.erro.set(mensagem)`; isso não acontece sozinho.
-    const temporizador = setTimeout(() => {
-      this.certames.set(CERTAMES_MOCK);
-      this.carregando.set(false);
-    });
-    this.destroyRef.onDestroy(() => clearTimeout(temporizador));
-  }
-
-  private combinaBusca(certame: Certame): boolean {
-    const termo = normalizar(this.busca().trim());
-    if (termo.length === 0) return true;
-    return (
-      normalizar(certame.titulo).includes(termo) ||
-      normalizar(certame.resumo).includes(termo) ||
-      normalizar(certame.numero).includes(termo) ||
-      normalizar(certame.modalidadeLabel).includes(termo)
-    );
-  }
-
-  private combinaStatus(certame: Certame): boolean {
-    const status = this.statusSelecionado();
-    return status === null || certame.status === status;
-  }
-
-  private combinaModalidade(certame: Certame): boolean {
-    const modalidade = this.modalidadeSelecionada();
-    return modalidade === null || certame.modalidade === modalidade;
+  private montarParams(): HttpParams {
+    let params = new HttpParams().set('incluir_contadores', 'true');
+    const situacao = this.situacaoSelecionada();
+    if (situacao !== null) {
+      params = params.set('situacao', situacao);
+    }
+    const q = this.buscaAplicada();
+    if (q.length > 0) {
+      params = params.set('q', q);
+    }
+    const pagina = this.pagina();
+    if (pagina === undefined) {
+      return params.set('limit', String(PAGE_SIZE));
+    }
+    return params.set('cursor', cursorToString(pagina.cursor)).set('direction', pagina.direction);
   }
 
   private mediaCompacta(): MediaQueryList | null {
