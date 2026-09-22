@@ -74,15 +74,6 @@ export class TiposAtoApi {
     );
   }
 
-  /**
-   * GET `/api/publicacoes/tipos-ato/{codigo}/vigente` — a versão que vale numa
-   * data.
-   *
-   * A vigência é semiaberta, e é ela que decide se um código pode ser
-   * referenciado: a API recusa a gravação do cronograma quando o ato declarado
-   * não tem versão vigente na data de hoje. `data` existe para conferir uma
-   * data diferente; omitida, o servidor usa a de hoje.
-   */
   /** GET `/api/publicacoes/tipos-ato/{id}` — uma versão pelo identificador dela. */
   obter(id: string): Observable<ApiResult<TipoAtoPublicadoDto>> {
     return this.http.get<ApiResult<TipoAtoPublicadoDto>>(
@@ -118,10 +109,7 @@ export class TiposAtoApi {
    * vigências, e o agregado recusa qualquer divergência — o payload o
    * reapresenta igual.
    */
-  atualizar(
-    id: string,
-    command: AtualizarTipoAtoPublicadoCommand,
-  ): Observable<ApiResult<void>> {
+  atualizar(id: string, command: AtualizarTipoAtoPublicadoCommand): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/publicacoes/admin/tipos-ato/${encodeURIComponent(id)}`,
       command,
@@ -135,6 +123,15 @@ export class TiposAtoApi {
     );
   }
 
+  /**
+   * GET `/api/publicacoes/tipos-ato/{codigo}/vigente` — a versão que vale numa
+   * data.
+   *
+   * A vigência é semiaberta, e é ela que decide se um código pode ser
+   * referenciado: a API recusa a gravação do cronograma quando o ato declarado
+   * não tem versão vigente na data de hoje. `data` existe para conferir uma
+   * data diferente; omitida, o servidor usa a de hoje.
+   */
   obterVigente(codigo: string, data?: string): Observable<ApiResult<TipoAtoPublicadoDto>> {
     let params = new HttpParams();
     if (data !== undefined) {

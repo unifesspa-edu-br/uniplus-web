@@ -108,6 +108,12 @@ export const appRoutes: Routes = [
           ),
       },
       {
+        path: 'tipos-ato',
+        data: { breadcrumb: 'Tipo de Ato' },
+        loadChildren: () =>
+          import('./features/tipos-ato/tipos-ato.routes').then((m) => m.TIPOS_ATO_ROUTES),
+      },
+      {
         path: 'tipos-documento',
         data: { breadcrumb: 'Tipo de Documento' },
         loadChildren: () =>

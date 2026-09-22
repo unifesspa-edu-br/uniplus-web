@@ -26,6 +26,7 @@ const atoSeed: TipoAtoPublicadoDto = {
   congelaConfiguracao: false,
   unicoPorObjeto: false,
   efeitoIrreversivel: false,
+  ehResultado: false,
   vigenciaInicio: '2020-01-01',
   vigenciaFim: null,
   baseLegal: null,
@@ -192,19 +193,14 @@ describe('TiposAtoApi', () => {
     const req = controller.expectOne(`${BASE}/api/publicacoes/admin/tipos-ato`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(comando);
-    // O ato que determina a situação do candidato é o que habilita o ciclo
-    // recursal: um corpo que o perdesse gravaria o tipo sem ele, e nenhum
-    // certame conseguiria declarar recurso — que é o defeito que originou esta
-    // tela.
     expect(req.request.body.ehResultado).toBe(true);
 
     req.flush(atoSeed.id, { status: 201, statusText: 'Created' });
     expect(isApiOk((await promise) as ApiResult<string>)).toBe(true);
   });
 
+  // A ADR-0027 dispensa PUT puro, e a rota não declara o header.
   it('atualizar envia PUT por id e NÃO manda Idempotency-Key', async () => {
-    // A ADR-0027 dispensa PUT puro, e o contrato do servidor não declara o
-    // header nesta rota. Mandá-lo seria inventar exigência que não existe.
     const atualizacao: AtualizarTipoAtoPublicadoCommand = { ...comando, id: atoSeed.id };
     const promise = firstValueFrom(api.atualizar(atoSeed.id, atualizacao));
 
@@ -243,9 +239,6 @@ describe('TiposAtoApi', () => {
   });
 
   it('a sobreposição de vigência chega ao chamador como 409 tratável', async () => {
-    // É o erro que o operador vai encontrar de verdade: duas versões do mesmo
-    // código com janelas que se cruzam. A tela precisa distingui-lo de um 409
-    // qualquer para dizer o que fazer.
     const promise = firstValueFrom(api.criar(comando, new HttpContext()));
 
     controller.expectOne(`${BASE}/api/publicacoes/admin/tipos-ato`).flush(
@@ -259,10 +252,7 @@ describe('TiposAtoApi', () => {
       {
         status: 409,
         statusText: 'Conflict',
-        // Sem este header o interceptor sintetiza `unexpected_response` em vez
-        // de ler o problema. Medido contra homologação: a API responde
-        // `application/problem+json`, inclusive quando o Accept é vendor media
-        // type — então omiti-lo aqui testaria um cenário que não existe.
+        // Sem este header o interceptor sintetiza `unexpected_response` em vez de ler o problema.
         headers: { 'Content-Type': 'application/problem+json' },
       },
     );
