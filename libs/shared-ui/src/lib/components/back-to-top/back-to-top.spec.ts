@@ -40,6 +40,28 @@ function scrollerFake(metricas: {
   return el;
 }
 
+/**
+ * Instala métricas de rolagem num elemento real (jsdom não as calcula) e
+ * devolve a função que as remove.
+ */
+function definirMetricas(
+  elemento: HTMLElement,
+  metricas: { scrollHeight: number; clientHeight: number; scrollTop: number },
+): () => void {
+  const propriedades = ['scrollHeight', 'clientHeight', 'scrollTop'] as const;
+  for (const propriedade of propriedades) {
+    Object.defineProperty(elemento, propriedade, {
+      configurable: true,
+      get: () => metricas[propriedade],
+    });
+  }
+  return () => {
+    for (const propriedade of propriedades) {
+      delete (elemento as unknown as Record<string, unknown>)[propriedade];
+    }
+  };
+}
+
 @Component({
   standalone: true,
   imports: [BackToTopComponent],
@@ -113,6 +135,26 @@ describe('BackToTopComponent', () => {
 
     await rolarPara(fixture, scroller, 100);
     expect(visivel(botao)).toBe(false);
+  });
+
+  it('reage à rolagem quando o contêiner é o documento, cujo evento só chega em window', async () => {
+    // `<html>` não recebe o evento nativo de rolagem da página — ele é
+    // despachado em `window`/`document`. Registrar o listener no próprio
+    // elemento deixaria o botão congelado em telas de rolagem natural.
+    const metricas = { scrollHeight: 1000, clientHeight: 300, scrollTop: 800 };
+    const descritores = definirMetricas(document.documentElement, metricas);
+    try {
+      const { fixture, botao } = await montar(document.documentElement);
+      expect(visivel(botao)).toBe(true);
+
+      metricas.scrollTop = 0;
+      window.dispatchEvent(new Event('scroll'));
+      await estabilizar(fixture);
+
+      expect(visivel(botao)).toBe(false);
+    } finally {
+      descritores();
+    }
   });
 
   it('mantém o botão oculto quando não há intervalo rolável (CA-05)', async () => {
