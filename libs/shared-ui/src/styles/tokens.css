@@ -179,6 +179,7 @@
   --color-danger-solid:  #991b1b; /* 8.3:1 with #fff */
   --color-info-solid:    #1351b4; /* 7.1:1 with #fff */
   --color-primary-solid: #1351b4;
+  --color-neutral-solid: #334155; /* 10.35:1 with #fff */
 
   /* ============================ SEMANTIC SURFACES ============================
    * Component layer reads from THESE — never directly from neutrals. */
@@ -486,6 +487,9 @@
   --color-info-600: #00ffff;
   --color-info-700: #00ffff;
   --color-info-solid: #00ffff;
+
+  /* Sem matiz própria no contraste: a etiqueta neutra se distingue pelo texto. */
+  --color-neutral-solid: #ffffff;
 
   /* Component-scoped */
   --avatar-bg: #ffff00;  /* visible plaque against any contrast surface */
