@@ -130,7 +130,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
       'Dezembro de 2027',
     ]);
 
-    await page.getByRole('button', { name: /1 de janeiro de 2027/ }).click();
+    await page.getByRole('button', { name: /^1 de janeiro de 2027/ }).click();
     await expect(page.getByRole('dialog')).toContainText('Confraternização Universal');
   });
 
@@ -139,7 +139,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     await botaoDia.click();
 
     const dialogo = page.getByRole('dialog', { name: '5 de abril de 2026' });
@@ -159,7 +159,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     const dialogo = page.getByRole('dialog', { name: '5 de abril de 2026' });
 
     await botaoDia.focus();
@@ -181,7 +181,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /15 de novembro de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^15 de novembro de 2026/ });
     // Contador pintado em ::before, fora do texto do DOM (SC 2.5.3). Além do
     // atributo — que é só o insumo —, confere o que a tela de fato mostra:
     // apagar a regra CSS some com o contador sem quebrar nada mais.
@@ -200,7 +200,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   test('hover mostra a prévia sem abrir o drawer (CA-06)', async ({ page }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     await botaoDia.hover();
 
     await expect(page.locator('.cfg-calendario-mensal__preview')).toBeVisible();
@@ -212,7 +212,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     await botaoDia.focus();
     await expect(page.locator('.cfg-calendario-mensal__preview')).toBeVisible();
 
@@ -225,7 +225,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   test('mouse sair do botão que continua focado não esconde a prévia (CA-06)', async ({ page }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     const previewDoBotao = botaoDia.locator('.cfg-calendario-mensal__preview');
 
     await botaoDia.focus();
@@ -249,7 +249,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     const previewDoBotao = botaoDia.locator('.cfg-calendario-mensal__preview');
 
     await botaoDia.hover();
@@ -274,7 +274,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
 
     // 2026-04-05 é domingo — primeira coluna da grade, o caso mais exposto
     // a ser recortado pela borda esquerda ao centralizar a prévia (CA-12).
-    const botaoDia = page.getByRole('button', { name: /5 de abril de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^5 de abril de 2026/ });
     await botaoDia.focus();
     const preview = page.locator('.cfg-calendario-mensal__preview');
     await expect(preview).toBeVisible();
@@ -296,7 +296,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     await page.setViewportSize({ width: 320, height: 720 });
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /17 de junho de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^17 de junho de 2026/ });
     await botaoDia.focus();
     const preview = page.locator('.cfg-calendario-mensal__preview');
     await expect(preview).toBeVisible();
@@ -347,11 +347,11 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     page,
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
-    await expect(page.getByRole('button', { name: /5 de abril de 2026/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
 
     await assertSemViolacoesGraves(page);
 
-    await page.getByRole('button', { name: /5 de abril de 2026/ }).click();
+    await page.getByRole('button', { name: /^5 de abril de 2026/ }).click();
     await expect(page.getByRole('dialog', { name: '5 de abril de 2026' })).toBeVisible();
 
     await assertSemViolacoesGraves(page);
