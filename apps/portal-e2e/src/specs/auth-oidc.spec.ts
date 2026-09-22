@@ -22,9 +22,9 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
 
       // Não deve redirecionar ao provedor OIDC (rota pública)
       await expect(page).toHaveURL(/processos/);
-      // Hero derivado do certame `destaque: true` do mock — checa a
-      // estrutura, não o literal (issue #776).
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Processos seletivos', level: 1 }),
+      ).toBeVisible();
     });
 
     test('header não exibe user info em rota pública', async ({ page }) => {

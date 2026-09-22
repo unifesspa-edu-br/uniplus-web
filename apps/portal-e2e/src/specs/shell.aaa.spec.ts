@@ -24,10 +24,10 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
 
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('main')).toBeVisible();
-    // O hero é derivado do primeiro certame da vitrine (dado real, via API) —
-    // checa a estrutura (um único h1), não o texto, pra não acoplar o teste a
-    // um título de seed que varia por ambiente (achado de revisão, issue #776).
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // O título da página não depende do que a vitrine carregou: vale com
+    // certames, sem certames e com a API fora do ar. O destaque do topo, que
+    // varia por ambiente, não é asseverado aqui.
+    await expect(page.getByRole('heading', { name: 'Processos seletivos', level: 1 })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Editais', level: 2 })).toBeVisible();
     await expect(page.locator('.institutional-bar')).toBeVisible();
     await expect(page.locator('.gov-bar')).toHaveCount(0);

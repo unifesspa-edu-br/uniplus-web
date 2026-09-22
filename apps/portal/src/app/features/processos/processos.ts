@@ -1,4 +1,3 @@
-import { HttpParams } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,17 +17,16 @@ import {
   Cursor,
   CursorPagina,
   ProblemI18nService,
-  cursorToString,
   extractNextCursor,
   extractPrevCursor,
   useApiResource,
   useCursorObsoletoRecovery,
-  withVendorMime,
 } from '@uniplus/shared-core/http';
 import {
   CertameNaVitrineDto,
   SELECAO_BASE_PATH,
   SituacaoDoCertame,
+  certamesPublicosRequest,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -99,9 +97,23 @@ const SITUACAO_VARIANT: Record<SituacaoDoCertame, UiTagVariant> = {
   [SituacaoDoCertame.encerradas]: 'neutral',
 };
 
-/** Contagem por situação (headers `X-Certames-*`, só vem com `incluir_contadores=true`). */
+/**
+ * Situações em que o certame ainda recebe inscrição — as únicas que o destaque
+ * do topo pode convidar a fazer.
+ */
+const SITUACOES_QUE_RECEBEM_INSCRICAO: readonly SituacaoDoCertame[] = [
+  SituacaoDoCertame.inscricoesAbertas,
+  SituacaoDoCertame.ultimosDias,
+];
+
+/**
+ * Contagem por situação (headers `X-Certames-*`, só vêm com
+ * `incluir_contadores=true`). O valor é `undefined` quando o header não veio:
+ * "o servidor não contou" e "existem zero certames" dizem coisas diferentes ao
+ * candidato, e só o segundo é um zero.
+ */
 interface ContadoresSituacao {
-  readonly [situacao: string]: number;
+  readonly [situacao: string]: number | undefined;
 }
 
 const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
@@ -111,9 +123,6 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
 
 /** Abaixo desta largura a lista é a forma canônica (decisão do design system). */
 const COMPACT_MEDIA_QUERY = '(max-width: 599.98px)';
-
-/** Janela da vitrine por página (cursor pagination, ADR-0026). */
-const PAGE_SIZE = 10;
 
 /** Debounce da busca textual — uma request por rajada de digitação, não por tecla. */
 const BUSCA_DEBOUNCE_MS = 300;
@@ -137,9 +146,16 @@ function writeVisao(visao: VisaoCertames): void {
   }
 }
 
-function numeroDoHeader(headers: { get(name: string): string | null } | undefined, nome: string): number {
-  const valor = Number(headers?.get(nome));
-  return Number.isFinite(valor) ? valor : 0;
+function numeroDoHeader(
+  headers: { get(name: string): string | null } | undefined,
+  nome: string,
+): number | undefined {
+  const bruto = headers?.get(nome);
+  if (bruto === null || bruto === undefined || bruto.trim().length === 0) {
+    return undefined;
+  }
+  const valor = Number(bruto);
+  return Number.isFinite(valor) ? valor : undefined;
 }
 
 /**
@@ -206,11 +222,14 @@ export class ProcessosComponent {
     computation: () => undefined,
   });
 
-  private readonly lista = useApiResource<readonly CertameNaVitrineDto[]>(() => ({
-    url: `${this.basePath}/api/selecao/certames`,
-    params: this.montarParams(),
-    context: withVendorMime('certame', 1),
-  }));
+  private readonly lista = useApiResource<readonly CertameNaVitrineDto[]>(() =>
+    certamesPublicosRequest(this.basePath, {
+      pagina: this.pagina(),
+      situacao: this.situacaoSelecionada(),
+      q: this.buscaAplicada(),
+      incluirContadores: true,
+    }),
+  );
 
   protected readonly carregando = this.lista.isLoading;
 
@@ -284,26 +303,29 @@ export class ProcessosComponent {
     }));
   });
 
-  /**
-   * Certame do hero — só na primeira página sem filtro ativo (a API já ordena
-   * por urgência por padrão, então o primeiro item é o mais urgente).
-   */
-  protected readonly destaque = computed<CertameNaVitrineDto | null>(() => {
-    if (
-      this.pagina() !== undefined ||
-      this.buscaAplicada().length > 0 ||
-      this.situacaoSelecionada() !== null
-    ) {
-      return null;
-    }
-    return this.certames()[0] ?? null;
-  });
-
   protected readonly temFiltrosAtivos = computed(
     () => this.buscaAplicada().length > 0 || this.situacaoSelecionada() !== null,
   );
 
-  /** Detecta a largura canônica de lista (<600px) via matchMedia (ADR-0002-like). */
+  /**
+   * Certame do hero — só na primeira página sem filtro ativo, e só entre os que
+   * ainda recebem inscrição: o hero convida a se inscrever, e a API ordena por
+   * urgência, de modo que sem esse recorte o primeiro item de uma vitrine sem
+   * certame aberto seria um encerrado, anunciado com prazo vencido e botão de
+   * inscrição.
+   */
+  protected readonly destaque = computed<CertameNaVitrineDto | null>(() => {
+    if (this.pagina() !== undefined || this.temFiltrosAtivos()) {
+      return null;
+    }
+    return (
+      this.certames().find((certame) =>
+        SITUACOES_QUE_RECEBEM_INSCRICAO.includes(certame.situacao),
+      ) ?? null
+    );
+  });
+
+  /** Detecta a largura em que a lista é a forma canônica (<600px), via `matchMedia`. */
   protected readonly isCompacto = signal(this.mediaCompacta()?.matches ?? false);
 
   /** Abaixo de 600px a visão fica travada em lista, mesmo com "cards" salvo. */
@@ -378,32 +400,16 @@ export class ProcessosComponent {
     }
   }
 
+  /**
+   * Repete a consulta que falhou, seja ela qual for: `reload()` reexecuta com
+   * os parâmetros reativos vigentes, preservando a página em que o candidato
+   * estava. Voltar à primeira página é recuperação de cursor obsoleto, e quem
+   * cuida disso é `recuperandoDeCursorObsoleto`.
+   */
   protected tentarNovamente(): void {
-    if (this.carregando()) {
-      return;
-    }
-    if (this.pagina() === undefined) {
+    if (!this.carregando()) {
       this.lista.reload();
-    } else {
-      this.pagina.set(undefined);
     }
-  }
-
-  private montarParams(): HttpParams {
-    let params = new HttpParams().set('incluir_contadores', 'true');
-    const situacao = this.situacaoSelecionada();
-    if (situacao !== null) {
-      params = params.set('situacao', situacao);
-    }
-    const q = this.buscaAplicada();
-    if (q.length > 0) {
-      params = params.set('q', q);
-    }
-    const pagina = this.pagina();
-    if (pagina === undefined) {
-      return params.set('limit', String(PAGE_SIZE));
-    }
-    return params.set('cursor', cursorToString(pagina.cursor)).set('direction', pagina.direction);
   }
 
   private mediaCompacta(): MediaQueryList | null {

@@ -40,6 +40,18 @@ const tecnicoEnfermagem: CertameNaVitrineDto = {
   totalDeVagas: 60,
 };
 
+const encerrado: CertameNaVitrineDto = {
+  processoSeletivoId: '01960000-0000-7000-0000-0000000000e3',
+  numero: 'Edital 02/2026',
+  nome: 'Pós-graduação em Educação',
+  tipoProcesso: { codigo: 'PSE', nome: 'Processo Seletivo Especial' },
+  modalidadesOfertadas: ['AC'],
+  inscricoesDe: '2026-01-05T00:00:00Z',
+  inscricoesAte: '2026-03-22T23:59:59Z',
+  situacao: SituacaoDoCertame.encerradas,
+  totalDeVagas: 40,
+};
+
 function stubMatchMedia(matches: boolean): void {
   window.matchMedia = ((consulta: string) =>
     ({
@@ -114,6 +126,14 @@ describe('ProcessosComponent', () => {
     );
   }
 
+  function botao(rotulo: string): HTMLButtonElement | null {
+    return (
+      Array.from(host().querySelectorAll<HTMLButtonElement>('button')).find((el) =>
+        el.textContent?.includes(rotulo),
+      ) ?? null
+    );
+  }
+
   const contadoresHeaders = {
     'X-Certames-Em-Breve': '0',
     'X-Certames-Inscricoes-Abertas': '1',
@@ -164,6 +184,35 @@ describe('ProcessosComponent', () => {
     expect(heroTitle?.textContent?.trim()).toBe(sisu.nome);
   });
 
+  it('o hero pula os certames que não recebem mais inscrição', async () => {
+    await flushLista([encerrado, sisu], contadoresHeaders);
+
+    expect(component['destaque']()?.nome).toBe(sisu.nome);
+  });
+
+  it('sem certame recebendo inscrição, não há hero convidando a se inscrever', async () => {
+    await flushLista([encerrado], contadoresHeaders);
+
+    expect(component['destaque']()).toBeNull();
+    expect(host().querySelector('.portal-hero')).toBeNull();
+  });
+
+  it('o h1 da página independe do que a vitrine carregou', async () => {
+    await flushLista([], contadoresHeaders);
+
+    const titulos = Array.from(host().querySelectorAll('h1'));
+    expect(titulos).toHaveLength(1);
+    expect(titulos[0].textContent?.trim()).toBe('Processos seletivos');
+  });
+
+  it('chip fica sem contador quando a resposta não traz os headers X-Certames-*', async () => {
+    await flushLista([sisu]);
+    fixture.detectChanges();
+
+    expect(chip('Em breve')?.textContent).not.toContain('0');
+    expect(host().querySelector('.filter-chip__count')).toBeNull();
+  });
+
   it('busca server-side: digitação em rajada dispara um único GET com q após o debounce, na primeira página', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
@@ -209,10 +258,7 @@ describe('ProcessosComponent', () => {
     await flushLista([tecnicoEnfermagem], contadoresHeaders);
 
     expect(component['temFiltrosAtivos']()).toBe(true);
-    const botaoLimpar = Array.from(host().querySelectorAll('button')).find((b) =>
-      b.textContent?.includes('Limpar filtros'),
-    );
-    botaoLimpar?.click();
+    botao('Limpar filtros')?.click();
     fixture.detectChanges();
     // `termoBusca` limpo também passa pelo debounce antes de virar `buscaAplicada`.
     await sleep(DEBOUNCE_FOLGA_MS);
@@ -291,16 +337,49 @@ describe('ProcessosComponent', () => {
 
     const alerta = host().querySelector('.alert--danger');
     expect(alerta?.textContent).toContain('Erro interno ao consultar certames');
-    expect(host().querySelector('.certames-count')).toBeNull();
+    // Busca e chips continuam de pé: quando é o recorte que a API recusa,
+    // desfazê-lo é a saída.
+    expect(host().querySelector('ui-filter-bar')).toBeTruthy();
+    expect(chip('Últimos dias')).toBeTruthy();
 
-    const tentar = Array.from(host().querySelectorAll('button')).find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    );
+    const tentar = botao('Tentar novamente');
     expect(tentar).toBeTruthy();
     tentar?.click();
     await propagate();
 
     controller.expectOne((r) => r.url === CERTAMES_URL).flush([sisu], { headers: contadoresHeaders });
+    await propagate();
+    expect(component['erro']()).toBeNull();
+  });
+
+  it('"Tentar novamente" repete a página em que o erro aconteceu, sem voltar à primeira', async () => {
+    await flushLista([sisu], {
+      ...contadoresHeaders,
+      Link: `<${CERTAMES_URL}?cursor=p2&direction=next>; rel="next"`,
+    });
+
+    component['proximaPagina']();
+    await propagate();
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.infra.erro_interno',
+        title: 'Erro interno ao consultar certames',
+        status: 500,
+        code: 'uniplus.infra.erro_interno',
+        traceId: 'test-trace',
+      }),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    await propagate();
+    fixture.detectChanges();
+
+    botao('Tentar novamente')?.click();
+    await propagate();
+
+    const repetida = controller.expectOne((r) => r.url === CERTAMES_URL);
+    expect(repetida.request.params.get('cursor')).toBe('p2');
+    expect(repetida.request.params.get('direction')).toBe('next');
+    repetida.flush([tecnicoEnfermagem], { headers: contadoresHeaders });
     await propagate();
     expect(component['erro']()).toBeNull();
   });
