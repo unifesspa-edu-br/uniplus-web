@@ -58,6 +58,19 @@ const SINGLETON_CONFLITO_MSG =
   'Já existe uma instituição cadastrada nesta instância da plataforma. ' +
   'Para criar uma nova, primeiro remova a existente.';
 
+/** Vendor code do DomainError `Instituicao.JaExiste` (uniplus-api, 409 Conflict). */
+const INSTITUICAO_JA_EXISTE_CODE = 'uniplus.organizacao.instituicao.ja_existe';
+
+/**
+ * Vendor codes dos DomainErrors 422 de unidade raiz inválida (uniplus-api):
+ * `Instituicao.UnidadeRaizNaoEncontrada` e `Instituicao.UnidadeRaizNaoEhReitoria`.
+ * Os dois apontam para o mesmo controle do formulário.
+ */
+const INSTITUICAO_UNIDADE_RAIZ_INVALIDA_CODES: ReadonlySet<string> = new Set([
+  'uniplus.organizacao.instituicao.unidade_raiz_nao_encontrada',
+  'uniplus.organizacao.instituicao.unidade_raiz_nao_eh_reitoria',
+]);
+
 interface InstituicaoForm {
   nome: FormControl<string>;
   sigla: FormControl<string>;
@@ -888,9 +901,9 @@ export class InstituicaoPage {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
-    // 2) Unidade raiz inválida — domain error 422 sem errors[], mapeado por code
-    //    ao controle correspondente (CA-08).
-    if (problem.code.includes('unidade_raiz')) {
+    // 2) Unidade raiz inválida — domain error 422 sem errors[], mapeado pelos
+    //    codes exatos ao controle correspondente (CA-08).
+    if (INSTITUICAO_UNIDADE_RAIZ_INVALIDA_CODES.has(problem.code)) {
       this.renovarIdempotencyKey();
       const control = this.form.controls.unidadeRaizId;
       control.setErrors({
@@ -908,10 +921,11 @@ export class InstituicaoPage {
       return;
     }
     // 3) Conflito singleton (409) — banner de bloqueio, não inline (CA-06).
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.organizacao.instituicao.ja_existe'
-    ) {
+    //    Só o code exato do conflito de singleton produz esta mensagem fixa;
+    //    qualquer outro 409 (ex.: `uniplus.idempotency.processing_conflict`,
+    //    ou um conflito de concorrência) cai no ramo genérico abaixo e
+    //    preserva o title que a API mandou.
+    if (problem.code === INSTITUICAO_JA_EXISTE_CODE) {
       this.renovarIdempotencyKey();
       this.submitError.set(SINGLETON_CONFLITO_MSG);
       return;

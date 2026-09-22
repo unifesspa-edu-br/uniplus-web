@@ -237,6 +237,87 @@ describe('InstituicaoPage', () => {
     expect(component.idempotencyKeyAtual()).not.toBe(chaveInicial);
   });
 
+  it('InstituicaoForm_ErroUnidadeRaizNaoEncontrada_MapeiaCampo', async () => {
+    await carregar(instituicaoSeed);
+    component.abrirEdicao();
+    component.salvar();
+    await propagate();
+
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
+    // A reitoria escolhida foi removida entre a carga do select e o envio.
+    req.flush(
+      problem(
+        422,
+        'uniplus.organizacao.instituicao.unidade_raiz_nao_encontrada',
+        'A unidade informada como raiz não foi encontrada ou foi removida',
+      ),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component.erroDoCampo('unidadeRaizId')).toContain('não foi encontrada');
+    expect(component.submitError()).toBeNull();
+  });
+
+  it('InstituicaoForm_CodeUnidadeRaizEmOutroAgregado_NaoAncoraNoControle', async () => {
+    await carregar(instituicaoSeed);
+    component.abrirEdicao();
+    component.salvar();
+    await propagate();
+
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
+    // Code de outro agregado que também contém o trecho `unidade_raiz`, mas
+    // não é um dos codes exatos desta tela — não pode ser casado por substring.
+    req.flush(
+      problem(
+        422,
+        'uniplus.organizacao.unidade.unidade_raiz_orfa',
+        'Unidade raiz órfã em outro agregado',
+      ),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component.erroDoCampo('unidadeRaizId')).toBeNull();
+    expect(component.submitError()).toContain('Unidade raiz órfã em outro agregado');
+  });
+
+  it('InstituicaoForm_Erro409ProcessingConflict_NaoConfundeComSingleton', async () => {
+    await carregar(null);
+    component.abrirCadastro();
+    preencherObrigatorios();
+    component.salvar();
+    await propagate();
+
+    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
+    // 409 de conflito de idempotência em processamento — não é o singleton de
+    // Instituição, então deve preservar o title da API.
+    req.flush(
+      problem(
+        409,
+        'uniplus.idempotency.processing_conflict',
+        'Uma requisição idêntica ainda está em processamento',
+      ),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component.submitError()).toBe('Uma requisição idêntica ainda está em processamento');
+    expect(component.submitError()).not.toContain('Já existe uma instituição cadastrada');
+  });
+
   it('InstituicaoForm_Criar_RequisicaoCorreta', async () => {
     await carregar(null);
     component.abrirCadastro();
