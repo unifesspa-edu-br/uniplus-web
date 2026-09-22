@@ -1,4 +1,11 @@
 export { SELECAO_BASE_PATH } from './tokens';
+export {
+  CertamesPublicosApi,
+  SituacaoDoCertame,
+  type CertameNaVitrineDto,
+  type CertamesPublicosQuery,
+  type TipoCatalogadoCertameDto,
+} from './certames-publicos.api';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
 export type {
   ConfiguracaoDistribuicaoVagasDto,

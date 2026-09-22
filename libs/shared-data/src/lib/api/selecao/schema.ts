@@ -44,6 +44,181 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/certames": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    readonly situacao?: components["schemas"]["SituacaoDoCertame"];
+                    /** @description Código da modalidade que o certame precisa ofertar. Sem o parâmetro, não recorta. */
+                    readonly modalidade?: string;
+                    /** @description Texto pesquisado no título do certame e no número do edital. Insensível a caixa e a acentuação. */
+                    readonly q?: string;
+                    /** @description Campos de ordenação separados por vírgula, na ordem de prioridade; '-' prefixa o campo decrescente. Exemplo: sort=inscricoesAte,-nome. Campos aceitos: inscricoesAte, inscricoesDe, nome, divulgadoEm. Sem o parâmetro, vale a ordem por urgência: quem ainda não encerrou primeiro, do prazo mais próximo ao mais distante, e os encerrados depois. */
+                    readonly sort?: string;
+                    readonly incluir_contadores?: boolean;
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiSelecaoCertamesGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        /** @description Quantos certames divulgados ainda não abriram a janela de inscrição, no instante da consulta. Presente só quando incluir_contadores=true. */
+                        readonly "X-Certames-Em-Breve"?: number;
+                        /** @description Quantos certames divulgados ainda recebem inscrição sem estar no limiar final, no instante da consulta. Presente só quando incluir_contadores=true. */
+                        readonly "X-Certames-Inscricoes-Abertas"?: number;
+                        /** @description Quantos certames divulgados encerram dentro do limiar final, no instante da consulta. Presente só quando incluir_contadores=true. */
+                        readonly "X-Certames-Ultimos-Dias"?: number;
+                        /** @description Quantos certames divulgados já encerraram, no instante da consulta. Presente só quando incluir_contadores=true. */
+                        readonly "X-Certames-Encerrados"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.certame.v1+json": readonly components["schemas"]["CertameNaVitrineDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/certames/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: {
+                    readonly "If-None-Match"?: string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Selo da representação servida, no formato "{versaoDaProjecao}:{hashDaConfiguracao}". Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo é o que permite receber 304 em vez do documento inteiro. Esta rota é somente leitura e não aceita If-Match. */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.certame.v1+json": components["schemas"]["CertamePublicadoDto"];
+                    };
+                };
+                /** @description Not Modified */
+                readonly 304: {
+                    headers: {
+                        /** @description Selo da representação servida, no formato "{versaoDaProjecao}:{hashDaConfiguracao}". Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo é o que permite receber 304 em vez do documento inteiro. Esta rota é somente leitura e não aceita If-Match. */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-edital": {
         readonly parameters: {
             readonly query?: never;
@@ -3986,7 +4161,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta. Reler o processo e resubmeter. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -4093,7 +4268,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Conflict */
+                /** @description Há uma retificação em curso neste processo: enquanto a sessão editorial existir, o atalho em um ato só recusa — fechá-la ou descartá-la libera esta rota. Também responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -4262,7 +4437,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Conflict */
+                /** @description Não há retificação em curso para ter o motivo alterado. Abrir a retificação antes. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -4378,7 +4553,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Conflict */
+                /** @description Já existe retificação em curso para este processo — só uma por vez. Fechar ou descartar a atual antes de abrir outra. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -4466,7 +4641,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Conflict */
+                /** @description Não há retificação em curso para descartar, ou a base dela ficou para trás da versão vigente. Reler o estado da retificação antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -4592,7 +4767,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Conflict */
+                /** @description A retificação não está aberta, a base dela ficou para trás da versão vigente, ou outra publicação concorrente congelou uma versão entre a leitura e a gravação desta. Reler a retificação em curso antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -5481,6 +5656,11 @@ export interface components {
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
         };
+        readonly AtendimentoCertameDto: {
+            readonly condicoes: readonly components["schemas"]["CondicaoAtendimentoCertameDto"][];
+            readonly recursos: readonly string[];
+            readonly tiposDeficiencia: readonly components["schemas"]["CondicaoAtendimentoCertameDto"][];
+        };
         readonly AtualizarMotivoDecisaoIsencaoCommand: {
             /** Format: uuid */
             readonly id: string;
@@ -5565,6 +5745,49 @@ export interface components {
         };
         /** @enum {string} */
         readonly CategoriaObrigatoriedade: CategoriaObrigatoriedade;
+        readonly CertameNaVitrineDto: {
+            /** Format: uuid */
+            readonly processoSeletivoId: string;
+            readonly numero: null | string;
+            readonly nome: string;
+            readonly tipoProcesso: components["schemas"]["TipoCatalogadoCertameDto"];
+            readonly modalidadesOfertadas: readonly string[];
+            /** Format: date-time */
+            readonly inscricoesDe: string;
+            /** Format: date-time */
+            readonly inscricoesAte: string;
+            readonly situacao: components["schemas"]["SituacaoDoCertame"];
+            /** Format: int32 */
+            readonly totalDeVagas: number | string;
+        };
+        readonly CertamePublicadoDto: {
+            /** Format: uuid */
+            readonly processoSeletivoId: string;
+            /** Format: uuid */
+            readonly atoCriadorId: string;
+            readonly nome: string;
+            readonly versaoProjecao: string;
+            readonly hashConfiguracao: string;
+            readonly tipoProcesso: components["schemas"]["TipoCatalogadoCertameDto"];
+            readonly periodo: components["schemas"]["PeriodoInscricaoCertameDto"];
+            readonly localidade: components["schemas"]["LocalidadeCertameDto"];
+            readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraCertameDto"];
+            readonly documentoEdital: components["schemas"]["DocumentoEditalCertameDto"];
+            readonly ofertas: readonly string[];
+            readonly modalidadesOfertadas: readonly string[];
+            readonly vagas: readonly components["schemas"]["QuadroDeVagasCertameDto"][];
+            readonly etapas: readonly components["schemas"]["EtapaCertameDto"][];
+            readonly origemCandidatos: string;
+            readonly cronogramaFases: readonly components["schemas"]["FaseCronogramaCertameDto"][];
+            readonly documentosExigidos: readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
+            readonly atendimento: components["schemas"]["AtendimentoCertameDto"];
+            readonly taxaInscricao: null | components["schemas"]["TaxaInscricaoCertameDto"];
+            readonly retificacao: null | components["schemas"]["RetificacaoCertameDto"];
+        };
+        readonly CondicaoAtendimentoCertameDto: {
+            readonly codigo: string;
+            readonly nome: string;
+        };
         readonly CondicaoDerivacaoDto: {
             readonly fato: string;
             readonly operador: string;
@@ -5861,6 +6084,11 @@ export interface components {
             readonly ordem: number | string;
             readonly modalidadeDestinoCodigo: null | string;
         };
+        readonly DocumentoEditalCertameDto: {
+            /** Format: uuid */
+            readonly documentoEditalId: string;
+            readonly hashSha256: string;
+        };
         readonly DocumentoEditalDto: {
             /** Format: uuid */
             readonly id: string;
@@ -5899,6 +6127,21 @@ export interface components {
             /** Format: uuid */
             readonly exigidoNaEtapaId: null | string;
         };
+        readonly EtapaCertameDto: {
+            readonly nome: string;
+            readonly carater: string;
+            readonly tipoEtapa: components["schemas"]["TipoCatalogadoCertameDto"];
+            readonly peso: null | string;
+            readonly notaMinima: null | string;
+            /** Format: int32 */
+            readonly ordem: null | number | string;
+            readonly faseCodigo: null | string;
+            /** Format: date-time */
+            readonly inicio: null | string;
+            /** Format: date-time */
+            readonly fim: null | string;
+            readonly emiteParecerIndividual: boolean;
+        };
         readonly EtapaProcessoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -5935,15 +6178,33 @@ export interface components {
             /** Format: uuid */
             readonly id?: null | string;
             readonly faseCodigo?: null | string;
-            readonly produtos?: null | readonly components["schemas"]["ProdutoDaEtapaInput"][];
+            readonly produtos: readonly components["schemas"]["ProdutoDaEtapaInput"][];
             /** Format: date-time */
             readonly inicio?: null | string;
             /** Format: date-time */
             readonly fim?: null | string;
             /** @default false */
             readonly emiteParecerIndividual: boolean;
-            readonly bancas?: null | readonly components["schemas"]["BancaDaEtapaInput"][];
-            readonly recursos?: null | readonly components["schemas"]["RecursoDaEtapaInput"][];
+            readonly bancas: readonly components["schemas"]["BancaDaEtapaInput"][];
+            readonly recursos: readonly components["schemas"]["RecursoDaEtapaInput"][];
+        };
+        readonly ExigenciaDocumentalCertameDto: {
+            readonly rotulo: string;
+            readonly aplicabilidade: string;
+            readonly obrigatorio: boolean;
+            readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
+        };
+        readonly FaseCronogramaCertameDto: {
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly codigo: string;
+            /** Format: date-time */
+            readonly inicio: null | string;
+            /** Format: date-time */
+            readonly fim: null | string;
+            readonly coletaInscricao: boolean;
+            readonly coletaSolicitacaoIsencao: boolean;
+            readonly permiteComplementacao: boolean;
         };
         readonly FaseCronogramaDto: {
             /** Format: uuid */
@@ -6023,6 +6284,10 @@ export interface components {
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
         };
+        readonly FormatosAceitosCertameDto: {
+            readonly qualquer: boolean;
+            readonly lista: null | readonly string[];
+        };
         readonly FormularioRenderizavelDto: {
             readonly titulo: null | string;
             readonly termoAceiteTexto: null | string;
@@ -6087,6 +6352,12 @@ export interface components {
         };
         readonly JsonElement: unknown;
         readonly JsonNode: unknown;
+        readonly LocalidadeCertameDto: {
+            readonly codigoIbge: string;
+            readonly nome: string;
+            readonly uf: string;
+            readonly fusoHorario: string;
+        };
         readonly LocalidadeRegenteDto: {
             readonly codigoIbge: string;
             readonly nome: string;
@@ -6206,6 +6477,13 @@ export interface components {
         };
         /** @enum {string} */
         readonly OrigemCandidatos: OrigemCandidatos;
+        readonly PeriodoInscricaoCertameDto: {
+            readonly numero: null | string;
+            /** Format: date-time */
+            readonly inicio: string;
+            /** Format: date-time */
+            readonly fim: string;
+        };
         readonly PredicadoObrigatoriedade: components["schemas"]["PredicadoObrigatoriedadeEtapaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeModalidadesMinimas"] | components["schemas"]["PredicadoObrigatoriedadeDesempateDeveIncluir"] | components["schemas"]["PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade"] | components["schemas"]["PredicadoObrigatoriedadeAtendimentoDisponivel"] | components["schemas"]["PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeCustomizado"];
         readonly PredicadoObrigatoriedadeAtendimentoDisponivel: {
             /** @enum {string} */
@@ -6321,6 +6599,13 @@ export interface components {
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
+        };
+        readonly QuadroDeVagasCertameDto: {
+            /** Format: uuid */
+            readonly ofertaCursoOrigemId: string;
+            readonly quadro: readonly components["schemas"]["VagaPorModalidadeCertameDto"][];
+            /** Format: int32 */
+            readonly totalPublicado: number | string;
         };
         readonly QuantidadeVagaInput: {
             /** Format: uuid */
@@ -6471,6 +6756,11 @@ export interface components {
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
         };
+        readonly RetificacaoCertameDto: {
+            /** Format: uuid */
+            readonly atoRetificadoId: string;
+            readonly motivo: string;
+        };
         readonly RetificacaoEmCursoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -6504,6 +6794,8 @@ export interface components {
             readonly versao: number | string;
             readonly conteudo: components["schemas"]["JsonElement"];
         };
+        /** @enum {string} */
+        readonly SituacaoDoCertame: SituacaoDoCertame;
         readonly SnapshotVigenteDto: {
             /** Format: uuid */
             readonly snapshotPublicacaoId: string;
@@ -6517,6 +6809,15 @@ export interface components {
         };
         /** @enum {string} */
         readonly StatusProcesso: StatusProcesso;
+        readonly TaxaInscricaoCertameDto: {
+            readonly cobra: boolean;
+            readonly valor: null | string;
+            readonly fundamentos: readonly string[];
+        };
+        readonly TipoCatalogadoCertameDto: {
+            readonly codigo: string;
+            readonly nome: string;
+        };
         readonly TipoEtapaSnapshotDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -6528,6 +6829,13 @@ export interface components {
             readonly origemId: string;
             readonly codigo: string;
             readonly nome: string;
+        };
+        readonly UnidadeAdministradoraCertameDto: {
+            readonly sigla: string;
+            readonly nome: string;
+            readonly tipo: string;
+            readonly cidadeNome: null | string;
+            readonly cidadeUf: null | string;
         };
         readonly UnidadeAdministradoraSnapshotDto: {
             /** Format: uuid */
@@ -6558,6 +6866,11 @@ export interface components {
             readonly id: string;
             /** Format: uuid */
             readonly modalidadeOrigemId: string;
+            readonly modalidadeCodigo: string;
+            /** Format: int32 */
+            readonly quantidade: number | string;
+        };
+        readonly VagaPorModalidadeCertameDto: {
             readonly modalidadeCodigo: string;
             /** Format: int32 */
             readonly quantidade: number | string;
@@ -6635,6 +6948,10 @@ export interface operations {
             };
         };
     };
+}
+export enum PathsApiSelecaoCertamesGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
 }
 export enum PathsApiSelecaoMotivosDecisaoIsencaoGetParametersQueryDirection {
     next = "next",
@@ -6714,6 +7031,12 @@ export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
 }
 export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
     modalidadesMinimas = "modalidadesMinimas"
+}
+export enum SituacaoDoCertame {
+    emBreve = "emBreve",
+    inscricoesAbertas = "inscricoesAbertas",
+    ultimosDias = "ultimosDias",
+    encerradas = "encerradas"
 }
 export enum StatusProcesso {
     nenhum = "nenhum",
