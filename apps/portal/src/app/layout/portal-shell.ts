@@ -139,12 +139,11 @@ interface PortalFooterGroup {
   `,
 })
 export class PortalShellComponent {
-  // "Meu perfil" completa o caminho de volta pro shell administrativo — sem
-  // ele, quem chega em /processos via link direto não alcançava essa área
-  // por nenhum menu (achado de revisão, issue #776). "Documentos" fica de
-  // fora por ora: é placeholder vazio, sem funcionalidade real ainda; a
-  // rota continua existindo e acessível por URL direta, e ganha link aqui
-  // quando houver conteúdo de verdade por trás.
+  // "Meu perfil" fecha o caminho de volta: sem ele, quem chega em /processos
+  // por link direto não alcança a área da conta por nenhum menu. "Documentos"
+  // fica de fora enquanto for placeholder vazio — pô-lo no menu principal cria
+  // uma expectativa que a tela não entrega; a rota continua acessível por URL
+  // direta e ganha link aqui quando houver conteúdo por trás.
   protected readonly navItems: readonly PortalNavItem[] = [
     { label: 'Editais', icon: 'pi-calendar', routerLink: '/processos' },
     { label: 'Minhas inscrições', icon: 'pi-check-square', routerLink: '/inscricao' },
