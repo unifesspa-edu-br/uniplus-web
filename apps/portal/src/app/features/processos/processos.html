@@ -1,14 +1,25 @@
+<!--
+  O título da página é o `h1` e vive fora de qualquer ramo condicional: o
+  destaque abaixo é um item da vitrine, não o assunto da tela, e some assim que
+  o candidato busca, filtra ou navega de página.
+-->
+<ui-page-header
+  heading="Processos seletivos"
+  description="Acompanhe os certames publicados pela Unifesspa e escolha em qual se inscrever."
+  [level]="1"
+/>
+
 @if (destaque(); as certameDestaque) {
   <section class="portal-hero" aria-labelledby="portal-hero-title">
     <div class="portal-hero__content">
       <ui-tag [variant]="statusVariant(certameDestaque.situacao)" [solid]="true">
         {{ statusLabel(certameDestaque.situacao) }}
       </ui-tag>
-      <h1 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.nome }}</h1>
+      <h2 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.nome }}</h2>
       <p class="portal-hero__desc">
         As inscrições vão até
         <strong>{{ certameDestaque.inscricoesAte | dateBr: 'long' }}</strong>. Você pode se
-        inscrever em 5 etapas curtas e voltar quando quiser para concluir.
+        inscrever em etapas curtas e voltar quando quiser para concluir.
       </p>
       <div class="portal-hero__actions">
         <a class="btn btn--primary btn--lg" routerLink="/inscricao">
@@ -38,12 +49,64 @@
   </section>
 }
 
-<ui-page-header
-  id="certames-lista"
-  heading="Editais"
-  description="Veja todos os certames publicados."
-  [level]="2"
-/>
+<ui-page-header id="certames-lista" heading="Editais" [level]="2" />
+
+<div class="certames-toolbar">
+  <!--
+    A região viva fica sempre no DOM e só o conteúdo muda: removê-la e recriá-la
+    a cada estado faz o leitor de tela perder o anúncio.
+  -->
+  <span class="certames-count" role="status" aria-live="polite">
+    @if (carregando()) {
+      Carregando certames…
+    } @else if (!erro()) {
+      {{ certames().length }}
+      {{ certames().length === 1 ? 'certame nesta página' : 'certames nesta página' }}
+    }
+  </span>
+  @if (!isCompacto()) {
+    <ui-segmented
+      accessibleName="Alternar entre lista e cards"
+      [choices]="viewOptions"
+      [selectedValue]="visao()"
+      (selectedValueChange)="setVisao($event)"
+    />
+  }
+</div>
+
+<!--
+  Busca e filtros ficam de pé também no estado de erro: quando é o próprio
+  recorte que a API recusa, desfazê-lo é a saída, e escondê-los deixaria o
+  candidato só com a ação que acabou de falhar.
+-->
+<ui-filter-bar
+  ariaLabel="Buscar certames"
+  searchPlaceholder="Buscar por edital ou título..."
+  searchAriaLabel="Buscar por edital ou título"
+  [(searchValue)]="termoBusca"
+  secondaryRole="group"
+  secondaryAriaLabel="Filtrar certames"
+>
+  <button
+    uiFilterBarActions
+    type="button"
+    class="btn btn--tertiary btn--sm"
+    [disabled]="!temFiltrosAtivos()"
+    (click)="limparFiltros()"
+  >
+    Limpar filtros
+  </button>
+  <ng-container uiFilterBarSecondary>
+    <div class="certames-filter-group">
+      <span class="u-eyebrow">Situação</span>
+      <ui-filter-chips
+        ariaLabel="Filtrar por situação"
+        [options]="statusChips()"
+        [(selected)]="situacaoSelecionada"
+      />
+    </div>
+  </ng-container>
+</ui-filter-bar>
 
 @if (erro(); as mensagem) {
   <ui-alert variant="danger" heading="Não foi possível carregar os certames">
@@ -59,145 +122,93 @@
       </button>
     </div>
   </ui-alert>
-} @else {
-  <div class="certames-toolbar">
-    <span class="certames-count" role="status" aria-live="polite">
-      @if (carregando()) {
-        Carregando certames…
-      } @else {
-        {{ certames().length }}
-        {{ certames().length === 1 ? 'certame nesta página' : 'certames nesta página' }}
-      }
-    </span>
-    @if (!isCompacto()) {
-      <ui-segmented
-        accessibleName="Alternar entre lista e cards"
-        [choices]="viewOptions"
-        [selectedValue]="visao()"
-        (selectedValueChange)="setVisao($event)"
-      />
-    }
+} @else if (carregando()) {
+  <div class="certames-loading" role="status">
+    <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
+    Carregando certames…
   </div>
-
-  <ui-filter-bar
-    ariaLabel="Buscar certames"
-    searchPlaceholder="Buscar por edital ou título..."
-    searchAriaLabel="Buscar por edital ou título"
-    [(searchValue)]="termoBusca"
-    secondaryRole="group"
-    secondaryAriaLabel="Filtrar certames"
-  >
-    <button
-      uiFilterBarActions
-      type="button"
-      class="btn btn--tertiary btn--sm"
-      [disabled]="!temFiltrosAtivos()"
-      (click)="limparFiltros()"
-    >
-      Limpar filtros
-    </button>
-    <ng-container uiFilterBarSecondary>
-      <div class="certames-filter-group">
-        <span class="u-eyebrow">Situação</span>
-        <ui-filter-chips
-          ariaLabel="Filtrar por situação"
-          [options]="statusChips()"
-          [(selected)]="situacaoSelecionada"
-        />
-      </div>
-    </ng-container>
-  </ui-filter-bar>
-
-  @if (carregando()) {
-    <div class="certames-loading" role="status">
-      <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
-      Carregando certames…
-    </div>
-  } @else if (certames().length > 0) {
-    @if (visaoEfetiva() === 'lista') {
-      <ul class="certames-list" role="list">
-        @for (certame of certames(); track certame.processoSeletivoId) {
-          <li class="edital-row">
-            <div class="edital-row__body">
-              <div class="edital-row__head">
-                <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
-                  {{ statusLabel(certame.situacao) }}
-                </ui-tag>
-                @if (certame.numero) {
-                  <span class="card__meta">{{ certame.numero }}</span>
-                }
-                <ui-tag>{{ certame.tipoProcesso.nome }}</ui-tag>
-              </div>
-              <h3 class="edital-row__title">{{ certame.nome }}</h3>
-              <div class="edital-row__meta">
-                <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
-                <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
-              </div>
-            </div>
-            <div class="edital-row__actions">
-              <a class="btn btn--primary" routerLink="/inscricao">
-                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-                Inscrever-me
-              </a>
-            </div>
-          </li>
-        }
-      </ul>
-    } @else {
-      <div class="certames-grid">
-        @for (certame of certames(); track certame.processoSeletivoId) {
-          <article class="card">
-            <div class="card__header">
+} @else if (certames().length > 0) {
+  @if (visaoEfetiva() === 'lista') {
+    <ul class="certames-list" role="list">
+      @for (certame of certames(); track certame.processoSeletivoId) {
+        <li class="edital-row">
+          <div class="edital-row__body">
+            <div class="edital-row__head">
               <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
                 {{ statusLabel(certame.situacao) }}
               </ui-tag>
               @if (certame.numero) {
                 <span class="card__meta">{{ certame.numero }}</span>
               }
+              <ui-tag>{{ certame.tipoProcesso.nome }}</ui-tag>
             </div>
-            <h3 class="card__title">{{ certame.nome }}</h3>
+            <h3 class="edital-row__title">{{ certame.nome }}</h3>
             <div class="edital-row__meta">
               <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
               <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
             </div>
-            <div class="card__footer">
-              <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
-              <a class="btn btn--primary btn--sm" routerLink="/inscricao">
-                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-                Inscrever-me
-              </a>
-            </div>
-          </article>
-        }
-      </div>
-    }
-
-    <ui-list-footer
-      navigationLabel="Paginação de certames"
-      [hasRows]="certames().length > 0"
-      [hasPrevious]="hasPrevious()"
-      [hasNext]="hasNext()"
-      [isDisabled]="carregando()"
-      (previous)="paginaAnterior()"
-      (next)="proximaPagina()"
-    />
+          </div>
+          <div class="edital-row__actions">
+            <a class="btn btn--primary" routerLink="/inscricao">
+              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+              Inscrever-me
+            </a>
+          </div>
+        </li>
+      }
+    </ul>
   } @else {
-    @if (temFiltrosAtivos()) {
-      <ui-empty-state
-        heading="Nenhum certame encontrado"
-        description="Ajuste a busca ou limpe os filtros para ver todos os certames."
-      >
-        <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
-          Limpar filtros
-        </button>
-      </ui-empty-state>
-    } @else {
-      <ui-empty-state
-        heading="Nenhum certame publicado no momento"
-        description="Volte em breve — novos editais aparecem aqui assim que forem publicados."
-      />
-    }
+    <div class="certames-grid">
+      @for (certame of certames(); track certame.processoSeletivoId) {
+        <article class="card">
+          <div class="card__header">
+            <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
+              {{ statusLabel(certame.situacao) }}
+            </ui-tag>
+            @if (certame.numero) {
+              <span class="card__meta">{{ certame.numero }}</span>
+            }
+          </div>
+          <h3 class="card__title">{{ certame.nome }}</h3>
+          <div class="edital-row__meta">
+            <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
+            <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
+          </div>
+          <div class="card__footer">
+            <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
+            <a class="btn btn--primary btn--sm" routerLink="/inscricao">
+              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+              Inscrever-me
+            </a>
+          </div>
+        </article>
+      }
+    </div>
   }
+
+  <ui-list-footer
+    navigationLabel="Paginação de certames"
+    [hasRows]="certames().length > 0"
+    [hasPrevious]="hasPrevious()"
+    [hasNext]="hasNext()"
+    [isDisabled]="carregando()"
+    (previous)="paginaAnterior()"
+    (next)="proximaPagina()"
+  />
+} @else if (temFiltrosAtivos()) {
+  <ui-empty-state
+    heading="Nenhum certame encontrado"
+    description="Ajuste a busca ou limpe os filtros para ver todos os certames."
+  >
+    <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
+      Limpar filtros
+    </button>
+  </ui-empty-state>
+} @else {
+  <ui-empty-state
+    heading="Nenhum certame publicado no momento"
+    description="Volte em breve — novos editais aparecem aqui assim que forem publicados."
+  />
 }
 
 <section class="portal-section" aria-labelledby="portal-como-funciona-title">
