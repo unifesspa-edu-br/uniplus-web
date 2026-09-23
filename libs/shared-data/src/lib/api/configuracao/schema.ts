@@ -3805,6 +3805,8 @@ export interface paths {
                     readonly q?: string;
                     /** @description Campos de ordenação separados por vírgula, na ordem de prioridade; '-' prefixa o campo decrescente. Exemplo: sort=cursoNome,-programaDeOferta. Campos aceitos: cursoNome, cursoCodigo, unidadeOfertanteSigla, programaDeOferta, formatoPedagogico, regimeDeFuncionamento, regimeDeTurno, criadoEm. Sem o parâmetro, vale a ordem alfabética padrão. */
                     readonly sort?: string;
+                    /** @description Inclui o total de registros no header X-Total-Count. O total é contado sobre a mesma consulta que produziu a página — filtros e busca inclusive —, nunca sobre a tabela inteira. Ausente ou false, nenhum header de total é emitido. */
+                    readonly include_total?: boolean;
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
@@ -3825,6 +3827,8 @@ export interface paths {
                         readonly Link?: string;
                         /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
                         readonly "X-Page-Size"?: number;
+                        /** @description Total de registros que atendem à consulta — filtros e busca inclusive, nunca a tabela inteira. Presente apenas na resposta de quem pediu `include_total=true`; ausente nas demais (ADR-0026). */
+                        readonly "X-Total-Count"?: number;
                         readonly [name: string]: unknown;
                     };
                     content: {
