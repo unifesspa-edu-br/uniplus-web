@@ -1,0 +1,128 @@
+<ui-page-header
+  heading="Publicações"
+  description="Acompanhe os processos seletivos em andamento e veja quando um resultado é divulgado."
+  [level]="1"
+/>
+
+<div class="publicacoes-toolbar">
+  <span class="publicacoes-count" role="status" aria-live="polite">
+    @if (carregando()) { Carregando publicações… } @else if (!erro()) { {{ publicacoes().length }}
+    {{ publicacoes().length === 1 ? 'edital nesta lista' : 'editais nesta lista' }} }
+  </span>
+  @if (!isCompacto()) {
+  <ui-segmented
+    accessibleName="Alternar entre lista e cards"
+    [choices]="viewOptions"
+    [selectedValue]="visao()"
+    (selectedValueChange)="setVisao($event)"
+  />
+  }
+</div>
+
+<ui-filter-bar
+  ariaLabel="Buscar publicações"
+  searchPlaceholder="Buscar por edital..."
+  searchAriaLabel="Buscar por edital"
+  [(searchValue)]="termoBusca"
+  secondaryRole="group"
+  secondaryAriaLabel="Filtrar publicações"
+>
+  <button
+    uiFilterBarActions
+    type="button"
+    class="btn btn--tertiary btn--sm"
+    [disabled]="!temFiltrosAtivos()"
+    (click)="limparFiltros()"
+  >
+    Limpar filtros
+  </button>
+  <ng-container uiFilterBarSecondary>
+    <div class="publicacoes-filter-group">
+      <span class="u-eyebrow">Situação</span>
+      <ui-filter-chips
+        ariaLabel="Filtrar por situação"
+        [options]="situacaoChips()"
+        [(selected)]="situacaoSelecionada"
+      />
+    </div>
+  </ng-container>
+</ui-filter-bar>
+
+@if (erro(); as mensagem) {
+<ui-alert variant="danger" heading="Não foi possível carregar as publicações">
+  {{ mensagem }}
+  <div class="publicacoes-retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="carregando()"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @else if (carregando()) {
+<div class="publicacoes-loading" role="status">
+  <ui-spinner spinnerSize="sm" accessibleName="Carregando publicações" />
+  Carregando publicações…
+</div>
+} @else if (publicacoes().length > 0) { @if (visaoEfetiva() === 'lista') {
+<ul class="publicacoes-list" role="list">
+  @for (publicacao of publicacoes(); track publicacao.id) {
+  <li class="edital-row">
+    <div class="edital-row__body">
+      <div class="edital-row__head">
+        <ui-tag [variant]="statusVariant(publicacao.situacao)" [solid]="true">
+          {{ statusLabel(publicacao.situacao) }}
+        </ui-tag>
+        <span class="card__meta">
+          Edital {{ publicacao.numeroEdital }} · Publicado em {{ publicacao.dataPublicacao | dateBr:
+          'shortMonth' }}
+        </span>
+      </div>
+      <h2 class="edital-row__title">{{ publicacao.titulo }}</h2>
+      <p class="edital-row__desc">{{ publicacao.descricao }}</p>
+    </div>
+    <div class="edital-row__actions">
+      <a class="btn btn--primary" [routerLink]="['/publicacoes', publicacao.id]"> Ver detalhes </a>
+    </div>
+  </li>
+  }
+</ul>
+} @else {
+<div class="publicacoes-grid">
+  @for (publicacao of publicacoes(); track publicacao.id) {
+  <article class="card">
+    <div class="card__header">
+      <ui-tag [variant]="statusVariant(publicacao.situacao)" [solid]="true">
+        {{ statusLabel(publicacao.situacao) }}
+      </ui-tag>
+      <span class="card__meta">Edital {{ publicacao.numeroEdital }}</span>
+    </div>
+    <h2 class="card__title">{{ publicacao.titulo }}</h2>
+    <p class="card__desc">{{ publicacao.descricao }}</p>
+    <div class="card__footer">
+      <span class="card__meta">
+        Publicado em {{ publicacao.dataPublicacao | dateBr: 'shortMonth' }}
+      </span>
+      <a class="btn btn--primary btn--sm" [routerLink]="['/publicacoes', publicacao.id]">
+        Ver detalhes
+      </a>
+    </div>
+  </article>
+  }
+</div>
+} } @else if (temFiltrosAtivos()) {
+<ui-empty-state
+  heading="Nenhuma publicação encontrada"
+  description="Ajuste a busca ou limpe os filtros para ver todos os editais."
+>
+  <button type="button" class="btn btn--secondary" (click)="limparFiltros()">Limpar filtros</button>
+</ui-empty-state>
+} @else {
+<ui-empty-state
+  heading="Nenhuma publicação em andamento no momento"
+  description="Volte em breve — novas publicações aparecem aqui assim que forem divulgadas."
+/>
+}
