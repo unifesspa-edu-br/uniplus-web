@@ -47,7 +47,7 @@ export type {
   UseCursorObsoletoRecoveryOptions,
 } from './use-cursor-obsoleto-recovery';
 
-export { resolverVinculo } from './resolucao-de-vinculo';
+export { descreverVinculo, resolverVinculo } from './resolucao-de-vinculo';
 export type { EstadoDoVinculo, ResolucaoDeVinculo } from './resolucao-de-vinculo';
 export type { Cursor, PaginationDirection } from './pagination';
 
