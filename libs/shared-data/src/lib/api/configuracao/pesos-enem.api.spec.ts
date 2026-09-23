@@ -11,6 +11,7 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import {
+  AreaPesoAreaEnemDto,
   AtualizarPesoAreaEnemCommand,
   CriarPesoAreaEnemCommand,
   PesoAreaEnemDto,
@@ -25,12 +26,10 @@ const seed: PesoAreaEnemDto = {
   id: ID,
   resolucao: 'Res. 805/2024',
   grupoCurso: 'Tecnológica',
-  pesoLinguagens: 1,
-  pesoCienciasHumanas: 1,
-  pesoCienciasNatureza: 2,
-  pesoMatematica: 3,
-  pesoRedacao: 1,
-  corteRedacao: 400,
+  areas: [
+    { codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 },
+    { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias', peso: 3, corte: null },
+  ],
   baseLegal: 'Res. 805/2024 Anexo I',
   criadoEm: '2026-06-24T12:00:00Z',
 };
@@ -38,23 +37,19 @@ const seed: PesoAreaEnemDto = {
 const criarCommand: CriarPesoAreaEnemCommand = {
   resolucao: 'Res. 805/2024',
   grupoCurso: 'Tecnológica',
-  pesoLinguagens: 1,
-  pesoCienciasHumanas: 1,
-  pesoCienciasNatureza: 2,
-  pesoMatematica: 3,
-  pesoRedacao: 1,
+  areas: [
+    { codigo: 'REDACAO', peso: 2, corte: 400 },
+    { codigo: 'MATEMATICA', peso: 3, corte: null },
+  ],
   baseLegal: 'Res. 805/2024 Anexo I',
-  corteRedacao: 400,
 };
 
 const atualizarCommand: AtualizarPesoAreaEnemCommand = {
   id: ID,
-  pesoLinguagens: 1,
-  pesoCienciasHumanas: 1,
-  pesoCienciasNatureza: 2,
-  pesoMatematica: 3,
-  pesoRedacao: 1,
-  corteRedacao: 400,
+  areas: [
+    { codigo: 'REDACAO', peso: 2, corte: 400 },
+    { codigo: 'MATEMATICA', peso: 3, corte: null },
+  ],
   baseLegal: 'Res. 805/2024 Anexo I',
 };
 
@@ -94,6 +89,16 @@ describe('PesosEnemApi', () => {
     expect(req.request.params.has('limit')).toBe(false);
     req.flush([seed]);
     await promise;
+  });
+
+  it('listarAreas() faz GET nas áreas do cadastro com o Accept versionado próprio', async () => {
+    const promise = firstValueFrom(api.listarAreas());
+    const req = controller.expectOne(`${BASE}/api/configuracao/pesos-area-enem/areas`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('area-peso-area-enem', 1));
+    req.flush([{ codigo: 'REDACAO', rotulo: 'Redação' }]);
+    const result = (await promise) as ApiResult<readonly AreaPesoAreaEnemDto[]>;
+    expect(isApiOk(result) && result.data).toEqual([{ codigo: 'REDACAO', rotulo: 'Redação' }]);
   });
 
   it('obter() faz GET no path de módulo/{id} com Accept versionado', async () => {

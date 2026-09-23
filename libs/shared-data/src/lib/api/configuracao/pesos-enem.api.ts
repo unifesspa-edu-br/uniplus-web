@@ -6,8 +6,11 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type PesoAreaEnemDto = components['schemas']['PesoAreaEnemDto'];
+export type PesoAreaEnemAreaDto = components['schemas']['PesoAreaEnemAreaDto'];
+export type AreaPesoAreaEnemDto = components['schemas']['AreaPesoAreaEnemDto'];
 export type CriarPesoAreaEnemCommand = components['schemas']['CriarPesoAreaEnemCommand'];
 export type AtualizarPesoAreaEnemCommand = components['schemas']['AtualizarPesoAreaEnemCommand'];
+export type PesoAreaEnemAreaCommand = components['schemas']['PesoAreaEnemAreaCommand'];
 
 /** Filtro de listagem (cursor pagination, ADR-0026). */
 export interface PesosAreaEnemQuery {
@@ -44,6 +47,18 @@ export class PesosEnemApi {
     return this.http.get<ApiResult<readonly PesoAreaEnemDto[]>>(
       `${this.basePath}/api/configuracao/pesos-area-enem`,
       { params, context: withVendorMime('peso-area-enem', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/configuracao/pesos-area-enem/areas` — as cinco áreas do cadastro, com
+   * código e rótulo oficial, na ordem canônica. É a fonte das colunas e dos campos da
+   * tela: nenhuma lista de áreas é escrita no cliente.
+   */
+  listarAreas(): Observable<ApiResult<readonly AreaPesoAreaEnemDto[]>> {
+    return this.http.get<ApiResult<readonly AreaPesoAreaEnemDto[]>>(
+      `${this.basePath}/api/configuracao/pesos-area-enem/areas`,
+      { context: withVendorMime('area-peso-area-enem', 1) },
     );
   }
 

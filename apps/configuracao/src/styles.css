@@ -534,13 +534,16 @@ cfg-pesos-enem-page {
   background: var(--surface-subtle);
 }
 
-/* Pesos ENEM — mobile-first: cartão empilhado; ≥1024px vira 7 colunas */
+/* Pesos ENEM — mobile-first: cartão empilhado; ≥1024px vira uma coluna de grupo mais
+   uma por área. O número de áreas vem da API (--pe-colunas), não do CSS. */
 .pe-grid .num-grid__header {
   display: none;
 }
 
+/* minmax(0, 1fr): a coluna encolhe abaixo da largura da palavra mais longa do rótulo,
+   em vez de alargar o cartão além da tela estreita (320 px). */
 .pe-grid .num-grid__row {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
 }
@@ -557,8 +560,18 @@ cfg-pesos-enem-page {
 
   .pe-grid .num-grid__header,
   .pe-grid .num-grid__row {
-    grid-template-columns: minmax(180px, 2.5fr) repeat(5, 1fr) 1fr;
+    grid-template-columns: minmax(180px, 2fr) repeat(var(--pe-colunas, 5), minmax(0, 1fr));
     gap: 0;
+  }
+
+  /* Rótulo oficial das áreas é longo: quebra linha no cabeçalho em vez de estourar. */
+  .pe-grid .num-grid__header .num-cell--head {
+    overflow-wrap: anywhere;
+  }
+
+  /* No desktop o cabeçalho nomeia cada coluna; o rótulo por célula é só do cartão. */
+  .pe-grid .pe-cell-rotulo {
+    display: none;
   }
 
   .pe-grid .num-grid__row {
@@ -573,6 +586,31 @@ cfg-pesos-enem-page {
 
 .num-cell {
   padding: 0 var(--space-2);
+}
+
+/* No cartão empilhado (sem cabeçalho visível), cada célula mostra o nome da área. O
+   rótulo oficial é longo ("Tecnologias"): quebra dentro da palavra se preciso. */
+.pe-cell-rotulo {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Rótulo visível curto ("Peso", "Corte") dos campos da edição em linha. */
+.pe-campo-rotulo {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.pe-corte {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .num-cell--head {
