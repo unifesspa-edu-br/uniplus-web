@@ -11,6 +11,18 @@ export const appRoutes: Routes = [
     // onde a raiz é protegida pelo mesmo guard que traz o usuário até esta tela.
     data: { rotaDeVolta: '/processos' },
   },
+  {
+    // Documento de um evento da linha do tempo (Tela 2 de Publicações) —
+    // aberto pelo candidato numa aba própria, de propósito fora do shell
+    // público: sem topo/nav do portal, só o conteúdo do documento (hoje um
+    // texto padrão; no futuro, a visualização/download em PDF). Precisa
+    // vir antes do bloco do PortalShellComponent abaixo: sem isso, o
+    // roteador tentaria casar esse caminho contra as rotas (mais curtas)
+    // de `publicacoes` do shell e cairia no wildcard.
+    path: 'publicacoes/:id/eventos/:eventoId/documento',
+    loadComponent: () =>
+      import('./features/publicacoes/evento-documento').then((m) => m.EventoDocumentoComponent),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'processos' },
   {
     // Área pública do portal — shell próprio (ADR-0023 §2), sem menu lateral.

@@ -1,0 +1,35 @@
+@if (carregando()) {
+<main class="evento-documento">
+  <p role="status">Carregando documento…</p>
+</main>
+} @else if (erro()) {
+<main class="evento-documento">
+  <ui-empty-state
+    heading="Não foi possível carregar o documento"
+    description="Feche esta aba e tente abrir o documento de novo a partir da publicação."
+    variant="error"
+  />
+</main>
+} @else if (evento(); as item) {
+<main class="evento-documento">
+  <p class="evento-documento__eyebrow">
+    {{ publicacaoTitulo() }} · {{ item.data | dateBr: 'long' }}
+  </p>
+  <h1 class="evento-documento__title">{{ item.titulo }}</h1>
+
+  <div class="evento-documento__placeholder">
+    <p>
+      Este documento ainda não está disponível. Em breve você poderá visualizar e baixar este
+      conteúdo em PDF diretamente por aqui.
+    </p>
+  </div>
+</main>
+} @else {
+<main class="evento-documento">
+  <ui-empty-state
+    heading="Documento não encontrado"
+    description="Este evento não existe ou não está mais disponível."
+    variant="error"
+  />
+</main>
+}
