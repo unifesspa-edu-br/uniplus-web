@@ -165,6 +165,9 @@ interface OfertaCursoForm {
       <div class="panel-head">
         <div class="panel-head__title">
           <h2 id="cfg-ofertas-list-title">Ofertas de curso</h2>
+          @if (totalOfertas() !== null) {
+            <span class="list-count">Total de ofertas cadastradas: {{ totalOfertas() }}</span>
+          }
           @if (loading()) {
             <span class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando</span>
           }
@@ -704,6 +707,25 @@ export class OfertasCursoPage {
       }
       const link = untracked(() => this.lista.headers()?.get('Link') ?? null);
       return { prev: extractPrevCursor(link), next: extractNextCursor(link) };
+    },
+  });
+
+  // Total do cadastro (`X-Total-Count`). É pedido só na consulta sem cursor —
+  // o total é da consulta, não da página — e as páginas com cursor reaproveitam
+  // o último valor conhecido. `null` é "desconhecido" (falha ou header
+  // ausente): o indicador some em vez de afirmar zero.
+  protected readonly totalOfertas = linkedSignal<
+    ApiResult<readonly OfertaCursoDto[]> | undefined,
+    number | null
+  >({
+    source: () => this.lista.value(),
+    computation: (envelope, previous) => {
+      const atual = previous?.value ?? null;
+      if (envelope === undefined || untracked(() => this.pagina() !== undefined)) {
+        return atual;
+      }
+      const header = untracked(() => this.lista.headers()?.get('X-Total-Count') ?? null);
+      return envelope.ok && header !== null && /^\d+$/.test(header) ? Number(header) : null;
     },
   });
 
@@ -1271,7 +1293,7 @@ export class OfertasCursoPage {
   private montarParams(): HttpParams {
     const pagina = this.pagina();
     if (pagina === undefined) {
-      return new HttpParams().set('limit', String(this.limite()));
+      return new HttpParams().set('limit', String(this.limite())).set('include_total', true);
     }
     return new HttpParams()
       .set('cursor', cursorToString(pagina.cursor))
