@@ -87,6 +87,28 @@ const ofertaSeed: OfertaCursoDto = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
+// Segundo curso e segunda oferta no mesmo local e na mesma unidade que
+// `ofertaSeed` — a listagem não é escopada a um curso (`ofertas-curso.routes.ts`
+// não tem parâmetro de curso), então as duas linhas convivem na mesma página.
+// Usados para provar que o identificador da linha (#835) as distingue.
+const CURSO_ID_2 = '01960000-0000-7000-0000-0000000000c2';
+
+const cursoSeed2: CursoDto = {
+  id: CURSO_ID_2,
+  codigo: 'ENG-MIN',
+  nome: 'Engenharia de Minas',
+  grau: 'Bacharelado',
+  nivelEnsino: 'Graduação',
+  grupoAreaEnem: 'Tecnológica',
+  criadoEm: '2026-06-10T12:00:00Z',
+};
+
+const ofertaSeed2: OfertaCursoDto = {
+  ...ofertaSeed,
+  id: '01960000-0000-7000-0000-0000000000d2',
+  cursoId: CURSO_ID_2,
+};
+
 describe('OfertasCursoPage', () => {
   let fixture: ComponentFixture<OfertasCursoPage>;
   let component: OfertasCursoPage;
@@ -154,6 +176,12 @@ describe('OfertasCursoPage', () => {
     expectLookup(`${BASE}/api/organizacao/unidades`).flush(itens);
     await propagate();
   }
+
+  // O nome acessível é o único texto do botão (o `<i>` é `aria-hidden`), então
+  // localizar por `aria-label` exato é o equivalente de `getByRole('button',
+  // { name, exact: true })` no Playwright.
+  const botaoAcao = (rotulo: string): HTMLButtonElement | null =>
+    fixture.nativeElement.querySelector(`button[aria-label="${rotulo}"]`);
 
   it('pede o máximo de uma página da API nos lookups de Curso, Local de oferta e Unidade', async () => {
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
@@ -784,6 +812,14 @@ describe('OfertasCursoPage', () => {
       fixture.nativeElement.querySelector('td[data-label="Local de oferta"]').textContent,
     ).toContain('Marabá');
 
+    // O nome acessível do botão repete o que a célula já mostra — não
+    // "Vinculado", que faria a falha de rede soar como dado legítimo (#579).
+    expect(
+      botaoAcao(
+        'Editar oferta de curso Não carregado · IGE · Campus sede — Marabá · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+
     const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
     expect(alerta.textContent).toContain('Recarregar cursos');
     expect(alerta.textContent).not.toContain('Recarregar locais de oferta');
@@ -800,6 +836,11 @@ describe('OfertasCursoPage', () => {
     expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
       'Engenharia Civil',
     );
+    expect(
+      botaoAcao(
+        'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
+      ),
+    ).not.toBeNull();
   });
 
   it('lookup de Local de oferta recusado sinaliza a própria coluna', async () => {
@@ -824,9 +865,113 @@ describe('OfertasCursoPage', () => {
       'Engenharia Civil',
     );
 
+    // O botão repete o marcador da célula: a falha do catálogo não pode soar
+    // como um local legítimo para quem usa leitor de tela.
+    expect(
+      botaoAcao(
+        'Editar oferta de curso Engenharia Civil · IGE · Não carregado · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+    expect(
+      botaoAcao(
+        'Remover oferta de curso Engenharia Civil · IGE · Não carregado · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+
     const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
     expect(alerta.textContent).toContain('Recarregar locais de oferta');
     expect(alerta.textContent).not.toContain('Recarregar cursos');
+  });
+
+  it('nome acessível das ações identifica a oferta pelas colunas da linha, não pelo id técnico (#835)', async () => {
+    await flushCargaInicial([ofertaSeed]);
+    fixture.detectChanges();
+
+    expect(
+      botaoAcao(
+        'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+    expect(
+      botaoAcao(
+        'Remover oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+
+    const botoesDaLinha: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll(
+      '[aria-label*="oferta de curso"]',
+    );
+    expect(botoesDaLinha.length).toBeGreaterThan(0);
+    for (const botao of Array.from(botoesDaLinha)) {
+      expect(botao.getAttribute('aria-label')).not.toContain(OFERTA_ID);
+    }
+  });
+
+  it('duas ofertas no mesmo local e na mesma unidade, mas em cursos diferentes, têm nomes acessíveis distintos (#835)', async () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
+      .flush([ofertaSeed, ofertaSeed2]);
+    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed, cursoSeed2]);
+    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+    await propagate();
+    fixture.detectChanges();
+
+    // Sem o curso na composição, unidade e local sozinhos não distinguem
+    // estas duas linhas: mesmo `localOfertaId`, mesmo `unidadeOfertante`.
+    expect(
+      botaoAcao(
+        'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+    expect(
+      botaoAcao(
+        'Editar oferta de curso Engenharia de Minas · IGE · Campus sede — Marabá · Regular · Matutino',
+      ),
+    ).not.toBeNull();
+  });
+
+  it('ofertas do mesmo curso, local e unidade em turnos ou programas diferentes têm nomes acessíveis distintos (#835)', async () => {
+    const noturno: OfertaCursoDto = {
+      ...ofertaSeed,
+      id: '01960000-0000-7000-0000-0000000000d3',
+      turnos: ['NOTURNO'],
+    };
+    const parfor: OfertaCursoDto = {
+      ...ofertaSeed,
+      id: '01960000-0000-7000-0000-0000000000d4',
+      programaDeOferta: 'PARFOR',
+      baseLegal: 'Decreto 6.755/2009',
+    };
+    await flushCargaInicial([ofertaSeed, noturno, parfor]);
+    fixture.detectChanges();
+
+    const nomes = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        'button[aria-label^="Editar oferta de curso"]',
+      ) as NodeListOf<HTMLButtonElement>,
+    ).map((botao) => botao.getAttribute('aria-label'));
+
+    expect(nomes).toEqual([
+      'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
+      'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Noturno',
+      'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · PARFOR · Matutino',
+    ]);
+  });
+
+  it('ofertas que coincidem em todas as colunas do nome ganham ordinal, e o nome continua único (#835)', async () => {
+    const ead: OfertaCursoDto = {
+      ...ofertaSeed,
+      id: '01960000-0000-7000-0000-0000000000d5',
+      formatoPedagogico: 'EAD',
+    };
+    await flushCargaInicial([ofertaSeed, ead]);
+    fixture.detectChanges();
+
+    const nome = 'Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino';
+    expect(botaoAcao(`Editar oferta de curso ${nome} (1 de 2)`)).not.toBeNull();
+    expect(botaoAcao(`Remover oferta de curso ${nome} (1 de 2)`)).not.toBeNull();
+    expect(botaoAcao(`Editar oferta de curso ${nome} (2 de 2)`)).not.toBeNull();
+    expect(botaoAcao(`Remover oferta de curso ${nome} (2 de 2)`)).not.toBeNull();
   });
 
   it('evita submissão de formulário quando regime de funcionamento INTENSIVO e regime de turno REGULAR', async () => {

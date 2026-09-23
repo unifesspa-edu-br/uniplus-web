@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
-import { resolverVinculo } from './resolucao-de-vinculo';
+import { descreverVinculo, resolverVinculo } from './resolucao-de-vinculo';
 
 interface Curso {
   readonly codigo: string;
@@ -59,5 +59,19 @@ describe('resolverVinculo', () => {
 
     expect(resolverVinculo(emAndamento, item, rotular).estado).toBe('resolvido');
     expect(resolverVinculo(recusado, item, rotular).estado).toBe('resolvido');
+  });
+});
+
+describe('descreverVinculo', () => {
+  it('devolve o rótulo quando o vínculo resolveu', () => {
+    expect(descreverVinculo({ estado: 'resolvido', rotulo: 'Curso ENG-CIV' })).toBe(
+      'Curso ENG-CIV',
+    );
+  });
+
+  it('nomeia cada desfecho não resolvido com um marcador próprio', () => {
+    expect(descreverVinculo({ estado: 'carregando', rotulo: '' })).toBe('Carregando…');
+    expect(descreverVinculo({ estado: 'falhou', rotulo: '' })).toBe('Não carregado');
+    expect(descreverVinculo({ estado: 'ausente', rotulo: '' })).toBe('Não identificado');
   });
 });

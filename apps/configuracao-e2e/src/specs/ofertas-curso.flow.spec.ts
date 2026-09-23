@@ -75,6 +75,27 @@ const ofertaSeed = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
+// Rótulo de `localSeed.tipo` em TIPOS_LOCAL_OFERTA (@uniplus/shared-data/configuracao,
+// `libs/shared-data/src/lib/api/configuracao/locais-oferta.api.ts`) — não
+// importável aqui: o barril da lib carrega clientes Angular decorados, e o
+// JIT falha fora de um bootstrap Angular (Playwright roda em Node puro).
+// Mudar TipoLocalOferta.campusSede lá exige atualizar esta constante também.
+const TIPO_LOCAL_OFERTA_CAMPUS_SEDE_LABEL = 'Campus sede';
+
+// Nome acessível das ações da linha de `ofertaSeed` (#835), composto a partir
+// dos seeds como a página compõe (`identificadorOferta`): curso · unidade ·
+// local · programa · turnos. Escrito à mão, uma mudança num seed quebraria o
+// locator em silêncio, com um timeout no clique. Os rótulos de programa e de
+// turno (`REGULAR`, `MATUTINO`) vão por extenso pelo mesmo motivo da constante
+// acima: os catálogos da lib não são importáveis aqui.
+const identificadorOfertaSeed = [
+  cursoSeed.nome,
+  unidadeSeed.sigla,
+  `${TIPO_LOCAL_OFERTA_CAMPUS_SEDE_LABEL} — ${localSeed.cidade.nome}`,
+  'Regular',
+  'Matutino',
+].join(' · ');
+
 /**
  * Marca um turno pelo gesto real do operador: o clique no rótulo. O
  * `input[type=checkbox]` do design system é visualmente oculto
@@ -308,8 +329,20 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await mockApi(page, capturado, [ofertaSeed]);
     await abrirPagina(page);
 
+    // As duas ações da linha mudam de forma idêntica (#835): o Remover fica
+    // ancorado aqui porque nenhum outro spec o localiza pelo nome acessível.
+    await expect(
+      page.getByRole('button', {
+        name: `Remover oferta de curso ${identificadorOfertaSeed}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+
     await page
-      .getByRole('button', { name: `Editar oferta de curso ${OFERTA_ID}`, exact: true })
+      .getByRole('button', {
+        name: `Editar oferta de curso ${identificadorOfertaSeed}`,
+        exact: true,
+      })
       .click();
 
     await expect(page.locator('[formControlName="cursoId"]')).toHaveCount(0);

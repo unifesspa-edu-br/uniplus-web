@@ -28,6 +28,7 @@ import {
   ProblemValidationError,
   ResolucaoDeVinculo,
   cursorToString,
+  descreverVinculo,
   ehCursorDePaginacaoExpirado,
   extractNextCursor,
   extractPrevCursor,
@@ -204,6 +205,7 @@ interface OfertaCursoForm {
             </thead>
             <tbody>
               @for (oferta of ofertas(); track oferta.id) {
+                @let identificador = identificadores().get(oferta.id) ?? '';
                 <tr>
                   <td data-label="Curso">
                     <ui-lookup-label [resolucao]="cursoDaOferta(oferta.cursoId)" />
@@ -234,14 +236,14 @@ interface OfertaCursoForm {
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-pencil"
-                      [accessibleName]="'Editar oferta de curso ' + oferta.id"
+                      [accessibleName]="'Editar oferta de curso ' + identificador"
                       tooltip="Editar oferta de curso"
                       [isDisabled]="loading()"
                       (triggered)="abrirEdicao(oferta)"
                     />
                     <ui-icon-button
                       icon="pi-trash"
-                      [accessibleName]="'Remover oferta de curso ' + oferta.id"
+                      [accessibleName]="'Remover oferta de curso ' + identificador"
                       tooltip="Remover oferta de curso"
                       [isDisabled]="loading()"
                       (triggered)="pedirRemocao(oferta)"
@@ -750,6 +752,32 @@ export class OfertasCursoPage {
     },
   });
 
+  // Nome acessível das ações de cada linha, por id da oferta. Quando duas
+  // linhas da página coincidem em todas as colunas que compõem o nome (o
+  // backend não declara chave natural), um ordinal as separa — "1 de 2",
+  // "2 de 2", na ordem da tabela — em vez de dois botões com o mesmo nome.
+  protected readonly identificadores = computed(() => {
+    const nomes = this.ofertas().map(
+      (oferta) => [oferta.id, this.identificadorOferta(oferta)] as const,
+    );
+    const total = new Map<string, number>();
+    for (const [, nome] of nomes) {
+      total.set(nome, (total.get(nome) ?? 0) + 1);
+    }
+    const vistos = new Map<string, number>();
+    return new Map(
+      nomes.map(([id, nome]) => {
+        const repeticoes = total.get(nome) ?? 1;
+        if (repeticoes === 1) {
+          return [id, nome] as const;
+        }
+        const ordem = (vistos.get(nome) ?? 0) + 1;
+        vistos.set(nome, ordem);
+        return [id, `${nome} (${ordem} de ${repeticoes})`] as const;
+      }),
+    );
+  });
+
   // Cursor que não continua esta consulta (400) ou que expirou (410):
   // recomeça a paginação sem cursor e avisa o operador (CA-14c).
   private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
@@ -1110,6 +1138,31 @@ export class OfertasCursoPage {
   protected localOfertaLabel(localOfertaId: string): string {
     const { estado, rotulo } = this.localDaOferta(localOfertaId);
     return estado === 'resolvido' ? rotulo : 'Vinculado';
+  }
+
+  /**
+   * Identificador da linha para as ações só-ícone, no lugar do UUID que um
+   * leitor de tela não relaciona a nenhuma coluna visível.
+   *
+   * A listagem reúne ofertas de todos os cursos, e o backend não declara chave
+   * natural: o mesmo curso pode ser ofertado no mesmo local, pela mesma
+   * unidade, em turnos ou programas diferentes. Por isso o nome repete, das
+   * colunas da linha, curso, unidade, local, programa e turnos — o que
+   * distingue as ofertas de um mesmo curso na prática. O que ainda coincidir
+   * é separado por ordinal em `identificadores`.
+   *
+   * Curso e local usam `descreverVinculo`, o mesmo texto da célula: enquanto o
+   * catálogo carrega ou quando falha, o botão diz isso em vez de soar como
+   * dado legítimo.
+   */
+  private identificadorOferta(oferta: OfertaCursoDto): string {
+    return [
+      descreverVinculo(this.cursoDaOferta(oferta.cursoId)),
+      oferta.unidadeOfertante.sigla,
+      descreverVinculo(this.localDaOferta(oferta.localOfertaId)),
+      this.programaLabel(oferta.programaDeOferta),
+      this.turnosLabel(oferta.turnos),
+    ].join(' · ');
   }
 
   protected unidadeOfertanteEmEdicaoLabel(): string {

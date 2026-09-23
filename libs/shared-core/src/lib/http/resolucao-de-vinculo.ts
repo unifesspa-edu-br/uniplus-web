@@ -53,3 +53,22 @@ export function resolverVinculo<T>(
   }
   return { estado: 'ausente', rotulo: '' };
 }
+
+/**
+ * Texto que descreve uma resolução: o rótulo, quando resolveu, ou o marcador
+ * do desfecho, quando não. É o que a célula da listagem mostra, e o que um
+ * nome acessível montado a partir do vínculo tem de repetir para não contar
+ * outra história ao leitor de tela.
+ */
+export function descreverVinculo(resolucao: ResolucaoDeVinculo): string {
+  switch (resolucao.estado) {
+    case 'resolvido':
+      return resolucao.rotulo;
+    case 'carregando':
+      return 'Carregando…';
+    case 'falhou':
+      return 'Não carregado';
+    case 'ausente':
+      return 'Não identificado';
+  }
+}

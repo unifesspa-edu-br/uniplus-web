@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
+import { ResolucaoDeVinculo, descreverVinculo } from '@uniplus/shared-core/http';
 
 /**
  * Rótulo de uma chave estrangeira resolvida por lookup.
@@ -37,14 +37,5 @@ export class LookupLabelComponent {
 
   protected readonly estado = computed(() => this.resolucao().estado);
 
-  protected readonly marcador = computed(() => {
-    switch (this.estado()) {
-      case 'carregando':
-        return 'Carregando…';
-      case 'falhou':
-        return 'Não carregado';
-      default:
-        return 'Não identificado';
-    }
-  });
+  protected readonly marcador = computed(() => descreverVinculo(this.resolucao()));
 }
