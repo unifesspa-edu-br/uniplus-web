@@ -9,6 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { normalizarParaBusca } from '@uniplus/shared-utils';
 
 /** Uma escolha da lista. `value` é o que sai; `label` é o que a pessoa lê. */
 export interface UiComboboxOption {
@@ -175,15 +176,15 @@ export class ComboboxComponent {
    * acento e caixa, que é como as pessoas digitam.
    */
   protected readonly gruposVisiveis = computed<readonly UiComboboxGroup[]>(() => {
-    const termo = normalizar(this.busca() ?? '');
+    const termo = normalizarParaBusca(this.busca() ?? '');
     if (termo === '') return this.grupos();
 
     return this.grupos()
       .map((grupo) => ({
         ...grupo,
-        options: normalizar(grupo.label).includes(termo)
+        options: normalizarParaBusca(grupo.label).includes(termo)
           ? grupo.options
-          : grupo.options.filter((opcao) => normalizar(opcao.label).includes(termo)),
+          : grupo.options.filter((opcao) => normalizarParaBusca(opcao.label).includes(termo)),
       }))
       .filter((grupo) => grupo.options.length > 0);
   });
@@ -336,13 +337,4 @@ export class ComboboxComponent {
     if (alvo instanceof Node && this.hospedeiro.nativeElement.contains(alvo)) return;
     this.fechar();
   }
-}
-
-/** Sem acento e sem caixa: é como as pessoas digitam, e não é como o cadastro grava. */
-function normalizar(texto: string): string {
-  return texto
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .trim();
 }
