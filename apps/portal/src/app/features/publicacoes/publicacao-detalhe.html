@@ -1,0 +1,87 @@
+<a class="btn btn--tertiary btn--sm publicacao-voltar" routerLink="/publicacoes">
+  <i class="pi pi-arrow-left btn__icon" aria-hidden="true"></i>
+  Voltar para Publicações
+</a>
+
+@if (erro(); as mensagem) {
+<ui-alert variant="danger" heading="Não foi possível carregar esta publicação">
+  {{ mensagem }}
+  <div class="publicacao-retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="carregando()"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @else if (carregando()) {
+<div class="publicacao-loading" role="status">
+  <ui-spinner spinnerSize="sm" accessibleName="Carregando publicação" />
+  Carregando publicação…
+</div>
+} @else if (publicacao(); as item) {
+<ui-page-header [heading]="item.titulo" [level]="1" />
+
+<div class="publicacao-meta">
+  <ui-tag [variant]="statusVariant()" [solid]="true">{{ statusLabel() }}</ui-tag>
+  <span class="card__meta">Edital {{ item.numeroEdital }}</span>
+  <span class="card__meta"> Publicado em {{ item.dataPublicacao | dateBr: 'long' }} </span>
+</div>
+
+<p class="publicacao-desc">{{ item.descricao }}</p>
+
+<section class="publicacao-historico" aria-labelledby="publicacao-historico-title">
+  <h2 id="publicacao-historico-title" class="sr-only">Linha do tempo</h2>
+
+  @if (historico().length > 0) {
+  <ol class="publicacao-timeline" role="list">
+    @for (evento of historico(); track evento.id; let primeiro = $first) {
+    <li class="publicacao-timeline__item">
+      <span class="publicacao-timeline__marker" [class.is-current]="primeiro" aria-hidden="true">
+        <i class="pi pi-check"></i>
+      </span>
+      <div class="publicacao-timeline__card" [class.is-current]="primeiro">
+        <div class="publicacao-timeline__head">
+          <span class="publicacao-timeline__data">{{ evento.data | dateBr: 'long' }}</span>
+          <ui-tag [variant]="categoriaVariant(evento.categoria)"
+            >{{ categoriaLabel(evento.categoria) }}</ui-tag
+          >
+        </div>
+        <h3 class="publicacao-timeline__evento-titulo">{{ evento.titulo }}</h3>
+        @if (evento.descricao) {
+        <p class="publicacao-timeline__evento-desc">{{ evento.descricao }}</p>
+        } @if (evento.documentoArquivo) {
+        <a
+          class="publicacao-timeline__link"
+          [routerLink]="['/publicacoes', item.id, 'eventos', evento.id, 'documento']"
+          target="_blank"
+          rel="noopener"
+        >
+          <i class="pi pi-file-pdf" aria-hidden="true"></i>
+          Ver documento (PDF) — {{ evento.documentoArquivo }}
+          <span class="sr-only">(abre em nova aba)</span>
+        </a>
+        }
+      </div>
+    </li>
+    }
+  </ol>
+  } @else {
+  <ui-empty-state
+    heading="Nenhum evento registrado"
+    description="Ainda não há eventos na linha do tempo deste processo seletivo."
+  />
+  }
+</section>
+} @else {
+<ui-empty-state
+  heading="Publicação não encontrada"
+  description="Este edital não existe ou não está mais disponível."
+  variant="error"
+>
+  <a class="btn btn--secondary" routerLink="/publicacoes">Voltar para Publicações</a>
+</ui-empty-state>
+}

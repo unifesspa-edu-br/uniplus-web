@@ -1,0 +1,40 @@
+/* ── Documento de um evento da linha do tempo (aba própria, sem o shell do portal) ── */
+
+:host {
+  display: block;
+  min-height: 100vh;
+  padding: var(--space-8) var(--space-6);
+}
+
+.evento-documento {
+  max-width: 68ch;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.evento-documento__eyebrow {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.evento-documento__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+}
+
+.evento-documento__placeholder {
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.evento-documento__placeholder p {
+  margin: 0;
+}

@@ -1,0 +1,173 @@
+/* ── Detalhe de publicação (menu Publicações — Tela 2) ────────────────── */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+}
+
+.publicacao-voltar {
+  align-self: flex-start;
+}
+
+.publicacao-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.publicacao-desc {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.publicacao-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.publicacao-retry {
+  display: inline-flex;
+}
+
+.publicacao-historico {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Linha do tempo: mesmo padrão do wizard (step-rail) — marcador verde nos passos
+   concluídos, azul + fundo tingido no atual (o evento mais recente). */
+.publicacao-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 68ch;
+}
+
+.publicacao-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+}
+
+.publicacao-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+/* Conector vertical contínuo, centralizado no marcador (32px → meia = 16px). */
+.publicacao-timeline__item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 15px;
+  top: calc(var(--space-3) + 16px);
+  bottom: calc(var(--space-3) * -1);
+  width: 2px;
+  background: var(--color-success-solid);
+}
+
+.publicacao-timeline__item:last-child::before {
+  display: none;
+}
+
+.publicacao-timeline__marker {
+  position: relative;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  margin-top: var(--space-3);
+  border-radius: 50%;
+  border: 2px solid var(--color-success-solid);
+  background: var(--color-success-solid);
+  color: var(--color-neutral-0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+}
+
+.publicacao-timeline__marker.is-current {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
+[data-theme='contrast'] .publicacao-timeline__marker {
+  color: var(--text-on-primary);
+}
+
+.publicacao-timeline__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.publicacao-timeline__card.is-current {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-card));
+  border-color: var(--color-primary-200);
+}
+
+.publicacao-timeline__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.publicacao-timeline__data {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.publicacao-timeline__evento-titulo {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-heading);
+}
+
+.publicacao-timeline__evento-desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.publicacao-timeline__link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary);
+  overflow-wrap: anywhere;
+}
+
+.publicacao-timeline__link:hover {
+  text-decoration: underline;
+}
+
+.publicacao-timeline__link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
