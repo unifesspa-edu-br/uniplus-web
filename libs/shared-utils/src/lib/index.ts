@@ -1,3 +1,4 @@
+export { normalizarParaBusca } from './utils/busca.util';
 export {
   CODIGO_CADASTRO_FORMATO,
   CODIGO_CADASTRO_TAMANHO_MAXIMO,
