@@ -147,7 +147,7 @@ export class PortalShellComponent {
   protected readonly navItems: readonly PortalNavItem[] = [
     { label: 'Editais', icon: 'pi-calendar', routerLink: '/processos' },
     { label: 'Minhas inscrições', icon: 'pi-check-square', routerLink: '/inscricao' },
-    { label: 'Resultados', icon: 'pi-chart-bar', routerLink: '/acompanhamento' },
+    { label: 'Publicações', icon: 'pi-chart-bar', routerLink: '/publicacoes' },
     { label: 'Meu perfil', icon: 'pi-user', routerLink: '/perfil' },
     { label: 'Ajuda', icon: 'pi-question-circle' },
   ];
@@ -158,7 +158,7 @@ export class PortalShellComponent {
       links: [
         { label: 'Editais', routerLink: '/processos' },
         { label: 'Minhas inscrições', routerLink: '/inscricao' },
-        { label: 'Resultados', routerLink: '/acompanhamento' },
+        { label: 'Publicações', routerLink: '/publicacoes' },
       ],
     },
     {

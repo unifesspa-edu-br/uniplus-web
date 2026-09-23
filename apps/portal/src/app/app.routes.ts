@@ -27,6 +27,15 @@ export const appRoutes: Routes = [
           import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),
       },
       {
+        // Publicações — lista pública dos processos seletivos ainda não
+        // finalizados e o detalhe/linha do tempo de cada um (menu
+        // "Publicações"). Mesmo motivo de "processos": consulta sem
+        // autenticação, dado mocado por ora (ver publicacoes.mock.ts).
+        path: 'publicacoes',
+        loadChildren: () =>
+          import('./features/publicacoes/publicacoes.routes').then((m) => m.PUBLICACOES_ROUTES),
+      },
+      {
         // "Minhas inscrições" e "Resultados" ficam no shell público, como o
         // resto da navegação do topo — exigem authGuard mesmo aqui, o shell
         // em si continua sem restrição de rota.
