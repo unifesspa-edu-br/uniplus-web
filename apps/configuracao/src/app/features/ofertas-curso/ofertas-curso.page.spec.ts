@@ -1038,4 +1038,143 @@ describe('OfertasCursoPage', () => {
       'Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e turno, e vagas e-MEC',
     );
   });
+
+  describe('indicador de total de ofertas cadastradas (#789)', () => {
+    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
+    const ofertaB: OfertaCursoDto = { ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000d2' };
+
+    const indicador = (): string | null => {
+      fixture.detectChanges();
+      const el: HTMLElement | null = fixture.nativeElement.querySelector(
+        '.panel-head__title .list-count',
+      );
+      return el?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+    };
+
+    async function flushPrimeiraPagina(
+      ofertas: readonly OfertaCursoDto[],
+      headers: Record<string, string>,
+    ): Promise<TestRequest> {
+      const req = controller.expectOne((r) => r.url === LISTA_URL);
+      req.flush(ofertas, { headers });
+      expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
+      expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+      await propagate();
+      return req;
+    }
+
+    it('CA-01/CA-10: pede include_total na primeira página e exibe o X-Total-Count no formato da issue', async () => {
+      const req = await flushPrimeiraPagina([ofertaSeed], { 'X-Total-Count': '120' });
+
+      expect(req.request.params.get('include_total')).toBe('true');
+      expect(indicador()).toBe('Total de ofertas cadastradas: 120');
+    });
+
+    it('CA-09: exibe zero quando a API informa que não há ofertas', async () => {
+      await flushPrimeiraPagina([], { 'X-Total-Count': '0' });
+
+      expect(indicador()).toBe('Total de ofertas cadastradas: 0');
+    });
+
+    it('CA-05: a troca de página não pede nem altera o total', async () => {
+      await flushPrimeiraPagina([ofertaSeed], {
+        'X-Total-Count': '120',
+        Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"`,
+      });
+
+      component['proximaPagina']();
+      await propagate();
+      expect(indicador()).toBe('Total de ofertas cadastradas: 120');
+      const p2 = controller.expectOne((r) => r.url === LISTA_URL);
+      expect(p2.request.params.get('cursor')).toBe('p2');
+      expect(p2.request.params.has('include_total')).toBe(false);
+      p2.flush([ofertaB], {
+        headers: { Link: `<${LISTA_URL}?cursor=p1&direction=prev>; rel="prev"` },
+      });
+      await propagate();
+      expect(indicador()).toBe('Total de ofertas cadastradas: 120');
+
+      component['paginaAnterior']();
+      await propagate();
+      const p1 = controller.expectOne((r) => r.url === LISTA_URL);
+      expect(p1.request.params.get('direction')).toBe('prev');
+      expect(p1.request.params.has('include_total')).toBe(false);
+      p1.flush([ofertaSeed], {
+        headers: { Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"` },
+      });
+      await propagate();
+      expect(indicador()).toBe('Total de ofertas cadastradas: 120');
+    });
+
+    it('CA-12: sem X-Total-Count na resposta, o indicador não afirma um total', async () => {
+      await flushPrimeiraPagina([ofertaSeed], {});
+
+      expect(indicador()).toBeNull();
+    });
+
+    it('CA-12: falha na consulta esconde o indicador em vez de exibir zero', async () => {
+      controller
+        .expectOne((r) => r.url === LISTA_URL)
+        .flush({}, { status: 500, statusText: 'Server Error' });
+      expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
+      expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+      await propagate();
+
+      expect(component['errorMessage']()).not.toBeNull();
+      expect(indicador()).toBeNull();
+    });
+
+    it('CA-06: após criar uma oferta, consulta o total de novo e exibe o novo valor', async () => {
+      await flushPrimeiraPagina([ofertaSeed], { 'X-Total-Count': '1' });
+      component['abrirCadastro']();
+      await flushUnidades();
+      component['form'].patchValue({
+        cursoId: CURSO_ID,
+        localOfertaId: LOCAL_ID,
+        unidadeOfertanteOrigemId: UNIDADE_ID,
+        turnos: ['MATUTINO'],
+        vagasAnuaisAutorizadas: 40,
+      });
+      component['salvar']();
+      controller
+        .expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`)
+        .flush(ofertaB.id, { status: 201, statusText: 'Created' });
+      await propagate();
+
+      // Durante o refetch o valor anterior se mantém — não pisca "0".
+      expect(indicador()).toBe('Total de ofertas cadastradas: 1');
+      const recarga = controller.expectOne((r) => r.url === LISTA_URL);
+      expect(recarga.request.params.get('include_total')).toBe('true');
+      recarga.flush([ofertaSeed, ofertaB], { headers: { 'X-Total-Count': '2' } });
+      await propagate();
+
+      expect(indicador()).toBe('Total de ofertas cadastradas: 2');
+    });
+
+    it('CA-07: após remover uma oferta numa página adiante, volta ao início e exibe o novo total', async () => {
+      await flushPrimeiraPagina([ofertaSeed], {
+        'X-Total-Count': '2',
+        Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"`,
+      });
+      component['proximaPagina']();
+      await propagate();
+      controller.expectOne((r) => r.url === LISTA_URL).flush([ofertaB]);
+      await propagate();
+
+      component['pedirRemocao'](ofertaB);
+      component['removerConfirmado']();
+      controller
+        .expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${ofertaB.id}`)
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+
+      const recarga = controller.expectOne((r) => r.url === LISTA_URL);
+      expect(recarga.request.params.has('cursor')).toBe(false);
+      expect(recarga.request.params.get('include_total')).toBe('true');
+      recarga.flush([ofertaSeed], { headers: { 'X-Total-Count': '1' } });
+      await propagate();
+
+      expect(indicador()).toBe('Total de ofertas cadastradas: 1');
+    });
+  });
 });

@@ -86,7 +86,12 @@ async function marcarTurno(page: Page, rotulo: string): Promise<void> {
   await expect(page.getByRole('checkbox', { name: rotulo })).toBeChecked();
 }
 
-async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
+async function jsonRoute(
+  route: Route,
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
     return;
@@ -94,7 +99,7 @@ async function jsonRoute(route: Route, body: unknown, status = 200): Promise<voi
   await route.fulfill({
     status,
     contentType: 'application/json',
-    headers: CORS_HEADERS,
+    headers: { ...CORS_HEADERS, ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -167,6 +172,30 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await expect(page.getByRole('cell', { name: 'Engenharia Civil', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Bacharelado', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'IGE', exact: true })).toBeVisible();
+  });
+
+  test('#789: exibe o total de ofertas cadastradas informado pela API', async ({ page }) => {
+    await mockApi(page, novoCapturado(), [ofertaSeed]);
+    // Registrada depois, a rota tem precedência sobre a de `mockApi`. O header
+    // precisa estar em `Access-Control-Expose-Headers`, como a API faz, senão o
+    // navegador o esconde da aplicação.
+    await page.route(/\/api\/configuracao\/ofertas-curso(\?.*)?$/, (route) =>
+      jsonRoute(route, [ofertaSeed], 200, {
+        'access-control-expose-headers': 'X-Total-Count',
+        'x-total-count': '42',
+      }),
+    );
+    await abrirPagina(page);
+
+    await expect(page.getByText('Total de ofertas cadastradas: 42', { exact: true })).toBeVisible();
+
+    // CA-13: o indicador cabe no cabeçalho em 320 px sem rolagem horizontal.
+    await page.setViewportSize({ width: 320, height: 900 });
+    await expect(page.getByText('Total de ofertas cadastradas: 42', { exact: true })).toBeVisible();
+    const estouraLargura = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(estouraLargura).toBe(false);
   });
 
   test('CA-04: cria oferta com os 3 vínculos e programa Regular (sem base legal)', async ({
