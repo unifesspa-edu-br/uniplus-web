@@ -26,8 +26,11 @@ export {
 export {
   PesosEnemApi,
   type PesoAreaEnemDto,
+  type PesoAreaEnemAreaDto,
+  type AreaPesoAreaEnemDto,
   type CriarPesoAreaEnemCommand,
   type AtualizarPesoAreaEnemCommand,
+  type PesoAreaEnemAreaCommand,
 } from './pesos-enem.api';
 export {
   CursosApi,

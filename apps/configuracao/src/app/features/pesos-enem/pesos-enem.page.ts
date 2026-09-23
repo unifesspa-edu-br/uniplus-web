@@ -4,9 +4,19 @@ import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, expand, forkJoin, map } from 'rxjs';
 
@@ -15,6 +25,7 @@ import {
   ProblemDetails,
   ProblemI18nService,
   cursorToString,
+  deveRotacionarIdempotencyKey,
   extractNextCursor,
   idempotencyKey,
   withIdempotencyKey,
@@ -22,8 +33,11 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
+  AreaPesoAreaEnemDto,
   AtualizarPesoAreaEnemCommand,
   CriarPesoAreaEnemCommand,
+  PesoAreaEnemAreaCommand,
+  PesoAreaEnemAreaDto,
   PesoAreaEnemDto,
   PesosEnemApi,
 } from '@uniplus/shared-data/configuracao';
@@ -37,6 +51,9 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 
+import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import { NumeroDigitadoValidoDirective } from './numero-digitado-valido.directive';
+
 /** Domínio fechado dos 4 grupos de área do ENEM (Res. INEP 805/2024, Anexo I).
  *  Espelha `GrupoCurso` do backend (Configuracao.Domain.ValueObjects) — o
  *  schema expõe `grupoCurso` como `string` livre, então o roster é declarado
@@ -48,11 +65,13 @@ const GRUPOS_CURSO: readonly string[] = [
   'Saúde e Biológicas',
 ];
 
-/** Tetos espelhando `PesoAreaEnem.PesoMaximo`/`CorteRedacaoMaximo` no backend —
- *  evita 422 surpresa por overflow das colunas `numeric(4,2)`/`numeric(7,3)`. */
+/** Tetos espelhando `PesoAreaEnem.PesoMaximo`/`CorteMaximo` no backend — evita
+ *  422 surpresa por overflow das colunas `numeric(4,2)`/`numeric(7,3)`. */
 const PESO_MAXIMO = 99.99;
 const CORTE_MAXIMO = 1000;
-const CORTE_REDACAO_PADRAO = 400;
+/** Casas decimais que as colunas guardam: peso `numeric(4,2)`, corte `numeric(7,3)`. */
+const CASAS_PESO = 2;
+const CASAS_CORTE = 3;
 
 /** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
 const PAGE_SIZE = 100;
@@ -62,23 +81,20 @@ const MAX_PAGINAS = 50;
 
 const PAR_JA_EXISTE_CODE = 'uniplus.configuracao.peso_area_enem.par_ja_existe';
 
-type PesoCampoComum =
-  | 'pesoLinguagens'
-  | 'pesoCienciasHumanas'
-  | 'pesoCienciasNatureza'
-  | 'pesoMatematica'
-  | 'pesoRedacao'
-  | 'corteRedacao'
-  | 'baseLegal';
+/** Campo editável de uma área: o peso (obrigatório) e o corte (opcional). */
+type CampoDaArea = 'peso' | 'corte';
+
+/** Uma área dentro de um grupo: o código identifica a área (fixo, vindo da API);
+ *  o operador edita só peso e corte. */
+interface AreaForm {
+  codigo: FormControl<string>;
+  peso: FormControl<number>;
+  corte: FormControl<number | null>;
+}
 
 interface PesoGrupoForm {
   grupoCurso: FormControl<string>;
-  pesoLinguagens: FormControl<number>;
-  pesoCienciasHumanas: FormControl<number>;
-  pesoCienciasNatureza: FormControl<number>;
-  pesoMatematica: FormControl<number>;
-  pesoRedacao: FormControl<number>;
-  corteRedacao: FormControl<number>;
+  areas: FormArray<FormGroup<AreaForm>>;
   baseLegal: FormControl<string>;
 }
 
@@ -91,16 +107,24 @@ interface PesoLoteForm {
 interface PesoEdicaoGrupoForm {
   id: FormControl<string>;
   grupoCurso: FormControl<string>;
-  pesoLinguagens: FormControl<number>;
-  pesoCienciasHumanas: FormControl<number>;
-  pesoCienciasNatureza: FormControl<number>;
-  pesoMatematica: FormControl<number>;
-  pesoRedacao: FormControl<number>;
-  corteRedacao: FormControl<number>;
+  areas: FormArray<FormGroup<AreaForm>>;
   baseLegal: FormControl<string>;
 }
 
 type EstadoOperacao = 'ok' | 'erro';
+
+/** Campos de primeiro nível do pedido que o operador corrige no contexto atual. O
+ *  que falta aqui não tem campo visível — e o grupo nunca tem, porque não se edita —:
+ *  o erro dele vai para o banner da operação. */
+interface DestinosDePrimeiroNivel {
+  readonly resolucao?: AbstractControl;
+  readonly baseLegal?: AbstractControl;
+}
+
+const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new Set([
+  'resolucao',
+  'baseLegal',
+]);
 
 @Component({
   selector: 'cfg-pesos-enem-page',
@@ -110,6 +134,7 @@ type EstadoOperacao = 'ok' | 'erro';
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    NumeroDigitadoValidoDirective,
     ReactiveFormsModule,
     SkeletonComponent,
     SpinnerComponent,
@@ -119,7 +144,7 @@ type EstadoOperacao = 'ok' | 'erro';
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title">Peso por Área</h1>
+        <h1 class="page-header__title" id="cfg-pesos-enem-titulo" tabindex="-1">Peso por Área</h1>
         <p class="page-header__desc">
           Pesos das cinco áreas do ENEM por grupo de curso, versionados por resolução INEP.
         </p>
@@ -129,7 +154,7 @@ type EstadoOperacao = 'ok' | 'erro';
           <button
             type="button"
             class="btn btn--primary"
-            [disabled]="submitting()"
+            [disabled]="submitting() || areas().length === 0"
             (click)="abrirDrawerCriacao()"
           >
             <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
@@ -142,9 +167,34 @@ type EstadoOperacao = 'ok' | 'erro';
     <ui-alert variant="info" heading="Chave composta: resolução + grupo de curso" [dynamic]="false">
       Cada linha representa um dos 4 grupos de curso de uma resolução INEP. Os pesos das áreas são
       definidos pela instituição em cada processo seletivo — não há soma fixa; o sistema registra os valores
-      informados sem bloquear. O corte de redação é a nota mínima exigida na redação (padrão 400;
-      não entra em cálculo de soma). Estes parâmetros também são congelados por processo seletivo.
+      informados sem bloquear. O corte de uma área é a nota mínima exigida nela: é opcional e não entra em
+      cálculo de soma. Por enquanto, só a Redação aceita corte. Estes parâmetros também são congelados por
+      processo seletivo.
     </ui-alert>
+
+    @if (erroAreas()) {
+      <ui-alert variant="danger" heading="Não foi possível carregar as áreas do ENEM">
+        {{ erroAreas() }}
+        <div class="cfg-pesos-enem__retry">
+          <!-- aria-disabled, e não disabled: o botão fica focável enquanto recarrega, e o
+               foco não cai no body no meio da nova tentativa. -->
+          <button
+            type="button"
+            id="cfg-pesos-enem-areas-tentar"
+            class="btn btn--secondary btn--sm"
+            [attr.aria-disabled]="carregandoAreas() ? 'true' : null"
+            (click)="tentarCarregarAreas()"
+          >
+            @if (carregandoAreas()) {
+              <ui-spinner size="sm" />
+              Carregando...
+            } @else {
+              Tentar novamente
+            }
+          </button>
+        </div>
+      </ui-alert>
+    }
 
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os pesos do ENEM">
@@ -162,12 +212,12 @@ type EstadoOperacao = 'ok' | 'erro';
       </ui-alert>
     }
 
-    @if (isLoading() && resolucoes().length === 0) {
+    @if ((isLoading() || carregandoAreas()) && resolucoesExibiveis().length === 0) {
       <ui-skeleton skeletonKind="card" blockSize="10rem" />
       <ui-skeleton skeletonKind="card" blockSize="10rem" />
     }
 
-    @for (resolucao of resolucoes(); track resolucao; let first = $first) {
+    @for (resolucao of resolucoesExibiveis(); track resolucao; let first = $first) {
       <section class="panel" [attr.aria-labelledby]="'cfg-pesos-enem-title-' + slug(resolucao)">
         <div class="panel-head">
           <div class="panel-head__title">
@@ -212,23 +262,21 @@ type EstadoOperacao = 'ok' | 'erro';
         <div
           class="num-grid pe-grid"
           tabindex="-1"
+          [style.--pe-colunas]="areas().length"
           [class.is-editing]="editandoResolucao() === resolucao"
           [attr.aria-label]="'Pesos do ENEM — ' + resolucao"
           (keydown.escape)="editandoResolucao() === resolucao && cancelarEdicao()"
         >
           <div class="num-grid__header" aria-hidden="true">
             <div class="num-cell">Grupo de curso</div>
-            <div class="num-cell num-cell--head">Linguagens</div>
-            <div class="num-cell num-cell--head">Humanas</div>
-            <div class="num-cell num-cell--head">Natureza</div>
-            <div class="num-cell num-cell--head">Matemática</div>
-            <div class="num-cell num-cell--head">Redação</div>
-            <div class="num-cell num-cell--head">Corte de redação</div>
+            @for (area of areas(); track area.codigo) {
+              <div class="num-cell num-cell--head">{{ area.rotulo }}</div>
+            }
           </div>
 
           @if (editandoResolucao() === resolucao && editForm(); as form) {
             @for (grupo of form.controls; track grupo.controls.id.value; let gi = $index) {
-              <div class="num-grid__row" [formGroup]="grupo">
+              <div class="num-grid__row">
                 <div>
                   <strong class="cell-label--group-label">{{
                     grupo.controls.grupoCurso.value
@@ -238,125 +286,70 @@ type EstadoOperacao = 'ok' | 'erro';
                     <ui-tag variant="success">Salvo</ui-tag>
                   }
                 </div>
-                <div class="num-cell">
-                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'">
-                    {{ grupo.controls.grupoCurso.value }} — Linguagens
-                  </label>
-                  <input
-                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'"
-                    class="num-input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoLinguagens"
-                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoLinguagens') ? 'true' : null"
-                  />
-                  @if (erroDoCampo(grupo, 'pesoLinguagens'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </div>
-                <div class="num-cell">
-                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'">
-                    {{ grupo.controls.grupoCurso.value }} — Ciências humanas
-                  </label>
-                  <input
-                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'"
-                    class="num-input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoCienciasHumanas"
-                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoCienciasHumanas') ? 'true' : null"
-                  />
-                  @if (erroDoCampo(grupo, 'pesoCienciasHumanas'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </div>
-                <div class="num-cell">
-                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'">
-                    {{ grupo.controls.grupoCurso.value }} — Ciências da natureza
-                  </label>
-                  <input
-                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'"
-                    class="num-input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoCienciasNatureza"
-                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoCienciasNatureza') ? 'true' : null"
-                  />
-                  @if (erroDoCampo(grupo, 'pesoCienciasNatureza'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </div>
-                <div class="num-cell">
-                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'">
-                    {{ grupo.controls.grupoCurso.value }} — Matemática
-                  </label>
-                  <input
-                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'"
-                    class="num-input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoMatematica"
-                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoMatematica') ? 'true' : null"
-                  />
-                  @if (erroDoCampo(grupo, 'pesoMatematica'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </div>
-                <div class="num-cell">
-                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-red'">
-                    {{ grupo.controls.grupoCurso.value }} — Redação
-                  </label>
-                  <input
-                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-red'"
-                    class="num-input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoRedacao"
-                    [attr.aria-invalid]="erroDoCampo(grupo, 'pesoRedacao') ? 'true' : null"
-                  />
-                  @if (erroDoCampo(grupo, 'pesoRedacao'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </div>
-                <div class="num-cell">
-                  <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'">
-                    {{ grupo.controls.grupoCurso.value }} — Corte de redação (padrão 400)
-                  </label>
-                  <input
-                    [id]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'"
-                    class="num-input"
-                    type="number"
-                    min="0"
-                    [attr.max]="CORTE_MAXIMO"
-                    step="10"
-                    placeholder="400"
-                    formControlName="corteRedacao"
-                    data-no-sum
-                    [attr.aria-invalid]="erroDoCampo(grupo, 'corteRedacao') ? 'true' : null"
-                  />
-                  @if (erroDoCampo(grupo, 'corteRedacao'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </div>
+                @for (
+                  area of grupo.controls.areas.controls;
+                  track area.controls.codigo.value;
+                  let ai = $index
+                ) {
+                  @let idPeso = idCampo(resolucao, gi, ai, 'peso');
+                  @let idCorte = idCampo(resolucao, gi, ai, 'corte');
+                  @let erroPeso = erroDaArea(area, 'peso');
+                  @let erroCorte = erroDaArea(area, 'corte');
+                  @let sufixo = sufixoDoRotulo(area.controls.codigo.value, grupo.controls.grupoCurso.value);
+                  <div class="num-cell" [formGroup]="area">
+                    <span class="pe-cell-rotulo" aria-hidden="true">{{
+                      rotuloDaArea(area.controls.codigo.value)
+                    }}</span>
+                    <!-- Rótulo visível curto; o restante do nome acessível (área e grupo)
+                         fica só para o leitor de tela e continua o texto visível. -->
+                    <label class="pe-campo-rotulo" [for]="idPeso">
+                      Peso<span class="sr-only">{{ sufixo }}</span>
+                    </label>
+                    <input
+                      [id]="idPeso"
+                      class="num-input"
+                      type="number"
+                      min="0"
+                      [attr.max]="PESO_MAXIMO"
+                      step="0.05"
+                      formControlName="peso"
+                      cfgNumeroDigitadoValido
+                      [attr.aria-describedby]="descritoPor(erroPeso ? idPeso + '-erro' : null)"
+                      [attr.aria-invalid]="erroPeso ? 'true' : null"
+                    />
+                    @if (erroPeso) {
+                      <span class="field__error" role="alert" [id]="idPeso + '-erro'">{{ erroPeso }}</span>
+                    }
+                    <label class="pe-campo-rotulo" [for]="idCorte">
+                      Corte<span class="sr-only">{{ sufixo }}</span>
+                    </label>
+                    <input
+                      [id]="idCorte"
+                      class="num-input"
+                      type="number"
+                      min="0"
+                      [attr.max]="CORTE_MAXIMO"
+                      step="10"
+                      placeholder="Sem corte"
+                      formControlName="corte"
+                      cfgNumeroDigitadoValido
+                      [attr.aria-describedby]="descritoPor(idCorte + '-dica', erroCorte ? idCorte + '-erro' : null)"
+                      [attr.aria-invalid]="erroCorte ? 'true' : null"
+                    />
+                    <span class="sr-only" [id]="idCorte + '-dica'">
+                      Opcional — em branco, a área fica sem corte.
+                    </span>
+                    @if (erroCorte) {
+                      <span class="field__error" role="alert" [id]="idCorte + '-erro'">{{ erroCorte }}</span>
+                    }
+                  </div>
+                }
               </div>
             }
             <div class="grid-editbar" id="grid-pe-bar">
               @if (editErro()) {
-                <ui-alert
-                  variant="danger"
-                  heading="Não foi possível salvar todos os grupos"
-                  [dynamic]="false"
-                >
+                <!-- Região viva (role="alert"): recusas sem campo na tela só aparecem aqui. -->
+                <ui-alert variant="danger" heading="Não foi possível salvar todos os grupos">
                   {{ editErro() }}
                 </ui-alert>
               }
@@ -389,80 +382,31 @@ type EstadoOperacao = 'ok' | 'erro';
                   <div>
                     <strong class="cell-label--group-label">{{ grupo }}</strong>
                   </div>
-                  <div class="num-cell">
-                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'">
-                      {{ grupo }} — Linguagens
-                    </label>
-                    <input
-                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-ling'"
-                      class="num-input"
-                      type="number"
-                      [value]="linha.pesoLinguagens"
-                      readonly
-                    />
-                  </div>
-                  <div class="num-cell">
-                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'">
-                      {{ grupo }} — Ciências humanas
-                    </label>
-                    <input
-                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-hum'"
-                      class="num-input"
-                      type="number"
-                      [value]="linha.pesoCienciasHumanas"
-                      readonly
-                    />
-                  </div>
-                  <div class="num-cell">
-                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'">
-                      {{ grupo }} — Ciências da natureza
-                    </label>
-                    <input
-                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-nat'"
-                      class="num-input"
-                      type="number"
-                      [value]="linha.pesoCienciasNatureza"
-                      readonly
-                    />
-                  </div>
-                  <div class="num-cell">
-                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'">
-                      {{ grupo }} — Matemática
-                    </label>
-                    <input
-                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-mat'"
-                      class="num-input"
-                      type="number"
-                      [value]="linha.pesoMatematica"
-                      readonly
-                    />
-                  </div>
-                  <div class="num-cell">
-                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-red'">
-                      {{ grupo }} — Redação
-                    </label>
-                    <input
-                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-red'"
-                      class="num-input"
-                      type="number"
-                      [value]="linha.pesoRedacao"
-                      readonly
-                    />
-                  </div>
-                  <div class="num-cell">
-                    <label class="sr-only" [for]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'">
-                      {{ grupo }} — Corte de redação (padrão 400)
-                    </label>
-                    <input
-                      [id]="'pe-' + slug(resolucao) + '-g' + gi + '-corte'"
-                      class="num-input"
-                      type="number"
-                      [value]="linha.corteRedacao"
-                      placeholder="400"
-                      readonly
-                      data-no-sum
-                    />
-                  </div>
+                  @for (area of areas(); track area.codigo; let ai = $index) {
+                    @let valor = valorDaArea(linha, area.codigo);
+                    @let corte = corteExibido(valor);
+                    @let idLeitura = idCampoLeitura(resolucao, gi, ai);
+                    <div class="num-cell">
+                      <span class="pe-cell-rotulo" aria-hidden="true">{{ area.rotulo }}</span>
+                      <label class="sr-only" [for]="idLeitura">
+                        {{ rotuloDoCampo('peso', area.codigo, grupo) }}
+                      </label>
+                      <!-- O corte é anunciado junto do peso: fica ligado ao campo como descrição. -->
+                      <input
+                        [id]="idLeitura"
+                        class="num-input"
+                        type="number"
+                        [value]="valor?.peso"
+                        [attr.aria-describedby]="corte !== null ? idLeitura + '-corte' : null"
+                        readonly
+                      />
+                      @if (corte !== null) {
+                        <span class="pe-corte" [id]="idLeitura + '-corte'">
+                          Corte: {{ corte }}
+                        </span>
+                      }
+                    </div>
+                  }
                 </div>
               }
             }
@@ -470,13 +414,13 @@ type EstadoOperacao = 'ok' | 'erro';
 
           <p class="grid-note">
             Os pesos das áreas são definidos pela instituição em cada processo seletivo — não há soma fixa; o
-            sistema registra os valores informados sem bloquear. O corte de redação é a nota mínima
-            exigida na redação (valor padrão 400; não entra em cálculo de soma).
+            sistema registra os valores informados sem bloquear. O corte de uma área é a nota mínima
+            exigida nela: aparece abaixo do peso quando existe e não entra em cálculo de soma.
           </p>
         </div>
       </section>
     } @empty {
-      @if (!isLoading() && !errorMessage()) {
+      @if (!isLoading() && !carregandoAreas() && !errorMessage() && !erroAreas()) {
         <ui-empty-state
           heading="Nenhuma resolução cadastrada"
           description="Cadastre a primeira resolução de pesos do ENEM por grupo de curso."
@@ -484,7 +428,7 @@ type EstadoOperacao = 'ok' | 'erro';
           <button
             type="button"
             class="btn btn--primary"
-            [disabled]="submitting()"
+            [disabled]="submitting() || areas().length === 0"
             (click)="abrirDrawerCriacao()"
           >
             Cadastrar nova resolução
@@ -575,91 +519,58 @@ type EstadoOperacao = 'ok' | 'erro';
                 }
               </legend>
               <div class="form-grid">
-                <label class="field">
-                  <span class="field__label is-required">Linguagens</span>
-                  <input
-                    class="input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoLinguagens"
-                  />
-                  @if (erroDoCampoGrupo(gi, 'pesoLinguagens'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </label>
-                <label class="field">
-                  <span class="field__label is-required">Ciências humanas</span>
-                  <input
-                    class="input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoCienciasHumanas"
-                  />
-                  @if (erroDoCampoGrupo(gi, 'pesoCienciasHumanas'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </label>
-                <label class="field">
-                  <span class="field__label is-required">Ciências da natureza</span>
-                  <input
-                    class="input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoCienciasNatureza"
-                  />
-                  @if (erroDoCampoGrupo(gi, 'pesoCienciasNatureza'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </label>
-                <label class="field">
-                  <span class="field__label is-required">Matemática</span>
-                  <input
-                    class="input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoMatematica"
-                  />
-                  @if (erroDoCampoGrupo(gi, 'pesoMatematica'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </label>
-                <label class="field">
-                  <span class="field__label is-required">Redação</span>
-                  <input
-                    class="input"
-                    type="number"
-                    min="0"
-                    [attr.max]="PESO_MAXIMO"
-                    step="0.05"
-                    formControlName="pesoRedacao"
-                  />
-                  @if (erroDoCampoGrupo(gi, 'pesoRedacao'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </label>
-                <label class="field">
-                  <span class="field__label">Corte de redação</span>
-                  <input
-                    class="input"
-                    type="number"
-                    min="0"
-                    [attr.max]="CORTE_MAXIMO"
-                    step="10"
-                    placeholder="400"
-                    formControlName="corteRedacao"
-                  />
-                  @if (erroDoCampoGrupo(gi, 'corteRedacao'); as erro) {
-                    <span class="field__error" role="alert">{{ erro }}</span>
-                  }
-                </label>
+                @for (
+                  area of grupo.controls.areas.controls;
+                  track area.controls.codigo.value;
+                  let ai = $index
+                ) {
+                  @let rotulo = rotuloDaArea(area.controls.codigo.value);
+                  @let erroPeso = erroDaArea(area, 'peso');
+                  @let erroCorte = erroDaArea(area, 'corte');
+                  @let idPesoErro = idDrawer(gi, ai, 'peso-erro');
+                  @let idCorteDica = idDrawer(gi, ai, 'corte-dica');
+                  @let idCorteErro = idDrawer(gi, ai, 'corte-erro');
+                  <label class="field" [formGroup]="area">
+                    <span class="field__label is-required">Peso de {{ rotulo }}</span>
+                    <input
+                      class="input"
+                      type="number"
+                      min="0"
+                      [attr.max]="PESO_MAXIMO"
+                      step="0.05"
+                      formControlName="peso"
+                      cfgNumeroDigitadoValido
+                      [attr.aria-label]="rotuloDoCampo('peso', area.controls.codigo.value, gruposCurso[gi])"
+                      [attr.aria-describedby]="descritoPor(erroPeso ? idPesoErro : null)"
+                      [attr.aria-invalid]="erroPeso ? 'true' : null"
+                    />
+                    @if (erroPeso) {
+                      <span class="field__error" role="alert" [id]="idPesoErro">{{ erroPeso }}</span>
+                    }
+                  </label>
+                  <label class="field" [formGroup]="area">
+                    <span class="field__label">Corte de {{ rotulo }}</span>
+                    <input
+                      class="input"
+                      type="number"
+                      min="0"
+                      [attr.max]="CORTE_MAXIMO"
+                      step="10"
+                      placeholder="Sem corte"
+                      formControlName="corte"
+                      cfgNumeroDigitadoValido
+                      [attr.aria-label]="rotuloDoCampo('corte', area.controls.codigo.value, gruposCurso[gi])"
+                      [attr.aria-describedby]="descritoPor(idCorteDica, erroCorte ? idCorteErro : null)"
+                      [attr.aria-invalid]="erroCorte ? 'true' : null"
+                    />
+                    <span class="field__hint" [id]="idCorteDica">
+                      Opcional — em branco, a área fica sem corte.
+                    </span>
+                    @if (erroCorte) {
+                      <span class="field__error" role="alert" [id]="idCorteErro">{{ erroCorte }}</span>
+                    }
+                  </label>
+                }
                 <label class="field field--full">
                   <span class="field__label is-required">Base legal</span>
                   <input class="input" type="text" formControlName="baseLegal" />
@@ -703,6 +614,17 @@ export class PesosEnemPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+
+  /** As cinco áreas do cadastro, na ordem canônica, vindas da API — a fonte das
+   *  colunas da tabela e dos campos dos formulários. Nenhuma lista de áreas é
+   *  escrita no cliente. */
+  protected readonly areas = signal<readonly AreaPesoAreaEnemDto[]>([]);
+  protected readonly carregandoAreas = signal(false);
+  protected readonly erroAreas = signal<string | null>(null);
+  private readonly rotuloPorCodigo = computed(
+    () => new Map(this.areas().map((area) => [area.codigo, area.rotulo])),
+  );
 
   protected readonly registros = signal<readonly PesoAreaEnemDto[]>([]);
   protected readonly isLoading = signal(false);
@@ -716,6 +638,10 @@ export class PesosEnemPage {
         return diff !== 0 ? diff : resolucaoB.localeCompare(resolucaoA, 'pt-BR');
       })
       .map(([resolucao]) => resolucao),
+  );
+  /** Sem as áreas não há colunas para montar: a tabela espera a lista chegar. */
+  protected readonly resolucoesExibiveis = computed(() =>
+    this.areas().length === 0 ? [] : this.resolucoes(),
   );
 
   // --- Edição in-line ---------------------------------------------------
@@ -750,6 +676,8 @@ export class PesosEnemPage {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
     }),
+    // As áreas de cada grupo só são montadas ao abrir o drawer, quando a lista de
+    // áreas da API já chegou.
     grupos: new FormArray(GRUPOS_CURSO.map((grupo) => criarPesoGrupoForm(grupo))),
   });
 
@@ -784,11 +712,51 @@ export class PesosEnemPage {
           }
         });
       });
+    this.carregarAreas();
     this.carregar();
   }
 
   protected slug(valor: string): string {
     return slug(valor);
+  }
+
+  /** Id de um campo editável da edição em linha. */
+  protected idCampo(resolucao: string, grupo: number, area: number, campo: CampoDaArea): string {
+    return `pe-${slug(resolucao)}-g${grupo}-a${area}-${campo}`;
+  }
+
+  /** Id de um elemento de apoio (dica, erro) de uma área no drawer de criação. */
+  protected idDrawer(grupo: number, area: number, sufixo: string): string {
+    return `pe-drawer-g${grupo}-a${area}-${sufixo}`;
+  }
+
+  /** Valor de `aria-describedby`: os ids presentes, ou nenhum atributo. */
+  protected descritoPor(...ids: readonly (string | null)[]): string | null {
+    const presentes = ids.filter((id): id is string => id !== null);
+    return presentes.length > 0 ? presentes.join(' ') : null;
+  }
+
+  /** Id do campo somente leitura: distinto do da edição, para o foco ao abrir a
+   *  edição nunca cair no input que está saindo da tela. */
+  protected idCampoLeitura(resolucao: string, grupo: number, area: number): string {
+    return `pe-${slug(resolucao)}-g${grupo}-a${area}-leitura`;
+  }
+
+  protected rotuloDaArea(codigo: string): string {
+    return this.rotuloPorCodigo().get(codigo) ?? codigo;
+  }
+
+  /** Nome acessível completo do campo: área e grupo, para quem navega campo a campo
+   *  sem ver o cabeçalho da coluna (ex.: "Peso de Matemática e suas Tecnologias —
+   *  Tecnológica"). */
+  protected rotuloDoCampo(campo: CampoDaArea, codigo: string, grupo: string): string {
+    return `${campo === 'peso' ? 'Peso' : 'Corte'}${this.sufixoDoRotulo(codigo, grupo)}`;
+  }
+
+  /** O que segue "Peso"/"Corte" no nome acessível — oculto na tela, onde o rótulo
+   *  visível é curto e a área e o grupo já aparecem no cabeçalho e na linha. */
+  protected sufixoDoRotulo(codigo: string, grupo: string): string {
+    return ` de ${this.rotuloDaArea(codigo)} — ${grupo}`;
   }
 
   protected linhaDoGrupo(resolucao: string, grupo: string): PesoAreaEnemDto | undefined {
@@ -797,9 +765,26 @@ export class PesosEnemPage {
       ?.find((linha) => linha.grupoCurso === grupo);
   }
 
+  protected valorDaArea(linha: PesoAreaEnemDto, codigo: string): PesoAreaEnemAreaDto | undefined {
+    return linha.areas.find((area) => area.codigo === codigo);
+  }
+
+  /** O corte da área como texto em pt-BR, ou `null` quando a área não tem corte (o
+   *  zero é corte válido e aparece). */
+  protected corteExibido(valor: PesoAreaEnemAreaDto | undefined): string | null {
+    const corte = corteComoNumero(valor?.corte);
+    return corte === null ? null : formatarNumero(corte);
+  }
+
   protected tentarNovamente(): void {
     if (!this.isLoading()) {
       this.carregar();
+    }
+  }
+
+  protected tentarCarregarAreas(): void {
+    if (!this.carregandoAreas()) {
+      this.carregarAreas();
     }
   }
 
@@ -840,7 +825,9 @@ export class PesosEnemPage {
 
   private abrirEdicao(resolucao: string): void {
     const linhas = ordenarPorRoster(this.porResolucao().get(resolucao) ?? []);
-    const form = new FormArray(linhas.map((linha) => criarPesoEdicaoGrupoForm(linha)));
+    const form = new FormArray(
+      linhas.map((linha) => criarPesoEdicaoGrupoForm(linha, this.areas())),
+    );
     this.editForm.set(form);
     this.editErro.set(null);
     this.estadoLinhasEdicao.set(new Map());
@@ -849,9 +836,13 @@ export class PesosEnemPage {
     );
     this.ultimoPayloadEdicao.set(new Map());
     this.editandoResolucao.set(resolucao);
-    queueMicrotask(() => {
-      document.getElementById(`pe-${slug(resolucao)}-g0-ling`)?.focus();
-    });
+    // Depois da renderização: antes dela o bloco de edição ainda não existe na tela.
+    afterNextRender(
+      () => {
+        document.getElementById(this.idCampo(resolucao, 0, 0, 'peso'))?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   protected cancelarEdicao(): void {
@@ -886,17 +877,19 @@ export class PesosEnemPage {
     this.editErro.set(null);
     this.estadoLinhasEdicao.set(new Map());
     if (resolucao !== null) {
-      queueMicrotask(() => {
-        document.getElementById(`pe-editar-${slug(resolucao)}`)?.focus();
-      });
+      // Depois da renderização: antes dela o botão "Editar parâmetros" ainda pode estar
+      // desabilitado pelo envio que acabou de terminar, e o foco se perderia.
+      afterNextRender(
+        () => {
+          document.getElementById(`pe-editar-${slug(resolucao)}`)?.focus();
+        },
+        { injector: this.injector },
+      );
     }
   }
 
-  protected erroDoCampo(
-    grupo: FormGroup<PesoEdicaoGrupoForm>,
-    nome: PesoCampoComum,
-  ): string | null {
-    return this.erroDeControle(grupo.controls[nome], nome);
+  protected erroDaArea(area: FormGroup<AreaForm>, campo: CampoDaArea): string | null {
+    return this.erroDeControle(area.controls[campo], campo);
   }
 
   protected salvarEdicao(): void {
@@ -931,24 +924,13 @@ export class PesosEnemPage {
       const raw = grupo.getRawValue();
       const command: AtualizarPesoAreaEnemCommand = {
         id: raw.id,
-        pesoLinguagens: raw.pesoLinguagens,
-        pesoCienciasHumanas: raw.pesoCienciasHumanas,
-        pesoCienciasNatureza: raw.pesoCienciasNatureza,
-        pesoMatematica: raw.pesoMatematica,
-        pesoRedacao: raw.pesoRedacao,
-        corteRedacao: raw.corteRedacao,
+        areas: areasDoPayload(raw.areas),
         baseLegal: nullIfBlank(raw.baseLegal),
       };
-      // Reusa a Idempotency-Key SOMENTE se o corpo é idêntico ao da última
-      // tentativa dessa linha. A maioria dos 422 de peso/corte é rejeitada
-      // por exceção do FluentValidation ANTES do handler — nesse caminho a
-      // reserva de idempotência é descartada, então reenviar com corpo
-      // corrigido sob a mesma key funciona normalmente. Mas há um caminho
-      // de erro de domínio (retornado como Result, não lançado) que É
-      // cacheado pelo idempotency store — reenviar corpo diferente sob a
-      // mesma key nesse caso conflitaria como corpo divergente. Comparar o
-      // payload evita ter que distinguir os dois caminhos: só reusa quando
-      // o usuário não mudou nada (retry idêntico), renova quando mudou.
+      // Reusa a Idempotency-Key SOMENTE num retry idêntico depois de falha em que
+      // o servidor pode ter processado sem a resposta chegar (rede, 5xx). Depois de
+      // recusa definitiva a chave é descartada no retorno (ver o laço abaixo): a API
+      // guarda essa resposta, e reenviar sob a mesma chave a devolveria de novo.
       const payloadAtual = JSON.stringify(command);
       const chave =
         this.ultimoPayloadEdicao().get(raw.id) === payloadAtual
@@ -967,10 +949,10 @@ export class PesosEnemPage {
         const novasChaves = new Map(this.idempotencyKeysEdicao());
         const novosPayloads = new Map(this.ultimoPayloadEdicao());
         let ultimoProblema: ProblemDetails | null = null;
+        const semCampo: string[] = [];
 
         for (const { id, grupo, result, chave, payloadAtual } of resultados) {
-          novasChaves.set(id, chave);
-          novosPayloads.set(id, payloadAtual);
+          lembrarChave(novasChaves, novosPayloads, id, chave, payloadAtual, result);
           if (result.ok) {
             novoEstado.set(id, 'ok');
             // Trava a linha salva: sem isso, o usuário poderia editá-la de
@@ -986,7 +968,10 @@ export class PesosEnemPage {
           // reenviar — as demais (ok/pendente-de-outra-rodada) permanecem
           // como estavam.
           grupo.enable();
-          this.aplicarErroGrupo(grupo, result.problem);
+          // A edição em linha só permite corrigir as áreas: resolução, grupo e base legal
+          // não aparecem nela, e o erro deles vai para o banner, nomeando o grupo.
+          const mensagens = this.aplicarErroGrupo(grupo, result.problem, {});
+          semCampo.push(...mensagens.map((m) => `${grupo.controls.grupoCurso.value}: ${m}`));
         }
 
         this.estadoLinhasEdicao.set(novoEstado);
@@ -996,7 +981,10 @@ export class PesosEnemPage {
         const falhas = resultados.filter((r) => !r.result.ok);
         if (falhas.length > 0) {
           this.editErro.set(
-            `${falhas.length} de ${resultados.length} grupo(s) não foram salvos. Corrija e tente novamente.`,
+            [
+              `${falhas.length} de ${resultados.length} grupo(s) não foram salvos. Corrija e tente novamente.`,
+              ...semCampo,
+            ].join(' '),
           );
           if (ultimoProblema && ultimoProblema.status >= 500) {
             this.notifications.errorFromProblem(ultimoProblema);
@@ -1034,12 +1022,12 @@ export class PesosEnemPage {
         }
         return {
           ...linha,
-          pesoLinguagens: nova.pesoLinguagens,
-          pesoCienciasHumanas: nova.pesoCienciasHumanas,
-          pesoCienciasNatureza: nova.pesoCienciasNatureza,
-          pesoMatematica: nova.pesoMatematica,
-          pesoRedacao: nova.pesoRedacao,
-          corteRedacao: nova.corteRedacao,
+          areas: nova.areas.map((area) => ({
+            codigo: area.codigo,
+            rotulo: this.rotuloDaArea(area.codigo),
+            peso: area.peso,
+            corte: area.corte,
+          })),
           baseLegal: nova.baseLegal,
         };
       }),
@@ -1055,23 +1043,15 @@ export class PesosEnemPage {
     // anterior ainda referencia. Quando essa resposta tardia chegasse,
     // grupo.disable()/setErrors() mexeriam nos campos da sessão nova que o
     // usuário já está preenchendo.
-    if (this.submitting()) {
+    if (this.submitting() || this.areas().length === 0) {
       return;
     }
     this.pesoLoteForm.controls.resolucao.enable();
     this.pesoLoteForm.reset({ resolucao: '', baseLegalGlobal: '' });
     this.pesoLoteForm.controls.grupos.controls.forEach((grupo, index) => {
       grupo.enable();
-      grupo.reset({
-        grupoCurso: GRUPOS_CURSO[index],
-        pesoLinguagens: 0,
-        pesoCienciasHumanas: 0,
-        pesoCienciasNatureza: 0,
-        pesoMatematica: 0,
-        pesoRedacao: 0,
-        corteRedacao: CORTE_REDACAO_PADRAO,
-        baseLegal: '',
-      });
+      grupo.setControl('areas', criarAreasForm(this.areas()));
+      grupo.reset({ grupoCurso: GRUPOS_CURSO[index], baseLegal: '' });
     });
     this.submitError.set(null);
     this.estadoGruposCriacao.set(new Map());
@@ -1116,7 +1096,7 @@ export class PesosEnemPage {
     return this.erroDeControle(this.pesoLoteForm.controls[nome], nome);
   }
 
-  protected erroDoCampoGrupo(index: number, nome: PesoCampoComum): string | null {
+  protected erroDoCampoGrupo(index: number, nome: 'baseLegal'): string | null {
     const grupo = this.pesoLoteForm.controls.grupos.at(index);
     return this.erroDeControle(grupo.controls[nome], nome);
   }
@@ -1153,22 +1133,13 @@ export class PesosEnemPage {
       const command: CriarPesoAreaEnemCommand = {
         resolucao: nullIfBlank(resolucao),
         grupoCurso: nullIfBlank(raw.grupoCurso),
-        pesoLinguagens: raw.pesoLinguagens,
-        pesoCienciasHumanas: raw.pesoCienciasHumanas,
-        pesoCienciasNatureza: raw.pesoCienciasNatureza,
-        pesoMatematica: raw.pesoMatematica,
-        pesoRedacao: raw.pesoRedacao,
-        corteRedacao: raw.corteRedacao,
+        areas: areasDoPayload(raw.areas),
         baseLegal: nullIfBlank(raw.baseLegal),
       };
-      // Reusa a Idempotency-Key SOMENTE se o corpo é idêntico ao da última
-      // tentativa desse grupo — só assim é seguro assumir que uma falha
-      // transitória (rede/5xx) pode ter processado o POST no servidor
-      // mesmo com a resposta perdida. Se o usuário alterou qualquer campo
-      // entre tentativas (inclusive após uma falha transitória, que deixa
-      // o grupo editável), o corpo mudou e reusar a key arriscaria um
-      // conflito de idempotência (corpo divergente) no backend — gera uma
-      // key nova nesse caso.
+      // Reusa a Idempotency-Key SOMENTE num retry idêntico depois de falha em que
+      // o servidor pode ter processado sem a resposta chegar (rede, 5xx): repetir a
+      // chave é o que evita criar o grupo duas vezes. Corpo alterado ou recusa
+      // definitiva anterior (descartada no laço abaixo) saem com chave nova.
       const payloadAtual = JSON.stringify(command);
       const chave =
         this.ultimoPayloadCriacao().get(index) === payloadAtual
@@ -1188,10 +1159,16 @@ export class PesosEnemPage {
         const novosPayloads = new Map(this.ultimoPayloadCriacao());
         let duplicidade = false;
         let ultimoProblema: ProblemDetails | null = null;
+        const semCampo: string[] = [];
+        // Algum grupo já criado, neste envio ou num anterior: a resolução fica
+        // travada (ver abaixo), e travar limpa o erro do campo — por isso, nesse caso,
+        // o erro de resolução vai para o banner.
+        const algumSucesso =
+          [...this.estadoGruposCriacao().values()].some((estado) => estado === 'ok') ||
+          resultados.some((r) => r.result.ok);
 
         for (const { index, grupo, result, chave, payloadAtual } of resultados) {
-          novasChaves.set(index, chave);
-          novosPayloads.set(index, payloadAtual);
+          lembrarChave(novasChaves, novosPayloads, index, chave, payloadAtual, result);
           if (result.ok) {
             novoEstado.set(index, 'ok');
             grupo.disable();
@@ -1206,7 +1183,11 @@ export class PesosEnemPage {
           if (result.problem.code === PAR_JA_EXISTE_CODE) {
             duplicidade = true;
           } else {
-            this.aplicarErroGrupo(grupo, result.problem);
+            const mensagens = this.aplicarErroGrupo(grupo, result.problem, {
+              resolucao: algumSucesso ? undefined : this.pesoLoteForm.controls.resolucao,
+              baseLegal: grupo.controls.baseLegal,
+            });
+            semCampo.push(...mensagens.map((m) => `${GRUPOS_CURSO[index]}: ${m}`));
           }
         }
 
@@ -1218,7 +1199,6 @@ export class PesosEnemPage {
         // criados ficam presos a esse identificador no backend — mudar
         // `resolucao` depois de um sucesso parcial faria os grupos pendentes
         // serem recriados sob uma resolução diferente da dos já criados.
-        const algumSucesso = [...novoEstado.values()].some((estado) => estado === 'ok');
         if (algumSucesso) {
           this.pesoLoteForm.controls.resolucao.disable();
         }
@@ -1249,15 +1229,20 @@ export class PesosEnemPage {
           if (!this.drawerAberto() && algumSucesso) {
             this.carregar();
           }
+          // Com resolução duplicada e nada criado, o aviso fica no campo da resolução
+          // (acima) e o banner leva só as mensagens dos outros grupos que não têm campo.
+          const partes: string[] = [];
           if (duplicidade && algumSucesso) {
-            this.submitError.set(
+            partes.push(
               'Um dos grupos pendentes já existe com esse identificador. Os grupos já criados foram salvos — confira os dados existentes antes de tentar novamente.',
             );
           } else if (!duplicidade) {
-            this.submitError.set(
+            partes.push(
               `${falhas.length} de ${resultados.length} grupo(s) não foram criados. Corrija e tente novamente.`,
             );
           }
+          partes.push(...semCampo);
+          this.submitError.set(partes.length > 0 ? partes.join(' ') : null);
           if (ultimoProblema && ultimoProblema.status >= 500) {
             this.notifications.errorFromProblem(ultimoProblema);
           }
@@ -1327,8 +1312,46 @@ export class PesosEnemPage {
       });
   }
 
-  // --- Carregamento (exaustão de cursor, ADR-0015/0026) ------------------
+  // --- Carregamento -------------------------------------------------------
 
+  private carregarAreas(): void {
+    // O alerta de falha anterior fica na tela até a nova tentativa terminar: tirá-lo
+    // agora removeria o botão que está com o foco.
+    this.carregandoAreas.set(true);
+    this.api
+      .listarAreas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.carregandoAreas.set(false);
+        if (!result.ok) {
+          this.erroAreas.set(this.problemI18n.resolve(result.problem).title);
+          if (result.problem.status >= 500) {
+            this.notifications.errorFromProblem(result.problem);
+          }
+          return;
+        }
+        // Sem áreas não há colunas nem campos: é falha do carregamento, não cadastro
+        // vazio, e a tela oferece tentar de novo em vez de convidar a cadastrar.
+        if (result.data.length === 0) {
+          this.erroAreas.set('A lista de áreas do ENEM veio vazia.');
+          return;
+        }
+        // O alerta sai da tela: se o foco estava nele (no botão de tentar de novo),
+        // passa ao título da página, em vez de cair no body.
+        const focoNoAlerta =
+          this.erroAreas() !== null &&
+          document.activeElement?.id === 'cfg-pesos-enem-areas-tentar';
+        this.erroAreas.set(null);
+        this.areas.set(result.data);
+        if (focoNoAlerta) {
+          afterNextRender(() => document.getElementById('cfg-pesos-enem-titulo')?.focus(), {
+            injector: this.injector,
+          });
+        }
+      });
+  }
+
+  /** Exaustão de cursor (ADR-0015/0026). */
   private carregar(): void {
     if (this.isLoading()) {
       return;
@@ -1386,18 +1409,29 @@ export class PesosEnemPage {
       const backend = control.errors['backend'] as { code: string; message: string };
       return backend.message;
     }
+    if (control.errors['numeroInvalido']) {
+      return 'Número inválido.';
+    }
+    // Texto ainda incompleto ("2,", "1e"): o campo continua inválido, mas nada é dito
+    // até o operador terminar — nem "Campo obrigatório.", que o valor vazio causaria.
+    if (control.errors['digitacaoIncompleta']) {
+      return null;
+    }
     if (control.errors['required']) {
       return 'Campo obrigatório.';
     }
     if (control.errors['min']) {
-      return nome === 'corteRedacao'
-        ? 'O corte de redação não pode ser negativo.'
-        : 'O peso não pode ser negativo.';
+      return nome === 'corte' ? 'O corte não pode ser negativo.' : 'O peso não pode ser negativo.';
     }
     if (control.errors['max']) {
-      return nome === 'corteRedacao'
-        ? `Corte de redação não pode exceder ${CORTE_MAXIMO}.`
-        : `Peso não pode exceder ${PESO_MAXIMO}.`;
+      return nome === 'corte'
+        ? `O corte não pode exceder ${formatarNumero(CORTE_MAXIMO)}.`
+        : `O peso não pode exceder ${formatarNumero(PESO_MAXIMO)}.`;
+    }
+    if (control.errors['casasDecimais']) {
+      return nome === 'corte'
+        ? `O corte aceita no máximo ${CASAS_CORTE} casas decimais.`
+        : `O peso aceita no máximo ${CASAS_PESO} casas decimais.`;
     }
     if (control.errors['maxlength']) {
       return 'Valor acima do tamanho permitido.';
@@ -1405,42 +1439,56 @@ export class PesosEnemPage {
     return 'Valor inválido.';
   }
 
+  /** Leva cada erro do backend ao campo em que o operador o corrige neste contexto.
+   *  Devolve as mensagens que não têm campo corrigível aqui (ex.: a base legal na
+   *  edição em linha, que não a exibe), para o banner da operação: um controle
+   *  inválido e invisível travaria o formulário sem mensagem, e pôr o erro num campo
+   *  que não é o dele faria o operador mexer no lugar errado. */
   private aplicarErroGrupo(
     grupo: FormGroup<PesoGrupoForm> | FormGroup<PesoEdicaoGrupoForm>,
     problem: ProblemDetails,
-  ): void {
-    const controls = grupo.controls as unknown as Record<PesoCampoComum, AbstractControl>;
+    destinos: DestinosDePrimeiroNivel,
+  ): string[] {
+    const areas = grupo.controls.areas;
+    const semCampo: string[] = [];
     if (
       problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
       problem.errors &&
       problem.errors.length > 0
     ) {
-      let aplicouAlgum = false;
+      // Vários erros podem cair no mesmo campo (ex.: `areas[i].codigo` e `areas[i].peso`
+      // vão ambos ao peso da área): acumula as mensagens, para o operador ver todas.
+      const porControle = new Map<AbstractControl, { code: string; mensagens: string[] }>();
       for (const erro of problem.errors) {
-        const nome = controlNameFromBackendField(erro.field);
-        if (nome === null) {
+        const control = controleDoCampoBackend(areas, destinos, erro.field);
+        if (control === null) {
+          if (!semCampo.includes(erro.message)) {
+            semCampo.push(erro.message);
+          }
           continue;
         }
-        controls[nome].setErrors({ backend: { code: erro.code, message: erro.message } });
-        controls[nome].markAsTouched();
-        aplicouAlgum = true;
+        const acumulado = porControle.get(control) ?? { code: erro.code, mensagens: [] };
+        if (!acumulado.mensagens.includes(erro.message)) {
+          acumulado.mensagens.push(erro.message);
+        }
+        porControle.set(control, acumulado);
       }
-      if (aplicouAlgum) {
-        return;
+      for (const [control, { code, mensagens }] of porControle) {
+        control.setErrors({ backend: { code, message: mensagens.join(' ') } });
+        control.markAsTouched();
+      }
+      if (porControle.size > 0 || semCampo.length > 0) {
+        return semCampo;
       }
     }
-    // Fallback (erro de domínio 4xx sem `errors[]` granular) só trava o
-    // campo quando a falha é acionável pelo usuário (algo no request precisa
-    // mudar). Falha transitória (rede/status 0, 5xx) NÃO pina erro aqui —
-    // isso invalidaria o form permanentemente e bloquearia retry do mesmo
-    // payload até o usuário editar algum campo só para limpar o erro
-    // sintético. O banner (editErro/submitError) já comunica a falha geral.
+    // Recusa 4xx sem `errors[]` (ex.: linha removida por outra sessão, conflito de
+    // concorrência): não aponta campo nenhum, então vai ao banner da operação, e não a
+    // um campo que não é o dela. Falha transitória (rede/status 0, 5xx) não acrescenta
+    // nada: o banner geral já a comunica, e o mesmo pedido pode passar num novo envio.
     if (ehFalhaAcionavelPeloUsuario(problem)) {
-      controls.pesoLinguagens.setErrors({
-        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-      });
-      controls.pesoLinguagens.markAsTouched();
+      semCampo.push(this.problemI18n.resolve(problem).title);
     }
+    return semCampo;
   }
 }
 
@@ -1474,33 +1522,66 @@ function toNumber(valor: number | string): number {
   return typeof valor === 'number' ? valor : Number(valor);
 }
 
+/** O corte vindo da API como número, ou `null` quando a área não tem corte. */
+function corteComoNumero(corte: number | string | null | undefined): number | null {
+  return corte === null || corte === undefined ? null : toNumber(corte);
+}
+
+/** Um formatador para a página inteira: criar um a cada célula e a cada detecção de
+ *  mudanças custaria a construção de um `Intl.NumberFormat` por chamada. */
+const FORMATADOR_NUMERO = new Intl.NumberFormat('pt-BR');
+
+function formatarNumero(valor: number): string {
+  return FORMATADOR_NUMERO.format(valor);
+}
+
+function criarAreaForm(codigo: string, peso: number, corte: number | null): FormGroup<AreaForm> {
+  return new FormGroup<AreaForm>({
+    codigo: new FormControl(codigo, { nonNullable: true }),
+    peso: new FormControl(peso, {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.min(0),
+        Validators.max(PESO_MAXIMO),
+        maximoDeCasasDecimais(CASAS_PESO),
+      ],
+    }),
+    // Opcional: em branco (null) é "sem corte" — sem Validators.required.
+    corte: new FormControl<number | null>(corte, {
+      validators: [Validators.min(0), Validators.max(CORTE_MAXIMO), maximoDeCasasDecimais(CASAS_CORTE)],
+    }),
+  });
+}
+
+/** Recusa valor com mais casas decimais do que a coluna guarda: sem isso, a tela
+ *  mostraria o número digitado e o backend gravaria outro, arredondado. */
+function maximoDeCasasDecimais(maximo: number): ValidatorFn {
+  return (control) => {
+    const valor: unknown = control.value;
+    if (typeof valor !== 'number' || !Number.isFinite(valor)) {
+      return null;
+    }
+    return casasDecimais(valor) > maximo ? { casasDecimais: { maximo } } : null;
+  };
+}
+
+/** Casas decimais de um número, inclusive na notação exponencial (ex.: 1.5e-7). */
+function casasDecimais(valor: number): number {
+  const [mantissa = '', expoente = '0'] = String(valor).toLowerCase().split('e');
+  const decimaisDaMantissa = mantissa.split('.')[1]?.length ?? 0;
+  return Math.max(0, decimaisDaMantissa - Number(expoente));
+}
+
+/** Uma área por item da lista da API, na ordem dela, com peso zero e sem corte. */
+function criarAreasForm(areas: readonly AreaPesoAreaEnemDto[]): FormArray<FormGroup<AreaForm>> {
+  return new FormArray(areas.map((area) => criarAreaForm(area.codigo, 0, null)));
+}
+
 function criarPesoGrupoForm(grupoCurso: string): FormGroup<PesoGrupoForm> {
   return new FormGroup<PesoGrupoForm>({
     grupoCurso: new FormControl(grupoCurso, { nonNullable: true }),
-    pesoLinguagens: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoCienciasHumanas: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoCienciasNatureza: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoMatematica: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoRedacao: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    corteRedacao: new FormControl(CORTE_REDACAO_PADRAO, {
-      nonNullable: true,
-      validators: [Validators.min(0), Validators.max(CORTE_MAXIMO)],
-    }),
+    areas: new FormArray<FormGroup<AreaForm>>([]),
     baseLegal: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
@@ -1508,46 +1589,57 @@ function criarPesoGrupoForm(grupoCurso: string): FormGroup<PesoGrupoForm> {
   });
 }
 
-function criarPesoEdicaoGrupoForm(linha: PesoAreaEnemDto): FormGroup<PesoEdicaoGrupoForm> {
+/** As áreas da edição seguem a ordem da lista da API, não a ordem em que a linha as
+ *  devolveu: o índice de cada controle é o índice que o backend usa em
+ *  `areas[i]`, para o erro voltar ao campo certo. */
+function criarPesoEdicaoGrupoForm(
+  linha: PesoAreaEnemDto,
+  areas: readonly AreaPesoAreaEnemDto[],
+): FormGroup<PesoEdicaoGrupoForm> {
   return new FormGroup<PesoEdicaoGrupoForm>({
     id: new FormControl(linha.id, { nonNullable: true }),
     grupoCurso: new FormControl(linha.grupoCurso, { nonNullable: true }),
-    pesoLinguagens: new FormControl(toNumber(linha.pesoLinguagens), {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoCienciasHumanas: new FormControl(toNumber(linha.pesoCienciasHumanas), {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoCienciasNatureza: new FormControl(toNumber(linha.pesoCienciasNatureza), {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoMatematica: new FormControl(toNumber(linha.pesoMatematica), {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    pesoRedacao: new FormControl(toNumber(linha.pesoRedacao), {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(PESO_MAXIMO)],
-    }),
-    corteRedacao: new FormControl(toNumber(linha.corteRedacao), {
-      // Required só na edição: `AtualizarPesoAreaEnemCommand.corteRedacao`
-      // não é opcional no schema (diferente de criar, que aceita null e
-      // assume o padrão 400 no backend). Sem isso, limpar o input só
-      // deixaria a validação de min/max passar (elas ignoram valor vazio) e
-      // o NumberValueAccessor escreveria `null` no controle mesmo com
-      // `nonNullable: true` — que é garantia só de tipo, não de runtime — e
-      // o command seria enviado com corteRedacao inválido para o contrato.
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(CORTE_MAXIMO)],
-    }),
+    areas: new FormArray(
+      areas.map((area) => {
+        const valor = linha.areas.find((existente) => existente.codigo === area.codigo);
+        return criarAreaForm(
+          area.codigo,
+          valor === undefined ? 0 : toNumber(valor.peso),
+          corteComoNumero(valor?.corte),
+        );
+      }),
+    ),
     baseLegal: new FormControl(linha.baseLegal, {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(1), Validators.maxLength(500)],
     }),
   });
+}
+
+function areasDoPayload(
+  areas: readonly { codigo: string; peso: number; corte: number | null }[],
+): PesoAreaEnemAreaCommand[] {
+  return areas.map((area) => ({ codigo: area.codigo, peso: area.peso, corte: area.corte ?? null }));
+}
+
+/** Guarda a chave e o corpo enviados para um retry idêntico reaproveitar a chave —
+ *  exceto depois de recusa definitiva, que a API guarda: aí o registro sai, e o
+ *  próximo envio, mesmo com o corpo igual, leva chave nova. */
+function lembrarChave<K>(
+  chaves: Map<K, string>,
+  payloads: Map<K, string>,
+  alvo: K,
+  chave: string,
+  payload: string,
+  result: ApiResult<unknown>,
+): void {
+  if (!result.ok && deveRotacionarIdempotencyKey(result.problem)) {
+    chaves.delete(alvo);
+    payloads.delete(alvo);
+    return;
+  }
+  chaves.set(alvo, chave);
+  payloads.set(alvo, payload);
 }
 
 /** 4xx = algo no pedido precisa mudar antes do retry (domínio/validação);
@@ -1558,24 +1650,30 @@ function ehFalhaAcionavelPeloUsuario(problem: ProblemDetails): boolean {
   return problem.status >= 400 && problem.status < 500;
 }
 
-const PESO_CONTROL_NAMES: ReadonlySet<string> = new Set<PesoCampoComum>([
-  'pesoLinguagens',
-  'pesoCienciasHumanas',
-  'pesoCienciasNatureza',
-  'pesoMatematica',
-  'pesoRedacao',
-  'corteRedacao',
-  'baseLegal',
-]);
-
-function controlNameFromBackendField(field: string): PesoCampoComum | null {
-  const normalized =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return PESO_CONTROL_NAMES.has(camelCase) ? (camelCase as PesoCampoComum) : null;
+/** Leva o erro do backend ao campo em que o operador corrige: `areas[i].corte` ao
+ *  corte da área; `areas[i].peso`, `areas[i].codigo` (o código não é editável) e o erro
+ *  do item inteiro (`areas[i]`) ao peso da área; `areas` (área faltando) ao primeiro
+ *  peso; `resolucao` e `baseLegal` ao campo deles, quando corrigíveis neste contexto.
+ *  O resto (inclusive `grupoCurso`) devolve `null`, e a mensagem vai para o banner. Tolera prefixo no caminho (`request.`, `$.`) e a
+ *  primeira letra maiúscula (`Areas[2].Peso`). */
+function controleDoCampoBackend(
+  areas: FormArray<FormGroup<AreaForm>>,
+  destinos: DestinosDePrimeiroNivel,
+  field: string,
+): AbstractControl | null {
+  const daArea = /(?:^|\.)areas\[(\d+)\](?:\.(\w+))?$/iu.exec(field);
+  if (daArea !== null) {
+    const area = areas.at(Number(daArea[1]));
+    if (area === undefined) {
+      return null;
+    }
+    return daArea[2]?.toLowerCase() === 'corte' ? area.controls.corte : area.controls.peso;
+  }
+  if (/(?:^|\.)areas$/iu.test(field)) {
+    return areas.at(0)?.controls.peso ?? null;
+  }
+  const nome = controlNameFromBackendField<keyof DestinosDePrimeiroNivel>(field, CAMPOS_DE_PRIMEIRO_NIVEL);
+  return nome === null ? null : (destinos[nome] ?? null);
 }
 
 function slug(valor: string): string {
@@ -1584,9 +1682,4 @@ function slug(valor: string): string {
     .replace(/[̀-ͯ]/gu, '')
     .replace(/[^a-zA-Z0-9]+/gu, '-')
     .toLowerCase();
-}
-
-function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }

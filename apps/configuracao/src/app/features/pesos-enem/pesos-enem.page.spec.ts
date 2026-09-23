@@ -1,28 +1,53 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormControl, FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
-import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
+import { ProblemI18nService, apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
+import { AreaPesoAreaEnemDto, CONFIGURACAO_BASE_PATH, PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PesosEnemPage } from './pesos-enem.page';
 
 const BASE = 'http://localhost:5000';
 const LIST_URL = `${BASE}/api/configuracao/pesos-area-enem`;
+const AREAS_URL = `${BASE}/api/configuracao/pesos-area-enem/areas`;
+
+/** As cinco áreas como a API as devolve: código, rótulo oficial e ordem canônica. */
+const AREAS: readonly AreaPesoAreaEnemDto[] = [
+  { codigo: 'REDACAO', rotulo: 'Redação' },
+  { codigo: 'CIENCIAS_DA_NATUREZA', rotulo: 'Ciências da Natureza e suas Tecnologias' },
+  { codigo: 'CIENCIAS_HUMANAS', rotulo: 'Ciências Humanas e suas Tecnologias' },
+  { codigo: 'LINGUAGENS', rotulo: 'Linguagens e suas Tecnologias' },
+  { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
+];
+
+/** Pesos padrão por código; a Redação tem corte 400, as demais não têm corte. */
+const PESOS_PADRAO: Readonly<Record<string, number>> = {
+  REDACAO: 1,
+  CIENCIAS_DA_NATUREZA: 1.5,
+  CIENCIAS_HUMANAS: 1,
+  LINGUAGENS: 1,
+  MATEMATICA: 2.5,
+};
 
 function linha(overrides: Partial<PesoAreaEnemDto> & Pick<PesoAreaEnemDto, 'id' | 'resolucao' | 'grupoCurso'>): PesoAreaEnemDto {
   return {
-    pesoLinguagens: 1,
-    pesoCienciasHumanas: 1,
-    pesoCienciasNatureza: 1.5,
-    pesoMatematica: 2.5,
-    pesoRedacao: 1,
-    corteRedacao: 400,
+    areas: AREAS.map((area) => ({
+      codigo: area.codigo,
+      rotulo: area.rotulo,
+      peso: PESOS_PADRAO[area.codigo] ?? 1,
+      corte: area.codigo === 'REDACAO' ? 400 : null,
+    })),
     baseLegal: 'Res. 805/2024 Anexo I',
     criadoEm: '2026-06-24T12:00:00Z',
     ...overrides,
   };
+}
+
+/** Peso de uma área numa linha de `registros`. */
+function pesoDe(dto: PesoAreaEnemDto | undefined, codigo: string): number | string | undefined {
+  return dto?.areas.find((area) => area.codigo === codigo)?.peso;
 }
 
 const RES_805 = 'Res. 805/2024';
@@ -102,6 +127,27 @@ describe('PesosEnemPage', () => {
     appRef.tick();
   };
 
+  function expectAreas(): TestRequest {
+    const req = controller.expectOne((r) => r.url === AREAS_URL);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('area-peso-area-enem', 1));
+    return req;
+  }
+
+  /** Controles de uma área (peso, corte) dentro de um grupo do formulário. */
+  function areaDo(
+    grupo: { controls: { areas: { controls: readonly { controls: { codigo: { value: string } } }[] } } } | undefined,
+    codigo: string,
+  ) {
+    const area = grupo?.controls.areas.controls.find((a) => a.controls.codigo.value === codigo);
+    if (!area) throw new Error(`área ${codigo} ausente do formulário`);
+    return area as unknown as FormGroup<{
+      codigo: FormControl<string>;
+      peso: FormControl<number>;
+      corte: FormControl<number | null>;
+    }>;
+  }
+
   function expectListagem(): TestRequest {
     const req = controller.expectOne((r) => r.url === LIST_URL);
     expect(req.request.method).toBe('GET');
@@ -109,11 +155,16 @@ describe('PesosEnemPage', () => {
     return req;
   }
 
-  /** Carrega a página com uma única página de resultados (sem Link de próxima página). */
-  async function carregarUmaPagina(dados: readonly PesoAreaEnemDto[]): Promise<void> {
+  /** Carrega a página com a lista de áreas e uma única página de resultados (sem Link de próxima página). */
+  async function carregarUmaPagina(
+    dados: readonly PesoAreaEnemDto[],
+    areas: readonly AreaPesoAreaEnemDto[] = AREAS,
+  ): Promise<void> {
     fixture.detectChanges();
+    expectAreas().flush([...areas]);
     expectListagem().flush([...dados]);
     await propagate();
+    fixture.detectChanges();
   }
 
   it('PesosEnemPage_TextoDeApoio_DescreveOCadastroSemRotuloInterno', async () => {
@@ -123,8 +174,8 @@ describe('PesosEnemPage', () => {
     const texto = (fixture.nativeElement.textContent as string).replace(/\s+/g, ' ');
 
     // São cinco áreas com peso — Linguagens, Matemática, Ciências da Natureza,
-    // Ciências Humanas e Redação —, e o conjunto não decorre da LDB. O corte de
-    // redação é campo à parte, e por isso não entra nesta contagem.
+    // Ciências Humanas e Redação —, e o conjunto não decorre da LDB. Cada área tem
+    // também um corte opcional, que é nota mínima e não peso: não entra nesta contagem.
     expect(texto).toContain('Pesos das cinco áreas do ENEM por grupo de curso');
     expect(texto).not.toContain('LDB');
 
@@ -141,6 +192,7 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_CarregamentoInicial_EsgotaCursorEAgrupaPorResolucao', async () => {
     fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
     const pagina1 = expectListagem();
     pagina1.flush([...linhas805], { headers: { Link: `<${LIST_URL}?cursor=abc&direction=next>; rel="next"` } });
     await propagate();
@@ -170,6 +222,7 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_ErroCarga_ExibeAlertComRetry', async () => {
     fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
     expectListagem().flush(
       problem(500, 'uniplus.erro_interno', 'Erro interno'),
       { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
@@ -231,7 +284,7 @@ describe('PesosEnemPage', () => {
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    component.editForm()?.controls[0]?.controls.pesoLinguagens.setValue(3);
+    areaDo(component.editForm()?.controls[0], 'LINGUAGENS').controls.peso.setValue(3);
     component.cancelarEdicao();
     await propagate();
 
@@ -239,7 +292,7 @@ describe('PesosEnemPage', () => {
     expect(component.editForm()).toBeNull();
     // Nenhuma chamada de API disparada pelo cancelamento (o afterEach->verify()
     // garante isso: qualquer request não esperada falharia o teste).
-    expect(component.registros().find((l) => l.id === linhas805[0]?.id)?.pesoLinguagens).toBe(1);
+    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'LINGUAGENS')).toBe(1);
   });
 
   it('PesosEnemPage_Esc_FechaModoEdicaoERestauraValores', async () => {
@@ -293,7 +346,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     const form = component.editForm();
-    form?.controls[0]?.controls.pesoMatematica.setValue(3.0);
+    areaDo(form?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     component.salvarEdicao();
     await propagate();
 
@@ -310,7 +363,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     expect(component.editandoResolucao()).toBeNull();
-    expect(component.registros().find((l) => l.id === linhas805[0]?.id)?.pesoMatematica).toBe(3.0);
+    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'MATEMATICA')).toBe(3.0);
   });
 
   it('PesosEnemPage_PesoZero_Valido_PesoNegativo_InvalidaForm', async () => {
@@ -321,12 +374,13 @@ describe('PesosEnemPage', () => {
     const grupo = component.editForm()?.controls[0];
     expect(grupo).toBeDefined();
     if (!grupo) throw new Error('form de edição não inicializado');
-    grupo.controls.pesoCienciasHumanas.setValue(0);
-    expect(grupo.controls.pesoCienciasHumanas.valid).toBe(true);
+    areaDo(grupo, 'CIENCIAS_HUMANAS').controls.peso.setValue(0);
+    expect(areaDo(grupo, 'CIENCIAS_HUMANAS').controls.peso.valid).toBe(true);
 
-    grupo.controls.pesoLinguagens.setValue(-1);
-    grupo.controls.pesoLinguagens.markAsTouched();
-    expect(component.erroDoCampo(grupo, 'pesoLinguagens')).toBe('O peso não pode ser negativo.');
+    const linguagens = areaDo(grupo, 'LINGUAGENS');
+    linguagens.controls.peso.setValue(-1);
+    linguagens.controls.peso.markAsTouched();
+    expect(component.erroDaArea(linguagens, 'peso')).toBe('O peso não pode ser negativo.');
 
     component.salvarEdicao();
     await propagate();
@@ -338,34 +392,36 @@ describe('PesosEnemPage', () => {
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    const grupo = component.editForm()?.controls[3];
-    expect(grupo).toBeDefined();
-    if (!grupo) throw new Error('form de edição não inicializado');
-    grupo.controls.corteRedacao.setValue(-10);
-    grupo.controls.corteRedacao.markAsTouched();
-    expect(component.erroDoCampo(grupo, 'corteRedacao')).toBe('O corte de redação não pode ser negativo.');
+    const redacao = areaDo(component.editForm()?.controls[3], 'REDACAO');
+    redacao.controls.corte.setValue(-10);
+    redacao.controls.corte.markAsTouched();
+    expect(component.erroDaArea(redacao, 'corte')).toBe('O corte não pode ser negativo.');
   });
 
-  it('PesosEnemPage_CorteRedacaoVazioNaEdicao_InvalidaFormEBloqueiaSubmit', async () => {
-    // Regressão: `AtualizarPesoAreaEnemCommand.corteRedacao`
-    // não é opcional no schema — limpar o input não pode resultar em `null`
-    // enviado ao backend silenciosamente (min/max ignoram valor vazio).
+  it('PesosEnemPage_CorteVazioNaEdicao_ViajaComoSemCorte', async () => {
+    // O corte é opcional: limpar o campo é "sem corte", não erro de campo
+    // obrigatório — o PUT leva corte null para a área.
     await carregarUmaPagina([...linhas805]);
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    const grupo = component.editForm()?.controls[0];
-    expect(grupo).toBeDefined();
-    if (!grupo) throw new Error('form de edição não inicializado');
-    grupo.controls.corteRedacao.setValue(null as unknown as number);
-    grupo.controls.corteRedacao.markAsTouched();
-
-    expect(grupo.controls.corteRedacao.valid).toBe(false);
-    expect(component.erroDoCampo(grupo, 'corteRedacao')).toBe('Campo obrigatório.');
+    const redacao = areaDo(component.editForm()?.controls[0], 'REDACAO');
+    redacao.controls.corte.setValue(null);
+    redacao.controls.corte.markAsTouched();
+    expect(redacao.controls.corte.valid).toBe(true);
+    expect(component.erroDaArea(redacao, 'corte')).toBeNull();
 
     component.salvarEdicao();
     await propagate();
-    controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    const corpo = requests[0]?.request.body as { areas: { codigo: string; corte: number | null }[] };
+    expect(corpo.areas.find((a) => a.codigo === 'REDACAO')?.corte).toBeNull();
+    for (const req of requests) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
   });
 
   it('PesosEnemPage_IdempotencyKey_PreservadaEmRetryComMesmoCorpo', async () => {
@@ -375,7 +431,7 @@ describe('PesosEnemPage', () => {
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    component.editForm()?.controls[0]?.controls.pesoMatematica.setValue(3.0);
+    areaDo(component.editForm()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     component.salvarEdicao();
     await propagate();
 
@@ -433,8 +489,9 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    // Usuário corrige o valor apontado pelo erro antes de reenviar.
-    component.editForm()?.controls[0]?.controls.pesoLinguagens.setValue(2.0);
+    // Usuário muda um valor antes de reenviar (a recusa sem `errors[]` vai ao banner,
+    // sem apontar campo).
+    areaDo(component.editForm()?.controls[0], 'REDACAO').controls.peso.setValue(2.0);
     component.salvarEdicao();
     await propagate();
     const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
@@ -446,9 +503,9 @@ describe('PesosEnemPage', () => {
   });
 
   it('PesosEnemPage_FalhaTransitoria_NaoTravaFormNemImpedeRetryImediato', async () => {
-    // Regressão: status 0/5xx é transitório — não pode
-    // pinar um erro sintético em pesoLinguagens que invalida o form e
-    // bloqueia o retry até o usuário editar algum campo só para limpá-lo.
+    // Regressão: status 0/5xx é transitório — não pode pinar um erro sintético em
+    // campo nenhum, que invalidaria o form e bloquearia o retry até o usuário editar
+    // algum campo só para limpá-lo.
     await carregarUmaPagina([...linhas805]);
     component.clicarEditarParametros(RES_805);
     await propagate();
@@ -468,7 +525,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     const grupoFalho = component.editForm()?.controls[0];
-    expect(grupoFalho?.controls.pesoLinguagens.errors).toBeNull();
+    expect(areaDo(grupoFalho, 'REDACAO').controls.peso.errors).toBeNull();
     expect(component.editForm()?.invalid).toBe(false);
 
     // Retry imediato, sem editar nada — deve disparar o PUT de novo.
@@ -483,7 +540,7 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_LinhaSalvaEmRodadaParcial_FicaTravadaENaoSofreDriftLocal', async () => {
     // Regressão: numa falha parcial, a linha que já teve sucesso não pode
     // continuar editável — senão uma edição local não reenviada seria
-    // gravada em `registros` como se estivesse persistida (ver revisão do PR).
+    // gravada em `registros` como se estivesse persistida.
     await carregarUmaPagina([...linhas805]);
     component.clicarEditarParametros(RES_805);
     await propagate();
@@ -582,7 +639,7 @@ describe('PesosEnemPage', () => {
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    component.editForm()?.controls[0]?.controls.pesoMatematica.setValue(3.0);
+    areaDo(component.editForm()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     component.salvarEdicao();
     await propagate();
 
@@ -602,7 +659,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     expect(component.editandoResolucao()).toBeNull();
-    expect(component.registros().find((l) => l.id === linhas805[0]?.id)?.pesoMatematica).toBe(3.0);
+    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'MATEMATICA')).toBe(3.0);
   });
 
   it('PesosEnemPage_TrocarResolucaoAposSucessoParcial_AplicaLinhasJaPersistidas', async () => {
@@ -615,7 +672,7 @@ describe('PesosEnemPage', () => {
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    component.editForm()?.controls[0]?.controls.pesoMatematica.setValue(3.0);
+    areaDo(component.editForm()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
     component.salvarEdicao();
     await propagate();
 
@@ -637,7 +694,7 @@ describe('PesosEnemPage', () => {
     confirmSpy.mockRestore();
 
     expect(component.editandoResolucao()).toBe(RES_750);
-    expect(component.registros().find((l) => l.id === linhas805[0]?.id)?.pesoMatematica).toBe(3.0);
+    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'MATEMATICA')).toBe(3.0);
   });
 
   // --- Drawer de criação ----------------------------------------------
@@ -658,6 +715,13 @@ describe('PesosEnemPage', () => {
 
     const legendas = fixture.nativeElement.querySelectorAll('.pe-drawer-grupo legend');
     expect(legendas).toHaveLength(4);
+
+    // As áreas de cada grupo são as da API, na ordem dela, e funcionam com o cadastro vazio.
+    for (const grupo of grupos) {
+      expect(grupo.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
+        AREAS.map((a) => a.codigo),
+      );
+    }
   });
 
   it('PesosEnemPage_ResolucaoVazia_InvalidaFormDeCriacao', async () => {
@@ -738,7 +802,7 @@ describe('PesosEnemPage', () => {
     requests1.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
     await propagate();
 
-    expect(component.pesoLoteForm.controls.grupos.controls[0]?.controls.pesoLinguagens.errors).toBeNull();
+    expect(areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO').controls.peso.errors).toBeNull();
 
     component.criarResolucao();
     await propagate();
@@ -805,7 +869,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     // Usuário altera o grupo que falhou antes de reenviar.
-    component.pesoLoteForm.controls.grupos.controls[0]?.controls.pesoLinguagens.setValue(3.5);
+    areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'LINGUAGENS').controls.peso.setValue(3.5);
     component.criarResolucao();
     await propagate();
     const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -952,8 +1016,9 @@ describe('PesosEnemPage', () => {
     primeiraRodada[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
 
-    // Corrige o grupo que falhou e reenvia (retry só do pendente).
-    component.pesoLoteForm.controls.grupos.controls[1]?.controls.pesoLinguagens.setValue(2.0);
+    // Muda um valor do grupo que falhou (a recusa sem `errors[]` vai ao banner) e
+    // reenvia (retry só do pendente).
+    areaDo(component.pesoLoteForm.controls.grupos.controls[1], 'REDACAO').controls.peso.setValue(2.0);
     component.criarResolucao();
     await propagate();
     const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1197,8 +1262,8 @@ describe('PesosEnemPage', () => {
     await carregarUmaPagina([...linhas805, ...linhas750]);
     component.clicarEditarParametros(RES_805);
     await propagate();
-    component.editForm()?.controls[0]?.controls.pesoLinguagens.setValue(9);
-    component.editForm()?.controls[0]?.controls.pesoLinguagens.markAsDirty();
+    areaDo(component.editForm()?.controls[0], 'LINGUAGENS').controls.peso.setValue(9);
+    areaDo(component.editForm()?.controls[0], 'LINGUAGENS').controls.peso.markAsDirty();
 
     const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
     component.clicarEditarParametros(RES_750);
@@ -1213,5 +1278,1000 @@ describe('PesosEnemPage', () => {
     expect(component.editandoResolucao()).toBe(RES_750);
 
     confirmSpy.mockRestore();
+  });
+
+  // --- Áreas vindas da API ------------------------------------------------
+
+  it('PesosEnemPage_Colunas_VemDasAreasDaApiNaOrdemDela', async () => {
+    await carregarUmaPagina([...linhas805]);
+
+    const cabecalho = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-grid__header .num-cell--head'),
+    ].map((celula) => celula.textContent?.trim());
+    expect(cabecalho).toEqual(AREAS.map((area) => area.rotulo));
+    expect((fixture.nativeElement.textContent as string)).not.toContain('Corte de redação');
+  });
+
+  it('PesosEnemPage_Colunas_NaoTemListaDeAreasNoCliente', async () => {
+    // Com outra lista vinda da API, a tabela mostra exatamente essa lista:
+    // nenhuma área é escrita no cliente.
+    const duas: readonly AreaPesoAreaEnemDto[] = [
+      { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
+      { codigo: 'REDACAO', rotulo: 'Redação' },
+    ];
+    await carregarUmaPagina([...linhas805], duas);
+
+    const cabecalho = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-grid__header .num-cell--head'),
+    ].map((celula) => celula.textContent?.trim());
+    expect(cabecalho).toEqual(['Matemática e suas Tecnologias', 'Redação']);
+  });
+
+  it('PesosEnemPage_ModoLeitura_MostraCorteAbaixoDoPesoSoQuandoExiste', async () => {
+    await carregarUmaPagina([...linhas805]);
+
+    const cortes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.pe-corte')].map(
+      (el) => el.textContent?.trim(),
+    );
+    // Uma por grupo: só a Redação tem corte nas linhas de exemplo.
+    expect(cortes).toEqual(['Corte: 400', 'Corte: 400', 'Corte: 400', 'Corte: 400']);
+  });
+
+  it('PesosEnemPage_Criar_EnviaAreasComCodigoPesoECorteSemRotulo', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    const grupo0 = component.pesoLoteForm.controls.grupos.controls[0];
+    areaDo(grupo0, 'REDACAO').controls.corte.setValue(450);
+    areaDo(grupo0, 'MATEMATICA').controls.peso.setValue(2.5);
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests).toHaveLength(4);
+    expect(requests[0]?.request.body).toEqual({
+      resolucao: 'Res. 900/2026',
+      grupoCurso: 'Tecnológica',
+      areas: [
+        { codigo: 'REDACAO', peso: 0, corte: 450 },
+        { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
+        { codigo: 'CIENCIAS_HUMANAS', peso: 0, corte: null },
+        { codigo: 'LINGUAGENS', peso: 0, corte: null },
+        { codigo: 'MATEMATICA', peso: 2.5, corte: null },
+      ],
+      baseLegal: 'Res. 900/2026 Anexo I',
+    });
+    requests.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_CodigoERotulo_NaoSaoEditaveis', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.abrirDrawerCriacao();
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelectorAll('input[formcontrolname="codigo"]')).toHaveLength(0);
+    expect(raiz.querySelectorAll('input[formcontrolname="peso"]').length).toBeGreaterThan(0);
+    expect(raiz.querySelectorAll('input[formcontrolname="corte"]').length).toBeGreaterThan(0);
+  });
+
+  it('PesosEnemPage_ErroDoBackendPorArea_VaiAoCampoDaArea', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(
+      problem(422, 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao', 'Corte fora da Redação', [
+        {
+          field: 'areas[3].corte',
+          code: 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao',
+          message: 'Por enquanto só a Redação aceita corte; Linguagens e suas Tecnologias deve ficar sem corte.',
+        },
+        {
+          field: 'areas[4].peso',
+          code: 'uniplus.configuracao.peso_area_enem.peso_excede_maximo',
+          message: 'O peso de Matemática e suas Tecnologias não pode exceder 99.99.',
+        },
+      ]),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+
+    const grupo = component.editForm()?.controls[0];
+    expect(component.erroDaArea(areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe(
+      'Por enquanto só a Redação aceita corte; Linguagens e suas Tecnologias deve ficar sem corte.',
+    );
+    expect(component.erroDaArea(areaDo(grupo, 'MATEMATICA'), 'peso')).toBe(
+      'O peso de Matemática e suas Tecnologias não pode exceder 99.99.',
+    );
+    expect(component.erroDaArea(areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
+  });
+
+  it('PesosEnemPage_AreaFaltandoNoBackend_VaiAoPrimeiroPeso', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    requests[0]?.flush(
+      problem(422, 'uniplus.configuracao.peso_area_enem.area_faltando', 'Área faltando', [
+        {
+          field: 'areas',
+          code: 'uniplus.configuracao.peso_area_enem.area_faltando',
+          message: 'Informe o peso das cinco áreas; faltam: MATEMATICA.',
+        },
+      ]),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+
+    const grupo0 = component.pesoLoteForm.controls.grupos.controls[0];
+    expect(component.erroDaArea(areaDo(grupo0, 'REDACAO'), 'peso')).toBe(
+      'Informe o peso das cinco áreas; faltam: MATEMATICA.',
+    );
+  });
+
+  it('PesosEnemPage_CamposTemRotuloAcessivelCompleto', async () => {
+    await carregarUmaPagina([...linhas805]);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    // Modo leitura: label associado ao input nomeia área e grupo.
+    const rotulos = [...raiz.querySelectorAll('label.sr-only')].map((l) => l.textContent?.trim());
+    expect(rotulos).toContain('Peso de Matemática e suas Tecnologias — Tecnológica');
+
+    // Drawer: o nome acessível começa pelo texto visível e acrescenta o grupo.
+    component.abrirDrawerCriacao();
+    await propagate();
+    fixture.detectChanges();
+    expect(
+      raiz.querySelector('input[aria-label="Peso de Matemática e suas Tecnologias — Tecnológica"]'),
+    ).not.toBeNull();
+    const corteRedacao = raiz.querySelector<HTMLInputElement>(
+      'input[aria-label="Corte de Redação — Saúde e Biológicas"]',
+    );
+    expect(corteRedacao).not.toBeNull();
+    // A dica "Opcional" fica fora do nome acessível (o aria-label o substitui), então
+    // é ligada ao campo como descrição.
+    const dica = raiz.querySelector(`[id="${corteRedacao?.getAttribute('aria-describedby') ?? ''}"]`);
+    expect(dica?.textContent?.trim()).toBe('Opcional — em branco, a área fica sem corte.');
+  });
+
+  it('PesosEnemPage_AreasPendentesComRegistrosCarregados_ExibeSkeleton', async () => {
+    // Sem as áreas a tabela não é montada: enquanto elas não chegam, a tela
+    // mostra o skeleton em vez de ficar em branco, mesmo com os registros já carregados.
+    fixture.detectChanges();
+    const areas = expectAreas();
+    expectListagem().flush([...linhas805]);
+    await propagate();
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelectorAll('ui-skeleton').length).toBeGreaterThan(0);
+
+    areas.flush([...AREAS]);
+    await propagate();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('ui-skeleton')).toHaveLength(0);
+  });
+
+  it('PesosEnemPage_ModoLeitura_FormataCorteEmPtBr', async () => {
+    const comCorteFracionado = linhas805.map((l) => ({
+      ...l,
+      areas: l.areas.map((area) => (area.codigo === 'REDACAO' ? { ...area, corte: 450.5 } : area)),
+    }));
+    await carregarUmaPagina(comCorteFracionado);
+
+    const cortes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.pe-corte')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(cortes).toEqual(['Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5']);
+  });
+
+  it('PesosEnemPage_ErroAoCarregarAreas_ExibeAlertaEBloqueiaCadastro', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(component.erroAreas()).toBeTruthy();
+    component.abrirDrawerCriacao();
+    expect(component.drawerAberto()).toBe(false);
+
+    const retry = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cfg-pesos-enem__retry button')][0] as
+      | HTMLButtonElement
+      | undefined;
+    expect(retry).toBeDefined();
+    retry?.click();
+    await propagate();
+    expectAreas().flush([...AREAS]);
+    await propagate();
+
+    expect(component.erroAreas()).toBeNull();
+    component.abrirDrawerCriacao();
+    expect(component.drawerAberto()).toBe(true);
+  });
+
+  // --- Acessibilidade e validação dos campos numéricos --------------------
+
+  /** Simula o navegador marcando o texto digitado como não numérico (`badInput`):
+   *  o `value` fica vazio e o evento `input` dispara, como no navegador real. */
+  function digitarNumeroInvalido(input: HTMLInputElement): void {
+    Object.defineProperty(input, 'validity', {
+      configurable: true,
+      value: { ...input.validity, badInput: true, valid: false },
+    });
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+  }
+
+  /** Texto inválido digitado e o operador sai do campo — quando o erro é acusado. */
+  function digitarNumeroInvalidoESair(input: HTMLInputElement): void {
+    digitarNumeroInvalido(input);
+    input.dispatchEvent(new FocusEvent('blur'));
+  }
+
+  function inputDaEdicao(campo: 'peso' | 'corte', grupo: number, area: number): HTMLInputElement {
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      `#pe-res-805-2024-g${grupo}-a${area}-${campo}`,
+    );
+    if (!input) throw new Error(`input de ${campo} (g${grupo}, a${area}) ausente`);
+    return input;
+  }
+
+  it('PesosEnemPage_EdicaoEmLinha_PesoECorteTemRotuloVisivel', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    for (const campo of ['peso', 'corte'] as const) {
+      const input = inputDaEdicao(campo, 0, 0);
+      const rotulo = raiz.querySelector<HTMLLabelElement>(`label[for="${input.id}"]`);
+      expect(rotulo).not.toBeNull();
+      // Visível: o rótulo não é sr-only, e o texto fora do trecho sr-only é curto.
+      expect(rotulo?.classList.contains('sr-only')).toBe(false);
+      const visivel = [...(rotulo?.childNodes ?? [])]
+        .filter((no) => no.nodeType === Node.TEXT_NODE)
+        .map((no) => no.textContent?.trim())
+        .join('');
+      expect(visivel).toBe(campo === 'peso' ? 'Peso' : 'Corte');
+      // O nome acessível completo continua o texto visível.
+      expect(rotulo?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        `${campo === 'peso' ? 'Peso' : 'Corte'} de Redação — Tecnológica`,
+      );
+    }
+  });
+
+  it('PesosEnemPage_ModoLeitura_CorteDescreveOPeso', async () => {
+    await carregarUmaPagina([...linhas805]);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    const pesoRedacao = raiz.querySelector<HTMLInputElement>('#pe-res-805-2024-g0-a0-leitura');
+    const idDescricao = pesoRedacao?.getAttribute('aria-describedby') ?? '';
+    expect(idDescricao).not.toBe('');
+    expect(raiz.querySelector(`[id="${idDescricao}"]`)?.textContent?.trim()).toBe('Corte: 400');
+
+    // Área sem corte não aponta descrição inexistente.
+    const pesoMatematica = raiz.querySelector<HTMLInputElement>('#pe-res-805-2024-g0-a4-leitura');
+    expect(pesoMatematica?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('PesosEnemPage_EdicaoEmLinha_NumeroInvalidoNoCorteBloqueiaEnvio', async () => {
+    // Sem a recusa, o texto não numérico virava null e o PUT apagava o corte sem aviso.
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+
+    digitarNumeroInvalidoESair(inputDaEdicao('corte', 0, 0));
+    fixture.detectChanges();
+
+    const redacao = areaDo(component.editForm()?.controls[0], 'REDACAO');
+    expect(component.erroDaArea(redacao, 'corte')).toBe('Número inválido.');
+
+    component.salvarEdicao();
+    await propagate();
+    controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
+  });
+
+  it('PesosEnemPage_Drawer_NumeroInvalidoNoPesoMostraErroProprio', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const input = raiz.querySelector<HTMLInputElement>(
+      'input[aria-label="Peso de Matemática e suas Tecnologias — Tecnológica"]',
+    );
+    if (!input) throw new Error('campo de peso ausente');
+    digitarNumeroInvalidoESair(input);
+    fixture.detectChanges();
+
+    const matematica = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'MATEMATICA');
+    expect(component.erroDaArea(matematica, 'peso')).toBe('Número inválido.');
+  });
+
+  it('PesosEnemPage_CasasDecimaisAlemDoGravado_SaoRecusadas', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+
+    const grupo = component.editForm()?.controls[0];
+    const matematica = areaDo(grupo, 'MATEMATICA');
+    matematica.controls.peso.setValue(1.125);
+    matematica.controls.peso.markAsTouched();
+    expect(component.erroDaArea(matematica, 'peso')).toBe('O peso aceita no máximo 2 casas decimais.');
+
+    const redacao = areaDo(grupo, 'REDACAO');
+    redacao.controls.corte.setValue(400.1234);
+    redacao.controls.corte.markAsTouched();
+    expect(component.erroDaArea(redacao, 'corte')).toBe('O corte aceita no máximo 3 casas decimais.');
+
+    component.salvarEdicao();
+    await propagate();
+    controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
+
+    // No limite do que a coluna guarda, o valor é aceito.
+    matematica.controls.peso.setValue(1.25);
+    redacao.controls.corte.setValue(400.125);
+    expect(matematica.controls.peso.valid).toBe(true);
+    expect(redacao.controls.corte.valid).toBe(true);
+  });
+
+  it('PesosEnemPage_ListaDeAreasVazia_TrataComoFalhaDeCarregamento', async () => {
+    await carregarUmaPagina([], []);
+
+    expect(component.erroAreas()).toBeTruthy();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('ui-empty-state')).toBeNull();
+    expect(raiz.querySelector('.cfg-pesos-enem__retry button')).not.toBeNull();
+  });
+
+  it('PesosEnemPage_AbrirEdicao_FocaOPrimeiroCampoEditavel', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    await propagate();
+
+    const focado = document.activeElement as HTMLInputElement | null;
+    expect(focado?.id).toBe('pe-res-805-2024-g0-a0-peso');
+    expect(focado?.readOnly).toBe(false);
+  });
+
+  it('PesosEnemPage_ErroDoBackendComPrefixoOuMaiuscula_VaiAoCampoCerto', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(
+      problem(422, 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao', 'Recusa', [
+        { field: 'request.Areas[3].corte', code: 'c1', message: 'Erro no corte de Linguagens.' },
+        { field: '$.areas[2]', code: 'c2', message: 'Erro no item de Ciências Humanas.' },
+        { field: 'Areas[4].Peso', code: 'c3', message: 'Erro no peso de Matemática.' },
+      ]),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+
+    const grupo = component.editForm()?.controls[0];
+    expect(component.erroDaArea(areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe('Erro no corte de Linguagens.');
+    expect(component.erroDaArea(areaDo(grupo, 'CIENCIAS_HUMANAS'), 'peso')).toBe(
+      'Erro no item de Ciências Humanas.',
+    );
+    expect(component.erroDaArea(areaDo(grupo, 'MATEMATICA'), 'peso')).toBe('Erro no peso de Matemática.');
+  });
+
+  it('PesosEnemPage_VariosErrosNoMesmoCampo_MostraTodos', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(
+      problem(422, 'uniplus.configuracao.peso_area_enem.area_fora_do_dominio', 'Recusa', [
+        { field: 'areas[0].codigo', code: 'c1', message: 'Área fora do Peso por Área.' },
+        { field: 'areas[0].peso', code: 'c2', message: 'O peso não pode ser negativo.' },
+        { field: 'areas', code: 'c3', message: 'Faltam áreas: MATEMATICA.' },
+      ]),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+
+    const erro = component.erroDaArea(areaDo(component.editForm()?.controls[0], 'REDACAO'), 'peso');
+    expect(erro).toContain('Área fora do Peso por Área.');
+    expect(erro).toContain('O peso não pode ser negativo.');
+    expect(erro).toContain('Faltam áreas: MATEMATICA.');
+  });
+
+  // --- Erro do backend preservado, destino corrigível e descrição acessível ---
+
+  function recusa422(req: TestRequest | undefined, errors: readonly { field: string; code: string; message: string }[]): void {
+    req?.flush(
+      problem(422, errors[0]?.code ?? 'uniplus.recusa', 'Recusa', errors),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+  }
+
+  it('PesosEnemPage_SairDoCampoComTab_NaoApagaOErroDoBackend', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    recusa422(requests[0], [
+      {
+        field: 'areas[3].corte',
+        code: 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao',
+        message: 'Por enquanto só a Redação aceita corte.',
+      },
+    ]);
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+    fixture.detectChanges();
+
+    inputDaEdicao('corte', 0, 3).dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+
+    const linguagens = areaDo(component.editForm()?.controls[0], 'LINGUAGENS');
+    expect(component.erroDaArea(linguagens, 'corte')).toBe('Por enquanto só a Redação aceita corte.');
+    expect(component.editForm()?.invalid).toBe(true);
+  });
+
+  it('PesosEnemPage_ErroDeBaseLegalNaEdicaoEmLinha_VaiAoBannerSemTravarCampo', async () => {
+    // A edição em linha não mostra nem edita a base legal: o erro dela não pode ficar
+    // num controle escondido (trava o formulário sem mensagem) nem num campo que não é
+    // o dele (o operador mexeria no lugar errado e reenviaria o mesmo pedido).
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    recusa422(requests[0], [
+      {
+        field: 'baseLegal',
+        code: 'uniplus.configuracao.peso_area_enem.base_legal_tamanho',
+        message: 'Base legal deve ter no máximo 500 caracteres.',
+      },
+    ]);
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+
+    const grupo = component.editForm()?.controls[0];
+    if (!grupo) throw new Error('form de edição não inicializado');
+    expect(component.editErro()).toContain('Tecnológica: Base legal deve ter no máximo 500 caracteres.');
+    expect(grupo.controls.baseLegal.errors).toBeNull();
+    expect(component.erroDaArea(areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
+    expect(component.editForm()?.invalid).toBe(false);
+
+    // O operador pode desistir da edição.
+    component.cancelarEdicao();
+    expect(component.editandoResolucao()).toBeNull();
+  });
+
+  it('PesosEnemPage_Drawer_ErroDoCampoEntraNaDescricaoDoInput', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    recusa422(requests[0], [
+      { field: 'areas[4].peso', code: 'c1', message: 'O peso de Matemática excede o máximo.' },
+      { field: 'areas[0].corte', code: 'c2', message: 'O corte de Redação excede o máximo.' },
+    ]);
+    requests.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const descricao = (input: HTMLInputElement | null): string =>
+      (input?.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => raiz.querySelector(`[id="${id}"]`)?.textContent?.trim() ?? '')
+        .join(' | ');
+
+    const peso = raiz.querySelector<HTMLInputElement>(
+      'input[aria-label="Peso de Matemática e suas Tecnologias — Tecnológica"]',
+    );
+    expect(descricao(peso)).toBe('O peso de Matemática excede o máximo.');
+
+    const corte = raiz.querySelector<HTMLInputElement>('input[aria-label="Corte de Redação — Tecnológica"]');
+    expect(descricao(corte)).toBe(
+      'Opcional — em branco, a área fica sem corte. | O corte de Redação excede o máximo.',
+    );
+
+    // Sem erro, só a dica descreve o corte, e o peso não tem descrição.
+    const pesoSemErro = raiz.querySelector<HTMLInputElement>(
+      'input[aria-label="Peso de Redação — Tecnológica"]',
+    );
+    expect(pesoSemErro?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('PesosEnemPage_FormatacaoDoCorte_NaoCriaFormatadorPorCelula', async () => {
+    // O formatador é criado uma vez, no módulo: montar as células não constrói outro
+    // Intl.NumberFormat nem usa o toLocaleString, que cria um a cada chamada.
+    const construtor = vi.spyOn(Intl, 'NumberFormat');
+    const toLocaleString = vi.spyOn(Number.prototype, 'toLocaleString');
+    try {
+      const comCorteFracionado = linhas805.map((l) => ({
+        ...l,
+        areas: l.areas.map((area) => (area.codigo === 'REDACAO' ? { ...area, corte: 450.5 } : area)),
+      }));
+      await carregarUmaPagina(comCorteFracionado);
+
+      expect(construtor).not.toHaveBeenCalled();
+      expect(toLocaleString).not.toHaveBeenCalled();
+      const cortes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.pe-corte')].map(
+        (el) => el.textContent?.trim(),
+      );
+      expect(cortes).toEqual(['Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5']);
+    } finally {
+      construtor.mockRestore();
+      toLocaleString.mockRestore();
+    }
+  });
+
+  // --- Destino dos erros no drawer, foco estável e custo por célula --------
+
+  it('PesosEnemPage_Drawer_ErroDeResolucaoVaiAoCampoDaResolucaoEDestravaReenvio', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests).toHaveLength(4);
+    for (const req of requests) {
+      recusa422(req, [
+        {
+          field: 'resolucao',
+          code: 'uniplus.configuracao.peso_area_enem.resolucao_tamanho',
+          message: 'Resolução deve ter entre 5 e 40 caracteres.',
+        },
+      ]);
+    }
+    await propagate();
+
+    expect(component.erroDoCampoLote('resolucao')).toBe('Resolução deve ter entre 5 e 40 caracteres.');
+    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
+    expect(component.erroDaArea(redacao, 'peso')).toBeNull();
+
+    // Corrigir a resolução limpa o erro, e o reenvio volta a sair.
+    component.pesoLoteForm.controls.resolucao.setValue('Res. 900/2026');
+    component.criarResolucao();
+    await propagate();
+    const reenvio = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(reenvio).toHaveLength(4);
+    reenvio.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_Drawer_ErroDeGrupoQueNaoSeEditaVaiAoBanner', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    for (const req of requests) {
+      recusa422(req, [{ field: 'grupoCurso', code: 'c1', message: 'Grupo fora do domínio.' }]);
+    }
+    await propagate();
+
+    expect(component.submitError()).toContain('Tecnológica: Grupo fora do domínio.');
+    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
+    expect(component.erroDaArea(redacao, 'peso')).toBeNull();
+  });
+
+  it('PesosEnemPage_TentarDeNovoAsAreas_MantemOFocoEmPontoEstavel', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
+    if (!botao) throw new Error('botão de tentar de novo ausente');
+    botao.focus();
+    botao.click();
+    await propagate();
+    fixture.detectChanges();
+
+    // Enquanto recarrega, o botão continua na tela e com o foco.
+    expect(document.activeElement?.id).toBe('cfg-pesos-enem-areas-tentar');
+    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')?.getAttribute('aria-disabled')).toBe('true');
+
+    // Carregou: o alerta sai, e o foco vai ao título da página, não ao body.
+    expectAreas().flush([...AREAS]);
+    await propagate();
+    fixture.detectChanges();
+    await propagate();
+    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')).toBeNull();
+    expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
+  });
+
+  it('PesosEnemPage_EdicaoEmLinha_CalculaErroDeCadaCampoUmaVezPorPassada', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+
+    const alvo = component as unknown as {
+      erroDaArea: (...args: unknown[]) => unknown;
+      idCampo: (...args: unknown[]) => unknown;
+    };
+    const erroDaArea = vi.spyOn(alvo, 'erroDaArea');
+    const idCampo = vi.spyOn(alvo, 'idCampo');
+    try {
+      const campos = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'input[formcontrolname="peso"], input[formcontrolname="corte"]',
+      ).length;
+      expect(campos).toBe(40);
+
+      // Marca a view do próprio componente (OnPush) e roda uma passada, sem a
+      // conferência extra de modo de desenvolvimento.
+      fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+      fixture.detectChanges(false);
+
+      // Uma avaliação por campo (peso e corte de cada área, em cada grupo) por passada.
+      expect(erroDaArea).toHaveBeenCalledTimes(campos);
+      expect(idCampo).toHaveBeenCalledTimes(campos);
+    } finally {
+      erroDaArea.mockRestore();
+      idCampo.mockRestore();
+    }
+  });
+
+  // --- Banner das recusas sem campo, foco depois de salvar e digitação -----
+
+  it('PesosEnemPage_DigitandoSeparadorDecimal_NaoAcusaAteSairDoCampo', async () => {
+    // "2," e "2." são estados intermediários com badInput no navegador: acusá-los
+    // durante a digitação dispararia o alerta a cada separador digitado.
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+
+    const input = inputDaEdicao('corte', 0, 0);
+    const redacao = areaDo(component.editForm()?.controls[0], 'REDACAO');
+    digitarNumeroInvalido(input);
+    fixture.detectChanges();
+    expect(component.erroDaArea(redacao, 'corte')).toBeNull();
+    expect(input.parentElement?.querySelector('.field__error')).toBeNull();
+
+    // Ao sair do campo com o texto ainda inválido, o erro aparece.
+    input.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    expect(component.erroDaArea(redacao, 'corte')).toBe('Número inválido.');
+
+    // Voltar a digitar tira o alerta até o operador terminar de novo.
+    digitarNumeroInvalido(input);
+    fixture.detectChanges();
+    expect(component.erroDaArea(redacao, 'corte')).toBeNull();
+  });
+
+  it('PesosEnemPage_Drawer_EnterComTextoInvalido_AcusaAntesDeEnviar', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const input = raiz.querySelector<HTMLInputElement>('input[aria-label="Corte de Redação — Tecnológica"]');
+    if (!input) throw new Error('campo de corte ausente');
+    digitarNumeroInvalido(input);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+
+    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
+    expect(component.erroDaArea(redacao, 'corte')).toBe('Número inválido.');
+  });
+
+  it('PesosEnemPage_Drawer_DuplicidadeSemGrupoCriado_MostraMensagensSemCampoDosOutros', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests).toHaveLength(4);
+    requests[0]?.flush(
+      problem(409, 'uniplus.configuracao.peso_area_enem.par_ja_existe', 'Já existe'),
+      { status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/problem+json' } },
+    );
+    for (const req of requests.slice(1)) {
+      recusa422(req, [{ field: 'grupoCurso', code: 'c1', message: 'Grupo fora do domínio.' }]);
+    }
+    await propagate();
+
+    expect(component.erroDoCampoLote('resolucao')).toBe(
+      'Resolução já cadastrada. Informe um identificador diferente.',
+    );
+    expect(component.submitError()).toContain('Humanística I: Grupo fora do domínio.');
+    expect(component.submitError()).toContain('Saúde e Biológicas: Grupo fora do domínio.');
+  });
+
+  it('PesosEnemPage_SalvarComSucesso_DevolveOFocoAoBotaoDeEditar', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    component.salvarEdicao();
+    await propagate();
+    fixture.detectChanges();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    for (const req of requests) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+    fixture.detectChanges();
+    await propagate();
+
+    expect(component.editandoResolucao()).toBeNull();
+    expect(document.activeElement?.id).toBe('pe-editar-res-805-2024');
+  });
+
+  it('PesosEnemPage_RecusaSemErrorsNaEdicao_VaiAoBannerSemMarcarCampo', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    const naoEncontrado = JSON.parse(
+      problem(404, 'uniplus.configuracao.peso_area_enem.nao_encontrado', 'Linha de pesos não encontrada'),
+    ) as Parameters<ProblemI18nService['resolve']>[0];
+    requests[0]?.flush(JSON.stringify(naoEncontrado), {
+      status: 404,
+      statusText: 'Not Found',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+
+    const titulo = TestBed.inject(ProblemI18nService).resolve(naoEncontrado).title;
+    expect(component.editErro()).toContain(titulo);
+    const grupo = component.editForm()?.controls[0];
+    expect(component.erroDaArea(areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
+    expect(component.editForm()?.invalid).toBe(false);
+  });
+
+  it('PesosEnemPage_RecusaSemErrorsNaCriacao_VaiAoBannerSemMarcarCampo', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    const conflito = JSON.parse(
+      problem(409, 'uniplus.concorrencia.conflito', 'Conflito de concorrência'),
+    ) as Parameters<ProblemI18nService['resolve']>[0];
+    requests[0]?.flush(JSON.stringify(conflito), {
+      status: 409,
+      statusText: 'Conflict',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    requests.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+
+    const titulo = TestBed.inject(ProblemI18nService).resolve(conflito).title;
+    expect(component.submitError()).toContain(titulo);
+    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
+    expect(component.erroDaArea(redacao, 'peso')).toBeNull();
+  });
+
+  // --- Anúncio das recusas, digitação no peso e chave depois de recusa -----
+
+  it('PesosEnemPage_RecusaSemCampoNaEdicao_BannerEhRegiaoViva', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    requests[0]?.flush(
+      problem(404, 'uniplus.configuracao.peso_area_enem.nao_encontrado', 'Linha de pesos não encontrada'),
+      { status: 404, statusText: 'Not Found', headers: { 'content-type': 'application/problem+json' } },
+    );
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+    fixture.detectChanges();
+
+    const banner = (fixture.nativeElement as HTMLElement).querySelector('#grid-pe-bar .alert');
+    expect(banner?.getAttribute('role')).toBe('alert');
+    expect(banner?.textContent).toContain(component.editErro() ?? '<sem mensagem>');
+  });
+
+  it('PesosEnemPage_EdicaoEmLinha_DigitandoSeparadorNoPeso_NaoAcusaNada', async () => {
+    // No peso (obrigatório), o texto incompleto vira valor vazio: sem a chave
+    // silenciosa, "Campo obrigatório." apareceria a cada separador digitado.
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+
+    const input = inputDaEdicao('peso', 0, 4);
+    const matematica = areaDo(component.editForm()?.controls[0], 'MATEMATICA');
+    digitarNumeroInvalido(input);
+    fixture.detectChanges();
+    expect(component.erroDaArea(matematica, 'peso')).toBeNull();
+    expect(input.parentElement?.querySelector('.field__error')).toBeNull();
+    expect(matematica.controls.peso.invalid).toBe(true);
+
+    input.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    expect(component.erroDaArea(matematica, 'peso')).toBe('Número inválido.');
+  });
+
+  it('PesosEnemPage_Drawer_DigitandoSeparadorNoPeso_NaoAcusaNada', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const input = raiz.querySelector<HTMLInputElement>(
+      'input[aria-label="Peso de Matemática e suas Tecnologias — Tecnológica"]',
+    );
+    if (!input) throw new Error('campo de peso ausente');
+    const matematica = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'MATEMATICA');
+    digitarNumeroInvalido(input);
+    fixture.detectChanges();
+    expect(component.erroDaArea(matematica, 'peso')).toBeNull();
+
+    input.dispatchEvent(new FocusEvent('blur'));
+    fixture.detectChanges();
+    expect(component.erroDaArea(matematica, 'peso')).toBe('Número inválido.');
+  });
+
+  it('PesosEnemPage_EdicaoEmLinha_RecusaDefinitivaSemErrors_ReenvioIgualSaiComChaveNova', async () => {
+    // A API guarda a recusa 4xx: reenviar o mesmo corpo com a mesma chave devolveria
+    // a mesma recusa, mesmo depois de a causa externa ter sido resolvida.
+    await carregarUmaPagina([...linhas805]);
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    component.salvarEdicao();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    const chaveOriginal = requests[0]?.request.headers.get('Idempotency-Key');
+    requests[0]?.flush(
+      problem(403, 'uniplus.autorizacao.sem_permissao', 'Sem permissão'),
+      { status: 403, statusText: 'Forbidden', headers: { 'content-type': 'application/problem+json' } },
+    );
+    for (const req of requests.slice(1)) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+
+    component.salvarEdicao();
+    await propagate();
+    const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
+    expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
+    retry.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+  });
+
+  it('PesosEnemPage_Criacao_RecusaDefinitivaSemErrors_ReenvioIgualSaiComChaveNova', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    const chaveOriginal = requests[0]?.request.headers.get('Idempotency-Key');
+    requests[0]?.flush(
+      problem(422, 'uniplus.configuracao.peso_area_enem.regra_qualquer', 'Recusa'),
+      { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+    );
+    requests.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+
+    component.criarResolucao();
+    await propagate();
+    const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
+    retry.flush('novo-id-0', { status: 201, statusText: 'Created' });
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_Drawer_CampoDePrimeiroNivelComPrefixoEMaiuscula_VaiAoCampoCerto', async () => {
+    await carregarUmaPagina([]);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res', baseLegalGlobal: 'Base' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    recusa422(requests[0], [
+      { field: 'Request.Resolucao', code: 'c1', message: 'Resolução curta demais.' },
+      { field: '$.BaseLegal', code: 'c2', message: 'Base legal curta demais.' },
+    ]);
+    for (const req of requests.slice(1)) {
+      recusa422(req, [{ field: 'Request.Resolucao', code: 'c1', message: 'Resolução curta demais.' }]);
+    }
+    await propagate();
+
+    expect(component.erroDoCampoLote('resolucao')).toBe('Resolução curta demais.');
+    expect(component.erroDoCampoGrupo(0, 'baseLegal')).toBe('Base legal curta demais.');
+    expect(component.submitError()).not.toContain('curta demais');
   });
 });

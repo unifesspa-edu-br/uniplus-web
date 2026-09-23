@@ -4271,6 +4271,50 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/pesos-area-enem/areas": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.area-peso-area-enem.v1+json": readonly components["schemas"]["AreaPesoAreaEnemDto"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/pesos-area-enem/{id}": {
         readonly parameters: {
             readonly query?: never;
@@ -8661,6 +8705,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        readonly AreaPesoAreaEnemDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
+        };
         readonly AtualizarBaseLegalBonusRegionalCommand: {
             /** Format: uuid */
             readonly id: string;
@@ -8767,18 +8815,7 @@ export interface components {
         readonly AtualizarPesoAreaEnemCommand: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: double */
-            readonly pesoRedacao: number | string;
-            /** Format: double */
-            readonly pesoCienciasNatureza: number | string;
-            /** Format: double */
-            readonly pesoCienciasHumanas: number | string;
-            /** Format: double */
-            readonly pesoLinguagens: number | string;
-            /** Format: double */
-            readonly pesoMatematica: number | string;
-            /** Format: double */
-            readonly corteRedacao: number | string;
+            readonly areas: null | readonly components["schemas"]["PesoAreaEnemAreaCommand"][];
             readonly baseLegal: null | string;
         };
         readonly AtualizarPrecedenciaFaseCommand: {
@@ -9052,19 +9089,8 @@ export interface components {
         readonly CriarPesoAreaEnemCommand: {
             readonly resolucao: null | string;
             readonly grupoCurso: null | string;
-            /** Format: double */
-            readonly pesoRedacao: number | string;
-            /** Format: double */
-            readonly pesoCienciasNatureza: number | string;
-            /** Format: double */
-            readonly pesoCienciasHumanas: number | string;
-            /** Format: double */
-            readonly pesoLinguagens: number | string;
-            /** Format: double */
-            readonly pesoMatematica: number | string;
+            readonly areas: null | readonly components["schemas"]["PesoAreaEnemAreaCommand"][];
             readonly baseLegal: null | string;
-            /** Format: double */
-            readonly corteRedacao?: null | number | string;
         };
         readonly CriarPrecedenciaFaseCommand: {
             readonly antecessoraCodigo: null | string;
@@ -9306,23 +9332,27 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly PesoAreaEnemAreaCommand: {
+            readonly codigo: null | string;
+            /** Format: double */
+            readonly peso: number | string;
+            /** Format: double */
+            readonly corte?: null | number | string;
+        };
+        readonly PesoAreaEnemAreaDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
+            /** Format: double */
+            readonly peso: number | string;
+            /** Format: double */
+            readonly corte: null | number | string;
+        };
         readonly PesoAreaEnemDto: {
             /** Format: uuid */
             readonly id: string;
             readonly resolucao: string;
             readonly grupoCurso: string;
-            /** Format: double */
-            readonly pesoRedacao: number | string;
-            /** Format: double */
-            readonly pesoCienciasNatureza: number | string;
-            /** Format: double */
-            readonly pesoCienciasHumanas: number | string;
-            /** Format: double */
-            readonly pesoLinguagens: number | string;
-            /** Format: double */
-            readonly pesoMatematica: number | string;
-            /** Format: double */
-            readonly corteRedacao: number | string;
+            readonly areas: readonly components["schemas"]["PesoAreaEnemAreaDto"][];
             readonly baseLegal: string;
             /** Format: date-time */
             readonly criadoEm: string;
