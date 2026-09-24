@@ -13,7 +13,7 @@ import {
   eliminacaoExigeBaseadoEmEnem,
   exigeResolucaoPesoAreaEnem,
   eliminacaoUsaEtapaENotaMinima,
-  eliminacaoUsaMinimo,
+  eliminacaoUsaAreaEMinimo,
   mensagensDeClassificacaoBase,
 } from './classificacao-para-comando';
 
@@ -40,6 +40,7 @@ function regraEliminacao(patch: Partial<RegraEliminacaoConfigurada>): RegraElimi
     etapaRef: '',
     notaMinima: '',
     minimo: '',
+    areaCodigo: '',
     ...patch,
   };
 }
@@ -187,9 +188,9 @@ describe('comoComandoDeClassificacao — resolução de Peso por Área', () => {
 });
 
 describe('shape por código de regra de eliminação (DefinirClassificacaoCommandHandler.MontarArgs)', () => {
-  it('ELIM-NOTA-MINIMA-ETAPA usa etapaRef e notaMinima, e minimo vai null', () => {
+  it('ELIM-NOTA-MINIMA-ETAPA usa etapaRef e notaMinima, e minimo e areaCodigo vão null', () => {
     expect(eliminacaoUsaEtapaENotaMinima('ELIM-NOTA-MINIMA-ETAPA')).toBe(true);
-    expect(eliminacaoUsaMinimo('ELIM-NOTA-MINIMA-ETAPA')).toBe(false);
+    expect(eliminacaoUsaAreaEMinimo('ELIM-NOTA-MINIMA-ETAPA')).toBe(false);
 
     const comando = comoComandoDeRegraEliminacao(
       regraEliminacao({
@@ -198,6 +199,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
         etapaRef: 'etapa-1',
         notaMinima: '5',
         minimo: '999', // resíduo de outra escolha — não pode vazar
+        areaCodigo: 'REDACAO', // idem
       }),
     );
 
@@ -207,35 +209,42 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
       etapaRef: 'etapa-1',
       notaMinima: 5,
       minimo: null,
+      areaCodigo: null,
     });
   });
 
-  it('ELIM-CORTE-REDACAO usa minimo, e etapaRef/notaMinima vão null', () => {
-    expect(eliminacaoUsaMinimo('ELIM-CORTE-REDACAO')).toBe(true);
-    expect(eliminacaoExigeBaseadoEmEnem('ELIM-CORTE-REDACAO')).toBe(true);
+  it('ELIM-CORTE-EM-AREA usa areaCodigo e minimo, e etapaRef/notaMinima vão null', () => {
+    expect(eliminacaoUsaAreaEMinimo('ELIM-CORTE-EM-AREA')).toBe(true);
+    expect(eliminacaoExigeBaseadoEmEnem('ELIM-CORTE-EM-AREA')).toBe(true);
 
     const comando = comoComandoDeRegraEliminacao(
       regraEliminacao({
-        regraCodigo: 'ELIM-CORTE-REDACAO',
-        regraVersao: '1.0',
+        regraCodigo: 'ELIM-CORTE-EM-AREA',
+        regraVersao: 'v1',
         etapaRef: 'etapa-1', // resíduo — não pode vazar
         notaMinima: '5', // resíduo — não pode vazar
         minimo: '400',
+        areaCodigo: 'MATEMATICA',
       }),
     );
 
     expect(comando).toEqual({
-      regraCodigo: 'ELIM-CORTE-REDACAO',
-      regraVersao: '1.0',
+      regraCodigo: 'ELIM-CORTE-EM-AREA',
+      regraVersao: 'v1',
       etapaRef: null,
       notaMinima: null,
       minimo: 400,
+      areaCodigo: 'MATEMATICA',
     });
+  });
+
+  it('a regra antiga de corte de redação não tem mais shape reconhecido', () => {
+    expect(eliminacaoUsaAreaEMinimo('ELIM-CORTE-REDACAO')).toBe(false);
   });
 
   it('ELIM-ZERO-EM-AREA não usa nenhum campo', () => {
     expect(eliminacaoUsaEtapaENotaMinima('ELIM-ZERO-EM-AREA')).toBe(false);
-    expect(eliminacaoUsaMinimo('ELIM-ZERO-EM-AREA')).toBe(false);
+    expect(eliminacaoUsaAreaEMinimo('ELIM-ZERO-EM-AREA')).toBe(false);
     expect(eliminacaoExigeBaseadoEmEnem('ELIM-ZERO-EM-AREA')).toBe(true);
 
     const comando = comoComandoDeRegraEliminacao(
@@ -245,6 +254,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
         etapaRef: 'etapa-1',
         notaMinima: '5',
         minimo: '400',
+        areaCodigo: 'REDACAO',
       }),
     );
 
@@ -254,6 +264,7 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
       etapaRef: null,
       notaMinima: null,
       minimo: null,
+      areaCodigo: null,
     });
   });
 });

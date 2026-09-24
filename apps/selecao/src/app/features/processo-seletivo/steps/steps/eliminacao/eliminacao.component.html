@@ -100,9 +100,45 @@
             </div>
           }
 
-          @if (usaMinimo(regra)) {
+          @if (usaAreaEMinimo(regra)) {
+            @let semAreas = areasDoCorte() === null;
+            @let recusaDaArea = recusaDoCampo(indice, 'area');
             <div class="form-field">
-              <label class="label" [attr.for]="'elim-minimo-' + indice">Mínimo exigido</label
+              <label class="label" [attr.for]="'elim-area-' + indice">Área do ENEM</label
+              ><select
+                class="input"
+                [id]="'elim-area-' + indice"
+                [value]="regra.areaCodigo"
+                [disabled]="semAreas && regra.areaCodigo === ''"
+                [attr.aria-invalid]="recusaDaArea ? 'true' : null"
+                [attr.aria-describedby]="
+                  descritoPor(indice, 'area', semAreas ? 'elim-area-dica-' + indice : null)
+                "
+                (change)="escolherArea(indice, $any($event.target).value)"
+              >
+                <option value="">— escolher —</option>
+                @for (area of areasEscolhiveis(indice); track area.codigo) {
+                  <option [value]="area.codigo" [selected]="area.codigo === regra.areaCodigo">
+                    {{ area.rotulo }}
+                  </option>
+                }
+              </select>
+              @if (recusaDaArea) {
+                <p class="field__error" [id]="'elim-area-erro-' + indice">{{ recusaDaArea }}</p>
+              }
+              @if (semAreas) {
+                <p class="field__hint" [id]="'elim-area-dica-' + indice">
+                  As áreas vêm do quadro de Peso por Área da resolução escolhida no passo Fórmula, que
+                  ainda não está disponível.
+                </p>
+              }
+            </div>
+            @let corte = corteSugerido(regra);
+            @let recusaDoMinimo = recusaDoCampo(indice, 'minimo');
+            <div class="form-field">
+              <label class="label" [attr.for]="'elim-minimo-' + indice">{{
+                rotuloDoMinimo(regra)
+              }}</label
               ><input
                 class="input"
                 [id]="'elim-minimo-' + indice"
@@ -110,8 +146,23 @@
                 min="0"
                 step="0.01"
                 [value]="regra.minimo"
+                [attr.aria-invalid]="recusaDoMinimo ? 'true' : null"
+                [attr.aria-describedby]="
+                  descritoPor(indice, 'minimo', corte !== null ? 'elim-minimo-dica-' + indice : null)
+                "
                 (input)="alterarMinimo(indice, $any($event.target).value)"
               />
+              @if (recusaDoMinimo) {
+                <p class="field__error" [id]="'elim-minimo-erro-' + indice">
+                  {{ recusaDoMinimo }}
+                </p>
+              }
+              @if (corte !== null) {
+                <p class="field__hint" [id]="'elim-minimo-dica-' + indice">
+                  A resolução de Peso por Área dá o corte {{ corte }} para esta área; o valor pode
+                  ser alterado.
+                </p>
+              }
             </div>
           }
         </div>

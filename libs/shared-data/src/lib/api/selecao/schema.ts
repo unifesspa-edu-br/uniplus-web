@@ -6746,6 +6746,7 @@ export interface components {
             readonly notaMinima: null | number | string;
             /** Format: double */
             readonly minimo: null | number | string;
+            readonly areaCodigo: null | string;
         };
         readonly RegraEliminacaoInput: {
             readonly regraCodigo: string;
@@ -6756,6 +6757,7 @@ export interface components {
             readonly notaMinima: null | number | string;
             /** Format: double */
             readonly minimo: null | number | string;
+            readonly areaCodigo: null | string;
         };
         readonly RegraRecursoFaseDto: {
             /** Format: uuid */
