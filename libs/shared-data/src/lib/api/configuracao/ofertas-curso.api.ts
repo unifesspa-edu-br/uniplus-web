@@ -98,7 +98,6 @@ export const REGIME_DE_TURNO_REGULAR = 'REGULAR';
 /** Único regime de turno que comporta o regime de funcionamento INTENSIVO. */
 export const REGIME_DE_TURNO_INTEGRAL = 'INTEGRAL';
 
-
 export interface RegimeDeFuncionamentoOption {
   value: string;
   label: string;
@@ -113,6 +112,10 @@ export const REGIMES_DE_FUNCIONAMENTO: readonly RegimeDeFuncionamentoOption[] = 
     value: 'EXTENSIVO',
     label: 'Extensivo',
   },
+  {
+    value: 'ALTERNANCIA_PEDAGOGICA',
+    label: 'Alternância Pedagógica',
+  },
 ] as const;
 
 /**
@@ -124,6 +127,9 @@ export const REGIME_DE_FUNCIONAMENTO_EXTENSIVO = 'EXTENSIVO';
 
 /** Regime de funcionamento que exige regime de turno INTEGRAL (UNI-REQ-0138). */
 export const REGIME_DE_FUNCIONAMENTO_INTENSIVO = 'INTENSIVO';
+
+/** Regime de funcionamento sem restrição de regime de turno: aceita REGULAR e INTEGRAL. */
+export const REGIME_DE_FUNCIONAMENTO_ALTERNANCIA_PEDAGOGICA = 'ALTERNANCIA_PEDAGOGICA';
 
 /**
  * Quantos turnos distintos o regime exige, ou `null` quando o token não é um
@@ -139,7 +145,9 @@ export function turnosExigidosPorRegime(regime: string): number | null {
  */
 export function ordenarTurnosCanonicamente(turnos: readonly string[]): readonly string[] {
   const ordem = new Map(TURNOS_OFERTA.map((t, indice) => [t.value, indice]));
-  return [...turnos].sort((a, b) => (ordem.get(a) ?? Number.MAX_SAFE_INTEGER) - (ordem.get(b) ?? Number.MAX_SAFE_INTEGER));
+  return [...turnos].sort(
+    (a, b) => (ordem.get(a) ?? Number.MAX_SAFE_INTEGER) - (ordem.get(b) ?? Number.MAX_SAFE_INTEGER),
+  );
 }
 
 /**
