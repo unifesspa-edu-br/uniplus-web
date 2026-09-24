@@ -128,9 +128,6 @@ export const REGIME_DE_FUNCIONAMENTO_EXTENSIVO = 'EXTENSIVO';
 /** Regime de funcionamento que exige regime de turno INTEGRAL (UNI-REQ-0138). */
 export const REGIME_DE_FUNCIONAMENTO_INTENSIVO = 'INTENSIVO';
 
-/** Regime de funcionamento sem restrição de regime de turno: aceita REGULAR e INTEGRAL. */
-export const REGIME_DE_FUNCIONAMENTO_ALTERNANCIA_PEDAGOGICA = 'ALTERNANCIA_PEDAGOGICA';
-
 /**
  * Quantos turnos distintos o regime exige, ou `null` quando o token não é um
  * regime conhecido (a API é a árbitra final nesse caso).
