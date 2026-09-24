@@ -10,6 +10,7 @@ import type {
   ProdutoDaFase,
   RecursoDaEtapa,
   RecursoDaFase,
+  TipoCongeladoDaEtapa,
 } from '../../processo-seletivo.models';
 import { campoDoInstante, instanteDoCampo } from '../../shared/fuso-institucional';
 
@@ -81,6 +82,8 @@ export interface EtapaForm {
   readonly emiteParecerIndividual: FormControl<boolean>;
   readonly bancas: FormControl<readonly string[]>;
   readonly recursos: FormControl<readonly RecursoDaEtapa[]>;
+  /** Não é editado: viaja para a tela saber o que o processo congelou do tipo. */
+  readonly tipoCongelado: FormControl<TipoCongeladoDaEtapa | null>;
 }
 
 export interface CronogramaForm {
@@ -141,6 +144,7 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     emiteParecerIndividual: controle(etapa.emiteParecerIndividual ?? false),
     bancas: controle<readonly string[]>(etapa.bancas ?? []),
     recursos: controle<readonly RecursoDaEtapa[]>(etapa.recursos ?? []),
+    tipoCongelado: controle<TipoCongeladoDaEtapa | null>(etapa.tipoCongelado ?? null),
   });
 }
 

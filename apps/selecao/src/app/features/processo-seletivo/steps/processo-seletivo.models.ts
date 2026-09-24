@@ -299,6 +299,18 @@ export interface EtapaPontuada {
   readonly emiteParecerIndividual: boolean;
   readonly bancas: readonly string[];
   readonly recursos: readonly RecursoDaEtapa[];
+  /**
+   * O que o processo congelou do tipo quando a etapa foi gravada. Vale sobre o cadastro
+   * enquanto a etapa aponta para o mesmo tipo: o cadastro pode mudar depois, e a etapa
+   * gravada continua sendo o que o servidor guardou. Ausente na etapa ainda não gravada.
+   */
+  readonly tipoCongelado?: TipoCongeladoDaEtapa | null;
+}
+
+/** O que a etapa gravada congelou do tipo de etapa do cadastro. */
+export interface TipoCongeladoDaEtapa {
+  readonly origemId: string;
+  readonly notaDeOrigemNoEnem: boolean;
 }
 
 /**

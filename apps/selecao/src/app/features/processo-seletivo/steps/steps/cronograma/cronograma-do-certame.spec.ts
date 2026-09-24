@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
+import { CaraterEtapa } from '@uniplus/shared-data/selecao';
 
 import type {
   EtapaPontuada,
   FaseDoCronograma,
   ProdutoDaFase,
+  RecursoDaEtapa,
 } from '../../processo-seletivo.models';
 import { publicaResultadoDefinitivo, type AtoDoCatalogo } from '../fase/configuracao-da-fase';
 import {
@@ -19,6 +21,8 @@ import {
   violacoesDePrecedencia,
   type ExigenciaDeclarada,
   type TipoDeEtapaDoCatalogo,
+  declaraNotaDoEnem,
+  recusaDaEtapaDeNotaDoEnem,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
@@ -33,6 +37,7 @@ const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
   nome: 'Prova objetiva',
   admitePontuacao: true,
   admiteEliminacao: true,
+  notaDeOrigemNoEnem: false,
 });
 
 /** A conferência do cronograma, com os catálogos que ela consulta. */
@@ -541,7 +546,12 @@ describe('o que impede gravar o cronograma', () => {
       [],
       SEM_CATALOGO,
       nomeDaBanca,
-      () => ({ nome: 'Análise Documental', admitePontuacao: false, admiteEliminacao: true }),
+      () => ({
+        nome: 'Análise Documental',
+        admitePontuacao: false,
+        admiteEliminacao: true,
+        notaDeOrigemNoEnem: false,
+      }),
       [],
     );
 
@@ -1123,3 +1133,90 @@ describe('a janela própria da etapa', () => {
   });
 });
 
+
+describe('etapa de nota do ENEM', () => {
+  const tipoDoEnem = (): TipoDeEtapaDoCatalogo => ({
+    nome: 'Nota do ENEM',
+    admitePontuacao: true,
+    admiteEliminacao: true,
+    notaDeOrigemNoEnem: true,
+  });
+  const faseDeAvaliacao = fase({ faseCanonicaId: 'fase-1', codigo: 'AVALIACAO' });
+
+  function problemasDaEnem(parcial: Partial<EtapaPontuada>): readonly string[] {
+    return problemasDoCronograma(
+      [faseDeAvaliacao],
+      [etapa({ nome: 'Nota do ENEM', ...parcial })],
+      new Map([['fase-1', faseCanonica({ id: 'fase-1', codigo: 'AVALIACAO' })]]),
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoDoEnem,
+      [],
+    ).filter((problema) => problema.includes('nota do ENEM'));
+  }
+
+  it('reconhece a etapa pelo atributo do tipo no cadastro', () => {
+    expect(declaraNotaDoEnem(etapa({}), tipoDoEnem())).toBe(true);
+    expect(declaraNotaDoEnem(etapa({}), tipoQueAdmiteTudo())).toBe(false);
+  });
+
+  it('na etapa gravada vale o que o processo congelou, enquanto o tipo é o mesmo', () => {
+    const gravada = etapa({ tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true } });
+    expect(declaraNotaDoEnem(gravada, tipoQueAdmiteTudo())).toBe(true);
+  });
+
+  it('trocar o tipo desfaz o congelado, e vale o cadastro do tipo novo', () => {
+    const trocada = etapa({
+      tipoEtapaOrigemId: 'tipo-2',
+      tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true },
+    });
+    expect(declaraNotaDoEnem(trocada, tipoQueAdmiteTudo())).toBe(false);
+  });
+
+  it('classificatória com peso não tem pendência', () => {
+    expect(problemasDaEnem({ carater: CaraterEtapa.classificatoria, peso: '2' })).toEqual([]);
+  });
+
+  it('puramente eliminatória é recusada: a etapa sempre compõe a média', () => {
+    expect(problemasDaEnem({ carater: CaraterEtapa.eliminatoria, peso: '' })).toHaveLength(1);
+  });
+
+  it('com banca, publicação, janela própria ou recurso contado de publicação é recusada', () => {
+    const recurso = (ancora: RecursoDaEtapa['ancora']): RecursoDaEtapa => ({
+      ancora,
+      regraCodigo: 'R',
+      regraVersao: 'v1',
+      prazoValor: '2',
+      prazoUnidade: 'diasUteis',
+      atoAncoraCodigo: '',
+      suspensividadePrimeiraInstanciaValor: '',
+      suspensividadePrimeiraInstanciaUnidade: '',
+      suspensividadeSegundaInstanciaValor: '',
+      suspensividadeSegundaInstanciaUnidade: '',
+    });
+    expect(problemasDaEnem({ bancas: ['banca-1'] })).toHaveLength(1);
+    expect(problemasDaEnem({ inicio: '2027-01-10T08:00' })).toHaveLength(1);
+    expect(problemasDaEnem({ fim: '2027-01-10T18:00' })).toHaveLength(1);
+    expect(problemasDaEnem({ produtos: [{ atoCodigo: 'ATO', papel: null }] })).toHaveLength(1);
+    expect(problemasDaEnem({ recursos: [recurso('atoPublicado')] })).toHaveLength(1);
+    expect(problemasDaEnem({ recursos: [recurso('cienciaIndividual')] })).toEqual([]);
+  });
+
+  it('a recusa do servidor à etapa de nota do ENEM ganha texto próprio', () => {
+    expect(
+      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota'),
+    ).toContain('compõe a média');
+    expect(
+      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca'),
+    ).toContain('não admite banca');
+    expect(
+      recusaDaEtapaDeNotaDoEnem(
+        'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
+      ),
+    ).toContain('ciência do candidato');
+    expect(
+      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_lancamento'),
+    ).toBeNull();
+  });
+});

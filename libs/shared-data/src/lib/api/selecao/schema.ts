@@ -6846,6 +6846,7 @@ export interface components {
             readonly origemId: string;
             readonly codigo: string;
             readonly nome: string;
+            readonly notaDeOrigemNoEnem: boolean;
         };
         readonly TipoProcessoSnapshotDto: {
             /** Format: uuid */
