@@ -31,8 +31,8 @@ import {
   comoComandoDeClassificacao,
   divisorDaMediaValido,
   eliminacaoExigeBaseadoEmEnem,
+  eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapaENotaMinima,
-  eliminacaoUsaMinimo,
   ehCampoDaResolucao,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
@@ -40,9 +40,17 @@ import {
 } from '../classificacao/classificacao-para-comando';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import {
+  areasComunsAoQuadro,
+  corteDaArea,
+  ordemDasAreas,
+  type ColunaDoQuadro,
+  type GrupoDoQuadro,
+} from '../../shared/quadro-de-pesos';
+import {
   conferirDesempateGravado,
   recusaDaClassificacaoPeloDesempate,
   recusaPorCriterioGravadoSemQuadro,
+  rotulosDasAreas,
   type PendenciaDoCriterioGravado,
 } from '../desempate/quadro-do-desempate';
 
@@ -52,6 +60,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
   etapaRef: '',
   notaMinima: '',
   minimo: '',
+  areaCodigo: '',
 };
 
 /**
@@ -112,8 +121,102 @@ export class EliminacaoStepComponent {
     return eliminacaoUsaEtapaENotaMinima(regra.regraCodigo);
   }
 
-  usaMinimo(regra: RegraEliminacaoConfigurada): boolean {
-    return eliminacaoUsaMinimo(regra.regraCodigo);
+  usaAreaEMinimo(regra: RegraEliminacaoConfigurada): boolean {
+    return eliminacaoUsaAreaEMinimo(regra.regraCodigo);
+  }
+
+  /**
+   * O quadro contra o qual o servidor confere o corte: o que a gravação da classificação copia do
+   * cadastro para a resolução do rascunho. Com o cadastro ainda não lido, a cópia gravada vale só
+   * se for da mesma resolução — é o caso do processo só para consulta. `null` quando não se sabe;
+   * `'sem-quadro'` quando a classificação não usa a média ponderada do ENEM.
+   */
+  private readonly quadroDoCorte = computed<readonly GrupoDoQuadro[] | 'sem-quadro' | null>(
+    () => {
+      const classificacao = this.classificacao();
+      if (!exigeResolucaoPesoAreaEnem(classificacao)) return 'sem-quadro';
+      const cadastro = this.cadastroDePesos.leitura();
+      if (cadastro.lido) return cadastro.quadroDaResolucaoEscolhida;
+      const gravada = this.store.classificacaoGravada();
+      return gravada.estado === 'com-quadro' &&
+        gravada.resolucao === classificacao.resolucaoPesoAreaEnem
+        ? gravada.grupos
+        : null;
+    },
+  );
+
+  /**
+   * As áreas que um corte pode citar: com quadro, as que estão em todos os grupos dele; sem quadro,
+   * qualquer área do ENEM; `null` enquanto o quadro não é conhecido.
+   */
+  readonly areasDoCorte = computed<readonly ColunaDoQuadro[] | null>(() => {
+    const quadro = this.quadroDoCorte();
+    const canonicas = this.cadastroDePesos.leitura().canonicas;
+    if (quadro === 'sem-quadro') return canonicas;
+    return quadro === null ? null : areasComunsAoQuadro(quadro, ordemDasAreas(canonicas));
+  });
+
+  private readonly gruposDoQuadro = computed(() => {
+    const quadro = this.quadroDoCorte();
+    return quadro === 'sem-quadro' || quadro === null ? [] : quadro;
+  });
+
+  /** As áreas oferecidas à regra: as do corte, menos as que outro corte já cita (uma por área). */
+  areasEscolhiveis(indice: number): readonly ColunaDoQuadro[] {
+    const citadasPorOutras = new Set(
+      this.regras()
+        .filter((regra, item) => item !== indice && this.usaAreaEMinimo(regra))
+        .map((regra) => regra.areaCodigo),
+    );
+    const oferecidas = (this.areasDoCorte() ?? []).filter(
+      (area) => !citadasPorOutras.has(area.codigo),
+    );
+    // A área gravada aparece mesmo fora das oferecidas: o operador vê o que está configurado.
+    const gravada = this.regras()[indice]?.areaCodigo ?? '';
+    return gravada === '' || oferecidas.some((area) => area.codigo === gravada)
+      ? oferecidas
+      : [{ codigo: gravada, rotulo: this.rotuloDaArea(gravada) }, ...oferecidas];
+  }
+
+  rotuloDaArea(codigo: string): string {
+    return (
+      rotulosDasAreas(this.cadastroDePesos.leitura().canonicas, this.gruposDoQuadro()).get(
+        codigo,
+      ) ?? codigo
+    );
+  }
+
+  /** O rótulo completo do mínimo, com a área: dois cortes lado a lado não se confundem. */
+  rotuloDoMinimo(regra: RegraEliminacaoConfigurada): string {
+    return regra.areaCodigo === ''
+      ? 'Nota mínima'
+      : `Nota mínima em ${this.rotuloDaArea(regra.areaCodigo)}`;
+  }
+
+  /** O corte que a resolução dá à área, quando a classificação tem quadro e o cadastro foi lido. */
+  corteSugerido(regra: RegraEliminacaoConfigurada): number | null {
+    const grupos = this.gruposDoQuadro();
+    if (regra.areaCodigo === '' || grupos.length === 0) return null;
+    return corteDaArea(grupos, regra.areaCodigo);
+  }
+
+  /**
+   * As recusas do servidor a um campo de uma regra, por `índice.campo`. Ficam junto do campo até
+   * a regra mudar ou a gravação seguinte responder.
+   */
+  readonly recusasPorCampo = signal<ReadonlyMap<string, string>>(new Map());
+
+  recusaDoCampo(indice: number, campo: CampoDoCorte): string | null {
+    return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
+  }
+
+  /** O `aria-describedby` do campo: a recusa, quando há, e a dica, quando há. */
+  descritoPor(indice: number, campo: CampoDoCorte, dica: string | null): string | null {
+    const ids = [
+      this.recusaDoCampo(indice, campo) === null ? null : `elim-${campo}-erro-${indice}`,
+      dica,
+    ].filter((id): id is string => id !== null);
+    return ids.length > 0 ? ids.join(' ') : null;
   }
 
   rotuloDaEtapa(etapaId: string): string {
@@ -142,6 +245,8 @@ export class EliminacaoStepComponent {
   }
 
   removerRegra(indice: number): void {
+    // As posições seguintes mudam: as recusas guardadas por índice deixam de apontar a regra certa.
+    this.recusasPorCampo.set(new Map());
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().filter((_, item) => item !== indice),
     });
@@ -173,6 +278,24 @@ export class EliminacaoStepComponent {
       etapaRef: '',
       notaMinima: '',
       minimo: '',
+      areaCodigo: '',
+    });
+  }
+
+  /**
+   * O corte do cadastro é sugestão, e a regra é a norma aplicada: o mínimo sugerido só entra
+   * quando o operador ainda não informou um. O mínimo igual à sugestão da área anterior veio dela,
+   * e não do operador, então também é trocado.
+   */
+  escolherArea(indice: number, areaCodigo: string): void {
+    const regra = this.regras()[indice];
+    const anterior = this.corteSugerido(regra);
+    const sugerido = this.corteSugerido({ ...regra, areaCodigo });
+    const minimo = regra.minimo.trim();
+    const naoInformado = minimo === '' || (anterior !== null && minimo === String(anterior));
+    this.atualizarRegra(indice, {
+      areaCodigo,
+      ...(naoInformado ? { minimo: sugerido === null ? '' : String(sugerido) } : {}),
     });
   }
 
@@ -189,11 +312,19 @@ export class EliminacaoStepComponent {
   }
 
   private atualizarRegra(indice: number, patch: Partial<RegraEliminacaoConfigurada>): void {
+    this.esquecerRecusasDa(indice);
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().map((regra, item) =>
         item === indice ? { ...regra, ...patch } : regra,
       ),
     });
+  }
+
+  private esquecerRecusasDa(indice: number): void {
+    const restantes = [...this.recusasPorCampo()].filter(
+      ([chave]) => !chave.startsWith(`${indice}.`),
+    );
+    if (restantes.length < this.recusasPorCampo().size) this.recusasPorCampo.set(new Map(restantes));
   }
 
   rotuloDeAvanco(): string {
@@ -293,10 +424,8 @@ export class EliminacaoStepComponent {
         if (!decimalValido(regra.notaMinima)) {
           messages.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
         }
-      } else if (this.usaMinimo(regra)) {
-        if (!decimalValido(regra.minimo)) {
-          messages.push(`Regra de eliminação ${posicao}: informe o mínimo exigido.`);
-        }
+      } else if (this.usaAreaEMinimo(regra)) {
+        messages.push(...this.mensagensDoCorte(regra, indice));
       }
 
       if (eliminacaoExigeBaseadoEmEnem(regra.regraCodigo) && !classificacao.baseadoEmEnem) {
@@ -307,6 +436,33 @@ export class EliminacaoStepComponent {
     });
 
     return messages.length ? { valid: false, messages } : { valid: true };
+  }
+
+  private mensagensDoCorte(regra: RegraEliminacaoConfigurada, indice: number): string[] {
+    const posicao = indice + 1;
+    const mensagens: string[] = [];
+    if (regra.areaCodigo === '') {
+      mensagens.push(`Regra de eliminação ${posicao}: selecione a área do ENEM.`);
+    } else {
+      const rotulo = this.rotuloDaArea(regra.areaCodigo);
+      const repetida = this.regras().some(
+        (outra, item) =>
+          item < indice && this.usaAreaEMinimo(outra) && outra.areaCodigo === regra.areaCodigo,
+      );
+      if (repetida) {
+        mensagens.push(`Regra de eliminação ${posicao}: ${rotulo} já tem um corte em outra regra.`);
+      }
+      const areas = this.areasDoCorte();
+      if (areas !== null && !areas.some((area) => area.codigo === regra.areaCodigo)) {
+        mensagens.push(
+          `Regra de eliminação ${posicao}: ${rotulo} não está em todos os grupos da resolução de Peso por Área escolhida.`,
+        );
+      }
+    }
+    if (!decimalValido(regra.minimo)) {
+      mensagens.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
+    }
+    return mensagens;
   }
 
   /**
@@ -393,6 +549,7 @@ export class EliminacaoStepComponent {
         const resposta = await this.cadastro.definirClassificacao(processoId, comando);
         if (geracao !== this.store.geracao()) return resposta;
         if (resposta.ok) {
+          this.recusasPorCampo.set(new Map());
           this.store.descartarRecusasDaClassificacao();
           this.registrarQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
         } else if (resposta.inconclusiva) {
@@ -424,6 +581,7 @@ export class EliminacaoStepComponent {
    * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
    */
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
+    this.recusasPorCampo.set(recusasDoCorte(problema.errors ?? []));
     const sobOCampo = (problema.errors ?? []).filter((erro) => ehCampoDaResolucao(erro.field));
     if (sobOCampo.length > 0) {
       const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
@@ -440,6 +598,7 @@ export class EliminacaoStepComponent {
     return resumoDaRecusa(
       problema,
       (erro) =>
+        recusaDaEliminacao(erro) ??
         recusaDaClassificacaoPeloDesempate(erro) ??
         (ehCampoDaResolucao(erro.field)
           ? `Resolução de Peso por Área, no passo Fórmula: ${mensagemDaRecusaDaResolucao(erro)}`
@@ -508,6 +667,73 @@ const MENSAGEM_POR_CODIGO_DA_RESOLUCAO: ReadonlyMap<string, string> = new Map([
     'A resolução escolhida repete um grupo de área no cadastro de Peso por Área.',
   ],
 ]);
+
+/**
+ * O que a tela diz para cada recusa das regras de eliminação. O servidor aponta a regra pelo campo
+ * `regrasEliminacao[i]`, e a tela a nomeia pela posição, como na própria validação.
+ */
+const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
+  [
+    `${PREFIXO_DA_RECUSA}corte_em_area_repetido`,
+    'a área já tem um corte em outra regra; deixe um corte por área',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
+    'a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo Fórmula',
+  ],
+  [
+    'uniplus.selecao.regra_eliminacao.area_invalida',
+    'a área do corte não é uma área do ENEM válida; escolha a área na lista',
+  ],
+  [
+    'uniplus.selecao.regra_eliminacao.area_e_minimo_obrigatorios',
+    'o corte por área exige a área do ENEM e a nota mínima',
+  ],
+  [
+    'uniplus.selecao.processo_seletivo.eliminacao_enem_fora_de_processo_enem',
+    'as regras de eliminação do ENEM só se aplicam à classificação baseada em ENEM; marque o ENEM no passo Fórmula ou retire essas regras',
+  ],
+]);
+
+type CampoDoCorte = 'area' | 'minimo';
+
+const CAMPO_DO_CORTE: Readonly<Record<string, CampoDoCorte>> = {
+  areaCodigo: 'area',
+  minimo: 'minimo',
+};
+
+/**
+ * O campo de cada recusa que o servidor aponta só pela regra, sem sufixo: a repetição da área é
+ * recusada em `regrasEliminacao[i]`, e é o campo da área que a corrige.
+ */
+const CAMPO_DA_RECUSA_SEM_SUFIXO: Readonly<Record<string, CampoDoCorte>> = {
+  [`${PREFIXO_DA_RECUSA}corte_em_area_repetido`]: 'area',
+};
+
+/** As recusas que o servidor aponta num campo de uma regra, por `índice.campo`. */
+function recusasDoCorte(
+  erros: readonly { readonly field: string; readonly code: string }[],
+): ReadonlyMap<string, string> {
+  const recusas = new Map<string, string>();
+  for (const erro of erros) {
+    const [, indice, nome] = /^regrasEliminacao\[(\d+)\](?:\.(\w+))?$/.exec(erro.field) ?? [];
+    const campo =
+      nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DO_CORTE[nome];
+    const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
+    if (indice === undefined || campo === undefined || texto === undefined) continue;
+    recusas.set(`${indice}.${campo}`, `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`);
+  }
+  return recusas;
+}
+
+function recusaDaEliminacao(erro: { readonly field: string; readonly code: string }): string | null {
+  const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
+  if (texto === undefined) return null;
+  const indice = /^regrasEliminacao\[(\d+)\]/.exec(erro.field)?.[1];
+  return indice === undefined
+    ? `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`
+    : `Regra de eliminação ${Number(indice) + 1}: ${texto}.`;
+}
 
 const MENSAGEM_DE_RECUSA_DESCONHECIDA =
   'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.';

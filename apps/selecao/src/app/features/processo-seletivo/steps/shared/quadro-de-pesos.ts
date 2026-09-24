@@ -105,6 +105,18 @@ export function areasComunsAoQuadro(
   );
 }
 
+/**
+ * O corte que a resolução dá à área, quando todos os grupos concordam. Com cortes diferentes entre
+ * os grupos, ou sem corte, não há um valor único a sugerir.
+ */
+export function corteDaArea(quadro: readonly GrupoDoQuadro[], areaCodigo: string): number | null {
+  const cortes = new Set(
+    quadro.map((grupo) => grupo.areas.find((area) => area.codigo === areaCodigo)?.corte ?? null),
+  );
+  const [unico] = cortes;
+  return cortes.size === 1 && unico !== undefined ? unico : null;
+}
+
 /** Algum grupo de `congelado` não está mais em `cadastro` — a resolução ficou incompleta lá. */
 export function perdeuGrupo(
   congelado: readonly GrupoDoQuadro[],

@@ -12217,7 +12217,8 @@
           "regra",
           "etapaRef",
           "notaMinima",
-          "minimo"
+          "minimo",
+          "areaCodigo"
         ],
         "type": "object",
         "properties": {
@@ -12252,6 +12253,12 @@
               "string"
             ],
             "format": "double"
+          },
+          "areaCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -12261,7 +12268,8 @@
           "regraVersao",
           "etapaRef",
           "notaMinima",
-          "minimo"
+          "minimo",
+          "areaCodigo"
         ],
         "type": "object",
         "properties": {
@@ -12295,6 +12303,12 @@
               "string"
             ],
             "format": "double"
+          },
+          "areaCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

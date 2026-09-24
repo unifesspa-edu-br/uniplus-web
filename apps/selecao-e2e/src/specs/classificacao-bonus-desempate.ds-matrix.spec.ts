@@ -37,6 +37,7 @@ const REGRAS_ARREDONDAMENTO = [
 const REGRAS_ORDEM_ALOCACAO = [regra('ALOCACAO-OPCOES-RN04', 'regra_ordem_alocacao', 'RN04')];
 const REGRAS_ELIMINACAO = [
   regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
+  regra('ELIM-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
 ];
 const REGRAS_BONUS = [
   regra(
@@ -190,6 +191,31 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await page
         .getByLabel('Regra de eliminação', { exact: true })
         .selectOption('ELIM-ZERO-EM-AREA|1.0');
+
+      const resultado = await runAxeWcagAA(page);
+      expect(identificadoresDe(resultado)).toEqual([]);
+    });
+
+    test('corte por área: oferece as áreas do quadro, sugere o corte e não viola WCAG 2.1 AA', async ({
+      page,
+    }, testInfo) => {
+      await irAoPasso(page, 'Fórmula e precisão', testInfo);
+      await declararFormulaLocal(page);
+      await page.getByLabel('Classificação baseada em provas').check();
+      await page
+        .getByLabel('Resolução de Peso por Área', { exact: true })
+        .selectOption(RESOLUCAO_PESO_AREA);
+
+      await irAoPasso(page, 'Eliminação', testInfo);
+      await page.getByRole('button', { name: '+ Acrescentar regra de eliminação' }).click();
+      await page
+        .getByLabel('Regra de eliminação', { exact: true })
+        .selectOption('ELIM-CORTE-EM-AREA|1.0');
+      await page.getByLabel('Área do ENEM', { exact: true }).selectOption('REDACAO');
+
+      const minimo = page.getByLabel('Nota mínima em Redação', { exact: true });
+      await expect(minimo).toHaveValue('400');
+      await expect(page.getByText(/dá o corte 400 para esta área/)).toBeVisible();
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);

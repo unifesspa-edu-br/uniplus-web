@@ -343,10 +343,10 @@ export interface RecursoDaEtapa {
 /**
  * Uma regra de eliminação configurada no rascunho, no shape do `esquema_args`
  * fechado que `DefinirClassificacaoCommandHandler.MontarArgs` valida por
- * código: só uma das três colunas seguintes se aplica a cada regra, e as
- * demais viajam `null` no comando — nunca omitidas. `ELIM-NOTA-MINIMA-ETAPA`
- * usa `etapaRef` + `notaMinima`; `ELIM-CORTE-REDACAO` usa `minimo`;
- * `ELIM-ZERO-EM-AREA` não usa nenhuma. Os três campos ficam sempre presentes
+ * código: cada regra usa só parte das colunas seguintes, e as demais viajam
+ * `null` no comando — nunca omitidas. `ELIM-NOTA-MINIMA-ETAPA` usa
+ * `etapaRef` + `notaMinima`; `ELIM-CORTE-EM-AREA` usa `areaCodigo` + `minimo`;
+ * `ELIM-ZERO-EM-AREA` não usa nenhuma. Os campos ficam sempre presentes
  * no rascunho — o mapeador para o comando é quem decide qual vale, a partir de
  * `regraCodigo` — porque trocar de regra sem perder o que já foi digitado
  * simplifica a tela sem violar a invariante do servidor.
@@ -358,6 +358,8 @@ export interface RegraEliminacaoConfigurada {
   readonly etapaRef: string;
   readonly notaMinima: string;
   readonly minimo: string;
+  /** Código da área do ENEM do corte — uma das áreas presentes em todos os grupos do quadro. */
+  readonly areaCodigo: string;
 }
 
 /**
@@ -689,7 +691,7 @@ export interface WizardDraft {
     regraOrdemAlocacaoVersao: string;
     nOpcoesAlocacao: string;
     /**
-     * Único booleano do corpo — condiciona se `ELIM-CORTE-REDACAO` e
+     * Único booleano do corpo — condiciona se `ELIM-CORTE-EM-AREA` e
      * `ELIM-ZERO-EM-AREA` são aceitas em `regrasEliminacao`
      * (`EliminacaoEnemForaDeProcessoEnem`).
      */

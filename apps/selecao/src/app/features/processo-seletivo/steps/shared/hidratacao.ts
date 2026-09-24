@@ -311,6 +311,7 @@ function regraEliminacaoDe(
     etapaRef: regra.etapaRef ?? '',
     notaMinima: comoTexto(regra.notaMinima),
     minimo: comoTexto(regra.minimo),
+    areaCodigo: regra.areaCodigo ?? '',
   };
 }
 

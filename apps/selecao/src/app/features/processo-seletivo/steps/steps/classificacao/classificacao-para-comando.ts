@@ -25,7 +25,7 @@ export const REGRA_CALCULO_MEDIA_PONDERADA = 'FORMULA-MEDIA-PONDERADA';
 
 /** Códigos de `RegraEliminacaoCodigo`, na mesma função de discriminador. */
 const ELIM_NOTA_MINIMA_ETAPA = 'ELIM-NOTA-MINIMA-ETAPA';
-const ELIM_CORTE_REDACAO = 'ELIM-CORTE-REDACAO';
+const ELIM_CORTE_EM_AREA = 'ELIM-CORTE-EM-AREA';
 const ELIM_ZERO_EM_AREA = 'ELIM-ZERO-EM-AREA';
 
 /**
@@ -50,7 +50,7 @@ export function classificacaoUsaFormulaLocal(regraCalculoCodigo: string): boolea
 /**
  * O shape de campos que uma regra de eliminação aceita, espelhando
  * `DefinirClassificacaoCommandHandler.MontarArgs` (`ELIM-NOTA-MINIMA-ETAPA`
- * exige `etapaRef`+`notaMinima`; `ELIM-CORTE-REDACAO` exige `minimo`;
+ * exige `etapaRef`+`notaMinima`; `ELIM-CORTE-EM-AREA` exige `areaCodigo`+`minimo`;
  * `ELIM-ZERO-EM-AREA` não aceita nenhum). Uma regra fora deste conjunto ainda
  * não tem shape reconhecido pela tela — trata como "nenhum campo", igual a
  * `ELIM-ZERO-EM-AREA`, em vez de adivinhar.
@@ -59,13 +59,13 @@ export function eliminacaoUsaEtapaENotaMinima(regraCodigo: string): boolean {
   return regraCodigo === ELIM_NOTA_MINIMA_ETAPA;
 }
 
-export function eliminacaoUsaMinimo(regraCodigo: string): boolean {
-  return regraCodigo === ELIM_CORTE_REDACAO;
+export function eliminacaoUsaAreaEMinimo(regraCodigo: string): boolean {
+  return regraCodigo === ELIM_CORTE_EM_AREA;
 }
 
 /** Regras cujo uso exige `baseadoEmEnem === true` (`EliminacaoEnemForaDeProcessoEnem`). */
 export function eliminacaoExigeBaseadoEmEnem(regraCodigo: string): boolean {
-  return regraCodigo === ELIM_CORTE_REDACAO || regraCodigo === ELIM_ZERO_EM_AREA;
+  return regraCodigo === ELIM_CORTE_EM_AREA || regraCodigo === ELIM_ZERO_EM_AREA;
 }
 
 /** Texto vazio vira `null` — é assim que um campo não aplicável viaja no comando. */
@@ -95,14 +95,15 @@ export function comoComandoDeRegraEliminacao(
   regra: RegraEliminacaoConfigurada,
 ): RegraEliminacaoInput {
   const usaEtapa = eliminacaoUsaEtapaENotaMinima(regra.regraCodigo);
-  const usaMinimo = eliminacaoUsaMinimo(regra.regraCodigo);
+  const usaAreaEMinimo = eliminacaoUsaAreaEMinimo(regra.regraCodigo);
 
   return {
     regraCodigo: regra.regraCodigo,
     regraVersao: regra.regraVersao,
     etapaRef: usaEtapa ? naoVazio(regra.etapaRef) : null,
     notaMinima: usaEtapa ? decimal(regra.notaMinima) : null,
-    minimo: usaMinimo ? decimal(regra.minimo) : null,
+    minimo: usaAreaEMinimo ? decimal(regra.minimo) : null,
+    areaCodigo: usaAreaEMinimo ? naoVazio(regra.areaCodigo) : null,
   };
 }
 
