@@ -680,6 +680,14 @@ export interface WizardDraft {
      * (`EliminacaoEnemForaDeProcessoEnem`).
      */
     baseadoEmEnem: boolean;
+    /**
+     * Resolução de Peso por Área que a nota usa — o valor da resolução no cadastro da
+     * Configuração, que é a chave pela qual o servidor copia o quadro de pesos para o processo.
+     * Vazio enquanto não há escolha. Só é enviada quando a classificação é baseada em ENEM com
+     * cálculo local (`exigeResolucaoPesoAreaEnem`); nos demais casos o mapeador envia `null`,
+     * mesmo que o rascunho guarde uma escolha anterior.
+     */
+    resolucaoPesoAreaEnem: string;
     regrasEliminacao: readonly RegraEliminacaoConfigurada[];
   };
   /**

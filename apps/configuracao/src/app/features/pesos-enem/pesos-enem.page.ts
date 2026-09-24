@@ -56,6 +56,7 @@ import {
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
+import { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from '@uniplus/shared-utils';
 
 import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
 import { contadorDeFalhas } from '../../shared/contador-de-falhas';
@@ -859,8 +860,8 @@ export class PesosEnemPage {
   /** O corte da área como texto em pt-BR, ou `null` quando a área não tem corte (o
    *  zero é corte válido e aparece). */
   protected corteExibido(valor: PesoAreaEnemAreaDto | undefined): string | null {
-    const corte = corteComoNumero(valor?.corte);
-    return corte === null ? null : formatarNumero(corte);
+    const corte = numeroOuNuloDaApi(valor?.corte);
+    return corte === null ? null : formatarNumeroPtBr(corte);
   }
 
   protected tentarNovamente(): void {
@@ -1495,8 +1496,8 @@ export class PesosEnemPage {
     }
     if (control.errors['max']) {
       return nome === 'corte'
-        ? `O corte não pode exceder ${formatarNumero(CORTE_MAXIMO)}.`
-        : `O peso não pode exceder ${formatarNumero(PESO_MAXIMO)}.`;
+        ? `O corte não pode exceder ${formatarNumeroPtBr(CORTE_MAXIMO)}.`
+        : `O peso não pode exceder ${formatarNumeroPtBr(PESO_MAXIMO)}.`;
     }
     if (control.errors['casasDecimais']) {
       return nome === 'corte'
@@ -1587,23 +1588,6 @@ function maxCriadoEm(linhas: readonly PesoAreaEnemDto[]): number {
   return linhas.reduce((max, linha) => Math.max(max, Date.parse(linha.criadoEm)), 0);
 }
 
-function toNumber(valor: number | string): number {
-  return typeof valor === 'number' ? valor : Number(valor);
-}
-
-/** O corte vindo da API como número, ou `null` quando a área não tem corte. */
-function corteComoNumero(corte: number | string | null | undefined): number | null {
-  return corte === null || corte === undefined ? null : toNumber(corte);
-}
-
-/** Um formatador para a página inteira: criar um a cada célula e a cada detecção de
- *  mudanças custaria a construção de um `Intl.NumberFormat` por chamada. */
-const FORMATADOR_NUMERO = new Intl.NumberFormat('pt-BR');
-
-function formatarNumero(valor: number): string {
-  return FORMATADOR_NUMERO.format(valor);
-}
-
 function criarAreaForm(codigo: string, peso: number, corte: number | null): FormGroup<AreaForm> {
   return new FormGroup<AreaForm>({
     codigo: new FormControl(codigo, { nonNullable: true }),
@@ -1676,8 +1660,8 @@ function criarPesoEdicaoGrupoForm(
         const valor = linha.areas.find((existente) => existente.codigo === area.codigo);
         return criarAreaForm(
           area.codigo,
-          valor === undefined ? 0 : toNumber(valor.peso),
-          corteComoNumero(valor?.corte),
+          valor === undefined ? 0 : numeroDaApi(valor.peso),
+          numeroOuNuloDaApi(valor?.corte),
         );
       }),
     ),

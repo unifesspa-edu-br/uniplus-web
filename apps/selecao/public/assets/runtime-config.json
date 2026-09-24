@@ -1,5 +1,6 @@
 {
   "apiUrl": "http://localhost:5000",
+  "configuracaoWebUrl": "http://localhost:4203",
   "oidc": {
     "issuerUrl": "http://localhost:8080/realms/unifesspa",
     "clientId": "selecao-web"

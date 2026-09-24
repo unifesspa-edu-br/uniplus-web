@@ -44,6 +44,7 @@ function draftVazio(): WizardDraft {
       regraOrdemAlocacaoVersao: '',
       nOpcoesAlocacao: '',
       baseadoEmEnem: false,
+      resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],
     },
     bonus: {

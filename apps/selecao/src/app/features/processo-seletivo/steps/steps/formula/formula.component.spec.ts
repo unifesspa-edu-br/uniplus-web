@@ -2,11 +2,13 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './formula.component';
 
@@ -38,6 +40,9 @@ describe('FormulaStepComponent', () => {
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        // O passo relê o processo só pelo botão do aviso de quadro velho; esta suíte não o aciona.
+        { provide: ReleituraDoSnapshot, useValue: { reler: async () => true } },
       ],
     }).compileComponents();
 

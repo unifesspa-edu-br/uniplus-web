@@ -7,7 +7,11 @@ import {
   Injector,
   signal,
 } from '@angular/core';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  type ProblemDetails,
+  type ProblemValidationError,
+} from '@uniplus/shared-core/http';
 
 import {
   EtapaPontuada,
@@ -18,6 +22,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
   classificacaoUsaFormulaLocal,
@@ -26,7 +31,9 @@ import {
   eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaMinimo,
+  exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
+  TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 
@@ -60,6 +67,7 @@ export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   private readonly cadastro = inject(CadastroInicialService);
+  private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
 
   constructor() {
@@ -201,6 +209,12 @@ export class EliminacaoStepComponent {
         { rotulo: 'Número de opções de curso', valor: classificacao.nOpcoesAlocacao },
         { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
         {
+          rotulo: 'Resolução de Peso por Área',
+          valor: exigeResolucaoPesoAreaEnem(classificacao)
+            ? classificacao.resolucaoPesoAreaEnem
+            : 'não se aplica',
+        },
+        {
           rotulo: 'Regras de eliminação',
           valor: local
             ? `${classificacao.regrasEliminacao.length} regra(s)`
@@ -220,7 +234,11 @@ export class EliminacaoStepComponent {
    */
   validate(): StepValidation {
     const classificacao = this.store.draft().classificacao;
-    const messages: string[] = [...mensagensDeClassificacaoBase(classificacao)];
+    // A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o
+    // cadastro; a completude dos grupos continua sendo julgada pelo servidor.
+    const messages: string[] = [
+      ...mensagensDeClassificacaoBase(classificacao, this.catalogos.resolucaoForaDoCadastro),
+    ];
 
     if (!this.usaFormulaLocal()) {
       // CLASSIFICACAO-IMPORTADA (ou regra ainda não escolhida) não usa
@@ -294,22 +312,138 @@ export class EliminacaoStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const resultado = await this.cadastro.definirClassificacao(
-        processoId,
-        comoComandoDeClassificacao(this.store.draft().classificacao),
-      );
+      const comando = comoComandoDeClassificacao(this.store.draft().classificacao);
+      this.releitura.descartarLeiturasEmCurso();
+      const resultado = await this.cadastro.definirClassificacao(processoId, comando);
 
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
 
       if (!resultado.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+        // Sem resposta conclusiva o servidor pode ter gravado — e copiado o quadro de novo.
+        if (
+          resultado.inconclusiva &&
+          this.envolveResolucao(comando.resolucaoPesoAreaEnem ?? null)
+        ) {
+          this.store.quadroPesoAreaEnemDesatualizado.set(true);
+        }
+        return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
       }
 
+      this.store.recusaDaResolucaoPesoAreaEnem.set(null);
+      await this.acompanharQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       return { valid: true };
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
   }
+
+  /**
+   * O resumo da recusa: a recusa da resolução, cada uma uma vez, com o texto da tela e o passo onde
+   * corrigir; e o título da raiz, pelo `ProblemI18nService`, quando há erro em outro campo ou
+   * nenhum erro de campo. Recusa só da resolução não repete o título, que fala do mesmo erro.
+   *
+   * A recusa da resolução fica guardada para aparecer sob o campo, no passo da fórmula. Uma
+   * recusa sem ela não a apaga: o servidor recusa outros campos antes de chegar a julgar a
+   * resolução, e só a gravação que dá certo prova que ela passou.
+   */
+  private mensagensDaRecusa(problema: ProblemDetails): string[] {
+    const erros = problema.errors ?? [];
+    const daResolucao = [...new Set(erros.filter(ehDaResolucao).map(mensagemDaRecusaDaResolucao))];
+    if (daResolucao.length > 0) this.store.recusaDaResolucaoPesoAreaEnem.set(daResolucao[0]);
+
+    const haOutraRecusa = daResolucao.length === 0 || erros.some((erro) => !ehDaResolucao(erro));
+    return [
+      ...daResolucao.map((mensagem) => `Resolução de Peso por Área, no passo Fórmula: ${mensagem}`),
+      ...(haOutraRecusa ? [this.problemI18n.resolve(problema).title] : []),
+    ];
+  }
+
+  /**
+   * A gravação copiou o quadro da resolução de novo no servidor, e a Fórmula mostra o que o
+   * processo congelou. Na varredura da publicação a referência só fica marcada como velha: a
+   * página relê o detalhe uma vez, no fim da varredura, em vez de uma leitura por gravação.
+   */
+  private async acompanharQuadroCongelado(resolucaoGravada: string | null): Promise<void> {
+    if (!this.envolveResolucao(resolucaoGravada)) {
+      this.store.quadroPesoAreaEnemDesatualizado.set(false);
+      return;
+    }
+
+    if (this.store.travamentoDeOrquestracao()) {
+      this.store.quadroPesoAreaEnemDesatualizado.set(true);
+      return;
+    }
+
+    await this.releitura.reler();
+  }
+
+  /** Sem resolução, nem enviada nem congelada, a gravação não mexe em quadro nenhum. */
+  private envolveResolucao(resolucaoEnviada: string | null): boolean {
+    return (
+      resolucaoEnviada !== null ||
+      (this.store.quadroPesoAreaEnemCongelado()?.resolucao ?? null) !== null
+    );
+  }
+}
+
+/** O campo da resolução nas recusas do servidor, comparado sem caixa. */
+const CAMPO_RESOLUCAO = 'resolucaopesoareaenem';
+
+const PREFIXO_DA_RECUSA = 'uniplus.selecao.configuracao_classificacao.';
+
+/**
+ * O que a tela diz para cada recusa da resolução. O texto é daqui, e não o `message` que o
+ * servidor devolve: a mensagem ao operador é contrato da tela, e o `code` é o que é estável.
+ */
+const MENSAGEM_POR_CODIGO_DA_RESOLUCAO: ReadonlyMap<string, string> = new Map([
+  [
+    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_obrigatoria`,
+    TEXTO_DA_PENDENCIA_DA_RESOLUCAO.obrigatoria.campo,
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_indevida`,
+    'A resolução de Peso por Área só se aplica à classificação baseada em ENEM com a média ponderada.',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_invalida`,
+    'O nome da resolução de Peso por Área não é válido. Escolha a resolução na lista.',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_nao_encontrada`,
+    'A resolução escolhida não está no cadastro de Peso por Área. Escolha outra.',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_incompleta`,
+    'A resolução escolhida não tem pesos cadastrados para todos os grupos de área. Complete-a no cadastro de Peso por Área ou escolha outra.',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}quadro_peso_area_enem_vazio`,
+    'A resolução escolhida não tem nenhum grupo de área no cadastro de Peso por Área.',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}quadro_peso_area_enem_grupo_repetido`,
+    'A resolução escolhida repete um grupo de área no cadastro de Peso por Área.',
+  ],
+]);
+
+const MENSAGEM_DE_RECUSA_DESCONHECIDA =
+  'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.';
+
+function ehDaResolucao(erro: ProblemValidationError): boolean {
+  return ultimoSegmento(erro.field) === CAMPO_RESOLUCAO;
+}
+
+function mensagemDaRecusaDaResolucao(erro: ProblemValidationError): string {
+  return MENSAGEM_POR_CODIGO_DA_RESOLUCAO.get(erro.code) ?? MENSAGEM_DE_RECUSA_DESCONHECIDA;
+}
+
+/**
+ * O nome do campo sem prefixo de caminho (`$.`, `request.`) e sem caixa — a recusa do domínio e a
+ * do model binding nomeiam o mesmo campo de formas diferentes.
+ */
+function ultimoSegmento(campo: string): string {
+  return (campo.split('.').at(-1) ?? campo).toLowerCase();
 }
 
 function decimalValido(texto: string): boolean {

@@ -1,6 +1,10 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
-import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import type {
+  ConfiguracaoClassificacaoDto,
+  DocumentoEditalDto,
+  ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { STEP_LABELS } from './processo-seletivo.data';
 import { exigenciasVazias } from './shared/exigencias-documentais';
 import { hidratarDraft } from './shared/hidratacao';
@@ -51,6 +55,7 @@ const INITIAL_DRAFT: WizardDraft = {
     regraOrdemAlocacaoVersao: '',
     nOpcoesAlocacao: '',
     baseadoEmEnem: false,
+    resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
   },
   bonus: {
@@ -80,6 +85,11 @@ const INITIAL_DRAFT: WizardDraft = {
     ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
   },
 };
+
+export interface QuadroPesoAreaEnemCongelado {
+  readonly resolucao: string | null;
+  readonly quadro: ConfiguracaoClassificacaoDto['quadroPesoAreaEnem'];
+}
 
 @Injectable()
 export class ProcessoSeletivoStore {
@@ -169,6 +179,38 @@ export class ProcessoSeletivoStore {
    * e enviar outro, criando um segundo documento imutável.
    */
   readonly avisoDocumentos = signal<string | null>(null);
+
+  /**
+   * Recusa do servidor ao campo `resolucaoPesoAreaEnem`, na última gravação da classificação.
+   *
+   * Vive no store porque quem grava a classificação é a Eliminação, e o campo é do passo da
+   * fórmula: sem um lugar comum, o operador voltava à fórmula e não via ali o que o servidor
+   * recusou. Some quando a resolução muda ou deixa de ser exigida, quando o cadastro é relido e
+   * quando a gravação seguinte dá certo. Uma recusa de outro campo não a apaga: o servidor pode
+   * ter recusado antes de julgar a resolução.
+   */
+  readonly recusaDaResolucaoPesoAreaEnem = signal<string | null>(null);
+
+  /**
+   * A resolução de Peso por Área e o quadro que o processo congelou, pela última leitura do
+   * servidor. `null` enquanto nada foi lido (processo novo).
+   */
+  readonly quadroPesoAreaEnemCongelado = signal<QuadroPesoAreaEnemCongelado | null>(null);
+
+  /**
+   * A classificação pode ter sido gravada depois da última leitura — e o servidor copiou o quadro
+   * de novo —, então `quadroPesoAreaEnemCongelado` pode não ser mais o que o processo tem. Desfaz
+   * a marca uma leitura nova da classificação (`registrarClassificacaoLida`), a gravação que não
+   * envolve resolução nenhuma e a troca de processo (`reset`).
+   */
+  readonly quadroPesoAreaEnemDesatualizado = signal(false);
+
+  /**
+   * Muda a cada leitura da classificação do processo e a cada troca de processo. Uma leitura do
+   * cadastro de Peso por Área pedida nesta versão, ou depois, é posterior ao que o processo
+   * congelou.
+   */
+  readonly versaoDaClassificacaoLida = signal(0);
 
   /**
    * Muda sempre que o editor passa a tratar de outro processo — por limpeza ou
@@ -413,7 +455,29 @@ export class ProcessoSeletivoStore {
     this.documentosParaEscolha.set([]);
     this.camposPostosPelasExigencias.set(new Set());
     this.avisoDocumentos.set(null);
+    this.recusaDaResolucaoPesoAreaEnem.set(null);
+    this.quadroPesoAreaEnemCongelado.set(null);
+    this.quadroPesoAreaEnemDesatualizado.set(false);
+    this.versaoDaClassificacaoLida.update((versao) => versao + 1);
     this.geracao.update((valor) => valor + 1);
+  }
+
+  /**
+   * A classificação do processo, lida do servidor. Só ela: a releitura depois de gravar não pode
+   * mexer no `remoteSnapshot`, de que outros passos derivam estado, nem no rascunho, que é o que o
+   * operador está editando.
+   */
+  registrarClassificacaoLida(classificacao: ProcessoSeletivoDto['classificacao']): void {
+    this.quadroPesoAreaEnemCongelado.set(
+      classificacao === null || classificacao === undefined
+        ? null
+        : {
+            resolucao: classificacao.resolucaoPesoAreaEnem ?? null,
+            quadro: classificacao.quadroPesoAreaEnem,
+          },
+    );
+    this.versaoDaClassificacaoLida.update((versao) => versao + 1);
+    this.quadroPesoAreaEnemDesatualizado.set(false);
   }
 
   /**
@@ -431,6 +495,7 @@ export class ProcessoSeletivoStore {
     // resolve a incerteza de `publicacaoNaoConfirmada`, publicado ou não.
     this.publicacaoNaoConfirmada.set(false);
     this.remoteSnapshot.set(dto);
+    this.registrarClassificacaoLida(dto.classificacao);
     this.processoSeletivoId.set(dto.id);
     this.draft.update((draft) => hidratarDraft(draft, dto));
   }

@@ -278,6 +278,7 @@ function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao']
       regraOrdemAlocacaoVersao: '',
       nOpcoesAlocacao: '',
       baseadoEmEnem: false,
+      resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],
     };
   }
@@ -292,6 +293,7 @@ function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao']
     regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacao.versao,
     nOpcoesAlocacao: comoTexto(classificacao.nOpcoesAlocacao),
     baseadoEmEnem: classificacao.baseadoEmEnem,
+    resolucaoPesoAreaEnem: classificacao.resolucaoPesoAreaEnem ?? '',
     regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
   };
 }

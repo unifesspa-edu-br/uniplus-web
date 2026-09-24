@@ -16,10 +16,31 @@ import { componeNota } from '../cronograma/cronograma-do-certame';
  */
 export const REGRA_CALCULO_IMPORTADA = 'CLASSIFICACAO-IMPORTADA';
 
+/**
+ * Código de `RegraCalculoCodigo.FormulaMediaPonderada` — a regra de cálculo local cuja nota usa
+ * os pesos por área do ENEM. É discriminador, como o de cima: decide se a resolução de Peso por
+ * Área vai no corpo.
+ */
+export const REGRA_CALCULO_MEDIA_PONDERADA = 'FORMULA-MEDIA-PONDERADA';
+
 /** Códigos de `RegraEliminacaoCodigo`, na mesma função de discriminador. */
 const ELIM_NOTA_MINIMA_ETAPA = 'ELIM-NOTA-MINIMA-ETAPA';
 const ELIM_CORTE_REDACAO = 'ELIM-CORTE-REDACAO';
 const ELIM_ZERO_EM_AREA = 'ELIM-ZERO-EM-AREA';
+
+/**
+ * A classificação exige a resolução de Peso por Área: baseada em ENEM e com a média ponderada
+ * local. Espelha `ConfiguracaoClassificacao.ExigeQuadroPesoAreaEnem` do servidor, que exige a
+ * resolução nesse caso e a recusa em qualquer outro — por isso o mapeador só a envia aqui.
+ */
+export function exigeResolucaoPesoAreaEnem(
+  classificacao: Pick<WizardDraft['classificacao'], 'regraCalculoCodigo' | 'baseadoEmEnem'>,
+): boolean {
+  return (
+    classificacao.baseadoEmEnem &&
+    classificacao.regraCalculoCodigo === REGRA_CALCULO_MEDIA_PONDERADA
+  );
+}
 
 /** A classificação usa fórmula local — o ramo que exige arredondamento e admite eliminação. */
 export function classificacaoUsaFormulaLocal(regraCalculoCodigo: string): boolean {
@@ -91,7 +112,8 @@ export function comoComandoDeRegraEliminacao(
  * de eliminação são forçados aos valores que INV-B8 exige — `null` ou
  * vazio — **independentemente** do que esteja digitado no rascunho, porque
  * trocar de regra de cálculo não precisa apagar o que o operador já preencheu
- * do outro ramo.
+ * do outro ramo. A resolução de Peso por Área segue a mesma lógica: só viaja quando a
+ * classificação a exige, e `null` fora disso.
  */
 export function comoComandoDeClassificacao(
   classificacao: WizardDraft['classificacao'],
@@ -109,13 +131,55 @@ export function comoComandoDeClassificacao(
     nOpcoesAlocacao: inteiro(classificacao.nOpcoesAlocacao) ?? 0,
     regrasEliminacao: local ? classificacao.regrasEliminacao.map(comoComandoDeRegraEliminacao) : [],
     baseadoEmEnem: classificacao.baseadoEmEnem,
+    resolucaoPesoAreaEnem: exigeResolucaoPesoAreaEnem(classificacao)
+      ? naoVazio(classificacao.resolucaoPesoAreaEnem)
+      : null,
   };
+}
+
+/** O que falta à resolução de Peso por Área para a classificação poder ser gravada. */
+export type PendenciaDaResolucao = 'obrigatoria' | 'fora-do-cadastro';
+
+/**
+ * Os textos de cada pendência: no resumo do passo, que diz onde corrigir, e sob o próprio campo.
+ * Fora do cadastro, a lista lida pode estar velha — a resolução pode ter sido criada noutra aba —,
+ * por isso o texto manda atualizá-la antes de trocar a escolha.
+ */
+export const TEXTO_DA_PENDENCIA_DA_RESOLUCAO: Readonly<
+  Record<PendenciaDaResolucao, { readonly resumo: string; readonly campo: string }>
+> = {
+  obrigatoria: {
+    resumo: 'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+    campo: 'Selecione a resolução de Peso por Área usada na nota.',
+  },
+  'fora-do-cadastro': {
+    resumo:
+      'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+    campo:
+      'Esta resolução não está no cadastro lido. Use "Atualizar lista" se ela foi criada agora, ou escolha outra.',
+  },
+};
+
+/**
+ * A regra única da resolução, para o resumo e para o campo: exigida sem escolha, ou escolhida mas
+ * fora do cadastro — quando quem chama leu o cadastro e informa `resolucaoForaDoCadastro`; sem ele,
+ * nada foi lido para afirmá-lo.
+ */
+export function pendenciaDaResolucao(
+  classificacao: WizardDraft['classificacao'],
+  resolucaoForaDoCadastro: (resolucao: string) => boolean = () => false,
+): PendenciaDaResolucao | null {
+  if (!exigeResolucaoPesoAreaEnem(classificacao)) return null;
+  const resolucao = classificacao.resolucaoPesoAreaEnem;
+  if (!resolucao.trim()) return 'obrigatoria';
+  return resolucaoForaDoCadastro(resolucao) ? 'fora-do-cadastro' : null;
 }
 
 /**
  * Mensagens de recusa dos campos que o passo Fórmula coleta — regra de
- * cálculo, ordem de alocação, número de opções e, sob fórmula local,
- * arredondamento. Compartilhada entre `FormulaStepComponent.validate()` e
+ * cálculo, ordem de alocação, número de opções, sob fórmula local o
+ * arredondamento e, quando a classificação a exige, a resolução de Peso por
+ * Área. Compartilhada entre `FormulaStepComponent.validate()` e
  * `EliminacaoStepComponent.validate()`: a navegação do wizard é livre, então
  * a Eliminação — que grava o comando de classificação inteiro — não pode
  * supor que o operador passou pela Fórmula antes de chegar aqui. Sem esta
@@ -125,6 +189,7 @@ export function comoComandoDeClassificacao(
  */
 export function mensagensDeClassificacaoBase(
   classificacao: WizardDraft['classificacao'],
+  resolucaoForaDoCadastro: (resolucao: string) => boolean = () => false,
 ): readonly string[] {
   const messages: string[] = [];
 
@@ -152,6 +217,10 @@ export function mensagensDeClassificacaoBase(
   if (nOpcoes !== 1 && nOpcoes !== 2) {
     messages.push('Informe o número de opções de curso (1 ou 2), no passo Fórmula.');
   }
+
+  // Por último porque é o último campo da tela: o resumo segue a ordem em que o operador os vê.
+  const pendencia = pendenciaDaResolucao(classificacao, resolucaoForaDoCadastro);
+  if (pendencia !== null) messages.push(TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].resumo);
 
   return messages;
 }

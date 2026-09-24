@@ -106,10 +106,184 @@
     ><input
       type="checkbox"
       [checked]="store.draft().classificacao.baseadoEmEnem"
-      (change)="alternarBaseadoEmEnem($any($event.target).checked)"
+      [disabled]="!store.aceitaEdicao()"
+      (change)="aoAlternarBaseadoEmEnem($event)"
     /><span
-      >Classificação baseada em provas e notas do ENEM (habilita regras de eliminação por corte de
-      redação e zero em área, no próximo passo)</span
+      >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que pesa
+      as notas das áreas e habilita as regras de eliminação por corte de redação e zero em área, no
+      passo Eliminação)</span
     ></label
   >
+
+  @if (enemComNotaImportada()) {
+    <p class="field__hint" style="margin-top: var(--space-3)">
+      Com a classificação importada, a nota chega pronta: não há resolução de Peso por Área a
+      escolher.
+    </p>
+  }
+
+  @if (exigeResolucao()) {
+    <section class="peso-area" aria-labelledby="peso-area-titulo">
+      <h2 class="form-section__title" id="peso-area-titulo" tabindex="-1">
+        Pesos das áreas do ENEM
+      </h2>
+
+      @if (catalogos.pesosErro(); as erro) {
+        <div class="alert alert--danger field__erro" role="alert">
+          <p>{{ erro }}</p>
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
+            (click)="tentarCarregarPesosDeNovo()"
+          >
+            {{ catalogos.pesosCarregando() ? 'Carregando…' : 'Tentar novamente' }}
+          </button>
+        </div>
+      }
+
+      <div class="form-field">
+        <label class="label" [for]="idDoCampoResolucao">Resolução de Peso por Área</label
+        ><select
+          class="input"
+          [id]="idDoCampoResolucao"
+          [class.is-invalid]="erroDaResolucao() !== null"
+          [attr.aria-invalid]="erroDaResolucao() !== null ? 'true' : null"
+          [attr.aria-describedby]="descricaoDaResolucao()"
+          [attr.aria-busy]="catalogos.pesosCarregando() ? 'true' : null"
+          [disabled]="
+            !store.aceitaEdicao() ||
+            (catalogos.pesosCarregando() && catalogos.pesosLidosNaMarca() < 0)
+          "
+          (change)="aoEscolherResolucao($event)"
+        >
+          <!-- [selected] em cada opção, e não [value] no select: as opções nascem depois do
+               binding, e com [value] a escolha hidratada ficava no rascunho sem chegar à tela. -->
+          <option value="" [selected]="resolucaoEscolhida() === ''">— escolher —</option>
+          @for (resolucao of resolucoesEscolhiveis(); track resolucao.valor) {
+            <option [value]="resolucao.valor" [selected]="resolucao.valor === resolucaoEscolhida()">
+              {{ resolucao.rotulo }}
+            </option>
+          }
+        </select>
+        @if (erroDaResolucao(); as erro) {
+          <p class="field__error" [id]="idDoCampoResolucao + '-erro'">{{ erro }}</p>
+        }
+        <p class="field__hint" [id]="idDoCampoResolucao + '-dica'">
+          Os pesos e os cortes vêm do cadastro de Peso por Área e são copiados para o processo
+          quando a classificação é gravada, no passo Eliminação.
+          @if (administraPlataforma()) {
+            <a [href]="linkDoCadastroDePesos()" target="_blank" rel="noopener"
+              >Abrir o cadastro de Peso por Área<span class="sr-only"> (abre em nova aba)</span></a
+            >
+          } @else {
+            As resoluções são cadastradas pela administração da plataforma.
+          }
+        </p>
+        @if (store.edicaoPermitida()) {
+          <div class="peso-area__acoes">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
+              (click)="atualizarListaDePesos()"
+            >
+              Atualizar lista
+            </button>
+            <span class="sr-only" role="status">{{ avisoDaLista() }}</span>
+          </div>
+        }
+      </div>
+
+      @if (avisaForaDoCadastro()) {
+        <p class="alert alert--warning" role="status">
+          A resolução {{ resolucaoEscolhida() }} não está no cadastro de Peso por Área lido. Se ela
+          foi criada ou corrigida agora, use "Atualizar lista"; senão, escolha outra: a gravação da
+          classificação vai recusá-la.
+        </p>
+      }
+
+      @if (quadroDesatualizado()) {
+        <div class="alert alert--warning field__erro" role="status">
+          <p>
+            A classificação foi gravada depois da última leitura do processo, e o quadro que ele
+            congelou ainda não foi relido. Enquanto isso, o quadro abaixo é a prévia do cadastro.
+          </p>
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [attr.aria-disabled]="relendoProcesso() ? 'true' : null"
+            (click)="relerProcesso()"
+          >
+            {{ relendoProcesso() ? 'Relendo…' : 'Reler o processo' }}
+          </button>
+        </div>
+      }
+
+      @if (cadastroPerdeuGrupo()) {
+        <p class="alert alert--warning" role="status">
+          O cadastro de Peso por Área não tem mais todos os grupos de área que esta resolução tinha
+          quando foi copiada para o processo. A próxima gravação da classificação — inclusive a que
+          a publicação faz — será recusada até a resolução ser completada no cadastro ou outra ser
+          escolhida.
+        </p>
+      } @else if (cadastroMudouDesdeAGravacao()) {
+        <p class="alert alert--warning" role="status">
+          O cadastro de Peso por Área mudou depois que esta resolução foi copiada para o processo. A
+          próxima gravação da classificação — inclusive a que a publicação faz — copia os valores
+          atuais do cadastro.
+        </p>
+      }
+
+      @if (quadro().length > 0) {
+        <div class="table-responsive peso-area__quadro">
+          <table>
+            <caption class="peso-area__legenda">
+              @if (mostraQuadroGravado()) {
+                Quadro de pesos congelado no processo, da resolução {{ resolucaoEscolhida() }}, por
+                grupo de área
+              } @else {
+                Prévia do quadro da resolução {{ resolucaoEscolhida() }} no cadastro de Peso por
+                Área, por grupo de área: será copiado para o processo ao gravar a classificação, no
+                passo Eliminação
+              }
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Grupo de área</th>
+                @for (coluna of colunasDoQuadro(); track coluna.codigo) {
+                  <th scope="col">{{ coluna.rotulo }}</th>
+                }
+                <th scope="col">Base legal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (grupo of quadro(); track grupo.codigo) {
+                <tr>
+                  <th scope="row">{{ grupo.rotulo }}</th>
+                  @for (coluna of colunasDoQuadro(); track coluna.codigo) {
+                    @let area = areaDoGrupo(grupo, coluna.codigo);
+                    <td class="table-responsive__num" [attr.data-label]="coluna.rotulo">
+                      @if (area) {
+                        Peso {{ formatarNumero(area.peso) }}
+                        @if (area.corte !== null) {
+                          <span class="peso-area__corte"
+                            >corte {{ formatarNumero(area.corte) }}</span
+                          >
+                        }
+                      } @else {
+                        <span aria-hidden="true">—</span
+                        ><span class="sr-only">sem peso nesta resolução</span>
+                      }
+                    </td>
+                  }
+                  <td data-label="Base legal">{{ grupo.baseLegal }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
 </div>

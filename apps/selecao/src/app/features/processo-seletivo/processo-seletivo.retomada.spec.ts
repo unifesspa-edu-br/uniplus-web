@@ -13,6 +13,7 @@ import {
   BaseLegalBonusRegionalApi,
   CondicoesAtendimentoApi,
   TiposInstrumentoNormativoApi,
+  PesosEnemApi,
   CursosApi,
   ModalidadesApi,
   OfertasCursoApi,
@@ -47,6 +48,7 @@ import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reu
 import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
 
 const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -179,6 +181,8 @@ function montar(opts: CenarioOpts = {}) {
   // tipo de instrumento da norma.
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
+  // O passo da fórmula carrega o cadastro de Peso por Área, de onde sai a resolução do ENEM.
+  { provide: PesosEnemApi, useValue: { ...catalogoVazioStub, listarAreas: catalogoVazioStub.listar } },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -772,6 +776,26 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     });
 
     expect(cenario.componente.rascunhoPendente()).toBe(true);
+  });
+
+  it('abrir outro processo esquece o cadastro de Peso por Área lido para o anterior', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({
+      id: PROCESSO_ID,
+      obter: vi.fn((id: string) => of(okResult(detalhe({ id })))),
+      paramMap,
+    });
+    await propagar();
+    const catalogos = cenario.fixture.debugElement.injector.get(CatalogosDeClassificacaoService);
+    const esquecer = vi.spyOn(catalogos, 'esquecerPesosAreaEnem');
+
+    paramMap.next({ get: () => OUTRO_ID });
+    await propagar();
+
+    expect(esquecer).toHaveBeenCalledTimes(1);
   });
 
   /**

@@ -1,9 +1,15 @@
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
+import {
+  apiOk,
+  apiResultInterceptor,
+  errorResult,
+  mockProblemDetails,
+} from '@uniplus/shared-core/http';
+import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import { RegraCatalogoDto, RegrasCatalogoApi, RegrasCatalogoQuery } from '@uniplus/shared-data/selecao';
 
 import { CatalogosDeClassificacaoService } from './catalogos-de-classificacao.service';
@@ -34,17 +40,51 @@ const POR_TIPO: Record<string, readonly RegraCatalogoDto[]> = {
   criterio_desempate: [regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate')],
 };
 
-function montar(listar = vi.fn((query: RegrasCatalogoQuery) => pagina(POR_TIPO[query.tipo ?? ''] ?? []))) {
+const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
+
+function linhaDePeso(resolucao: string, grupo: string) {
+  return {
+    id: `${resolucao}-${grupo}`,
+    resolucao,
+    grupoCurso: { codigo: grupo, rotulo: grupo },
+    areas: [],
+    baseLegal: `${resolucao} – Anexo I`,
+    criadoEm: '2026-09-01T00:00:00Z',
+  };
+}
+
+const listarAreas = vi.fn(() =>
+  of(apiOk([{ codigo: 'REDACAO', rotulo: 'Redação' }], 200, new HttpHeaders())),
+);
+
+function montar(
+  listar = vi.fn((query: RegrasCatalogoQuery) => pagina(POR_TIPO[query.tipo ?? ''] ?? [])),
+  listarPesos = vi.fn(() =>
+    of(
+      apiOk(
+        [linhaDePeso(RESOLUCAO, 'TECNOLOGICA'), linhaDePeso(RESOLUCAO, 'SAUDE_E_BIOLOGICAS')],
+        200,
+        new HttpHeaders(),
+      ),
+    ),
+  ),
+) {
   TestBed.configureTestingModule({
     providers: [
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
       CatalogosDeClassificacaoService,
       { provide: RegrasCatalogoApi, useValue: { listar } },
+      { provide: PesosEnemApi, useValue: { listar: listarPesos, listarAreas } },
     ],
   });
 
-  return { servico: TestBed.inject(CatalogosDeClassificacaoService), listar };
+  return {
+    servico: TestBed.inject(CatalogosDeClassificacaoService),
+    listar,
+    listarPesos,
+    listarAreas,
+  };
 }
 
 describe('CatalogosDeClassificacaoService', () => {
@@ -98,5 +138,160 @@ describe('CatalogosDeClassificacaoService', () => {
 
     servico.carregar();
     expect(listar).toHaveBeenCalledTimes(12);
+  });
+
+  describe('cadastro de Peso por Área', () => {
+    it('não lê o cadastro até alguém precisar dele, e lê uma vez só', () => {
+      const { servico, listarPesos } = montar();
+
+      servico.carregar();
+      expect(listarPesos).not.toHaveBeenCalled();
+
+      servico.garantirPesosAreaEnem(0);
+      servico.garantirPesosAreaEnem(0);
+      expect(listarPesos).toHaveBeenCalledTimes(1);
+      expect(servico.resolucoesPesoAreaEnem()).toEqual([RESOLUCAO]);
+    });
+
+    it('lê de novo para uma marca nova — outro processo — e, até a leitura, não acusa nada', () => {
+      const { servico, listarPesos } = montar();
+
+      servico.garantirPesosAreaEnem(0);
+      expect(servico.resolucaoForaDoCadastro('Outra')).toBe(true);
+
+      listarPesos.mockReturnValueOnce(new Subject<never>());
+      servico.garantirPesosAreaEnem(1);
+
+      expect(listarPesos).toHaveBeenCalledTimes(2);
+      expect(servico.resolucaoForaDoCadastro('Outra')).toBe(false);
+    });
+
+    it('a resposta atrasada de uma marca anterior não substitui a leitura da marca atual', () => {
+      const antiga = new Subject<ReturnType<typeof apiOk>>();
+      const { servico, listarPesos } = montar();
+      listarPesos.mockReturnValueOnce(antiga.asObservable() as never);
+
+      servico.garantirPesosAreaEnem(0);
+      servico.garantirPesosAreaEnem(1);
+      antiga.next(apiOk([linhaDePeso('Resolução antiga', 'TECNOLOGICA')], 200, new HttpHeaders()));
+      antiga.complete();
+
+      expect(servico.resolucoesPesoAreaEnem()).toEqual([RESOLUCAO]);
+      expect(servico.pesosLidosNaMarca()).toBe(1);
+    });
+
+    it('na troca de processo esquece lista, falhas, leitura válida e marca pedida', () => {
+      const listarPesos = vi.fn(() => throwError(() => new Error('falha')));
+      const { servico } = montar(undefined, listarPesos);
+      servico.garantirPesosAreaEnem(0);
+      expect(servico.pesosErro()).not.toBeNull();
+
+      servico.esquecerPesosAreaEnem();
+
+      expect(servico.pesosErro()).toBeNull();
+      expect(servico.pesosAreaEnem()).toEqual([]);
+      expect(servico.pesosLidosNaMarca()).toBe(-1);
+      servico.garantirPesosAreaEnem(0);
+      expect(listarPesos).toHaveBeenCalledTimes(2);
+    });
+
+    it('a releitura pedida por quem espera o resultado, substituída por uma marca nova, ainda o avisa', () => {
+      const substituida = new Subject<ReturnType<typeof apiOk>>();
+      const { servico, listarPesos } = montar();
+      servico.garantirPesosAreaEnem(0);
+      listarPesos.mockReturnValueOnce(substituida.asObservable() as never);
+      const aoLer = vi.fn();
+
+      servico.recarregarPesosAreaEnem(0, aoLer);
+      servico.garantirPesosAreaEnem(1);
+
+      expect(aoLer).toHaveBeenCalledTimes(1);
+      expect(servico.pesosLidosNaMarca()).toBe(1);
+    });
+
+    it.each([
+      ['no envelope', () => of(errorResult(mockProblemDetails({ status: 503 })))],
+      ['fora do envelope', () => throwError(() => new Error('falha'))],
+    ])(
+      'a falha da lista canônica das áreas (%s) não derruba a leitura do cadastro, e é pedida de novo',
+      (_, falha) => {
+        listarAreas.mockReturnValueOnce(falha() as never);
+        listarAreas.mockClear();
+        const { servico } = montar();
+
+        servico.garantirPesosAreaEnem(0);
+
+        expect(servico.pesosErro()).toBeNull();
+        expect(servico.pesosLidosNaMarca()).toBe(0);
+        expect(servico.resolucoesPesoAreaEnem()).toEqual([RESOLUCAO]);
+        expect(servico.areasEnem()).toEqual([]);
+
+        servico.recarregarPesosAreaEnem(0);
+        expect(servico.areasEnem()).toEqual([{ codigo: 'REDACAO', rotulo: 'Redação' }]);
+      },
+    );
+
+    it('lê a lista canônica das áreas uma vez só, entre releituras do cadastro', () => {
+      listarAreas.mockClear();
+      const { servico } = montar();
+
+      servico.garantirPesosAreaEnem(0);
+      servico.recarregarPesosAreaEnem(0);
+      servico.garantirAreasEnem();
+
+      expect(listarAreas).toHaveBeenCalledTimes(1);
+      expect(servico.areasEnem()).toEqual([{ codigo: 'REDACAO', rotulo: 'Redação' }]);
+    });
+
+    it('relê o cadastro a pedido, com o que mudou nele', () => {
+      const listarPesos = vi
+        .fn()
+        .mockReturnValueOnce(
+          of(apiOk([linhaDePeso(RESOLUCAO, 'TECNOLOGICA')], 200, new HttpHeaders())),
+        )
+        .mockReturnValueOnce(
+          of(
+            apiOk(
+              [linhaDePeso(RESOLUCAO, 'TECNOLOGICA'), linhaDePeso('Resolução nova', 'TECNOLOGICA')],
+              200,
+              new HttpHeaders(),
+            ),
+          ),
+        );
+      const { servico } = montar(undefined, listarPesos);
+
+      servico.garantirPesosAreaEnem(0);
+      servico.recarregarPesosAreaEnem(0);
+
+      expect([...servico.resolucoesPesoAreaEnem()].sort()).toEqual(
+        ['Resolução nova', RESOLUCAO].sort(),
+      );
+    });
+
+    it('só acusa resolução fora do cadastro depois de ler o cadastro', () => {
+      const listarPesos = vi.fn(() => throwError(() => new Error('falha fora do envelope')));
+      const { servico } = montar(undefined, listarPesos);
+
+      servico.garantirPesosAreaEnem(0);
+
+      expect(servico.resolucaoForaDoCadastro('Qualquer')).toBe(false);
+      expect(servico.pesosErro()).toContain(
+        'Não foi possível carregar o cadastro de Peso por Área',
+      );
+    });
+
+    it('muda o aviso a cada nova falha, para o leitor de tela anunciar de novo', () => {
+      const listarPesos = vi.fn(() => throwError(() => new Error('falha')));
+      const { servico } = montar(undefined, listarPesos);
+
+      servico.garantirPesosAreaEnem(0);
+      const primeira = servico.pesosErro();
+      servico.recarregarPesosAreaEnem(0);
+      const segunda = servico.pesosErro();
+
+      expect(segunda).not.toBeNull();
+      expect(segunda).not.toBe(primeira);
+      expect(segunda).toContain('2ª tentativa');
+    });
   });
 });

@@ -31,6 +31,7 @@ import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
 import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
@@ -107,6 +108,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     CadastroInicialService,
     CatalogosDoCronogramaService,
     CatalogosDeClassificacaoService,
+    ReleituraDoSnapshot,
   ],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -173,6 +175,8 @@ export class ProcessoSeletivoPage {
   private readonly router = inject(Router);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicialService);
+  private readonly releitura = inject(ReleituraDoSnapshot);
+  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
 
@@ -586,6 +590,7 @@ export class ProcessoSeletivoPage {
   private limparEditor(): void {
     this.store.reset();
     this.cadastro.descartarCadastroEmAndamento();
+    this.catalogosDeClassificacao.esquecerPesosAreaEnem();
 
     // A rota reusa esta página, então um resumo aberto sobrevive à troca de
     // processo se ninguém o descartar. Confirmá-lo depois resolveria o passo
@@ -911,6 +916,10 @@ export class ProcessoSeletivoPage {
     this.store.travamentoDeOrquestracao.set(true);
     try {
       const falhasDeGravacao = await this.gravarPassosAnteriores();
+      if (geracao !== this.store.geracao()) return;
+      // Os passos gravados na varredura não releem o detalhe um a um; uma leitura só, aqui, põe
+      // em dia o que o processo congelou — com ou sem falha na varredura.
+      if (this.store.quadroPesoAreaEnemDesatualizado()) await this.releitura.reler();
       if (geracao !== this.store.geracao()) return;
       if (falhasDeGravacao.length > 0) {
         this.store.setStepError(falhasDeGravacao);
