@@ -64,6 +64,47 @@ export function mesmoQuadro(a: readonly GrupoDoQuadro[], b: readonly GrupoDoQuad
   return JSON.stringify(normalizado(a)) === JSON.stringify(normalizado(b));
 }
 
+/** A cópia do quadro que a última gravação da classificação congelou no processo. */
+export interface CopiaCongelada {
+  readonly resolucao: string;
+  readonly grupos: readonly GrupoDoQuadro[];
+}
+
+export interface QuadroVigente {
+  readonly grupos: readonly GrupoDoQuadro[];
+  readonly daCopiaCongelada: boolean;
+}
+
+/**
+ * O quadro que vale para a resolução escolhida: a cópia congelada em vigor quando a resolução é a
+ * que o processo gravou — mesmo que ela tenha saído do cadastro ou mudado lá. Em qualquer outro
+ * caso vale a prévia do cadastro, que é o que a próxima gravação copia.
+ */
+export function quadroVigente(
+  escolhida: string,
+  copiaEmVigor: CopiaCongelada | null,
+  doCadastro: readonly GrupoDoQuadro[],
+): QuadroVigente {
+  const daCopiaCongelada = copiaEmVigor !== null && escolhida === copiaEmVigor.resolucao;
+  return daCopiaCongelada
+    ? { grupos: copiaEmVigor.grupos, daCopiaCongelada }
+    : { grupos: doCadastro, daCopiaCongelada };
+}
+
+/**
+ * As áreas que todos os grupos do quadro têm, na ordem canônica. São as que o desempate por área
+ * pode citar: uma área que falte a algum grupo deixaria candidatos daquele grupo sem a nota
+ * comparada, e o servidor a recusa.
+ */
+export function areasComunsAoQuadro(
+  quadro: readonly GrupoDoQuadro[],
+  ordem: ReadonlyMap<string, number>,
+): readonly ColunaDoQuadro[] {
+  return colunasDoQuadro(quadro, ordem).filter((coluna) =>
+    quadro.every((grupo) => grupo.areas.some((area) => area.codigo === coluna.codigo)),
+  );
+}
+
 /** Algum grupo de `congelado` não está mais em `cadastro` — a resolução ficou incompleta lá. */
 export function perdeuGrupo(
   congelado: readonly GrupoDoQuadro[],

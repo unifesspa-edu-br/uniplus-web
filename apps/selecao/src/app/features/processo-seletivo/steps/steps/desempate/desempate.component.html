@@ -5,6 +5,43 @@
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 
+@if (falhaDoCadastroDePesos(); as falha) {
+  <div class="alert alert--danger" role="alert">
+    <p>{{ falha }}</p>
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      id="desemp-areas-tentar"
+      [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
+      (click)="tentarLerOCadastroDeNovo()"
+    >
+      {{ catalogos.pesosCarregando() ? 'Carregando…' : 'Tentar novamente' }}
+    </button>
+  </div>
+}
+
+@if (gravaComAClassificacao()) {
+  <p class="alert alert--info" role="status">
+    Os critérios de desempate serão gravados junto com a classificação, no passo Eliminação: o
+    critério por área precisa do quadro de Peso por Área, que é congelado nessa gravação.
+  </p>
+}
+
+@if (avisoDaReleitura(); as aviso) {
+  <div class="alert alert--warning" role="alert">
+    <p>{{ aviso }}</p>
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      id="desemp-reler-processo"
+      [attr.aria-disabled]="relendoProcesso() ? 'true' : null"
+      (click)="relerProcesso()"
+    >
+      {{ relendoProcesso() ? 'Relendo…' : 'Reler o processo' }}
+    </button>
+  </div>
+}
+
 @if (falhaDoCatalogoDeFatos(); as falha) {
   <p class="alert alert--danger" role="alert">
     {{ falha }} Sem esses dados, um critério que cita um fato do candidato aparece como
@@ -236,6 +273,111 @@
                 Escolha o fato do candidato para declarar a comparação e o valor.
               </p>
             }
+          }
+
+          @if (usaAreas(criterio)) {
+            <div class="form-field form-grid__full">
+              <span class="label" [id]="'desemp-areas-rotulo-' + indice">Ordem das áreas do ENEM</span>
+              @let situacao = situacaoDoQuadro();
+              @if (dicaDaOrigem(); as dica) {
+                <p class="field__hint" [id]="'desemp-areas-dica-' + indice">{{ dica }}</p>
+              }
+
+              @if (criterio.areas.length > 0) {
+                <ol
+                  class="desempate-areas"
+                  [attr.aria-labelledby]="'desemp-areas-rotulo-' + indice"
+                  [attr.aria-describedby]="dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
+                >
+                  @for (
+                    codigo of criterio.areas;
+                    track $index;
+                    let posicao = $index;
+                    let primeira = $first;
+                    let ultima = $last
+                  ) {
+                    <li class="desempate-area">
+                      <span class="desempate-area__nome">{{ posicao + 1 }}ª {{ rotuloDaArea(codigo) }}</span>
+                      <span class="desempate-actions">
+                        <button
+                          class="desempate-btn"
+                          type="button"
+                          [id]="'desemp-area-subir-' + indice + '-' + posicao"
+                          [attr.aria-label]="'Mover a área ' + rotuloDaArea(codigo) + ' para cima'"
+                          [disabled]="primeira || !store.aceitaEdicao()"
+                          (click)="moverArea(indice, posicao, -1)"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                            <path d="M18 15l-6-6-6 6" />
+                          </svg></button
+                        ><button
+                          class="desempate-btn"
+                          type="button"
+                          [id]="'desemp-area-descer-' + indice + '-' + posicao"
+                          [attr.aria-label]="'Mover a área ' + rotuloDaArea(codigo) + ' para baixo'"
+                          [disabled]="ultima || !store.aceitaEdicao()"
+                          (click)="moverArea(indice, posicao, 1)"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6" />
+                          </svg></button
+                        ><button
+                          class="desempate-btn"
+                          type="button"
+                          [id]="'desemp-area-remover-' + indice + '-' + posicao"
+                          [attr.aria-label]="'Retirar a área ' + rotuloDaArea(codigo) + ' do critério'"
+                          [disabled]="!store.aceitaEdicao()"
+                          (click)="removerArea(indice, posicao)"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                          </svg>
+                        </button>
+                      </span>
+                    </li>
+                  }
+                </ol>
+              } @else if (situacao.tipo === 'lido') {
+                <p class="field__hint">
+                  Acrescente as áreas na ordem em que devem desempatar: a primeira compara primeiro.
+                </p>
+              }
+
+              @if (situacao.tipo === 'lido') {
+                <label class="label" [attr.for]="'desemp-area-nova-' + indice">Área a acrescentar</label>
+                <div class="desempate-area-nova">
+                  <select
+                    #seletorDeArea
+                    class="select"
+                    [id]="'desemp-area-nova-' + indice"
+                    [attr.aria-describedby]="dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
+                    [disabled]="!store.aceitaEdicao() || areasOferecidas().length === 0"
+                    (change)="escolherArea(indice, seletorDeArea)"
+                  >
+                    <option value="" [selected]="escolhaPendente(indice) === ''">
+                      {{ areasOferecidas().length === 0 ? semAreaAOferecer(criterio) : '— escolher —' }}
+                    </option>
+                    @for (area of areasOferecidas(); track area.codigo) {
+                      <option
+                        [value]="area.codigo"
+                        [selected]="area.codigo === escolhaPendente(indice)"
+                      >
+                        {{ area.rotulo }}
+                      </option>
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn--secondary btn--sm"
+                    [id]="'desemp-area-acrescentar-' + indice"
+                    [disabled]="!store.aceitaEdicao() || areasOferecidas().length === 0"
+                    (click)="acrescentarAreaEscolhida(indice)"
+                  >
+                    Acrescentar
+                  </button>
+                </div>
+              }
+            </div>
           }
         </div>
         <div class="desempate-actions">

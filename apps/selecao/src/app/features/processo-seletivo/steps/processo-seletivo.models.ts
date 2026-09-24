@@ -352,7 +352,8 @@ export interface RegraEliminacaoConfigurada {
  * Um critério de desempate configurado no rascunho, no shape fechado que
  * `ArgsCriterioDesempate` define por código: `DESEMPATE-MAIOR-NOTA-ETAPA` usa
  * `etapaRef`; `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-PREDICADO-FATO`
- * usa `fato` + `operador` + `valor`; `DESEMPATE-MAIOR-IDADE` não usa nenhum.
+ * usa `fato` + `operador` + `valor`; `DESEMPATE-MAIOR-NOTA-AREA-ENEM` usa `areas`, os
+ * códigos das áreas na ordem em que desempatam; `DESEMPATE-MAIOR-IDADE` não usa nenhum.
  * A ordem não é um campo aqui — é a posição do item na lista do rascunho,
  * reescrita a cada `move`/`remove`, como já valia para o desempate anterior.
  */
@@ -364,6 +365,7 @@ export interface CriterioDesempateConfigurado {
   readonly fato: string;
   readonly operador: string;
   readonly valor: string;
+  readonly areas: readonly string[];
 }
 
 export interface DocumentoDefinicao {

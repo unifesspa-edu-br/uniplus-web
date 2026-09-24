@@ -236,3 +236,12 @@ export function mensagensDeClassificacaoBase(
 export function divisorDaMediaValido(etapas: readonly EtapaPontuada[]): boolean {
   return etapas.some(componeNota);
 }
+
+/**
+ * O campo da recusa do servidor é o da resolução de Peso por Área. Compara o nome sem prefixo de
+ * caminho (`$.`, `request.`) e sem caixa — a recusa do domínio e a do model binding nomeiam o mesmo
+ * campo de formas diferentes.
+ */
+export function ehCampoDaResolucao(campo: string): boolean {
+  return (campo.split('.').at(-1) ?? campo).toLowerCase() === 'resolucaopesoareaenem';
+}

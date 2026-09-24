@@ -15,7 +15,9 @@ import {
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { quadroCongelado } from '../../shared/quadro-de-pesos';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './formula.component';
 
@@ -92,6 +94,7 @@ async function montar(
     providers: [
       ProcessoSeletivoStore,
       CatalogosDeClassificacaoService,
+      AcompanhamentoDoCadastroDePesos,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
       {
@@ -425,8 +428,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       responderPesos(m);
       expect(texto(m.el)).toContain('O cadastro de Peso por Área mudou depois');
 
-      // A Eliminação gravou e releu o detalhe: o cadastro em mãos é anterior à cópia nova.
-      processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO)(m.store);
+      // Outra gravação congelou outro quadro: o cadastro em mãos é anterior à cópia nova.
+      const outraCopia = [{ ...QUADRO_CONGELADO[0], baseLegal: `${RESOLUCAO} – Anexo II` }];
+      processoGravadoCom(RESOLUCAO, outraCopia)(m.store);
       m.fixture.detectChanges();
       expect(texto(m.el)).not.toContain('O cadastro de Peso por Área mudou depois');
 
@@ -435,13 +439,47 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(texto(m.el)).toContain('O cadastro de Peso por Área mudou depois');
     });
 
+    it('com a releitura automática do cadastro em falha, o seletor mantém as resoluções lidas antes', async () => {
+      const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
+      responderPesos(m);
+
+      const outraCopia = [{ ...QUADRO_CONGELADO[0], baseLegal: `${RESOLUCAO} – Anexo II` }];
+      processoGravadoCom(RESOLUCAO, outraCopia)(m.store);
+      m.fixture.detectChanges();
+      falharPesos(m);
+
+      const opcoes = Array.from(
+        m.el.querySelectorAll<HTMLOptionElement>(`${SELETOR_RESOLUCAO} option`),
+      );
+      expect(opcoes.map((opcao) => texto(opcao))).toEqual([
+        '— escolher —',
+        OUTRA_RESOLUCAO,
+        RESOLUCAO,
+      ]);
+      expect(seletor(m).disabled).toBe(false);
+      // A lista anterior só serve de prévia: a cópia nova não é julgada contra ela.
+      expect(texto(m.el)).not.toContain('O cadastro de Peso por Área mudou depois');
+    });
+
+    it('a releitura que traz a mesma cópia não relê o cadastro nem descarta o lido', async () => {
+      const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
+      responderPesos(m);
+
+      processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO)(m.store);
+      m.fixture.detectChanges();
+
+      expect(m.controller.match((r) => r.url.endsWith(ROTA_PESOS))).toHaveLength(0);
+      expect(texto(m.el)).toContain('O cadastro de Peso por Área mudou depois');
+    });
+
     it('"Reler o processo" relê o detalhe ali mesmo e, quando o aviso sai, foca o título', async () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
-      m.store.quadroPesoAreaEnemDesatualizado.set(true);
+      const gravada = m.store.classificacaoGravada();
+      m.store.marcarClassificacaoDesconhecida();
       m.fixture.detectChanges();
       releitura.reler.mockImplementation(async () => {
-        m.store.quadroPesoAreaEnemDesatualizado.set(false);
+        m.store.classificacaoGravada.set(gravada);
         return true;
       });
 
@@ -461,10 +499,11 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('"Reler o processo" superado por outra leitura não mexe no foco', async () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
-      m.store.quadroPesoAreaEnemDesatualizado.set(true);
+      const gravada = m.store.classificacaoGravada();
+      m.store.marcarClassificacaoDesconhecida();
       m.fixture.detectChanges();
       releitura.reler.mockImplementation(async () => {
-        m.store.quadroPesoAreaEnemDesatualizado.set(false);
+        m.store.classificacaoGravada.set(gravada);
         return false;
       });
 
@@ -514,11 +553,23 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('releitura falha depois de gravar: não mostra a cópia velha como congelada e avisa', async () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
-      m.store.quadroPesoAreaEnemDesatualizado.set(true);
+      m.store.marcarClassificacaoDesconhecida();
       m.fixture.detectChanges();
 
       expect(texto(m.el.querySelector('caption'))).toContain('Prévia');
-      expect(texto(m.el)).toContain('ainda não foi relido');
+      expect(texto(m.el)).toContain('Não se sabe o que a classificação gravada tem agora');
+    });
+
+    it('a cópia que a gravação presumiu não é dada como congelada: falta confirmá-la, e o aviso oferece reler', async () => {
+      const m = await montar({ antesDeMontar: rascunhoComResolucao(RESOLUCAO) });
+      responderPesos(m);
+      m.store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, quadroCongelado(QUADRO_CONGELADO));
+      m.fixture.detectChanges();
+
+      expect(texto(m.el.querySelector('caption'))).toContain('Prévia');
+      expect(texto(m.el)).not.toContain('congelado no processo, da resolução');
+      expect(texto(m.el)).toContain('ainda não foi confirmado por uma releitura');
+      expect(botao(m, 'Reler o processo')).toBeDefined();
     });
 
     it('não esconde a cópia congelada quando a resolução saiu do cadastro', async () => {
@@ -683,7 +734,8 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
           store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
         },
       });
-      responderAreas(m);
+      // Sem cópia congelada, o quadro à vista só pode vir do cadastro, mesmo só para consulta.
+      responderPesos(m);
 
       m.componente.escolherResolucao(OUTRA_RESOLUCAO);
 
@@ -762,6 +814,24 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       escolherNoSeletor(m, OUTRA_RESOLUCAO);
       expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       expect(m.el.querySelector('#f-resolucao-peso-area-erro')).toBeNull();
+    });
+
+    it('mostra sob o campo também a recusa por um critério de desempate, e a tira com a troca de resolução', async () => {
+      const m = await montar();
+      marcarEnemComMediaPonderada(m);
+      responderPesos(m);
+      escolherNoSeletor(m, RESOLUCAO);
+      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa da resolução.');
+      m.store.recusaPeloDesempatePorArea.set('Recusa pelo desempate.');
+      m.fixture.detectChanges();
+
+      // As duas recusas vigentes, e não uma escondendo a outra.
+      expect(texto(m.el.querySelector('#f-resolucao-peso-area-erro'))).toBe(
+        'Recusa da resolução. Recusa pelo desempate.',
+      );
+
+      escolherNoSeletor(m, OUTRA_RESOLUCAO);
+      expect(m.store.recusaPeloDesempatePorArea()).toBeNull();
     });
   });
 

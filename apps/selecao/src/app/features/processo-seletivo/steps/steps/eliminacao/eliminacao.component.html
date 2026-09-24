@@ -6,6 +6,23 @@
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 
+@for (aviso of avisoDoDesempatePorArea(); track aviso; let primeiro = $first) {
+  <div class="alert alert--warning" role="status">
+    <p>{{ aviso }}</p>
+    @if (primeiro) {
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        id="elim-atualizar-cadastro"
+        [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
+        (click)="atualizarCadastroDePesos()"
+      >
+        {{ catalogos.pesosCarregando() ? 'Carregando…' : 'Atualizar lista' }}
+      </button>
+    }
+  </div>
+}
+
 @if (!store.draft().classificacao.regraCalculoCodigo) {
   <p class="alert alert--info" role="status">
     Escolha a regra de cálculo no passo Fórmula antes de configurar a eliminação.

@@ -41,10 +41,12 @@ import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
 import { CatalogosDoCronogramaService } from './steps/steps/cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
 import { FormularioStepComponent } from './steps/steps/formulario/formulario.component';
+import { AcompanhamentoDoCadastroDePesos } from './steps/steps/classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
+import { reavaliarRecusaPeloDesempate } from './steps/steps/desempate/quadro-do-desempate';
 import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
@@ -108,6 +110,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     CadastroInicialService,
     CatalogosDoCronogramaService,
     CatalogosDeClassificacaoService,
+    AcompanhamentoDoCadastroDePesos,
     ReleituraDoSnapshot,
   ],
   templateUrl: './processo-seletivo.page.html',
@@ -176,6 +179,7 @@ export class ProcessoSeletivoPage {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly releitura = inject(ReleituraDoSnapshot);
+  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
@@ -238,6 +242,15 @@ export class ProcessoSeletivoPage {
     effect(() => {
       this.store.currentStep();
       untracked(() => this.confirmacaoPendente.set(null));
+    });
+
+    // Cada leitura do cadastro de Peso por Área que dá certo, e cada mudança nos critérios de
+    // desempate gravados, pode mostrar que acabou a pendência pela qual o servidor recusou a
+    // classificação.
+    effect(() => {
+      this.catalogosDeClassificacao.pesosLidosNaLeitura();
+      this.store.criteriosDesempateGravados();
+      untracked(() => reavaliarRecusaPeloDesempate(this.store, this.cadastroDePesos.leitura()));
     });
 
     effect(() => {
@@ -853,6 +866,17 @@ export class ProcessoSeletivoPage {
         }
         return false;
       }
+
+      const recusaDoDesempate = await this.gravarDesempatePendente();
+      if (recusaDoDesempate !== null) {
+        // A classificação ficou gravada; a recusa é dos critérios, e é no passo deles que se corrige.
+        if (recusaDoDesempate.mensagens.length > 0) {
+          this.store.goTo(recusaDoDesempate.indice);
+          this.store.setStepError(recusaDoDesempate.mensagens);
+          this.revelarErro();
+        }
+        return false;
+      }
     }
 
     this.store.setStepError(null);
@@ -892,13 +916,6 @@ export class ProcessoSeletivoPage {
   private async publicar(): Promise<void> {
     const geracao = this.store.geracao();
 
-    const pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
-    if (pendentesAntesDeGravar.length > 0) {
-      this.store.setStepError(pendentesAntesDeGravar);
-      this.revelarErro();
-      return;
-    }
-
     // `travamentoDeOrquestracao`, não só o `salvando()` de cada passo
     // individual: cada `persistir()` da varredura abaixo solta `salvando`
     // no próprio `finally` assim que a PRÓPRIA chamada termina, mas esta
@@ -910,17 +927,49 @@ export class ProcessoSeletivoPage {
     // navegar, editar e voltar antes da recarga concluir, e a confirmação
     // seguinte comparava contra um checklist que já não descrevia o
     // rascunho atual (achado do Codex na #486, P1 — a quarta ocorrência de
-    // "estado intermediário tratado como final" nesta Story). Solta ao sair
-    // — inclusive ao abrir o diálogo de confirmação: a partir dali é a
-    // modalidade dele, não esta trava, que impede editar por baixo.
+    // "estado intermediário tratado como final" nesta Story). Liga antes de
+    // qualquer espera, a releitura antes da validação inclusive: um segundo clique, ou
+    // um clique no stepper, não entra no meio. Solta ao sair — inclusive ao
+    // abrir o diálogo de confirmação: a partir dali é a modalidade dele, não
+    // esta trava, que impede editar por baixo.
     this.store.travamentoDeOrquestracao.set(true);
     try {
+      let pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
+      // O Desempate recusa o critério por área enquanto não se sabe o que a classificação gravada
+      // tem. Com algo por reler, a recusa pode ser essa: a releitura decide e a validação se
+      // refaz. Sem nada por reler, o rascunho incompleto é barrado sem ir à rede.
+      if (pendentesAntesDeGravar.length > 0 && this.store.gravadoPorReler()) {
+        await this.releitura.reler();
+        if (geracao !== this.store.geracao()) return;
+        pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
+      }
+      if (pendentesAntesDeGravar.length > 0) {
+        this.store.setStepError(pendentesAntesDeGravar);
+        this.revelarErro();
+        return;
+      }
+
       const falhasDeGravacao = await this.gravarPassosAnteriores();
       if (geracao !== this.store.geracao()) return;
       // Os passos gravados na varredura não releem o detalhe um a um; uma leitura só, aqui, põe
-      // em dia o que o processo congelou — com ou sem falha na varredura.
-      if (this.store.quadroPesoAreaEnemDesatualizado()) await this.releitura.reler();
+      // em dia o que o processo congelou — com ou sem falha na varredura —, e confirma a cópia que
+      // a gravação da classificação presumiu.
+      if (this.store.gravadoPorReler()) await this.releitura.reler();
       if (geracao !== this.store.geracao()) return;
+      // Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria
+      // com os que o servidor tinha antes.
+      const indiceDoDesempate = this.passos().findIndex(
+        (passo) => passo instanceof DesempateStepComponent,
+      );
+      if (
+        falhasDeGravacao.length === 0 &&
+        this.store.desempatePendenteDeGravacao() &&
+        indiceDoDesempate >= 0
+      ) {
+        falhasDeGravacao.push(
+          `Passo ${indiceDoDesempate + 1} — ${this.store.labels[indiceDoDesempate]}: ${DESEMPATE_AINDA_PENDENTE}`,
+        );
+      }
       if (falhasDeGravacao.length > 0) {
         this.store.setStepError(falhasDeGravacao);
         this.revelarErro();
@@ -997,6 +1046,41 @@ export class ProcessoSeletivoPage {
       }
       alerta.focus({ preventScroll: true });
     });
+  }
+
+  /**
+   * Os critérios de desempate que ficaram para depois da classificação são gravados assim que ela
+   * congela o quadro: primeiro a classificação, depois os critérios, que o servidor confere contra
+   * o quadro. A cópia que a gravação presumiu é confirmada antes — a varredura da publicação não
+   * relê a cada passo —, porque o Desempate só julga as áreas contra uma cópia confirmada. `null`
+   * quando não havia o que gravar ou deu certo.
+   */
+  private async gravarDesempatePendente(): Promise<RecusaDoDesempate | null> {
+    if (!this.store.desempatePendenteDeGravacao()) return null;
+    const indice = this.passos().findIndex((passo) => passo instanceof DesempateStepComponent);
+    const desempate = this.passos()[indice];
+    if (!(desempate instanceof DesempateStepComponent)) return null;
+
+    if (this.store.motivoDaReleituraDaClassificacao() !== null) {
+      const geracao = this.store.geracao();
+      await this.releitura.reler();
+      if (geracao !== this.store.geracao()) return { indice, mensagens: [] };
+    }
+    const gravada = this.store.classificacaoGravada().estado;
+    // Ainda sem a classificação gravada com quadro: é o passo dela que vem antes.
+    if (gravada === 'nunca-gravada' || gravada === 'sem-quadro') return null;
+    if (this.store.copiaCongeladaEmVigor() === null) {
+      return { indice, mensagens: [COPIA_NAO_CONFIRMADA] };
+    }
+
+    const commit = await desempate.gravarPendente().catch(
+      (): StepValidation => ({
+        valid: false,
+        messages: ['Não foi possível concluir a operação. Tente novamente.'],
+      }),
+    );
+    if (commit.valid) return null;
+    return { indice, mensagens: commit.messages?.length === 0 ? [] : mensagensDe(commit) };
   }
 
   /**
@@ -1109,10 +1193,32 @@ export class ProcessoSeletivoPage {
         const detalhe = mensagensDe(commit).join(' ');
         pendencias.push(`Passo ${index + 1} — ${this.store.labels[index]}: ${detalhe}`);
       }
+      if (!commit.valid) continue;
+
+      const recusaDoDesempate = await this.gravarDesempatePendente();
+      if (geracao !== this.store.geracao()) return [];
+      if (recusaDoDesempate !== null && recusaDoDesempate.mensagens.length > 0) {
+        const { indice, mensagens } = recusaDoDesempate;
+        pendencias.push(
+          `Passo ${indice + 1} — ${this.store.labels[indice]}: ${mensagens.join(' ')}`,
+        );
+      }
     }
 
     return pendencias;
   }
+}
+
+const DESEMPATE_AINDA_PENDENTE =
+  'Os critérios de desempate por área não foram gravados, porque a classificação não ficou gravada com o quadro de Peso por Área de que eles dependem. Grave a classificação no passo Eliminação, com a resolução escolhida no passo Fórmula, e publique de novo.';
+
+const COPIA_NAO_CONFIRMADA =
+  'Os critérios de desempate não foram gravados: a classificação foi gravada, mas o quadro de Peso por Área que ela congelou não pôde ser confirmado por uma releitura do processo, e os critérios por área dependem dele. Tente de novo.';
+
+/** A recusa à gravação dos critérios de desempate, com o passo onde eles se corrigem. */
+interface RecusaDoDesempate {
+  readonly indice: number;
+  readonly mensagens: string[];
 }
 
 /** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */

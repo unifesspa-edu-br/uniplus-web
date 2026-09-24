@@ -6,13 +6,15 @@ import { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
  * Códigos de `CriterioDesempateCodigo` — o discriminador do shape de args de
  * `ArgsCriterioDesempate` (`DESEMPATE-MAIOR-NOTA-ETAPA` usa `etapaRef`;
  * `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-PREDICADO-FATO` usa
- * `fato`+`operador`+`valor`; `DESEMPATE-MAIOR-IDADE` não usa nenhum). Não é
+ * `fato`+`operador`+`valor`; `DESEMPATE-MAIOR-NOTA-AREA-ENEM` usa `areas`;
+ * `DESEMPATE-MAIOR-IDADE` não usa nenhum). Não é
  * rótulo do frontend: é o mesmo discriminador que
  * `DefinirCriteriosDesempateCommandHandler.MontarArgs` aplica no servidor.
  */
 const DESEMPATE_MAIOR_NOTA_ETAPA = 'DESEMPATE-MAIOR-NOTA-ETAPA';
 const DESEMPATE_IDOSO = 'DESEMPATE-IDOSO';
 const DESEMPATE_PREDICADO_FATO = 'DESEMPATE-PREDICADO-FATO';
+const DESEMPATE_MAIOR_NOTA_AREA_ENEM = 'DESEMPATE-MAIOR-NOTA-AREA-ENEM';
 
 export function desempateUsaEtapa(regraCodigo: string): boolean {
   return regraCodigo === DESEMPATE_MAIOR_NOTA_ETAPA;
@@ -24,6 +26,10 @@ export function desempateUsaIdadeMinima(regraCodigo: string): boolean {
 
 export function desempateUsaPredicadoFato(regraCodigo: string): boolean {
   return regraCodigo === DESEMPATE_PREDICADO_FATO;
+}
+
+export function desempateUsaAreas(regraCodigo: string): boolean {
+  return regraCodigo === DESEMPATE_MAIOR_NOTA_AREA_ENEM;
 }
 
 const DESEMPATE_MAIOR_IDADE = 'DESEMPATE-MAIOR-IDADE';
@@ -41,6 +47,7 @@ export function desempateTemShapeConhecido(regraCodigo: string): boolean {
     regraCodigo === DESEMPATE_MAIOR_NOTA_ETAPA ||
     regraCodigo === DESEMPATE_IDOSO ||
     regraCodigo === DESEMPATE_PREDICADO_FATO ||
+    regraCodigo === DESEMPATE_MAIOR_NOTA_AREA_ENEM ||
     regraCodigo === DESEMPATE_MAIOR_IDADE
   );
 }
@@ -68,6 +75,7 @@ export function comoComandoDeCriterioDesempate(
   const usaEtapa = desempateUsaEtapa(criterio.regraCodigo);
   const usaIdade = desempateUsaIdadeMinima(criterio.regraCodigo);
   const usaPredicado = desempateUsaPredicadoFato(criterio.regraCodigo);
+  const usaAreas = desempateUsaAreas(criterio.regraCodigo);
 
   return {
     ordem,
@@ -78,6 +86,7 @@ export function comoComandoDeCriterioDesempate(
     fato: usaPredicado ? naoVazio(criterio.fato) : null,
     operador: usaPredicado ? naoVazio(criterio.operador) : null,
     valor: usaPredicado ? naoVazio(criterio.valor) : null,
+    areas: usaAreas ? [...criterio.areas] : null,
   };
 }
 

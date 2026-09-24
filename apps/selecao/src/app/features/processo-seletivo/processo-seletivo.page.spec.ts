@@ -1,6 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { Subject, of } from 'rxjs';
 import { apiOk } from '@uniplus/shared-core/http';
 import {
@@ -32,9 +32,27 @@ import {
   FundamentoIsencaoDto,
   ProcessosSeletivosApi,
   RegrasCatalogoApi,
+  type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { quadroCongelado } from './steps/shared/quadro-de-pesos';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
+import type { PassoDoWizard } from './steps/passo-do-wizard';
+import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
+import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
+import type { CriterioDesempateConfigurado } from './steps/processo-seletivo.models';
+
+const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
+  regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+  regraVersao: '1',
+  etapaRef: '',
+  idadeMinima: '',
+  fato: '',
+  operador: '',
+  valor: '',
+  areas: ['REDACAO'],
+};
 import { STEP_LABELS } from './steps/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
@@ -429,7 +447,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const stubQueMarca = {
       validate: () => ({ valid: true }),
       persistir: vi.fn(async () => {
-        store.quadroPesoAreaEnemDesatualizado.set(true);
+        store.marcarClassificacaoDesconhecida();
         return { valid: false, messages: ['Falha ao gravar de novo.'] };
       }),
     };
@@ -446,6 +464,469 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     // Mesmo com a varredura falhando, a leitura acontece — sem ela a marca ficaria para sempre.
     expect(reler).toHaveBeenCalledTimes(1);
+  });
+
+  it('a cópia que a gravação na varredura presumiu é confirmada por uma releitura no fim, com o que o servidor congelou', async () => {
+    const { fixture, page, store } = montar();
+    // O processo já criado ganha endereço próprio; a rota dele não está neste teste.
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    store.processoSeletivoId.set('processo-1');
+    const detalhe = {
+      id: 'processo-1',
+      classificacao: {
+        resolucaoPesoAreaEnem: 'Resolução nova',
+        quadroPesoAreaEnem: [
+          {
+            grupoAreaEnem: { codigo: 'G', rotulo: 'Grupo' },
+            baseLegal: 'Anexo I',
+            areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 3, corte: null }],
+          },
+        ],
+      },
+      criteriosDesempate: [],
+    } as unknown as ProcessoSeletivoDto;
+    const obterDetalhe = vi
+      .spyOn(fixture.debugElement.injector.get(CadastroInicialService), 'obterDetalhe')
+      .mockResolvedValue(apiOk(detalhe, 200, new HttpHeaders()));
+    // O cadastro lido aqui tinha peso 1; o servidor copiou o dele, mais novo, com peso 3.
+    const stubDaEliminacao = {
+      validate: () => ({ valid: true }),
+      persistir: vi.fn(async () => {
+        store.registrarClassificacaoGravadaComQuadro('Resolução nova', [
+          {
+            codigo: 'G',
+            rotulo: 'Grupo',
+            baseLegal: 'Anexo I',
+            areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }],
+          },
+        ]);
+        return { valid: true };
+      }),
+    };
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    // A Revisão para a publicação depois da releitura: o que importa aqui é o que veio antes.
+    const stubDaRevisao = { validate: () => ({ valid: false, messages: ['Revisão pendente.'] }) };
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) =>
+      index === 2
+        ? stubDaEliminacao
+        : index === store.totalSteps - 1
+          ? stubDaRevisao
+          : stubSemPersistir,
+    );
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(stubDaEliminacao.persistir).toHaveBeenCalledTimes(1);
+    expect(obterDetalhe).toHaveBeenCalledTimes(1);
+    expect(store.copiaCongeladaEmVigor()).toEqual({
+      resolucao: 'Resolução nova',
+      grupos: quadroCongelado(detalhe.classificacao?.quadroPesoAreaEnem ?? []),
+    });
+  });
+
+  it('com a classificação gravada desconhecida, valida, relê e valida de novo', async () => {
+    const { fixture, page, store } = montar();
+    const releitura = fixture.debugElement.injector.get(ReleituraDoSnapshot);
+    const ordem: string[] = [];
+    vi.spyOn(releitura, 'reler').mockImplementation(async () => {
+      ordem.push('releu');
+      store.registrarClassificacaoGravadaSemQuadro();
+      return true;
+    });
+    // O Desempate recusa enquanto não se sabe o que a classificação gravada tem.
+    const stubQueDependeDaClassificacao = {
+      validate: () => {
+        ordem.push('validou');
+        return store.motivoDaReleituraDaClassificacao() === 'desconhecida'
+          ? { valid: false, messages: ['Classificação desconhecida.'] }
+          : { valid: true };
+      },
+    };
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation(() => stubQueDependeDaClassificacao);
+    store.marcarClassificacaoDesconhecida();
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    // Valida antes de ir à rede, e de novo depois da releitura.
+    expect(ordem[0]).toBe('validou');
+    expect(ordem).toContain('releu');
+    expect(ordem.slice(ordem.indexOf('releu'))).toContain('validou');
+    expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Classificação desconhecida.');
+  });
+
+  it('sem nada por reler, o rascunho incompleto é barrado sem ir à rede', async () => {
+    const { fixture, page, store } = montar();
+    const reler = vi.spyOn(fixture.debugElement.injector.get(ReleituraDoSnapshot), 'reler');
+    const stubIncompleto = { validate: () => ({ valid: false, messages: ['Falta a regra.'] }) };
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation(() => stubIncompleto);
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    expect(reler).not.toHaveBeenCalled();
+    expect(JSON.stringify(store.stepError())).toContain('Falta a regra.');
+  });
+
+  it('cada leitura do cadastro que dá certo reavalia a recusa pelo desempate', () => {
+    const { fixture, store } = montar();
+    store.criteriosDesempateGravados.set([]);
+    store.recusarPeloDesempate('Recusa pelo desempate.', 0);
+
+    fixture.debugElement.injector
+      .get(CatalogosDeClassificacaoService)
+      .pesosLidosNaLeitura.update((leitura) => leitura + 1);
+    TestBed.tick();
+
+    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+  });
+
+  it('critérios de desempate gravados que mudam reavaliam a recusa pelo desempate', () => {
+    const { store } = montar();
+    store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+    store.recusarPeloDesempate('Recusa pelo desempate.', 0);
+    TestBed.tick();
+    expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+
+    // A releitura do processo, ou a gravação do Desempate, trouxe critérios sem área.
+    store.criteriosDesempateGravados.set([]);
+    TestBed.tick();
+
+    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+  });
+
+  describe('critérios de desempate por área antes da classificação com quadro', () => {
+    const INDICE_DO_DESEMPATE = STEP_LABELS.indexOf('Desempate');
+    const INDICE_DA_ELIMINACAO = STEP_LABELS.indexOf('Eliminação');
+
+    const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
+    const DETALHE_COM_QUADRO = {
+      id: 'processo-1',
+      classificacao: {
+        resolucaoPesoAreaEnem: RESOLUCAO,
+        quadroPesoAreaEnem: [
+          {
+            grupoAreaEnem: { codigo: 'G', rotulo: 'Grupo' },
+            baseLegal: 'Anexo I',
+            areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }],
+          },
+        ],
+      },
+      criteriosDesempate: [],
+    } as unknown as ProcessoSeletivoDto;
+    const COPIA_PRESUMIDA = quadroCongelado(
+      DETALHE_COM_QUADRO.classificacao?.quadroPesoAreaEnem ?? [],
+    );
+
+    /**
+     * O Desempate adia os critérios, a Eliminação grava a classificação e deixa a cópia por
+     * confirmar, e a releitura a confirma — ou falha. A gravação pendente do Desempate é observada,
+     * sem ir à rede.
+     */
+    function montarFluxo(
+      recusaDosCriterios: string[] | null = null,
+      {
+        releituraFalha = false,
+        trocaDeProcesso = false,
+      }: { readonly releituraFalha?: boolean; readonly trocaDeProcesso?: boolean } = {},
+    ) {
+      const montagem = montar();
+      const { fixture, page, store } = montagem;
+      const ordem: string[] = [];
+      vi.spyOn(fixture.debugElement.injector.get(ReleituraDoSnapshot), 'reler').mockImplementation(
+        async () => {
+          ordem.push('releitura');
+          if (trocaDeProcesso) store.geracao.update((valor) => valor + 1);
+          else if (!releituraFalha) store.registrarGravadoLido(DETALHE_COM_QUADRO);
+          return true;
+        },
+      );
+      const passos = (page as unknown as { passos: () => readonly unknown[] }).passos();
+      const desempate = passos.find(
+        (passo): passo is DesempateStepComponent => passo instanceof DesempateStepComponent,
+      );
+      if (desempate === undefined) throw new Error('passo Desempate ausente');
+      vi.spyOn(desempate, 'gravarPendente').mockImplementation(async () => {
+        ordem.push('critérios');
+        if (recusaDosCriterios !== null) return { valid: false, messages: recusaDosCriterios };
+        store.desempatePendenteDeGravacao.set(false);
+        return { valid: true };
+      });
+      const stubDoDesempate = {
+        validate: () => ({ valid: true }),
+        persistir: vi.fn(async () => {
+          ordem.push('critérios adiados');
+          store.desempatePendenteDeGravacao.set(true);
+          return { valid: true };
+        }),
+      };
+      const stubDaEliminacao = {
+        validate: () => ({ valid: true }),
+        persistir: vi.fn(async () => {
+          ordem.push('classificação');
+          store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA);
+          return { valid: true };
+        }),
+      };
+      const stubSemPersistir = { validate: () => ({ valid: true }) };
+      vi.spyOn(
+        page as unknown as { stepValidatorAt: (index: number) => unknown },
+        'stepValidatorAt',
+      ).mockImplementation((index: number) =>
+        index === INDICE_DO_DESEMPATE
+          ? stubDoDesempate
+          : index === INDICE_DA_ELIMINACAO
+            ? stubDaEliminacao
+            : stubSemPersistir,
+      );
+      fixture.detectChanges();
+      return { ...montagem, ordem };
+    }
+
+    it('avançando do Desempate à Eliminação, grava a classificação e depois os critérios', async () => {
+      const { page, store, ordem } = montarFluxo();
+
+      store.goTo(INDICE_DO_DESEMPATE);
+      await page.nextOrPublish();
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
+      expect(store.currentStep()).toBe(INDICE_DA_ELIMINACAO + 1);
+      expect(store.stepError()).toBeNull();
+      expect(store.desempatePendenteDeGravacao()).toBe(false);
+    });
+
+    it('a recusa dos critérios gravados depois da classificação leva ao passo Desempate', async () => {
+      const { page, store, ordem } = montarFluxo(['Critério de desempate 1: recusado.']);
+
+      store.goTo(INDICE_DO_DESEMPATE);
+      await page.nextOrPublish();
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
+      expect(store.currentStep()).toBe(INDICE_DO_DESEMPATE);
+      expect(store.stepError()).toEqual(['Critério de desempate 1: recusado.']);
+    });
+
+    it('na varredura da publicação, a mesma ordem: classificação, depois critérios', async () => {
+      const { page, store, ordem } = montarFluxo();
+
+      store.goTo(store.totalSteps - 1);
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
+    });
+
+    it('sem a cópia confirmada pela releitura, não grava os critérios e diz por quê', async () => {
+      const { page, store, ordem } = montarFluxo(null, { releituraFalha: true });
+
+      store.goTo(INDICE_DO_DESEMPATE);
+      await page.nextOrPublish();
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura']);
+      expect(store.currentStep()).toBe(INDICE_DO_DESEMPATE);
+      expect(JSON.stringify(store.stepError())).toContain('não pôde ser confirmado');
+    });
+
+    /**
+     * A varredura com o Desempate de verdade: `aoGravarAClassificacao` diz o que a Eliminação deixa
+     * no store, e `detalhe`, o que a releitura traz.
+     */
+    async function montarVarreduraReal(
+      aoGravarAClassificacao: (store: ProcessoSeletivoStore) => void,
+      detalhe: ProcessoSeletivoDto = DETALHE_COM_QUADRO,
+    ) {
+      // O cadastro de Peso por Área tem a resolução com o quadro que a gravação vai copiar.
+      TestBed.overrideProvider(PesosEnemApi, {
+        useValue: {
+          listar: () =>
+            of(
+              apiOk(
+                [
+                  {
+                    id: 'g',
+                    resolucao: RESOLUCAO,
+                    grupoCurso: { codigo: 'G', rotulo: 'Grupo' },
+                    areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }],
+                    baseLegal: 'Anexo I',
+                    criadoEm: '2026-09-01T00:00:00Z',
+                  },
+                ],
+                200,
+                new HttpHeaders(),
+              ),
+            ),
+          listarAreas: () =>
+            of(apiOk([{ codigo: 'REDACAO', rotulo: 'Redação' }], 200, new HttpHeaders())),
+        },
+      });
+      const { fixture, page, store } = montar();
+      vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      store.processoSeletivoId.set('processo-1');
+      store.patchObjectSection('classificacao', {
+        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        baseadoEmEnem: true,
+        resolucaoPesoAreaEnem: RESOLUCAO,
+      });
+      store.patchSection('desempate', [CRITERIO_POR_AREA]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const ordem: string[] = [];
+      const cadastro = fixture.debugElement.injector.get(CadastroInicialService);
+      vi.spyOn(cadastro, 'obterDetalhe').mockImplementation(async () => {
+        ordem.push('releitura');
+        return apiOk(detalhe, 200, new HttpHeaders());
+      });
+      const gravarCriterios = vi
+        .spyOn(cadastro, 'definirCriteriosDesempate')
+        .mockImplementation(async () => {
+          ordem.push('critérios');
+          return { ok: true };
+        });
+      const passos = (page as unknown as { passos: () => readonly PassoDoWizard[] }).passos();
+      const stubDaEliminacao = {
+        validate: () => ({ valid: true }),
+        persistir: vi.fn(async () => {
+          ordem.push('classificação');
+          aoGravarAClassificacao(store);
+          return { valid: true };
+        }),
+      };
+      const stubSemPersistir = { validate: () => ({ valid: true }) };
+      vi.spyOn(
+        page as unknown as { stepValidatorAt: (index: number) => unknown },
+        'stepValidatorAt',
+      ).mockImplementation((index: number) =>
+        index === INDICE_DO_DESEMPATE
+          ? passos[index]
+          : index === INDICE_DA_ELIMINACAO
+            ? stubDaEliminacao
+            : stubSemPersistir,
+      );
+      return { page, store, ordem, gravarCriterios };
+    }
+
+    it('na varredura, com o Desempate de verdade, confirma a cópia e grava os critérios sem recusa', async () => {
+      const { page, store, ordem, gravarCriterios } = await montarVarreduraReal((store) =>
+        store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA),
+      );
+
+      store.goTo(store.totalSteps - 1);
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['classificação', 'releitura', 'critérios']);
+      expect(gravarCriterios).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Desempate');
+      expect(store.desempatePendenteDeGravacao()).toBe(false);
+    });
+
+    it('trocado o processo durante a releitura, não grava os critérios nem acusa nada', async () => {
+      const { page, store, ordem } = montarFluxo(null, { trocaDeProcesso: true });
+
+      store.goTo(INDICE_DO_DESEMPATE);
+      await page.nextOrPublish();
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura']);
+      expect(store.stepError()).toBeNull();
+    });
+
+    it('na varredura, com a classificação desconhecida depois de gravar, relê e grava os critérios', async () => {
+      const { page, store, ordem, gravarCriterios } = await montarVarreduraReal((store) =>
+        store.marcarClassificacaoDesconhecida(),
+      );
+
+      store.goTo(store.totalSteps - 1);
+      await page.nextOrPublish();
+
+      expect(ordem).toEqual(['classificação', 'releitura', 'critérios']);
+      expect(gravarCriterios).toHaveBeenCalledTimes(1);
+      expect(store.desempatePendenteDeGravacao()).toBe(false);
+      expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Desempate');
+    });
+
+    it('com os critérios ainda pendentes ao fim da varredura, a publicação é barrada no Desempate', async () => {
+      const { page, store, gravarCriterios } = await montarVarreduraReal(
+        (store) => store.marcarClassificacaoDesconhecida(),
+        {
+          id: 'processo-1',
+          classificacao: null,
+          criteriosDesempate: [],
+        } as unknown as ProcessoSeletivoDto,
+      );
+
+      store.goTo(store.totalSteps - 1);
+      await page.nextOrPublish();
+
+      expect(gravarCriterios).not.toHaveBeenCalled();
+      expect(JSON.stringify(store.stepError())).toContain(
+        `Passo ${INDICE_DO_DESEMPATE + 1} — Desempate: Os critérios de desempate por área não foram gravados`,
+      );
+    });
+
+    it('na varredura, a recusa dos critérios é dita no passo Desempate', async () => {
+      const { page, store } = montarFluxo(['recusado.']);
+
+      store.goTo(store.totalSteps - 1);
+      await page.nextOrPublish();
+
+      expect(store.stepError()).toContain(
+        `Passo ${INDICE_DO_DESEMPATE + 1} — Desempate: recusado.`,
+      );
+    });
+  });
+
+  it('um segundo clique durante a releitura inicial não começa outra varredura', async () => {
+    const { fixture, page, store } = montar();
+    const releitura = fixture.debugElement.injector.get(ReleituraDoSnapshot);
+    const releiturasPendentes: (() => void)[] = [];
+    vi.spyOn(releitura, 'reler').mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          releiturasPendentes.push(() => {
+            store.registrarClassificacaoGravadaSemQuadro();
+            resolve(true);
+          });
+        }),
+    );
+    const persistir = vi.fn().mockResolvedValue({ valid: true });
+    const stubComPersistir = { validate: () => ({ valid: true }), persistir };
+    // Com a classificação desconhecida o passo recusa, e a publicação relê antes de validar de novo.
+    const stubQueAguarda = {
+      validate: () =>
+        store.motivoDaReleituraDaClassificacao() === 'desconhecida'
+          ? { valid: false, messages: ['Classificação desconhecida.'] }
+          : { valid: true },
+    };
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === 2 ? stubComPersistir : stubQueAguarda));
+    store.marcarClassificacaoDesconhecida();
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+
+    const primeiro = page.nextOrPublish();
+    const segundo = page.nextOrPublish();
+    releiturasPendentes.forEach((terminar) => terminar());
+    await Promise.all([primeiro, segundo]);
+
+    expect(persistir).toHaveBeenCalledTimes(1);
   });
 
   it('recusa publicar e nomeia o passo quando a gravação de um passo anterior falha', async () => {

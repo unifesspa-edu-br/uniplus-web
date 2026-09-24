@@ -10,7 +10,11 @@ import {
   mockProblemDetails,
 } from '@uniplus/shared-core/http';
 import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
-import { RegraCatalogoDto, RegrasCatalogoApi, RegrasCatalogoQuery } from '@uniplus/shared-data/selecao';
+import {
+  RegraCatalogoDto,
+  RegrasCatalogoApi,
+  RegrasCatalogoQuery,
+} from '@uniplus/shared-data/selecao';
 
 import { CatalogosDeClassificacaoService } from './catalogos-de-classificacao.service';
 
@@ -153,17 +157,33 @@ describe('CatalogosDeClassificacaoService', () => {
       expect(servico.resolucoesPesoAreaEnem()).toEqual([RESOLUCAO]);
     });
 
-    it('lê de novo para uma marca nova — outro processo — e, até a leitura, não acusa nada', () => {
+    it('numera cada leitura quando ela é pedida, e não quando a resposta chega', () => {
+      const { servico, listarPesos } = montar();
+      servico.garantirPesosAreaEnem(0);
+      listarPesos.mockReturnValueOnce(new Subject<never>());
+      const substituta = new Subject<ReturnType<typeof apiOk>>();
+      listarPesos.mockReturnValueOnce(substituta as never);
+
+      servico.garantirPesosAreaEnem(1);
+      servico.garantirPesosAreaEnem(2);
+      substituta.next(apiOk([linhaDePeso(RESOLUCAO, 'TECNOLOGICA')], 200, new HttpHeaders()));
+      substituta.complete();
+
+      // A segunda leitura foi substituída pela terceira antes de responder.
+      expect(servico.pesosLeituraPedida()).toBe(3);
+      expect(servico.pesosLidosNaLeitura()).toBe(3);
+    });
+
+    it('lê de novo para uma marca nova e, até a leitura, mantém a anterior com a marca dela', () => {
       const { servico, listarPesos } = montar();
 
       servico.garantirPesosAreaEnem(0);
-      expect(servico.resolucaoForaDoCadastro('Outra')).toBe(true);
-
       listarPesos.mockReturnValueOnce(new Subject<never>());
       servico.garantirPesosAreaEnem(1);
 
       expect(listarPesos).toHaveBeenCalledTimes(2);
-      expect(servico.resolucaoForaDoCadastro('Outra')).toBe(false);
+      expect(servico.pesosLidosNaMarca()).toBe(0);
+      expect(servico.resolucoesPesoAreaEnem()).toEqual([RESOLUCAO]);
     });
 
     it('a resposta atrasada de uma marca anterior não substitui a leitura da marca atual', () => {
@@ -213,10 +233,10 @@ describe('CatalogosDeClassificacaoService', () => {
       ['no envelope', () => of(errorResult(mockProblemDetails({ status: 503 })))],
       ['fora do envelope', () => throwError(() => new Error('falha'))],
     ])(
-      'a falha da lista canônica das áreas (%s) não derruba a leitura do cadastro, e é pedida de novo',
+      'a falha da lista canônica das áreas (%s) não derruba a leitura do cadastro, e é pedida de novo quando ela termina',
       (_, falha) => {
-        listarAreas.mockReturnValueOnce(falha() as never);
         listarAreas.mockClear();
+        listarAreas.mockReturnValueOnce(falha() as never);
         const { servico } = montar();
 
         servico.garantirPesosAreaEnem(0);
@@ -224,9 +244,7 @@ describe('CatalogosDeClassificacaoService', () => {
         expect(servico.pesosErro()).toBeNull();
         expect(servico.pesosLidosNaMarca()).toBe(0);
         expect(servico.resolucoesPesoAreaEnem()).toEqual([RESOLUCAO]);
-        expect(servico.areasEnem()).toEqual([]);
-
-        servico.recarregarPesosAreaEnem(0);
+        expect(listarAreas).toHaveBeenCalledTimes(2);
         expect(servico.areasEnem()).toEqual([{ codigo: 'REDACAO', rotulo: 'Redação' }]);
       },
     );
@@ -268,13 +286,13 @@ describe('CatalogosDeClassificacaoService', () => {
       );
     });
 
-    it('só acusa resolução fora do cadastro depois de ler o cadastro', () => {
+    it('a leitura que falha não fica marcada como lida', () => {
       const listarPesos = vi.fn(() => throwError(() => new Error('falha fora do envelope')));
       const { servico } = montar(undefined, listarPesos);
 
       servico.garantirPesosAreaEnem(0);
 
-      expect(servico.resolucaoForaDoCadastro('Qualquer')).toBe(false);
+      expect(servico.pesosLidosNaMarca()).toBe(-1);
       expect(servico.pesosErro()).toContain(
         'Não foi possível carregar o cadastro de Peso por Área',
       );
@@ -292,6 +310,28 @@ describe('CatalogosDeClassificacaoService', () => {
       expect(segunda).not.toBeNull();
       expect(segunda).not.toBe(primeira);
       expect(segunda).toContain('2ª tentativa');
+    });
+  });
+
+  describe('lista canônica das áreas', () => {
+    it('a lista de áreas que falhou enquanto a leitura do cadastro corria é pedida de novo quando ela termina', () => {
+      const areasAvulsas = new Subject<never>();
+      const pesos = new Subject<ReturnType<typeof apiOk<ReturnType<typeof linhaDePeso>[]>>>();
+      const { servico } = montar(
+        undefined,
+        vi.fn(() => pesos),
+      );
+      listarAreas.mockClear();
+      listarAreas.mockReturnValueOnce(areasAvulsas);
+
+      servico.garantirAreasEnem();
+      servico.garantirPesosAreaEnem(0);
+      areasAvulsas.error(new Error('rede'));
+      pesos.next(apiOk([], 200, new HttpHeaders()));
+      pesos.complete();
+
+      expect(listarAreas).toHaveBeenCalledTimes(2);
+      expect(servico.areasEnem()).toEqual([{ codigo: 'REDACAO', rotulo: 'Redação' }]);
     });
   });
 });

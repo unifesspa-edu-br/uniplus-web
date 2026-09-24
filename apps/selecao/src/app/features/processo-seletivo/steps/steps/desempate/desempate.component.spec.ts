@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { DesempateStepComponent } from './desempate.component';
 
@@ -65,6 +67,7 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
     fato: '',
     operador: '',
     valor: '',
+    areas: [],
     ...patch,
   };
 }
@@ -81,6 +84,8 @@ describe('DesempateStepComponent', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDeClassificacaoService,
+        AcompanhamentoDoCadastroDePesos,
+        ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -122,6 +127,8 @@ describe('DesempateStepComponent', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDeClassificacaoService,
+        AcompanhamentoDoCadastroDePesos,
+        ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -412,6 +419,7 @@ describe('DesempateStepComponent', () => {
           fato: null,
           operador: null,
           valor: null,
+          areas: null,
         },
         {
           ordem: 2,
@@ -422,6 +430,7 @@ describe('DesempateStepComponent', () => {
           fato: null,
           operador: null,
           valor: null,
+          areas: null,
         },
       ]);
 

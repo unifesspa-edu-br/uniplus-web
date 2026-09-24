@@ -5992,6 +5992,7 @@ export interface components {
             readonly fato: null | string;
             readonly operador: null | string;
             readonly valor: null | string;
+            readonly areas: null | readonly string[];
         };
         readonly CriterioDesempateInput: {
             /** Format: int32 */
@@ -6005,6 +6006,7 @@ export interface components {
             readonly fato: null | string;
             readonly operador: null | string;
             readonly valor: null | string;
+            readonly areas?: null | readonly string[];
         };
         readonly DadosDoAtoRequest: {
             readonly orgao: string;
