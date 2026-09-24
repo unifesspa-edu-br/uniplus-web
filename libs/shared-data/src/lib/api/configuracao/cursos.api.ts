@@ -9,20 +9,6 @@ export type CursoDto = components['schemas']['CursoDto'];
 export type CriarCursoCommand = components['schemas']['CriarCursoCommand'];
 export type AtualizarCursoCommand = components['schemas']['AtualizarCursoCommand'];
 
-/** Opção de Grupo de área do ENEM (domínio fechado, Res. INEP/ENEM 805/2024, Anexo I). */
-export interface GrupoAreaEnemOption {
-  readonly value: string;
-  readonly label: string;
-}
-
-/** Os quatro grupos de área do ENEM — vocabulário de referência (não enum compilado no backend). */
-export const GRUPOS_AREA_ENEM: readonly GrupoAreaEnemOption[] = [
-  { value: 'Tecnológica', label: 'Tecnológica' },
-  { value: 'Humanística I', label: 'Humanística I' },
-  { value: 'Humanística II', label: 'Humanística II' },
-  { value: 'Saúde e Biológicas', label: 'Saúde e Biológicas' },
-] as const;
-
 /** Filtro de listagem de Cursos (cursor pagination, ADR-0026; busca/ordenação, uniplus-api#1419). */
 export interface CursosQuery {
   readonly cursor?: string;

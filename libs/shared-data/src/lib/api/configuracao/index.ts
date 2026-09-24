@@ -34,13 +34,12 @@ export {
 } from './pesos-enem.api';
 export {
   CursosApi,
-  GRUPOS_AREA_ENEM,
   type AtualizarCursoCommand,
   type CriarCursoCommand,
   type CursoDto,
   type CursosQuery,
-  type GrupoAreaEnemOption,
 } from './cursos.api';
+export { GruposAreaEnemApi, type GrupoAreaEnemDto } from './grupos-area-enem.api';
 export {
   OfertasCursoApi,
   FORMATOS_PEDAGOGICOS,

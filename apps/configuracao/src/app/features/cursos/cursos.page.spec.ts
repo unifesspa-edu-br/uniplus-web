@@ -3,17 +3,29 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { ProblemI18nService, apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   CursoDto,
+  type GrupoAreaEnemDto,
   OfertaCursoDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { CursosPage } from './cursos.page';
 
 const BASE = 'http://localhost:5000';
 const OFERTAS_URL = `${BASE}/api/configuracao/ofertas-curso`;
+const GRUPOS_URL = `${BASE}/api/configuracao/vocabularios/grupos-area-enem`;
+
+/** Os grupos de área do ENEM como a API os devolve: código, rótulo e ordem. */
+const GRUPOS: readonly GrupoAreaEnemDto[] = [
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
+  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
+  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+];
 
 const cursoSeed: CursoDto = {
   id: '01960000-0000-7000-0000-0000000000c1',
@@ -21,7 +33,7 @@ const cursoSeed: CursoDto = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'Tecnológica',
+  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -72,6 +84,9 @@ describe('CursosPage', () => {
 
   afterEach(() => controller.verify());
 
+  /** Abrir o formulário pede a lista de grupos uma vez: responde esse pedido. */
+  const responderGrupos = (): void => controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
     appRef.tick();
@@ -101,6 +116,7 @@ describe('CursosPage', () => {
     await flushLista([]);
 
     component['abrirCadastro']();
+    responderGrupos();
     component['form'].setValue({
       codigo: 'ADM',
       nome: 'Administração',
@@ -132,6 +148,7 @@ describe('CursosPage', () => {
   it('CA-02: cria curso sem grupo de área do ENEM (campo opcional)', async () => {
     await flushLista([]);
     component['abrirCadastro']();
+    responderGrupos();
     component['form'].setValue({
       codigo: 'HIST',
       nome: 'História',
@@ -151,6 +168,7 @@ describe('CursosPage', () => {
   it('bloqueia salvar com campos obrigatórios vazios', async () => {
     await flushLista([]);
     component['abrirCadastro']();
+    responderGrupos();
     fixture.detectChanges();
 
     const submit = fixture.nativeElement.querySelector(
@@ -166,6 +184,7 @@ describe('CursosPage', () => {
   it('CA-03: código duplicado (409) é mapeado ao campo Código sem fechar o drawer', async () => {
     await flushLista([]);
     component['abrirCadastro']();
+    responderGrupos();
     component['form'].setValue({
       codigo: 'ENG-CIV',
       nome: 'Engenharia Civil (duplicado)',
@@ -562,5 +581,439 @@ describe('CursosPage', () => {
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Cursos cadastrados, com código, grau, nível e grupo ENEM',
     );
+  });
+
+  it('a lista de grupos é pedida ao abrir o formulário, não ao abrir a página', async () => {
+    await flushLista([cursoSeed]);
+    // A tabela usa o rótulo que vem na própria listagem de cursos.
+    controller.expectNone(GRUPOS_URL);
+
+    component['abrirCadastro']();
+    responderGrupos();
+  });
+
+  describe('grupo de área do ENEM vindo da API', () => {
+    const opcoesDoSelect = (): { value: string; texto: string }[] =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>(
+          'select[formcontrolname="grupoAreaEnem"] option',
+        ),
+        (opcao) => ({ value: opcao.value, texto: opcao.textContent?.trim() ?? '' }),
+      );
+
+    const selectDoGrupo = (): HTMLSelectElement =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        'select[formcontrolname="grupoAreaEnem"]',
+      ) as HTMLSelectElement;
+
+    it('CA-01: o select oferece os grupos que a API devolve, na ordem dela, com o código como valor', async () => {
+      await flushLista([]);
+      // Outra lista e outra ordem: o select acompanha a API, não uma lista do cliente.
+      component['gruposAreaEnem'].recarregar();
+      controller.expectOne(GRUPOS_URL).flush([
+        { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+        { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+      ]);
+      // A lista já chegou: abrir o formulário não a pede de novo.
+      component['abrirCadastro']();
+      fixture.detectChanges();
+
+      expect(opcoesDoSelect()).toEqual([
+        { value: '', texto: 'Não classificado' },
+        { value: 'SAUDE_E_BIOLOGICAS', texto: 'Saúde e Biológicas' },
+        { value: 'TECNOLOGICA', texto: 'Tecnológica' },
+      ]);
+    });
+
+    it('CA-02: a tabela mostra o rótulo do grupo, não o código', async () => {
+      await flushLista([
+        cursoSeed,
+        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c2', grupoAreaEnem: null },
+        // Rótulo vazio mostra o código, como o formulário, e não o traço de "não classificado".
+        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c3', grupoAreaEnem: { codigo: 'X', rotulo: '' } },
+      ]);
+      fixture.detectChanges();
+
+      const celulas = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('td[data-label="Grupo ENEM"]'),
+        (td) => td.textContent?.trim(),
+      );
+      expect(celulas).toEqual(['Tecnológica', '—', 'X']);
+    });
+
+    it('CA-02: o grupo escolhido no select é enviado pelo código', async () => {
+      await flushLista([]);
+      component['abrirCadastro']();
+      controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+      component['form'].patchValue({
+        codigo: 'DIR',
+        nome: 'Direito',
+        grau: 'Bacharelado',
+        nivelEnsino: 'Graduação',
+      });
+      fixture.detectChanges();
+
+      const select = selectDoGrupo();
+      const humanistica = Array.from(select.options).find((opcao) => opcao.textContent?.trim() === 'Humanística I');
+      select.value = humanistica?.value ?? '';
+      select.dispatchEvent(new Event('change'));
+      component['salvar']();
+
+      const post = controller.expectOne(`${BASE}/api/configuracao/admin/cursos`);
+      expect(post.request.body.grupoAreaEnem).toBe('HUMANISTICA_I');
+      post.flush('new-id', { status: 201, statusText: 'Created' });
+      await propagate();
+      await flushLista([]);
+    });
+
+    it('CA-02: editar um curso seleciona o grupo dele pelo código e o reenvia pelo código', async () => {
+      await flushLista([cursoSeed]);
+      component['abrirEdicao'](cursoSeed);
+      controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+      fixture.detectChanges();
+
+      expect(component['form'].controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
+      const select = selectDoGrupo();
+      expect(select.options[select.selectedIndex]?.textContent?.trim()).toBe('Tecnológica');
+
+      component['salvar']();
+      const put = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${cursoSeed.id}`);
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.body.grupoAreaEnem).toBe('TECNOLOGICA');
+      put.flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+      await flushLista([cursoSeed]);
+    });
+
+    it('CA-03: grupo recusado pela API aparece no campo do grupo, com a mensagem dela', async () => {
+      await flushLista([]);
+      component['abrirCadastro']();
+      responderGrupos();
+      component['form'].setValue({
+        codigo: 'DIR',
+        nome: 'Direito',
+        grau: 'Bacharelado',
+        nivelEnsino: 'Graduação',
+        grupoAreaEnem: 'TECNOLOGICA',
+      });
+      component['salvar']();
+
+      controller.expectOne(`${BASE}/api/configuracao/admin/cursos`).flush(
+        JSON.stringify({
+          type: 'https://uniplus.dev/erros/uniplus.configuracao.curso.grupo_area_enem_invalido',
+          title: 'Dados inválidos',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: 'test-trace',
+          errors: [
+            {
+              field: 'grupoAreaEnem',
+              code: 'uniplus.configuracao.curso.grupo_area_enem_invalido',
+              message: 'Grupo de área do ENEM fora dos grupos da Resolução nº 805/2024/Consepe.',
+            },
+          ],
+        }),
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+      );
+      await propagate();
+      fixture.detectChanges();
+
+      const campo = selectDoGrupo().closest('label') as HTMLElement;
+      expect(campo.querySelector('.field__error')?.textContent?.trim()).toBe(
+        'Grupo de área do ENEM fora dos grupos da Resolução nº 805/2024/Consepe.',
+      );
+      expect(selectDoGrupo().getAttribute('aria-invalid')).toBe('true');
+      // O erro é anunciado e descreve o select (WCAG 3.3.1).
+      const erro = campo.querySelector('.field__error');
+      expect(erro?.getAttribute('role')).toBe('alert');
+      expect(selectDoGrupo().getAttribute('aria-describedby')?.split(' ')).toContain(erro?.id);
+      expect(component['formError']()).toBeNull();
+    });
+  });
+});
+
+describe('CursosPage — lista de grupos de área do ENEM que não chega', () => {
+  let fixture: ComponentFixture<CursosPage>;
+  let component: CursosPage;
+  let controller: HttpTestingController;
+  let appRef: ApplicationRef;
+
+  const indisponivel = (): void =>
+    controller
+      .expectOne(GRUPOS_URL)
+      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+
+  beforeEach(async () => {
+    TestBed.configureTestingModule({
+      imports: [CursosPage],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    });
+    fixture = TestBed.createComponent(CursosPage);
+    component = fixture.componentInstance;
+    controller = TestBed.inject(HttpTestingController);
+    appRef = TestBed.inject(ApplicationRef);
+    fixture.detectChanges();
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
+    await Promise.resolve();
+    appRef.tick();
+  });
+
+  afterEach(() => controller.verify());
+
+  it('a edição mostra o grupo do curso pelo rótulo da API, e o alerta oferece tentar de novo', () => {
+    component['abrirEdicao'](cursoSeed);
+    // A lista de grupos, pedida ao abrir o formulário, não chega.
+    indisponivel();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).toContain('Grupos de área do ENEM não carregados');
+    // Sem a lista, o select ainda mostra o grupo do curso: salvar não reenvia um grupo
+    // que o operador nunca viu selecionado.
+    const select = raiz.querySelector<HTMLSelectElement>('select[formcontrolname="grupoAreaEnem"]');
+    if (!select) throw new Error('select do grupo ausente');
+    expect(Array.from(select.options).map((opcao) => opcao.value)).toEqual(['', 'TECNOLOGICA']);
+    expect(select.options[select.selectedIndex]?.textContent?.trim()).toBe('Tecnológica');
+
+    const tentar = Array.from(raiz.querySelectorAll('button')).find(
+      (botao) => botao.textContent?.trim() === 'Tentar novamente',
+    );
+    tentar?.click();
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+    fixture.detectChanges();
+
+    expect(raiz.textContent).not.toContain('Grupos de área do ENEM não carregados');
+    // Com a lista, o grupo do curso aparece uma vez só, entre os da API.
+    expect(Array.from(select.options).map((opcao) => opcao.value)).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
+    expect(select.options[select.selectedIndex]?.value).toBe('TECNOLOGICA');
+  });
+
+  it('tentar de novo mantém o foco no formulário: o alerta fica até a tentativa terminar e o foco vai ao select', async () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+    // O drawer leva o foco ao botão de fechar logo depois de abrir: deixa isso acontecer antes.
+    await Promise.resolve();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar');
+    if (!botao) throw new Error('botão de tentar de novo ausente');
+    botao.focus();
+    botao.click();
+    fixture.detectChanges();
+
+    // Enquanto a nova tentativa corre, o botão continua na tela, com o foco e desabilitado.
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBe(botao);
+    expect(document.activeElement).toBe(botao);
+    expect(botao.getAttribute('aria-disabled')).toBe('true');
+    // Acionar de novo durante a tentativa não a reinicia: segue um pedido só, o primeiro.
+    botao.click();
+    const pedidos = controller.match(GRUPOS_URL);
+    expect(pedidos).toHaveLength(1);
+    expect(pedidos[0]?.cancelled).toBe(false);
+
+    pedidos[0]?.flush([...GRUPOS]);
+    fixture.detectChanges();
+    await Promise.resolve();
+    appRef.tick();
+
+    // A lista chegou: o alerta sai, e o foco vai ao select que ela alimenta, sem cair no body.
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBeNull();
+    expect(document.activeElement?.id).toBe('cfg-curso-grupo-area-enem');
+  });
+
+  it('nova tentativa que falha de novo mantém o alerta e o foco no botão', async () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar');
+    if (!botao) throw new Error('botão de tentar de novo ausente');
+    botao.focus();
+    botao.click();
+    indisponivel();
+    fixture.detectChanges();
+    await Promise.resolve();
+    appRef.tick();
+
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBe(botao);
+    expect(document.activeElement).toBe(botao);
+    expect(botao.getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('lista vazia é falha de carga: alerta com tentar de novo, como na recusa', () => {
+    component['abrirEdicao'](cursoSeed);
+    controller.expectOne(GRUPOS_URL).flush([]);
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).toContain('Grupos de área do ENEM não carregados');
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).not.toBeNull();
+  });
+
+  it('o select do grupo é descrito pelo alerta de falha enquanto a lista não chega', () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const select = raiz.querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
+    const descricao = select?.getAttribute('aria-describedby') ?? '';
+    expect(raiz.querySelector(`[id="${descricao}"]`)?.textContent?.trim()).toContain(
+      'Sem a lista de grupos não é possível classificar o curso.',
+    );
+
+    raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+    fixture.detectChanges();
+    expect(select?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('recarga em segundo plano que dá certo não mexe no foco', async () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).not.toBeNull();
+    // O operador não acionou nada: o foco está fora de qualquer campo.
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    // Outra tela pede o vocabulário de novo, e ele chega.
+    TestBed.inject(CatalogoGruposAreaEnem).garantirCarregado();
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+    fixture.detectChanges();
+    await Promise.resolve();
+    appRef.tick();
+
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBeNull();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('clique que não levou o foco ao botão não move o foco quando a lista chega', async () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    // Como no Safari: o clique aciona o botão sem focá-lo, e o foco está no body.
+    (document.activeElement as HTMLElement | null)?.blur();
+    raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
+    expect(document.activeElement).toBe(document.body);
+
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+    fixture.detectChanges();
+    await Promise.resolve();
+    appRef.tick();
+
+    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBeNull();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('foco levado para fora do botão durante a espera não é movido quando a lista chega', async () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar');
+    botao?.focus();
+    botao?.click();
+    fixture.detectChanges();
+    // Enquanto espera, o operador clica numa área que não recebe foco.
+    botao?.blur();
+    expect(document.activeElement).toBe(document.body);
+
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+    fixture.detectChanges();
+    await Promise.resolve();
+    appRef.tick();
+
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('com a lista em falha, dá para trocar para "Não classificado" e voltar ao grupo original do curso', () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const select = raiz.querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
+    if (!select) throw new Error('select do grupo ausente');
+    const valores = (): string[] => Array.from(select.options, (opcao) => opcao.value);
+    expect(valores()).toEqual(['', 'TECNOLOGICA']);
+
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    // A opção do grupo original continua, para o operador poder voltar a ela.
+    expect(valores()).toEqual(['', 'TECNOLOGICA']);
+
+    select.value = 'TECNOLOGICA';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(component['form'].controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
+    expect(select.options[select.selectedIndex]?.textContent?.trim()).toBe('Tecnológica');
+  });
+
+  it('recarga que falha com a lista anterior em memória não mostra alerta, e o select segue com ela', () => {
+    // A lista chegou antes (outra tela ou outra abertura do formulário).
+    const catalogo = TestBed.inject(CatalogoGruposAreaEnem);
+    catalogo.garantirCarregado();
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+
+    component['abrirEdicao'](cursoSeed);
+    catalogo.recarregar();
+    indisponivel();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).not.toContain('Grupos de área do ENEM não carregados');
+    const select = raiz.querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
+    expect(Array.from(select?.options ?? [], (opcao) => opcao.value)).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
+  });
+
+  it('falha de servidor dos grupos mostra o motivo no alerta e avisa com o traceId', () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    component['abrirEdicao'](cursoSeed);
+    controller.expectOne(GRUPOS_URL).flush(
+      JSON.stringify({ title: 'Serviço indisponível', status: 503, code: 'uniplus.indisponivel', traceId: 'trace-grupos' }),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    fixture.detectChanges();
+
+    expect(erroSpy).toHaveBeenCalledTimes(1);
+    expect(erroSpy.mock.calls[0]?.[0]).toMatchObject({ status: 503, traceId: 'trace-grupos' });
+    const mensagem = (fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha')?.textContent?.trim();
+    expect(mensagem).toContain('Sem a lista de grupos não é possível classificar o curso.');
+    expect(mensagem).not.toBe('Sem a lista de grupos não é possível classificar o curso.');
+  });
+
+  it('grupos recusados por permissão mostram o motivo sem aviso de servidor', () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    component['abrirEdicao'](cursoSeed);
+    const semPermissao = { title: 'Acesso negado', status: 403, code: 'uniplus.autorizacao.acesso_negado', traceId: 't' };
+    controller.expectOne(GRUPOS_URL).flush(JSON.stringify(semPermissao), {
+      status: 403,
+      statusText: 'Forbidden',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    fixture.detectChanges();
+
+    const titulo = TestBed.inject(ProblemI18nService).resolve(
+      semPermissao as Parameters<ProblemI18nService['resolve']>[0],
+    ).title;
+    expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha')?.textContent).toContain(titulo);
+    expect(erroSpy).not.toHaveBeenCalled();
   });
 });

@@ -25,7 +25,7 @@ const ID = '01960000-0000-7000-0000-0000000000f1';
 const seed: PesoAreaEnemDto = {
   id: ID,
   resolucao: 'Res. 805/2024',
-  grupoCurso: 'Tecnológica',
+  grupoCurso: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
   areas: [
     { codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 },
     { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias', peso: 3, corte: null },
@@ -36,7 +36,7 @@ const seed: PesoAreaEnemDto = {
 
 const criarCommand: CriarPesoAreaEnemCommand = {
   resolucao: 'Res. 805/2024',
-  grupoCurso: 'Tecnológica',
+  grupoCurso: 'TECNOLOGICA',
   areas: [
     { codigo: 'REDACAO', peso: 2, corte: 400 },
     { codigo: 'MATEMATICA', peso: 3, corte: null },

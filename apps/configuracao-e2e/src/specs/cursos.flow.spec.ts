@@ -21,9 +21,17 @@ const cursoSeed = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'Tecnológica',
+  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
+
+/** Os grupos de área do ENEM como a API os devolve (código, rótulo, ordem). */
+const GRUPOS_AREA_ENEM = [
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
+  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
+  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+] as const;
 
 const ofertaSeed = {
   id: '01960000-0000-7000-0000-0000000000f1',
@@ -118,6 +126,9 @@ async function mockApi(
     }
     await jsonRoute(route, opcoes.ofertas ?? []);
   });
+  await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (route) =>
+    jsonRoute(route, GRUPOS_AREA_ENEM),
+  );
   await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => {
     if (route.request().method() === 'GET') {
       capturado.listaUrls.push(route.request().url());
@@ -180,6 +191,30 @@ test.describe('Curso — CRUD (#389)', () => {
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({ codigo: 'ADM', nome: 'Administração' });
+  });
+
+  test('grupo de área do ENEM: a tabela mostra o rótulo e o curso grava o grupo pelo código', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, [cursoSeed]);
+    await abrirPagina(page);
+
+    await expect(page.locator('table tbody td[data-label="Grupo ENEM"]')).toHaveText('Tecnológica');
+
+    await page.getByRole('button', { name: 'Novo curso' }).first().click();
+    await page.locator('[formControlName="codigo"]').fill('DIR');
+    await page.locator('[formControlName="nome"]').fill('Direito');
+    await page.locator('[formControlName="grau"]').fill('Bacharelado');
+    await page.locator('[formControlName="nivelEnsino"]').fill('Graduação');
+    const grupo = page.getByLabel('Grupo de área do ENEM');
+    await expect(grupo.locator('option')).toHaveText([
+      'Não classificado',
+      ...GRUPOS_AREA_ENEM.map((opcao) => opcao.rotulo),
+    ]);
+    await grupo.selectOption({ label: 'Humanística I' });
+    await page.getByRole('button', { name: 'Criar curso' }).click();
+
+    await expect.poll(() => capturado.posts.length).toBe(1);
+    expect(capturado.posts[0]).toMatchObject({ codigo: 'DIR', grupoAreaEnem: 'HUMANISTICA_I' });
   });
 
   test('CA-03: código duplicado (409) é rejeitado com erro inline sem fechar o drawer', async ({
