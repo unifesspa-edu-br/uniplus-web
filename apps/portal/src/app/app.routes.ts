@@ -12,13 +12,11 @@ export const appRoutes: Routes = [
     data: { rotaDeVolta: '/processos' },
   },
   {
-    // Documento de um evento da linha do tempo (Tela 2 de Publicações) —
-    // aberto pelo candidato numa aba própria, de propósito fora do shell
-    // público: sem topo/nav do portal, só o conteúdo do documento (hoje um
-    // texto padrão; no futuro, a visualização/download em PDF). Precisa
-    // vir antes do bloco do PortalShellComponent abaixo: sem isso, o
-    // roteador tentaria casar esse caminho contra as rotas (mais curtas)
-    // de `publicacoes` do shell e cairia no wildcard.
+    // Documento de um evento da linha do tempo das publicações de um edital
+    // (accordion "Ver publicações" em /processos) — aberto pelo candidato
+    // numa aba própria, de propósito fora do shell público: sem topo/nav do
+    // portal, só o conteúdo do documento (hoje um texto padrão; no futuro, a
+    // visualização/download em PDF).
     path: 'publicacoes/:id/eventos/:eventoId/documento',
     loadComponent: () =>
       import('./features/publicacoes/evento-documento').then((m) => m.EventoDocumentoComponent),
@@ -37,15 +35,6 @@ export const appRoutes: Routes = [
         path: 'processos',
         loadChildren: () =>
           import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),
-      },
-      {
-        // Publicações — lista pública dos processos seletivos ainda não
-        // finalizados e o detalhe/linha do tempo de cada um (menu
-        // "Publicações"). Mesmo motivo de "processos": consulta sem
-        // autenticação, dado mocado por ora (ver publicacoes.mock.ts).
-        path: 'publicacoes',
-        loadChildren: () =>
-          import('./features/publicacoes/publicacoes.routes').then((m) => m.PUBLICACOES_ROUTES),
       },
       {
         // "Minhas inscrições" e "Resultados" ficam no shell público, como o

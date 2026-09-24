@@ -1,10 +1,10 @@
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 /**
- * Contrato de Publicações compartilhado pela listagem, pelo detalhe e pela
- * página do documento. Fica quando a consulta pública da API chegar; só o dado
- * simulado (`publicacoes.mock.ts`) e o repositório mudam. `encerrado` é a única
- * situação "finalizada": é o que a listagem usa para esconder o processo.
+ * Contrato de Publicações compartilhado pelo accordion "Ver publicações" de
+ * cada edital (em /processos) e pela página do documento. Fica quando a
+ * consulta pública da API chegar; só o dado simulado (`publicacoes.mock.ts`)
+ * e o repositório mudam.
  */
 export type SituacaoPublicacao =
   | 'inscricoesAbertas'
@@ -12,30 +12,6 @@ export type SituacaoPublicacao =
   | 'resultadoPreliminar'
   | 'resultadoDivulgado'
   | 'encerrado';
-
-export const SITUACAO_PUBLICACAO_LABEL: Record<SituacaoPublicacao, string> = {
-  inscricoesAbertas: 'Inscrições abertas',
-  emHomologacao: 'Em homologação',
-  resultadoPreliminar: 'Resultado preliminar',
-  resultadoDivulgado: 'Resultado divulgado',
-  encerrado: 'Encerrado',
-};
-
-export const SITUACAO_PUBLICACAO_VARIANT: Record<SituacaoPublicacao, UiTagVariant> = {
-  inscricoesAbertas: 'info',
-  emHomologacao: 'warning',
-  resultadoPreliminar: 'warning',
-  resultadoDivulgado: 'success',
-  encerrado: 'neutral',
-};
-
-/** Ordem de exibição dos chips na Tela 1 — `encerrado` fica de fora: a lista nunca traz um item nessa situação. */
-export const SITUACOES_PUBLICACAO_EXIBIDAS: readonly SituacaoPublicacao[] = [
-  'inscricoesAbertas',
-  'emHomologacao',
-  'resultadoPreliminar',
-  'resultadoDivulgado',
-];
 
 /** Categoria do evento na linha do tempo — vira a etiqueta colorida do cartão. */
 export type CategoriaEvento =
@@ -84,7 +60,21 @@ export interface Publicacao {
   readonly titulo: string;
   readonly descricao: string;
   readonly situacao: SituacaoPublicacao;
-  /** Data do evento mais recente do histórico — mostrada na Tela 1. */
+  /** Data do evento mais recente do histórico. */
   readonly dataPublicacao: string;
   readonly historico: readonly EventoHistoricoPublicacao[];
+}
+
+/**
+ * Evento do edital de abertura — o mais antigo de categoria `edital` que tem
+ * documento. É o alvo do link "Ler o edital de abertura" de cada item de
+ * Editais; retificações posteriores também são `edital`, mas não abrem a
+ * publicação.
+ */
+export function eventoDoEditalDeAbertura(
+  publicacao: Publicacao | undefined,
+): EventoHistoricoPublicacao | undefined {
+  return publicacao?.historico
+    .filter((evento) => evento.categoria === 'edital' && evento.documentoArquivo)
+    .sort((a, b) => a.data.localeCompare(b.data))[0];
 }

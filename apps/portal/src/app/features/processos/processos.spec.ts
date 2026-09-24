@@ -167,6 +167,77 @@ describe('ProcessosComponent', () => {
     expect(status?.textContent).toContain('2 certames nesta página');
   });
 
+  describe('publicações do edital', () => {
+    // As publicações são simuladas para todo certame, a partir dos dados dele.
+    async function carregarComPublicacoes(itens: readonly CertameNaVitrineDto[]): Promise<void> {
+      await flushLista(itens, contadoresHeaders);
+      await sleep(DEBOUNCE_FOLGA_MS);
+      await propagate();
+      fixture.detectChanges();
+    }
+
+    it('cada item da lista traz o accordion "Ver publicações", fechado', async () => {
+      await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
+      fixture.detectChanges();
+
+      const toggles = host().querySelectorAll<HTMLButtonElement>('.publicacoes-toggle');
+      expect(toggles).toHaveLength(2);
+      toggles.forEach((toggle) => {
+        expect(toggle.textContent).toContain('Ver publicações');
+        expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      });
+    });
+
+    it('a visão em cards também traz o accordion em cada card', async () => {
+      await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
+      component['setVisao']('cards');
+      fixture.detectChanges();
+
+      expect(host().querySelectorAll('.card .publicacoes-toggle')).toHaveLength(2);
+    });
+
+    it('todo certame ganha o link "Ler o edital de abertura", só depois que as publicações chegam', async () => {
+      await flushLista([sisu, encerrado], contadoresHeaders);
+      expect(host().querySelector('.certame-edital-link')).toBeNull();
+
+      await sleep(DEBOUNCE_FOLGA_MS);
+      await propagate();
+      fixture.detectChanges();
+
+      const links = host().querySelectorAll<HTMLAnchorElement>('.certame-edital-link');
+      expect(links).toHaveLength(2);
+      expect(links[0].textContent).toContain('Ler o edital de abertura');
+      expect(links[0].getAttribute('href')).toBe(
+        `/publicacoes/${sisu.processoSeletivoId}/eventos/${sisu.processoSeletivoId}-edital/documento`,
+      );
+      expect(links[0].target).toBe('_blank');
+    });
+
+    it('abrir o accordion mostra a linha do tempo do próprio edital, não a de outro', async () => {
+      await carregarComPublicacoes([sisu, tecnicoEnfermagem]);
+
+      host().querySelector<HTMLButtonElement>('.publicacoes-toggle')?.click();
+      fixture.detectChanges();
+
+      const linha = host().querySelector('.edital-row');
+      expect(linha?.querySelector('.publicacao-timeline')).toBeTruthy();
+      expect(linha?.textContent).toContain('Edital publicado');
+      expect(linha?.textContent).toContain('Inscrições abertas');
+      // O segundo item continua fechado, sem linha do tempo no DOM.
+      expect(host().querySelectorAll('.publicacao-timeline')).toHaveLength(1);
+    });
+
+    it('o botão de inscrição convida a entrar e se inscrever', async () => {
+      await flushLista([sisu], contadoresHeaders);
+      fixture.detectChanges();
+
+      const cta = Array.from(host().querySelectorAll<HTMLAnchorElement>('.edital-row a.btn')).find(
+        (a) => a.textContent?.includes('Entre e inscreva-se'),
+      );
+      expect(cta?.getAttribute('href')).toBe('/inscricao');
+    });
+  });
+
   it('chips de situação usam os contadores dos headers X-Certames-*, não a página carregada', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
     fixture.detectChanges();
