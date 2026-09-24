@@ -8701,6 +8701,50 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/vocabularios/grupos-area-enem": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.codigo-grupo-area-enem.v1+json": readonly components["schemas"]["GrupoAreaEnemDto"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9159,7 +9203,7 @@ export interface components {
             readonly nome: string;
             readonly grau: string;
             readonly nivelEnsino: string;
-            readonly grupoAreaEnem: null | string;
+            readonly grupoAreaEnem: null | components["schemas"]["GrupoAreaEnemDto"];
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
@@ -9271,6 +9315,10 @@ export interface components {
             readonly ordem: number | string;
             readonly ativo: boolean;
         };
+        readonly GrupoAreaEnemDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
+        };
         readonly LocalOfertaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -9351,7 +9399,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly resolucao: string;
-            readonly grupoCurso: string;
+            readonly grupoCurso: components["schemas"]["GrupoAreaEnemDto"];
             readonly areas: readonly components["schemas"]["PesoAreaEnemAreaDto"][];
             readonly baseLegal: string;
             /** Format: date-time */

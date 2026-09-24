@@ -24,7 +24,7 @@ const cursoSeed = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'Tecnológica',
+  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
 

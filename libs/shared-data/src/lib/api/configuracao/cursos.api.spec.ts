@@ -22,7 +22,7 @@ const cursoSeed: CursoDto = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'Tecnológica',
+  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -31,7 +31,7 @@ const criarCommand: CriarCursoCommand = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'Tecnológica',
+  grupoAreaEnem: 'TECNOLOGICA',
 };
 
 describe('CursosApi', () => {

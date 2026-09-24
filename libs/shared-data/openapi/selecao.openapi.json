@@ -8307,6 +8307,7 @@
           "regraDistribuicao",
           "regraAjuste",
           "referenciaDemografica",
+          "grupoAreaEnem",
           "modalidades",
           "quadro",
           "vrNominal",
@@ -8361,6 +8362,16 @@
               },
               {
                 "$ref": "#/components/schemas/ReferenciaReservaDemograficaSnapshotDto"
+              }
+            ]
+          },
+          "grupoAreaEnem": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/GrupoAreaEnemSnapshotDto"
               }
             ]
           },
@@ -10257,6 +10268,21 @@
             "type": "string"
           },
           "descricao": {
+            "type": "string"
+          }
+        }
+      },
+      "GrupoAreaEnemSnapshotDto": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "rotulo": {
             "type": "string"
           }
         }

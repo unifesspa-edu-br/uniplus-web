@@ -25,9 +25,17 @@ const CURSO = {
   nome: 'Engenharia Civil',
   grau: 'Bacharelado',
   nivelEnsino: 'Graduação',
-  grupoAreaEnem: 'Tecnológica',
+  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
   criadoEm: '2026-06-10T12:00:00Z',
 };
+
+/** Os grupos de área do ENEM como a API os devolve (código, rótulo, ordem). */
+const GRUPOS_AREA_ENEM = [
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
+  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
+  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+] as const;
 
 /**
  * A combinação mais larga do vocabulário de Oferta (UNI-REQ-0137): programa
@@ -77,6 +85,9 @@ async function mockApi(page: Page): Promise<void> {
     });
   };
   await page.route(/\/api\/configuracao\/ofertas-curso(\?.*)?$/, (route) => json(route, OFERTAS));
+  await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (route) =>
+    json(route, GRUPOS_AREA_ENEM),
+  );
   await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, (route) => json(route, [CURSO]));
   await page.route(/\/api\/configuracao\/admin\/cursos(\/.*)?(\?.*)?$/, (route) =>
     route.fulfill({ status: 204, headers: CORS_HEADERS }),

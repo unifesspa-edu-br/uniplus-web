@@ -38,7 +38,7 @@ import {
   CriarCursoCommand,
   CursoDto,
   CursosApi,
-  GRUPOS_AREA_ENEM,
+  type GrupoAreaEnemDto,
   OfertaCursoDto,
   PROGRAMAS_DE_OFERTA,
   REGIMES_DE_TURNO,
@@ -57,6 +57,11 @@ import {
   ListFooterComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+
+import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import { focarAposNovaTentativa } from '../../shared/foco';
+import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
+import { motivoDaFalha } from '../../shared/lista-de-referencia';
 
 /** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 5;
@@ -92,6 +97,7 @@ interface CursoForm {
   imports: [
     ReactiveFormsModule,
     AlertComponent,
+    AlertaNovaTentativaComponent,
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
@@ -175,7 +181,7 @@ interface CursoForm {
                     <span class="tag">{{ curso.grau }}</span>
                   </td>
                   <td data-label="Nível">{{ curso.nivelEnsino }}</td>
-                  <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem || '—' }}</td>
+                  <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem?.rotulo || curso.grupoAreaEnem?.codigo || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-briefcase"
@@ -331,19 +337,42 @@ interface CursoForm {
                 <span class="field__error">{{ erroDoCampo('nivelEnsino') }}</span>
               }
             </label>
+            @if (gruposAreaEnem.falhou()) {
+              <cfg-alerta-nova-tentativa
+                variante="warning"
+                titulo="Grupos de área do ENEM não carregados"
+                [mensagem]="mensagemFalhaGrupos()"
+                [pendente]="gruposAreaEnem.pendente()"
+                idBotao="cfg-curso-grupos-tentar"
+                idMensagem="cfg-curso-grupos-falha"
+                (tentar)="tentarCarregarGrupos()"
+              />
+            }
             <label class="field" [class.is-error]="erroDoCampo('grupoAreaEnem')">
               <span class="field__label">Grupo de área do ENEM</span>
-              <select class="select" formControlName="grupoAreaEnem">
+              <select
+                id="cfg-curso-grupo-area-enem"
+                class="select"
+                formControlName="grupoAreaEnem"
+                [attr.aria-busy]="gruposAreaEnem.pendente() ? 'true' : null"
+                [attr.aria-invalid]="erroDoCampo('grupoAreaEnem') ? 'true' : null"
+                [attr.aria-describedby]="descricaoDoGrupo()"
+              >
                 <option value="">Não classificado</option>
-                @for (grupo of gruposAreaEnem; track grupo.value) {
-                  <option [value]="grupo.value">{{ grupo.label }}</option>
+                @if (grupoForaDasOpcoes(); as grupoAtual) {
+                  <option [value]="grupoAtual.codigo">{{ grupoAtual.rotulo }}</option>
+                }
+                @for (grupo of gruposAreaEnem.opcoes(); track grupo.codigo) {
+                  <option [value]="grupo.codigo">{{ grupo.rotulo }}</option>
                 }
               </select>
               <span class="field__hint">
                 Quando presente, liga ao cadastro de pesos por grupo do ENEM.
               </span>
               @if (erroDoCampo('grupoAreaEnem')) {
-                <span class="field__error">{{ erroDoCampo('grupoAreaEnem') }}</span>
+                <span class="field__error" id="cfg-curso-grupo-erro" role="alert">{{
+                  erroDoCampo('grupoAreaEnem')
+                }}</span>
               }
             </label>
           </div>
@@ -453,7 +482,16 @@ export class CursosPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  protected readonly gruposAreaEnem = GRUPOS_AREA_ENEM;
+  /** Grupos de área do ENEM vindos da API: o select oferece os rótulos e grava o código. */
+  protected readonly gruposAreaEnem = inject(CatalogoGruposAreaEnem);
+  private readonly motivoFalhaGrupos = motivoDaFalha(this.gruposAreaEnem);
+  protected readonly mensagemFalhaGrupos = computed(() => {
+    const semLista = 'Sem a lista de grupos não é possível classificar o curso.';
+    const motivo = this.motivoFalhaGrupos();
+    return motivo === null ? semLista : `${motivo.replace(/[.!?]$/u, '')}. ${semLista}`;
+  });
+  /** Grupo que o curso em edição já tem, como a API o devolveu (código e rótulo). */
+  private readonly grupoDoCursoEmEdicao = signal<GrupoAreaEnemDto | null>(null);
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
@@ -698,6 +736,30 @@ export class CursosPage {
     grupoAreaEnem: new FormControl('', { nonNullable: true }),
   });
 
+  /**
+   * Grupo do curso em edição que a lista da API não oferece — a lista ainda não chegou
+   * ou falhou. Sem uma option com esse código o select apareceria em branco, mas o
+   * controle continuaria com o grupo do curso, e salvar reenviaria um grupo que o
+   * operador nunca viu selecionado. A opção depende do grupo original do curso, e não do
+   * valor escolhido: trocar para "Não classificado" não a tira, e dá para voltar a ele.
+   * O rótulo é o que a API devolveu para o curso.
+   */
+  protected readonly grupoForaDasOpcoes = computed<GrupoAreaEnemDto | null>(() => {
+    const doCurso = this.grupoDoCursoEmEdicao();
+    if (doCurso === null || this.gruposAreaEnem.porCodigo().has(doCurso.codigo)) {
+      return null;
+    }
+    return { codigo: doCurso.codigo, rotulo: doCurso.rotulo || doCurso.codigo };
+  });
+
+  /** A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai
+   *  ao select que a lista alimenta, sem sair do formulário. */
+  private readonly novaTentativaDosGrupos = focarAposNovaTentativa(
+    this.gruposAreaEnem.pendente,
+    this.gruposAreaEnem.falhou,
+    () => document.getElementById('cfg-curso-grupo-area-enem'),
+  );
+
   constructor() {
     effect(() => {
       const problem = this.lista.problem();
@@ -706,6 +768,19 @@ export class CursosPage {
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
     });
+  }
+
+  /** O select do grupo é descrito pela falha da lista e pelo erro do campo, quando há. */
+  protected descricaoDoGrupo(): string | null {
+    const ids = [
+      this.gruposAreaEnem.falhou() ? 'cfg-curso-grupos-falha' : null,
+      this.erroDoCampo('grupoAreaEnem') ? 'cfg-curso-grupo-erro' : null,
+    ].filter((id): id is string => id !== null);
+    return ids.length > 0 ? ids.join(' ') : null;
+  }
+
+  protected tentarCarregarGrupos(): void {
+    this.novaTentativaDosGrupos.executar(() => this.gruposAreaEnem.tentarDeNovo());
   }
 
   protected proximaPagina(): void {
@@ -815,6 +890,8 @@ export class CursosPage {
     this.modo.set('criar');
     this.cursoEmEdicaoId.set(null);
     this.form.reset({ codigo: '', nome: '', grau: '', nivelEnsino: '', grupoAreaEnem: '' });
+    this.grupoDoCursoEmEdicao.set(null);
+    this.gruposAreaEnem.garantirCarregado();
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.formOpen.set(true);
@@ -828,8 +905,10 @@ export class CursosPage {
       nome: curso.nome,
       grau: curso.grau,
       nivelEnsino: curso.nivelEnsino,
-      grupoAreaEnem: curso.grupoAreaEnem ?? '',
+      grupoAreaEnem: curso.grupoAreaEnem?.codigo ?? '',
     });
+    this.grupoDoCursoEmEdicao.set(curso.grupoAreaEnem ?? null);
+    this.gruposAreaEnem.garantirCarregado();
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.formOpen.set(true);

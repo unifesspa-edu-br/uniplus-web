@@ -26,7 +26,15 @@ const AREAS = [
   { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
 ] as const;
 
-function linha(id: string, grupoCurso: string): Record<string, unknown> {
+/** Os grupos de área do ENEM como a API os devolve (código, rótulo, ordem). */
+const GRUPOS = [
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
+  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
+  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+] as const;
+
+function linha(id: string, grupoCurso: (typeof GRUPOS)[number]): Record<string, unknown> {
   return {
     id,
     resolucao: RESOLUCAO,
@@ -43,10 +51,10 @@ function linha(id: string, grupoCurso: string): Record<string, unknown> {
 }
 
 const SEED = [
-  linha('01960000-0000-7000-0000-0000000000a1', 'Tecnológica'),
-  linha('01960000-0000-7000-0000-0000000000a2', 'Humanística I'),
-  linha('01960000-0000-7000-0000-0000000000a3', 'Humanística II'),
-  linha('01960000-0000-7000-0000-0000000000a4', 'Saúde e Biológicas'),
+  linha('01960000-0000-7000-0000-0000000000a1', GRUPOS[0]),
+  linha('01960000-0000-7000-0000-0000000000a2', GRUPOS[1]),
+  linha('01960000-0000-7000-0000-0000000000a3', GRUPOS[2]),
+  linha('01960000-0000-7000-0000-0000000000a4', GRUPOS[3]),
 ];
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
@@ -104,6 +112,7 @@ async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
   });
   await page.route(/\/api\/configuracao\/pesos-area-enem\/areas$/, (route) => jsonRoute(route, AREAS));
+  await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (route) => jsonRoute(route, GRUPOS));
   await page.route(/\/api\/configuracao\/pesos-area-enem(\?.*)?$/, (route) => jsonRoute(route, lista));
 }
 
@@ -162,7 +171,10 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     }>;
     expect(posts.map((post) => post.resolucao)).toEqual(Array(4).fill('Res. 900/2026'));
     expect(posts.map((post) => post.baseLegal)).toEqual(Array(4).fill('Res. 900/2026 Anexo I'));
-    const tecnologica = posts.find((post) => post.grupoCurso === 'Tecnológica');
+    // O grupo vai pelo código; o rótulo é só da tela. Os quatro POSTs saem juntos e
+    // chegam em qualquer ordem: a comparação não depende dela.
+    expect(posts.map((post) => post.grupoCurso).sort()).toEqual(GRUPOS.map((grupo) => grupo.codigo).sort());
+    const tecnologica = posts.find((post) => post.grupoCurso === 'TECNOLOGICA');
     expect(tecnologica?.areas).toEqual([
       { codigo: 'REDACAO', peso: 0, corte: 450 },
       { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
@@ -192,15 +204,24 @@ test.describe('Peso por Área — reflow em 320 px (WCAG 1.4.10)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  /** Largura que sobra além da área visível, no documento e em cada painel e linha da
-   *  grade: zero quando nada transborda na horizontal. */
+  /**
+   * Largura que sobra além da área visível no documento e em cada painel e linha da
+   * grade: zero quando nada transborda. O documento tolera 1 px de arredondamento, como
+   * o contrato de reflow de `@uniplus/shared-e2e`; o helper dele não serve aqui porque,
+   * em 320 px, também confere que nenhum `dialog.uni-drawer` fica no DOM depois de
+   * fechar o menu, e esta página mantém o drawer de cadastro no DOM mesmo fechado. O
+   * painel tem `overflow: hidden`, que esconde do documento o transbordo das linhas —
+   * por isso painel e linhas são medidos à parte.
+   */
   async function medirTransbordo(page: Page): Promise<{ documento: number; paineis: number; linhas: number }> {
     return page.evaluate(() => {
       const excesso = (el: Element): number => el.scrollWidth - el.clientWidth;
       const maximo = (seletor: string): number =>
-        Math.max(0, ...[...document.querySelectorAll(seletor)].map(excesso));
+        Math.max(0, ...Array.from(document.querySelectorAll(seletor), excesso));
+      const raiz = document.documentElement;
+      const documento = Math.max(raiz.scrollWidth, document.body.scrollWidth) - raiz.clientWidth;
       return {
-        documento: excesso(document.documentElement),
+        documento: documento > 1 ? documento : 0,
         paineis: maximo('section.panel'),
         linhas: maximo('.pe-grid .num-grid__row'),
       };
@@ -213,15 +234,11 @@ test.describe('Peso por Área — reflow em 320 px (WCAG 1.4.10)', () => {
     await abrirPagina(page);
     await expect(page.getByText(`Pesos — ${RESOLUCAO}`)).toBeVisible();
 
-    const leitura = await medirTransbordo(page);
-    console.log(`transbordo em 320 px, leitura: ${JSON.stringify(leitura)}`);
-    expect(leitura).toEqual({ documento: 0, paineis: 0, linhas: 0 });
+    expect(await medirTransbordo(page)).toEqual({ documento: 0, paineis: 0, linhas: 0 });
 
     await page.getByRole('button', { name: 'Editar parâmetros' }).click();
     await expect(page.getByRole('button', { name: 'Salvar' })).toBeVisible();
-    const edicao = await medirTransbordo(page);
-    console.log(`transbordo em 320 px, edição: ${JSON.stringify(edicao)}`);
-    expect(edicao).toEqual({ documento: 0, paineis: 0, linhas: 0 });
+    expect(await medirTransbordo(page)).toEqual({ documento: 0, paineis: 0, linhas: 0 });
   });
 });
 

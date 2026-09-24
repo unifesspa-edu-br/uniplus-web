@@ -5,13 +5,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
 import { ProblemI18nService, apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { AreaPesoAreaEnemDto, CONFIGURACAO_BASE_PATH, PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import {
+  AreaPesoAreaEnemDto,
+  CONFIGURACAO_BASE_PATH,
+  GrupoAreaEnemDto,
+  PesoAreaEnemDto,
+  PesosEnemApi,
+} from '@uniplus/shared-data/configuracao';
+import { throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { PesosEnemPage } from './pesos-enem.page';
 
 const BASE = 'http://localhost:5000';
 const LIST_URL = `${BASE}/api/configuracao/pesos-area-enem`;
 const AREAS_URL = `${BASE}/api/configuracao/pesos-area-enem/areas`;
+const GRUPOS_URL = `${BASE}/api/configuracao/vocabularios/grupos-area-enem`;
 
 /** As cinco áreas como a API as devolve: código, rótulo oficial e ordem canônica. */
 const AREAS: readonly AreaPesoAreaEnemDto[] = [
@@ -21,6 +31,20 @@ const AREAS: readonly AreaPesoAreaEnemDto[] = [
   { codigo: 'LINGUAGENS', rotulo: 'Linguagens e suas Tecnologias' },
   { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
 ];
+
+/** Os grupos de área do ENEM como a API os devolve: código, rótulo e ordem. */
+const GRUPOS: readonly GrupoAreaEnemDto[] = [
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
+  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
+  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+];
+
+function grupo(codigo: string): GrupoAreaEnemDto {
+  const encontrado = GRUPOS.find((g) => g.codigo === codigo);
+  if (!encontrado) throw new Error(`grupo ${codigo} ausente dos fixtures`);
+  return encontrado;
+}
 
 /** Pesos padrão por código; a Redação tem corte 400, as demais não têm corte. */
 const PESOS_PADRAO: Readonly<Record<string, number>> = {
@@ -54,35 +78,35 @@ const RES_805 = 'Res. 805/2024';
 const RES_750 = 'Res. 750/2022';
 
 const linhas805: readonly PesoAreaEnemDto[] = [
-  linha({ id: '01960000-0000-7000-0000-0000000000a1', resolucao: RES_805, grupoCurso: 'Tecnológica' }),
-  linha({ id: '01960000-0000-7000-0000-0000000000a2', resolucao: RES_805, grupoCurso: 'Humanística I' }),
-  linha({ id: '01960000-0000-7000-0000-0000000000a3', resolucao: RES_805, grupoCurso: 'Humanística II' }),
-  linha({ id: '01960000-0000-7000-0000-0000000000a4', resolucao: RES_805, grupoCurso: 'Saúde e Biológicas' }),
+  linha({ id: '01960000-0000-7000-0000-0000000000a1', resolucao: RES_805, grupoCurso: grupo('TECNOLOGICA') }),
+  linha({ id: '01960000-0000-7000-0000-0000000000a2', resolucao: RES_805, grupoCurso: grupo('HUMANISTICA_I') }),
+  linha({ id: '01960000-0000-7000-0000-0000000000a3', resolucao: RES_805, grupoCurso: grupo('HUMANISTICA_II') }),
+  linha({ id: '01960000-0000-7000-0000-0000000000a4', resolucao: RES_805, grupoCurso: grupo('SAUDE_E_BIOLOGICAS') }),
 ];
 
 const linhas750: readonly PesoAreaEnemDto[] = [
   linha({
     id: '01960000-0000-7000-0000-0000000000b1',
     resolucao: RES_750,
-    grupoCurso: 'Tecnológica',
+    grupoCurso: grupo('TECNOLOGICA'),
     criadoEm: '2025-01-10T12:00:00Z',
   }),
   linha({
     id: '01960000-0000-7000-0000-0000000000b2',
     resolucao: RES_750,
-    grupoCurso: 'Humanística I',
+    grupoCurso: grupo('HUMANISTICA_I'),
     criadoEm: '2025-01-10T12:00:00Z',
   }),
   linha({
     id: '01960000-0000-7000-0000-0000000000b3',
     resolucao: RES_750,
-    grupoCurso: 'Humanística II',
+    grupoCurso: grupo('HUMANISTICA_II'),
     criadoEm: '2025-01-10T12:00:00Z',
   }),
   linha({
     id: '01960000-0000-7000-0000-0000000000b4',
     resolucao: RES_750,
-    grupoCurso: 'Saúde e Biológicas',
+    grupoCurso: grupo('SAUDE_E_BIOLOGICAS'),
     criadoEm: '2025-01-10T12:00:00Z',
   }),
 ];
@@ -148,6 +172,13 @@ describe('PesosEnemPage', () => {
     }>;
   }
 
+  function expectGrupos(): TestRequest {
+    const req = controller.expectOne((r) => r.url === GRUPOS_URL);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('codigo-grupo-area-enem', 1));
+    return req;
+  }
+
   function expectListagem(): TestRequest {
     const req = controller.expectOne((r) => r.url === LIST_URL);
     expect(req.request.method).toBe('GET');
@@ -155,13 +186,15 @@ describe('PesosEnemPage', () => {
     return req;
   }
 
-  /** Carrega a página com a lista de áreas e uma única página de resultados (sem Link de próxima página). */
+  /** Carrega a página com as listas de áreas e de grupos e uma única página de resultados (sem Link de próxima página). */
   async function carregarUmaPagina(
     dados: readonly PesoAreaEnemDto[],
     areas: readonly AreaPesoAreaEnemDto[] = AREAS,
+    grupos: readonly GrupoAreaEnemDto[] = GRUPOS,
   ): Promise<void> {
     fixture.detectChanges();
     expectAreas().flush([...areas]);
+    expectGrupos().flush([...grupos]);
     expectListagem().flush([...dados]);
     await propagate();
     fixture.detectChanges();
@@ -173,10 +206,9 @@ describe('PesosEnemPage', () => {
 
     const texto = (fixture.nativeElement.textContent as string).replace(/\s+/g, ' ');
 
-    // São cinco áreas com peso — Linguagens, Matemática, Ciências da Natureza,
-    // Ciências Humanas e Redação —, e o conjunto não decorre da LDB. Cada área tem
-    // também um corte opcional, que é nota mínima e não peso: não entra nesta contagem.
-    expect(texto).toContain('Pesos das cinco áreas do ENEM por grupo de curso');
+    // As áreas vêm da API: o texto não fixa quantas são, e o conjunto não decorre da LDB.
+    expect(texto).toContain('Pesos das áreas do ENEM por grupo de curso');
+    expect(texto).not.toMatch(/\b(cinco|5) áreas\b/);
     expect(texto).not.toContain('LDB');
 
     // Identificador de requisito e rótulo de regra são rastreabilidade interna:
@@ -193,6 +225,7 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_CarregamentoInicial_EsgotaCursorEAgrupaPorResolucao', async () => {
     fixture.detectChanges();
     expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
     const pagina1 = expectListagem();
     pagina1.flush([...linhas805], { headers: { Link: `<${LIST_URL}?cursor=abc&direction=next>; rel="next"` } });
     await propagate();
@@ -223,6 +256,7 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_ErroCarga_ExibeAlertComRetry', async () => {
     fixture.detectChanges();
     expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
     expectListagem().flush(
       problem(500, 'uniplus.erro_interno', 'Erro interno'),
       { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
@@ -230,7 +264,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     expect(component.errorMessage()).toBeTruthy();
-    const botaoRetry = fixture.nativeElement.querySelector('.cfg-pesos-enem__retry button') as HTMLButtonElement;
+    const botaoRetry = fixture.nativeElement.querySelector('.cfg-list__retry button') as HTMLButtonElement;
     expect(botaoRetry).not.toBeNull();
 
     botaoRetry.click();
@@ -258,16 +292,16 @@ describe('PesosEnemPage', () => {
     const form = component.editForm();
     expect(form).not.toBeNull();
     expect(form?.controls).toHaveLength(4);
-    expect(form?.controls[0]?.controls.grupoCurso.value).toBe('Tecnológica');
+    expect(form?.controls[0]?.controls.grupoCurso.value).toEqual({ codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' });
 
     const barra = fixture.nativeElement.querySelector('#grid-pe-bar');
     expect(barra).not.toBeNull();
   });
 
-  it('PesosEnemPage_EnterEdit_OrdenaPeloRosterMesmoComApiForaDeOrdem', async () => {
+  it('PesosEnemPage_EnterEdit_OrdenaPelosGruposDaApiMesmoComLinhasForaDeOrdem', async () => {
     // Regressão: a API pode devolver as 4 linhas em qualquer ordem (ex.: id de
     // inserção); o modo edição deve seguir a MESMA ordem do modo leitura
-    // (roster canônico), não a ordem crua da resposta.
+    // (a da lista de grupos), não a ordem crua da resposta.
     const foraDeOrdem = [linhas805[3], linhas805[1], linhas805[0], linhas805[2]].filter(
       (l): l is PesoAreaEnemDto => l !== undefined,
     );
@@ -275,8 +309,8 @@ describe('PesosEnemPage', () => {
     component.clicarEditarParametros(RES_805);
     await propagate();
 
-    const ordemObtida = component.editForm()?.controls.map((g) => g.controls.grupoCurso.value);
-    expect(ordemObtida).toEqual(['Tecnológica', 'Humanística I', 'Humanística II', 'Saúde e Biológicas']);
+    const ordemObtida = component.editForm()?.controls.map((g) => g.controls.grupoCurso.value.codigo);
+    expect(ordemObtida).toEqual(['TECNOLOGICA', 'HUMANISTICA_I', 'HUMANISTICA_II', 'SAUDE_E_BIOLOGICAS']);
   });
 
   it('PesosEnemPage_Cancelar_ReverteSemChamarApiEDevolveFoco', async () => {
@@ -706,12 +740,7 @@ describe('PesosEnemPage', () => {
 
     const grupos = component.pesoLoteForm.controls.grupos.controls;
     expect(grupos).toHaveLength(4);
-    expect(grupos.map((g) => g.controls.grupoCurso.value)).toEqual([
-      'Tecnológica',
-      'Humanística I',
-      'Humanística II',
-      'Saúde e Biológicas',
-    ]);
+    expect(grupos.map((g) => g.controls.grupoCurso.value)).toEqual(GRUPOS);
 
     const legendas = fixture.nativeElement.querySelectorAll('.pe-drawer-grupo legend');
     expect(legendas).toHaveLength(4);
@@ -1331,7 +1360,7 @@ describe('PesosEnemPage', () => {
     expect(requests).toHaveLength(4);
     expect(requests[0]?.request.body).toEqual({
       resolucao: 'Res. 900/2026',
-      grupoCurso: 'Tecnológica',
+      grupoCurso: 'TECNOLOGICA',
       areas: [
         { codigo: 'REDACAO', peso: 0, corte: 450 },
         { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
@@ -1457,6 +1486,7 @@ describe('PesosEnemPage', () => {
     // mostra o skeleton em vez de ficar em branco, mesmo com os registros já carregados.
     fixture.detectChanges();
     const areas = expectAreas();
+    expectGrupos().flush([...GRUPOS]);
     expectListagem().flush([...linhas805]);
     await propagate();
     fixture.detectChanges();
@@ -1488,15 +1518,16 @@ describe('PesosEnemPage', () => {
       problem(500, 'uniplus.erro_interno', 'Erro interno'),
       { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
     );
+    expectGrupos().flush([...GRUPOS]);
     expectListagem().flush([]);
     await propagate();
     fixture.detectChanges();
 
-    expect(component.erroAreas()).toBeTruthy();
+    expect(component.listaAreas.falhou()).toBe(true);
     component.abrirDrawerCriacao();
     expect(component.drawerAberto()).toBe(false);
 
-    const retry = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cfg-pesos-enem__retry button')][0] as
+    const retry = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cfg-list__retry button')][0] as
       | HTMLButtonElement
       | undefined;
     expect(retry).toBeDefined();
@@ -1505,7 +1536,7 @@ describe('PesosEnemPage', () => {
     expectAreas().flush([...AREAS]);
     await propagate();
 
-    expect(component.erroAreas()).toBeNull();
+    expect(component.listaAreas.falhou()).toBe(false);
     component.abrirDrawerCriacao();
     expect(component.drawerAberto()).toBe(true);
   });
@@ -1642,10 +1673,10 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_ListaDeAreasVazia_TrataComoFalhaDeCarregamento', async () => {
     await carregarUmaPagina([], []);
 
-    expect(component.erroAreas()).toBeTruthy();
+    expect(component.listaAreas.falhou()).toBe(true);
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('ui-empty-state')).toBeNull();
-    expect(raiz.querySelector('.cfg-pesos-enem__retry button')).not.toBeNull();
+    expect(raiz.querySelector('.cfg-list__retry button')).not.toBeNull();
   });
 
   it('PesosEnemPage_AbrirEdicao_FocaOPrimeiroCampoEditavel', async () => {
@@ -1923,6 +1954,7 @@ describe('PesosEnemPage', () => {
       problem(500, 'uniplus.erro_interno', 'Erro interno'),
       { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
     );
+    expectGrupos().flush([...GRUPOS]);
     expectListagem().flush([]);
     await propagate();
     fixture.detectChanges();
@@ -2273,5 +2305,712 @@ describe('PesosEnemPage', () => {
     expect(component.erroDoCampoLote('resolucao')).toBe('Resolução curta demais.');
     expect(component.erroDoCampoGrupo(0, 'baseLegal')).toBe('Base legal curta demais.');
     expect(component.submitError()).not.toContain('curta demais');
+  });
+
+  // --- Grupos de área do ENEM vindos da API ---------------------------------
+
+  it('PesosEnemPage_Drawer_GruposVemDaApiNaOrdemDelaEGravamPeloCodigo', async () => {
+    // Outra lista e outra ordem: o cadastro acompanha a API, não uma lista do cliente.
+    await carregarUmaPagina([], AREAS, [grupo('SAUDE_E_BIOLOGICAS'), grupo('TECNOLOGICA')]);
+    component.abrirDrawerCriacao();
+    await propagate();
+    fixture.detectChanges();
+
+    const legendas = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.pe-drawer-grupo legend'),
+      (legenda) => legenda.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+    expect(legendas).toEqual(['Saúde e Biológicas', 'Tecnológica']);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('input[aria-label="Peso de Redação — Saúde e Biológicas"]'),
+    ).not.toBeNull();
+
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
+    expect(requests.map((req) => req.request.body.grupoCurso)).toEqual(['SAUDE_E_BIOLOGICAS', 'TECNOLOGICA']);
+    requests.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_ModoLeitura_LinhasNaOrdemDosGruposDaApiComORotuloDaLinha', async () => {
+    const outroGrupo = linha({
+      id: '01960000-0000-7000-0000-0000000000a5',
+      resolucao: RES_805,
+      grupoCurso: { codigo: 'GRUPO_FORA_DA_LISTA', rotulo: 'Grupo fora da lista' },
+    });
+    await carregarUmaPagina([outroGrupo, ...linhas805], AREAS, [
+      grupo('HUMANISTICA_II'),
+      grupo('TECNOLOGICA'),
+      grupo('SAUDE_E_BIOLOGICAS'),
+      grupo('HUMANISTICA_I'),
+    ]);
+
+    const rotulos = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label'),
+      (el) => el.textContent?.trim(),
+    );
+    // Linha de um grupo que a lista não traz não some: vai para o fim.
+    expect(rotulos).toEqual([
+      'Humanística II',
+      'Tecnológica',
+      'Saúde e Biológicas',
+      'Humanística I',
+      'Grupo fora da lista',
+    ]);
+  });
+
+  it('PesosEnemPage_ListaDeGruposVazia_TrataComoFalhaDeCarregamento', async () => {
+    await carregarUmaPagina([], AREAS, []);
+
+    expect(component.catalogoGrupos.falhou()).toBe(true);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('ui-empty-state')).toBeNull();
+    expect(raiz.querySelector('.cfg-list__retry button')).not.toBeNull();
+    component.abrirDrawerCriacao();
+    expect(component.drawerAberto()).toBe(false);
+  });
+
+  it('PesosEnemPage_ErroAoCarregarGrupos_MostraAsLinhasEBloqueiaSoOCadastroAteONovoCarregamento', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([...linhas805]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    // Só os grupos falharam: o título não diz que as áreas também.
+    expect(raiz.textContent).toContain('Não foi possível carregar os grupos de área do ENEM');
+    expect(raiz.textContent).not.toContain('as áreas e os grupos');
+    // As linhas trazem o rótulo do grupo: a tabela continua, na ordem da API. Só o
+    // cadastro, que monta um grupo por item da lista, fica bloqueado.
+    expect(
+      Array.from(raiz.querySelectorAll('.cell-label--group-label'), (el) => el.textContent?.trim()),
+    ).toEqual(linhas805.map((l) => l.grupoCurso.rotulo));
+    expect(raiz.querySelector('ui-empty-state')).toBeNull();
+    const cadastrar = Array.from(raiz.querySelectorAll<HTMLButtonElement>('button')).filter(
+      (botao) => botao.textContent?.trim() === 'Cadastrar nova resolução',
+    );
+    expect(cadastrar.length).toBeGreaterThan(0);
+    expect(cadastrar.every((botao) => botao.disabled)).toBe(true);
+    component.abrirDrawerCriacao();
+    expect(component.drawerAberto()).toBe(false);
+
+    // A edição em linha funciona: ela usa as linhas e as áreas, não a lista de grupos.
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    expect(component.editForm()?.controls.map((g) => g.controls.grupoCurso.value.codigo)).toEqual(
+      linhas805.map((l) => l.grupoCurso.codigo),
+    );
+    component.cancelarEdicao();
+    await propagate();
+    fixture.detectChanges();
+
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
+    await propagate();
+    // Só a lista que falhou é pedida de novo: as áreas já tinham chegado.
+    expectGrupos().flush([...GRUPOS]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(component.catalogoGrupos.falhou()).toBe(false);
+    expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(4);
+    component.abrirDrawerCriacao();
+    expect(component.drawerAberto()).toBe(true);
+  });
+
+  it('PesosEnemPage_TentarDeNovoOsGrupos_NaoDesmontaAEdicaoEmLinhaNemApagaOCorteDigitado', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([...linhas805]);
+    await propagate();
+    fixture.detectChanges();
+
+    // Edição em linha aberta, com texto inválido num corte e o operador fora do campo.
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    const corte = inputDaEdicao('corte', 0, 0);
+    digitarNumeroInvalidoESair(corte);
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const erroDoCorte = (): string | undefined =>
+      raiz.querySelector(`[id="${corte.id}-erro"]`)?.textContent?.trim();
+    expect(erroDoCorte()).toBe('Número inválido.');
+
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
+    await propagate();
+    fixture.detectChanges();
+
+    // Antes de a tentativa responder: linhas, edição e erro continuam na tela.
+    const grupos = expectGrupos();
+    expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
+    expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
+    expect(raiz.querySelector(`[id="${corte.id}"]`)).toBe(corte);
+    expect(erroDoCorte()).toBe('Número inválido.');
+
+    grupos.flush([...GRUPOS]);
+    await propagate();
+    fixture.detectChanges();
+
+    // Depois: o erro continua, e Salvar não envia o corte apagado.
+    expect(raiz.querySelector(`[id="${corte.id}"]`)).toBe(corte);
+    expect(erroDoCorte()).toBe('Número inválido.');
+    component.salvarEdicao();
+    await propagate();
+    controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('PesosEnemPage_GruposChegamComEdicaoAberta_OrdemCongeladaAteFecharAEdicao', async () => {
+    const ordemDaApi = (linhas: readonly PesoAreaEnemDto[]): PesoAreaEnemDto[] =>
+      [linhas[3], linhas[0], linhas[1], linhas[2]].filter((l): l is PesoAreaEnemDto => l !== undefined);
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([...ordemDaApi(linhas805), ...ordemDaApi(linhas750)]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const rotulos = (): (string | undefined)[] =>
+      Array.from(raiz.querySelectorAll('.cell-label--group-label'), (el) => el.textContent?.trim());
+    const naOrdemDaApi = ordemDaApi(linhas805).map((l) => l.grupoCurso.rotulo);
+
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    // Edição (Res. 805) e leitura (Res. 750) na ordem da API.
+    expect(rotulos()).toEqual([...naOrdemDaApi, ...naOrdemDaApi]);
+
+    // Os grupos chegam no meio da edição: nada se reordena, nem a edição nem a leitura.
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
+    await propagate();
+    expectGrupos().flush([...GRUPOS]);
+    await propagate();
+    fixture.detectChanges();
+    expect(rotulos()).toEqual([...naOrdemDaApi, ...naOrdemDaApi]);
+
+    // Fechada a edição, a ordem dos grupos vale para todas as resoluções.
+    component.cancelarEdicao();
+    await propagate();
+    fixture.detectChanges();
+    const naOrdemDosGrupos = GRUPOS.map((grupo) => grupo.rotulo);
+    expect(rotulos()).toEqual([...naOrdemDosGrupos, ...naOrdemDosGrupos]);
+  });
+
+  it('PesosEnemPage_FalhaDeServidorNasAreas_AvisaComTraceIdEMostraOMotivo', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    fixture.detectChanges();
+    const indisponivel = JSON.parse(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+    ) as Parameters<ProblemI18nService['resolve']>[0];
+    expectAreas().flush(JSON.stringify(indisponivel), {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    // O aviso de erro de servidor leva o problema (com o traceId) para o suporte.
+    expect(erroSpy).toHaveBeenCalledTimes(1);
+    expect(erroSpy.mock.calls[0]?.[0]).toMatchObject({ status: 503, traceId: 'test-trace' });
+    const titulo = TestBed.inject(ProblemI18nService).resolve(indisponivel).title;
+    expect(component.motivoFalhaAreas()).toBe(titulo);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(titulo);
+  });
+
+  it('PesosEnemPage_AreasRecusadasPorPermissao_AlertaDizOMotivoSemAvisoDeServidor', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    fixture.detectChanges();
+    const semPermissao = JSON.parse(
+      problem(403, 'uniplus.autorizacao.acesso_negado', 'Acesso negado'),
+    ) as Parameters<ProblemI18nService['resolve']>[0];
+    expectAreas().flush(JSON.stringify(semPermissao), {
+      status: 403,
+      statusText: 'Forbidden',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const titulo = TestBed.inject(ProblemI18nService).resolve(semPermissao).title;
+    expect(titulo).not.toBe('A lista de áreas do ENEM não foi carregada.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(titulo);
+    expect(erroSpy).not.toHaveBeenCalled();
+  });
+
+  it('PesosEnemPage_FalhaDeServidorNosGrupos_AvisaComTraceIdEMostraOMotivo', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    fixture.detectChanges();
+    const indisponivel = JSON.parse(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+    ) as Parameters<ProblemI18nService['resolve']>[0];
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(JSON.stringify(indisponivel), {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(erroSpy).toHaveBeenCalledTimes(1);
+    expect(erroSpy.mock.calls[0]?.[0]).toMatchObject({ status: 503, traceId: 'test-trace' });
+    const titulo = TestBed.inject(ProblemI18nService).resolve(indisponivel).title;
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(titulo);
+  });
+
+  it('PesosEnemPage_GruposRecusadosPorPermissao_AlertaDizOMotivoSemAvisoDeServidor', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    fixture.detectChanges();
+    const semPermissao = JSON.parse(
+      problem(403, 'uniplus.autorizacao.acesso_negado', 'Acesso negado'),
+    ) as Parameters<ProblemI18nService['resolve']>[0];
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(JSON.stringify(semPermissao), {
+      status: 403,
+      statusText: 'Forbidden',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const titulo = TestBed.inject(ProblemI18nService).resolve(semPermissao).title;
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(titulo);
+    expect(erroSpy).not.toHaveBeenCalled();
+  });
+
+  it('PesosEnemPage_GruposFalhamComAreasPendentesEOperadorTentaDeNovo_TabelaEEdicaoNaoSomem', async () => {
+    fixture.detectChanges();
+    const areas = expectAreas();
+    // Os grupos falham enquanto as áreas ainda carregam.
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([...linhas805]);
+    await propagate();
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    // O operador tenta de novo os grupos, e as áreas chegam com a tentativa ainda em curso.
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
+    await propagate();
+    const grupos = expectGrupos();
+    areas.flush([...AREAS]);
+    await propagate();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
+
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
+
+    grupos.flush([...GRUPOS]);
+    await propagate();
+    fixture.detectChanges();
+    expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
+  });
+
+  it('PesosEnemPage_RecargaAutomaticaDosGruposComEdicaoAberta_NaoEscondeATabela', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([...linhas805]);
+    await propagate();
+    fixture.detectChanges();
+    component.clicarEditarParametros(RES_805);
+    await propagate();
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
+
+    // Uma recarga automática dos grupos (não o "Tentar novamente") começa com a edição aberta.
+    TestBed.inject(CatalogoGruposAreaEnem).recarregar();
+    await propagate();
+    fixture.detectChanges();
+    const recarga = expectGrupos();
+    expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
+    expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
+
+    recarga.flush([]);
+    await propagate();
+    fixture.detectChanges();
+    expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
+  });
+
+  it('PesosEnemPage_RecargaDosGruposVoltaVazia_SegueComAListaAnteriorECadastroLiberado', async () => {
+    await carregarUmaPagina([...linhas805]);
+    expect(component.podeCadastrar()).toBe(true);
+
+    TestBed.inject(CatalogoGruposAreaEnem).recarregar();
+    expectGrupos().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).not.toContain('Não foi possível carregar os grupos de área do ENEM');
+    expect(component.podeCadastrar()).toBe(true);
+    component.abrirDrawerCriacao();
+    expect(component.pesoLoteForm.controls.grupos.controls).toHaveLength(GRUPOS.length);
+  });
+
+  it('PesosEnemPage_ListaDeGruposVaziaComLinhas_MostraAsLinhasNaOrdemDaApi', async () => {
+    const foraDeOrdem = [linhas805[2], linhas805[0], linhas805[3], linhas805[1]].filter(
+      (l): l is PesoAreaEnemDto => l !== undefined,
+    );
+    await carregarUmaPagina(foraDeOrdem, AREAS, []);
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).toContain('Não foi possível carregar os grupos de área do ENEM');
+    // Sem a lista não há ordem dos grupos: as linhas seguem a ordem em que a API as devolveu.
+    expect(
+      Array.from(raiz.querySelectorAll('.cell-label--group-label'), (el) => el.textContent?.trim()),
+    ).toEqual(foraDeOrdem.map((l) => l.grupoCurso.rotulo));
+    expect(component.podeCadastrar()).toBe(false);
+  });
+
+  it('PesosEnemPage_Textos_AtribuemAResolucaoAoConsepeENaoAoInep', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component.abrirDrawerCriacao();
+    await propagate();
+    fixture.detectChanges();
+
+    const texto = ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+    expect(texto).not.toContain('INEP');
+    expect(texto).toContain('versionados por resolução do Consepe');
+    expect(texto).toContain('Identificador da resolução do Consepe');
+    // O número de grupos vem da API: o texto não o fixa.
+    expect(texto).not.toMatch(/\b4 grupos\b/);
+  });
+
+  it('PesosEnemPage_ErroForaDoEnvelopeNasAreas_MantemAlertaENovaTentativa', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    // A nova tentativa falha fora do ApiResult (ex.: erro de outro interceptor).
+    vi.spyOn(TestBed.inject(PesosEnemApi), 'listarAreas').mockReturnValueOnce(
+      throwError(() => new Error('falha fora do envelope')),
+    );
+    const raiz = fixture.nativeElement as HTMLElement;
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
+    await propagate();
+    fixture.detectChanges();
+
+    // A carga não fica presa: o alerta continua, com o botão de tentar de novo habilitado.
+    expect(component.listaAreas.pendente()).toBe(false);
+    expect(component.listaAreas.falhou()).toBe(true);
+    expect(raiz.textContent).toContain('A lista de áreas do ENEM não foi carregada.');
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
+    expect(botao?.getAttribute('aria-disabled')).toBeNull();
+
+    botao?.click();
+    await propagate();
+    expectAreas().flush([...AREAS]);
+    await propagate();
+    fixture.detectChanges();
+    expect(component.listaAreas.falhou()).toBe(false);
+    expect(component.podeCadastrar()).toBe(true);
+  });
+
+  it('PesosEnemPage_AreasFalhamComGruposPendentes_TentarDeNovoRecarregaAsAreas', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    // Os grupos ainda não responderam.
+    const grupos = expectGrupos();
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
+    // Nada está recarregando as áreas: o botão continua acionável.
+    expect(botao?.getAttribute('aria-disabled')).toBeNull();
+    botao?.click();
+    await propagate();
+
+    expectAreas().flush([...AREAS]);
+    grupos.flush([...GRUPOS]);
+    await propagate();
+    expect(component.listaAreas.falhou()).toBe(false);
+  });
+
+  it('PesosEnemPage_TentarDeNovoAsAreasComGruposPendentes_FocoNaoEsperaOsGrupos', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    // Os grupos ainda não responderam, e vão demorar.
+    const grupos = expectGrupos();
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
+    if (!botao) throw new Error('botão de tentar de novo ausente');
+    botao.focus();
+    botao.click();
+    await propagate();
+    fixture.detectChanges();
+
+    // As áreas chegam: o alerta sai, e o foco vai ao título sem esperar os grupos.
+    expectAreas().flush([...AREAS]);
+    await propagate();
+    fixture.detectChanges();
+    await propagate();
+    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')).toBeNull();
+    expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
+
+    grupos.flush([...GRUPOS]);
+    await propagate();
+  });
+
+  it('PesosEnemPage_FalhaDasDuasListas_UmAlertaEUmBotaoPorLista', async () => {
+    fixture.detectChanges();
+    const areas = expectAreas();
+    const grupos = expectGrupos();
+    expectListagem().flush([]);
+    areas.flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    grupos.flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).toContain('Não foi possível carregar as áreas do ENEM');
+    expect(raiz.textContent).toContain('Não foi possível carregar os grupos de área do ENEM');
+    const botaoAreas = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
+    const botaoGrupos = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar');
+    expect(botaoAreas).not.toBeNull();
+    expect(botaoGrupos).not.toBeNull();
+
+    // Cada botão fica desabilitado só enquanto a própria lista carrega.
+    botaoAreas?.click();
+    await propagate();
+    fixture.detectChanges();
+    expect(botaoAreas?.getAttribute('aria-disabled')).toBe('true');
+    expect(botaoGrupos?.getAttribute('aria-disabled')).toBeNull();
+
+    botaoGrupos?.click();
+    await propagate();
+    fixture.detectChanges();
+    expect(botaoGrupos?.getAttribute('aria-disabled')).toBe('true');
+
+    expectAreas().flush([...AREAS]);
+    await propagate();
+    fixture.detectChanges();
+    // As áreas chegaram: o alerta delas sai; o dos grupos segue, ainda carregando.
+    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')).toBeNull();
+    expect(raiz.querySelector('#cfg-pesos-enem-grupos-tentar')?.getAttribute('aria-disabled')).toBe('true');
+
+    expectGrupos().flush([...GRUPOS]);
+    await propagate();
+    fixture.detectChanges();
+    expect(raiz.querySelector('#cfg-pesos-enem-grupos-tentar')).toBeNull();
+  });
+
+  it('PesosEnemPage_UmaListaFalhaDeNovoComAOutraPendente_NovoCliqueDelaRecarrega', async () => {
+    fixture.detectChanges();
+    const areas = expectAreas();
+    const grupos = expectGrupos();
+    expectListagem().flush([]);
+    areas.flush(
+      problem(500, 'uniplus.erro_interno', 'Erro interno'),
+      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+    );
+    grupos.flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    await propagate();
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    // O operador tenta de novo as duas listas.
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
+    await propagate();
+    const areasDeNovo = expectAreas();
+    // Os grupos falham de novo logo; as áreas continuam carregando.
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    await propagate();
+    fixture.detectChanges();
+
+    // O botão dos grupos está acionável, e o clique dele gera a requisição.
+    const botaoGrupos = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar');
+    expect(botaoGrupos?.getAttribute('aria-disabled')).toBeNull();
+    botaoGrupos?.click();
+    await propagate();
+    expectGrupos().flush([...GRUPOS]);
+    areasDeNovo.flush([...AREAS]);
+    await propagate();
+    expect(component.catalogoGrupos.falhou()).toBe(false);
+    expect(component.listaAreas.falhou()).toBe(false);
+  });
+
+  it('PesosEnemPage_RecargaDosGruposEmSegundoPlano_NaoMexeNoFoco', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(
+      problem(503, 'uniplus.indisponivel', 'Serviço indisponível'),
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    // Outra tela pede o vocabulário de novo, e ele chega: o operador não acionou nada aqui.
+    TestBed.inject(CatalogoGruposAreaEnem).garantirCarregado();
+    expectGrupos().flush([...GRUPOS]);
+    await propagate();
+    fixture.detectChanges();
+    await propagate();
+
+    expect(component.catalogoGrupos.falhou()).toBe(false);
+    expect(document.activeElement).toBe(document.body);
+  });
+});
+
+describe('PesosEnemPage — grupos de área vindos do catálogo compartilhado', () => {
+  let controller: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [PesosEnemPage],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    });
+    controller = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => controller.verify());
+
+  it('PesosEnemPage_TentativaDoOperadorEmOutraTela_NaoApareceComoFalhaAoEntrar', async () => {
+    // Em Cursos a lista falhou e o operador clicou "Tentar novamente".
+    const catalogo = TestBed.inject(CatalogoGruposAreaEnem);
+    catalogo.garantirCarregado();
+    controller
+      .expectOne(GRUPOS_URL)
+      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+    expect(catalogo.falhou()).toBe(true);
+    catalogo.tentarDeNovo();
+    expect(catalogo.falhou()).toBe(true);
+
+    // Ele navega para Pesos antes de a tentativa responder: para Pesos, ela é automática.
+    const fixture = TestBed.createComponent(PesosEnemPage);
+    fixture.detectChanges();
+    controller.expectOne(AREAS_URL).flush([...AREAS]);
+    controller.expectOne((r) => r.url === LIST_URL).flush([...linhas805]);
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).not.toContain('Não foi possível carregar');
+
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
+  });
+
+  it('PesosEnemPage_GruposJaCarregadosPorOutraTela_NaoPedeDeNovo', async () => {
+    // Outra tela (ex.: o cadastro de Cursos) já trouxe o vocabulário.
+    const catalogo = TestBed.inject(CatalogoGruposAreaEnem);
+    catalogo.garantirCarregado();
+    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+
+    const fixture = TestBed.createComponent(PesosEnemPage);
+    fixture.detectChanges();
+    controller.expectOne(AREAS_URL).flush([...AREAS]);
+    controller.expectOne((r) => r.url === LIST_URL).flush([...linhas805]);
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+
+    controller.expectNone(GRUPOS_URL);
+    const rotulos = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label'),
+      (el) => el.textContent?.trim(),
+    );
+    expect(rotulos).toEqual(GRUPOS.map((grupo) => grupo.rotulo));
+  });
+
+  it('PesosEnemPage_FalhaDosGruposEmOutraTela_NaoApareceDuranteARecargaAutomatica', async () => {
+    // O vocabulário falhou no cadastro de Cursos.
+    const catalogo = TestBed.inject(CatalogoGruposAreaEnem);
+    catalogo.garantirCarregado();
+    controller
+      .expectOne(GRUPOS_URL)
+      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+    // A tela de Cursos mostrou o alerta dessa falha.
+    expect(catalogo.falhou()).toBe(true);
+
+    // Ao entrar em Pesos a lista é pedida de novo; enquanto isso, nenhum alerta.
+    const fixture = TestBed.createComponent(PesosEnemPage);
+    fixture.detectChanges();
+    controller.expectOne(AREAS_URL).flush([...AREAS]);
+    controller.expectOne((r) => r.url === LIST_URL).flush([...linhas805]);
+    const recarga = controller.expectOne(GRUPOS_URL);
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).not.toContain('Não foi possível carregar');
+    expect(raiz.querySelector('#cfg-pesos-enem-grupos-tentar')).toBeNull();
+
+    // A recarga desta visita falha: agora o alerta aparece.
+    recarga.flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    expect(raiz.textContent).toContain('Não foi possível carregar os grupos de área do ENEM');
   });
 });

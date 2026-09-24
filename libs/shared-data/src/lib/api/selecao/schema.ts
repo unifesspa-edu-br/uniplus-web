@@ -5885,6 +5885,7 @@ export interface components {
             readonly regraDistribuicao: components["schemas"]["ReferenciaRegraDto"];
             readonly regraAjuste: null | components["schemas"]["ReferenciaRegraDto"];
             readonly referenciaDemografica: null | components["schemas"]["ReferenciaReservaDemograficaSnapshotDto"];
+            readonly grupoAreaEnem: null | components["schemas"]["GrupoAreaEnemSnapshotDto"];
             readonly modalidades: readonly components["schemas"]["ModalidadeSelecionadaDto"][];
             readonly quadro: readonly components["schemas"]["VagaOfertadaDto"][];
             /** Format: int32 */
@@ -6297,6 +6298,10 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: string;
+        };
+        readonly GrupoAreaEnemSnapshotDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
         };
         readonly IdadeMaximaEmissaoDto: {
             /** Format: int32 */
