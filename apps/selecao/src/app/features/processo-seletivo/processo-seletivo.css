@@ -2065,9 +2065,10 @@
   overflow-wrap: anywhere;
 }
 
-/* Onde a pendência se resolve, quando não é num passo do wizard. Mora sob a mensagem, no
-   mesmo bloco de texto, porque `.revisao-item` é uma linha flex — como irmão do botão, a
-   frase disputaria a linha com ele. */
+/* O que fazer e onde, quando o botão do passo não basta: a pendência se resolve fora do
+   wizard, ou a correção passa por mais de um lugar. Mora sob a mensagem, no mesmo bloco de
+   texto, porque `.revisao-item` é uma linha flex — como irmão do botão, a frase disputaria a
+   linha com ele. */
 .revisao-item__onde {
   display: block;
   margin-top: var(--space-1);
