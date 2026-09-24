@@ -885,3 +885,14 @@ cfg-pesos-enem-page {
 .cfg-tipos-ato__acoes {
   flex-wrap: nowrap;
 }
+
+/* "Tentar novamente" durante a espera: o botão fica com aria-disabled, e não disabled,
+   para continuar focável; o DS só estiliza :disabled, então o mesmo visual vem aqui. */
+.cfg-list__retry .btn[aria-disabled='true'],
+.cfg-list__retry .btn[aria-disabled='true']:hover,
+.cfg-list__retry .btn[aria-disabled='true']:active {
+  cursor: progress;
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  border-color: transparent;
+}

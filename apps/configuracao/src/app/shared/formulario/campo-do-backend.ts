@@ -21,8 +21,9 @@ export function controlNameFromBackendField<TControlName extends string>(
   return controlNames.has(camelCase) ? (camelCase as TControlName) : null;
 }
 
-/** Converte campo de texto opcional deixado em branco na ausência que a API espera. */
-export function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
+/** O texto aparado, ou `null` quando ausente, vazio ou só com espaços — a ausência que a
+ *  API espera num campo opcional, e o critério de "texto a mostrar" das telas. */
+export function nullIfBlank(value: string | null | undefined): string | null {
+  const trimmed = value?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
 }

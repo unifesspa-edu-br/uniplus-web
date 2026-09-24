@@ -1,0 +1,1 @@
+export { comPontoFinal } from './texto';

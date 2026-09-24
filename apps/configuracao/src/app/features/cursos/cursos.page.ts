@@ -61,6 +61,8 @@ import {
 import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
 import { focarAposNovaTentativa } from '../../shared/foco';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
+import { nullIfBlank } from '../../shared/formulario';
+import { comPontoFinal } from '../../shared/texto';
 import { motivoDaFalha } from '../../shared/lista-de-referencia';
 
 /** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
@@ -171,7 +173,7 @@ interface CursoForm {
               </tr>
             </thead>
             <tbody>
-              @for (curso of cursos(); track curso.id) {
+              @for (curso of cursosExibidos(); track curso.id) {
                 <tr>
                   <td data-label="Código">
                     <code>{{ curso.codigo }}</code>
@@ -181,7 +183,7 @@ interface CursoForm {
                     <span class="tag">{{ curso.grau }}</span>
                   </td>
                   <td data-label="Nível">{{ curso.nivelEnsino }}</td>
-                  <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem?.rotulo || curso.grupoAreaEnem?.codigo || '—' }}</td>
+                  <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem?.rotulo || '—' }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-briefcase"
@@ -337,12 +339,15 @@ interface CursoForm {
                 <span class="field__error">{{ erroDoCampo('nivelEnsino') }}</span>
               }
             </label>
-            @if (gruposAreaEnem.falhou()) {
+            <!-- Só com o formulário aberto: a carga de fundo que falha não vira alerta
+                 escondido no formulário fechado. -->
+            @if (formOpen() && gruposAreaEnem.falhou()) {
               <cfg-alerta-nova-tentativa
                 variante="warning"
                 titulo="Grupos de área do ENEM não carregados"
                 [mensagem]="mensagemFalhaGrupos()"
                 [pendente]="gruposAreaEnem.pendente()"
+                [tentativasSemSucesso]="gruposAreaEnem.tentativasSemSucesso()"
                 idBotao="cfg-curso-grupos-tentar"
                 idMensagem="cfg-curso-grupos-falha"
                 (tentar)="tentarCarregarGrupos()"
@@ -487,10 +492,10 @@ export class CursosPage {
   private readonly motivoFalhaGrupos = motivoDaFalha(this.gruposAreaEnem);
   protected readonly mensagemFalhaGrupos = computed(() => {
     const semLista = 'Sem a lista de grupos não é possível classificar o curso.';
-    const motivo = this.motivoFalhaGrupos();
-    return motivo === null ? semLista : `${motivo.replace(/[.!?]$/u, '')}. ${semLista}`;
+    const motivo = nullIfBlank(this.motivoFalhaGrupos());
+    return motivo ? `${comPontoFinal(motivo)} ${semLista}` : semLista;
   });
-  /** Grupo que o curso em edição já tem, como a API o devolveu (código e rótulo). */
+  /** Grupo que o curso em edição já tem, como a tela o mostra (ver `exibivel`). */
   private readonly grupoDoCursoEmEdicao = signal<GrupoAreaEnemDto | null>(null);
 
   protected readonly saving = signal(false);
@@ -595,6 +600,16 @@ export class CursosPage {
       return [...envelope.data];
     },
   });
+  /** Os cursos como a tela os mostra: o grupo com o rótulo do vocabulário quando ele o
+   *  tem, como no select, para o mesmo grupo não aparecer com dois textos. Até o
+   *  vocabulário chegar (ou se ele falhar), vale o rótulo do registro. */
+  protected readonly cursosExibidos = computed(() =>
+    this.cursos().map((curso) =>
+      curso.grupoAreaEnem
+        ? { ...curso, grupoAreaEnem: this.gruposAreaEnem.exibivel(curso.grupoAreaEnem) }
+        : curso,
+    ),
+  );
 
   // Ofertas vivas do curso selecionado — só dispara quando o drawer tem um
   // curso (request fn `undefined` = sem fetch). Filtro `?cursoId` reanexado a
@@ -742,14 +757,13 @@ export class CursosPage {
    * controle continuaria com o grupo do curso, e salvar reenviaria um grupo que o
    * operador nunca viu selecionado. A opção depende do grupo original do curso, e não do
    * valor escolhido: trocar para "Não classificado" não a tira, e dá para voltar a ele.
-   * O rótulo é o que a API devolveu para o curso.
    */
   protected readonly grupoForaDasOpcoes = computed<GrupoAreaEnemDto | null>(() => {
     const doCurso = this.grupoDoCursoEmEdicao();
     if (doCurso === null || this.gruposAreaEnem.porCodigo().has(doCurso.codigo)) {
       return null;
     }
-    return { codigo: doCurso.codigo, rotulo: doCurso.rotulo || doCurso.codigo };
+    return doCurso;
   });
 
   /** A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai
@@ -761,6 +775,9 @@ export class CursosPage {
   );
 
   constructor() {
+    // A tabela usa o rótulo do vocabulário. A falha desta carga de fundo não aparece na
+    // listagem: o alerta de grupos só existe no formulário, que tenta de novo ao abrir.
+    this.gruposAreaEnem.garantirCarregado();
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -773,7 +790,7 @@ export class CursosPage {
   /** O select do grupo é descrito pela falha da lista e pelo erro do campo, quando há. */
   protected descricaoDoGrupo(): string | null {
     const ids = [
-      this.gruposAreaEnem.falhou() ? 'cfg-curso-grupos-falha' : null,
+      this.formOpen() && this.gruposAreaEnem.falhou() ? 'cfg-curso-grupos-falha' : null,
       this.erroDoCampo('grupoAreaEnem') ? 'cfg-curso-grupo-erro' : null,
     ].filter((id): id is string => id !== null);
     return ids.length > 0 ? ids.join(' ') : null;
@@ -907,7 +924,9 @@ export class CursosPage {
       nivelEnsino: curso.nivelEnsino,
       grupoAreaEnem: curso.grupoAreaEnem?.codigo ?? '',
     });
-    this.grupoDoCursoEmEdicao.set(curso.grupoAreaEnem ?? null);
+    this.grupoDoCursoEmEdicao.set(
+      curso.grupoAreaEnem ? this.gruposAreaEnem.exibivel(curso.grupoAreaEnem) : null,
+    );
     this.gruposAreaEnem.garantirCarregado();
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -1145,9 +1164,4 @@ function controlNameFromBackendField(field: string): keyof CursoForm | null {
       ?.replace(/\[\d+\]$/u, '') ?? field;
   const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
   return CURSO_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof CursoForm) : null;
-}
-
-function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }

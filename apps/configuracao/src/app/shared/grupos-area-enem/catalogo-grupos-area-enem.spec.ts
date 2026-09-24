@@ -66,6 +66,27 @@ describe('CatalogoGruposAreaEnem', () => {
     expect(catalogo.opcoes().length).toBe(1);
   });
 
+  it('vocabulário só com itens sem código é falha de carga, com alerta', () => {
+    catalogo.garantirCarregado();
+    controller.expectOne(URL).flush([{ codigo: ' ', rotulo: 'X' }]);
+
+    expect(catalogo.opcoes()).toEqual([]);
+    expect(catalogo.comErro()).toBe(true);
+    expect(catalogo.falhou()).toBe(true);
+  });
+
+  it('recarga só com itens sem código mantém a lista anterior como reserva, sem alerta', () => {
+    catalogo.garantirCarregado();
+    controller.expectOne(URL).flush([tecnologica]);
+
+    catalogo.recarregar();
+    controller.expectOne(URL).flush([{ codigo: ' ', rotulo: 'X' }]);
+
+    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA']);
+    expect(catalogo.comErro()).toBe(true);
+    expect(catalogo.falhou()).toBe(false);
+  });
+
   it('lista vazia é falha de carga: o vocabulário sempre tem grupos', () => {
     catalogo.garantirCarregado();
     controller.expectOne(URL).flush([]);

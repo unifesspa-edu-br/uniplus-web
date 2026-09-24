@@ -82,9 +82,16 @@ describe('CursosPage', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => {
+    // A página pede o vocabulário de grupos ao iniciar. Quem não usa a lista deixa esse
+    // pedido pendente; mais de um é pedido em excesso.
+    const pendentes = controller.match(GRUPOS_URL);
+    expect(pendentes.length).toBeLessThanOrEqual(1);
+    pendentes.forEach((pedido) => pedido.flush([...GRUPOS]));
+    controller.verify();
+  });
 
-  /** Abrir o formulário pede a lista de grupos uma vez: responde esse pedido. */
+  /** Responde o pedido do vocabulário de grupos feito ao iniciar a página. */
   const responderGrupos = (): void => controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
 
   const propagate = async (): Promise<void> => {
@@ -583,13 +590,34 @@ describe('CursosPage', () => {
     );
   });
 
-  it('a lista de grupos é pedida ao abrir o formulário, não ao abrir a página', async () => {
+  it('a lista de grupos é pedida uma vez, ao abrir a página, e abrir o formulário não a pede de novo', async () => {
     await flushLista([cursoSeed]);
-    // A tabela usa o rótulo que vem na própria listagem de cursos.
-    controller.expectNone(GRUPOS_URL);
+    responderGrupos();
 
     component['abrirCadastro']();
+    controller.expectNone(GRUPOS_URL);
+  });
+
+  it('numa visita nova, a tabela passa ao rótulo oficial quando o vocabulário chega, sem abrir o formulário', async () => {
+    await flushLista([{ ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Rótulo do registro' } }]);
+    fixture.detectChanges();
+    const celula = (): string | undefined =>
+      (fixture.nativeElement as HTMLElement).querySelector('td[data-label="Grupo ENEM"]')?.textContent?.trim();
+    expect(celula()).toBe('Rótulo do registro');
+
     responderGrupos();
+    fixture.detectChanges();
+    expect(celula()).toBe('Tecnológica');
+  });
+
+  it('falha da carga de fundo do vocabulário não mostra alerta na listagem', async () => {
+    await flushLista([cursoSeed]);
+    controller
+      .expectOne(GRUPOS_URL)
+      .flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Service Unavailable' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-tentar')).toBeNull();
   });
 
   describe('grupo de área do ENEM vindo da API', () => {
@@ -609,7 +637,6 @@ describe('CursosPage', () => {
     it('CA-01: o select oferece os grupos que a API devolve, na ordem dela, com o código como valor', async () => {
       await flushLista([]);
       // Outra lista e outra ordem: o select acompanha a API, não uma lista do cliente.
-      component['gruposAreaEnem'].recarregar();
       controller.expectOne(GRUPOS_URL).flush([
         { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
         { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
@@ -625,12 +652,33 @@ describe('CursosPage', () => {
       ]);
     });
 
-    it('CA-02: a tabela mostra o rótulo do grupo, não o código', async () => {
+    it('CA-01: grupo da API sem rótulo aparece no select pelo código', async () => {
+      await flushLista([]);
+      controller.expectOne(GRUPOS_URL).flush([
+        { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+        { codigo: 'OUTRO', rotulo: ' ' },
+      ]);
+      component['abrirCadastro']();
+      fixture.detectChanges();
+
+      expect(opcoesDoSelect()).toContainEqual({ value: 'OUTRO', texto: 'OUTRO' });
+    });
+
+    it('CA-02: com o vocabulário carregado, a tabela usa o rótulo dele, como o select', async () => {
+      controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
       await flushLista([
-        cursoSeed,
-        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c2', grupoAreaEnem: null },
-        // Rótulo vazio mostra o código, como o formulário, e não o traço de "não classificado".
-        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c3', grupoAreaEnem: { codigo: 'X', rotulo: '' } },
+        { ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Rótulo antigo' } },
+        // Sem rótulo, do jeito que a API pode devolver: o código, ou o traço sem código.
+        {
+          ...cursoSeed,
+          id: '01960000-0000-7000-0000-0000000000c6',
+          grupoAreaEnem: { codigo: 'Z', rotulo: null } as unknown as GrupoAreaEnemDto,
+        },
+        {
+          ...cursoSeed,
+          id: '01960000-0000-7000-0000-0000000000c7',
+          grupoAreaEnem: { codigo: undefined, rotulo: undefined } as unknown as GrupoAreaEnemDto,
+        },
       ]);
       fixture.detectChanges();
 
@@ -638,7 +686,46 @@ describe('CursosPage', () => {
         (fixture.nativeElement as HTMLElement).querySelectorAll('td[data-label="Grupo ENEM"]'),
         (td) => td.textContent?.trim(),
       );
-      expect(celulas).toEqual(['Tecnológica', '—', 'X']);
+      expect(celulas).toEqual(['Tecnológica', 'Z', '—']);
+    });
+
+    it('CA-02: com o rótulo oficial em branco, tabela e select mostram o mesmo texto', async () => {
+      controller.expectOne(GRUPOS_URL).flush([
+        { codigo: 'TECNOLOGICA', rotulo: ' ' },
+        // Sem código não há o que gravar: o item não vira opção.
+        { codigo: ' ', rotulo: 'Sem código' },
+      ]);
+      await flushLista([{ ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Rótulo do registro' } }]);
+      component['abrirCadastro']();
+      fixture.detectChanges();
+
+      const naTabela = (fixture.nativeElement as HTMLElement)
+        .querySelector('td[data-label="Grupo ENEM"]')
+        ?.textContent?.trim();
+      expect(naTabela).toBe('TECNOLOGICA');
+      expect(opcoesDoSelect()).toEqual([
+        { value: '', texto: 'Não classificado' },
+        { value: 'TECNOLOGICA', texto: 'TECNOLOGICA' },
+      ]);
+    });
+
+    it('CA-02: a tabela mostra o rótulo do grupo, não o código', async () => {
+      await flushLista([
+        cursoSeed,
+        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c2', grupoAreaEnem: null },
+        // Rótulo vazio mostra o código, como o formulário, e não o traço de "não classificado".
+        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c3', grupoAreaEnem: { codigo: 'X', rotulo: '' } },
+        // Rótulo só com espaços também conta como vazio; sem rótulo nem código, fica o traço.
+        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c4', grupoAreaEnem: { codigo: 'Y', rotulo: '  ' } },
+        { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c5', grupoAreaEnem: { codigo: '', rotulo: '' } },
+      ]);
+      fixture.detectChanges();
+
+      const celulas = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('td[data-label="Grupo ENEM"]'),
+        (td) => td.textContent?.trim(),
+      );
+      expect(celulas).toEqual(['Tecnológica', '—', 'X', 'Y', '—']);
     });
 
     it('CA-02: o grupo escolhido no select é enviado pelo código', async () => {
@@ -846,6 +933,65 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBe(botao);
     expect(document.activeElement).toBe(botao);
     expect(botao.getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('nova falha pedida pelo operador é anunciada de novo, com o texto pontuado que descreve o select', async () => {
+    component['abrirEdicao'](cursoSeed);
+    indisponivel();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
+    indisponivel();
+    fixture.detectChanges();
+
+    const select = raiz.querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
+    const descricao = select?.getAttribute('aria-describedby') ?? '';
+    expect(raiz.querySelector(`[id="${descricao}"]`)?.textContent?.trim()).toMatch(
+      /classificar o curso\. Tentativa 2 sem sucesso\.$/u,
+    );
+  });
+
+  it('recusa sem título mostra só o texto padrão, sem ponto solto no início', () => {
+    component['abrirEdicao'](cursoSeed);
+    controller
+      .expectOne(GRUPOS_URL)
+      .flush(
+        { type: 'about:blank', title: '', status: 503, code: 'uniplus.teste.sem_titulo', traceId: 't' },
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha')?.textContent?.trim()).toBe(
+      'Sem a lista de grupos não é possível classificar o curso.',
+    );
+  });
+
+  it('curso cru com o grupo sem rótulo, com a lista em falha: a opção do grupo mostra o código', () => {
+    component['abrirEdicao']({ ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: '' } });
+    indisponivel();
+    fixture.detectChanges();
+
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
+    const opcao = Array.from(select?.options ?? []).find((o) => o.value === 'TECNOLOGICA');
+    expect(opcao?.textContent?.trim()).toBe('TECNOLOGICA');
+  });
+
+  it('motivo só com espaços cai no texto padrão', () => {
+    component['abrirEdicao'](cursoSeed);
+    controller.expectOne(GRUPOS_URL).flush(
+      { type: 'about:blank', title: '   ', status: 503, code: 'uniplus.teste.sem_titulo', traceId: 't' },
+      { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+    );
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha')?.textContent?.trim()).toBe(
+      'Sem a lista de grupos não é possível classificar o curso.',
+    );
   });
 
   it('lista vazia é falha de carga: alerta com tentar de novo, como na recusa', () => {

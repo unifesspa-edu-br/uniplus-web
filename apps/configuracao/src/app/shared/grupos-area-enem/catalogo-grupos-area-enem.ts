@@ -2,6 +2,8 @@ import { DestroyRef, Injectable, Signal, computed, inject } from '@angular/core'
 import { type LookupCompleto, type ProblemDetails } from '@uniplus/shared-core/http';
 import { GruposAreaEnemApi, type GrupoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 
+import { comRotuloExibivel } from '../codigo-e-rotulo';
+import { nullIfBlank } from '../formulario';
 import { listaDeReferencia } from '../lista-de-referencia';
 
 /**
@@ -21,9 +23,13 @@ export class CatalogoGruposAreaEnem implements LookupCompleto<GrupoAreaEnemDto> 
   private readonly lista = listaDeReferencia<GrupoAreaEnemDto>(
     () => this.api.listar(),
     inject(DestroyRef),
+    // Grupo sem código não tem o que gravar: não conta como item da lista.
+    (grupo) => nullIfBlank(grupo.codigo) !== null,
   );
 
-  readonly opcoes: Signal<readonly GrupoAreaEnemDto[]> = this.lista.opcoes;
+  readonly opcoes: Signal<readonly GrupoAreaEnemDto[]> = computed(() =>
+    this.lista.opcoes().map(comRotuloExibivel),
+  );
   readonly pendente: Signal<boolean> = this.lista.pendente;
   /** `true` quando a última tentativa não trouxe os grupos: recusada, com erro ou vazia. */
   readonly comErro: Signal<boolean> = this.lista.comErro;
@@ -31,11 +37,20 @@ export class CatalogoGruposAreaEnem implements LookupCompleto<GrupoAreaEnemDto> 
   readonly falhou: Signal<boolean> = this.lista.falhou;
   /** A recusa da API na última tentativa (ver `listaDeReferencia`). */
   readonly ultimoProblema: Signal<ProblemDetails | null> = this.lista.ultimoProblema;
+  /** Falhas seguidas das tentativas do operador (ver `listaDeReferencia`). */
+  readonly tentativasSemSucesso: Signal<number> = this.lista.tentativasSemSucesso;
 
   /** Índice por código — é por ele que cursos e pesos gravam o grupo. */
   readonly porCodigo = computed(
     () => new Map(this.opcoes().map((grupo) => [grupo.codigo, grupo] as const)),
   );
+
+  /** O grupo como a tela o mostra, pela mesma regra das opções: quando o vocabulário tem
+   *  o código, o texto dele (o rótulo oficial, ou o código); senão, o rótulo do próprio
+   *  registro, ou o código. */
+  exibivel(grupo: GrupoAreaEnemDto): GrupoAreaEnemDto {
+    return this.porCodigo().get(grupo.codigo) ?? comRotuloExibivel(grupo);
+  }
 
   garantirCarregado(): void {
     this.lista.garantirCarregado();
