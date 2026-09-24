@@ -27,15 +27,13 @@ import {
   PendenciaEstruturalProblem,
   agruparPorDimensao,
   comExtensoesDePublicacao,
+  comoGruposDaRevisao,
   comoComandoDePublicacao,
   dataReferenciaLegalDe,
   eErroDeDocumentoOuAto,
   faseQueAncoraOPeriodoDeInscricao,
   mensagensDePublicacao,
-  ondeResolverItem,
-  passoDoItem,
   rotuloDaDimensao as rotularDimensao,
-  rotuloDoPasso,
   temFaseDeColetaInscricao,
 } from './publicacao-para-comando';
 
@@ -306,11 +304,11 @@ export class RevisaoStepComponent {
    */
   readonly gruposEstruturais = computed(() => {
     const recusa = this.ultimaRecusa();
-    if (recusa !== null) {
-      return agruparPorDimensao(recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false })));
-    }
-    const itens = this.preflight.estrutural();
-    return itens === null ? null : agruparPorDimensao(itens);
+    const itens =
+      recusa === null
+        ? this.preflight.estrutural()
+        : recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false }));
+    return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
   });
 
   readonly estruturalOk = computed(() => {
@@ -377,10 +375,6 @@ export class RevisaoStepComponent {
   });
 
   readonly rotuloDaDimensao = rotularDimensao;
-  readonly passoDoItem = passoDoItem;
-  readonly rotuloDoPasso = rotuloDoPasso;
-  readonly ondeResolverItem = ondeResolverItem;
-
   /** Navega ao passo dono do item, pelo código estável — nunca por comparação de frase (CA-04). */
   irParaSecao(index: number): void {
     this.store.goTo(index);

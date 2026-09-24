@@ -3,8 +3,8 @@
  * rótulo: o stepper tem largura apertada, o cabeçalho não, e o painel de
  * revisão usa o nome que o operador reconhece na lista de pendências.
  */
-interface DefinicaoDePasso {
-  readonly rotulo: string;
+interface DefinicaoDePasso<Rotulo extends string = string> {
+  readonly rotulo: Rotulo;
   readonly titulo?: string;
   readonly revisao?: string;
 }
@@ -13,7 +13,7 @@ interface DefinicaoDePasso {
  * Os passos na ordem em que são apresentados. Única fonte da ordem: o número
  * exibido é a posição aqui, e nenhum componente de passo declara a própria.
  */
-const DEFINICOES: readonly DefinicaoDePasso[] = [
+const DEFINICOES = [
   { rotulo: 'Tipo do processo', revisao: 'Tipo do processo seletivo' },
   { rotulo: 'Identificação' },
   { rotulo: 'Pagamento', titulo: 'Taxa de inscrição e isenção', revisao: 'Taxa de inscrição' },
@@ -40,13 +40,20 @@ const DEFINICOES: readonly DefinicaoDePasso[] = [
     revisao: 'Formulário de inscrição',
   },
   { rotulo: 'Revisão e publicação' },
-];
+] as const satisfies readonly DefinicaoDePasso[];
 
-export const PASSOS = DEFINICOES.map((passo) => ({
-  rotulo: passo.rotulo,
-  titulo: passo.titulo ?? passo.rotulo,
-  revisao: passo.revisao ?? passo.titulo ?? passo.rotulo,
-}));
+/** Rótulo de um passo existente: o compilador recusa o que não está em DEFINICOES. */
+export type RotuloDePasso = (typeof DEFINICOES)[number]['rotulo'];
+
+function comoPasso(passo: DefinicaoDePasso<RotuloDePasso>) {
+  return {
+    rotulo: passo.rotulo,
+    titulo: passo.titulo ?? passo.rotulo,
+    revisao: passo.revisao ?? passo.titulo ?? passo.rotulo,
+  };
+}
+
+export const PASSOS = DEFINICOES.map(comoPasso);
 
 /** Rótulos curtos do stepper lateral. */
 export const STEP_LABELS = PASSOS.map((passo) => passo.rotulo);

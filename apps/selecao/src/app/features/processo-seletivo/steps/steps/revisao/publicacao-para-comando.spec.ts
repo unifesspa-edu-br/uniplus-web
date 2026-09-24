@@ -2,20 +2,19 @@ import { ProblemDetails } from '@uniplus/shared-core/http';
 import { ItemConformidadeDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { PASSOS } from '../../processo-seletivo.data';
+import { PASSOS, RotuloDePasso } from '../../processo-seletivo.data';
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
 import {
   agruparPorDimensao,
+  comoGruposDaRevisao,
   comExtensoesDePublicacao,
   comoComandoDePublicacao,
   dataReferenciaLegalDe,
   eErroDeDocumentoOuAto,
   faseQueAncoraOPeriodoDeInscricao,
   mensagensDePublicacao,
-  ondeResolverItem,
-  passoDoItem,
+  nomeDoPasso,
   rotuloDaDimensao,
-  rotuloDoPasso,
   temFaseDeColetaInscricao,
 } from './publicacao-para-comando';
 
@@ -276,15 +275,27 @@ describe('rotuloDaDimensao', () => {
   });
 });
 
-describe('passoDoItem', () => {
+describe('destino de cada pendência no painel', () => {
+  /** A pendência como o painel a mostra, pela API pública do módulo. */
+  function pendente(codigo: string, dimensao: string) {
+    const [grupo] = comoGruposDaRevisao(
+      agruparPorDimensao([{ codigo, dimensao, mensagem: 'x', ok: false }]),
+    );
+    return grupo.itens[0];
+  }
+
   /**
    * O rótulo do passo, e não o índice, é o que se afirma aqui: o índice literal já se
    * desalinhou quando "Locais de prova" saiu do wizard, e um teste escrito contra o índice
    * teria acompanhado o erro em vez de apanhá-lo.
    */
   function rotuloDoItem(codigo: string, dimensao: string): string | null {
-    const passo = passoDoItem(codigo, dimensao);
-    return passo === null ? null : PASSOS[passo].rotulo;
+    const passo = pendente(codigo, dimensao).passo;
+    return passo === null ? null : PASSOS[passo.indice].rotulo;
+  }
+
+  function orientacaoDoItem(codigo: string, dimensao: string): string | null {
+    return pendente(codigo, dimensao).orientacao?.texto ?? null;
   }
 
   it('leva cada dimensão ao passo que a grava', () => {
@@ -351,56 +362,196 @@ describe('passoDoItem', () => {
       'localidade_nao_declarada',
       'fuso_institucional_nao_reconhecido',
     ]) {
-      expect(passoDoItem(codigo, 'contagem_de_prazos')).toBeNull();
-      expect(ondeResolverItem(codigo)).not.toBeNull();
+      expect(rotuloDoItem(codigo, 'contagem_de_prazos')).toBeNull();
+      expect(orientacaoDoItem(codigo, 'contagem_de_prazos')).not.toBeNull();
     }
 
-    expect(ondeResolverItem('calendario_vigente_ausente')).toContain('Configuração');
+    expect(orientacaoDoItem('calendario_vigente_ausente', 'contagem_de_prazos')).toContain(
+      'Configuração',
+    );
   });
 
-  it('não diz "onde resolver" para item que tem passo', () => {
-    expect(ondeResolverItem('cronograma_fases_ausente')).toBeNull();
-    expect(ondeResolverItem('algoritmo_contagem_prazo_nao_declarado')).toBeNull();
+  describe('pendências do processo ENEM', () => {
+    const RESOLUCAO = 'classificacao_resolucao_peso_area_enem_ausente';
+    const FORA_DO_QUADRO = 'classificacao_grupo_area_enem_da_oferta_fora_do_quadro';
+    const OFERTA_SEM_GRUPO = 'distribuicao_vagas_oferta_sem_grupo_area_enem';
+    const DESEMPATE_SEM_QUADRO = 'desempate_area_enem_sem_quadro';
+    const DESEMPATE_FORA_DO_QUADRO = 'desempate_area_enem_fora_do_quadro';
+
+    const FORMULA = nomeDoPasso('Fórmula e precisão');
+    const VAGAS = nomeDoPasso('Vagas');
+    const GRAVADA_COM_A_CLASSIFICACAO = `é gravada quando a classificação é gravada, no passo ${nomeDoPasso('Eliminação')}, ou na publicação do processo, e até lá esta pendência continua aqui.`;
+    const REGRAVAR_VAGAS = `e depois regrave o passo ${VAGAS}: o grupo é copiado para o processo quando a distribuição é gravada, e não se atualiza sozinho.`;
+
+    /**
+     * A fórmula não grava, e atualizar o checklist não regrava: sem dizer quando a escolha chega
+     * ao processo, a pendência que continua vermelha parece uma correção que falhou.
+     */
+    it('leva a resolução ao passo da fórmula e diz que a escolha vai com a classificação', () => {
+      expect(rotuloDoItem(RESOLUCAO, 'classificacao')).toBe('Fórmula e precisão');
+      expect(orientacaoDoItem(RESOLUCAO, 'classificacao')).toBe(
+        `Escolha a resolução de Peso por Área. A escolha ${GRAVADA_COM_A_CLASSIFICACAO}`,
+      );
+    });
+
+    /**
+     * O servidor confere a cópia do grupo guardada em cada oferta, refeita só quando a
+     * distribuição é gravada: a correção é o curso, e o passo Vagas refaz a cópia.
+     */
+    it('diz as duas metades da correção do grupo fora do quadro, e leva ao passo Vagas', () => {
+      expect(rotuloDoItem(FORA_DO_QUADRO, 'classificacao')).toBe('Vagas');
+      expect(orientacaoDoItem(FORA_DO_QUADRO, 'classificacao')).toBe(
+        `Corrija o grupo de área do ENEM no cadastro do curso, em Configuração, ${REGRAVAR_VAGAS}`,
+      );
+    });
+
+    /** O grupo é campo do cadastro de cursos, e o processo guarda uma cópia dele. */
+    it('diz as duas metades da correção da oferta sem grupo, e leva ao passo Vagas', () => {
+      expect(rotuloDoItem(OFERTA_SEM_GRUPO, 'distribuicao_vagas')).toBe('Vagas');
+      expect(orientacaoDoItem(OFERTA_SEM_GRUPO, 'distribuicao_vagas')).toBe(
+        `Declare o grupo de área do ENEM no cadastro do curso, em Configuração, ${REGRAVAR_VAGAS}`,
+      );
+    });
+
+    /** Os critérios são da dimensão da classificação, mas quem os grava é o passo Desempate. */
+    it('leva os itens de desempate ao passo Desempate, e não ao que grava a classificação', () => {
+      for (const codigo of [
+        'criterios_desempate_em_excesso',
+        'desempate_area_enem_areas_mal_formadas',
+        'desempate_area_enem_citada_por_dois_criterios',
+        DESEMPATE_SEM_QUADRO,
+        DESEMPATE_FORA_DO_QUADRO,
+      ]) {
+        expect(rotuloDoItem(codigo, 'classificacao'), codigo).toBe('Desempate');
+      }
+    });
+
+    /**
+     * A causa pode estar no critério ou na classificação escolhida na fórmula: retirar o critério
+     * grava ao avançar, e a mudança na fórmula vai junto com a classificação, gravada no passo
+     * Eliminação ou na publicação.
+     */
+    it('orienta o critério por área sem quadro a retirar o critério ou ajustar a fórmula', () => {
+      expect(orientacaoDoItem(DESEMPATE_SEM_QUADRO, 'classificacao')).toBe(
+        `Retire o critério por área, ou declare no passo ${FORMULA} a classificação baseada em ENEM com média ponderada e escolha a resolução de Peso por Área. A mudança na fórmula ${GRAVADA_COM_A_CLASSIFICACAO}`,
+      );
+    });
+
+    /** O servidor recusa a área fora do quadro também no campo da resolução. */
+    it('orienta a área fora do quadro a sair do critério ou a trocar a resolução', () => {
+      expect(orientacaoDoItem(DESEMPATE_FORA_DO_QUADRO, 'classificacao')).toBe(
+        `Retire a área do critério, ou escolha no passo ${FORMULA} uma resolução de Peso por Área que tenha a área em todos os grupos. A mudança na fórmula ${GRAVADA_COM_A_CLASSIFICACAO}`,
+      );
+    });
+
+    /**
+     * O divisor só é conferido sob a fórmula local do ENEM, e é a soma dos pesos das etapas que
+     * compõem a nota, declaradas no cronograma.
+     */
+    it('leva o divisor da média ao cronograma, onde se declaram as etapas e os pesos', () => {
+      expect(rotuloDoItem('classificacao_divisor_media_invalido', 'classificacao')).toBe(
+        'Cronograma',
+      );
+      expect(orientacaoDoItem('classificacao_divisor_media_invalido', 'classificacao')).toBe(
+        'Declare ao menos uma etapa classificatória (ou ambas) com peso maior que zero: a média da nota final divide pela soma desses pesos.',
+      );
+    });
+
+    /** O botão e a orientação chamam o passo pelo mesmo nome. */
+    it('nomeia o passo como o botão do painel', () => {
+      expect(pendente(RESOLUCAO, 'classificacao').passo?.nome).toBe(FORMULA);
+    });
   });
 
-  /**
-   * O defeito que motivou trocar o índice literal pelo rótulo: todo destino do mapa tem de
-   * existir em PASSOS. Um passo retirado ou renomeado quebra aqui, e não em produção.
-   */
-  it('todo destino do mapa resolve para um passo existente', () => {
-    const dimensoes = [
-      ['taxa_inscricao_nao_declarada', 'taxa_inscricao'],
-      ['distribuicao_vagas_ausente', 'distribuicao_vagas'],
-      ['cascata_pendente', 'cascata_remanejamento'],
-      ['cronograma_fases_ausente', 'cronograma'],
-      ['exigencias_base_legal_nao_resolvida', 'exigencias_documentais'],
-      ['algoritmo_contagem_prazo_nao_declarado', 'contagem_de_prazos'],
-      ['classificacao_ausente', 'classificacao'],
-      ['atendimento_especializado_ausente', 'atendimento_especializado'],
-      ['derivacao_fatos_citados_inexistentes', 'coleta_de_fatos'],
-      ['referencia_temporal_extremo_da_fase_ausente', 'coleta_de_fatos'],
-      ['fato_coletavel_sem_valores_ofertados', 'coleta_de_fatos'],
-    ] as const;
+  it('não dá orientação a item cujo passo resolve sozinho', () => {
+    expect(orientacaoDoItem('cronograma_fases_ausente', 'cronograma')).toBeNull();
+    expect(
+      orientacaoDoItem('algoritmo_contagem_prazo_nao_declarado', 'contagem_de_prazos'),
+    ).toBeNull();
+  });
 
-    for (const [codigo, dimensao] of dimensoes) {
-      const passo = passoDoItem(codigo, dimensao);
-      expect(passo, `dimensão ${dimensao} sem passo resolvido`).not.toBeNull();
-      expect(passo).toBeGreaterThanOrEqual(0);
-      expect(passo).toBeLessThan(PASSOS.length);
+  /** O código vem do servidor: uma chave herdada de objeto não pode passar por item conhecido. */
+  it('não trata como conhecido um código que coincide com propriedade herdada', () => {
+    for (const codigo of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      expect(orientacaoDoItem(codigo, 'cronograma')).toBeNull();
+      expect(rotuloDoItem(codigo, 'cronograma')).toBe('Cronograma');
+      expect(rotuloDoItem('item_desconhecido', codigo)).toBeNull();
     }
   });
 
   /** O painel nomeia o passo, não a dimensão — é o nome que o operador reconhece na lista. */
   it('nomeia o passo pelo rótulo de revisão', () => {
-    function nomeDoPasso(codigo: string, dimensao: string): string | null {
-      const passo = passoDoItem(codigo, dimensao);
-      return passo === null ? null : rotuloDoPasso(passo);
+    function nomeDoPassoDoItem(codigo: string, dimensao: string): string | null {
+      return pendente(codigo, dimensao).passo?.nome ?? null;
     }
 
-    expect(nomeDoPasso('taxa_inscricao_nao_declarada', 'taxa_inscricao')).toBe(
+    expect(nomeDoPassoDoItem('taxa_inscricao_nao_declarada', 'taxa_inscricao')).toBe(
       'Taxa de inscrição',
     );
-    expect(nomeDoPasso('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma e etapas');
+    expect(nomeDoPassoDoItem('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma e etapas');
+  });
+
+  /** O rótulo é tipado; um que escape do tipo é defeito de programação e não vira nome vazio. */
+  it('falha alto quando o passo pedido não existe', () => {
+    expect(() => nomeDoPasso('Passo que não existe' as RotuloDePasso)).toThrow(
+      'O passo "Passo que não existe" não existe no wizard.',
+    );
+  });
+});
+
+describe('comoGruposDaRevisao', () => {
+  const pendentes = comoGruposDaRevisao(
+    agruparPorDimensao([
+      {
+        codigo: 'distribuicao_vagas_ausente',
+        dimensao: 'distribuicao_vagas',
+        mensagem: 'Distribuição',
+        ok: false,
+      },
+      {
+        codigo: 'distribuicao_vagas_oferta_sem_grupo_area_enem',
+        dimensao: 'distribuicao_vagas',
+        mensagem: 'Grupo',
+        ok: false,
+      },
+      {
+        codigo: 'calendario_vigente_ausente',
+        dimensao: 'contagem_de_prazos',
+        mensagem: 'Calendário',
+        ok: false,
+      },
+    ]),
+  );
+  const item = (codigo: string) =>
+    pendentes.flatMap((grupo) => grupo.itens).find((candidato) => candidato.codigo === codigo);
+
+  it('identifica a mensagem e a orientação de cada item pelo código', () => {
+    const oferta = item('distribuicao_vagas_oferta_sem_grupo_area_enem');
+
+    expect(oferta?.idDaMensagem).toBe('rev-item-distribuicao_vagas_oferta_sem_grupo_area_enem-mensagem');
+    expect(oferta?.orientacao?.id).toBe(
+      'rev-item-distribuicao_vagas_oferta_sem_grupo_area_enem-orientacao',
+    );
+    expect(item('distribuicao_vagas_ausente')?.orientacao).toBeNull();
+  });
+
+  it('item sem passo mostra só a orientação', () => {
+    expect(item('calendario_vigente_ausente')?.passo).toBeNull();
+    expect(item('calendario_vigente_ausente')?.orientacao?.texto).toContain('Configuração');
+  });
+
+  it('item conforme não mostra orientação nem botão', () => {
+    const [grupo] = comoGruposDaRevisao(
+      agruparPorDimensao([
+        {
+          codigo: 'calendario_vigente_ausente',
+          dimensao: 'contagem_de_prazos',
+          mensagem: 'x',
+          ok: true,
+        },
+      ]),
+    );
+    expect(grupo.itens[0]).toMatchObject({ orientacao: null, passo: null });
   });
 });
 
@@ -475,8 +626,12 @@ describe('mensagensDePublicacao', () => {
 
     const mensagens = mensagensDePublicacao(draft, DOCUMENTO_ID);
 
-    expect(mensagens).toContain('O número do ato passa de 60 caracteres, que é o limite do registro.');
-    expect(mensagens).toContain('O órgão do ato passa de 200 caracteres, que é o limite do registro.');
+    expect(mensagens).toContain(
+      'O número do ato passa de 60 caracteres, que é o limite do registro.',
+    );
+    expect(mensagens).toContain(
+      'O órgão do ato passa de 200 caracteres, que é o limite do registro.',
+    );
   });
 
   it('vazio quando documento escolhido, ato completo e período preenchido', () => {
@@ -494,15 +649,21 @@ describe('mensagensDePublicacao', () => {
 
 describe('eErroDeDocumentoOuAto', () => {
   it('reconhece os códigos nomeados que nenhum dos dois checklists cobre', () => {
-    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.documento_nao_confirmado')).toBe(true);
-    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente')).toBe(true);
+    expect(
+      eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.documento_nao_confirmado'),
+    ).toBe(true);
+    expect(
+      eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente'),
+    ).toBe(true);
   });
 
   it('não reconhece código de conformidade estrutural nem legal', () => {
-    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_insuficiente')).toBe(
-      false,
-    );
-    expect(eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente')).toBe(false);
+    expect(
+      eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_insuficiente'),
+    ).toBe(false);
+    expect(
+      eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente'),
+    ).toBe(false);
   });
 });
 

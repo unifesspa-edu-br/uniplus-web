@@ -112,15 +112,19 @@
                 >
                   <span class="revisao-item__estado">{{ item.ok ? 'Conforme' : 'Pendente' }}</span>
                   <div class="revisao-item__meta">
-                    <span class="revisao-item__name">{{ item.mensagem }}</span>
-                    <!-- Pendência que nenhum passo do wizard resolve não fica muda: sem
-                         isto o item aparece sem botão e sem saída, e o operador lê
-                         "calendário vigente ausente" sem ter para onde ir. -->
-                    @if (!item.ok && ondeResolverItem(item.codigo) !== null) {
-                      <span class="revisao-item__onde">{{ ondeResolverItem(item.codigo) }}</span>
+                    <span class="revisao-item__name" [id]="item.idDaMensagem">{{ item.mensagem }}</span>
+                    <!-- O que fazer e onde quando o botão não basta: sem isto, a pendência que
+                         nenhum passo resolve aparece sem saída, e a que passa por mais de um
+                         lugar leva a um passo sem dizer o resto da correção. -->
+                    @if (item.orientacao; as orientacao) {
+                      <span class="revisao-item__onde" [id]="orientacao.id">{{ orientacao.texto }}</span>
                     }
                   </div>
-                  @if (!item.ok && passoDoItem(item.codigo, grupo.dimensao) !== null) {
+                  @if (item.passo; as passo) {
+                    <!-- O botão é descrito pela pendência que resolve: vários itens podem levar
+                         ao mesmo passo, e "Ir para Vagas" sozinho não diz qual. -->
+                    @let descritoPor =
+                      item.orientacao ? item.idDaMensagem + ' ' + item.orientacao.id : item.idDaMensagem;
                     <!-- `revisao-item__ir`, não `revisao-item__go`: esse nome
                          já é de um widget de resumo de progresso mais antigo
                          (`.revisao-summary`/`.revisao-progress`), sem HTML
@@ -136,9 +140,10 @@
                     <button
                       class="btn btn--sm btn--ghost revisao-item__ir"
                       type="button"
-                      (click)="irParaSecao(passoDoItem(item.codigo, grupo.dimensao)!)"
+                      [attr.aria-describedby]="descritoPor"
+                      (click)="irParaSecao(passo.indice)"
                     >
-                      Ir para {{ rotuloDoPasso(passoDoItem(item.codigo, grupo.dimensao)!) }}
+                      Ir para {{ passo.nome }}
                     </button>
                   }
                 </li>
