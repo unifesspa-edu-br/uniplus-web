@@ -2,7 +2,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { DestroyRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ApiResult, apiOk, type Cursor } from '@uniplus/shared-core/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { listaDeReferencia } from './lista-de-referencia';
 
@@ -27,6 +27,30 @@ describe('listaDeReferencia', () => {
     lista.recarregar();
 
     expect(lista.opcoes()).toEqual(['a', 'b', 'c']);
+    expect(lista.falhou()).toBe(false);
+  });
+
+  it('conta as falhas seguidas do operador, inclusive síncronas, e recomeça na recarga automática', () => {
+    let falhar = true;
+    const listar = (): Observable<ApiResult<readonly string[]>> =>
+      falhar ? throwError(() => new Error('falha síncrona')) : of(pagina(['a']));
+    const lista = listaDeReferencia(listar, TestBed.inject(DestroyRef));
+
+    lista.garantirCarregado();
+    expect(lista.falhou()).toBe(true);
+    expect(lista.tentativasSemSucesso()).toBe(1);
+
+    lista.tentarDeNovo();
+    expect(lista.tentativasSemSucesso()).toBe(2);
+    lista.tentarDeNovo();
+    expect(lista.tentativasSemSucesso()).toBe(3);
+
+    lista.recarregar();
+    expect(lista.tentativasSemSucesso()).toBe(1);
+
+    falhar = false;
+    lista.tentarDeNovo();
+    expect(lista.tentativasSemSucesso()).toBe(0);
     expect(lista.falhou()).toBe(false);
   });
 });

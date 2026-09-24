@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef, ChangeDetectorRef } from '@angular/core';
+import { ApplicationRef, ChangeDetectorRef, ErrorHandler } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup } from '@angular/forms';
 import { provideRouter } from '@angular/router';
@@ -13,7 +13,7 @@ import {
   PesoAreaEnemDto,
   PesosEnemApi,
 } from '@uniplus/shared-data/configuracao';
-import { throwError } from 'rxjs';
+import { config as rxjsConfig, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { PesosEnemPage } from './pesos-enem.page';
@@ -276,9 +276,297 @@ describe('PesosEnemPage', () => {
     expect(component.resolucoes()).toEqual([RES_805]);
   });
 
+  const ERRO_500 = {
+    status: 500,
+    statusText: 'Internal Server Error',
+    headers: { 'content-type': 'application/problem+json' },
+  };
+
+  it('PesosEnemPage_ListagemFalhaComReferenciasCarregando_MostraSoOAlerta', async () => {
+    fixture.detectChanges();
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    try {
+      expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')).not.toBeNull();
+      expect(raiz.querySelector('ui-skeleton')).toBeNull();
+    } finally {
+      // Responde as referências mesmo com a asserção falha, para não vazar pedido pendente.
+      expectAreas().flush([...AREAS]);
+      expectGrupos().flush([...GRUPOS]);
+      await propagate();
+    }
+  });
+
+  it('PesosEnemPage_NovaFalhaDosRegistros_MantemOAlertaEAnunciaDeNovo', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = (): HTMLButtonElement | null =>
+      raiz.querySelector('#cfg-pesos-enem-registros-tentar') as HTMLButtonElement | null;
+    const textoAntes = botao()?.closest('ui-alert')?.textContent ?? '';
+
+    botao()?.click();
+    await propagate();
+    try {
+      expect(botao()).not.toBeNull();
+      expect(botao()?.getAttribute('aria-disabled')).toBe('true');
+    } finally {
+      // Responde a nova tentativa mesmo com a asserção falha, para não vazar pedido pendente.
+      expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+      await propagate();
+    }
+
+    const textoDepois = botao()?.closest('ui-alert')?.textContent ?? '';
+    expect(textoDepois).not.toBe(textoAntes);
+    expect(textoDepois).toContain('Tentativa 2 sem sucesso.');
+  });
+
+  it('PesosEnemPage_LinhaSemRotulo_UsaORotuloDoVocabulario', async () => {
+    await carregarUmaPagina([
+      linha({
+        id: '01960000-0000-7000-0000-0000000000d1',
+        resolucao: RES_805,
+        grupoCurso: { codigo: 'TECNOLOGICA', rotulo: '' },
+      }),
+    ]);
+
+    const rotulos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(rotulos).toEqual(['Tecnológica']);
+  });
+
+  it('PesosEnemPage_GrupoForaDoVocabularioSemRotulo_MostraOCodigo', async () => {
+    await carregarUmaPagina([
+      linha({
+        id: '01960000-0000-7000-0000-0000000000d2',
+        resolucao: RES_805,
+        grupoCurso: { codigo: 'OUTRO', rotulo: '  ' },
+      }),
+    ]);
+
+    const rotulos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(rotulos).toEqual(['OUTRO']);
+  });
+
+  it('PesosEnemPage_AreaSemRotulo_CabecalhoMostraOCodigo', async () => {
+    const areas = AREAS.map((area) => (area.codigo === 'MATEMATICA' ? { ...area, rotulo: ' ' } : area));
+    await carregarUmaPagina([...linhas805], areas);
+
+    const cabecalhos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-cell--head')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(cabecalhos).toContain('MATEMATICA');
+  });
+
+  it('PesosEnemPage_ListagemVoltaDepoisDoTentarDeNovo_FocoVaiAoTitulo', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-registros-tentar');
+    if (!botao) throw new Error('botão de tentar de novo ausente');
+    botao.focus();
+    botao.click();
+    await propagate();
+    fixture.detectChanges();
+    expect(document.activeElement?.id).toBe('cfg-pesos-enem-registros-tentar');
+
+    expectListagem().flush([...linhas805]);
+    await propagate();
+    fixture.detectChanges();
+    await propagate();
+    expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')).toBeNull();
+    expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
+  });
+
+  it('PesosEnemPage_ListagemComErroForaDoEnvelope_AlertaENovaTentativaContando', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    // As novas tentativas falham fora do ApiResult e de forma síncrona.
+    const erro = new Error('falha fora do envelope');
+    vi.spyOn(TestBed.inject(PesosEnemApi), 'listar').mockReturnValue(throwError(() => erro));
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const tentar = async (): Promise<void> => {
+      raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-registros-tentar')?.click();
+      await propagate();
+      fixture.detectChanges();
+    };
+
+    await tentar();
+    expect(component.isLoading()).toBe(false);
+    const botao = raiz.querySelector('#cfg-pesos-enem-registros-tentar');
+    expect(botao?.getAttribute('aria-disabled')).toBeNull();
+    expect(botao?.closest('ui-alert')?.textContent).toContain('Tentativa 2 sem sucesso.');
+    // O erro não some: vai ao ErrorHandler da aplicação.
+    expect(handleError).toHaveBeenCalledWith(erro);
+
+    await tentar();
+    expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.closest('ui-alert')?.textContent).toContain(
+      'Tentativa 3 sem sucesso.',
+    );
+  });
+
+  it('PesosEnemPage_FalhaRepetidaDasAreas_AnunciaNoAlertaDasAreas', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
+    await propagate();
+    expectAreas().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')?.closest('ui-alert')?.textContent).toContain(
+      'Tentativa 2 sem sucesso.',
+    );
+  });
+
+  it('PesosEnemPage_FalhaRepetidaDosGrupos_AnunciaNoAlertaDosGrupos', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
+    await propagate();
+    expectGrupos().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(raiz.querySelector('#cfg-pesos-enem-grupos-tentar')?.closest('ui-alert')?.textContent).toContain(
+      'Tentativa 2 sem sucesso.',
+    );
+  });
+
+  it('PesosEnemPage_AreasRecusadasSemTitulo_AlertaComTextoPadrao', async () => {
+    fixture.detectChanges();
+    expectAreas().flush(problem(500, 'uniplus.teste.sem_titulo', '   '), ERRO_500);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush([]);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#cfg-pesos-enem-areas-tentar')?.closest('ui-alert')
+        ?.textContent,
+    ).toContain('A lista de áreas do ENEM não foi carregada.');
+  });
+
+  it('PesosEnemPage_ErrorHandlerQueLanca_NaoPrendeACarga', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    vi.spyOn(TestBed.inject(PesosEnemApi), 'listar').mockReturnValue(throwError(() => new Error('fora do envelope')));
+    vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => {
+      throw new Error('o registro de erro também falhou');
+    });
+    const raiz = fixture.nativeElement as HTMLElement;
+    // O erro do registro sobe como erro não tratado do rxjs; aqui ele é recolhido para
+    // o teste conferir só que a tela não fica presa.
+    const naoTratados: unknown[] = [];
+    const anterior = rxjsConfig.onUnhandledError;
+    rxjsConfig.onUnhandledError = (erro) => naoTratados.push(erro);
+    try {
+      raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-registros-tentar')?.click();
+      await propagate();
+      await new Promise((resolve) => setTimeout(resolve));
+    } finally {
+      rxjsConfig.onUnhandledError = anterior;
+    }
+    fixture.detectChanges();
+
+    expect(naoTratados).toHaveLength(1);
+    expect(component.isLoading()).toBe(false);
+    expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('PesosEnemPage_ListagemFalha_CabecalhoNaoOfereceCadastrar', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.page-header__actions')).toBeNull();
+    expect(raiz.querySelector('ui-empty-state')).toBeNull();
+  });
+
+  it('PesosEnemPage_RecargaAutomaticaDaListagem_NaoContaNemMostraAlertaAntigo', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    component['carregar']();
+    await propagate();
+    fixture.detectChanges();
+    try {
+      expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')).toBeNull();
+    } finally {
+      expectListagem().flush(problem(500, 'uniplus.erro_interno', 'Erro interno'), ERRO_500);
+      await propagate();
+      fixture.detectChanges();
+    }
+    const alerta = raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.closest('ui-alert');
+    expect(alerta).not.toBeNull();
+    expect(alerta?.textContent).not.toContain('Tentativa');
+  });
+
+  it('PesosEnemPage_ListagemRecusadaSemTitulo_AlertaComTextoPadrao', async () => {
+    fixture.detectChanges();
+    expectAreas().flush([...AREAS]);
+    expectGrupos().flush([...GRUPOS]);
+    expectListagem().flush(problem(500, 'uniplus.teste.sem_titulo', '   '), ERRO_500);
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('ui-skeleton')).toBeNull();
+    expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.closest('ui-alert')?.textContent).toContain(
+      'A lista de pesos do ENEM não foi carregada.',
+    );
+  });
+
   it('PesosEnemPage_SemResolucoes_ExibeEmptyState', async () => {
     await carregarUmaPagina([]);
     expect(fixture.nativeElement.querySelector('ui-empty-state')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.page-header__actions')).not.toBeNull();
   });
 
   // --- Edição in-line -----------------------------------------------------

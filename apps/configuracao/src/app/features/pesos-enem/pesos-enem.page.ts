@@ -11,6 +11,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ErrorHandler,
   Injector,
   Signal,
   afterNextRender,
@@ -57,8 +58,10 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import { contadorDeFalhas } from '../../shared/contador-de-falhas';
 import { focarAposNovaTentativa } from '../../shared/foco';
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import { comRotuloExibivel } from '../../shared/codigo-e-rotulo';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { listaDeReferencia, motivoDaFalha } from '../../shared/lista-de-referencia';
 import { NumeroDigitadoValidoDirective } from './numero-digitado-valido.directive';
@@ -71,6 +74,7 @@ const CORTE_MAXIMO = 1000;
 const CASAS_PESO = 2;
 const CASAS_CORTE = 3;
 
+const LISTAGEM_NAO_CARREGADA = 'A lista de pesos do ENEM não foi carregada.';
 /** Tamanho de página ao esgotar o cursor (ADR-0015/0026) — ver `carregar()`. */
 const PAGE_SIZE = 100;
 /** Teto defensivo de páginas seguidas via `Link: rel="next"` — evita loop
@@ -150,7 +154,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
           Pesos das áreas do ENEM por grupo de curso, versionados por resolução do Consepe.
         </p>
       </div>
-      @if (!isLoading() && resolucoes().length === 0) {
+      @if (estadoDaTabela() === 'vazia') {
         <div class="page-header__actions">
           <button
             type="button"
@@ -177,8 +181,9 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
     @if (listaAreas.falhou()) {
       <cfg-alerta-nova-tentativa
         titulo="Não foi possível carregar as áreas do ENEM"
-        [mensagem]="motivoFalhaAreas() ?? 'A lista de áreas do ENEM não foi carregada.'"
+        [mensagem]="mensagemFalhaAreas()"
         [pendente]="listaAreas.pendente()"
+        [tentativasSemSucesso]="listaAreas.tentativasSemSucesso()"
         idBotao="cfg-pesos-enem-areas-tentar"
         (tentar)="tentarCarregarAreas()"
       />
@@ -187,27 +192,23 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
     @if (catalogoGrupos.falhou()) {
       <cfg-alerta-nova-tentativa
         titulo="Não foi possível carregar os grupos de área do ENEM"
-        [mensagem]="motivoFalhaGrupos() ?? 'A lista de grupos de área do ENEM não foi carregada.'"
+        [mensagem]="mensagemFalhaGrupos()"
         [pendente]="catalogoGrupos.pendente()"
+        [tentativasSemSucesso]="catalogoGrupos.tentativasSemSucesso()"
         idBotao="cfg-pesos-enem-grupos-tentar"
         (tentar)="tentarCarregarGrupos()"
       />
     }
 
-    @if (errorMessage()) {
-      <ui-alert variant="danger" heading="Não foi possível carregar os pesos do ENEM">
-        {{ errorMessage() }}
-        <div class="cfg-list__retry">
-          <button
-            type="button"
-            class="btn btn--secondary btn--sm"
-            [disabled]="isLoading()"
-            (click)="tentarNovamente()"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </ui-alert>
+    @if (errorMessage(); as erro) {
+      <cfg-alerta-nova-tentativa
+        titulo="Não foi possível carregar os pesos do ENEM"
+        [mensagem]="erro"
+        [pendente]="isLoading()"
+        [tentativasSemSucesso]="falhasDaListagem.valor()"
+        idBotao="cfg-pesos-enem-registros-tentar"
+        (tentar)="tentarNovamente()"
+      />
     }
 
     @if (estadoDaTabela() === 'carregando') {
@@ -609,6 +610,7 @@ export class PesosEnemPage {
   protected readonly catalogoGrupos = inject(CatalogoGruposAreaEnem);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
+  private readonly errorHandler = inject(ErrorHandler);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
 
@@ -619,12 +621,20 @@ export class PesosEnemPage {
     () => this.api.listarAreas(),
     this.destroyRef,
   );
-  protected readonly areas: Signal<readonly AreaPesoAreaEnemDto[]> = this.listaAreas.opcoes;
+  protected readonly areas: Signal<readonly AreaPesoAreaEnemDto[]> = computed(() =>
+    this.listaAreas.opcoes().map(comRotuloExibivel),
+  );
   protected readonly motivoFalhaAreas = motivoDaFalha(this.listaAreas);
+  protected readonly mensagemFalhaAreas = computed(
+    () => nullIfBlank(this.motivoFalhaAreas()) ?? 'A lista de áreas do ENEM não foi carregada.',
+  );
   /** Os grupos de área do ENEM, na ordem da API — a fonte dos grupos do cadastro e da
    *  ordem das linhas de cada resolução. Nenhuma lista de grupos é escrita no cliente. */
   protected readonly grupos: Signal<readonly GrupoAreaEnemDto[]> = this.catalogoGrupos.opcoes;
   protected readonly motivoFalhaGrupos = motivoDaFalha(this.catalogoGrupos);
+  protected readonly mensagemFalhaGrupos = computed(
+    () => nullIfBlank(this.motivoFalhaGrupos()) ?? 'A lista de grupos de área do ENEM não foi carregada.',
+  );
   /** "Tentar novamente" de cada lista: a guarda é o pendente dela, o mesmo do
    *  `aria-disabled` do botão. Quando a lista chega, o foco passa ao título da página. */
   private readonly novaTentativaDasAreas = focarAposNovaTentativa(
@@ -663,11 +673,21 @@ export class PesosEnemPage {
   protected readonly registros = signal<readonly PesoAreaEnemDto[]>([]);
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  /** Falhas seguidas da listagem (ver `AlertaNovaTentativaComponent.tentativasSemSucesso`). */
+  protected readonly falhasDaListagem = contadorDeFalhas();
+  private readonly novaTentativaDaListagem = focarAposNovaTentativa(
+    this.isLoading,
+    computed(() => Boolean(this.errorMessage())),
+    () => document.getElementById('cfg-pesos-enem-titulo'),
+  );
 
   /** Linhas de cada resolução, na ordem dos grupos da API — a mesma na leitura e na
    *  edição, para entrar em edição não reordenar as linhas na tela. */
   protected readonly porResolucao = computed(() =>
-    agruparPorResolucao(this.registros(), this.ordemDosGrupos()),
+    agruparPorResolucao(
+      this.registros().map((linha) => ({ ...linha, grupoCurso: this.catalogoGrupos.exibivel(linha.grupoCurso) })),
+      this.ordemDosGrupos(),
+    ),
   );
   protected readonly resolucoes = computed(() =>
     [...this.porResolucao().entries()]
@@ -693,10 +713,15 @@ export class PesosEnemPage {
     if (this.resolucoesExibiveis().length > 0) {
       return 'pronta';
     }
+    // A listagem falha já decide a tela: esperar as referências só manteria o skeleton
+    // ao lado do alerta.
+    if (this.errorMessage()) {
+      return 'erro';
+    }
     if (this.isLoading() || this.listaAreas.pendente() || this.catalogoGrupos.pendente()) {
       return 'carregando';
     }
-    if (this.errorMessage() !== null || this.listaAreas.falhou() || this.catalogoGrupos.falhou()) {
+    if (this.listaAreas.falhou() || this.catalogoGrupos.falhou()) {
       return 'erro';
     }
     return 'vazia';
@@ -839,9 +864,7 @@ export class PesosEnemPage {
   }
 
   protected tentarNovamente(): void {
-    if (!this.isLoading()) {
-      this.carregar();
-    }
+    this.novaTentativaDaListagem.executar(() => this.carregar(true));
   }
 
   protected tentarCarregarAreas(): void {
@@ -1377,17 +1400,39 @@ export class PesosEnemPage {
 
   // --- Carregamento -------------------------------------------------------
 
-  /** Exaustão de cursor (ADR-0015/0026). */
-  private carregar(): void {
+  /** Exaustão de cursor (ADR-0015/0026). Na tentativa do operador, o alerta da falha
+   *  anterior fica na tela até ela terminar, para não sair levando o botão com o foco; na
+   *  recarga automática ele sai logo, porque a falha é de outro momento. */
+  private carregar(pedidaPeloOperador = false): void {
     if (this.isLoading()) {
       return;
     }
+    const falhaRepetida = pedidaPeloOperador && this.errorMessage() !== null;
     this.isLoading.set(true);
-    this.errorMessage.set(null);
+    if (!falhaRepetida) {
+      this.errorMessage.set(null);
+    }
 
     let acumulado: PesoAreaEnemDto[] = [];
     let falhou: ProblemDetails | null = null;
     let paginas = 0;
+
+    const concluir = (semResposta: boolean): void => {
+      this.isLoading.set(false);
+      if (falhou === null && !semResposta) {
+        this.errorMessage.set(null);
+        this.falhasDaListagem.registrarSucesso();
+        this.registros.set(acumulado);
+        return;
+      }
+      this.errorMessage.set(
+        nullIfBlank(falhou === null ? null : this.problemI18n.resolve(falhou).title) ?? LISTAGEM_NAO_CARREGADA,
+      );
+      this.falhasDaListagem.registrarFalha(falhaRepetida);
+      if (falhou !== null && falhou.status >= 500) {
+        this.notifications.errorFromProblem(falhou);
+      }
+    };
 
     this.api
       .listar({ limit: PAGE_SIZE })
@@ -1412,17 +1457,16 @@ export class PesosEnemPage {
           }
           acumulado = [...acumulado, ...result.data];
         },
-        complete: () => {
-          this.isLoading.set(false);
-          if (falhou !== null) {
-            this.errorMessage.set(this.problemI18n.resolve(falhou).title);
-            if (falhou.status >= 500) {
-              this.notifications.errorFromProblem(falhou);
-            }
-            return;
+        // Erro fora do envelope ApiResult (ex.: de outro interceptor): também é falha,
+        // com alerta e nova tentativa, em vez de deixar a tela carregando.
+        error: (erro: unknown) => {
+          try {
+            this.errorHandler.handleError(erro);
+          } finally {
+            concluir(true);
           }
-          this.registros.set(acumulado);
         },
+        complete: () => concluir(false),
       });
   }
 

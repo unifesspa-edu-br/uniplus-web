@@ -11,6 +11,8 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { Observable, tap } from 'rxjs';
 
+import { contadorDeFalhas } from '../contador-de-falhas';
+
 /**
  * Lista de referência que a tela precisa para funcionar (vocabulário, áreas): carga,
  * falha com alerta e "Tentar novamente".
@@ -31,6 +33,10 @@ export interface ListaDeReferencia<T> extends LookupCompleto<T> {
    *  permissão) e a tela avisar o erro de servidor com o traceId; `null` quando a
    *  última tentativa deu certo ou falhou sem resposta da API. */
   readonly ultimoProblema: Signal<ProblemDetails | null>;
+  /** Falhas seguidas: 1 na falha que abre o alerta, mais uma a cada "Tentar novamente"
+   *  que falha de novo; 0 depois de uma carga com itens. Recarga automática que falha
+   *  recomeça em 1. */
+  readonly tentativasSemSucesso: Signal<number>;
   /** Busca na primeira vez e reaproveita o que já está em memória; depois de uma
    *  falha, tenta outra vez. */
   garantirCarregado(): void;
@@ -38,13 +44,26 @@ export interface ListaDeReferencia<T> extends LookupCompleto<T> {
   tentarDeNovo(): void;
 }
 
+/**
+ * @param utilizavel Item que a tela consegue usar. Os demais são descartados na chegada,
+ *   e uma resposta sem nenhum item utilizável conta como lista vazia (falha de carga).
+ */
 export function listaDeReferencia<T>(
   listar: (cursor?: Cursor) => Observable<ApiResult<readonly T[]>>,
   destroyRef: DestroyRef,
+  utilizavel: (item: T) => boolean = () => true,
 ): ListaDeReferencia<T> {
   /** A última lista completa com itens: continua valendo se a recarga voltar vazia. */
   const ultimaUtil = signal<readonly T[]>([]);
   const ultimoProblema = signal<ProblemDetails | null>(null);
+  const falhas = contadorDeFalhas();
+  let iniciado = false;
+  /** A tentativa em curso foi pedida pelo operador em "Tentar novamente". */
+  const doOperador = signal(false);
+  /** O alerta que estava na tela quando o operador pediu a tentativa em curso. */
+  const falhaAntesDaTentativa = signal(false);
+  const registrarFalha = (): void =>
+    falhas.registrarFalha(untracked(doOperador) && untracked(falhaAntesDaTentativa));
   /** Itens das páginas da tentativa em curso, até a última chegar. */
   let coletados: readonly T[] = [];
   const lookup = lookupCompleto<T>(
@@ -57,33 +76,39 @@ export function listaDeReferencia<T>(
           next: (resultado) => {
             if (!resultado.ok) {
               ultimoProblema.set(resultado.problem);
+              registrarFalha();
               return;
             }
             ultimoProblema.set(null);
-            coletados = [...coletados, ...resultado.data];
+            coletados = [...coletados, ...resultado.data.filter(utilizavel)];
             const ultimaPagina = extractNextCursor(resultado.headers.get('Link')) === null;
-            if (ultimaPagina && coletados.length > 0) {
+            if (!ultimaPagina) {
+              return;
+            }
+            if (coletados.length > 0) {
               ultimaUtil.set(coletados);
+              falhas.registrarSucesso();
+            } else {
+              registrarFalha();
             }
           },
-          error: () => ultimoProblema.set(null),
+          error: () => {
+            ultimoProblema.set(null);
+            registrarFalha();
+          },
         }),
       );
     },
     destroyRef,
   );
-  let iniciado = false;
-  /** A tentativa em curso foi pedida pelo operador em "Tentar novamente". */
-  const doOperador = signal(false);
-  /** O alerta que estava na tela quando o operador pediu a tentativa em curso. */
-  const falhaAntesDaTentativa = signal(false);
 
+  const atuais = computed(() => lookup.opcoes().filter(utilizavel));
   /** Os itens da última lista utilizável: a recusa mantém os anteriores (`lookupCompleto`
    *  não os limpa), e a resposta vazia também. */
-  const opcoes = computed(() => (lookup.opcoes().length > 0 ? lookup.opcoes() : ultimaUtil()));
+  const opcoes = computed(() => (atuais().length > 0 ? atuais() : ultimaUtil()));
   /** `true` quando a última tentativa não trouxe itens: recusada, com erro ou vazia. */
   const comErro = computed(
-    () => lookup.comErro() || (!lookup.pendente() && lookup.opcoes().length === 0),
+    () => lookup.comErro() || (!lookup.pendente() && atuais().length === 0),
   );
   const falhou = computed(() => {
     if (lookup.pendente()) {
@@ -105,6 +130,7 @@ export function listaDeReferencia<T>(
     comErro,
     falhou,
     ultimoProblema: ultimoProblema.asReadonly(),
+    tentativasSemSucesso: falhas.valor,
     garantirCarregado: () => {
       if (iniciado && untracked(lookup.pendente)) {
         // Uma tela nova pede a lista enquanto corre o "Tentar novamente" de outra: para
