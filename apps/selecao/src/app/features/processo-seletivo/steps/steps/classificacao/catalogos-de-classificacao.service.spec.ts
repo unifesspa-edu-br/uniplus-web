@@ -38,7 +38,7 @@ function regra(codigo: string, tipo: string): RegraCatalogoDto {
 const POR_TIPO: Record<string, readonly RegraCatalogoDto[]> = {
   regra_calculo: [regra('FORMULA-MEDIA-PONDERADA', 'regra_calculo')],
   regra_arredondamento: [regra('ARRED-TRUNCAR', 'regra_arredondamento')],
-  regra_ordem_alocacao: [regra('ALOCACAO-OPCOES-RN04', 'regra_ordem_alocacao')],
+  regra_ordem_alocacao: [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'regra_ordem_alocacao')],
   regra_eliminacao: [regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao')],
   regra_bonus: [regra('BONUS-MULTIPLICATIVO', 'regra_bonus')],
   criterio_desempate: [regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate')],
@@ -100,7 +100,7 @@ describe('CatalogosDeClassificacaoService', () => {
 
     expect(servico.regrasCalculo().map((r) => r.codigo)).toEqual(['FORMULA-MEDIA-PONDERADA']);
     expect(servico.regrasArredondamento().map((r) => r.codigo)).toEqual(['ARRED-TRUNCAR']);
-    expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual(['ALOCACAO-OPCOES-RN04']);
+    expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual(['ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA']);
     expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIM-ZERO-EM-AREA']);
     expect(servico.regrasBonus().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
     expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE-MAIOR-IDADE']);

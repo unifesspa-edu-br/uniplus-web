@@ -67,7 +67,7 @@ describe('FormulaStepComponent', () => {
   it('sob classificação importada, não exige arredondamento nem casas', () => {
     componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
     store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
     });
@@ -78,7 +78,7 @@ describe('FormulaStepComponent', () => {
   it('sob fórmula local, exige regra de arredondamento e casas maior que zero', () => {
     componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
     store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
     });
@@ -94,7 +94,7 @@ describe('FormulaStepComponent', () => {
   it('recusa número de opções de alocação diferente de 1 ou 2', () => {
     componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
     store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '3',
     });

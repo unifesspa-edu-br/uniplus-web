@@ -24,7 +24,7 @@ function classificacaoBase(): WizardDraft['classificacao'] {
     regraArredondamentoCodigo: '',
     regraArredondamentoVersao: '',
     casasArredondamento: '',
-    regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+    regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     regraOrdemAlocacaoVersao: '1.0',
     nOpcoesAlocacao: '2',
     baseadoEmEnem: false,
@@ -299,7 +299,7 @@ describe('mensagensDeClassificacaoBase', () => {
     regraArredondamentoCodigo: 'ARRED-TRUNCAR',
     regraArredondamentoVersao: '1.0',
     casasArredondamento: '2',
-    regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+    regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     regraOrdemAlocacaoVersao: '1.0',
     nOpcoesAlocacao: '2',
   });
