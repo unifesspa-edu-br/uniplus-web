@@ -359,6 +359,93 @@ describe('OfertasCursoPage', () => {
     expect(texto).not.toContain('EXTENSIVO');
   });
 
+  it('CA-01/CA-02: o campo oferece Alternância Pedagógica sem remover Intensivo e Extensivo', async () => {
+    await flushCargaInicial([]);
+    component['abrirCadastro']();
+    await flushUnidades();
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector(
+      'select[formControlName="regimeDeFuncionamento"]',
+    ) as HTMLSelectElement;
+    const opcoes = Array.from(select.options).map((o) => [o.value, o.textContent?.trim()]);
+    expect(opcoes).toEqual([
+      ['INTENSIVO', 'Intensivo'],
+      ['EXTENSIVO', 'Extensivo'],
+      ['ALTERNANCIA_PEDAGOGICA', 'Alternância Pedagógica'],
+    ]);
+  });
+
+  it('CA-09: a listagem mostra Alternância Pedagógica por rótulo, não pelo token', async () => {
+    const oferta: OfertaCursoDto = {
+      ...ofertaSeed,
+      regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
+    };
+    await flushCargaInicial([oferta]);
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.textContent as string;
+    expect(texto).toContain('Alternância Pedagógica');
+    expect(texto).not.toContain('ALTERNANCIA_PEDAGOGICA');
+  });
+
+  it.each(['REGULAR', 'INTEGRAL'])(
+    'CA-03/CA-07: cria oferta em ALTERNANCIA_PEDAGOGICA com regime de turno %s',
+    async (regimeDeTurno) => {
+      await flushCargaInicial([]);
+      component['abrirCadastro']();
+      await flushUnidades();
+
+      component['form'].patchValue({
+        cursoId: CURSO_ID,
+        localOfertaId: LOCAL_ID,
+        unidadeOfertanteOrigemId: UNIDADE_ID,
+        programaDeOferta: 'REGULAR',
+        formatoPedagogico: 'PRESENCIAL',
+        regimeDeTurno,
+        regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
+      });
+      component['alternarTurno']('MATUTINO');
+      if (regimeDeTurno === 'INTEGRAL') component['alternarTurno']('VESPERTINO');
+      await propagate();
+
+      expect(component['erroDoCampo']('regimeDeFuncionamento')).toBeNull();
+      component['salvar']();
+
+      const post = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`);
+      expect(post.request.body).toMatchObject({
+        regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
+        regimeDeTurno,
+      });
+      post.flush(OFERTA_ID, { status: 201, statusText: 'Created' });
+      await flushRecarregarLista([ofertaSeed]);
+    },
+  );
+
+  it('CA-04/CA-05/CA-08: edição preserva ALTERNANCIA_PEDAGOGICA selecionada e não mexe em turno', async () => {
+    const oferta: OfertaCursoDto = {
+      ...ofertaSeed,
+      regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
+    };
+    await flushCargaInicial([oferta]);
+    component['abrirEdicao'](oferta);
+    await propagate();
+
+    expect(component['form'].controls.regimeDeFuncionamento.value).toBe('ALTERNANCIA_PEDAGOGICA');
+
+    component['form'].controls.regimeDeFuncionamento.setValue('EXTENSIVO');
+    component['form'].controls.regimeDeFuncionamento.setValue('ALTERNANCIA_PEDAGOGICA');
+    await propagate();
+    expect(component['form'].controls.regimeDeTurno.value).toBe('REGULAR');
+    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO']);
+
+    component['salvar']();
+    const put = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
+    expect(put.request.body.regimeDeFuncionamento).toBe('ALTERNANCIA_PEDAGOGICA');
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([oferta]);
+  });
+
   it('CA-06: programa REGULAR não exige base legal; programa != REGULAR exige', async () => {
     await flushCargaInicial([]);
     component['abrirCadastro']();
