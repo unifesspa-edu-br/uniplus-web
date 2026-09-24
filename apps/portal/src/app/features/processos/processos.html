@@ -134,12 +134,12 @@
         <li class="edital-row">
           <div class="edital-row__body">
             <div class="edital-row__head">
-              <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
-                {{ statusLabel(certame.situacao) }}
-              </ui-tag>
               @if (certame.numero) {
                 <span class="card__meta">{{ certame.numero }}</span>
               }
+              <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
+                {{ statusLabel(certame.situacao) }}
+              </ui-tag>
               <ui-tag>{{ certame.tipoProcesso.nome }}</ui-tag>
             </div>
             <h3 class="edital-row__title">{{ certame.nome }}</h3>
@@ -148,12 +148,27 @@
               <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
             </div>
           </div>
-          <div class="edital-row__actions">
-            <a class="btn btn--primary" routerLink="/inscricao">
-              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-              Inscrever-me
-            </a>
+          <div class="edital-row__actions certame-acoes">
+            @if (editalDe(certame); as edital) {
+              <a
+                class="certame-edital-link"
+                [routerLink]="['/publicacoes', edital.publicacaoId, 'eventos', edital.evento.id, 'documento']"
+                target="_blank"
+                rel="noopener"
+              >
+                Ler o edital de abertura
+                <span class="sr-only">(abre em nova aba)</span>
+              </a>
+            }
+            <a class="btn btn--primary" routerLink="/inscricao">Entre e inscreva-se</a>
           </div>
+          <ptl-certame-publicacoes
+            class="edital-row__publicacoes"
+            [certameId]="certame.processoSeletivoId"
+            [publicacao]="publicacaoDe(certame)"
+            [carregando]="publicacoesCarregando()"
+            [erro]="publicacoesComErro()"
+          />
         </li>
       }
     </ul>
@@ -162,25 +177,40 @@
       @for (certame of certames(); track certame.processoSeletivoId) {
         <article class="card">
           <div class="card__header">
-            <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
-              {{ statusLabel(certame.situacao) }}
-            </ui-tag>
             @if (certame.numero) {
               <span class="card__meta">{{ certame.numero }}</span>
             }
+            <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
+              {{ statusLabel(certame.situacao) }}
+            </ui-tag>
           </div>
           <h3 class="card__title">{{ certame.nome }}</h3>
           <div class="edital-row__meta">
             <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
             <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
           </div>
+          @if (editalDe(certame); as edital) {
+            <a
+              class="certame-edital-link"
+              [routerLink]="['/publicacoes', edital.publicacaoId, 'eventos', edital.evento.id, 'documento']"
+              target="_blank"
+              rel="noopener"
+            >
+              Ler o edital de abertura
+              <span class="sr-only">(abre em nova aba)</span>
+            </a>
+          }
           <div class="card__footer">
             <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
-            <a class="btn btn--primary btn--sm" routerLink="/inscricao">
-              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-              Inscrever-me
-            </a>
+            <a class="btn btn--primary btn--sm" routerLink="/inscricao">Entre e inscreva-se</a>
           </div>
+          <ptl-certame-publicacoes
+            class="edital-row__publicacoes"
+            [certameId]="certame.processoSeletivoId"
+            [publicacao]="publicacaoDe(certame)"
+            [carregando]="publicacoesCarregando()"
+            [erro]="publicacoesComErro()"
+          />
         </article>
       }
     </div>

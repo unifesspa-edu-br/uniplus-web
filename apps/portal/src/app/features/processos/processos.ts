@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
 import {
   ApiResult,
   Cursor,
@@ -43,6 +43,14 @@ import {
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+
+import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
+import {
+  eventoDoEditalDeAbertura,
+  type EventoHistoricoPublicacao,
+  type Publicacao,
+} from '../publicacoes/publicacoes.model';
+import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
 
 type VisaoCertames = 'lista' | 'cards';
 
@@ -116,6 +124,12 @@ interface ContadoresSituacao {
   readonly [situacao: string]: number | undefined;
 }
 
+/** Publicações dos certames da página atual — `carregando` enquanto a consulta não voltou. */
+type PublicacoesDaPagina =
+  | { readonly status: 'carregando' }
+  | { readonly status: 'erro' }
+  | { readonly status: 'ok'; readonly porCertame: ReadonlyMap<string, Publicacao> };
+
 const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
   { value: 'lista', label: 'Lista', icon: 'pi-list' },
   { value: 'cards', label: 'Cards', icon: 'pi-th-large' },
@@ -175,6 +189,7 @@ function numeroDoHeader(
     RouterOutlet,
     DateBrPipe,
     AlertComponent,
+    CertamePublicacoesComponent,
     EmptyStateComponent,
     FilterBarComponent,
     FilterChipsComponent,
@@ -192,6 +207,7 @@ export class ProcessosComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(SELECAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly publicacoesRepository = inject(PublicacoesRepository);
 
   protected readonly viewOptions = VIEW_OPTIONS;
   protected readonly passos = PASSOS;
@@ -294,6 +310,29 @@ export class ProcessosComponent {
     },
   });
 
+  /**
+   * Publicações (linha do tempo do accordion "Ver publicações" e link do edital
+   * de abertura) dos certames da página, numa única consulta por página. Uma
+   * falha aqui não derruba a vitrine: só o accordion avisa, ao ser aberto.
+   */
+  private readonly publicacoes = toSignal<PublicacoesDaPagina, PublicacoesDaPagina>(
+    toObservable(this.certames).pipe(
+      switchMap((certames) =>
+        this.publicacoesRepository.buscarPorCertames(certames).pipe(
+          map((porCertame): PublicacoesDaPagina => ({ status: 'ok', porCertame })),
+          catchError(() => of<PublicacoesDaPagina>({ status: 'erro' })),
+          startWith<PublicacoesDaPagina>({ status: 'carregando' }),
+        ),
+      ),
+    ),
+    { initialValue: { status: 'carregando' } },
+  );
+
+  protected readonly publicacoesCarregando = computed(
+    () => this.publicacoes().status === 'carregando',
+  );
+  protected readonly publicacoesComErro = computed(() => this.publicacoes().status === 'erro');
+
   protected readonly statusChips = computed<readonly UiFilterChipOption[]>(() => {
     const contadores = this.contadores();
     return SITUACOES_EXIBIDAS.map((situacao) => ({
@@ -368,6 +407,20 @@ export class ProcessosComponent {
 
   protected statusVariant(situacao: SituacaoDoCertame): UiTagVariant {
     return SITUACAO_VARIANT[situacao];
+  }
+
+  protected publicacaoDe(certame: CertameNaVitrineDto): Publicacao | undefined {
+    const atual = this.publicacoes();
+    return atual.status === 'ok' ? atual.porCertame.get(certame.processoSeletivoId) : undefined;
+  }
+
+  /** Alvo do link "Ler o edital de abertura" — ausente até a publicação chegar ou se não houver edital. */
+  protected editalDe(
+    certame: CertameNaVitrineDto,
+  ): { readonly publicacaoId: string; readonly evento: EventoHistoricoPublicacao } | null {
+    const publicacao = this.publicacaoDe(certame);
+    const evento = eventoDoEditalDeAbertura(publicacao);
+    return publicacao && evento ? { publicacaoId: publicacao.id, evento } : null;
   }
 
   /** `totalDeVagas` chega como `number | string` (contrato usa `pattern` no int32). */

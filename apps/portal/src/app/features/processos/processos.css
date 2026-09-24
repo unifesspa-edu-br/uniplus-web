@@ -123,6 +123,54 @@
   display: grid;
   gap: var(--space-5);
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* Abrir "Ver publicações" num card não estica os vizinhos da mesma linha. */
+  align-items: start;
+}
+
+/* Ações do item de lista: "Ler o edital de abertura" acima do botão de inscrição. */
+.certame-acoes {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+  .certame-acoes {
+    align-items: flex-end;
+  }
+}
+
+/* Sublinhado: link nu no meio de texto não pode depender só da cor (WCAG 1.4.1). */
+.certame-edital-link {
+  /* Âncora do `.sr-only` ("abre em nova aba"): é `position: absolute`, e sem um
+     ancestral posicionado ele ancora na página — abaixo da dobra, estende a
+     altura do documento e aparece uma rolagem vertical da página inteira. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.certame-edital-link:hover {
+  color: var(--text-on-primary-tint);
+}
+
+.certame-edital-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Accordion "Ver publicações": ocupa a largura toda do item (na lista, a linha
+   abaixo das duas colunas do grid) e é separado do resto por um filete. */
+.edital-row__publicacoes {
+  grid-column: 1 / -1;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ── Seção "Como funciona" ───────────────────────────────────────── */

@@ -1,47 +1,67 @@
-/* ── Detalhe de publicação (menu Publicações — Tela 2) ────────────────── */
+/* ── Accordion "Ver publicações" de um item de Editais ────────────────── */
 
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
-  min-height: 0;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
-.publicacao-voltar {
+/* Botão com cara de link (como no desenho): sublinhado para não depender só da
+   cor (WCAG 1.4.1) e alvo de toque mínimo. */
+.publicacoes-toggle {
   align-self: flex-start;
-}
-
-.publicacao-meta {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
 }
 
-.publicacao-desc {
-  margin: 0;
-  max-width: 68ch;
-  color: var(--text-secondary);
-  line-height: var(--leading-relaxed);
+.publicacoes-toggle__label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
-.publicacao-loading {
+.publicacoes-toggle:hover {
+  color: var(--text-on-primary-tint);
+}
+
+.publicacoes-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.publicacoes-toggle__icon {
+  font-size: var(--text-sm);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.publicacoes-toggle[aria-expanded='true'] .publicacoes-toggle__icon {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publicacoes-toggle__icon {
+    transition: none;
+  }
+}
+
+.publicacoes-loading {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-6);
+  padding: var(--space-4);
   color: var(--text-secondary);
   font-size: var(--text-sm);
-}
-
-.publicacao-retry {
-  display: inline-flex;
-}
-
-.publicacao-historico {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }
 
 /* Linha do tempo: mesmo padrão do wizard (step-rail) — marcador verde nos passos
@@ -152,6 +172,9 @@
 }
 
 .publicacao-timeline__link {
+  /* Âncora do `.sr-only` ("abre em nova aba") — sem ela o texto oculto ancora na
+     página e estende a rolagem do documento. */
+  position: relative;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
