@@ -1,0 +1,140 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Olá, {{ nomeUsuario() }}</h1>
+    <p class="page-header__desc">Aqui você acompanha todas as suas inscrições.</p>
+  </div>
+</div>
+
+<div class="inscricoes-toolbar">
+  <!--
+    A região viva fica sempre no DOM e só o conteúdo muda: removê-la e recriá-la
+    a cada estado faz o leitor de tela perder o anúncio.
+  -->
+  <span class="inscricoes-contagem-mensagem" role="status" aria-live="polite">
+    @if (loading()) {
+      Carregando inscrições…
+    } @else if (!errorMessage()) {
+      {{ inscricoesFiltradas().length }}
+      {{ inscricoesFiltradas().length === 1 ? 'inscrição nesta página' : 'inscrições nesta página' }}
+    }
+  </span>
+  @if (!isCompacto()) {
+    <ui-segmented
+      accessibleName="Alternar entre lista e cards"
+      [choices]="viewOptions"
+      [selectedValue]="visao()"
+      (selectedValueChange)="setVisao($event)"
+    />
+  }
+</div>
+
+<ui-filter-bar
+  ariaLabel="Filtrar inscrições"
+  searchPlaceholder="Buscar por nome..."
+  searchAriaLabel="Buscar inscrições"
+  [(searchValue)]="termoBusca"
+>
+  <button
+    uiFilterBarActions
+    type="button"
+    class="btn btn--tertiary btn--sm btn--rect"
+    (click)="limparFiltros()"
+  >
+    Limpar
+  </button>
+</ui-filter-bar>
+
+@if (errorMessage(); as mensagem ) {
+  <ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
+    {{ mensagem }}
+    <div class="ptl-inscricao__retry">
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        [disabled]="loading()"
+        (click)="tentarNovamente()"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  </ui-alert>
+} @else if (loading()) {
+  <div class="certames-loading" role="status">
+    <ui-spinner spinnerSize="sm" accessibleName="Carregando inscrições" />
+    Carregando inscrições...
+  </div>
+} @else if (lista().length > 0) {
+    @if (visaoEfetiva() === 'lista') {
+      <ul class="inscricao-lista" role="list">
+        @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
+          <li class="edital-row inscricao-lista-item">
+            <div class="inscricao-lista-item__cabecalho">
+              <span class="ptl-meta">
+                {{ inscricao.editalLabel }}
+              </span>
+              <ui-tag
+                [dot]="true"
+                [variant]="exibeInscricaoStatusVariantLabel(inscricao.status)"
+              >
+                {{ exibeInscricaoStatusLabel(inscricao.status) }}
+              </ui-tag>
+            </div>
+            <div class="inscricao-lista-item__corpo">
+              <h3 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h3>
+              <p>{{ inscricao.mensagem }}</p>
+            </div>
+            <div class="inscricao-lista-item__rodape">
+              <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
+              @let botaoInfo = obterBotaoInfo(inscricao.status);
+              <button
+                type="button"
+                [class]="'btn ' + botaoInfo.className"
+              >
+                {{ botaoInfo.label }}
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+    @else {
+      <div class="inscricoes-grid">
+        @for(inscricao of inscricoesFiltradas(); track inscricao.id) {
+          <article class="card">
+            <div class="card__header">
+              <ui-tag
+                [dot]="true"
+                [variant]="exibeInscricaoStatusVariantLabel(inscricao.status)"
+              >
+                {{ exibeInscricaoStatusLabel(inscricao.status) }}
+              </ui-tag>
+              <span class="ptl-meta">
+                {{ inscricao.editalLabel }}
+              </span>
+            </div>
+            <h3 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h3>
+            <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
+            <div class="card__footer">
+              @let botaoInfo = obterBotaoInfo(inscricao.status);
+              <button
+                type="button"
+                [class]="'btn ' + botaoInfo.className"
+              >
+                {{ botaoInfo.label }}
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+} @else if (temFiltrosAtivos()) {
+  <ui-empty-state
+    heading="Nenhuma inscrição encontrada."
+    description="Ajuste a busca ou limpe os filtros para ver todos os certames."
+  />
+} @else {
+  <ui-empty-state
+    heading="Não há inscrições cadastradas."
+    description="Inicie uma inscrição para exibi-las aqui."
+  />
+}
