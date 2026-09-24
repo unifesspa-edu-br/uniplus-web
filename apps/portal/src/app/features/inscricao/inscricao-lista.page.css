@@ -1,0 +1,119 @@
+.inscricao-corpo-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.titulo-inscricao {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  margin: var(--space-2) 0;
+}
+
+.inscricoes-toolbar,
+.inscricao-row__body  {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.inscricoes-contagem-mensagem {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.inscricao-spinner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.inscricao-lista {}
+
+.inscricao-lista-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.inscricao-lista-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-1);
+}
+
+.inscricao-lista-item + .inscricao-lista-item {
+  margin-top: var(--space-4);
+}
+
+.inscricao-lista-item__cabecalho {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inscricao-lista-item__corpo {
+  margin: 0;
+  padding: var(--space-4) var(--space-1);
+}
+
+.inscricao-lista-item__titulo {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  margin: var(--space-2) var(--space-0);
+  line-height: var(--leading-snug);
+  flex: 1 1 100%;
+}
+
+.inscricao-lista-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.inscricao-lista-item__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inscricao-lista-item__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .inscricao-lista-item {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  .inscricao-lista-item__actions {
+    justify-content: flex-end;
+  }
+}
+
+.inscricao-lista-item__rodape2 {
+  justify-content: flex-end;
+  padding: var(--space-2) 0;
+}
