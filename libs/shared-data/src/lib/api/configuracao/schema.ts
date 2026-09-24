@@ -9551,6 +9551,7 @@ export interface components {
             readonly ativo: boolean;
             readonly admitePontuacao: boolean;
             readonly admiteEliminacao: boolean;
+            readonly notaDeOrigemNoEnem: boolean;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {

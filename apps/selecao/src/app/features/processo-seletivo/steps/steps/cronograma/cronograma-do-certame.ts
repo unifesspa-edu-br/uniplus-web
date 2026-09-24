@@ -364,6 +364,77 @@ export interface TipoDeEtapaDoCatalogo {
   readonly nome: string;
   readonly admitePontuacao: boolean;
   readonly admiteEliminacao: boolean;
+  readonly notaDeOrigemNoEnem: boolean;
+}
+
+/**
+ * A etapa traz a nota do ENEM do candidato, em vez de uma nota lançada por banca.
+ *
+ * Quem diz é o atributo do tipo, nunca o código: um código na tela envelheceria no dia em
+ * que o cadastro ganhasse outro tipo com a mesma natureza. Na etapa gravada vale o que o
+ * processo congelou, enquanto ela aponta para o mesmo tipo; trocar o tipo desfaz o vínculo,
+ * e aí o que vale é o cadastro do tipo novo.
+ */
+export function declaraNotaDoEnem(
+  etapa: Pick<EtapaPontuada, 'tipoEtapaOrigemId' | 'tipoCongelado'>,
+  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
+): boolean {
+  const congelado = etapa.tipoCongelado;
+  if (congelado != null && congelado.origemId === etapa.tipoEtapaOrigemId) {
+    return congelado.notaDeOrigemNoEnem;
+  }
+  return tipoDoCadastro?.notaDeOrigemNoEnem ?? false;
+}
+
+/**
+ * A etapa de nota do ENEM sempre compõe a média, e a nota dela é calculada, não julgada:
+ * não tem banca, não publica ato próprio, não abre janela própria e só admite recurso
+ * contado da ciência do candidato, porque não há publicação da qual contar.
+ */
+function problemasDaEtapaDeNotaDoEnem(etapa: EtapaPontuada): readonly string[] {
+  const nome = etapa.nome.trim();
+  const problemas: string[] = [];
+  if (etapa.carater === 'eliminatoria' || (etapa.carater !== '' && !componeNota(etapa))) {
+    problemas.push(
+      `A etapa de nota do ENEM "${nome}" compõe a nota final: precisa ser classificatória (ou ambas) e ter peso maior que zero.`,
+    );
+  }
+  const julgada =
+    etapa.bancas.length > 0 ||
+    etapa.produtos.length > 0 ||
+    etapa.inicio !== '' ||
+    etapa.fim !== '' ||
+    etapa.recursos.some((recurso) => recurso.ancora !== 'cienciaIndividual');
+  if (julgada) {
+    problemas.push(
+      `A etapa de nota do ENEM "${nome}" tem a nota calculada: não declara banca, publicação, janela própria nem recurso contado de publicação.`,
+    );
+  }
+  return problemas;
+}
+
+/**
+ * Texto próprio das recusas do servidor à etapa de nota do ENEM, que o título genérico não
+ * orienta: cada um diz o que corrigir no passo.
+ */
+const RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM: ReadonlyMap<string, string> = new Map([
+  [
+    'uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota',
+    'A etapa de nota do ENEM compõe a média: declare caráter classificatória (ou ambas) e um peso maior que zero.',
+  ],
+  [
+    'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
+    'A etapa de nota do ENEM não admite banca: a nota é calculada, e quem julga o recurso é declarado na fase de recursos.',
+  ],
+  [
+    'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
+    'A etapa de nota do ENEM não publica ato nem abre recurso contado de publicação: o resultado sai pela fase, e na etapa cabe só o recurso contado da ciência do candidato.',
+  ],
+]);
+
+/** O texto da recusa à etapa de nota do ENEM, ou `null` quando a recusa é outra. */
+export function recusaDaEtapaDeNotaDoEnem(codigo: string): string | null {
+  return RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM.get(codigo) ?? null;
 }
 
 export function componeNota(etapa: EtapaPontuada): boolean {
@@ -599,6 +670,11 @@ function problemasDasEtapas(
         `O tipo ${tipo.nome} não elimina candidato: a etapa "${etapa.nome.trim()}" não pode ter caráter que reprova.`,
       );
     }
+  }
+
+  for (const etapa of etapas) {
+    if (!declaraNotaDoEnem(etapa, tipoDaEtapa(etapa.tipoEtapaOrigemId))) continue;
+    problemas.push(...problemasDaEtapaDeNotaDoEnem(etapa));
   }
 
   if (repetidos(etapas.map((etapa) => etapa.ordem)).length > 0) {

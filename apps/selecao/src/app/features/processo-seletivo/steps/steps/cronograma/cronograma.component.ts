@@ -63,7 +63,9 @@ import {
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
   componeNota,
+  declaraNotaDoEnem,
   descreverFase,
+  recusaDaEtapaDeNotaDoEnem,
   problemasDoCronograma,
   renumerar,
   type DescricaoDaFase,
@@ -661,13 +663,16 @@ export class CronogramaStepComponent {
     const tipo = this.catalogos.tipoEtapaPorId().get(grupo.controls.tipoEtapaOrigemId.value);
 
     // Sem tipo escolhido não há o que restringir: a etapa ainda não disse de que natureza é.
+    // A etapa de nota do ENEM sempre compõe a média: puramente eliminatória, ela ficaria
+    // fora do divisor, e a nota que ela traz não pesaria em nada.
+    const notaDoEnem = this.etapaDeNotaDoEnem(grupo);
     const admitidos: readonly { valor: string; rotulo: string }[] =
       tipo === undefined
         ? CARATERES
         : CARATERES.filter(
             (opcao) =>
               (opcao.valor === 'classificatoria' && tipo.admitePontuacao) ||
-              (opcao.valor === 'eliminatoria' && tipo.admiteEliminacao) ||
+              (opcao.valor === 'eliminatoria' && tipo.admiteEliminacao && !notaDoEnem) ||
               (opcao.valor === 'ambas' && tipo.admitePontuacao && tipo.admiteEliminacao),
           );
 
@@ -686,10 +691,35 @@ export class CronogramaStepComponent {
   /**
    * Troca o tipo da etapa. Não mexe no caráter de propósito: se o tipo novo não o admitir, ele
    * permanece visível e marcado por `caracteresPara`, e a recusa vem na gravação com o motivo.
+   * O que some da tela com o tipo novo, esse sim é descartado, porque não fica visível para
+   * ser corrigido.
    */
   escolherTipoEtapa(grupo: FormGroup<EtapaForm>, tipoEtapaOrigemId: string): void {
     grupo.controls.tipoEtapaOrigemId.setValue(tipoEtapaOrigemId);
+    if (this.etapaDeNotaDoEnem(grupo)) this.descartarOQueANotaDoEnemNaoTem(grupo);
     this.versaoDoFormulario.update((versao) => versao + 1);
+  }
+
+  /** A nota da etapa vem do ENEM do candidato — é calculada, não lançada por banca. */
+  etapaDeNotaDoEnem(grupo: FormGroup<EtapaForm>): boolean {
+    this.versaoDoFormulario();
+    const etapa = grupo.getRawValue();
+    return declaraNotaDoEnem(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
+  }
+
+  /**
+   * Banca, publicação, janela própria e recurso contado de publicação somem da tela da
+   * etapa de nota do ENEM. Ficar com o que já estava declarado seria mandar ao servidor, a
+   * cada gravação, o que ninguém vê e ele recusa.
+   */
+  private descartarOQueANotaDoEnemNaoTem(grupo: FormGroup<EtapaForm>): void {
+    grupo.controls.bancas.setValue([]);
+    grupo.controls.produtos.setValue([]);
+    grupo.controls.inicio.setValue('');
+    grupo.controls.fim.setValue('');
+    grupo.controls.recursos.setValue(
+      grupo.controls.recursos.value.filter((recurso) => recurso.ancora === 'cienciaIndividual'),
+    );
   }
 
   /**
@@ -979,11 +1009,15 @@ export class CronogramaStepComponent {
    */
   acrescentarRecursoNaEtapa(grupo: FormGroup<EtapaForm>): void {
     const preliminar = grupo.controls.produtos.value.find((p) => p.papel === PAPEL_PRELIMINAR);
-    const regra = this.regraDoCatalogo('atoPublicado');
+    // A etapa de nota do ENEM não publica ato: o único relógio é a ciência do candidato.
+    const ancora: RecursoDaEtapa['ancora'] = this.etapaDeNotaDoEnem(grupo)
+      ? 'cienciaIndividual'
+      : 'atoPublicado';
+    const regra = this.regraDoCatalogo(ancora);
     this.escreverRecursos(grupo, [
       ...grupo.controls.recursos.value,
       {
-        ancora: 'atoPublicado',
+        ancora,
         regraCodigo: regra?.codigo ?? '',
         regraVersao: regra?.versao ?? '',
         prazoValor: '',
@@ -1226,7 +1260,10 @@ export class CronogramaStepComponent {
       if (!gravacaoDeEtapas.ok) {
         return {
           valid: false,
-          messages: [this.problemI18n.resolve(gravacaoDeEtapas.problem).title],
+          messages: [
+            recusaDaEtapaDeNotaDoEnem(gravacaoDeEtapas.problem.code) ??
+              this.problemI18n.resolve(gravacaoDeEtapas.problem).title,
+          ],
         };
       }
 
