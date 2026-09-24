@@ -63,7 +63,7 @@
     <ui-spinner spinnerSize="sm" accessibleName="Carregando inscrições" />
     Carregando inscrições...
   </div>
-} @else if (lista().length > 0) {
+} @else if (inscricoesFiltradas().length > 0) {
     @if (visaoEfetiva() === 'lista') {
       <ul class="inscricao-lista" role="list">
         @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
@@ -130,7 +130,7 @@
 } @else if (temFiltrosAtivos()) {
   <ui-empty-state
     heading="Nenhuma inscrição encontrada."
-    description="Ajuste a busca ou limpe os filtros para ver todos os certames."
+    description="Ajuste a busca ou limpe os filtros para ver todos as inscrições."
   />
 } @else {
   <ui-empty-state
