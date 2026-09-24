@@ -123,7 +123,7 @@ describe('EliminacaoStepComponent', () => {
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
       regraArredondamentoVersao: '1.0',
       casasArredondamento: '2',
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
       baseadoEmEnem: false,
@@ -150,7 +150,7 @@ describe('EliminacaoStepComponent', () => {
     store.patchObjectSection('classificacao', {
       regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
       regraCalculoVersao: '1.0',
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
     });

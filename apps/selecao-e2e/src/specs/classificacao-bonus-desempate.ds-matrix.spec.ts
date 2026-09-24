@@ -34,7 +34,7 @@ const REGRAS_CALCULO = [
 const REGRAS_ARREDONDAMENTO = [
   regra('ARRED-TRUNCAR', 'regra_arredondamento', 'Edital padrão PSIQ'),
 ];
-const REGRAS_ORDEM_ALOCACAO = [regra('ALOCACAO-OPCOES-RN04', 'regra_ordem_alocacao', 'RN04')];
+const REGRAS_ORDEM_ALOCACAO = [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'regra_ordem_alocacao', 'UNI-REQ-0045 — processamento da 1ª opção antes da 2ª')];
 const REGRAS_ELIMINACAO = [
   regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
   regra('ELIM-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
@@ -335,7 +335,7 @@ async function declararFormulaLocal(page: Page): Promise<void> {
   await page.getByLabel('Casas decimais', { exact: true }).fill('2');
   await page
     .getByLabel('Ordem de alocação', { exact: true })
-    .selectOption('ALOCACAO-OPCOES-RN04|1.0');
+    .selectOption('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA|1.0');
   await page.getByLabel('Número de opções de curso', { exact: true }).selectOption('2');
 }
 
