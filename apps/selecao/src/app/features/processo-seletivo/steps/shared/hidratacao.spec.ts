@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { WizardDraft } from '../processo-seletivo.models';
+import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 import { hidratarDraft } from './hidratacao';
 
 /** Só o que `hidratarDraft` lê; o resto do rascunho não participa. */
@@ -371,6 +372,8 @@ const CLASSIFICACAO = {
   nOpcoesAlocacao: 2,
   baseadoEmEnem: false,
   concorrenciaDuplaAplicavel: false,
+  resolucaoPesoAreaEnem: null,
+  quadroPesoAreaEnem: [],
   regrasEliminacao: [
     {
       id: 'snapshot-elim-1',
@@ -433,6 +436,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
       baseadoEmEnem: false,
+      resolucaoPesoAreaEnem: '',
       regrasEliminacao: [
         {
           regraCodigo: 'ELIM-NOTA-MINIMA-ETAPA',
@@ -443,6 +447,24 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
         },
       ],
     });
+  });
+
+  it('projeta a resolução de Peso por Área que o processo congelou', () => {
+    const enem = {
+      ...CLASSIFICACAO,
+      baseadoEmEnem: true,
+      resolucaoPesoAreaEnem: 'Resolução nº 805/2024/Consepe',
+      quadroPesoAreaEnem: [
+        {
+          grupoAreaEnem: { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+          baseLegal: 'Resolução nº 805/2024/Consepe – Anexo I',
+          areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 }],
+        },
+      ],
+    };
+    const { classificacao } = hidratarDraft(DRAFT, dtoComCronograma({ classificacao: enem }));
+
+    expect(classificacao.resolucaoPesoAreaEnem).toBe('Resolução nº 805/2024/Consepe');
   });
 
   /** Sob classificação importada (INV-B8), o arredondamento é ausente — `null`, não zero. */
@@ -465,6 +487,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     const { classificacao } = hidratarDraft(DRAFT, dtoComCronograma({ classificacao: null }));
 
     expect(classificacao.regraCalculoCodigo).toBe('');
+    expect(classificacao.resolucaoPesoAreaEnem).toBe('');
     expect(classificacao.regrasEliminacao).toEqual([]);
   });
 
@@ -724,3 +747,34 @@ describe('hidratarDraft — formulário de inscrição', () => {
   });
 });
 
+describe('ProcessoSeletivoStore.hidratar — quadro de Peso por Área congelado', () => {
+  const QUADRO = [
+    {
+      grupoAreaEnem: { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+      baseLegal: 'Resolução nº 805/2024/Consepe – Anexo I',
+      areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 }],
+    },
+  ];
+
+  it('guarda a resolução e o quadro que o processo congelou, como referência atual', () => {
+    const store = new ProcessoSeletivoStore();
+    store.quadroPesoAreaEnemDesatualizado.set(true);
+
+    store.hidratar(
+      dtoComCronograma({
+        classificacao: {
+          ...CLASSIFICACAO,
+          baseadoEmEnem: true,
+          resolucaoPesoAreaEnem: 'Resolução nº 805/2024/Consepe',
+          quadroPesoAreaEnem: QUADRO,
+        },
+      }),
+    );
+
+    expect(store.quadroPesoAreaEnemCongelado()).toEqual({
+      resolucao: 'Resolução nº 805/2024/Consepe',
+      quadro: QUADRO,
+    });
+    expect(store.quadroPesoAreaEnemDesatualizado()).toBe(false);
+  });
+});

@@ -7,6 +7,7 @@ import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
   TiposInstrumentoNormativoApi,
+  PesosEnemApi,
   CondicoesAtendimentoApi,
   CursosApi,
   ModalidadesApi,
@@ -33,6 +34,7 @@ import {
   RegrasCatalogoApi,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { STEP_LABELS } from './steps/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
@@ -83,6 +85,8 @@ const PAGE_PROVIDERS = [
   // tipo de instrumento da norma.
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
+  // O passo da fórmula carrega o cadastro de Peso por Área, de onde sai a resolução do ENEM.
+  { provide: PesosEnemApi, useValue: { ...catalogoVazioStub, listarAreas: catalogoVazioStub.listar } },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -416,6 +420,32 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     expect(persistirDoPassoAnterior).toHaveBeenCalledTimes(1);
     expect(store.stepError()).toBeNull();
+  });
+
+  it('relê o processo uma vez no fim da varredura quando uma gravação deixou o quadro congelado velho', async () => {
+    const { fixture, page, store } = montar();
+    const releitura = fixture.debugElement.injector.get(ReleituraDoSnapshot);
+    const reler = vi.spyOn(releitura, 'reler').mockResolvedValue(true);
+    const stubQueMarca = {
+      validate: () => ({ valid: true }),
+      persistir: vi.fn(async () => {
+        store.quadroPesoAreaEnemDesatualizado.set(true);
+        return { valid: false, messages: ['Falha ao gravar de novo.'] };
+      }),
+    };
+    const stubSemPersistir = { validate: () => ({ valid: true }) };
+
+    vi.spyOn(
+      page as unknown as { stepValidatorAt: (index: number) => unknown },
+      'stepValidatorAt',
+    ).mockImplementation((index: number) => (index === 2 ? stubQueMarca : stubSemPersistir));
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+
+    // Mesmo com a varredura falhando, a leitura acontece — sem ela a marca ficaria para sempre.
+    expect(reler).toHaveBeenCalledTimes(1);
   });
 
   it('recusa publicar e nomeia o passo quando a gravação de um passo anterior falha', async () => {

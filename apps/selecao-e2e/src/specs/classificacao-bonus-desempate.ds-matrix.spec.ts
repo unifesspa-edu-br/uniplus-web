@@ -56,6 +56,30 @@ const BASES_LEGAIS_BONUS_REGIONAL = [
     criadoEm: '2026-01-01T00:00:00Z',
   },
 ];
+const RESOLUCAO_PESO_AREA = 'Resolução nº 805/2024/Consepe';
+
+/** A lista canônica que o cadastro de Peso por Área publica, na ordem das colunas. */
+const AREAS_ENEM = [
+  { codigo: 'REDACAO', rotulo: 'Redação' },
+  { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
+];
+
+/** Duas linhas do cadastro de Peso por Área — a resolução escolhida e o quadro que ela carrega. */
+const PESOS_AREA_ENEM = [
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+].map((grupoCurso, indice) => ({
+  id: `0196000${indice}-0000-7000-8000-00000000pa00`,
+  resolucao: RESOLUCAO_PESO_AREA,
+  grupoCurso,
+  areas: [
+    { codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 },
+    { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias', peso: 1.5, corte: null },
+  ],
+  baseLegal: `${RESOLUCAO_PESO_AREA} – Anexo I`,
+  criadoEm: '2026-09-01T00:00:00Z',
+}));
+
 const CRITERIOS_DESEMPATE = [
   regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate', 'Costume administrativo'),
   regra('DESEMPATE-IDOSO', 'criterio_desempate', 'Lei 10.741/2003, art. 27'),
@@ -103,6 +127,41 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
+    });
+
+    test('não viola WCAG 2.1 AA com a resolução de Peso por Área e o quadro à vista', async ({
+      page,
+    }, testInfo) => {
+      await irAoPasso(page, 'Fórmula e precisão', testInfo);
+      await declararFormulaLocal(page);
+      await page.getByLabel('Classificação baseada em provas').check();
+      await page
+        .getByLabel('Resolução de Peso por Área', { exact: true })
+        .selectOption(RESOLUCAO_PESO_AREA);
+
+      await expect(
+        page.getByRole('table', { name: /Prévia do quadro da resolução/ }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: /Abrir o cadastro de Peso por Área/ }),
+      ).toBeVisible();
+
+      const resultado = await runAxeWcagAA(page);
+      expect(identificadoresDe(resultado)).toEqual([]);
+    });
+
+    test('bloqueia o avanço sem a resolução e aponta o campo', async ({ page }, testInfo) => {
+      await irAoPasso(page, 'Fórmula e precisão', testInfo);
+      await declararFormulaLocal(page);
+      await page.getByLabel('Classificação baseada em provas').check();
+
+      await page.getByRole('button', { name: 'Próximo' }).click();
+
+      const seletor = page.getByLabel('Resolução de Peso por Área', { exact: true });
+      await expect(seletor).toHaveAttribute('aria-invalid', 'true');
+      await expect(page.locator('.step-error')).toContainText(
+        'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+      );
     });
 
     test('nomeia cada campo pelo rótulo visível', async ({ page }, testInfo) => {
@@ -372,6 +431,37 @@ async function mockarCatalogos(page: Page): Promise<void> {
       contentType: 'application/json',
       headers: CORS_HEADERS,
       body: JSON.stringify(FATOS_CANDIDATO),
+    });
+  });
+
+  // A lista canônica das áreas, que ordena as colunas do quadro. Rota própria: a do cadastro,
+  // abaixo, termina no recurso e não casa com `/areas`.
+  await page.route(/\/api\/configuracao\/pesos-area-enem\/areas(\?.*)?$/, async (route: Route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: CORS_HEADERS,
+      body: JSON.stringify(AREAS_ENEM),
+    });
+  });
+
+  // O cadastro de Peso por Área, de onde o passo da fórmula tira a resolução e o quadro.
+  await page.route(/\/api\/configuracao\/pesos-area-enem(\?.*)?$/, async (route: Route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: CORS_HEADERS,
+      body: JSON.stringify(PESOS_AREA_ENEM),
     });
   });
 

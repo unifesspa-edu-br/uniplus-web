@@ -57,7 +57,7 @@ export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
 /**
  * Forma reaproveitada por qualquer gravação cujo chamador precise saber se
  * uma recusa deixou em aberto se o comando foi executado — hoje a cascata de
- * remanejamento e a publicação (`publicar()`).
+ * remanejamento, a classificação e a publicação (`publicar()`).
  */
 export type ResultadoGravacaoComInconclusiva =
   | { readonly ok: true }
@@ -462,7 +462,7 @@ export class CadastroInicialService {
   async definirClassificacao(
     processoSeletivoId: string,
     request: DefinirClassificacaoRequest,
-  ): Promise<ResultadoGravacao> {
+  ): Promise<ResultadoGravacaoComInconclusiva> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.definirClassificacao(
@@ -472,15 +472,15 @@ export class CadastroInicialService {
       ),
     );
 
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
 
     if (isApiOk(result)) {
       this.chaveClassificacao.renovar();
       return { ok: true };
     }
 
-    this.chaveClassificacao.recusada(result);
-    return { ok: false, problem: result.problem };
+    const inconclusiva = this.chaveClassificacao.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
   }
 
   /**

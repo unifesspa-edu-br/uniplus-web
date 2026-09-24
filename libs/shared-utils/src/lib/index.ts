@@ -5,3 +5,4 @@ export {
   sugerirCodigoDeCadastro,
 } from './utils/codigo-cadastro.util';
 export { formatCpfProgressive } from './utils/cpf.util';
+export { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from './utils/numero.util';

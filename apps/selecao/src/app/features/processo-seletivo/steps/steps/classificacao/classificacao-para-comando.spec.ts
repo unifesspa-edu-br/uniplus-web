@@ -11,6 +11,7 @@ import {
   comoComandoDeRegraEliminacao,
   divisorDaMediaValido,
   eliminacaoExigeBaseadoEmEnem,
+  exigeResolucaoPesoAreaEnem,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaMinimo,
   mensagensDeClassificacaoBase,
@@ -27,6 +28,7 @@ function classificacaoBase(): WizardDraft['classificacao'] {
     regraOrdemAlocacaoVersao: '1.0',
     nOpcoesAlocacao: '2',
     baseadoEmEnem: false,
+    resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
   };
 }
@@ -117,6 +119,70 @@ describe('comoComandoDeClassificacao — bimodalidade (INV-B8)', () => {
     });
 
     expect(comando.nOpcoesAlocacao).toBe(1);
+  });
+});
+
+const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
+
+describe('exigeResolucaoPesoAreaEnem — espelha o servidor', () => {
+  it('é verdadeiro só com ENEM e média ponderada local', () => {
+    expect(
+      exigeResolucaoPesoAreaEnem({
+        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        baseadoEmEnem: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('é falso sem ENEM, com a nota importada ou sem regra escolhida', () => {
+    expect(
+      exigeResolucaoPesoAreaEnem({
+        regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+        baseadoEmEnem: false,
+      }),
+    ).toBe(false);
+    expect(
+      exigeResolucaoPesoAreaEnem({
+        regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+        baseadoEmEnem: true,
+      }),
+    ).toBe(false);
+    expect(exigeResolucaoPesoAreaEnem({ regraCalculoCodigo: '', baseadoEmEnem: true })).toBe(false);
+  });
+});
+
+describe('comoComandoDeClassificacao — resolução de Peso por Área', () => {
+  const enemLocal = (): WizardDraft['classificacao'] => ({
+    ...classificacaoBase(),
+    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoVersao: '1.0',
+    regraArredondamentoCodigo: 'ARRED-TRUNCAR',
+    regraArredondamentoVersao: '1.0',
+    casasArredondamento: '2',
+    baseadoEmEnem: true,
+    resolucaoPesoAreaEnem: RESOLUCAO,
+  });
+
+  it('envia a resolução quando a classificação a exige', () => {
+    expect(comoComandoDeClassificacao(enemLocal()).resolucaoPesoAreaEnem).toBe(RESOLUCAO);
+  });
+
+  it('envia null fora do ENEM, mesmo com uma escolha anterior guardada no rascunho', () => {
+    const semEnem = comoComandoDeClassificacao({ ...enemLocal(), baseadoEmEnem: false });
+    const importada = comoComandoDeClassificacao({
+      ...enemLocal(),
+      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+    });
+
+    expect(semEnem.resolucaoPesoAreaEnem).toBeNull();
+    expect(importada.resolucaoPesoAreaEnem).toBeNull();
+  });
+
+  it('envia null, e não texto vazio, quando a resolução não foi escolhida', () => {
+    expect(
+      comoComandoDeClassificacao({ ...enemLocal(), resolucaoPesoAreaEnem: '  ' })
+        .resolucaoPesoAreaEnem,
+    ).toBeNull();
   });
 });
 
@@ -270,6 +336,56 @@ describe('mensagensDeClassificacaoBase', () => {
       regraArredondamentoCodigo: '',
       regraArredondamentoVersao: '',
       casasArredondamento: '',
+    });
+
+    expect(mensagens).toEqual([]);
+  });
+
+  it('recusa a classificação baseada em ENEM com média ponderada sem a resolução', () => {
+    const mensagens = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      baseadoEmEnem: true,
+    });
+
+    expect(mensagens).toEqual([
+      'Selecione a resolução de Peso por Área usada na nota, no passo Fórmula.',
+    ]);
+  });
+
+  it('aceita a classificação baseada em ENEM com a resolução escolhida', () => {
+    expect(
+      mensagensDeClassificacaoBase({
+        ...classificacaoCompleta(),
+        baseadoEmEnem: true,
+        resolucaoPesoAreaEnem: RESOLUCAO,
+      }),
+    ).toEqual([]);
+  });
+
+  it('recusa a resolução que o cadastro lido já não tem, quando quem chama informa', () => {
+    const classificacao = {
+      ...classificacaoCompleta(),
+      baseadoEmEnem: true,
+      resolucaoPesoAreaEnem: RESOLUCAO,
+    };
+
+    expect(
+      mensagensDeClassificacaoBase(classificacao, (resolucao) => resolucao === RESOLUCAO),
+    ).toEqual([
+      'A resolução de Peso por Área escolhida não está no cadastro lido. Se ela foi criada ou corrigida agora, use "Atualizar lista" no passo Fórmula; senão, escolha outra.',
+    ]);
+    // Sem o predicado, nada foi lido para afirmar que a resolução saiu do cadastro.
+    expect(mensagensDeClassificacaoBase(classificacao)).toEqual([]);
+  });
+
+  it('não exige a resolução com a nota importada, mesmo marcada como ENEM', () => {
+    const mensagens = mensagensDeClassificacaoBase({
+      ...classificacaoCompleta(),
+      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      regraArredondamentoCodigo: '',
+      regraArredondamentoVersao: '',
+      casasArredondamento: '',
+      baseadoEmEnem: true,
     });
 
     expect(mensagens).toEqual([]);

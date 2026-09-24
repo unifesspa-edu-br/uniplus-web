@@ -5634,6 +5634,14 @@ export interface components {
         };
         /** @enum {string} */
         readonly AncoraDoRecurso: AncoraDoRecurso;
+        readonly AreaPesoAreaEnemCongeladaDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
+            /** Format: double */
+            readonly peso: number | string;
+            /** Format: double */
+            readonly corte: null | number | string;
+        };
         readonly ArgsRegraAjusteDistribuicao: components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirDe"] | components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm"];
         readonly ArgsRegraAjusteDistribuicaoArgsReduzirDe: {
             /** @enum {string} */
@@ -5864,6 +5872,8 @@ export interface components {
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoDto"][];
             readonly concorrenciaDuplaAplicavel: boolean;
             readonly baseadoEmEnem: boolean;
+            readonly resolucaoPesoAreaEnem: null | string;
+            readonly quadroPesoAreaEnem: readonly components["schemas"]["GrupoPesoAreaEnemCongeladoDto"][];
         };
         readonly ConfiguracaoDerivacaoDto: {
             readonly codigoFato: string;
@@ -6039,6 +6049,7 @@ export interface components {
             readonly nOpcoesAlocacao: number | string;
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoInput"][];
             readonly baseadoEmEnem: boolean;
+            readonly resolucaoPesoAreaEnem?: null | string;
         };
         readonly DefinirConfiguracaoDivulgacaoRequest: {
             readonly camposPublicos: null | readonly DefinirConfiguracaoDivulgacaoRequestCamposPublicos[];
@@ -6302,6 +6313,11 @@ export interface components {
         readonly GrupoAreaEnemSnapshotDto: {
             readonly codigo: string;
             readonly rotulo: string;
+        };
+        readonly GrupoPesoAreaEnemCongeladoDto: {
+            readonly grupoAreaEnem: components["schemas"]["GrupoAreaEnemSnapshotDto"];
+            readonly baseLegal: string;
+            readonly areas: readonly components["schemas"]["AreaPesoAreaEnemCongeladaDto"][];
         };
         readonly IdadeMaximaEmissaoDto: {
             /** Format: int32 */
