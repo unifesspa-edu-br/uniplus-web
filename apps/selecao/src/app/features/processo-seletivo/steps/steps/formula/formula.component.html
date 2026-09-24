@@ -153,7 +153,7 @@
           [attr.aria-busy]="catalogos.pesosCarregando() ? 'true' : null"
           [disabled]="
             !store.aceitaEdicao() ||
-            (catalogos.pesosCarregando() && catalogos.pesosLidosNaMarca() < 0)
+            (catalogos.pesosCarregando() && catalogos.pesosAreaEnem().length === 0)
           "
           (change)="aoEscolherResolucao($event)"
         >
@@ -203,12 +203,9 @@
         </p>
       }
 
-      @if (quadroDesatualizado()) {
+      @if (avisoDeQuadroPorReler(); as aviso) {
         <div class="alert alert--warning field__erro" role="status">
-          <p>
-            A classificação foi gravada depois da última leitura do processo, e o quadro que ele
-            congelou ainda não foi relido. Enquanto isso, o quadro abaixo é a prévia do cadastro.
-          </p>
+          <p>{{ aviso }}</p>
           <button
             type="button"
             class="btn btn--secondary btn--sm"

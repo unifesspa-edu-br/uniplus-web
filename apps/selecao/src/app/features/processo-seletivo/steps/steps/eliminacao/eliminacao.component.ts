@@ -23,6 +23,8 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
+import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
   classificacaoUsaFormulaLocal,
@@ -31,11 +33,18 @@ import {
   eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaMinimo,
+  ehCampoDaResolucao,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import {
+  conferirDesempateGravado,
+  recusaDaClassificacaoPeloDesempate,
+  recusaPorCriterioGravadoSemQuadro,
+  type PendenciaDoCriterioGravado,
+} from '../desempate/quadro-do-desempate';
 
 const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
   regraCodigo: '',
@@ -66,6 +75,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
 export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
+  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -78,7 +88,10 @@ export class EliminacaoStepComponent {
     classificacaoUsaFormulaLocal(this.store.draft().classificacao.regraCalculoCodigo),
   );
 
-  readonly regras = computed(() => this.store.draft().classificacao.regrasEliminacao);
+  /** Só a classificação: uma tecla em outro passo não refaz a conferência do desempate. */
+  private readonly classificacao = computed(() => this.store.draft().classificacao);
+
+  readonly regras = computed(() => this.classificacao().regrasEliminacao);
 
   /** Só etapas já persistidas (com `id`) podem ser referenciadas por `etapaRef`. */
   readonly etapasReferenciaveis = computed(() =>
@@ -187,15 +200,23 @@ export class EliminacaoStepComponent {
     return 'Gravar e avançar';
   }
 
+  /**
+   * Sem confirmação quando a gravação já se sabe recusada: `null` leva direto ao `persistir()`, que
+   * mostra a recusa sem chamar a API.
+   */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid) return null;
+    if (!this.validate().valid || this.recusasCertasPeloDesempate().length > 0) return null;
+    const avisoDoDesempate = this.avisoDoDesempatePorArea();
 
     const classificacao = this.store.draft().classificacao;
     const local = this.usaFormulaLocal();
 
     return {
       titulo: 'Confirmar a classificação do processo',
-      aviso: 'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
+      aviso: [
+        'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
+        ...avisoDoDesempate,
+      ].join(' '),
       rotuloDeConfirmar: 'Gravar classificação',
       itens: [
         { rotulo: 'Regra de cálculo', valor: classificacao.regraCalculoCodigo },
@@ -237,7 +258,7 @@ export class EliminacaoStepComponent {
     // A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o
     // cadastro; a completude dos grupos continua sendo julgada pelo servidor.
     const messages: string[] = [
-      ...mensagensDeClassificacaoBase(classificacao, this.catalogos.resolucaoForaDoCadastro),
+      ...mensagensDeClassificacaoBase(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro),
     ];
 
     if (!this.usaFormulaLocal()) {
@@ -289,6 +310,58 @@ export class EliminacaoStepComponent {
   }
 
   /**
+   * O servidor recusa a classificação que deixa sem nota de área um critério de desempate já
+   * gravado que a cita. Com o rascunho fora do ENEM pela média ponderada, a recusa é certa, e a
+   * gravação nem é tentada. Confere o que está gravado, e por isso fica fora do `validate()`: a
+   * publicação valida todos os passos antes de gravá-los, e o Desempate, gravado antes deste, pode
+   * resolver a pendência.
+   */
+  private recusasCertasPeloDesempate(): string[] {
+    return this.pendenciasDoDesempateGravado()
+      .filter(({ semQuadro }) => semQuadro)
+      .map(({ posicao }) => recusaPorCriterioGravadoSemQuadro(posicao));
+  }
+
+  /**
+   * As áreas que o cadastro lido não tem em todos os grupos da resolução do rascunho. Só avisa: a
+   * gravação copia o quadro do cadastro que o servidor tem, que pode ter mudado depois da leitura,
+   * e quem julga é ele.
+   */
+  readonly avisoDoDesempatePorArea = computed(() => {
+    // Só para consulta não há gravação a avisar.
+    if (!this.store.edicaoPermitida()) return [];
+    const resolucao = this.classificacao().resolucaoPesoAreaEnem;
+    return this.pendenciasDoDesempateGravado()
+      .filter(({ semQuadro }) => !semQuadro)
+      .map(({ posicao, fora, todas }) => {
+        // Retirar todas as áreas deixaria o critério vazio, que o próprio Desempate recusa.
+        const correcao = todas
+          ? 'troque a regra do critério ou remova-o no passo Desempate e grave o passo'
+          : 'retire a área no passo Desempate e grave o passo';
+        return `Pelo cadastro de Peso por Área lido, o critério de desempate ${posicao} gravado cita ${fora.join(', ')}, que a resolução ${resolucao} não tem em todos os grupos, e a gravação deve ser recusada: ${correcao}, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`;
+      });
+  });
+
+  private readonly pendenciasDoDesempateGravado = computed<readonly PendenciaDoCriterioGravado[]>(
+    () => {
+      // Depois de uma gravação do desempate sem resposta conclusiva, só o servidor sabe o que tem.
+      const gravados = this.store.criteriosDesempateGravados();
+      if (gravados === null) return [];
+      const conferencia = conferirDesempateGravado(
+        gravados,
+        this.classificacao(),
+        this.cadastroDePesos.leitura(),
+      );
+      return conferencia.resultado === 'com-pendencias' ? conferencia.pendencias : [];
+    },
+  );
+
+  /** "Atualizar lista" do aviso: relê o cadastro, e o aviso se refaz com ele. */
+  atualizarCadastroDePesos(): void {
+    this.cadastroDePesos.relerCadastroAPedido(() => undefined);
+  }
+
+  /**
    * Grava a classificação inteira — regra de cálculo, precisão, ordem de
    * alocação e o vetor de eliminação — num comando só. É o único `persistir()`
    * das duas telas: gravar também no Fórmula enviaria `regrasEliminacao`
@@ -309,29 +382,30 @@ export class EliminacaoStepComponent {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
 
+    const doDesempate = this.recusasCertasPeloDesempate();
+    if (doDesempate.length > 0) return { valid: false, messages: doDesempate };
+
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
       const comando = comoComandoDeClassificacao(this.store.draft().classificacao);
-      this.releitura.descartarLeiturasEmCurso();
-      const resultado = await this.cadastro.definirClassificacao(processoId, comando);
+      const resultado = await this.releitura.gravando(async () => {
+        const resposta = await this.cadastro.definirClassificacao(processoId, comando);
+        if (geracao !== this.store.geracao()) return resposta;
+        if (resposta.ok) {
+          this.store.descartarRecusasDaClassificacao();
+          this.registrarQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
+        } else if (resposta.inconclusiva) {
+          // O servidor pode ter gravado — com ou sem quadro —, e o que ele tem fica desconhecido.
+          this.store.marcarClassificacaoDesconhecida();
+        }
+        return resposta;
+      });
 
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-
       if (!resultado.ok) {
-        // Sem resposta conclusiva o servidor pode ter gravado — e copiado o quadro de novo.
-        if (
-          resultado.inconclusiva &&
-          this.envolveResolucao(comando.resolucaoPesoAreaEnem ?? null)
-        ) {
-          this.store.quadroPesoAreaEnemDesatualizado.set(true);
-        }
         return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
       }
-
-      this.store.recusaDaResolucaoPesoAreaEnem.set(null);
-      await this.acompanharQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       return { valid: true };
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -339,56 +413,64 @@ export class EliminacaoStepComponent {
   }
 
   /**
-   * O resumo da recusa: a recusa da resolução, cada uma uma vez, com o texto da tela e o passo onde
-   * corrigir; e o título da raiz, pelo `ProblemI18nService`, quando há erro em outro campo ou
-   * nenhum erro de campo. Recusa só da resolução não repete o título, que fala do mesmo erro.
+   * O resumo da recusa: a recusa da resolução, com o texto da tela e o passo onde corrigir; a
+   * recusa por um critério de desempate já gravado, com o texto da tela, qualquer que seja o campo
+   * que o servidor apontou; e o título da raiz, pelo `ProblemI18nService`, para o que a tela não
+   * explica.
    *
-   * A recusa da resolução fica guardada para aparecer sob o campo, no passo da fórmula. Uma
-   * recusa sem ela não a apaga: o servidor recusa outros campos antes de chegar a julgar a
-   * resolução, e só a gravação que dá certo prova que ela passou.
+   * As recusas sob o campo da resolução ficam guardadas para aparecer no passo da fórmula. Uma
+   * resposta que julgou o campo substitui as duas — a da resolução e a de um critério de desempate
+   * gravado — pelo que ela traz. Uma resposta sem ele não as apaga: o servidor recusa outros campos
+   * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
    */
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
-    const erros = problema.errors ?? [];
-    const daResolucao = [...new Set(erros.filter(ehDaResolucao).map(mensagemDaRecusaDaResolucao))];
-    if (daResolucao.length > 0) this.store.recusaDaResolucaoPesoAreaEnem.set(daResolucao[0]);
+    const sobOCampo = (problema.errors ?? []).filter((erro) => ehCampoDaResolucao(erro.field));
+    if (sobOCampo.length > 0) {
+      const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
+      const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
+      this.store.recusarPeloDesempate(
+        peloDesempate.find((recusa) => recusa !== null) ?? null,
+        this.cadastroDePesos.leitura().pedida,
+      );
+      this.store.recusaDaResolucaoPesoAreaEnem.set(
+        daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
+      );
+    }
 
-    const haOutraRecusa = daResolucao.length === 0 || erros.some((erro) => !ehDaResolucao(erro));
-    return [
-      ...daResolucao.map((mensagem) => `Resolução de Peso por Área, no passo Fórmula: ${mensagem}`),
-      ...(haOutraRecusa ? [this.problemI18n.resolve(problema).title] : []),
-    ];
+    return resumoDaRecusa(
+      problema,
+      (erro) =>
+        recusaDaClassificacaoPeloDesempate(erro) ??
+        (ehCampoDaResolucao(erro.field)
+          ? `Resolução de Peso por Área, no passo Fórmula: ${mensagemDaRecusaDaResolucao(erro)}`
+          : null),
+      () => this.problemI18n.resolve(problema).title,
+    );
   }
 
   /**
-   * A gravação copiou o quadro da resolução de novo no servidor, e a Fórmula mostra o que o
-   * processo congelou. Na varredura da publicação a referência só fica marcada como velha: a
-   * página relê o detalhe uma vez, no fim da varredura, em vez de uma leitura por gravação.
+   * A gravação que deu certo diz o que o processo passou a ter: sem resolução, nenhum quadro; com
+   * ela, o quadro que o cadastro do servidor tinha para a resolução. O cadastro lido aqui dá a
+   * cópia presumida, por confirmar na releitura que `gravando` faz — ou que a publicação faz no fim
+   * da varredura; sem ele lido, só a releitura diz o que foi copiado.
    */
-  private async acompanharQuadroCongelado(resolucaoGravada: string | null): Promise<void> {
-    if (!this.envolveResolucao(resolucaoGravada)) {
-      this.store.quadroPesoAreaEnemDesatualizado.set(false);
+  private registrarQuadroCongelado(resolucaoGravada: string | null): void {
+    if (resolucaoGravada === null) {
+      this.store.registrarClassificacaoGravadaSemQuadro();
       return;
     }
 
-    if (this.store.travamentoDeOrquestracao()) {
-      this.store.quadroPesoAreaEnemDesatualizado.set(true);
-      return;
+    const cadastro = this.cadastroDePesos.leitura();
+    if (cadastro.lido && cadastro.quadroDaResolucaoEscolhida.length > 0) {
+      this.store.registrarClassificacaoGravadaComQuadro(
+        resolucaoGravada,
+        cadastro.quadroDaResolucaoEscolhida,
+      );
+    } else {
+      this.store.marcarClassificacaoDesconhecida();
     }
-
-    await this.releitura.reler();
-  }
-
-  /** Sem resolução, nem enviada nem congelada, a gravação não mexe em quadro nenhum. */
-  private envolveResolucao(resolucaoEnviada: string | null): boolean {
-    return (
-      resolucaoEnviada !== null ||
-      (this.store.quadroPesoAreaEnemCongelado()?.resolucao ?? null) !== null
-    );
   }
 }
-
-/** O campo da resolução nas recusas do servidor, comparado sem caixa. */
-const CAMPO_RESOLUCAO = 'resolucaopesoareaenem';
 
 const PREFIXO_DA_RECUSA = 'uniplus.selecao.configuracao_classificacao.';
 
@@ -430,20 +512,8 @@ const MENSAGEM_POR_CODIGO_DA_RESOLUCAO: ReadonlyMap<string, string> = new Map([
 const MENSAGEM_DE_RECUSA_DESCONHECIDA =
   'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.';
 
-function ehDaResolucao(erro: ProblemValidationError): boolean {
-  return ultimoSegmento(erro.field) === CAMPO_RESOLUCAO;
-}
-
-function mensagemDaRecusaDaResolucao(erro: ProblemValidationError): string {
+function mensagemDaRecusaDaResolucao(erro: Pick<ProblemValidationError, 'code'>): string {
   return MENSAGEM_POR_CODIGO_DA_RESOLUCAO.get(erro.code) ?? MENSAGEM_DE_RECUSA_DESCONHECIDA;
-}
-
-/**
- * O nome do campo sem prefixo de caminho (`$.`, `request.`) e sem caixa — a recusa do domínio e a
- * do model binding nomeiam o mesmo campo de formas diferentes.
- */
-function ultimoSegmento(campo: string): string {
-  return (campo.split('.').at(-1) ?? campo).toLowerCase();
 }
 
 function decimalValido(texto: string): boolean {

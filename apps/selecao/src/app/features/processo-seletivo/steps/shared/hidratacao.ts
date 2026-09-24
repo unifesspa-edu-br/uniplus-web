@@ -343,7 +343,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
  * posição no array é a ordem, então a lista chega ordenada por `ordem` antes
  * de perder o número.
  */
-function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfigurado[] {
+export function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfigurado[] {
   return [...(dto.criteriosDesempate ?? [])]
     .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
     .map((criterio) => ({
@@ -354,6 +354,7 @@ function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfig
       fato: criterio.fato ?? '',
       operador: criterio.operador ?? '',
       valor: criterio.valor ?? '',
+      areas: [...(criterio.areas ?? [])],
     }));
 }
 
