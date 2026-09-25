@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -790,6 +794,311 @@ describe('FaseStepComponent', () => {
         detectar();
 
         expect(avisos()).toBe(0);
+      });
+    });
+
+    /**
+     * A conferência lê a fase pelo resumo: cada documento numa linha com o que decide a
+     * exigência, e os campos só abrem por documento. Com dezenas de documentos abertos de uma
+     * vez, a fase passa de quinze mil pixels e não se confere.
+     */
+    describe('conferência dos documentos da fase', () => {
+      const ID_RG = '01960000-0000-7000-0000-0000000000f2';
+      const linhas = () => Array.from(nativo.querySelectorAll('.doc-conferencia__linha'));
+      const celula = (linha: Element, rotulo: string) =>
+        linha.querySelector(`td[data-label="${rotulo}"]`)?.textContent?.replace(/\s+/g, ' ').trim();
+      const botaoDeEdicao = () =>
+        nativo.querySelector<HTMLButtonElement>('.doc-conferencia__alternar');
+      const campoDeEntrega = () => nativo.querySelector(`#fase-doc-obrigatorio-${ID_CPF}`);
+
+      beforeEach(() => comCronograma(fase({})));
+
+      it('mostra no resumo o que decide a exigência, com os campos fechados', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        componente.escolherConsequencia(ID_CPF, 'ELIMINA');
+        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        detectar();
+
+        const [linha] = linhas();
+        expect(linha.querySelector('th[scope="row"]')?.textContent?.trim()).toBe('CPF');
+        expect(celula(linha, 'A quem se aplica')).toBe('Todo candidato');
+        expect(celula(linha, 'Entrega')).toBe('Obrigatória');
+        expect(celula(linha, 'Se não for entregue')).toBe('Elimina do processo');
+        expect(celula(linha, 'Coleta')).toBe('Na fase inteira');
+        expect(campoDeEntrega()).toBeNull();
+        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('false');
+      });
+
+      /** A norma de todos aparece uma vez, acima da tabela; repetida, dobraria cada linha. */
+      it('mostra uma vez a norma resolvida que sustenta todos os documentos', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        detectar();
+
+        expect(
+          nativo.querySelector('.doc-conferencia__norma-comum')?.textContent?.replace(/\s+/g, ' '),
+        ).toContain(
+          'Norma de todos os documentos: Lei 12.711/2012, art. 3º (O próprio edital · Resolvida)',
+        );
+        expect(celula(linhas()[0], 'Norma')).toBeUndefined();
+      });
+
+      it('mostra a norma de cada documento quando elas diferem', () => {
+        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+          ...TIPOS_DOCUMENTO,
+          { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
+        ]);
+        componente.alternarExigencia(ID_CPF, true);
+        componente.alternarExigencia(ID_RG, true);
+        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        componente.escreverBaseLegal(ID_RG, 0, 'referencia', 'Lei 7.116/1983');
+        detectar();
+
+        expect(nativo.querySelector('.doc-conferencia__norma-comum')).toBeNull();
+        expect(linhas().map((linha) => celula(linha, 'Norma'))).toEqual([
+          'Lei 12.711/2012, art. 3º O próprio edital · Resolvida',
+          'Lei 7.116/1983 O próprio edital · Resolvida',
+        ]);
+      });
+
+      it('acusa no resumo a exigência que a publicação recusaria por falta de norma', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        detectar();
+
+        expect(celula(linhas()[0], 'Norma')).toContain('Sem norma resolvida');
+      });
+
+      it('abre e recolhe os campos pelo nome do documento, que diz o estado', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        detectar();
+
+        botaoDeEdicao()?.click();
+        detectar();
+        const controlados = botaoDeEdicao()?.getAttribute('aria-controls') ?? '';
+        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('true');
+        expect(nativo.querySelector(`#${controlados}`)?.contains(campoDeEntrega())).toBe(true);
+
+        botaoDeEdicao()?.click();
+        detectar();
+        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('false');
+        expect(campoDeEntrega()).toBeNull();
+      });
+
+      it('abre os campos do documento recém-acrescentado', () => {
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        detectar();
+
+        expect(campoDeEntrega()).not.toBeNull();
+      });
+
+      it('filtra os documentos pelo público e diz quantos sobraram', () => {
+        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+          ...TIPOS_DOCUMENTO,
+          { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
+        ]);
+        componente.alternarExigencia(ID_CPF, true);
+        componente.alternarExigencia(ID_RG, true);
+        componente.escolherExigidoDe(ID_RG, 'quem');
+        detectar();
+
+        const filtro = nativo.querySelector<HTMLSelectElement>('#fase-AVALIACAO-doc-filtro');
+        if (filtro === null) throw new Error('o filtro de público não está na tela');
+        filtro.value = 'todo-candidato';
+        filtro.dispatchEvent(new Event('change'));
+        detectar();
+
+        expect(linhas().map((linha) => linha.querySelector('th')?.textContent?.trim())).toEqual([
+          'CPF',
+        ]);
+        expect(nativo.querySelector('#fase-AVALIACAO-doc-filtro-total')?.textContent?.trim()).toBe(
+          '1 de 2 documentos.',
+        );
+      });
+
+      /**
+       * O documento aberto em edição fica na tela mesmo quando a edição o tira do público
+       * filtrado: sumir levaria junto o campo em foco.
+       */
+      it('mantém à vista o documento em edição que sai do público filtrado', () => {
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        componente.filtroDoPublico.set('todo-candidato');
+        detectar();
+
+        componente.escolherExigidoDe(ID_CPF, 'quem');
+        detectar();
+
+        expect(linhas()).toHaveLength(1);
+        expect(campoDeEntrega()).not.toBeNull();
+        expect(nativo.querySelector('#fase-AVALIACAO-doc-filtro-total')?.textContent?.trim()).toBe(
+          '1 de 1 documentos.',
+        );
+
+        document.body.appendChild(nativo);
+        botaoDeEdicao()?.click();
+        detectar();
+        expect(linhas()).toHaveLength(0);
+
+        // Recolhido, o documento sai com o botão focado: o foco vai ao seletor do público, e a
+        // contagem ligada a ele, que é região de status, diz o que saiu.
+        const filtro = nativo.querySelector('#fase-AVALIACAO-doc-filtro');
+        expect(document.activeElement).toBe(filtro);
+        expect(
+          nativo
+            .querySelector('#fase-AVALIACAO-doc-filtro-total')
+            ?.textContent?.replace(/\s+/g, ' '),
+        ).toContain('CPF saiu da lista, porque não é mais do público filtrado.');
+        nativo.remove();
+      });
+
+      /** Reescrever a condição filtrada não devolve o seletor a "todos" a cada tecla. */
+      it('mantém o público escolhido quando nenhum documento o declara mais', () => {
+        componente.filtroDoPublico.set('condicao:Cor ou raça é INDIGENA');
+        detectar();
+
+        componente.alternarExigencia(ID_CPF, true);
+        detectar();
+        const filtro = nativo.querySelector<HTMLSelectElement>('#fase-AVALIACAO-doc-filtro');
+        expect(filtro?.value).toBe('condicao:Cor ou raça é INDIGENA');
+        expect(filtro?.selectedOptions[0]?.textContent?.trim()).toBe(
+          'Candidato com: Cor ou raça é INDIGENA',
+        );
+      });
+
+      it('mostra o documento recém-acrescentado sob qualquer filtro', () => {
+        componente.filtroDoPublico.set('condicao:Cor ou raça é INDIGENA');
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        detectar();
+
+        expect(linhas()).toHaveLength(1);
+        expect(campoDeEntrega()).not.toBeNull();
+      });
+
+      /** O filtro e o aviso são da fase aberta: a outra fase abre com todos os documentos. */
+      it('volta o filtro a todos e apaga o aviso ao trocar de fase', () => {
+        comCronograma(
+          fase({}),
+          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+        );
+        componente.alternarExigencia(ID_CPF, true);
+        componente.filtroDoPublico.set('condicao:Cor ou raça é INDIGENA');
+        componente.saiuDaLista.set('CPF saiu da lista, porque não é mais do público filtrado.');
+        detectar();
+
+        componente.abrirFase(ID_RECURSOS);
+        componente.alternarExigencia(ID_CPF, true);
+        detectar();
+
+        expect(componente.filtroDoPublico()).toBe('');
+        expect(nativo.querySelector<HTMLSelectElement>('#fase-RECURSOS-doc-filtro')?.value).toBe(
+          '',
+        );
+        expect(nativo.querySelector('#fase-RECURSOS-doc-filtro-total')?.textContent?.trim()).toBe(
+          '1 de 1 documentos.',
+        );
+      });
+
+      /** A mesma exigência em outra fase é outra exigência: abrir numa não abre na outra. */
+      it('abre os campos só na fase em que o documento foi aberto', () => {
+        comCronograma(
+          fase({}),
+          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+        );
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        detectar();
+        expect(componente.emEdicao(ID_CPF)).toBe(true);
+
+        componente.abrirFase(ID_RECURSOS);
+        componente.alternarExigencia(ID_CPF, true);
+        detectar();
+        expect(componente.emEdicao(ID_CPF)).toBe(false);
+        expect(campoDeEntrega()).toBeNull();
+
+        componente.abrirFase(ID_AVALIACAO);
+        detectar();
+        expect(componente.emEdicao(ID_CPF)).toBe(true);
+      });
+
+      /**
+       * O Cronograma embute um passo destes por fase aberta: cada rótulo, descrição e
+       * `aria-controls` aponta para o elemento da própria fase, e nenhum id se repete.
+       */
+      it('dá à conferência de cada fase embutida ids próprios', () => {
+        comCronograma(
+          fase({}),
+          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+        );
+        const segunda = TestBed.createComponent(FaseStepComponent);
+        segunda.componentRef.setInput('faseFixada', ID_RECURSOS);
+        segunda.detectChanges();
+        for (const requisicao of controller.match(() => true)) requisicao.flush([]);
+
+        componente.alternarExigencia(ID_CPF, true);
+        componente.alternarEdicao(ID_CPF, true);
+        segunda.componentInstance.alternarExigencia(ID_CPF, true);
+        segunda.componentInstance.alternarEdicao(ID_CPF, true);
+        detectar();
+        segunda.detectChanges();
+
+        const referencias = (raiz: HTMLElement) => {
+          const filtro = raiz.querySelector('.doc-conferencia__filtro select');
+          const rotulo = raiz.querySelector('.doc-conferencia__filtro label');
+          const alternar = raiz.querySelector('.doc-conferencia__alternar');
+          const alvos = [
+            rotulo?.getAttribute('for'),
+            filtro?.getAttribute('aria-describedby'),
+            alternar?.getAttribute('aria-controls'),
+          ];
+          for (const alvo of alvos) {
+            expect(alvo, 'a referência aponta para dentro da própria fase').toBeTruthy();
+            expect(raiz.querySelector(`[id="${alvo}"]`)).not.toBeNull();
+          }
+          // Só os ids do bloco da conferência: os dos campos do documento ficam fora desta verificação.
+          return Array.from(
+            raiz.querySelectorAll('.doc-conferencia__filtro [id], .doc-conferencia__campos[id]'),
+          ).map((elemento) => elemento.id);
+        };
+
+        const daPrimeira = referencias(nativo);
+        const daSegunda = referencias(segunda.nativeElement as HTMLElement);
+        expect(daPrimeira).toHaveLength(3);
+        expect(daPrimeira.filter((id) => daSegunda.includes(id))).toEqual([]);
+        segunda.destroy();
+      });
+
+      /**
+       * Processo publicado só se consulta: o resumo mostra as regras, e o detalhe continua ao
+       * alcance — os campos abrem pelo nome, desabilitados.
+       */
+      it('em consulta, abre os campos do documento desabilitados', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        store.remoteSnapshot.set({
+          status: StatusProcesso.publicado,
+        } as unknown as ProcessoSeletivoDto);
+        detectar();
+
+        expect(linhas()).toHaveLength(1);
+        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('false');
+        expect(campoDeEntrega()).toBeNull();
+
+        botaoDeEdicao()?.click();
+        detectar();
+        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('true');
+        expect((campoDeEntrega() as HTMLSelectElement | null)?.disabled).toBe(true);
+      });
+
+      /** A gravação suspende a edição por um instante, e os campos abertos não somem com ela. */
+      it('mantém os campos abertos enquanto a gravação está em curso', () => {
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        store.salvando.set(true);
+        detectar();
+
+        expect(campoDeEntrega()).not.toBeNull();
+        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('true');
       });
     });
 

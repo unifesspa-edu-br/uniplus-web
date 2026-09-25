@@ -82,7 +82,7 @@
 
       <!-- Publicações -->
       <div class="step-card">
-        <h2 class="form-section__title">O que esta fase publica</h2>
+        <h3 class="form-section__title">O que esta fase publica</h3>
         <p class="field__hint" id="fase-produtos-ajuda">
           Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo
           marca como resultado: é ele que abre o ciclo recursal (preliminar) e o encerra
@@ -162,7 +162,7 @@
 
       <!-- Conclusão do ciclo recursal e parecer -->
       <div class="step-card">
-        <h2 class="form-section__title">Ciclo recursal da matéria</h2>
+        <h3 class="form-section__title">Ciclo recursal da matéria</h3>
         <div class="form-grid">
           @if (publicaPreliminar()) {
             <div class="form-field form-grid__full">
@@ -229,7 +229,7 @@
 
       <!-- Regra de recurso -->
       <div class="step-card">
-        <h2 class="form-section__title">Recurso contra o que esta fase publica</h2>
+        <h3 class="form-section__title">Recurso contra o que esta fase publica</h3>
 
         <label class="checkbox" for="fase-admite-recurso">
           <input
@@ -426,7 +426,7 @@
 
       <!-- Bancas requeridas -->
       <div class="step-card">
-        <h2 class="form-section__title">Bancas que esta fase requer</h2>
+        <h3 class="form-section__title">Bancas que esta fase requer</h3>
         <p class="field__hint" id="fase-bancas-ajuda">
           O recorte de competência diz que categorias de documento cada banca julga. Com uma banca
           de cada tipo ele é dispensável — a banca julga tudo o que a fase exige. Com duas do mesmo
@@ -527,7 +527,7 @@
 
       <!-- Exigências documentais -->
       <div class="step-card">
-        <h2 class="form-section__title">Documentos exigidos nesta fase</h2>
+        <h3 class="form-section__title">Documentos exigidos nesta fase</h3>
         <p class="field__hint">
           Acrescente o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades
           que devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
@@ -568,586 +568,857 @@
           </div>
         </div>
 
-        @for (doc of documentosDaFase(); track doc.id) {
-          <div class="doc-item doc-item--exigido">
-            <div class="doc-item__row">
-              <div class="doc-item__info">
-                <span class="doc-item__name">{{ doc.nome }}</span>
-                <span class="doc-item__desc">{{ doc.desc }}</span>
-                <!-- Folha dentro de um grupo não é exigida por si: basta satisfazer o grupo.
-                     Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
-                @if (posicaoNaArvore(doc.id) !== '') {
-                  <span class="doc-item__desc">{{ posicaoNaArvore(doc.id) }}</span>
-                }
-                @if (declaradoMaisDeUmaVez(doc.id) !== '') {
-                  <span class="field__hint">{{ declaradoMaisDeUmaVez(doc.id) }}</span>
-                }
-              </div>
-              <button
-                class="btn btn--tertiary"
-                type="button"
-                [disabled]="!store.aceitaEdicao()"
-                [attr.aria-label]="'Remover ' + doc.nome"
-                (click)="removerDocumento(doc.id)"
-              >
-                Remover
-              </button>
-            </div>
-
-            <!--
-              Os três eixos da exigência, lado a lado enquanto a largura permite: em que
-              fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
-            -->
-            <div class="doc-item__eixos">
-              <div class="form-field">
-                <label class="label" [attr.for]="'fase-doc-alcance-' + doc.id">Exigido em</label>
-                <!--
-                  Alcance entre fases, que é outro eixo do "Coletado em" ao lado: este diz em
-                  QUAIS fases o documento é exigido; aquele, em que ponto DESTA fase ele é
-                  coletado — e a resposta do segundo continua sendo por fase mesmo quando o
-                  primeiro diz "todas".
-                -->
-                <select
-                  class="select"
-                  [attr.id]="'fase-doc-alcance-' + doc.id"
-                  [disabled]="!store.aceitaEdicao()"
-                  (change)="escolherAlcanceDoDocumento(doc.id, $any($event.target).value)"
-                >
-                  <option value="fase" [selected]="!valeEmTodasAsFases(doc.id)">
-                    Só em {{ nomeDaFaseAberta() }}
-                  </option>
-                  <option value="todas" [selected]="valeEmTodasAsFases(doc.id)">
-                    Todas as fases do edital
-                  </option>
-                </select>
-              </div>
-
-              @if (etapasDaFaseAberta().length > 0) {
-                <div class="form-field">
-                  <label class="label" [attr.for]="'fase-doc-etapa-' + doc.id">Coletado em</label>
-                  <!--
-                    `selected` por opção, não `value` no seletor: o valor é aplicado antes de
-                    as opções existirem, e o seletor voltaria sempre em "A fase inteira" —
-                    escondendo a etapa que o processo já declarou.
-                  -->
-                  <select
-                    class="select"
-                    [attr.id]="'fase-doc-etapa-' + doc.id"
-                    [disabled]="!store.aceitaEdicao()"
-                    (change)="escolherEtapaDoDocumento(doc.id, $any($event.target).value)"
-                  >
-                    <option value="" [selected]="etapaDoDocumento(doc.id) === ''">
-                      A fase inteira
-                    </option>
-                    @for (etapa of etapasDaFaseAberta(); track etapa.id ?? etapa.nome) {
-                      <option
-                        [value]="etapa.id ?? ''"
-                        [disabled]="etapa.id === null"
-                        [selected]="etapa.id === etapaDoDocumento(doc.id)"
-                      >
-                        {{ etapa.nome
-                        }}{{ etapa.id === null ? ' — grave o passo para poder escolher' : '' }}
-                      </option>
-                    }
-                  </select>
-                </div>
+        @if (resumos().length > 0) {
+          <!--
+            A conferência lê a fase inteira pelo resumo: o que decide cada exigência fica à vista,
+            e os campos abrem por documento. O filtro responde "o que este candidato entrega".
+          -->
+          <div class="form-field doc-conferencia__filtro">
+            <label class="label" [attr.for]="idDaConferencia('filtro')"
+              >Conferir os documentos de</label
+            >
+            <select
+              #seletorDoPublico
+              class="select"
+              [attr.id]="idDaConferencia('filtro')"
+              [attr.aria-describedby]="idDaConferencia('filtro-total')"
+              (change)="escolherPublico($any($event.target).value)"
+            >
+              @for (opcao of opcoesDoFiltro(); track opcao.valor) {
+                <option [value]="opcao.valor" [selected]="opcao.valor === filtroDoPublico()">
+                  {{ opcao.rotulo }}
+                </option>
               }
+            </select>
+            <p class="field__hint" [attr.id]="idDaConferencia('filtro-total')" role="status">
+              {{ resumosVisiveis().length }} de {{ resumos().length }} documentos.
+              {{ saiuDaLista() }}
+            </p>
+          </div>
 
-              <!--
-                Sem modalidade no quadro não há o que escolher: um campo vazio e desabilitado
-                ao lado do aviso seria só mais uma coisa a ignorar.
-              -->
-              @if (modalidades().length === 0) {
-                <div class="form-field">
-                  <span class="label">Quem deve entregar</span>
-                  <p class="field__hint">
-                    O quadro de vagas ainda não seleciona modalidade alguma. Declare as ofertas
-                    no passo Vagas.
-                  </p>
-                </div>
-              } @else {
-                <div class="form-field">
-                  <label class="label" [attr.for]="modalidadesDoDoc.campoId">
-                    Quem deve entregar
-                  </label>
-                  <ui-combobox
-                    #modalidadesDoDoc
-                    multiplo
-                    rotulo="Modalidades que devem entregar"
-                    placeholder="Todas as modalidades ofertadas"
-                    textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
-                    [grupos]="modalidadesEscolhiveis()"
-                    [values]="modalidadesEfetivas(doc.id)"
-                    [disabled]="!store.aceitaEdicao()"
-                    (valuesChange)="definirModalidades(doc.id, $event)"
-                  />
-                </div>
+          @if (normaComumDaFase(); as norma) {
+            <p class="doc-conferencia__norma-comum">
+              <span class="doc-conferencia__rotulo">Norma de todos os documentos:</span>
+              {{ norma.referencia }} ({{ norma.detalhe }})
+              @if (norma.observacao !== '') {
+                <span class="doc-conferencia__meta">{{ norma.observacao }}</span>
               }
+            </p>
+          }
 
-              <div class="form-field">
-                <label class="label" [attr.for]="'fase-doc-exigido-de-' + doc.id">
-                  Exigido de
-                </label>
-                <!--
-                  Declaração, não dedução: uma exigência pode ser "de quem satisfaz" e ainda
-                  não ter condição escrita — é exigida de ninguém até que a primeira apareça.
-                  Deduzir isto da presença de condição tornaria esse estado inalcançável.
-                -->
-                <select
-                  class="select"
-                  [attr.id]="'fase-doc-exigido-de-' + doc.id"
-                  [disabled]="!store.aceitaEdicao()"
-                  (change)="escolherExigidoDe(doc.id, $any($event.target).value)"
-                >
-                  <option value="todos" [selected]="ehExigidoDeTodos(doc.id)">
-                    Todo candidato
-                  </option>
-                  <option value="quem" [selected]="!ehExigidoDeTodos(doc.id)">
-                    Só de quem satisfaz as condições declaradas
-                  </option>
-                </select>
-                @if (avisoDeDescarteDoGatilho(doc.id) !== '') {
-                  <span class="field__hint">{{ avisoDeDescarteDoGatilho(doc.id) }}</span>
-                }
-              </div>
-
-              @if (!ehExigidoDeTodos(doc.id)) {
-                <!--
-                  O gatilho: há documento que só se cobra de quem tem certo fato — o título de
-                  eleitor não se pede a estrangeiro, a mulher nem a menor de dezoito. As
-                  condições de uma mesma alternativa valem JUNTAS; alternativas diferentes são
-                  caminhos independentes pelos quais o documento passa a ser cobrado.
-                -->
-                <fieldset class="doc-item__gatilho">
-                  <legend class="label">Condições para este documento ser cobrado</legend>
-
-                  @if (fatosDoGatilho().length === 0) {
-                    <p class="field__hint">
-                      O catálogo de fatos do candidato não foi carregado. Recarregue a página
-                      para declarar condições.
-                    </p>
+          <div class="table-responsive quadro-empilhavel doc-conferencia">
+            <table>
+              <caption class="sr-only">
+                Documentos exigidos nesta fase
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="doc-conferencia__col-documento">Documento</th>
+                  <th scope="col" class="doc-conferencia__col-publico">A quem se aplica</th>
+                  <th scope="col" class="doc-conferencia__col-entrega">Entrega</th>
+                  <th scope="col" class="doc-conferencia__col-consequencia">Se não for entregue</th>
+                  <th scope="col" class="doc-conferencia__col-coleta">Coleta</th>
+                  @if (normaComumDaFase() === null) {
+                    <th scope="col" class="doc-conferencia__col-norma">Norma</th>
                   }
-
-                  @for (clausula of clausulasDoDocumento(doc.id); track clausula.numero) {
-                    @if (!$first) {
-                      <p class="gatilho__ou">ou, alternativamente</p>
+                </tr>
+              </thead>
+              <tbody>
+                @for (resumo of resumosVisiveis(); track resumo.id) {
+                  <tr class="doc-conferencia__linha">
+                    <th scope="row">
+                      <!--
+                        O nome abre os campos do documento, como o nome da fase abre a fase: um botão a mais
+                        por linha tomaria a largura de uma coluna da conferência. Em consulta também abre:
+                        o detalhe (a descrição do tipo, os formatos que a exigência não declara) só está lá.
+                      -->
+                      <button
+                        class="doc-conferencia__alternar"
+                        type="button"
+                        [attr.aria-expanded]="emEdicao(resumo.id)"
+                        [attr.aria-controls]="idDaConferencia('campos-' + resumo.id)"
+                        (click)="alternarEdicaoNaConferencia(resumo.id, seletorDoPublico)"
+                      >
+                        <span class="etapa-resumo__seta" aria-hidden="true"></span>
+                        <span>{{ resumo.nome }}</span>
+                      </button>
+                      @if (resumo.repetido !== '') {
+                        <span class="doc-conferencia__meta">{{ resumo.repetido }}</span>
+                      }
+                    </th>
+                    <td class="doc-conferencia__largo" data-label="A quem se aplica">
+                      {{ resumo.aplicaA }}
+                    </td>
+                    <td data-label="Entrega">
+                      {{ resumo.entrega }}
+                      @if (resumo.composicao !== '') {
+                        <span class="doc-conferencia__meta">{{ resumo.composicao }}</span>
+                      }
+                    </td>
+                    <td data-label="Se não for entregue">{{ resumo.consequencia }}</td>
+                    <td data-label="Coleta">{{ resumo.coleta }}</td>
+                    @if (normaComumDaFase() === null) {
+                      <td class="doc-conferencia__largo" data-label="Norma">
+                        @for (norma of resumo.normas; track $index) {
+                          <span class="doc-conferencia__norma">
+                            {{ norma.referencia }}
+                            <span class="doc-conferencia__meta">{{ norma.detalhe }}</span>
+                            @if (norma.observacao !== '') {
+                              <span class="doc-conferencia__meta">{{ norma.observacao }}</span>
+                            }
+                          </span>
+                        }
+                        @if (resumo.faltaNorma) {
+                          <span class="tag tag--warning">Sem norma resolvida</span>
+                        }
+                      </td>
                     }
-
-                    <div class="gatilho__clausula">
-                      @for (posicionada of clausula.condicoes; track posicionada.indice) {
-                        <div class="gatilho__condicao">
-                          <div class="form-field">
-                            <label
-                              class="label"
-                              [attr.for]="'fase-doc-fato-' + doc.id + '-' + posicionada.indice"
-                            >
-                              Fato do candidato
-                            </label>
-                            <select
-                              class="select"
-                              [attr.id]="'fase-doc-fato-' + doc.id + '-' + posicionada.indice"
-                              [disabled]="!store.aceitaEdicao()"
-                              (change)="
-                                escolherFatoDaCondicao(
-                                  doc.id,
-                                  posicionada.indice,
-                                  $any($event.target).value
-                                )
-                              "
-                            >
-                              @for (fato of fatosDoGatilho(); track fato.codigo) {
-                                <option
-                                  [value]="fato.codigo"
-                                  [selected]="fato.codigo === posicionada.condicao.fato"
-                                >
-                                  {{ fato.nome }}
-                                </option>
+                  </tr>
+                  @if (emEdicao(resumo.id)) {
+                    <tr
+                      class="doc-conferencia__campos"
+                      [attr.id]="idDaConferencia('campos-' + resumo.id)"
+                    >
+                      <td [attr.colspan]="colunasDaConferencia()">
+                        @let doc = resumo.documento;
+                        <div class="doc-item doc-item--exigido">
+                          <div class="doc-item__row">
+                            <div class="doc-item__info">
+                              <span class="doc-item__name">{{ doc.nome }}</span>
+                              <span class="doc-item__desc">{{ doc.desc }}</span>
+                              <!-- Folha dentro de um grupo não é exigida por si: basta satisfazer o grupo.
+                                   Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
+                              @if (posicaoNaArvore(doc.id) !== '') {
+                                <span class="doc-item__desc">{{ posicaoNaArvore(doc.id) }}</span>
                               }
-                              @if (fatoDaCondicao(posicionada.condicao.fato) === undefined) {
-                                <option [value]="posicionada.condicao.fato" selected>
-                                  {{ posicionada.condicao.fato }} — fora do catálogo
-                                </option>
+                              @if (declaradoMaisDeUmaVez(doc.id) !== '') {
+                                <span class="field__hint">{{ declaradoMaisDeUmaVez(doc.id) }}</span>
                               }
-                            </select>
-                          </div>
-
-                          <div class="form-field">
-                            <label
-                              class="label"
-                              [attr.for]="'fase-doc-operador-' + doc.id + '-' + posicionada.indice"
-                            >
-                              Comparação
-                            </label>
-                            <select
-                              class="select"
-                              [attr.id]="'fase-doc-operador-' + doc.id + '-' + posicionada.indice"
-                              [disabled]="!store.aceitaEdicao()"
-                              (change)="
-                                escolherOperadorDaCondicao(
-                                  doc.id,
-                                  posicionada.indice,
-                                  $any($event.target).value
-                                )
-                              "
-                            >
-                              @for (
-                                opcao of operadoresDaCondicao(posicionada.condicao.fato);
-                                track opcao.valor
-                              ) {
-                                <option
-                                  [value]="opcao.valor"
-                                  [selected]="opcao.valor === posicionada.condicao.operador"
-                                >
-                                  {{ opcao.rotulo }}
-                                </option>
-                              }
-                            </select>
-                          </div>
-
-                          @if (condicaoComparaComLista(posicionada.condicao.operador)) {
-                            <div class="form-field">
-                              <label class="label" [attr.for]="valoresDoFatoCampo.campoId">
-                                Valores
-                              </label>
-                              <ui-combobox
-                                #valoresDoFatoCampo
-                                multiplo
-                                rotulo="Valores que satisfazem a condição"
-                                placeholder="Escolha ao menos um"
-                                textoSemResultado="Nenhum valor do domínio casa com o que você digitou."
-                                [grupos]="valoresDoFato(posicionada.condicao.fato)"
-                                [values]="valoresDaCondicao(posicionada.condicao)"
-                                [disabled]="!store.aceitaEdicao()"
-                                (valuesChange)="
-                                  escreverValoresDaCondicao(doc.id, posicionada.indice, $event)
-                                "
-                              />
                             </div>
-                          } @else if (fatoEhBooleano(posicionada.condicao.fato)) {
+                            <button
+                              class="btn btn--tertiary"
+                              type="button"
+                              [disabled]="!store.aceitaEdicao()"
+                              [attr.aria-label]="'Remover ' + doc.nome"
+                              (click)="removerDocumento(doc.id)"
+                            >
+                              Remover
+                            </button>
+                          </div>
+
+                          <!--
+                            Os três eixos da exigência, lado a lado enquanto a largura permite: em que
+                            fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
+                          -->
+                          <div class="doc-item__eixos">
                             <div class="form-field">
-                              <label
-                                class="label"
-                                [attr.for]="'fase-doc-valor-' + doc.id + '-' + posicionada.indice"
+                              <label class="label" [attr.for]="'fase-doc-alcance-' + doc.id"
+                                >Exigido em</label
                               >
-                                Resposta
-                              </label>
                               <!--
-                                Duas opções fechadas, nunca texto livre: um campo de texto aqui
-                                aceitaria "Sim" e gravaria o contrário do que foi escrito, e o
-                                servidor aceitaria, porque "não" também é booleano válido.
+                                Alcance entre fases, que é outro eixo do "Coletado em" ao lado: este diz em
+                                QUAIS fases o documento é exigido; aquele, em que ponto DESTA fase ele é
+                                coletado — e a resposta do segundo continua sendo por fase mesmo quando o
+                                primeiro diz "todas".
                               -->
                               <select
                                 class="select"
-                                [attr.id]="'fase-doc-valor-' + doc.id + '-' + posicionada.indice"
+                                [attr.id]="'fase-doc-alcance-' + doc.id"
                                 [disabled]="!store.aceitaEdicao()"
                                 (change)="
-                                  escreverValorDaCondicao(
-                                    doc.id,
-                                    posicionada.indice,
-                                    $any($event.target).value
-                                  )
+                                  escolherAlcanceDoDocumento(doc.id, $any($event.target).value)
                                 "
                               >
-                                <option value="" [selected]="valorDaCondicao(posicionada.condicao) === ''">
-                                  Escolha a resposta
+                                <option value="fase" [selected]="!valeEmTodasAsFases(doc.id)">
+                                  Só em {{ nomeDaFaseAberta() }}
                                 </option>
-                                @for (resposta of respostasBooleanas; track resposta.valor) {
-                                  <option
-                                    [value]="resposta.valor"
-                                    [selected]="resposta.valor === valorDaCondicao(posicionada.condicao)"
-                                  >
-                                    {{ resposta.rotulo }}
-                                  </option>
-                                }
+                                <option value="todas" [selected]="valeEmTodasAsFases(doc.id)">
+                                  Todas as fases do edital
+                                </option>
                               </select>
                             </div>
-                          } @else if (valoresEscolhiveis(posicionada.condicao.fato).length > 0) {
+
+                            @if (etapasDaFaseAberta().length > 0) {
+                              <div class="form-field">
+                                <label class="label" [attr.for]="'fase-doc-etapa-' + doc.id"
+                                  >Coletado em</label
+                                >
+                                <!--
+                                  `selected` por opção, não `value` no seletor: o valor é aplicado antes de
+                                  as opções existirem, e o seletor voltaria sempre em "A fase inteira" —
+                                  escondendo a etapa que o processo já declarou.
+                                -->
+                                <select
+                                  class="select"
+                                  [attr.id]="'fase-doc-etapa-' + doc.id"
+                                  [disabled]="!store.aceitaEdicao()"
+                                  (change)="
+                                    escolherEtapaDoDocumento(doc.id, $any($event.target).value)
+                                  "
+                                >
+                                  <option value="" [selected]="etapaDoDocumento(doc.id) === ''">
+                                    A fase inteira
+                                  </option>
+                                  @for (
+                                    etapa of etapasDaFaseAberta();
+                                    track etapa.id ?? etapa.nome
+                                  ) {
+                                    <option
+                                      [value]="etapa.id ?? ''"
+                                      [disabled]="etapa.id === null"
+                                      [selected]="etapa.id === etapaDoDocumento(doc.id)"
+                                    >
+                                      {{ etapa.nome
+                                      }}{{
+                                        etapa.id === null
+                                          ? ' — grave o passo para poder escolher'
+                                          : ''
+                                      }}
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+                            }
+
+                            <!--
+                              Sem modalidade no quadro não há o que escolher: um campo vazio e desabilitado
+                              ao lado do aviso seria só mais uma coisa a ignorar.
+                            -->
+                            @if (modalidades().length === 0) {
+                              <div class="form-field">
+                                <span class="label">Quem deve entregar</span>
+                                <p class="field__hint">
+                                  O quadro de vagas ainda não seleciona modalidade alguma. Declare
+                                  as ofertas no passo Vagas.
+                                </p>
+                              </div>
+                            } @else {
+                              <div class="form-field">
+                                <label class="label" [attr.for]="modalidadesDoDoc.campoId">
+                                  Quem deve entregar
+                                </label>
+                                <ui-combobox
+                                  #modalidadesDoDoc
+                                  multiplo
+                                  rotulo="Modalidades que devem entregar"
+                                  placeholder="Todas as modalidades ofertadas"
+                                  textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
+                                  [grupos]="modalidadesEscolhiveis()"
+                                  [values]="modalidadesEfetivas(doc.id)"
+                                  [disabled]="!store.aceitaEdicao()"
+                                  (valuesChange)="definirModalidades(doc.id, $event)"
+                                />
+                              </div>
+                            }
+
                             <div class="form-field">
-                              <label
-                                class="label"
-                                [attr.for]="'fase-doc-valor-' + doc.id + '-' + posicionada.indice"
+                              <label class="label" [attr.for]="'fase-doc-exigido-de-' + doc.id">
+                                Exigido de
+                              </label>
+                              <!--
+                                Declaração, não dedução: uma exigência pode ser "de quem satisfaz" e ainda
+                                não ter condição escrita — é exigida de ninguém até que a primeira apareça.
+                                Deduzir isto da presença de condição tornaria esse estado inalcançável.
+                              -->
+                              <select
+                                class="select"
+                                [attr.id]="'fase-doc-exigido-de-' + doc.id"
+                                [disabled]="!store.aceitaEdicao()"
+                                (change)="escolherExigidoDe(doc.id, $any($event.target).value)"
                               >
-                                Valor
+                                <option value="todos" [selected]="ehExigidoDeTodos(doc.id)">
+                                  Todo candidato
+                                </option>
+                                <option value="quem" [selected]="!ehExigidoDeTodos(doc.id)">
+                                  Só de quem satisfaz as condições declaradas
+                                </option>
+                              </select>
+                              @if (avisoDeDescarteDoGatilho(doc.id) !== '') {
+                                <span class="field__hint">{{
+                                  avisoDeDescarteDoGatilho(doc.id)
+                                }}</span>
+                              }
+                            </div>
+
+                            @if (!ehExigidoDeTodos(doc.id)) {
+                              <!--
+                                O gatilho: há documento que só se cobra de quem tem certo fato — o título de
+                                eleitor não se pede a estrangeiro, a mulher nem a menor de dezoito. As
+                                condições de uma mesma alternativa valem JUNTAS; alternativas diferentes são
+                                caminhos independentes pelos quais o documento passa a ser cobrado.
+                              -->
+                              <fieldset class="doc-item__gatilho">
+                                <legend class="label">
+                                  Condições para este documento ser cobrado
+                                </legend>
+
+                                @if (fatosDoGatilho().length === 0) {
+                                  <p class="field__hint">
+                                    O catálogo de fatos do candidato não foi carregado. Recarregue a
+                                    página para declarar condições.
+                                  </p>
+                                }
+
+                                @for (
+                                  clausula of clausulasDoDocumento(doc.id);
+                                  track clausula.numero
+                                ) {
+                                  @if (!$first) {
+                                    <p class="gatilho__ou">ou, alternativamente</p>
+                                  }
+
+                                  <div class="gatilho__clausula">
+                                    @for (
+                                      posicionada of clausula.condicoes;
+                                      track posicionada.indice
+                                    ) {
+                                      <div class="gatilho__condicao">
+                                        <div class="form-field">
+                                          <label
+                                            class="label"
+                                            [attr.for]="
+                                              'fase-doc-fato-' + doc.id + '-' + posicionada.indice
+                                            "
+                                          >
+                                            Fato do candidato
+                                          </label>
+                                          <select
+                                            class="select"
+                                            [attr.id]="
+                                              'fase-doc-fato-' + doc.id + '-' + posicionada.indice
+                                            "
+                                            [disabled]="!store.aceitaEdicao()"
+                                            (change)="
+                                              escolherFatoDaCondicao(
+                                                doc.id,
+                                                posicionada.indice,
+                                                $any($event.target).value
+                                              )
+                                            "
+                                          >
+                                            @for (fato of fatosDoGatilho(); track fato.codigo) {
+                                              <option
+                                                [value]="fato.codigo"
+                                                [selected]="
+                                                  fato.codigo === posicionada.condicao.fato
+                                                "
+                                              >
+                                                {{ fato.nome }}
+                                              </option>
+                                            }
+                                            @if (
+                                              fatoDaCondicao(posicionada.condicao.fato) ===
+                                              undefined
+                                            ) {
+                                              <option [value]="posicionada.condicao.fato" selected>
+                                                {{ posicionada.condicao.fato }} — fora do catálogo
+                                              </option>
+                                            }
+                                          </select>
+                                        </div>
+
+                                        <div class="form-field">
+                                          <label
+                                            class="label"
+                                            [attr.for]="
+                                              'fase-doc-operador-' +
+                                              doc.id +
+                                              '-' +
+                                              posicionada.indice
+                                            "
+                                          >
+                                            Comparação
+                                          </label>
+                                          <select
+                                            class="select"
+                                            [attr.id]="
+                                              'fase-doc-operador-' +
+                                              doc.id +
+                                              '-' +
+                                              posicionada.indice
+                                            "
+                                            [disabled]="!store.aceitaEdicao()"
+                                            (change)="
+                                              escolherOperadorDaCondicao(
+                                                doc.id,
+                                                posicionada.indice,
+                                                $any($event.target).value
+                                              )
+                                            "
+                                          >
+                                            @for (
+                                              opcao of operadoresDaCondicao(
+                                                posicionada.condicao.fato
+                                              );
+                                              track opcao.valor
+                                            ) {
+                                              <option
+                                                [value]="opcao.valor"
+                                                [selected]="
+                                                  opcao.valor === posicionada.condicao.operador
+                                                "
+                                              >
+                                                {{ opcao.rotulo }}
+                                              </option>
+                                            }
+                                          </select>
+                                        </div>
+
+                                        @if (
+                                          condicaoComparaComLista(posicionada.condicao.operador)
+                                        ) {
+                                          <div class="form-field">
+                                            <label
+                                              class="label"
+                                              [attr.for]="valoresDoFatoCampo.campoId"
+                                            >
+                                              Valores
+                                            </label>
+                                            <ui-combobox
+                                              #valoresDoFatoCampo
+                                              multiplo
+                                              rotulo="Valores que satisfazem a condição"
+                                              placeholder="Escolha ao menos um"
+                                              textoSemResultado="Nenhum valor do domínio casa com o que você digitou."
+                                              [grupos]="valoresDoFato(posicionada.condicao.fato)"
+                                              [values]="valoresDaCondicao(posicionada.condicao)"
+                                              [disabled]="!store.aceitaEdicao()"
+                                              (valuesChange)="
+                                                escreverValoresDaCondicao(
+                                                  doc.id,
+                                                  posicionada.indice,
+                                                  $event
+                                                )
+                                              "
+                                            />
+                                          </div>
+                                        } @else if (fatoEhBooleano(posicionada.condicao.fato)) {
+                                          <div class="form-field">
+                                            <label
+                                              class="label"
+                                              [attr.for]="
+                                                'fase-doc-valor-' +
+                                                doc.id +
+                                                '-' +
+                                                posicionada.indice
+                                              "
+                                            >
+                                              Resposta
+                                            </label>
+                                            <!--
+                                              Duas opções fechadas, nunca texto livre: um campo de texto aqui
+                                              aceitaria "Sim" e gravaria o contrário do que foi escrito, e o
+                                              servidor aceitaria, porque "não" também é booleano válido.
+                                            -->
+                                            <select
+                                              class="select"
+                                              [attr.id]="
+                                                'fase-doc-valor-' +
+                                                doc.id +
+                                                '-' +
+                                                posicionada.indice
+                                              "
+                                              [disabled]="!store.aceitaEdicao()"
+                                              (change)="
+                                                escreverValorDaCondicao(
+                                                  doc.id,
+                                                  posicionada.indice,
+                                                  $any($event.target).value
+                                                )
+                                              "
+                                            >
+                                              <option
+                                                value=""
+                                                [selected]="
+                                                  valorDaCondicao(posicionada.condicao) === ''
+                                                "
+                                              >
+                                                Escolha a resposta
+                                              </option>
+                                              @for (
+                                                resposta of respostasBooleanas;
+                                                track resposta.valor
+                                              ) {
+                                                <option
+                                                  [value]="resposta.valor"
+                                                  [selected]="
+                                                    resposta.valor ===
+                                                    valorDaCondicao(posicionada.condicao)
+                                                  "
+                                                >
+                                                  {{ resposta.rotulo }}
+                                                </option>
+                                              }
+                                            </select>
+                                          </div>
+                                        } @else if (
+                                          valoresEscolhiveis(posicionada.condicao.fato).length > 0
+                                        ) {
+                                          <div class="form-field">
+                                            <label
+                                              class="label"
+                                              [attr.for]="
+                                                'fase-doc-valor-' +
+                                                doc.id +
+                                                '-' +
+                                                posicionada.indice
+                                              "
+                                            >
+                                              Valor
+                                            </label>
+                                            <select
+                                              class="select"
+                                              [attr.id]="
+                                                'fase-doc-valor-' +
+                                                doc.id +
+                                                '-' +
+                                                posicionada.indice
+                                              "
+                                              [disabled]="!store.aceitaEdicao()"
+                                              (change)="
+                                                escreverValorDaCondicao(
+                                                  doc.id,
+                                                  posicionada.indice,
+                                                  $any($event.target).value
+                                                )
+                                              "
+                                            >
+                                              <option
+                                                value=""
+                                                [selected]="
+                                                  valorDaCondicao(posicionada.condicao) === ''
+                                                "
+                                              >
+                                                Escolha o valor
+                                              </option>
+                                              @for (
+                                                valor of valoresEscolhiveis(
+                                                  posicionada.condicao.fato
+                                                );
+                                                track valor
+                                              ) {
+                                                <option
+                                                  [value]="valor"
+                                                  [selected]="
+                                                    valor === valorDaCondicao(posicionada.condicao)
+                                                  "
+                                                >
+                                                  {{ valor }}
+                                                </option>
+                                              }
+                                            </select>
+                                          </div>
+                                        } @else {
+                                          <div class="form-field">
+                                            <label
+                                              class="label"
+                                              [attr.for]="
+                                                'fase-doc-valor-' +
+                                                doc.id +
+                                                '-' +
+                                                posicionada.indice
+                                              "
+                                            >
+                                              Valor
+                                            </label>
+                                            <input
+                                              class="input"
+                                              type="text"
+                                              inputmode="numeric"
+                                              [attr.id]="
+                                                'fase-doc-valor-' +
+                                                doc.id +
+                                                '-' +
+                                                posicionada.indice
+                                              "
+                                              [value]="valorDaCondicao(posicionada.condicao)"
+                                              [disabled]="!store.aceitaEdicao()"
+                                              (input)="
+                                                escreverValorDaCondicao(
+                                                  doc.id,
+                                                  posicionada.indice,
+                                                  $any($event.target).value
+                                                )
+                                              "
+                                            />
+                                          </div>
+                                        }
+
+                                        <button
+                                          class="btn btn--tertiary btn--sm"
+                                          type="button"
+                                          [disabled]="!store.aceitaEdicao()"
+                                          [attr.aria-label]="
+                                            'Remover a condição sobre ' + posicionada.condicao.fato
+                                          "
+                                          (click)="removerCondicao(doc.id, posicionada.indice)"
+                                        >
+                                          Remover condição
+                                        </button>
+
+                                        @if (alcanceDe(posicionada.condicao) !== '') {
+                                          <!--
+                                            "não é feminino" e "é masculino" não são a mesma coisa: a
+                                            primeira alcança também quem declarou outro valor do domínio.
+                                            Dizer o que cada condição alcança é o que torna a escolha
+                                            consciente antes da gravação.
+                                          -->
+                                          <p class="field__hint gatilho__alcance">
+                                            {{ alcanceDe(posicionada.condicao) }}
+                                          </p>
+                                        }
+                                      </div>
+                                    }
+
+                                    <div class="gatilho__acoes">
+                                      <button
+                                        class="btn btn--tertiary btn--sm"
+                                        type="button"
+                                        [disabled]="
+                                          !store.aceitaEdicao() || fatosDoGatilho().length === 0
+                                        "
+                                        (click)="acrescentarCondicao(doc.id, clausula.numero)"
+                                      >
+                                        Acrescentar condição que também precisa valer
+                                      </button>
+                                      @if (clausulasDoDocumento(doc.id).length > 1) {
+                                        <button
+                                          class="btn btn--tertiary btn--sm"
+                                          type="button"
+                                          [disabled]="!store.aceitaEdicao()"
+                                          (click)="removerAlternativa(doc.id, clausula.numero)"
+                                        >
+                                          Remover esta alternativa
+                                        </button>
+                                      }
+                                    </div>
+                                  </div>
+                                } @empty {
+                                  <p class="field__hint">{{ gatilhoSemCondicaoDiz(doc.id) }}</p>
+                                }
+
+                                <button
+                                  class="btn btn--tertiary btn--sm"
+                                  type="button"
+                                  [disabled]="
+                                    !store.aceitaEdicao() || fatosDoGatilho().length === 0
+                                  "
+                                  (click)="acrescentarAlternativa(doc.id)"
+                                >
+                                  Acrescentar alternativa
+                                </button>
+                              </fieldset>
+                            }
+
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'fase-doc-obrigatorio-' + doc.id">
+                                Entrega
                               </label>
                               <select
                                 class="select"
-                                [attr.id]="'fase-doc-valor-' + doc.id + '-' + posicionada.indice"
+                                [attr.id]="'fase-doc-obrigatorio-' + doc.id"
                                 [disabled]="!store.aceitaEdicao()"
                                 (change)="
-                                  escreverValorDaCondicao(
-                                    doc.id,
-                                    posicionada.indice,
-                                    $any($event.target).value
-                                  )
+                                  escolherObrigatoriedade(doc.id, $any($event.target).value)
                                 "
                               >
-                                <option value="" [selected]="valorDaCondicao(posicionada.condicao) === ''">
-                                  Escolha o valor
+                                <option value="sim" [selected]="ehObrigatorio(doc.id)">
+                                  Obrigatória
                                 </option>
-                                @for (
-                                  valor of valoresEscolhiveis(posicionada.condicao.fato);
-                                  track valor
-                                ) {
+                                <option value="nao" [selected]="!ehObrigatorio(doc.id)">
+                                  Facultativa — a análise segue sem ela
+                                </option>
+                              </select>
+                            </div>
+
+                            <div class="form-field">
+                              <label class="label" [attr.for]="'fase-doc-consequencia-' + doc.id">
+                                Se não for entregue
+                              </label>
+                              <!--
+                                Toda exigência que decide sozinha o resultado precisa de norma resolvida — é
+                                o que a publicação confere. A consequência é o que diz se ela decide.
+                              -->
+                              <select
+                                class="select"
+                                [attr.id]="'fase-doc-consequencia-' + doc.id"
+                                [disabled]="!store.aceitaEdicao()"
+                                (change)="escolherConsequencia(doc.id, $any($event.target).value)"
+                              >
+                                @for (opcao of consequenciasDaFase(); track opcao.valor) {
                                   <option
-                                    [value]="valor"
-                                    [selected]="valor === valorDaCondicao(posicionada.condicao)"
+                                    [value]="opcao.valor"
+                                    [selected]="opcao.valor === consequenciaDoDocumento(doc.id)"
                                   >
-                                    {{ valor }}
+                                    {{ rotuloDaConsequencia(opcao.valor, ehObrigatorio(doc.id)) }}
                                   </option>
                                 }
                               </select>
+                              @if (formatosForaDoContrato(doc.id).length > 0) {
+                                <span class="field__hint">
+                                  O cadastro aceita {{ formatosForaDoContrato(doc.id).join(', ') }},
+                                  que a exigência não sabe declarar — o candidato só poderá entregar
+                                  os demais.
+                                </span>
+                              }
                             </div>
-                          } @else {
-                            <div class="form-field">
-                              <label
-                                class="label"
-                                [attr.for]="'fase-doc-valor-' + doc.id + '-' + posicionada.indice"
-                              >
-                                Valor
-                              </label>
-                              <input
-                                class="input"
-                                type="text"
-                                inputmode="numeric"
-                                [attr.id]="'fase-doc-valor-' + doc.id + '-' + posicionada.indice"
-                                [value]="valorDaCondicao(posicionada.condicao)"
+
+                            <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
+                                 federal somada à cláusula do edital é o caso comum. -->
+                            @for (base of basesLegaisDoDocumento(doc.id); track $index) {
+                              <div class="form-field">
+                                <label
+                                  class="label"
+                                  [attr.for]="'fase-doc-base-legal-' + doc.id + '-' + $index"
+                                >
+                                  Norma que exige o documento
+                                </label>
+                                <input
+                                  class="input"
+                                  type="text"
+                                  [attr.id]="'fase-doc-base-legal-' + doc.id + '-' + $index"
+                                  placeholder="Lei 12.711/2012, art. 3º"
+                                  [value]="base.referencia"
+                                  [disabled]="!store.aceitaEdicao()"
+                                  (input)="
+                                    escreverBaseLegal(
+                                      doc.id,
+                                      $index,
+                                      'referencia',
+                                      $any($event.target).value
+                                    )
+                                  "
+                                />
+                              </div>
+
+                              <div class="form-field">
+                                <label
+                                  class="label"
+                                  [attr.for]="'fase-doc-abrangencia-' + doc.id + '-' + $index"
+                                >
+                                  Alcance da norma
+                                </label>
+                                <select
+                                  class="select"
+                                  [attr.id]="'fase-doc-abrangencia-' + doc.id + '-' + $index"
+                                  [disabled]="!store.aceitaEdicao()"
+                                  (change)="
+                                    escreverBaseLegal(
+                                      doc.id,
+                                      $index,
+                                      'abrangencia',
+                                      $any($event.target).value
+                                    )
+                                  "
+                                >
+                                  @for (opcao of abrangencias; track opcao.valor) {
+                                    <option
+                                      [value]="opcao.valor"
+                                      [selected]="opcao.valor === base.abrangencia"
+                                    >
+                                      {{ opcao.rotulo }}
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+
+                              <div class="form-field">
+                                <label
+                                  class="label"
+                                  [attr.for]="'fase-doc-status-legal-' + doc.id + '-' + $index"
+                                >
+                                  Identificação da norma
+                                </label>
+                                <select
+                                  class="select"
+                                  [attr.id]="'fase-doc-status-legal-' + doc.id + '-' + $index"
+                                  [disabled]="!store.aceitaEdicao()"
+                                  (change)="
+                                    escreverBaseLegal(
+                                      doc.id,
+                                      $index,
+                                      'status',
+                                      $any($event.target).value
+                                    )
+                                  "
+                                >
+                                  @for (opcao of statusBaseLegal; track opcao.valor) {
+                                    <option
+                                      [value]="opcao.valor"
+                                      [selected]="opcao.valor === base.status"
+                                    >
+                                      {{ opcao.rotulo }}
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+
+                              <div class="form-field">
+                                <label
+                                  class="label"
+                                  [attr.for]="'fase-doc-obs-legal-' + doc.id + '-' + $index"
+                                >
+                                  Observação<span class="sr-only"> sobre a norma</span> (opcional)
+                                </label>
+                                <input
+                                  class="input"
+                                  type="text"
+                                  [attr.id]="'fase-doc-obs-legal-' + doc.id + '-' + $index"
+                                  placeholder="O que esta norma exige, em uma linha"
+                                  [value]="base.observacao"
+                                  [disabled]="!store.aceitaEdicao()"
+                                  (input)="
+                                    escreverBaseLegal(
+                                      doc.id,
+                                      $index,
+                                      'observacao',
+                                      $any($event.target).value
+                                    )
+                                  "
+                                />
+                              </div>
+
+                              @if (basesLegaisDoDocumento(doc.id).length > 1) {
+                                <div class="doc-item__acoes">
+                                  <button
+                                    class="btn btn--tertiary btn--sm"
+                                    type="button"
+                                    [disabled]="!store.aceitaEdicao()"
+                                    (click)="removerBaseLegal(doc.id, $index)"
+                                  >
+                                    Remover esta norma
+                                  </button>
+                                </div>
+                              }
+                            }
+
+                            @if (faltaNormaResolvida(doc.id)) {
+                              <p class="field__hint doc-item__aviso-norma">
+                                Sem uma norma declarada e identificada como "Resolvida", a
+                                publicação recusa esta exigência, que decide o resultado.
+                              </p>
+                            }
+
+                            <div class="doc-item__acoes">
+                              <button
+                                class="btn btn--tertiary btn--sm"
+                                type="button"
                                 [disabled]="!store.aceitaEdicao()"
-                                (input)="
-                                  escreverValorDaCondicao(
-                                    doc.id,
-                                    posicionada.indice,
-                                    $any($event.target).value
-                                  )
-                                "
-                              />
+                                (click)="acrescentarBaseLegal(doc.id)"
+                              >
+                                Acrescentar outra norma
+                              </button>
                             </div>
-                          }
-
-                          <button
-                            class="btn btn--tertiary btn--sm"
-                            type="button"
-                            [disabled]="!store.aceitaEdicao()"
-                            [attr.aria-label]="
-                              'Remover a condição sobre ' + posicionada.condicao.fato
-                            "
-                            (click)="removerCondicao(doc.id, posicionada.indice)"
-                          >
-                            Remover condição
-                          </button>
-
-                          @if (alcanceDe(posicionada.condicao) !== '') {
-                            <!--
-                              "não é feminino" e "é masculino" não são a mesma coisa: a
-                              primeira alcança também quem declarou outro valor do domínio.
-                              Dizer o que cada condição alcança é o que torna a escolha
-                              consciente antes da gravação.
-                            -->
-                            <p class="field__hint gatilho__alcance">
-                              {{ alcanceDe(posicionada.condicao) }}
-                            </p>
-                          }
+                          </div>
                         </div>
-                      }
-
-                      <div class="gatilho__acoes">
-                        <button
-                          class="btn btn--tertiary btn--sm"
-                          type="button"
-                          [disabled]="!store.aceitaEdicao() || fatosDoGatilho().length === 0"
-                          (click)="acrescentarCondicao(doc.id, clausula.numero)"
-                        >
-                          Acrescentar condição que também precisa valer
-                        </button>
-                        @if (clausulasDoDocumento(doc.id).length > 1) {
-                          <button
-                            class="btn btn--tertiary btn--sm"
-                            type="button"
-                            [disabled]="!store.aceitaEdicao()"
-                            (click)="removerAlternativa(doc.id, clausula.numero)"
-                          >
-                            Remover esta alternativa
-                          </button>
-                        }
-                      </div>
-                    </div>
-                  } @empty {
-                    <p class="field__hint">{{ gatilhoSemCondicaoDiz(doc.id) }}</p>
+                      </td>
+                    </tr>
                   }
-
-                  <button
-                    class="btn btn--tertiary btn--sm"
-                    type="button"
-                    [disabled]="!store.aceitaEdicao() || fatosDoGatilho().length === 0"
-                    (click)="acrescentarAlternativa(doc.id)"
-                  >
-                    Acrescentar alternativa
-                  </button>
-                </fieldset>
-              }
-
-              <div class="form-field">
-                <label class="label" [attr.for]="'fase-doc-obrigatorio-' + doc.id">
-                  Entrega
-                </label>
-                <select
-                  class="select"
-                  [attr.id]="'fase-doc-obrigatorio-' + doc.id"
-                  [disabled]="!store.aceitaEdicao()"
-                  (change)="escolherObrigatoriedade(doc.id, $any($event.target).value)"
-                >
-                  <option value="sim" [selected]="ehObrigatorio(doc.id)">Obrigatória</option>
-                  <option value="nao" [selected]="!ehObrigatorio(doc.id)">
-                    Facultativa — a análise segue sem ela
-                  </option>
-                </select>
-              </div>
-
-              <div class="form-field">
-                <label class="label" [attr.for]="'fase-doc-consequencia-' + doc.id">
-                  Se não for entregue
-                </label>
-                <!--
-                  Toda exigência que decide sozinha o resultado precisa de norma resolvida — é
-                  o que a publicação confere. A consequência é o que diz se ela decide.
-                -->
-                <select
-                  class="select"
-                  [attr.id]="'fase-doc-consequencia-' + doc.id"
-                  [disabled]="!store.aceitaEdicao()"
-                  (change)="escolherConsequencia(doc.id, $any($event.target).value)"
-                >
-                  @for (opcao of consequenciasDaFase(); track opcao.valor) {
-                    <option
-                      [value]="opcao.valor"
-                      [selected]="opcao.valor === consequenciaDoDocumento(doc.id)"
-                    >
-                      {{
-                        opcao.valor === '' && ehObrigatorio(doc.id)
-                          ? 'Nada além de faltar o documento obrigatório'
-                          : opcao.rotulo
-                      }}
-                    </option>
-                  }
-                </select>
-                @if (formatosForaDoContrato(doc.id).length > 0) {
-                  <span class="field__hint">
-                    O cadastro aceita {{ formatosForaDoContrato(doc.id).join(', ') }}, que a
-                    exigência não sabe declarar — o candidato só poderá entregar os demais.
-                  </span>
                 }
-              </div>
-
-              <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
-                   federal somada à cláusula do edital é o caso comum. -->
-              @for (base of basesLegaisDoDocumento(doc.id); track $index) {
-                <div class="form-field">
-                  <label class="label" [attr.for]="'fase-doc-base-legal-' + doc.id + '-' + $index">
-                    Norma que exige o documento
-                  </label>
-                  <input
-                    class="input"
-                    type="text"
-                    [attr.id]="'fase-doc-base-legal-' + doc.id + '-' + $index"
-                    placeholder="Lei 12.711/2012, art. 3º"
-                    [value]="base.referencia"
-                    [disabled]="!store.aceitaEdicao()"
-                    (input)="
-                      escreverBaseLegal(doc.id, $index, 'referencia', $any($event.target).value)
-                    "
-                  />
-                </div>
-
-                <div class="form-field">
-                  <label class="label" [attr.for]="'fase-doc-abrangencia-' + doc.id + '-' + $index">
-                    Alcance da norma
-                  </label>
-                  <select
-                    class="select"
-                    [attr.id]="'fase-doc-abrangencia-' + doc.id + '-' + $index"
-                    [disabled]="!store.aceitaEdicao()"
-                    (change)="
-                      escreverBaseLegal(doc.id, $index, 'abrangencia', $any($event.target).value)
-                    "
-                  >
-                    @for (opcao of abrangencias; track opcao.valor) {
-                      <option [value]="opcao.valor" [selected]="opcao.valor === base.abrangencia">
-                        {{ opcao.rotulo }}
-                      </option>
-                    }
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label class="label" [attr.for]="'fase-doc-status-legal-' + doc.id + '-' + $index">
-                    Identificação da norma
-                  </label>
-                  <select
-                    class="select"
-                    [attr.id]="'fase-doc-status-legal-' + doc.id + '-' + $index"
-                    [disabled]="!store.aceitaEdicao()"
-                    (change)="
-                      escreverBaseLegal(doc.id, $index, 'status', $any($event.target).value)
-                    "
-                  >
-                    @for (opcao of statusBaseLegal; track opcao.valor) {
-                      <option [value]="opcao.valor" [selected]="opcao.valor === base.status">
-                        {{ opcao.rotulo }}
-                      </option>
-                    }
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label class="label" [attr.for]="'fase-doc-obs-legal-' + doc.id + '-' + $index">
-                    Observação<span class="sr-only"> sobre a norma</span> (opcional)
-                  </label>
-                  <input
-                    class="input"
-                    type="text"
-                    [attr.id]="'fase-doc-obs-legal-' + doc.id + '-' + $index"
-                    placeholder="O que esta norma exige, em uma linha"
-                    [value]="base.observacao"
-                    [disabled]="!store.aceitaEdicao()"
-                    (input)="
-                      escreverBaseLegal(doc.id, $index, 'observacao', $any($event.target).value)
-                    "
-                  />
-                </div>
-
-                @if (basesLegaisDoDocumento(doc.id).length > 1) {
-                  <div class="doc-item__acoes">
-                    <button
-                      class="btn btn--tertiary btn--sm"
-                      type="button"
-                      [disabled]="!store.aceitaEdicao()"
-                      (click)="removerBaseLegal(doc.id, $index)"
-                    >
-                      Remover esta norma
-                    </button>
-                  </div>
-                }
-              }
-
-              @if (faltaNormaResolvida(doc.id)) {
-                <p class="field__hint doc-item__aviso-norma">
-                  Sem uma norma declarada e identificada como "Resolvida", a publicação recusa esta
-                  exigência, que decide o resultado.
-                </p>
-              }
-
-              <div class="doc-item__acoes">
-                <button
-                  class="btn btn--tertiary btn--sm"
-                  type="button"
-                  [disabled]="!store.aceitaEdicao()"
-                  (click)="acrescentarBaseLegal(doc.id)"
-                >
-                  Acrescentar outra norma
-                </button>
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
-        } @empty {
+        } @else {
           <p class="field__hint">Esta fase ainda não exige documento nenhum.</p>
         }
       </div>

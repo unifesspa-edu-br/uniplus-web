@@ -884,6 +884,172 @@
 }
 
 /*
+ * A conferência dos documentos da fase: uma linha por documento com o que decide a exigência.
+ * A largura das colunas é fixa porque a linha dos campos abertos ocupa a tabela inteira, e com
+ * largura automática o formulário dela alargaria as colunas do resumo além da tela.
+ */
+.sel-processo .doc-conferencia__filtro {
+  max-width: 32rem;
+  margin-bottom: var(--space-4);
+}
+
+.sel-processo .doc-conferencia table {
+  table-layout: fixed;
+}
+
+.sel-processo .doc-conferencia__col-documento {
+  width: 17%;
+}
+
+.sel-processo .doc-conferencia__col-publico {
+  width: 16%;
+}
+
+.sel-processo .doc-conferencia__col-entrega {
+  width: 13%;
+}
+
+.sel-processo .doc-conferencia__col-consequencia {
+  width: 15%;
+}
+
+.sel-processo .doc-conferencia__col-coleta {
+  width: 12%;
+}
+
+/*
+ * Colunas estreitas numa tabela de largura fixa: o recuo lateral menor é o que deixa "Obrigatória"
+ * e a consequência mais longa inteiras. Só a norma quebra palavra (abaixo): a referência de
+ * edital é um token só, mais largo que a coluna.
+ */
+.sel-processo .table-responsive.doc-conferencia :is(th, td) {
+  padding-inline: var(--space-2);
+}
+
+.sel-processo .table-responsive.doc-conferencia :is(tbody th, td) {
+  padding-block: var(--space-2);
+  vertical-align: top;
+}
+
+.sel-processo .doc-conferencia tbody th[scope='row'] {
+  font-weight: var(--weight-medium);
+}
+
+.sel-processo .doc-conferencia__meta {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.sel-processo .doc-conferencia__norma {
+  display: block;
+  overflow-wrap: break-word;
+}
+
+.sel-processo .doc-conferencia__norma-comum {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.sel-processo .doc-conferencia__rotulo {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.sel-processo .doc-conferencia__norma + .doc-conferencia__norma,
+.sel-processo .doc-conferencia__norma + .tag {
+  margin-top: var(--space-2);
+}
+
+/* O nome do documento, que abre os campos dele, lido como ação pela cor e pela seta. */
+.sel-processo .doc-conferencia__alternar {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-on-primary-tint);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .doc-conferencia__alternar:hover > span:last-child {
+  text-decoration: underline;
+}
+
+.sel-processo .doc-conferencia__alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .doc-conferencia__alternar > .etapa-resumo__seta {
+  margin-top: 0.45em;
+}
+
+.sel-processo .doc-conferencia__alternar[aria-expanded='true'] > .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+/* A linha do resumo e a dos campos dela leem como um bloco só. */
+.sel-processo .doc-conferencia__linha:has(+ .doc-conferencia__campos) > * {
+  border-bottom: none;
+}
+
+.sel-processo .table-responsive.doc-conferencia tbody .doc-conferencia__campos:hover {
+  background: none;
+}
+
+/* O cartão dos campos já tem borda e respiro próprios: a célula não soma outro recuo. */
+.sel-processo .table-responsive.doc-conferencia .doc-conferencia__campos > td {
+  padding: 0 0 var(--space-3);
+}
+
+@container quadro-empilhavel (max-width: 48rem) {
+  /* Rótulo sobre o valor: frase longa ao lado do rótulo viraria uma coluna estreita. */
+  .sel-processo .table-responsive.doc-conferencia td {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    text-align: left;
+  }
+
+  .sel-processo .table-responsive.doc-conferencia :is(tbody th, td) {
+    padding: var(--space-1) 0;
+  }
+
+  /* Os valores curtos dividem a linha do cartão; nome, público e norma ocupam a largura. */
+  .sel-processo .table-responsive.doc-conferencia tbody .doc-conferencia__linha {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(6.5rem, 100%), 1fr));
+    column-gap: var(--space-3);
+  }
+
+  .sel-processo .doc-conferencia__linha > :is(th, .doc-conferencia__largo) {
+    grid-column: 1 / -1;
+  }
+
+  .sel-processo .doc-conferencia .doc-conferencia__campos > td::before {
+    content: none;
+  }
+
+  .sel-processo .table-responsive.doc-conferencia tbody .doc-conferencia__campos {
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .sel-processo .table-responsive.doc-conferencia .doc-conferencia__campos > td {
+    display: block;
+    padding: 0;
+  }
+}
+
+/*
  * O que a convenção de contagem escolhida faz, na prosa do catálogo. Fica fora do seletor
  * porque descreve a escolha feita, não as disponíveis — dentro da opção, o mesmo texto de
  * quatrocentos e sessenta e nove caracteres se repetia em cada linha da lista.
@@ -1048,6 +1214,23 @@
 .sel-processo .fase-bloco--aberta {
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: var(--space-5);
+}
+
+/*
+ * A fase aberta é um bloco delimitado: com várias abertas, sem a borda não se vê onde uma
+ * termina e a próxima começa. Abaixo de 768 o `.step-card` já é cartão.
+ */
+@media (min-width: 768px) {
+  .sel-processo .fase-bloco--aberta {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2) var(--space-4) var(--space-5);
+  }
+}
+
+/* As seções da fase ficam um nível abaixo do título dela, também no tamanho. */
+.sel-processo .fase-bloco :is(h3, h4).form-section__title {
+  font-size: var(--text-base);
 }
 
 /*
