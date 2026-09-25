@@ -11,6 +11,7 @@ import {
   inject,
   signal,
   untracked,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -19,12 +20,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
-import {
-  AlertComponent,
-  BackToTopContainerDirective,
-  DialogComponent,
-  SpinnerComponent,
-} from '@uniplus/shared-ui/components';
+import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
@@ -88,7 +84,6 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     DatePipe,
     RouterLink,
     AlertComponent,
-    BackToTopContainerDirective,
     DialogComponent,
     SpinnerComponent,
     WizardStepperComponent,
@@ -226,7 +221,8 @@ export class ProcessoSeletivoPage {
   @ViewChild('stepBarButton') private stepBarButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlayClose') private stepsOverlayClose?: ElementRef<HTMLButtonElement>;
   @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
-  @ViewChild('wizContent') private wizContent?: ElementRef<HTMLElement>;
+  private readonly barraDeEtapas = viewChild<ElementRef<HTMLElement>>('stepBarButton');
+  private readonly rodape = viewChild<ElementRef<HTMLElement>>('wizFooter');
 
   constructor() {
     // Navegar com o overlay ou a sidebar abertos destruía a página sem liberar
@@ -251,6 +247,29 @@ export class ProcessoSeletivoPage {
       this.catalogosDeClassificacao.pesosLidosNaLeitura();
       this.store.criteriosDesempateGravados();
       untracked(() => reavaliarRecusaPeloDesempate(this.store, this.cadastroDePesos.leitura()));
+    });
+
+    // O rodapé e a barra de etapas do celular ficam colados às bordas do `.page`, por cima
+    // do passo. Ao rolar até o campo que recebe foco, o navegador só os desconta pelo
+    // `scroll-padding` do `.page` (em `styles.css`), que recebe daqui a altura medida de
+    // cada um: ela muda com a largura, com o modo de fonte e com os botões do passo.
+    effect((onCleanup) => {
+      const barra = this.barraDeEtapas()?.nativeElement;
+      const rodape = this.rodape()?.nativeElement;
+      const area = this.root.nativeElement.closest<HTMLElement>('.page');
+      if (!barra || !rodape || !area || typeof ResizeObserver === 'undefined') return;
+
+      const observador = new ResizeObserver(() => {
+        area.style.setProperty('--wiz-reserva-topo', `${barra.offsetHeight}px`);
+        area.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
+      });
+      observador.observe(barra);
+      observador.observe(rodape);
+      onCleanup(() => {
+        observador.disconnect();
+        area.style.removeProperty('--wiz-reserva-topo');
+        area.style.removeProperty('--wiz-reserva-base');
+      });
     });
 
     effect(() => {
@@ -1012,11 +1031,6 @@ export class ProcessoSeletivoPage {
     }
   }
 
-  /**
-   * Traz o aviso de pendências para a vista e o entrega ao leitor de tela. O
-   * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
-   * publica a partir do rodapé com a lista rolada não recebe retorno visível.
-   */
   /** Título do passo — o destino de foco a cada troca. */
   private focarTituloDoPasso(): void {
     this.root.nativeElement.querySelector<HTMLElement>('.step-head h1')?.focus({
@@ -1024,6 +1038,11 @@ export class ProcessoSeletivoPage {
     });
   }
 
+  /**
+   * Traz o aviso de pendências para a vista e o entrega ao leitor de tela. O
+   * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
+   * publica a partir do rodapé com a lista rolada não recebe retorno visível.
+   */
   private revelarErro(): void {
     // `setTimeout` e não `queueMicrotask`: o aviso só existe no DOM depois que
     // o Angular processa a mudança do signal, o que ocorre após a fila de
@@ -1033,17 +1052,16 @@ export class ProcessoSeletivoPage {
       if (alerta === null) return;
 
       alerta.setAttribute('tabindex', '-1');
-      // O scroll do wizard vive em `.wiz-content` — rolar o documento com
-      // `scrollIntoView` empurraria a institutional-bar/header/sidebar para
-      // fora do topo (somem) e deixaria folga embaixo. Rola somente o
-      // container, calculando o offset interno pelo getBoundingClientRect.
-      const scroller = this.wizContent?.nativeElement;
+      // Quem rola é o `.page` do shell. O `scrollTo` ignora o `scroll-padding`, então a
+      // reserva do topo (a barra de etapas do celular, que cobriria o aviso) entra à mão.
+      const scroller = this.root.nativeElement.closest<HTMLElement>('.page');
       if (scroller) {
         try {
+          const reservaTopo = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0;
           const topoAlerta = alerta.getBoundingClientRect().top;
           const topoScroller = scroller.getBoundingClientRect().top;
           scroller.scrollTo({
-            top: scroller.scrollTop + (topoAlerta - topoScroller),
+            top: scroller.scrollTop + (topoAlerta - topoScroller) - reservaTopo,
             behavior: 'smooth',
           });
         } catch {

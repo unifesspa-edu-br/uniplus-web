@@ -238,29 +238,27 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     expect(host.querySelector('.wiz-content')).not.toBeNull();
   });
 
-  it('deixa .wiz-content focável para o botão global "Voltar ao topo" (uiBackToTopContainer)', () => {
-    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
-    fixture.detectChanges();
+  it.each([
+    ['em edição', null],
+    ['em consulta', StatusProcesso.publicado],
+  ])(
+    '%s, .wiz-content não é contêiner de rolagem próprio: rola o .page do shell',
+    (_modo, status) => {
+      const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+      if (status !== null) {
+        fixture.debugElement.injector.get(ProcessoSeletivoStore).remoteSnapshot.set({
+          id: 'processo-publicado',
+          status,
+        } as unknown as ProcessoSeletivoDto);
+      }
+      fixture.detectChanges();
 
-    const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
-    expect(wizContent?.hasAttribute('uiBackToTopContainer')).toBe(true);
-    expect(wizContent?.getAttribute('tabindex')).toBe('-1');
-    expect(wizContent?.getAttribute('role')).toBeNull();
-  });
-
-  it('em consulta, põe .wiz-content na ordem de tabulação como região nomeada', () => {
-    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
-    fixture.debugElement.injector.get(ProcessoSeletivoStore).remoteSnapshot.set({
-      id: 'processo-publicado',
-      status: StatusProcesso.publicado,
-    } as unknown as ProcessoSeletivoDto);
-    fixture.detectChanges();
-
-    const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
-    expect(wizContent?.getAttribute('tabindex')).toBe('0');
-    expect(wizContent?.getAttribute('role')).toBe('region');
-    expect(wizContent?.getAttribute('aria-label')).toBe('Conteúdo do passo, somente leitura');
-  });
+      const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
+      expect(wizContent?.hasAttribute('uiBackToTopContainer')).toBe(false);
+      expect(wizContent?.hasAttribute('tabindex')).toBe(false);
+      expect(wizContent?.getAttribute('role')).toBeNull();
+    },
+  );
 });
 
 describe('ProcessoSeletivoPage — lista de etapas', () => {

@@ -12,13 +12,12 @@
   pointer-events: none;
 }
 
-/* Área útil do wizard: stepper lateral + corpo, ocupando a altura da rota.
-   `min-height: 0` permite que `.wiz-content` role dentro deste flex. */
+/* Área útil do wizard: stepper lateral + corpo, com pelo menos a altura da rota; cresce
+   com o passo, e quem rola é o `.page`. */
 .wiz-shell {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: row;
-  min-height: 0;
 }
 
 /* Step bar mobile */
@@ -126,8 +125,13 @@
 }
 
 @media (min-width: 768px) {
+  /* Fica parado ao lado do passo enquanto o `.page` rola, com a altura visível dele. */
   .wiz-nav {
     display: block;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100cqh;
   }
 }
 
@@ -338,48 +342,11 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  scrollbar-width: thin;
 }
 
 .wiz-content {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
   padding: var(--space-8);
-  overflow-y: auto;
-
-  /*
-   * Bloco de contenção da própria rolagem. Os controles que o passo esconde do olho
-   * mas mantém para o leitor de tela (`.sr-only`) são posicionados em absoluto, e sem
-   * um ancestral posicionado aqui o ancestral deles vira `main.page` — que então
-   * crescia com o passo inteiro e abria uma segunda barra de rolagem, com espaço morto
-   * abaixo do rodapé.
-   */
-  position: relative;
-
-  /* Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-/* Chrome, Edge e Safari */
-.wiz-content::-webkit-scrollbar {
-  width: 5px;
-}
-
-.wiz-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.wiz-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-}
-
-.wiz-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 
 /* Mensagens de validação do step ativo (role="alert") */
@@ -587,6 +554,10 @@
 
 /* Wizard footer */
 .wiz-footer {
+  /* Os botões de navegação ficam à vista enquanto o passo rola. */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   background: var(--surface-card);
   border-top: 1px solid var(--border-subtle);
   padding: var(--space-4) var(--space-8);

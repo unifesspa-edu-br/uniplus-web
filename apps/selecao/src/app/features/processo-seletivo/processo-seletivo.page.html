@@ -95,19 +95,7 @@
     <sel-wizard-stepper></sel-wizard-stepper>
   </nav>
   <div class="wiz-body">
-    <!--
-      Em consulta os controles do passo ficam desabilitados, e a área rolável ficaria sem nada
-      que o teclado alcance: nesse modo ela entra na ordem de tabulação, como região nomeada, para
-      quem navega por teclado conseguir rolar. Em edição, o -1 só serve ao foco por código.
-    -->
-    <div
-      class="wiz-content"
-      #wizContent
-      uiBackToTopContainer
-      [attr.tabindex]="store.edicaoPermitida() ? -1 : 0"
-      [attr.role]="store.edicaoPermitida() ? null : 'region'"
-      [attr.aria-label]="store.edicaoPermitida() ? null : 'Conteúdo do passo, somente leitura'"
-    >
+    <div class="wiz-content">
       <div aria-live="polite" aria-atomic="true">
         @if (store.stepError(); as errors) {
         <div class="step-error" role="alert">
@@ -179,7 +167,7 @@
         </section>
       </div>
     </div>
-    <div class="wiz-footer">
+    <div class="wiz-footer" #wizFooter>
       <button
         class="btn btn--tertiary"
         type="button"

@@ -1,6 +1,14 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
+import {
+  conferirRolagemPorRodaForaDoConteudo,
+  conferirRolagemPorTeclado,
+  conferirStepperNaAlturaDaArea,
+  encurtarJanela,
+  medirTransbordoHorizontal,
+  rolarAteOMeio,
+} from '../support/rolagem-do-editor';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 
@@ -421,6 +429,27 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
 
     expect(medida.documento).toBeLessThanOrEqual(1);
     expect(medida.scroller).toBeLessThanOrEqual(1);
+  });
+
+  test('em consulta, rola a área de trabalho pelo teclado e pela roda fora do conteúdo do passo', async ({
+    page,
+  }) => {
+    await mockarAtoPublicado(page);
+    await mockarProcesso(page, { status: 'publicado', cronogramaFases: [FASE_DE_COLETA] });
+    await page.goto(`/processo-seletivo/${PROCESSO_ID}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await encurtarJanela(page);
+
+    await conferirRolagemPorTeclado(page);
+    await conferirRolagemPorRodaForaDoConteudo(page);
+
+    await rolarAteOMeio(page);
+    await conferirStepperNaAlturaDaArea(page);
+    const resultado = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultado)).toEqual([]);
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
   });
 });
 
