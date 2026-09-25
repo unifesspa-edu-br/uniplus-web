@@ -1,7 +1,7 @@
 import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { regrasEscolhiveis } from './regra-escolhivel';
+import { lerChaveDaRegra, regrasEscolhiveis } from './regra-escolhivel';
 
 function regra(patch: Partial<RegraCatalogoDto>): RegraCatalogoDto {
   return {
@@ -22,7 +22,7 @@ describe('regrasEscolhiveis', () => {
     const catalogo = [regra({ codigo: 'A', versao: '1.0', baseLegal: 'Lei X' })];
 
     expect(regrasEscolhiveis(catalogo, '', '')).toEqual([
-      { codigo: 'A', versao: '1.0', baseLegal: 'Lei X' },
+      { codigo: 'A', versao: '1.0', baseLegal: 'Lei X', chave: 'A|1.0', selecionada: false },
     ]);
   });
 
@@ -49,14 +49,33 @@ describe('regrasEscolhiveis', () => {
     const opcoes = regrasEscolhiveis(catalogo, 'B', '2.0');
 
     expect(opcoes).toEqual([
-      { codigo: 'A', versao: '1.0', baseLegal: 'Base legal' },
-      { codigo: 'B', versao: '2.0', baseLegal: null },
+      { codigo: 'A', versao: '1.0', baseLegal: 'Base legal', chave: 'A|1.0', selecionada: false },
+      { codigo: 'B', versao: '2.0', baseLegal: null, chave: 'B|2.0', selecionada: true },
     ]);
   });
 
   it('acrescenta mesmo quando o catálogo está vazio', () => {
     expect(regrasEscolhiveis([], 'B', '2.0')).toEqual([
-      { codigo: 'B', versao: '2.0', baseLegal: null },
+      { codigo: 'B', versao: '2.0', baseLegal: null, chave: 'B|2.0', selecionada: true },
     ]);
+  });
+
+  it('marca como selecionada só a regra gravada', () => {
+    const catalogo = [regra({ codigo: 'A', versao: '1.0' }), regra({ codigo: 'B', versao: '2.0' })];
+
+    expect(regrasEscolhiveis(catalogo, 'B', '2.0').map((opcao) => opcao.selecionada)).toEqual([
+      false,
+      true,
+    ]);
+  });
+});
+
+describe('lerChaveDaRegra', () => {
+  it('desfaz a chave da opção em código e versão', () => {
+    expect(lerChaveDaRegra('A|1.0')).toEqual({ codigo: 'A', versao: '1.0' });
+  });
+
+  it('lê a opção vazia do select como regra nenhuma', () => {
+    expect(lerChaveDaRegra('|')).toEqual({ codigo: '', versao: '' });
   });
 });

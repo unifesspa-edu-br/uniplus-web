@@ -9,6 +9,25 @@ export interface RegraEscolhivel {
   readonly codigo: string;
   readonly versao: string;
   readonly baseLegal: string | null;
+  /** O `value` da opção: `codigo|versao`, a forma que `lerChaveDaRegra` desfaz. */
+  readonly chave: string;
+  /**
+   * Se a opção é a regra gravada. O `<select>` marca a escolha por `[selected]` em cada
+   * opção, e não por `[value]` no próprio select: as opções nascem do `@for` depois do
+   * binding, quando o catálogo chega, e o `[value]` aplicado antes delas não é reaplicado.
+   */
+  readonly selecionada: boolean;
+}
+
+/** A chave de uma regra no `<select>`: `codigo|versao`. */
+export function chaveDaRegra(codigo: string, versao: string): string {
+  return `${codigo}|${versao}`;
+}
+
+/** Desfaz `chaveDaRegra`; a opção vazia do select (`|`) dá código e versão vazios. */
+export function lerChaveDaRegra(chave: string): { codigo: string; versao: string } {
+  const [codigo = '', versao = ''] = chave.split('|');
+  return { codigo, versao };
 }
 
 /**
@@ -25,18 +44,20 @@ export function regrasEscolhiveis(
   codigoSelecionado: string,
   versaoSelecionada: string,
 ): readonly RegraEscolhivel[] {
-  const opcoes: RegraEscolhivel[] = catalogo.map((regra) => ({
-    codigo: regra.codigo,
-    versao: regra.versao,
-    baseLegal: regra.baseLegal,
-  }));
+  const escolhivel = (
+    codigo: string,
+    versao: string,
+    baseLegal: string | null,
+  ): RegraEscolhivel => ({
+    codigo,
+    versao,
+    baseLegal,
+    chave: chaveDaRegra(codigo, versao),
+    selecionada: codigo === codigoSelecionado && versao === versaoSelecionada,
+  });
+  const opcoes = catalogo.map((regra) => escolhivel(regra.codigo, regra.versao, regra.baseLegal));
 
-  if (codigoSelecionado === '') return opcoes;
+  if (codigoSelecionado === '' || opcoes.some((regra) => regra.selecionada)) return opcoes;
 
-  const jaPresente = opcoes.some(
-    (regra) => regra.codigo === codigoSelecionado && regra.versao === versaoSelecionada,
-  );
-  if (jaPresente) return opcoes;
-
-  return [...opcoes, { codigo: codigoSelecionado, versao: versaoSelecionada, baseLegal: null }];
+  return [...opcoes, escolhivel(codigoSelecionado, versaoSelecionada, null)];
 }

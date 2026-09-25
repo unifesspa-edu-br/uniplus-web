@@ -324,6 +324,219 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
   });
 });
 
+const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000898';
+
+/** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
+function referencia(codigo: string) {
+  return { codigo, versao: '1.0', hash: `hash-${codigo}` };
+}
+
+/**
+ * Um processo publicado com as quatro seções declaradas — o que a consulta precisa mostrar
+ * marcado. `status: 'publicado'` é o que põe o editor em somente leitura.
+ */
+const DETALHE_PUBLICADO = {
+  id: PROCESSO_PUBLICADO_ID,
+  nome: 'Processo seletivo publicado',
+  tipoProcesso: {
+    origemId: '01960000-0000-7000-0000-000000000905',
+    codigo: 'GRAD',
+    nome: 'Graduação',
+  },
+  status: 'publicado',
+  origemCandidatos: 'inscricaoPropria',
+  unidadeAdministradora: {
+    origemId: '01960000-0000-7000-0000-000000000906',
+    sigla: 'CEPS',
+    slug: 'ceps',
+    nome: 'CEPS',
+    tipo: 'PROREITORIA',
+    cidadeCodigoIbge: '1504208',
+    cidadeNome: 'Marabá',
+    cidadeUf: 'PA',
+  },
+  localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+  etapas: [],
+  ofertaAtendimento: null,
+  distribuicaoVagas: [],
+  bonusRegional: {
+    id: '01960000-0000-7000-0000-0000000008b1',
+    regra: referencia('BONUS-MULTIPLICATIVO'),
+    fator: 1.2,
+    teto: null,
+    baseLegalBonusRegionalId: BASE_LEGAL_BONUS_REGIONAL_ID,
+    tipoInstrumento: 'PORTARIA',
+    identificacao: 'Portaria Unifesspa nº 2514/2023',
+    descricao: 'Institui inclusão regional.',
+    municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+  },
+  cascata: null,
+  criteriosDesempate: [
+    {
+      id: '01960000-0000-7000-0000-0000000008d1',
+      ordem: 1,
+      regra: referencia('DESEMPATE-MAIOR-IDADE'),
+      etapaRef: null,
+      idadeMinima: null,
+      fato: null,
+      operador: null,
+      valor: null,
+      areas: null,
+    },
+  ],
+  classificacao: {
+    id: '01960000-0000-7000-0000-0000000008c1',
+    regraCalculo: referencia('FORMULA-MEDIA-PONDERADA'),
+    regraArredondamento: referencia('ARRED-TRUNCAR'),
+    casasArredondamento: 2,
+    regraOrdemAlocacao: referencia('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA'),
+    nOpcoesAlocacao: 1,
+    regrasEliminacao: [
+      {
+        id: '01960000-0000-7000-0000-0000000008e1',
+        regra: referencia('ELIM-ZERO-EM-AREA'),
+        etapaRef: null,
+        notaMinima: null,
+        minimo: null,
+        areaCodigo: null,
+      },
+    ],
+    concorrenciaDuplaAplicavel: false,
+    baseadoEmEnem: false,
+    resolucaoPesoAreaEnem: null,
+    quadroPesoAreaEnem: [],
+  },
+  cronogramaFases: [],
+  documentosExigidos: [],
+  raizesExigencia: [],
+  referenciaTemporalFatos: null,
+  fatosColetados: [],
+  regrasDerivacao: [],
+  formularioTitulo: null,
+  formularioTermoAceiteTexto: null,
+  configuracaoDivulgacao: null,
+  configuracaoTaxaInscricao: null,
+  algoritmoContagemPrazo: null,
+  criadoEm: '2026-09-01T00:00:00Z',
+};
+
+/** As regras que cada passo da consulta tem de mostrar marcadas. */
+const REGRAS_MARCADAS: Record<string, Record<string, string>> = {
+  'Fórmula e precisão': {
+    'Regra de cálculo': 'FORMULA-MEDIA-PONDERADA|1.0',
+    'Regra de arredondamento': 'ARRED-TRUNCAR|1.0',
+    'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA|1.0',
+  },
+  Bônus: {
+    'Regra do bônus': 'BONUS-MULTIPLICATIVO|1.0',
+    'Base Legal do bônus': BASE_LEGAL_BONUS_REGIONAL_ID,
+  },
+  Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE|1.0' },
+  'Eliminação': { 'Regra de eliminação': 'ELIM-ZERO-EM-AREA|1.0' },
+};
+
+/** As larguras de referência em que a consulta não pode ter rolagem horizontal. */
+const LARGURAS_DE_REFERENCIA = [1440, 768, 375, 320] as const;
+
+/**
+ * Consulta de um processo publicado (web#898): a regra gravada aparece marcada mesmo com o
+ * catálogo chegando depois do detalhe, e nenhum controle dos passos 6 a 9 aceita edição.
+ */
+test.describe('Classificação, bônus e desempate em consulta — matriz DS @ds', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await mockarCatalogos(page);
+    await mockarProcessoPublicado(page);
+    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+    await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_ID}`);
+    // Enquanto o processo carrega, o stepper ignora o clique: a troca de passo espera a leitura.
+    await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  for (const [passo, regras] of Object.entries(REGRAS_MARCADAS)) {
+    test(`${passo}: mostra a regra gravada, não aceita edição e não transborda`, async ({
+      page,
+    }, testInfo) => {
+      await irAoPasso(page, passo, testInfo);
+      await expect(page.getByRole('heading', { level: 1 })).toContainText(passo);
+
+      for (const [rotulo, valor] of Object.entries(regras)) {
+        const seletor = page.getByLabel(rotulo, { exact: true }).first();
+        await expect(seletor).toHaveValue(valor);
+        await expect(seletor).toBeDisabled();
+      }
+      expect(await controlesEditaveisVisiveis(page)).toEqual([]);
+
+      const resultado = await runAxeWcagAA(page);
+      expect(identificadoresDe(resultado)).toEqual([]);
+
+      const larguraDoProject = testInfo.project.use.viewport;
+      for (const largura of LARGURAS_DE_REFERENCIA) {
+        await page.setViewportSize({ width: largura, height: larguraDoProject?.height ?? 900 });
+        expect(await transbordo(page), `transbordo em ${largura} px`).toEqual({
+          documento: 0,
+          conteudo: 0,
+        });
+      }
+    });
+  }
+});
+
+/** O detalhe, os documentos e o checklist do processo publicado, todos sob o mesmo prefixo. */
+async function mockarProcessoPublicado(page: Page): Promise<void> {
+  await page.route(
+    new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_PUBLICADO_ID}(/.*)?(\\?.*)?$`),
+    async (route: Route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+
+      const caminho = new URL(route.request().url()).pathname;
+      const corpo = caminho.endsWith(PROCESSO_PUBLICADO_ID)
+        ? DETALHE_PUBLICADO
+        : caminho.endsWith('/conformidade')
+          ? { processoSeletivoId: PROCESSO_PUBLICADO_ID, itens: [] }
+          : [];
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: CORS_HEADERS,
+        body: JSON.stringify(corpo),
+      });
+    },
+  );
+}
+
+/** Controles de formulário do passo aberto que ainda aceitam interação. */
+async function controlesEditaveisVisiveis(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll<HTMLInputElement>(
+        '.wiz-content select, .wiz-content input, .wiz-content textarea, .wiz-content button',
+      ),
+    )
+      .filter((controle) => controle.offsetParent !== null && !controle.disabled)
+      .map((controle) => controle.id || controle.textContent?.trim() || controle.tagName),
+  );
+}
+
+/** Quanto a página e o conteúdo do passo passam da largura visível. */
+async function transbordo(page: Page): Promise<{ documento: number; conteudo: number }> {
+  return page.evaluate(() => {
+    const documento = document.documentElement;
+    const conteudo = document.querySelector('.wiz-content');
+    return {
+      documento: Math.max(0, documento.scrollWidth - documento.clientWidth),
+      conteudo:
+        conteudo instanceof HTMLElement
+          ? Math.max(0, conteudo.scrollWidth - conteudo.clientWidth)
+          : 0,
+    };
+  });
+}
+
 /** Fórmula local completa — regra de cálculo, arredondamento, casas e ordem de alocação. */
 async function declararFormulaLocal(page: Page): Promise<void> {
   await page

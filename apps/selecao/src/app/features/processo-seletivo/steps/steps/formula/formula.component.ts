@@ -30,7 +30,7 @@ import {
   mensagensDeClassificacaoBase,
   pendenciaDaResolucao,
 } from '../classificacao/classificacao-para-comando';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import {
   colunasDoQuadro,
   mesmoQuadro,
@@ -286,23 +286,8 @@ export class FormulaStepComponent {
     () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
   );
 
-  readonly valorDoSelectDeCalculo = computed(() => {
-    const classificacao = this.store.draft().classificacao;
-    return `${classificacao.regraCalculoCodigo}|${classificacao.regraCalculoVersao}`;
-  });
-
-  readonly valorDoSelectDeArredondamento = computed(() => {
-    const classificacao = this.store.draft().classificacao;
-    return `${classificacao.regraArredondamentoCodigo}|${classificacao.regraArredondamentoVersao}`;
-  });
-
-  readonly valorDoSelectDeOrdemAlocacao = computed(() => {
-    const classificacao = this.store.draft().classificacao;
-    return `${classificacao.regraOrdemAlocacaoCodigo}|${classificacao.regraOrdemAlocacaoVersao}`;
-  });
-
   escolherRegraCalculo(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     if (codigo === '') {
       this.store.patchObjectSection('classificacao', {
         regraCalculoCodigo: '',
@@ -327,7 +312,7 @@ export class FormulaStepComponent {
   }
 
   escolherRegraArredondamento(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('classificacao', {
       regraArredondamentoCodigo: codigo,
       regraArredondamentoVersao: versao,
@@ -339,7 +324,7 @@ export class FormulaStepComponent {
   }
 
   escolherRegraOrdemAlocacao(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: codigo,
       regraOrdemAlocacaoVersao: versao,

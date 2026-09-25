@@ -33,6 +33,7 @@ import {
   OrigemCandidatos,
   ProcessosSeletivosApi,
   RegrasCatalogoApi,
+  StatusProcesso,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
@@ -243,6 +244,21 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
     expect(wizContent?.hasAttribute('uiBackToTopContainer')).toBe(true);
     expect(wizContent?.getAttribute('tabindex')).toBe('-1');
+    expect(wizContent?.getAttribute('role')).toBeNull();
+  });
+
+  it('em consulta, põe .wiz-content na ordem de tabulação como região nomeada', () => {
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.debugElement.injector.get(ProcessoSeletivoStore).remoteSnapshot.set({
+      id: 'processo-publicado',
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    const wizContent = (fixture.nativeElement as HTMLElement).querySelector('.wiz-content');
+    expect(wizContent?.getAttribute('tabindex')).toBe('0');
+    expect(wizContent?.getAttribute('role')).toBe('region');
+    expect(wizContent?.getAttribute('aria-label')).toBe('Conteúdo do passo, somente leitura');
   });
 });
 

@@ -44,7 +44,7 @@ import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import {
   comoComandoDeCriteriosDesempate,
   desempateUsaAreas,
@@ -513,7 +513,7 @@ export class DesempateStepComponent {
   }
 
   escolherRegra(indice: number, valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.remapearEscolhas((anterior) => (anterior === indice ? null : anterior));
     // Trocar de regra some com o que a variante anterior usava — CA-05: só os
     // argumentos aplicáveis à regra atual permanecem.
