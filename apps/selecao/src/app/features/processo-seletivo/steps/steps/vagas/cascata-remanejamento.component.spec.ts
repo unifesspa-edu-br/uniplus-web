@@ -217,11 +217,17 @@ describe('CascataRemanejamentoComponent', () => {
 
     // Até 767 px o design system esconde o `thead` e usa `data-label` como
     // rótulo visível da célula. Sem ele o cartão mostraria só os códigos, e a
-    // ordem de preferência — o que a matriz existe para dizer — sumiria.
+    // ordem de preferência — o que a matriz existe para dizer — sumiria. O
+    // rótulo é o ordinal do cabeçalho; o texto visível que descreve a matriz
+    // diz que o ordinal é de preferência.
     const rotulos = [
       ...elemento.querySelectorAll('.cascata-matriz tbody tr:first-child td'),
     ].map((celula) => celula.getAttribute('data-label'));
-    expect(rotulos).toEqual(['1ª preferência', '2ª preferência']);
+    expect(rotulos).toEqual(['1ª', '2ª']);
+    const leitura = elemento.querySelector(
+      `#${elemento.querySelector('.cascata-matriz')?.getAttribute('aria-describedby')}`,
+    );
+    expect(leitura?.textContent?.replace(/\s+/g, ' ')).toContain('na ordem de preferência');
 
     // O destino final é enunciado fora da matriz: tratá-lo como linha sugeriria
     // que a ampla concorrência também remaneja.

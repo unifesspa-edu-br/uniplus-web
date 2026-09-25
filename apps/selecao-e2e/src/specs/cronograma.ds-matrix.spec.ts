@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
+import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 
@@ -169,6 +170,31 @@ test.describe('Cronograma — matriz DS @ds', () => {
   });
 
   /**
+   * O rótulo da ação é longo para a tela estreita: ele quebra em vez de passar da borda do
+   * cartão, que o `.page` corta sem rolagem. Lado a lado com o campo, os dois têm a mesma
+   * altura e a mesma base.
+   */
+  test('mantém a ação de acrescentar fase dentro do cartão, na base do campo', async ({ page }) => {
+    const medida = await medirAcaoDeAcrescentarFase(page);
+
+    expect(medida.direitaDaAcao).toBeLessThanOrEqual(medida.direitaDoCartao + 1);
+    expect(Math.abs(medida.alturaDaAcao - medida.alturaDoCampo)).toBeLessThanOrEqual(1);
+    expect(
+      !medida.ladoALado || medida.desalinhamentoDaBase <= 1,
+      `base da ação e do campo (${medida.desalinhamentoDaBase} px)`,
+    ).toBe(true);
+  });
+
+  /** A fase aberta é o trecho com mais ações, e as de rótulo longo passavam da borda. */
+  test('mantém as ações da fase aberta dentro do cartão', async ({ page }) => {
+    await acrescentarFase(page);
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await expect(page.getByRole('heading', { name: 'Etapas desta fase' })).toBeVisible();
+
+    expect(await elementosForaDoCartao(page)).toEqual([]);
+  });
+
+  /**
    * Título de seção, alerta e dica têm margem do ritmo vertical do passo: nenhum encosta
    * no bloco vizinho. A fase aberta é o trecho que mais empilha esses três.
    */
@@ -313,6 +339,35 @@ async function exigirDocumento(page: Page): Promise<void> {
   await campo.fill('nome social');
   await page.getByRole('option', { name: NOME_DOCUMENTO }).click();
   await page.getByRole('button', { name: 'Acrescentar documento' }).click();
+}
+
+/** Ação de acrescentar fase, o campo ao lado dela e a borda do conteúdo do cartão. */
+async function medirAcaoDeAcrescentarFase(page: Page): Promise<{
+  direitaDaAcao: number;
+  direitaDoCartao: number;
+  alturaDaAcao: number;
+  alturaDoCampo: number;
+  ladoALado: boolean;
+  desalinhamentoDaBase: number;
+}> {
+  return page.getByRole('button', { name: 'Acrescentar à linha do tempo' }).evaluate((acao) => {
+    const cartao = acao.closest('.step-card');
+    const campo = document.getElementById('cr-nova-fase');
+    if (!cartao || !campo) {
+      throw new Error('Cartão ou campo de acrescentar fase ausente.');
+    }
+    const caixaDaAcao = acao.getBoundingClientRect();
+    const caixaDoCampo = campo.getBoundingClientRect();
+    return {
+      direitaDaAcao: caixaDaAcao.right,
+      direitaDoCartao:
+        cartao.getBoundingClientRect().right - parseFloat(getComputedStyle(cartao).paddingRight),
+      alturaDaAcao: caixaDaAcao.height,
+      alturaDoCampo: caixaDoCampo.height,
+      ladoALado: caixaDaAcao.top < caixaDoCampo.bottom,
+      desalinhamentoDaBase: Math.abs(caixaDaAcao.bottom - caixaDoCampo.bottom),
+    };
+  });
 }
 
 /** Declara a única convenção de contagem que o catálogo do cenário oferece. */

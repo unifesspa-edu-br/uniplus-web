@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+import { RolagemFocavelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
@@ -45,7 +46,7 @@ import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 @Component({
   selector: 'sel-cascata-remanejamento',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RolagemFocavelDirective],
   templateUrl: './cascata-remanejamento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
