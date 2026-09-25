@@ -2,7 +2,11 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import {
+  OrigemCandidatos,
+  type ProcessoSeletivoDto,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
@@ -99,7 +103,19 @@ describe('IdentificacaoStepComponent', () => {
       unidadeAdministradoraId: UNIDADE_ID,
       origemCandidatos: OrigemCandidatos.inscricaoPropria,
       localidade: MARABA,
+      identificadorLegivel: 'ps-2027',
     });
+  }
+
+  /** O processo já criado, com o detalhe lido do servidor só no que o passo consulta. */
+  function lerDetalhe(status: StatusProcesso, identificadorLegivel: string | null): void {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    store.remoteSnapshot.set({
+      id: PROCESSO_ID,
+      status,
+      identificadorLegivel,
+    } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('identificacao', { identificadorLegivel: identificadorLegivel ?? '' });
   }
 
   /** Tudo que `validate()` exige, menos o anexo do edital. */
@@ -446,7 +462,8 @@ describe('IdentificacaoStepComponent', () => {
   /** Com o processo criado não há o que gravar: o passo volta a ser navegação. */
   it('dispensa a confirmação quando o processo já existe', () => {
     preencherCamposDoComando();
-    store.processoSeletivoId.set(PROCESSO_ID);
+    lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+    detectar();
 
     expect(componente.confirmacaoDeGravacao()).toBeNull();
     expect(componente.rotuloDeAvanco()).toBe('Próximo');
@@ -483,6 +500,243 @@ describe('IdentificacaoStepComponent', () => {
 
     expect(store.processoSeletivoId()).toBeNull();
     expect(componente.rotuloDeAvanco()).toBe('Repetir a gravação');
+  });
+
+  describe('identificador legível', () => {
+    const URL_DO_IDENTIFICADOR = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/identificador-legivel`;
+    const EM_USO = 'uniplus.selecao.processo_seletivo.identificador_legivel_em_uso';
+
+    it('recusa o formato antes do envio e mostra o erro junto ao campo', () => {
+      preencherCamposDoComando();
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'PSIQ 2026' });
+
+      const resultado = componente.validate();
+      detectar();
+
+      expect(resultado.valid).toBe(false);
+      const campo = host.querySelector('#f-identificador');
+      const erro = host.querySelector('#f-identificador-erro');
+      expect(campo?.getAttribute('aria-invalid')).toBe('true');
+      expect(campo?.getAttribute('aria-describedby')).toBe(
+        'f-identificador-erro f-identificador-hint',
+      );
+      expect(erro?.getAttribute('role')).toBe('alert');
+      expect(erro?.textContent).toMatch(/^O identificador legível deve começar/);
+    });
+
+    it('exige o identificador para avançar', () => {
+      preencherCamposDoComando();
+      store.patchObjectSection('identificacao', { identificadorLegivel: '' });
+
+      expect(componente.validate().messages).toContain(
+        'Informe o identificador legível do processo seletivo.',
+      );
+    });
+
+    it('recusa valor com a forma de um Guid', () => {
+      preencherCamposDoComando();
+      store.patchObjectSection('identificacao', {
+        identificadorLegivel: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      });
+
+      expect(componente.validate().messages).toContain(
+        'O identificador legível não pode ter a forma de um identificador técnico (Guid).',
+      );
+    });
+
+    it('envia o identificador, sem os espaços das pontas, na criação', async () => {
+      preencherCamposDoComando();
+      store.patchObjectSection('identificacao', { identificadorLegivel: '  medicina-2027 ' });
+
+      const criado = componente.persistir();
+      const criacao = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
+      expect(criacao.request.body).toMatchObject({ identificadorLegivel: 'medicina-2027' });
+      criacao.flush(PROCESSO_ID, { status: 201, statusText: 'Created' });
+      await tick();
+      await criado;
+
+      // O servidor tem o que foi enviado: avançar de novo não regrava.
+      expect(componente.rotuloDeAvanco()).toBe('Próximo');
+    });
+
+    it('mostra junto ao campo o identificador já usado por outro processo', async () => {
+      preencherCamposDoComando();
+
+      const criado = componente.persistir();
+      const recusa = problema(
+        409,
+        EM_USO,
+        'O identificador legível já é usado por outro processo seletivo',
+      );
+      controller
+        .expectOne(`${BASE}/api/selecao/processos-seletivos`)
+        .flush(recusa.body, recusa.opts);
+      await tick();
+      expect((await criado).valid).toBe(false);
+      detectar();
+
+      expect(componente.erroDoIdentificador()).toBe(
+        'O identificador legível já é usado por outro processo seletivo',
+      );
+      expect(host.querySelector('#f-identificador')?.getAttribute('aria-invalid')).toBe('true');
+      expect(host.querySelector('#f-identificador-erro')?.textContent).toContain('já é usado');
+    });
+
+    it('grava pelo PUT do campo o identificador trocado depois da criação', async () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      detectar();
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'ps-2027-medicina' });
+
+      expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');
+      const gravado = componente.persistir();
+      const req = controller.expectOne(URL_DO_IDENTIFICADOR);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ identificadorLegivel: 'ps-2027-medicina' });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      await tick();
+
+      expect((await gravado).valid).toBe(true);
+      expect(componente.rotuloDeAvanco()).toBe('Próximo');
+    });
+
+    it('não regrava o identificador que o servidor já tem', async () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      detectar();
+
+      expect((await componente.persistir()).valid).toBe(true);
+      controller.expectNone(URL_DO_IDENTIFICADOR);
+    });
+
+    it('mostra junto ao campo a recusa do PUT', async () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      detectar();
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
+
+      const gravado = componente.persistir();
+      const recusa = problema(
+        409,
+        EM_USO,
+        'O identificador legível já é usado por outro processo seletivo',
+      );
+      controller.expectOne(URL_DO_IDENTIFICADOR).flush(recusa.body, recusa.opts);
+      await tick();
+
+      expect((await gravado).valid).toBe(false);
+      expect(componente.erroDoIdentificador()).toContain('já é usado');
+    });
+
+    /**
+     * A publicação liga a trava de orquestração antes de conferir e regravar os passos anteriores,
+     * sem passar pelo "Próximo" da identificação. O identificador editado precisa ser conferido e
+     * gravado nessa varredura — senão o processo publica com o valor antigo, que não muda mais.
+     */
+    it('confere e grava o identificador editado durante a varredura da publicação', async () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      detectar();
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
+      store.travamentoDeOrquestracao.set(true);
+
+      expect(componente.validate().valid).toBe(true);
+      const gravado = componente.persistir();
+      const req = controller.expectOne(URL_DO_IDENTIFICADOR);
+      expect(req.request.body).toEqual({ identificadorLegivel: 'medicina-2027' });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      await tick();
+
+      expect((await gravado).valid).toBe(true);
+    });
+
+    it('barra a publicação com o identificador inválido e mostra o erro no campo', () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'Medicina 2027' });
+      store.travamentoDeOrquestracao.set(true);
+
+      const resultado = componente.validate();
+      detectar();
+
+      expect(resultado.valid).toBe(false);
+      expect(host.querySelector('#f-identificador-erro')?.textContent).toMatch(
+        /^O identificador legível deve começar/,
+      );
+    });
+
+    /**
+     * Sem resposta conclusiva, o servidor pode ter gravado o valor novo. Voltar ao valor anterior
+     * precisa reenviar — senão o processo publicaria com o que o servidor gravou, não com o da tela.
+     */
+    it('reenvia depois de uma gravação inconclusiva, mesmo de volta ao valor anterior', async () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      detectar();
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
+
+      const primeira = componente.persistir();
+      const falha = problema(503, 'uniplus.internal.unexpected', 'Serviço indisponível');
+      controller.expectOne(URL_DO_IDENTIFICADOR).flush(falha.body, falha.opts);
+      await tick();
+      expect((await primeira).valid).toBe(false);
+
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'ps-2027' });
+      expect(componente.rotuloDeAvanco()).toBe('Gravar e avançar');
+      const segunda = componente.persistir();
+      const req = controller.expectOne(URL_DO_IDENTIFICADOR);
+      expect(req.request.body).toEqual({ identificadorLegivel: 'ps-2027' });
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      await tick();
+
+      expect((await segunda).valid).toBe(true);
+      expect(componente.rotuloDeAvanco()).toBe('Próximo');
+    });
+
+    it('não reenvia o valor anterior depois de uma recusa definitiva', async () => {
+      preencherCamposDoComando();
+      lerDetalhe(StatusProcesso.rascunho, 'ps-2027');
+      detectar();
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
+
+      const primeira = componente.persistir();
+      const recusa = problema(
+        409,
+        EM_USO,
+        'O identificador legível já é usado por outro processo seletivo',
+      );
+      controller.expectOne(URL_DO_IDENTIFICADOR).flush(recusa.body, recusa.opts);
+      await tick();
+      await primeira;
+
+      store.patchObjectSection('identificacao', { identificadorLegivel: 'ps-2027' });
+      expect((await componente.persistir()).valid).toBe(true);
+      controller.expectNone(URL_DO_IDENTIFICADOR);
+    });
+
+    /** Publicado, o campo não muda por aqui — nem exige o que o operador não pode corrigir. */
+    it('trava o campo e não o confere com o processo publicado', () => {
+      lerDetalhe(StatusProcesso.publicado, 'ps-2027');
+      detectar();
+      store.patchObjectSection('identificacao', { identificadorLegivel: '' });
+      detectar();
+
+      expect((host.querySelector('#f-identificador') as HTMLInputElement).disabled).toBe(true);
+      expect(componente.validate().messages ?? []).not.toContain(
+        'Informe o identificador legível do processo seletivo.',
+      );
+      expect(componente.rotuloDeAvanco()).toBe('Próximo');
+    });
+
+    it('descreve o campo como endereço público que não muda depois de publicado', () => {
+      const hint = host.querySelector('#f-identificador-hint');
+
+      expect(host.querySelector('#f-identificador')?.getAttribute('aria-describedby')).toBe(
+        'f-identificador-hint',
+      );
+      expect(hint?.textContent).toMatch(/endereço público do certame/i);
+      expect(hint?.textContent).toMatch(/depois de publicado, não muda mais/i);
+    });
   });
 
   it('orienta o passo sem citar PDF, requisito interno ou LGPD', () => {

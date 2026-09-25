@@ -52,6 +52,20 @@ function dtoCom(distribuicao: unknown): ProcessoSeletivoDto {
   } as unknown as ProcessoSeletivoDto;
 }
 
+describe('hidratarDraft — identificador legível', () => {
+  it('projeta o identificador gravado sobre o rascunho', () => {
+    const dto = { ...dtoCom([]), identificadorLegivel: 'medicina-2027' } as ProcessoSeletivoDto;
+
+    expect(hidratarDraft(DRAFT, dto).identificacao.identificadorLegivel).toBe('medicina-2027');
+  });
+
+  it('deixa o campo vazio quando o processo ainda não declarou identificador', () => {
+    const dto = { ...dtoCom([]), identificadorLegivel: null } as ProcessoSeletivoDto;
+
+    expect(hidratarDraft(DRAFT, dto).identificacao.identificadorLegivel).toBe('');
+  });
+});
+
 describe('hidratarDraft — distribuição de vagas', () => {
   it('projeta a distribuição gravada sobre o rascunho', () => {
     const { ofertas } = hidratarDraft(DRAFT, dtoCom([DISTRIBUICAO])).vagas;

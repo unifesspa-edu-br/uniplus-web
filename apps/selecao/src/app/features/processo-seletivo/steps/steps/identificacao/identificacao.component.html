@@ -21,6 +21,30 @@
       />
     </div>
     <div class="form-field form-grid__full">
+      <label class="label" for="f-identificador">Identificador legível</label>
+      <input
+        class="input"
+        id="f-identificador"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="medicina-2027"
+        [formControl]="identificadorLegivel"
+        [attr.aria-describedby]="
+          erroDoIdentificador() ? 'f-identificador-erro f-identificador-hint' : 'f-identificador-hint'
+        "
+        [attr.aria-invalid]="invalidFields().has('identificadorLegivel') || null"
+        [class.is-invalid]="invalidFields().has('identificadorLegivel')"
+      />
+      @if (erroDoIdentificador(); as erro) {
+        <p class="field__erro" id="f-identificador-erro" role="alert">{{ erro }}</p>
+      }
+      <p class="field__hint" id="f-identificador-hint">
+        É o endereço público do certame no portal. Use letras minúsculas sem acento, dígitos e
+        hífens, de 3 a 64 caracteres (ex.: medicina-2027). Pode ser trocado enquanto o processo for
+        rascunho; depois de publicado, não muda mais.
+      </p>
+    </div>
+    <div class="form-field form-grid__full">
       <label class="label" for="f-unidade">Unidade administradora</label>
       @if (unidadesErro(); as erro) {
         <div class="field__erro" role="alert">

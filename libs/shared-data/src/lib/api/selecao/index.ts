@@ -36,6 +36,7 @@ export type {
   ConfiguracaoDerivacaoDto,
   ConfiguracaoDerivacaoInput,
   DefinirFormularioRequest,
+  DefinirIdentificadorLegivelRequest,
   DefinirReferenciaTemporalFatosRequest,
   FatoColetadoDto,
   FatoColetadoInput,

@@ -9,7 +9,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ProblemI18nService, extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
+import {
+  type ProblemDetails,
+  ProblemI18nService,
+  extractNextCursor,
+  isApiOk,
+} from '@uniplus/shared-core/http';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
@@ -19,6 +24,11 @@ import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-sele
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import {
+  ehRecusaDoIdentificadorLegivel,
+  normalizarIdentificadorLegivel,
+  problemaDoIdentificadorLegivel,
+} from '../../shared/identificador-legivel';
 
 interface UnidadeOption {
   readonly id: string;
@@ -126,8 +136,75 @@ export class IdentificacaoStepComponent {
     }),
   });
 
+  /**
+   * O identificador legível fica fora do formulário do comando: ao contrário dos demais, ele
+   * continua editável depois da criação, enquanto o processo for rascunho — é declarado pelo
+   * PUT do próprio campo, e só a publicação o fixa.
+   */
+  readonly identificadorLegivel = new FormControl('', { nonNullable: true });
+
+  /** Recusa do identificador — local ou do servidor —, exibida junto ao campo. */
+  readonly erroDoIdentificador = signal<string | null>(null);
+
+  /**
+   * O valor que o servidor tem, contra o qual se decide se há o que gravar ao avançar. Vem do
+   * detalhe lido e é atualizado por cada gravação aceita nesta sessão, que o detalhe só
+   * refletiria numa releitura.
+   *
+   * `undefined` quando não se sabe: uma gravação sem resposta conclusiva pode ter aplicado o
+   * valor enviado, e comparar com o anterior deixaria de reenviar justamente quando o operador
+   * voltasse a ele — o processo publicaria com o valor que o servidor gravou, não com o da tela.
+   */
+  private readonly identificadorGravado = signal<string | null | undefined>(null);
+
+  /**
+   * O processo admite declarar o identificador: é rascunho (ou ainda não existe) e não há
+   * criação inconclusiva — nela o comando retido será reenviado com o corpo original, e editar
+   * o campo não mudaria o que vai.
+   *
+   * É o que decide conferir e gravar, e por isso não depende de gravação em curso: a publicação
+   * liga a trava de orquestração antes de conferir e regravar os passos, e um critério que a
+   * enxergasse deixaria o identificador editado sem conferência nem PUT — o processo publicaria
+   * com o valor antigo, que dali em diante não muda mais.
+   */
+  private readonly identificadorDeclaravel = computed(
+    () => this.store.edicaoPermitida() && !this.store.criacaoIndefinida(),
+  );
+
+  /** O controle aceita digitação — além de declarável, nenhuma gravação em curso. */
+  private readonly identificadorEditavel = computed(
+    () => this.identificadorDeclaravel() && !this.store.operacaoEmAndamento(),
+  );
+
   constructor() {
     this.carregarUnidades();
+
+    this.identificadorLegivel.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((valor) => {
+        this.store.patchObjectSection('identificacao', { identificadorLegivel: valor });
+        this.erroDoIdentificador.set(null);
+      });
+
+    effect(() => {
+      const detalhe = this.store.remoteSnapshot();
+      this.identificadorGravado.set(detalhe?.identificadorLegivel ?? null);
+    });
+
+    effect(() => {
+      const valor = this.store.draft().identificacao.identificadorLegivel;
+      const editavel = this.identificadorEditavel();
+
+      if (this.identificadorLegivel.value !== valor) {
+        this.identificadorLegivel.setValue(valor, { emitEvent: false });
+      }
+      if (editavel && this.identificadorLegivel.disabled) {
+        this.identificadorLegivel.enable({ emitEvent: false });
+      }
+      if (!editavel && this.identificadorLegivel.enabled) {
+        this.identificadorLegivel.disable({ emitEvent: false });
+      }
+    });
 
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
       this.store.patchObjectSection('identificacao', {
@@ -286,8 +363,10 @@ export class IdentificacaoStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
+      const identificador = normalizarIdentificadorLegivel(identificacao.identificadorLegivel);
       const resultado = await this.cadastro.criar({
         nome: identificacao.nome.trim(),
+        identificadorLegivel: identificador === '' ? null : identificador,
         tipoProcessoOrigemId,
         origemCandidatos: identificacao.origemCandidatos as OrigemCandidatos,
         unidadeAdministradoraOrigemId: identificacao.unidadeAdministradoraId,
@@ -302,6 +381,7 @@ export class IdentificacaoStepComponent {
 
       if (!resultado.ok) {
         this.store.criacaoIndefinida.set(this.cadastro.temCriacaoPendente());
+        this.apontarRecusaDoIdentificador(resultado.problem);
         this.erroDeCriacao.set(
           this.store.criacaoIndefinida()
             ? `${this.problemI18n.resolve(resultado.problem).title} Não é possível saber se o cadastro chegou a ser criado; use "Tentar novamente" para repetir o mesmo envio.`
@@ -311,6 +391,7 @@ export class IdentificacaoStepComponent {
       }
 
       this.store.criacaoIndefinida.set(false);
+      this.identificadorGravado.set(identificador === '' ? null : identificador);
       this.store.processoSeletivoId.set(resultado.processoSeletivoId);
       return resultado.processoSeletivoId;
     } finally {
@@ -331,7 +412,9 @@ export class IdentificacaoStepComponent {
    * reenvio, e contradiria o aviso na tela, que pede para tentar de novo.
    */
   rotuloDeAvanco(): string {
-    if (this.store.processoSeletivoId() !== null) return 'Próximo';
+    if (this.store.processoSeletivoId() !== null) {
+      return this.identificadorAGravar() === null ? 'Próximo' : 'Gravar e avançar';
+    }
     if (this.store.criacaoIndefinida()) return 'Repetir a gravação';
     return 'Gravar e avançar';
   }
@@ -403,6 +486,16 @@ export class IdentificacaoStepComponent {
       messages.push('Informe o município cujo calendário rege os prazos do processo.');
       invalid.add('localidade');
     }
+    // Só se confere o que ainda se pode corrigir aqui: travado, o campo não tem o que o operador
+    // mude, e a pendência de um processo publicado sem identificador é da retificação.
+    if (this.identificadorDeclaravel()) {
+      const problema = problemaDoIdentificadorLegivel(id.identificadorLegivel);
+      if (problema !== null) {
+        messages.push(problema);
+        invalid.add('identificadorLegivel');
+      }
+      this.erroDoIdentificador.set(problema);
+    }
     this.invalidFields.set(invalid);
     return messages.length ? { valid: false, messages } : { valid: true };
   }
@@ -415,7 +508,8 @@ export class IdentificacaoStepComponent {
    * de a criação ter falhado e o operador reagir pelo rodapé.
    */
   async persistir(): Promise<StepValidation> {
-    if (this.store.processoSeletivoId() !== null) return { valid: true };
+    const existente = this.store.processoSeletivoId();
+    if (existente !== null) return this.gravarIdentificador(existente);
 
     const processoId = await this.garantirProcessoCriado();
     if (processoId === null) {
@@ -427,6 +521,54 @@ export class IdentificacaoStepComponent {
       };
     }
     return { valid: true };
+  }
+
+  /**
+   * O identificador que precisa ir ao servidor, ou `null` quando o servidor já tem o que está
+   * na tela (ou quando o campo está travado e não há o que gravar).
+   */
+  private identificadorAGravar(): string | null {
+    if (!this.identificadorDeclaravel()) return null;
+    const desejado = normalizarIdentificadorLegivel(
+      this.store.draft().identificacao.identificadorLegivel,
+    );
+    const gravado = this.identificadorGravado();
+    if (gravado === undefined) return desejado;
+    return desejado === (gravado ?? '') ? null : desejado;
+  }
+
+  /** Grava o identificador de um processo já criado, quando ele mudou. */
+  private async gravarIdentificador(processoId: string): Promise<StepValidation> {
+    const identificador = this.identificadorAGravar();
+    if (identificador === null) return { valid: true };
+    if (this.store.salvando()) return { valid: false, messages: [] };
+
+    const geracao = this.store.geracao();
+    this.store.salvando.set(true);
+    try {
+      const resultado = await this.cadastro.definirIdentificadorLegivel(processoId, {
+        identificadorLegivel: identificador,
+      });
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+
+      if (!resultado.ok) {
+        if (resultado.inconclusiva) this.identificadorGravado.set(undefined);
+        this.apontarRecusaDoIdentificador(resultado.problem);
+        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+      }
+
+      this.identificadorGravado.set(identificador);
+      return { valid: true };
+    } finally {
+      if (geracao === this.store.geracao()) this.store.salvando.set(false);
+    }
+  }
+
+  /** Recusa do servidor sobre o identificador vai para junto do campo, além do aviso do passo. */
+  private apontarRecusaDoIdentificador(problem: ProblemDetails): void {
+    if (!ehRecusaDoIdentificadorLegivel(problem.code)) return;
+    this.erroDoIdentificador.set(this.problemI18n.resolve(problem).title);
+    this.invalidFields.update((campos) => new Set([...campos, 'identificadorLegivel']));
   }
 
   /**

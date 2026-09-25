@@ -27,6 +27,7 @@ import {
   PublicarProcessoSeletivoRequest,
   ConfiguracaoDerivacaoInput,
   DefinirFormularioRequest,
+  DefinirIdentificadorLegivelRequest,
   DefinirReferenciaTemporalFatosRequest,
   FatoColetadoInput,
 } from '@uniplus/shared-data/selecao';
@@ -150,6 +151,7 @@ export class CadastroInicialService {
   private readonly chaveRegrasDerivacao = new ChaveDeSubstituicao();
   private readonly chaveReferenciaTemporal = new ChaveDeSubstituicao();
   private readonly chaveFormulario = new ChaveDeSubstituicao();
+  private readonly chaveIdentificadorLegivel = new ChaveDeSubstituicao();
 
   /**
    * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
@@ -566,6 +568,35 @@ export class CadastroInicialService {
 
     this.chaveReferenciaTemporal.recusada(result);
     return { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Endereço público do certame, declarado ou trocado depois da criação. Diz se a recusa é
+   * inconclusiva: nela o servidor pode ter gravado o valor enviado, e quem chama não pode mais
+   * tomar o valor anterior como o que o servidor tem.
+   */
+  async definirIdentificadorLegivel(
+    processoSeletivoId: string,
+    request: DefinirIdentificadorLegivelRequest,
+  ): Promise<ResultadoGravacaoComInconclusiva> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirIdentificadorLegivel(
+        processoSeletivoId,
+        request,
+        this.chaveIdentificadorLegivel.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
+
+    if (isApiOk(result)) {
+      this.chaveIdentificadorLegivel.renovar();
+      return { ok: true };
+    }
+
+    const inconclusiva = this.chaveIdentificadorLegivel.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
   }
 
   /** Título e termo de aceite do formulário — os campos vêm por `definirFatosColetados`. */

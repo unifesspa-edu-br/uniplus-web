@@ -34,6 +34,7 @@ const INITIAL_DRAFT: WizardDraft = {
   // Todos os campos do Passo 2 começam vazios para obrigar o preenchimento.
   identificacao: {
     nome: '',
+    identificadorLegivel: '',
     unidadeAdministradoraId: '',
     origemCandidatos: '',
     localidade: null,
