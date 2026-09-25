@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
+import { blocosColados } from '../support/ritmo-vertical';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 
@@ -153,6 +154,18 @@ test.describe('Cronograma — matriz DS @ds', () => {
 
     expect(medida.documento).toBeLessThanOrEqual(1);
     expect(medida.scroller).toBeLessThanOrEqual(1);
+  });
+
+  /**
+   * Título de seção, alerta e dica têm margem do ritmo vertical do passo: nenhum encosta
+   * no bloco vizinho. A fase aberta é o trecho que mais empilha esses três.
+   */
+  test('separa título, alerta e dica do bloco vizinho', async ({ page }) => {
+    await acrescentarFase(page);
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await expect(page.getByRole('heading', { name: 'Etapas desta fase' })).toBeVisible();
+
+    expect(await blocosColados(page)).toEqual([]);
   });
 });
 

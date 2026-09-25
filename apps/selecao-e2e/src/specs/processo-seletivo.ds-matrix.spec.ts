@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Route, type TestInfo } from '@playwright/test';
+import { blocosColados } from '../support/ritmo-vertical';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 
@@ -100,6 +101,25 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
 
       expect(medida.documento, `documento no passo ${passo + 1}`).toBeLessThanOrEqual(1);
       expect(medida.scroller, `scroller no passo ${passo + 1}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  /**
+   * Título de seção, alerta e dica têm margem do ritmo vertical: nenhum encosta no bloco
+   * vizinho. Os passos são os que empilham esses três; a fase aberta do Cronograma fica
+   * na matriz do próprio passo.
+   */
+  test('mantém o ritmo vertical entre título, alerta e dica', async ({ page }) => {
+    for (const passo of ['Tipo do processo', 'Identificação', 'Pagamento', 'Vagas', 'Formulário']) {
+      const posicao = await page.evaluate((rotulo) => {
+        const botoes = [...document.querySelectorAll<HTMLButtonElement>('li.steps__item button')];
+        const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
+        botoes[indice]?.click();
+        return indice + 1;
+      }, passo);
+      await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
+
+      expect(await blocosColados(page), `passo ${passo}`).toEqual([]);
     }
   });
 
