@@ -21,6 +21,7 @@ import {
   temNormaResolvida,
   todasAsExigencias,
   type ExigenciaLocalizada,
+  type GrupoDaExigencia,
 } from '../../shared/exigencias-documentais';
 import {
   alcanceDaCondicao,
@@ -51,6 +52,7 @@ import {
   effect,
   inject,
   input,
+  linkedSignal,
   signal,
   untracked,
 } from '@angular/core';
@@ -94,6 +96,18 @@ import {
   type ProblemaDaFase,
 } from './configuracao-da-fase';
 import { faseDaConfiguracao, grupoDaConfiguracaoDaFase, type FaseConfigForm } from './fase-form';
+import {
+  alcancaOPublico,
+  composicaoResumida,
+  descreverNorma,
+  descreverPublico,
+  normaComum,
+  publicoDaExigencia,
+  rotuloDaConsequencia,
+  type FiltroDePublico,
+  type NormaDescrita,
+  type PublicoDaExigencia,
+} from './resumo-da-exigencia';
 
 /**
  * Unidades de prazo que o domínio aceita, com o rótulo que o operador lê. Dia
@@ -588,14 +602,8 @@ export class FaseStepComponent {
    * está solto, que é o caso comum e não precisa de explicação.
    */
   posicaoNaArvore(id: string): string {
-    const declaracoes = this.declaracoesPorDocumento().get(id) ?? [];
-    const grupo = declaracoes[0]?.grupo;
-    if (grupo === undefined || grupo === null) return '';
-
-    // Grupo de um filho só não oferece alternativa nenhuma: satisfazê-lo é satisfazer aquele
-    // filho, e a folha é materialmente igual a uma exigência solta. Anunciá-la como grupo
-    // informaria errado antes de informar mal.
-    if (grupo.alternativas < 2) return '';
+    const grupo = this.grupoDoDocumento(id);
+    if (grupo === null) return '';
 
     if (grupo.tipo === 'E') {
       return `Faz parte de um conjunto de ${grupo.alternativas} documentos que valem juntos.`;
@@ -605,6 +613,16 @@ export class FaseStepComponent {
     return minima === 1
       ? `É uma das ${grupo.alternativas} alternativas de um grupo — basta entregar uma delas.`
       : `É uma das ${grupo.alternativas} alternativas de um grupo que pede ${minima} delas.`;
+  }
+
+  /** O grupo que o documento compõe, ou `null` quando ele é exigido por si. */
+  private grupoDoDocumento(id: string): GrupoDaExigencia | null {
+    const grupo = (this.declaracoesPorDocumento().get(id) ?? [])[0]?.grupo ?? null;
+
+    // Grupo de um filho só não oferece alternativa nenhuma: satisfazê-lo é satisfazer aquele
+    // filho, e a folha é materialmente igual a uma exigência solta. Anunciá-la como grupo
+    // informaria errado antes de informar mal.
+    return grupo !== null && grupo.alternativas >= 2 ? grupo : null;
   }
 
   /**
@@ -706,6 +724,8 @@ export class FaseStepComponent {
     if (id === '') return;
 
     this.alternarExigencia(id, true);
+    // O documento recém-exigido ainda não declarou nada: os campos dele abrem já à mostra.
+    this.alternarEdicao(id, true);
     // O campo volta ao estado neutro: o próximo documento começa do zero.
     this.documentoAAcrescentar.set('');
   }
@@ -717,6 +737,165 @@ export class FaseStepComponent {
   /** Tira o documento desta fase; das outras, só se ele não valer em nenhuma mais. */
   removerDocumento(id: string): void {
     this.alternarExigencia(id, false);
+    this.alternarEdicao(id, false);
+  }
+
+  /**
+   * Os documentos cujos campos estão à mostra, por fase: a mesma exigência em outra fase é
+   * outra exigência, e abri-la numa não a abre nas demais. A conferência lê o resumo; os campos
+   * abrem por documento, porque a fase com dezenas deles abertos de uma vez não se confere.
+   */
+  private readonly documentosEmEdicao = signal<ReadonlySet<string>>(new Set());
+
+  private chaveDeEdicao(id: string): string {
+    return `${this.faseDoRascunho()?.codigo ?? ''}|${id}`;
+  }
+
+  emEdicao(id: string): boolean {
+    return this.documentosEmEdicao().has(this.chaveDeEdicao(id));
+  }
+
+  alternarEdicao(id: string, aberto = !this.emEdicao(id)): void {
+    const chave = this.chaveDeEdicao(id);
+    this.documentosEmEdicao.update((atuais) => {
+      const proximos = new Set(atuais);
+      if (aberto) proximos.add(chave);
+      else proximos.delete(chave);
+      return proximos;
+    });
+  }
+
+  /** O resumo de cada documento da fase: o que decide a exigência, sem abrir os campos. */
+  readonly resumos = computed<readonly ResumoDoDocumento[]>(() =>
+    this.documentosDaFase().map((doc) => {
+      const exigencia = this.exigenciaDoDocumento(doc.id);
+      const publico = publicoDaExigencia(exigencia, this.fatoPorCodigo());
+      return {
+        id: doc.id,
+        nome: doc.nome,
+        documento: doc,
+        publico,
+        aplicaA: descreverPublico(publico),
+        entrega: exigencia.obrigatorio ? 'Obrigatória' : 'Facultativa',
+        composicao: composicaoResumida(this.grupoDoDocumento(doc.id)),
+        consequencia: rotuloDaConsequencia(
+          exigencia.consequenciaIndeferimento,
+          exigencia.obrigatorio,
+        ),
+        coleta: this.coletaDoDocumento(doc.id),
+        bases: exigencia.basesLegais,
+        normas: exigencia.basesLegais.map(descreverNorma),
+        faltaNorma: this.faltaNormaResolvida(doc.id),
+        repetido: this.declaradoMaisDeUmaVez(doc.id),
+      };
+    }),
+  );
+
+  /**
+   * A norma que sustenta todos os documentos da fase, quando é uma só e resolvida. Ela aparece
+   * uma vez, acima da tabela, e a coluna sai: repetida em cada linha, dobraria a altura de cada
+   * documento sem dizer nada que a primeira linha já não dissesse.
+   */
+  readonly normaComumDaFase = computed(() => {
+    const comum = normaComum(this.resumos().map((resumo) => resumo.bases));
+    return comum === null ? null : descreverNorma(comum);
+  });
+
+  /** Quantas colunas a tabela da conferência tem — a linha dos campos ocupa todas. */
+  readonly colunasDaConferencia = computed(() => (this.normaComumDaFase() === null ? 6 : 5));
+
+  /**
+   * Em que ponto desta fase o documento é coletado, e se ele vale também nas outras. A fase é a
+   * da própria tabela, e repeti-la em cada linha só alongaria a coluna.
+   */
+  private coletaDoDocumento(id: string): string {
+    const etapaId = this.etapaDoDocumento(id);
+    const etapa = this.etapasDaFaseAberta().find((candidata) => candidata.id === etapaId);
+    const momento = etapa === undefined ? 'na fase inteira' : `na etapa ${etapa.nome}`;
+    return this.valeEmTodasAsFases(id)
+      ? `Todas as fases; nesta, ${momento}`
+      : `${momento.charAt(0).toUpperCase()}${momento.slice(1)}`;
+  }
+
+  /**
+   * O id de um elemento da conferência, único por fase: o Cronograma embute um passo destes por
+   * fase aberta, e com id fixo o rótulo e o `aria-controls` da segunda fase apontariam para
+   * os da primeira.
+   */
+  idDaConferencia(sufixo: string): string {
+    return `fase-${this.faseDoRascunho()?.codigo ?? ''}-doc-${sufixo}`;
+  }
+
+  /**
+   * Quem a conferência está olhando: o valor do filtro, codificado para o seletor. É da fase
+   * aberta: outra fase pode não declarar o público escolhido, e abriria vazia sem motivo.
+   */
+  readonly filtroDoPublico = linkedSignal({ source: this.faseAberta, computation: () => '' });
+
+  /** O aviso de que o documento recolhido saiu da lista filtrada; vazio no resto do tempo. */
+  readonly saiuDaLista = linkedSignal({ source: this.faseAberta, computation: () => '' });
+
+  escolherPublico(valor: string): void {
+    this.filtroDoPublico.set(valor);
+    this.saiuDaLista.set('');
+  }
+
+  /**
+   * Abre ou recolhe os campos a partir do nome do documento na conferência.
+   *
+   * O documento aberto fica na lista mesmo fora do público filtrado; recolhido, ele sai, e o
+   * botão focado sairia junto, deixando o foco no corpo da página. O foco vai então para o
+   * seletor do público, e a contagem ligada a ele, que é uma região de status, diz o que saiu.
+   */
+  alternarEdicaoNaConferencia(id: string, seletorDoPublico: HTMLElement): void {
+    this.saiuDaLista.set('');
+    this.alternarEdicao(id);
+    if (this.emEdicao(id) || this.resumosVisiveis().some((resumo) => resumo.id === id)) return;
+
+    const nome = this.resumos().find((resumo) => resumo.id === id)?.nome ?? '';
+    this.saiuDaLista.set(`${nome} saiu da lista, porque não é mais do público filtrado.`);
+    seletorDoPublico.focus();
+  }
+
+  /**
+   * Os públicos que a conferência oferece: todo candidato, cada modalidade do quadro e cada
+   * condição que algum documento da fase declara.
+   */
+  readonly opcoesDoFiltro = computed<readonly OpcaoDoFiltro[]>(() => {
+    const condicoes = [
+      ...new Set(this.resumos().flatMap((resumo) => resumo.publico.alternativas.flat())),
+    ];
+    const opcoes: OpcaoDoFiltro[] = [
+      { valor: '', rotulo: 'Todos os documentos da fase' },
+      { valor: 'todo-candidato', rotulo: 'Exigidos de todo candidato' },
+      ...this.modalidades().map((codigo) => opcaoDoFiltro(`modalidade:${codigo}`)),
+      ...condicoes.map((condicao) => opcaoDoFiltro(`condicao:${condicao}`)),
+    ];
+
+    // O público escolhido continua na lista mesmo quando nenhum documento o declara mais — a
+    // condição sendo reescrita, a modalidade que saiu do quadro. Voltar sozinho a "todos" a
+    // cada tecla trocaria a lista inteira debaixo de quem edita; mantido, o seletor diz qual
+    // filtro está valendo.
+    const escolhido = this.filtroDoPublico();
+    return opcoes.some((opcao) => opcao.valor === escolhido)
+      ? opcoes
+      : [...opcoes, opcaoDoFiltro(escolhido)];
+  });
+
+  /**
+   * Os documentos que o filtro alcança, e sempre o que está com os campos abertos: tirá-lo da
+   * tela porque a edição mudou a quem ele se aplica levaria junto o campo em foco.
+   */
+  readonly resumosVisiveis = computed(() => {
+    const filtro = filtroDoValor(this.filtroDoPublico());
+    return this.resumos().filter(
+      (resumo) => alcancaOPublico(resumo.publico, filtro) || this.emEdicao(resumo.id),
+    );
+  });
+
+  /** O rótulo da consequência, o mesmo no seletor do editor e no resumo. */
+  rotuloDaConsequencia(valor: string, obrigatorio: boolean): string {
+    return rotuloDaConsequencia(valor, obrigatorio);
   }
 
   /**
@@ -1518,3 +1697,53 @@ function canonico(valor: unknown): string {
   );
 }
 
+/** O que a conferência mostra de um documento exigido. */
+interface ResumoDoDocumento {
+  readonly id: string;
+  readonly nome: string;
+  readonly documento: DocumentoDefinicao;
+  readonly publico: PublicoDaExigencia;
+  readonly aplicaA: string;
+  readonly entrega: string;
+  /** Como o documento compõe um grupo; vazio quando é exigido por si. */
+  readonly composicao: string;
+  readonly consequencia: string;
+  readonly coleta: string;
+  readonly bases: readonly BaseLegalConfig[];
+  readonly normas: readonly NormaDescrita[];
+  readonly faltaNorma: boolean;
+  readonly repetido: string;
+}
+
+/** Um público que a conferência oferece, com o valor que o seletor guarda. */
+interface OpcaoDoFiltro {
+  readonly valor: string;
+  readonly rotulo: string;
+}
+
+/** A opção do seletor de público, rotulada pelo público que o valor codifica. */
+function opcaoDoFiltro(valor: string): OpcaoDoFiltro {
+  const filtro = filtroDoValor(valor);
+  switch (filtro.tipo) {
+    case 'modalidade':
+      return { valor, rotulo: `Candidato de ${filtro.codigo}` };
+    case 'condicao':
+      return { valor, rotulo: `Candidato com: ${filtro.condicao}` };
+    case 'todo-candidato':
+      return { valor, rotulo: 'Exigidos de todo candidato' };
+    case 'tudo':
+      return { valor, rotulo: 'Todos os documentos da fase' };
+  }
+}
+
+/** O valor do seletor de público de volta ao filtro que ele codifica. */
+function filtroDoValor(valor: string): FiltroDePublico {
+  if (valor === 'todo-candidato') return { tipo: 'todo-candidato' };
+  if (valor.startsWith('modalidade:')) {
+    return { tipo: 'modalidade', codigo: valor.slice('modalidade:'.length) };
+  }
+  if (valor.startsWith('condicao:')) {
+    return { tipo: 'condicao', condicao: valor.slice('condicao:'.length) };
+  }
+  return { tipo: 'tudo' };
+}

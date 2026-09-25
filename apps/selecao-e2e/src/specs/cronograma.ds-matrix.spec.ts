@@ -325,6 +325,300 @@ test.describe('Cronograma — matriz DS @ds', () => {
 
     expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
   });
+
+  /**
+   * Os campos do documento abrem e recolhem pelo nome dele, que diz o estado; recolhidos, o
+   * resumo continua dizendo o que decide a exigência.
+   */
+  test('abre e recolhe os campos do documento pelo nome', async ({ page }) => {
+    await acrescentarFase(page);
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await exigirDocumento(page);
+
+    const alternar = page.getByRole('button', { name: NOME_DOCUMENTO, exact: true });
+    await expect(alternar).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByLabel('Entrega')).toBeVisible();
+
+    await alternar.click();
+    await expect(alternar).toHaveAttribute('aria-expanded', 'false');
+    await expect(alternar).toBeFocused();
+    await expect(page.getByLabel('Entrega')).toHaveCount(0);
+    await expect(
+      page.getByRole('row', { name: new RegExp(NOME_DOCUMENTO) }).getByText('Obrigatória'),
+    ).toBeVisible();
+
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
+
+  /**
+   * Com o filtro "todo candidato" ativo, passar o documento aberto para "de quem satisfaz" o
+   * tira do público filtrado; ele continua na tela, com o campo em foco.
+   */
+  test('mantém o documento em edição e o foco quando ele sai do público filtrado', async ({
+    page,
+  }) => {
+    await acrescentarFase(page);
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await exigirDocumento(page);
+    await page.getByLabel('Conferir os documentos de').selectOption({
+      label: 'Exigidos de todo candidato',
+    });
+
+    const exigidoDe = page.getByLabel('Exigido de', { exact: true });
+    await exigidoDe.focus();
+    await exigidoDe.selectOption({ label: 'Só de quem satisfaz as condições declaradas' });
+
+    await expect(exigidoDe).toBeFocused();
+    await expect(page.getByRole('button', { name: NOME_DOCUMENTO, exact: true })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+
+    // Recolhido, o documento sai da lista: o foco vai ao seletor do público, visível, e a
+    // contagem ligada a ele diz o que saiu.
+    await page.getByRole('button', { name: NOME_DOCUMENTO, exact: true }).click();
+    const filtro = page.getByLabel('Conferir os documentos de');
+    await expect(filtro).toBeFocused();
+    await expect(filtro).toBeInViewport();
+    const aviso = `${NOME_DOCUMENTO} saiu da lista, porque não é mais do público filtrado.`;
+    await expect(filtro).toHaveAccessibleDescription(new RegExp(aviso));
+    await expect(page.locator('.doc-conferencia__filtro [role="status"]')).toContainText(aviso);
+    await expect(page.locator('.doc-conferencia__linha')).toHaveCount(0);
+  });
+});
+
+/**
+ * Documentos publicados: o processo da consulta, com uma fase e dois documentos — um cobrado de
+ * todo candidato e outro só de quem concorre por LB_PPI. `status: 'publicado'` põe o editor em
+ * somente leitura.
+ */
+const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000a01';
+const FASE_PUBLICADA_ID = '01960000-0000-7000-0000-000000000a02';
+const NORMA_DO_EDITAL = {
+  referencia: 'Edital nº 1/2027, Anexo III',
+  abrangencia: 'INTERNA_EDITAL',
+  status: 'RESOLVIDO',
+  observacao: null,
+};
+
+function folha(id: string, documento: Record<string, unknown>) {
+  return {
+    id,
+    tipo: 'FOLHA',
+    quantidadeMinima: null,
+    consequencia: null,
+    basesLegais: [],
+    filhos: [],
+    chaveDistincao: null,
+    dataReferencia: null,
+    ocorrenciasEsperadas: null,
+    repetePorEntidade: null,
+    documento: {
+      id: `${id}-doc`,
+      exigidoNaFaseId: FASE_PUBLICADA_ID,
+      tipoDocumentoCategoria: 'IDENTIFICACAO',
+      condicoes: [],
+      basesLegais: [{ id: `${id}-norma`, ...NORMA_DO_EDITAL }],
+      idadeMaximaEmissao: null,
+      formatosPermitidos: ['pdf'],
+      tamanhoMaximoBytes: 10485760,
+      exigidoNaEtapaId: null,
+      ...documento,
+    },
+  };
+}
+
+const DETALHE_PUBLICADO = {
+  id: PROCESSO_PUBLICADO_ID,
+  nome: 'Processo seletivo publicado',
+  tipoProcesso: { origemId: TIPOS_PROCESSO[0].id, codigo: 'SISU', nome: 'SISU' },
+  status: 'publicado',
+  origemCandidatos: 'inscricaoPropria',
+  unidadeAdministradora: {
+    origemId: '01960000-0000-7000-0000-000000000906',
+    sigla: 'CEPS',
+    slug: 'ceps',
+    nome: 'CEPS',
+    tipo: 'PROREITORIA',
+    cidadeCodigoIbge: '1504208',
+    cidadeNome: 'Marabá',
+    cidadeUf: 'PA',
+  },
+  localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+  etapas: [],
+  ofertaAtendimento: null,
+  distribuicaoVagas: [],
+  bonusRegional: null,
+  cascata: null,
+  criteriosDesempate: [],
+  classificacao: null,
+  cronogramaFases: [
+    {
+      id: FASE_PUBLICADA_ID,
+      ordem: 1,
+      faseCanonicaOrigemId: FASES_CANONICAS[0].id,
+      codigo: FASES_CANONICAS[0].codigo,
+      donoInstitucional: 'CEPS',
+      origemData: 'PROPRIA',
+      agrupaEtapas: false,
+      permiteComplementacao: false,
+      produzResultado: false,
+      coletaInscricao: true,
+      coletaSolicitacaoIsencao: false,
+      inicio: '2027-01-01T00:00:00Z',
+      fim: '2027-01-31T23:59:59Z',
+      produtos: [],
+      faseConcluinteCodigo: null,
+      emiteParecerIndividual: false,
+      bancasRequeridas: [],
+      regraRecurso: null,
+    },
+  ],
+  documentosExigidos: [],
+  raizesExigencia: [
+    folha('01960000-0000-7000-0000-000000000a11', {
+      tipoDocumentoOrigemId: TIPOS_DOCUMENTO[0].id,
+      tipoDocumentoCodigo: TIPOS_DOCUMENTO[0].codigo,
+      tipoDocumentoNome: NOME_DOCUMENTO,
+      aplicabilidade: 'GERAL',
+      obrigatorio: true,
+      consequenciaIndeferimento: 'ELIMINA',
+    }),
+    folha('01960000-0000-7000-0000-000000000a12', {
+      tipoDocumentoOrigemId: '01960000-0000-7000-0000-0000000000f9',
+      tipoDocumentoCodigo: 'AUTODECLARACAO_PPI',
+      tipoDocumentoNome: 'Autodeclaração étnico-racial',
+      aplicabilidade: 'CONDICIONAL',
+      obrigatorio: false,
+      consequenciaIndeferimento: 'RECLASSIFICA_AC',
+      condicoes: [
+        {
+          id: '01960000-0000-7000-0000-000000000a13',
+          clausula: 1,
+          fato: 'MODALIDADE',
+          operador: 'EM',
+          valor: '["LB_PPI"]',
+        },
+      ],
+    }),
+  ],
+  referenciaTemporalFatos: null,
+  fatosColetados: [],
+  regrasDerivacao: [],
+  formularioTitulo: null,
+  formularioTermoAceiteTexto: null,
+  configuracaoDivulgacao: null,
+  configuracaoTaxaInscricao: null,
+  algoritmoContagemPrazo: null,
+  criadoEm: '2026-09-01T00:00:00Z',
+};
+
+/**
+ * Conferência dos documentos de uma fase publicada (web#902): o resumo mostra todas as regras
+ * com os campos recolhidos — cada documento com a quem se aplica, a entrega, a consequência e a
+ * coleta, a norma comum uma vez —, o nome abre os campos desabilitados, e a lista é filtrável
+ * por público.
+ */
+test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await mockarCatalogos(page);
+    await mockarProcessoPublicado(page);
+    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+    await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_ID}`);
+    await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    await irAoPasso(page, 'Cronograma', testInfo);
+    await page.getByRole('button', { name: /Inscrição \d+ documentos/ }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Documentos exigidos nesta fase' }),
+    ).toBeVisible();
+  });
+
+  test('mostra o que decide cada exigência com os campos recolhidos', async ({ page }) => {
+    const tabela = page.getByRole('table', { name: 'Documentos exigidos nesta fase' });
+    const autodeclaracao = tabela.getByRole('row', { name: /Autodeclaração étnico-racial/ });
+
+    await expect(tabela.getByRole('row', { name: new RegExp(NOME_DOCUMENTO) })).toContainText(
+      'Todo candidato',
+    );
+    await expect(autodeclaracao).toContainText('Modalidades LB_PPI');
+    await expect(autodeclaracao).toContainText('Facultativa');
+    await expect(autodeclaracao).toContainText('Reclassifica para ampla concorrência');
+    await expect(autodeclaracao).toContainText('Na fase inteira');
+    await expect(page.getByText('Norma de todos os documentos:')).toBeVisible();
+    await expect(tabela.locator('button[aria-expanded="true"]')).toHaveCount(0);
+    await expect(tabela.locator('.doc-conferencia__campos')).toHaveCount(0);
+
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
+    expect(await blocosColados(page)).toEqual([]);
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
+
+  /**
+   * O detalhe continua ao alcance em consulta: o nome abre os campos pelo teclado, e eles vêm
+   * desabilitados — o processo publicado só muda por retificação.
+   */
+  test('abre pelo teclado os campos do documento, desabilitados', async ({ page }) => {
+    const alternar = page.getByRole('button', {
+      name: 'Autodeclaração étnico-racial',
+      exact: true,
+    });
+    await expect(alternar).toHaveAttribute('aria-expanded', 'false');
+
+    await alternar.focus();
+    await page.keyboard.press('Enter');
+
+    await expect(alternar).toHaveAttribute('aria-expanded', 'true');
+    const campos = page.locator(`[id="${await alternar.getAttribute('aria-controls')}"]`);
+    await expect(campos.getByLabel('Entrega')).toBeDisabled();
+    await expect(campos.getByLabel('Se não for entregue')).toBeDisabled();
+
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
+
+  /**
+   * Nenhuma célula do resumo, nem cabeçalho, passa da própria caixa ou da borda da linha: a
+   * tabela tem largura fixa, e o que não coubesse sairia por cima da coluna vizinha.
+   */
+  test('mostra o resumo inteiro em qualquer largura', async ({ page }) => {
+    const problemas = await page
+      .locator('.doc-conferencia tr:not(.doc-conferencia__campos)')
+      .evaluateAll((linhas) =>
+        linhas.flatMap((linha) => {
+          const limite = linha.getBoundingClientRect();
+          return Array.from(linha.querySelectorAll<HTMLElement>('th, td'))
+            .filter((celula) => celula.offsetParent !== null)
+            .filter(
+              (celula) =>
+                celula.scrollWidth > celula.clientWidth + 1 ||
+                celula.getBoundingClientRect().right > limite.right + 1,
+            )
+            .map((celula) => celula.dataset['label'] ?? celula.textContent?.trim() ?? '');
+        }),
+      );
+
+    expect(problemas).toEqual([]);
+  });
+
+  test('filtra o que cada público entrega e diz quantos sobraram', async ({ page }) => {
+    await page.getByLabel('Conferir os documentos de').selectOption({
+      label: 'Exigidos de todo candidato',
+    });
+
+    await expect(page.locator('.doc-conferencia__linha')).toHaveCount(1);
+    await expect(page.getByText('1 de 2 documentos.')).toBeVisible();
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
 });
 
 /** Acrescenta a única fase do catálogo à linha do tempo. */
@@ -438,6 +732,33 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responderCatalogo(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, []);
   await responderCatalogo(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, []);
   await mockarRegrasCatalogo(page);
+}
+
+/** O detalhe e o que mora sob o prefixo do processo publicado da consulta. */
+async function mockarProcessoPublicado(page: Page): Promise<void> {
+  await page.route(
+    new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_PUBLICADO_ID}(/.*)?(\\?.*)?$`),
+    async (route: Route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+
+      const caminho = new URL(route.request().url()).pathname;
+      const corpo = caminho.endsWith(PROCESSO_PUBLICADO_ID)
+        ? DETALHE_PUBLICADO
+        : caminho.endsWith('/conformidade')
+          ? { processoSeletivoId: PROCESSO_PUBLICADO_ID, itens: [] }
+          : [];
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: CORS_HEADERS,
+        body: JSON.stringify(corpo),
+      });
+    },
+  );
 }
 
 async function mockarRegrasCatalogo(page: Page): Promise<void> {
