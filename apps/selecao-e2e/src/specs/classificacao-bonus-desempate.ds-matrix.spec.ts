@@ -34,7 +34,13 @@ const REGRAS_CALCULO = [
 const REGRAS_ARREDONDAMENTO = [
   regra('ARRED-TRUNCAR', 'regra_arredondamento', 'Edital padrão PSIQ'),
 ];
-const REGRAS_ORDEM_ALOCACAO = [regra('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', 'regra_ordem_alocacao', 'UNI-REQ-0045 — processamento da 1ª opção antes da 2ª')];
+const REGRAS_ORDEM_ALOCACAO = [
+  regra(
+    'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+    'regra_ordem_alocacao',
+    'UNI-REQ-0045 — processamento da 1ª opção antes da 2ª',
+  ),
+];
 const REGRAS_ELIMINACAO = [
   regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
   regra('ELIM-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
@@ -62,21 +68,30 @@ const RESOLUCAO_PESO_AREA = 'Resolução nº 805/2024/Consepe';
 /** A lista canônica que o cadastro de Peso por Área publica, na ordem das colunas. */
 const AREAS_ENEM = [
   { codigo: 'REDACAO', rotulo: 'Redação' },
+  { codigo: 'CIENCIAS_NATUREZA', rotulo: 'Ciências da Natureza e suas Tecnologias' },
+  { codigo: 'CIENCIAS_HUMANAS', rotulo: 'Ciências Humanas e suas Tecnologias' },
+  { codigo: 'LINGUAGENS', rotulo: 'Linguagens, Códigos e suas Tecnologias' },
   { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias' },
 ];
 
-/** Duas linhas do cadastro de Peso por Área — a resolução escolhida e o quadro que ela carrega. */
+/**
+ * O quadro da resolução escolhida no tamanho do de uma resolução real — quatro grupos, as cinco
+ * áreas e a mesma base legal em todos —, que é o que põe a largura da tabela à prova.
+ */
 const PESOS_AREA_ENEM = [
-  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
+  { codigo: 'HUMANISTICA_I', rotulo: 'Humanística I' },
+  { codigo: 'HUMANISTICA_II', rotulo: 'Humanística II' },
   { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
+  { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
 ].map((grupoCurso, indice) => ({
   id: `0196000${indice}-0000-7000-8000-00000000pa00`,
   resolucao: RESOLUCAO_PESO_AREA,
   grupoCurso,
-  areas: [
-    { codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 },
-    { codigo: 'MATEMATICA', rotulo: 'Matemática e suas Tecnologias', peso: 1.5, corte: null },
-  ],
+  areas: AREAS_ENEM.map((area, posicao) => ({
+    ...area,
+    peso: posicao === indice + 1 ? 2.5 : posicao === 0 ? 2 : 1.5,
+    corte: area.codigo === 'REDACAO' ? 400 : null,
+  })),
   baseLegal: `${RESOLUCAO_PESO_AREA} – Anexo I`,
   criadoEm: '2026-09-01T00:00:00Z',
 }));
@@ -141,15 +156,51 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
         .getByLabel('Resolução de Peso por Área', { exact: true })
         .selectOption(RESOLUCAO_PESO_AREA);
 
-      await expect(
-        page.getByRole('table', { name: /Prévia do quadro da resolução/ }),
-      ).toBeVisible();
+      await expect(page.getByRole('table', { name: /Prévia do quadro de pesos/ })).toBeVisible();
       await expect(
         page.getByRole('link', { name: /Abrir o cadastro de Peso por Área/ }),
       ).toBeVisible();
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
+    });
+
+    test('o quadro de pesos cabe em cada largura, sem partir cabeçalho nem valor', async ({
+      page,
+    }, testInfo) => {
+      await irAoPasso(page, 'Fórmula e precisão', testInfo);
+      await declararFormulaLocal(page);
+      await page.getByLabel('Classificação baseada em provas').check();
+      await page
+        .getByLabel('Resolução de Peso por Área', { exact: true })
+        .selectOption(RESOLUCAO_PESO_AREA);
+      await expect(page.getByRole('table', { name: /Prévia do quadro de pesos/ })).toBeVisible();
+      // A base legal é a mesma nos quatro grupos: uma vez acima do quadro, e não em coluna.
+      await expect(page.getByText(`Base legal: ${RESOLUCAO_PESO_AREA} – Anexo I`)).toBeVisible();
+      await expect(page.getByRole('columnheader', { name: 'Base legal' })).toHaveCount(0);
+
+      for (const largura of LARGURAS_DE_REFERENCIA) {
+        await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
+        await esperarLayoutEstavel(page);
+
+        expect(await transbordo(page), `transbordo em ${largura} px`).toEqual({
+          documento: 0,
+          conteudo: 0,
+        });
+        expect(await rolagemDoQuadro(page), `rolagem do quadro em ${largura} px`).toBe(0);
+        expect(
+          await trechosPartidos(page, '.peso-area__quadro th', '\\S+'),
+          `cabeçalhos em ${largura} px`,
+        ).toEqual([]);
+        // "Peso 1,5" é um valor só: o número não desce para a linha de baixo.
+        expect(
+          await trechosPartidos(page, '.peso-area__valor', 'Peso \\S+'),
+          `valores em ${largura} px`,
+        ).toEqual([]);
+
+        const resultado = await runAxeWcagAA(page);
+        expect(identificadoresDe(resultado), `WCAG em ${largura} px`).toEqual([]);
+      }
     });
 
     test('bloqueia o avanço sem a resolução e aponta o campo', async ({ page }, testInfo) => {
@@ -433,7 +484,7 @@ const REGRAS_MARCADAS: Record<string, Record<string, string>> = {
     'Base Legal do bônus': BASE_LEGAL_BONUS_REGIONAL_ID,
   },
   Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE|1.0' },
-  'Eliminação': { 'Regra de eliminação': 'ELIM-ZERO-EM-AREA|1.0' },
+  Eliminação: { 'Regra de eliminação': 'ELIM-ZERO-EM-AREA|1.0' },
 };
 
 /** As larguras de referência em que a consulta não pode ter rolagem horizontal. */
@@ -552,7 +603,10 @@ test.describe('Desempate por área em consulta — matriz DS @ds', () => {
         conteudo: 0,
       });
       // Uma letra por linha: a palavra se partia em várias linhas do nome.
-      expect(cartao.palavrasPartidas, `nome da área em ${largura} px`).toEqual([]);
+      expect(
+        await trechosPartidos(page, '.desempate-item .desempate-area__nome', '\\S+'),
+        `nome da área em ${largura} px`,
+      ).toEqual([]);
       expect(cartao.larguraDoSeletor, `seletor e áreas em ${largura} px`).toBeGreaterThanOrEqual(
         cartao.larguraDaLista - 1,
       );
@@ -572,6 +626,41 @@ test.describe('Desempate por área em consulta — matriz DS @ds', () => {
   });
 });
 
+/** Quanto a tabela de pesos passa da largura do próprio quadro. */
+async function rolagemDoQuadro(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const quadro = document.querySelector('.peso-area__quadro');
+    return quadro instanceof HTMLElement ? Math.max(0, quadro.scrollWidth - quadro.clientWidth) : 0;
+  });
+}
+
+/**
+ * Os trechos (casados por `padrao`) que o navegador partiu em mais de uma linha, no texto dos
+ * elementos visíveis de `seletor`: um trecho partido tem mais de um retângulo de linha.
+ */
+async function trechosPartidos(page: Page, seletor: string, padrao: string): Promise<string[]> {
+  return page.evaluate(
+    ({ seletor, padrao }) =>
+      Array.from(document.querySelectorAll(seletor)).flatMap((elemento) => {
+        const percurso = document.createTreeWalker(elemento, NodeFilter.SHOW_TEXT);
+        const textos: Text[] = [];
+        while (percurso.nextNode()) textos.push(percurso.currentNode as Text);
+        return textos.flatMap((texto) =>
+          Array.from(texto.data.matchAll(new RegExp(padrao, 'g'))).flatMap((trecho) => {
+            const intervalo = document.createRange();
+            intervalo.setStart(texto, trecho.index);
+            intervalo.setEnd(texto, trecho.index + trecho[0].length);
+            const linhas = new Set(
+              Array.from(intervalo.getClientRects(), (retangulo) => Math.round(retangulo.top)),
+            );
+            return linhas.size > 1 ? [trecho[0]] : [];
+          }),
+        );
+      }),
+    { seletor, padrao },
+  );
+}
+
 /** Espera dois quadros de animação, para medir depois que a troca de largura se assentou. */
 async function esperarLayoutEstavel(page: Page): Promise<void> {
   await page.evaluate(
@@ -589,7 +678,6 @@ function alturaDoProject(testInfo: TestInfo): number {
 
 /** As medidas do primeiro cartão de critério que os critérios de aceite comparam. */
 async function medidasDoCartao(page: Page): Promise<{
-  palavrasPartidas: string[];
   larguraDoSeletor: number;
   larguraDaLista: number;
   larguraDaListaDeCriterios: number;
@@ -601,19 +689,6 @@ async function medidasDoCartao(page: Page): Promise<{
     const cartao = document.querySelector('.desempate-item');
     const largura = (seletor: string) =>
       cartao?.querySelector(seletor)?.getBoundingClientRect().width ?? 0;
-    const nomes = Array.from(cartao?.querySelectorAll('.desempate-area__nome') ?? []);
-    // Uma palavra que ocupa mais de uma linha tem mais de um retângulo de linha.
-    const palavrasPartidas = nomes.flatMap((nome) => {
-      const texto = nome.firstChild;
-      if (!(texto instanceof Text)) return [];
-      return Array.from(texto.data.matchAll(/\S+/g)).flatMap((palavra) => {
-        const trecho = document.createRange();
-        trecho.setStart(texto, palavra.index);
-        trecho.setEnd(texto, palavra.index + palavra[0].length);
-        const linhas = new Set(Array.from(trecho.getClientRects(), (r) => Math.round(r.top)));
-        return linhas.size > 1 ? [palavra[0]] : [];
-      });
-    });
     const numero = cartao?.querySelector('.desempate-num')?.getBoundingClientRect();
     // A maior distância entre os topos de número, campos e ações.
     const desalinhamento = (caixas: (DOMRect | undefined)[]) => {
@@ -634,7 +709,6 @@ async function medidasDoCartao(page: Page): Promise<{
     }
     const campos = cartao?.querySelector('.desempate-item__campos')?.getBoundingClientRect();
     return {
-      palavrasPartidas,
       larguraDoSeletor: largura('select'),
       larguraDaLista: largura('.desempate-areas'),
       larguraDaListaDeCriterios:

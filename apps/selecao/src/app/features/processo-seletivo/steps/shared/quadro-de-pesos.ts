@@ -110,11 +110,17 @@ export function areasComunsAoQuadro(
  * os grupos, ou sem corte, não há um valor único a sugerir.
  */
 export function corteDaArea(quadro: readonly GrupoDoQuadro[], areaCodigo: string): number | null {
-  const cortes = new Set(
+  return valorUnico(
     quadro.map((grupo) => grupo.areas.find((area) => area.codigo === areaCodigo)?.corte ?? null),
   );
-  const [unico] = cortes;
-  return cortes.size === 1 && unico !== undefined ? unico : null;
+}
+
+/**
+ * A base legal que todos os grupos do quadro citam, para ser dita uma vez só. Com bases diferentes
+ * entre os grupos, cada linha precisa mostrar a sua.
+ */
+export function baseLegalComum(quadro: readonly GrupoDoQuadro[]): string | null {
+  return valorUnico(quadro.map((grupo) => grupo.baseLegal));
 }
 
 /** Algum grupo de `congelado` não está mais em `cadastro` — a resolução ficou incompleta lá. */
@@ -165,6 +171,12 @@ function areaDo(area: {
     peso: numeroDaApi(area.peso),
     corte: numeroOuNuloDaApi(area.corte),
   };
+}
+
+function valorUnico<T>(valores: readonly T[]): T | null {
+  const distintos = new Set(valores);
+  const [unico] = distintos;
+  return distintos.size === 1 && unico !== undefined ? unico : null;
 }
 
 function ordenarPorCodigo(grupos: GrupoDoQuadro[]): readonly GrupoDoQuadro[] {

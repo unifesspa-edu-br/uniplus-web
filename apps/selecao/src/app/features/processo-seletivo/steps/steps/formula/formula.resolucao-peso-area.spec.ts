@@ -353,12 +353,11 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(legenda).toContain('será copiado para o processo');
 
       const cabecalhos = [...(tabela?.querySelectorAll('thead th') ?? [])].map(texto);
-      expect(cabecalhos).toEqual([
-        'Grupo de área',
-        'Área de teste A',
-        'Área de teste B',
-        'Base legal',
-      ]);
+      // A base legal é a mesma nos dois grupos: dita uma vez acima do quadro, e não em coluna.
+      expect(cabecalhos).toEqual(['Grupo de área', 'Área de teste A', 'Área de teste B']);
+      expect(texto(m.el.querySelector('.peso-area__base-legal'))).toBe(
+        `Base legal: ${RESOLUCAO} – Anexo I`,
+      );
 
       const linhas = [...(tabela?.querySelectorAll('tbody tr') ?? [])];
       // Grupos pelo código, a mesma ordem da cópia que o servidor congela.
@@ -371,7 +370,40 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       const tecnologica = linhas[1].querySelectorAll('td');
       expect(texto(tecnologica[0])).toBe('Peso 2 corte 400');
       expect(texto(tecnologica[1])).toBe('Peso 1,5');
-      expect(texto(tecnologica[2])).toBe(`${RESOLUCAO} – Anexo I`);
+      expect(tecnologica).toHaveLength(2);
+    });
+
+    it('com bases legais diferentes entre os grupos, mostra a de cada um na sua linha', async () => {
+      const m = await montar();
+      marcarEnemComMediaPonderada(m);
+      responderPesos(m, [PESOS[0], { ...PESOS[1], baseLegal: `${RESOLUCAO} – Anexo II` }]);
+      escolherNoSeletor(m, RESOLUCAO);
+
+      const tabela = m.el.querySelector('table');
+      const cabecalhos = [...(tabela?.querySelectorAll('thead th') ?? [])].map(texto);
+      expect(cabecalhos.at(-1)).toBe('Base legal');
+      const basesLegais = [...(tabela?.querySelectorAll('td[data-label="Base legal"]') ?? [])];
+      expect(basesLegais.map(texto)).toEqual([`${RESOLUCAO} – Anexo II`, `${RESOLUCAO} – Anexo I`]);
+      expect(m.el.querySelector('.peso-area__base-legal')).toBeNull();
+    });
+
+    it('não repete a palavra "resolução" antes do nome dela', async () => {
+      const m = await montar();
+      marcarEnemComMediaPonderada(m);
+      responderPesos(m);
+      escolherNoSeletor(m, RESOLUCAO);
+
+      expect(texto(m.el.querySelector('caption')).toLowerCase()).not.toContain(
+        'resolução resolução',
+      );
+    });
+
+    it('a opção do ENEM anuncia o corte por área, que vale para qualquer área e não só a redação', async () => {
+      const m = await montar();
+
+      const opcao = texto(m.el.querySelector('.check-item'));
+      expect(opcao).toContain('corte por área');
+      expect(opcao).not.toContain('corte de redação');
     });
 
     it('com a resolução gravada, mostra a cópia congelada no processo, e não o cadastro', async () => {
@@ -383,7 +415,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       const linhas = [...(tabela?.querySelectorAll('tbody tr') ?? [])];
       expect(linhas).toHaveLength(1);
       expect(texto(linhas[0].querySelectorAll('td')[0])).toBe('Peso 9 corte 700');
-      expect(texto(linhas[0].querySelectorAll('td')[1])).toBe(`${RESOLUCAO} – Anexo I (congelada)`);
+      expect(texto(m.el.querySelector('.peso-area__base-legal'))).toBe(
+        `Base legal: ${RESOLUCAO} – Anexo I (congelada)`,
+      );
       // O cadastro mudou depois da cópia: o operador precisa saber o que a próxima gravação faz.
       expect(texto(m.el)).toContain('O cadastro de Peso por Área mudou depois');
     });
@@ -420,7 +454,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(texto(m.el.querySelector('caption'))).toContain('congelado no processo');
       expect(texto(m.el)).not.toContain('O cadastro de Peso por Área mudou depois');
       const cabecalhos = [...m.el.querySelectorAll('thead th')].map(texto);
-      expect(cabecalhos.slice(1, -1)).toEqual(ROTULOS_CANONICOS);
+      expect(cabecalhos.slice(1)).toEqual(ROTULOS_CANONICOS);
     });
 
     it('só compara a cópia com um cadastro lido depois dela, e relê o cadastro a cada cópia nova', async () => {
@@ -537,7 +571,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       escolherNoSeletor(m, RESOLUCAO);
 
       const cabecalhos = [...m.el.querySelectorAll('thead th')].map(texto);
-      expect(cabecalhos.slice(1, -1)).toEqual(ROTULOS_CANONICOS);
+      expect(cabecalhos.slice(1)).toEqual(ROTULOS_CANONICOS);
     });
 
     it('a prévia do cadastro tem as colunas na mesma ordem da cópia congelada', async () => {
@@ -547,7 +581,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       escolherNoSeletor(m, RESOLUCAO);
 
       const cabecalhos = [...m.el.querySelectorAll('thead th')].map(texto);
-      expect(cabecalhos.slice(1, -1)).toEqual(ROTULOS_CANONICOS);
+      expect(cabecalhos.slice(1)).toEqual(ROTULOS_CANONICOS);
     });
 
     it('releitura falha depois de gravar: não mostra a cópia velha como congelada e avisa', async () => {
@@ -567,7 +601,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       m.fixture.detectChanges();
 
       expect(texto(m.el.querySelector('caption'))).toContain('Prévia');
-      expect(texto(m.el)).not.toContain('congelado no processo, da resolução');
+      expect(texto(m.el)).not.toContain('congelado no processo');
       expect(texto(m.el)).toContain('ainda não foi confirmado por uma releitura');
       expect(botao(m, 'Reler o processo')).toBeDefined();
     });

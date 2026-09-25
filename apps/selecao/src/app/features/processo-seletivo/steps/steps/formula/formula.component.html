@@ -118,7 +118,7 @@
       (change)="aoAlternarBaseadoEmEnem($event)"
     /><span
       >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que pesa
-      as notas das áreas e habilita as regras de eliminação por corte de redação e zero em área, no
+      as notas das áreas e habilita as regras de eliminação por corte por área e zero em área, no
       passo Eliminação)</span
     ></label
   >
@@ -205,9 +205,9 @@
 
       @if (avisaForaDoCadastro()) {
         <p class="alert alert--warning" role="status">
-          A resolução {{ resolucaoEscolhida() }} não está no cadastro de Peso por Área lido. Se ela
-          foi criada ou corrigida agora, use "Atualizar lista"; senão, escolha outra: a gravação da
-          classificação vai recusá-la.
+          A resolução escolhida ({{ resolucaoEscolhida() }}) não está no cadastro de Peso por Área
+          lido. Se ela foi criada ou corrigida agora, use "Atualizar lista"; senão, escolha outra: a
+          gravação da classificação vai recusá-la.
         </p>
       }
 
@@ -241,25 +241,30 @@
       }
 
       @if (quadro().length > 0) {
+        @if (baseLegalDoQuadro(); as baseLegal) {
+          <p class="peso-area__base-legal">
+            <span class="peso-area__base-legal-rotulo">Base legal:</span> {{ baseLegal }}
+          </p>
+        }
         <div class="table-responsive peso-area__quadro">
           <table>
             <caption class="peso-area__legenda">
               @if (mostraQuadroGravado()) {
-                Quadro de pesos congelado no processo, da resolução {{ resolucaoEscolhida() }}, por
-                grupo de área
+                Quadro de pesos por grupo de área congelado no processo ({{ resolucaoEscolhida() }})
               } @else {
-                Prévia do quadro da resolução {{ resolucaoEscolhida() }} no cadastro de Peso por
-                Área, por grupo de área: será copiado para o processo ao gravar a classificação, no
-                passo Eliminação
+                Prévia do quadro de pesos por grupo de área ({{ resolucaoEscolhida() }}): é o que
+                será copiado para o processo ao gravar a classificação, no passo Eliminação
               }
             </caption>
             <thead>
               <tr>
                 <th scope="col">Grupo de área</th>
                 @for (coluna of colunasDoQuadro(); track coluna.codigo) {
-                  <th scope="col">{{ coluna.rotulo }}</th>
+                  <th scope="col" class="table-responsive__num">{{ coluna.rotulo }}</th>
                 }
-                <th scope="col">Base legal</th>
+                @if (baseLegalDoQuadro() === null) {
+                  <th scope="col">Base legal</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -270,19 +275,23 @@
                     @let area = areaDoGrupo(grupo, coluna.codigo);
                     <td class="table-responsive__num" [attr.data-label]="coluna.rotulo">
                       @if (area) {
-                        Peso {{ formatarNumero(area.peso) }}
-                        @if (area.corte !== null) {
-                          <span class="peso-area__corte"
-                            >corte {{ formatarNumero(area.corte) }}</span
-                          >
-                        }
+                        <span class="peso-area__valor"
+                          >Peso {{ formatarNumero(area.peso) }}
+                          @if (area.corte !== null) {
+                            <span class="peso-area__corte"
+                              >corte {{ formatarNumero(area.corte) }}</span
+                            >
+                          }
+                        </span>
                       } @else {
                         <span aria-hidden="true">—</span
                         ><span class="sr-only">sem peso nesta resolução</span>
                       }
                     </td>
                   }
-                  <td data-label="Base legal">{{ grupo.baseLegal }}</td>
+                  @if (baseLegalDoQuadro() === null) {
+                    <td data-label="Base legal">{{ grupo.baseLegal }}</td>
+                  }
                 </tr>
               }
             </tbody>

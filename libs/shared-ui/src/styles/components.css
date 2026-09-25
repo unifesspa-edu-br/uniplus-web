@@ -1093,6 +1093,10 @@ ui-icon-button {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* O cabeçalho de uma coluna numérica acompanha o alinhamento dos valores dela. */
+.table-responsive thead th.table-responsive__num {
+  text-align: right;
+}
 .table-responsive__row--clickable {
   cursor: pointer;
 }
