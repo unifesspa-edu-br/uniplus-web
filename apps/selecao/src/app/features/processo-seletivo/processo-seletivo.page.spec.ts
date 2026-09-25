@@ -2,7 +2,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Subject, of } from 'rxjs';
-import { apiOk } from '@uniplus/shared-core/http';
+import { apiFailure, apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
@@ -30,6 +30,7 @@ import { GeoApi } from '@uniplus/shared-data/geo';
 import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import {
   FundamentoIsencaoDto,
+  OrigemCandidatos,
   ProcessosSeletivosApi,
   RegrasCatalogoApi,
   type ProcessoSeletivoDto,
@@ -1351,6 +1352,95 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
 
     expect(chamadas).toBe(1);
     emVoo.complete();
+  });
+
+  /**
+   * O resumo do passo descreve a última conferência. Quando o operador corrige
+   * o campo e a conferência passa, o erro antigo não pode continuar anunciado
+   * atrás do diálogo em que ele decide gravar.
+   */
+  it('tira o erro já corrigido do resumo antes de abrir a confirmação', async () => {
+    const { page, store, fixture } = cenario();
+
+    store.patchObjectSection('identificacao', { identificadorLegivel: 'Vestibular 2027' });
+    fixture.detectChanges();
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(store.stepError()).not.toBeNull();
+    expect(page.confirmacaoPendente()).toBeNull();
+
+    store.patchObjectSection('identificacao', { identificadorLegivel: 'vestibular-2027' });
+    fixture.detectChanges();
+    await page.nextOrPublish();
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).not.toBeNull();
+    expect(store.stepError()).toBeNull();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.step-error')).toBeNull();
+  });
+
+  it('desistir da confirmação não traz o erro corrigido de volta', async () => {
+    const { page, store, fixture } = cenario();
+
+    store.setStepError(['O identificador legível não pode ter a forma de um identificador técnico (Guid).']);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(page.confirmacaoPendente()).not.toBeNull();
+
+    page.cancelarGravacao();
+    fixture.detectChanges();
+
+    expect(page.confirmacaoPendente()).toBeNull();
+    expect(store.stepError()).toBeNull();
+  });
+
+  it('a recusa da gravação confirmada volta a preencher o resumo', async () => {
+    const recusa = apiFailure(
+      {
+        type: 'about:blank',
+        title: 'O identificador legível já é usado por outro processo seletivo',
+        status: 409,
+        code: 'uniplus.selecao.processo_seletivo.identificador_legivel_em_uso',
+        traceId: 'teste',
+      },
+      409,
+      new HttpHeaders(),
+    );
+    TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+      providers: [
+        ...PAGE_PROVIDERS,
+        {
+          provide: ProcessosSeletivosApi,
+          useValue: { criar: () => of(recusa), listarFundamentosIsencao: listarFundamentos },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    const page = fixture.componentInstance;
+    fixture.detectChanges();
+    store.patchObjectSection('tipoProcesso', { selected: 'tipo-1', rotulo: 'Vestibular' });
+    store.patchObjectSection('identificacao', {
+      nome: 'Vestibular 2027',
+      unidadeAdministradoraId: 'unidade-1',
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      localidade: MARABA,
+      identificadorLegivel: 'vestibular-2027',
+    });
+    store.goTo(1);
+    fixture.detectChanges();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(store.stepError()).toBeNull();
+
+    await page.confirmarGravacao();
+    fixture.detectChanges();
+
+    expect(store.stepError()?.join(' ')).toContain('já é usado por outro processo seletivo');
   });
 
   /** O comando já saiu: fechar aqui só tiraria da tela o aviso da gravação. */

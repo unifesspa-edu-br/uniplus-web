@@ -720,6 +720,12 @@ export class ProcessoSeletivoPage {
       return;
     }
 
+    // O passo acabou de passar na conferência: o resumo que ainda estiver na
+    // tela descreve erros que já não existem, e o alerta os anunciaria de novo
+    // enquanto o operador lê a confirmação. Uma recusa da gravação volta a
+    // preenchê-lo.
+    this.store.setStepError(null);
+
     // A confirmação vem antes de qualquer requisição: é o momento em que o
     // operador ainda pode desistir. Depois de gravado, o cadastro inicial não
     // volta atrás pelo contrato desta tela.
