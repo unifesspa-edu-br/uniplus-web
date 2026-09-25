@@ -350,7 +350,7 @@ describe('BonusStepComponent', () => {
       );
       vi.spyOn(regiao as HTMLDivElement, 'scrollHeight', 'get').mockReturnValue(500);
       vi.spyOn(regiao as HTMLDivElement, 'clientHeight', 'get').mockReturnValue(256);
-      componente['medirRolagemDosMunicipios']();
+      window.dispatchEvent(new Event('resize'));
       fixture.detectChanges();
 
       expect(regiao?.getAttribute('tabindex')).toBe('0');
