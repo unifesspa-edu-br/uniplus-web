@@ -207,6 +207,26 @@ export const STATUS_BASE_LEGAL_ESCOLHIVEIS = [
 ] as const;
 
 /**
+ * Se alguma das normas sustenta a exigência perante a publicação: declarada e identificada
+ * como resolvida. Uma norma só com a referência, mas pendente, não basta.
+ */
+export function temNormaResolvida(bases: readonly BaseLegalConfig[]): boolean {
+  return bases.some(
+    (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
+  );
+}
+
+/**
+ * Se a exigência decide sozinha o resultado de quem não a cumpre: é obrigatória ou declara
+ * consequência para a falta. É a exigência que a publicação só aceita com norma resolvida.
+ */
+export function exigenciaDecideResultado(
+  exigencia: Pick<ExigenciaDeDocumento, 'obrigatorio' | 'consequenciaIndeferimento'>,
+): boolean {
+  return exigencia.obrigatorio || exigencia.consequenciaIndeferimento !== '';
+}
+
+/**
  * O que acontece com quem não entrega o documento, ou tem a entrega indeferida. Vazio é
  * escolha legítima: a exigência que não decide sozinha não precisa declarar consequência.
  */
@@ -547,10 +567,7 @@ export function gruposSemNormaResolvida(
       if (no.tipo === 'FOLHA') continue;
 
       const decideResultado = no.tipo === 'OU' && (no.consequencia ?? '') !== '';
-      const temNorma = (no.basesLegais ?? []).some(
-        (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
-      );
-      if (decideResultado && !temNorma) {
+      if (decideResultado && !temNormaResolvida(no.basesLegais ?? [])) {
         // Os documentos de TODA a subárvore, não só as folhas diretas: um grupo que reúne
         // outros grupos ficaria sem nome nenhum na mensagem, que é o oposto do que ela serve.
         pendentes.push({ documentos: documentosDaSubarvore(no.filhos ?? []) });

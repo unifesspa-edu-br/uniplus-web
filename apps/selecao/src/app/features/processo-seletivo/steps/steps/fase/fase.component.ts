@@ -9,6 +9,7 @@ import {
   comExigenciaNaRaiz,
   comExigidoDeTodos,
   comRecorteEscolhido,
+  exigenciaDecideResultado,
   exigenciaNova,
   exigenciasDaFase,
   exigenciasDaRaiz,
@@ -17,6 +18,7 @@ import {
   formatosDeclarados,
   modalidadesDaExigencia,
   semAExigencia,
+  temNormaResolvida,
   todasAsExigencias,
   type ExigenciaLocalizada,
 } from '../../shared/exigencias-documentais';
@@ -812,6 +814,12 @@ export class FaseStepComponent {
   /** As normas que sustentam a exigência nesta fase — são N por exigência (ADR-0074). */
   basesLegaisDoDocumento(id: string): readonly BaseLegalConfig[] {
     return this.exigenciaDoDocumento(id).basesLegais;
+  }
+
+  /** Se a publicação recusaria esta exigência por falta de norma: a mesma regra que ela aplica. */
+  faltaNormaResolvida(id: string): boolean {
+    const exigencia = this.exigenciaDoDocumento(id);
+    return exigenciaDecideResultado(exigencia) && !temNormaResolvida(exigencia.basesLegais);
   }
 
   /**

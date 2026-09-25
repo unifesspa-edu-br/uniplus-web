@@ -35,13 +35,14 @@ import {
 import {
   CONSEQUENCIA_REENVIO,
   FATO_MODALIDADE,
-  STATUS_BASE_LEGAL_RESOLVIDO,
   arvoreDeExigencias,
+  exigenciaDecideResultado,
   exigenciasDaFase,
   gruposSemNormaResolvida,
   modalidadesDaExigencia,
   semAEtapa,
   semAFase,
+  temNormaResolvida,
   todasAsExigencias,
 } from '../../shared/exigencias-documentais';
 import {
@@ -361,10 +362,8 @@ export class CronogramaStepComponent {
 
       return {
         nome: nomePorId.get(exigencia.tipoDocumentoId) ?? exigencia.tipoDocumentoId,
-        decideResultado: exigencia.obrigatorio || exigencia.consequenciaIndeferimento !== '',
-        normaResolvida: exigencia.basesLegais.some(
-          (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
-        ),
+        decideResultado: exigenciaDecideResultado(exigencia),
+        normaResolvida: temNormaResolvida(exigencia.basesLegais),
         faseCodigo: exigencia.faseCodigo,
         faseViva: fase !== undefined,
         alcancaModalidade:

@@ -728,11 +728,89 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
-      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).not.toContainEqual(
-        expect.objectContaining({ value: ID_CPF }),
-      );
+      expect(
+        componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
+      ).not.toContainEqual(expect.objectContaining({ value: ID_CPF }));
       // O seletor volta ao estado neutro: o próximo documento começa do zero.
       expect(componente.documentoAAcrescentar()).toBe('');
+    });
+
+    /**
+     * O aviso de norma diz o que a publicação vai recusar, com a mesma regra que ela aplica:
+     * a exigência que decide o resultado precisa de ao menos uma norma declarada e resolvida.
+     * Olhar só a referência de cada norma calava diante da norma pendente e acusava a
+     * exigência que outra norma já sustentava.
+     */
+    describe('aviso de norma que a publicação recusa', () => {
+      const AVISO = 'Sem uma norma declarada e identificada como "Resolvida"';
+      const avisos = () =>
+        Array.from(nativo.querySelectorAll('.doc-item__aviso-norma')).filter((aviso) =>
+          aviso.textContent?.includes(AVISO),
+        ).length;
+
+      beforeEach(() => {
+        comCronograma(fase({}));
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        detectar();
+      });
+
+      it('avisa enquanto nenhuma norma está declarada, e uma vez só', () => {
+        componente.acrescentarBaseLegal(ID_CPF);
+        detectar();
+
+        expect(avisos()).toBe(1);
+      });
+
+      it('some com a norma declarada e resolvida', () => {
+        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        detectar();
+
+        expect(avisos()).toBe(0);
+      });
+
+      it('continua com a norma declarada mas pendente', () => {
+        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        componente.escreverBaseLegal(ID_CPF, 0, 'status', 'PENDENTE');
+        detectar();
+
+        expect(avisos()).toBe(1);
+      });
+
+      it('some quando outra norma da exigência já está resolvida', () => {
+        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        componente.acrescentarBaseLegal(ID_CPF);
+        detectar();
+
+        expect(avisos()).toBe(0);
+      });
+
+      it('não avisa a exigência que não decide o resultado', () => {
+        componente.escolherObrigatoriedade(ID_CPF, 'nao');
+        detectar();
+
+        expect(avisos()).toBe(0);
+      });
+    });
+
+    /**
+     * O rótulo visível encurtou para caber numa linha do grid dos campos; o nome acessível
+     * continua dizendo de que a observação trata.
+     */
+    it('dá à observação o nome acessível completo com um rótulo visível curto', () => {
+      comCronograma(fase({}));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+
+      const rotulo = nativo.querySelector(`label[for="fase-doc-obs-legal-${ID_CPF}-0"]`);
+      const normalizar = (texto: string | null | undefined) => texto?.replace(/\s+/g, ' ').trim();
+      expect(normalizar(rotulo?.textContent)).toBe('Observação sobre a norma (opcional)');
+
+      const visivel = rotulo?.cloneNode(true) as HTMLElement;
+      visivel.querySelectorAll('.sr-only').forEach((oculto) => oculto.remove());
+      expect(normalizar(visivel.textContent)).toBe('Observação (opcional)');
+      expect(normalizar(rotulo?.querySelector('.sr-only')?.textContent)).toBe('sobre a norma');
     });
 
     /**
@@ -774,7 +852,9 @@ describe('FaseStepComponent', () => {
         [ID_CPF],
         'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista',
       );
-      expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).not.toContainEqual(
+      expect(
+        componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
+      ).not.toContainEqual(
         expect.objectContaining({ value: ID_CPF }),
         'e não volta a ser oferecida para quem ainda não a exige',
       );
@@ -852,9 +932,9 @@ describe('FaseStepComponent', () => {
 
       expect(componente.etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
       // A etapa é campo da exigência daquela fase, que é onde ela vive no contrato.
-      expect(
-        exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId,
-      ).toBe(ID_ETAPA_DOCUMENTAL);
+      expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId).toBe(
+        ID_ETAPA_DOCUMENTAL,
+      );
     });
 
     /**
@@ -1031,10 +1111,7 @@ describe('FaseStepComponent', () => {
 
     /** A fase alcançada mas ainda não materializada mostra o que será gravado. */
     it('mostra na fase herdada o que o modelo declara, não um formulário em branco', () => {
-      comCronograma(
-        fase({}),
-        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
-      );
+      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();

@@ -1055,9 +1055,6 @@
                       escreverBaseLegal(doc.id, $index, 'referencia', $any($event.target).value)
                     "
                   />
-                  <span class="field__hint">
-                    Sem norma declarada, a publicação recusa a exigência que decide o resultado.
-                  </span>
                 </div>
 
                 <div class="form-field">
@@ -1102,7 +1099,7 @@
 
                 <div class="form-field">
                   <label class="label" [attr.for]="'fase-doc-obs-legal-' + doc.id + '-' + $index">
-                    Observação sobre a norma (opcional)
+                    Observação<span class="sr-only"> sobre a norma</span> (opcional)
                   </label>
                   <input
                     class="input"
@@ -1129,6 +1126,13 @@
                     </button>
                   </div>
                 }
+              }
+
+              @if (faltaNormaResolvida(doc.id)) {
+                <p class="field__hint doc-item__aviso-norma">
+                  Sem uma norma declarada e identificada como "Resolvida", a publicação recusa esta
+                  exigência, que decide o resultado.
+                </p>
               }
 
               <div class="doc-item__acoes">
