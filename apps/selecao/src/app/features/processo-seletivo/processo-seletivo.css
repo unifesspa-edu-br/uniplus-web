@@ -736,6 +736,14 @@
 }
 
 /*
+ * Sobre o fundo do card, o azul de `--color-primary` do botão terciário rende 4,07:1 no tema
+ * escuro; a tinta de texto sobre tint alcança os 4,5:1 que a WCAG 2.1 AA exige.
+ */
+.sel-processo .doc-item--exigido .btn--tertiary {
+  --btn-fg: var(--text-on-primary-tint);
+}
+
+/*
  * Os três eixos da exigência lado a lado enquanto a largura permite: em que fases vale, em
  * que ponto desta fase é coletada, e de quem é cobrada. Empilhados, um documento gastava
  * trezentos pixels de altura, e a fase com cinco deles virava rolagem.
@@ -761,6 +769,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/*
+ * O aviso de norma é da exigência, não de uma norma: vem depois de todas elas, na largura
+ * inteira, e se afasta das ações que o seguem.
+ */
+.sel-processo .doc-item__aviso-norma {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--space-2);
 }
 
 /*
@@ -824,9 +841,14 @@
   gap: var(--space-2);
 }
 
-/* O nome e a ação ficam na mesma linha, com a ação encostada à direita. */
+/*
+ * O nome e a ação ficam na mesma linha, com a ação encostada à direita. Quando não sobra
+ * largura para o nome, a ação desce para a linha de baixo, em vez de espremer o nome numa
+ * coluna estreita ou passar por cima dele.
+ */
 .sel-processo .doc-item--exigido .doc-item__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
@@ -834,7 +856,15 @@
 
 .sel-processo .doc-item--exigido .doc-item__info {
   display: grid;
+  flex: 1 1 12rem;
   min-width: 0;
+}
+
+/* O nome do documento encabeça o card, acima dos rótulos dos campos na hierarquia. */
+.sel-processo .doc-item--exigido .doc-item__name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  cursor: default;
 }
 
 /*
@@ -916,8 +946,13 @@
   max-width: 34rem;
 }
 
-.sel-processo .campo-com-acao > .btn {
-  flex: 0 0 auto;
+/* A ação quebra o próprio rótulo em vez de passar da borda do card numa tela estreita. */
+.sel-processo .campo-com-acao > .btn,
+.sel-processo .doc-item__acoes > .btn {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  line-height: var(--leading-snug);
 }
 
 /* O campo que abriga a própria ação não tem teto: quem o tem é o controle dentro dele. */

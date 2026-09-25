@@ -2,6 +2,7 @@ import { expect, test, type Page, type Route, type TestInfo } from '@playwright/
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { blocosColados } from '../support/ritmo-vertical';
+import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 
@@ -37,6 +38,25 @@ const FASES_CANONICAS = [
     baseLegal: null,
     coletaInscricao: true,
     origemData: 'PROPRIA',
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
+] as const;
+
+/**
+ * Um documento de nome longo, com descrição: é o caso que espremia o título do card ao lado
+ * da ação de remover numa tela estreita.
+ */
+const NOME_DOCUMENTO = 'Requerimento de inclusão do nome social no registro acadêmico';
+const TIPOS_DOCUMENTO = [
+  {
+    id: '01960000-0000-7000-0000-0000000000f1',
+    codigo: 'REQUERIMENTO_NOME_SOCIAL',
+    nome: NOME_DOCUMENTO,
+    descricao: 'Pedido de uso do nome social nos documentos emitidos pela universidade.',
+    categoria: 'IDENTIFICACAO',
+    formatosAceitos: 'pdf',
+    tamanhoMaximoMb: 10,
+    tipoEquivalente: null,
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;
@@ -143,17 +163,9 @@ test.describe('Cronograma — matriz DS @ds', () => {
   test('não transborda horizontalmente', async ({ page }) => {
     await acrescentarFase(page);
 
-    const medida = await page.evaluate(() => {
-      const documento = document.documentElement;
-      const scroller = document.querySelector('.wiz-content');
-      return {
-        documento: documento.scrollWidth - documento.clientWidth,
-        scroller: scroller instanceof HTMLElement ? scroller.scrollWidth - scroller.clientWidth : 0,
-      };
-    });
-
-    expect(medida.documento).toBeLessThanOrEqual(1);
-    expect(medida.scroller).toBeLessThanOrEqual(1);
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
   });
 
   /**
@@ -167,12 +179,140 @@ test.describe('Cronograma — matriz DS @ds', () => {
 
     expect(await blocosColados(page)).toEqual([]);
   });
+
+  /**
+   * O card do documento exigido numa tela estreita: o nome não pode ficar embaixo da ação
+   * de remover, nada passa da borda do card, e o aviso de norma ausente só aparece sem norma.
+   */
+  test('mostra o documento exigido inteiro no card', async ({ page }, testInfo) => {
+    await acrescentarFase(page);
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await exigirDocumento(page);
+
+    const card = page.locator('.doc-item--exigido').first();
+    await expect(card.getByText(NOME_DOCUMENTO)).toBeVisible();
+
+    const medida = await card.evaluate((elemento) => {
+      const caixa = (seletor: string) => elemento.querySelector(seletor)?.getBoundingClientRect();
+      const nome = caixa('.doc-item__name');
+      const linha = caixa('.doc-item__row');
+      const remover = caixa('.doc-item__row > .btn');
+      const limite = elemento.getBoundingClientRect().right;
+      const transbordam = Array.from(elemento.querySelectorAll<HTMLElement>('*'))
+        .filter((filho) => filho.offsetParent !== null)
+        .filter((filho) => filho.getBoundingClientRect().right > limite + 1)
+        .map((filho) => filho.className || filho.tagName);
+      const sobrepoe =
+        nome !== undefined &&
+        remover !== undefined &&
+        nome.left < remover.right &&
+        remover.left < nome.right &&
+        nome.top < remover.bottom &&
+        remover.top < nome.bottom;
+      return {
+        sobrepoe,
+        transbordam,
+        larguraDoNome: nome?.width ?? 0,
+        larguraDaLinha: linha?.width ?? 0,
+      };
+    });
+
+    expect(medida.sobrepoe, 'o nome não fica sob a ação de remover').toBe(false);
+    expect(medida.transbordam, 'nada passa da borda do card').toEqual([]);
+    expect(medida.larguraDoNome, 'o nome não é espremido ao lado da ação').toBeGreaterThanOrEqual(
+      medida.larguraDaLinha / 2,
+    );
+
+    const acrescentar = await page
+      .getByRole('button', { name: 'Acrescentar documento' })
+      .evaluate((botao) => {
+        const secao = botao.closest('.escolher-e-acrescentar') as HTMLElement;
+        return botao.getBoundingClientRect().right - secao.getBoundingClientRect().right;
+      });
+    expect(acrescentar, '"Acrescentar documento" não passa da borda').toBeLessThanOrEqual(1);
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
+
+    const tamanhos = await card.evaluate((elemento) => {
+      const tamanho = (seletor: string) =>
+        parseFloat(getComputedStyle(elemento.querySelector(seletor) as Element).fontSize);
+      return { nome: tamanho('.doc-item__name'), rotulo: tamanho('.label') };
+    });
+    expect(tamanhos.nome, 'o nome do documento encabeça os rótulos dos campos').toBeGreaterThan(
+      tamanhos.rotulo,
+    );
+
+    /*
+     * Em 1440 px a grade dos eixos tem três colunas estreitas, e a observação divide a linha
+     * com o alcance e a identificação da norma: um rótulo que quebra em duas linhas desce o
+     * input em relação aos vizinhos. O viewport desktop da matriz (1366 px) tem duas colunas
+     * largas, onde o rótulo cabe em qualquer caso.
+     */
+    if (testInfo.project.metadata['viewport'] === 'desktop') {
+      const original = page.viewportSize();
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const alinhamento = await card.evaluate((elemento) => {
+        const topoDoInput = (campo: Element) =>
+          campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
+        const campo = elemento
+          .querySelector('[id^="fase-doc-obs-legal-"]')
+          ?.closest('.form-field') as Element;
+        const linha = campo.getBoundingClientRect().top;
+        const referencia = topoDoInput(campo) ?? 0;
+        const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
+          .filter((outro) => outro !== campo)
+          .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
+          .map(topoDoInput)
+          .filter((topo): topo is number => topo !== null);
+        return { vizinhos: vizinhos.length, diferencas: vizinhos.map((topo) => topo - referencia) };
+      });
+      if (original) await page.setViewportSize(original);
+
+      expect(alinhamento.vizinhos, 'a observação divide a linha com outros campos').toBeGreaterThan(
+        0,
+      );
+      for (const diferenca of alinhamento.diferencas) {
+        expect(
+          Math.abs(diferenca),
+          'o input da observação alinha com os vizinhos',
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+
+    // O aviso segue a regra da publicação: alguma norma declarada E resolvida.
+    const aviso = card.getByText('Sem uma norma declarada e identificada como "Resolvida"');
+    const normas = card.getByLabel('Norma que exige o documento');
+    const identificacoes = card.getByLabel('Identificação da norma');
+    await expect(aviso).toBeVisible();
+    await normas.first().fill('Lei 12.711/2012, art. 3º');
+    await expect(aviso).toHaveCount(0);
+
+    await identificacoes.first().selectOption({ label: 'Pendente' });
+    await expect(aviso, 'a norma pendente não sustenta a exigência').toBeVisible();
+    expect(await blocosColados(page)).toEqual([]);
+
+    await card.getByRole('button', { name: 'Acrescentar outra norma' }).click();
+    await identificacoes.first().selectOption({ label: 'Resolvida' });
+    await expect(normas).toHaveCount(2);
+    await expect(aviso, 'a outra norma, resolvida, já sustenta a exigência').toHaveCount(0);
+
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
 });
 
 /** Acrescenta a única fase do catálogo à linha do tempo. */
 async function acrescentarFase(page: Page): Promise<void> {
   await page.getByLabel('Fase do catálogo').selectOption({ label: 'Inscrição' });
   await page.getByRole('button', { name: 'Acrescentar à linha do tempo' }).click();
+}
+
+/** Escolhe no seletor da fase aberta o único documento do catálogo e o exige. */
+async function exigirDocumento(page: Page): Promise<void> {
+  const campo = page.getByLabel('Documento a exigir');
+  await campo.fill('nome social');
+  await page.getByRole('option', { name: NOME_DOCUMENTO }).click();
+  await page.getByRole('button', { name: 'Acrescentar documento' }).click();
 }
 
 /** Declara a única convenção de contagem que o catálogo do cenário oferece. */
@@ -239,6 +379,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responderCatalogo(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, []);
   await responderCatalogo(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, []);
   await responderCatalogo(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, []);
+  await responderCatalogo(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO);
   await responderCatalogo(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, []);
   await responderCatalogo(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, []);
   await mockarRegrasCatalogo(page);
