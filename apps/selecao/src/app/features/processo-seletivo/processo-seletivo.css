@@ -349,6 +349,22 @@
   padding: var(--space-8);
 }
 
+/* O rótulo de uma ação quebra em vez de passar da borda do cartão, que o `.page` corta sem
+   rolagem: na tela estreita, "Acrescentar à linha do tempo" não cabe numa linha só. */
+.sel-processo .btn {
+  max-width: 100%;
+  white-space: normal;
+  line-height: var(--leading-snug);
+}
+
+/* No celular, a margem lateral do passo acompanha a da barra de etapas. Com 40 px de cada
+   lado, os cartões aninhados (quadro > cascata > origem) ficavam com menos de 200 px úteis. */
+@media (max-width: 479px) {
+  .wiz-content {
+    padding-inline: var(--space-4);
+  }
+}
+
 /* Mensagens de validação do step ativo (role="alert") */
 .step-error {
   display: flex;
@@ -923,8 +939,10 @@
   margin: 0;
 }
 
+/* A ação tem a altura do campo ao lado, para as duas bases coincidirem. */
 .sel-processo .escolher-e-acrescentar > .btn {
-  flex: 0 0 auto;
+  --btn-height: var(--touch-comfortable);
+  flex: 0 1 auto;
 }
 
 /*
@@ -1367,6 +1385,22 @@
   }
 }
 
+/* Cartão dentro de cartão, na tela estreita, vira seção do cartão de fora: cada borda com o
+   seu recuo tirava do conteúdo a largura que ele não tem de sobra. */
+@media (max-width: 479px) {
+  .step-card .step-card {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+    padding: var(--space-4) 0 0;
+  }
+
+  .step-card .table-responsive tbody tr,
+  .step-card .table-responsive tfoot tr {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
 /* Step subtitle */
 .step-subtitle {
   font-size: var(--text-sm);
@@ -1657,14 +1691,21 @@
 }
 
 .vagas-table tbody td {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
   vertical-align: middle;
 }
 
-.vagas-table tbody tr:last-child td {
-  border-bottom: none;
+/* Recuo e divisória de célula de tabela. Empilhada, a célula é linha do cartão, e o recuo
+   é o do design system: com este, o rótulo saía do alinhamento com o nome da oferta. */
+@media (min-width: 768px) {
+  .vagas-table tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .vagas-table tbody tr:last-child td {
+    border-bottom: none;
+  }
 }
 
 /* ---- Matriz da cascata de remanejamento (passo Vagas) ----
@@ -1717,7 +1758,7 @@
    comparação entre linhas, não de texto corrido.
 
    O `nowrap` fica de fora daqui de propósito: abaixo de 768 px a célula vira
-   linha de um cartão, ao lado do rótulo "1ª PREFERÊNCIA", e o código de
+   item de um cartão, ao lado do ordinal "1ª", e o código de
    modalidade admite até 60 caracteres. Impedi-lo de quebrar ali faria o texto
    transbordar do cartão. */
 .cascata-matriz thead th.cascata-matriz__ordem,
@@ -1728,7 +1769,7 @@
 
 /* Código de modalidade é um token só, sem espaço: retirar o `nowrap` não cria
    oportunidade de quebra, porque `overflow-wrap: normal` não quebra dentro da
-   palavra. Como cartão, ao lado do rótulo "1ª PREFERÊNCIA", um código de até 60
+   palavra. Como cartão, ao lado do ordinal "1ª", um código de até 60
    caracteres transbordaria mesmo assim. `anywhere` — e não `break-word` —
    porque só ele também reduz o tamanho mínimo intrínseco, que é o que impede o
    transbordo dentro do flex do cartão.
@@ -1746,6 +1787,33 @@
 
 .cascata-matriz td.cascata-matriz__destino {
   font-variant-numeric: tabular-nums;
+}
+
+/* Como cartão, a origem encabeça e os destinos seguem em fila, cada um com o seu ordinal, na
+   ordem de preferência. Um destino por linha, cada origem ocupava a tela inteira e a matriz
+   somava milhares de pixels. O código só quebra quando sozinho não cabe na linha: antes disso
+   o destino inteiro desce para a linha seguinte. */
+@media (max-width: 767px) {
+  .table-responsive .cascata-matriz tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+  }
+
+  .table-responsive .cascata-matriz tbody th[scope='row'] {
+    flex-basis: 100%;
+  }
+
+  .table-responsive .cascata-matriz td.cascata-matriz__destino {
+    display: inline-flex;
+    width: auto;
+    justify-content: flex-start;
+    align-items: baseline;
+    gap: var(--space-1);
+    padding: 0;
+    border: none;
+    text-align: left;
+  }
 }
 
 /* A origem é a âncora da linha: fica presa à esquerda quando a matriz precisa
@@ -2594,11 +2662,29 @@
 }
 
 /* A linha de totais fecha o quadro: separa-se das ofertas por uma borda mais
-   firme que a que divide as linhas entre si. */
+   firme que a que divide as linhas entre si. Empilhada, ela é o último cartão, e a
+   borda mais firme é a do cartão. */
 .vagas-table tfoot th,
 .vagas-table tfoot td {
-  border-top: 2px solid var(--border-default);
   font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .vagas-table tfoot th,
+  .vagas-table tfoot td {
+    border-top: 2px solid var(--border-default);
+  }
+}
+
+@media (max-width: 767px) {
+  .table-responsive .vagas-table tfoot tr {
+    border-color: var(--border-default);
+  }
+
+  /* Na tabela, a célula vazia mantém a coluna de ações; no cartão seria só uma linha em branco. */
+  .table-responsive .vagas-table tfoot .vagas-table__acoes {
+    display: none;
+  }
 }
 
 .vagas-table tfoot .vagas-table__oferta {
@@ -2648,6 +2734,13 @@
   padding-left: var(--space-5);
   display: grid;
   gap: var(--space-1);
+}
+
+/* A garantia costuma ser fórmula sem espaço ("VRSI=VR−VRRI"): como item de grade, ela impunha
+   a própria largura à coluna e saía da caixa na tela estreita. */
+.regra-explicada__invariantes li {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .regra-explicada details {
