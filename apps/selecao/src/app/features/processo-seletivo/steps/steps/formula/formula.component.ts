@@ -32,6 +32,7 @@ import {
 } from '../classificacao/classificacao-para-comando';
 import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import {
+  baseLegalComum,
   colunasDoQuadro,
   mesmoQuadro,
   ordemDasAreas,
@@ -186,6 +187,9 @@ export class FormulaStepComponent {
   readonly colunasDoQuadro = computed(() =>
     colunasDoQuadro(this.quadro(), ordemDasAreas(this.catalogos.areasEnem())),
   );
+
+  /** Com uma base legal só, ela vai uma vez acima do quadro, e não repetida em cada linha. */
+  readonly baseLegalDoQuadro = computed(() => baseLegalComum(this.quadro()));
 
   /**
    * O cadastro mudou depois de o processo congelar a resolução. Cada gravação da classificação —

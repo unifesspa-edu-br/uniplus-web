@@ -1821,6 +1821,93 @@
   color: var(--text-secondary);
 }
 
+.peso-area__valor {
+  white-space: nowrap;
+}
+
+.peso-area__base-legal {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.peso-area__base-legal-rotulo {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+/*
+ * O DS empilha a tabela em cartões pela largura da janela, mas no editor o stepper lateral come
+ * parte dela: em 768 sobram ~460px para uma área por coluna. O quadro empilha pela largura que ele
+ * mesmo recebe, abaixo da qual os cabeçalhos das áreas não cabem sem rolagem.
+ */
+.peso-area__quadro {
+  container: quadro-de-pesos / inline-size;
+}
+
+.table-responsive.peso-area__quadro :is(th, td) {
+  padding-inline: var(--space-3);
+}
+
+@container quadro-de-pesos (max-width: 48rem) {
+  .peso-area__quadro thead {
+    display: none;
+  }
+
+  .peso-area__quadro table,
+  .peso-area__quadro caption,
+  .peso-area__quadro tbody,
+  .peso-area__quadro tr,
+  .peso-area__quadro td,
+  .peso-area__quadro tbody th[scope='row'] {
+    display: block;
+    width: 100%;
+  }
+
+  .peso-area__quadro tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .peso-area__quadro tbody tr {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  /* O realce de linha da tabela do DS apagaria o fundo do cartão; o cartão realça pela borda. */
+  .table-responsive.peso-area__quadro tbody tr:hover {
+    background: var(--surface-card);
+    border-color: var(--border-default);
+  }
+
+  .table-responsive.peso-area__quadro tbody th[scope='row'] {
+    border: none;
+    padding: 0 0 var(--space-1);
+    font-weight: var(--weight-medium);
+  }
+
+  .table-responsive.peso-area__quadro td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+  }
+
+  .peso-area__quadro td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+  }
+}
+
 /* ---- Step 7: Bônus ---- */
 .bonus-info {
   background: var(--surface-subtle);
