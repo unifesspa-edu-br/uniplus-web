@@ -134,8 +134,15 @@ type Faixa = 'topo' | 'base';
  * Rola a área de trabalho até o campo ficar sob a faixa fixa: com o topo dele no topo da
  * área (sob a barra de etapas) ou com a base dele na base da área (sob o rodapé).
  */
-async function colocarCampoSobAFaixa(page: Page, campo: ElementHandle, faixa: Faixa): Promise<void> {
+async function colocarCampoSobAFaixa(
+  page: Page,
+  campo: ElementHandle,
+  faixa: Faixa,
+): Promise<void> {
   await campo.evaluate((elemento, lado) => {
+    if (!(elemento instanceof Element)) {
+      throw new Error('O campo não é um elemento.');
+    }
     const area = elemento.closest('main.page');
     if (!area) {
       throw new Error('Campo fora da área de trabalho.');
@@ -162,9 +169,9 @@ async function conferirFocoEmCampoSobAFaixa(page: Page, faixa: Faixa): Promise<v
     }
     const vista = area.getBoundingClientRect();
     const maximo = area.scrollHeight - area.clientHeight;
-    const candidatos = [
-      ...document.querySelectorAll<HTMLElement>('.wiz-content :is(input, select, textarea)'),
-    ].filter((elemento) => elemento.getClientRects().length > 0 && !elemento.matches(':disabled'));
+    const candidatos = Array.from(
+      document.querySelectorAll<HTMLElement>('.wiz-content :is(input, select, textarea)'),
+    ).filter((elemento) => elemento.getClientRects().length > 0 && !elemento.matches(':disabled'));
     // O campo tem de caber na posição pedida sem passar dos limites da rolagem.
     const escolhido = candidatos.find((elemento) => {
       const caixa = elemento.getBoundingClientRect();
