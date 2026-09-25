@@ -98,7 +98,6 @@ export const REGIME_DE_TURNO_REGULAR = 'REGULAR';
 /** Único regime de turno que comporta o regime de funcionamento INTENSIVO. */
 export const REGIME_DE_TURNO_INTEGRAL = 'INTEGRAL';
 
-
 export interface RegimeDeFuncionamentoOption {
   value: string;
   label: string;
@@ -112,6 +111,10 @@ export const REGIMES_DE_FUNCIONAMENTO: readonly RegimeDeFuncionamentoOption[] = 
   {
     value: 'EXTENSIVO',
     label: 'Extensivo',
+  },
+  {
+    value: 'ALTERNANCIA_PEDAGOGICA',
+    label: 'Alternância Pedagógica',
   },
 ] as const;
 
@@ -139,7 +142,9 @@ export function turnosExigidosPorRegime(regime: string): number | null {
  */
 export function ordenarTurnosCanonicamente(turnos: readonly string[]): readonly string[] {
   const ordem = new Map(TURNOS_OFERTA.map((t, indice) => [t.value, indice]));
-  return [...turnos].sort((a, b) => (ordem.get(a) ?? Number.MAX_SAFE_INTEGER) - (ordem.get(b) ?? Number.MAX_SAFE_INTEGER));
+  return [...turnos].sort(
+    (a, b) => (ordem.get(a) ?? Number.MAX_SAFE_INTEGER) - (ordem.get(b) ?? Number.MAX_SAFE_INTEGER),
+  );
 }
 
 /**
