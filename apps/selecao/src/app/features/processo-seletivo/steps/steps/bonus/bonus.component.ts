@@ -23,7 +23,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import { comoComandoDeBonus } from './bonus-para-comando';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
@@ -244,7 +244,7 @@ export class BonusStepComponent {
   });
 
   escolherRegra(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('bonus', { regraCodigo: codigo, regraVersao: versao });
   }
 

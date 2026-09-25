@@ -38,7 +38,7 @@ import {
   mensagensDeClassificacaoBase,
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import {
   areasComunsAoQuadro,
   corteDaArea,
@@ -269,7 +269,7 @@ export class EliminacaoStepComponent {
   }
 
   escolherRegra(indice: number, valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.atualizarRegra(indice, {
       regraCodigo: codigo,
       regraVersao: versao,

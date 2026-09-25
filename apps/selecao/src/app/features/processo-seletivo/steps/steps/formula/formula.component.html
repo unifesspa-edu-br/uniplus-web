@@ -12,13 +12,14 @@
       class="input"
       id="f-regra-calculo"
       [class.is-invalid]="invalidFields().has('regraCalculo')"
-      [disabled]="catalogos.carregando()"
-      [value]="valorDoSelectDeCalculo()"
+      [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
       (change)="escolherRegraCalculo($any($event.target).value)"
     >
-      <option value="|">— escolher —</option>
+      <option value="|" [selected]="store.draft().classificacao.regraCalculoCodigo === ''">
+        — escolher —
+      </option>
       @for (regra of regrasCalculo(); track regra.codigo + regra.versao) {
-        <option [value]="regra.codigo + '|' + regra.versao">
+        <option [value]="regra.chave" [selected]="regra.selecionada">
           {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
         </option>
       }
@@ -33,13 +34,17 @@
           class="input"
           id="f-regra-arredondamento"
           [class.is-invalid]="invalidFields().has('regraArredondamento')"
-          [disabled]="catalogos.carregando()"
-          [value]="valorDoSelectDeArredondamento()"
+          [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
           (change)="escolherRegraArredondamento($any($event.target).value)"
         >
-          <option value="|">— escolher —</option>
+          <option
+            value="|"
+            [selected]="store.draft().classificacao.regraArredondamentoCodigo === ''"
+          >
+            — escolher —
+          </option>
           @for (regra of regrasArredondamento(); track regra.codigo + regra.versao) {
-            <option [value]="regra.codigo + '|' + regra.versao">
+            <option [value]="regra.chave" [selected]="regra.selecionada">
               {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
             </option>
           }
@@ -54,6 +59,7 @@
           min="1"
           step="1"
           [class.is-invalid]="invalidFields().has('casasArredondamento')"
+          [disabled]="!store.aceitaEdicao()"
           [value]="store.draft().classificacao.casasArredondamento"
           (input)="alterarCasasArredondamento($any($event.target).value)"
         />
@@ -74,13 +80,14 @@
         class="input"
         id="f-ordem-alocacao"
         [class.is-invalid]="invalidFields().has('regraOrdemAlocacao')"
-        [disabled]="catalogos.carregando()"
-        [value]="valorDoSelectDeOrdemAlocacao()"
+        [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
         (change)="escolherRegraOrdemAlocacao($any($event.target).value)"
       >
-        <option value="|">— escolher —</option>
+        <option value="|" [selected]="store.draft().classificacao.regraOrdemAlocacaoCodigo === ''">
+          — escolher —
+        </option>
         @for (regra of regrasOrdemAlocacao(); track regra.codigo + regra.versao) {
-          <option [value]="regra.codigo + '|' + regra.versao">
+          <option [value]="regra.chave" [selected]="regra.selecionada">
             {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
           </option>
         }
@@ -92,6 +99,7 @@
         class="input"
         id="f-n-opcoes"
         [class.is-invalid]="invalidFields().has('nOpcoesAlocacao')"
+        [disabled]="!store.aceitaEdicao()"
         [value]="store.draft().classificacao.nOpcoesAlocacao"
         (change)="alterarNOpcoesAlocacao($any($event.target).value)"
       >

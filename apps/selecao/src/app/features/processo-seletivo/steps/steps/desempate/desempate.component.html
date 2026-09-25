@@ -98,13 +98,12 @@
             ><select
               class="input"
               [id]="'desemp-regra-' + indice"
-              [disabled]="catalogos.carregando()"
-              [value]="criterio.regraCodigo + '|' + criterio.regraVersao"
+              [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
               (change)="escolherRegra(indice, $any($event.target).value)"
             >
-              <option value="|">— escolher —</option>
-              @for (opcao of regraEscolhivel(criterio); track opcao.codigo + opcao.versao) {
-                <option [value]="opcao.codigo + '|' + opcao.versao">
+              <option value="|" [selected]="criterio.regraCodigo === ''">— escolher —</option>
+              @for (opcao of regraEscolhivel(criterio); track opcao.chave) {
+                <option [value]="opcao.chave" [selected]="opcao.selecionada">
                   {{ opcao.codigo }} — {{ opcao.baseLegal ?? 'base legal indisponível' }}
                 </option>
               }
@@ -117,12 +116,14 @@
               ><select
                 class="input"
                 [id]="'desemp-etapa-' + indice"
-                [value]="criterio.etapaRef"
+                [disabled]="!store.aceitaEdicao()"
                 (change)="alterarEtapaRef(indice, $any($event.target).value)"
               >
-                <option value="">— escolher —</option>
+                <option value="" [selected]="criterio.etapaRef === ''">— escolher —</option>
                 @for (etapa of etapasReferenciaveis(); track etapa.id) {
-                  <option [value]="etapa.id">{{ etapa.nome || 'Etapa sem nome' }}</option>
+                  <option [value]="etapa.id" [selected]="etapa.id === criterio.etapaRef">
+                    {{ etapa.nome || 'Etapa sem nome' }}
+                  </option>
                 }
               </select>
             </div>
@@ -138,6 +139,7 @@
                 min="1"
                 step="1"
                 [value]="criterio.idadeMinima"
+                [disabled]="!store.aceitaEdicao()"
                 (input)="alterarIdadeMinima(indice, $any($event.target).value)"
               />
             </div>
@@ -386,7 +388,7 @@
             type="button"
             [id]="'desemp-subir-' + indice"
             [attr.aria-label]="'Mover o critério ' + (indice + 1) + ' para cima'"
-            [disabled]="first"
+            [disabled]="first || !store.aceitaEdicao()"
             (click)="mover(indice, -1)"
           >
             <svg
@@ -405,7 +407,7 @@
             type="button"
             [id]="'desemp-descer-' + indice"
             [attr.aria-label]="'Mover o critério ' + (indice + 1) + ' para baixo'"
-            [disabled]="last"
+            [disabled]="last || !store.aceitaEdicao()"
             (click)="mover(indice, 1)"
           >
             <svg
@@ -424,6 +426,7 @@
             type="button"
             [id]="'desemp-remover-' + indice"
             [attr.aria-label]="'Remover critério de desempate ' + (indice + 1)"
+            [disabled]="!store.aceitaEdicao()"
             (click)="remover(indice)"
           >
             <svg
@@ -448,6 +451,7 @@
   class="btn btn--outline btn--sm"
   type="button"
   id="desempate-acrescentar"
+  [disabled]="!store.aceitaEdicao()"
   (click)="acrescentar()"
 >
   + Acrescentar critério

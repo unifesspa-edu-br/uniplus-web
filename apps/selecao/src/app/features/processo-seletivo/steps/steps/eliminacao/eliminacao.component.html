@@ -59,12 +59,12 @@
             ><select
               class="input"
               [id]="'elim-regra-' + indice"
-              [value]="regra.regraCodigo + '|' + regra.regraVersao"
+              [disabled]="!store.aceitaEdicao()"
               (change)="escolherRegra(indice, $any($event.target).value)"
             >
-              <option value="|">— escolher —</option>
-              @for (opcao of regraEscolhivel(regra); track opcao.codigo + opcao.versao) {
-                <option [value]="opcao.codigo + '|' + opcao.versao">
+              <option value="|" [selected]="regra.regraCodigo === ''">— escolher —</option>
+              @for (opcao of regraEscolhivel(regra); track opcao.chave) {
+                <option [value]="opcao.chave" [selected]="opcao.selecionada">
                   {{ opcao.codigo }} — {{ opcao.baseLegal ?? 'base legal indisponível' }}
                 </option>
               }
@@ -77,12 +77,14 @@
               ><select
                 class="input"
                 [id]="'elim-etapa-' + indice"
-                [value]="regra.etapaRef"
+                [disabled]="!store.aceitaEdicao()"
                 (change)="alterarEtapaRef(indice, $any($event.target).value)"
               >
-                <option value="">— escolher —</option>
+                <option value="" [selected]="regra.etapaRef === ''">— escolher —</option>
                 @for (etapa of etapasReferenciaveis(); track etapa.id) {
-                  <option [value]="etapa.id">{{ etapa.nome || 'Etapa sem nome' }}</option>
+                  <option [value]="etapa.id" [selected]="etapa.id === regra.etapaRef">
+                    {{ etapa.nome || 'Etapa sem nome' }}
+                  </option>
                 }
               </select>
             </div>
@@ -95,6 +97,7 @@
                 min="0"
                 step="0.01"
                 [value]="regra.notaMinima"
+                [disabled]="!store.aceitaEdicao()"
                 (input)="alterarNotaMinima(indice, $any($event.target).value)"
               />
             </div>
@@ -108,15 +111,14 @@
               ><select
                 class="input"
                 [id]="'elim-area-' + indice"
-                [value]="regra.areaCodigo"
-                [disabled]="semAreas && regra.areaCodigo === ''"
+                [disabled]="!store.aceitaEdicao() || (semAreas && regra.areaCodigo === '')"
                 [attr.aria-invalid]="recusaDaArea ? 'true' : null"
                 [attr.aria-describedby]="
                   descritoPor(indice, 'area', semAreas ? 'elim-area-dica-' + indice : null)
                 "
                 (change)="escolherArea(indice, $any($event.target).value)"
               >
-                <option value="">— escolher —</option>
+                <option value="" [selected]="regra.areaCodigo === ''">— escolher —</option>
                 @for (area of areasEscolhiveis(indice); track area.codigo) {
                   <option [value]="area.codigo" [selected]="area.codigo === regra.areaCodigo">
                     {{ area.rotulo }}
@@ -128,8 +130,8 @@
               }
               @if (semAreas) {
                 <p class="field__hint" [id]="'elim-area-dica-' + indice">
-                  As áreas vêm do quadro de Peso por Área da resolução escolhida no passo Fórmula, que
-                  ainda não está disponível.
+                  As áreas vêm do quadro de Peso por Área da resolução escolhida no passo Fórmula,
+                  que ainda não está disponível.
                 </p>
               }
             </div>
@@ -146,9 +148,14 @@
                 min="0"
                 step="0.01"
                 [value]="regra.minimo"
+                [disabled]="!store.aceitaEdicao()"
                 [attr.aria-invalid]="recusaDoMinimo ? 'true' : null"
                 [attr.aria-describedby]="
-                  descritoPor(indice, 'minimo', corte !== null ? 'elim-minimo-dica-' + indice : null)
+                  descritoPor(
+                    indice,
+                    'minimo',
+                    corte !== null ? 'elim-minimo-dica-' + indice : null
+                  )
                 "
                 (input)="alterarMinimo(indice, $any($event.target).value)"
               />
@@ -178,6 +185,7 @@
           style="margin-top: var(--space-3)"
           [id]="'elim-remover-' + indice"
           [attr.aria-label]="'Remover regra de eliminação ' + (indice + 1)"
+          [disabled]="!store.aceitaEdicao()"
           (click)="removerRegra(indice)"
         >
           Remover
@@ -190,6 +198,7 @@
     class="btn btn--outline btn--sm"
     type="button"
     id="eliminacao-acrescentar"
+    [disabled]="!store.aceitaEdicao()"
     (click)="acrescentarRegra()"
   >
     + Acrescentar regra de eliminação
