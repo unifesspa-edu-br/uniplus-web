@@ -737,6 +737,17 @@
 }
 
 /*
+ * As ações da norma ocupam uma linha inteira do grid: como item solto, o botão virava uma
+ * célula e esticava até a altura dos campos vizinhos.
+ */
+.sel-processo .doc-item__acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
  * O gatilho atravessa o grid dos eixos: ele não é um quarto campo curto, é um bloco com
  * tantas linhas quantas forem as condições, e espremê-lo numa coluna de dezesseis rem deixava
  * fato, comparação e valor em três linhas cada.

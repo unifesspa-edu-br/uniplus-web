@@ -1118,25 +1118,29 @@
                 </div>
 
                 @if (basesLegaisDoDocumento(doc.id).length > 1) {
-                  <button
-                    class="btn btn--tertiary btn--sm"
-                    type="button"
-                    [disabled]="!store.aceitaEdicao()"
-                    (click)="removerBaseLegal(doc.id, $index)"
-                  >
-                    Remover esta norma
-                  </button>
+                  <div class="doc-item__acoes">
+                    <button
+                      class="btn btn--tertiary btn--sm"
+                      type="button"
+                      [disabled]="!store.aceitaEdicao()"
+                      (click)="removerBaseLegal(doc.id, $index)"
+                    >
+                      Remover esta norma
+                    </button>
+                  </div>
                 }
               }
 
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                [disabled]="!store.aceitaEdicao()"
-                (click)="acrescentarBaseLegal(doc.id)"
-              >
-                Acrescentar outra norma
-              </button>
+              <div class="doc-item__acoes">
+                <button
+                  class="btn btn--tertiary btn--sm"
+                  type="button"
+                  [disabled]="!store.aceitaEdicao()"
+                  (click)="acrescentarBaseLegal(doc.id)"
+                >
+                  Acrescentar outra norma
+                </button>
+              </div>
             </div>
           </div>
         } @empty {
