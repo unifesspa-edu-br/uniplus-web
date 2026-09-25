@@ -122,7 +122,9 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   test('mantém o ritmo vertical entre título, alerta e dica', async ({ page }) => {
     for (const passo of ['Tipo do processo', 'Identificação', 'Pagamento', 'Vagas', 'Formulário']) {
       const posicao = await page.evaluate((rotulo) => {
-        const botoes = [...document.querySelectorAll<HTMLButtonElement>('li.steps__item button')];
+        const botoes = Array.from(
+          document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),
+        );
         const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
         botoes[indice]?.click();
         return indice + 1;
@@ -280,7 +282,9 @@ function navegacaoDePassos(page: Page, largura: number): () => Promise<void> {
  */
 async function abrirPasso(page: Page, rotulo: string): Promise<void> {
   await page.evaluate((procurado) => {
-    const botoes = [...document.querySelectorAll<HTMLButtonElement>('li.steps__item button')];
+    const botoes = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),
+    );
     botoes.find((botao) => botao.textContent?.includes(procurado))?.click();
   }, rotulo);
 }

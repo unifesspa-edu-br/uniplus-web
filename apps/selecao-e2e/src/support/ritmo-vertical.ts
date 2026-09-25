@@ -19,8 +19,7 @@ export async function blocosColados(page: Page): Promise<string[]> {
     if (!raiz) {
       return ['.wiz-content ausente'];
     }
-    const visivel = (e: Element | null): e is Element =>
-      e !== null && e.getBoundingClientRect().height > 0;
+    const visivel = (e: Element): boolean => e.getBoundingClientRect().height > 0;
     const anterior = (e: Element): Element | null => {
       let irmao = e.previousElementSibling;
       while (irmao && !visivel(irmao)) irmao = irmao.previousElementSibling;
@@ -39,14 +38,16 @@ export async function blocosColados(page: Page): Promise<string[]> {
     const LARGURA_INTEIRA = 'details, .field__hint, .alert, .form-grid, .checkbox-grid';
     const colados: string[] = [];
 
-    for (const titulo of raiz.querySelectorAll('.step-section__title, .form-section__title')) {
+    for (const titulo of Array.from(
+      raiz.querySelectorAll('.step-section__title, .form-section__title'),
+    )) {
       const antes = visivel(titulo) ? anterior(titulo) : null;
       if (antes && distancia(antes, titulo) < 20) {
         colados.push(`título "${texto(titulo)}"`);
       }
     }
 
-    for (const bloco of raiz.querySelectorAll('.alert, .field__hint')) {
+    for (const bloco of Array.from(raiz.querySelectorAll('.alert, .field__hint'))) {
       if (!visivel(bloco)) continue;
       const depois = seguinte(bloco);
       if (depois) {
