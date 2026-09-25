@@ -50,6 +50,7 @@ export {
   ListFooterComponent,
 } from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export { RolagemFocavelDirective } from '../../src/lib/directives/rolagem-focavel.directive';
 export {
   SegmentedComponent,
   type UiSegmentedOption,

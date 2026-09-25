@@ -124,11 +124,8 @@
       @if (municipiosDaBaseLegalSelecionada().length > 0) {
         <div class="bonus-municipios">
           <div
-            #municipiosScroll
             class="table-responsive bonus-municipios__scroll"
-            [attr.tabindex]="municipiosRolavel() ? 0 : null"
-            [attr.role]="municipiosRolavel() ? 'region' : null"
-            [attr.aria-labelledby]="municipiosRolavel() ? 'bonus-municipios-caption' : null"
+            uiRolagemFocavel="bonus-municipios-caption"
           >
             <table>
               <caption id="bonus-municipios-caption" class="bonus-municipios__caption">
