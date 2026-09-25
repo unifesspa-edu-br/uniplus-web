@@ -1906,38 +1906,39 @@
 
 /*
  * O DS empilha a tabela em cartões pela largura da janela, mas no editor o stepper lateral come
- * parte dela: em 768 sobram ~460px para uma área por coluna. O quadro empilha pela largura que ele
- * mesmo recebe, abaixo da qual os cabeçalhos das áreas não cabem sem rolagem.
+ * parte dela: em 768 sobram ~460px para as colunas. O quadro empilhável empilha pela largura que
+ * ele mesmo recebe, abaixo da qual os cabeçalhos não cabem sem rolagem. As regras do cartão
+ * repetem as do DS porque o DS empilha por `@media`, e uma regra não une as duas condições.
  */
-.peso-area__quadro {
-  container: quadro-de-pesos / inline-size;
+.quadro-empilhavel {
+  container: quadro-empilhavel / inline-size;
 }
 
-.table-responsive.peso-area__quadro :is(th, td) {
+.table-responsive.quadro-empilhavel :is(th, td) {
   padding-inline: var(--space-3);
 }
 
-@container quadro-de-pesos (max-width: 48rem) {
-  .peso-area__quadro thead {
+@container quadro-empilhavel (max-width: 48rem) {
+  .quadro-empilhavel thead {
     display: none;
   }
 
-  .peso-area__quadro table,
-  .peso-area__quadro caption,
-  .peso-area__quadro tbody,
-  .peso-area__quadro tr,
-  .peso-area__quadro td,
-  .peso-area__quadro tbody th[scope='row'] {
+  .quadro-empilhavel table,
+  .quadro-empilhavel caption:not(.sr-only),
+  .quadro-empilhavel tbody,
+  .quadro-empilhavel tr,
+  .quadro-empilhavel td,
+  .quadro-empilhavel tbody th[scope='row'] {
     display: block;
     width: 100%;
   }
 
-  .peso-area__quadro tbody {
+  .quadro-empilhavel tbody {
     display: grid;
     gap: var(--space-3);
   }
 
-  .peso-area__quadro tbody tr {
+  .quadro-empilhavel tbody tr {
     background: var(--surface-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -1945,18 +1946,18 @@
   }
 
   /* O realce de linha da tabela do DS apagaria o fundo do cartão; o cartão realça pela borda. */
-  .table-responsive.peso-area__quadro tbody tr:hover {
+  .table-responsive.quadro-empilhavel tbody tr:hover {
     background: var(--surface-card);
     border-color: var(--border-default);
   }
 
-  .table-responsive.peso-area__quadro tbody th[scope='row'] {
+  .table-responsive.quadro-empilhavel tbody th[scope='row'] {
     border: none;
     padding: 0 0 var(--space-1);
     font-weight: var(--weight-medium);
   }
 
-  .table-responsive.peso-area__quadro td {
+  .table-responsive.quadro-empilhavel td {
     border: none;
     display: flex;
     justify-content: space-between;
@@ -1965,7 +1966,7 @@
     padding: var(--space-1) 0;
   }
 
-  .peso-area__quadro td::before {
+  .quadro-empilhavel td::before {
     content: attr(data-label);
     color: var(--text-muted);
     font-size: var(--text-xs);
