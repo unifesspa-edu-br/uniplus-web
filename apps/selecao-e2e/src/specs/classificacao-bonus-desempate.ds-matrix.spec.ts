@@ -85,6 +85,7 @@ const CRITERIOS_DESEMPATE = [
   regra('DESEMPATE-MAIOR-IDADE', 'criterio_desempate', 'Costume administrativo'),
   regra('DESEMPATE-IDOSO', 'criterio_desempate', 'Lei 10.741/2003, art. 27'),
   regra('DESEMPATE-PREDICADO-FATO', 'criterio_desempate', 'Definido por cada edital'),
+  regra('DESEMPATE-MAIOR-NOTA-AREA-ENEM', 'criterio_desempate', 'Definido por cada edital'),
 ];
 
 /**
@@ -482,10 +483,182 @@ test.describe('Classificação, bônus e desempate em consulta — matriz DS @ds
   }
 });
 
-/** O detalhe, os documentos e o checklist do processo publicado, todos sob o mesmo prefixo. */
+const PROCESSO_DESEMPATE_POR_AREA_ID = '01960000-0000-7000-0000-000000000900';
+
+/**
+ * O mesmo processo publicado, classificado pelo ENEM com o quadro de Peso por Área congelado e
+ * um critério de desempate pela ordem das áreas: é o cartão que quebrava no celular.
+ */
+const DETALHE_DESEMPATE_POR_AREA = {
+  ...DETALHE_PUBLICADO,
+  id: PROCESSO_DESEMPATE_POR_AREA_ID,
+  criteriosDesempate: [
+    {
+      ...DETALHE_PUBLICADO.criteriosDesempate[0],
+      regra: referencia('DESEMPATE-MAIOR-NOTA-AREA-ENEM'),
+      areas: AREAS_ENEM.map((area) => area.codigo),
+    },
+  ],
+  classificacao: {
+    ...DETALHE_PUBLICADO.classificacao,
+    baseadoEmEnem: true,
+    resolucaoPesoAreaEnem: RESOLUCAO_PESO_AREA,
+    quadroPesoAreaEnem: PESOS_AREA_ENEM.map((linha) => ({
+      grupoAreaEnem: linha.grupoCurso,
+      baseLegal: linha.baseLegal,
+      areas: linha.areas,
+    })),
+  },
+};
+
+/** A partir desta largura, o seletor mostra o código da regra inteiro. */
+const LARGURA_CODIGO_INTEIRO = 768;
+
+/** Com a lista até esta largura (40rem), o cartão do critério empilha número, campos e ações. */
+const LARGURA_LISTA_EMPILHADA = 640;
+
+/**
+ * Cartão do critério de desempate por área em consulta (web#900): o nome da área não quebra
+ * letra a letra, o seletor da regra tem a largura da lista de áreas, e no celular os campos
+ * descem para a largura inteira do cartão.
+ */
+test.describe('Desempate por área em consulta — matriz DS @ds', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await mockarCatalogos(page);
+    await mockarProcesso(page, PROCESSO_DESEMPATE_POR_AREA_ID, DETALHE_DESEMPATE_POR_AREA);
+    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+    await page.goto(`/processo-seletivo/${PROCESSO_DESEMPATE_POR_AREA_ID}`);
+    await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  test('o cartão do critério cabe em cada largura sem quebrar as áreas', async ({
+    page,
+  }, testInfo) => {
+    await irAoPasso(page, 'Desempate', testInfo);
+    await expect(page.locator('.desempate-area__nome').first()).toBeVisible();
+
+    const resultado = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultado)).toEqual([]);
+
+    for (const largura of LARGURAS_DE_REFERENCIA) {
+      await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
+      await esperarLayoutEstavel(page);
+      const cartao = await medidasDoCartao(page);
+      const empilhado = cartao.larguraDaListaDeCriterios <= LARGURA_LISTA_EMPILHADA;
+
+      expect(await transbordo(page), `transbordo em ${largura} px`).toEqual({
+        documento: 0,
+        conteudo: 0,
+      });
+      // Uma letra por linha: a palavra se partia em várias linhas do nome.
+      expect(cartao.palavrasPartidas, `nome da área em ${largura} px`).toEqual([]);
+      expect(cartao.larguraDoSeletor, `seletor e áreas em ${largura} px`).toBeGreaterThanOrEqual(
+        cartao.larguraDaLista - 1,
+      );
+      // Um <select> não quebra linha: no celular o código não cabe e o seletor ocupa a largura
+      // toda; a partir de 768 px o código tem de aparecer inteiro.
+      expect(
+        cartao.codigoCabeNoSeletor || largura < LARGURA_CODIGO_INTEIRO,
+        `código da regra inteiro em ${largura} px`,
+      ).toBe(true);
+      expect(cartao.camposAbaixoDoNumero, `campos empilhados em ${largura} px`).toBe(empilhado);
+      // Lado a lado, número, campos e ações começam no topo do cartão, não no meio dele.
+      expect(
+        empilhado || cartao.desalinhamentoNoTopo <= 1,
+        `número, campos e ações no topo em ${largura} px (${cartao.desalinhamentoNoTopo} px)`,
+      ).toBe(true);
+    }
+  });
+});
+
+/** Espera dois quadros de animação, para medir depois que a troca de largura se assentou. */
+async function esperarLayoutEstavel(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolver) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolver())),
+      ),
+  );
+}
+
+/** A altura da viewport do project, mantida quando o teste troca só a largura. */
+function alturaDoProject(testInfo: TestInfo): number {
+  return testInfo.project.use.viewport?.height ?? 900;
+}
+
+/** As medidas do primeiro cartão de critério que os critérios de aceite comparam. */
+async function medidasDoCartao(page: Page): Promise<{
+  palavrasPartidas: string[];
+  larguraDoSeletor: number;
+  larguraDaLista: number;
+  larguraDaListaDeCriterios: number;
+  codigoCabeNoSeletor: boolean;
+  camposAbaixoDoNumero: boolean;
+  desalinhamentoNoTopo: number;
+}> {
+  return page.evaluate(() => {
+    const cartao = document.querySelector('.desempate-item');
+    const largura = (seletor: string) =>
+      cartao?.querySelector(seletor)?.getBoundingClientRect().width ?? 0;
+    const nomes = Array.from(cartao?.querySelectorAll('.desempate-area__nome') ?? []);
+    // Uma palavra que ocupa mais de uma linha tem mais de um retângulo de linha.
+    const palavrasPartidas = nomes.flatMap((nome) => {
+      const texto = nome.firstChild;
+      if (!(texto instanceof Text)) return [];
+      return Array.from(texto.data.matchAll(/\S+/g)).flatMap((palavra) => {
+        const trecho = document.createRange();
+        trecho.setStart(texto, palavra.index);
+        trecho.setEnd(texto, palavra.index + palavra[0].length);
+        const linhas = new Set(Array.from(trecho.getClientRects(), (r) => Math.round(r.top)));
+        return linhas.size > 1 ? [palavra[0]] : [];
+      });
+    });
+    const numero = cartao?.querySelector('.desempate-num')?.getBoundingClientRect();
+    // A maior distância entre os topos de número, campos e ações.
+    const desalinhamento = (caixas: (DOMRect | undefined)[]) => {
+      const topos = caixas.filter((caixa) => caixa !== undefined).map((caixa) => caixa.top);
+      return topos.length === 0 ? Infinity : Math.max(...topos) - Math.min(...topos);
+    };
+    // O código da regra escolhida, medido na fonte do seletor, tem de caber no espaço de texto dele.
+    const seletor = cartao?.querySelector('select');
+    const escolhida = seletor?.selectedOptions[0]?.textContent?.split('—')[0]?.trim() ?? '';
+    const contexto = document.createElement('canvas').getContext('2d');
+    let codigoCabeNoSeletor = false;
+    if (seletor && contexto) {
+      const estilo = getComputedStyle(seletor);
+      contexto.font = `${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
+      const espacoDeTexto =
+        seletor.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+      codigoCabeNoSeletor = contexto.measureText(escolhida).width <= espacoDeTexto;
+    }
+    const campos = cartao?.querySelector('.desempate-item__campos')?.getBoundingClientRect();
+    return {
+      palavrasPartidas,
+      larguraDoSeletor: largura('select'),
+      larguraDaLista: largura('.desempate-areas'),
+      larguraDaListaDeCriterios:
+        document.querySelector('.desempate-list')?.getBoundingClientRect().width ?? 0,
+      codigoCabeNoSeletor,
+      desalinhamentoNoTopo: desalinhamento([
+        numero,
+        campos,
+        cartao?.querySelector(':scope > .desempate-actions')?.getBoundingClientRect(),
+      ]),
+      camposAbaixoDoNumero: !!numero && !!campos && campos.top >= numero.bottom,
+    };
+  });
+}
+
+/** O processo publicado da consulta dos passos 6 a 9. */
 async function mockarProcessoPublicado(page: Page): Promise<void> {
+  await mockarProcesso(page, PROCESSO_PUBLICADO_ID, DETALHE_PUBLICADO);
+}
+
+/** O detalhe, os documentos e o checklist de um processo, todos sob o mesmo prefixo. */
+async function mockarProcesso(page: Page, id: string, detalhe: unknown): Promise<void> {
   await page.route(
-    new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_PUBLICADO_ID}(/.*)?(\\?.*)?$`),
+    new RegExp(`/api/selecao/processos-seletivos/${id}(/.*)?(\\?.*)?$`),
     async (route: Route) => {
       if (route.request().method() === 'OPTIONS') {
         await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -493,10 +666,10 @@ async function mockarProcessoPublicado(page: Page): Promise<void> {
       }
 
       const caminho = new URL(route.request().url()).pathname;
-      const corpo = caminho.endsWith(PROCESSO_PUBLICADO_ID)
-        ? DETALHE_PUBLICADO
+      const corpo = caminho.endsWith(id)
+        ? detalhe
         : caminho.endsWith('/conformidade')
-          ? { processoSeletivoId: PROCESSO_PUBLICADO_ID, itens: [] }
+          ? { processoSeletivoId: id, itens: [] }
           : [];
 
       await route.fulfill({
