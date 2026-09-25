@@ -650,6 +650,51 @@
   margin: 0 0 var(--space-3);
 }
 
+/*
+ * Ritmo vertical dos passos. Alerta, dica e título de seção não têm margem própria
+ * no DS, e cada passo empilhava esses blocos sem espaço: o alerta encostava no campo
+ * seguinte e o título da seção encostava na dica de cima. `:where` mantém a
+ * especificidade baixa, para que o arranjo próprio de um componente prevaleça.
+ *
+ * O título é a exceção: `.form-section__title` já tem margem na folha global, que é
+ * carregada depois desta, e com a mesma especificidade ela venceria. A classe fica
+ * fora do `:where` só no título.
+ */
+.sel-processo .step-section__title:where(:not(:first-child)),
+.sel-processo .form-section__title:where(:not(:first-child)) {
+  margin-block-start: var(--space-6);
+}
+
+.sel-processo :where(.alert:not(:last-child)) {
+  margin-block-end: var(--space-5);
+}
+
+/* A dica que encerra o campo não ganha margem: a do bloco seguinte decide. */
+.sel-processo
+  :where(
+    .field__hint:not(:last-child):not(
+        :has(+ :is(input, select, textarea, label, .input, .field__hint, .field__erro))
+      )
+  ) {
+  margin-block-end: var(--space-4);
+}
+
+.sel-processo :where(.field__hint:has(+ .field__hint)) {
+  margin-block-end: var(--space-2);
+}
+
+/*
+ * Dica que encerra um contêiner (campo, cabeçalho, linha de ações): o bloco seguinte
+ * é irmão do contêiner, não da dica. Só blocos de largura inteira recebem a margem;
+ * um item de grade que a recebesse sairia da linha dos vizinhos.
+ */
+.sel-processo
+  :where(
+    :has(> .field__hint:last-child) + :is(details, .field__hint, .alert, .form-grid, .checkbox-grid)
+  ) {
+  margin-block-start: var(--space-4);
+}
+
 /* Checkbox grid */
 .checkbox-grid {
   display: grid;
@@ -2520,7 +2565,7 @@
    ganha rolagem própria — com muitas ofertas, ela empurraria a tabela para
    fora da tela justamente quando se quer conferir as duas. */
 .vagas-escolha {
-  margin: var(--space-3) 0;
+  margin: var(--space-4) 0 var(--space-3);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
