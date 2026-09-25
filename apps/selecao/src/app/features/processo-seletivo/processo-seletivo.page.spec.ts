@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { Subject, of } from 'rxjs';
+import { NEVER, Subject, of } from 'rxjs';
 import { apiFailure, apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
@@ -27,7 +27,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
-import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
+import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import {
   FundamentoIsencaoDto,
   OrigemCandidatos,
@@ -116,6 +116,7 @@ const PAGE_PROVIDERS = [
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
+  { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; esta suíte não exercita as escolhas, só a estrutura da página.
   { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },

@@ -8,8 +8,10 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { AtoNormativoDto, AtosApi } from '@uniplus/shared-data/publicacoes';
 import { SnapshotVigenteDto, StatusProcesso } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -20,6 +22,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { instanteLegivel } from '../../shared/fuso-institucional';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import {
@@ -65,6 +68,15 @@ const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE =
   'uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente';
 
 /**
+ * O ato vigente de um processo já publicado. A tela o lê do servidor ao abrir, porque o
+ * formulário do ato só guarda o que esta sessão transcreveu antes de publicar.
+ */
+export type AtoPublicado =
+  | { readonly estado: 'lendo' }
+  | { readonly estado: 'lido'; readonly ato: AtoNormativoDto }
+  | { readonly estado: 'falha' };
+
+/**
  * Passo Revisão e Publicação (`#486`). Substitui a contagem de passos
  * concluídos — que anunciava "tudo pronto" e a publicação recusava no clique
  * seguinte — pelo preflight que o servidor realmente aplica: checklist
@@ -89,6 +101,8 @@ export class RevisaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly preflight = inject(PreflightDaPublicacaoService);
   private readonly cadastro = inject(CadastroInicialService);
+  private readonly atos = inject(AtosApi);
+  private readonly dataBr = new DateBrPipe();
   private readonly problemI18n = inject(ProblemI18nService);
   /**
    * Provido na página, mesma instância que `CronogramaStepComponent` já usa.
@@ -102,6 +116,36 @@ export class RevisaoStepComponent {
 
   /** O snapshot lido depois do `204` (CA-08) — só existe quando esta sessão acabou de publicar. */
   readonly snapshotConfirmado = signal<SnapshotVigenteDto | null>(null);
+
+  /** O ato vigente, para processo publicado; `null` enquanto não há o que ler. */
+  readonly atoPublicado = signal<AtoPublicado | null>(null);
+
+  /**
+   * Se o processo tem versão publicada e, portanto, um ato vigente a mostrar no lugar do
+   * formulário. Só `publicado` garante isso (a retificação o mantém): cancelado ou encerrado
+   * não dizem se houve publicação, e ler o snapshot vigente de um rascunho cancelado falharia
+   * e esconderia a transcrição que ele guarda.
+   */
+  readonly jaPublicado = computed(
+    () => this.store.remoteSnapshot()?.status === StatusProcesso.publicado,
+  );
+
+  /** O ato vigente como pares rótulo e valor, na ordem do formulário que ele substitui. */
+  readonly resumoDoAto = computed(() => {
+    const leitura = this.atoPublicado();
+    if (leitura?.estado !== 'lido') return null;
+    const { ato } = leitura;
+    const tipo = this.preflight.tiposAto().find((item) => item.codigo === ato.tipoCodigo);
+    return [
+      { rotulo: 'Número do ato', valor: ato.numero?.trim() || 'não informado' },
+      { rotulo: 'Tipo de ato', valor: tipo?.nome ?? ato.tipoCodigo },
+      { rotulo: 'Órgão', valor: ato.orgao },
+      { rotulo: 'Série', valor: ato.serie },
+      { rotulo: 'Ano', valor: String(ato.ano) },
+      { rotulo: 'Data de publicação do ato', valor: this.dataBr.transform(ato.dataPublicacao) },
+      { rotulo: 'Assinante', valor: ato.assinante },
+    ];
+  });
 
   /**
    * Formulário reativo tipado do ato de publicação (AGENTS.md: "formulários
@@ -182,7 +226,17 @@ export class RevisaoStepComponent {
       untracked(() => {
         this.ultimaRecusa.set(null);
         this.snapshotConfirmado.set(null);
+        this.atoPublicado.set(null);
       });
+    });
+
+    // Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar
+    // no passo. Uma falha fica visível com "Tentar novamente", em vez de o formulário vazio.
+    effect(() => {
+      const id = this.store.processoSeletivoId();
+      if (id === null || !this.store.isLast() || !this.jaPublicado()) return;
+      if (untracked(() => this.atoPublicado()) !== null) return;
+      untracked(() => void this.lerAtoPublicado(id));
     });
 
     // Empurra o rascunho para o formulário sem disparar `valueChanges` — quem
@@ -248,6 +302,37 @@ export class RevisaoStepComponent {
     });
   }
 
+  /**
+   * Lê o ato vigente: o `atoId` vem do snapshot publicado, e o ato, da Publicações. Quando esta
+   * sessão acabou de publicar, o snapshot já relido serve, sem ler de novo.
+   */
+  async lerAtoPublicado(processoId: string): Promise<void> {
+    const geracao = this.store.geracao();
+    this.atoPublicado.set({ estado: 'lendo' });
+
+    const atoId =
+      this.snapshotConfirmado()?.atoId ?? (await this.atoIdDoSnapshotVigente(processoId));
+    if (geracao !== this.store.geracao()) return;
+    if (atoId === null) {
+      this.atoPublicado.set({ estado: 'falha' });
+      return;
+    }
+
+    const ato = await firstValueFrom(this.atos.obter(atoId));
+    if (geracao !== this.store.geracao()) return;
+    this.atoPublicado.set(ato.ok ? { estado: 'lido', ato: ato.data } : { estado: 'falha' });
+  }
+
+  private async atoIdDoSnapshotVigente(processoId: string): Promise<string | null> {
+    const snapshot = await this.cadastro.obterSnapshotVigente(processoId);
+    return snapshot.ok ? snapshot.data.atoId : null;
+  }
+
+  tentarLerAtoDeNovo(): void {
+    const id = this.store.processoSeletivoId();
+    if (id !== null) void this.lerAtoPublicado(id);
+  }
+
   recarregarPreflight(): void {
     void this.recarregarChecklist();
   }
@@ -292,6 +377,19 @@ export class RevisaoStepComponent {
   readonly faseAncora = computed(() =>
     faseQueAncoraOPeriodoDeInscricao(this.store.draft(), this.catalogosDoCronograma.fasePorId()),
   );
+
+  /** A fase que ancora o período de inscrição, pelo nome e com a janela em data e hora locais. */
+  readonly janelaDaInscricao = computed(() => {
+    const fase = this.faseAncora();
+    if (fase === null) return null;
+    const nome =
+      this.catalogosDoCronograma.fasePorId().get(fase.faseCanonicaId)?.nome ?? 'de inscrição';
+    const janela =
+      fase.inicio && fase.fim
+        ? `${instanteLegivel(fase.inicio)} até ${instanteLegivel(fase.fim)}`
+        : null;
+    return { nome, janela };
+  });
 
   /**
    * Checklist estrutural agrupado por dimensão — `null` enquanto não carregou.
@@ -411,7 +509,7 @@ export class RevisaoStepComponent {
         {
           rotulo: 'Período de inscrição',
           valor: temFase
-            ? `janela da fase do cronograma (${this.faseAncora()?.codigo ?? ''})`
+            ? `janela da fase ${this.janelaDaInscricao()?.nome ?? ''} do cronograma`
             : `${draft.publicacao.periodoInscricaoInicio} até ${draft.publicacao.periodoInscricaoFim}`,
         },
       ],

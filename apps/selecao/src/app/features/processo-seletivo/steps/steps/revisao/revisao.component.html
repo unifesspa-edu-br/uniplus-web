@@ -245,71 +245,110 @@
         O edital anexado acima é o documento que a publicação referencia — nada a repetir aqui.
       </p>
 
-      <div class="form-grid" [formGroup]="form">
-        <div class="form-field">
-          <label class="label" for="rev-numero">Número do ato (opcional)</label>
-          <input class="input" id="rev-numero" type="text" formControlName="numero" />
-        </div>
+      @if (jaPublicado()) {
+        @switch (atoPublicado()?.estado) {
+          @case ('falha') {
+            <div class="alert alert--danger" role="alert">
+              <p>Não foi possível ler o ato publicado deste processo.</p>
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                (click)="tentarLerAtoDeNovo()"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          }
+          @case ('lido') {
+            <dl class="confirmacao-lista" aria-label="Ato publicado">
+              @for (item of resumoDoAto() ?? []; track item.rotulo) {
+                <div class="confirmacao-lista__linha">
+                  <dt class="confirmacao-lista__rotulo">{{ item.rotulo }}</dt>
+                  <dd class="confirmacao-lista__valor">{{ item.valor }}</dd>
+                </div>
+              }
+            </dl>
+          }
+          @default {
+            <p class="step-hint" role="status">Lendo o ato publicado…</p>
+          }
+        }
+      } @else {
+        <div class="form-grid" [formGroup]="form">
+          <div class="form-field">
+            <label class="label" for="rev-numero">Número do ato (opcional)</label>
+            <input class="input" id="rev-numero" type="text" formControlName="numero" />
+          </div>
 
-        <div class="form-field">
-          <label class="label" for="rev-tipo-ato">Tipo de ato</label>
-          <select class="input" id="rev-tipo-ato" formControlName="tipoAtoCodigo">
-            <option value="">— escolher —</option>
-            @for (tipo of preflight.tiposAto(); track tipo.codigo) {
-              <option [value]="tipo.codigo">{{ tipo.nome }} ({{ tipo.codigo }})</option>
-            }
-          </select>
-        </div>
+          <div class="form-field">
+            <label class="label" for="rev-tipo-ato">Tipo de ato</label>
+            <select class="input" id="rev-tipo-ato" formControlName="tipoAtoCodigo">
+              <option value="">— escolher —</option>
+              @for (tipo of preflight.tiposAto(); track tipo.codigo) {
+                <option [value]="tipo.codigo">{{ tipo.nome }} ({{ tipo.codigo }})</option>
+              }
+            </select>
+          </div>
 
-        <div class="form-field">
-          <label class="label" for="rev-orgao">Órgão</label>
-          <input class="input" id="rev-orgao" type="text" formControlName="orgao" />
-        </div>
+          <div class="form-field">
+            <label class="label" for="rev-orgao">Órgão</label>
+            <input class="input" id="rev-orgao" type="text" formControlName="orgao" />
+          </div>
 
-        <div class="form-field">
-          <label class="label" for="rev-serie">Série</label>
-          <input class="input" id="rev-serie" type="text" formControlName="serie" />
-        </div>
+          <div class="form-field">
+            <label class="label" for="rev-serie">Série</label>
+            <input class="input" id="rev-serie" type="text" formControlName="serie" />
+          </div>
 
-        <div class="form-field">
-          <label class="label" for="rev-ano">Ano</label>
-          <!--
-            `type="text"` com `inputmode="numeric"`, e não `type="number"`: o
-            `NumberValueAccessor` do Angular grava número no controle, que é
-            declarado como texto igual aos seus seis irmãos deste formulário, e o
-            mapeador quebrava ao chamar `trim()` sobre número (#738). O teclado
-            numérico do celular vem do `inputmode`, e a validação do formato é do
-            próprio mapeador.
-          -->
-          <input
-            class="input"
-            id="rev-ano"
-            type="text"
-            inputmode="numeric"
-            autocomplete="off"
-            formControlName="ano"
-          />
-        </div>
+          <div class="form-field">
+            <label class="label" for="rev-ano">Ano</label>
+            <!--
+              `type="text"` com `inputmode="numeric"`, e não `type="number"`: o
+              `NumberValueAccessor` do Angular grava número no controle, que é
+              declarado como texto igual aos seus seis irmãos deste formulário, e o
+              mapeador quebrava ao chamar `trim()` sobre número (#738). O teclado
+              numérico do celular vem do `inputmode`, e a validação do formato é do
+              próprio mapeador.
+            -->
+            <input
+              class="input"
+              id="rev-ano"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              formControlName="ano"
+            />
+          </div>
 
-        <div class="form-field">
-          <label class="label" for="rev-data-publicacao">Data de publicação do ato</label>
-          <input class="input" id="rev-data-publicacao" type="date" formControlName="dataPublicacao" />
-        </div>
+          <div class="form-field">
+            <label class="label" for="rev-data-publicacao">Data de publicação do ato</label>
+            <input
+              class="input"
+              id="rev-data-publicacao"
+              type="date"
+              formControlName="dataPublicacao"
+            />
+          </div>
 
-        <div class="form-field">
-          <label class="label" for="rev-assinante">Assinante</label>
-          <input class="input" id="rev-assinante" type="text" formControlName="assinante" />
+          <div class="form-field">
+            <label class="label" for="rev-assinante">Assinante</label>
+            <input class="input" id="rev-assinante" type="text" formControlName="assinante" />
+          </div>
         </div>
-      </div>
+      }
 
       @if (temFaseDeColeta()) {
+        <!-- A frase vai num único elemento: o alerta é flex, e o <strong> solto no meio dela
+             viraria um item à parte, quebrando a linha. -->
         <p class="alert alert--info" role="status">
-          O período de inscrição vem da janela da fase
-          <strong>{{ faseAncora()?.codigo }}</strong> do cronograma
-          @if (faseAncora()?.inicio && faseAncora()?.fim) {
-            ({{ faseAncora()?.inicio }} até {{ faseAncora()?.fim }})
-          }
-          — esta tela não pede o período porque o servidor o deriva do cronograma.
+          <span>
+            O período de inscrição vem da janela da fase
+            <strong>{{ janelaDaInscricao()?.nome }}</strong> do cronograma
+            @if (janelaDaInscricao()?.janela; as janela) {
+              ({{ janela }})
+            }
+            — esta tela não pede o período porque o servidor o deriva do cronograma.
+          </span>
         </p>
       } @else {
         <p class="step-hint">

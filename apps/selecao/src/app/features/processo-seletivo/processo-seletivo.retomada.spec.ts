@@ -31,7 +31,7 @@ import {
   CategoriasDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
 import { GeoApi } from '@uniplus/shared-data/geo';
-import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
+import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoEditalDto,
@@ -41,7 +41,7 @@ import {
   ProcessosSeletivosApi,
   StatusProcesso,
 } from '@uniplus/shared-data/selecao';
-import { BehaviorSubject, from, of } from 'rxjs';
+import { BehaviorSubject, NEVER, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
@@ -192,6 +192,7 @@ function montar(opts: CenarioOpts = {}) {
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
+  { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; esta suíte cobre a retomada do processo, não as escolhas.
   { provide: CondicoesAtendimentoApi, useValue: catalogoVazioStub },
@@ -205,6 +206,8 @@ function montar(opts: CenarioOpts = {}) {
           obter,
           listarDocumentosEdital: listarDocumentos,
           obterRascunhoDaPublicacao: obterRascunho,
+          // A Revisão de processo publicado lê o ato vigente; esta suíte não exercita o ato.
+          obterSnapshotVigente: () => NEVER,
           listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
           definirTaxaInscricao,
         },
@@ -1771,7 +1774,8 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     /**
      * No processo publicado, cancelado ou encerrado os campos são de leitura. Gravar rascunho
      * dali ou colheria recusa do servidor ou guardaria uma transcrição que esta jornada não
-     * tem mais como usar — e a tela anunciaria sucesso.
+     * tem mais como usar — e a tela anunciaria sucesso. Sem as ações de rascunho, o rodapé fica
+     * só com a navegação, alinhado como nos demais passos.
      */
     it('não oferece gravar rascunho em processo que não aceita edição', async () => {
       const cenario = montar({
@@ -1787,7 +1791,8 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       const botao = [...cenario.host.querySelectorAll('button')].find(
         (b) => b.textContent?.trim() === 'Salvar rascunho',
       );
-      expect(botao?.disabled).toBe(true);
+      expect(botao).toBeUndefined();
+      expect(cenario.host.querySelector('.rascunho-publicacao')).toBeNull();
     });
 
     it('mantém a edição liberada enquanto o detalhe não chegou', () => {

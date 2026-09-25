@@ -15,6 +15,7 @@ const CORS_HEADERS = {
 
 const PROCESSO_ID = '01960000-0000-7000-0000-000000000901';
 const DOCUMENTO_ID = '01960000-0000-7000-0000-000000000902';
+const ATO_ID = '01960000-0000-7000-0000-000000000908';
 
 const TIPO_ATO_DTO = {
   id: '01960000-0000-7000-0000-000000000903',
@@ -48,13 +49,36 @@ const FASE_DE_COLETA = {
   regraRecurso: null,
 };
 
+const ATO_DTO = {
+  id: ATO_ID,
+  orgao: 'CEPS/Unifesspa',
+  serie: 'Edital de abertura',
+  ano: 2027,
+  numero: '001/2027',
+  tipoCodigo: TIPO_ATO_DTO.codigo,
+  congelaConfiguracao: true,
+  efeitoIrreversivel: true,
+  unicoPorObjeto: false,
+  dataPublicacao: '2027-01-15',
+  documentoHash: 'b'.repeat(64),
+  assinante: 'Reitor da Unifesspa',
+  registradoEm: '2027-01-15T12:00:00Z',
+  versaoInvocadaId: null,
+  versaoInvocadaHash: null,
+  atoRetificadoId: null,
+  motivoRetificacao: null,
+  avisos: null,
+  _links: null,
+};
+
 interface MockarProcessoOpcoes {
+  readonly status?: 'rascunho' | 'publicado';
   readonly cronogramaFases?: readonly unknown[];
   readonly conformidadeItens?: readonly { codigo: string; dimensao: string; mensagem: string; ok: boolean }[];
   readonly conformidadeLegalRegras?: readonly unknown[];
 }
 
-function processoDto(cronogramaFases: readonly unknown[]) {
+function processoDto(cronogramaFases: readonly unknown[], status: string) {
   return {
     id: PROCESSO_ID,
     nome: 'Processo Seletivo de teste',
@@ -63,7 +87,7 @@ function processoDto(cronogramaFases: readonly unknown[]) {
     // faria hidratar() marcar o processo como somente leitura (edicaoPermitida()
     // compara com StatusProcesso.rascunho === 'rascunho') e todo campo do
     // formulário nasceria desabilitado.
-    status: 'rascunho',
+    status,
     origemCandidatos: 'inscricaoPropria',
     unidadeAdministradora: {
       origemId: '01960000-0000-7000-0000-000000000906',
@@ -107,6 +131,7 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
   const cronogramaFases = opcoes.cronogramaFases ?? [FASE_DE_COLETA];
   const conformidadeItens = opcoes.conformidadeItens ?? [];
   const conformidadeLegalRegras = opcoes.conformidadeLegalRegras ?? [];
+  const status = opcoes.status ?? 'rascunho';
 
   await page.route(
     new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_ID}(/.*)?(\\?.*)?$`),
@@ -141,6 +166,29 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
         return;
       }
 
+      if (caminho.endsWith('/snapshot-vigente')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          headers: CORS_HEADERS,
+          body: JSON.stringify({
+            snapshotPublicacaoId: '01960000-0000-7000-0000-000000000909',
+            atoId: ATO_ID,
+            schemaVersion: '1',
+            algoritmoHash: 'c'.repeat(64),
+            hashConfiguracao: 'd'.repeat(64),
+            hashEdital: 'a'.repeat(64),
+            configuracao: {},
+          }),
+        });
+        return;
+      }
+
+      if (caminho.endsWith('/rascunho-da-publicacao')) {
+        await route.fulfill({ status: 404, headers: CORS_HEADERS });
+        return;
+      }
+
       if (caminho.endsWith('/conformidade-legal')) {
         await route.fulfill({
           status: 200,
@@ -171,7 +219,7 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
         status: 200,
         contentType: 'application/json',
         headers: CORS_HEADERS,
-        body: JSON.stringify(processoDto(cronogramaFases)),
+        body: JSON.stringify(processoDto(cronogramaFases, status)),
       });
     },
   );
@@ -189,6 +237,22 @@ async function mockarTiposAto(page: Page): Promise<void> {
       contentType: 'application/json',
       headers: CORS_HEADERS,
       body: JSON.stringify([TIPO_ATO_DTO]),
+    });
+  });
+}
+
+async function mockarAtoPublicado(page: Page): Promise<void> {
+  await page.route(new RegExp(`/api/publicacoes/atos/${ATO_ID}$`), async (route: Route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: CORS_HEADERS,
+      body: JSON.stringify(ATO_DTO),
     });
   });
 }
@@ -327,14 +391,33 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await irAoPasso(page, 'Revisão e publicação', testInfo);
 
-    const medida = await page.evaluate(() => {
-      const documento = document.documentElement;
-      const scroller = document.querySelector('.wiz-content');
-      return {
-        documento: documento.scrollWidth - documento.clientWidth,
-        scroller: scroller instanceof HTMLElement ? scroller.scrollWidth - scroller.clientWidth : 0,
-      };
-    });
+    const medida = await medirTransbordo(page);
+
+    expect(medida.documento).toBeLessThanOrEqual(1);
+    expect(medida.scroller).toBeLessThanOrEqual(1);
+  });
+
+  test('em consulta, mostra o ato publicado como texto sem violar WCAG 2.1 AA nem transbordar', async ({
+    page,
+  }, testInfo) => {
+    await mockarAtoPublicado(page);
+    await mockarProcesso(page, { status: 'publicado', cronogramaFases: [FASE_DE_COLETA] });
+    await page.goto(`/processo-seletivo/${PROCESSO_ID}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await irAoPasso(page, 'Revisão e publicação', testInfo);
+
+    const ato = page.getByRole('definition').filter({ hasText: '001/2027' });
+    await expect(ato).toBeVisible();
+    await expect(page.getByText('Reitor da Unifesspa')).toBeVisible();
+    await expect(page.getByText('15/01/2027')).toBeVisible();
+    await expect(page.getByLabel('Número do ato (opcional)', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Publicar' })).toHaveCount(0);
+
+    const resultado = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultado)).toEqual([]);
+
+    const medida = await medirTransbordo(page);
 
     expect(medida.documento).toBeLessThanOrEqual(1);
     expect(medida.scroller).toBeLessThanOrEqual(1);
@@ -361,6 +444,18 @@ async function irAoPasso(page: Page, rotulo: string, testInfo: TestInfo): Promis
   await expect(dialogo).toBeVisible();
   await dialogo.getByRole('button', { name: rotulo }).click();
   await expect(dialogo).toBeHidden();
+}
+
+/** Quanto a página e o conteúdo do passo rolam na horizontal, em px. */
+async function medirTransbordo(page: Page): Promise<{ documento: number; scroller: number }> {
+  return page.evaluate(() => {
+    const documento = document.documentElement;
+    const scroller = document.querySelector('.wiz-content');
+    return {
+      documento: documento.scrollWidth - documento.clientWidth,
+      scroller: scroller instanceof HTMLElement ? scroller.scrollWidth - scroller.clientWidth : 0,
+    };
+  });
 }
 
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
