@@ -4,10 +4,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
+import {
+  apiOk,
+  apiResultInterceptor,
+  errorResult,
+  mockProblemDetails,
+} from '@uniplus/shared-core/http';
 import { SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
-import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
+import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 
 import { FaseDoCronograma, FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { PASSOS } from '../../processo-seletivo.data';
@@ -119,6 +124,28 @@ const SNAPSHOT_DTO = {
   configuracao: {},
 };
 
+const ATO_PUBLICADO: AtoNormativoDto = {
+  id: SNAPSHOT_DTO.atoId,
+  orgao: 'CEPS/Unifesspa',
+  serie: 'Edital de Abertura',
+  ano: 2026,
+  numero: '001/2026',
+  tipoCodigo: 'PORTARIA',
+  congelaConfiguracao: true,
+  efeitoIrreversivel: true,
+  unicoPorObjeto: false,
+  dataPublicacao: '2026-09-25',
+  documentoHash: 'hash-do-documento',
+  assinante: 'Reitor da Unifesspa',
+  registradoEm: '2026-09-25T12:00:00Z',
+  versaoInvocadaId: null,
+  versaoInvocadaHash: null,
+  atoRetificadoId: null,
+  motivoRetificacao: null,
+  avisos: null,
+  _links: null,
+};
+
 describe('RevisaoStepComponent', () => {
   let fixture: ComponentFixture<RevisaoStepComponent>;
   let componente: RevisaoStepComponent;
@@ -127,8 +154,20 @@ describe('RevisaoStepComponent', () => {
   /** Mutável por teste — a fase de coleta pode não ter `congelados` ainda, e é o catálogo quem resolve. */
   let fasePorId: ReturnType<typeof signal<ReadonlyMap<string, FaseCanonicaDto>>>;
 
+  /** Resposta do `GET …/atos/{id}`, trocada por teste; conta as chamadas para provar quando lê. */
+  let respostaDoAto: ReturnType<AtosApi['obter']>;
+  let atosLidos: string[];
+  const atosApi = {
+    obter: (id: string) => {
+      atosLidos.push(id);
+      return respostaDoAto;
+    },
+  };
+
   beforeEach(async () => {
     fasePorId = signal(new Map());
+    atosLidos = [];
+    respostaDoAto = of(apiOk(ATO_PUBLICADO, 200, new HttpHeaders()));
 
     await TestBed.configureTestingModule({
       imports: [RevisaoStepComponent],
@@ -142,6 +181,7 @@ describe('RevisaoStepComponent', () => {
           provide: TiposAtoApi,
           useValue: { listar: () => of(apiOk([TIPO_ATO_DTO], 200, new HttpHeaders())) },
         },
+        { provide: AtosApi, useValue: atosApi },
         // Stub minimalista: só o que RevisaoStepComponent lê do catálogo de
         // fases — evita puxar as sete APIs que o serviço real injeta.
         { provide: CatalogosDoCronogramaService, useValue: { fasePorId } },
@@ -840,6 +880,132 @@ describe('RevisaoStepComponent', () => {
       expect(daOferta).toContain('Grupo de área do ENEM congelado em toda oferta');
       expect(daOferta).toContain(`regrave o passo ${nomeDoPasso('Vagas')}`);
       expect(descricao('Distribuição de vagas')).toBe('Distribuição de vagas');
+    });
+  });
+
+  describe('processo já publicado', () => {
+    async function abrirPublicado(): Promise<void> {
+      store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
+      await criarProcesso();
+      await flushPreflightVerde();
+    }
+
+    function texto(): string {
+      return (fixture.nativeElement as HTMLElement).textContent ?? '';
+    }
+
+    it('lê o ato vigente pelo snapshot e o mostra como texto, sem o formulário', async () => {
+      await abrirPublicado();
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(atosLidos).toEqual([SNAPSHOT_DTO.atoId]);
+      const lista = (fixture.nativeElement as HTMLElement).querySelector(
+        'dl[aria-label="Ato publicado"]',
+      );
+      expect(lista?.textContent).toContain('001/2026');
+      expect(lista?.textContent).toContain('Portaria');
+      expect(lista?.textContent).toContain('25/09/2026');
+      expect(lista?.textContent).toContain('Reitor da Unifesspa');
+      expect((fixture.nativeElement as HTMLElement).querySelector('#rev-numero')).toBeNull();
+    });
+
+    it('mostra a falha da leitura com "Tentar novamente", que lê de novo', async () => {
+      respostaDoAto = of(errorResult(mockProblemDetails({ status: 503 })));
+      await abrirPublicado();
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(texto()).toContain('Não foi possível ler o ato publicado');
+
+      respostaDoAto = of(apiOk(ATO_PUBLICADO, 200, new HttpHeaders()));
+      const botoes = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'));
+      const botao = botoes.find((item) => item.textContent?.includes('Tentar novamente'));
+      botao?.click();
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await flushMicrotasks();
+      fixture.detectChanges();
+
+      expect(texto()).toContain('Reitor da Unifesspa');
+      expect(atosLidos).toHaveLength(2);
+    });
+
+    it('depois de publicar nesta sessão, lê o ato pelo snapshot já relido', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
+      await flushMicrotasks();
+      controller.expectOne(ROTA_DETALHE).flush(PROCESSO_DTO_MINIMO);
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await gravacao;
+      await flushMicrotasks();
+      fixture.detectChanges();
+      await flushMicrotasks();
+
+      controller.expectNone(ROTA_SNAPSHOT);
+      expect(atosLidos).toEqual([SNAPSHOT_DTO.atoId]);
+    });
+
+    // Cancelado e encerrado não dizem se houve publicação: um rascunho cancelado não tem
+    // snapshot vigente, e a transcrição que ele guarda precisa continuar na tela.
+    it.each([StatusProcesso.rascunho, StatusProcesso.cancelado, StatusProcesso.encerrado])(
+      'em %s não lê ato nenhum e mantém o formulário',
+      async (status) => {
+        store.remoteSnapshot.set({ ...PROCESSO_DTO_MINIMO, status } as never);
+        await criarProcesso();
+        await flushPreflightVerde();
+        fixture.detectChanges();
+
+        controller.expectNone(ROTA_SNAPSHOT);
+        expect(atosLidos).toEqual([]);
+        expect((fixture.nativeElement as HTMLElement).querySelector('#rev-numero')).not.toBeNull();
+      },
+    );
+  });
+
+  describe('período de inscrição', () => {
+    it('nomeia a fase e mostra a janela em data e hora locais', async () => {
+      const faseDeInscricao: FaseDoCronograma = {
+        faseCanonicaId: 'fase-inscricao-1',
+        codigo: 'INSCRICAO',
+        ordem: 1,
+        inicio: '2026-12-10T03:00:00+00:00',
+        fim: '2027-01-11T02:59:00+00:00',
+        produtos: [],
+        faseConcluinteCodigo: null,
+        emiteParecerIndividual: false,
+        bancasRequeridas: [],
+        regraRecurso: null,
+        congelados: null,
+      };
+      fasePorId.set(
+        new Map([
+          [
+            'fase-inscricao-1',
+            {
+              id: 'fase-inscricao-1',
+              codigo: 'INSCRICAO',
+              nome: 'Inscrição',
+              coletaInscricao: true,
+            } as FaseCanonicaDto,
+          ],
+        ]),
+      );
+      store.patchObjectSection('cronograma', { fases: [faseDeInscricao] });
+      await criarProcesso();
+      await flushPreflightVerde();
+      fixture.detectChanges();
+
+      const aviso = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(aviso).toContain('Inscrição');
+      expect(aviso).toContain('10/12/2026 às 00:00 até 10/01/2027 às 23:59');
+      expect(aviso).not.toContain('INSCRICAO');
+      expect(aviso).not.toContain('2026-12-10T');
     });
   });
 });

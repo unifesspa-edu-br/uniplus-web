@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { campoDoInstante, hojeNoFusoInstitucional, instanteDoCampo,
+import {
+  campoDoInstante,
+  hojeNoFusoInstitucional,
+  instanteDoCampo,
+  instanteLegivel,
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
 } from './fuso-institucional';
@@ -121,3 +125,14 @@ describe('o piso dos campos de data e hora', () => {
 
 });
 
+
+describe('instante para leitura', () => {
+  it('mostra o instante em UTC como data e hora do fuso institucional', () => {
+    expect(instanteLegivel('2026-12-10T03:00:00+00:00')).toBe('10/12/2026 às 00:00');
+    expect(instanteLegivel('2027-01-11T02:59:00+00:00')).toBe('10/01/2027 às 23:59');
+  });
+
+  it('devolve o valor como veio quando não é instante', () => {
+    expect(instanteLegivel('não é data')).toBe('não é data');
+  });
+});

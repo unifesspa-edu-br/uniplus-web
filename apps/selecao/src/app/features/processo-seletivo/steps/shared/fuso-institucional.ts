@@ -117,6 +117,18 @@ export function campoDoInstante(instanteIso: string): string {
   return `${partes.ano}-${partes.mes}-${partes.dia}T${segundos === '00' ? relogio : `${relogio}:${segundos}`}`;
 }
 
+/**
+ * Um instante para leitura, como `DD/MM/AAAA às HH:mm` no fuso institucional. Um
+ * instante inválido volta como veio, em vez de sumir da tela.
+ */
+export function instanteLegivel(instanteIso: string): string {
+  const instante = new Date(instanteIso);
+  if (Number.isNaN(instante.getTime())) return instanteIso;
+
+  const partes = partesNoFuso(instante);
+  return `${partes.dia}/${partes.mes}/${partes.ano} às ${partes.hora}:${partes.minuto}`;
+}
+
 function sufixoDoDeslocamento(minutos: number): string {
   if (minutos === 0) return 'Z';
   const sinal = minutos > 0 ? '+' : '-';
