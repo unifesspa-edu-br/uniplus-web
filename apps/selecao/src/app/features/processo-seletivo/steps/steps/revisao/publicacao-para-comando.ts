@@ -140,15 +140,34 @@ export function agruparPorDimensao(
 }
 
 /**
- * Rótulo legível de uma dimensão vinda do contrato — `DimensaoConformidade`
- * (`DimensaoConformidade.cs`) é `snake_case` (`taxa_inscricao`), não enum:
- * `taxa_inscricao` → "taxa inscricao". É transformação mecânica de grafia —
- * troca de separador e capitalização —, não um mapa código→rótulo escrito no
- * frontend: a exceção do §4 do plano é sobre vocabulário de NEGÓCIO, e aqui
- * não há tabela de tradução nenhuma, só a mesma palavra que o servidor já
- * mandou, sem `_`.
+ * Rótulo de cada dimensão conhecida de `DimensaoConformidade` (`DimensaoConformidade.cs`). O
+ * código chega em `snake_case` e sem acento (`taxa_inscricao`), e o painel é texto user-facing:
+ * trocar o separador não basta, porque "Taxa inscricao" sai sem preposição e sem acento.
+ *
+ * `Map`, e não objeto literal, pelo mesmo motivo do mapa de passos: o código vem do servidor, e
+ * um objeto responderia por chaves herdadas como `constructor`.
+ */
+const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>([
+  ['identificacao', 'Identificação'],
+  ['taxa_inscricao', 'Taxa de inscrição'],
+  ['distribuicao_vagas', 'Distribuição de vagas'],
+  ['cascata_remanejamento', 'Cascata de remanejamento'],
+  ['cronograma', 'Cronograma'],
+  ['exigencias_documentais', 'Exigências documentais'],
+  ['contagem_de_prazos', 'Contagem de prazos'],
+  ['classificacao', 'Classificação'],
+  ['atendimento_especializado', 'Atendimento especializado'],
+  ['coleta_de_fatos', 'Coleta de fatos'],
+]);
+
+/**
+ * Rótulo legível de uma dimensão vinda do contrato. Dimensão que este cliente ainda não conhece
+ * — acrescentada no servidor antes de chegar aqui — cai na grafia do próprio código, sem `_`, em
+ * vez de sumir do painel.
  */
 export function rotuloDaDimensao(dimensao: string): string {
+  const conhecido = ROTULO_POR_DIMENSAO.get(dimensao);
+  if (conhecido !== undefined) return conhecido;
   const comEspacos = dimensao.replace(/_/g, ' ').trim();
   return comEspacos.charAt(0).toUpperCase() + comEspacos.slice(1);
 }
@@ -173,6 +192,8 @@ export function rotuloDaDimensao(dimensao: string): string {
  * passo que não existe.
  */
 const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, RotuloDePasso>([
+  // O identificador legível é declarado no passo de identificação, junto do nome.
+  ['identificacao', 'Identificação'],
   ['taxa_inscricao', 'Pagamento'],
   ['distribuicao_vagas', 'Vagas'],
   // A cascata é seção do próprio passo Vagas — não um passo à parte.

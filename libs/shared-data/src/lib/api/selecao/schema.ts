@@ -1832,7 +1832,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description O identificador legível informado já é usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3396,6 +3396,134 @@ export interface paths {
                     };
                 };
                 /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{id}/identificador-legivel": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DefinirIdentificadorLegivelRequest"];
+                    readonly "text/json": components["schemas"]["DefinirIdentificadorLegivelRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirIdentificadorLegivelRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description O identificador legível informado já é usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -5978,6 +6106,7 @@ export interface components {
             readonly localidadeCodigoIbge: null | string;
             readonly localidadeNome: null | string;
             readonly localidadeUf: null | string;
+            readonly identificadorLegivel?: null | string;
         };
         readonly CriterioDesempateDto: {
             /** Format: uuid */
@@ -6060,6 +6189,9 @@ export interface components {
         readonly DefinirFormularioRequest: {
             readonly titulo: null | string;
             readonly termoAceiteTexto: null | string;
+        };
+        readonly DefinirIdentificadorLegivelRequest: {
+            readonly identificadorLegivel: null | string;
         };
         readonly DefinirLocalidadeRequest: {
             readonly codigoIbge: null | string;
@@ -6555,6 +6687,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly nome: string;
+            readonly identificadorLegivel: null | string;
             readonly tipoProcesso: components["schemas"]["TipoProcessoSnapshotDto"];
             readonly status: components["schemas"]["StatusProcesso"];
             readonly origemCandidatos: components["schemas"]["OrigemCandidatos"];

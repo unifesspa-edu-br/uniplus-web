@@ -26,6 +26,7 @@ function draftVazio(): WizardDraft {
     pagamento: { cobra: null, valor: '', fundamentos: [] },
     identificacao: {
       nome: '',
+      identificadorLegivel: '',
       unidadeAdministradoraId: '',
       origemCandidatos: '',
       localidade: null,
@@ -269,9 +270,28 @@ describe('agruparPorDimensao', () => {
 });
 
 describe('rotuloDaDimensao', () => {
-  it('troca sublinhado por espaço e capitaliza só a primeira letra — sem tabela de tradução', () => {
-    expect(rotuloDaDimensao('taxa_inscricao')).toBe('Taxa inscricao');
-    expect(rotuloDaDimensao('atendimento_especializado')).toBe('Atendimento especializado');
+  it.each([
+    ['identificacao', 'Identificação'],
+    ['taxa_inscricao', 'Taxa de inscrição'],
+    ['distribuicao_vagas', 'Distribuição de vagas'],
+    ['cascata_remanejamento', 'Cascata de remanejamento'],
+    ['cronograma', 'Cronograma'],
+    ['exigencias_documentais', 'Exigências documentais'],
+    ['contagem_de_prazos', 'Contagem de prazos'],
+    ['classificacao', 'Classificação'],
+    ['atendimento_especializado', 'Atendimento especializado'],
+    ['coleta_de_fatos', 'Coleta de fatos'],
+  ])('nomeia a dimensão %s em pt-BR, com acento', (dimensao, rotulo) => {
+    expect(rotuloDaDimensao(dimensao)).toBe(rotulo);
+  });
+
+  it('mostra a dimensão ainda desconhecida pela grafia do código, sem sublinhado', () => {
+    expect(rotuloDaDimensao('dimensao_nova')).toBe('Dimensao nova');
+  });
+
+  /** O código vem do servidor: uma chave herdada de objeto não pode passar por dimensão conhecida. */
+  it('não trata como conhecida uma dimensão que coincide com propriedade herdada', () => {
+    expect(rotuloDaDimensao('constructor')).toBe('Constructor');
   });
 });
 
@@ -489,6 +509,14 @@ describe('destino de cada pendência no painel', () => {
       'Taxa de inscrição',
     );
     expect(nomeDoPassoDoItem('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma e etapas');
+  });
+
+  /** Sem destino, a pendência do identificador apareceria na revisão sem botão que a resolva. */
+  it('leva o identificador legível ausente ao passo de identificação', () => {
+    expect(pendente('identificador_legivel_nao_declarado', 'identificacao').passo?.nome).toBe(
+      'Identificação',
+    );
+    expect(orientacaoDoItem('identificador_legivel_nao_declarado', 'identificacao')).toBeNull();
   });
 
   /** O rótulo é tipado; um que escape do tipo é defeito de programação e não vira nome vazio. */

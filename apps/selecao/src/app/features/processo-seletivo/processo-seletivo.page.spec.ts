@@ -1123,6 +1123,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
       unidadeAdministradoraId: 'unidade-1',
       origemCandidatos: 'inscricaoPropria',
       localidade: MARABA,
+      identificadorLegivel: 'vestibular-2027',
     });
     store.goTo(1);
     fixture.detectChanges();
@@ -1271,6 +1272,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
       unidadeAdministradoraId: 'unidade-1',
       origemCandidatos: 'inscricaoPropria',
       localidade: MARABA,
+      identificadorLegivel: 'vestibular-2027',
     });
     store.goTo(1);
     fixture.detectChanges();
@@ -1334,6 +1336,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
       unidadeAdministradoraId: 'unidade-1',
       origemCandidatos: 'inscricaoPropria',
       localidade: MARABA,
+      identificadorLegivel: 'vestibular-2027',
     });
     store.goTo(1);
     fixture.detectChanges();

@@ -624,6 +624,12 @@ export interface WizardDraft {
   identificacao: {
     nome: string;
     /**
+     * Endereço público do certame, escolhido por quem cadastra — não se deriva do
+     * nome. Opcional na criação e obrigatório para publicar. Enquanto o processo é
+     * rascunho pode ser trocado; depois de publicado com valor, não muda mais.
+     */
+    identificadorLegivel: string;
+    /**
      * Unidade que administra o certame, escolhida no catálogo de Organização
      * Institucional. Obrigatória na criação e imutável depois dela.
      */

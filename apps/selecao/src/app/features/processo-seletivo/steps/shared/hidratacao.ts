@@ -55,6 +55,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
+      identificadorLegivel: dto.identificadorLegivel ?? '',
       unidadeAdministradoraId: dto.unidadeAdministradora.origemId,
       origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos),
       localidade: {
