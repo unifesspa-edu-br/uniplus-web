@@ -210,6 +210,42 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 
 .textarea { min-height: 96px; resize: vertical; line-height: var(--leading-normal); }
 
+/* ============================================================================
+ * VALOR EM CONSULTA — o campo lido, não preenchido (<ui-valor-em-consulta>)
+ * O rótulo repete o do campo em edição, em cor secundária; o valor fica no texto
+ * primário e quebra linha em vez de ser cortado pela largura do campo.
+ * ========================================================================== */
+.valor-em-consulta { display: block; min-width: 0; }
+.valor-em-consulta__par {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+.valor-em-consulta__rotulo {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+.valor-em-consulta__valor {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.valor-em-consulta__lista {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+  white-space: normal;
+}
+.valor-em-consulta__vazio { color: var(--text-secondary); font-style: italic; }
+.valor-em-consulta > .field__hint { margin: var(--space-1) 0 0; }
+
 .textarea[aria-invalid="true"], .field.is-error .textarea {
   border-color: var(--color-danger-500);
   background: var(--color-danger-50);
