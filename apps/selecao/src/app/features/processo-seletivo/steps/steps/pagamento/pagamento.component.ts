@@ -18,12 +18,17 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { analisarValorEmReais, FORMATO_VALOR_EM_REAIS } from '../../shared/valor-em-reais';
+import {
+  analisarValorEmReais,
+  FORMATO_VALOR_EM_REAIS,
+  formatarValorEmReais,
+} from '../../shared/valor-em-reais';
 
 /**
  * Declaração de taxa de inscrição e dos fundamentos de isenção que o processo
@@ -36,7 +41,7 @@ import { analisarValorEmReais, FORMATO_VALOR_EM_REAIS } from '../../shared/valor
 @Component({
   selector: 'sel-step-pagamento',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './pagamento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(PagamentoStepComponent)],
@@ -70,6 +75,34 @@ export class PagamentoStepComponent {
 
   /** O hint do campo e a mensagem de recusa dizem o mesmo formato. */
   protected readonly formatoEsperado = FORMATO_VALOR_EM_REAIS;
+
+  /** A escolha tem o mesmo texto no rádio da edição e na leitura da consulta. */
+  protected readonly rotulosDeCobranca = {
+    cobra: 'Este processo cobra taxa',
+    gratuito: 'Este processo é gratuito',
+  } as const;
+
+  readonly declaracaoDeCobranca = computed(() => {
+    const cobra = this.cobra();
+    if (cobra === null) return null;
+    return cobra ? this.rotulosDeCobranca.cobra : this.rotulosDeCobranca.gratuito;
+  });
+
+  /** O valor gravado em reais; texto que não é valor aparece como foi escrito. */
+  readonly valorDaTaxa = computed(() => {
+    const texto = this.store.draft().pagamento.valor;
+    const valor = analisarValorEmReais(texto);
+    return valor === null ? texto : `R$ ${formatarValorEmReais(valor)}`;
+  });
+
+  /**
+   * O nome de cada fundamento reconhecido. Sem o catálogo carregado, o código gravado
+   * aparece no lugar, para a consulta não esconder o que o processo declara.
+   */
+  readonly nomesDosFundamentosSelecionados = computed(() => {
+    const nomePorCodigo = new Map(this.fundamentos().map((item) => [item.codigo, item.nome]));
+    return this.selecionados().map((codigo) => nomePorCodigo.get(codigo) ?? codigo);
+  });
 
   /** Fundamentos escolhidos, na ordem do catálogo. */
   readonly selecionados = computed(() => this.store.draft().pagamento.fundamentos);

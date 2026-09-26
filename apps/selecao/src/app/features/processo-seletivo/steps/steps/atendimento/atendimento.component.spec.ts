@@ -312,6 +312,31 @@ describe('AtendimentoStepComponent', () => {
     controller.expectNone(ROTA_ATENDIMENTO);
   });
 
+  /** Em consulta a oferta gravada aparece como texto, com o nome que o rascunho guarda. */
+  it('em consulta, lista a oferta gravada como texto, sem caixa de seleção', () => {
+    store.patchObjectSection('atendimento', {
+      condicoes: [{ id: PCD_ID, codigo: 'PCD', nome: 'Pessoa com deficiência' }],
+      tiposDeficiencia: [{ id: 'id-antigo', nome: 'Tipo já inativado' }],
+      recursos: [],
+    });
+    store.remoteSnapshot.set({ status: 'publicado' } as never);
+    detectar();
+
+    expect(elemento.querySelector('input, button')).toBeNull();
+    const lida = (titulo: string): string[] =>
+      Array.from(
+        elemento.querySelector(`[aria-labelledby="${titulo}"]`)?.querySelectorAll('li') ?? [],
+        (li) => li.textContent?.trim() ?? '',
+      );
+    expect(lida('atend-secao-condicoes')).toEqual(['Pessoa com deficiência']);
+    // O processo publicou o tipo; o catálogo tê-lo inativado depois não muda a leitura.
+    expect(lida('atend-secao-tipos')).toEqual(['Tipo já inativado']);
+    expect(
+      elemento.querySelector('[aria-labelledby="atend-secao-recursos"]')?.textContent?.trim(),
+    ).toBe('Nenhum recurso de acessibilidade oferecido');
+    expect(elemento.textContent).not.toContain('Inativo no cadastro');
+  });
+
   it('mantém referência inativa visível e permite removê-la', () => {
     // Simula hidratação de um recurso que já saiu do cadastro ativo.
     store.patchObjectSection('atendimento', {

@@ -107,6 +107,14 @@ describe('IdentificacaoStepComponent', () => {
     });
   }
 
+  /** O valor que a consulta mostra sob o rótulo, ou `null` se o rótulo não está na tela. */
+  function valorEmConsulta(rotulo: string): string | null {
+    const par = Array.from(host.querySelectorAll('dl')).find(
+      (dl) => dl.querySelector('dt')?.textContent?.trim() === rotulo,
+    );
+    return par?.querySelector('dd')?.textContent?.trim() ?? null;
+  }
+
   /** O processo já criado, com o detalhe lido do servidor só no que o passo consulta. */
   function lerDetalhe(status: StatusProcesso, identificadorLegivel: string | null): void {
     store.processoSeletivoId.set(PROCESSO_ID);
@@ -715,13 +723,13 @@ describe('IdentificacaoStepComponent', () => {
     });
 
     /** Publicado, o campo não muda por aqui — nem exige o que o operador não pode corrigir. */
-    it('trava o campo e não o confere com o processo publicado', () => {
-      lerDetalhe(StatusProcesso.publicado, 'ps-2027');
-      detectar();
-      store.patchObjectSection('identificacao', { identificadorLegivel: '' });
+    it('lê o identificador como texto e não o confere com o processo publicado', () => {
+      // Publicado sem identificador: a leitura diz que falta, e a validação não o exige.
+      lerDetalhe(StatusProcesso.publicado, null);
       detectar();
 
-      expect((host.querySelector('#f-identificador') as HTMLInputElement).disabled).toBe(true);
+      expect(host.querySelector('#f-identificador')).toBeNull();
+      expect(valorEmConsulta('Identificador legível')).toBe('Não informado');
       expect(componente.validate().messages ?? []).not.toContain(
         'Informe o identificador legível do processo seletivo.',
       );
@@ -737,6 +745,23 @@ describe('IdentificacaoStepComponent', () => {
       expect(hint?.textContent).toMatch(/endereço público do certame/i);
       expect(hint?.textContent).toMatch(/depois de publicado, não muda mais/i);
     });
+  });
+
+  it('em consulta, lê o cadastro como texto, com o rótulo de cada escolha', () => {
+    preencherCamposDoComando();
+    lerDetalhe(StatusProcesso.publicado, 'ps-2027');
+    detectar();
+
+    expect(host.querySelector('input, select, textarea, button')).toBeNull();
+    expect(valorEmConsulta('Nome do processo seletivo')).toBe('Processo Seletivo 2027');
+    expect(valorEmConsulta('Identificador legível')).toBe('ps-2027');
+    expect(valorEmConsulta('Unidade administradora')).toBe(
+      unidadeSeed.sigla + ' — ' + unidadeSeed.nome,
+    );
+    expect(valorEmConsulta('Município que rege os prazos')).toBe(MARABA.nome + ' — ' + MARABA.uf);
+    expect(valorEmConsulta('Origem dos candidatos')).toBe('Inscrição neste sistema');
+    // O aviso de campos congelados fala a quem edita; em consulta não há o que congelar.
+    expect(host.querySelector('.alert')).toBeNull();
   });
 
   it('orienta o passo sem citar PDF, requisito interno ou LGPD', () => {

@@ -1,174 +1,206 @@
 <p class="step-subtitle">
   Informe os dados de identificação do Processo Seletivo.
 </p>
-@if (camposDoComandoBloqueados()) {
+@if (camposDoComandoBloqueados() && !store.emConsulta()) {
   <p class="alert alert--info" role="status">
     O cadastro inicial já foi criado no sistema. Nome, tipo do processo, unidade administradora,
     município e origem dos candidatos não podem mais ser alterados por aqui.
   </p>
 }
 <div class="step-card">
-  <form class="form-grid" [formGroup]="form">
-    <div class="form-field form-grid__full">
-      <label class="label" for="f-nome">Nome do processo seletivo</label>
-      <input
-        class="input"
-        id="f-nome"
-        placeholder="Processo Seletivo Seriado"
-        formControlName="nome"
-        [attr.aria-invalid]="invalidFields().has('nome') || null"
-        [class.is-invalid]="invalidFields().has('nome')"
+  @if (store.emConsulta()) {
+    <div class="form-grid">
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Nome do processo seletivo"
+        [valor]="leitura().nome"
+      />
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Identificador legível"
+        dica="É o endereço público do certame no portal."
+        [valor]="leitura().identificadorLegivel"
+      />
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Unidade administradora"
+        [valor]="leitura().unidade"
+      />
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Município que rege os prazos"
+        dica="Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso."
+        [valor]="leitura().municipio"
+      />
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Origem dos candidatos"
+        [valor]="leitura().origem"
       />
     </div>
-    <div class="form-field form-grid__full">
-      <label class="label" for="f-identificador">Identificador legível</label>
-      <input
-        class="input"
-        id="f-identificador"
-        autocomplete="off"
-        spellcheck="false"
-        placeholder="medicina-2027"
-        [formControl]="identificadorLegivel"
-        [attr.aria-describedby]="
-          erroDoIdentificador() ? 'f-identificador-erro f-identificador-hint' : 'f-identificador-hint'
-        "
-        [attr.aria-invalid]="invalidFields().has('identificadorLegivel') || null"
-        [class.is-invalid]="invalidFields().has('identificadorLegivel')"
-      />
-      @if (erroDoIdentificador(); as erro) {
-        <p class="field__erro" id="f-identificador-erro" role="alert">{{ erro }}</p>
-      }
-      <p class="field__hint" id="f-identificador-hint">
-        É o endereço público do certame no portal. Use letras minúsculas sem acento, dígitos e
-        hífens, de 3 a 64 caracteres (ex.: medicina-2027). Pode ser trocado enquanto o processo for
-        rascunho; depois de publicado, não muda mais.
-      </p>
-    </div>
-    <div class="form-field form-grid__full">
-      <label class="label" for="f-unidade">Unidade administradora</label>
-      @if (unidadesErro(); as erro) {
-        <div class="field__erro" role="alert">
-          <p>{{ erro }}</p>
-          <button class="btn btn--tertiary" type="button" (click)="carregarUnidades()">
-            Tentar novamente
-          </button>
-        </div>
-      }
-      <select
-        class="input"
-        id="f-unidade"
-        aria-describedby="f-unidade-hint"
-        formControlName="unidadeAdministradoraId"
-        [attr.aria-busy]="unidadesCarregando() || null"
-        [attr.aria-invalid]="invalidFields().has('unidadeAdministradoraId') || null"
-        [class.is-invalid]="invalidFields().has('unidadeAdministradoraId')"
-      >
-        <option value="">{{ unidadesCarregando() ? 'Carregando…' : 'Selecione' }}</option>
-        @for (unidade of unidades(); track unidade.id) {
-          <option [value]="unidade.id">{{ unidade.rotulo }}</option>
+  } @else {
+    <form class="form-grid" [formGroup]="form">
+      <div class="form-field form-grid__full">
+        <label class="label" for="f-nome">Nome do processo seletivo</label>
+        <input
+          class="input"
+          id="f-nome"
+          placeholder="Processo Seletivo Seriado"
+          formControlName="nome"
+          [attr.aria-invalid]="invalidFields().has('nome') || null"
+          [class.is-invalid]="invalidFields().has('nome')"
+        />
+      </div>
+      <div class="form-field form-grid__full">
+        <label class="label" for="f-identificador">Identificador legível</label>
+        <input
+          class="input"
+          id="f-identificador"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="medicina-2027"
+          [formControl]="identificadorLegivel"
+          [attr.aria-describedby]="
+            erroDoIdentificador() ? 'f-identificador-erro f-identificador-hint' : 'f-identificador-hint'
+          "
+          [attr.aria-invalid]="invalidFields().has('identificadorLegivel') || null"
+          [class.is-invalid]="invalidFields().has('identificadorLegivel')"
+        />
+        @if (erroDoIdentificador(); as erro) {
+          <p class="field__erro" id="f-identificador-erro" role="alert">{{ erro }}</p>
         }
-      </select>
-      <p class="field__hint" id="f-unidade-hint">
-        Unidade responsável pela administração do certame. O município que rege os prazos é
-        declarado abaixo, e não decorre dela.
-      </p>
-    </div>
-    <div class="form-field form-grid__full">
-      <label class="label" for="f-localidade">Município que rege os prazos</label>
-      @if (store.draft().identificacao.localidade; as localidade) {
-        @if (camposDoComandoBloqueados()) {
-          <input
-            class="input"
-            id="f-localidade"
-            disabled
-            aria-describedby="f-localidade-hint"
-            [value]="localidade.nome + ' — ' + localidade.uf"
-          />
-        } @else {
-          <div class="input-group">
-            <input
-              class="input"
-              id="f-localidade"
-              readonly
-              aria-describedby="f-localidade-hint"
-              [value]="localidade.nome + ' — ' + localidade.uf"
-            />
-            <button class="btn btn--tertiary" type="button" (click)="limparLocalidade()">
-              Trocar município
+        <p class="field__hint" id="f-identificador-hint">
+          É o endereço público do certame no portal. Use letras minúsculas sem acento, dígitos e
+          hífens, de 3 a 64 caracteres (ex.: medicina-2027). Pode ser trocado enquanto o processo for
+          rascunho; depois de publicado, não muda mais.
+        </p>
+      </div>
+      <div class="form-field form-grid__full">
+        <label class="label" for="f-unidade">Unidade administradora</label>
+        @if (unidadesErro(); as erro) {
+          <div class="field__erro" role="alert">
+            <p>{{ erro }}</p>
+            <button class="btn btn--tertiary" type="button" (click)="carregarUnidades()">
+              Tentar novamente
             </button>
           </div>
         }
-      } @else {
-        <input
+        <select
           class="input"
-          id="f-localidade"
-          type="search"
-          autocomplete="off"
-          placeholder="Digite ao menos 3 letras do município"
-          aria-describedby="f-localidade-hint"
-          [attr.aria-busy]="municipiosCarregando() || null"
-          [attr.aria-invalid]="invalidFields().has('localidade') || null"
-          [class.is-invalid]="invalidFields().has('localidade')"
-          [disabled]="camposDoComandoBloqueados()"
-          [value]="buscaMunicipio()"
-          (input)="buscarMunicipios($any($event.target).value)"
-        />
-        @if (municipiosCarregando()) {
-          <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
+          id="f-unidade"
+          aria-describedby="f-unidade-hint"
+          formControlName="unidadeAdministradoraId"
+          [attr.aria-busy]="unidadesCarregando() || null"
+          [attr.aria-invalid]="invalidFields().has('unidadeAdministradoraId') || null"
+          [class.is-invalid]="invalidFields().has('unidadeAdministradoraId')"
+        >
+          <option value="">{{ unidadesCarregando() ? 'Carregando…' : 'Selecione' }}</option>
+          @for (unidade of unidades(); track unidade.id) {
+            <option [value]="unidade.id">{{ unidade.rotulo }}</option>
+          }
+        </select>
+        <p class="field__hint" id="f-unidade-hint">
+          Unidade responsável pela administração do certame. O município que rege os prazos é
+          declarado abaixo, e não decorre dela.
+        </p>
+      </div>
+      <div class="form-field form-grid__full">
+        <label class="label" for="f-localidade">Município que rege os prazos</label>
+        @if (store.draft().identificacao.localidade; as localidade) {
+          @if (camposDoComandoBloqueados()) {
+            <input
+              class="input"
+              id="f-localidade"
+              disabled
+              aria-describedby="f-localidade-hint"
+              [value]="localidade.nome + ' — ' + localidade.uf"
+            />
+          } @else {
+            <div class="input-group">
+              <input
+                class="input"
+                id="f-localidade"
+                readonly
+                aria-describedby="f-localidade-hint"
+                [value]="localidade.nome + ' — ' + localidade.uf"
+              />
+              <button class="btn btn--tertiary" type="button" (click)="limparLocalidade()">
+                Trocar município
+              </button>
+            </div>
+          }
+        } @else {
+          <input
+            class="input"
+            id="f-localidade"
+            type="search"
+            autocomplete="off"
+            placeholder="Digite ao menos 3 letras do município"
+            aria-describedby="f-localidade-hint"
+            [attr.aria-busy]="municipiosCarregando() || null"
+            [attr.aria-invalid]="invalidFields().has('localidade') || null"
+            [class.is-invalid]="invalidFields().has('localidade')"
+            [disabled]="camposDoComandoBloqueados()"
+            [value]="buscaMunicipio()"
+            (input)="buscarMunicipios($any($event.target).value)"
+          />
+          @if (municipiosCarregando()) {
+            <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
+          }
+          @if (municipiosErro(); as erro) {
+            <div class="field__erro" role="alert">
+              <p>{{ erro }}</p>
+            </div>
+          }
+          @if (municipios().length > 0) {
+            <ul class="localidade-opcoes" aria-label="Municípios encontrados">
+              @for (municipio of municipios(); track municipio.codigoIbge) {
+                <li>
+                  <button
+                    class="btn btn--tertiary"
+                    type="button"
+                    (click)="
+                      selecionarLocalidade({
+                        codigoIbge: municipio.codigoIbge,
+                        nome: municipio.nome,
+                        uf: municipio.uf,
+                      })
+                    "
+                  >
+                    {{ municipio.nome }} — {{ municipio.uf }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         }
-        @if (municipiosErro(); as erro) {
-          <div class="field__erro" role="alert">
-            <p>{{ erro }}</p>
-          </div>
-        }
-        @if (municipios().length > 0) {
-          <ul class="localidade-opcoes" aria-label="Municípios encontrados">
-            @for (municipio of municipios(); track municipio.codigoIbge) {
-              <li>
-                <button
-                  class="btn btn--tertiary"
-                  type="button"
-                  (click)="
-                    selecionarLocalidade({
-                      codigoIbge: municipio.codigoIbge,
-                      nome: municipio.nome,
-                      uf: municipio.uf,
-                    })
-                  "
-                >
-                  {{ municipio.nome }} — {{ municipio.uf }}
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      }
-      <p class="field__hint" id="f-localidade-hint">
-        Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.
-        Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode correr
-        sob o calendário de outro município.
-      </p>
-    </div>
-    <div class="form-field form-grid__full">
-      <label class="label" for="f-origem">Origem dos candidatos</label>
-      <select
-        class="input"
-        id="f-origem"
-        aria-describedby="f-origem-hint"
-        formControlName="origemCandidatos"
-        [attr.aria-invalid]="invalidFields().has('origemCandidatos') || null"
-        [class.is-invalid]="invalidFields().has('origemCandidatos')"
-      >
-        <option value="">Selecione</option>
-        @for (origem of origens; track origem.value) {
-          <option [value]="origem.value">{{ origem.label }}</option>
-        }
-      </select>
-      <p class="field__hint" id="f-origem-hint">
-        <strong>Inscrição neste sistema:</strong> o candidato se inscreve no Uni+, e o cronograma
-        precisa de ao menos uma fase de inscrição. <strong>Importação externa:</strong> os
-        candidatos vêm de outra base, como o SiSU/MEC.
-      </p>
-    </div>
-  </form>
+        <p class="field__hint" id="f-localidade-hint">
+          Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.
+          Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode correr
+          sob o calendário de outro município.
+        </p>
+      </div>
+      <div class="form-field form-grid__full">
+        <label class="label" for="f-origem">Origem dos candidatos</label>
+        <select
+          class="input"
+          id="f-origem"
+          aria-describedby="f-origem-hint"
+          formControlName="origemCandidatos"
+          [attr.aria-invalid]="invalidFields().has('origemCandidatos') || null"
+          [class.is-invalid]="invalidFields().has('origemCandidatos')"
+        >
+          <option value="">Selecione</option>
+          @for (origem of origens; track origem.value) {
+            <option [value]="origem.value">{{ origem.label }}</option>
+          }
+        </select>
+        <p class="field__hint" id="f-origem-hint">
+          <strong>Inscrição neste sistema:</strong> o candidato se inscreve no Uni+, e o cronograma
+          precisa de ao menos uma fase de inscrição. <strong>Importação externa:</strong> os
+          candidatos vêm de outra base, como o SiSU/MEC.
+        </p>
+      </div>
+    </form>
+  }
 </div>

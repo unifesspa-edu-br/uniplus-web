@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import {
   CondicaoAtendimentoDto,
   RecursoAcessibilidadeDto,
@@ -63,6 +64,7 @@ function mensagemDeInativos(
 @Component({
   selector: 'sel-step-atendimento',
   standalone: true,
+  imports: [ValorEmConsultaComponent],
   templateUrl: './atendimento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CatalogosDeAtendimentoService, provePassoDoWizard(AtendimentoStepComponent)],
@@ -88,6 +90,18 @@ export class AtendimentoStepComponent {
   }
 
   readonly atendimento = computed(() => this.store.draft().atendimento);
+
+  /*
+   * Em consulta, a oferta lida é a gravada: o rascunho guarda o nome de cada referência, e o
+   * catálogo vivo, que pode ter inativado alguma, não muda o que o processo publicou.
+   */
+  readonly nomesDasCondicoes = computed(() => this.atendimento().condicoes.map((item) => item.nome));
+
+  readonly nomesDosTiposDeDeficiencia = computed(() =>
+    this.atendimento().tiposDeficiencia.map((item) => item.nome),
+  );
+
+  readonly nomesDosRecursos = computed(() => this.atendimento().recursos.map((item) => item.nome));
 
   /**
    * A condição PcD está entre as selecionadas — é o que libera tipos de
