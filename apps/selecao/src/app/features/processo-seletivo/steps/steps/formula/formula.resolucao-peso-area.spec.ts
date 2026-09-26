@@ -187,6 +187,14 @@ function botao(m: Montagem, rotulo: string): HTMLButtonElement | undefined {
   );
 }
 
+/** A resolução que a consulta lê, sob o rótulo do campo. */
+function resolucaoEmConsulta(m: Montagem): string | undefined {
+  return Array.from(m.el.querySelectorAll('dl'))
+    .find((par) => texto(par.querySelector('dt')) === 'Resolução de Peso por Área')
+    ?.querySelector('dd')
+    ?.textContent?.trim();
+}
+
 function texto(el: Element | null): string {
   return (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
@@ -726,22 +734,20 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(m.componente.catalogos.resolucoesPesoAreaEnem()).toEqual([]);
       expect(m.componente.catalogos.pesosLidosNaMarca()).toBe(-1);
       expect(pedidosDoCadastro(m)).toHaveLength(0);
-      const opcoes = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
-      expect(opcoes).toEqual(['— escolher —', OUTRA_RESOLUCAO]);
+      expect(resolucaoEmConsulta(m)).toBe(OUTRA_RESOLUCAO);
     });
   });
 
   describe('processo que não aceita edição', () => {
-    it('não lê o cadastro, trava o seletor e o checkbox, e mostra a cópia congelada', async () => {
+    it('não lê o cadastro, lê a resolução como texto e mostra a cópia congelada', async () => {
       const m = await montar({
         antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO, StatusProcesso.publicado),
       });
       responderAreas(m);
 
       expect(pedidosDoCadastro(m)).toHaveLength(0);
-      expect(seletor(m).disabled).toBe(true);
-      expect(m.el.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(true);
-      expect(botao(m, 'Atualizar lista')).toBeUndefined();
+      expect(m.el.querySelector('select, input, button')).toBeNull();
+      expect(resolucaoEmConsulta(m)).toBe(RESOLUCAO);
       expect(texto(m.el.querySelector('caption'))).toContain('congelado no processo');
       expect(texto(m.el.querySelector('tbody tr td'))).toBe('Peso 9 corte 700');
     });

@@ -9,6 +9,8 @@ export interface RegraEscolhivel {
   readonly codigo: string;
   readonly versao: string;
   readonly baseLegal: string | null;
+  /** O texto da regra, o mesmo na opção do seletor e na leitura em consulta. */
+  readonly rotulo: string;
   /** O `value` da opção: `codigo|versao`, a forma que `lerChaveDaRegra` desfaz. */
   readonly chave: string;
   /**
@@ -52,6 +54,7 @@ export function regrasEscolhiveis(
     codigo,
     versao,
     baseLegal,
+    rotulo: `${codigo} — ${baseLegal ?? 'base legal indisponível'}`,
     chave: chaveDaRegra(codigo, versao),
     selecionada: codigo === codigoSelecionado && versao === versaoSelecionada,
   });
@@ -60,4 +63,9 @@ export function regrasEscolhiveis(
   if (codigoSelecionado === '' || opcoes.some((regra) => regra.selecionada)) return opcoes;
 
   return [...opcoes, escolhivel(codigoSelecionado, versaoSelecionada, null)];
+}
+
+/** O texto da regra escolhida entre as opções, ou `null` quando nenhuma foi escolhida. */
+export function rotuloDaRegraEscolhida(opcoes: readonly RegraEscolhivel[]): string | null {
+  return opcoes.find((opcao) => opcao.selecionada)?.rotulo ?? null;
 }

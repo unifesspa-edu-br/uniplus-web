@@ -258,6 +258,17 @@ function areasNaTela(m: Montagem, indice: number): readonly string[] {
   ).map((item) => item.querySelector('.desempate-area__nome')?.textContent?.trim() ?? '');
 }
 
+/** As áreas que a consulta lê no critério, na lista numerada da ordem gravada. */
+function areasEmConsulta(m: Montagem, indice: number): readonly string[] {
+  const leitura = Array.from(m.el.querySelectorAll('.valor-em-consulta')).filter(
+    (valor) => valor.querySelector('dt')?.textContent?.trim() === 'Ordem das áreas do ENEM',
+  )[indice];
+  return Array.from(
+    leitura?.querySelectorAll('ol > li') ?? [],
+    (item) => item.textContent?.trim() ?? '',
+  );
+}
+
 function textoDaTela(m: Montagem): string {
   return m.el.textContent?.replace(/\s+/g, ' ') ?? '';
 }
@@ -415,7 +426,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       });
 
       expect(textoDaTela(m)).not.toContain('Carregando as áreas');
-      expect(areasNaTela(m, 0)).toEqual(['1ª Redação']);
+      expect(areasEmConsulta(m, 0)).toEqual(['Redação']);
     });
 
     it('uma tecla em outro passo não recalcula o quadro', async () => {
@@ -1259,11 +1270,11 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
     });
   });
 
-  it('só para consulta, mostra as áreas gravadas pelo rótulo da cópia, sem ler o cadastro nem deixar editar', async () => {
+  it('só para consulta, lê as áreas gravadas pelo rótulo da cópia, sem ler o cadastro nem oferecer edição', async () => {
     const m = await montar({
       antesDeMontar: (store) => {
         store.patchSection('desempate', [criterio(['LINGUAGENS'])]);
-        // Com Matemática ainda por citar, só o modo consulta trava o seletor e o botão.
+        // Com Matemática ainda por citar, só o modo consulta deixa de oferecer o seletor e o botão.
         classificacaoGravada(
           RESOLUCAO,
           QUADRO_CONGELADO.map((grupo) => ({
@@ -1277,11 +1288,8 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       semResponderPesos: true,
     });
 
-    expect(areasNaTela(m, 0)).toEqual(['1ª Linguagens']);
-    expect(opcoesDoSeletor(m, 0)).toEqual(['Matemática']);
-    expect(botao(m, 'desemp-area-remover-0-0').disabled).toBe(true);
-    expect(seletor(m, 0)?.disabled).toBe(true);
-    expect(botao(m, 'desemp-area-acrescentar-0').disabled).toBe(true);
+    expect(areasEmConsulta(m, 0)).toEqual(['Linguagens']);
+    expect(m.el.querySelector('select, input, button')).toBeNull();
   });
 
   describe('gravação e recusas do servidor', () => {

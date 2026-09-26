@@ -2,126 +2,160 @@
   Regra de cálculo da nota final, precisão e ordem de alocação — a regra de eliminação fica no
   próximo passo.
 </p>
-@if (catalogos.erro(); as erro) {
+@if (!store.emConsulta() && catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 <div class="step-card">
-  <div class="form-field">
-    <label class="label" for="f-regra-calculo">Regra de cálculo</label
-    ><select
-      class="input"
-      id="f-regra-calculo"
-      [class.is-invalid]="invalidFields().has('regraCalculo')"
-      [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
-      (change)="escolherRegraCalculo($any($event.target).value)"
-    >
-      <option value="|" [selected]="store.draft().classificacao.regraCalculoCodigo === ''">
-        — escolher —
-      </option>
-      @for (regra of regrasCalculo(); track regra.codigo + regra.versao) {
-        <option [value]="regra.chave" [selected]="regra.selecionada">
-          {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
-        </option>
+  @if (store.emConsulta()) {
+    <div class="form-grid">
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Regra de cálculo"
+        [valor]="leitura().regraCalculo"
+      />
+      @if (usaFormulaLocal()) {
+        <ui-valor-em-consulta
+          rotulo="Regra de arredondamento"
+          [valor]="leitura().regraArredondamento"
+        />
+        <ui-valor-em-consulta rotulo="Casas decimais" [valor]="leitura().casasDecimais" />
       }
-    </select>
-  </div>
+      <ui-valor-em-consulta rotulo="Ordem de alocação" [valor]="leitura().ordemAlocacao" />
+      <ui-valor-em-consulta
+        rotulo="Número de opções de curso"
+        [valor]="leitura().opcoesDeCurso"
+      />
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Classificação baseada em provas e notas do ENEM"
+        [valor]="store.draft().classificacao.baseadoEmEnem"
+      />
+    </div>
+  } @else {
+    <div class="form-field">
+      <label class="label" for="f-regra-calculo">Regra de cálculo</label
+      ><select
+        class="input"
+        id="f-regra-calculo"
+        [class.is-invalid]="invalidFields().has('regraCalculo')"
+        [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
+        (change)="escolherRegraCalculo($any($event.target).value)"
+      >
+        <option value="|" [selected]="store.draft().classificacao.regraCalculoCodigo === ''">
+          — escolher —
+        </option>
+        @for (regra of regrasCalculo(); track regra.codigo + regra.versao) {
+          <option [value]="regra.chave" [selected]="regra.selecionada">
+            {{ regra.rotulo }}
+          </option>
+        }
+      </select>
+    </div>
 
-  @if (usaFormulaLocal()) {
-    <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
+    @if (usaFormulaLocal()) {
+      <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
+        <div class="form-field">
+          <label class="label" for="f-regra-arredondamento">Regra de arredondamento</label
+          ><select
+            class="input"
+            id="f-regra-arredondamento"
+            [class.is-invalid]="invalidFields().has('regraArredondamento')"
+            [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
+            (change)="escolherRegraArredondamento($any($event.target).value)"
+          >
+            <option
+              value="|"
+              [selected]="store.draft().classificacao.regraArredondamentoCodigo === ''"
+            >
+              — escolher —
+            </option>
+            @for (regra of regrasArredondamento(); track regra.codigo + regra.versao) {
+              <option [value]="regra.chave" [selected]="regra.selecionada">
+                {{ regra.rotulo }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="label" for="f-casas">Casas decimais</label
+          ><input
+            class="input"
+            id="f-casas"
+            type="number"
+            min="1"
+            step="1"
+            [class.is-invalid]="invalidFields().has('casasArredondamento')"
+            [disabled]="!store.aceitaEdicao()"
+            [value]="store.draft().classificacao.casasArredondamento"
+            (input)="alterarCasasArredondamento($any($event.target).value)"
+          />
+        </div>
+      </div>
+      @if (avisoDeDivisorInvalido()) {
+        <p class="alert alert--warning" role="alert" style="margin-top: var(--space-4)">
+          Nenhuma etapa do Cronograma compõe a nota (classificatória ou ambas, com peso maior que
+          zero). A Eliminação recusa gravar a classificação enquanto isso não for corrigido.
+        </p>
+      }
+    }
+
+    <div class="form-grid form-grid--3" style="margin-top: var(--space-5)">
       <div class="form-field">
-        <label class="label" for="f-regra-arredondamento">Regra de arredondamento</label
+        <label class="label" for="f-ordem-alocacao">Ordem de alocação</label
         ><select
           class="input"
-          id="f-regra-arredondamento"
-          [class.is-invalid]="invalidFields().has('regraArredondamento')"
+          id="f-ordem-alocacao"
+          [class.is-invalid]="invalidFields().has('regraOrdemAlocacao')"
           [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
-          (change)="escolherRegraArredondamento($any($event.target).value)"
+          (change)="escolherRegraOrdemAlocacao($any($event.target).value)"
         >
-          <option
-            value="|"
-            [selected]="store.draft().classificacao.regraArredondamentoCodigo === ''"
-          >
+          <option value="|" [selected]="store.draft().classificacao.regraOrdemAlocacaoCodigo === ''">
             — escolher —
           </option>
-          @for (regra of regrasArredondamento(); track regra.codigo + regra.versao) {
+          @for (regra of regrasOrdemAlocacao(); track regra.codigo + regra.versao) {
             <option [value]="regra.chave" [selected]="regra.selecionada">
-              {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
+              {{ regra.rotulo }}
             </option>
           }
         </select>
       </div>
       <div class="form-field">
-        <label class="label" for="f-casas">Casas decimais</label
-        ><input
+        <label class="label" for="f-n-opcoes">Número de opções de curso</label
+        ><select
           class="input"
-          id="f-casas"
-          type="number"
-          min="1"
-          step="1"
-          [class.is-invalid]="invalidFields().has('casasArredondamento')"
+          id="f-n-opcoes"
+          [class.is-invalid]="invalidFields().has('nOpcoesAlocacao')"
           [disabled]="!store.aceitaEdicao()"
-          [value]="store.draft().classificacao.casasArredondamento"
-          (input)="alterarCasasArredondamento($any($event.target).value)"
-        />
+          (change)="alterarNOpcoesAlocacao($any($event.target).value)"
+        >
+          <option value="" [selected]="store.draft().classificacao.nOpcoesAlocacao === ''">
+            — escolher —
+          </option>
+          @for (opcao of opcoesDeCurso; track opcao.valor) {
+            <option
+              [value]="opcao.valor"
+              [selected]="opcao.valor === store.draft().classificacao.nOpcoesAlocacao"
+            >
+              {{ opcao.rotulo }}
+            </option>
+          }
+        </select>
       </div>
     </div>
-    @if (avisoDeDivisorInvalido()) {
-      <p class="alert alert--warning" role="alert" style="margin-top: var(--space-4)">
-        Nenhuma etapa do Cronograma compõe a nota (classificatória ou ambas, com peso maior que
-        zero). A Eliminação recusa gravar a classificação enquanto isso não for corrigido.
-      </p>
-    }
-  }
 
-  <div class="form-grid form-grid--3" style="margin-top: var(--space-5)">
-    <div class="form-field">
-      <label class="label" for="f-ordem-alocacao">Ordem de alocação</label
-      ><select
-        class="input"
-        id="f-ordem-alocacao"
-        [class.is-invalid]="invalidFields().has('regraOrdemAlocacao')"
-        [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
-        (change)="escolherRegraOrdemAlocacao($any($event.target).value)"
-      >
-        <option value="|" [selected]="store.draft().classificacao.regraOrdemAlocacaoCodigo === ''">
-          — escolher —
-        </option>
-        @for (regra of regrasOrdemAlocacao(); track regra.codigo + regra.versao) {
-          <option [value]="regra.chave" [selected]="regra.selecionada">
-            {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="form-field">
-      <label class="label" for="f-n-opcoes">Número de opções de curso</label
-      ><select
-        class="input"
-        id="f-n-opcoes"
-        [class.is-invalid]="invalidFields().has('nOpcoesAlocacao')"
+    <label class="check-item" style="margin-top: var(--space-5)"
+      ><input
+        type="checkbox"
+        [checked]="store.draft().classificacao.baseadoEmEnem"
         [disabled]="!store.aceitaEdicao()"
-        [value]="store.draft().classificacao.nOpcoesAlocacao"
-        (change)="alterarNOpcoesAlocacao($any($event.target).value)"
-      >
-        <option value="">— escolher —</option>
-        <option value="1">1 opção</option>
-        <option value="2">2 opções</option>
-      </select>
-    </div>
-  </div>
-
-  <label class="check-item" style="margin-top: var(--space-5)"
-    ><input
-      type="checkbox"
-      [checked]="store.draft().classificacao.baseadoEmEnem"
-      [disabled]="!store.aceitaEdicao()"
-      (change)="aoAlternarBaseadoEmEnem($event)"
-    /><span
-      >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que pesa
-      as notas das áreas e habilita as regras de eliminação por corte por área e zero em área, no
-      passo Eliminação)</span
-    ></label
-  >
+        (change)="aoAlternarBaseadoEmEnem($event)"
+      /><span
+        >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que pesa
+        as notas das áreas e habilita as regras de eliminação por corte por área e zero em área, no
+        passo Eliminação)</span
+      ></label
+    >
+  }
 
   @if (enemComNotaImportada()) {
     <p class="field__hint" style="margin-top: var(--space-3)">
@@ -136,7 +170,7 @@
         Pesos das áreas do ENEM
       </h2>
 
-      @if (catalogos.pesosErro(); as erro) {
+      @if (falhaDosPesosQueImporta(); as erro) {
         <div class="alert alert--danger field__erro" role="alert">
           <p>{{ erro }}</p>
           <button
@@ -150,58 +184,65 @@
         </div>
       }
 
-      <div class="form-field">
-        <label class="label" [for]="idDoCampoResolucao">Resolução de Peso por Área</label
-        ><select
-          class="input"
-          [id]="idDoCampoResolucao"
-          [class.is-invalid]="erroDaResolucao() !== null"
-          [attr.aria-invalid]="erroDaResolucao() !== null ? 'true' : null"
-          [attr.aria-describedby]="descricaoDaResolucao()"
-          [attr.aria-busy]="catalogos.pesosCarregando() ? 'true' : null"
-          [disabled]="
-            !store.aceitaEdicao() ||
-            (catalogos.pesosCarregando() && catalogos.pesosAreaEnem().length === 0)
-          "
-          (change)="aoEscolherResolucao($event)"
-        >
-          <!-- [selected] em cada opção, e não [value] no select: as opções nascem depois do
-               binding, e com [value] a escolha hidratada ficava no rascunho sem chegar à tela. -->
-          <option value="" [selected]="resolucaoEscolhida() === ''">— escolher —</option>
-          @for (resolucao of resolucoesEscolhiveis(); track resolucao.valor) {
-            <option [value]="resolucao.valor" [selected]="resolucao.valor === resolucaoEscolhida()">
-              {{ resolucao.rotulo }}
-            </option>
+      @if (store.emConsulta()) {
+        <ui-valor-em-consulta
+          rotulo="Resolução de Peso por Área"
+          [valor]="resolucaoEscolhida()"
+        />
+      } @else {
+        <div class="form-field">
+          <label class="label" [for]="idDoCampoResolucao">Resolução de Peso por Área</label
+          ><select
+            class="input"
+            [id]="idDoCampoResolucao"
+            [class.is-invalid]="erroDaResolucao() !== null"
+            [attr.aria-invalid]="erroDaResolucao() !== null ? 'true' : null"
+            [attr.aria-describedby]="descricaoDaResolucao()"
+            [attr.aria-busy]="catalogos.pesosCarregando() ? 'true' : null"
+            [disabled]="
+              !store.aceitaEdicao() ||
+              (catalogos.pesosCarregando() && catalogos.pesosAreaEnem().length === 0)
+            "
+            (change)="aoEscolherResolucao($event)"
+          >
+            <!-- [selected] em cada opção, e não [value] no select: as opções nascem depois do
+                 binding, e com [value] a escolha hidratada ficava no rascunho sem chegar à tela. -->
+            <option value="" [selected]="resolucaoEscolhida() === ''">— escolher —</option>
+            @for (resolucao of resolucoesEscolhiveis(); track resolucao.valor) {
+              <option [value]="resolucao.valor" [selected]="resolucao.valor === resolucaoEscolhida()">
+                {{ resolucao.rotulo }}
+              </option>
+            }
+          </select>
+          @if (erroDaResolucao(); as erro) {
+            <p class="field__error" [id]="idDoCampoResolucao + '-erro'">{{ erro }}</p>
           }
-        </select>
-        @if (erroDaResolucao(); as erro) {
-          <p class="field__error" [id]="idDoCampoResolucao + '-erro'">{{ erro }}</p>
-        }
-        <p class="field__hint" [id]="idDoCampoResolucao + '-dica'">
-          Os pesos e os cortes vêm do cadastro de Peso por Área e são copiados para o processo
-          quando a classificação é gravada, no passo Eliminação.
-          @if (administraPlataforma()) {
-            <a [href]="linkDoCadastroDePesos()" target="_blank" rel="noopener"
-              >Abrir o cadastro de Peso por Área<span class="sr-only"> (abre em nova aba)</span></a
-            >
-          } @else {
-            As resoluções são cadastradas pela administração da plataforma.
+          <p class="field__hint" [id]="idDoCampoResolucao + '-dica'">
+            Os pesos e os cortes vêm do cadastro de Peso por Área e são copiados para o processo
+            quando a classificação é gravada, no passo Eliminação.
+            @if (administraPlataforma()) {
+              <a [href]="linkDoCadastroDePesos()" target="_blank" rel="noopener"
+                >Abrir o cadastro de Peso por Área<span class="sr-only"> (abre em nova aba)</span></a
+              >
+            } @else {
+              As resoluções são cadastradas pela administração da plataforma.
+            }
+          </p>
+          @if (store.edicaoPermitida()) {
+            <div class="peso-area__acoes">
+              <button
+                type="button"
+                class="btn btn--secondary btn--sm"
+                [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
+                (click)="atualizarListaDePesos()"
+              >
+                Atualizar lista
+              </button>
+              <span class="sr-only" role="status">{{ avisoDaLista() }}</span>
+            </div>
           }
-        </p>
-        @if (store.edicaoPermitida()) {
-          <div class="peso-area__acoes">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
-              (click)="atualizarListaDePesos()"
-            >
-              Atualizar lista
-            </button>
-            <span class="sr-only" role="status">{{ avisoDaLista() }}</span>
-          </div>
-        }
-      </div>
+        </div>
+      }
 
       @if (avisaForaDoCadastro()) {
         <p class="alert alert--warning" role="status">

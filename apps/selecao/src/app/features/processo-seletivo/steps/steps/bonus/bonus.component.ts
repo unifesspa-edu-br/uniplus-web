@@ -13,7 +13,7 @@ import {
   BaseLegalBonusRegionalDto,
   TiposInstrumentoNormativoApi,
 } from '@uniplus/shared-data/configuracao';
-import { RolagemFocavelDirective } from '@uniplus/shared-ui/components';
+import { RolagemFocavelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -21,7 +21,12 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
 import { comoComandoDeBonus } from './bonus-para-comando';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
@@ -57,7 +62,7 @@ interface MunicipioBeneficiado {
 @Component({
   selector: 'sel-step-bonus',
   standalone: true,
-  imports: [RolagemFocavelDirective],
+  imports: [RolagemFocavelDirective, ValorEmConsultaComponent],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(BonusStepComponent)],
@@ -186,6 +191,26 @@ export class BonusStepComponent {
     if (codigo === '') return '';
     return this.rotuloDoTipoInstrumento().get(codigo) ?? codigo;
   }
+
+  /** A norma pelo tipo e pela identificação, no seletor e na consulta. */
+  rotuloDaBaseLegal(base: Pick<BaseLegalEscolhivel, 'tipoInstrumento' | 'identificacao'>): string {
+    return `${this.rotuloDoTipo(base.tipoInstrumento)} ${base.identificacao}`.trim();
+  }
+
+  /** O bônus como se lê em consulta, com o rótulo de cada escolha. */
+  readonly leitura = computed(() => {
+    const bonus = this.store.draft().bonus;
+    const base = this.basesLegaisEscolhiveis().find(
+      (item) => item.id === bonus.baseLegalBonusRegionalId,
+    );
+    return {
+      aplicacao: bonus.ativo ? 'Aplicado neste processo' : 'Não aplicado neste processo',
+      regra: rotuloDaRegraEscolhida(this.regrasBonus()),
+      fator: leituraDoCampoDecimal(bonus.fator),
+      teto: leituraDoCampoDecimal(bonus.teto),
+      baseLegal: base === undefined ? null : this.rotuloDaBaseLegal(base),
+    };
+  });
 
   /** O que a norma escolhida diz. */
   readonly descricaoDaBaseLegal = computed<string>(() => {

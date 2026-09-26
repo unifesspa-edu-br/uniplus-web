@@ -2,10 +2,10 @@
   Bônus regional (opcional). A ausência de bônus é um estado válido — a gravação declara isso
   explicitamente ao servidor.
 </p>
-@if (catalogos.erro(); as erro) {
+@if (!store.emConsulta() && catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
-@if (basesLegaisErro(); as erro) {
+@if (!store.emConsulta() && basesLegaisErro(); as erro) {
   <p class="alert alert--danger" role="alert">
     {{ erro }}
     <button type="button" class="btn btn--secondary btn--sm" (click)="carregarBasesLegais()">
@@ -14,113 +14,135 @@
   </p>
 }
 <div class="step-card">
-  <label class="check-item"
-    ><input
-      type="checkbox"
-      [checked]="store.draft().bonus.ativo"
-      [disabled]="!store.aceitaEdicao()"
-      (change)="alternarAtivo($any($event.target).checked)"
-    /><span>Aplicar bônus regional neste processo seletivo?</span></label
-  >
-  @if (!store.draft().bonus.ativo) {
+  @if (store.emConsulta()) {
+    <ui-valor-em-consulta rotulo="Bônus regional" [valor]="leitura().aplicacao" />
+  } @else {
+    <label class="check-item"
+      ><input
+        type="checkbox"
+        [checked]="store.draft().bonus.ativo"
+        [disabled]="!store.aceitaEdicao()"
+        (change)="alternarAtivo($any($event.target).checked)"
+      /><span>Aplicar bônus regional neste processo seletivo?</span></label
+    >
+  }
+  @if (!store.draft().bonus.ativo && !store.emConsulta()) {
     <div class="bonus-info">Bônus desabilitado — a gravação declara a ausência ao servidor.</div>
   }
   @if (store.draft().bonus.ativo) {
     <div class="bonus-config">
-      <div class="form-grid form-grid--3">
-        <div class="form-field">
-          <label class="label" for="f-bonus-regra">Regra do bônus</label
-          ><select
-            class="input"
-            id="f-bonus-regra"
-            [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
-            (change)="escolherRegra($any($event.target).value)"
-          >
-            <option value="|" [selected]="store.draft().bonus.regraCodigo === ''">
-              — escolher —
-            </option>
-            @for (regra of regrasBonus(); track regra.chave) {
-              <option [value]="regra.chave" [selected]="regra.selecionada">
-                {{ regra.codigo }} — {{ regra.baseLegal ?? 'base legal indisponível' }}
-              </option>
-            }
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="label" for="f-bonus-fator">Fator</label
-          ><input
-            class="input"
-            id="f-bonus-fator"
-            type="number"
-            min="0"
-            max="99.9999"
-            step="0.0001"
-            placeholder="1.20"
-            [value]="store.draft().bonus.fator"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarFator($any($event.target).value)"
-          /><span class="field-hint">Ex.: 1.20 multiplica a nota final por 1,20.</span>
-        </div>
-      </div>
-      <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
-        <div class="form-field">
-          <label class="label" for="f-bonus-base-legal">Base Legal do bônus</label
-          ><select
-            class="input"
-            id="f-bonus-base-legal"
-            [disabled]="basesLegaisCarregando() || !store.aceitaEdicao()"
-            (change)="escolherBaseLegal($any($event.target).value)"
-          >
-            <option value="" [selected]="store.draft().bonus.baseLegalBonusRegionalId === ''">
-              — escolher —
-            </option>
-            @for (base of basesLegaisEscolhiveis(); track base.id) {
-              <option
-                [value]="base.id"
-                [selected]="base.id === store.draft().bonus.baseLegalBonusRegionalId"
-              >
-                {{ rotuloDoTipo(base.tipoInstrumento) }} {{ base.identificacao }}
-              </option>
-            }
-          </select>
-          <!-- O que a norma diz, fora do seletor: dentro da opção, o texto se repetiria em
-               cada linha da lista. É por ele que se distinguem duas portarias parecidas. -->
-          @if (descricaoDaBaseLegal(); as descricao) {
-            <span class="field__hint">{{ descricao }}</span>
-          }
-          @if (tiposInstrumentoErro(); as erro) {
-            <!--
-              `role="alert"` como o carregamento vizinho: sem ele, quem usa leitor de tela
-              clica em "Tentar novamente", a segunda tentativa falha, e nada o diz.
-            -->
-            <span class="field__hint" role="alert">
-              {{ erro }} O tipo de cada norma aparece pelo código até o catálogo responder.
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                [disabled]="tiposInstrumentoCarregando()"
-                (click)="carregarTiposDeInstrumento()"
-              >
-                {{ tiposInstrumentoCarregando() ? 'Carregando…' : 'Tentar novamente' }}
-              </button>
-            </span>
-          }
-        </div>
-        <div class="form-field">
-          <label class="label" for="f-bonus-teto">Teto (opcional)</label
-          ><input
-            class="input"
-            id="f-bonus-teto"
-            type="number"
-            min="0"
-            max="99.9999"
-            step="0.0001"
-            [value]="store.draft().bonus.teto"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="alterarTeto($any($event.target).value)"
+      @if (store.emConsulta()) {
+        <div class="form-grid">
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Regra do bônus"
+            [valor]="leitura().regra"
+          />
+          <ui-valor-em-consulta rotulo="Fator" [valor]="leitura().fator" />
+          <ui-valor-em-consulta rotulo="Teto" seVazio="Sem teto" [valor]="leitura().teto" />
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Base Legal do bônus"
+            [valor]="leitura().baseLegal"
+            [dica]="descricaoDaBaseLegal() || null"
           />
         </div>
-      </div>
+      } @else {
+        <div class="form-grid form-grid--3">
+          <div class="form-field">
+            <label class="label" for="f-bonus-regra">Regra do bônus</label
+            ><select
+              class="input"
+              id="f-bonus-regra"
+              [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
+              (change)="escolherRegra($any($event.target).value)"
+            >
+              <option value="|" [selected]="store.draft().bonus.regraCodigo === ''">
+                — escolher —
+              </option>
+              @for (regra of regrasBonus(); track regra.chave) {
+                <option [value]="regra.chave" [selected]="regra.selecionada">
+                  {{ regra.rotulo }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="label" for="f-bonus-fator">Fator</label
+            ><input
+              class="input"
+              id="f-bonus-fator"
+              type="number"
+              min="0"
+              max="99.9999"
+              step="0.0001"
+              placeholder="1.20"
+              [value]="store.draft().bonus.fator"
+              [disabled]="!store.aceitaEdicao()"
+              (input)="alterarFator($any($event.target).value)"
+            /><span class="field-hint">Ex.: 1.20 multiplica a nota final por 1,20.</span>
+          </div>
+        </div>
+        <div class="form-grid form-grid--3" style="margin-top: var(--space-4)">
+          <div class="form-field">
+            <label class="label" for="f-bonus-base-legal">Base Legal do bônus</label
+            ><select
+              class="input"
+              id="f-bonus-base-legal"
+              [disabled]="basesLegaisCarregando() || !store.aceitaEdicao()"
+              (change)="escolherBaseLegal($any($event.target).value)"
+            >
+              <option value="" [selected]="store.draft().bonus.baseLegalBonusRegionalId === ''">
+                — escolher —
+              </option>
+              @for (base of basesLegaisEscolhiveis(); track base.id) {
+                <option
+                  [value]="base.id"
+                  [selected]="base.id === store.draft().bonus.baseLegalBonusRegionalId"
+                >
+                  {{ rotuloDaBaseLegal(base) }}
+                </option>
+              }
+            </select>
+            <!-- O que a norma diz, fora do seletor: dentro da opção, o texto se repetiria em
+                 cada linha da lista. É por ele que se distinguem duas portarias parecidas. -->
+            @if (descricaoDaBaseLegal(); as descricao) {
+              <span class="field__hint">{{ descricao }}</span>
+            }
+            @if (tiposInstrumentoErro(); as erro) {
+              <!--
+                `role="alert"` como o carregamento vizinho: sem ele, quem usa leitor de tela
+                clica em "Tentar novamente", a segunda tentativa falha, e nada o diz.
+              -->
+              <span class="field__hint" role="alert">
+                {{ erro }} O tipo de cada norma aparece pelo código até o catálogo responder.
+                <button
+                  class="btn btn--tertiary btn--sm"
+                  type="button"
+                  [disabled]="tiposInstrumentoCarregando()"
+                  (click)="carregarTiposDeInstrumento()"
+                >
+                  {{ tiposInstrumentoCarregando() ? 'Carregando…' : 'Tentar novamente' }}
+                </button>
+              </span>
+            }
+          </div>
+          <div class="form-field">
+            <label class="label" for="f-bonus-teto">Teto (opcional)</label
+            ><input
+              class="input"
+              id="f-bonus-teto"
+              type="number"
+              min="0"
+              max="99.9999"
+              step="0.0001"
+              [value]="store.draft().bonus.teto"
+              [disabled]="!store.aceitaEdicao()"
+              (input)="alterarTeto($any($event.target).value)"
+            />
+          </div>
+        </div>
+      }
       @if (municipiosDaBaseLegalSelecionada().length > 0) {
         <div class="bonus-municipios">
           <div
