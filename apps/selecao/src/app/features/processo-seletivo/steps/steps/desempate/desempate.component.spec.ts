@@ -3,7 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  ProcessoSeletivoDto,
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
@@ -169,6 +173,67 @@ describe('DesempateStepComponent', () => {
     expect(local.falhaDoCatalogoDeFatos()).toBeNull();
     expect(local.fatosEscolhiveis().length).toBeGreaterThan(0);
     controllerLocal.verify();
+  });
+
+  it('em consulta, com o catálogo de fatos em falha, lê o fato pelo código gravado e avisa, sem dizer que saiu do catálogo', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [DesempateStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        CatalogosDeClassificacaoService,
+        AcompanhamentoDoCadastroDePesos,
+        ReleituraDoSnapshot,
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(DesempateStepComponent);
+    const storeLocal = TestBed.inject(ProcessoSeletivoStore);
+    const controllerLocal = TestBed.inject(HttpTestingController);
+    storeLocal.processoSeletivoId.set(PROCESSO_ID);
+    storeLocal.patchSection('desempate', [
+      criterio({
+        regraCodigo: 'DESEMPATE-PREDICADO-FATO',
+        regraVersao: '1.0',
+        fato: 'RENDA_PER_CAPITA',
+        operador: 'MENOR_OU_IGUAL',
+        valor: '1',
+      }),
+    ]);
+    storeLocal.remoteSnapshot.set({
+      id: PROCESSO_ID,
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    for (const requisicao of controllerLocal.match(() => true)) {
+      if (requisicao.request.url.includes('fatos-candidato')) {
+        requisicao.flush(
+          { type: 'about:blank', title: 'Falha ao consultar o cadastro', status: 500 },
+          {
+            status: 500,
+            statusText: 'Internal Server Error',
+            headers: { 'content-type': 'application/problem+json' },
+          },
+        );
+        continue;
+      }
+      requisicao.flush([]);
+    }
+    fixture.detectChanges();
+    for (const requisicao of controllerLocal.match(() => true)) requisicao.flush([]);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('RENDA_PER_CAPITA');
+    expect(host.textContent).not.toContain('fora do catálogo');
+    expect(host.textContent).toContain('Não foi possível carregar os dados do candidato.');
+    expect(host.querySelector('button')).toBeNull();
   });
 
   it('é válido sem nenhum critério (desempate é opcional)', () => {

@@ -1,7 +1,7 @@
 import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { lerChaveDaRegra, regrasEscolhiveis } from './regra-escolhivel';
+import { lerChaveDaRegra, regrasEscolhiveis, rotuloDaRegraEscolhida } from './regra-escolhivel';
 
 function regra(patch: Partial<RegraCatalogoDto>): RegraCatalogoDto {
   return {
@@ -22,7 +22,14 @@ describe('regrasEscolhiveis', () => {
     const catalogo = [regra({ codigo: 'A', versao: '1.0', baseLegal: 'Lei X' })];
 
     expect(regrasEscolhiveis(catalogo, '', '')).toEqual([
-      { codigo: 'A', versao: '1.0', baseLegal: 'Lei X', chave: 'A|1.0', selecionada: false },
+      {
+        codigo: 'A',
+        versao: '1.0',
+        baseLegal: 'Lei X',
+        rotulo: 'A — Lei X',
+        chave: 'A|1.0',
+        selecionada: false,
+      },
     ]);
   });
 
@@ -49,14 +56,35 @@ describe('regrasEscolhiveis', () => {
     const opcoes = regrasEscolhiveis(catalogo, 'B', '2.0');
 
     expect(opcoes).toEqual([
-      { codigo: 'A', versao: '1.0', baseLegal: 'Base legal', chave: 'A|1.0', selecionada: false },
-      { codigo: 'B', versao: '2.0', baseLegal: null, chave: 'B|2.0', selecionada: true },
+      {
+        codigo: 'A',
+        versao: '1.0',
+        baseLegal: 'Base legal',
+        rotulo: 'A — Base legal',
+        chave: 'A|1.0',
+        selecionada: false,
+      },
+      {
+        codigo: 'B',
+        versao: '2.0',
+        baseLegal: null,
+        rotulo: 'B — base legal indisponível',
+        chave: 'B|2.0',
+        selecionada: true,
+      },
     ]);
   });
 
   it('acrescenta mesmo quando o catálogo está vazio', () => {
     expect(regrasEscolhiveis([], 'B', '2.0')).toEqual([
-      { codigo: 'B', versao: '2.0', baseLegal: null, chave: 'B|2.0', selecionada: true },
+      {
+        codigo: 'B',
+        versao: '2.0',
+        baseLegal: null,
+        rotulo: 'B — base legal indisponível',
+        chave: 'B|2.0',
+        selecionada: true,
+      },
     ]);
   });
 
@@ -77,5 +105,19 @@ describe('lerChaveDaRegra', () => {
 
   it('lê a opção vazia do select como regra nenhuma', () => {
     expect(lerChaveDaRegra('|')).toEqual({ codigo: '', versao: '' });
+  });
+});
+
+describe('rotuloDaRegraEscolhida', () => {
+  it('lê a regra escolhida pelo mesmo texto da opção', () => {
+    const catalogo = [regra({ codigo: 'A', versao: '1.0', baseLegal: 'Lei X' })];
+
+    expect(rotuloDaRegraEscolhida(regrasEscolhiveis(catalogo, 'A', '1.0'))).toBe('A — Lei X');
+  });
+
+  it('não inventa regra quando nenhuma foi escolhida', () => {
+    const catalogo = [regra({ codigo: 'A', versao: '1.0' })];
+
+    expect(rotuloDaRegraEscolhida(regrasEscolhiveis(catalogo, '', ''))).toBeNull();
   });
 });

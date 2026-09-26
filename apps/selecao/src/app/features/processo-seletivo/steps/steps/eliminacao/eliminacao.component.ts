@@ -12,6 +12,7 @@ import {
   type ProblemDetails,
   type ProblemValidationError,
 } from '@uniplus/shared-core/http';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import {
   EtapaPontuada,
@@ -23,6 +24,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -38,7 +40,11 @@ import {
   mensagensDeClassificacaoBase,
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
-import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
 import {
   areasComunsAoQuadro,
   corteDaArea,
@@ -77,6 +83,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
 @Component({
   selector: 'sel-step-eliminacao',
   standalone: true,
+  imports: [ValorEmConsultaComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(EliminacaoStepComponent)],
@@ -184,6 +191,18 @@ export class EliminacaoStepComponent {
         codigo,
       ) ?? codigo
     );
+  }
+
+  /** A regra como se lê em consulta, com o rótulo de cada escolha. */
+  leituraDaRegra(regra: RegraEliminacaoConfigurada) {
+    const etapa = this.etapasReferenciaveis().find((item) => item.id === regra.etapaRef);
+    return {
+      regra: rotuloDaRegraEscolhida(this.regraEscolhivel(regra)),
+      etapa: etapa === undefined ? null : etapa.nome || 'Etapa sem nome',
+      notaMinima: leituraDoCampoDecimal(regra.notaMinima),
+      area: regra.areaCodigo === '' ? null : this.rotuloDaArea(regra.areaCodigo),
+      minimo: leituraDoCampoDecimal(regra.minimo),
+    };
   }
 
   /** O rótulo completo do mínimo, com a área: dois cortes lado a lado não se confundem. */

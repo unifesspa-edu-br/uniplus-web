@@ -1,6 +1,8 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
+import { blocosColados } from '../support/ritmo-vertical';
+import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 
@@ -180,26 +182,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await expect(page.getByRole('columnheader', { name: 'Base legal' })).toHaveCount(0);
 
       for (const largura of LARGURAS_DE_REFERENCIA) {
-        await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
-        await esperarLayoutEstavel(page);
-
-        expect(await transbordo(page), `transbordo em ${largura} px`).toEqual({
-          documento: 0,
-          conteudo: 0,
-        });
-        expect(await rolagemDoQuadro(page), `rolagem do quadro em ${largura} px`).toBe(0);
-        expect(
-          await trechosPartidos(page, '.peso-area__quadro th', '\\S+'),
-          `cabeçalhos em ${largura} px`,
-        ).toEqual([]);
-        // "Peso 1,5" é um valor só: o número não desce para a linha de baixo.
-        expect(
-          await trechosPartidos(page, '.peso-area__valor', 'Peso \\S+'),
-          `valores em ${largura} px`,
-        ).toEqual([]);
-
-        const resultado = await runAxeWcagAA(page);
-        expect(identificadoresDe(resultado), `WCAG em ${largura} px`).toEqual([]);
+        await quadroCabeNaLargura(page, testInfo, largura);
       }
     });
 
@@ -384,8 +367,8 @@ function referencia(codigo: string) {
 }
 
 /**
- * Um processo publicado com as quatro seções declaradas — o que a consulta precisa mostrar
- * marcado. `status: 'publicado'` é o que põe o editor em somente leitura.
+ * Um processo publicado com as quatro seções declaradas — o que a consulta precisa ler.
+ * `status: 'publicado'` é o que põe o editor em somente leitura.
  */
 const DETALHE_PUBLICADO = {
   id: PROCESSO_PUBLICADO_ID,
@@ -472,27 +455,32 @@ const DETALHE_PUBLICADO = {
   criadoEm: '2026-09-01T00:00:00Z',
 };
 
-/** As regras que cada passo da consulta tem de mostrar marcadas. */
-const REGRAS_MARCADAS: Record<string, Record<string, string>> = {
+/** O que cada passo lê em consulta: o rótulo do campo e o trecho que o valor tem de trazer. */
+const LEITURAS: Record<string, Record<string, string>> = {
   'Fórmula e precisão': {
-    'Regra de cálculo': 'FORMULA-MEDIA-PONDERADA|1.0',
-    'Regra de arredondamento': 'ARRED-TRUNCAR|1.0',
-    'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA|1.0',
+    'Regra de cálculo': 'FORMULA-MEDIA-PONDERADA — Resolução CEPS 12/2026',
+    'Regra de arredondamento': 'ARRED-TRUNCAR — Edital padrão PSIQ',
+    'Casas decimais': '2',
+    'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+    'Número de opções de curso': '1 opção',
   },
   Bônus: {
-    'Regra do bônus': 'BONUS-MULTIPLICATIVO|1.0',
-    'Base Legal do bônus': BASE_LEGAL_BONUS_REGIONAL_ID,
+    'Bônus regional': 'Aplicado neste processo',
+    'Regra do bônus': 'BONUS-MULTIPLICATIVO',
+    Fator: '1,2',
+    'Base Legal do bônus': 'Portaria Unifesspa nº 2514/2023',
   },
-  Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE|1.0' },
-  Eliminação: { 'Regra de eliminação': 'ELIM-ZERO-EM-AREA|1.0' },
+  Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE — Costume administrativo' },
+  Eliminação: { 'Regra de eliminação 1': 'ELIM-ZERO-EM-AREA — Resolução 805/2020, art. 5º' },
 };
 
 /** As larguras de referência em que a consulta não pode ter rolagem horizontal. */
 const LARGURAS_DE_REFERENCIA = [1440, 768, 375, 320] as const;
 
 /**
- * Consulta de um processo publicado (web#898): a regra gravada aparece marcada mesmo com o
- * catálogo chegando depois do detalhe, e nenhum controle dos passos 6 a 9 aceita edição.
+ * Consulta de um processo publicado (web#898, web#905): o valor gravado de cada campo aparece
+ * como texto, associado ao rótulo, mesmo com o catálogo chegando depois do detalhe, e o passo
+ * não oferece controle nem ação de edição.
  */
 test.describe('Classificação, bônus e desempate em consulta — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -505,30 +493,27 @@ test.describe('Classificação, bônus e desempate em consulta — matriz DS @ds
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  for (const [passo, regras] of Object.entries(REGRAS_MARCADAS)) {
-    test(`${passo}: mostra a regra gravada, não aceita edição e não transborda`, async ({
+  for (const [passo, leituras] of Object.entries(LEITURAS)) {
+    test(`${passo}: lê o valor gravado como texto, sem controle, e não transborda`, async ({
       page,
     }, testInfo) => {
       await irAoPasso(page, passo, testInfo);
       await expect(page.getByRole('heading', { level: 1 })).toContainText(passo);
 
-      for (const [rotulo, valor] of Object.entries(regras)) {
-        const seletor = page.getByLabel(rotulo, { exact: true }).first();
-        await expect(seletor).toHaveValue(valor);
-        await expect(seletor).toBeDisabled();
+      for (const [rotulo, trecho] of Object.entries(leituras)) {
+        await expect(valorEmConsulta(page, rotulo), rotulo).toContainText(trecho);
       }
-      expect(await controlesEditaveisVisiveis(page)).toEqual([]);
+      expect(await controlesVisiveis(page)).toEqual([]);
+      expect(await blocosColados(page)).toEqual([]);
 
       const resultado = await runAxeWcagAA(page);
       expect(identificadoresDe(resultado)).toEqual([]);
 
-      const larguraDoProject = testInfo.project.use.viewport;
       for (const largura of LARGURAS_DE_REFERENCIA) {
-        await page.setViewportSize({ width: largura, height: larguraDoProject?.height ?? 900 });
-        expect(await transbordo(page), `transbordo em ${largura} px`).toEqual({
-          documento: 0,
-          conteudo: 0,
-        });
+        await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
+        const medida = await medirTransbordoHorizontal(page);
+        expect(medida.documento, `documento em ${largura} px`).toBeLessThanOrEqual(1);
+        expect(medida.areaDeTrabalho, `área de trabalho em ${largura} px`).toBeLessThanOrEqual(1);
       }
     });
   }
@@ -569,62 +554,164 @@ const LARGURA_CODIGO_INTEIRO = 768;
 const LARGURA_LISTA_EMPILHADA = 640;
 
 /**
- * Cartão do critério de desempate por área em consulta (web#900): o nome da área não quebra
- * letra a letra, o seletor da regra tem a largura da lista de áreas, e no celular os campos
- * descem para a largura inteira do cartão.
+ * Cartão do critério de desempate por área (web#900): o nome da área não quebra letra a letra,
+ * no celular os campos descem para a largura inteira do cartão e, lado a lado, número, campos e
+ * ações começam no topo. Em rascunho, o seletor da regra tem a largura da lista de áreas; em
+ * consulta, a regra e as áreas são lidas como texto (web#905).
  */
-test.describe('Desempate por área em consulta — matriz DS @ds', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+test.describe('Desempate por área — matriz DS @ds', () => {
+  test.describe('processo em rascunho', () => {
+    test.beforeEach(async ({ page }, testInfo) => {
+      await abrirDesempatePorArea(page, testInfo, 'rascunho');
+    });
+
+    test('o cartão do critério cabe em cada largura sem quebrar as áreas', async ({
+      page,
+    }, testInfo) => {
+      await expect(page.locator('.desempate-area__nome').first()).toBeVisible();
+      expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+
+      for (const largura of LARGURAS_DE_REFERENCIA) {
+        const cartao = await cartaoNaLargura(page, testInfo, largura, '.desempate-area__nome');
+        expect(cartao.larguraDoSeletor, `seletor e áreas em ${largura} px`).toBeGreaterThanOrEqual(
+          cartao.larguraDaLista - 1,
+        );
+        // Um <select> não quebra linha: no celular o código não cabe e o seletor ocupa a largura
+        // toda; a partir de 768 px o código tem de aparecer inteiro.
+        expect(
+          cartao.codigoCabeNoSeletor || largura < LARGURA_CODIGO_INTEIRO,
+          `código da regra inteiro em ${largura} px`,
+        ).toBe(true);
+      }
+    });
+  });
+
+  test.describe('processo publicado', () => {
+    test.beforeEach(async ({ page }, testInfo) => {
+      await abrirDesempatePorArea(page, testInfo, 'publicado');
+    });
+
+    test('lê a regra e a ordem das áreas como texto, e o cartão cabe em cada largura', async ({
+      page,
+    }, testInfo) => {
+      // A ordem é a de avaliação: lista numerada, que o leitor de tela anuncia como tal.
+      await expect(
+        valorEmConsulta(page, 'Ordem das áreas do ENEM').locator('ol > li').first(),
+      ).toHaveText('Redação');
+      expect(await controlesVisiveis(page)).toEqual([]);
+      expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+
+      for (const largura of LARGURAS_DE_REFERENCIA) {
+        await cartaoNaLargura(page, testInfo, largura, '.valor-em-consulta li');
+      }
+    });
+  });
+});
+
+/**
+ * A Fórmula de um processo publicado classificado pelo ENEM: a resolução é lida como texto, e o
+ * quadro congelado no processo continua cabendo em cada largura (web#903, web#905).
+ */
+test.describe('Fórmula com quadro de pesos em consulta — matriz DS @ds', () => {
+  test('lê a resolução como texto, e o quadro congelado cabe em cada largura', async ({
+    page,
+  }, testInfo) => {
     await mockarCatalogos(page);
     await mockarProcesso(page, PROCESSO_DESEMPATE_POR_AREA_ID, DETALHE_DESEMPATE_POR_AREA);
     await instalarPreferencia(page, temaDoProject(testInfo.project.name));
     await page.goto(`/processo-seletivo/${PROCESSO_DESEMPATE_POR_AREA_ID}`);
     await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  });
+    await irAoPasso(page, 'Fórmula e precisão', testInfo);
 
-  test('o cartão do critério cabe em cada largura sem quebrar as áreas', async ({
-    page,
-  }, testInfo) => {
-    await irAoPasso(page, 'Desempate', testInfo);
-    await expect(page.locator('.desempate-area__nome').first()).toBeVisible();
-
-    const resultado = await runAxeWcagAA(page);
-    expect(identificadoresDe(resultado)).toEqual([]);
+    await expect(valorEmConsulta(page, 'Resolução de Peso por Área')).toHaveText(
+      RESOLUCAO_PESO_AREA,
+    );
+    await expect(page.getByRole('table', { name: /congelado no processo/ })).toBeVisible();
+    expect(await controlesVisiveis(page)).toEqual([]);
 
     for (const largura of LARGURAS_DE_REFERENCIA) {
-      await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
-      await esperarLayoutEstavel(page);
-      const cartao = await medidasDoCartao(page);
-      const empilhado = cartao.larguraDaListaDeCriterios <= LARGURA_LISTA_EMPILHADA;
-
-      expect(await transbordo(page), `transbordo em ${largura} px`).toEqual({
-        documento: 0,
-        conteudo: 0,
-      });
-      // Uma letra por linha: a palavra se partia em várias linhas do nome.
-      expect(
-        await trechosPartidos(page, '.desempate-item .desempate-area__nome', '\\S+'),
-        `nome da área em ${largura} px`,
-      ).toEqual([]);
-      expect(cartao.larguraDoSeletor, `seletor e áreas em ${largura} px`).toBeGreaterThanOrEqual(
-        cartao.larguraDaLista - 1,
-      );
-      // Um <select> não quebra linha: no celular o código não cabe e o seletor ocupa a largura
-      // toda; a partir de 768 px o código tem de aparecer inteiro.
-      expect(
-        cartao.codigoCabeNoSeletor || largura < LARGURA_CODIGO_INTEIRO,
-        `código da regra inteiro em ${largura} px`,
-      ).toBe(true);
-      expect(cartao.camposAbaixoDoNumero, `campos empilhados em ${largura} px`).toBe(empilhado);
-      // Lado a lado, número, campos e ações começam no topo do cartão, não no meio dele.
-      expect(
-        empilhado || cartao.desalinhamentoNoTopo <= 1,
-        `número, campos e ações no topo em ${largura} px (${cartao.desalinhamentoNoTopo} px)`,
-      ).toBe(true);
+      await quadroCabeNaLargura(page, testInfo, largura);
     }
   });
 });
+
+/**
+ * O processo classificado pelo ENEM com um critério de desempate por área, aberto no passo
+ * Desempate.
+ */
+async function abrirDesempatePorArea(
+  page: Page,
+  testInfo: TestInfo,
+  status: 'rascunho' | 'publicado',
+): Promise<void> {
+  await mockarCatalogos(page);
+  await mockarProcesso(page, PROCESSO_DESEMPATE_POR_AREA_ID, {
+    ...DETALHE_DESEMPATE_POR_AREA,
+    status,
+  });
+  await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+  await page.goto(`/processo-seletivo/${PROCESSO_DESEMPATE_POR_AREA_ID}`);
+  await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await irAoPasso(page, 'Desempate', testInfo);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Desempate');
+}
+
+/**
+ * Leva a tela à largura e confere o que vale para o cartão em edição e em consulta: sem
+ * transbordo, nome da área inteiro, campos empilhados só na lista estreita e, lado a lado, tudo
+ * alinhado ao topo. Devolve as medidas para as conferências próprias de cada modo.
+ */
+async function cartaoNaLargura(
+  page: Page,
+  testInfo: TestInfo,
+  largura: number,
+  nomeDaArea: string,
+): Promise<Awaited<ReturnType<typeof medidasDoCartao>>> {
+  await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
+  await esperarLayoutEstavel(page);
+  const cartao = await medidasDoCartao(page);
+  const empilhado = cartao.larguraDaListaDeCriterios <= LARGURA_LISTA_EMPILHADA;
+
+  const medida = await medirTransbordoHorizontal(page);
+  expect(medida.documento, `documento em ${largura} px`).toBeLessThanOrEqual(1);
+  expect(medida.areaDeTrabalho, `área de trabalho em ${largura} px`).toBeLessThanOrEqual(1);
+  // Uma letra por linha: a palavra se partia em várias linhas do nome.
+  expect(
+    await trechosPartidos(page, `.desempate-item ${nomeDaArea}`, '\\S+'),
+    `nome da área em ${largura} px`,
+  ).toEqual([]);
+  expect(cartao.camposAbaixoDoNumero, `campos empilhados em ${largura} px`).toBe(empilhado);
+  expect(
+    empilhado || cartao.desalinhamentoNoTopo <= 1,
+    `número, campos e ações no topo em ${largura} px (${cartao.desalinhamentoNoTopo} px)`,
+  ).toBe(true);
+  return cartao;
+}
+
+/**
+ * O quadro de pesos na largura (web#903): sem transbordo da página nem do próprio quadro, sem
+ * cabeçalho partido, "Peso X" numa linha só e sem violar WCAG 2.1 AA.
+ */
+async function quadroCabeNaLargura(page: Page, testInfo: TestInfo, largura: number): Promise<void> {
+  await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
+  await esperarLayoutEstavel(page);
+
+  const medida = await medirTransbordoHorizontal(page);
+  expect(medida.documento, `documento em ${largura} px`).toBeLessThanOrEqual(1);
+  expect(medida.areaDeTrabalho, `área de trabalho em ${largura} px`).toBeLessThanOrEqual(1);
+  expect(await rolagemDoQuadro(page), `rolagem do quadro em ${largura} px`).toBe(0);
+  expect(
+    await trechosPartidos(page, '.peso-area__quadro th', '\\S+'),
+    `cabeçalhos em ${largura} px`,
+  ).toEqual([]);
+  // "Peso 1,5" é um valor só: o número não desce para a linha de baixo.
+  expect(
+    await trechosPartidos(page, '.peso-area__valor', 'Peso \\S+'),
+    `valores em ${largura} px`,
+  ).toEqual([]);
+  expect(identificadoresDe(await runAxeWcagAA(page)), `WCAG em ${largura} px`).toEqual([]);
+}
 
 /** Quanto a tabela de pesos passa da largura do próprio quadro. */
 async function rolagemDoQuadro(page: Page): Promise<number> {
@@ -756,32 +843,28 @@ async function mockarProcesso(page: Page, id: string, detalhe: unknown): Promise
   );
 }
 
-/** Controles de formulário do passo aberto que ainda aceitam interação. */
-async function controlesEditaveisVisiveis(page: Page): Promise<string[]> {
-  return page.evaluate(() =>
-    Array.from(
-      document.querySelectorAll<HTMLInputElement>(
-        '.wiz-content select, .wiz-content input, .wiz-content textarea, .wiz-content button',
-      ),
-    )
-      .filter((controle) => controle.offsetParent !== null && !controle.disabled)
-      .map((controle) => controle.id || controle.textContent?.trim() || controle.tagName),
-  );
+/**
+ * Controles de formulário e botões visíveis no passo aberto. Em consulta não há nenhum: o valor
+ * é lido como texto, e um controle desabilitado ainda seria um campo onde não se escreve.
+ */
+async function controlesVisiveis(page: Page): Promise<string[]> {
+  return page
+    .locator('.wiz-content')
+    .locator('select, input, textarea, button')
+    .evaluateAll((controles) =>
+      controles
+        .filter((controle) => controle.checkVisibility())
+        .map((controle) => controle.id || controle.textContent?.trim() || controle.tagName),
+    );
 }
 
-/** Quanto a página e o conteúdo do passo passam da largura visível. */
-async function transbordo(page: Page): Promise<{ documento: number; conteudo: number }> {
-  return page.evaluate(() => {
-    const documento = document.documentElement;
-    const conteudo = document.querySelector('.wiz-content');
-    return {
-      documento: Math.max(0, documento.scrollWidth - documento.clientWidth),
-      conteudo:
-        conteudo instanceof HTMLElement
-          ? Math.max(0, conteudo.scrollWidth - conteudo.clientWidth)
-          : 0,
-    };
-  });
+/** O valor que a consulta lê sob o rótulo, no passo aberto. */
+function valorEmConsulta(page: Page, rotulo: string) {
+  return page
+    .locator('.wiz-content .valor-em-consulta:visible')
+    .filter({ has: page.locator('dt', { hasText: new RegExp(`^${rotulo}$`) }) })
+    .locator('dd')
+    .first();
 }
 
 /** Fórmula local completa — regra de cálculo, arredondamento, casas e ordem de alocação. */

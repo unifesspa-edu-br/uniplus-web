@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
@@ -19,6 +20,7 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
@@ -30,7 +32,11 @@ import {
   mensagensDeClassificacaoBase,
   pendenciaDaResolucao,
 } from '../classificacao/classificacao-para-comando';
-import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
 import {
   baseLegalComum,
   colunasDoQuadro,
@@ -74,6 +80,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 @Component({
   selector: 'sel-step-formula',
   standalone: true,
+  imports: [ValorEmConsultaComponent],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormulaStepComponent)],
@@ -184,6 +191,14 @@ export class FormulaStepComponent {
 
   readonly quadro = computed<readonly GrupoDoQuadro[]>(() => this.quadroVigente().grupos);
 
+  /**
+   * A falha ao ler o cadastro de Peso por Área. Em consulta o quadro à vista é a cópia congelada
+   * no processo, que não depende do cadastro, e a falha dele não tem o que explicar.
+   */
+  readonly falhaDosPesosQueImporta = computed(() =>
+    this.store.emConsulta() && this.mostraQuadroGravado() ? null : this.catalogos.pesosErro(),
+  );
+
   readonly colunasDoQuadro = computed(() =>
     colunasDoQuadro(this.quadro(), ordemDasAreas(this.catalogos.areasEnem())),
   );
@@ -278,6 +293,25 @@ export class FormulaStepComponent {
       classificacao.regraOrdemAlocacaoCodigo,
       classificacao.regraOrdemAlocacaoVersao,
     );
+  });
+
+  /** Quantas opções de curso o candidato declara, com o texto do seletor e da consulta. */
+  protected readonly opcoesDeCurso = [
+    { valor: '1', rotulo: '1 opção' },
+    { valor: '2', rotulo: '2 opções' },
+  ] as const;
+
+  /** A classificação como se lê em consulta, com o rótulo de cada escolha. */
+  readonly leitura = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    const opcoes = classificacao.nOpcoesAlocacao;
+    return {
+      regraCalculo: rotuloDaRegraEscolhida(this.regrasCalculo()),
+      regraArredondamento: rotuloDaRegraEscolhida(this.regrasArredondamento()),
+      casasDecimais: leituraDoCampoDecimal(classificacao.casasArredondamento),
+      ordemAlocacao: rotuloDaRegraEscolhida(this.regrasOrdemAlocacao()),
+      opcoesDeCurso: this.opcoesDeCurso.find((opcao) => opcao.valor === opcoes)?.rotulo ?? null,
+    };
   });
 
   /**

@@ -11,7 +11,11 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
+import {
+  ComboboxComponent,
+  type UiComboboxGroup,
+  ValorEmConsultaComponent,
+} from '@uniplus/shared-ui/components';
 import { isApiOk } from '@uniplus/shared-core/http';
 import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
 
@@ -41,10 +45,15 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { lerChaveDaRegra, regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
 import {
   comoComandoDeCriteriosDesempate,
   desempateUsaAreas,
@@ -87,7 +96,7 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   selector: 'sel-step-desempate',
   standalone: true,
   templateUrl: './desempate.component.html',
-  imports: [ComboboxComponent],
+  imports: [ComboboxComponent, ValorEmConsultaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(DesempateStepComponent)],
 })
@@ -111,6 +120,12 @@ export class DesempateStepComponent {
    * que a gravação desfaz.
    */
   private readonly catalogoDeFatos = signal<readonly FatoCandidatoView[]>([]);
+
+  /**
+   * Só um catálogo lido permite dizer que um fato saiu dele: enquanto a busca não responde,
+   * ou quando falha, o vazio é falta de dado, não ausência do fato.
+   */
+  private readonly catalogoDeFatosLido = signal(false);
 
   readonly fatosEscolhiveis = computed(() => fatosParaGatilho(this.catalogoDeFatos()));
 
@@ -205,6 +220,7 @@ export class DesempateStepComponent {
         next: (resultado) => {
           if (isApiOk(resultado)) {
             this.catalogoDeFatos.set(resultado.data);
+            this.catalogoDeFatosLido.set(true);
             return;
           }
 
@@ -422,6 +438,38 @@ export class DesempateStepComponent {
 
   usaAreas(criterio: CriterioDesempateConfigurado): boolean {
     return desempateUsaAreas(criterio.regraCodigo);
+  }
+
+  /** O critério como se lê em consulta, com o rótulo de cada escolha e os campos que a edição usa. */
+  leituraDoCriterio(criterio: CriterioDesempateConfigurado) {
+    const etapa = this.etapasReferenciaveis().find((item) => item.id === criterio.etapaRef);
+    const fato = this.fatoDoCriterio(criterio.fato);
+    const comparacao = this.operadoresDoCriterio(criterio.fato).find(
+      (opcao) => opcao.valor === criterio.operador,
+    );
+    const porLista = this.criterioComparaComLista(criterio.operador);
+    const booleano = this.ehBooleano(criterio.fato);
+    const escalar = this.valorDoCriterio(criterio);
+    return {
+      regra: rotuloDaRegraEscolhida(this.regraEscolhivel(criterio)),
+      etapa: etapa === undefined ? null : etapa.nome || 'Etapa sem nome',
+      idadeMinima: leituraDoCampoDecimal(criterio.idadeMinima),
+      fato:
+        fato?.nome ??
+        (criterio.fato === ''
+          ? null
+          : this.catalogoDeFatosLido()
+            ? `${criterio.fato} — fora do catálogo`
+            : criterio.fato),
+      comparacao: comparacao?.rotulo ?? (criterio.operador || null),
+      rotuloDoValor: porLista ? 'Valores' : booleano ? 'Resposta' : 'Valor',
+      valor: porLista
+        ? this.valoresDoCriterio(criterio)
+        : booleano
+          ? (RESPOSTAS_BOOLEANAS.find((resposta) => resposta.valor === escalar)?.rotulo ?? escalar)
+          : escalar,
+      areas: criterio.areas.map((codigo) => this.rotuloDaArea(codigo)),
+    };
   }
 
   acrescentar(): void {

@@ -31,6 +31,14 @@ export function decimalDoCampo(texto: string): number | null {
   return /^\d+(\.\d+)?$/.test(limpo) ? finitoOuNulo(Number(limpo)) : null;
 }
 
+/**
+ * O campo como se lê em consulta: o número, que a leitura escreve no formato pt-BR, ou o texto
+ * como foi gravado quando ele não é número — a consulta mostra o que está lá, não o esconde.
+ */
+export function leituraDoCampoDecimal(texto: string): number | string {
+  return decimalDoCampo(texto) ?? texto;
+}
+
 function finitoOuNulo(valor: number): number | null {
   return Number.isFinite(valor) ? valor : null;
 }
