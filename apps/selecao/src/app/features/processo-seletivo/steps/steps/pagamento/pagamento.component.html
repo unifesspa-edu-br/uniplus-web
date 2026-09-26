@@ -10,21 +10,37 @@
 <form [formGroup]="form">
   <div class="step-card">
     <div class="form-grid">
-      <fieldset class="form-field form-grid__full">
-        <legend class="label">Cobrança da taxa de inscrição</legend>
-        <div class="checkbox-grid">
-          <label class="check-item">
-            <input type="radio" [value]="true" formControlName="cobra" />
-            <span>Este processo cobra taxa</span>
-          </label>
-          <label class="check-item">
-            <input type="radio" [value]="false" formControlName="cobra" />
-            <span>Este processo é gratuito</span>
-          </label>
-        </div>
-      </fieldset>
+      @if (store.emConsulta()) {
+        <ui-valor-em-consulta
+          class="form-grid__full"
+          rotulo="Cobrança da taxa de inscrição"
+          seVazio="Não declarada"
+          [valor]="declaracaoDeCobranca()"
+        />
+        @if (cobra() === true) {
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Valor da taxa"
+            [valor]="valorDaTaxa()"
+          />
+        }
+      } @else {
+        <fieldset class="form-field form-grid__full">
+          <legend class="label">Cobrança da taxa de inscrição</legend>
+          <div class="checkbox-grid">
+            <label class="check-item">
+              <input type="radio" [value]="true" formControlName="cobra" />
+              <span>{{ rotulosDeCobranca.cobra }}</span>
+            </label>
+            <label class="check-item">
+              <input type="radio" [value]="false" formControlName="cobra" />
+              <span>{{ rotulosDeCobranca.gratuito }}</span>
+            </label>
+          </div>
+        </fieldset>
+      }
 
-      @if (cobra() === true) {
+      @if (cobra() === true && !store.emConsulta()) {
         <div class="form-field form-grid__full">
           <label class="label" for="f-valor-taxa">Valor da taxa</label>
           <input
@@ -46,66 +62,74 @@
 
   @if (cobra() === true) {
     <div class="step-card">
-      <h2 class="form-section__title">Fundamentos de isenção</h2>
+      <h2 class="form-section__title" id="f-fundamentos-titulo">Fundamentos de isenção</h2>
       <p class="field__hint" id="f-fundamentos-hint">
         Quais fundamentos este processo reconhece para isentar candidatos. Processo que cobra taxa
         reconhece ao menos um — é por eles que o candidato poderá pedir isenção.
       </p>
 
-      @if (fundamentosCarregando()) {
-        <p class="field__hint" role="status" aria-live="polite">Carregando fundamentos…</p>
-      }
-
-      @if (fundamentosErro(); as erro) {
-        <div class="field__erro" role="alert">
-          <p>{{ erro }}</p>
-          <button class="btn btn--tertiary" type="button" (click)="carregarFundamentos()">
-            Tentar novamente
-          </button>
-        </div>
-      }
-
-      @if (fundamentosNaoSuportados().length > 0) {
-        <p class="alert alert--warning" role="status">
-          Esta versão do sistema não reconhece
-          {{ fundamentosNaoSuportados().join(', ') }} — atualize a página; se persistir, o sistema
-          precisa ser atualizado para oferecer esse fundamento.
-        </p>
-      }
-
-      @if (fundamentosInvalidos()) {
-        <p class="field__erro" id="f-fundamentos-erro" role="alert">
-          Selecione ao menos um fundamento de isenção.
-        </p>
-      }
-
-      <ul
-        class="pagamento-fundamentos"
-        role="group"
-        aria-label="Fundamentos de isenção reconhecidos"
-        [attr.aria-invalid]="fundamentosInvalidos() || null"
-        [attr.aria-describedby]="
-          fundamentosInvalidos() ? 'f-fundamentos-hint f-fundamentos-erro' : 'f-fundamentos-hint'
-        "
-      >
-        @for (fundamento of fundamentos(); track fundamento.codigo) {
-          <li class="pagamento-fundamentos__item">
-            <label class="check-item">
-              <input
-                type="checkbox"
-                [checked]="estaSelecionado(fundamento.codigo)"
-                [disabled]="!store.aceitaEdicao()"
-                [attr.aria-describedby]="'f-desc-' + fundamento.codigo"
-                (change)="alternarFundamento(fundamento.codigo)"
-              />
-              <span class="pagamento-fundamentos__nome">{{ fundamento.nome }}</span>
-            </label>
-            <p class="field__hint" [id]="'f-desc-' + fundamento.codigo">
-              {{ fundamento.descricao }}
-            </p>
-          </li>
+      @if (store.emConsulta()) {
+        <ui-valor-em-consulta
+          rotuladoPor="f-fundamentos-titulo"
+          seVazio="Nenhum fundamento reconhecido"
+          [valor]="nomesDosFundamentosSelecionados()"
+        />
+      } @else {
+        @if (fundamentosCarregando()) {
+          <p class="field__hint" role="status" aria-live="polite">Carregando fundamentos…</p>
         }
-      </ul>
+
+        @if (fundamentosErro(); as erro) {
+          <div class="field__erro" role="alert">
+            <p>{{ erro }}</p>
+            <button class="btn btn--tertiary" type="button" (click)="carregarFundamentos()">
+              Tentar novamente
+            </button>
+          </div>
+        }
+
+        @if (fundamentosNaoSuportados().length > 0) {
+          <p class="alert alert--warning" role="status">
+            Esta versão do sistema não reconhece
+            {{ fundamentosNaoSuportados().join(', ') }} — atualize a página; se persistir, o sistema
+            precisa ser atualizado para oferecer esse fundamento.
+          </p>
+        }
+
+        @if (fundamentosInvalidos()) {
+          <p class="field__erro" id="f-fundamentos-erro" role="alert">
+            Selecione ao menos um fundamento de isenção.
+          </p>
+        }
+
+        <ul
+          class="pagamento-fundamentos"
+          role="group"
+          aria-label="Fundamentos de isenção reconhecidos"
+          [attr.aria-invalid]="fundamentosInvalidos() || null"
+          [attr.aria-describedby]="
+            fundamentosInvalidos() ? 'f-fundamentos-hint f-fundamentos-erro' : 'f-fundamentos-hint'
+          "
+        >
+          @for (fundamento of fundamentos(); track fundamento.codigo) {
+            <li class="pagamento-fundamentos__item">
+              <label class="check-item">
+                <input
+                  type="checkbox"
+                  [checked]="estaSelecionado(fundamento.codigo)"
+                  [disabled]="!store.aceitaEdicao()"
+                  [attr.aria-describedby]="'f-desc-' + fundamento.codigo"
+                  (change)="alternarFundamento(fundamento.codigo)"
+                />
+                <span class="pagamento-fundamentos__nome">{{ fundamento.nome }}</span>
+              </label>
+              <p class="field__hint" [id]="'f-desc-' + fundamento.codigo">
+                {{ fundamento.descricao }}
+              </p>
+            </li>
+          }
+        </ul>
+      }
     </div>
   }
 </form>

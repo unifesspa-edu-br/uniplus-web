@@ -498,26 +498,67 @@ describe('PagamentoStepComponent', () => {
 
   /**
    * As caixas de fundamento são inputs nativos fora do formulário, então
-   * `form.disable()` não as alcança: sem `disabled` próprio elas seguem
-   * focáveis e clicáveis, e o clique só não faz nada — o operador tenta e a
-   * tela não explica.
+   * `form.disable()` não as alcança: sem `disabled` próprio elas seguiriam
+   * clicáveis durante a gravação, e o clique só não faria nada.
    */
-  it('desabilita as caixas de fundamento fora de rascunho', async () => {
+  it('desabilita as caixas de fundamento enquanto a gravação está em curso', async () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '230',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
+    });
+    store.salvando.set(true);
+    detectar();
+    await tick();
+    detectar();
+
+    const caixas = Array.from(
+      host.querySelectorAll<HTMLInputElement>('.pagamento-fundamentos input[type="checkbox"]'),
+    );
+    expect(caixas.length).toBeGreaterThan(0);
+    expect(caixas.every((caixa) => caixa.disabled)).toBe(true);
+  });
+
+  /**
+   * Em consulta o passo lê o que está gravado: a declaração, o valor e os fundamentos
+   * aparecem como texto, sem rádio, campo nem caixa de seleção desabilitados.
+   */
+  it('em consulta, mostra cobrança, valor e fundamentos como texto', async () => {
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      valor: '1230,5',
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO, FundamentoIsencao.DOACAO_MEDULA_OSSEA],
     });
     store.remoteSnapshot.set({ status: 'publicado' } as never);
     detectar();
     await tick();
     detectar();
 
-    const caixas = host.querySelectorAll<HTMLInputElement>(
-      '.pagamento-fundamentos input[type="checkbox"]',
-    );
-    expect(caixas.length).toBeGreaterThan(0);
-    for (const caixa of caixas) expect(caixa.disabled).toBe(true);
+    expect(host.querySelector('input, select, textarea')).toBeNull();
+    const pares = Array.from(host.querySelectorAll('dl')).map((dl) => [
+      dl.querySelector('dt')?.textContent?.trim(),
+      dl.querySelector('dd')?.textContent?.trim(),
+    ]);
+    expect(pares).toEqual([
+      ['Cobrança da taxa de inscrição', 'Este processo cobra taxa'],
+      ['Valor da taxa', 'R$ 1.230,50'],
+    ]);
+    const fundamentos = host.querySelector('[aria-labelledby="f-fundamentos-titulo"]');
+    expect(
+      Array.from(fundamentos?.querySelectorAll('li') ?? [], (li) => li.textContent?.trim()),
+    ).toEqual(['Cadastro Único', 'Doação de medula óssea']);
+  });
+
+  it('em consulta, diz que o processo é gratuito e não mostra valor nem fundamentos', async () => {
+    store.patchObjectSection('pagamento', { cobra: false, valor: '', fundamentos: [] });
+    store.remoteSnapshot.set({ status: 'publicado' } as never);
+    detectar();
+    await tick();
+    detectar();
+
+    expect(host.querySelector('dd')?.textContent?.trim()).toBe('Este processo é gratuito');
+    expect(host.querySelectorAll('dl')).toHaveLength(1);
+    expect(host.querySelector('#f-fundamentos-titulo')).toBeNull();
   });
 
   /**

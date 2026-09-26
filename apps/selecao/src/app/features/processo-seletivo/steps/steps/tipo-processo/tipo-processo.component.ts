@@ -9,6 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
@@ -17,7 +18,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 @Component({
   selector: 'sel-step-tipo-processo',
   standalone: true,
-  imports: [TypeCardComponent],
+  imports: [TypeCardComponent, ValorEmConsultaComponent],
   templateUrl: './tipo-processo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(TipoProcessoStepComponent)],
@@ -56,6 +57,10 @@ export class TipoProcessoStepComponent {
       ...catalogo,
     ];
   });
+  /** O tipo gravado, com a descrição do catálogo quando ele a tem. */
+  readonly tipoEscolhido = computed(
+    () => this.options().find((opcao) => opcao.value === this.store.draft().tipoProcesso.selected) ?? null,
+  );
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly query = signal('');

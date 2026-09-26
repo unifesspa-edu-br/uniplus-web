@@ -341,6 +341,13 @@ export class ProcessoSeletivoStore {
     return detalhe === null || detalhe.status === StatusProcesso.rascunho;
   });
 
+  /**
+   * O processo não admite mutação, e os passos mostram o que está gravado como texto, não
+   * como formulário desabilitado. A gravação em curso não entra aqui: os campos continuam
+   * campos enquanto ela termina, só não aceitam digitação (`aceitaEdicao`).
+   */
+  readonly emConsulta = computed(() => !this.edicaoPermitida());
+
   /** `salvando()` OU uma orquestração de vários passos em curso — ver `travamentoDeOrquestracao`. */
   readonly operacaoEmAndamento = computed(() => this.salvando() || this.travamentoDeOrquestracao());
 

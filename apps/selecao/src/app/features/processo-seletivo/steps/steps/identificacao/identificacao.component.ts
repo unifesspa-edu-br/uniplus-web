@@ -18,6 +18,7 @@ import {
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
@@ -54,7 +55,7 @@ export const ORIGENS_CANDIDATOS: readonly {
 @Component({
   selector: 'sel-step-identificacao',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(IdentificacaoStepComponent)],
@@ -98,6 +99,25 @@ export class IdentificacaoStepComponent {
     if (catalogo.some((opcao) => opcao.id === snapshot.origemId)) return catalogo;
 
     return [{ id: snapshot.origemId, rotulo: `${snapshot.sigla} — ${snapshot.nome}` }, ...catalogo];
+  });
+  /**
+   * O cadastro como se lê: o que o rascunho guarda, com o rótulo de cada escolha. Serve à
+   * consulta e ao resumo que confirma a criação. Sem o catálogo de unidades, a unidade vem
+   * do snapshot do processo (`unidades`).
+   */
+  readonly leitura = computed(() => {
+    const identificacao = this.store.draft().identificacao;
+    const localidade = identificacao.localidade;
+    return {
+      nome: identificacao.nome,
+      identificadorLegivel: identificacao.identificadorLegivel,
+      unidade:
+        this.unidades().find((opcao) => opcao.id === identificacao.unidadeAdministradoraId)
+          ?.rotulo ?? null,
+      municipio: localidade === null ? null : `${localidade.nome} — ${localidade.uf}`,
+      origem:
+        this.origens.find((opcao) => opcao.value === identificacao.origemCandidatos)?.label ?? null,
+    };
   });
   readonly unidadesCarregando = signal(true);
   readonly unidadesErro = signal<string | null>(null);
@@ -438,13 +458,7 @@ export class IdentificacaoStepComponent {
     // `persistir()` aparece direto e nomeia o que falta.
     if (this.camposFaltantesDoComando().length > 0) return null;
 
-    const draft = this.store.draft();
-    const identificacao = draft.identificacao;
-    const unidade = this.unidades().find(
-      (item) => item.id === identificacao.unidadeAdministradoraId,
-    );
-    const origem = this.origens.find((item) => item.value === identificacao.origemCandidatos);
-    const localidade = identificacao.localidade;
+    const leitura = this.leitura();
 
     return {
       titulo: 'Confirmar o cadastro do processo seletivo',
@@ -452,14 +466,11 @@ export class IdentificacaoStepComponent {
         'Estes dados não poderão ser alterados depois de gravados. Confira antes de continuar.',
       rotuloDeConfirmar: 'Gravar processo',
       itens: [
-        { rotulo: 'Nome do processo seletivo', valor: identificacao.nome },
-        { rotulo: 'Tipo do processo', valor: draft.tipoProcesso.rotulo },
-        { rotulo: 'Unidade administradora', valor: unidade?.rotulo ?? '' },
-        {
-          rotulo: 'Município que rege os prazos',
-          valor: localidade === null ? '' : `${localidade.nome} — ${localidade.uf}`,
-        },
-        { rotulo: 'Origem dos candidatos', valor: origem?.label ?? '' },
+        { rotulo: 'Nome do processo seletivo', valor: leitura.nome },
+        { rotulo: 'Tipo do processo', valor: this.store.draft().tipoProcesso.rotulo },
+        { rotulo: 'Unidade administradora', valor: leitura.unidade ?? '' },
+        { rotulo: 'Município que rege os prazos', valor: leitura.municipio ?? '' },
+        { rotulo: 'Origem dos candidatos', valor: leitura.origem ?? '' },
       ],
     };
   }
