@@ -70,6 +70,14 @@ describe('ValorEmConsultaComponent', () => {
     expect(itens).toEqual(['Prova ampliada', 'Ledor']);
   });
 
+  it('numera a lista cuja ordem importa', () => {
+    const host = render({ rotulo: 'Áreas', valor: ['Redação', 'Matemática'], ordenada: true });
+
+    expect(host.querySelector('ul')).toBeNull();
+    const itens = Array.from(host.querySelectorAll('dd ol li'), (li) => li.textContent?.trim());
+    expect(itens).toEqual(['Redação', 'Matemática']);
+  });
+
   it('com rotuladoPor, usa o título da tela como rótulo e não o repete', () => {
     const host = render({ rotuladoPor: 'secao-recursos', valor: ['Ledor'], rotulo: 'Ignorado' });
 

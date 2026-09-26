@@ -243,6 +243,7 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
   list-style: disc;
   white-space: normal;
 }
+.valor-em-consulta__lista--ordenada { list-style: decimal; }
 .valor-em-consulta__vazio { color: var(--text-secondary); font-style: italic; }
 .valor-em-consulta > .field__hint { margin: var(--space-1) 0 0; }
 

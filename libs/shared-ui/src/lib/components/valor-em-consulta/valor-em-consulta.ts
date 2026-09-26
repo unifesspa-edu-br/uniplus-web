@@ -1,5 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 
 /** O que um campo guarda, na forma em que chega do formulário ou do rascunho. */
 export type UiValorEmConsulta = string | number | boolean | readonly string[] | null | undefined;
@@ -59,11 +65,19 @@ function apresentar(valor: UiValorEmConsulta): Apresentacao {
     <ng-template #conteudo>
       @switch (apresentacao().forma) {
         @case ('lista') {
-          <ul class="valor-em-consulta__lista">
-            @for (item of itens(); track $index) {
-              <li>{{ item }}</li>
-            }
-          </ul>
+          @if (ordenada()) {
+            <ol class="valor-em-consulta__lista valor-em-consulta__lista--ordenada">
+              @for (item of itens(); track $index) {
+                <li>{{ item }}</li>
+              }
+            </ol>
+          } @else {
+            <ul class="valor-em-consulta__lista">
+              @for (item of itens(); track $index) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
         }
         @case ('vazio') {
           <span class="valor-em-consulta__vazio">{{ seVazio() }}</span>
@@ -84,6 +98,8 @@ export class ValorEmConsultaComponent {
   readonly rotuladoPor = input<string | null>(null);
   /** O que se lê quando nada foi declarado. */
   readonly seVazio = input<string>('Não informado');
+  /** A lista tem ordem que importa, como a de avaliação: numerada, e anunciada como tal. */
+  readonly ordenada = input(false, { transform: booleanAttribute });
   /** Contexto que ajuda a ler o valor; instrução de preenchimento não entra aqui. */
   readonly dica = input<string | null>(null);
 
