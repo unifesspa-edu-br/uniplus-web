@@ -3,7 +3,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserContextService } from '@uniplus/shared-auth';
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 
 import { InscricaoListaPage } from './inscricao-lista.page';
 import { InscricoesCandidatoMockService } from './inscricao-mock.service';
