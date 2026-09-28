@@ -80,7 +80,7 @@
               </ui-tag>
             </div>
             <div class="inscricao-lista-item__corpo">
-              <h3 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h3>
+              <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
               <p>{{ inscricao.mensagem }}</p>
             </div>
             <div class="inscricao-lista-item__rodape">
@@ -112,7 +112,7 @@
                 {{ inscricao.editalLabel }}
               </span>
             </div>
-            <h3 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h3>
+            <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
             <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
             <div class="card__footer">
               @let botaoInfo = obterBotaoInfo(inscricao.status);
@@ -130,7 +130,7 @@
 } @else if (temFiltrosAtivos()) {
   <ui-empty-state
     heading="Nenhuma inscrição encontrada."
-    description="Ajuste a busca ou limpe os filtros para ver todos as inscrições."
+    description="Ajuste a busca ou limpe os filtros para ver todas as inscrições."
   />
 } @else {
   <ui-empty-state
