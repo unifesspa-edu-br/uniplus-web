@@ -82,7 +82,7 @@ test.describe('Tipo de ato — lista e formulário', () => {
   });
 
   test('o formulário não viola WCAG 2.1 A/AA', async ({ page }) => {
-    await page.getByRole('button', { name: 'Cadastrar tipo de ato' }).first().click();
+    await page.getByRole('button', { name: 'Novo tipo de ato' }).first().click();
     await expect(page.locator('[formControlName="codigo"]')).toBeVisible();
 
     const { violations } = await runAxeWcagAA(page);
@@ -96,7 +96,7 @@ test.describe('Tipo de ato — lista e formulário', () => {
   // O contrato da gaveta do módulo: a rolagem é do formulário, e o rodapé fica
   // fora dele para não rolar junto com os campos.
   test('a gaveta rola pelo formulário e mantém o rodapé fixo', async ({ page }) => {
-    await page.getByRole('button', { name: 'Cadastrar tipo de ato' }).first().click();
+    await page.getByRole('button', { name: 'Novo tipo de ato' }).first().click();
 
     const formulario = page.locator('form.cfg-form');
     await expect(formulario).toBeVisible();
