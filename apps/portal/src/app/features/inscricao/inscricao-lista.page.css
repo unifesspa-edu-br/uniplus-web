@@ -1,15 +1,3 @@
-.inscricao-corpo-info {
-  display: flex;
-  justify-content: space-between;
-}
-
-.titulo-inscricao {
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-  color: var(--text-heading);
-  margin: var(--space-2) 0;
-}
-
 .inscricoes-toolbar,
 .inscricao-row__body  {
   display: flex;
@@ -33,7 +21,11 @@
   font-size: var(--text-sm);
 }
 
-.inscricao-lista {}
+.inscricoes-grid {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
 
 .inscricao-lista-item {
   display: grid;
@@ -76,21 +68,6 @@
   flex: 1 1 100%;
 }
 
-.inscricao-lista-item__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-.inscricao-lista-item__actions {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
 .inscricao-lista-item__rodape {
   display: flex;
   align-items: center;
@@ -106,10 +83,6 @@
     grid-template-columns: 1fr;
     gap: var(--space-5);
     align-items: center;
-  }
-
-  .inscricao-lista-item__actions {
-    justify-content: flex-end;
   }
 }
 

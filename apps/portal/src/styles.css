@@ -68,13 +68,4 @@ ptl-root {
   color: var(--text-secondary);
 }
 
-a.btn--tertiary {
-  text-decoration-line: none;
-}
-
-.inscricoes-grid {
-  display: grid;
-  gap: var(--space-5);
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-}
 

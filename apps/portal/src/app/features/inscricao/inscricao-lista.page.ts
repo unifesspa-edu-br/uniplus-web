@@ -1,25 +1,29 @@
 import {
-  Component,
   ChangeDetectionStrategy,
-  signal,
-  inject,
+  Component,
+  DestroyRef,
+  ElementRef,
   computed,
   effect,
-  DestroyRef,
+  inject,
+  signal,
+  viewChild,
 } from '@angular/core';
 
 import {
   AlertComponent,
+  ButtonComponent,
   EmptyStateComponent,
   FilterBarComponent,
   SegmentedComponent,
   SpinnerComponent,
   TagComponent,
+  type UiButtonVariant,
   type UiSegmentedOption,
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { UserContextService } from '@uniplus/shared-auth';
-import { InscricaoStatus, } from './inscricao-lista.mock';
+import { type Inscricao, InscricaoStatus, } from './inscricao-lista.mock';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { InscricoesCandidatoMockService } from './inscricao-mock.service';
 
@@ -67,21 +71,22 @@ const INSCRICAO_STATUS_VARIANT: Record<InscricaoStatus, UiTagVariant> = {
 
 export interface InscricaoBotaoInfo {
   label: string;
-  className: string
+  variant: UiButtonVariant;
 }
 const INSCRICAO_BUTTON_DEFINITION: Record<InscricaoStatus, InscricaoBotaoInfo> = {
-  analise: { label: 'Ver detalhes', className: 'btn--tertiary' },
-  rascunho: { label: 'Continuar inscrição', className: 'btn--primary' },
-  aprovada: { label: 'Ver detalhes', className: 'btn--tertiary' },
-  reprovada: { label: 'Ver detalhes', className: 'btn--tertiary' },
+  analise: { label: 'Ver detalhes', variant: 'tertiary' },
+  rascunho: { label: 'Continuar inscrição', variant: 'primary' },
+  aprovada: { label: 'Ver detalhes', variant: 'tertiary' },
+  reprovada: { label: 'Ver detalhes', variant: 'tertiary' },
 };
 
 @Component({
   selector: 'ptl-inscricao-lista',
   standalone: true,
   imports: [
-    EmptyStateComponent,
     AlertComponent,
+    ButtonComponent,
+    EmptyStateComponent,
     FilterBarComponent,
     SegmentedComponent,
     SpinnerComponent,
@@ -96,6 +101,7 @@ export class InscricaoListaPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly inscricoesCandidatoService = inject(InscricoesCandidatoMockService);
   private readonly userContext = inject(UserContextService);
+  private readonly paginaTitulo = viewChild<ElementRef<HTMLHeadingElement>>('paginaTitulo');
   protected readonly nomeUsuario = computed(() => this.userContext.displayName() || 'Candidato');
   /** Detecta a largura em que a lista é a forma canônica (<600px), via `matchMedia`. */
   protected readonly isCompacto = signal(this.mediaCompacta()?.matches ?? false);
@@ -132,8 +138,11 @@ export class InscricaoListaPage {
   protected tentarNovamente(): void {
     if (!this.loading()) {
       this.inscricoesResource.reload();
+      this.paginaTitulo()?.nativeElement?.focus();
     }
   }
+
+  protected abrirInscricao(_inscricao: Inscricao): void {}
 
   protected limparFiltros(): void {
     this.termoBusca.set('');
