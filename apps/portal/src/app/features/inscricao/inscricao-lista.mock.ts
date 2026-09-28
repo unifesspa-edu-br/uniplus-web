@@ -1,5 +1,5 @@
 export type InscricaoStatus = 'rascunho' | 'analise' | 'aprovada' | 'reprovada';
-interface InscricaoMock {
+export interface Inscricao {
   id: string;
   editalLabel: string;
   status: InscricaoStatus;
@@ -7,7 +7,7 @@ interface InscricaoMock {
   nome: string;
   mensagemPrazo: string;
 }
-export const INSCRICOES_MOCK: InscricaoMock[] = [
+export const INSCRICOES_MOCK: Inscricao[] = [
   {
     id: '1',
     editalLabel: 'Edital 12/2026',
