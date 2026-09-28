@@ -77,9 +77,9 @@ describe('TiposDeficienciaListPage', () => {
     ) as HTMLButtonElement;
   }
 
-  function getInativarButtonEl(): HTMLButtonElement {
+  function getRemoverButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions button[aria-label^="Inativar tipo de deficiência"]',
+      'td.table-responsive__actions button[aria-label^="Remover tipo de deficiência"]',
     ) as HTMLButtonElement;
   }
 
@@ -279,13 +279,13 @@ describe('TiposDeficienciaListPage', () => {
       put.flush(null, { status: 204, statusText: 'No Content' });
       await flushRecarregarLista([tipo_deficiencia]);
     });
-  it('desabilita as ações da linha (Editar e Inativar) durante a recarga da lista', async () => {
+  it('desabilita as ações da linha (Editar e Remover) durante a recarga da lista', async () => {
     // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
     await flushLista([tipoDeficienciaSeed]);
     fixture.detectChanges();
     expect(component['loading']()).toBe(false);
     expect(getEditarButtonEl().disabled).toBe(false);
-    expect(getInativarButtonEl().disabled).toBe(false);
+    expect(getRemoverButtonEl().disabled).toBe(false);
 
     // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
     component['tentarNovamente']();
@@ -293,7 +293,7 @@ describe('TiposDeficienciaListPage', () => {
     fixture.detectChanges();
     expect(component['loading']()).toBe(true);
     expect(getEditarButtonEl().disabled).toBe(true);
-    expect(getInativarButtonEl().disabled).toBe(true);
+    expect(getRemoverButtonEl().disabled).toBe(true);
 
     // Encerra o GET pendente para o controller.verify() do afterEach.
     controller
