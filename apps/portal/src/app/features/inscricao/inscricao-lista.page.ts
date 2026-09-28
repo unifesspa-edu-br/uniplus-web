@@ -22,7 +22,7 @@ import {
   type UiSegmentedOption,
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
-import { UserContextService } from '@uniplus/shared-auth';
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type Inscricao, InscricaoStatus, } from './inscricao-lista.mock';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { InscricoesCandidatoMockService } from './inscricao-mock.service';
