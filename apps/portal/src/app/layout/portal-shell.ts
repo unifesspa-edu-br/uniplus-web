@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import {
   A11yMenuComponent,
@@ -13,11 +14,13 @@ interface PortalNavItem {
   readonly label: string;
   readonly icon: string;
   readonly routerLink?: string;
+  readonly requiresAuth?: boolean;
 }
 
 interface PortalFooterLink {
   readonly label: string;
   readonly routerLink?: string;
+  readonly requiresAuth?: boolean;
 }
 
 interface PortalFooterGroup {
@@ -79,7 +82,7 @@ interface PortalFooterGroup {
     </header>
 
     <nav class="portal-nav" aria-label="Navegação principal">
-      @for (item of navItems; track item.label) {
+      @for (item of navItems(); track item.label) {
         @if (item.routerLink) {
           <a
             class="portal-nav__link"
@@ -110,7 +113,7 @@ interface PortalFooterGroup {
             <span class="portal-footer__brand-mark" aria-hidden="true">U+</span>
             <p>Sistema Unificado de Seleção e Ingresso da UNIFESSPA.</p>
           </div>
-          @for (group of footerGroups; track group.label) {
+          @for (group of footerGroups(); track group.label) {
             <div class="portal-footer__group">
               <p class="portal-footer__group-title">{{ group.label }}</p>
               <ul>
@@ -139,24 +142,31 @@ interface PortalFooterGroup {
   `,
 })
 export class PortalShellComponent {
+  private readonly userContext = inject(UserContextService);
+
   // "Meu perfil" fecha o caminho de volta: sem ele, quem chega em /processos
   // por link direto não alcança a área da conta por nenhum menu. "Documentos"
   // fica de fora enquanto for placeholder vazio — pô-lo no menu principal cria
   // uma expectativa que a tela não entrega; a rota continua acessível por URL
   // direta e ganha link aqui quando houver conteúdo por trás.
-  protected readonly navItems: readonly PortalNavItem[] = [
+  private readonly allNavItems: readonly PortalNavItem[] = [
     { label: 'Editais', icon: 'pi-calendar', routerLink: '/processos' },
-    { label: 'Minhas inscrições', icon: 'pi-check-square', routerLink: '/inscricao' },
+    {
+      label: 'Minhas inscrições',
+      icon: 'pi-check-square',
+      routerLink: '/inscricao',
+      requiresAuth: true,
+    },
     { label: 'Meu perfil', icon: 'pi-user', routerLink: '/perfil' },
     { label: 'Ajuda', icon: 'pi-question-circle' },
   ];
 
-  protected readonly footerGroups: readonly PortalFooterGroup[] = [
+  private readonly allFooterGroups: readonly PortalFooterGroup[] = [
     {
       label: 'Candidato',
       links: [
         { label: 'Editais', routerLink: '/processos' },
-        { label: 'Minhas inscrições', routerLink: '/inscricao' },
+        { label: 'Minhas inscrições', routerLink: '/inscricao', requiresAuth: true },
       ],
     },
     {
@@ -172,4 +182,17 @@ export class PortalShellComponent {
       ],
     },
   ];
+
+  protected readonly navItems = computed(() =>
+    this.allNavItems.filter((item) => !item.requiresAuth || this.userContext.isAuthenticated()),
+  );
+
+  protected readonly footerGroups = computed(() =>
+    this.allFooterGroups.map((group) => ({
+      ...group,
+      links: group.links.filter(
+        (link) => !link.requiresAuth || this.userContext.isAuthenticated(),
+      ),
+    })),
+  );
 }
