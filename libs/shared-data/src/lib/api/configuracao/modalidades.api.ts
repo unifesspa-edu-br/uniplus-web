@@ -23,13 +23,12 @@ export interface DominioOption<T extends string = string> {
   readonly label: string;
 }
 
-export type NaturezaLegalToken = 'AMPLA' | 'COTA_RESERVADA' | 'SUPLEMENTAR' | 'OUTRA_MODALIDADE';
+export type NaturezaLegalToken = 'AMPLA' | 'COTA_RESERVADA' | 'ACAO_AFIRMATIVA';
 
 export const NATUREZAS_LEGAIS: readonly DominioOption<NaturezaLegalToken>[] = [
   { value: 'AMPLA', label: 'Ampla concorrência' },
-  { value: 'COTA_RESERVADA', label: 'Cota reservada' },
-  { value: 'SUPLEMENTAR', label: 'Suplementar' },
-  { value: 'OUTRA_MODALIDADE', label: 'Outra modalidade' },
+  { value: 'COTA_RESERVADA', label: 'Cota (Lei 12.711)' },
+  { value: 'ACAO_AFIRMATIVA', label: 'Ação afirmativa' },
 ] as const;
 
 /** Natureza legal default de uma nova modalidade (§3 da story). */

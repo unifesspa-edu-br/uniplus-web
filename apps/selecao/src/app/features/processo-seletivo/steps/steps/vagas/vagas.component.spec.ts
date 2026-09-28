@@ -19,7 +19,7 @@ const OFERTA = '01960000-0000-7000-0000-0000000000f1';
 const OUTRA_OFERTA = '01960000-0000-7000-0000-0000000000f2';
 const MODALIDADE = '01960000-0000-7000-0000-0000000000a1';
 
-const OUTRA_MODALIDADE = '01960000-0000-7000-0000-0000000000a2';
+const SEGUNDA_MODALIDADE = '01960000-0000-7000-0000-0000000000a2';
 
 /** Suplementares: não dependem de origem nem de remanejamento para valer. */
 const MODALIDADES = [
@@ -27,7 +27,7 @@ const MODALIDADES = [
     id: MODALIDADE,
     codigo: 'AC_I',
     descricao: 'Indígena',
-    naturezaLegal: 'SUPLEMENTAR',
+    naturezaLegal: 'ACAO_AFIRMATIVA',
     composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
     composicaoOrigemCodigo: null,
     regraRemanejamento: null,
@@ -36,10 +36,10 @@ const MODALIDADES = [
     remanejamentoFallback: null,
   },
   {
-    id: OUTRA_MODALIDADE,
+    id: SEGUNDA_MODALIDADE,
     codigo: 'AC_Q',
     descricao: 'Quilombola',
-    naturezaLegal: 'SUPLEMENTAR',
+    naturezaLegal: 'ACAO_AFIRMATIVA',
     composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
     composicaoOrigemCodigo: null,
     regraRemanejamento: null,
@@ -1398,8 +1398,8 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
           regraDistribuicaoVersao: 'v1',
           modalidades: [
             { id: MODALIDADE, codigo: 'AC_I' },
-            { id: OUTRA_MODALIDADE, codigo: 'AC_Q' },
-            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'PCD_PURO' },
+            { id: SEGUNDA_MODALIDADE, codigo: 'AC_Q' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD' },
           ],
         },
       ],
@@ -1410,7 +1410,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
 
     expect(
       problemas.some(
-        (p) => p.mensagem.includes('PCD_PURO') && p.mensagem.includes('não pertence ao rol'),
+        (p) => p.mensagem.includes('AC_PCD') && p.mensagem.includes('não pertence ao rol'),
       ),
     ).toBe(true);
   });
@@ -1451,8 +1451,8 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
           regraDistribuicaoVersao: 'v1',
           modalidades: [
             { id: MODALIDADE, codigo: 'AC_I' },
-            { id: OUTRA_MODALIDADE, codigo: 'AC_Q' },
-            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'PCD_PURO' },
+            { id: SEGUNDA_MODALIDADE, codigo: 'AC_Q' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD' },
           ],
           quadro: [{ modalidadeId: '01960000-0000-7000-0000-0000000000a9', quantidade: '3' }],
         },
@@ -1465,8 +1465,8 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     expect(componente.reaplicarRolPendente()).toBe(true);
     expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual([
       'AC_I',
+      'AC_PCD',
       'AC_Q',
-      'PCD_PURO',
     ]);
 
     componente.confirmarReaplicarRol();
@@ -1484,7 +1484,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
           regraDistribuicaoVersao: 'v1',
           modalidades: [
             { id: MODALIDADE, codigo: 'AC_I' },
-            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'PCD_PURO' },
+            { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'AC_PCD' },
           ],
           quadro: [{ modalidadeId: '01960000-0000-7000-0000-0000000000a9', quantidade: '3' }],
         },
@@ -1498,7 +1498,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     expect(componente.reaplicarRolPendente()).toBe(false);
     expect(componente.padrao().modalidades.map((m) => m.codigo).sort()).toEqual([
       'AC_I',
-      'PCD_PURO',
+      'AC_PCD',
     ]);
   });
 
@@ -1552,7 +1552,7 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
       id: MODALIDADE,
       codigo: 'AC_I',
       descricao: 'Indígena',
-      naturezaLegal: 'SUPLEMENTAR',
+      naturezaLegal: 'ACAO_AFIRMATIVA',
       composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
       composicaoOrigemCodigo: null,
       regraRemanejamento: null,

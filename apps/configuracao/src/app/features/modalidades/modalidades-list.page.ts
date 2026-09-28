@@ -60,8 +60,7 @@ function rotulo(roster: readonly { value: string; label: string }[], token: stri
 const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
   AMPLA: 'info',
   COTA_RESERVADA: 'success',
-  SUPLEMENTAR: 'warning',
-  OUTRA_MODALIDADE: 'neutral',
+  ACAO_AFIRMATIVA: 'warning',
 };
 
 @Component({

@@ -37,7 +37,7 @@ const V = modalidade({
   id: 'id-v',
   codigo: 'V',
   descricao: 'PcD ampla concorrência',
-  naturezaLegal: 'SUPLEMENTAR',
+  naturezaLegal: 'ACAO_AFIRMATIVA',
   composicaoVagas: 'RETIRA_DE',
   composicaoOrigem: 'AC',
   regraRemanejamento: 'DESTINO_UNICO',
@@ -95,9 +95,9 @@ describe('ModalidadesListPage', () => {
     await flushLista([AC, V]);
     const chips = component['chipsNatureza']();
     expect(chips.find((c) => c.value === 'AMPLA')?.count).toBe(1);
-    expect(chips.find((c) => c.value === 'SUPLEMENTAR')?.count).toBe(1);
+    expect(chips.find((c) => c.value === 'ACAO_AFIRMATIVA')?.count).toBe(1);
 
-    component['naturezaSelecionada'].set('SUPLEMENTAR');
+    component['naturezaSelecionada'].set('ACAO_AFIRMATIVA');
     expect(component['modalidadesFiltradas']().map((m) => m.codigo)).toEqual(['V']);
   });
 
