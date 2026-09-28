@@ -520,24 +520,24 @@ describe('TiposDocumentoListPage', () => {
   });
 
   // TiposDocumentoListPage_ModalInativacao_ExibeNomeENota
-  it('CA-07: modal de inativação exibe o nome do tipo e a nota de imunidade RN08', async () => {
+  it('CA-07: modal de remoção exibe o nome do tipo e a nota de imunidade RN08', async () => {
     await flushLista([rgSeed]);
-    component['pedirInativacao'](rgSeed);
+    component['pedirRemocao'](rgSeed);
     fixture.detectChanges();
 
-    expect(component['confirmInativarMensagem']()).toContain('Registro Geral');
-    expect(component['confirmInativarMensagem']()).toContain('RG');
-    expect(component['confirmInativarMensagem']()).toContain(
+    expect(component['confirmRemoverMensagem']()).toContain('Registro Geral');
+    expect(component['confirmRemoverMensagem']()).toContain('RG');
+    expect(component['confirmRemoverMensagem']()).toContain(
       'Editais já publicados que o referenciam não são afetados',
     );
-    expect(component['confirmInativarMensagem']()).toContain('RN08');
+    expect(component['confirmRemoverMensagem']()).toContain('RN08');
   });
 
   // TiposDocumentoListPage_ModalInativacao_ConfirmaRemove
   it('CA-07/CA-08: confirmação no modal dispara remover sem checagem prévia e atualiza a lista', async () => {
     await flushLista([rgSeed]);
-    component['pedirInativacao'](rgSeed);
-    component['confirmarInativacao']();
+    component['pedirRemocao'](rgSeed);
+    component['confirmarRemocao']();
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento/${rgSeed.id}`);
     expect(req.request.method).toBe('DELETE');
@@ -545,7 +545,7 @@ describe('TiposDocumentoListPage', () => {
     await propagate();
 
     await flushLista([]);
-    expect(component['confirmInativarAberto']()).toBe(false);
+    expect(component['confirmRemoverAberto']()).toBe(false);
   });
   // ---------------------------------------------------------------------------
   // Cenários da issue #651 — o vocabulário de categoria passa a vir do cadastro
