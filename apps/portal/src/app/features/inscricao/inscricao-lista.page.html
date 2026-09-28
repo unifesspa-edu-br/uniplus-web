@@ -1,6 +1,6 @@
 <div class="page-header">
   <div class="page-header__content">
-    <h1 class="page-header__title">Olá, {{ nomeUsuario() }}</h1>
+    <h1 #paginaTitulo class="page-header__title" tabindex="-1">Olá, {{ nomeUsuario() }}</h1>
     <p class="page-header__desc">Aqui você acompanha todas as suas inscrições.</p>
   </div>
 </div>
@@ -48,18 +48,13 @@
   <ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
     {{ mensagem }}
     <div class="ptl-inscricao__retry">
-      <button
-        type="button"
-        class="btn btn--secondary btn--sm"
-        [disabled]="loading()"
-        (click)="tentarNovamente()"
-      >
+      <ui-button variant="secondary" buttonSize="sm" [isDisabled]="loading()" (click)="tentarNovamente()">
         Tentar novamente
-      </button>
+      </ui-button>
     </div>
   </ui-alert>
 } @else if (loading()) {
-  <div class="certames-loading" role="status">
+  <div class="inscricao-spinner">
     <ui-spinner spinnerSize="sm" accessibleName="Carregando inscrições" />
     Carregando inscrições...
   </div>
@@ -86,12 +81,13 @@
             <div class="inscricao-lista-item__rodape">
               <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
               @let botaoInfo = obterBotaoInfo(inscricao.status);
-              <button
-                type="button"
-                [class]="'btn ' + botaoInfo.className"
+              <ui-button
+                [variant]="botaoInfo.variant"
+                buttonSize="sm"
+                (click)="abrirInscricao(inscricao)"
               >
                 {{ botaoInfo.label }}
-              </button>
+              </ui-button>
             </div>
           </li>
         }
@@ -116,12 +112,13 @@
             <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
             <div class="card__footer">
               @let botaoInfo = obterBotaoInfo(inscricao.status);
-              <button
-                type="button"
-                [class]="'btn ' + botaoInfo.className"
+              <ui-button
+                [variant]="botaoInfo.variant"
+                buttonSize="sm"
+                (click)="abrirInscricao(inscricao)"
               >
                 {{ botaoInfo.label }}
-              </button>
+              </ui-button>
             </div>
           </article>
         }

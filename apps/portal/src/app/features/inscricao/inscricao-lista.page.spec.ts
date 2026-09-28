@@ -256,9 +256,6 @@ describe('InscricaoListaPage', () => {
     await propagate();
     fixtureCompacto.detectChanges();
 
-    const cmp = fixtureCompacto.componentInstance as InscricaoListaPage;
-    (cmp as unknown as Record<string, unknown>)['visao'] =
-      (cmp as unknown as Record<string, { set: (v: string) => void }>)['visao'];
     (fixtureCompacto.componentInstance as unknown as Record<string, { set: (v: string) => void }>)['visao'].set('cards');
     fixtureCompacto.detectChanges();
 
