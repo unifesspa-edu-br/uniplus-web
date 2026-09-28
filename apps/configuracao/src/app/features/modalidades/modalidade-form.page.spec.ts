@@ -122,9 +122,9 @@ describe('ModalidadeFormPage', () => {
     expect(component['regraDesabilitada']('CRUZADO')).toBe(true);
   });
 
-  it('ModalidadeForm_Natureza_SuplementarOfertaDestinoOuCruzado', () => {
+  it('ModalidadeForm_Natureza_AcaoAfirmativaOfertaDestinoOuCruzado', () => {
     montar();
-    setControl('naturezaLegal', 'SUPLEMENTAR');
+    setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     component['aoMudarNatureza']();
     expect(component['regraDesabilitada']('SEGUE_CASCATA')).toBe(true);
     expect(component['regraDesabilitada']('DESTINO_UNICO')).toBe(false);
@@ -150,7 +150,7 @@ describe('ModalidadeFormPage', () => {
 
   it('ModalidadeForm_Args_PorRegra', () => {
     montar();
-    setControl('naturezaLegal', 'SUPLEMENTAR');
+    setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     component['aoMudarNatureza']();
     setControl('regraRemanejamento', 'DESTINO_UNICO');
     component['aoMudarRegra']();
@@ -193,7 +193,7 @@ describe('ModalidadeFormPage', () => {
 
   it('ModalidadeForm_TrocaNatureza_ResetaDependentes', () => {
     montar();
-    setControl('naturezaLegal', 'SUPLEMENTAR');
+    setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     component['aoMudarNatureza']();
     setControl('regraRemanejamento', 'CRUZADO');
     component['aoMudarRegra']();
@@ -216,7 +216,7 @@ describe('ModalidadeFormPage', () => {
 
   it('ModalidadeForm_TrocaNatureza_CancelarPreserva', () => {
     montar();
-    setControl('naturezaLegal', 'SUPLEMENTAR');
+    setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     component['aoMudarNatureza']();
     setControl('regraRemanejamento', 'DESTINO_UNICO');
     component['aoMudarRegra']();
@@ -228,7 +228,7 @@ describe('ModalidadeFormPage', () => {
 
     component['cancelarResetNatureza']();
     // Reverte a natureza e preserva os campos.
-    expect(component['form'].controls.naturezaLegal.value).toBe('SUPLEMENTAR');
+    expect(component['form'].controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
     expect(component['form'].controls.remanejamentoDestino.value).toBe('AC');
   });
 
@@ -237,11 +237,11 @@ describe('ModalidadeFormPage', () => {
     setControl('naturezaLegal', 'COTA_RESERVADA');
     component['aoMudarNatureza']();
     // regra auto-preenchida SEGUE_CASCATA, sem argumentos digitados pelo usuário.
-    setControl('naturezaLegal', 'SUPLEMENTAR');
+    setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     component['aoMudarNatureza']();
     // Não pede confirmação (nada do usuário a descartar); aplica direto.
     expect(component['confirmResetAberto']()).toBe(false);
-    expect(component['form'].controls.naturezaLegal.value).toBe('SUPLEMENTAR');
+    expect(component['form'].controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
     expect(component['form'].controls.regraRemanejamento.value).toBe('');
     expect(component['regraDesabilitada']('SEGUE_CASCATA')).toBe(true);
   });
@@ -266,7 +266,7 @@ describe('ModalidadeFormPage', () => {
     montar();
     setControl('codigo', 'V');
     setControl('descricao', 'PcD ampla concorrência');
-    setControl('naturezaLegal', 'SUPLEMENTAR');
+    setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
     component['aoMudarNatureza']();
     setControl('composicaoVagas', 'RETIRA_DE');
     component['aoMudarComposicao']();

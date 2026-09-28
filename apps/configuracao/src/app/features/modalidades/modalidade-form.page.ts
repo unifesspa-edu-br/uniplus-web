@@ -491,10 +491,9 @@ export class ModalidadeFormPage {
   protected readonly dicaRegra = computed(() => {
     switch (this.natureza()) {
       case 'COTA_RESERVADA':
-        return 'Cota reservada segue obrigatoriamente a cascata legal.';
-      case 'SUPLEMENTAR':
-      case 'OUTRA_MODALIDADE':
-        return 'Escolha destino único ou remanejamento cruzado.';
+        return 'Cota da Lei 12.711 segue obrigatoriamente a cascata legal.';
+      case 'ACAO_AFIRMATIVA':
+        return 'Ação afirmativa não segue a cascata legal: escolha destino único ou remanejamento cruzado.';
       default:
         return 'Selecione a regra de remanejamento aplicável.';
     }
@@ -527,7 +526,7 @@ export class ModalidadeFormPage {
     if (natureza === 'AMPLA') {
       clausulas.push('Ampla concorrência não remaneja vagas ociosas.');
     } else if (natureza === 'COTA_RESERVADA') {
-      clausulas.push('Cota reservada: vagas ociosas seguem a cascata legal de remanejamento.');
+      clausulas.push('Cota da Lei 12.711: vagas ociosas seguem a cascata legal de remanejamento.');
     } else if (regra === 'DESTINO_UNICO') {
       clausulas.push(
         raw.remanejamentoDestino
@@ -627,8 +626,7 @@ export class ModalidadeFormPage {
     switch (this.natureza()) {
       case 'COTA_RESERVADA':
         return valor !== 'SEGUE_CASCATA';
-      case 'SUPLEMENTAR':
-      case 'OUTRA_MODALIDADE':
+      case 'ACAO_AFIRMATIVA':
         return valor === 'SEGUE_CASCATA';
       default:
         return false;
@@ -725,7 +723,7 @@ export class ModalidadeFormPage {
       controls.regraRemanejamento.setValue('SEGUE_CASCATA', { emitEvent: false });
       controls.regraRemanejamento.setValidators([Validators.required]);
     } else {
-      // SUPLEMENTAR / OUTRA_MODALIDADE: só DESTINO_UNICO/CRUZADO.
+      // ACAO_AFIRMATIVA: só DESTINO_UNICO/CRUZADO.
       if (controls.regraRemanejamento.value === 'SEGUE_CASCATA') {
         controls.regraRemanejamento.setValue('', { emitEvent: false });
       }
@@ -757,7 +755,7 @@ export class ModalidadeFormPage {
    * própria regra é auto-gerida por `reconciliarCondicionais` (ex.: o
    * `SEGUE_CASCATA` que a cota preenche sozinha), então não conta como dado do
    * usuário; considerá-la bloquearia trocas legítimas como COTA_RESERVADA →
-   * SUPLEMENTAR sem nada a descartar.
+   * ACAO_AFIRMATIVA sem nada a descartar.
    */
   private remanejamentoPreenchido(): boolean {
     const raw = this.form.getRawValue();
