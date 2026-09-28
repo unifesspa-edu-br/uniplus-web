@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, Subject } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth';
 
 import { InscricaoListaPage } from './inscricao-lista.page';
@@ -101,6 +101,16 @@ describe('InscricaoListaPage', () => {
     expect(status?.textContent).toContain('Carregando inscrições');
   });
 
+  it('exibe ui-spinner durante o carregamento e o remove após os dados chegarem (CA-07)', async () => {
+    expect(host().querySelector('ui-spinner')).toBeTruthy();
+
+    listagemService.flush();
+    await propagate();
+    fixture.detectChanges();
+
+    expect(host().querySelector('ui-spinner')).toBeNull();
+  });
+
   // --- saudação (CA-03, CA-04) ---
 
   it('exibe saudação com o nome do candidato autenticado', async () => {
@@ -140,6 +150,48 @@ describe('InscricaoListaPage', () => {
 
     const itens = host().querySelectorAll('li.inscricao-lista-item');
     expect(itens.length).toBe(INSCRICOES_MOCK.length);
+  });
+
+  it('inscrição em rascunho exibe "Continuar inscrição" com variante primary (CA-09, CA-15)', async () => {
+    listagemService.flush(INSCRICOES_MOCK);
+    await propagate();
+    fixture.detectChanges();
+
+    // INSCRICOES_MOCK[0] tem status 'rascunho'
+    const item = host().querySelectorAll('li.inscricao-lista-item')[0];
+    const btn = item.querySelector('button');
+    expect(btn?.textContent?.trim()).toContain('Continuar inscrição');
+    // variant 'primary' não adiciona classe extra — ausência de btn--tertiary comprova
+    expect(btn?.classList.contains('btn--tertiary')).toBe(false);
+  });
+
+  it('inscrições em analise, aprovada e reprovada exibem "Ver detalhes" com variante tertiary (CA-10, CA-15)', async () => {
+    listagemService.flush(INSCRICOES_MOCK);
+    await propagate();
+    fixture.detectChanges();
+
+    // indices 1, 2, 3 = analise, aprovada, reprovada
+    const itens = Array.from(host().querySelectorAll('li.inscricao-lista-item')).slice(1);
+    for (const item of itens) {
+      const btn = item.querySelector('button');
+      expect(btn?.textContent?.trim()).toContain('Ver detalhes');
+      expect(btn?.classList.contains('btn--tertiary')).toBe(true);
+    }
+  });
+
+  it('clique no botão de ação chama abrirInscricao com a inscrição correta (CA-16)', async () => {
+    listagemService.flush(INSCRICOES_MOCK);
+    await propagate();
+    fixture.detectChanges();
+
+    const spy = vi.spyOn(
+      component as unknown as { abrirInscricao: (i: Inscricao) => void },
+      'abrirInscricao',
+    );
+    botao('Continuar inscrição')?.click();
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy).toHaveBeenCalledWith(INSCRICOES_MOCK[0]);
   });
 
   it('títulos de inscrição são h2 (não pula nível de h1)', async () => {
