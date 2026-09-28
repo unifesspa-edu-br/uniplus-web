@@ -18,7 +18,7 @@ import {
   type UiSegmentedOption,
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
-import { AuthService, UserContextService } from '@uniplus/shared-auth';
+import { UserContextService } from '@uniplus/shared-auth';
 import { InscricaoStatus, } from './inscricao-lista.mock';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { InscricoesCandidatoMockService } from './inscricao-mock.service';
@@ -93,7 +93,6 @@ const INSCRICAO_BUTTON_DEFINITION: Record<InscricaoStatus, InscricaoBotaoInfo> =
   host: { class: 'ptl-page' },
 })
 export class InscricaoListaPage {
-  private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly inscricoesCandidatoService = inject(InscricoesCandidatoMockService);
   private readonly userContext = inject(UserContextService);

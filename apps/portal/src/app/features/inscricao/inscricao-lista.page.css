@@ -113,7 +113,6 @@
   }
 }
 
-.inscricao-lista-item__rodape2 {
+.card__footer {
   justify-content: flex-end;
-  padding: var(--space-2) 0;
 }
