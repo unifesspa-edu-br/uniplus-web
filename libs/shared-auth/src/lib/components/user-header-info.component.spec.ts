@@ -18,12 +18,14 @@ describe('UserHeaderInfoComponent', () => {
 
   function setup(profile: UserProfile | null = profileData) {
     const logout = vi.fn();
+    const login = vi.fn();
 
     const authServiceMock = {
       userProfile: signal(profile).asReadonly(),
       authenticated: signal(profile !== null).asReadonly(),
       hasRole: vi.fn((role: string) => profile?.roles.includes(role) ?? false),
       logout,
+      login,
     } as unknown as AuthService;
 
     const userContextMock = {
@@ -51,7 +53,7 @@ describe('UserHeaderInfoComponent', () => {
     const fixture: ComponentFixture<UserHeaderInfoComponent> =
       TestBed.createComponent(UserHeaderInfoComponent);
     fixture.detectChanges();
-    return { fixture, logout };
+    return { fixture, logout, login };
   }
 
   it('exibe apenas o primeiro nome social + avatar no chip (sem username/perfil)', () => {
@@ -161,11 +163,19 @@ describe('UserHeaderInfoComponent', () => {
     expect(logout).toHaveBeenCalledOnce();
   });
 
-  it('renderiza vazio quando não há usuário autenticado', () => {
+  it('exibe botão "Entrar" quando não há usuário autenticado, sem chip/menu de conta', () => {
     const { fixture } = setup(null);
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent?.trim()).toBe('');
-    expect(el.querySelector('button')).toBeNull();
+    expect(el.textContent?.trim()).toBe('Entrar');
+    expect(el.querySelector('button.user-chip')).toBeNull();
+    expect(el.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it('chama authService.login() ao clicar em Entrar', () => {
+    const { fixture, login } = setup(null);
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    btn.click();
+    expect(login).toHaveBeenCalledOnce();
   });
 
   it('não exibe seção de roles quando lista está vazia', () => {

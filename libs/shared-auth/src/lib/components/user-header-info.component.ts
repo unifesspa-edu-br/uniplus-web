@@ -16,10 +16,10 @@ import {
 } from '@uniplus/shared-auth/bootstrap';
 
 /**
- * Bloco de identificação do usuário autenticado para uso em headers.
- * Exibe nome social (ou civil), username, roles do realm e menu de conta.
- * Renderiza vazio quando não há sessão ativa — seguro para uso em
- * layouts que misturam rotas públicas e autenticadas.
+ * Bloco de identificação do usuário para uso em headers.
+ * Autenticado: nome social (ou civil), username, roles do realm e menu de
+ * conta. Sem sessão ativa: botão "Entrar" que inicia o login OIDC — seguro
+ * para uso em layouts que misturam rotas públicas e autenticadas.
  */
 @Component({
   selector: 'auth-user-header-info',
@@ -111,6 +111,8 @@ import {
           </li>
         </ul>
       </div>
+    } @else {
+      <button type="button" class="btn btn--sm" (click)="login()">Entrar</button>
     }
   `,
 })
@@ -194,6 +196,10 @@ export class UserHeaderInfoComponent {
   protected logout(): void {
     this.disclosure.close(false);
     void this.authService.logout();
+  }
+
+  protected login(): void {
+    void this.authService.login();
   }
 
   private menuItems(): HTMLElement[] {
