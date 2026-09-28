@@ -191,7 +191,8 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
         <div class="table-responsive">
           <table>
             <caption class="sr-only">
-              Bases legais do bônus regional, com tipo de instrumento, identificação e quantidade de municípios beneficiados
+              Bases legais do bônus regional, com tipo de instrumento, identificação e quantidade de
+              municípios beneficiados
             </caption>
             <thead>
               <tr>
@@ -220,11 +221,11 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                       (triggered)="abrirEdicao(base)"
                     />
                     <ui-icon-button
-                      icon="pi-power-off"
-                      [accessibleName]="'Desativar base legal ' + base.identificacao"
-                      tooltip="Desativar base legal"
+                      icon="pi-trash"
+                      [accessibleName]="'Remover base legal ' + base.identificacao"
+                      tooltip="Remover base legal"
                       [isDisabled]="loading()"
-                      (triggered)="pedirDesativacao(base)"
+                      (triggered)="pedirRemocao(base)"
                     />
                   </td>
                 </tr>
@@ -471,12 +472,12 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
     </ui-drawer>
 
     <ui-confirm-dialog
-      [(visible)]="confirmDesativarAberto"
-      heading="Desativar base legal"
-      [message]="confirmDesativarMensagem()"
-      confirmLabel="Desativar"
+      [(visible)]="confirmRemoverAberto"
+      heading="Remover base legal"
+      [message]="confirmRemoverMensagem()"
+      confirmLabel="Remover"
       confirmVariant="danger"
-      (confirmed)="confirmarDesativacao()"
+      (confirmed)="confirmarRemocao()"
     />
   `,
   styles: `
@@ -552,9 +553,9 @@ export class BaseLegalBonusRegionalListPage {
   protected readonly formOpen = signal(false);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly baseEmEdicaoId = signal<string | null>(null);
-  /** Estados de "em voo" independentes — salvar/editar e desativar não competem pelo mesmo sinal. */
+  /** Estados de "em voo" independentes — salvar/editar e remover não competem pelo mesmo sinal. */
   protected readonly savingForm = signal(false);
-  protected readonly savingDesativar = signal(false);
+  protected readonly savingRemover = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
@@ -590,14 +591,14 @@ export class BaseLegalBonusRegionalListPage {
     return ids.length > 0 ? ids.join(' ') : null;
   });
 
-  protected readonly confirmDesativarAberto = signal(false);
-  protected readonly baseParaDesativar = signal<BaseLegalBonusRegionalDto | null>(null);
+  protected readonly confirmRemoverAberto = signal(false);
+  protected readonly baseParaRemover = signal<BaseLegalBonusRegionalDto | null>(null);
   /** Incrementado a cada abertura da confirmação — identifica a que pedido uma resposta pertence. */
-  private readonly desativacaoSessao = signal(0);
-  protected readonly confirmDesativarMensagem = computed(() => {
-    const base = this.baseParaDesativar();
+  private readonly remocaoSessao = signal(0);
+  protected readonly confirmRemoverMensagem = computed(() => {
+    const base = this.baseParaRemover();
     return base
-      ? `Tem certeza que deseja desativar "${base.identificacao}"? Processos que já a referenciam mantêm o snapshot congelado.`
+      ? `Tem certeza que deseja remover "${base.identificacao}"? Processos que já a referenciam mantêm o snapshot congelado.`
       : '';
   });
 
@@ -870,20 +871,20 @@ export class BaseLegalBonusRegionalListPage {
     this.buscarMunicipios('');
   }
 
-  protected pedirDesativacao(base: BaseLegalBonusRegionalDto): void {
-    this.desativacaoSessao.update((atual) => atual + 1);
-    this.savingDesativar.set(false);
-    this.baseParaDesativar.set(base);
-    this.confirmDesativarAberto.set(true);
+  protected pedirRemocao(base: BaseLegalBonusRegionalDto): void {
+    this.remocaoSessao.update((atual) => atual + 1);
+    this.savingRemover.set(false);
+    this.baseParaRemover.set(base);
+    this.confirmRemoverAberto.set(true);
   }
 
-  protected confirmarDesativacao(): void {
-    const base = this.baseParaDesativar();
-    if (base === null || this.savingDesativar()) {
+  protected confirmarRemocao(): void {
+    const base = this.baseParaRemover();
+    if (base === null || this.savingRemover()) {
       return;
     }
-    this.savingDesativar.set(true);
-    const sessao = this.desativacaoSessao();
+    this.savingRemover.set(true);
+    const sessao = this.remocaoSessao();
     this.api
       .remover(base.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -891,20 +892,20 @@ export class BaseLegalBonusRegionalListPage {
         // O desfecho no backend independe de qual diálogo está na tela agora — sucesso
         // recarrega a lista, falha notifica, os dois sempre. O que pertence à SESSÃO
         // (fechar o diálogo, liberar o botão) só se aplica se nenhum pedido mais novo
-        // tiver assumido o estado compartilhado; senão a falha de uma desativação
+        // tiver assumido o estado compartilhado; senão a falha de uma remoção
         // superada ficaria muda para o operador.
         if (result.ok) {
-          this.notifications.success('Base legal desativada', base.identificacao);
+          this.notifications.success('Base legal removida', base.identificacao);
           this.recarregar();
         } else {
           const titulo = this.problemI18n.resolve(result.problem).title;
           this.notifications.errorFromProblem(result.problem, { title: titulo });
         }
-        if (sessao !== this.desativacaoSessao()) {
+        if (sessao !== this.remocaoSessao()) {
           return;
         }
-        this.savingDesativar.set(false);
-        this.baseParaDesativar.set(null);
+        this.savingRemover.set(false);
+        this.baseParaRemover.set(null);
       });
   }
 
