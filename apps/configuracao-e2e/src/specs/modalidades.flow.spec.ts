@@ -143,7 +143,6 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     const linhaAc = page.locator('tr[data-codigo="AC"]');
     await expect(linhaAc.locator('td').first().locator('code')).toHaveText('AC');
     await expect(linhaAc.locator('.tag--info')).toContainText('Ampla concorrência');
-    await expect(linhaAc.locator('.tag--success')).toHaveText('Ativa');
     // A linha de AC mostra V como quem a referencia (mapa reverso).
     await expect(linhaAc.locator('.cfg-ref-chip')).toHaveText('V');
   });
@@ -264,14 +263,14 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Inativar modalidade AC' }).click();
+    await page.getByRole('button', { name: 'Remover modalidade AC' }).click();
 
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog.getByText('Remoção bloqueada')).toBeVisible();
     // V aparece como dependente na lista de referências.
     await expect(dialog.locator('.cfg-refs-lista').getByText('V', { exact: true })).toBeVisible();
     // Não deve haver botão de confirmação de inativação.
-    await expect(dialog.getByRole('button', { name: 'Inativar', exact: true })).toHaveCount(0);
+    await expect(dialog.getByRole('button', { name: 'Remover', exact: true })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Entendi' }).click();
     expect(capturado.deletedIds).toHaveLength(0);
   });
@@ -281,10 +280,10 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Inativar modalidade V' }).click();
+    await page.getByRole('button', { name: 'Remover modalidade V' }).click();
 
     const dialog = page.locator('dialog.uni-dialog');
-    await dialog.getByRole('button', { name: 'Inativar', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(V_ID);
   });
@@ -313,7 +312,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
   test('modal de bloqueio aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
-    await page.getByRole('button', { name: 'Inativar modalidade AC' }).click();
+    await page.getByRole('button', { name: 'Remover modalidade AC' }).click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
