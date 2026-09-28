@@ -2,12 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
-  afterRenderEffect,
   computed,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
@@ -16,6 +13,7 @@ import {
   BaseLegalBonusRegionalDto,
   TiposInstrumentoNormativoApi,
 } from '@uniplus/shared-data/configuracao';
+import { RolagemFocavelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -23,7 +21,12 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
 import { comoComandoDeBonus } from './bonus-para-comando';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
@@ -59,6 +62,7 @@ interface MunicipioBeneficiado {
 @Component({
   selector: 'sel-step-bonus',
   standalone: true,
+  imports: [RolagemFocavelDirective, ValorEmConsultaComponent],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(BonusStepComponent)],
@@ -75,43 +79,11 @@ export class BonusStepComponent {
   readonly basesLegaisCarregando = signal(true);
   readonly basesLegaisErro = signal<string | null>(null);
 
-  private readonly municipiosScrollRef =
-    viewChild<ElementRef<HTMLDivElement>>('municipiosScroll');
-  protected readonly municipiosRolavel = signal(false);
-
   constructor() {
     this.catalogos.carregar();
     this.carregarBasesLegais();
 
     this.carregarTiposDeInstrumento();
-
-    afterRenderEffect(() => {
-      // Lido aqui só para a leitura virar dependência do efeito: a lista de
-      // municípios muda de tamanho (conteúdo da tabela) sem que o breakpoint
-      // mude, e a caixa precisa ser remedida quando isso acontece.
-      this.municipiosDaBaseLegalSelecionada();
-      this.medirRolagemDosMunicipios();
-    });
-
-    if (typeof window !== 'undefined') {
-      const remedir = (): void => this.medirRolagemDosMunicipios();
-      window.addEventListener('resize', remedir);
-      this.destroyRef.onDestroy(() => window.removeEventListener('resize', remedir));
-    }
-  }
-
-  /**
-   * `tabindex`/`role`/`aria-labelledby` só fazem sentido quando a tabela de
-   * fato transborda a caixa — decidir só pelo breakpoint (768px) marcava
-   * como focável até uma base legal com poucos municípios, que nunca chega a
-   * rolar mesmo em telas largas. Medido de novo a cada mudança de conteúdo e
-   * a cada redimensionamento da janela (o CSS que remove `max-height` abaixo
-   * de 768px já faz `scrollHeight` bater com `clientHeight` sozinho, sem
-   * precisar duplicar o valor do breakpoint aqui).
-   */
-  private medirRolagemDosMunicipios(): void {
-    const elemento = this.municipiosScrollRef()?.nativeElement;
-    this.municipiosRolavel.set(elemento !== undefined && elemento.scrollHeight > elemento.clientHeight);
   }
 
   readonly regrasBonus = computed(() => {
@@ -220,6 +192,26 @@ export class BonusStepComponent {
     return this.rotuloDoTipoInstrumento().get(codigo) ?? codigo;
   }
 
+  /** A norma pelo tipo e pela identificação, no seletor e na consulta. */
+  rotuloDaBaseLegal(base: Pick<BaseLegalEscolhivel, 'tipoInstrumento' | 'identificacao'>): string {
+    return `${this.rotuloDoTipo(base.tipoInstrumento)} ${base.identificacao}`.trim();
+  }
+
+  /** O bônus como se lê em consulta, com o rótulo de cada escolha. */
+  readonly leitura = computed(() => {
+    const bonus = this.store.draft().bonus;
+    const base = this.basesLegaisEscolhiveis().find(
+      (item) => item.id === bonus.baseLegalBonusRegionalId,
+    );
+    return {
+      aplicacao: bonus.ativo ? 'Aplicado neste processo' : 'Não aplicado neste processo',
+      regra: rotuloDaRegraEscolhida(this.regrasBonus()),
+      fator: leituraDoCampoDecimal(bonus.fator),
+      teto: leituraDoCampoDecimal(bonus.teto),
+      baseLegal: base === undefined ? null : this.rotuloDaBaseLegal(base),
+    };
+  });
+
   /** O que a norma escolhida diz. */
   readonly descricaoDaBaseLegal = computed<string>(() => {
     const escolhida = this.store.draft().bonus.baseLegalBonusRegionalId;
@@ -244,7 +236,7 @@ export class BonusStepComponent {
   });
 
   escolherRegra(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('bonus', { regraCodigo: codigo, regraVersao: versao });
   }
 

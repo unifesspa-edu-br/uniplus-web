@@ -502,6 +502,26 @@ describe('ProcessosSeletivosApi', () => {
     if (!result.ok) expect(result.problem.status).toBe(422);
   });
 
+  it('definirIdentificadorLegivel() envia o identificador pelo PUT do campo', async () => {
+    const promise = firstValueFrom(
+      api.definirIdentificadorLegivel(
+        ID,
+        { identificadorLegivel: 'medicina-2027' },
+        withIdempotencyKey('chave-identificador'),
+      ),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/identificador-legivel`,
+    );
+
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('chave-identificador');
+    expect(req.request.body).toEqual({ identificadorLegivel: 'medicina-2027' });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
   it('definirOfertaAtendimento() envia os ids dos cadastros de Configuração', async () => {
     const request: DefinirOfertaAtendimentoRequest = {
       condicaoIds: ['01960000-0000-7000-0000-000000000601'],

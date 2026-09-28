@@ -12,13 +12,12 @@
   pointer-events: none;
 }
 
-/* Área útil do wizard: stepper lateral + corpo, ocupando a altura da rota.
-   `min-height: 0` permite que `.wiz-content` role dentro deste flex. */
+/* Área útil do wizard: stepper lateral + corpo, com pelo menos a altura da rota; cresce
+   com o passo, e quem rola é o `.page`. */
 .wiz-shell {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: row;
-  min-height: 0;
 }
 
 /* Step bar mobile */
@@ -126,8 +125,13 @@
 }
 
 @media (min-width: 768px) {
+  /* Fica parado ao lado do passo enquanto o `.page` rola, com a altura visível dele. */
   .wiz-nav {
     display: block;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100cqh;
   }
 }
 
@@ -338,48 +342,27 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  scrollbar-width: thin;
 }
 
 .wiz-content {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
   padding: var(--space-8);
-  overflow-y: auto;
-
-  /*
-   * Bloco de contenção da própria rolagem. Os controles que o passo esconde do olho
-   * mas mantém para o leitor de tela (`.sr-only`) são posicionados em absoluto, e sem
-   * um ancestral posicionado aqui o ancestral deles vira `main.page` — que então
-   * crescia com o passo inteiro e abria uma segunda barra de rolagem, com espaço morto
-   * abaixo do rodapé.
-   */
-  position: relative;
-
-  /* Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Chrome, Edge e Safari */
-.wiz-content::-webkit-scrollbar {
-  width: 5px;
+/* O rótulo de uma ação quebra em vez de passar da borda do cartão, que o `.page` corta sem
+   rolagem: na tela estreita, "Acrescentar à linha do tempo" não cabe numa linha só. */
+.sel-processo .btn {
+  max-width: 100%;
+  white-space: normal;
+  line-height: var(--leading-snug);
 }
 
-.wiz-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.wiz-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-}
-
-.wiz-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+/* No celular, a margem lateral do passo acompanha a da barra de etapas. Com 40 px de cada
+   lado, os cartões aninhados (quadro > cascata > origem) ficavam com menos de 200 px úteis. */
+@media (max-width: 479px) {
+  .wiz-content {
+    padding-inline: var(--space-4);
+  }
 }
 
 /* Mensagens de validação do step ativo (role="alert") */
@@ -587,6 +570,10 @@
 
 /* Wizard footer */
 .wiz-footer {
+  /* Os botões de navegação ficam à vista enquanto o passo rola. */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   background: var(--surface-card);
   border-top: 1px solid var(--border-subtle);
   padding: var(--space-4) var(--space-8);
@@ -648,6 +635,51 @@
   font-weight: var(--weight-bold);
   color: var(--color-primary);
   margin: 0 0 var(--space-3);
+}
+
+/*
+ * Ritmo vertical dos passos. Alerta, dica e título de seção não têm margem própria
+ * no DS, e cada passo empilhava esses blocos sem espaço: o alerta encostava no campo
+ * seguinte e o título da seção encostava na dica de cima. `:where` mantém a
+ * especificidade baixa, para que o arranjo próprio de um componente prevaleça.
+ *
+ * O título é a exceção: `.form-section__title` já tem margem na folha global, que é
+ * carregada depois desta, e com a mesma especificidade ela venceria. A classe fica
+ * fora do `:where` só no título.
+ */
+.sel-processo .step-section__title:where(:not(:first-child)),
+.sel-processo .form-section__title:where(:not(:first-child)) {
+  margin-block-start: var(--space-6);
+}
+
+.sel-processo :where(.alert:not(:last-child)) {
+  margin-block-end: var(--space-5);
+}
+
+/* A dica que encerra o campo não ganha margem: a do bloco seguinte decide. */
+.sel-processo
+  :where(
+    .field__hint:not(:last-child):not(
+        :has(+ :is(input, select, textarea, label, .input, .field__hint, .field__erro))
+      )
+  ) {
+  margin-block-end: var(--space-4);
+}
+
+.sel-processo :where(.field__hint:has(+ .field__hint)) {
+  margin-block-end: var(--space-2);
+}
+
+/*
+ * Dica que encerra um contêiner (campo, cabeçalho, linha de ações): o bloco seguinte
+ * é irmão do contêiner, não da dica. Só blocos de largura inteira recebem a margem;
+ * um item de grade que a recebesse sairia da linha dos vizinhos.
+ */
+.sel-processo
+  :where(
+    :has(> .field__hint:last-child) + :is(details, .field__hint, .alert, .form-grid, .checkbox-grid)
+  ) {
+  margin-block-start: var(--space-4);
 }
 
 /* Checkbox grid */
@@ -720,6 +752,14 @@
 }
 
 /*
+ * Sobre o fundo do card, o azul de `--color-primary` do botão terciário rende 4,07:1 no tema
+ * escuro; a tinta de texto sobre tint alcança os 4,5:1 que a WCAG 2.1 AA exige.
+ */
+.sel-processo .doc-item--exigido .btn--tertiary {
+  --btn-fg: var(--text-on-primary-tint);
+}
+
+/*
  * Os três eixos da exigência lado a lado enquanto a largura permite: em que fases vale, em
  * que ponto desta fase é coletada, e de quem é cobrada. Empilhados, um documento gastava
  * trezentos pixels de altura, e a fase com cinco deles virava rolagem.
@@ -734,6 +774,26 @@
 .sel-processo .doc-item__eixos > .form-field {
   margin: 0;
   min-width: 0;
+}
+
+/*
+ * As ações da norma ocupam uma linha inteira do grid: como item solto, o botão virava uma
+ * célula e esticava até a altura dos campos vizinhos.
+ */
+.sel-processo .doc-item__acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
+ * O aviso de norma é da exigência, não de uma norma: vem depois de todas elas, na largura
+ * inteira, e se afasta das ações que o seguem.
+ */
+.sel-processo .doc-item__aviso-norma {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--space-2);
 }
 
 /*
@@ -797,9 +857,14 @@
   gap: var(--space-2);
 }
 
-/* O nome e a ação ficam na mesma linha, com a ação encostada à direita. */
+/*
+ * O nome e a ação ficam na mesma linha, com a ação encostada à direita. Quando não sobra
+ * largura para o nome, a ação desce para a linha de baixo, em vez de espremer o nome numa
+ * coluna estreita ou passar por cima dele.
+ */
 .sel-processo .doc-item--exigido .doc-item__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
@@ -807,7 +872,181 @@
 
 .sel-processo .doc-item--exigido .doc-item__info {
   display: grid;
+  flex: 1 1 12rem;
   min-width: 0;
+}
+
+/* O nome do documento encabeça o card, acima dos rótulos dos campos na hierarquia. */
+.sel-processo .doc-item--exigido .doc-item__name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  cursor: default;
+}
+
+/*
+ * A conferência dos documentos da fase: uma linha por documento com o que decide a exigência.
+ * A largura das colunas é fixa porque a linha dos campos abertos ocupa a tabela inteira, e com
+ * largura automática o formulário dela alargaria as colunas do resumo além da tela.
+ */
+.sel-processo .doc-conferencia__filtro {
+  max-width: 32rem;
+  margin-bottom: var(--space-4);
+}
+
+.sel-processo .doc-conferencia table {
+  table-layout: fixed;
+}
+
+.sel-processo .doc-conferencia__col-documento {
+  width: 17%;
+}
+
+.sel-processo .doc-conferencia__col-publico {
+  width: 16%;
+}
+
+.sel-processo .doc-conferencia__col-entrega {
+  width: 13%;
+}
+
+.sel-processo .doc-conferencia__col-consequencia {
+  width: 15%;
+}
+
+.sel-processo .doc-conferencia__col-coleta {
+  width: 12%;
+}
+
+/*
+ * Colunas estreitas numa tabela de largura fixa: o recuo lateral menor é o que deixa "Obrigatória"
+ * e a consequência mais longa inteiras. Só a norma quebra palavra (abaixo): a referência de
+ * edital é um token só, mais largo que a coluna.
+ */
+.sel-processo .table-responsive.doc-conferencia :is(th, td) {
+  padding-inline: var(--space-2);
+}
+
+.sel-processo .table-responsive.doc-conferencia :is(tbody th, td) {
+  padding-block: var(--space-2);
+  vertical-align: top;
+}
+
+.sel-processo .doc-conferencia tbody th[scope='row'] {
+  font-weight: var(--weight-medium);
+}
+
+.sel-processo .doc-conferencia__meta {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.sel-processo .doc-conferencia__norma {
+  display: block;
+  overflow-wrap: break-word;
+}
+
+.sel-processo .doc-conferencia__norma-comum {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.sel-processo .doc-conferencia__rotulo {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.sel-processo .doc-conferencia__norma + .doc-conferencia__norma,
+.sel-processo .doc-conferencia__norma + .tag {
+  margin-top: var(--space-2);
+}
+
+/* O nome do documento, que abre os campos dele, lido como ação pela cor e pela seta. */
+.sel-processo .doc-conferencia__alternar {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-on-primary-tint);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .doc-conferencia__alternar:hover > span:last-child {
+  text-decoration: underline;
+}
+
+.sel-processo .doc-conferencia__alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .doc-conferencia__alternar > .etapa-resumo__seta {
+  margin-top: 0.45em;
+}
+
+.sel-processo .doc-conferencia__alternar[aria-expanded='true'] > .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+/* A linha do resumo e a dos campos dela leem como um bloco só. */
+.sel-processo .doc-conferencia__linha:has(+ .doc-conferencia__campos) > * {
+  border-bottom: none;
+}
+
+.sel-processo .table-responsive.doc-conferencia tbody .doc-conferencia__campos:hover {
+  background: none;
+}
+
+/* O cartão dos campos já tem borda e respiro próprios: a célula não soma outro recuo. */
+.sel-processo .table-responsive.doc-conferencia .doc-conferencia__campos > td {
+  padding: 0 0 var(--space-3);
+}
+
+@container quadro-empilhavel (max-width: 48rem) {
+  /* Rótulo sobre o valor: frase longa ao lado do rótulo viraria uma coluna estreita. */
+  .sel-processo .table-responsive.doc-conferencia td {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    text-align: left;
+  }
+
+  .sel-processo .table-responsive.doc-conferencia :is(tbody th, td) {
+    padding: var(--space-1) 0;
+  }
+
+  /* Os valores curtos dividem a linha do cartão; nome, público e norma ocupam a largura. */
+  .sel-processo .table-responsive.doc-conferencia tbody .doc-conferencia__linha {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(6.5rem, 100%), 1fr));
+    column-gap: var(--space-3);
+  }
+
+  .sel-processo .doc-conferencia__linha > :is(th, .doc-conferencia__largo) {
+    grid-column: 1 / -1;
+  }
+
+  .sel-processo .doc-conferencia .doc-conferencia__campos > td::before {
+    content: none;
+  }
+
+  .sel-processo .table-responsive.doc-conferencia tbody .doc-conferencia__campos {
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .sel-processo .table-responsive.doc-conferencia .doc-conferencia__campos > td {
+    display: block;
+    padding: 0;
+  }
 }
 
 /*
@@ -866,8 +1105,10 @@
   margin: 0;
 }
 
+/* A ação tem a altura do campo ao lado, para as duas bases coincidirem. */
 .sel-processo .escolher-e-acrescentar > .btn {
-  flex: 0 0 auto;
+  --btn-height: var(--touch-comfortable);
+  flex: 0 1 auto;
 }
 
 /*
@@ -889,8 +1130,13 @@
   max-width: 34rem;
 }
 
-.sel-processo .campo-com-acao > .btn {
-  flex: 0 0 auto;
+/* A ação quebra o próprio rótulo em vez de passar da borda do card numa tela estreita. */
+.sel-processo .campo-com-acao > .btn,
+.sel-processo .doc-item__acoes > .btn {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  line-height: var(--leading-snug);
 }
 
 /* O campo que abriga a própria ação não tem teto: quem o tem é o controle dentro dele. */
@@ -968,6 +1214,23 @@
 .sel-processo .fase-bloco--aberta {
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: var(--space-5);
+}
+
+/*
+ * A fase aberta é um bloco delimitado: com várias abertas, sem a borda não se vê onde uma
+ * termina e a próxima começa. Abaixo de 768 o `.step-card` já é cartão.
+ */
+@media (min-width: 768px) {
+  .sel-processo .fase-bloco--aberta {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2) var(--space-4) var(--space-5);
+  }
+}
+
+/* As seções da fase ficam um nível abaixo do título dela, também no tamanho. */
+.sel-processo .fase-bloco :is(h3, h4).form-section__title {
+  font-size: var(--text-base);
 }
 
 /*
@@ -1305,6 +1568,22 @@
   }
 }
 
+/* Cartão dentro de cartão, na tela estreita, vira seção do cartão de fora: cada borda com o
+   seu recuo tirava do conteúdo a largura que ele não tem de sobra. */
+@media (max-width: 479px) {
+  .step-card .step-card {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+    padding: var(--space-4) 0 0;
+  }
+
+  .step-card .table-responsive tbody tr,
+  .step-card .table-responsive tfoot tr {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
 /* Step subtitle */
 .step-subtitle {
   font-size: var(--text-sm);
@@ -1428,7 +1707,7 @@
 
 .file-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
 }
 
@@ -1454,6 +1733,12 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* As ações do arquivo ficam alinhadas ao nome dele: esticadas na coluna, o link centralizava
+   e se descolava do resto do bloco. */
+.file-info > .btn {
+  align-self: flex-start;
 }
 
 .file-name {
@@ -1589,14 +1874,21 @@
 }
 
 .vagas-table tbody td {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
   vertical-align: middle;
 }
 
-.vagas-table tbody tr:last-child td {
-  border-bottom: none;
+/* Recuo e divisória de célula de tabela. Empilhada, a célula é linha do cartão, e o recuo
+   é o do design system: com este, o rótulo saía do alinhamento com o nome da oferta. */
+@media (min-width: 768px) {
+  .vagas-table tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .vagas-table tbody tr:last-child td {
+    border-bottom: none;
+  }
 }
 
 /* ---- Matriz da cascata de remanejamento (passo Vagas) ----
@@ -1649,7 +1941,7 @@
    comparação entre linhas, não de texto corrido.
 
    O `nowrap` fica de fora daqui de propósito: abaixo de 768 px a célula vira
-   linha de um cartão, ao lado do rótulo "1ª PREFERÊNCIA", e o código de
+   item de um cartão, ao lado do ordinal "1ª", e o código de
    modalidade admite até 60 caracteres. Impedi-lo de quebrar ali faria o texto
    transbordar do cartão. */
 .cascata-matriz thead th.cascata-matriz__ordem,
@@ -1660,7 +1952,7 @@
 
 /* Código de modalidade é um token só, sem espaço: retirar o `nowrap` não cria
    oportunidade de quebra, porque `overflow-wrap: normal` não quebra dentro da
-   palavra. Como cartão, ao lado do rótulo "1ª PREFERÊNCIA", um código de até 60
+   palavra. Como cartão, ao lado do ordinal "1ª", um código de até 60
    caracteres transbordaria mesmo assim. `anywhere` — e não `break-word` —
    porque só ele também reduz o tamanho mínimo intrínseco, que é o que impede o
    transbordo dentro do flex do cartão.
@@ -1678,6 +1970,33 @@
 
 .cascata-matriz td.cascata-matriz__destino {
   font-variant-numeric: tabular-nums;
+}
+
+/* Como cartão, a origem encabeça e os destinos seguem em fila, cada um com o seu ordinal, na
+   ordem de preferência. Um destino por linha, cada origem ocupava a tela inteira e a matriz
+   somava milhares de pixels. O código só quebra quando sozinho não cabe na linha: antes disso
+   o destino inteiro desce para a linha seguinte. */
+@media (max-width: 767px) {
+  .table-responsive .cascata-matriz tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+  }
+
+  .table-responsive .cascata-matriz tbody th[scope='row'] {
+    flex-basis: 100%;
+  }
+
+  .table-responsive .cascata-matriz td.cascata-matriz__destino {
+    display: inline-flex;
+    width: auto;
+    justify-content: flex-start;
+    align-items: baseline;
+    gap: var(--space-1);
+    padding: 0;
+    border: none;
+    text-align: left;
+  }
 }
 
 /* A origem é a âncora da linha: fica presa à esquerda quando a matriz precisa
@@ -1753,6 +2072,94 @@
   color: var(--text-secondary);
 }
 
+.peso-area__valor {
+  white-space: nowrap;
+}
+
+.peso-area__base-legal {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.peso-area__base-legal-rotulo {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+/*
+ * O DS empilha a tabela em cartões pela largura da janela, mas no editor o stepper lateral come
+ * parte dela: em 768 sobram ~460px para as colunas. O quadro empilhável empilha pela largura que
+ * ele mesmo recebe, abaixo da qual os cabeçalhos não cabem sem rolagem. As regras do cartão
+ * repetem as do DS porque o DS empilha por `@media`, e uma regra não une as duas condições.
+ */
+.quadro-empilhavel {
+  container: quadro-empilhavel / inline-size;
+}
+
+.table-responsive.quadro-empilhavel :is(th, td) {
+  padding-inline: var(--space-3);
+}
+
+@container quadro-empilhavel (max-width: 48rem) {
+  .quadro-empilhavel thead {
+    display: none;
+  }
+
+  .quadro-empilhavel table,
+  .quadro-empilhavel caption:not(.sr-only),
+  .quadro-empilhavel tbody,
+  .quadro-empilhavel tr,
+  .quadro-empilhavel td,
+  .quadro-empilhavel tbody th[scope='row'] {
+    display: block;
+    width: 100%;
+  }
+
+  .quadro-empilhavel tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .quadro-empilhavel tbody tr {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  /* O realce de linha da tabela do DS apagaria o fundo do cartão; o cartão realça pela borda. */
+  .table-responsive.quadro-empilhavel tbody tr:hover {
+    background: var(--surface-card);
+    border-color: var(--border-default);
+  }
+
+  .table-responsive.quadro-empilhavel tbody th[scope='row'] {
+    border: none;
+    padding: 0 0 var(--space-1);
+    font-weight: var(--weight-medium);
+  }
+
+  .table-responsive.quadro-empilhavel td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+  }
+
+  .quadro-empilhavel td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+  }
+}
+
 /* ---- Step 7: Bônus ---- */
 .bonus-info {
   background: var(--surface-subtle);
@@ -1813,16 +2220,22 @@
 }
 
 /* ---- Step 8: Desempate ---- */
+/* A lista é o contêiner que decide quando o cartão do critério empilha (ver abaixo). */
 .desempate-list {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
 
+/*
+ * Número, campos e ações ficam no topo do cartão: centralizados num critério alto, o número e
+ * as ações se afastavam do título do critério e pareciam soltos.
+ */
 .desempate-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
@@ -1850,6 +2263,33 @@
   flex-shrink: 0;
 }
 
+/* Os campos do critério ocupam o espaço entre o número e as ações, e podem encolher. */
+.desempate-item__campos {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * Cartão estreito: número e ações ficam numa linha de cabeçalho e os campos descem para a
+ * largura inteira do cartão. Ao lado deles sobravam cerca de 110 px no celular, e o seletor da
+ * regra cortava o código em 768. A medida é a da lista, não a da tela, porque a largura útil
+ * depende do menu e do stepper laterais.
+ */
+@container (max-width: 40rem) {
+  .desempate-item {
+    flex-wrap: wrap;
+  }
+
+  .desempate-item > .desempate-actions {
+    margin-left: auto;
+  }
+
+  .desempate-item__campos {
+    order: 1;
+    flex-basis: 100%;
+  }
+}
+
 .desempate-btn {
   width: 28px;
   height: 28px;
@@ -1874,6 +2314,48 @@
 .desempate-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* Ordem das áreas do ENEM num critério de desempate: a posição é a regra. */
+.desempate-areas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.desempate-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+/*
+ * O nome da área quebra entre palavras, nunca no meio: com `anywhere`, numa coluna estreita,
+ * "Redação" saía uma letra por linha. Sem espaço para uma palavra inteira ao lado dos botões,
+ * a linha quebra e os botões descem.
+ */
+.desempate-area__nome {
+  flex: 1 1 12ch;
+  overflow-wrap: break-word;
+}
+
+.desempate-area > .desempate-actions {
+  margin-left: auto;
+}
+
+.desempate-area-nova {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /* ---- Step 10: Documentos por modalidade ---- */
@@ -2034,9 +2516,10 @@
   overflow-wrap: anywhere;
 }
 
-/* Onde a pendência se resolve, quando não é num passo do wizard. Mora sob a mensagem, no
-   mesmo bloco de texto, porque `.revisao-item` é uma linha flex — como irmão do botão, a
-   frase disputaria a linha com ele. */
+/* O que fazer e onde, quando o botão do passo não basta: a pendência se resolve fora do
+   wizard, ou a correção passa por mais de um lugar. Mora sob a mensagem, no mesmo bloco de
+   texto, porque `.revisao-item` é uma linha flex — como irmão do botão, a frase disputaria a
+   linha com ele. */
 .revisao-item__onde {
   display: block;
   margin-top: var(--space-1);
@@ -2363,11 +2846,29 @@
 }
 
 /* A linha de totais fecha o quadro: separa-se das ofertas por uma borda mais
-   firme que a que divide as linhas entre si. */
+   firme que a que divide as linhas entre si. Empilhada, ela é o último cartão, e a
+   borda mais firme é a do cartão. */
 .vagas-table tfoot th,
 .vagas-table tfoot td {
-  border-top: 2px solid var(--border-default);
   font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .vagas-table tfoot th,
+  .vagas-table tfoot td {
+    border-top: 2px solid var(--border-default);
+  }
+}
+
+@media (max-width: 767px) {
+  .table-responsive .vagas-table tfoot tr {
+    border-color: var(--border-default);
+  }
+
+  /* Na tabela, a célula vazia mantém a coluna de ações; no cartão seria só uma linha em branco. */
+  .table-responsive .vagas-table tfoot .vagas-table__acoes {
+    display: none;
+  }
 }
 
 .vagas-table tfoot .vagas-table__oferta {
@@ -2417,6 +2918,13 @@
   padding-left: var(--space-5);
   display: grid;
   gap: var(--space-1);
+}
+
+/* A garantia costuma ser fórmula sem espaço ("VRSI=VR−VRRI"): como item de grade, ela impunha
+   a própria largura à coluna e saía da caixa na tela estreita. */
+.regra-explicada__invariantes li {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .regra-explicada details {
@@ -2471,7 +2979,7 @@
    ganha rolagem própria — com muitas ofertas, ela empurraria a tabela para
    fora da tela justamente quando se quer conferir as duas. */
 .vagas-escolha {
-  margin: var(--space-3) 0;
+  margin: var(--space-4) 0 var(--space-3);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);

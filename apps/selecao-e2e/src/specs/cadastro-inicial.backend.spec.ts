@@ -52,6 +52,9 @@ test.describe('Cadastro inicial do processo seletivo', () => {
     // interface.
     await expect(page.getByRole('heading', { level: 1, name: /Identificação/i })).toBeVisible();
     await page.locator('#f-nome').fill(`Medicina 2027 — CEPS — E2E ${sufixo}`);
+    // O identificador legível é único entre processos: o sufixo da execução evita colidir com o
+    // de uma rodada anterior contra o mesmo banco.
+    await page.locator('#f-identificador').fill(`medicina-2027-e2e-${sufixo}`);
 
     // A unidade precisa ter cidade cadastrada: a API recusa a criação sem ela
     // (`ProcessoSeletivo.UnidadeAdministradoraSemCidade`). A Pró-Reitoria de
@@ -99,6 +102,8 @@ test.describe('Cadastro inicial do processo seletivo', () => {
     await expect(page.locator('#f-nome')).toBeDisabled();
     await expect(page.locator('#f-unidade')).toBeDisabled();
     await expect(page.locator('#f-origem')).toBeDisabled();
+    // O identificador, ao contrário, continua editável enquanto o processo for rascunho.
+    await expect(page.locator('#f-identificador')).toBeEnabled();
 
     // O edital é anexado na revisão e publicação, com o processo já existente.
     await page.getByRole('button', { name: /Revisão e publicação/i }).click();

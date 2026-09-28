@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, catchError, forkJoin, of } from 'rxjs';
+import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   AreaPesoAreaEnemDto,
@@ -33,9 +33,9 @@ const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sens
  * Também guarda o cadastro de Peso por Área, de onde a Fórmula tira a resolução do ENEM e a
  * Eliminação confere, antes de gravar, se a resolução escolhida ainda existe. Esse cadastro só é
  * baixado quando a classificação passa a exigir a resolução, e cada leitura leva a `marca` de
- * quem a pediu — a versão da classificação lida do processo —, para a Fórmula saber se o
- * cadastro em mãos é posterior ao que o processo congelou. A lista canônica das áreas é
- * estática: lida uma vez, quando dá certo.
+ * quem a pediu — a versão da classificação lida do processo. Quem julga pelo cadastro compara a
+ * marca com a versão atual; as linhas de uma marca anterior só servem de prévia. A lista canônica
+ * das áreas é estática: lida uma vez, quando dá certo.
  */
 @Injectable()
 export class CatalogosDeClassificacaoService {
@@ -57,11 +57,15 @@ export class CatalogosDeClassificacaoService {
   /** As áreas do ENEM na ordem canônica do cadastro — a ordem das colunas de qualquer quadro. */
   readonly areasEnem = signal<readonly AreaPesoAreaEnemDto[]>([]);
   readonly pesosCarregando = signal(false);
-  /**
-   * A marca da última leitura que deu certo, ou `-1` sem leitura válida para o processo atual —
-   * e então ausência na lista não prova nada.
-   */
+  /** A marca da última leitura que deu certo, ou `-1` sem leitura para o processo atual. */
   readonly pesosLidosNaMarca = signal(-1);
+  /**
+   * Cada leitura é numerada quando é pedida: uma leitura é posterior a um fato quando foi pedida
+   * depois dele, e não quando a resposta chega depois. `pesosLeituraPedida` é o número da última
+   * pedida; `pesosLidosNaLeitura`, o da última que deu certo.
+   */
+  readonly pesosLeituraPedida = signal(0);
+  readonly pesosLidosNaLeitura = signal(0);
   private readonly pesosFalhas = signal(0);
 
   /**
@@ -154,13 +158,9 @@ export class CatalogosDeClassificacaoService {
       });
   }
 
-  /**
-   * Lê o cadastro para a `marca` informada, se nenhuma leitura dela, ou posterior, já foi pedida.
-   * Uma marca nova — outro processo, ou o mesmo relido — descarta a lista anterior como prova.
-   */
+  /** Lê o cadastro para a `marca` informada, se nenhuma leitura dela, ou posterior, já foi pedida. */
   garantirPesosAreaEnem(marca: number): void {
     if (this.marcaPedida >= marca) return;
-    this.pesosLidosNaMarca.set(-1);
     this.buscarPesosAreaEnem(marca);
   }
 
@@ -207,16 +207,7 @@ export class CatalogosDeClassificacaoService {
   }
 
   /**
-   * A resolução está fora do cadastro — e o cliente pode afirmar isso: o cadastro foi lido para o
-   * processo atual. Sem essa leitura, "não achei" é só "ainda não sei", e nada é acusado.
-   */
-  readonly resolucaoForaDoCadastro = (resolucao: string): boolean =>
-    resolucao.trim() !== '' &&
-    this.pesosLidosNaMarca() >= 0 &&
-    !this.resolucoesPesoAreaEnem().includes(resolucao);
-
-  /**
-   * Uma leitura nova substitui a que estiver em curso: a resposta de uma marca antiga não vale. Quem
+   * Uma leitura nova substitui a que estiver em curso: a resposta da substituída não chega. Quem
    * esperava a substituída (`aoLer`) passa a esperar a nova, que também relê o cadastro.
    *
    * A lista canônica das áreas só ordena as colunas: se ela falhar, a leitura do cadastro vale do
@@ -224,28 +215,43 @@ export class CatalogosDeClassificacaoService {
    */
   private buscarPesosAreaEnem(marca: number, aoLer?: () => void): void {
     this.marcaPedida = Math.max(this.marcaPedida, marca);
+    const numero = this.pesosLeituraPedida() + 1;
+    this.pesosLeituraPedida.set(numero);
     this.pesosCarregando.set(true);
     if (aoLer) this.aoLerPendentes.push(aoLer);
 
     this.leituraDosPesos?.unsubscribe();
+    const pedeAreas = !this.areasLidas && !this.areasBuscando;
+    let leuAsLinhas = false;
+    if (pedeAreas) this.areasBuscando = true;
     this.leituraDosPesos = forkJoin({
       linhas: coletarPaginas((cursor) => this.pesosApi.listar({ cursor, direction: 'next' })),
-      areas: this.areasLidas
-        ? of(null)
-        : this.pesosApi.listarAreas().pipe(catchError(() => of(null))),
+      areas: pedeAreas ? this.pesosApi.listarAreas().pipe(catchError(() => of(null))) : of(null),
     })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        // Também quando uma leitura nova substitui esta: a lista pedida aqui não chega mais.
+        finalize(() => {
+          if (pedeAreas) this.areasBuscando = false;
+          // A lista que a leitura não trouxe — pedida por ela e recusada, ou pedida à parte e
+          // recusada enquanto ela corria — é pedida de novo, com a guarda já liberada.
+          if (leuAsLinhas && !this.areasLidas) this.garantirAreasEnem();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
         next: ({ linhas, areas }) => {
+          // A lista das áreas vale por si: a falha das linhas não a descarta.
+          if (areas !== null && isApiOk(areas)) this.guardarAreas(areas.data);
           if (!isApiOk(linhas)) {
             this.anunciarFalhaDosPesos();
             return;
           }
-          if (areas !== null && isApiOk(areas)) this.guardarAreas(areas.data);
           this.pesosAreaEnem.set(linhas.data);
           this.pesosLidosNaMarca.set(marca);
+          this.pesosLidosNaLeitura.set(numero);
           this.pesosFalhas.set(0);
           this.pesosCarregando.set(false);
+          leuAsLinhas = true;
           const pendentes = this.aoLerPendentes.splice(0);
           pendentes.forEach((depoisDeLer) => depoisDeLer());
         },

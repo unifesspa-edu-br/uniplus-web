@@ -70,16 +70,25 @@ sel-layout {
   color: var(--color-neutral-0);
 }
 
+/*
+ * O editor rola no próprio `.page`, como toda rota do shell: a rolagem ocupa a área de
+ * trabalho inteira, e a roda do mouse e o teclado funcionam em qualquer ponto dela. A
+ * contenção de tamanho dá ao stepper lateral a altura visível do `.page` (`cqh`), para
+ * ele ficar fixo enquanto o passo rola. O rodapé e a barra de etapas do celular também
+ * ficam fixos, por cima do passo: a reserva de rolagem com a altura deles, medida pelo
+ * editor, faz o campo que recebe foco parar fora dessas faixas, e não atrás delas.
+ */
 .page:has(> .sel-processo) {
   padding: 0;
   gap: 0;
+  container-type: size;
+  scroll-padding-block: var(--wiz-reserva-topo, 0px) var(--wiz-reserva-base, 0px);
 }
 
 .sel-processo {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: column;
-  min-height: 0;
 }
 
 .cfg-unidades-scope {

@@ -5,18 +5,23 @@ import {
   Injector,
   afterNextRender,
   computed,
-  effect,
   inject,
   signal,
-  untracked,
 } from '@angular/core';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import {
+  ReleituraDoSnapshot,
+  relerProcessoAPedido,
+} from '../../shared/releitura-do-snapshot.service';
+import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
   REGRA_CALCULO_IMPORTADA,
@@ -27,17 +32,21 @@ import {
   mensagensDeClassificacaoBase,
   pendenciaDaResolucao,
 } from '../classificacao/classificacao-para-comando';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
+import {
+  baseLegalComum,
   colunasDoQuadro,
   mesmoQuadro,
   ordemDasAreas,
   perdeuGrupo,
-  quadroCongelado,
-  quadroDoCadastro,
+  quadroVigente,
   type AreaDoQuadro,
   type GrupoDoQuadro,
-} from './quadro-de-pesos';
+} from '../../shared/quadro-de-pesos';
 
 /** Uma opção do seletor de resolução — o valor é o que o servidor recebe. */
 interface ResolucaoEscolhivel {
@@ -71,6 +80,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 @Component({
   selector: 'sel-step-formula',
   standalone: true,
+  imports: [ValorEmConsultaComponent],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormulaStepComponent)],
@@ -108,24 +118,12 @@ export class FormulaStepComponent {
     exigeResolucaoPesoAreaEnem(this.store.draft().classificacao),
   );
 
+  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+
   constructor() {
+    this.cadastroDePesos.acompanhar();
     this.catalogos.carregar();
     inject(DestroyRef).onDestroy(() => (this.destruida = true));
-
-    // O cadastro de Peso por Área só é lido quando a classificação exige a resolução e o processo
-    // aceita edição: sem ENEM, com a nota importada ou só para consulta, não há o que escolher —
-    // basta a lista canônica das áreas para ordenar a cópia congelada. A leitura se repete a cada
-    // leitura nova da classificação, para o cadastro em mãos ser posterior ao que o processo
-    // congelou.
-    effect(() => {
-      if (!this.exigeResolucao()) return;
-      const marca = this.store.versaoDaClassificacaoLida();
-      if (this.store.edicaoPermitida()) {
-        untracked(() => this.catalogos.garantirPesosAreaEnem(marca));
-      } else {
-        untracked(() => this.catalogos.garantirAreasEnem());
-      }
-    });
   }
 
   /**
@@ -145,7 +143,7 @@ export class FormulaStepComponent {
 
   /** A resolução escolhida saiu do cadastro — dito só depois de o cadastro ter sido lido. */
   readonly resolucaoForaDoCadastro = computed(() =>
-    this.catalogos.resolucaoForaDoCadastro(this.resolucaoEscolhida()),
+    this.cadastroDePesos.resolucaoForaDoCadastro(this.resolucaoEscolhida()),
   );
 
   /**
@@ -171,40 +169,42 @@ export class FormulaStepComponent {
     return [{ valor: escolhida, rotulo }, ...opcoes];
   });
 
-  private readonly quadroGravado = computed(() =>
-    quadroCongelado(this.store.quadroPesoAreaEnemCongelado()?.quadro ?? []),
+  private readonly quadroGravado = computed(() => this.store.copiaCongeladaEmVigor()?.grupos ?? []);
+
+  private readonly quadroVigente = computed(() =>
+    quadroVigente(
+      this.resolucaoEscolhida(),
+      this.store.copiaCongeladaEmVigor(),
+      this.cadastroDePesos.quadroDaResolucaoEscolhida(),
+    ),
   );
 
-  private readonly quadroDoCadastroEscolhido = computed(() =>
-    quadroDoCadastro(this.catalogos.pesosAreaEnem(), this.resolucaoEscolhida()),
-  );
+  readonly mostraQuadroGravado = computed(() => this.quadroVigente().daCopiaCongelada);
 
-  /**
-   * A resolução do rascunho é a que o processo já gravou: o quadro à vista é a cópia congelada
-   * no processo, mesmo que a resolução tenha saído do cadastro ou mudado lá. Enquanto a cópia
-   * guardada pode estar velha (`quadroPesoAreaEnemDesatualizado`), ela não é mostrada.
-   */
-  readonly mostraQuadroGravado = computed(() => {
-    const escolhida = this.resolucaoEscolhida();
-    return (
-      escolhida !== '' &&
-      !this.store.quadroPesoAreaEnemDesatualizado() &&
-      escolhida === this.store.quadroPesoAreaEnemCongelado()?.resolucao &&
-      this.quadroGravado().length > 0
-    );
+  /** O aviso de que o quadro à vista é a prévia, porque só uma releitura diz o que ficou congelado. */
+  readonly avisoDeQuadroPorReler = computed(() => {
+    const motivo = this.store.motivoDaReleituraDaClassificacao();
+    return this.exigeResolucao() && motivo !== null
+      ? `${MOTIVO_DA_RELEITURA[motivo]}. Enquanto isso, o quadro abaixo é a prévia do cadastro.`
+      : null;
   });
 
-  readonly quadroDesatualizado = computed(
-    () => this.exigeResolucao() && this.store.quadroPesoAreaEnemDesatualizado(),
-  );
+  readonly quadro = computed<readonly GrupoDoQuadro[]>(() => this.quadroVigente().grupos);
 
-  readonly quadro = computed<readonly GrupoDoQuadro[]>(() =>
-    this.mostraQuadroGravado() ? this.quadroGravado() : this.quadroDoCadastroEscolhido(),
+  /**
+   * A falha ao ler o cadastro de Peso por Área. Em consulta o quadro à vista é a cópia congelada
+   * no processo, que não depende do cadastro, e a falha dele não tem o que explicar.
+   */
+  readonly falhaDosPesosQueImporta = computed(() =>
+    this.store.emConsulta() && this.mostraQuadroGravado() ? null : this.catalogos.pesosErro(),
   );
 
   readonly colunasDoQuadro = computed(() =>
     colunasDoQuadro(this.quadro(), ordemDasAreas(this.catalogos.areasEnem())),
   );
+
+  /** Com uma base legal só, ela vai uma vez acima do quadro, e não repetida em cada linha. */
+  readonly baseLegalDoQuadro = computed(() => baseLegalComum(this.quadro()));
 
   /**
    * O cadastro mudou depois de o processo congelar a resolução. Cada gravação da classificação —
@@ -215,12 +215,12 @@ export class FormulaStepComponent {
     () =>
       this.store.edicaoPermitida() &&
       this.mostraQuadroGravado() &&
-      // Só um cadastro lido depois da cópia pode dizer que ela ficou para trás: cada leitura
-      // nova da classificação descarta a leitura anterior do cadastro (ver o efeito do
-      // construtor).
-      this.catalogos.pesosLidosNaMarca() >= 0 &&
+      // Só um cadastro lido depois da cópia pode dizer que ela ficou para trás: a leitura da
+      // classificação que traz outra cópia deixa a do cadastro sem valer até ele ser relido (ver
+      // `AcompanhamentoDoCadastroDePesos`).
+      this.cadastroDePesos.leitura().lido &&
       !this.resolucaoForaDoCadastro() &&
-      !mesmoQuadro(this.quadroGravado(), this.quadroDoCadastroEscolhido()),
+      !mesmoQuadro(this.quadroGravado(), this.cadastroDePesos.quadroDaResolucaoEscolhida()),
   );
 
   /**
@@ -230,23 +230,26 @@ export class FormulaStepComponent {
   readonly cadastroPerdeuGrupo = computed(
     () =>
       this.cadastroMudouDesdeAGravacao() &&
-      perdeuGrupo(this.quadroGravado(), this.quadroDoCadastroEscolhido()),
+      perdeuGrupo(this.quadroGravado(), this.cadastroDePesos.quadroDaResolucaoEscolhida()),
   );
 
   /**
-   * O que aparece sob o seletor: a pendência local depois de "Próximo", e senão a recusa que o
-   * servidor devolveu para o campo na última gravação da classificação.
+   * O que aparece sob o seletor: a pendência local depois de "Próximo", e senão as recusas que o
+   * servidor devolveu para o campo na última gravação da classificação — a da resolução e a de um
+   * critério de desempate gravado, as duas quando vierem.
    */
   readonly erroDaResolucao = computed<string | null>(() => {
     const pendencia = this.invalidFields().has('resolucaoPesoAreaEnem')
       ? pendenciaDaResolucao(
           this.store.draft().classificacao,
-          this.catalogos.resolucaoForaDoCadastro,
+          this.cadastroDePesos.resolucaoForaDoCadastro,
         )
       : null;
     return pendencia !== null
       ? TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].campo
-      : this.store.recusaDaResolucaoPesoAreaEnem();
+      : [this.store.recusaDaResolucaoPesoAreaEnem(), this.store.recusaPeloDesempatePorArea()]
+          .filter((recusa) => recusa !== null)
+          .join(' ') || null;
   });
 
   readonly descricaoDaResolucao = computed(() => {
@@ -292,6 +295,25 @@ export class FormulaStepComponent {
     );
   });
 
+  /** Quantas opções de curso o candidato declara, com o texto do seletor e da consulta. */
+  protected readonly opcoesDeCurso = [
+    { valor: '1', rotulo: '1 opção' },
+    { valor: '2', rotulo: '2 opções' },
+  ] as const;
+
+  /** A classificação como se lê em consulta, com o rótulo de cada escolha. */
+  readonly leitura = computed(() => {
+    const classificacao = this.store.draft().classificacao;
+    const opcoes = classificacao.nOpcoesAlocacao;
+    return {
+      regraCalculo: rotuloDaRegraEscolhida(this.regrasCalculo()),
+      regraArredondamento: rotuloDaRegraEscolhida(this.regrasArredondamento()),
+      casasDecimais: leituraDoCampoDecimal(classificacao.casasArredondamento),
+      ordemAlocacao: rotuloDaRegraEscolhida(this.regrasOrdemAlocacao()),
+      opcoesDeCurso: this.opcoesDeCurso.find((opcao) => opcao.valor === opcoes)?.rotulo ?? null,
+    };
+  });
+
   /**
    * Aviso antecipado do que a Eliminação vai recusar ao gravar: sob fórmula
    * local, sem etapa que componha a nota o divisor da média fica zero. Não
@@ -302,23 +324,8 @@ export class FormulaStepComponent {
     () => this.usaFormulaLocal() && !divisorDaMediaValido(this.store.draft().cronograma.etapas),
   );
 
-  readonly valorDoSelectDeCalculo = computed(() => {
-    const classificacao = this.store.draft().classificacao;
-    return `${classificacao.regraCalculoCodigo}|${classificacao.regraCalculoVersao}`;
-  });
-
-  readonly valorDoSelectDeArredondamento = computed(() => {
-    const classificacao = this.store.draft().classificacao;
-    return `${classificacao.regraArredondamentoCodigo}|${classificacao.regraArredondamentoVersao}`;
-  });
-
-  readonly valorDoSelectDeOrdemAlocacao = computed(() => {
-    const classificacao = this.store.draft().classificacao;
-    return `${classificacao.regraOrdemAlocacaoCodigo}|${classificacao.regraOrdemAlocacaoVersao}`;
-  });
-
   escolherRegraCalculo(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     if (codigo === '') {
       this.store.patchObjectSection('classificacao', {
         regraCalculoCodigo: '',
@@ -343,7 +350,7 @@ export class FormulaStepComponent {
   }
 
   escolherRegraArredondamento(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('classificacao', {
       regraArredondamentoCodigo: codigo,
       regraArredondamentoVersao: versao,
@@ -355,7 +362,7 @@ export class FormulaStepComponent {
   }
 
   escolherRegraOrdemAlocacao(valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: codigo,
       regraOrdemAlocacaoVersao: versao,
@@ -389,7 +396,7 @@ export class FormulaStepComponent {
    */
   private descartarRecusaQueNaoSeAplica(): void {
     if (exigeResolucaoPesoAreaEnem(this.store.draft().classificacao)) return;
-    this.store.recusaDaResolucaoPesoAreaEnem.set(null);
+    this.store.descartarRecusasDaClassificacao();
   }
 
   aoEscolherResolucao(evento: Event): void {
@@ -400,7 +407,7 @@ export class FormulaStepComponent {
     if (!this.store.aceitaEdicao() || valor === this.resolucaoEscolhida()) return;
     this.store.patchObjectSection('classificacao', { resolucaoPesoAreaEnem: valor });
     // A recusa era sobre a escolha anterior; a nova ainda não foi julgada pelo servidor.
-    this.store.recusaDaResolucaoPesoAreaEnem.set(null);
+    this.store.descartarRecusasDaClassificacao();
   }
 
   /**
@@ -410,7 +417,7 @@ export class FormulaStepComponent {
   atualizarListaDePesos(): void {
     if (this.catalogos.pesosCarregando()) return;
     this.avisoDaLista.set(null);
-    this.relerCadastro(() =>
+    this.cadastroDePesos.relerCadastroAPedido(() =>
       this.avisoDaLista.set('Lista de resoluções de Peso por Área atualizada.'),
     );
   }
@@ -422,7 +429,7 @@ export class FormulaStepComponent {
    * aceita edição.
    */
   tentarCarregarPesosDeNovo(): void {
-    this.relerCadastro(() => this.focarDepoisDeReler());
+    this.cadastroDePesos.relerCadastroAPedido(() => this.focarDepoisDeReler());
   }
 
   /**
@@ -431,28 +438,10 @@ export class FormulaStepComponent {
    * superada por outra mais nova não mexe no foco: quem decide é a mais nova.
    */
   async relerProcesso(): Promise<void> {
-    if (this.relendoProcesso()) return;
-    this.relendoProcesso.set(true);
-    let decidiu = false;
-    try {
-      decidiu = await this.releitura.reler();
-    } finally {
-      this.relendoProcesso.set(false);
-    }
-    if (decidiu && !this.store.quadroPesoAreaEnemDesatualizado()) {
+    const decidiu = await relerProcessoAPedido(this.releitura, this.relendoProcesso);
+    if (decidiu && !this.store.classificacaoPorReler()) {
       this.focarQuemSobrou(ID_DO_TITULO_DA_SECAO);
     }
-  }
-
-  /**
-   * Relido o cadastro — o operador pode ter completado a resolução na outra aba —, a recusa
-   * guardada, que julgou o cadastro de antes, deixa de valer: a próxima gravação julga de novo.
-   */
-  private relerCadastro(depoisDeLer: () => void): void {
-    this.catalogos.recarregarPesosAreaEnem(this.store.versaoDaClassificacaoLida(), () => {
-      this.store.recusaDaResolucaoPesoAreaEnem.set(null);
-      depoisDeLer();
-    });
   }
 
   private focarDepoisDeReler(): void {
@@ -502,7 +491,9 @@ export class FormulaStepComponent {
     const nOpcoes = numero(classificacao.nOpcoesAlocacao);
     if (nOpcoes !== 1 && nOpcoes !== 2) invalid.add('nOpcoesAlocacao');
 
-    if (pendenciaDaResolucao(classificacao, this.catalogos.resolucaoForaDoCadastro) !== null) {
+    if (
+      pendenciaDaResolucao(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro) !== null
+    ) {
       invalid.add('resolucaoPesoAreaEnem');
     }
 
@@ -510,7 +501,7 @@ export class FormulaStepComponent {
 
     const messages = mensagensDeClassificacaoBase(
       classificacao,
-      this.catalogos.resolucaoForaDoCadastro,
+      this.cadastroDePesos.resolucaoForaDoCadastro,
     );
     return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
   }

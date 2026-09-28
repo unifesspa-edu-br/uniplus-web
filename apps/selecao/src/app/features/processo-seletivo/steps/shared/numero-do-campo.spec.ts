@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { decimalDoCampo, inteiroDoCampo } from './numero-do-campo';
+import { decimalDoCampo, inteiroDoCampo, leituraDoCampoDecimal } from './numero-do-campo';
 
 describe('leitura dos campos numéricos do editor', () => {
   it('lê o ponto como separador decimal, não como agrupador', () => {
@@ -36,5 +36,12 @@ describe('leitura dos campos numéricos do editor', () => {
   it('campo vazio não é número', () => {
     expect(decimalDoCampo('')).toBeNull();
     expect(inteiroDoCampo('   ')).toBeNull();
+  });
+
+  it('lê em consulta o número do campo, e o texto que não é número como foi gravado', () => {
+    expect(leituraDoCampoDecimal('1.20')).toBe(1.2);
+    expect(leituraDoCampoDecimal('400')).toBe(400);
+    expect(leituraDoCampoDecimal('')).toBe('');
+    expect(leituraDoCampoDecimal('1e2')).toBe('1e2');
   });
 });

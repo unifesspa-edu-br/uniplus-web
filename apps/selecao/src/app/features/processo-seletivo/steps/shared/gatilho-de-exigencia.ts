@@ -1,7 +1,7 @@
 import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-seletivo.models';
-import { FATO_MODALIDADE, numerosDeClausula } from './exigencias-documentais';
+import { FATO_MODALIDADE, exigidoDeTodos, numerosDeClausula } from './exigencias-documentais';
 
 /**
  * O gatilho de uma exigência documental: a condição sobre fatos do candidato que diz de quem
@@ -547,5 +547,71 @@ function interpretar(valor: string): unknown {
     return JSON.parse(valor);
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * As modalidades do recorte do gatilho, ou `null` quando ele não tem recorte uniforme.
+ *
+ * Recorte é a mesma cláusula `MODALIDADE EM [...]`, com a mesma lista, em TODAS as
+ * alternativas — a forma que o controle "quem deve entregar" grava. Só então ela restringe o
+ * gatilho inteiro; presente em algumas alternativas, é condição delas e de mais nenhuma.
+ */
+export function recorteUniforme(documento: ExigenciaDeDocumento): readonly string[] | null {
+  if (documento.condicoes.length === 0) return null;
+
+  const listasPorAlternativa = numerosDeClausula(documento.condicoes).map((numero) =>
+    documento.condicoes
+      .filter(
+        (condicao) =>
+          condicao.clausula === numero &&
+          condicao.fato === FATO_MODALIDADE &&
+          condicao.operador === OPERADOR_EM,
+      )
+      .map((condicao) => JSON.stringify(valoresDeListaDe(condicao))),
+  );
+
+  const [primeira] = listasPorAlternativa[0] ?? [];
+  if (primeira === undefined) return null;
+  const uniforme = listasPorAlternativa.every((listas) => listas.includes(primeira));
+  return uniforme ? (JSON.parse(primeira) as string[]) : null;
+}
+
+/**
+ * Se a exigência pode ser cobrada de quem concorre na modalidade — a mesma regra do domínio
+ * (`DocumentoExigido.PodeAlcancarModalidade`). A de todo candidato alcança qualquer uma; a
+ * condicional sem condição nenhuma, nenhuma. Nas demais, basta uma alternativa cujas condições
+ * sobre modalidade aceitem o código: as sobre outros fatos não se sabem antes da inscrição, e
+ * a alternativa sem condição de modalidade alcança qualquer uma.
+ *
+ * Vale para qualquer operador que o domínio aceita, não só o `EM` que o editor escreve: o
+ * gatilho gravado por outro caminho continua sendo cobrado.
+ */
+export function podeAlcancarModalidade(
+  documento: ExigenciaDeDocumento,
+  modalidadeCodigo: string,
+): boolean {
+  if (exigidoDeTodos(documento)) return true;
+  if (documento.condicoes.length === 0) return false;
+
+  return numerosDeClausula(documento.condicoes).some((numero) =>
+    documento.condicoes
+      .filter((condicao) => condicao.clausula === numero && condicao.fato === FATO_MODALIDADE)
+      .every((condicao) => condicaoDeModalidadeAceita(condicao, modalidadeCodigo)),
+  );
+}
+
+function condicaoDeModalidadeAceita(condicao: CondicaoDeFato, modalidadeCodigo: string): boolean {
+  switch (condicao.operador) {
+    case OPERADOR_IGUAL:
+      return valorEscalarDe(condicao) === modalidadeCodigo;
+    case OPERADOR_DIFERENTE:
+      return valorEscalarDe(condicao) !== modalidadeCodigo;
+    case OPERADOR_EM:
+      return valoresDeListaDe(condicao).includes(modalidadeCodigo);
+    case OPERADOR_NAO_EM:
+      return !valoresDeListaDe(condicao).includes(modalidadeCodigo);
+    default:
+      return false;
   }
 }

@@ -52,6 +52,20 @@ function dtoCom(distribuicao: unknown): ProcessoSeletivoDto {
   } as unknown as ProcessoSeletivoDto;
 }
 
+describe('hidratarDraft — identificador legível', () => {
+  it('projeta o identificador gravado sobre o rascunho', () => {
+    const dto = { ...dtoCom([]), identificadorLegivel: 'medicina-2027' } as ProcessoSeletivoDto;
+
+    expect(hidratarDraft(DRAFT, dto).identificacao.identificadorLegivel).toBe('medicina-2027');
+  });
+
+  it('deixa o campo vazio quando o processo ainda não declarou identificador', () => {
+    const dto = { ...dtoCom([]), identificadorLegivel: null } as ProcessoSeletivoDto;
+
+    expect(hidratarDraft(DRAFT, dto).identificacao.identificadorLegivel).toBe('');
+  });
+});
+
 describe('hidratarDraft — distribuição de vagas', () => {
   it('projeta a distribuição gravada sobre o rascunho', () => {
     const { ofertas } = hidratarDraft(DRAFT, dtoCom([DISTRIBUICAO])).vagas;
@@ -368,7 +382,7 @@ const CLASSIFICACAO = {
   regraCalculo: { codigo: 'FORMULA-MEDIA-PONDERADA', versao: '1.0' },
   regraArredondamento: { codigo: 'ARRED-TRUNCAR', versao: '1.0' },
   casasArredondamento: 2,
-  regraOrdemAlocacao: { codigo: 'ALOCACAO-OPCOES-RN04', versao: '1.0' },
+  regraOrdemAlocacao: { codigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', versao: '1.0' },
   nOpcoesAlocacao: 2,
   baseadoEmEnem: false,
   concorrenciaDuplaAplicavel: false,
@@ -381,6 +395,15 @@ const CLASSIFICACAO = {
       etapaRef: 'etapa-persistida-1',
       notaMinima: 5,
       minimo: null,
+      areaCodigo: null,
+    },
+    {
+      id: 'snapshot-elim-2',
+      regra: { codigo: 'ELIM-CORTE-EM-AREA', versao: 'v1' },
+      etapaRef: null,
+      notaMinima: null,
+      minimo: 450,
+      areaCodigo: 'REDACAO',
     },
   ],
 };
@@ -409,6 +432,7 @@ const CRITERIOS_DESEMPATE = [
     fato: null,
     operador: null,
     valor: null,
+    areas: null,
   },
   {
     id: 'snapshot-desemp-1',
@@ -419,6 +443,18 @@ const CRITERIOS_DESEMPATE = [
     fato: null,
     operador: null,
     valor: null,
+    areas: null,
+  },
+  {
+    id: 'snapshot-desemp-3',
+    ordem: 3,
+    regra: { codigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM', versao: '1' },
+    etapaRef: null,
+    idadeMinima: null,
+    fato: null,
+    operador: null,
+    valor: null,
+    areas: ['MATEMATICA', 'REDACAO'],
   },
 ];
 
@@ -432,7 +468,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       regraArredondamentoCodigo: 'ARRED-TRUNCAR',
       regraArredondamentoVersao: '1.0',
       casasArredondamento: '2',
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
       baseadoEmEnem: false,
@@ -444,6 +480,15 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
           etapaRef: 'etapa-persistida-1',
           notaMinima: '5',
           minimo: '',
+          areaCodigo: '',
+        },
+        {
+          regraCodigo: 'ELIM-CORTE-EM-AREA',
+          regraVersao: 'v1',
+          etapaRef: '',
+          notaMinima: '',
+          minimo: '450',
+          areaCodigo: 'REDACAO',
         },
       ],
     });
@@ -527,6 +572,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     expect(desempate.map((criterio) => criterio.regraCodigo)).toEqual([
       'DESEMPATE-MAIOR-NOTA-ETAPA',
       'DESEMPATE-IDOSO',
+      'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
     ]);
     expect(desempate[1]).toEqual({
       regraCodigo: 'DESEMPATE-IDOSO',
@@ -536,7 +582,50 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       fato: '',
       operador: '',
       valor: '',
+      areas: [],
     });
+  });
+
+  it('projeta as áreas do critério por área do ENEM na ordem gravada', () => {
+    const { desempate } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ criteriosDesempate: CRITERIOS_DESEMPATE }),
+    );
+
+    expect(desempate[2].areas).toEqual(['MATEMATICA', 'REDACAO']);
+  });
+
+  it('guarda no store os critérios lidos como os gravados, contra os quais a classificação é conferida', () => {
+    const store = new ProcessoSeletivoStore();
+
+    store.hidratar(dtoComCronograma({ criteriosDesempate: CRITERIOS_DESEMPATE }));
+
+    expect(store.criteriosDesempateGravados()).toEqual(store.draft().desempate);
+    expect(store.criteriosDesempateGravados()?.[2].areas).toEqual(['MATEMATICA', 'REDACAO']);
+  });
+
+  it('a hidratação de outro processo muda a versão da classificação lida, mesmo com a mesma classificação', () => {
+    const store = new ProcessoSeletivoStore();
+    store.hidratar(dtoComCronograma({ id: 'processo-1' }));
+    const antes = store.versaoDaClassificacaoLida();
+
+    store.hidratar(dtoComCronograma({ id: 'processo-2' }));
+
+    expect(store.versaoDaClassificacaoLida()).toBe(antes + 1);
+  });
+
+  it('a releitura do processo repõe os critérios gravados que uma gravação inconclusiva deixou desconhecidos', () => {
+    const store = new ProcessoSeletivoStore();
+    store.criteriosDesempateGravados.set(null);
+
+    store.registrarGravadoLido(dtoComCronograma({ criteriosDesempate: CRITERIOS_DESEMPATE }));
+
+    // Na ordem em que o servidor os avalia, como a hidratação os projeta.
+    expect(store.criteriosDesempateGravados()?.map((criterio) => criterio.regraCodigo)).toEqual(
+      [...CRITERIOS_DESEMPATE]
+        .sort((a, b) => a.ordem - b.ordem)
+        .map((criterio) => criterio.regra.codigo),
+    );
   });
 
   it('trata processo sem critério de desempate declarado', () => {
@@ -756,9 +845,20 @@ describe('ProcessoSeletivoStore.hidratar — quadro de Peso por Área congelado'
     },
   ];
 
+  it('uma classificação lida sem o quadro fica sem grupo, sem quebrar quem o lê', () => {
+    const store = new ProcessoSeletivoStore();
+
+    store.registrarClassificacaoLida({
+      resolucaoPesoAreaEnem: 'Resolução nº 805/2024/Consepe',
+    } as unknown as ProcessoSeletivoDto['classificacao']);
+
+    // O servidor só conta como quadro o que tem ao menos um grupo.
+    expect(store.classificacaoGravada()).toEqual({ estado: 'sem-quadro' });
+  });
+
   it('guarda a resolução e o quadro que o processo congelou, como referência atual', () => {
     const store = new ProcessoSeletivoStore();
-    store.quadroPesoAreaEnemDesatualizado.set(true);
+    store.marcarClassificacaoDesconhecida();
 
     store.hidratar(
       dtoComCronograma({
@@ -771,10 +871,9 @@ describe('ProcessoSeletivoStore.hidratar — quadro de Peso por Área congelado'
       }),
     );
 
-    expect(store.quadroPesoAreaEnemCongelado()).toEqual({
-      resolucao: 'Resolução nº 805/2024/Consepe',
-      quadro: QUADRO,
-    });
-    expect(store.quadroPesoAreaEnemDesatualizado()).toBe(false);
+    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nº 805/2024/Consepe');
+    expect(store.copiaCongeladaEmVigor()?.grupos.map((grupo) => grupo.codigo)).toEqual(
+      QUADRO.map((grupo) => grupo.grupoAreaEnem.codigo).sort(),
+    );
   });
 });

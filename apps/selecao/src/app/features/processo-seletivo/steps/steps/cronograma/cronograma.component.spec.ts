@@ -1,6 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
@@ -12,6 +13,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './cronograma.component';
+import type { EtapaForm } from './cronograma-form';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -78,6 +80,7 @@ const FASES_CANONICAS = [
 ];
 
 const TIPO_ETAPA_SO_ELIMINA = '01960000-0000-7000-0000-0000000000e2';
+const TIPO_ETAPA_NOTA_ENEM = '01960000-0000-7000-0000-0000000000e3';
 
 const TIPOS_ETAPA = [
   {
@@ -95,6 +98,15 @@ const TIPOS_ETAPA = [
     ativo: true,
     admitePontuacao: false,
     admiteEliminacao: true,
+  },
+  {
+    id: TIPO_ETAPA_NOTA_ENEM,
+    codigo: 'NOTA_ENEM',
+    nome: 'Nota do ENEM',
+    ativo: true,
+    admitePontuacao: true,
+    admiteEliminacao: true,
+    notaDeOrigemNoEnem: true,
   },
 ];
 
@@ -628,6 +640,68 @@ describe('CronogramaStepComponent', () => {
     expect(componente.caracteresPara(etapa)).toHaveLength(3);
   });
 
+  describe('etapa de nota do ENEM', () => {
+    function comEtapaDoEnemAberta(): FormGroup<EtapaForm> {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      const etapa = componente.etapas.at(0);
+      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      componente.alternarFase(0);
+      componente.alternarEtapa(0);
+      detectar();
+      return etapa;
+    }
+
+    it('não oferece o caráter puramente eliminatório', () => {
+      const etapa = comEtapaDoEnemAberta();
+      expect(componente.caracteresPara(etapa).map((o) => o.valor)).toEqual([
+        'classificatoria',
+        'ambas',
+      ]);
+    });
+
+    it('avisa que a nota é calculada e não oferece banca, publicação nem janela própria', () => {
+      comEtapaDoEnemAberta();
+      expect(nativo.querySelector('#cr-etapa-enem-0')?.textContent).toContain('calculada');
+      expect(nativo.querySelector('#cr-etapa-ini-0')).toBeNull();
+      expect(nativo.querySelector('#cr-etapa-fim-0')).toBeNull();
+      expect(nativo.textContent).not.toContain('Quem julga esta etapa');
+      expect(nativo.textContent).not.toContain('O que esta etapa publica');
+      expect(nativo.querySelector('#cr-etapa-parecer-0')).not.toBeNull();
+    });
+
+    it('escolher o tipo descarta banca, publicação, janela e recurso contado de publicação', () => {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      const etapa = componente.etapas.at(0);
+      etapa.controls.bancas.setValue(['banca-1']);
+      etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
+      etapa.controls.inicio.setValue('2027-01-10T08:00');
+      componente.acrescentarRecursoNaEtapa(etapa);
+
+      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+
+      expect(etapa.controls.bancas.value).toEqual([]);
+      expect(etapa.controls.produtos.value).toEqual([]);
+      expect(etapa.controls.inicio.value).toBe('');
+      expect(etapa.controls.recursos.value).toEqual([]);
+    });
+
+    it('o recurso acrescentado corre da ciência do candidato', () => {
+      const etapa = comEtapaDoEnemAberta();
+      componente.acrescentarRecursoNaEtapa(etapa);
+      expect(etapa.controls.recursos.value[0]?.ancora).toBe('cienciaIndividual');
+    });
+
+    it('na etapa gravada vale o que o processo congelou do tipo', () => {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      const etapa = componente.etapas.at(0);
+      etapa.controls.tipoCongelado.setValue({ origemId: TIPO_ETAPA, notaDeOrigemNoEnem: true });
+      expect(componente.etapaDeNotaDoEnem(etapa)).toBe(true);
+    });
+  });
+
   it('abre a etapa pelo resumo, e mais de uma ao mesmo tempo', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
@@ -978,6 +1052,31 @@ describe('CronogramaStepComponent', () => {
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
+  });
+
+  it('a recusa do servidor à etapa de nota do ENEM chega com texto próprio', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(
+      {
+        type: 'about:blank',
+        title: 'Etapa de nota do ENEM não admite banca',
+        status: 422,
+        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
+        traceId: '00000000000000000000000000000005',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.join(' ')).toContain('quem julga o recurso');
   });
 
   /**

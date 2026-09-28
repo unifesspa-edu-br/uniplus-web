@@ -1,4 +1,15 @@
 import { test, expect, type Page, type Route, type TestInfo } from '@playwright/test';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { blocosColados } from '../support/ritmo-vertical';
+import {
+  conferirFocoForaDasFaixasFixas,
+  conferirRolagemPorRodaForaDoConteudo,
+  conferirRolagemPorTeclado,
+  conferirStepperNaAlturaDaArea,
+  encurtarJanela,
+  medirTransbordoHorizontal,
+  rolarAteOMeio,
+} from '../support/rolagem-do-editor';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 
@@ -103,6 +114,27 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     }
   });
 
+  /**
+   * Título de seção, alerta e dica têm margem do ritmo vertical: nenhum encosta no bloco
+   * vizinho. Os passos são os que empilham esses três; a fase aberta do Cronograma fica
+   * na matriz do próprio passo.
+   */
+  test('mantém o ritmo vertical entre título, alerta e dica', async ({ page }) => {
+    for (const passo of ['Tipo do processo', 'Identificação', 'Pagamento', 'Vagas', 'Formulário']) {
+      const posicao = await page.evaluate((rotulo) => {
+        const botoes = Array.from(
+          document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),
+        );
+        const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
+        botoes[indice]?.click();
+        return indice + 1;
+      }, passo);
+      await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
+
+      expect(await blocosColados(page), `passo ${passo}`).toEqual([]);
+    }
+  });
+
   test('não transborda horizontalmente', async ({ page }) => {
     const transbordo = await page.evaluate(() => {
       const documento = document.documentElement;
@@ -117,6 +149,53 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
 
     expect(transbordo.excedeDocumento).toBe(false);
     expect(transbordo.excedeScroller).toBe(false);
+  });
+
+  test('o campo focado por Tab não fica atrás do rodapé nem da barra de etapas', async ({
+    page,
+  }) => {
+    await abrirPasso(page, 'Vagas');
+    await expect(page.locator('.wiz-content h1')).toContainText('Vagas');
+    await encurtarJanela(page);
+
+    await conferirFocoForaDasFaixasFixas(page);
+  });
+
+  /** Tipo do processo é curto: cabe inteiro na altura de cada project, sem rolagem. */
+  test('o stepper lateral cobre a altura visível da área de trabalho num passo curto', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      larguraDoProject(testInfo) < LARGURA_STEPPER_LATERAL,
+      'Abaixo de 768 px o stepper lateral dá lugar à barra de etapas.',
+    );
+    await expect(page.locator('.wiz-content h1')).toContainText('Tipo do processo');
+
+    await conferirStepperNaAlturaDaArea(page);
+  });
+
+  /**
+   * Vagas é o passo do rascunho que passa da área de trabalho em todas as larguras. A
+   * troca de passo leva o foco ao título dele, e é desse foco que o teclado parte.
+   */
+  test('rola a área de trabalho pelo teclado e pela roda fora do conteúdo do passo', async ({
+    page,
+  }) => {
+    await abrirPasso(page, 'Vagas');
+    await expect(page.locator('.wiz-content h1')).toBeFocused();
+    await expect(page.locator('.wiz-content h1')).toContainText('Vagas');
+    await encurtarJanela(page);
+
+    await conferirRolagemPorTeclado(page);
+    await conferirRolagemPorRodaForaDoConteudo(page);
+
+    await rolarAteOMeio(page);
+    await conferirStepperNaAlturaDaArea(page);
+    const resultado = await runAxeWcagAA(page);
+    expect(resultado.violations.map((violacao) => violacao.id)).toEqual([]);
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
   });
 
   test('avança e volta entre os passos', async ({ page }) => {
@@ -195,6 +274,19 @@ function navegacaoDePassos(page: Page, largura: number): () => Promise<void> {
     await dialogo.getByRole('button', { name: 'Revisão e publicação' }).click();
     await expect(dialogo).toBeHidden();
   };
+}
+
+/**
+ * Abre o passo pelo botão do stepper, que fica montado mesmo oculto no celular: o clique
+ * vai por script, sem ponteiro, e o foco é o que o editor põe no título do passo.
+ */
+async function abrirPasso(page: Page, rotulo: string): Promise<void> {
+  await page.evaluate((procurado) => {
+    const botoes = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),
+    );
+    botoes.find((botao) => botao.textContent?.includes(procurado))?.click();
+  }, rotulo);
 }
 
 async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {

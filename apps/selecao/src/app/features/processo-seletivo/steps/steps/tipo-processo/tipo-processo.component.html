@@ -1,5 +1,13 @@
 <p class="step-subtitle">Escolha o tipo de processo seletivo.</p>
-@if (loading()) {
+@if (store.emConsulta()) {
+  <div class="step-card">
+    <ui-valor-em-consulta
+      rotulo="Tipo do processo seletivo"
+      [valor]="tipoEscolhido()?.name ?? store.draft().tipoProcesso.rotulo"
+      [dica]="tipoEscolhido()?.description ?? null"
+    />
+  </div>
+} @else if (loading()) {
   <p role="status" aria-live="polite">Carregando tipos de processo...</p>
 } @else if (errorMessage(); as error) {
   <div role="alert">

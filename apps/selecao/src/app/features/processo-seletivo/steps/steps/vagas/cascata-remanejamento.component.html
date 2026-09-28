@@ -46,28 +46,30 @@
         O sistema não propõe uma cascata institucional por padrão: a ausência de escolha é estado
         válido enquanto rascunho.
       </p>
+
+      <!-- Dentro do campo, como nas regras do padrão da distribuição: detalha a regra escolhida
+           logo acima, e não é bloco à parte. -->
+      @if (regraExplicada(); as regra) {
+        <details class="regra-explicada">
+          <summary>
+            Base legal e garantias desta regra
+            <span class="regra-explicada__contagem">{{ regra.invariantes.length }} garantias</span>
+          </summary>
+
+          <p class="regra-explicada__rotulo">Base legal</p>
+          <p class="regra-explicada__legal">{{ regra.baseLegal }}</p>
+
+          @if (regra.invariantes.length > 0) {
+            <p class="regra-explicada__rotulo">O que esta regra garante</p>
+            <ul class="regra-explicada__invariantes">
+              @for (invariante of regra.invariantes; track invariante) {
+                <li>{{ invariante }}</li>
+              }
+            </ul>
+          }
+        </details>
+      }
     </div>
-
-    @if (regraExplicada(); as regra) {
-      <details class="regra-explicada">
-        <summary>
-          Base legal e garantias desta regra
-          <span class="regra-explicada__contagem">{{ regra.invariantes.length }} garantias</span>
-        </summary>
-
-        <p class="regra-explicada__rotulo">Base legal</p>
-        <p class="regra-explicada__legal">{{ regra.baseLegal }}</p>
-
-        @if (regra.invariantes.length > 0) {
-          <p class="regra-explicada__rotulo">O que esta regra garante</p>
-          <ul class="regra-explicada__invariantes">
-            @for (invariante of regra.invariantes; track invariante) {
-              <li>{{ invariante }}</li>
-            }
-          </ul>
-        }
-      </details>
-    }
 
     @if (esquemaNaoReconhecido()) {
       <div class="field__erro" role="alert">
@@ -94,8 +96,16 @@
     }
 
     @if (matriz(); as matrizDaRegra) {
-      <div class="table-responsive">
-        <table class="cascata-matriz">
+      <!--
+        Fora da tabela: como legenda, o texto seguia a largura da matriz e, com ela rolando
+        de lado, parte dele ficava fora da vista.
+      -->
+      <p class="field__hint" id="c-matriz-leitura">
+        Para cada modalidade de origem, os destinos da vaga não preenchida, na ordem de
+        preferência que a regra congela: a 1ª antes da 2ª, e assim por diante.
+      </p>
+      <div class="table-responsive" uiRolagemFocavel="c-matriz-leitura">
+        <table class="cascata-matriz" aria-describedby="c-matriz-leitura">
           <caption class="sr-only">
             Matriz de remanejamento congelada pela regra escolhida. Cada linha é uma modalidade de
             origem; as colunas são a ordem de preferência dos destinos, da primeira à última.
@@ -123,9 +133,11 @@
                     esconde o `thead` e empilha a linha como cartão, usando este
                     atributo como rótulo visível da célula. Sem ele o cartão
                     mostraria só os códigos, e a ordem de preferência — que é o
-                    que a matriz existe para dizer — desapareceria.
+                    que a matriz existe para dizer — desapareceria. É o mesmo
+                    ordinal do cabeçalho da coluna; o texto acima da matriz diz
+                    que é de preferência.
                   -->
-                  <td class="cascata-matriz__destino" [attr.data-label]="ordinal + ' preferência'">
+                  <td class="cascata-matriz__destino" [attr.data-label]="ordinal">
                     {{ destinoNaPosicao(ordem.destinos, posicao) }}
                   </td>
                 }

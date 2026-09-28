@@ -76,6 +76,21 @@ describe('TipoProcessoStepComponent', () => {
     expect(component.store.draft().tipoProcesso.selected).toBe(ID_SISU);
   });
 
+  it('em consulta, lê o tipo gravado como texto, com a descrição do catálogo', () => {
+    const component = montar();
+    const host = fixture.nativeElement as HTMLElement;
+    component.store.patchSection('tipoProcesso', { selected: ID_SISU, rotulo: 'SiSU' });
+    component.store.remoteSnapshot.set({ status: 'publicado' } as never);
+    fixture.detectChanges();
+
+    expect(host.querySelector('input, button')).toBeNull();
+    expect(host.querySelector('dt')?.textContent?.trim()).toBe('Tipo do processo seletivo');
+    expect(host.querySelector('dd')?.textContent?.trim()).toBe('SiSU');
+    expect(host.querySelector('.field__hint')?.textContent?.trim()).toBe(
+      'Sistema de Seleção Unificada.',
+    );
+  });
+
   it('percorre todos os cursores next do catálogo antes de exibir os tipos', () => {
     const consultas: Array<TiposProcessoQuery | undefined> = [];
     const headersComProximaPagina = new HttpHeaders({

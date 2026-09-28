@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './formula.component';
 
@@ -37,6 +38,7 @@ describe('FormulaStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CatalogosDeClassificacaoService,
+        AcompanhamentoDoCadastroDePesos,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -65,7 +67,7 @@ describe('FormulaStepComponent', () => {
   it('sob classificação importada, não exige arredondamento nem casas', () => {
     componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
     store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
     });
@@ -76,7 +78,7 @@ describe('FormulaStepComponent', () => {
   it('sob fórmula local, exige regra de arredondamento e casas maior que zero', () => {
     componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
     store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '2',
     });
@@ -92,7 +94,7 @@ describe('FormulaStepComponent', () => {
   it('recusa número de opções de alocação diferente de 1 ou 2', () => {
     componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
     store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-OPCOES-RN04',
+      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       nOpcoesAlocacao: '3',
     });

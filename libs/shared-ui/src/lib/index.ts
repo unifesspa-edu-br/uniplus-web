@@ -44,6 +44,10 @@ export { TagComponent, type UiTagVariant } from './components/tag/tag';
 export { TextInputComponent } from './components/text-input/text-input';
 export { TextareaComponent } from './components/textarea/textarea';
 export { VlibrasLoaderComponent } from './components/vlibras-loader/vlibras-loader';
+export {
+  ValorEmConsultaComponent,
+  type UiValorEmConsulta,
+} from './components/valor-em-consulta/valor-em-consulta';
 export { BulletComponent, type UiBulletVariant } from './components/bullet/bullet';
 
 // Pipes
@@ -54,3 +58,4 @@ export { NomeSocialPipe } from './pipes/nome-social.pipe';
 // Directives
 export { CpfMaskDirective } from './directives/cpf-mask.directive';
 export { RoleDirective } from './directives/role.directive';
+export { RolagemFocavelDirective } from './directives/rolagem-focavel.directive';

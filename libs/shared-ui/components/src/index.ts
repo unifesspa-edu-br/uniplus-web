@@ -50,6 +50,7 @@ export {
   ListFooterComponent,
 } from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export { RolagemFocavelDirective } from '../../src/lib/directives/rolagem-focavel.directive';
 export {
   SegmentedComponent,
   type UiSegmentedOption,
@@ -66,4 +67,8 @@ export { TagComponent, type UiTagVariant } from '../../src/lib/components/tag/ta
 export { TextInputComponent } from '../../src/lib/components/text-input/text-input';
 export { TextareaComponent } from '../../src/lib/components/textarea/textarea';
 export { VlibrasLoaderComponent } from '../../src/lib/components/vlibras-loader/vlibras-loader';
+export {
+  ValorEmConsultaComponent,
+  type UiValorEmConsulta,
+} from '../../src/lib/components/valor-em-consulta/valor-em-consulta';
 export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';

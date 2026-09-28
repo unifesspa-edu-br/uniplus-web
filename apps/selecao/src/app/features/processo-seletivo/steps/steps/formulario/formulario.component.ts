@@ -4,7 +4,12 @@ import { DestroyRef } from '@angular/core';
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { firstValueFrom } from 'rxjs';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
-import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
+import {
+  ComboboxComponent,
+  type UiComboboxGroup,
+  ValorEmConsultaComponent,
+} from '@uniplus/shared-ui/components';
+import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
 
 import type { FatoColetadoConfig, StepValidation } from '../../processo-seletivo.models';
@@ -40,7 +45,7 @@ import {
 @Component({
   selector: 'sel-step-formulario',
   standalone: true,
-  imports: [ComboboxComponent],
+  imports: [ComboboxComponent, DateBrPipe, ValorEmConsultaComponent],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormularioStepComponent)],
@@ -149,6 +154,11 @@ export class FormularioStepComponent {
   readonly termoAceite = computed(() => this.store.draft().formulario.termoAceiteTexto);
 
   readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);
+
+  /** A âncora da apuração como o seletor a nomeia. */
+  readonly rotuloDaAncora = computed(
+    () => this.ancoras.find((opcao) => opcao.valor === this.referencia().tipo)?.rotulo ?? null,
+  );
 
   /** Se a apuração da idade precisa de fase — só então o seletor de fase aparece. */
   readonly ancoraEmFase = computed(() => {

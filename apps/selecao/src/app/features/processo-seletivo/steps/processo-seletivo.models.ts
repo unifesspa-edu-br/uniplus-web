@@ -299,6 +299,18 @@ export interface EtapaPontuada {
   readonly emiteParecerIndividual: boolean;
   readonly bancas: readonly string[];
   readonly recursos: readonly RecursoDaEtapa[];
+  /**
+   * O que o processo congelou do tipo quando a etapa foi gravada. Vale sobre o cadastro
+   * enquanto a etapa aponta para o mesmo tipo: o cadastro pode mudar depois, e a etapa
+   * gravada continua sendo o que o servidor guardou. Ausente na etapa ainda não gravada.
+   */
+  readonly tipoCongelado?: TipoCongeladoDaEtapa | null;
+}
+
+/** O que a etapa gravada congelou do tipo de etapa do cadastro. */
+export interface TipoCongeladoDaEtapa {
+  readonly origemId: string;
+  readonly notaDeOrigemNoEnem: boolean;
 }
 
 /**
@@ -331,10 +343,10 @@ export interface RecursoDaEtapa {
 /**
  * Uma regra de eliminação configurada no rascunho, no shape do `esquema_args`
  * fechado que `DefinirClassificacaoCommandHandler.MontarArgs` valida por
- * código: só uma das três colunas seguintes se aplica a cada regra, e as
- * demais viajam `null` no comando — nunca omitidas. `ELIM-NOTA-MINIMA-ETAPA`
- * usa `etapaRef` + `notaMinima`; `ELIM-CORTE-REDACAO` usa `minimo`;
- * `ELIM-ZERO-EM-AREA` não usa nenhuma. Os três campos ficam sempre presentes
+ * código: cada regra usa só parte das colunas seguintes, e as demais viajam
+ * `null` no comando — nunca omitidas. `ELIM-NOTA-MINIMA-ETAPA` usa
+ * `etapaRef` + `notaMinima`; `ELIM-CORTE-EM-AREA` usa `areaCodigo` + `minimo`;
+ * `ELIM-ZERO-EM-AREA` não usa nenhuma. Os campos ficam sempre presentes
  * no rascunho — o mapeador para o comando é quem decide qual vale, a partir de
  * `regraCodigo` — porque trocar de regra sem perder o que já foi digitado
  * simplifica a tela sem violar a invariante do servidor.
@@ -346,13 +358,16 @@ export interface RegraEliminacaoConfigurada {
   readonly etapaRef: string;
   readonly notaMinima: string;
   readonly minimo: string;
+  /** Código da área do ENEM do corte — uma das áreas presentes em todos os grupos do quadro. */
+  readonly areaCodigo: string;
 }
 
 /**
  * Um critério de desempate configurado no rascunho, no shape fechado que
  * `ArgsCriterioDesempate` define por código: `DESEMPATE-MAIOR-NOTA-ETAPA` usa
  * `etapaRef`; `DESEMPATE-IDOSO` usa `idadeMinima`; `DESEMPATE-PREDICADO-FATO`
- * usa `fato` + `operador` + `valor`; `DESEMPATE-MAIOR-IDADE` não usa nenhum.
+ * usa `fato` + `operador` + `valor`; `DESEMPATE-MAIOR-NOTA-AREA-ENEM` usa `areas`, os
+ * códigos das áreas na ordem em que desempatam; `DESEMPATE-MAIOR-IDADE` não usa nenhum.
  * A ordem não é um campo aqui — é a posição do item na lista do rascunho,
  * reescrita a cada `move`/`remove`, como já valia para o desempate anterior.
  */
@@ -364,6 +379,7 @@ export interface CriterioDesempateConfigurado {
   readonly fato: string;
   readonly operador: string;
   readonly valor: string;
+  readonly areas: readonly string[];
 }
 
 export interface DocumentoDefinicao {
@@ -608,6 +624,12 @@ export interface WizardDraft {
   identificacao: {
     nome: string;
     /**
+     * Endereço público do certame, escolhido por quem cadastra — não se deriva do
+     * nome. Opcional na criação e obrigatório para publicar. Enquanto o processo é
+     * rascunho pode ser trocado; depois de publicado com valor, não muda mais.
+     */
+    identificadorLegivel: string;
+    /**
      * Unidade que administra o certame, escolhida no catálogo de Organização
      * Institucional. Obrigatória na criação e imutável depois dela.
      */
@@ -675,7 +697,7 @@ export interface WizardDraft {
     regraOrdemAlocacaoVersao: string;
     nOpcoesAlocacao: string;
     /**
-     * Único booleano do corpo — condiciona se `ELIM-CORTE-REDACAO` e
+     * Único booleano do corpo — condiciona se `ELIM-CORTE-EM-AREA` e
      * `ELIM-ZERO-EM-AREA` são aceitas em `regrasEliminacao`
      * (`EliminacaoEnemForaDeProcessoEnem`).
      */

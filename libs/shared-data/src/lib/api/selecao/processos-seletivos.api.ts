@@ -40,6 +40,8 @@ export type ReferenciaTemporalFatosDto = components['schemas']['ReferenciaTempor
 export type DefinirReferenciaTemporalFatosRequest =
   components['schemas']['DefinirReferenciaTemporalFatosRequest'];
 export type DefinirFormularioRequest = components['schemas']['DefinirFormularioRequest'];
+export type DefinirIdentificadorLegivelRequest =
+  components['schemas']['DefinirIdentificadorLegivelRequest'];
 export type BaseLegalDto = components['schemas']['BaseLegalDto'];
 export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
 export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
@@ -333,6 +335,29 @@ export class ProcessosSeletivosApi {
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formulario`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/identificador-legivel` — declara o
+   * endereço público do certame.
+   *
+   * Recusa com 409 (`identificador_legivel_em_uso`) o valor já usado por outro
+   * processo, e com 422 o que o formato ou a imutabilidade depois de publicado
+   * não admitem — as recusas do campo compartilham o prefixo
+   * `uniplus.selecao.processo_seletivo.identificador_legivel_`.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirIdentificadorLegivel(
+    processoSeletivoId: string,
+    request: DefinirIdentificadorLegivelRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/identificador-legivel`,
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

@@ -3,7 +3,7 @@
   reconhece — vindos dos cadastros institucionais de Configuração.
 </p>
 
-@if (catalogos.carregando()) {
+@if (catalogos.carregando() && !store.emConsulta()) {
   <p class="field__hint" role="status">
     Carregando condições, recursos e tipos de deficiência… O que já está gravado neste processo
     segue visível abaixo, sem alteração, enquanto o carregamento não confirma o que continua
@@ -11,7 +11,7 @@
   </p>
 }
 
-@if (catalogos.erro(); as erro) {
+@if (!store.emConsulta() && catalogos.erro(); as erro) {
   <div class="field__erro" role="alert">
     <p>{{ erro }}</p>
     <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
@@ -26,7 +26,7 @@
 
 <p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
 
-@if (fatosQueDependemDaOferta().length > 0) {
+@if (fatosQueDependemDaOferta().length > 0 && !store.emConsulta()) {
   <!--
     O formulário de inscrição pergunta ao candidato algo cujo domínio sai desta tela. Sem este
     aviso, quem chega aqui pelo botão do checklist de publicação não sabe por que foi trazido.
@@ -41,7 +41,13 @@
 <div class="step-card">
   <h2 class="form-section__title" id="atend-secao-condicoes" tabindex="-1">Condições aceitas</h2>
 
-  @if (catalogos.condicoes().length > 0 || condicoesInativas().length > 0) {
+  @if (store.emConsulta()) {
+    <ui-valor-em-consulta
+      rotuladoPor="atend-secao-condicoes"
+      seVazio="Nenhuma condição aceita"
+      [valor]="nomesDasCondicoes()"
+    />
+  } @else if (catalogos.condicoes().length > 0 || condicoesInativas().length > 0) {
     @if (catalogos.condicoes().length > 0) {
       <div class="atendimento__atalhos">
         <label class="check-item">
@@ -100,49 +106,58 @@
 @if (pcdSelecionada()) {
   <div class="step-card">
     <h2 class="form-section__title" id="atend-secao-tipos" tabindex="-1">Tipos de deficiência reconhecidos</h2>
-    <p class="field__hint">
-      Só pode ser preenchido com a condição "Pessoa com deficiência" marcada acima.
-    </p>
 
-    @if (catalogos.tiposDeficiencia().length > 0 || tiposDeficienciaInativos().length > 0) {
-      <div class="checkbox-grid">
-        @for (tipo of catalogos.tiposDeficiencia(); track tipo.id) {
-          <label class="check-item">
-            <input
-              type="checkbox"
-              [checked]="tipoDeficienciaMarcado(tipo.id)"
-              [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-              (change)="toggleTipoDeficiencia(tipo, $any($event.target).checked)"
-            />
-            <span>{{ tipo.nome }}</span>
-          </label>
-        }
-        <!--
-          Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
-          ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
-          "caixa de seleção, marcada" e fazia parecer reversível o que não é.
-        -->
-        @for (inativo of tiposDeficienciaInativos(); track inativo.id) {
-          <div class="check-item">
-            <span>{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
-            <button
-              class="btn btn--tertiary btn--sm"
-              type="button"
-              [id]="'atend-tipo-inativo-' + $index"
-              [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-              [attr.aria-label]="'Remover definitivamente ' + inativo.nome"
-              (click)="removerTipoDeficienciaInativo(inativo.id)"
-            >
-              Remover
-            </button>
-          </div>
-        }
-      </div>
-    } @else if (catalogoConfirmado()) {
+    @if (store.emConsulta()) {
+      <ui-valor-em-consulta
+        rotuladoPor="atend-secao-tipos"
+        seVazio="Nenhum tipo de deficiência reconhecido"
+        [valor]="nomesDosTiposDeDeficiencia()"
+      />
+    } @else {
       <p class="field__hint">
-        Nenhum tipo de deficiência cadastrado. Cadastre ao menos um em Configuração → Tipos de
-        deficiência antes de reconhecer tipos aqui.
+        Só pode ser preenchido com a condição "Pessoa com deficiência" marcada acima.
       </p>
+
+      @if (catalogos.tiposDeficiencia().length > 0 || tiposDeficienciaInativos().length > 0) {
+        <div class="checkbox-grid">
+          @for (tipo of catalogos.tiposDeficiencia(); track tipo.id) {
+            <label class="check-item">
+              <input
+                type="checkbox"
+                [checked]="tipoDeficienciaMarcado(tipo.id)"
+                [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+                (change)="toggleTipoDeficiencia(tipo, $any($event.target).checked)"
+              />
+              <span>{{ tipo.nome }}</span>
+            </label>
+          }
+          <!--
+            Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
+            ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
+            "caixa de seleção, marcada" e fazia parecer reversível o que não é.
+          -->
+          @for (inativo of tiposDeficienciaInativos(); track inativo.id) {
+            <div class="check-item">
+              <span>{{ inativo.nome }} <span class="tag tag--warning">{{ rotuloDeSituacaoInativa() }}</span></span>
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [id]="'atend-tipo-inativo-' + $index"
+                [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
+                [attr.aria-label]="'Remover definitivamente ' + inativo.nome"
+                (click)="removerTipoDeficienciaInativo(inativo.id)"
+              >
+                Remover
+              </button>
+            </div>
+          }
+        </div>
+      } @else if (catalogoConfirmado()) {
+        <p class="field__hint">
+          Nenhum tipo de deficiência cadastrado. Cadastre ao menos um em Configuração → Tipos de
+          deficiência antes de reconhecer tipos aqui.
+        </p>
+      }
     }
   </div>
 }
@@ -150,7 +165,13 @@
 <div class="step-card">
   <h2 class="form-section__title" id="atend-secao-recursos" tabindex="-1">Recursos de acessibilidade oferecidos</h2>
 
-  @if (catalogos.recursos().length > 0 || recursosInativos().length > 0) {
+  @if (store.emConsulta()) {
+    <ui-valor-em-consulta
+      rotuladoPor="atend-secao-recursos"
+      seVazio="Nenhum recurso de acessibilidade oferecido"
+      [valor]="nomesDosRecursos()"
+    />
+  } @else if (catalogos.recursos().length > 0 || recursosInativos().length > 0) {
     @if (catalogos.recursos().length > 0) {
       <div class="atendimento__atalhos">
         <label class="check-item">

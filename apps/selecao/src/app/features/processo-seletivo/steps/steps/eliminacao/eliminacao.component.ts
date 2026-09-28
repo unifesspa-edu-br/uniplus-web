@@ -12,6 +12,7 @@ import {
   type ProblemDetails,
   type ProblemValidationError,
 } from '@uniplus/shared-core/http';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import {
   EtapaPontuada,
@@ -23,19 +24,41 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
+import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
   classificacaoUsaFormulaLocal,
   comoComandoDeClassificacao,
   divisorDaMediaValido,
   eliminacaoExigeBaseadoEmEnem,
+  eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapaENotaMinima,
-  eliminacaoUsaMinimo,
+  ehCampoDaResolucao,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import {
+  lerChaveDaRegra,
+  regrasEscolhiveis,
+  rotuloDaRegraEscolhida,
+} from '../classificacao/regra-escolhivel';
+import {
+  areasComunsAoQuadro,
+  corteDaArea,
+  ordemDasAreas,
+  type ColunaDoQuadro,
+  type GrupoDoQuadro,
+} from '../../shared/quadro-de-pesos';
+import {
+  conferirDesempateGravado,
+  recusaDaClassificacaoPeloDesempate,
+  recusaPorCriterioGravadoSemQuadro,
+  rotulosDasAreas,
+  type PendenciaDoCriterioGravado,
+} from '../desempate/quadro-do-desempate';
 
 const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
   regraCodigo: '',
@@ -43,6 +66,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
   etapaRef: '',
   notaMinima: '',
   minimo: '',
+  areaCodigo: '',
 };
 
 /**
@@ -59,6 +83,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
 @Component({
   selector: 'sel-step-eliminacao',
   standalone: true,
+  imports: [ValorEmConsultaComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(EliminacaoStepComponent)],
@@ -66,6 +91,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
 export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
+  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -78,7 +104,10 @@ export class EliminacaoStepComponent {
     classificacaoUsaFormulaLocal(this.store.draft().classificacao.regraCalculoCodigo),
   );
 
-  readonly regras = computed(() => this.store.draft().classificacao.regrasEliminacao);
+  /** Só a classificação: uma tecla em outro passo não refaz a conferência do desempate. */
+  private readonly classificacao = computed(() => this.store.draft().classificacao);
+
+  readonly regras = computed(() => this.classificacao().regrasEliminacao);
 
   /** Só etapas já persistidas (com `id`) podem ser referenciadas por `etapaRef`. */
   readonly etapasReferenciaveis = computed(() =>
@@ -99,8 +128,114 @@ export class EliminacaoStepComponent {
     return eliminacaoUsaEtapaENotaMinima(regra.regraCodigo);
   }
 
-  usaMinimo(regra: RegraEliminacaoConfigurada): boolean {
-    return eliminacaoUsaMinimo(regra.regraCodigo);
+  usaAreaEMinimo(regra: RegraEliminacaoConfigurada): boolean {
+    return eliminacaoUsaAreaEMinimo(regra.regraCodigo);
+  }
+
+  /**
+   * O quadro contra o qual o servidor confere o corte: o que a gravação da classificação copia do
+   * cadastro para a resolução do rascunho. Com o cadastro ainda não lido, a cópia gravada vale só
+   * se for da mesma resolução — é o caso do processo só para consulta. `null` quando não se sabe;
+   * `'sem-quadro'` quando a classificação não usa a média ponderada do ENEM.
+   */
+  private readonly quadroDoCorte = computed<readonly GrupoDoQuadro[] | 'sem-quadro' | null>(
+    () => {
+      const classificacao = this.classificacao();
+      if (!exigeResolucaoPesoAreaEnem(classificacao)) return 'sem-quadro';
+      const cadastro = this.cadastroDePesos.leitura();
+      if (cadastro.lido) return cadastro.quadroDaResolucaoEscolhida;
+      const gravada = this.store.classificacaoGravada();
+      return gravada.estado === 'com-quadro' &&
+        gravada.resolucao === classificacao.resolucaoPesoAreaEnem
+        ? gravada.grupos
+        : null;
+    },
+  );
+
+  /**
+   * As áreas que um corte pode citar: com quadro, as que estão em todos os grupos dele; sem quadro,
+   * qualquer área do ENEM; `null` enquanto o quadro não é conhecido.
+   */
+  readonly areasDoCorte = computed<readonly ColunaDoQuadro[] | null>(() => {
+    const quadro = this.quadroDoCorte();
+    const canonicas = this.cadastroDePesos.leitura().canonicas;
+    if (quadro === 'sem-quadro') return canonicas;
+    return quadro === null ? null : areasComunsAoQuadro(quadro, ordemDasAreas(canonicas));
+  });
+
+  private readonly gruposDoQuadro = computed(() => {
+    const quadro = this.quadroDoCorte();
+    return quadro === 'sem-quadro' || quadro === null ? [] : quadro;
+  });
+
+  /** As áreas oferecidas à regra: as do corte, menos as que outro corte já cita (uma por área). */
+  areasEscolhiveis(indice: number): readonly ColunaDoQuadro[] {
+    const citadasPorOutras = new Set(
+      this.regras()
+        .filter((regra, item) => item !== indice && this.usaAreaEMinimo(regra))
+        .map((regra) => regra.areaCodigo),
+    );
+    const oferecidas = (this.areasDoCorte() ?? []).filter(
+      (area) => !citadasPorOutras.has(area.codigo),
+    );
+    // A área gravada aparece mesmo fora das oferecidas: o operador vê o que está configurado.
+    const gravada = this.regras()[indice]?.areaCodigo ?? '';
+    return gravada === '' || oferecidas.some((area) => area.codigo === gravada)
+      ? oferecidas
+      : [{ codigo: gravada, rotulo: this.rotuloDaArea(gravada) }, ...oferecidas];
+  }
+
+  rotuloDaArea(codigo: string): string {
+    return (
+      rotulosDasAreas(this.cadastroDePesos.leitura().canonicas, this.gruposDoQuadro()).get(
+        codigo,
+      ) ?? codigo
+    );
+  }
+
+  /** A regra como se lê em consulta, com o rótulo de cada escolha. */
+  leituraDaRegra(regra: RegraEliminacaoConfigurada) {
+    const etapa = this.etapasReferenciaveis().find((item) => item.id === regra.etapaRef);
+    return {
+      regra: rotuloDaRegraEscolhida(this.regraEscolhivel(regra)),
+      etapa: etapa === undefined ? null : etapa.nome || 'Etapa sem nome',
+      notaMinima: leituraDoCampoDecimal(regra.notaMinima),
+      area: regra.areaCodigo === '' ? null : this.rotuloDaArea(regra.areaCodigo),
+      minimo: leituraDoCampoDecimal(regra.minimo),
+    };
+  }
+
+  /** O rótulo completo do mínimo, com a área: dois cortes lado a lado não se confundem. */
+  rotuloDoMinimo(regra: RegraEliminacaoConfigurada): string {
+    return regra.areaCodigo === ''
+      ? 'Nota mínima'
+      : `Nota mínima em ${this.rotuloDaArea(regra.areaCodigo)}`;
+  }
+
+  /** O corte que a resolução dá à área, quando a classificação tem quadro e o cadastro foi lido. */
+  corteSugerido(regra: RegraEliminacaoConfigurada): number | null {
+    const grupos = this.gruposDoQuadro();
+    if (regra.areaCodigo === '' || grupos.length === 0) return null;
+    return corteDaArea(grupos, regra.areaCodigo);
+  }
+
+  /**
+   * As recusas do servidor a um campo de uma regra, por `índice.campo`. Ficam junto do campo até
+   * a regra mudar ou a gravação seguinte responder.
+   */
+  readonly recusasPorCampo = signal<ReadonlyMap<string, string>>(new Map());
+
+  recusaDoCampo(indice: number, campo: CampoDoCorte): string | null {
+    return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
+  }
+
+  /** O `aria-describedby` do campo: a recusa, quando há, e a dica, quando há. */
+  descritoPor(indice: number, campo: CampoDoCorte, dica: string | null): string | null {
+    const ids = [
+      this.recusaDoCampo(indice, campo) === null ? null : `elim-${campo}-erro-${indice}`,
+      dica,
+    ].filter((id): id is string => id !== null);
+    return ids.length > 0 ? ids.join(' ') : null;
   }
 
   rotuloDaEtapa(etapaId: string): string {
@@ -129,6 +264,8 @@ export class EliminacaoStepComponent {
   }
 
   removerRegra(indice: number): void {
+    // As posições seguintes mudam: as recusas guardadas por índice deixam de apontar a regra certa.
+    this.recusasPorCampo.set(new Map());
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().filter((_, item) => item !== indice),
     });
@@ -151,7 +288,7 @@ export class EliminacaoStepComponent {
   }
 
   escolherRegra(indice: number, valor: string): void {
-    const [codigo = '', versao = ''] = valor.split('|');
+    const { codigo, versao } = lerChaveDaRegra(valor);
     this.atualizarRegra(indice, {
       regraCodigo: codigo,
       regraVersao: versao,
@@ -160,6 +297,24 @@ export class EliminacaoStepComponent {
       etapaRef: '',
       notaMinima: '',
       minimo: '',
+      areaCodigo: '',
+    });
+  }
+
+  /**
+   * O corte do cadastro é sugestão, e a regra é a norma aplicada: o mínimo sugerido só entra
+   * quando o operador ainda não informou um. O mínimo igual à sugestão da área anterior veio dela,
+   * e não do operador, então também é trocado.
+   */
+  escolherArea(indice: number, areaCodigo: string): void {
+    const regra = this.regras()[indice];
+    const anterior = this.corteSugerido(regra);
+    const sugerido = this.corteSugerido({ ...regra, areaCodigo });
+    const minimo = regra.minimo.trim();
+    const naoInformado = minimo === '' || (anterior !== null && minimo === String(anterior));
+    this.atualizarRegra(indice, {
+      areaCodigo,
+      ...(naoInformado ? { minimo: sugerido === null ? '' : String(sugerido) } : {}),
     });
   }
 
@@ -176,6 +331,7 @@ export class EliminacaoStepComponent {
   }
 
   private atualizarRegra(indice: number, patch: Partial<RegraEliminacaoConfigurada>): void {
+    this.esquecerRecusasDa(indice);
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().map((regra, item) =>
         item === indice ? { ...regra, ...patch } : regra,
@@ -183,19 +339,34 @@ export class EliminacaoStepComponent {
     });
   }
 
+  private esquecerRecusasDa(indice: number): void {
+    const restantes = [...this.recusasPorCampo()].filter(
+      ([chave]) => !chave.startsWith(`${indice}.`),
+    );
+    if (restantes.length < this.recusasPorCampo().size) this.recusasPorCampo.set(new Map(restantes));
+  }
+
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
   }
 
+  /**
+   * Sem confirmação quando a gravação já se sabe recusada: `null` leva direto ao `persistir()`, que
+   * mostra a recusa sem chamar a API.
+   */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid) return null;
+    if (!this.validate().valid || this.recusasCertasPeloDesempate().length > 0) return null;
+    const avisoDoDesempate = this.avisoDoDesempatePorArea();
 
     const classificacao = this.store.draft().classificacao;
     const local = this.usaFormulaLocal();
 
     return {
       titulo: 'Confirmar a classificação do processo',
-      aviso: 'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
+      aviso: [
+        'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
+        ...avisoDoDesempate,
+      ].join(' '),
       rotuloDeConfirmar: 'Gravar classificação',
       itens: [
         { rotulo: 'Regra de cálculo', valor: classificacao.regraCalculoCodigo },
@@ -237,7 +408,7 @@ export class EliminacaoStepComponent {
     // A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o
     // cadastro; a completude dos grupos continua sendo julgada pelo servidor.
     const messages: string[] = [
-      ...mensagensDeClassificacaoBase(classificacao, this.catalogos.resolucaoForaDoCadastro),
+      ...mensagensDeClassificacaoBase(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro),
     ];
 
     if (!this.usaFormulaLocal()) {
@@ -272,10 +443,8 @@ export class EliminacaoStepComponent {
         if (!decimalValido(regra.notaMinima)) {
           messages.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
         }
-      } else if (this.usaMinimo(regra)) {
-        if (!decimalValido(regra.minimo)) {
-          messages.push(`Regra de eliminação ${posicao}: informe o mínimo exigido.`);
-        }
+      } else if (this.usaAreaEMinimo(regra)) {
+        messages.push(...this.mensagensDoCorte(regra, indice));
       }
 
       if (eliminacaoExigeBaseadoEmEnem(regra.regraCodigo) && !classificacao.baseadoEmEnem) {
@@ -286,6 +455,85 @@ export class EliminacaoStepComponent {
     });
 
     return messages.length ? { valid: false, messages } : { valid: true };
+  }
+
+  private mensagensDoCorte(regra: RegraEliminacaoConfigurada, indice: number): string[] {
+    const posicao = indice + 1;
+    const mensagens: string[] = [];
+    if (regra.areaCodigo === '') {
+      mensagens.push(`Regra de eliminação ${posicao}: selecione a área do ENEM.`);
+    } else {
+      const rotulo = this.rotuloDaArea(regra.areaCodigo);
+      const repetida = this.regras().some(
+        (outra, item) =>
+          item < indice && this.usaAreaEMinimo(outra) && outra.areaCodigo === regra.areaCodigo,
+      );
+      if (repetida) {
+        mensagens.push(`Regra de eliminação ${posicao}: ${rotulo} já tem um corte em outra regra.`);
+      }
+      const areas = this.areasDoCorte();
+      if (areas !== null && !areas.some((area) => area.codigo === regra.areaCodigo)) {
+        mensagens.push(
+          `Regra de eliminação ${posicao}: ${rotulo} não está em todos os grupos da resolução de Peso por Área escolhida.`,
+        );
+      }
+    }
+    if (!decimalValido(regra.minimo)) {
+      mensagens.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
+    }
+    return mensagens;
+  }
+
+  /**
+   * O servidor recusa a classificação que deixa sem nota de área um critério de desempate já
+   * gravado que a cita. Com o rascunho fora do ENEM pela média ponderada, a recusa é certa, e a
+   * gravação nem é tentada. Confere o que está gravado, e por isso fica fora do `validate()`: a
+   * publicação valida todos os passos antes de gravá-los, e o Desempate, gravado antes deste, pode
+   * resolver a pendência.
+   */
+  private recusasCertasPeloDesempate(): string[] {
+    return this.pendenciasDoDesempateGravado()
+      .filter(({ semQuadro }) => semQuadro)
+      .map(({ posicao }) => recusaPorCriterioGravadoSemQuadro(posicao));
+  }
+
+  /**
+   * As áreas que o cadastro lido não tem em todos os grupos da resolução do rascunho. Só avisa: a
+   * gravação copia o quadro do cadastro que o servidor tem, que pode ter mudado depois da leitura,
+   * e quem julga é ele.
+   */
+  readonly avisoDoDesempatePorArea = computed(() => {
+    // Só para consulta não há gravação a avisar.
+    if (!this.store.edicaoPermitida()) return [];
+    const resolucao = this.classificacao().resolucaoPesoAreaEnem;
+    return this.pendenciasDoDesempateGravado()
+      .filter(({ semQuadro }) => !semQuadro)
+      .map(({ posicao, fora, todas }) => {
+        // Retirar todas as áreas deixaria o critério vazio, que o próprio Desempate recusa.
+        const correcao = todas
+          ? 'troque a regra do critério ou remova-o no passo Desempate e grave o passo'
+          : 'retire a área no passo Desempate e grave o passo';
+        return `Pelo cadastro de Peso por Área lido, o critério de desempate ${posicao} gravado cita ${fora.join(', ')}, que a resolução ${resolucao} não tem em todos os grupos, e a gravação deve ser recusada: ${correcao}, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`;
+      });
+  });
+
+  private readonly pendenciasDoDesempateGravado = computed<readonly PendenciaDoCriterioGravado[]>(
+    () => {
+      // Depois de uma gravação do desempate sem resposta conclusiva, só o servidor sabe o que tem.
+      const gravados = this.store.criteriosDesempateGravados();
+      if (gravados === null) return [];
+      const conferencia = conferirDesempateGravado(
+        gravados,
+        this.classificacao(),
+        this.cadastroDePesos.leitura(),
+      );
+      return conferencia.resultado === 'com-pendencias' ? conferencia.pendencias : [];
+    },
+  );
+
+  /** "Atualizar lista" do aviso: relê o cadastro, e o aviso se refaz com ele. */
+  atualizarCadastroDePesos(): void {
+    this.cadastroDePesos.relerCadastroAPedido(() => undefined);
   }
 
   /**
@@ -309,29 +557,31 @@ export class EliminacaoStepComponent {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
 
+    const doDesempate = this.recusasCertasPeloDesempate();
+    if (doDesempate.length > 0) return { valid: false, messages: doDesempate };
+
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
       const comando = comoComandoDeClassificacao(this.store.draft().classificacao);
-      this.releitura.descartarLeiturasEmCurso();
-      const resultado = await this.cadastro.definirClassificacao(processoId, comando);
+      const resultado = await this.releitura.gravando(async () => {
+        const resposta = await this.cadastro.definirClassificacao(processoId, comando);
+        if (geracao !== this.store.geracao()) return resposta;
+        if (resposta.ok) {
+          this.recusasPorCampo.set(new Map());
+          this.store.descartarRecusasDaClassificacao();
+          this.registrarQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
+        } else if (resposta.inconclusiva) {
+          // O servidor pode ter gravado — com ou sem quadro —, e o que ele tem fica desconhecido.
+          this.store.marcarClassificacaoDesconhecida();
+        }
+        return resposta;
+      });
 
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-
       if (!resultado.ok) {
-        // Sem resposta conclusiva o servidor pode ter gravado — e copiado o quadro de novo.
-        if (
-          resultado.inconclusiva &&
-          this.envolveResolucao(comando.resolucaoPesoAreaEnem ?? null)
-        ) {
-          this.store.quadroPesoAreaEnemDesatualizado.set(true);
-        }
         return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
       }
-
-      this.store.recusaDaResolucaoPesoAreaEnem.set(null);
-      await this.acompanharQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       return { valid: true };
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -339,56 +589,66 @@ export class EliminacaoStepComponent {
   }
 
   /**
-   * O resumo da recusa: a recusa da resolução, cada uma uma vez, com o texto da tela e o passo onde
-   * corrigir; e o título da raiz, pelo `ProblemI18nService`, quando há erro em outro campo ou
-   * nenhum erro de campo. Recusa só da resolução não repete o título, que fala do mesmo erro.
+   * O resumo da recusa: a recusa da resolução, com o texto da tela e o passo onde corrigir; a
+   * recusa por um critério de desempate já gravado, com o texto da tela, qualquer que seja o campo
+   * que o servidor apontou; e o título da raiz, pelo `ProblemI18nService`, para o que a tela não
+   * explica.
    *
-   * A recusa da resolução fica guardada para aparecer sob o campo, no passo da fórmula. Uma
-   * recusa sem ela não a apaga: o servidor recusa outros campos antes de chegar a julgar a
-   * resolução, e só a gravação que dá certo prova que ela passou.
+   * As recusas sob o campo da resolução ficam guardadas para aparecer no passo da fórmula. Uma
+   * resposta que julgou o campo substitui as duas — a da resolução e a de um critério de desempate
+   * gravado — pelo que ela traz. Uma resposta sem ele não as apaga: o servidor recusa outros campos
+   * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
    */
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
-    const erros = problema.errors ?? [];
-    const daResolucao = [...new Set(erros.filter(ehDaResolucao).map(mensagemDaRecusaDaResolucao))];
-    if (daResolucao.length > 0) this.store.recusaDaResolucaoPesoAreaEnem.set(daResolucao[0]);
+    this.recusasPorCampo.set(recusasDoCorte(problema.errors ?? []));
+    const sobOCampo = (problema.errors ?? []).filter((erro) => ehCampoDaResolucao(erro.field));
+    if (sobOCampo.length > 0) {
+      const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
+      const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
+      this.store.recusarPeloDesempate(
+        peloDesempate.find((recusa) => recusa !== null) ?? null,
+        this.cadastroDePesos.leitura().pedida,
+      );
+      this.store.recusaDaResolucaoPesoAreaEnem.set(
+        daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
+      );
+    }
 
-    const haOutraRecusa = daResolucao.length === 0 || erros.some((erro) => !ehDaResolucao(erro));
-    return [
-      ...daResolucao.map((mensagem) => `Resolução de Peso por Área, no passo Fórmula: ${mensagem}`),
-      ...(haOutraRecusa ? [this.problemI18n.resolve(problema).title] : []),
-    ];
+    return resumoDaRecusa(
+      problema,
+      (erro) =>
+        recusaDaEliminacao(erro) ??
+        recusaDaClassificacaoPeloDesempate(erro) ??
+        (ehCampoDaResolucao(erro.field)
+          ? `Resolução de Peso por Área, no passo Fórmula: ${mensagemDaRecusaDaResolucao(erro)}`
+          : null),
+      () => this.problemI18n.resolve(problema).title,
+    );
   }
 
   /**
-   * A gravação copiou o quadro da resolução de novo no servidor, e a Fórmula mostra o que o
-   * processo congelou. Na varredura da publicação a referência só fica marcada como velha: a
-   * página relê o detalhe uma vez, no fim da varredura, em vez de uma leitura por gravação.
+   * A gravação que deu certo diz o que o processo passou a ter: sem resolução, nenhum quadro; com
+   * ela, o quadro que o cadastro do servidor tinha para a resolução. O cadastro lido aqui dá a
+   * cópia presumida, por confirmar na releitura que `gravando` faz — ou que a publicação faz no fim
+   * da varredura; sem ele lido, só a releitura diz o que foi copiado.
    */
-  private async acompanharQuadroCongelado(resolucaoGravada: string | null): Promise<void> {
-    if (!this.envolveResolucao(resolucaoGravada)) {
-      this.store.quadroPesoAreaEnemDesatualizado.set(false);
+  private registrarQuadroCongelado(resolucaoGravada: string | null): void {
+    if (resolucaoGravada === null) {
+      this.store.registrarClassificacaoGravadaSemQuadro();
       return;
     }
 
-    if (this.store.travamentoDeOrquestracao()) {
-      this.store.quadroPesoAreaEnemDesatualizado.set(true);
-      return;
+    const cadastro = this.cadastroDePesos.leitura();
+    if (cadastro.lido && cadastro.quadroDaResolucaoEscolhida.length > 0) {
+      this.store.registrarClassificacaoGravadaComQuadro(
+        resolucaoGravada,
+        cadastro.quadroDaResolucaoEscolhida,
+      );
+    } else {
+      this.store.marcarClassificacaoDesconhecida();
     }
-
-    await this.releitura.reler();
-  }
-
-  /** Sem resolução, nem enviada nem congelada, a gravação não mexe em quadro nenhum. */
-  private envolveResolucao(resolucaoEnviada: string | null): boolean {
-    return (
-      resolucaoEnviada !== null ||
-      (this.store.quadroPesoAreaEnemCongelado()?.resolucao ?? null) !== null
-    );
   }
 }
-
-/** O campo da resolução nas recusas do servidor, comparado sem caixa. */
-const CAMPO_RESOLUCAO = 'resolucaopesoareaenem';
 
 const PREFIXO_DA_RECUSA = 'uniplus.selecao.configuracao_classificacao.';
 
@@ -427,23 +687,78 @@ const MENSAGEM_POR_CODIGO_DA_RESOLUCAO: ReadonlyMap<string, string> = new Map([
   ],
 ]);
 
+/**
+ * O que a tela diz para cada recusa das regras de eliminação. O servidor aponta a regra pelo campo
+ * `regrasEliminacao[i]`, e a tela a nomeia pela posição, como na própria validação.
+ */
+const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
+  [
+    `${PREFIXO_DA_RECUSA}corte_em_area_repetido`,
+    'a área já tem um corte em outra regra; deixe um corte por área',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
+    'a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo Fórmula',
+  ],
+  [
+    'uniplus.selecao.regra_eliminacao.area_invalida',
+    'a área do corte não é uma área do ENEM válida; escolha a área na lista',
+  ],
+  [
+    'uniplus.selecao.regra_eliminacao.area_e_minimo_obrigatorios',
+    'o corte por área exige a área do ENEM e a nota mínima',
+  ],
+  [
+    'uniplus.selecao.processo_seletivo.eliminacao_enem_fora_de_processo_enem',
+    'as regras de eliminação do ENEM só se aplicam à classificação baseada em ENEM; marque o ENEM no passo Fórmula ou retire essas regras',
+  ],
+]);
+
+type CampoDoCorte = 'area' | 'minimo';
+
+const CAMPO_DO_CORTE: Readonly<Record<string, CampoDoCorte>> = {
+  areaCodigo: 'area',
+  minimo: 'minimo',
+};
+
+/**
+ * O campo de cada recusa que o servidor aponta só pela regra, sem sufixo: a repetição da área é
+ * recusada em `regrasEliminacao[i]`, e é o campo da área que a corrige.
+ */
+const CAMPO_DA_RECUSA_SEM_SUFIXO: Readonly<Record<string, CampoDoCorte>> = {
+  [`${PREFIXO_DA_RECUSA}corte_em_area_repetido`]: 'area',
+};
+
+/** As recusas que o servidor aponta num campo de uma regra, por `índice.campo`. */
+function recusasDoCorte(
+  erros: readonly { readonly field: string; readonly code: string }[],
+): ReadonlyMap<string, string> {
+  const recusas = new Map<string, string>();
+  for (const erro of erros) {
+    const [, indice, nome] = /^regrasEliminacao\[(\d+)\](?:\.(\w+))?$/.exec(erro.field) ?? [];
+    const campo =
+      nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DO_CORTE[nome];
+    const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
+    if (indice === undefined || campo === undefined || texto === undefined) continue;
+    recusas.set(`${indice}.${campo}`, `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`);
+  }
+  return recusas;
+}
+
+function recusaDaEliminacao(erro: { readonly field: string; readonly code: string }): string | null {
+  const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
+  if (texto === undefined) return null;
+  const indice = /^regrasEliminacao\[(\d+)\]/.exec(erro.field)?.[1];
+  return indice === undefined
+    ? `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`
+    : `Regra de eliminação ${Number(indice) + 1}: ${texto}.`;
+}
+
 const MENSAGEM_DE_RECUSA_DESCONHECIDA =
   'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.';
 
-function ehDaResolucao(erro: ProblemValidationError): boolean {
-  return ultimoSegmento(erro.field) === CAMPO_RESOLUCAO;
-}
-
-function mensagemDaRecusaDaResolucao(erro: ProblemValidationError): string {
+function mensagemDaRecusaDaResolucao(erro: Pick<ProblemValidationError, 'code'>): string {
   return MENSAGEM_POR_CODIGO_DA_RESOLUCAO.get(erro.code) ?? MENSAGEM_DE_RECUSA_DESCONHECIDA;
-}
-
-/**
- * O nome do campo sem prefixo de caminho (`$.`, `request.`) e sem caixa — a recusa do domínio e a
- * do model binding nomeiam o mesmo campo de formas diferentes.
- */
-function ultimoSegmento(campo: string): string {
-  return (campo.split('.').at(-1) ?? campo).toLowerCase();
 }
 
 function decimalValido(texto: string): boolean {

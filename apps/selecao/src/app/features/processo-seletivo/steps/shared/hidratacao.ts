@@ -55,6 +55,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     identificacao: {
       ...draft.identificacao,
       nome: dto.nome,
+      identificadorLegivel: dto.identificadorLegivel ?? '',
       unidadeAdministradoraId: dto.unidadeAdministradora.origemId,
       origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos),
       localidade: {
@@ -225,6 +226,10 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     nome: etapa.nome,
     carater: etapa.carater,
     tipoEtapaOrigemId: etapa.tipoEtapa.origemId,
+    tipoCongelado: {
+      origemId: etapa.tipoEtapa.origemId,
+      notaDeOrigemNoEnem: etapa.tipoEtapa.notaDeOrigemNoEnem,
+    },
     peso: comoTexto(etapa.peso),
     notaMinima: comoTexto(etapa.notaMinima),
     ordem: comoInteiro(etapa.ordem),
@@ -307,6 +312,7 @@ function regraEliminacaoDe(
     etapaRef: regra.etapaRef ?? '',
     notaMinima: comoTexto(regra.notaMinima),
     minimo: comoTexto(regra.minimo),
+    areaCodigo: regra.areaCodigo ?? '',
   };
 }
 
@@ -343,7 +349,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
  * posição no array é a ordem, então a lista chega ordenada por `ordem` antes
  * de perder o número.
  */
-function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfigurado[] {
+export function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfigurado[] {
   return [...(dto.criteriosDesempate ?? [])]
     .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
     .map((criterio) => ({
@@ -354,6 +360,7 @@ function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfig
       fato: criterio.fato ?? '',
       operador: criterio.operador ?? '',
       valor: criterio.valor ?? '',
+      areas: [...(criterio.areas ?? [])],
     }));
 }
 

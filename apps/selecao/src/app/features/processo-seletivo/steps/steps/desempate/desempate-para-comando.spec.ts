@@ -6,6 +6,8 @@ import {
   comoComandoDeCriteriosDesempate,
   desempateUsaEtapa,
   desempateUsaIdadeMinima,
+  desempateTemShapeConhecido,
+  desempateUsaAreas,
   desempateUsaPredicadoFato,
 } from './desempate-para-comando';
 
@@ -18,6 +20,7 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
     fato: '',
     operador: '',
     valor: '',
+    areas: [],
     ...patch,
   };
 }
@@ -45,6 +48,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
       fato: null,
       operador: null,
       valor: null,
+      areas: null,
     });
   });
 
@@ -63,6 +67,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
       fato: null,
       operador: null,
       valor: null,
+      areas: null,
     });
   });
 
@@ -101,7 +106,44 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
       fato: 'RENDA_PER_CAPITA',
       operador: 'lte',
       valor: '1.5',
+      areas: null,
     });
+  });
+
+  it('DESEMPATE-MAIOR-NOTA-AREA-ENEM usa só as áreas, na ordem da lista', () => {
+    expect(desempateUsaAreas('DESEMPATE-MAIOR-NOTA-AREA-ENEM')).toBe(true);
+    expect(desempateTemShapeConhecido('DESEMPATE-MAIOR-NOTA-AREA-ENEM')).toBe(true);
+
+    const comando = comoComandoDeCriterioDesempate(
+      criterio({
+        regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+        regraVersao: '1',
+        areas: ['REDACAO', 'MATEMATICA'],
+        idadeMinima: '60', // resíduo — não pode vazar
+      }),
+      1,
+    );
+
+    expect(comando).toEqual({
+      ordem: 1,
+      regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
+      regraVersao: '1',
+      etapaRef: null,
+      idadeMinima: null,
+      fato: null,
+      operador: null,
+      valor: null,
+      areas: ['REDACAO', 'MATEMATICA'],
+    });
+  });
+
+  it('as áreas não viajam em outra regra', () => {
+    const comando = comoComandoDeCriterioDesempate(
+      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0', areas: ['REDACAO'] }),
+      1,
+    );
+
+    expect(comando.areas).toBeNull();
   });
 });
 

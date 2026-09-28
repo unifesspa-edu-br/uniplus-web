@@ -64,6 +64,65 @@ export function mesmoQuadro(a: readonly GrupoDoQuadro[], b: readonly GrupoDoQuad
   return JSON.stringify(normalizado(a)) === JSON.stringify(normalizado(b));
 }
 
+/** A cópia do quadro que a última gravação da classificação congelou no processo. */
+export interface CopiaCongelada {
+  readonly resolucao: string;
+  readonly grupos: readonly GrupoDoQuadro[];
+}
+
+export interface QuadroVigente {
+  readonly grupos: readonly GrupoDoQuadro[];
+  readonly daCopiaCongelada: boolean;
+}
+
+/**
+ * O quadro que vale para a resolução escolhida: a cópia congelada em vigor quando a resolução é a
+ * que o processo gravou — mesmo que ela tenha saído do cadastro ou mudado lá. Em qualquer outro
+ * caso vale a prévia do cadastro, que é o que a próxima gravação copia.
+ */
+export function quadroVigente(
+  escolhida: string,
+  copiaEmVigor: CopiaCongelada | null,
+  doCadastro: readonly GrupoDoQuadro[],
+): QuadroVigente {
+  const daCopiaCongelada = copiaEmVigor !== null && escolhida === copiaEmVigor.resolucao;
+  return daCopiaCongelada
+    ? { grupos: copiaEmVigor.grupos, daCopiaCongelada }
+    : { grupos: doCadastro, daCopiaCongelada };
+}
+
+/**
+ * As áreas que todos os grupos do quadro têm, na ordem canônica. São as que o desempate por área
+ * pode citar: uma área que falte a algum grupo deixaria candidatos daquele grupo sem a nota
+ * comparada, e o servidor a recusa.
+ */
+export function areasComunsAoQuadro(
+  quadro: readonly GrupoDoQuadro[],
+  ordem: ReadonlyMap<string, number>,
+): readonly ColunaDoQuadro[] {
+  return colunasDoQuadro(quadro, ordem).filter((coluna) =>
+    quadro.every((grupo) => grupo.areas.some((area) => area.codigo === coluna.codigo)),
+  );
+}
+
+/**
+ * O corte que a resolução dá à área, quando todos os grupos concordam. Com cortes diferentes entre
+ * os grupos, ou sem corte, não há um valor único a sugerir.
+ */
+export function corteDaArea(quadro: readonly GrupoDoQuadro[], areaCodigo: string): number | null {
+  return valorUnico(
+    quadro.map((grupo) => grupo.areas.find((area) => area.codigo === areaCodigo)?.corte ?? null),
+  );
+}
+
+/**
+ * A base legal que todos os grupos do quadro citam, para ser dita uma vez só. Com bases diferentes
+ * entre os grupos, cada linha precisa mostrar a sua.
+ */
+export function baseLegalComum(quadro: readonly GrupoDoQuadro[]): string | null {
+  return valorUnico(quadro.map((grupo) => grupo.baseLegal));
+}
+
 /** Algum grupo de `congelado` não está mais em `cadastro` — a resolução ficou incompleta lá. */
 export function perdeuGrupo(
   congelado: readonly GrupoDoQuadro[],
@@ -112,6 +171,12 @@ function areaDo(area: {
     peso: numeroDaApi(area.peso),
     corte: numeroOuNuloDaApi(area.corte),
   };
+}
+
+function valorUnico<T>(valores: readonly T[]): T | null {
+  const distintos = new Set(valores);
+  const [unico] = distintos;
+  return distintos.size === 1 && unico !== undefined ? unico : null;
 }
 
 function ordenarPorCodigo(grupos: GrupoDoQuadro[]): readonly GrupoDoQuadro[] {
