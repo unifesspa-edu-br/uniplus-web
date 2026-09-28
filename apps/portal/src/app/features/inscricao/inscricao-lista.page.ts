@@ -142,7 +142,9 @@ export class InscricaoListaPage {
     }
   }
 
-  protected abrirInscricao(_inscricao: Inscricao): void {}
+  protected abrirInscricao(_inscricao: Inscricao): void {
+    // navegação implementada na Story de detalhe da inscrição
+  }
 
   protected limparFiltros(): void {
     this.termoBusca.set('');
