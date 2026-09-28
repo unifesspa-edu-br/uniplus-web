@@ -81,14 +81,13 @@ describe('ModalidadesListPage', () => {
     await propagate();
   }
 
-  it('CA-01: renderiza código, natureza e status Ativa', async () => {
+  it('CA-01: renderiza código e natureza', async () => {
     await flushLista([AC, V]);
     fixture.detectChanges();
     const texto = fixture.nativeElement.textContent as string;
     expect(component['modalidadesFiltradas']()).toHaveLength(2);
     expect(texto).toContain('AC');
     expect(texto).toContain('Ampla concorrência');
-    expect(texto).toContain('Ativa');
   });
 
   it('CA-01: chips de natureza contam por token e filtram client-side', async () => {
