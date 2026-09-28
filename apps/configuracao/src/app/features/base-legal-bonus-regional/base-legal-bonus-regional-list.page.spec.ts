@@ -120,7 +120,7 @@ describe('BaseLegalBonusRegionalListPage', () => {
     // Botão só-ícone perde o texto visível, então o nome acessível é o que
     // distingue uma linha da outra — e precisa ser legível para quem ouve.
     expect(nomes).toContain('Editar base legal Portaria Unifesspa nº 2514/2023');
-    expect(nomes).toContain('Desativar base legal Portaria Unifesspa nº 2514/2023');
+    expect(nomes).toContain('Remover base legal Portaria Unifesspa nº 2514/2023');
 
     // O identificador técnico não serve de rótulo: anunciado por leitor de
     // tela, um UUID não diz ao operador de que base se trata.
@@ -184,31 +184,31 @@ describe('BaseLegalBonusRegionalListPage', () => {
     expect(opcao).not.toBeNull();
   });
 
-  it('resposta de uma desativação cancelada não limpa a confirmação de um registro mais novo', async () => {
+  it('resposta de uma remoção cancelada não limpa a confirmação de um registro mais novo', async () => {
     const outraBase: BaseLegalBonusRegionalDto = { ...portariaBase, id: 'ba5e0000-0000-7000-8000-000000000002' };
     await flushLista([portariaBase, outraBase]);
     fixture.detectChanges();
 
-    component['pedirDesativacao'](portariaBase);
-    component['confirmarDesativacao']();
+    component['pedirRemocao'](portariaBase);
+    component['confirmarRemocao']();
     const requisicaoAntiga = controller.expectOne(
       (r) => r.url === `${URL_ADMIN}/${portariaBase.id}` && r.method === 'DELETE',
     );
 
-    component['pedirDesativacao'](outraBase);
+    component['pedirRemocao'](outraBase);
     fixture.detectChanges();
 
     requisicaoAntiga.flush(null);
     await propagate();
 
-    expect(component['baseParaDesativar']()).toEqual(outraBase);
-    expect(component['savingDesativar']()).toBe(false);
+    expect(component['baseParaRemover']()).toEqual(outraBase);
+    expect(component['savingRemover']()).toBe(false);
     // O sucesso de A recarrega a lista mesmo superado por B — o registro removido
     // não pode continuar aparecendo até uma atualização não relacionada.
     controller.expectOne((r) => r.url === URL_LISTA).flush([outraBase]);
   });
 
-  it('reporta a falha de uma desativação superada, mesmo sem mais controlar o diálogo dela', async () => {
+  it('reporta a falha de uma remoção superada, mesmo sem mais controlar o diálogo dela', async () => {
     const outraBase: BaseLegalBonusRegionalDto = { ...portariaBase, id: 'ba5e0000-0000-7000-8000-000000000003' };
     await flushLista([portariaBase, outraBase]);
     fixture.detectChanges();
@@ -216,13 +216,13 @@ describe('BaseLegalBonusRegionalListPage', () => {
     const notifications = TestBed.inject(NotificationService);
     const erroSpy = vi.spyOn(notifications, 'errorFromProblem');
 
-    component['pedirDesativacao'](portariaBase);
-    component['confirmarDesativacao']();
+    component['pedirRemocao'](portariaBase);
+    component['confirmarRemocao']();
     const requisicaoAntiga = controller.expectOne(
       (r) => r.url === `${URL_ADMIN}/${portariaBase.id}` && r.method === 'DELETE',
     );
 
-    component['pedirDesativacao'](outraBase);
+    component['pedirRemocao'](outraBase);
     fixture.detectChanges();
 
     requisicaoAntiga.flush(
@@ -233,8 +233,8 @@ describe('BaseLegalBonusRegionalListPage', () => {
 
     expect(erroSpy).toHaveBeenCalled();
     // O diálogo em tela pertence a B — a falha de A não mexe nele.
-    expect(component['baseParaDesativar']()).toEqual(outraBase);
-    expect(component['savingDesativar']()).toBe(false);
+    expect(component['baseParaRemover']()).toEqual(outraBase);
+    expect(component['savingRemover']()).toBe(false);
   });
 
   it('CA-04: só busca município a partir de 3 caracteres, com debounce', async () => {
@@ -342,13 +342,13 @@ describe('BaseLegalBonusRegionalListPage', () => {
     const requisicao = controller.expectOne((r) => r.url === URL_ADMIN && r.method === 'POST');
 
     expect(component['form'].disabled).toBe(true);
-    const buscaInput = fixture.nativeElement.querySelector<HTMLInputElement>(
+    const buscaInput = fixture.nativeElement.querySelector(
       'input[aria-labelledby="cfg-blbr-municipios-label"]',
-    );
+    ) as HTMLInputElement;
     expect(buscaInput?.disabled).toBe(true);
-    const removerBtn = fixture.nativeElement.querySelector<HTMLButtonElement>(
+    const removerBtn = fixture.nativeElement.querySelector(
       '.cfg-municipio-selecionados button',
-    );
+    ) as HTMLButtonElement;
     expect(removerBtn?.disabled).toBe(true);
 
     requisicao.flush(portariaBase.id);
@@ -417,11 +417,11 @@ describe('BaseLegalBonusRegionalListPage', () => {
     const requisicao = controller.expectOne((r) => r.url === URL_ADMIN && r.method === 'POST');
 
     const cancelarBtn = Array.from(
-      fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.cfg-form-footer button'),
+      fixture.nativeElement.querySelectorAll('.cfg-form-footer button') as NodeListOf<HTMLButtonElement>,
     ).find((btn) => btn.textContent?.trim() === 'Cancelar');
-    const fecharBtn = fixture.nativeElement.querySelector<HTMLButtonElement>(
+    const fecharBtn = fixture.nativeElement.querySelector(
       '.uni-drawer__header button',
-    );
+    ) as HTMLButtonElement;
     expect(cancelarBtn?.disabled).toBe(true);
     expect(fecharBtn?.disabled).toBe(true);
 
@@ -434,9 +434,9 @@ describe('BaseLegalBonusRegionalListPage', () => {
 
     component['abrirCadastro']();
     fixture.detectChanges();
-    const fecharBtnDepois = fixture.nativeElement.querySelector<HTMLButtonElement>(
+    const fecharBtnDepois = fixture.nativeElement.querySelector(
       '.uni-drawer__header button',
-    );
+    ) as HTMLButtonElement;
     expect(fecharBtnDepois?.disabled).toBe(false);
   });
 
@@ -497,16 +497,16 @@ describe('BaseLegalBonusRegionalListPage', () => {
     focoSpy.mockRestore();
   });
 
-  it('CA-05: pede confirmação antes de desativar e só chama o backend após confirmar', async () => {
+  it('CA-05: pede confirmação antes de remoção e só chama o backend após confirmar', async () => {
     await flushLista([portariaBase]);
     fixture.detectChanges();
 
-    component['pedirDesativacao'](portariaBase);
+    component['pedirRemocao'](portariaBase);
     fixture.detectChanges();
-    expect(component['confirmDesativarAberto']()).toBe(true);
+    expect(component['confirmRemoverAberto']()).toBe(true);
     controller.expectNone((r) => r.url === `${URL_ADMIN}/${portariaBase.id}`);
 
-    component['confirmarDesativacao']();
+    component['confirmarRemocao']();
     const req = controller.expectOne(
       (r) => r.url === `${URL_ADMIN}/${portariaBase.id}` && r.method === 'DELETE',
     );
