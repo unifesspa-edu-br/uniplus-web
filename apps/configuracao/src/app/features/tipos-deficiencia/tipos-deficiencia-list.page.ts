@@ -190,7 +190,6 @@ const PAGE_SIZE = 50;
                   <th scope="col">Código</th>
                   <th scope="col">Nome</th>
                   <th scope="col">Descrição</th>
-                  <th scope="col">Status</th>
                   <th scope="col"><span class="sr-only">Ações</span></th>
                 </tr>
               </thead>
@@ -208,9 +207,6 @@ const PAGE_SIZE = 50;
                     <td data-label="Descrição">
                       {{ tipoDeficiencia.descricao }}
                     </td>
-                    <td data-label="Status">
-                      <ui-tag variant="success">Ativa</ui-tag>
-                    </td>
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
@@ -220,11 +216,11 @@ const PAGE_SIZE = 50;
                         (triggered)="abrirEdicao(tipoDeficiencia)"
                       />
                       <ui-icon-button
-                        icon="pi-power-off"
-                        [accessibleName]="'Inativar tipo de deficiência ' + tipoDeficiencia.codigo"
-                        tooltip="Inativar tipo de deficiência"
+                        icon="pi-trash"
+                        [accessibleName]="'Remover tipo de deficiência ' + tipoDeficiencia.codigo"
+                        tooltip="Remover tipo de deficiência"
                         [isDisabled]="loading() || submitting()"
-                        (triggered)="abrirInativarTipoDeficiencia(tipoDeficiencia)"
+                        (triggered)="abrirRemoverTipoDeficiencia(tipoDeficiencia)"
                       />
                     </td>
                   </tr>
@@ -370,16 +366,16 @@ const PAGE_SIZE = 50;
     </ui-drawer>
     <ui-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar tipo de deficiência?"
+      heading="Remover tipo de deficiência?"
       (closed)="confirmOpen.set(false)"
     >
       <p>
-        Você está prestes a inativar o tipo de deficiência
-        <code>{{ tipoDeficienciaParaInativar()?.codigo }}</code>
-        — <strong>{{ tipoDeficienciaParaInativar()?.nome }}.</strong>
+        Você está prestes a Remover o tipo de deficiência
+        <code>{{ tipoDeficienciaParaRemover()?.codigo }}</code>
+        — <strong>{{ tipoDeficienciaParaRemover()?.nome }}.</strong>
       </p>
       <p>
-        A inativação impede novos editais de utilizá-lo, mas
+        A remoção impede novos editais de utilizá-lo, mas
         <strong>não altera ofertas já congeladas</strong>
         — a cópia por valor de cada processo permanece íntegra.
       </p>
@@ -387,8 +383,8 @@ const PAGE_SIZE = 50;
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="inativarConfirmado()">
-          Confirmar inativação
+        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
+          Confirmar remoção
         </button>
       </div>
     </ui-dialog>
@@ -476,7 +472,7 @@ export class TiposDeficienciaListPage {
   protected readonly saving = signal(false);
   readonly drawerOpen = signal(false);
   readonly submitting = signal(false);
-  readonly tipoDeficienciaParaInativar = signal<TipoDeficienciaDto | null>(null);
+  readonly tipoDeficienciaParaRemover = signal<TipoDeficienciaDto | null>(null);
   readonly confirmOpen = signal(false);
   readonly form = new FormGroup<TipoDeficienciaForm>({
     nome: new FormControl('', {
@@ -615,8 +611,8 @@ export class TiposDeficienciaListPage {
     this.formOpen.set(true);
   }
 
-  abrirInativarTipoDeficiencia(tipoDeficiencia: TipoDeficienciaDto): void {
-    this.tipoDeficienciaParaInativar.set(tipoDeficiencia);
+  abrirRemoverTipoDeficiencia(tipoDeficiencia: TipoDeficienciaDto): void {
+    this.tipoDeficienciaParaRemover.set(tipoDeficiencia);
     this.confirmOpen.set(true);
   }
 
@@ -782,10 +778,10 @@ export class TiposDeficienciaListPage {
   private handleRemoverResult(result: ApiResult<void>): void {
     this.saving.set(false);
     if (result.ok) {
-      this.notifications.success('Tipo de deficiência inativado');
+      this.notifications.success('Tipo de deficiência removido');
       this.formOpen.set(false);
       this.confirmOpen.set(false);
-      this.tipoDeficienciaParaInativar.set(null);
+      this.tipoDeficienciaParaRemover.set(null);
       this.recarregar();
       return;
     }
@@ -806,8 +802,8 @@ export class TiposDeficienciaListPage {
     }
   }
 
-  protected inativarConfirmado(): void {
-    const tipoDeficiencia = this.tipoDeficienciaParaInativar();
+  protected removerConfirmado(): void {
+    const tipoDeficiencia = this.tipoDeficienciaParaRemover();
     if (tipoDeficiencia === null || this.saving()) {
       return;
     }
