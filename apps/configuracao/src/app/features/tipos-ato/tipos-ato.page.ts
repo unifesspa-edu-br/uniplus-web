@@ -137,16 +137,6 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
           que cada um determina.
         </p>
       </div>
-      <div class="page-header__actions">
-        <button
-          type="button"
-          class="btn btn--primary"
-          [disabled]="saving()"
-          (click)="abrirCriacao()"
-        >
-          Cadastrar tipo de ato
-        </button>
-      </div>
     </div>
 
     <ui-alert
@@ -185,6 +175,15 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="saving()"
+          (click)="abrirCriacao()"
+        >
+          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+          Novo tipo de ato
+        </button>
       </div>
 
       <ui-filter-bar
@@ -292,7 +291,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
               [disabled]="saving()"
               (click)="abrirCriacao()"
             >
-              Cadastrar tipo de ato
+              Novo tipo de ato
             </button>
           </ui-empty-state>
         }
@@ -315,7 +314,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
       class="cfg-form-drawer"
       [(visible)]="formOpen"
       [closable]="!saving()"
-      [heading]="emEdicao() ? 'Editar tipo de ato' : 'Cadastrar tipo de ato'"
+      [heading]="emEdicao() ? 'Editar tipo de ato' : 'Novo tipo de ato'"
       ariaLabel="Formulário de tipo de ato"
       position="right"
     >
