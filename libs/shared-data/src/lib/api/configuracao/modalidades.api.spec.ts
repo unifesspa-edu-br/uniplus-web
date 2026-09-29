@@ -40,7 +40,7 @@ const modalidadeSeed: ModalidadeDto = {
 const criarCommand: CriarModalidadeCommand = {
   codigo: 'V',
   descricao: 'PcD ampla concorrência',
-  naturezaLegal: 'SUPLEMENTAR',
+  naturezaLegal: 'ACAO_AFIRMATIVA',
   composicaoVagas: 'RETIRA_DE',
   composicaoOrigem: 'AC',
   regraRemanejamento: 'DESTINO_UNICO',
