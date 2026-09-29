@@ -156,15 +156,19 @@
                 target="_blank"
                 rel="noopener"
               >
-                Ler o edital de abertura
-                <span class="sr-only">(abre em nova aba)</span>
+                Ver edital
+                <span class="sr-only"> — {{ certame.nome }} (abre em nova aba)</span>
               </a>
             }
-            <a class="btn btn--primary" routerLink="/inscricao">Entre e inscreva-se</a>
+            <a class="btn btn--primary" routerLink="/inscricao">
+              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+              Inscrever-me
+            </a>
           </div>
           <ptl-certame-publicacoes
             class="edital-row__publicacoes"
             [certameId]="certame.processoSeletivoId"
+            [certameNome]="certame.nome"
             [publicacao]="publicacaoDe(certame)"
             [carregando]="publicacoesCarregando()"
             [erro]="publicacoesComErro()"
@@ -196,17 +200,21 @@
               target="_blank"
               rel="noopener"
             >
-              Ler o edital de abertura
-              <span class="sr-only">(abre em nova aba)</span>
+              Ver edital
+              <span class="sr-only"> — {{ certame.nome }} (abre em nova aba)</span>
             </a>
           }
           <div class="card__footer">
             <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
-            <a class="btn btn--primary btn--sm" routerLink="/inscricao">Entre e inscreva-se</a>
+            <a class="btn btn--primary btn--sm" routerLink="/inscricao">
+              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+              Inscrever-me
+            </a>
           </div>
           <ptl-certame-publicacoes
             class="edital-row__publicacoes"
             [certameId]="certame.processoSeletivoId"
+            [certameNome]="certame.nome"
             [publicacao]="publicacaoDe(certame)"
             [carregando]="publicacoesCarregando()"
             [erro]="publicacoesComErro()"

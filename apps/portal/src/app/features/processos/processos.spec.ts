@@ -9,8 +9,11 @@ import {
   SELECAO_BASE_PATH,
   SituacaoDoCertame,
 } from '@uniplus/shared-data/selecao';
+import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
+import type { Publicacao } from '../publicacoes/publicacoes.model';
 import { ProcessosComponent } from './processos';
 
 const BASE = 'http://localhost:5000';
@@ -196,7 +199,7 @@ describe('ProcessosComponent', () => {
       expect(host().querySelectorAll('.card .publicacoes-toggle')).toHaveLength(2);
     });
 
-    it('todo certame ganha o link "Ler o edital de abertura", só depois que as publicações chegam', async () => {
+    it('todo certame ganha o link "Ver edital", só depois que as publicações chegam', async () => {
       await flushLista([sisu, encerrado], contadoresHeaders);
       expect(host().querySelector('.certame-edital-link')).toBeNull();
 
@@ -206,7 +209,7 @@ describe('ProcessosComponent', () => {
 
       const links = host().querySelectorAll<HTMLAnchorElement>('.certame-edital-link');
       expect(links).toHaveLength(2);
-      expect(links[0].textContent).toContain('Ler o edital de abertura');
+      expect(links[0].textContent).toContain('Ver edital');
       expect(links[0].getAttribute('href')).toBe(
         `/publicacoes/${sisu.processoSeletivoId}/eventos/${sisu.processoSeletivoId}-edital/documento`,
       );
@@ -227,12 +230,12 @@ describe('ProcessosComponent', () => {
       expect(host().querySelectorAll('.publicacao-timeline')).toHaveLength(1);
     });
 
-    it('o botão de inscrição convida a entrar e se inscrever', async () => {
+    it('o botão de inscrição convida a se inscrever', async () => {
       await flushLista([sisu], contadoresHeaders);
       fixture.detectChanges();
 
       const cta = Array.from(host().querySelectorAll<HTMLAnchorElement>('.edital-row a.btn')).find(
-        (a) => a.textContent?.includes('Entre e inscreva-se'),
+        (a) => a.textContent?.includes('Inscrever-me'),
       );
       expect(cta?.getAttribute('href')).toBe('/inscricao');
     });
@@ -514,5 +517,78 @@ describe('ProcessosComponent', () => {
     fixture.detectChanges();
 
     expect(localStorage.getItem('uniplus.portal.certames-visao')).toBe('cards');
+  });
+});
+
+describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', () => {
+  const semDocumento: CertameNaVitrineDto = {
+    processoSeletivoId: '01960000-0000-7000-0000-0000000000e9',
+    numero: 'Edital 99/2026',
+    nome: 'Certame sem PDF do edital',
+    tipoProcesso: { codigo: 'VESTIBULAR', nome: 'Vestibular' },
+    modalidadesOfertadas: ['AC'],
+    inscricoesDe: '2026-02-01T00:00:00Z',
+    inscricoesAte: '2026-04-16T23:59:59Z',
+    situacao: SituacaoDoCertame.inscricoesAbertas,
+    totalDeVagas: 10,
+  };
+
+  const publicacaoSemDocumento: Publicacao = {
+    id: semDocumento.processoSeletivoId,
+    numeroEdital: semDocumento.numero ?? '',
+    titulo: semDocumento.nome,
+    descricao: '',
+    situacao: 'inscricoesAbertas',
+    dataPublicacao: '2026-01-05T12:00:00Z',
+    // Evento `edital` sem `documentoArquivo`: não há o que abrir.
+    historico: [
+      { id: 'evt-edital', categoria: 'edital', data: '2026-01-05T12:00:00Z', titulo: 'Edital publicado' },
+    ],
+  };
+
+  it('não mostra o link "Ver edital" quando a publicação não tem documento de abertura', async () => {
+    window.matchMedia = ((consulta: string) =>
+      ({
+        matches: false,
+        media: consulta,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList) as typeof window.matchMedia;
+
+    TestBed.configureTestingModule({
+      imports: [ProcessosComponent],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        {
+          provide: PublicacoesRepository,
+          useValue: {
+            buscarPorCertames: () =>
+              of(new Map([[semDocumento.processoSeletivoId, publicacaoSemDocumento]])),
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProcessosComponent);
+    const controller = TestBed.inject(HttpTestingController);
+    const appRef = TestBed.inject(ApplicationRef);
+    fixture.detectChanges();
+
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush([semDocumento]);
+    await Promise.resolve();
+    appRef.tick();
+    await new Promise((resolve) => setTimeout(resolve, 360));
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.publicacoes-toggle')).toBeTruthy();
+    expect(host.querySelector('.certame-edital-link')).toBeNull();
+
+    controller.verify();
   });
 });

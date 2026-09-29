@@ -35,6 +35,8 @@ import {
 export class CertamePublicacoesComponent {
   /** Identifica o certame — vira o sufixo dos ids do botão e do painel, únicos por item da lista. */
   readonly certameId = input.required<string>();
+  /** Nome do certame — some no nome acessível do botão e da região, pra distinguir um item do outro (WCAG 2.4.9). */
+  readonly certameNome = input('');
   readonly publicacao = input<Publicacao | undefined>(undefined);
   readonly carregando = input(false);
   readonly erro = input(false);

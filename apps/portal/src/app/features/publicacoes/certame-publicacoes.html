@@ -8,13 +8,16 @@
 >
   <i class="pi pi-caret-down publicacoes-toggle__icon" aria-hidden="true"></i>
   <span class="publicacoes-toggle__label">Ver publicações</span>
+  @if (certameNome()) {
+    <span class="sr-only"> — {{ certameNome() }}</span>
+  }
 </button>
 
 <div class="publicacoes-painel" [id]="painelId()" role="region" [attr.aria-labelledby]="botaoId()" [hidden]="!aberto()">
   @if (aberto()) {
     @if (erro()) {
       <ui-alert variant="danger" heading="Não foi possível carregar as publicações">
-        Feche e abra o painel de novo, ou recarregue a página, para tentar outra vez.
+        Recarregue a página para tentar outra vez.
       </ui-alert>
     } @else if (carregando()) {
       <div class="publicacoes-loading" role="status">
@@ -31,7 +34,7 @@
               </span>
               <div class="publicacao-timeline__card" [class.is-current]="primeiro">
                 <div class="publicacao-timeline__head">
-                  <span class="publicacao-timeline__data">{{ evento.data | dateBr: 'long' }}</span>
+                  <span class="publicacao-timeline__data">{{ evento.data | dateBr: 'datetime' }}</span>
                   <ui-tag [variant]="categoriaVariant(evento.categoria)">{{ categoriaLabel(evento.categoria) }}</ui-tag>
                 </div>
                 <h4 class="publicacao-timeline__evento-titulo">{{ evento.titulo }}</h4>
@@ -48,6 +51,12 @@
                     <i class="pi pi-file-pdf" aria-hidden="true"></i>
                     Ver documento (PDF) — {{ evento.documentoArquivo }}
                     <span class="sr-only">(abre em nova aba)</span>
+                  </a>
+                }
+                @if (evento.acao; as acao) {
+                  <a class="publicacao-timeline__link" [routerLink]="acao.routerLink">
+                    <i class="pi pi-arrow-right" aria-hidden="true"></i>
+                    {{ acao.rotulo }}
                   </a>
                 }
               </div>

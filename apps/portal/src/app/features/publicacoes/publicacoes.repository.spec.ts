@@ -57,7 +57,14 @@ describe('PublicacoesRepository', () => {
     expect(titulos(encerrado)).toEqual(['Edital publicado', 'Inscrições abertas', 'Inscrições encerradas']);
 
     const historico = porCertame.get(encerrado.processoSeletivoId)?.historico ?? [];
-    expect(historico.map((evento) => evento.data)).toEqual(['2027-02-14', '2027-03-01', '2027-04-01']);
+    // Instante completo preservado (15 dias antes de `inscricoesDe` para o
+    // edital, e os próprios `inscricoesDe`/`inscricoesAte` para os demais) —
+    // não trunca para dia em UTC, que descasaria do dia civil em Brasília.
+    expect(historico.map((evento) => evento.data)).toEqual([
+      '2027-02-14T00:00:00.000Z',
+      '2027-03-01T00:00:00.000Z',
+      '2027-04-01T23:59:59.000Z',
+    ]);
   });
 
   it('só o edital publicado tem documento, e o id do evento é único dentro do certame', async () => {

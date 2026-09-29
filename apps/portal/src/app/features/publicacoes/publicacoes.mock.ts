@@ -22,10 +22,15 @@ const MS_POR_DIA = 24 * 60 * 60 * 1000;
 /** O edital costuma sair antes da abertura das inscrições — dias de antecedência simulados. */
 const ANTECEDENCIA_DO_EDITAL_DIAS = 15;
 
-/** `AAAA-MM-DD` (o que o `dateBr` lê) de um instante ISO, deslocado em `dias`. */
-function diaIso(instante: string, dias = 0): string {
+/**
+ * Instante ISO 8601 completo (o que o `dateBr: 'datetime'` lê), deslocado em
+ * `dias`. Preserva hora e fuso do instante original — nada de truncar para
+ * `AAAA-MM-DD` em UTC, que descasa do dia civil exibido em America/Sao_Paulo
+ * perto da virada da meia-noite.
+ */
+function instanteIso(instante: string, dias = 0): string {
   const ms = Date.parse(instante);
-  return Number.isNaN(ms) ? instante.slice(0, 10) : new Date(ms + dias * MS_POR_DIA).toISOString().slice(0, 10);
+  return Number.isNaN(ms) ? instante : new Date(ms + dias * MS_POR_DIA).toISOString();
 }
 
 export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicacao {
@@ -34,7 +39,7 @@ export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicaca
     {
       id: `${id}-edital`,
       categoria: 'edital',
-      data: diaIso(certame.inscricoesDe, -ANTECEDENCIA_DO_EDITAL_DIAS),
+      data: instanteIso(certame.inscricoesDe, -ANTECEDENCIA_DO_EDITAL_DIAS),
       titulo: 'Edital publicado',
       descricao: `${certame.numero ?? 'Edital'} publicado no Diário Oficial e no site da Unifesspa.`,
       documentoArquivo: `edital-${id.slice(-8)}.pdf`,
@@ -45,8 +50,12 @@ export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicaca
     historico.push({
       id: `${id}-inscricoes-abertas`,
       categoria: 'inscricoes',
-      data: diaIso(certame.inscricoesDe),
+      data: instanteIso(certame.inscricoesDe),
       titulo: 'Inscrições abertas',
+      // Só convida a se inscrever enquanto o certame ainda recebe inscrição.
+      ...(certame.situacao !== 'encerradas'
+        ? { acao: { rotulo: 'Inscrever-se', routerLink: '/inscricao' } }
+        : {}),
     });
   }
 
@@ -54,7 +63,7 @@ export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicaca
     historico.push({
       id: `${id}-inscricoes-encerradas`,
       categoria: 'inscricoes',
-      data: diaIso(certame.inscricoesAte),
+      data: instanteIso(certame.inscricoesAte),
       titulo: 'Inscrições encerradas',
     });
   }
