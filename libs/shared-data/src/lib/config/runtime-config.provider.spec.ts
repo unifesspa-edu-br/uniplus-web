@@ -48,7 +48,7 @@ describe('resolveGeoBasePath (issue #570)', () => {
   });
 });
 
-describe('toAuthConfig — allowlist do geoApiUrl (Codex PR #571)', () => {
+describe('toAuthConfig — allowlist do geoApiUrl', () => {
   function cfgCom(overrides: Partial<AppConfig>): AppConfig {
     return {
       apiUrl: 'https://uniplus-api-hml.unifesspa.edu.br',
