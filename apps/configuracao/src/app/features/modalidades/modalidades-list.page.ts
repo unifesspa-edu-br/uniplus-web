@@ -166,7 +166,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
             <table>
               <caption class="sr-only">
                 Modalidades de concorrência, com natureza, composição de vagas, remanejamento e
-                situação
+                modalidades que a referenciam
               </caption>
               <thead>
                 <tr>
@@ -300,9 +300,9 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
           </ui-alert>
         } @else {
           <p>
-            A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na
-            trilha de auditoria. Cópias congeladas por snapshot em processos publicados não são
-            afetadas (RN08). Confirma?
+            A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na trilha
+            de auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas
+            (RN08). Confirma?
           </p>
         }
       }
@@ -360,7 +360,7 @@ export class ModalidadesListPage {
   /** Fallback quando o servidor bloqueia sem título e o mapa reverso local está vazio. */
   protected readonly mensagemBloqueioPadrao =
     'Esta modalidade não pode ser removida porque outra modalidade viva a referencia ' +
-    '(possivelmente fora desta página). Ajuste ou remova essas referências antes de Remover.';
+    '(possivelmente fora desta página). Ajuste ou remova essas referências antes de removê-la.';
 
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 

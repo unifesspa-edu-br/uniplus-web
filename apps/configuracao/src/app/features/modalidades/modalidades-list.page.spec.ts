@@ -158,7 +158,23 @@ describe('ModalidadesListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Modalidades de concorrência, com natureza, composição de vagas, remanejamento e situação',
+      'Modalidades de concorrência, com natureza, composição de vagas, remanejamento e modalidades que a referenciam',
     );
+  });
+
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual([
+      'Código',
+      'Natureza',
+      'Composição de vagas',
+      'Remanejamento',
+      'Referenciada por',
+      'Ações',
+    ]);
   });
 });
