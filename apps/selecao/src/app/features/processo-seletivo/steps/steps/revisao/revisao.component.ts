@@ -202,8 +202,7 @@ export class RevisaoStepComponent {
     // chegava aqui com o checklist de quando o processo foi criado — todo
     // vermelho, porque nenhuma dimensão existia ainda —, e `validate()`
     // bloqueava a publicação até o operador descobrir sozinho o botão
-    // "Atualizar checklist" (achado do Codex na #486: o caminho feliz da
-    // Story falhando).
+    // "Atualizar checklist".
     effect(() => {
       const id = this.store.processoSeletivoId();
       const entrouNoPasso = this.store.isLast();
@@ -217,7 +216,7 @@ export class RevisaoStepComponent {
     // endereço — só o `id` muda, o componente não é recriado. `ultimaRecusa`
     // e `snapshotConfirmado` são estado LOCAL desta sessão de revisão, e sem
     // este reset a recusa (ou o snapshot) do processo A continuaria valendo
-    // para o processo B assim que ele carregasse (achado do Codex na #486).
+    // para o processo B assim que ele carregasse.
     // `store.geracao()` já é o sinal que o resto do wizard usa para "o
     // processo em tela mudou" — `cronograma.component.ts` reseta seu próprio
     // estado local do mesmo jeito.
@@ -247,7 +246,8 @@ export class RevisaoStepComponent {
       untracked(() => {
         for (const chave of Object.keys(valores) as (keyof typeof valores)[]) {
           const controle = this.form.controls[chave];
-          if (controle.value !== valores[chave]) controle.setValue(valores[chave], { emitEvent: false });
+          if (controle.value !== valores[chave])
+            controle.setValue(valores[chave], { emitEvent: false });
         }
       });
     });
@@ -265,8 +265,8 @@ export class RevisaoStepComponent {
     // leituras). O `<select>` recua para o placeholder na tela, mas sem esta
     // limpeza o rascunho continuava com o código velho — `mensagensDePubli-
     // cacao` só checa "não vazio", então `validate()` aprovava e o operador
-    // só descobria com o 422, depois de confirmar o diálogo de publicação
-    // (achado do Codex na #486). Só limpa com o catálogo definitivamente
+    // só descobria com o 422, depois de confirmar o diálogo de publicação.
+    // Só limpa com o catálogo definitivamente
     // carregado (fora de `carregando`/`erro`) — nunca durante a primeira
     // carga, quando `tiposAto()` ainda está no valor inicial vazio.
     effect(() => {
@@ -344,7 +344,7 @@ export class RevisaoStepComponent {
    * anterior corrigido, para o checklist em tela refletir a correção antes
    * de `validarRascunho()` julgar de novo — sem isto, a correção fica
    * gravada no servidor, mas `validate()` desta tela ainda recusa com o
-   * checklist de antes dela (achado do Codex na #486, P1).
+   * checklist de antes dela.
    */
   async recarregarChecklist(): Promise<void> {
     const id = this.store.processoSeletivoId();
@@ -460,12 +460,12 @@ export class RevisaoStepComponent {
    * O checklist legal em tela foi avaliado para uma `dataReferencia` que já
    * não é a que o rascunho declara agora — a fase de coleta mudou, ou o
    * operador terminou de digitar o início do período depois de o preflight
-   * ter carregado sem essa data (achado do Codex na #486: sem esta checagem,
-   * `validate()` podia aprovar um checklist legal avaliado para a data
-   * errada). Não recarrega sozinho — `dataReferenciaLegalDe` muda a cada
-   * tecla no campo de período, e recarregar a cada tecla é justamente a
-   * corrida que `PreflightDaPublicacaoService` foi corrigido para evitar; o
-   * operador usa "Atualizar checklist", que já existe na tela.
+   * ter carregado sem essa data (sem esta checagem, `validate()` podia aprovar
+   * um checklist legal avaliado para a data errada). Não recarrega sozinho —
+   * `dataReferenciaLegalDe` muda a cada tecla no campo de período, e recarregar
+   * a cada tecla é justamente a corrida que `PreflightDaPublicacaoService` foi
+   * corrigido para evitar; o operador usa "Atualizar checklist", que já existe
+   * na tela.
    */
   readonly legalDesatualizada = computed(() => {
     if (this.preflight.legal() === null) return false;
@@ -623,7 +623,7 @@ export class RevisaoStepComponent {
         // pode correr contra a primeira tentativa. Mantém a tela travada
         // pelo mesmo sinal do caminho "204 mas releitura falhou", em vez de
         // deixar o `finally` liberar a edição sobre um resultado que ainda
-        // não se sabe se aplicou (achado do Codex na #486, P1).
+        // não se sabe se aplicou.
         if (resultado.inconclusiva) this.store.publicacaoNaoConfirmada.set(true);
 
         const problem = comExtensoesDePublicacao(resultado.problem);
@@ -680,7 +680,7 @@ export class RevisaoStepComponent {
       // verdade — mas sem o detalhe relido não há como confirmar nem
       // descartar. `persistir()` ainda vai liberar `salvando` no `finally`;
       // sem este sinal a edição destravaria sobre um processo possivelmente
-      // já publicado (achado do Codex na #486). Só uma releitura que chegue
+      // já publicado. Só uma releitura que chegue
       // ao fim — aqui numa nova tentativa, ou na retomada da página — limpa
       // isto, em `store.hidratar()`.
       this.store.publicacaoNaoConfirmada.set(true);
@@ -695,9 +695,8 @@ export class RevisaoStepComponent {
       // aplicaria este status desatualizado E limparia
       // `publicacaoNaoConfirmada` (é o que ele faz para resolver a
       // incerteza numa releitura que CHEGA a uma resposta definitiva) —
-      // tratando um estado ainda intermediário como se fosse o final
-      // (achado do Codex na #486, P1: a mesma família que já apareceu
-      // nesta frente). Mantém travado; só uma releitura que mostre um
+      // tratando um estado ainda intermediário como se fosse o final.
+      // Mantém travado; só uma releitura que mostre um
       // status definitivo resolve.
       this.store.publicacaoNaoConfirmada.set(true);
       return false;
@@ -706,8 +705,8 @@ export class RevisaoStepComponent {
     // Hidrata assim que o detalhe responde com um status definitivo, mesmo
     // que o snapshot falhe: o POST já pode ter publicado de verdade, e
     // deixar o rascunho no estado antigo reabriria os controles de edição e
-    // de publicar sobre um processo que o servidor já considera imutável
-    // (achado do Codex na #486). `persistir()` ainda devolve inválido
+    // de publicar sobre um processo que o servidor já considera imutável.
+    // `persistir()` ainda devolve inválido
     // quando `snapshot` falha — só a hidratação, que é o que trava a tela,
     // não pode esperar por ele.
     this.store.hidratar(detalhe.data);
@@ -717,5 +716,4 @@ export class RevisaoStepComponent {
     this.snapshotConfirmado.set(snapshot.data);
     return detalhe.data.status === StatusProcesso.publicado;
   }
-
 }

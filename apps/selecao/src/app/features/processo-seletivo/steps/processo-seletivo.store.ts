@@ -140,10 +140,7 @@ export class ProcessoSeletivoStore {
    * liberava o stepper e os campos por um instante real, não um microtask:
    * o operador podia navegar, editar, e voltar antes da recarga concluir, e
    * a confirmação seguinte comparava contra um checklist que já não
-   * descrevia o rascunho atual (achado do Codex na #486, P1 — a mesma
-   * "estado intermediário tratado como final" que já apareceu três vezes
-   * nesta frente, agora na janela assíncrona ENTRE passos, não dentro de
-   * um só). Ver `operacaoEmAndamento`.
+   * descrevia o rascunho atual. Ver `operacaoEmAndamento`.
    */
   readonly travamentoDeOrquestracao = signal(false);
   /**
@@ -321,7 +318,7 @@ export class ProcessoSeletivoStore {
    * irreversível no servidor, mas `remoteSnapshot()` ainda mostra o status
    * antigo. Sem este sinal, `edicaoPermitida()` confiaria nesse status
    * desatualizado e destravaria a edição sobre um processo possivelmente já
-   * publicado (achado do Codex na #486). `hidratar()` é quem limpa: qualquer
+   * publicado. `hidratar()` é quem limpa: qualquer
    * releitura que chegue ao fim traz verdade nova o bastante para o status
    * decidir sozinho de novo.
    */

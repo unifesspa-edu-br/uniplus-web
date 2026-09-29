@@ -715,8 +715,8 @@ export class CadastroInicialService {
    *
    * `inconclusiva` (mesmo contrato de `ResultadoGravacaoCascata`) diz ao
    * chamador se a recusa deixou em aberto se o comando foi executado — a
-   * tela de Revisão usa isso para manter a edição travada nesse caso
-   * (achado do Codex na #486, P1): sem o sinal, o `finally` de `persistir()`
+   * tela de Revisão usa isso para manter a edição travada nesse caso:
+   * sem o sinal, o `finally` de `persistir()`
    * destravaria a edição, e um retry com o corpo editado giraria a chave
    * (`ChaveDeSubstituicao.contextoPara`), deixando de ser o replay seguro do
    * comando incerto e podendo correr contra a primeira tentativa.
