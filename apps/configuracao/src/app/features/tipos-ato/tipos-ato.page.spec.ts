@@ -474,7 +474,7 @@ describe('TiposAtoPage', () => {
     expect(botao.querySelector('i.pi-plus')).not.toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Cadastrar tipo de ato');
     const botoesDeCriacao = Array.from(
-      fixture.nativeElement.querySelectorAll<HTMLButtonElement>('.btn--primary'),
+      fixture.nativeElement.querySelectorAll('.btn--primary') as NodeListOf<HTMLButtonElement>,
     ).filter((b) => b.textContent?.replace(/\s+/gu, ' ').trim() === 'Novo tipo de ato');
     expect(botoesDeCriacao.length).toBe(1);
   });
