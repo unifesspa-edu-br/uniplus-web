@@ -41,7 +41,7 @@ const vSeed = {
   id: V_ID,
   codigo: 'V',
   descricao: 'PcD ampla concorrência',
-  naturezaLegal: 'SUPLEMENTAR',
+  naturezaLegal: 'ACAO_AFIRMATIVA',
   composicaoVagas: 'RETIRA_DE',
   composicaoOrigem: 'AC',
   regraRemanejamento: 'DESTINO_UNICO',
@@ -152,7 +152,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: /Suplementar/ }).click();
+    await page.getByRole('button', { name: /Ação afirmativa/ }).click();
     await expect(page.locator('tbody tr')).toHaveCount(1);
     await expect(page.locator('tbody')).toContainText('PcD ampla concorrência');
   });
@@ -186,7 +186,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     );
   });
 
-  test('CA-03: AMPLA oculta remanejamento; COTA_RESERVADA fixa cascata; SUPLEMENTAR oferta destino/cruzado', async ({
+  test('CA-03: AMPLA oculta remanejamento; COTA_RESERVADA fixa cascata; ACAO_AFIRMATIVA oferta destino/cruzado', async ({
     page,
   }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
@@ -204,7 +204,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     // Playwright toBeDisabled é instável em <option>; checa a propriedade DOM diretamente.
     await expect(regra.locator('option[value="DESTINO_UNICO"]')).toHaveJSProperty('disabled', true);
 
-    await natureza.selectOption('SUPLEMENTAR');
+    await natureza.selectOption('ACAO_AFIRMATIVA');
     await expect(regra.locator('option[value="SEGUE_CASCATA"]')).toHaveJSProperty('disabled', true);
     await expect(regra.locator('option[value="DESTINO_UNICO"]')).toHaveJSProperty('disabled', false);
     await expect(regra.locator('option[value="CRUZADO"]')).toHaveJSProperty('disabled', false);
@@ -217,14 +217,14 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await page.locator('[formControlName="composicaoVagas"]').selectOption('RETIRA_DE');
     await expect(page.locator('[formControlName="composicaoOrigem"]')).toBeVisible();
 
-    await page.locator('[formControlName="naturezaLegal"]').selectOption('SUPLEMENTAR');
+    await page.locator('[formControlName="naturezaLegal"]').selectOption('ACAO_AFIRMATIVA');
     await page.locator('[formControlName="regraRemanejamento"]').selectOption('CRUZADO');
     await expect(page.locator('[formControlName="remanejamentoPar"]')).toBeVisible();
     await expect(page.locator('[formControlName="remanejamentoFallback"]')).toBeVisible();
     await expect(page.locator('[formControlName="remanejamentoDestino"]')).toBeHidden();
   });
 
-  test('CA-02 / CA-04: cria modalidade SUPLEMENTAR RETIRA_DE + DESTINO_UNICO', async ({ page }) => {
+  test('CA-02 / CA-04: cria modalidade ACAO_AFIRMATIVA RETIRA_DE + DESTINO_UNICO', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [acSeed, vSeed]);
     await page.goto('/modalidades/novo');
@@ -233,7 +233,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await page.locator('[formControlName="descricao"]').fill('Cota PPI independente de renda');
     await page.locator('[formControlName="composicaoVagas"]').selectOption('RETIRA_DE');
     await page.locator('[formControlName="composicaoOrigem"]').selectOption('AC');
-    await page.locator('[formControlName="naturezaLegal"]').selectOption('SUPLEMENTAR');
+    await page.locator('[formControlName="naturezaLegal"]').selectOption('ACAO_AFIRMATIVA');
     await page.locator('[formControlName="regraRemanejamento"]').selectOption('DESTINO_UNICO');
     await page.locator('[formControlName="remanejamentoDestino"]').selectOption('AC');
     await page.getByRole('button', { name: 'Criar modalidade' }).click();
@@ -241,7 +241,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
       codigo: 'LI_PPI',
-      naturezaLegal: 'SUPLEMENTAR',
+      naturezaLegal: 'ACAO_AFIRMATIVA',
       composicaoVagas: 'RETIRA_DE',
       composicaoOrigem: 'AC',
       regraRemanejamento: 'DESTINO_UNICO',
@@ -305,7 +305,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
   test('tela dedicada não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await page.goto('/modalidades/novo');
-    await page.locator('[formControlName="naturezaLegal"]').selectOption('SUPLEMENTAR');
+    await page.locator('[formControlName="naturezaLegal"]').selectOption('ACAO_AFIRMATIVA');
     await page.locator('[formControlName="regraRemanejamento"]').selectOption('CRUZADO');
     await assertSemViolacoesGraves(page);
   });

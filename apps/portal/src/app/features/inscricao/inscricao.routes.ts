@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
-import { InscricaoComponent } from './inscricao';
+
+import { InscricaoListaPage } from './inscricao-lista.page';
 
 export const INSCRICAO_ROUTES: Routes = [
-  { path: '', component: InscricaoComponent },
+  { path: '', component: InscricaoListaPage, },
 ];

@@ -19,9 +19,9 @@ const REGRA_LEI_12711_COM_AC_PCD = 'DISTRIB-VAGAS-LEI-12711-COM-AC-PCD';
 
 const AC = modalidade({ id: 'm-ac', codigo: 'AC', composicaoVagas: 'RESIDUAL_DO_VO' });
 const LI_PPI = modalidade({ id: 'm-li-ppi', codigo: 'LI_PPI', composicaoVagas: 'DENTRO_DO_VR' });
-const PCD_PURO = modalidade({
+const AC_PCD = modalidade({
   id: 'm-pcd',
-  codigo: 'PCD_PURO',
+  codigo: 'AC_PCD',
   composicaoVagas: 'RETIRA_DE',
   composicaoOrigemCodigo: 'AC',
 });
@@ -31,7 +31,7 @@ const INSTITUCIONAL = modalidade({
   composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
 });
 
-const CATALOGO = catalogo([AC, LI_PPI, PCD_PURO, INSTITUCIONAL]);
+const CATALOGO = catalogo([AC, LI_PPI, AC_PCD, INSTITUCIONAL]);
 
 function modalidade(
   base: Partial<ModalidadeDoCatalogo> & { id: string; codigo: string },
@@ -163,11 +163,11 @@ describe('problemasDaDistribuicao — fronteira da quantidade', () => {
   /** Retirada e suplemento continuam sendo do edital, mesmo no ramo federal. */
   it('exige quantidade de modalidade que retira, no ramo federal', () => {
     const problemas = problemasDaDistribuicao(
-      federal({ modalidades: [par(AC), par(PCD_PURO)], quadro: [] }),
+      federal({ modalidades: [par(AC), par(AC_PCD)], quadro: [] }),
       CATALOGO,
     );
     expect(
-      mensagens(problemas).some((p) => p.includes('Informe a quantidade de vagas de PCD_PURO')),
+      mensagens(problemas).some((p) => p.includes('Informe a quantidade de vagas de AC_PCD')),
     ).toBe(true);
   });
 
@@ -243,8 +243,8 @@ describe('problemasDaDistribuicao — dependências entre modalidades', () => {
   it('exige a origem da retirada selecionada na mesma oferta', () => {
     const problemas = problemasDaDistribuicao(
       federal({
-        modalidades: [par(PCD_PURO)],
-        quadro: [{ modalidadeId: PCD_PURO.id, quantidade: '2' }],
+        modalidades: [par(AC_PCD)],
+        quadro: [{ modalidadeId: AC_PCD.id, quantidade: '2' }],
       }),
       CATALOGO,
     );
@@ -345,7 +345,7 @@ describe('modalidadesDoRol', () => {
   });
 
   it('devolve vazio quando nenhuma modalidade do catálogo está no rol', () => {
-    expect(modalidadesDoRol(CATALOGO_COMPLETO, ['PCD_PURO'])).toEqual([]);
+    expect(modalidadesDoRol(CATALOGO_COMPLETO, ['AC_PCD'])).toEqual([]);
   });
 });
 
@@ -364,12 +364,12 @@ describe('problemasDaDistribuicao — rol fechado da regra', () => {
 
   it('recusa modalidade hidratada fora do rol fechado da regra atual, nomeando-a', () => {
     const problemas = problemasDaDistribuicao(
-      distribuicao({ modalidades: [par(AC), par(PCD_PURO)] }),
+      distribuicao({ modalidades: [par(AC), par(AC_PCD)] }),
       CATALOGO,
       ['AC'],
     );
 
-    expect(mensagens(problemas).some((p) => p.includes('PCD_PURO') && p.includes('não pertence ao rol'))).toBe(
+    expect(mensagens(problemas).some((p) => p.includes('AC_PCD') && p.includes('não pertence ao rol'))).toBe(
       true,
     );
   });
@@ -387,10 +387,10 @@ describe('problemasDaDistribuicao — rol fechado da regra', () => {
   it('recusa rol fechado incompleto, nomeando a modalidade que falta', () => {
     const problemas = problemasDaDistribuicao(distribuicao({ modalidades: [par(AC)] }), CATALOGO, [
       'AC',
-      'PCD_PURO',
+      'AC_PCD',
     ]);
 
-    expect(mensagens(problemas).some((p) => p.includes('PCD_PURO') && p.includes('exige'))).toBe(
+    expect(mensagens(problemas).some((p) => p.includes('AC_PCD') && p.includes('exige'))).toBe(
       true,
     );
   });
@@ -399,14 +399,14 @@ describe('problemasDaDistribuicao — rol fechado da regra', () => {
     const problemas = problemasDaDistribuicao(
       distribuicao({ modalidades: [par(AC), par(LI_PPI)] }),
       CATALOGO,
-      ['AC', 'PCD_PURO'],
+      ['AC', 'AC_PCD'],
     );
 
     const textos = mensagens(problemas);
     expect(textos.some((p) => p.includes('LI_PPI') && p.includes('não pertence ao rol'))).toBe(
       true,
     );
-    expect(textos.some((p) => p.includes('PCD_PURO') && p.includes('exige'))).toBe(true);
+    expect(textos.some((p) => p.includes('AC_PCD') && p.includes('exige'))).toBe(true);
   });
 });
 
@@ -500,12 +500,12 @@ describe('soma do quadro contra o total de vagas', () => {
     codigo: 'IND',
     composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
   });
-  const CATALOGO_DA_SOMA = catalogo([AC, PCD_PURO, SUPLEMENTAR]);
+  const CATALOGO_DA_SOMA = catalogo([AC, AC_PCD, SUPLEMENTAR]);
 
   function quadro(itens: Record<string, string>): DistribuicaoDeVagas {
     return distribuicao({
       voBase: '40',
-      modalidades: [par(AC), par(PCD_PURO), par(SUPLEMENTAR)],
+      modalidades: [par(AC), par(AC_PCD), par(SUPLEMENTAR)],
       quadro: Object.entries(itens).map(([modalidadeId, quantidade]) => ({
         modalidadeId,
         quantidade,
@@ -516,7 +516,7 @@ describe('soma do quadro contra o total de vagas', () => {
   /** As declaradas dividem o total da oferta; não o ampliam. */
   it('recusa soma acima do total de vagas', () => {
     const problema = problemaDeSomaDoQuadro(
-      quadro({ [AC.id]: '40', [PCD_PURO.id]: '2' }),
+      quadro({ [AC.id]: '40', [AC_PCD.id]: '2' }),
       CATALOGO_DA_SOMA,
     );
 
@@ -526,8 +526,8 @@ describe('soma do quadro contra o total de vagas', () => {
   });
 
   it.each([
-    ['exata', { [AC.id]: '38', [PCD_PURO.id]: '2' }],
-    ['abaixo', { [AC.id]: '10', [PCD_PURO.id]: '2' }],
+    ['exata', { [AC.id]: '38', [AC_PCD.id]: '2' }],
+    ['abaixo', { [AC.id]: '10', [AC_PCD.id]: '2' }],
   ])('aceita soma %s', (_caso, itens) => {
     expect(problemaDeSomaDoQuadro(quadro(itens), CATALOGO_DA_SOMA)).toBeNull();
   });
@@ -575,7 +575,7 @@ describe('soma do quadro contra o total de vagas', () => {
 
   it('entra na lista de problemas da distribuição', () => {
     const problemas = problemasDaDistribuicao(
-      quadro({ [AC.id]: '40', [PCD_PURO.id]: '2', [SUPLEMENTAR.id]: '5' }),
+      quadro({ [AC.id]: '40', [AC_PCD.id]: '2', [SUPLEMENTAR.id]: '5' }),
       CATALOGO_DA_SOMA,
     );
 
@@ -590,7 +590,7 @@ describe('seguemOMesmoPadrao', () => {
     regraAjusteCodigo: null,
     regraAjusteVersao: null,
     referenciaReservaDemograficaId: null,
-    modalidades: [par(AC), par(PCD_PURO)],
+    modalidades: [par(AC), par(AC_PCD)],
     pr: '0,5',
   };
 
@@ -600,7 +600,7 @@ describe('seguemOMesmoPadrao', () => {
 
   /** A ordem é de gravação, não de significado. */
   it('ignora a ordem das modalidades', () => {
-    const invertida = distribuicao({ modalidades: [par(PCD_PURO), par(AC)] });
+    const invertida = distribuicao({ modalidades: [par(AC_PCD), par(AC)] });
 
     expect(seguemOMesmoPadrao(invertida, PADRAO)).toBe(true);
   });
@@ -618,7 +618,7 @@ describe('seguemOMesmoPadrao', () => {
   });
 
   it.each([
-    ['a mais', [par(AC), par(PCD_PURO), par(INSTITUCIONAL)]],
+    ['a mais', [par(AC), par(AC_PCD), par(INSTITUCIONAL)]],
     ['a menos', [par(AC)]],
     ['trocada', [par(AC), par(INSTITUCIONAL)]],
   ])('recusa com modalidade %s', (_caso, modalidades) => {

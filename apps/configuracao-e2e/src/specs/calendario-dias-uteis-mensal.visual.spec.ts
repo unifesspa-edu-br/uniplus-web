@@ -181,7 +181,7 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
 
-    const botaoDia = page.getByRole('button', { name: /^15 de novembro de 2026/ });
+    const botaoDia = page.getByRole('button', { name: /^15 de novembro de 2026/, exact: true, });
     // Contador pintado em ::before, fora do texto do DOM (SC 2.5.3). Além do
     // atributo — que é só o insumo —, confere o que a tela de fato mostra:
     // apagar a regra CSS some com o contador sem quebrar nada mais.
@@ -347,12 +347,16 @@ test.describe('Calendário de dias úteis — visualização mensal e drawer (#5
     page,
   }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
-    await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /^5 de abril de 2026/ }),
+    ).toBeVisible();
 
     await assertSemViolacoesGraves(page);
 
     await page.getByRole('button', { name: /^5 de abril de 2026/ }).click();
-    await expect(page.getByRole('dialog', { name: '5 de abril de 2026' })).toBeVisible();
+    await expect(
+      page.getByRole('dialog', { name: '5 de abril de 2026', }),
+    ).toBeVisible();
 
     await assertSemViolacoesGraves(page);
   });
