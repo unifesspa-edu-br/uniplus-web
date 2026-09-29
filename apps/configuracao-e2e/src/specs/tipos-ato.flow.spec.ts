@@ -131,7 +131,7 @@ async function abrirPagina(page: Page): Promise<void> {
 }
 
 async function preencherCadastro(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Cadastrar tipo de ato' }).first().click();
+  await page.getByRole('button', { name: 'Novo tipo de ato' }).first().click();
   await page.locator('[formControlName="codigo"]').fill('RESULTADO_PRELIMINAR_INSCRICAO');
   await page.locator('[formControlName="nome"]').fill('Resultado preliminar da inscrição');
   await page.locator('[formControlName="vigenciaInicio"]').fill('2026-01-01');
@@ -235,6 +235,19 @@ test.describe('Tipo de ato — cadastro pela interface', () => {
       page.getByText('Encerre a anterior ou escolha outro início', { exact: false }),
     ).toBeVisible();
     await expect(page.locator('[formControlName="codigo"]')).toBeVisible();
+  });
+
+  test('o botão de criação fica no cabeçalho da tabela, com ícone, e não se duplica', async ({
+    page,
+  }) => {
+    await mockApi(page, novoCapturado(), [preliminar]);
+    await abrirPagina(page);
+
+    const botao = page.locator('.panel-head').getByRole('button', { name: 'Novo tipo de ato' });
+    await expect(botao).toBeVisible();
+    await expect(botao.locator('i.pi-plus')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Novo tipo de ato' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Cadastrar tipo de ato' })).toHaveCount(0);
   });
 
   test('remove uma vigência após confirmação', async ({ page }) => {

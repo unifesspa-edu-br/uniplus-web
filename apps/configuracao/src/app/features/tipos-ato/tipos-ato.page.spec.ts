@@ -320,7 +320,7 @@ describe('TiposAtoPage', () => {
 
     expect(component['saving']()).toBe(true);
     const cadastrar = fixture.nativeElement.querySelector(
-      '.page-header__actions button',
+      '.panel-head .btn--primary',
     ) as HTMLButtonElement;
     const cancelar = Array.from(
       fixture.nativeElement.querySelectorAll('.cfg-form-footer button'),
@@ -461,5 +461,21 @@ describe('TiposAtoPage', () => {
     expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
       'Tipos de ato publicáveis, com vigência e o que cada um determina',
     );
+  });
+
+  it('o botão de criação fica no cabeçalho da tabela, com ícone e o texto padronizado', async () => {
+    await flushLista([preliminar]);
+    fixture.detectChanges();
+
+    const botao = fixture.nativeElement.querySelector(
+      '.panel-head .btn--primary',
+    ) as HTMLButtonElement;
+    expect(botao.textContent?.replace(/\s+/gu, ' ').trim()).toBe('Novo tipo de ato');
+    expect(botao.querySelector('i.pi-plus')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Cadastrar tipo de ato');
+    const botoesDeCriacao = Array.from(
+      fixture.nativeElement.querySelectorAll('.btn--primary') as NodeListOf<HTMLButtonElement>,
+    ).filter((b) => b.textContent?.replace(/\s+/gu, ' ').trim() === 'Novo tipo de ato');
+    expect(botoesDeCriacao.length).toBe(1);
   });
 });
