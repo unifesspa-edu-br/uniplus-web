@@ -497,7 +497,7 @@ describe('BaseLegalBonusRegionalListPage', () => {
     focoSpy.mockRestore();
   });
 
-  it('CA-05: pede confirmação antes de remoção e só chama o backend após confirmar', async () => {
+  it('CA-05: pede confirmação antes de remover e só chama o backend após confirmar', async () => {
     await flushLista([portariaBase]);
     fixture.detectChanges();
 
