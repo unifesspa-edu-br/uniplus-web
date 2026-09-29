@@ -518,7 +518,7 @@ export async function assertTextSpacingResilience(page: Page): Promise<void> {
 
       const failures: Failure[] = [];
       for (const element of Array.from(document.body.querySelectorAll<HTMLElement>('*'))) {
-        if (!isVisible(element) || !hasOwnText(element) || isIgnoredTextElement(element)) continue;
+        if (!isVisible(element) || !hasOwnText(element) || isScreenReaderOnly(element)) continue;
 
         const style = getComputedStyle(element);
         if (clips(style.overflowX) && element.scrollWidth > element.clientWidth + 1) {
@@ -546,15 +546,14 @@ export async function assertTextSpacingResilience(page: Page): Promise<void> {
         return value === 'hidden' || value === 'clip';
       }
 
-      function isIgnoredTextElement(element: HTMLElement): boolean {
-        // `.sr-only` recorta o próprio conteúdo em 1x1px de propósito (texto só
-        // para leitor de tela, ex.: "(abre em nova aba)") — não é o clipping de
-        // conteúdo visível que este teste de espaçamento de texto quer pegar.
-        return element.matches(
-          ['script', 'style', 'svg', 'path', '[aria-hidden="true"]', '[hidden]', '.sr-only'].join(
-            ',',
-          ),
-        );
+      function isScreenReaderOnly(element: HTMLElement): boolean {
+        // `.sr-only` recorta o próprio conteúdo em 1x1px de propósito — não é o
+        // clipping de conteúdo visível que este teste procura. Diferente do
+        // teste de contraste (que também ignora `[aria-hidden="true"]`), aqui
+        // texto marcado `aria-hidden` mas visível a olho nu (ex.: a marca "U+",
+        // as iniciais do avatar) continua sob checagem: quem enxerga vê esse
+        // texto, e ele também não pode clipar sob espaçamento aumentado.
+        return element.matches('.sr-only');
       }
 
       function isVisible(element: HTMLElement): boolean {
