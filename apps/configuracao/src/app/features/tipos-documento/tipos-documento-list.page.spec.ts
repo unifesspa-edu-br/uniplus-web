@@ -281,7 +281,9 @@ describe('TiposDocumentoListPage', () => {
     component['form'].controls.codigo.markAsTouched();
     fixture.detectChanges();
 
-    const campo: HTMLInputElement = fixture.nativeElement.querySelector('[formControlName="codigo"]');
+    const campo: HTMLInputElement = fixture.nativeElement.querySelector(
+      '[formControlName="codigo"]',
+    );
     expect(campo.getAttribute('aria-describedby')).toContain('cfg-tdoc-codigo-dica');
     expect(campo.getAttribute('aria-describedby')).toContain('cfg-tdoc-codigo-erro');
     expect(campo.getAttribute('aria-invalid')).toBe('true');
@@ -291,7 +293,11 @@ describe('TiposDocumentoListPage', () => {
   it('CA-03: código duplicado (409) é mapeado ao campo Código sem fechar o drawer', async () => {
     await flushLista([]);
     component['abrirCadastro']();
-    component['form'].patchValue({ codigo: 'RG', nome: 'Registro Geral (dup)', categoria: 'IDENTIFICACAO' });
+    component['form'].patchValue({
+      codigo: 'RG',
+      nome: 'Registro Geral (dup)',
+      categoria: 'IDENTIFICACAO',
+    });
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
@@ -464,7 +470,11 @@ describe('TiposDocumentoListPage', () => {
   it('erro 422 com errors[] é mapeado ao FormControl correto', async () => {
     await flushLista([]);
     component['abrirCadastro']();
-    component['form'].patchValue({ codigo: 'RG', nome: 'Registro Geral', categoria: 'IDENTIFICACAO' });
+    component['form'].patchValue({
+      codigo: 'RG',
+      nome: 'Registro Geral',
+      categoria: 'IDENTIFICACAO',
+    });
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
@@ -494,7 +504,11 @@ describe('TiposDocumentoListPage', () => {
   it('erro 5xx exibe banner de alerta geral e notificação com traceId', async () => {
     await flushLista([]);
     component['abrirCadastro']();
-    component['form'].patchValue({ codigo: 'RG', nome: 'Registro Geral', categoria: 'IDENTIFICACAO' });
+    component['form'].patchValue({
+      codigo: 'RG',
+      nome: 'Registro Geral',
+      categoria: 'IDENTIFICACAO',
+    });
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
@@ -519,7 +533,7 @@ describe('TiposDocumentoListPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Erro interno inesperado');
   });
 
-  // TiposDocumentoListPage_ModalInativacao_ExibeNomeENota
+  // TiposDocumentoListPage_ModalRemocao_ExibeNomeENota
   it('CA-07: modal de remoção exibe o nome do tipo e a nota de imunidade RN08', async () => {
     await flushLista([rgSeed]);
     component['pedirRemocao'](rgSeed);
@@ -533,7 +547,7 @@ describe('TiposDocumentoListPage', () => {
     expect(component['confirmRemoverMensagem']()).toContain('RN08');
   });
 
-  // TiposDocumentoListPage_ModalInativacao_ConfirmaRemove
+  // TiposDocumentoListPage_ModalRemocao_ConfirmaRemove
   it('CA-07/CA-08: confirmação no modal dispara remover sem checagem prévia e atualiza a lista', async () => {
     await flushLista([rgSeed]);
     component['pedirRemocao'](rgSeed);

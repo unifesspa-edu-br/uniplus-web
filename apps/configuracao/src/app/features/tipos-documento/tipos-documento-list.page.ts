@@ -199,14 +199,14 @@ interface TipoDocumentoForm {
               Tipos de documento, com categoria, formatos aceitos e tamanho máximo de arquivo
             </caption>
             <thead>
-            <tr>
-              <th scope="col">Código</th>
-              <th scope="col">Nome</th>
-              <th scope="col">Categoria</th>
-              <th scope="col">Formatos aceitos</th>
-              <th scope="col">Tam. máx.</th>
-              <th scope="col"><span class="sr-only">Ações</span></th>
-            </tr>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Categoria</th>
+                <th scope="col">Formatos aceitos</th>
+                <th scope="col">Tam. máx.</th>
+                <th scope="col"><span class="sr-only">Ações</span></th>
+              </tr>
             </thead>
             <tbody>
               @for (tipo of documentosFiltrados(); track tipo.id) {
@@ -223,10 +223,8 @@ interface TipoDocumentoForm {
                     }
                   </td>
                   <td data-label="Categoria">
-                    <ui-tag
-                    >
-                      <ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)"
-                      />
+                    <ui-tag>
+                      <ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" />
                     </ui-tag>
                   </td>
                   <td data-label="Formatos aceitos" class="u-caption">
@@ -373,8 +371,8 @@ interface TipoDocumentoForm {
             <span class="field__hint" id="cfg-td-categoria-dica">{{ dicaCategoria() }}</span>
             @if (erroDoCampo('categoria')) {
               <span class="field__error" id="cfg-td-categoria-erro">{{
-                  erroDoCampo('categoria')
-                }}</span>
+                erroDoCampo('categoria')
+              }}</span>
             }
           </label>
         </div>

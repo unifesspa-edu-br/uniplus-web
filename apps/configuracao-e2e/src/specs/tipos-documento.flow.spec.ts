@@ -154,7 +154,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  test('CA-01: fluxo completo — criar, listar, filtrar por categoria e inativar', async ({
+  test('CA-01: fluxo completo — criar, listar, filtrar por categoria e remover', async ({
     page,
   }) => {
     const capturado = novoCapturado();
@@ -185,11 +185,11 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     expect(capturado.posts[0]).toMatchObject({ codigo: 'DECL_LIDERANCA', categoria: 'OUTROS' });
 
     await page
-      .getByRole('button', { name: `Inativar tipo de documento ${rgSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog.getByText('RN08')).toBeVisible();
-    await dialog.getByRole('button', { name: 'Inativar' }).click();
+    await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
   });
@@ -221,7 +221,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Inativar tipo de documento ${rgSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog).toBeVisible();
@@ -301,7 +301,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
     await mockApi(page, novoCapturado(), [rgSeed]);
     await abrirPagina(page);
     await page
-      .getByRole('button', { name: `Inativar tipo de documento ${rgSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
     await assertSemViolacoesGraves(page);
