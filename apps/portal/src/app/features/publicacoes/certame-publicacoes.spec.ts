@@ -44,9 +44,11 @@ describe('CertamePublicacoesComponent', () => {
     publicacao?: Publicacao;
     carregando?: boolean;
     erro?: boolean;
+    certameNome?: string;
   }): void {
     fixture = TestBed.createComponent(CertamePublicacoesComponent);
     fixture.componentRef.setInput('certameId', 'certame-1');
+    fixture.componentRef.setInput('certameNome', entradas.certameNome ?? '');
     fixture.componentRef.setInput('publicacao', entradas.publicacao);
     fixture.componentRef.setInput('carregando', entradas.carregando ?? false);
     fixture.componentRef.setInput('erro', entradas.erro ?? false);
@@ -84,6 +86,19 @@ describe('CertamePublicacoesComponent', () => {
     expect(botao().getAttribute('aria-expanded')).toBe('false');
     expect(painel().hidden).toBe(true);
     expect(host().querySelector('.publicacao-timeline')).toBeNull();
+  });
+
+  it('com certameNome, o botão ganha nome acessível distinto por edital (WCAG 2.4.9)', () => {
+    criar({ publicacao: medicina, certameNome: 'Medicina 2027' });
+
+    expect(botao().textContent).toContain('Ver publicações');
+    expect(botao().textContent).toContain('Medicina 2027');
+  });
+
+  it('sem certameNome, o botão não ganha sufixo (compatível com uso sem o input)', () => {
+    criar({ publicacao: medicina });
+
+    expect(botao().textContent?.trim()).toBe('Ver publicações');
   });
 
   it('o botão aponta para o painel, e o painel se nomeia pelo botão', () => {
@@ -130,6 +145,27 @@ describe('CertamePublicacoesComponent', () => {
     ]);
     expect(links.every((a) => a.target === '_blank' && a.rel.includes('noopener'))).toBe(true);
     expect(links[0].textContent).toContain('abre em nova aba');
+  });
+
+  it('evento com ação relacionada mostra o link da ação, além do documento', () => {
+    const comAcao: Publicacao = {
+      ...medicina,
+      historico: [
+        {
+          id: 'evt-inscricoes',
+          categoria: 'inscricoes',
+          data: '2026-01-20T12:00:00Z',
+          titulo: 'Inscrições abertas',
+          acao: { rotulo: 'Inscrever-se', routerLink: '/inscricao' },
+        },
+      ],
+    };
+    criar({ publicacao: comAcao });
+    abrir();
+
+    const link = host().querySelector<HTMLAnchorElement>('.publicacao-timeline__link');
+    expect(link?.textContent).toContain('Inscrever-se');
+    expect(link?.getAttribute('href')).toBe('/inscricao');
   });
 
   it('enquanto as publicações carregam, avisa numa região viva', () => {

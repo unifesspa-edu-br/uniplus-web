@@ -414,7 +414,7 @@ export class ProcessosComponent {
     return atual.status === 'ok' ? atual.porCertame.get(certame.processoSeletivoId) : undefined;
   }
 
-  /** Alvo do link "Ler o edital de abertura" — ausente até a publicação chegar ou se não houver edital. */
+  /** Alvo do link "Ver edital" — ausente até a publicação chegar ou se não houver edital. */
   protected editalDe(
     certame: CertameNaVitrineDto,
   ): { readonly publicacaoId: string; readonly evento: EventoHistoricoPublicacao } | null {

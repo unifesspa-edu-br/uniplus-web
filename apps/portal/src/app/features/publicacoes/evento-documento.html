@@ -13,7 +13,7 @@
 } @else if (evento(); as item) {
 <main class="evento-documento">
   <p class="evento-documento__eyebrow">
-    {{ publicacaoTitulo() }} · {{ item.data | dateBr: 'long' }}
+    {{ publicacaoTitulo() }} · {{ item.data | dateBr: 'datetime' }}
   </p>
   <h1 class="evento-documento__title">{{ item.titulo }}</h1>
 

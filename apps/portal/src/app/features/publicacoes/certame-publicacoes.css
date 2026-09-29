@@ -10,6 +10,10 @@
 /* Botão com cara de link (como no desenho): sublinhado para não depender só da
    cor (WCAG 1.4.1) e alvo de toque mínimo. */
 .publicacoes-toggle {
+  /* Âncora do `.sr-only` (nome do certame, WCAG 2.4.9) — sem ela ele é
+     `position: absolute` sem ancestral posicionado, ancora na página e
+     estende a rolagem do documento inteiro. */
+  position: relative;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
