@@ -269,7 +269,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect(dialog.getByText('Remoção bloqueada')).toBeVisible();
     // V aparece como dependente na lista de referências.
     await expect(dialog.locator('.cfg-refs-lista').getByText('V', { exact: true })).toBeVisible();
-    // Não deve haver botão de confirmação de inativação.
+    // Não deve haver botão de confirmação de remoção.
     await expect(dialog.getByRole('button', { name: 'Remover', exact: true })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Entendi' }).click();
     expect(capturado.deletedIds).toHaveLength(0);
