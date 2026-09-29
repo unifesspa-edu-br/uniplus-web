@@ -46,7 +46,6 @@ import {
 import {
   AlertComponent,
   SkeletonComponent,
-  TagComponent,
   EmptyStateComponent,
   DrawerComponent,
   SpinnerComponent,
@@ -100,7 +99,6 @@ const PAGE_SIZE = 50;
   imports: [
     AlertComponent,
     SkeletonComponent,
-    TagComponent,
     EmptyStateComponent,
     DrawerComponent,
     SpinnerComponent,
@@ -183,7 +181,7 @@ const PAGE_SIZE = 50;
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Tipos de deficiência, com código, descrição e situação
+                Tipos de deficiência, com código, nome e descrição
               </caption>
               <thead>
                 <tr>

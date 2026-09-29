@@ -551,7 +551,16 @@ describe('TiposDeficienciaListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
-      'Tipos de deficiência, com código, descrição e situação',
+      'Tipos de deficiência, com código, nome e descrição',
     );
+  });
+
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual(['Código', 'Nome', 'Descrição', 'Ações']);
   });
 });
