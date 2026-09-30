@@ -147,7 +147,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  test('CA-05: desativar uma Base Legal exige confirmação antes do soft-delete', async ({
+  test('CA-05: remover uma Base Legal exige confirmação antes do soft-delete', async ({
     page,
   }) => {
     const capturado = novoCapturado();
@@ -156,7 +156,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
 
     await page
       .getByRole('button', {
-        name: `Desativar base legal ${portariaSeed.identificacao}`,
+        name: `Remover base legal de bônus regional ${portariaSeed.identificacao}`,
         exact: true,
       })
       .click();
@@ -164,7 +164,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await expect(dialog).toBeVisible();
     expect(capturado.deletedIds).toHaveLength(0);
 
-    await dialog.getByRole('button', { name: 'Desativar' }).click();
+    await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds).toEqual([portariaSeed.id]);
   });

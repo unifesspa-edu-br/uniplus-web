@@ -2037,8 +2037,6 @@
   color: var(--text-secondary);
 }
 
-   /* o browser controla `display: none` (fechado) vs `block` (aberto). */
-
 /* ---- Step 6: Fórmula — resolução de Peso por Área ---- */
 .peso-area {
   margin-top: var(--space-5);

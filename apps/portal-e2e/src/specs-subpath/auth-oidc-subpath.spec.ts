@@ -101,9 +101,9 @@ test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
     // Espera o round-trip completo (não só o request sair) — sem isso o
     // `page.goto('perfil')` abaixo pode disparar antes do Keycloak
     // terminar de processar o logout e aplicar o redirect, cancelando a
-    // navegação em curso e deixando o teste intermitente (achado do Codex
-    // AI: `waitForURL` de escopo largo casava com a própria URL
-    // pré-logout, retornando cedo demais).
+    // navegação em curso e deixando o teste intermitente. Não trocar por
+    // `waitForURL`: de escopo largo, ele casa com a própria URL pré-logout
+    // e retorna cedo demais.
     const logoutResponse = page.waitForResponse(
       (res) => res.url().includes('/protocol/openid-connect/logout'),
       { timeout: 10_000 },

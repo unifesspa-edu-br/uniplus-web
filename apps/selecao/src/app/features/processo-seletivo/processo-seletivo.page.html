@@ -220,11 +220,10 @@
       <!-- `operacaoEmAndamento()`, não só `salvando()`: publicar() grava
            vários passos em sequência e recarrega o checklist entre eles — a
            orquestração inteira ainda está em curso mesmo nos instantes em
-           que nenhum passo individual tem uma chamada própria em voo
-           (achado do Codex na #486, P1). Sem isto o botão pareceria ocioso
-           — sem "Salvando…", clicável de novo — durante uma janela em que
-           um novo clique só seria descartado em silêncio por
-           `nextOrPublish()`. -->
+           que nenhum passo individual tem uma chamada própria em voo. Sem
+           isto o botão pareceria ocioso — sem "Salvando…", clicável de
+           novo — durante uma janela em que um novo clique só seria
+           descartado em silêncio por `nextOrPublish()`. -->
       <button
         class="btn btn--primary"
         type="button"

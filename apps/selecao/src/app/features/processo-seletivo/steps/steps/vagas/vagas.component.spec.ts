@@ -1659,7 +1659,7 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
    * selecaoBateComORol não vê essa divergência: os ids batem com o rol, a
    * checagem é sobre o CONTEÚDO do quadro. Sem reaplicarRolTemEfeito, o
    * botão "Recompor pelo rol da regra atual" ficaria escondido e a única
-   * saída seria remover e recriar a oferta — o achado original do Codex.
+   * saída seria remover e recriar a oferta.
    */
   it('reaplicarRolTemEfeito acusa mesmo quando a seleção já bate com o rol', () => {
     store.patchObjectSection('vagas', {

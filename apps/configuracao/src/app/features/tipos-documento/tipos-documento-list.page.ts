@@ -223,9 +223,9 @@ interface TipoDocumentoForm {
                     }
                   </td>
                   <td data-label="Categoria">
-                    <ui-tag
-                      ><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)"
-                    /></ui-tag>
+                    <ui-tag>
+                      <ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" />
+                    </ui-tag>
                   </td>
                   <td data-label="Formatos aceitos" class="u-caption">
                     {{ tipo.formatosAceitos || '—' }}
@@ -242,11 +242,11 @@ interface TipoDocumentoForm {
                       (triggered)="abrirEdicao(tipo)"
                     />
                     <ui-icon-button
-                      icon="pi-power-off"
-                      [accessibleName]="'Inativar tipo de documento ' + tipo.codigo"
-                      tooltip="Inativar tipo de documento"
+                      icon="pi-trash"
+                      [accessibleName]="'Remover tipo de documento ' + tipo.codigo"
+                      tooltip="Remover tipo de documento"
                       [isDisabled]="loading()"
-                      (triggered)="pedirInativacao(tipo)"
+                      (triggered)="pedirRemocao(tipo)"
                     />
                   </td>
                 </tr>
@@ -477,12 +477,12 @@ interface TipoDocumentoForm {
     </ui-drawer>
 
     <ui-confirm-dialog
-      [(visible)]="confirmInativarAberto"
-      heading="Inativar tipo de documento"
-      [message]="confirmInativarMensagem()"
-      confirmLabel="Inativar"
+      [(visible)]="confirmRemoverAberto"
+      heading="Remover tipo de documento"
+      [message]="confirmRemoverMensagem()"
+      confirmLabel="Remover"
       confirmVariant="danger"
-      (confirmed)="confirmarInativacao()"
+      (confirmed)="confirmarRemocao()"
     />
   `,
   host: { class: 'cfg-page' },
@@ -507,8 +507,8 @@ export class TiposDocumentoListPage {
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
 
-  protected readonly confirmInativarAberto = signal(false);
-  protected readonly tipoParaInativar = signal<TipoDocumentoDto | null>(null);
+  protected readonly confirmRemoverAberto = signal(false);
+  protected readonly tipoParaRemover = signal<TipoDocumentoDto | null>(null);
   protected readonly confirmError = signal<string | null>(null);
 
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
@@ -686,17 +686,17 @@ export class TiposDocumentoListPage {
     this.modo() === 'criar' ? 'Novo tipo de documento' : 'Editar tipo de documento',
   );
 
-  protected readonly confirmInativarMensagem = computed(() => {
+  protected readonly confirmRemoverMensagem = computed(() => {
     const erro = this.confirmError();
     if (erro !== null) {
       return erro;
     }
-    const tipo = this.tipoParaInativar();
+    const tipo = this.tipoParaRemover();
     return tipo
-      ? `Deseja inativar "${tipo.nome}" (${tipo.codigo})? O tipo é inativado e mantido na ` +
+      ? `Deseja remover "${tipo.nome}" (${tipo.codigo})? O tipo é removido e mantido na ` +
           'trilha de auditoria. Editais já publicados que o referenciam não são afetados — os ' +
           'parâmetros foram congelados na configuração do edital (RN08).'
-      : 'Deseja inativar este tipo de documento?';
+      : 'Deseja remover este tipo de documento?';
   });
 
   protected readonly form: FormGroup<TipoDocumentoForm> = new FormGroup<TipoDocumentoForm>({
@@ -912,14 +912,14 @@ export class TiposDocumentoListPage {
     this.formOpen.set(true);
   }
 
-  protected pedirInativacao(tipo: TipoDocumentoDto): void {
-    this.tipoParaInativar.set(tipo);
+  protected pedirRemocao(tipo: TipoDocumentoDto): void {
+    this.tipoParaRemover.set(tipo);
     this.confirmError.set(null);
-    this.confirmInativarAberto.set(true);
+    this.confirmRemoverAberto.set(true);
   }
 
-  protected confirmarInativacao(): void {
-    const tipo = this.tipoParaInativar();
+  protected confirmarRemocao(): void {
+    const tipo = this.tipoParaRemover();
     if (tipo === null || this.saving()) {
       return;
     }
@@ -930,9 +930,9 @@ export class TiposDocumentoListPage {
       .subscribe((result) => {
         this.saving.set(false);
         if (result.ok) {
-          this.notifications.success('Tipo de documento inativado', tipo.codigo);
-          this.confirmInativarAberto.set(false);
-          this.tipoParaInativar.set(null);
+          this.notifications.success('Tipo de documento removido', tipo.codigo);
+          this.confirmRemoverAberto.set(false);
+          this.tipoParaRemover.set(null);
           this.recarregar();
           return;
         }
@@ -941,7 +941,7 @@ export class TiposDocumentoListPage {
         // explicitamente com a mensagem de erro mantém o fluxo visível.
         const titulo = this.problemI18n.resolve(result.problem).title;
         this.confirmError.set(titulo);
-        this.confirmInativarAberto.set(true);
+        this.confirmRemoverAberto.set(true);
         if (result.problem.status >= 500) {
           this.notifications.errorFromProblem(result.problem, { title: titulo });
         }

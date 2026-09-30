@@ -151,7 +151,7 @@ server {
     # CSP3 split em `style-src` (#360):
     # - `style-src 'self' 'unsafe-inline'`: legacy fallback para browsers CSP2
     #   (sem -elem/-attr). Sem ele, esses browsers caem no default-src 'self'
-    #   que bloqueia atributos style="..." (Codex P2 PR #362).
+    #   que bloqueia atributos style="...".
     # - `style-src-elem 'self' 'nonce-$request_id'`: bloqueia <style> blocks e
     #   <link rel=stylesheet> externos não-self por padrão, com uma exceção
     #   assinada por requisição. Beasties desativado em #358 não elimina toda

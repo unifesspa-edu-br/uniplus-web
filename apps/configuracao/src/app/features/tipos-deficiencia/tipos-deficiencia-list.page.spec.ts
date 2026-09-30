@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationRef } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,6 +9,7 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   TiposDeficienciaListPage,
 } from './tipos-deficiencia-list.page';
@@ -77,9 +78,9 @@ describe('TiposDeficienciaListPage', () => {
     ) as HTMLButtonElement;
   }
 
-  function getInativarButtonEl(): HTMLButtonElement {
+  function getRemoverButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions button[aria-label^="Inativar tipo de deficiência"]',
+      'td.table-responsive__actions button[aria-label^="Remover tipo de deficiência"]',
     ) as HTMLButtonElement;
   }
 
@@ -279,13 +280,13 @@ describe('TiposDeficienciaListPage', () => {
       put.flush(null, { status: 204, statusText: 'No Content' });
       await flushRecarregarLista([tipo_deficiencia]);
     });
-  it('desabilita as ações da linha (Editar e Inativar) durante a recarga da lista', async () => {
+  it('desabilita as ações da linha (Editar e Remover) durante a recarga da lista', async () => {
     // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
     await flushLista([tipoDeficienciaSeed]);
     fixture.detectChanges();
     expect(component['loading']()).toBe(false);
     expect(getEditarButtonEl().disabled).toBe(false);
-    expect(getInativarButtonEl().disabled).toBe(false);
+    expect(getRemoverButtonEl().disabled).toBe(false);
 
     // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
     component['tentarNovamente']();
@@ -293,7 +294,7 @@ describe('TiposDeficienciaListPage', () => {
     fixture.detectChanges();
     expect(component['loading']()).toBe(true);
     expect(getEditarButtonEl().disabled).toBe(true);
-    expect(getInativarButtonEl().disabled).toBe(true);
+    expect(getRemoverButtonEl().disabled).toBe(true);
 
     // Encerra o GET pendente para o controller.verify() do afterEach.
     controller
@@ -551,7 +552,78 @@ describe('TiposDeficienciaListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
-      'Tipos de deficiência, com código, descrição e situação',
+      'Tipos de deficiência, com código, nome e descrição',
     );
+  });
+
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual(['Código', 'Nome', 'Descrição', 'Ações']);
+  });
+
+  it('CA-04/CA-06: botão e diálogo falam em remover, com o botão principal travado durante a remoção', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    fixture.detectChanges();
+    expect(getRemoverButtonEl().getAttribute('data-tooltip')).toBe('Remover tipo de deficiência');
+
+    getRemoverButtonEl().click();
+    fixture.detectChanges();
+    const dialogo = (
+      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
+    ).find((d) => d.textContent?.includes('prestes a')) as HTMLElement;
+    expect(dialogo.textContent).toContain('Remover tipo de deficiência?');
+    expect(dialogo.textContent).toContain('Você está prestes a remover o tipo de deficiência');
+    const principal = () =>
+      Array.from(
+        dialogo.querySelectorAll('button.btn--danger') as NodeListOf<HTMLButtonElement>,
+      )[0];
+    expect(principal().textContent?.trim()).toBe('Remover');
+
+    principal().click();
+    fixture.detectChanges();
+    expect(principal().disabled).toBe(true);
+    expect(principal().textContent?.trim()).toBe('Removendo...');
+
+    controller
+      .expectOne(
+        (r) =>
+          r.url === `${BASE}/api/configuracao/admin/tipos-deficiencia/${tipoDeficienciaSeed.id}` &&
+          r.method === 'DELETE',
+      )
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([]);
+  });
+
+  it('CA-11: falha na remoção avisa o usuário e mantém o registro e o diálogo', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    await flushLista([tipoDeficienciaSeed]);
+    component['abrirRemoverTipoDeficiencia'](tipoDeficienciaSeed);
+    component['removerConfirmado']();
+
+    controller
+      .expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${tipoDeficienciaSeed.id}`)
+      .flush(
+        {
+          type: 'about:blank',
+          title: 'Tipo de deficiência não encontrado',
+          status: 404,
+          code: 'uniplus.configuracao.tipo_deficiencia.nao_encontrado',
+        },
+        {
+          status: 404,
+          statusText: 'Not Found',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalled();
+    expect(component['confirmOpen']()).toBe(true);
+    expect(component['saving']()).toBe(false);
+    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
   });
 });

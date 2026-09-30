@@ -166,7 +166,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
             <table>
               <caption class="sr-only">
                 Modalidades de concorrência, com natureza, composição de vagas, remanejamento e
-                situação
+                modalidades que a referenciam
               </caption>
               <thead>
                 <tr>
@@ -175,7 +175,6 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                   <th scope="col">Composição de vagas</th>
                   <th scope="col">Remanejamento</th>
                   <th scope="col">Referenciada por</th>
-                  <th scope="col">Status</th>
                   <th scope="col"><span class="sr-only">Ações</span></th>
                 </tr>
               </thead>
@@ -215,7 +214,6 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                         }
                       }
                     </td>
-                    <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
@@ -224,9 +222,9 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                         [link]="[m.id]"
                       />
                       <ui-icon-button
-                        icon="pi-power-off"
-                        [accessibleName]="'Inativar modalidade ' + m.codigo"
-                        tooltip="Inativar modalidade"
+                        icon="pi-trash"
+                        [accessibleName]="'Remover modalidade ' + m.codigo"
+                        tooltip="Remover modalidade"
                         [isDisabled]="loading()"
                         (triggered)="pedirRemocao(m)"
                       />
@@ -272,7 +270,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
 
     <ui-dialog
       [(visible)]="dialogAberto"
-      [heading]="remocaoBloqueada() ? 'Remoção bloqueada' : 'Inativar modalidade'"
+      [heading]="remocaoBloqueada() ? 'Remoção bloqueada' : 'Remover modalidade'"
       (closed)="aoFecharDialog()"
     >
       @if (modalidadeParaRemover(); as alvo) {
@@ -283,7 +281,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
             [dynamic]="false"
           >
             @if (referenciadaPor(alvo.codigo).length > 0) {
-              A modalidade <code>{{ alvo.codigo }}</code> não pode ser inativada porque é usada como
+              A modalidade <code>{{ alvo.codigo }}</code> não pode ser removida porque é usada como
               origem, destino, par ou fallback das seguintes modalidades vivas:
               <ul class="cfg-refs-lista">
                 @for (r of referenciadaPor(alvo.codigo); track r.id) {
@@ -295,16 +293,16 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                   </li>
                 }
               </ul>
-              Ajuste ou remova essas referências antes de inativar.
+              Ajuste ou remova essas referências antes de removê-la.
             } @else {
               {{ mensagemBloqueioServidor() ?? mensagemBloqueioPadrao }}
             }
           </ui-alert>
         } @else {
           <p>
-            A modalidade <code>{{ alvo.codigo }}</code> é inativada (soft-delete) e mantida na
-            trilha de auditoria. Cópias congeladas por snapshot em processos publicados não são
-            afetadas (RN08). Confirma?
+            A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na trilha
+            de auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas
+            (RN08). Confirma?
           </p>
         }
       }
@@ -335,7 +333,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
             @if (removendo()) {
               <ui-spinner size="sm" />
             }
-            {{ removendo() ? 'Inativando...' : 'Inativar' }}
+            {{ removendo() ? 'Removendo...' : 'Remover' }}
           </button>
         }
       </div>
@@ -361,8 +359,8 @@ export class ModalidadesListPage {
   protected readonly mensagemBloqueioServidor = signal<string | null>(null);
   /** Fallback quando o servidor bloqueia sem título e o mapa reverso local está vazio. */
   protected readonly mensagemBloqueioPadrao =
-    'Esta modalidade não pode ser inativada porque outra modalidade viva a referencia ' +
-    '(possivelmente fora desta página). Ajuste ou remova essas referências antes de inativar.';
+    'Esta modalidade não pode ser removida porque outra modalidade viva a referencia ' +
+    '(possivelmente fora desta página). Ajuste ou remova essas referências antes de removê-la.';
 
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
@@ -565,7 +563,7 @@ export class ModalidadesListPage {
       .subscribe((result) => {
         this.removendo.set(false);
         if (result.ok) {
-          this.notifications.success('Modalidade inativada', alvo.codigo);
+          this.notifications.success('Modalidade removida', alvo.codigo);
           this.dialogAberto.set(false);
           this.recarregar();
           return;

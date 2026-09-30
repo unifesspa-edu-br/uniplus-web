@@ -39,8 +39,8 @@ export class AuthService {
   /**
    * Inicializa o cliente OIDC via adapter Keycloak. NUNCA lança — falhas são capturadas e
    * expostas via `initError()`, permitindo que o bootstrap da app
-   * prossiga mesmo com o provedor de autenticação indisponível
-   * (finding I7). Nessa situação o app entra em modo "não autenticado"
+   * prossiga mesmo com o provedor de autenticação indisponível.
+   * Nessa situação o app entra em modo "não autenticado"
    * e o shell pode exibir um banner de fallback.
    */
   async init(config: AuthConfig): Promise<boolean> {

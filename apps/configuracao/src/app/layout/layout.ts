@@ -103,7 +103,6 @@ export class LayoutComponent {
           label: 'Termo de Consentimento',
           icon: 'pi-file-edit',
           routerLink: '/termos-consentimento',
-          exact: true,
         },
         {
           label: 'Condição de Atendimento',
