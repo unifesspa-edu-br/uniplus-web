@@ -791,7 +791,9 @@ export class TiposDeficienciaListPage {
       this.recarregar();
       return;
     }
-    this.aplicarFalha(result.problem);
+    // A falha da remoção é mostrada no toast: aplicarFalha() escreve no formulário,
+    // que está fechado enquanto o diálogo de confirmação está aberto.
+    this.notifications.errorFromProblem(result.problem);
   }
 
   protected proximaPagina(): void {
