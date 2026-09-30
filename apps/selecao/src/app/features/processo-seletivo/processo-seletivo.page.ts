@@ -1115,8 +1115,8 @@ export class ProcessoSeletivoPage {
    * depende de um checklist que só fica correto DEPOIS de
    * `gravarPassosAnteriores()` gravar as correções e `recarregarChecklist()`
    * atualizar o cache — incluí-la na primeira passada recusaria com a foto
-   * de antes da correção e nunca chegaria a gravar nada. Passos fora do intervalo desta chamada mantêm o progresso que
-   * já tinham.
+   * de antes da correção e nunca chegaria a gravar nada. Passos fora do
+   * intervalo desta chamada mantêm o progresso que já tinham.
    */
   private validarRascunho(ateIndice = this.store.totalSteps): string[] {
     const pendencias: string[] = [];
