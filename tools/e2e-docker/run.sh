@@ -35,7 +35,7 @@ IMAGE_LOCAL="uniplus-e2e-runner"
 # imagem — sem o sufixo, uma máquina que já rodou este script antes de um
 # bump de PLAYWRIGHT_VERSION reusa o volume antigo (node_modules da versão
 # velha), reproduzindo o mesmo "Executable doesn't exist" que o bump
-# deveria corrigir (achado do Codex AI no PR da Story #449). Versões
+# deveria corrigir. Versões
 # antigas do volume ficam órfãs — `docker volume prune` limpa quando
 # quiser.
 VOLUME_NAME="uniplus-e2e-node-modules-${PLAYWRIGHT_VERSION}"
@@ -67,8 +67,7 @@ fi
 PORTS_TO_CHECK=(8080 4200 4202)
 # 4212 só é usada pelo container do portal sob subpath (seção 3.5), que só
 # sobe para portal-e2e/all — exigi-la livre também pra selecao-e2e bloquearia
-# a run à toa por um serviço não relacionado (achado do Codex AI no PR da
-# Story #449).
+# a run à toa por um serviço não relacionado.
 if [[ "$TARGET" == "portal-e2e" || "$TARGET" == "all" ]]; then
   PORTS_TO_CHECK+=(4212)
 fi
