@@ -120,7 +120,9 @@ describe('BaseLegalBonusRegionalListPage', () => {
     // Botão só-ícone perde o texto visível, então o nome acessível é o que
     // distingue uma linha da outra — e precisa ser legível para quem ouve.
     expect(nomes).toContain('Editar base legal Portaria Unifesspa nº 2514/2023');
-    expect(nomes).toContain('Remover base legal Portaria Unifesspa nº 2514/2023');
+    expect(nomes).toContain('Remover base legal de bônus regional Portaria Unifesspa nº 2514/2023');
+    const remover = acoes.find((b) => b.getAttribute('aria-label')?.startsWith('Remover'));
+    expect(remover?.getAttribute('data-tooltip')).toBe('Remover base legal de bônus regional');
 
     // O identificador técnico não serve de rótulo: anunciado por leitor de
     // tela, um UUID não diz ao operador de que base se trata.
@@ -514,4 +516,19 @@ describe('BaseLegalBonusRegionalListPage', () => {
     await propagate();
     controller.expectOne((r) => r.url === URL_LISTA).flush([]);
   });
+
+  it('CA-06: título e pergunta do diálogo falam em remover a base identificada', async () => {
+    await flushLista([portariaBase]);
+    component['pedirRemocao'](portariaBase);
+    fixture.detectChanges();
+
+    const titulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.uni-dialog__title'),
+    ) as HTMLElement[];
+    expect(titulos.map((t) => t.textContent?.trim())).toContain('Remover base legal');
+    expect(component['confirmRemoverMensagem']()).toContain(
+      `deseja remover "${portariaBase.identificacao}"`,
+    );
+  });
+
 });
