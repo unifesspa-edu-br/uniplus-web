@@ -5,7 +5,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  min-height: 0;
+  /* Sem `min-height: 0`: como filho flex de `.page`, o host encolheria abaixo do
+     conteúdo e o `.panel` (overflow: hidden) cortaria a tabela e o rodapé. */
+  flex-shrink: 0;
 }
 
 /* ── Page header ─────────────────────────────────────────────────── */

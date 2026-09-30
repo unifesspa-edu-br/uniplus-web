@@ -25,6 +25,7 @@ import {
 import {
   AlertComponent,
   EmptyStateComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
@@ -78,6 +79,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
   standalone: true,
   imports: [
     RouterLink,
+    IconButtonComponent,
     DateBrPipe,
     AlertComponent,
     EmptyStateComponent,
@@ -176,13 +178,12 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                     </td>
 
                     <td class="table-responsive__actions" data-label="Ações">
-                      <a
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [routerLink]="['/processo-seletivo', processo.id]"
-                        [attr.aria-label]="'Abrir ' + processo.nome"
-                      >
-                        Abrir
-                      </a>
+                      <ui-icon-button
+                        icon="pi-folder-open"
+                        [accessibleName]="'Abrir ' + processo.nome"
+                        tooltip="Abrir processo seletivo"
+                        [link]="['/processo-seletivo', processo.id]"
+                      />
                     </td>
                   </tr>
                 }
