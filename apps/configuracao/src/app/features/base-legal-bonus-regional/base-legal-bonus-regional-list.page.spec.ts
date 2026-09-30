@@ -531,4 +531,31 @@ describe('BaseLegalBonusRegionalListPage', () => {
     );
   });
 
+  it('CA-12: não reenvia a remoção de uma base cujo DELETE ainda está em andamento', async () => {
+    await flushLista([portariaBase]);
+
+    component['pedirRemocao'](portariaBase);
+    component['confirmarRemocao']();
+    const req = controller.expectOne(
+      (r) => r.url === `${URL_ADMIN}/${portariaBase.id}` && r.method === 'DELETE',
+    );
+    // O diálogo fecha ao confirmar (two-way binding do ui-confirm-dialog).
+    component['confirmRemoverAberto'].set(false);
+
+    component['pedirRemocao'](portariaBase);
+    expect(component['confirmRemoverAberto']()).toBe(false);
+    component['confirmarRemocao']();
+    controller.expectNone((r) => r.method === 'DELETE');
+
+    req.flush(mockProblemDetails({ status: 409, code: 'uniplus.conflito' }), {
+      status: 409,
+      statusText: 'Conflict',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    await propagate();
+
+    // Depois da falha, a mesma base pode ser removida de novo.
+    component['pedirRemocao'](portariaBase);
+    expect(component['confirmRemoverAberto']()).toBe(true);
+  });
 });

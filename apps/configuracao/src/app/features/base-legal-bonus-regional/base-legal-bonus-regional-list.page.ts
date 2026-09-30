@@ -597,6 +597,11 @@ export class BaseLegalBonusRegionalListPage {
   protected readonly baseParaRemover = signal<BaseLegalBonusRegionalDto | null>(null);
   /** Incrementado a cada abertura da confirmação — identifica a que pedido uma resposta pertence. */
   private readonly remocaoSessao = signal(0);
+  /**
+   * Bases com DELETE pendente. O diálogo fecha ao confirmar, então é aqui que se barra o
+   * reenvio da mesma remoção; a lixeira continua habilitada para devolver o foco a ela.
+   */
+  private readonly remocoesEmAndamento = new Set<string>();
   protected readonly confirmRemoverMensagem = computed(() => {
     const base = this.baseParaRemover();
     return base
@@ -874,6 +879,9 @@ export class BaseLegalBonusRegionalListPage {
   }
 
   protected pedirRemocao(base: BaseLegalBonusRegionalDto): void {
+    if (this.remocoesEmAndamento.has(base.id)) {
+      return;
+    }
     this.remocaoSessao.update((atual) => atual + 1);
     this.savingRemover.set(false);
     this.baseParaRemover.set(base);
@@ -886,11 +894,13 @@ export class BaseLegalBonusRegionalListPage {
       return;
     }
     this.savingRemover.set(true);
+    this.remocoesEmAndamento.add(base.id);
     const sessao = this.remocaoSessao();
     this.api
       .remover(base.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        this.remocoesEmAndamento.delete(base.id);
         // O desfecho no backend independe de qual diálogo está na tela agora — sucesso
         // recarrega a lista, falha notifica, os dois sempre. O que pertence à SESSÃO
         // (fechar o diálogo, liberar o botão) só se aplica se nenhum pedido mais novo
