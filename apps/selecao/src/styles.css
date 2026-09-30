@@ -223,7 +223,6 @@ sel-layout {
   border-left: 2px solid var(--border-subtle);
 }
 
-.table-responsive__actions,
 .cfg-drawer-actions,
 .cfg-form-footer {
   display: flex;
@@ -232,8 +231,22 @@ sel-layout {
   flex-wrap: wrap;
 }
 
-.table-responsive__actions {
-  justify-content: flex-end;
+/* No desktop a célula de ações continua `table-cell`: com `display: flex` o `<td>`
+   sai do layout da tabela e o botão fica desalinhado das demais colunas, com a
+   borda da linha quebrada. No mobile o DS já o transforma em flex (cartão). */
+@media (min-width: 768px) {
+  .table-responsive td.table-responsive__actions {
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .table-responsive__actions {
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 .panel > .pager {
