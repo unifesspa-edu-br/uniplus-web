@@ -48,6 +48,7 @@ import {
 import {
   fatosParaGatilho,
   nomesDoCatalogo,
+  podeAlcancarModalidade,
   problemasDoGatilho,
 } from '../../shared/gatilho-de-exigencia';
 import { etapasDe } from '../../shared/hidratacao';
@@ -354,7 +355,6 @@ export class CronogramaStepComponent {
 
     return todasAsExigencias(this.store.draft().documentos).map((exigencia) => {
       const fase = fasePorCodigo.get(exigencia.faseCodigo);
-      const recorte = modalidadesDaExigencia(exigencia);
       const admiteComplementacao =
         fase === undefined
           ? false
@@ -366,10 +366,9 @@ export class CronogramaStepComponent {
         normaResolvida: temNormaResolvida(exigencia.basesLegais),
         faseCodigo: exigencia.faseCodigo,
         faseViva: fase !== undefined,
-        alcancaModalidade:
-          recorte === null
-            ? ofertadas.size > 0
-            : recorte.some((codigo) => ofertadas.has(codigo)),
+        alcancaModalidade: [...ofertadas].some((codigo) =>
+          podeAlcancarModalidade(exigencia, codigo),
+        ),
         reenvioSemComplementacao:
           exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
         problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
