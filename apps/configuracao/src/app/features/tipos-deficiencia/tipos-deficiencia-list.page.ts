@@ -368,7 +368,7 @@ const PAGE_SIZE = 50;
       (closed)="confirmOpen.set(false)"
     >
       <p>
-        Você está prestes a Remover o tipo de deficiência
+        Você está prestes a remover o tipo de deficiência
         <code>{{ tipoDeficienciaParaRemover()?.codigo }}</code>
         — <strong>{{ tipoDeficienciaParaRemover()?.nome }}.</strong>
       </p>
@@ -381,8 +381,16 @@ const PAGE_SIZE = 50;
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
-          Confirmar remoção
+        <button
+          type="button"
+          class="btn btn--danger"
+          [disabled]="saving()"
+          (click)="removerConfirmado()"
+        >
+          @if (saving()) {
+            <ui-spinner size="sm" />
+          }
+          {{ saving() ? 'Removendo...' : 'Remover' }}
         </button>
       </div>
     </ui-dialog>
@@ -806,6 +814,7 @@ export class TiposDeficienciaListPage {
       return;
     }
 
+    this.saving.set(true);
     this.api
       .remover(tipoDeficiencia.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
