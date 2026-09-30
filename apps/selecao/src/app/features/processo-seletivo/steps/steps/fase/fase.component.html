@@ -26,10 +26,10 @@
     <div class="step-card">
       <div class="form-grid">
         <div class="form-field form-grid__full">
-          <label class="label" for="fase-aberta">Fase a configurar</label>
+          <label class="label" [attr.for]="idDaFase('aberta')">Fase a configurar</label>
           <select
             class="input"
-            id="fase-aberta"
+            [attr.id]="idDaFase('aberta')"
             [ngModel]="faseAberta()"
             [ngModelOptions]="{ standalone: true }"
             (ngModelChange)="abrirFase($event)"
@@ -83,7 +83,7 @@
       <!-- Publicações -->
       <div class="step-card">
         <h3 class="form-section__title">O que esta fase publica</h3>
-        <p class="field__hint" id="fase-produtos-ajuda">
+        <p class="field__hint" [attr.id]="idDaFase('produtos-ajuda')">
           Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo
           marca como resultado: é ele que abre o ciclo recursal (preliminar) e o encerra
           (definitivo).
@@ -92,17 +92,17 @@
         @for (produto of produtos; track $index) {
           <div class="form-grid">
             <div class="form-field">
-              <label class="label" [attr.for]="'fase-produto-ato-' + $index">Publicação</label>
+              <label class="label" [attr.for]="idDaFase('produto-ato-' + $index)">Publicação</label>
               <select
                 class="input"
-                [attr.id]="'fase-produto-ato-' + $index"
+                [attr.id]="idDaFase('produto-ato-' + $index)"
                 [ngModel]="produto.atoCodigo"
                 [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao()"
                 [attr.aria-describedby]="
                   erroDoCampo('produtos')
-                    ? 'fase-produtos-erro fase-produtos-ajuda'
-                    : 'fase-produtos-ajuda'
+                    ? idDaFase('produtos-erro') + ' ' + idDaFase('produtos-ajuda')
+                    : idDaFase('produtos-ajuda')
                 "
                 [attr.aria-invalid]="erroDoCampo('produtos') ? 'true' : null"
                 (ngModelChange)="escolherAto($index, $event)"
@@ -114,10 +114,10 @@
               </select>
             </div>
             <div class="form-field">
-              <label class="label" [attr.for]="'fase-produto-papel-' + $index">Papel</label>
+              <label class="label" [attr.for]="idDaFase('produto-papel-' + $index)">Papel</label>
               <select
                 class="input"
-                [attr.id]="'fase-produto-papel-' + $index"
+                [attr.id]="idDaFase('produto-papel-' + $index)"
                 [ngModel]="produto.papel ?? ''"
                 [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao() || !aceitaPapel(produto.atoCodigo)"
@@ -156,7 +156,7 @@
         </button>
 
         @if (erroDoCampo('produtos'); as erro) {
-          <p class="field__erro" id="fase-produtos-erro" role="alert">{{ erro }}</p>
+          <p class="field__erro" [attr.id]="idDaFase('produtos-erro')" role="alert">{{ erro }}</p>
         }
       </div>
 
@@ -166,16 +166,18 @@
         <div class="form-grid">
           @if (publicaPreliminar()) {
             <div class="form-field form-grid__full">
-              <label class="label" for="fase-concluinte">Fase que conclui o ciclo</label>
+              <label class="label" [attr.for]="idDaFase('concluinte')"
+                >Fase que conclui o ciclo</label
+              >
               <select
                 class="input"
-                id="fase-concluinte"
+                [attr.id]="idDaFase('concluinte')"
                 formControlName="faseConcluinteCodigo"
                 [attr.aria-invalid]="erroDoCampo('faseConcluinteCodigo') ? 'true' : null"
                 [attr.aria-describedby]="
                   erroDoCampo('faseConcluinteCodigo')
-                    ? 'fase-concluinte-erro fase-concluinte-ajuda'
-                    : 'fase-concluinte-ajuda'
+                    ? idDaFase('concluinte-erro') + ' ' + idDaFase('concluinte-ajuda')
+                    : idDaFase('concluinte-ajuda')
                 "
               >
                 <option value="">Esta fase conclui a si mesma</option>
@@ -183,13 +185,15 @@
                   <option [value]="fase.codigo">{{ fase.ordem }}. {{ fase.nome }}</option>
                 }
               </select>
-              <p class="field__hint" id="fase-concluinte-ajuda">
+              <p class="field__hint" [attr.id]="idDaFase('concluinte-ajuda')">
                 A fase publica resultado preliminar. Se ela também publica o definitivo da matéria,
                 conclui a si mesma e nada se declara aqui; se a definitiva sai noutra fase, é essa
                 fase que precisa ser declarada — e ela vem depois desta na linha do tempo.
               </p>
               @if (erroDoCampo('faseConcluinteCodigo'); as erro) {
-                <p class="field__erro" id="fase-concluinte-erro" role="alert">{{ erro }}</p>
+                <p class="field__erro" [attr.id]="idDaFase('concluinte-erro')" role="alert">
+                  {{ erro }}
+                </p>
               }
             </div>
           } @else {
@@ -205,18 +209,18 @@
           }
 
           <div class="form-field form-grid__full">
-            <label class="checkbox" for="fase-parecer">
+            <label class="checkbox" [attr.for]="idDaFase('parecer')">
               <input
                 type="checkbox"
-                id="fase-parecer"
+                [attr.id]="idDaFase('parecer')"
                 formControlName="emiteParecerIndividual"
-                aria-describedby="fase-parecer-ajuda"
+                [attr.aria-describedby]="idDaFase('parecer-ajuda')"
                 [attr.aria-invalid]="erroDoCampo('emiteParecerIndividual') ? 'true' : null"
               />
               <span class="checkbox__box" aria-hidden="true"></span>
               Esta fase emite parecer individual
             </label>
-            <p class="field__hint" id="fase-parecer-ajuda">
+            <p class="field__hint" [attr.id]="idDaFase('parecer-ajuda')">
               O edital promete devolutiva a cada candidato. Só fase que publica algum resultado pode
               prometê-la.
             </p>
@@ -231,17 +235,17 @@
       <div class="step-card">
         <h3 class="form-section__title">Recurso contra o que esta fase publica</h3>
 
-        <label class="checkbox" for="fase-admite-recurso">
+        <label class="checkbox" [attr.for]="idDaFase('admite-recurso')">
           <input
             type="checkbox"
-            id="fase-admite-recurso"
+            [attr.id]="idDaFase('admite-recurso')"
             formControlName="admiteRecurso"
-            aria-describedby="fase-recurso-ajuda"
+            [attr.aria-describedby]="idDaFase('recurso-ajuda')"
           />
           <span class="checkbox__box" aria-hidden="true"></span>
           Cabe recurso do que esta fase publica
         </label>
-        <p class="field__hint" id="fase-recurso-ajuda">
+        <p class="field__hint" [attr.id]="idDaFase('recurso-ajuda')">
           Desmarcado, a fase não declara regra de recurso alguma. Marcado, ela precisa publicar ao
           menos um resultado preliminar — é da divulgação dele que o prazo corre.
         </p>
@@ -249,10 +253,10 @@
         @if (form.controls.admiteRecurso.value) {
           <div class="form-grid" formGroupName="recurso">
             <div class="form-field form-grid__full">
-              <label class="label" for="fase-regra">Regra de contagem</label>
+              <label class="label" [attr.for]="idDaFase('regra')">Regra de contagem</label>
               <select
                 class="input"
-                id="fase-regra"
+                [attr.id]="idDaFase('regra')"
                 [ngModel]="form.controls.recurso.controls.regraCodigo.value"
                 [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao()"
@@ -272,32 +276,34 @@
             </div>
 
             <div class="form-field">
-              <label class="label" for="fase-prazo-valor">Prazo de interposição</label>
+              <label class="label" [attr.for]="idDaFase('prazo-valor')"
+                >Prazo de interposição</label
+              >
               <input
                 class="input"
-                id="fase-prazo-valor"
+                [attr.id]="idDaFase('prazo-valor')"
                 type="text"
                 inputmode="decimal"
                 formControlName="prazoValor"
                 [attr.aria-invalid]="erroDoCampo('recurso.prazo') ? 'true' : null"
                 [attr.aria-describedby]="
                   erroDoCampo('recurso.prazo')
-                    ? 'fase-prazo-erro fase-prazo-ajuda'
-                    : 'fase-prazo-ajuda'
+                    ? idDaFase('prazo-erro') + ' ' + idDaFase('prazo-ajuda')
+                    : idDaFase('prazo-ajuda')
                 "
               />
             </div>
             <div class="form-field">
-              <label class="label" for="fase-prazo-unidade">Unidade do prazo</label>
+              <label class="label" [attr.for]="idDaFase('prazo-unidade')">Unidade do prazo</label>
               <select
                 class="input"
-                id="fase-prazo-unidade"
+                [attr.id]="idDaFase('prazo-unidade')"
                 formControlName="prazoUnidade"
                 [attr.aria-invalid]="erroDoCampo('recurso.prazo') ? 'true' : null"
                 [attr.aria-describedby]="
                   erroDoCampo('recurso.prazo')
-                    ? 'fase-prazo-erro fase-prazo-ajuda'
-                    : 'fase-prazo-ajuda'
+                    ? idDaFase('prazo-erro') + ' ' + idDaFase('prazo-ajuda')
+                    : idDaFase('prazo-ajuda')
                 "
               >
                 <option value="">Selecione…</option>
@@ -306,27 +312,33 @@
                 }
               </select>
             </div>
-            <p class="field__hint form-grid__full" id="fase-prazo-ajuda">
+            <p class="field__hint form-grid__full" [attr.id]="idDaFase('prazo-ajuda')">
               Dia corrido não é aceito na interposição. Em dias úteis o prazo é inteiro; a fração só
               existe em horas.
             </p>
             @if (erroDoCampo('recurso.prazo'); as erro) {
-              <p class="field__erro form-grid__full" id="fase-prazo-erro" role="alert">
+              <p
+                class="field__erro form-grid__full"
+                [attr.id]="idDaFase('prazo-erro')"
+                role="alert"
+              >
                 {{ erro }}
               </p>
             }
 
             <div class="form-field form-grid__full">
-              <label class="label" for="fase-ancora">Publicação de que o prazo corre</label>
+              <label class="label" [attr.for]="idDaFase('ancora')"
+                >Publicação de que o prazo corre</label
+              >
               <select
                 class="input"
-                id="fase-ancora"
+                [attr.id]="idDaFase('ancora')"
                 formControlName="atoAncoraCodigo"
                 [attr.aria-invalid]="erroDoCampo('recurso.ancora') ? 'true' : null"
                 [attr.aria-describedby]="
                   erroDoCampo('recurso.ancora')
-                    ? 'fase-ancora-erro fase-ancora-ajuda'
-                    : 'fase-ancora-ajuda'
+                    ? idDaFase('ancora-erro') + ' ' + idDaFase('ancora-ajuda')
+                    : idDaFase('ancora-ajuda')
                 "
               >
                 <option value="">Selecione a publicação…</option>
@@ -334,41 +346,43 @@
                   <option [value]="ancora.codigo">{{ ancora.nome }}</option>
                 }
               </select>
-              <p class="field__hint" id="fase-ancora-ajuda">
+              <p class="field__hint" [attr.id]="idDaFase('ancora-ajuda')">
                 Só os resultados preliminares desta fase entram aqui. Uma fase que publica gabarito
                 e resultado preliminares admite recurso de qualquer um dos dois, e é a escolha feita
                 aqui que decide de qual publicação a janela é contada.
               </p>
               @if (erroDoCampo('recurso.ancora'); as erro) {
-                <p class="field__erro" id="fase-ancora-erro" role="alert">{{ erro }}</p>
+                <p class="field__erro" [attr.id]="idDaFase('ancora-erro')" role="alert">
+                  {{ erro }}
+                </p>
               }
             </div>
 
             <div class="form-field">
-              <label class="label" for="fase-susp1-valor">
+              <label class="label" [attr.for]="idDaFase('susp1-valor')">
                 Suspensividade da 1ª instância — prazo
               </label>
               <input
                 class="input"
-                id="fase-susp1-valor"
+                [attr.id]="idDaFase('susp1-valor')"
                 type="text"
                 inputmode="decimal"
                 formControlName="suspensividadePrimeiraInstanciaValor"
-                aria-describedby="fase-susp-ajuda"
+                [attr.aria-describedby]="idDaFase('susp-ajuda')"
                 [attr.aria-invalid]="
                   erroDoCampo('recurso.suspensividadePrimeiraInstancia') ? 'true' : null
                 "
               />
             </div>
             <div class="form-field">
-              <label class="label" for="fase-susp1-unidade">
+              <label class="label" [attr.for]="idDaFase('susp1-unidade')">
                 Suspensividade da 1ª instância — unidade
               </label>
               <select
                 class="input"
-                id="fase-susp1-unidade"
+                [attr.id]="idDaFase('susp1-unidade')"
                 formControlName="suspensividadePrimeiraInstanciaUnidade"
-                aria-describedby="fase-susp-ajuda"
+                [attr.aria-describedby]="idDaFase('susp-ajuda')"
               >
                 <option value="">Sem suspensividade</option>
                 @for (unidade of unidades; track unidade.valor) {
@@ -381,30 +395,30 @@
             }
 
             <div class="form-field">
-              <label class="label" for="fase-susp2-valor">
+              <label class="label" [attr.for]="idDaFase('susp2-valor')">
                 Suspensividade da 2ª instância — prazo
               </label>
               <input
                 class="input"
-                id="fase-susp2-valor"
+                [attr.id]="idDaFase('susp2-valor')"
                 type="text"
                 inputmode="decimal"
                 formControlName="suspensividadeSegundaInstanciaValor"
-                aria-describedby="fase-susp-ajuda"
+                [attr.aria-describedby]="idDaFase('susp-ajuda')"
                 [attr.aria-invalid]="
                   erroDoCampo('recurso.suspensividadeSegundaInstancia') ? 'true' : null
                 "
               />
             </div>
             <div class="form-field">
-              <label class="label" for="fase-susp2-unidade">
+              <label class="label" [attr.for]="idDaFase('susp2-unidade')">
                 Suspensividade da 2ª instância — unidade
               </label>
               <select
                 class="input"
-                id="fase-susp2-unidade"
+                [attr.id]="idDaFase('susp2-unidade')"
                 formControlName="suspensividadeSegundaInstanciaUnidade"
-                aria-describedby="fase-susp-ajuda"
+                [attr.aria-describedby]="idDaFase('susp-ajuda')"
               >
                 <option value="">Sem suspensividade</option>
                 @for (unidade of unidades; track unidade.valor) {
@@ -412,7 +426,7 @@
                 }
               </select>
             </div>
-            <p class="field__hint form-grid__full" id="fase-susp-ajuda">
+            <p class="field__hint form-grid__full" [attr.id]="idDaFase('susp-ajuda')">
               O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são
               declarados juntos; deixar os dois em branco desativa a suspensividade daquela
               instância.
@@ -427,7 +441,7 @@
       <!-- Bancas requeridas -->
       <div class="step-card">
         <h3 class="form-section__title">Bancas que esta fase requer</h3>
-        <p class="field__hint" id="fase-bancas-ajuda">
+        <p class="field__hint" [attr.id]="idDaFase('bancas-ajuda')">
           O recorte de competência diz que categorias de documento cada banca julga. Com uma banca
           de cada tipo ele é dispensável — a banca julga tudo o que a fase exige. Com duas do mesmo
           tipo, ele passa a ser obrigatório e precisa distingui-las.
@@ -436,17 +450,17 @@
         @for (banca of bancas; track $index) {
           <div class="form-grid">
             <div class="form-field form-grid__full">
-              <label class="label" [attr.for]="'fase-banca-' + $index">Tipo de banca</label>
+              <label class="label" [attr.for]="idDaFase('banca-' + $index)">Tipo de banca</label>
               <select
                 class="input"
-                [attr.id]="'fase-banca-' + $index"
+                [attr.id]="idDaFase('banca-' + $index)"
                 [ngModel]="banca.tipoBancaId"
                 [ngModelOptions]="{ standalone: true }"
                 [disabled]="!store.aceitaEdicao()"
                 [attr.aria-describedby]="
                   erroDoCampo('bancasRequeridas')
-                    ? 'fase-bancas-erro fase-bancas-ajuda'
-                    : 'fase-bancas-ajuda'
+                    ? idDaFase('bancas-erro') + ' ' + idDaFase('bancas-ajuda')
+                    : idDaFase('bancas-ajuda')
                 "
                 [attr.aria-invalid]="erroDoCampo('bancasRequeridas') ? 'true' : null"
                 (ngModelChange)="escolherTipoDeBanca($index, $event)"
@@ -475,11 +489,11 @@
                 @for (categoria of categorias(); track categoria.id) {
                   <label
                     class="checkbox"
-                    [attr.for]="'fase-recorte-' + $index + '-' + categoria.id"
+                    [attr.for]="idDaFase('recorte-' + $index + '-' + categoria.id)"
                   >
                     <input
                       type="checkbox"
-                      [attr.id]="'fase-recorte-' + $index + '-' + categoria.id"
+                      [attr.id]="idDaFase('recorte-' + $index + '-' + categoria.id)"
                       [checked]="categoriaMarcada($index, categoria.id)"
                       [disabled]="!store.aceitaEdicao()"
                       (change)="
@@ -521,7 +535,7 @@
         </button>
 
         @if (erroDoCampo('bancasRequeridas'); as erro) {
-          <p class="field__erro" id="fase-bancas-erro" role="alert">{{ erro }}</p>
+          <p class="field__erro" [attr.id]="idDaFase('bancas-erro')" role="alert">{{ erro }}</p>
         }
       </div>
 
@@ -565,6 +579,7 @@
                 Acrescentar documento
               </button>
             </div>
+            <p class="sr-only" role="status">{{ avisoDaRemocao() }}</p>
           </div>
         </div>
 
@@ -574,14 +589,14 @@
             e os campos abrem por documento. O filtro responde "o que este candidato entrega".
           -->
           <div class="form-field doc-conferencia__filtro">
-            <label class="label" [attr.for]="idDaConferencia('filtro')"
+            <label class="label" [attr.for]="idDaFase('doc-filtro')"
               >Conferir os documentos de</label
             >
             <select
               #seletorDoPublico
               class="select"
-              [attr.id]="idDaConferencia('filtro')"
-              [attr.aria-describedby]="idDaConferencia('filtro-total')"
+              [attr.id]="idDaFase('doc-filtro')"
+              [attr.aria-describedby]="idDaFase('doc-filtro-total')"
               (change)="escolherPublico($any($event.target).value)"
             >
               @for (opcao of opcoesDoFiltro(); track opcao.valor) {
@@ -590,7 +605,7 @@
                 </option>
               }
             </select>
-            <p class="field__hint" [attr.id]="idDaConferencia('filtro-total')" role="status">
+            <p class="field__hint" [attr.id]="idDaFase('doc-filtro-total')" role="status">
               {{ resumosVisiveis().length }} de {{ resumos().length }} documentos.
               {{ saiuDaLista() }}
             </p>
@@ -636,7 +651,7 @@
                         class="doc-conferencia__alternar"
                         type="button"
                         [attr.aria-expanded]="emEdicao(resumo.id)"
-                        [attr.aria-controls]="idDaConferencia('campos-' + resumo.id)"
+                        [attr.aria-controls]="idDaFase('doc-campos-' + resumo.id)"
                         (click)="alternarEdicaoNaConferencia(resumo.id, seletorDoPublico)"
                       >
                         <span class="etapa-resumo__seta" aria-hidden="true"></span>
@@ -677,7 +692,7 @@
                   @if (emEdicao(resumo.id)) {
                     <tr
                       class="doc-conferencia__campos"
-                      [attr.id]="idDaConferencia('campos-' + resumo.id)"
+                      [attr.id]="idDaFase('doc-campos-' + resumo.id)"
                     >
                       <td [attr.colspan]="colunasDaConferencia()">
                         @let doc = resumo.documento;
@@ -700,7 +715,7 @@
                               type="button"
                               [disabled]="!store.aceitaEdicao()"
                               [attr.aria-label]="'Remover ' + doc.nome"
-                              (click)="removerDocumento(doc.id)"
+                              (click)="removerDocumento(doc.id, seletorDoPublico)"
                             >
                               Remover
                             </button>
@@ -712,7 +727,7 @@
                           -->
                           <div class="doc-item__eixos">
                             <div class="form-field">
-                              <label class="label" [attr.for]="'fase-doc-alcance-' + doc.id"
+                              <label class="label" [attr.for]="idDaFase('doc-alcance-' + doc.id)"
                                 >Exigido em</label
                               >
                               <!--
@@ -723,7 +738,7 @@
                               -->
                               <select
                                 class="select"
-                                [attr.id]="'fase-doc-alcance-' + doc.id"
+                                [attr.id]="idDaFase('doc-alcance-' + doc.id)"
                                 [disabled]="!store.aceitaEdicao()"
                                 (change)="
                                   escolherAlcanceDoDocumento(doc.id, $any($event.target).value)
@@ -740,7 +755,7 @@
 
                             @if (etapasDaFaseAberta().length > 0) {
                               <div class="form-field">
-                                <label class="label" [attr.for]="'fase-doc-etapa-' + doc.id"
+                                <label class="label" [attr.for]="idDaFase('doc-etapa-' + doc.id)"
                                   >Coletado em</label
                                 >
                                 <!--
@@ -750,7 +765,7 @@
                                 -->
                                 <select
                                   class="select"
-                                  [attr.id]="'fase-doc-etapa-' + doc.id"
+                                  [attr.id]="idDaFase('doc-etapa-' + doc.id)"
                                   [disabled]="!store.aceitaEdicao()"
                                   (change)="
                                     escolherEtapaDoDocumento(doc.id, $any($event.target).value)
@@ -812,7 +827,10 @@
                             }
 
                             <div class="form-field">
-                              <label class="label" [attr.for]="'fase-doc-exigido-de-' + doc.id">
+                              <label
+                                class="label"
+                                [attr.for]="idDaFase('doc-exigido-de-' + doc.id)"
+                              >
                                 Exigido de
                               </label>
                               <!--
@@ -822,7 +840,7 @@
                               -->
                               <select
                                 class="select"
-                                [attr.id]="'fase-doc-exigido-de-' + doc.id"
+                                [attr.id]="idDaFase('doc-exigido-de-' + doc.id)"
                                 [disabled]="!store.aceitaEdicao()"
                                 (change)="escolherExigidoDe(doc.id, $any($event.target).value)"
                               >
@@ -877,7 +895,9 @@
                                           <label
                                             class="label"
                                             [attr.for]="
-                                              'fase-doc-fato-' + doc.id + '-' + posicionada.indice
+                                              idDaFase(
+                                                'doc-fato-' + doc.id + '-' + posicionada.indice
+                                              )
                                             "
                                           >
                                             Fato do candidato
@@ -885,7 +905,9 @@
                                           <select
                                             class="select"
                                             [attr.id]="
-                                              'fase-doc-fato-' + doc.id + '-' + posicionada.indice
+                                              idDaFase(
+                                                'doc-fato-' + doc.id + '-' + posicionada.indice
+                                              )
                                             "
                                             [disabled]="!store.aceitaEdicao()"
                                             (change)="
@@ -921,10 +943,9 @@
                                           <label
                                             class="label"
                                             [attr.for]="
-                                              'fase-doc-operador-' +
-                                              doc.id +
-                                              '-' +
-                                              posicionada.indice
+                                              idDaFase(
+                                                'doc-operador-' + doc.id + '-' + posicionada.indice
+                                              )
                                             "
                                           >
                                             Comparação
@@ -932,10 +953,9 @@
                                           <select
                                             class="select"
                                             [attr.id]="
-                                              'fase-doc-operador-' +
-                                              doc.id +
-                                              '-' +
-                                              posicionada.indice
+                                              idDaFase(
+                                                'doc-operador-' + doc.id + '-' + posicionada.indice
+                                              )
                                             "
                                             [disabled]="!store.aceitaEdicao()"
                                             (change)="
@@ -997,10 +1017,9 @@
                                             <label
                                               class="label"
                                               [attr.for]="
-                                                'fase-doc-valor-' +
-                                                doc.id +
-                                                '-' +
-                                                posicionada.indice
+                                                idDaFase(
+                                                  'doc-valor-' + doc.id + '-' + posicionada.indice
+                                                )
                                               "
                                             >
                                               Resposta
@@ -1013,10 +1032,9 @@
                                             <select
                                               class="select"
                                               [attr.id]="
-                                                'fase-doc-valor-' +
-                                                doc.id +
-                                                '-' +
-                                                posicionada.indice
+                                                idDaFase(
+                                                  'doc-valor-' + doc.id + '-' + posicionada.indice
+                                                )
                                               "
                                               [disabled]="!store.aceitaEdicao()"
                                               (change)="
@@ -1058,10 +1076,9 @@
                                             <label
                                               class="label"
                                               [attr.for]="
-                                                'fase-doc-valor-' +
-                                                doc.id +
-                                                '-' +
-                                                posicionada.indice
+                                                idDaFase(
+                                                  'doc-valor-' + doc.id + '-' + posicionada.indice
+                                                )
                                               "
                                             >
                                               Valor
@@ -1069,10 +1086,9 @@
                                             <select
                                               class="select"
                                               [attr.id]="
-                                                'fase-doc-valor-' +
-                                                doc.id +
-                                                '-' +
-                                                posicionada.indice
+                                                idDaFase(
+                                                  'doc-valor-' + doc.id + '-' + posicionada.indice
+                                                )
                                               "
                                               [disabled]="!store.aceitaEdicao()"
                                               (change)="
@@ -1113,10 +1129,9 @@
                                             <label
                                               class="label"
                                               [attr.for]="
-                                                'fase-doc-valor-' +
-                                                doc.id +
-                                                '-' +
-                                                posicionada.indice
+                                                idDaFase(
+                                                  'doc-valor-' + doc.id + '-' + posicionada.indice
+                                                )
                                               "
                                             >
                                               Valor
@@ -1126,10 +1141,9 @@
                                               type="text"
                                               inputmode="numeric"
                                               [attr.id]="
-                                                'fase-doc-valor-' +
-                                                doc.id +
-                                                '-' +
-                                                posicionada.indice
+                                                idDaFase(
+                                                  'doc-valor-' + doc.id + '-' + posicionada.indice
+                                                )
                                               "
                                               [value]="valorDaCondicao(posicionada.condicao)"
                                               [disabled]="!store.aceitaEdicao()"
@@ -1211,12 +1225,15 @@
                             }
 
                             <div class="form-field">
-                              <label class="label" [attr.for]="'fase-doc-obrigatorio-' + doc.id">
+                              <label
+                                class="label"
+                                [attr.for]="idDaFase('doc-obrigatorio-' + doc.id)"
+                              >
                                 Entrega
                               </label>
                               <select
                                 class="select"
-                                [attr.id]="'fase-doc-obrigatorio-' + doc.id"
+                                [attr.id]="idDaFase('doc-obrigatorio-' + doc.id)"
                                 [disabled]="!store.aceitaEdicao()"
                                 (change)="
                                   escolherObrigatoriedade(doc.id, $any($event.target).value)
@@ -1232,7 +1249,10 @@
                             </div>
 
                             <div class="form-field">
-                              <label class="label" [attr.for]="'fase-doc-consequencia-' + doc.id">
+                              <label
+                                class="label"
+                                [attr.for]="idDaFase('doc-consequencia-' + doc.id)"
+                              >
                                 Se não for entregue
                               </label>
                               <!--
@@ -1241,7 +1261,7 @@
                               -->
                               <select
                                 class="select"
-                                [attr.id]="'fase-doc-consequencia-' + doc.id"
+                                [attr.id]="idDaFase('doc-consequencia-' + doc.id)"
                                 [disabled]="!store.aceitaEdicao()"
                                 (change)="escolherConsequencia(doc.id, $any($event.target).value)"
                               >
@@ -1269,14 +1289,14 @@
                               <div class="form-field">
                                 <label
                                   class="label"
-                                  [attr.for]="'fase-doc-base-legal-' + doc.id + '-' + $index"
+                                  [attr.for]="idDaFase('doc-base-legal-' + doc.id + '-' + $index)"
                                 >
                                   Norma que exige o documento
                                 </label>
                                 <input
                                   class="input"
                                   type="text"
-                                  [attr.id]="'fase-doc-base-legal-' + doc.id + '-' + $index"
+                                  [attr.id]="idDaFase('doc-base-legal-' + doc.id + '-' + $index)"
                                   placeholder="Lei 12.711/2012, art. 3º"
                                   [value]="base.referencia"
                                   [disabled]="!store.aceitaEdicao()"
@@ -1294,13 +1314,13 @@
                               <div class="form-field">
                                 <label
                                   class="label"
-                                  [attr.for]="'fase-doc-abrangencia-' + doc.id + '-' + $index"
+                                  [attr.for]="idDaFase('doc-abrangencia-' + doc.id + '-' + $index)"
                                 >
                                   Alcance da norma
                                 </label>
                                 <select
                                   class="select"
-                                  [attr.id]="'fase-doc-abrangencia-' + doc.id + '-' + $index"
+                                  [attr.id]="idDaFase('doc-abrangencia-' + doc.id + '-' + $index)"
                                   [disabled]="!store.aceitaEdicao()"
                                   (change)="
                                     escreverBaseLegal(
@@ -1325,13 +1345,13 @@
                               <div class="form-field">
                                 <label
                                   class="label"
-                                  [attr.for]="'fase-doc-status-legal-' + doc.id + '-' + $index"
+                                  [attr.for]="idDaFase('doc-status-legal-' + doc.id + '-' + $index)"
                                 >
                                   Identificação da norma
                                 </label>
                                 <select
                                   class="select"
-                                  [attr.id]="'fase-doc-status-legal-' + doc.id + '-' + $index"
+                                  [attr.id]="idDaFase('doc-status-legal-' + doc.id + '-' + $index)"
                                   [disabled]="!store.aceitaEdicao()"
                                   (change)="
                                     escreverBaseLegal(
@@ -1356,14 +1376,14 @@
                               <div class="form-field">
                                 <label
                                   class="label"
-                                  [attr.for]="'fase-doc-obs-legal-' + doc.id + '-' + $index"
+                                  [attr.for]="idDaFase('doc-obs-legal-' + doc.id + '-' + $index)"
                                 >
                                   Observação<span class="sr-only"> sobre a norma</span> (opcional)
                                 </label>
                                 <input
                                   class="input"
                                   type="text"
-                                  [attr.id]="'fase-doc-obs-legal-' + doc.id + '-' + $index"
+                                  [attr.id]="idDaFase('doc-obs-legal-' + doc.id + '-' + $index)"
                                   placeholder="O que esta norma exige, em uma linha"
                                   [value]="base.observacao"
                                   [disabled]="!store.aceitaEdicao()"
