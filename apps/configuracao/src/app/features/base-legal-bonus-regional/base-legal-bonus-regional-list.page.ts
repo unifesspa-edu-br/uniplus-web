@@ -222,8 +222,10 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                     />
                     <ui-icon-button
                       icon="pi-trash"
-                      [accessibleName]="'Remover base legal ' + base.identificacao"
-                      tooltip="Remover base legal"
+                      [accessibleName]="
+                        'Remover base legal de bônus regional ' + base.identificacao
+                      "
+                      tooltip="Remover base legal de bônus regional"
                       [isDisabled]="loading()"
                       (triggered)="pedirRemocao(base)"
                     />
