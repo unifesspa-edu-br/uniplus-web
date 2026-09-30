@@ -563,4 +563,37 @@ describe('TiposDeficienciaListPage', () => {
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual(['Código', 'Nome', 'Descrição', 'Ações']);
   });
+
+  it('CA-04/CA-06: botão e diálogo falam em remover, com o botão principal travado durante a remoção', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    fixture.detectChanges();
+    expect(getRemoverButtonEl().getAttribute('data-tooltip')).toBe('Remover tipo de deficiência');
+
+    getRemoverButtonEl().click();
+    fixture.detectChanges();
+    const dialogo = (
+      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
+    ).find((d) => d.textContent?.includes('prestes a')) as HTMLElement;
+    expect(dialogo.textContent).toContain('Remover tipo de deficiência?');
+    expect(dialogo.textContent).toContain('Você está prestes a remover o tipo de deficiência');
+    const principal = () =>
+      Array.from(
+        dialogo.querySelectorAll('button.btn--danger') as NodeListOf<HTMLButtonElement>,
+      )[0];
+    expect(principal().textContent?.trim()).toBe('Remover');
+
+    principal().click();
+    fixture.detectChanges();
+    expect(principal().disabled).toBe(true);
+    expect(principal().textContent?.trim()).toBe('Removendo...');
+
+    controller
+      .expectOne(
+        (r) =>
+          r.url === `${BASE}/api/configuracao/admin/tipos-deficiencia/${tipoDeficienciaSeed.id}` &&
+          r.method === 'DELETE',
+      )
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([]);
+  });
 });
