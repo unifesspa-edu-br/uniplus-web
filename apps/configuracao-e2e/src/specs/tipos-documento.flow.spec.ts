@@ -213,7 +213,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  test('CA-08: modal de inativação não exibe bloqueio por referência de outro módulo', async ({
+  test('CA-08: modal de remoção não exibe bloqueio por referência de outro módulo', async ({
     page,
   }) => {
     const capturado = novoCapturado();
@@ -297,7 +297,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
     await assertSemViolacoesGraves(page);
   });
 
-  test('modal de inativação aberto não tem violações serious/critical', async ({ page }) => {
+  test('modal de remoção aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [rgSeed]);
     await abrirPagina(page);
     await page

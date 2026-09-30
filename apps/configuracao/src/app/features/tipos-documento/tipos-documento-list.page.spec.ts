@@ -547,6 +547,27 @@ describe('TiposDocumentoListPage', () => {
     expect(component['confirmRemoverMensagem']()).toContain('RN08');
   });
 
+  // TiposDocumentoListPage_AcaoRemover_UsaVocabularioDeRemocao
+  it('CA-04/CA-06: botão e diálogo falam em remover, não em inativar', async () => {
+    await flushLista([rgSeed]);
+    fixture.detectChanges();
+
+    const botao = fixture.nativeElement.querySelector(
+      'button[aria-label="Remover tipo de documento RG"]',
+    ) as HTMLButtonElement | null;
+    expect(botao?.getAttribute('data-tooltip')).toBe('Remover tipo de documento');
+
+    component['pedirRemocao'](rgSeed);
+    fixture.detectChanges();
+
+    const titulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.uni-dialog__title'),
+    ) as HTMLElement[];
+    expect(titulos.map((t) => t.textContent?.trim())).toContain('Remover tipo de documento');
+    expect(component['confirmRemoverMensagem']()).toMatch(/^Deseja remover /);
+    expect(component['confirmRemoverMensagem']()).not.toMatch(/inativ/i);
+  });
+
   // TiposDocumentoListPage_ModalRemocao_ConfirmaRemove
   it('CA-07/CA-08: confirmação no modal dispara remover sem checagem prévia e atualiza a lista', async () => {
     await flushLista([rgSeed]);
