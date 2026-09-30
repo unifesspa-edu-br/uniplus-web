@@ -135,7 +135,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  test('CA-01: lista modalidades com natureza, status e coluna "Referenciada por"', async ({ page }) => {
+  test('CA-01: lista modalidades com natureza e coluna "Referenciada por"', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
 

@@ -293,7 +293,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                   </li>
                 }
               </ul>
-              Ajuste ou remova essas referências antes de remover.
+              Ajuste ou remova essas referências antes de removê-la.
             } @else {
               {{ mensagemBloqueioServidor() ?? mensagemBloqueioPadrao }}
             }

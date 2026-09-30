@@ -112,6 +112,24 @@ describe('ModalidadesListPage', () => {
     expect(component['referenciadaPor']('V')).toEqual([]);
   });
 
+  it('CA-04/CA-06: botão e diálogo falam em remover, não em inativar', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+    const botao = fixture.nativeElement.querySelector(
+      'button[aria-label="Remover modalidade V"]',
+    ) as HTMLButtonElement | null;
+    expect(botao?.getAttribute('data-tooltip')).toBe('Remover modalidade');
+
+    component['pedirRemocao'](V);
+    fixture.detectChanges();
+    const dialogo = (
+      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
+    ).find((d) => d.textContent?.includes('soft-delete')) as HTMLElement;
+    expect(dialogo.textContent).toContain('Remover modalidade');
+    expect(dialogo.textContent).toContain('é removida (soft-delete)');
+    expect(dialogo.textContent).not.toMatch(/inativ/i);
+  });
+
   it('ModalidadeRemocaoDialog_BloqueiaQuandoReferenciada: sem DELETE quando há dependente', async () => {
     await flushLista([AC, V]);
     component['pedirRemocao'](AC);
