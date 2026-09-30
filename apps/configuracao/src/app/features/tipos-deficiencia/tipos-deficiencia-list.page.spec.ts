@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationRef } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,6 +9,7 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   TiposDeficienciaListPage,
 } from './tipos-deficiencia-list.page';
@@ -595,5 +596,34 @@ describe('TiposDeficienciaListPage', () => {
       )
       .flush(null, { status: 204, statusText: 'No Content' });
     await flushRecarregarLista([]);
+  });
+
+  it('CA-11: falha na remoção avisa o usuário e mantém o registro e o diálogo', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    await flushLista([tipoDeficienciaSeed]);
+    component['abrirRemoverTipoDeficiencia'](tipoDeficienciaSeed);
+    component['removerConfirmado']();
+
+    controller
+      .expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${tipoDeficienciaSeed.id}`)
+      .flush(
+        {
+          type: 'about:blank',
+          title: 'Tipo de deficiência não encontrado',
+          status: 404,
+          code: 'uniplus.configuracao.tipo_deficiencia.nao_encontrado',
+        },
+        {
+          status: 404,
+          statusText: 'Not Found',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalled();
+    expect(component['confirmOpen']()).toBe(true);
+    expect(component['saving']()).toBe(false);
+    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
   });
 });
