@@ -23,7 +23,7 @@ export const AUTH_CONFIG = new InjectionToken<AuthConfig>('AUTH_CONFIG');
  *
  * Qualquer requisição cuja URL não comece por nenhum dos prefixos
  * configurados NÃO recebe o Bearer, evitando vazamento de credenciais
- * para domínios externos (finding B2 do review da PR #3).
+ * para domínios externos.
  *
  * Derivado pelo `provideAuth` a partir de `AUTH_CONFIG.allowedUrls`.
  */

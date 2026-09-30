@@ -44,7 +44,7 @@ export interface PassoDoWizard {
    * checklist é lido uma vez e reaproveitado enquanto o operador estiver
    * nela. Sem isto, gravar de novo um passo anterior (`gravarPassosAnte-
    * riores`) não se reflete no checklist da Revisão, e `validate()` recusa
-   * com a foto de antes da correção (achado do Codex na #486, P1).
+   * com a foto de antes da correção.
    */
   recarregarChecklist?(): Promise<void>;
 }

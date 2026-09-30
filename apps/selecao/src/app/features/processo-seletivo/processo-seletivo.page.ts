@@ -715,7 +715,7 @@ export class ProcessoSeletivoPage {
     // processos com chaves de idempotência diferentes. `operacaoEmAndamento()`
     // cobre também a janela de `publicar()` entre um passo terminar e o
     // próximo começar — `salvando()` sozinho fica `false` ali por um
-    // instante real (achado do Codex na #486, P1).
+    // instante real.
     if (this.store.operacaoEmAndamento()) return;
 
     // Consultar um processo publicado é livre; escrever nele o servidor
@@ -924,9 +924,8 @@ export class ProcessoSeletivoPage {
    * checklist AINDA velho sempre que o operador tivesse acabado de corrigir
    * um passo anterior e voltado direto à Revisão pelo stepper livre (sem
    * "avançar", que gravaria): o portão barraria antes mesmo de
-   * `gravarPassosAnteriores()` ter a chance de gravar a correção (achado do
-   * Codex na #486, P1 — o mesmo estado intermediário tratado como final que
-   * já apareceu nesta frente). Só depois de gravar de novo e recarregar o
+   * `gravarPassosAnteriores()` ter a chance de gravar a correção.
+   * Só depois de gravar de novo e recarregar o
    * checklist da Revisão é que a segunda passada — o rascunho inteiro,
    * Revisão incluída — faz sentido: agora ela vê o que a primeira acabou de
    * produzir, nunca uma foto de antes dela.
@@ -934,8 +933,7 @@ export class ProcessoSeletivoPage {
    * `geracao` é conferida depois de cada await: `gravarPassosAnteriores()`
    * grava vários passos em sequência, e o operador pode trocar de processo
    * no meio da varredura — continuar dali gravaria no rascunho do processo
-   * NOVO por engano (achado do Codex na #486, P1 — o mais sério dos três
-   * desta rodada). Sai calada quando isso acontece, no mesmo silêncio que
+   * NOVO por engano. Sai calada quando isso acontece, no mesmo silêncio que
    * `{ valid: false, messages: [] }` já tem em `gravarEAvancar()`.
    */
   private async publicar(): Promise<void> {
@@ -951,8 +949,7 @@ export class ProcessoSeletivoPage {
     // liberava o stepper e os campos por um instante real: o operador podia
     // navegar, editar e voltar antes da recarga concluir, e a confirmação
     // seguinte comparava contra um checklist que já não descrevia o
-    // rascunho atual (achado do Codex na #486, P1 — a quarta ocorrência de
-    // "estado intermediário tratado como final" nesta Story). Liga antes de
+    // rascunho atual. Liga antes de
     // qualquer espera, a releitura antes da validação inclusive: um segundo clique, ou
     // um clique no stepper, não entra no meio. Solta ao sair — inclusive ao
     // abrir o diálogo de confirmação: a partir dali é a modalidade dele, não
@@ -1118,9 +1115,8 @@ export class ProcessoSeletivoPage {
    * depende de um checklist que só fica correto DEPOIS de
    * `gravarPassosAnteriores()` gravar as correções e `recarregarChecklist()`
    * atualizar o cache — incluí-la na primeira passada recusaria com a foto
-   * de antes da correção e nunca chegaria a gravar nada (achado do Codex na
-   * #486, P1). Passos fora do intervalo desta chamada mantêm o progresso que
-   * já tinham.
+   * de antes da correção e nunca chegaria a gravar nada. Passos fora do
+   * intervalo desta chamada mantêm o progresso que já tinham.
    */
   private validarRascunho(ateIndice = this.store.totalSteps): string[] {
     const pendencias: string[] = [];
@@ -1152,7 +1148,7 @@ export class ProcessoSeletivoPage {
    * não que bate com o que o servidor tem —, e sem esta varredura a
    * publicação confirmava sobre uma edição que nunca chegou ao servidor:
    * publica-se a configuração antiga enquanto o operador acredita publicar
-   * a que acabou de editar (achado do Codex na #486, P1).
+   * a que acabou de editar.
    *
    * Detectar "sujo" seção a seção exigiria um mapeamento de passo para
    * seção do `WizardDraft` que não existe em lugar nenhum do wizard de
@@ -1179,8 +1175,7 @@ export class ProcessoSeletivoPage {
       // Troca de processo em pleno voo — o operador navegou para outro
       // processo enquanto esta varredura sequencial ainda corria. Continuar
       // chamaria persistir() dos passos seguintes contra o rascunho do
-      // processo NOVO, gravando lá por engano (achado do Codex na #486, P1
-      // — o mais sério dos três desta rodada). Sai calada, sem pendência —
+      // processo NOVO, gravando lá por engano. Sai calada, sem pendência —
       // `publicar()` já confere `geracao` de novo ao voltar desta chamada e
       // não prossegue.
       if (geracao !== this.store.geracao()) return [];

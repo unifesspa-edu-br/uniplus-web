@@ -15,7 +15,7 @@ interface DoDItem {
 }
 
 export const coverage: readonly DoDItem[] = [
-  // --- Originais (review PR #3) -----------------------------------
+  // --- Originais -------------------------------------------------
   {
     id: 'allowlist',
     description: 'Token interceptor possui allowlist de URLs',

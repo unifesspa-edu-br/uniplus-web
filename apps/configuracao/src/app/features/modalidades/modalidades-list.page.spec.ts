@@ -81,14 +81,13 @@ describe('ModalidadesListPage', () => {
     await propagate();
   }
 
-  it('CA-01: renderiza código, natureza e status Ativa', async () => {
+  it('CA-01: renderiza código e natureza', async () => {
     await flushLista([AC, V]);
     fixture.detectChanges();
     const texto = fixture.nativeElement.textContent as string;
     expect(component['modalidadesFiltradas']()).toHaveLength(2);
     expect(texto).toContain('AC');
     expect(texto).toContain('Ampla concorrência');
-    expect(texto).toContain('Ativa');
   });
 
   it('CA-01: chips de natureza contam por token e filtram client-side', async () => {
@@ -111,6 +110,24 @@ describe('ModalidadesListPage', () => {
     await flushLista([AC, V]);
     expect(component['referenciadaPor']('AC').map((m) => m.codigo)).toEqual(['V']);
     expect(component['referenciadaPor']('V')).toEqual([]);
+  });
+
+  it('CA-04/CA-06: botão e diálogo falam em remover, não em inativar', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+    const botao = fixture.nativeElement.querySelector(
+      'button[aria-label="Remover modalidade V"]',
+    ) as HTMLButtonElement | null;
+    expect(botao?.getAttribute('data-tooltip')).toBe('Remover modalidade');
+
+    component['pedirRemocao'](V);
+    fixture.detectChanges();
+    const dialogo = (
+      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
+    ).find((d) => d.textContent?.includes('soft-delete')) as HTMLElement;
+    expect(dialogo.textContent).toContain('Remover modalidade');
+    expect(dialogo.textContent).toContain('é removida (soft-delete)');
+    expect(dialogo.textContent).not.toMatch(/inativ/i);
   });
 
   it('ModalidadeRemocaoDialog_BloqueiaQuandoReferenciada: sem DELETE quando há dependente', async () => {
@@ -159,7 +176,23 @@ describe('ModalidadesListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Modalidades de concorrência, com natureza, composição de vagas, remanejamento e situação',
+      'Modalidades de concorrência, com natureza, composição de vagas, remanejamento e modalidades que a referenciam',
     );
+  });
+
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual([
+      'Código',
+      'Natureza',
+      'Composição de vagas',
+      'Remanejamento',
+      'Referenciada por',
+      'Ações',
+    ]);
   });
 });

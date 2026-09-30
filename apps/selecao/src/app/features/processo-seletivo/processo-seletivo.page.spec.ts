@@ -350,8 +350,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
   /**
    * `page.nextOrPublish()` aguardado em todo teste deste describe: `publicar()`
    * agora grava de novo os passos anteriores e recarrega o checklist da
-   * Revisão ANTES de validar (achado do Codex na #486, P1 — ver o
-   * comentário de `publicar()`), o que introduz pontos `await` reais que
+   * Revisão ANTES de validar, o que introduz pontos `await` reais que
    * não existiam quando `validarRascunho()` era a primeira coisa a rodar.
    */
   it('recusa publicar rascunho vazio alcançado por salto de passo', async () => {
@@ -432,7 +431,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
    * pelo "avançar" que dispara `persistir()` de novo. Sem `gravarPassosAn-
    * teriores()`, `validarRascunho()` aprovaria o rascunho local (está
    * bem-formado) e a publicação confirmaria sobre uma edição que nunca
-   * chegou ao servidor (achado do Codex na #486, P1).
+   * chegou ao servidor.
    */
   it('grava de novo um passo anterior antes de publicar, mesmo sem editar via avançar', async () => {
     const { fixture, page, store } = montar();
@@ -974,8 +973,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
    * A Revisão fica de fora da primeira passada de `validarRascunho()`
    * porque seu checklist pode estar desatualizado — mas sem recarregá-lo
    * entre gravar de novo e a segunda passada, `validate()` recusaria com a
-   * foto de antes da correção mesmo depois de ela já ter sido gravada
-   * (achado do Codex na #486, P1).
+   * foto de antes da correção mesmo depois de ela já ter sido gravada.
    */
   it('recarrega o checklist da Revisão entre gravar de novo e validar, antes de publicar', async () => {
     const { fixture, page, store } = montar();
@@ -1014,9 +1012,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
    * validar de novo) ainda não acabou. Sem uma trava que cubra a
    * orquestração inteira, o intervalo entre um passo terminar e a recarga
    * do checklist começar liberava o stepper e os campos por um instante
-   * real: o operador podia navegar e editar antes da recarga concluir
-   * (achado do Codex na #486, P1 — a quarta ocorrência de "estado
-   * intermediário tratado como final" nesta Story).
+   * real: o operador podia navegar e editar antes da recarga concluir.
    */
   it('mantém a edição e a navegação travadas durante toda a orquestração de publicar, não só em cada passo isolado', async () => {
     const { fixture, page, store } = montar();
@@ -1060,8 +1056,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
    * `gravarPassosAnteriores()` grava vários passos em sequência — se o
    * operador trocar de processo em pleno voo (`geracao` muda), continuar a
    * varredura chamaria `persistir()` dos passos seguintes contra o
-   * rascunho do processo NOVO, gravando lá por engano (achado do Codex na
-   * #486, P1 — o mais sério dos três desta rodada).
+   * rascunho do processo NOVO, gravando lá por engano.
    */
   it('para a varredura sem gravar no processo errado quando geracao muda em pleno voo', async () => {
     const { fixture, page, store } = montar();

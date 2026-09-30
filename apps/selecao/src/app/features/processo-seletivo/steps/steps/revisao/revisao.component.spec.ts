@@ -297,7 +297,7 @@ describe('RevisaoStepComponent', () => {
      * O checklist legal foi avaliado para a data de referência de QUANDO ele
      * carregou — se o operador muda o período depois, sem recarregar,
      * `validate()` não pode aprovar um checklist que já não corresponde ao
-     * que vai ser publicado (achado do Codex na #486).
+     * que vai ser publicado.
      */
     it('recusa quando a data de referência mudou depois do último carregamento do checklist legal', async () => {
       prepararCamposLocais();
@@ -442,9 +442,7 @@ describe('RevisaoStepComponent', () => {
     /**
      * O `POST` já publicou de verdade quando esta releitura roda — se o
      * snapshot falhar por um blip transitório, o processo continua
-     * publicado no servidor, e o rascunho não pode seguir parecendo editável
-     * (achado do Codex na #486: perder a hidratação aqui reabriria os
-     * controles de um processo já imutável).
+     * publicado no servidor, e o rascunho não pode seguir parecendo editável.
      */
     it('hidrata o detalhe publicado mesmo quando a releitura do snapshot falha', async () => {
       prepararCamposLocais();
@@ -474,9 +472,7 @@ describe('RevisaoStepComponent', () => {
      * mostra `rascunho`, um status que só é consistente ANTES da publicação.
      * Atraso de propagação (réplica desatualizada) ou falha real de aplicar:
      * as duas exigem manter a tela travada, não tratar o status desatualizado
-     * como se fosse a verdade definitiva (achado do Codex na #486, P1 — a
-     * mesma família de "estado intermediário tratado como final" que já
-     * apareceu nesta frente).
+     * como se fosse a verdade definitiva.
      */
     it('mantém a tela travada quando a releitura pós-204 ainda mostra rascunho', async () => {
       prepararCamposLocais();
