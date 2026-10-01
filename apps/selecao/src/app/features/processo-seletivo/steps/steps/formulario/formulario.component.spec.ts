@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
 
 const BASE = 'http://localhost:5000';
@@ -123,5 +124,31 @@ describe('FormularioStepComponent em consulta', () => {
   it('lê a apuração da idade pelo rótulo da âncora e a data no formato brasileiro', () => {
     expect(valor('Apurar a idade em')).toEqual(['Uma data fixa']);
     expect(valor('Data de apuração')).toEqual(['15/01/2027']);
+  });
+  it('avisa do desempate por maior idade sem apuração e leva ao passo Desempate', () => {
+    expect(host.querySelector('#form-desempate-sem-apuracao')).toBeNull();
+
+    // O rascunho só aceita edição fora de consulta.
+    store.remoteSnapshot.set({ status: 'rascunho' } as never);
+    store.patchSection('desempate', [
+      {
+        regraCodigo: 'DESEMPATE-MAIOR-IDADE',
+        regraVersao: 'v1',
+        etapaRef: '',
+        idadeMinima: '',
+        fato: '',
+        operador: '',
+        valor: '',
+        areas: [],
+      },
+    ]);
+    store.patchObjectSection('formulario', {
+      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+    });
+    fixture.detectChanges();
+
+    expect(host.querySelector('#form-desempate-sem-apuracao')).not.toBeNull();
+    (host.querySelector('#form-ir-desempate') as HTMLButtonElement).click();
+    expect(store.currentStep()).toBe(PASSO_DESEMPATE);
   });
 });
