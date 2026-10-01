@@ -2,6 +2,7 @@ import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import type { FatoColetadoInput } from '@uniplus/shared-data/selecao';
 
 import type {
+  CriterioDesempateConfigurado,
   ExigenciasDoRascunho,
   FatoColetadoConfig,
   FormularioDeInscricao,
@@ -9,6 +10,7 @@ import type {
   WizardDraft,
 } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
+import { desempateUsaDataDeNascimento, FATO_DATA_NASCIMENTO } from '../desempate/desempate-por-idade';
 
 /**
  * O formulário de inscrição do certame: o que o candidato lê no topo e os campos que preenche.
@@ -262,8 +264,12 @@ export function problemasDoFormulario(
 export function camposSemUsoDeclarado(
   formulario: FormularioDeInscricao,
   exigencias: ExigenciasDoRascunho,
+  desempate: readonly CriterioDesempateConfigurado[] = [],
 ): readonly FatoColetadoConfig[] {
   const usados = new Set(fatosCitadosPelasExigencias(exigencias));
+
+  // O desempate por maior idade ordena pela data de nascimento: é a finalidade que o dado tem.
+  if (desempateUsaDataDeNascimento(desempate)) usados.add(FATO_DATA_NASCIMENTO);
 
   for (const config of formulario.derivacao) {
     for (const codigo of fatosCitadosPelaDerivacao(config.regras)) {

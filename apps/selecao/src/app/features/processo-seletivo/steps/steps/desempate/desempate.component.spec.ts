@@ -237,20 +237,48 @@ describe('DesempateStepComponent', () => {
     expect(host.querySelector('button')).toBeNull();
   });
 
-  it('avisa que o maior idade não tem idade apurada e leva ao Formulário', () => {
-    expect(componente.idadeSemApuracao()).toBe(false);
+  it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {
+    expect(componente.semDataDeNascimento()).toBe(false);
 
-    store.patchSection('desempate', [criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' })]);
-    expect(store.draft().formulario.referenciaTemporal.tipo).toBe('');
-    expect(componente.idadeSemApuracao()).toBe(true);
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+    ]);
+    expect(componente.semDataDeNascimento()).toBe(true);
 
     componente.irParaFormulario();
     expect(store.currentStep()).toBe(PASSO_FORMULARIO);
 
     store.patchObjectSection('formulario', {
+      fatos: [
+        {
+          fatoCodigo: 'DATA_NASCIMENTO',
+          ordem: 1,
+          rotulo: 'Data de nascimento',
+          tipoRenderizacao: 'DATA',
+          obrigatorio: true,
+          precondicao: null,
+        },
+      ],
+    });
+    expect(componente.semDataDeNascimento()).toBe(false);
+  });
+
+  it('não exige a apuração da idade do maior idade, só do idoso', () => {
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+    ]);
+    expect(store.draft().formulario.referenciaTemporal.tipo).toBe('');
+    expect(componente.idosoSemApuracao()).toBe(false);
+
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
+    ]);
+    expect(componente.idosoSemApuracao()).toBe(true);
+
+    store.patchObjectSection('formulario', {
       referenciaTemporal: { tipo: 'FIM_INSCRICAO', data: '', faseCodigo: '' },
     });
-    expect(componente.idadeSemApuracao()).toBe(false);
+    expect(componente.idosoSemApuracao()).toBe(false);
   });
 
   it('é válido sem nenhum critério (desempate é opcional)', () => {

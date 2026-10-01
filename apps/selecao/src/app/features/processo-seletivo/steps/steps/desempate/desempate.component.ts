@@ -55,7 +55,8 @@ import {
   rotuloDaRegraEscolhida,
 } from '../classificacao/regra-escolhivel';
 import {
-  desempatePorIdadeSemApuracao,
+  desempateIdosoSemApuracao,
+  desempateSemDataDeNascimento,
   PASSO_FORMULARIO,
 } from './desempate-por-idade';
 import {
@@ -399,13 +400,20 @@ export class DesempateStepComponent {
   readonly criterios = computed(() => this.store.draft().desempate);
 
   /**
-   * O critério de maior idade declarado sem que o formulário apure a idade. Em consulta não há
-   * o que corrigir, e o aviso só ofereceria uma ação a um processo que não aceita edição.
+   * O desempate por maior idade sem a data de nascimento no formulário. Em consulta não há o que
+   * corrigir, e o aviso só ofereceria uma ação a um processo que não aceita edição.
    */
-  readonly idadeSemApuracao = computed(
+  readonly semDataDeNascimento = computed(
     () =>
       !this.store.emConsulta() &&
-      desempatePorIdadeSemApuracao(
+      desempateSemDataDeNascimento(this.criterios(), this.store.draft().formulario.fatos),
+  );
+
+  /** O desempate por idoso sem a apuração da idade no formulário. */
+  readonly idosoSemApuracao = computed(
+    () =>
+      !this.store.emConsulta() &&
+      desempateIdosoSemApuracao(
         this.criterios(),
         this.store.draft().formulario.referenciaTemporal,
       ),

@@ -42,17 +42,34 @@
   </div>
 }
 
-@if (idadeSemApuracao()) {
-  <div class="alert alert--warning" role="status" id="desemp-idade-sem-apuracao">
+@if (semDataDeNascimento()) {
+  <div class="alert alert--warning" role="status" id="desemp-sem-data-nascimento">
     <p>
-      O desempate por maior idade precisa da data de nascimento do candidato, e o formulário de
-      inscrição está em "Não apura idade". Sem declarar em que instante a idade é apurada, o
-      critério não tem com o que desempatar.
+      O desempate por maior idade ordena pela data de nascimento do candidato, e o formulário de
+      inscrição não a coleta. Sem esse dado, o critério não tem com o que desempatar.
     </p>
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      id="desemp-ir-formulario"
+      id="desemp-ir-formulario-nascimento"
+      (click)="irParaFormulario()"
+    >
+      Ir para Formulário e acrescentar a data de nascimento
+    </button>
+  </div>
+}
+
+@if (idosoSemApuracao()) {
+  <div class="alert alert--warning" role="status" id="desemp-idoso-sem-apuracao">
+    <p>
+      O desempate por idoso compara a faixa etária do candidato, e o formulário de inscrição está
+      em "Não apura idade". Sem declarar em que instante a idade é apurada, o critério não tem
+      como avaliar quem é idoso.
+    </p>
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      id="desemp-ir-formulario-apuracao"
       (click)="irParaFormulario()"
     >
       Ir para Formulário e declarar a apuração da idade
