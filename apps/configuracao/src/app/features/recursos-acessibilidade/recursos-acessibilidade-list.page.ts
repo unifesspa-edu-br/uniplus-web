@@ -43,7 +43,6 @@ import {
 import {
   AlertComponent,
   SkeletonComponent,
-  TagComponent,
   EmptyStateComponent,
   DrawerComponent,
   SpinnerComponent,
@@ -91,7 +90,6 @@ const PAGE_SIZE = 50;
   imports: [
     AlertComponent,
     SkeletonComponent,
-    TagComponent,
     EmptyStateComponent,
     DrawerComponent,
     SpinnerComponent,
@@ -174,7 +172,6 @@ const PAGE_SIZE = 50;
                 <tr>
                   <th scope="col">Nome</th>
                   <th scope="col">Descrição</th>
-                  <th scope="col">Status</th>
                   <th scope="col"><span class="sr-only">Ações</span></th>
                 </tr>
               </thead>
@@ -192,9 +189,6 @@ const PAGE_SIZE = 50;
                     <td data-label="Descrição">
                       {{ recursoAcessibilidade.descricao }}
                     </td>
-                    <td data-label="Status">
-                      <ui-tag variant="success">Ativa</ui-tag>
-                    </td>
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
@@ -206,13 +200,13 @@ const PAGE_SIZE = 50;
                         (triggered)="abrirEdicao(recursoAcessibilidade)"
                       />
                       <ui-icon-button
-                        icon="pi-power-off"
+                        icon="pi-trash"
                         [accessibleName]="
-                          'Inativar recurso de acessibilidade ' + recursoAcessibilidade.nome
+                          'Remover recurso de acessibilidade ' + recursoAcessibilidade.nome
                         "
-                        tooltip="Inativar recurso de acessibilidade"
+                        tooltip="Remover recurso de acessibilidade"
                         [isDisabled]="loading() || submitting()"
-                        (triggered)="abrirInativarRecurso(recursoAcessibilidade)"
+                        (triggered)="abrirRemoverRecurso(recursoAcessibilidade)"
                       />
                     </td>
                   </tr>
@@ -330,14 +324,14 @@ const PAGE_SIZE = 50;
     </ui-drawer>
     <ui-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar recurso de acessibilidade?"
+      heading="Remover recurso de acessibilidade?"
       (closed)="confirmOpen.set(false)"
     >
       <p>
-        Você está prestes a inativar o recurso <strong>{{ recursoParaInativar()?.nome }}.</strong>
+        Você está prestes a remover o recurso <strong>{{ recursoParaRemover()?.nome }}.</strong>
       </p>
       <p>
-        A inativação impede novos editais de utilizá-lo, mas
+        A remoção impede novos editais de utilizá-lo, mas
         <strong>não altera ofertas já congeladas</strong>
         — a cópia por valor de cada processo permanece íntegra.
       </p>
@@ -345,8 +339,8 @@ const PAGE_SIZE = 50;
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="inativarConfirmado()">
-          Confirmar inativação
+        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
+          Confirmar remoção
         </button>
       </div>
     </ui-dialog>
@@ -429,7 +423,7 @@ export class RecursosAcessibilidadeListPage {
   protected readonly saving = signal(false);
   readonly drawerOpen = signal(false);
   readonly submitting = signal(false);
-  readonly recursoParaInativar = signal<RecursoAcessibilidadeDto | null>(null);
+  readonly recursoParaRemover = signal<RecursoAcessibilidadeDto | null>(null);
   readonly confirmOpen = signal(false);
 
   readonly form = new FormGroup<RecursoAcessibilidadeForm>({
@@ -495,8 +489,8 @@ export class RecursosAcessibilidadeListPage {
     this.formOpen.set(true);
   }
 
-  abrirInativarRecurso(recurso: RecursoAcessibilidadeDto): void {
-    this.recursoParaInativar.set(recurso);
+  abrirRemoverRecurso(recurso: RecursoAcessibilidadeDto): void {
+    this.recursoParaRemover.set(recurso);
     this.confirmOpen.set(true);
   }
 
@@ -655,10 +649,10 @@ export class RecursosAcessibilidadeListPage {
   private handleRemoverResult(result: ApiResult<void>): void {
     this.saving.set(false);
     if (result.ok) {
-      this.notifications.success('Recurso de acessibilidade inativado');
+      this.notifications.success('Recurso de acessibilidade removido');
       this.formOpen.set(false);
       this.confirmOpen.set(false);
-      this.recursoParaInativar.set(null);
+      this.recursoParaRemover.set(null);
       this.recarregar();
       return;
     }
@@ -679,8 +673,8 @@ export class RecursosAcessibilidadeListPage {
     }
   }
 
-  protected inativarConfirmado(): void {
-    const recurso = this.recursoParaInativar();
+  protected removerConfirmado(): void {
+    const recurso = this.recursoParaRemover();
     if (recurso === null || this.saving()) {
       return;
     }

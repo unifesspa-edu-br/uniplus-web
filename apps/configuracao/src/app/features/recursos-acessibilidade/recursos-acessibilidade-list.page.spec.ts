@@ -63,9 +63,9 @@ describe('RecursosAcessibilidadeListPage', () => {
     ) as HTMLButtonElement;
   }
 
-  function getInativarButtonEl(): HTMLButtonElement {
+  function getRemoverButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions button[aria-label^="Inativar recurso de acessibilidade"]',
+      'td.table-responsive__actions button[aria-label^="Remover recurso de acessibilidade"]',
     ) as HTMLButtonElement;
   }
 
@@ -258,13 +258,13 @@ describe('RecursosAcessibilidadeListPage', () => {
     await flushRecarregarLista([recurso_acessibilidade]);
   });
 
-  it('desabilita as ações da linha (Editar e Inativar) durante a recarga da lista', async () => {
+  it('desabilita as ações da linha (Editar e Remover) durante a recarga da lista', async () => {
     // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
     await flushLista([recurso_acessibilidade_seed]);
     fixture.detectChanges();
     expect(component['loading']()).toBe(false);
     expect(getEditarButtonEl().disabled).toBe(false);
-    expect(getInativarButtonEl().disabled).toBe(false);
+    expect(getRemoverButtonEl().disabled).toBe(false);
 
     // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
     component['tentarNovamente']();
@@ -272,7 +272,7 @@ describe('RecursosAcessibilidadeListPage', () => {
     fixture.detectChanges();
     expect(component['loading']()).toBe(true);
     expect(getEditarButtonEl().disabled).toBe(true);
-    expect(getInativarButtonEl().disabled).toBe(true);
+    expect(getRemoverButtonEl().disabled).toBe(true);
 
     // Encerra o GET pendente para o controller.verify() do afterEach.
     controller
@@ -291,5 +291,13 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Recursos de acessibilidade, com descrição e situação de uso',
     );
+  });
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([recurso_acessibilidade_seed]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual(['Nome', 'Descrição', 'Ações']);
   });
 });
