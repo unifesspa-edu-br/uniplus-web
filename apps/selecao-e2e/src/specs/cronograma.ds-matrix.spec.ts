@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
@@ -38,6 +38,19 @@ const FASES_CANONICAS = [
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: true,
+    origemData: 'PROPRIA',
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
+  {
+    id: '01960000-0000-7000-0000-0000000000c2',
+    codigo: 'AVALIACAO',
+    nome: 'Avaliação',
+    descricao: null,
+    donoTipico: 'CEPS',
+    agrupaEtapas: false,
+    permiteComplementacao: false,
+    baseLegal: null,
+    coletaInscricao: false,
     origemData: 'PROPRIA',
     criadoEm: '2026-08-30T12:00:00Z',
   },
@@ -282,7 +295,7 @@ test.describe('Cronograma — matriz DS @ds', () => {
         const topoDoInput = (campo: Element) =>
           campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
         const campo = elemento
-          .querySelector('[id^="fase-doc-obs-legal-"]')
+          .querySelector('[id*="-doc-obs-legal-"]')
           ?.closest('.form-field') as Element;
         const linha = campo.getBoundingClientRect().top;
         const referencia = topoDoInput(campo) ?? 0;
@@ -388,6 +401,60 @@ test.describe('Cronograma — matriz DS @ds', () => {
     await expect(filtro).toHaveAccessibleDescription(new RegExp(aviso));
     await expect(page.locator('.doc-conferencia__filtro [role="status"]')).toContainText(aviso);
     await expect(page.locator('.doc-conferencia__linha')).toHaveCount(0);
+  });
+
+  /**
+   * Cada fase aberta embute um passo da fase (web#923): com duas abertas, nenhum id se repete e
+   * todo `for`, `aria-describedby` e `aria-controls` aponta para um elemento da própria fase.
+   */
+  test('não repete id nem aponta para a fase vizinha com duas fases abertas', async ({ page }) => {
+    await acrescentarFase(page, 'Inscrição');
+    await acrescentarFase(page, 'Avaliação');
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await exigirDocumento(page);
+    await page.getByRole('button', { name: '2. Avaliação' }).click();
+    const fases = page.locator('sel-step-fase');
+    await expect(fases).toHaveCount(2);
+    await exigirDocumento(page, fases.nth(1));
+
+    const problemas = await page.evaluate(() => {
+      const ids = Array.from(document.querySelectorAll('[id]'), (elemento) => elemento.id);
+      const repetidos = ids.filter((id, posicao) => ids.indexOf(id) !== posicao);
+      const orfas = Array.from(document.querySelectorAll('sel-step-fase')).flatMap((fase) =>
+        Array.from(fase.querySelectorAll('[for], [aria-describedby], [aria-controls]'))
+          .flatMap((elemento) =>
+            ['for', 'aria-describedby', 'aria-controls'].flatMap(
+              (atributo) => elemento.getAttribute(atributo)?.split(/\s+/) ?? [],
+            ),
+          )
+          .filter((id) => id.startsWith('fase-') && fase.querySelector(`[id="${id}"]`) === null),
+      );
+      return { repetidos, orfas };
+    });
+
+    expect(problemas.repetidos, 'ids duplicados na página').toEqual([]);
+    expect(problemas.orfas, 'referências que saem da própria fase').toEqual([]);
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
+
+  /**
+   * O botão "Remover" sai junto com a linha do documento: o foco não pode cair no corpo da
+   * página (WCAG 2.4.3), e a remoção é anunciada.
+   */
+  test('leva o foco a um ponto estável ao remover o documento exigido', async ({ page }) => {
+    await acrescentarFase(page);
+    await page.getByRole('button', { name: '1. Inscrição' }).click();
+    await exigirDocumento(page);
+
+    await page.getByRole('button', { name: `Remover ${NOME_DOCUMENTO}` }).click();
+
+    await expect(page.locator('.doc-item--exigido')).toHaveCount(0);
+    const seletor = page.getByLabel('Documento a exigir');
+    await expect(seletor).toBeFocused();
+    await expect(seletor).toBeInViewport();
+    await expect(
+      page.locator('[role="status"]', { hasText: 'removido dos documentos' }),
+    ).toHaveText(`${NOME_DOCUMENTO} removido dos documentos exigidos nesta fase.`);
   });
 });
 
@@ -621,18 +688,18 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
   });
 });
 
-/** Acrescenta a única fase do catálogo à linha do tempo. */
-async function acrescentarFase(page: Page): Promise<void> {
-  await page.getByLabel('Fase do catálogo').selectOption({ label: 'Inscrição' });
+/** Acrescenta uma fase do catálogo (Inscrição, por padrão) à linha do tempo. */
+async function acrescentarFase(page: Page, nome = 'Inscrição'): Promise<void> {
+  await page.getByLabel('Fase do catálogo').selectOption({ label: nome });
   await page.getByRole('button', { name: 'Acrescentar à linha do tempo' }).click();
 }
 
-/** Escolhe no seletor da fase aberta o único documento do catálogo e o exige. */
-async function exigirDocumento(page: Page): Promise<void> {
-  const campo = page.getByLabel('Documento a exigir');
+/** Escolhe no seletor da fase aberta (ou da `dentro` dada) o único documento do catálogo e o exige. */
+async function exigirDocumento(page: Page, dentro: Page | Locator = page): Promise<void> {
+  const campo = dentro.getByLabel('Documento a exigir');
   await campo.fill('nome social');
   await page.getByRole('option', { name: NOME_DOCUMENTO }).click();
-  await page.getByRole('button', { name: 'Acrescentar documento' }).click();
+  await dentro.getByRole('button', { name: 'Acrescentar documento' }).click();
 }
 
 /** Ação de acrescentar fase, o campo ao lado dela e a borda do conteúdo do cartão. */

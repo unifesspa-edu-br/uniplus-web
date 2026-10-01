@@ -1965,6 +1965,71 @@ describe('CronogramaStepComponent', () => {
       expect(componente.validate().messages?.join(' ') ?? '').not.toContain('norma');
     });
 
+    describe('alcance da exigência sobre as modalidades ofertadas', () => {
+      const NORMA_RESOLVIDA = [
+        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+      ];
+      const MENSAGEM = 'valer para ao menos uma modalidade';
+
+      function ofertando(...codigos: string[]): void {
+        store.patchObjectSection('vagas', {
+          ofertas: [
+            {
+              ofertaCursoId: 'oferta-1',
+              voBase: '100',
+              pr: '0,5',
+              regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
+              regraDistribuicaoVersao: 'v1',
+              regraAjusteCodigo: 'AJUSTE-PADRAO',
+              regraAjusteVersao: 'v1',
+              referenciaReservaDemograficaId: 'ref-1',
+              modalidades: codigos.map((codigo) => ({ id: `id-${codigo}`, codigo })),
+              quadro: [],
+            },
+          ],
+        });
+      }
+
+      function gatilhoDeModalidade(operador: string, valor: string): Record<string, unknown> {
+        return {
+          aplicabilidade: 'CONDICIONAL',
+          condicoes: [{ clausula: 0, ordem: 0, fato: 'MODALIDADE', operador, valor }],
+        };
+      }
+
+      function acusaOrfa(): boolean {
+        return (componente.validate().messages ?? []).some((m) => m.includes(MENSAGEM));
+      }
+
+      it('acusa o gatilho IGUAL que não alcança nenhuma modalidade ofertada', () => {
+        ofertando('LB_Q');
+        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('IGUAL', '"LB_PPI"'));
+
+        expect(acusaOrfa()).toBe(true);
+      });
+
+      it('não acusa o gatilho IGUAL que alcança uma modalidade ofertada', () => {
+        ofertando('LB_Q', 'LB_PPI');
+        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('IGUAL', '"LB_PPI"'));
+
+        expect(acusaOrfa()).toBe(false);
+      });
+
+      it('acusa o gatilho NAO_EM que exclui toda modalidade ofertada', () => {
+        ofertando('LB_Q');
+        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('NAO_EM', '["LB_Q"]'));
+
+        expect(acusaOrfa()).toBe(true);
+      });
+
+      it('não acusa o gatilho NAO_EM que deixa passar alguma modalidade ofertada', () => {
+        ofertando('LB_Q', 'LB_PPI');
+        comExigenciaDeclarada(NORMA_RESOLVIDA, gatilhoDeModalidade('NAO_EM', '["LB_Q"]'));
+
+        expect(acusaOrfa()).toBe(false);
+      });
+    });
+
     /**
      * A recusa de complementação é do passo do CRONOGRAMA, não da superfície da fase: aquela
      * é embutida com `faseFixada` e o `validate()` dela nunca é chamado pela página. Escrita

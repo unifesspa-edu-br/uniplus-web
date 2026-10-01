@@ -48,6 +48,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   effect,
   inject,
@@ -55,6 +56,7 @@ import {
   linkedSignal,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
@@ -724,6 +726,9 @@ export class FaseStepComponent {
     if (id === '') return;
 
     this.alternarExigencia(id, true);
+    // O aviso de que ele saiu deixou de valer: zerado, a próxima remoção do mesmo documento
+    // muda o texto da região de status e volta a ser anunciada.
+    this.avisoDaRemocao.set('');
     // O documento recém-exigido ainda não declarou nada: os campos dele abrem já à mostra.
     this.alternarEdicao(id, true);
     // O campo volta ao estado neutro: o próximo documento começa do zero.
@@ -734,10 +739,29 @@ export class FaseStepComponent {
     this.documentoAAcrescentar.set(id);
   }
 
-  /** Tira o documento desta fase; das outras, só se ele não valer em nenhuma mais. */
-  removerDocumento(id: string): void {
+  /** O aviso de que o documento saiu da fase; vazio até a primeira remoção e ao trocar de fase. */
+  readonly avisoDaRemocao = linkedSignal({ source: this.faseAberta, computation: () => '' });
+
+  private readonly hospedeiroDoSeletor = viewChild('seletorDeDocumento', { read: ElementRef });
+
+  /**
+   * Tira o documento desta fase; das outras, só se ele não valer em nenhuma mais.
+   *
+   * O botão focado sai junto com a linha, e o foco cairia no corpo da página. Ele vai então para o
+   * seletor do público, que continua na tela enquanto houver documento, ou para o campo de
+   * "Documento a exigir", que é fixo; a região de status diz o que saiu.
+   */
+  removerDocumento(id: string, seletorDoPublico: HTMLElement): void {
+    const nome = this.resumos().find((resumo) => resumo.id === id)?.nome ?? '';
     this.alternarExigencia(id, false);
     this.alternarEdicao(id, false);
+    this.avisoDaRemocao.set(`${nome} removido dos documentos exigidos nesta fase.`);
+
+    const destino =
+      this.resumos().length > 0
+        ? seletorDoPublico
+        : this.hospedeiroDoSeletor()?.nativeElement.querySelector('input');
+    destino?.focus();
   }
 
   /**
@@ -818,12 +842,12 @@ export class FaseStepComponent {
   }
 
   /**
-   * O id de um elemento da conferência, único por fase: o Cronograma embute um passo destes por
-   * fase aberta, e com id fixo o rótulo e o `aria-controls` da segunda fase apontariam para
-   * os da primeira.
+   * O id de um elemento desta fase, único por instância: o Cronograma embute um passo destes por
+   * fase aberta, e com id fixo o rótulo, o `aria-describedby` e o `aria-controls` da segunda fase
+   * apontariam para os da primeira. Todo id do template passa por aqui.
    */
-  idDaConferencia(sufixo: string): string {
-    return `fase-${this.faseDoRascunho()?.codigo ?? ''}-doc-${sufixo}`;
+  idDaFase(sufixo: string): string {
+    return `fase-${this.faseDoRascunho()?.codigo ?? ''}-${sufixo}`;
   }
 
   /**
@@ -1232,7 +1256,12 @@ export class FaseStepComponent {
   readonly modalidadesEscolhiveis = computed<readonly UiComboboxGroup[]>(() => {
     const codigos = this.modalidades();
     if (codigos.length === 0) return [];
-    return [{ label: 'Modalidades do quadro de vagas', options: codigos.map((codigo) => ({ value: codigo, label: codigo })) }];
+    return [
+      {
+        label: 'Modalidades do quadro de vagas',
+        options: codigos.map((codigo) => ({ value: codigo, label: codigo })),
+      },
+    ];
   });
 
   /**
@@ -1360,7 +1389,9 @@ export class FaseStepComponent {
   }
 
   /** As comparações que o domínio daquele fato admite. */
-  operadoresDaCondicao(codigo: string): readonly { readonly valor: string; readonly rotulo: string }[] {
+  operadoresDaCondicao(
+    codigo: string,
+  ): readonly { readonly valor: string; readonly rotulo: string }[] {
     const fato = this.fatoDaCondicao(codigo);
     return fato === undefined ? [] : operadoresDoFato(fato);
   }
@@ -1452,7 +1483,10 @@ export class FaseStepComponent {
     const fato = atual === undefined ? undefined : this.fatoDaCondicao(atual.fato);
     if (atual === undefined || fato === undefined) return;
 
-    this.escreverGatilho(id, comCondicaoTrocada(exigencia, indice, comOperador(atual, fato, operador)));
+    this.escreverGatilho(
+      id,
+      comCondicaoTrocada(exigencia, indice, comOperador(atual, fato, operador)),
+    );
   }
 
   escreverValorDaCondicao(id: string, indice: number, valor: string): void {
@@ -1472,7 +1506,10 @@ export class FaseStepComponent {
     const atual = exigencia.condicoes[indice];
     if (atual === undefined) return;
 
-    this.escreverGatilho(id, comCondicaoTrocada(exigencia, indice, comValoresDeLista(atual, valores)));
+    this.escreverGatilho(
+      id,
+      comCondicaoTrocada(exigencia, indice, comValoresDeLista(atual, valores)),
+    );
   }
 
   private escreverGatilho(id: string, exigencia: ExigenciaDeDocumento): void {
@@ -1524,7 +1561,6 @@ export class FaseStepComponent {
         (problema) => `${nomes.get(fase.faseCanonicaId) ?? fase.codigo}: ${problema.mensagem}`,
       ),
     );
-
 
     return mensagens.length === 0 ? { valid: true } : { valid: false, messages: mensagens };
   }

@@ -211,6 +211,14 @@ describe('FaseStepComponent', () => {
 
     detectar();
 
+    atenderCatalogos();
+    detectar();
+  });
+
+  afterEach(() => controller.verify());
+
+  /** Responde ao que os catálogos pedem quando um passo abre. */
+  function atenderCatalogos(): void {
     for (const requisicao of controller.match(() => true)) {
       const { url } = requisicao.request;
       if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
@@ -221,10 +229,7 @@ describe('FaseStepComponent', () => {
       else if (url.includes('regras')) requisicao.flush(REGRAS);
       else requisicao.flush([]);
     }
-    detectar();
-  });
-
-  afterEach(() => controller.verify());
+  }
 
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -312,15 +317,15 @@ describe('FaseStepComponent', () => {
     });
 
     it('mostra a publicação que a fase declara, não o rótulo de escolha', () => {
-      expect(selecionado('fase-produto-ato-0')).toBe('RESULTADO_FINAL');
+      expect(selecionado('fase-AVALIACAO-produto-ato-0')).toBe('RESULTADO_FINAL');
     });
 
     it('mostra o papel que a publicação declara', () => {
-      expect(selecionado('fase-produto-papel-0')).toBe('DEFINITIVO');
+      expect(selecionado('fase-AVALIACAO-produto-papel-0')).toBe('DEFINITIVO');
     });
 
     it('mostra a banca que a fase requer', () => {
-      expect(selecionado('fase-banca-0')).toBe(ID_BANCA_HETERO);
+      expect(selecionado('fase-AVALIACAO-banca-0')).toBe(ID_BANCA_HETERO);
     });
 
     it('mostra a regra de recurso escolhida', async () => {
@@ -349,8 +354,8 @@ describe('FaseStepComponent', () => {
       await proximoPasso();
       detectar();
 
-      expect(selecionado('fase-regra')).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
-      expect(selecionado('fase-ancora')).toBe('RESULTADO_PRELIMINAR');
+      expect(selecionado('fase-AVALIACAO-regra')).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
+      expect(selecionado('fase-AVALIACAO-ancora')).toBe('RESULTADO_PRELIMINAR');
     });
   });
 
@@ -526,7 +531,7 @@ describe('FaseStepComponent', () => {
     await proximoPasso();
     detectar();
 
-    expect(nativo.querySelector<HTMLSelectElement>('#fase-regra')?.disabled).toBe(true);
+    expect(nativo.querySelector<HTMLSelectElement>('#fase-AVALIACAO-regra')?.disabled).toBe(true);
   });
 
   describe('bancas requeridas', () => {
@@ -809,7 +814,8 @@ describe('FaseStepComponent', () => {
         linha.querySelector(`td[data-label="${rotulo}"]`)?.textContent?.replace(/\s+/g, ' ').trim();
       const botaoDeEdicao = () =>
         nativo.querySelector<HTMLButtonElement>('.doc-conferencia__alternar');
-      const campoDeEntrega = () => nativo.querySelector(`#fase-doc-obrigatorio-${ID_CPF}`);
+      const campoDeEntrega = () =>
+        nativo.querySelector(`#fase-AVALIACAO-doc-obrigatorio-${ID_CPF}`);
 
       beforeEach(() => comCronograma(fase({})));
 
@@ -1112,7 +1118,7 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      const rotulo = nativo.querySelector(`label[for="fase-doc-obs-legal-${ID_CPF}-0"]`);
+      const rotulo = nativo.querySelector(`label[for="fase-AVALIACAO-doc-obs-legal-${ID_CPF}-0"]`);
       const normalizar = (texto: string | null | undefined) => texto?.replace(/\s+/g, ' ').trim();
       expect(normalizar(rotulo?.textContent)).toBe('Observação sobre a norma (opcional)');
 
@@ -1175,7 +1181,7 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      componente.removerDocumento(ID_CPF);
+      componente.removerDocumento(ID_CPF, document.body);
       detectar();
 
       expect(componente.documentosDaFase()).toEqual([]);
@@ -1431,6 +1437,126 @@ describe('FaseStepComponent', () => {
 
       expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
       expect(componente.exigenciaDoDocumento(ID_CPF).obrigatorio).toBe(false);
+    });
+  });
+
+  describe('ids únicos por instância', () => {
+    /** Um passo por fase, como o Cronograma os embute. */
+    function duasFases() {
+      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+      const criar = (faseCanonicaId: string) => {
+        const fixture = TestBed.createComponent(FaseStepComponent);
+        fixture.componentRef.setInput('faseFixada', faseCanonicaId);
+        fixture.detectChanges();
+        atenderCatalogos();
+        fixture.detectChanges();
+        return fixture;
+      };
+      const avaliacao = criar(ID_AVALIACAO);
+      const recursos = criar(ID_RECURSOS);
+      for (const fixture of [avaliacao, recursos]) {
+        const instancia = fixture.componentInstance;
+        instancia.acrescentarProduto();
+        instancia.escolherDocumento(ID_CPF);
+        instancia.acrescentarDocumento();
+        instancia.alternarEdicao(ID_CPF, true);
+        instancia.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 1/2000');
+        fixture.detectChanges();
+      }
+      return [avaliacao, recursos].map((fixture) => fixture.nativeElement as HTMLElement);
+    }
+
+    it('não repete id com duas fases abertas', () => {
+      const raizes = duasFases();
+
+      const ids = raizes.flatMap((raiz) =>
+        Array.from(raiz.querySelectorAll('[id]'), (elemento) => elemento.id),
+      );
+      expect(ids.length).toBeGreaterThan(20);
+      expect(ids.filter((id, posicao) => ids.indexOf(id) !== posicao)).toEqual([]);
+    });
+
+    it('aponta for, aria-describedby e aria-controls para elementos da própria fase', () => {
+      const raizes = duasFases();
+
+      for (const raiz of raizes) {
+        const referencias = Array.from(
+          raiz.querySelectorAll('[for], [aria-describedby], [aria-controls]'),
+        ).flatMap((elemento) =>
+          ['for', 'aria-describedby', 'aria-controls'].flatMap(
+            (atributo) => elemento.getAttribute(atributo)?.split(/\s+/) ?? [],
+          ),
+        );
+        expect(referencias.length).toBeGreaterThan(10);
+        const orfas = referencias.filter(
+          (id) => id !== '' && raiz.querySelector(`[id="${id}"]`) === null,
+        );
+        // O combobox do catálogo tem o próprio gerador; o que não resolve dentro da raiz é dele.
+        expect(orfas.filter((id) => id.startsWith('fase-'))).toEqual([]);
+      }
+    });
+  });
+
+  describe('foco ao remover documento', () => {
+    const ID_RG = '01960000-0000-7000-0000-0000000000f2';
+
+    beforeEach(() => {
+      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+        ...TIPOS_DOCUMENTO,
+        { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
+      ]);
+      comCronograma(fase({}));
+      for (const id of [ID_CPF, ID_RG]) {
+        componente.escolherDocumento(id);
+        componente.acrescentarDocumento();
+      }
+      componente.alternarEdicao(ID_CPF, true);
+      detectar();
+    });
+
+    const remover = () => {
+      const botao = nativo.querySelector<HTMLButtonElement>('.doc-item__row button');
+      botao?.focus();
+      botao?.click();
+      detectar();
+    };
+
+    it('leva o foco ao seletor do público enquanto restar documento', () => {
+      remover();
+
+      expect(componente.documentosDaFase()).toHaveLength(1);
+      expect(document.activeElement).toBe(nativo.querySelector('#fase-AVALIACAO-doc-filtro'));
+    });
+
+    it('leva o foco ao campo "Documento a exigir" ao remover o último', () => {
+      componente.alternarExigencia(ID_RG, false);
+      detectar();
+
+      remover();
+
+      expect(componente.documentosDaFase()).toEqual([]);
+      expect(document.activeElement).toBe(nativo.querySelector('ui-combobox input'));
+    });
+
+    it('anuncia a remoção numa região de status', () => {
+      remover();
+
+      const aviso = nativo.querySelector('p.sr-only[role="status"]');
+      expect(aviso?.textContent).toContain('removido dos documentos exigidos nesta fase');
+    });
+
+    it('anuncia de novo quando o mesmo documento é removido pela segunda vez', () => {
+      const aviso = () => nativo.querySelector('p.sr-only[role="status"]')?.textContent?.trim();
+      remover();
+      expect(aviso()).toBe('CPF removido dos documentos exigidos nesta fase.');
+
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+      expect(aviso(), 'com o CPF de volta, o aviso antigo não vale mais').toBe('');
+
+      remover();
+      expect(aviso()).toBe('CPF removido dos documentos exigidos nesta fase.');
     });
   });
 });
