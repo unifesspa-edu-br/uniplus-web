@@ -4,7 +4,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { By } from '@angular/platform-browser';
 import {
   CONFIGURACAO_BASE_PATH,
   CondicaoAtendimentoDto,
@@ -65,9 +64,9 @@ describe('CondicoesAtendimentoListPage', () => {
     ) as HTMLButtonElement;
   }
 
-  function getInativarButtonEl(): HTMLButtonElement {
+  function getRemoverButtonEl(): HTMLButtonElement {
     return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions button[aria-label^="Inativar condição de atendimento"]',
+      'td.table-responsive__actions button[aria-label^="Remover condição de atendimento"]',
     ) as HTMLButtonElement;
   }
 
@@ -211,12 +210,12 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
   });
 
-  it('desabilita o botão de inativação quando o código é "PCD"', async () => {
+  it('desabilita o botão de remoção quando o código é "PCD"', async () => {
     await flushLista([condicao_atendimento_seed]);
 
     fixture.detectChanges();
 
-    expect(getInativarButtonEl().disabled).toBe(true);
+    expect(getRemoverButtonEl().disabled).toBe(true);
   });
 
   it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
@@ -234,14 +233,6 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(component['condicoes']()).toHaveLength(1);
   });
 
-  it('exibe tag com valor "Protegido" quando o código é "PCD"', async () => {
-    await flushLista([condicao_atendimento_seed]);
-    fixture.detectChanges();
-
-    const tagEl = fixture.debugElement.query(By.css('ui-tag[variant="warning"]'));
-    expect(tagEl).toBeTruthy();
-    expect((tagEl.nativeElement as HTMLSpanElement).textContent).contain('Protegido');
-  });
 
   it('filtra a lista client-side por código ou nome', async () => {
     const outraCondicaoAtendimento: CondicaoAtendimentoDto = {
@@ -309,8 +300,8 @@ describe('CondicoesAtendimentoListPage', () => {
     await flushRecarregarLista([condicao_atendimento]);
   });
 
-  it('desabilita as ações da linha (Editar e Inativar) durante a recarga da lista', async () => {
-    // Condição não-PCD: o "Inativar" do PCD é desabilitado por regra própria, à parte do loading.
+  it('desabilita as ações da linha (Editar e Remover) durante a recarga da lista', async () => {
+    // Condição não-PCD: o "Remover" do PCD é desabilitado por regra própria, à parte do loading.
     const condicaoAtiva = { ...condicao_atendimento_seed, codigo: 'MOBIL', nome: 'Mobilidade' };
 
     // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
@@ -318,7 +309,7 @@ describe('CondicoesAtendimentoListPage', () => {
     fixture.detectChanges();
     expect(component['loading']()).toBe(false);
     expect(getEditarButtonEl().disabled).toBe(false);
-    expect(getInativarButtonEl().disabled).toBe(false);
+    expect(getRemoverButtonEl().disabled).toBe(false);
 
     // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
     component['tentarNovamente']();
@@ -326,7 +317,7 @@ describe('CondicoesAtendimentoListPage', () => {
     fixture.detectChanges();
     expect(component['loading']()).toBe(true);
     expect(getEditarButtonEl().disabled).toBe(true);
-    expect(getInativarButtonEl().disabled).toBe(true);
+    expect(getRemoverButtonEl().disabled).toBe(true);
 
     // Encerra o GET pendente para o controller.verify() do afterEach.
     controller
@@ -346,5 +337,13 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Condições de atendimento especializado, com código, nome e situação',
     );
+  });
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([condicao_atendimento_seed]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual(['Código', 'Nome', 'Ações']);
   });
 });

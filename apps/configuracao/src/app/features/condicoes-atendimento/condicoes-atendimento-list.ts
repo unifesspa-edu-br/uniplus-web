@@ -43,7 +43,6 @@ import {
   EmptyStateComponent,
   SpinnerComponent,
   DrawerComponent,
-  TagComponent,
   DialogComponent,
   PagerComponent,
   FilterBarComponent,
@@ -94,7 +93,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
     SpinnerComponent,
     DrawerComponent,
     ReactiveFormsModule,
-    TagComponent,
     DialogComponent,
     PagerComponent,
     FilterBarComponent,
@@ -113,7 +111,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
     <ui-alert variant="info" heading="Código editável, com exceção do PCD" [dynamic]="false">
       O código de uma condição é editável (com nova checagem de unicidade entre as ativas) — as
       ofertas já congeladas em editais permanecem intactas. A única exceção é o código PCD (Pessoa
-      com Deficiência), reservado e protegido: não pode ser renomeado nem inativado, pois a regra de
+      com Deficiência), reservado e protegido: não pode ser renomeado nem removido, pois a regra de
       oferta de atendimento o referencia literalmente.
     </ui-alert>
     @if (errorMessage()) {
@@ -176,7 +174,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                 <tr>
                   <th scope="col">Código</th>
                   <th scope="col">Nome</th>
-                  <th scope="col">Status</th>
                   <th scope="col">
                     <span class="sr-only">Ações</span>
                   </th>
@@ -196,18 +193,6 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                         {{ condicao.descricao }}
                       </div>
                     </td>
-                    <td data-label="Status">
-                      <ui-tag variant="success">Ativa</ui-tag>
-                      @if (condicao.codigo === 'PCD') {
-                        {{ ' ' }}
-                        <ui-tag
-                          variant="warning"
-                          title="Código reservado — não pode ser renomeado nem inativado"
-                        >
-                          Protegido
-                        </ui-tag>
-                      }
-                    </td>
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
@@ -217,18 +202,18 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
                         (triggered)="abrirEdicao(condicao)"
                       />
                       <ui-icon-button
-                        icon="pi-power-off"
-                        [accessibleName]="'Inativar condição de atendimento ' + condicao.codigo"
+                        icon="pi-trash"
+                        [accessibleName]="'Remover condição de atendimento ' + condicao.codigo"
                         [tooltip]="
                           condicao.codigo === 'PCD'
-                            ? 'A condição PCD não pode ser inativada.'
-                            : 'Inativar condição de atendimento'
+                            ? 'A condição PCD não pode ser removida.'
+                            : 'Remover condição de atendimento'
                         "
                         [description]="
-                          condicao.codigo === 'PCD' ? 'A condição PCD não pode ser inativada.' : ''
+                          condicao.codigo === 'PCD' ? 'A condição PCD não pode ser removida.' : ''
                         "
                         [isDisabled]="loading() || submitting() || condicao.codigo === 'PCD'"
-                        (triggered)="abrirInativarCondicao(condicao)"
+                        (triggered)="abrirRemoverCondicao(condicao)"
                       />
                     </td>
                   </tr>
@@ -369,21 +354,21 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
 
     <ui-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar condição de atendimento?"
+      heading="Remover condição de atendimento?"
       (closed)="confirmOpen.set(false)"
     >
       <p>
-        Você está prestes a inativar a condição
-        <strong>{{ condicaoParaInativar()?.nome }}/{{ condicaoParaInativar()?.codigo }}.</strong>
-        A inativação impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a
+        Você está prestes a remover a condição
+        <strong>{{ condicaoParaRemover()?.nome }}/{{ condicaoParaRemover()?.codigo }}.</strong>
+        A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a
         cópia por valor de cada processo permanece íntegra.
       </p>
       <div uiDialogFooter>
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="inativarConfirmado()">
-          Confirmar inativação
+        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
+          Confirmar remoção
         </button>
       </div>
     </ui-dialog>
@@ -465,7 +450,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
   protected readonly saving = signal(false);
   readonly drawerOpen = signal(false);
   readonly submitting = signal(false);
-  readonly condicaoParaInativar = signal<CondicaoAtendimentoDto | null>(null);
+  readonly condicaoParaRemover = signal<CondicaoAtendimentoDto | null>(null);
   readonly confirmOpen = signal(false);
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
@@ -661,9 +646,9 @@ export class CondicoesAtendimentoListPage implements OnInit {
     this.saving.set(false);
     if (result.ok) {
       this.formOpen.set(false);
-      this.notifications.success('Condição de atendimento inativada');
+      this.notifications.success('Condição de atendimento removida');
       this.confirmOpen.set(false);
-      this.condicaoParaInativar.set(null);
+      this.condicaoParaRemover.set(null);
       this.recarregar();
       return;
     }
@@ -725,8 +710,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
     return 'Valor inválido.';
   }
 
-  protected inativarConfirmado(): void {
-    const condicao = this.condicaoParaInativar();
+  protected removerConfirmado(): void {
+    const condicao = this.condicaoParaRemover();
     if (condicao === null || this.saving()) {
       return;
     }
@@ -737,8 +722,8 @@ export class CondicoesAtendimentoListPage implements OnInit {
       .subscribe((result) => this.handleRemoverResult(result));
   }
 
-  abrirInativarCondicao(condicao: CondicaoAtendimentoDto): void {
-    this.condicaoParaInativar.set(condicao);
+  abrirRemoverCondicao(condicao: CondicaoAtendimentoDto): void {
+    this.condicaoParaRemover.set(condicao);
     this.confirmOpen.set(true);
   }
 
