@@ -455,6 +455,31 @@ describe('campos que nada no certame usa', () => {
       .toEqual(['SEXO']);
   });
 
+  it('não aponta a data de nascimento quando o desempate por maior idade a usa', () => {
+    const formulario: FormularioDeInscricao = {
+      ...formularioVazio(),
+      fatos: [
+        { fatoCodigo: 'DATA_NASCIMENTO', ordem: 0, rotulo: 'Data de nascimento', tipoRenderizacao: 'DATA', obrigatorio: true, precondicao: null },
+      ],
+    };
+    const exigencias = { raizes: [], emTodasAsFases: [] };
+    const maiorIdade = {
+      regraCodigo: 'DESEMPATE-MAIOR-IDADE',
+      regraVersao: 'v1',
+      etapaRef: '',
+      idadeMinima: '',
+      fato: '',
+      operador: '',
+      valor: '',
+      areas: [],
+    };
+
+    expect(camposSemUsoDeclarado(formulario, exigencias).map((c) => c.fatoCodigo)).toEqual([
+      'DATA_NASCIMENTO',
+    ]);
+    expect(camposSemUsoDeclarado(formulario, exigencias, [maiorIdade])).toEqual([]);
+  });
+
   it('não aponta o campo que uma exigência cita', () => {
     const exigencias = comExigencia(
       { raizes: [], emTodasAsFases: [] },

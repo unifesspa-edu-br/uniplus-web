@@ -19,7 +19,8 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import {
-  desempatePorIdadeSemApuracao,
+  desempateIdosoSemApuracao,
+  desempateSemDataDeNascimento,
   PASSO_DESEMPATE,
 } from '../desempate/desempate-por-idade';
 import {
@@ -170,11 +171,18 @@ export class FormularioStepComponent {
     return tipo === 'INICIO_FASE' || tipo === 'FIM_FASE';
   });
 
-  /** O desempate por maior idade declarado sem apuração da idade neste formulário. */
-  readonly desempateSemApuracao = computed(() => {
+  /** O desempate por maior idade declarado sem a data de nascimento entre os campos. */
+  readonly desempateSemDataDeNascimento = computed(() => {
     if (this.store.emConsulta()) return false;
     const draft = this.store.draft();
-    return desempatePorIdadeSemApuracao(draft.desempate, draft.formulario.referenciaTemporal);
+    return desempateSemDataDeNascimento(draft.desempate, draft.formulario.fatos);
+  });
+
+  /** O desempate por idoso declarado sem apuração da idade neste formulário. */
+  readonly desempateIdosoSemApuracao = computed(() => {
+    if (this.store.emConsulta()) return false;
+    const draft = this.store.draft();
+    return desempateIdosoSemApuracao(draft.desempate, draft.formulario.referenciaTemporal);
   });
 
   irParaDesempate(): void {
@@ -275,7 +283,7 @@ export class FormularioStepComponent {
    */
   readonly camposSemUso = computed(() => {
     const draft = this.store.draft();
-    return camposSemUsoDeclarado(draft.formulario, draft.documentos).map(
+    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map(
       (campo) => campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo,
     );
   });
