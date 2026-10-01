@@ -65,7 +65,7 @@ import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulari
 import { comRotuloExibivel } from '../../shared/codigo-e-rotulo';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { listaDeReferencia, motivoDaFalha } from '../../shared/lista-de-referencia';
-import { NumeroDigitadoValidoDirective } from './numero-digitado-valido.directive';
+import { NumeroDigitadoValidoDirective } from '@uniplus/shared-ui';
 
 /** Tetos espelhando `PesoAreaEnem.PesoMaximo`/`CorteMaximo` no backend — evita
  *  422 surpresa por overflow das colunas `numeric(4,2)`/`numeric(7,3)`. */
@@ -313,7 +313,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                       [attr.max]="PESO_MAXIMO"
                       step="0.05"
                       formControlName="peso"
-                      cfgNumeroDigitadoValido
+                      uiNumeroDigitadoValido
                       [attr.aria-describedby]="descritoPor(erroPeso ? idPeso + '-erro' : null)"
                       [attr.aria-invalid]="erroPeso ? 'true' : null"
                     />
@@ -332,7 +332,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                       step="10"
                       placeholder="Sem corte"
                       formControlName="corte"
-                      cfgNumeroDigitadoValido
+                      uiNumeroDigitadoValido
                       [attr.aria-describedby]="descritoPor(idCorte + '-dica', erroCorte ? idCorte + '-erro' : null)"
                       [attr.aria-invalid]="erroCorte ? 'true' : null"
                     />
@@ -537,7 +537,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                       [attr.max]="PESO_MAXIMO"
                       step="0.05"
                       formControlName="peso"
-                      cfgNumeroDigitadoValido
+                      uiNumeroDigitadoValido
                       [attr.aria-label]="rotuloDoCampo('peso', area.controls.codigo.value, grupo.controls.grupoCurso.value.rotulo)"
                       [attr.aria-describedby]="descritoPor(erroPeso ? idPesoErro : null)"
                       [attr.aria-invalid]="erroPeso ? 'true' : null"
@@ -556,7 +556,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                       step="10"
                       placeholder="Sem corte"
                       formControlName="corte"
-                      cfgNumeroDigitadoValido
+                      uiNumeroDigitadoValido
                       [attr.aria-label]="rotuloDoCampo('corte', area.controls.codigo.value, grupo.controls.grupoCurso.value.rotulo)"
                       [attr.aria-describedby]="descritoPor(idCorteDica, erroCorte ? idCorteErro : null)"
                       [attr.aria-invalid]="erroCorte ? 'true' : null"

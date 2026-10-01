@@ -21,7 +21,7 @@ import { AbstractControl, NG_VALIDATORS, ValidationErrors, Validator } from '@an
  *   backend gravou no controle antes de o operador editá-lo.
  */
 @Directive({
-  selector: 'input[type=number][cfgNumeroDigitadoValido]',
+  selector: 'input[type=number][uiNumeroDigitadoValido]',
   standalone: true,
   providers: [{ provide: NG_VALIDATORS, useExisting: NumeroDigitadoValidoDirective, multi: true }],
 })
