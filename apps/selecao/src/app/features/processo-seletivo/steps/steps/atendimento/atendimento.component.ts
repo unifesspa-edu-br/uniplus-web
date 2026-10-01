@@ -422,6 +422,12 @@ export class AtendimentoStepComponent {
       );
     }
 
+    if (this.atendimento().tiposDeficiencia.length === 0 && this.pcdSelecionada()) {
+      mensagens.push(
+        'Os tipos de deficiências devem ser preenchidos quando a condição "pcd" é selecionada.',
+      );
+    }
+
     // A checagem de referência inativa só é confiável depois que os três
     // catálogos carregaram com sucesso. Enquanto carregando ou depois de uma
     // falha, `catalogos.condicoes()`/`recursos()`/`tiposDeficiencia()` ficam
