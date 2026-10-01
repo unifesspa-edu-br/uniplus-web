@@ -379,6 +379,65 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
   color: var(--text-muted);
 }
 
+/*
+ * Editor de condições sobre fatos (ui-editor-de-condicoes / ui-condicao-de-fato).
+ * A condição não tem caixa própria: seus campos participam do grid de quem a hospeda, e o
+ * editor dá a esse grid a forma de uma linha por condição.
+ */
+ui-condicao-de-fato { display: contents; }
+ui-editor-de-condicoes { display: block; }
+
+.editor-condicoes {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+/* A borda à esquerda mostra que as condições de dentro valem juntas; o "ou", que as caixas são caminhos independentes. */
+.editor-condicoes__clausula {
+  width: 100%;
+  display: grid;
+  gap: var(--space-3);
+  border-left: 3px solid var(--border-subtle);
+  padding-left: var(--space-3);
+}
+
+.editor-condicoes__ou {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+
+.editor-condicoes__condicao {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--space-2) var(--space-3);
+  align-items: end;
+}
+
+.editor-condicoes__condicao .form-field {
+  margin: 0;
+  min-width: 0;
+}
+
+.editor-condicoes__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* O que a condição alcança e o erro são prosa: ocupam a linha inteira, não um campo ao lado dos outros. */
+.condicao-de-fato__nota {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 /* Switch (toggle) */
 .switch {
   display: inline-flex; align-items: center; gap: var(--space-3);

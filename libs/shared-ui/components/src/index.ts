@@ -56,6 +56,9 @@ export {
   type UiSegmentedOption,
 } from '../../src/lib/components/segmented/segmented';
 export { SelectComponent, type UiSelectOption } from '../../src/lib/components/select/select';
+export { CondicaoDeFatoComponent } from '../../src/lib/components/editor-de-condicoes/condicao-de-fato';
+export { EditorDeCondicoesComponent } from '../../src/lib/components/editor-de-condicoes/editor-de-condicoes';
+export * from '../../src/lib/components/editor-de-condicoes/condicoes-de-fatos';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';
