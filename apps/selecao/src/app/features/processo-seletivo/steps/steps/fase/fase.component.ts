@@ -2,6 +2,7 @@ import {
   ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   CONSEQUENCIA_REENVIO,
+  FATO_MODALIDADE,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   baseLegalNova,
   comAlcanceDeTodasAsFases,
@@ -24,24 +25,8 @@ import {
   type GrupoDaExigencia,
 } from '../../shared/exigencias-documentais';
 import {
-  alcanceDaCondicao,
   clausulasDoGatilho,
-  comCondicao,
-  comCondicaoTrocada,
-  comClausula,
-  comOperador,
-  comValorEscalar,
-  comValoresDeLista,
-  comparaComLista,
-  condicaoNova,
   fatosParaGatilho,
-  operadoresDoFato,
-  RESPOSTAS_BOOLEANAS,
-  semClausula,
-  semCondicao,
-  valorEscalarDe,
-  valoresDeListaDe,
-  type ClausulaDeGatilho,
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
 import {
@@ -59,7 +44,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ComboboxComponent, type UiComboboxGroup } from '@uniplus/shared-ui/components';
+import {
+  ComboboxComponent,
+  EditorDeCondicoesComponent,
+  type UiComboboxGroup,
+} from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
@@ -144,7 +133,7 @@ interface FaseNoSeletor {
  */
 @Component({
   selector: 'sel-step-fase',
-  imports: [ComboboxComponent, FormsModule, ReactiveFormsModule],
+  imports: [ComboboxComponent, EditorDeCondicoesComponent, FormsModule, ReactiveFormsModule],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FaseStepComponent)],
@@ -1313,12 +1302,6 @@ export class FaseStepComponent {
     return 'Este documento é cobrado de quem concorre nas modalidades escolhidas acima. Acrescente condição para restringir mais.';
   }
 
-  /** Se o fato é de sim-ou-não — a tela oferece as duas respostas, nunca texto livre. */
-  fatoEhBooleano(codigo: string): boolean {
-    return this.fatoDaCondicao(codigo)?.tipoDominio === 'BOOLEANO';
-  }
-
-  protected readonly respostasBooleanas = RESPOSTAS_BOOLEANAS;
 
   /**
    * Em que fases o documento é exigido. É outro eixo do "Coletado em": este diz em QUAIS
@@ -1364,11 +1347,6 @@ export class FaseStepComponent {
     () => new Map(this.fatosDoGatilho().map((fato) => [fato.codigo, fato])),
   );
 
-  /** O fato de uma condição, ou `undefined` quando ele saiu do catálogo. */
-  fatoDaCondicao(codigo: string): FatoEscolhivel | undefined {
-    return this.fatoPorCodigo().get(codigo);
-  }
-
   /** Se a exigência é cobrada de todo candidato — é DECLARADO, não deduzido do gatilho. */
   ehExigidoDeTodos(id: string): boolean {
     return exigidoDeTodos(this.exigenciaDoDocumento(id));
@@ -1383,133 +1361,15 @@ export class FaseStepComponent {
     this.escreverGatilho(id, comExigidoDeTodos(this.exigenciaDoDocumento(id), valor === 'todos'));
   }
 
-  /** As alternativas do gatilho — cada uma é uma via pela qual o documento passa a ser cobrado. */
-  clausulasDoDocumento(id: string): readonly ClausulaDeGatilho[] {
-    return clausulasDoGatilho(this.exigenciaDoDocumento(id));
-  }
-
-  /** As comparações que o domínio daquele fato admite. */
-  operadoresDaCondicao(
-    codigo: string,
-  ): readonly { readonly valor: string; readonly rotulo: string }[] {
-    const fato = this.fatoDaCondicao(codigo);
-    return fato === undefined ? [] : operadoresDoFato(fato);
-  }
-
-  /** Se a condição compara contra vários valores de uma vez. */
-  condicaoComparaComLista(operador: string): boolean {
-    return comparaComLista(operador);
-  }
-
-  /** Os valores do domínio daquele fato, como a lista de escolha os apresenta. */
-  valoresDoFato(codigo: string): readonly UiComboboxGroup[] {
-    const fato = this.fatoDaCondicao(codigo);
-    if (fato === undefined || fato.valores.length === 0) return [];
-    return [
-      {
-        label: fato.nome,
-        options: fato.valores.map((valor) => ({ value: valor, label: valor })),
-      },
-    ];
-  }
-
-  /** Os valores que o domínio do fato declara — vazio quando ele não é categórico. */
-  valoresEscolhiveis(codigo: string): readonly string[] {
-    return this.fatoDaCondicao(codigo)?.valores ?? [];
-  }
-
-  valorDaCondicao(condicao: CondicaoGatilhoConfig): string {
-    return valorEscalarDe(condicao);
-  }
-
-  valoresDaCondicao(condicao: CondicaoGatilhoConfig): readonly string[] {
-    return valoresDeListaDe(condicao);
-  }
-
-  /** O que a condição alcança, para que "não é feminino" e "é masculino" não se confundam. */
-  alcanceDe(condicao: CondicaoGatilhoConfig): string {
-    const fato = this.fatoDaCondicao(condicao.fato);
-    return fato === undefined ? '' : alcanceDaCondicao(condicao, fato);
-  }
-
-  /** Acrescenta uma condição à alternativa — ela precisa valer JUNTO com as outras de lá. */
-  acrescentarCondicao(id: string, clausula: number): void {
-    const [primeiro] = this.fatosDoGatilho();
-    if (primeiro === undefined) return;
-    this.escreverGatilho(id, comCondicao(this.exigenciaDoDocumento(id), clausula, primeiro));
-  }
+  /** O fato que tem controle próprio ao lado do gatilho: o editor não o mostra. */
+  protected readonly fatoDoRecorte = FATO_MODALIDADE;
 
   /**
-   * Acrescenta uma alternativa: o documento passa a ser cobrado de quem satisfaz ESTA ou
-   * aquela combinação. É o que escreve "homem maior de dezoito, salvo indígena" sem precisar
-   * de uma segunda exigência do mesmo documento.
+   * As condições que o editor devolve: a lista inteira, já renumerada. Trocar o gatilho
+   * passa pelo mesmo caminho de qualquer outra edição da declaração desta fase.
    */
-  acrescentarAlternativa(id: string): void {
-    const [primeiro] = this.fatosDoGatilho();
-    if (primeiro === undefined) return;
-    this.escreverGatilho(id, comClausula(this.exigenciaDoDocumento(id), primeiro));
-  }
-
-  removerCondicao(id: string, indice: number): void {
-    this.escreverGatilho(id, semCondicao(this.exigenciaDoDocumento(id), indice));
-  }
-
-  removerAlternativa(id: string, numero: number): void {
-    this.escreverGatilho(id, semClausula(this.exigenciaDoDocumento(id), numero));
-  }
-
-  /**
-   * Troca o fato da condição. O operador e o valor recomeçam: eles pertenciam ao domínio do
-   * fato anterior, e carregá-los para outro domínio gravaria uma comparação que o servidor
-   * recusa.
-   */
-  escolherFatoDaCondicao(id: string, indice: number, codigo: string): void {
-    const fato = this.fatoDaCondicao(codigo);
-    if (fato === undefined) return;
-
-    const exigencia = this.exigenciaDoDocumento(id);
-    const atual = exigencia.condicoes[indice];
-    if (atual === undefined) return;
-
-    this.escreverGatilho(
-      id,
-      comCondicaoTrocada(exigencia, indice, condicaoNova(fato, atual.clausula)),
-    );
-  }
-
-  escolherOperadorDaCondicao(id: string, indice: number, operador: string): void {
-    const exigencia = this.exigenciaDoDocumento(id);
-    const atual = exigencia.condicoes[indice];
-    const fato = atual === undefined ? undefined : this.fatoDaCondicao(atual.fato);
-    if (atual === undefined || fato === undefined) return;
-
-    this.escreverGatilho(
-      id,
-      comCondicaoTrocada(exigencia, indice, comOperador(atual, fato, operador)),
-    );
-  }
-
-  escreverValorDaCondicao(id: string, indice: number, valor: string): void {
-    const exigencia = this.exigenciaDoDocumento(id);
-    const atual = exigencia.condicoes[indice];
-    const fato = atual === undefined ? undefined : this.fatoDaCondicao(atual.fato);
-    if (atual === undefined || fato === undefined) return;
-
-    this.escreverGatilho(
-      id,
-      comCondicaoTrocada(exigencia, indice, comValorEscalar(atual, fato, valor)),
-    );
-  }
-
-  escreverValoresDaCondicao(id: string, indice: number, valores: readonly string[]): void {
-    const exigencia = this.exigenciaDoDocumento(id);
-    const atual = exigencia.condicoes[indice];
-    if (atual === undefined) return;
-
-    this.escreverGatilho(
-      id,
-      comCondicaoTrocada(exigencia, indice, comValoresDeLista(atual, valores)),
-    );
+  escreverCondicoes(id: string, condicoes: readonly CondicaoGatilhoConfig[]): void {
+    this.escreverGatilho(id, { ...this.exigenciaDoDocumento(id), condicoes });
   }
 
   private escreverGatilho(id: string, exigencia: ExigenciaDeDocumento): void {

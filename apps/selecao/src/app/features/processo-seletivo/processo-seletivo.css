@@ -797,64 +797,13 @@
 }
 
 /*
- * O gatilho atravessa o grid dos eixos: ele não é um quarto campo curto, é um bloco com
- * tantas linhas quantas forem as condições, e espremê-lo numa coluna de dezesseis rem deixava
- * fato, comparação e valor em três linhas cada.
+ * O editor de condições atravessa o grid dos eixos: ele não é um quarto campo curto, é um
+ * bloco com tantas linhas quantas forem as condições, e espremê-lo numa coluna de dezesseis
+ * rem deixava fato, comparação e valor em três linhas cada. A aparência do bloco é do
+ * componente `ui-editor-de-condicoes`; aqui só se diz onde ele se encaixa.
  */
 .sel-processo .doc-item__gatilho {
   grid-column: 1 / -1;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 8px);
-  padding: var(--space-3) var(--space-4);
-  margin: 0;
-  display: grid;
-  gap: var(--space-3);
-  justify-items: start;
-}
-
-/*
- * Uma alternativa do gatilho. A borda à esquerda é o que mostra, sem legenda repetida, que
- * as condições de dentro valem juntas — e o "ou" entre duas caixas, que elas são caminhos
- * independentes.
- */
-.sel-processo .gatilho__clausula {
-  width: 100%;
-  display: grid;
-  gap: var(--space-3);
-  border-left: 3px solid var(--border-subtle);
-  padding-left: var(--space-3);
-}
-
-.sel-processo .gatilho__ou {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--text-secondary);
-  text-transform: lowercase;
-}
-
-.sel-processo .gatilho__condicao {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-  gap: var(--space-2) var(--space-3);
-  align-items: end;
-}
-
-.sel-processo .gatilho__condicao > .form-field {
-  margin: 0;
-  min-width: 0;
-}
-
-/* O que a condição alcança ocupa a linha inteira: é prosa, não um campo ao lado dos outros. */
-.sel-processo .gatilho__alcance {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-.sel-processo .gatilho__acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
 }
 
 /*

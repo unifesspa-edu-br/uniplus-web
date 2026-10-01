@@ -38,6 +38,9 @@ export {
 export { PagerComponent } from './pager/pager';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './select/select';
+export { CondicaoDeFatoComponent } from './editor-de-condicoes/condicao-de-fato';
+export { EditorDeCondicoesComponent } from './editor-de-condicoes/editor-de-condicoes';
+export * from './editor-de-condicoes/condicoes-de-fatos';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';
 export { SpinnerComponent } from './spinner/spinner';

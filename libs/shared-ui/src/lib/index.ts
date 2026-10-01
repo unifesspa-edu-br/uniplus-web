@@ -36,6 +36,9 @@ export {
   type UiComboboxOption,
 } from './components/combobox/combobox';
 export { SelectComponent, type UiSelectOption } from './components/select/select';
+export { CondicaoDeFatoComponent } from './components/editor-de-condicoes/condicao-de-fato';
+export { EditorDeCondicoesComponent } from './components/editor-de-condicoes/editor-de-condicoes';
+export * from './components/editor-de-condicoes/condicoes-de-fatos';
 export { SkeletonComponent } from './components/skeleton/skeleton';
 export { SkipLinkComponent } from './components/skip-link/skip-link';
 export { SpinnerComponent } from './components/spinner/spinner';
