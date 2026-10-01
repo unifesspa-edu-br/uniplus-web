@@ -19,6 +19,11 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import {
+  desempateIdosoSemApuracao,
+  desempateSemDataDeNascimento,
+  PASSO_DESEMPATE,
+} from '../desempate/desempate-por-idade';
+import {
   ANCORAS_DA_IDADE,
   camposSemUsoDeclarado,
   camposSemValoresOfertados,
@@ -166,6 +171,24 @@ export class FormularioStepComponent {
     return tipo === 'INICIO_FASE' || tipo === 'FIM_FASE';
   });
 
+  /** O desempate por maior idade declarado sem a data de nascimento entre os campos. */
+  readonly desempateSemDataDeNascimento = computed(() => {
+    if (this.store.emConsulta()) return false;
+    const draft = this.store.draft();
+    return desempateSemDataDeNascimento(draft.desempate, draft.formulario.fatos);
+  });
+
+  /** O desempate por idoso declarado sem apuração da idade neste formulário. */
+  readonly desempateIdosoSemApuracao = computed(() => {
+    if (this.store.emConsulta()) return false;
+    const draft = this.store.draft();
+    return desempateIdosoSemApuracao(draft.desempate, draft.formulario.referenciaTemporal);
+  });
+
+  irParaDesempate(): void {
+    this.store.goTo(PASSO_DESEMPATE);
+  }
+
   /** Se alguma exigência condiciona por idade — é o que torna a política obrigatória. */
   readonly exigeApuracaoDeIdade = computed(() =>
     fatosCitadosPelasExigencias(this.store.draft().documentos).has('FAIXA_ETARIA'),
@@ -260,7 +283,7 @@ export class FormularioStepComponent {
    */
   readonly camposSemUso = computed(() => {
     const draft = this.store.draft();
-    return camposSemUsoDeclarado(draft.formulario, draft.documentos).map(
+    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map(
       (campo) => campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo,
     );
   });

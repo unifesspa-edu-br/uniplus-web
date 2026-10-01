@@ -77,6 +77,24 @@
     existir.
   </p>
 
+  @if (desempateSemDataDeNascimento()) {
+    <div class="alert alert--warning" role="status" id="form-desempate-sem-nascimento">
+      <p>
+        O desempate por maior idade ordena pela data de nascimento, e ela não está entre os campos
+        do formulário. Acrescente "Data de nascimento" em "Acrescentar um dado", ou retire o
+        critério no passo Desempate.
+      </p>
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        id="form-ir-desempate-nascimento"
+        (click)="irParaDesempate()"
+      >
+        Ir para Desempate
+      </button>
+    </div>
+  }
+
   @if (!store.emConsulta()) {
     <div class="form-grid">
       <div class="form-field">
@@ -215,6 +233,23 @@
       Há documento exigido por faixa etária, então declará-la é obrigatório.
     }
   </p>
+
+  @if (desempateIdosoSemApuracao()) {
+    <div class="alert alert--warning" role="status" id="form-idoso-sem-apuracao">
+      <p>
+        O desempate por idoso está declarado e precisa da idade apurada. Escolha abaixo em que
+        instante apurá-la, ou retire o critério no passo Desempate.
+      </p>
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        id="form-ir-desempate-apuracao"
+        (click)="irParaDesempate()"
+      >
+        Ir para Desempate
+      </button>
+    </div>
+  }
 
   @if (store.emConsulta()) {
     <div class="form-grid">

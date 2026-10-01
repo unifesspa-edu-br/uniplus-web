@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
 
 const BASE = 'http://localhost:5000';
@@ -123,5 +124,69 @@ describe('FormularioStepComponent em consulta', () => {
   it('lê a apuração da idade pelo rótulo da âncora e a data no formato brasileiro', () => {
     expect(valor('Apurar a idade em')).toEqual(['Uma data fixa']);
     expect(valor('Data de apuração')).toEqual(['15/01/2027']);
+  });
+  function declararDesempate(regraCodigo: string): void {
+    // O rascunho só aceita edição fora de consulta.
+    store.remoteSnapshot.set({ status: 'rascunho' } as never);
+    store.patchSection('desempate', [
+      {
+        regraCodigo,
+        regraVersao: 'v1',
+        etapaRef: '',
+        idadeMinima: '',
+        fato: '',
+        operador: '',
+        valor: '',
+        areas: [],
+      },
+    ]);
+  }
+
+  it('avisa do desempate por maior idade sem data de nascimento e leva ao passo Desempate', () => {
+    expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
+
+    declararDesempate('DESEMPATE-MAIOR-IDADE');
+    fixture.detectChanges();
+
+    expect(host.querySelector('#form-desempate-sem-nascimento')).not.toBeNull();
+    // A apuração da idade não é do maior idade: o aviso dela não aparece.
+    expect(host.querySelector('#form-idoso-sem-apuracao')).toBeNull();
+    (host.querySelector('#form-ir-desempate-nascimento') as HTMLButtonElement).click();
+    expect(store.currentStep()).toBe(PASSO_DESEMPATE);
+  });
+
+  it('o aviso sai quando a data de nascimento passa a ser coletada', () => {
+    declararDesempate('DESEMPATE-MAIOR-IDADE');
+    store.patchObjectSection('formulario', {
+      fatos: [
+        ...store.draft().formulario.fatos,
+        {
+          fatoCodigo: 'DATA_NASCIMENTO',
+          ordem: 3,
+          rotulo: 'Data de nascimento',
+          tipoRenderizacao: 'DATA',
+          obrigatorio: true,
+          precondicao: null,
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
+    // O desempate usa o dado: ele não aparece como campo sem finalidade.
+    expect(host.textContent).not.toMatch(/Nada no certame usa[^.]*Data de nascimento/);
+  });
+
+  it('avisa do desempate por idoso sem apuração da idade e leva ao passo Desempate', () => {
+    declararDesempate('DESEMPATE-IDOSO');
+    store.patchObjectSection('formulario', {
+      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+    });
+    fixture.detectChanges();
+
+    expect(host.querySelector('#form-idoso-sem-apuracao')).not.toBeNull();
+    expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
+    (host.querySelector('#form-ir-desempate-apuracao') as HTMLButtonElement).click();
+    expect(store.currentStep()).toBe(PASSO_DESEMPATE);
   });
 });

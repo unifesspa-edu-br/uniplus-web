@@ -17,6 +17,7 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { DesempateStepComponent } from './desempate.component';
+import { PASSO_FORMULARIO } from './desempate-por-idade';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -234,6 +235,50 @@ describe('DesempateStepComponent', () => {
     expect(host.textContent).not.toContain('fora do catálogo');
     expect(host.textContent).toContain('Não foi possível carregar os dados do candidato.');
     expect(host.querySelector('button')).toBeNull();
+  });
+
+  it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {
+    expect(componente.semDataDeNascimento()).toBe(false);
+
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+    ]);
+    expect(componente.semDataDeNascimento()).toBe(true);
+
+    componente.irParaFormulario();
+    expect(store.currentStep()).toBe(PASSO_FORMULARIO);
+
+    store.patchObjectSection('formulario', {
+      fatos: [
+        {
+          fatoCodigo: 'DATA_NASCIMENTO',
+          ordem: 1,
+          rotulo: 'Data de nascimento',
+          tipoRenderizacao: 'DATA',
+          obrigatorio: true,
+          precondicao: null,
+        },
+      ],
+    });
+    expect(componente.semDataDeNascimento()).toBe(false);
+  });
+
+  it('não exige a apuração da idade do maior idade, só do idoso', () => {
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+    ]);
+    expect(store.draft().formulario.referenciaTemporal.tipo).toBe('');
+    expect(componente.idosoSemApuracao()).toBe(false);
+
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
+    ]);
+    expect(componente.idosoSemApuracao()).toBe(true);
+
+    store.patchObjectSection('formulario', {
+      referenciaTemporal: { tipo: 'FIM_INSCRICAO', data: '', faseCodigo: '' },
+    });
+    expect(componente.idosoSemApuracao()).toBe(false);
   });
 
   it('é válido sem nenhum critério (desempate é opcional)', () => {
