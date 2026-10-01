@@ -19,6 +19,10 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import {
+  desempatePorIdadeSemApuracao,
+  PASSO_DESEMPATE,
+} from '../desempate/desempate-por-idade';
+import {
   ANCORAS_DA_IDADE,
   camposSemUsoDeclarado,
   camposSemValoresOfertados,
@@ -165,6 +169,17 @@ export class FormularioStepComponent {
     const tipo = this.referencia().tipo;
     return tipo === 'INICIO_FASE' || tipo === 'FIM_FASE';
   });
+
+  /** O desempate por maior idade declarado sem apuração da idade neste formulário. */
+  readonly desempateSemApuracao = computed(() => {
+    if (this.store.emConsulta()) return false;
+    const draft = this.store.draft();
+    return desempatePorIdadeSemApuracao(draft.desempate, draft.formulario.referenciaTemporal);
+  });
+
+  irParaDesempate(): void {
+    this.store.goTo(PASSO_DESEMPATE);
+  }
 
   /** Se alguma exigência condiciona por idade — é o que torna a política obrigatória. */
   readonly exigeApuracaoDeIdade = computed(() =>

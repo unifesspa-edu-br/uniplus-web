@@ -42,6 +42,24 @@
   </div>
 }
 
+@if (idadeSemApuracao()) {
+  <div class="alert alert--warning" role="status" id="desemp-idade-sem-apuracao">
+    <p>
+      O desempate por maior idade precisa da data de nascimento do candidato, e o formulário de
+      inscrição está em "Não apura idade". Sem declarar em que instante a idade é apurada, o
+      critério não tem com o que desempatar.
+    </p>
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      id="desemp-ir-formulario"
+      (click)="irParaFormulario()"
+    >
+      Ir para Formulário e declarar a apuração da idade
+    </button>
+  </div>
+}
+
 @if (store.emConsulta() && falhaDoCatalogoDeFatos()) {
   <p class="alert alert--warning" role="status">
     Não foi possível carregar os dados do candidato. Os critérios que citam um fato aparecem pelo

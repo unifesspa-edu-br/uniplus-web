@@ -216,6 +216,23 @@
     }
   </p>
 
+  @if (desempateSemApuracao()) {
+    <div class="alert alert--warning" role="status" id="form-desempate-sem-apuracao">
+      <p>
+        O desempate por maior idade está declarado e precisa da idade apurada. Escolha abaixo em
+        que instante apurá-la, ou retire o critério no passo Desempate.
+      </p>
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        id="form-ir-desempate"
+        (click)="irParaDesempate()"
+      >
+        Ir para Desempate
+      </button>
+    </div>
+  }
+
   @if (store.emConsulta()) {
     <div class="form-grid">
       <ui-valor-em-consulta rotulo="Apurar a idade em" [valor]="rotuloDaAncora()" />
