@@ -193,23 +193,13 @@ describe('AtendimentoStepComponent', () => {
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
 
-  it('preserva o rascunho quando a API recusa', async () => {
+  it('preserva o rascunho quando condição pcd é selecionada e tipo de deficiência está vazio', async () => {
     componente.toggleCondicao(CONDICOES[0], true);
     detectar();
 
-    const gravacao = componente.persistir();
-    controller.expectOne(ROTA_ATENDIMENTO).flush(
-      {
-        type: 'about:blank',
-        title: 'Tipo de deficiência sem condição PcD.',
-        status: 422,
-        code: 'uniplus.selecao.oferta_atendimento.tipo_deficiencia_sem_condicao_pcd',
-        traceId: 'trace-1',
-      },
-      { status: 422, statusText: 'Unprocessable Entity' },
-    );
+    controller.expectNone(ROTA_ATENDIMENTO);
 
-    const resultado = await gravacao;
+    const resultado = await componente.persistir();
     expect(resultado.valid).toBe(false);
     expect(store.draft().atendimento.condicoes).toHaveLength(1);
   });
@@ -481,7 +471,7 @@ describe('AtendimentoStepComponent', () => {
     detectar();
 
     function checkboxes(): HTMLInputElement[] {
-      return [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+      return Array.from(elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>);
     }
 
     // Ainda carregando: o rascunho gravado segue visível (achado seguinte),
@@ -549,7 +539,7 @@ describe('AtendimentoStepComponent', () => {
     );
     detectar();
 
-    const checkboxes = [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+    const checkboxes = Array.from(elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>);
     expect(checkboxes.length).toBeGreaterThan(0);
     expect(checkboxes.every((input) => input.disabled)).toBe(true);
 
@@ -611,9 +601,11 @@ describe('AtendimentoStepComponent', () => {
   });
 
   it('marca a condição pelo checkbox real da tela, no DOM', () => {
-    const checkbox = [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find(
-      (input) => input.closest('label')?.textContent?.includes('Pessoa com deficiência'),
-    );
+    const checkbox = Array.from(
+      elemento.querySelectorAll(
+        'input[type="checkbox"]',
+      ) as NodeListOf<HTMLInputElement>,
+    ).find((input) => input.closest('label')?.textContent?.includes('Pessoa com deficiência'));
     if (checkbox === undefined) throw new Error('Checkbox da condição PcD não encontrado.');
 
     checkbox.checked = true;
