@@ -24,15 +24,17 @@ import {
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
+  DEFAULT_PAGE_SIZE_OPTIONS,
   EmptyStateComponent,
-  PagerComponent,
+  IconButtonComponent,
+  ListFooterComponent,
   SpinnerComponent,
   TagComponent,
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
-/** Janela da primeira página; a navegação segue o cursor, que já a carrega. */
+/** Itens por página iniciais; o operador troca pelo seletor do rodapé. */
 const PAGE_SIZE = 50;
 
 /**
@@ -78,10 +80,11 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
   standalone: true,
   imports: [
     RouterLink,
+    IconButtonComponent,
     DateBrPipe,
     AlertComponent,
     EmptyStateComponent,
-    PagerComponent,
+    ListFooterComponent,
     SpinnerComponent,
     TagComponent,
   ],
@@ -176,13 +179,12 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                     </td>
 
                     <td class="table-responsive__actions" data-label="Ações">
-                      <a
-                        class="btn btn--tertiary btn--sm btn--rect"
-                        [routerLink]="['/processo-seletivo', processo.id]"
-                        [attr.aria-label]="'Abrir ' + processo.nome"
-                      >
-                        Abrir
-                      </a>
+                      <ui-icon-button
+                        icon="pi-folder-open"
+                        [accessibleName]="'Abrir ' + processo.nome"
+                        tooltip="Abrir processo seletivo"
+                        [link]="['/processo-seletivo', processo.id]"
+                      />
                     </td>
                   </tr>
                 }
@@ -201,17 +203,18 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
         }
       </div>
 
-      @if (prevCursor() !== null || nextCursor() !== null) {
-        <ui-pager
-          statusText="Navegação por páginas"
-          navigationLabel="Paginação de processos seletivos"
-          [hasPrevious]="prevCursor() !== null"
-          [hasNext]="nextCursor() !== null"
-          [isDisabled]="loading()"
-          (previous)="paginaAnterior()"
-          (next)="proximaPagina()"
-        />
-      }
+      <ui-list-footer
+        navigationLabel="Paginação de processos seletivos"
+        [pageSizeOptions]="opcoesLimite"
+        [pageSize]="limite()"
+        (pageSizeChange)="aoTrocarLimite($event)"
+        [hasRows]="processos().length > 0"
+        [hasPrevious]="prevCursor() !== null"
+        [hasNext]="nextCursor() !== null"
+        [isDisabled]="loading()"
+        (previous)="paginaAnterior()"
+        (next)="proximaPagina()"
+      />
     </section>
   `,
   host: {
@@ -233,6 +236,8 @@ export class ProcessosSeletivosListaPage {
     readonly next: Cursor | null;
   }>({ prev: null, next: null });
 
+  protected readonly limite = signal<number>(PAGE_SIZE);
+  protected readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
   protected readonly loading = signal(false);
   protected readonly erro = signal<string | null>(null);
 
@@ -259,7 +264,7 @@ export class ProcessosSeletivosListaPage {
     this.loading.set(true);
 
     this.api
-      .listar({ cursor: pagina?.cursor, direction: pagina?.direction, limit: PAGE_SIZE })
+      .listar({ cursor: pagina?.cursor, direction: pagina?.direction, limit: primeiraPagina ? this.limite() : undefined })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.loading.set(false);
@@ -298,6 +303,15 @@ export class ProcessosSeletivosListaPage {
 
     if (anterior !== null && !this.loading()) {
       this.pagina.set({ cursor: anterior, direction: 'prev' });
+      this.carregarPagina();
+    }
+  }
+
+  protected aoTrocarLimite(valor: number | null): void {
+    if (valor !== null && valor !== this.limite() && !this.loading()) {
+      this.limite.set(valor);
+      // O cursor carrega a janela antiga: trocar o limite recomeça da primeira página.
+      this.pagina.set(undefined);
       this.carregarPagina();
     }
   }

@@ -210,10 +210,26 @@ describe('ProcessosSeletivosListaPage', () => {
     await propagate();
   });
 
-  it('esconde o pager quando o header Link não traz cursor algum', async () => {
+  it('recarrega a primeira página, sem cursor, ao trocar os itens por página', async () => {
+    await flushLista([processo()], `<${URL_LISTA}?cursor=pagina-2&direction=next>; rel="next"`);
+
+    const select = host().querySelector<HTMLSelectElement>('[data-pager="page-size"]');
+    select!.value = '25';
+    select!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const req = controller.expectOne((r) => r.url === URL_LISTA);
+    expect(req.request.params.get('limit')).toBe('25');
+    expect(req.request.params.get('cursor')).toBeNull();
+    req.flush([processo()]);
+    await propagate();
+  });
+
+  it('desabilita a navegação quando o header Link não traz cursor algum', async () => {
     await flushLista([processo()]);
 
-    expect(host().querySelector('[data-pager="next"]')).toBeNull();
+    expect(host().querySelector('[data-pager="next"]')?.hasAttribute('disabled')).toBe(true);
+    expect(host().querySelector('[data-pager="prev"]')?.hasAttribute('disabled')).toBe(true);
   });
 
   /**
