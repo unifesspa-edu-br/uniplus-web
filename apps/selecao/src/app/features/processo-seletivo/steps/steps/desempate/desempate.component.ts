@@ -12,8 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  ComboboxComponent,
-  type UiComboboxGroup,
+  CondicaoDeFatoComponent,
   ValorEmConsultaComponent,
 } from '@uniplus/shared-ui/components';
 import { isApiOk } from '@uniplus/shared-core/http';
@@ -21,9 +20,6 @@ import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/confi
 
 import {
   alcanceDaCondicao,
-  comOperador,
-  comValorEscalar,
-  comValoresDeLista,
   comparaComLista,
   fatosParaGatilho,
   operadoresDoFato,
@@ -31,6 +27,7 @@ import {
   RESPOSTAS_BOOLEANAS,
   valorEscalarDe,
   valoresDeListaDe,
+  type CondicaoDeFato,
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
 import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
@@ -96,7 +93,7 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   selector: 'sel-step-desempate',
   standalone: true,
   templateUrl: './desempate.component.html',
-  imports: [ComboboxComponent, ValorEmConsultaComponent],
+  imports: [CondicaoDeFatoComponent, ValorEmConsultaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(DesempateStepComponent)],
 })
@@ -254,17 +251,7 @@ export class DesempateStepComponent {
     return this.fatoDoCriterio(codigo)?.tipoDominio === 'BOOLEANO';
   }
 
-  valoresEscolhiveis(codigo: string): readonly string[] {
-    return this.fatoDoCriterio(codigo)?.valores ?? [];
-  }
 
-  valoresDoFato(codigo: string): readonly UiComboboxGroup[] {
-    const fato = this.fatoDoCriterio(codigo);
-    if (fato === undefined || fato.valores.length === 0) return [];
-    return [
-      { label: fato.nome, options: fato.valores.map((valor) => ({ value: valor, label: valor })) },
-    ];
-  }
 
   valorDoCriterio(criterio: CriterioDesempateConfigurado): string {
     return valorEscalarDe(criterio);
@@ -274,13 +261,6 @@ export class DesempateStepComponent {
     return valoresDeListaDe(criterio);
   }
 
-  /** O que o predicado alcança — a mesma leitura que a exigência documental oferece. */
-  alcanceDoCriterio(criterio: CriterioDesempateConfigurado): string {
-    const fato = this.fatoDoCriterio(criterio.fato);
-    return fato === undefined ? '' : alcanceDaCondicao(criterio, fato);
-  }
-
-  protected readonly respostasBooleanas = RESPOSTAS_BOOLEANAS;
 
   /** Só a classificação: uma tecla em outro passo não chega ao quadro. */
   private readonly classificacao = computed(() => this.store.draft().classificacao);
@@ -704,27 +684,22 @@ export class DesempateStepComponent {
     this.atualizar(indice, { fato: codigo, operador: operadoresDoFato(fato)[0].valor, valor: '' });
   }
 
-  alterarOperador(indice: number, operador: string): void {
-    const criterio = this.criterios()[indice];
-    const fato = criterio === undefined ? undefined : this.fatoDoCriterio(criterio.fato);
-    if (criterio === undefined || fato === undefined) return;
 
-    this.atualizar(indice, comOperador(criterio, fato, operador));
+
+
+  /** O que o predicado alcança — a mesma leitura que a exigência documental oferece. */
+  alcanceDoCriterio(criterio: CriterioDesempateConfigurado): string {
+    const fato = this.fatoDoCriterio(criterio.fato);
+    return fato === undefined ? '' : alcanceDaCondicao(criterio, fato);
   }
 
-  alterarValor(indice: number, valor: string): void {
-    const criterio = this.criterios()[indice];
-    const fato = criterio === undefined ? undefined : this.fatoDoCriterio(criterio.fato);
-    if (criterio === undefined || fato === undefined) return;
-
-    this.atualizar(indice, comValorEscalar(criterio, fato, valor));
-  }
-
-  alterarValores(indice: number, valores: readonly string[]): void {
-    const criterio = this.criterios()[indice];
-    if (criterio === undefined) return;
-
-    this.atualizar(indice, comValoresDeLista(criterio, valores));
+  /** A condição que o componente devolve: só os três campos do predicado entram no critério. */
+  alterarCondicao(indice: number, condicao: CondicaoDeFato): void {
+    this.atualizar(indice, {
+      fato: condicao.fato,
+      operador: condicao.operador,
+      valor: condicao.valor,
+    });
   }
 
   private atualizar(indice: number, patch: Partial<CriterioDesempateConfigurado>): void {
