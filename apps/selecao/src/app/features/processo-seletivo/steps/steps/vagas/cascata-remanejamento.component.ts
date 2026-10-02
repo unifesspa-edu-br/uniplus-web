@@ -13,6 +13,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 import { RolagemFocavelDirective } from '@uniplus/shared-ui/components';
+import { Subscription } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
@@ -126,6 +127,9 @@ export class CascataRemanejamentoComponent {
     | { readonly estado: 'falha'; readonly codigo: string; readonly versao: string }
     | null
   >(null);
+
+  /** A requisição por trás de um `buscando` — cancelada quando a seleção deixa de ser a dela. */
+  private buscaEmCurso: Subscription | null = null;
 
   private readonly regraEscolhida = computed<RegraCatalogoDto | undefined>(() => {
     const selecao = this.cascata();
@@ -310,6 +314,23 @@ export class CascataRemanejamentoComponent {
     carregando: boolean,
     regras: readonly RegraCatalogoDto[],
   ): void {
+    // Uma busca em curso cuja seleção saiu da tela (troca de processo, ou de
+    // regra) foi abandonada: a resposta dela não completaria mais nada. Ela é
+    // cancelada e esquecida antes de qualquer outra checagem — se o `buscando`
+    // ficasse, voltar à mesma seleção o veria como "já tratado" e nunca mais
+    // consultaria a versão (#729).
+    const emCurso = this.buscaDaVersaoFora();
+    if (
+      emCurso?.estado === 'buscando' &&
+      (selecao === null ||
+        emCurso.codigo !== selecao.regraCodigo ||
+        emCurso.versao !== selecao.regraVersao)
+    ) {
+      this.buscaEmCurso?.unsubscribe();
+      this.buscaEmCurso = null;
+      this.buscaDaVersaoFora.set(null);
+    }
+
     if (selecao === null || carregando) return;
 
     const naListagem = regras.some(
@@ -326,13 +347,15 @@ export class CascataRemanejamentoComponent {
 
     const { regraCodigo: codigo, regraVersao: versao } = selecao;
     this.buscaDaVersaoFora.set({ estado: 'buscando', codigo, versao });
-    this.regrasCatalogoApi
+    this.buscaEmCurso = this.regrasCatalogoApi
       .obterVersao(codigo, versao)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        // A seleção pode ter mudado enquanto a busca corria — uma resposta
-        // atrasada da versão anterior não pode sobrescrever o estado da
-        // busca que já está em curso para a seleção atual.
+        this.buscaEmCurso = null;
+
+        // Defesa extra: a busca abandonada já é cancelada acima, mas uma
+        // resposta que ainda assim chegue para outra seleção não pode
+        // sobrescrever o estado da seleção atual.
         const atual = this.cascata();
         if (atual === null || atual.regraCodigo !== codigo || atual.regraVersao !== versao) return;
 
