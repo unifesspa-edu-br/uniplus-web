@@ -160,15 +160,17 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('link', { name: 'Nova modalidade' }).first().click();
+    await page.getByRole('link', { name: 'Nova modalidade', exact: true, }).first().click();
     await expect(page).toHaveURL(/\/modalidades\/novo$/);
-    const titulo = page.getByRole('heading', { name: 'Nova modalidade', level: 1 });
+    const titulo = page.getByRole('heading', { name: 'Nova modalidade', level: 1, exact: true, });
     await expect(titulo).toBeVisible();
     await expect(titulo).toBeFocused();
 
-    await page.getByRole('link', { name: 'Voltar à lista' }).click();
+    await page.getByRole('link', { name: 'Voltar à lista', exact: true, }).click();
     await expect(page).toHaveURL(/\/modalidades$/);
-    await expect(page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1, exact: true, }),
+    ).toBeVisible();
   });
 
   test('"Nova modalidade" tem aparência de botão, sem o sublinhado de link', async ({ page }) => {
@@ -179,10 +181,9 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     // isso é o padrão compartilhado `.btn`. Sem esta asserção, retirar a regra
     // de lá volta a sublinhar a ação sem que nada acuse: lint, teste unitário
     // e build não avaliam estilo computado.
-    await expect(page.getByRole('link', { name: 'Nova modalidade' }).first()).toHaveCSS(
-      'text-decoration-line',
-      'none',
-    );
+    await expect(
+      page.getByRole('link', { name: 'Nova modalidade', exact: true, }).first(),
+    ).toHaveCSS('text-decoration-line', 'none');
   });
 
   test('CA-03: AMPLA oculta remanejamento; COTA_RESERVADA fixa cascata; ACAO_AFIRMATIVA oferta destino/cruzado', async ({
@@ -235,7 +236,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await page.locator('[formControlName="naturezaLegal"]').selectOption('ACAO_AFIRMATIVA');
     await page.locator('[formControlName="regraRemanejamento"]').selectOption('DESTINO_UNICO');
     await page.locator('[formControlName="remanejamentoDestino"]').selectOption('AC');
-    await page.getByRole('button', { name: 'Criar modalidade' }).click();
+    await page.getByRole('button', { name: 'Criar modalidade', exact: true, }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
@@ -263,7 +264,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Remover modalidade AC' }).click();
+    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true, }).click();
 
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog.getByText('Remoção bloqueada')).toBeVisible();
@@ -271,7 +272,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect(dialog.locator('.cfg-refs-lista').getByText('V', { exact: true })).toBeVisible();
     // Não deve haver botão de confirmação de remoção.
     await expect(dialog.getByRole('button', { name: 'Remover', exact: true })).toHaveCount(0);
-    await dialog.getByRole('button', { name: 'Entendi' }).click();
+    await dialog.getByRole('button', { name: 'Entendi', exact: true, }).click();
     expect(capturado.deletedIds).toHaveLength(0);
   });
 
@@ -280,7 +281,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Remover modalidade V' }).click();
+    await page.getByRole('button', { name: 'Remover modalidade V', exact: true, }).click();
 
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
@@ -312,7 +313,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
   test('modal de bloqueio aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
-    await page.getByRole('button', { name: 'Remover modalidade AC' }).click();
+    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true, }).click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
