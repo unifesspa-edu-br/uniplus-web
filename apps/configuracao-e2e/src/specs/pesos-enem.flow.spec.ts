@@ -153,14 +153,14 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Cadastrar nova resolução' }).first().click();
+    await page.getByRole('button', { name: 'Cadastrar nova resolução', exact: true, }).first().click();
     await page.locator('[formControlName="resolucao"]').fill('Res. 900/2026');
     await page.locator('[formControlName="baseLegalGlobal"]').fill('Res. 900/2026 Anexo I');
 
     await page.getByLabel('Peso de Matemática e suas Tecnologias — Tecnológica').fill('2.5');
     await page.getByLabel('Corte de Redação — Tecnológica').fill('450');
 
-    await page.getByRole('button', { name: 'Criar resolução' }).click();
+    await page.getByRole('button', { name: 'Criar resolução', exact: true, }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(4);
     const posts = capturado.posts as ReadonlyArray<{
@@ -189,10 +189,10 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await mockApi(page, capturado, SEED);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: `Inativar ${RESOLUCAO}` }).click();
+    await page.getByRole('button', { name: `Inativar ${RESOLUCAO}`, exact: true, }).click();
     await page
       .locator('dialog.uni-dialog')
-      .getByRole('button', { name: 'Confirmar inativação' })
+      .getByRole('button', { name: 'Confirmar inativação', exact: true, })
       .click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(4);
@@ -236,8 +236,8 @@ test.describe('Peso por Área — reflow em 320 px (WCAG 1.4.10)', () => {
 
     expect(await medirTransbordo(page)).toEqual({ documento: 0, paineis: 0, linhas: 0 });
 
-    await page.getByRole('button', { name: 'Editar parâmetros' }).click();
-    await expect(page.getByRole('button', { name: 'Salvar' })).toBeVisible();
+    await page.getByRole('button', { name: 'Editar parâmetros', exact: true, }).click();
+    await expect(page.getByRole('button', { name: 'Salvar', exact: true, })).toBeVisible();
     expect(await medirTransbordo(page)).toEqual({ documento: 0, paineis: 0, linhas: 0 });
   });
 });
@@ -251,7 +251,7 @@ test.describe('Peso por Área — identificação (#689)', () => {
     await mockApi(page, novoCapturado(), SEED);
     await abrirPagina(page);
 
-    const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+    const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb', exact: true, });
     await expect(breadcrumb.getByText('Peso por Área', { exact: true })).toBeVisible();
   });
 });
