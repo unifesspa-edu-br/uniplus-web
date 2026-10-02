@@ -473,4 +473,70 @@ describe('CascataRemanejamentoComponent', () => {
       ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
     });
   });
+
+  /**
+   * #729: trocar de processo (A → B sem cascata) com a busca direta da versão
+   * de A ainda em curso abandona essa busca — a resposta, quando vier, não é
+   * mais de quem está na tela. Ao voltar para A, o `buscando` abandonado não
+   * pode passar por "já tratado", senão nenhuma consulta nova sai e a matriz
+   * só volta com recarga da página.
+   */
+  describe('busca abandonada por troca de processo (A → B → A)', () => {
+    const URL_V0 = `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`;
+    const SELECAO_A = { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v0' };
+
+    function abandonarBuscaDeA(): void {
+      store.patchObjectSection('vagas', {
+        ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
+        cascata: SELECAO_A,
+      });
+      detectar();
+      const abandonada = controller.expectOne(URL_V0);
+
+      store.patchObjectSection('vagas', { cascata: null });
+      detectar();
+      expect(abandonada.cancelled).toBe(true);
+
+      store.patchObjectSection('vagas', { cascata: SELECAO_A });
+      detectar();
+    }
+
+    it('refaz a busca da versão ao voltar e resolve a regra e a matriz', () => {
+      abandonarBuscaDeA();
+
+      controller.expectOne(URL_V0).flush(REGRA_CASCATA_INATIVADA);
+      detectar();
+
+      expect(componente.regraNaoEncontrada()).toBe(false);
+      expect(componente.falhaAoConsultarRegra()).toBe(false);
+      expect(componente.matriz()).toEqual({
+        fallbackCodigo: 'AC',
+        ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
+      });
+      expect(elemento.querySelector('.cascata-matriz__terminal')?.textContent).toContain('AC');
+    });
+
+    it('preserva a falha retentável quando a nova busca falha', () => {
+      abandonarBuscaDeA();
+
+      controller
+        .expectOne(URL_V0)
+        .flush(
+          { type: 'about:blank', title: 'Erro interno.', status: 503, traceId: 't' },
+          { status: 503, statusText: 'Service Unavailable' },
+        );
+      detectar();
+
+      expect(componente.falhaAoConsultarRegra()).toBe(true);
+      expect(componente.matriz()).toBeNull();
+
+      componente.tentarNovamenteRegra();
+      detectar();
+      controller.expectOne(URL_V0).flush(REGRA_CASCATA_INATIVADA);
+      detectar();
+
+      expect(componente.falhaAoConsultarRegra()).toBe(false);
+      expect(componente.matriz()).not.toBeNull();
+    });
+  });
 });
