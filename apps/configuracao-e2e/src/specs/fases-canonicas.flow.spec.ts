@@ -7,7 +7,7 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  * via projeto `fluxo-chromium` (auth-setup + storageState).
  *
  * Issue #698: a interface comum não cria fase canônica — só lista, filtra,
- * edita e inativa. O endpoint de criação continua existindo na API, mas a tela
+ * edita e remove. O endpoint de criação continua existindo na API, mas a tela
  * nunca o aciona.
  */
 
@@ -192,16 +192,16 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  test('CA-15: inativa uma fase canônica após confirmação', async ({ page }) => {
+  test('CA-15: remove uma fase canônica após confirmação', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [faseSeed]);
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Inativar fase canônica ${faseSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Remover fase canônica ${faseSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
-    await dialog.getByRole('button', { name: 'Inativar' }).click();
+    await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(FASE_ID);

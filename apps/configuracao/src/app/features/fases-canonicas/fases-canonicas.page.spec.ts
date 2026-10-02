@@ -270,7 +270,7 @@ describe('FasesCanonicasPage', () => {
     );
   });
 
-  it('CA-15: inativa uma fase canônica após confirmação', async () => {
+  it('CA-15: remover uma fase canônica após confirmação', async () => {
     await flushLista([faseAvaliacaoSeed]);
     component['pedirRemocao'](faseAvaliacaoSeed);
     component['removerConfirmado']();
