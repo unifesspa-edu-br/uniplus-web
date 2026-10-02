@@ -116,7 +116,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
     >
       As fases canônicas pertencem a um vocabulário fixo, provisionado pela instituição no seed da
       API e congelado por snapshot nos cronogramas dos editais. Esta tela não cria fases nem altera
-      o código de uma fase — aqui você apenas edita os atributos de fases existentes ou as inativa.
+      o código de uma fase — aqui você apenas edita os atributos de fases existentes ou as remover.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -220,9 +220,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                       (triggered)="abrirEdicao(fase)"
                     />
                     <ui-icon-button
-                      icon="pi-power-off"
-                      [accessibleName]="'Inativar fase canônica ' + fase.codigo"
-                      tooltip="Inativar fase canônica"
+                      icon="pi-trash"
+                      [accessibleName]="'Remover fase canônica ' + fase.codigo"
+                      tooltip="Remover fase canônica"
                       [isDisabled]="loading()"
                       (triggered)="pedirRemocao(fase)"
                     />
@@ -450,9 +450,9 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
 
     <ui-confirm-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar fase canônica"
+      heading="Remover fase canônica"
       [message]="confirmMessage()"
-      confirmLabel="Inativar"
+      confirmLabel="Remover"
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
     />
@@ -560,8 +560,8 @@ export class FasesCanonicasPage {
   protected readonly confirmMessage = computed(() => {
     const fase = this.faseParaRemover();
     return fase
-      ? `Deseja inativar a fase ${fase.codigo}? A inativação impede novos editais de utilizar esta fase, mas não altera o que já foi congelado — a cópia por valor de cada cronograma permanece íntegra (snapshot-copy desacoplado) e não bloqueia esta remoção lógica.`
-      : 'Deseja inativar esta fase canônica?';
+      ? `Deseja remover a fase ${fase.codigo}? A remoção impede novos editais de utilizar esta fase, mas não altera o que já foi congelado — a cópia por valor de cada cronograma permanece íntegra (snapshot-copy desacoplado) e não bloqueia esta remoção lógica.`
+      : 'Deseja remover esta fase canônica?';
   });
 
   protected readonly form: FormGroup<FaseForm> = new FormGroup<FaseForm>({
@@ -692,7 +692,7 @@ export class FasesCanonicasPage {
       .subscribe((result) => {
         this.saving.set(false);
         if (result.ok) {
-          this.notifications.success('Fase canônica inativada', fase.codigo);
+          this.notifications.success('Fase canônica removida', fase.codigo);
           this.confirmOpen.set(false);
           this.faseParaRemover.set(null);
           this.recarregar();
