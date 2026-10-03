@@ -6,9 +6,11 @@ import { EditorDeCondicoesComponent } from './editor-de-condicoes';
 import {
   clausulasDe,
   comClausulaEm,
+  deClausulasDoWire,
   fatoEscolhivel,
   fatosEscolhiveis,
   problemasDeCondicoes,
+  paraClausulasDoWire,
   semCondicaoEm,
   type CondicaoEmClausula,
   type FatoDoCatalogo,
@@ -98,6 +100,37 @@ class HospedeiroDeTeste {
   readonly fatos = signal<readonly FatoEscolhivel[]>(FATOS);
   readonly erros = signal<Readonly<Record<number, string>>>({});
 }
+
+describe('o predicado na forma aninhada da API', () => {
+  it('vai e volta sem perder cláusula, operador nem valor', () => {
+    const wire = [
+      [{ fato: 'SEXO', operador: 'IGUAL', valor: 'FEMININO' }, { fato: 'IDADE', operador: 'MAIOR_IGUAL', valor: 18 }],
+      [{ fato: 'MODALIDADE', operador: 'EM', valor: ['AC', 'LB_PPI'] }],
+    ];
+
+    const editor = deClausulasDoWire(wire);
+
+    expect(editor.map((c) => [c.clausula, c.valor])).toEqual([
+      [1, '"FEMININO"'],
+      [1, '18'],
+      [2, '["AC","LB_PPI"]'],
+    ]);
+    expect(paraClausulasDoWire(editor)).toEqual(wire);
+  });
+
+  it('volta com as cláusulas na ordem e sem a que ficou vazia depois de uma remoção', () => {
+    const condicoes: CondicaoEmClausula[] = [
+      { clausula: 3, fato: 'SEXO', operador: 'IGUAL', valor: '"MASCULINO"' },
+      { clausula: 1, fato: 'IDADE', operador: 'IGUAL', valor: '30' },
+    ];
+
+    expect(paraClausulasDoWire(condicoes)).toEqual([
+      [{ fato: 'IDADE', operador: 'IGUAL', valor: 30 }],
+      [{ fato: 'SEXO', operador: 'IGUAL', valor: 'MASCULINO' }],
+    ]);
+    expect(deClausulasDoWire(null)).toEqual([]);
+  });
+});
 
 describe('EditorDeCondicoesComponent', () => {
   let fixture: ComponentFixture<HospedeiroDeTeste>;
