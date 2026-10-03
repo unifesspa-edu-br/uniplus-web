@@ -114,6 +114,12 @@ export const appRoutes: Routes = [
           import('./features/tipos-ato/tipos-ato.routes').then((m) => m.TIPOS_ATO_ROUTES),
       },
       {
+        path: 'fatos-candidato',
+        data: { breadcrumb: 'Fato do Candidato' },
+        loadChildren: () =>
+          import('./features/fatos-candidato/fatos-candidato.routes').then((m) => m.FATOS_CANDIDATO_ROUTES),
+      },
+      {
         path: 'tipos-documento',
         data: { breadcrumb: 'Tipo de Documento' },
         loadChildren: () =>

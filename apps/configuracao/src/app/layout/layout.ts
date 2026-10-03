@@ -100,6 +100,12 @@ export class LayoutComponent {
           exact: true,
         },
         {
+          label: 'Fato do Candidato',
+          icon: 'pi-list',
+          routerLink: '/fatos-candidato',
+          exact: true,
+        },
+        {
           label: 'Termo de Consentimento',
           icon: 'pi-file-edit',
           routerLink: '/termos-consentimento',

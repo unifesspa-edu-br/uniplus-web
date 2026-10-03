@@ -191,4 +191,16 @@ export {
 } from './tipos-instrumento-normativo.api';
 
 export { FatosCandidatoApi } from './fatos-candidato.api';
-export type { FatoCandidatoView, FatoValorDominioViewItem } from './fatos-candidato.api';
+export type {
+  CriarFatoAgregadoCommand,
+  CriarFatoCandidatoCommand,
+  CriarFatoDerivadoCommand,
+  DescritivoDoFatoInput,
+  FatoCandidatoDto,
+  FatoCandidatoView,
+  FatoValorDominioDto,
+  FatoValorDominioViewItem,
+  RegraPadraoDto,
+  RegrasPadraoInput,
+  ValorDominioInput,
+} from './fatos-candidato.api';
