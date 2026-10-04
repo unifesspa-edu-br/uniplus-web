@@ -203,18 +203,32 @@ export interface ProcessoComFormularios {
 export function formularioDoServidor(
   dto: ProcessoComFormularios,
   formulario: FormularioDto,
-): { readonly finalidade: string; readonly faseCodigo: string; readonly conteudo: ConteudoDoFormulario } {
+): {
+  readonly finalidade: string;
+  readonly faseCodigo: string;
+  readonly conteudo: ConteudoDoFormulario;
+  readonly modeloOrigemCodigo: string | null;
+} {
   const fase = formulario.faseId === null ? undefined : dto.cronogramaFases.find((f) => f.id === formulario.faseId);
-  return { finalidade: formulario.finalidade, faseCodigo: fase?.codigo ?? '', conteudo: conteudoDoFormulario(formulario) };
+  return {
+    finalidade: formulario.finalidade,
+    faseCodigo: fase?.codigo ?? '',
+    conteudo: conteudoDoFormulario(formulario),
+    modeloOrigemCodigo: formulario.modeloOrigemCodigo,
+  };
 }
 
 /**
  * O formulário de inscrição do servidor, na forma do rascunho. Sem formulário de inscrição, o
  * conteúdo é o inicial — a revisão e aceite —, e a seção dos dados básicos chega com a criação.
  */
-export function inscricaoDoServidor(dto: ProcessoComFormularios): { readonly faseCodigo: string; readonly conteudo: ConteudoDoFormulario } {
+export function inscricaoDoServidor(dto: ProcessoComFormularios): {
+  readonly faseCodigo: string;
+  readonly conteudo: ConteudoDoFormulario;
+  readonly modeloOrigemCodigo: string | null;
+} {
   const inscricao = formularioDaFinalidade(dto.formularios, FINALIDADE_INSCRICAO);
-  if (inscricao === null) return { faseCodigo: '', conteudo: conteudoInicial() };
-  const { faseCodigo, conteudo } = formularioDoServidor(dto, inscricao);
-  return { faseCodigo, conteudo };
+  if (inscricao === null) return { faseCodigo: '', conteudo: conteudoInicial(), modeloOrigemCodigo: null };
+  const { faseCodigo, conteudo, modeloOrigemCodigo } = formularioDoServidor(dto, inscricao);
+  return { faseCodigo, conteudo, modeloOrigemCodigo };
 }

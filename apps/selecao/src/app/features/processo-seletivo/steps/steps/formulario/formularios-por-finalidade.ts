@@ -107,7 +107,12 @@ export function emOrdemDasFinalidades<T extends { readonly finalidade: string }>
 /** Todos os formulários do rascunho, a inscrição primeiro. */
 export function formulariosDoRascunho(formulario: FormularioDeInscricao): readonly FormularioDaFinalidade[] {
   return [
-    { finalidade: FINALIDADE_INSCRICAO, faseCodigo: formulario.faseCodigo, conteudo: formulario.conteudo },
+    {
+      finalidade: FINALIDADE_INSCRICAO,
+      faseCodigo: formulario.faseCodigo,
+      conteudo: formulario.conteudo,
+      modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
+    },
     ...formulario.outrasFinalidades,
   ];
 }
@@ -115,7 +120,7 @@ export function formulariosDoRascunho(formulario: FormularioDeInscricao): readon
 /** O rascunho com o formulário da finalidade trocado; a inscrição nos campos dela, as outras na lista. */
 export function comFormulario(formulario: FormularioDeInscricao, novo: FormularioDaFinalidade): FormularioDeInscricao {
   if (novo.finalidade === FINALIDADE_INSCRICAO) {
-    return { ...formulario, faseCodigo: novo.faseCodigo, conteudo: novo.conteudo };
+    return { ...formulario, faseCodigo: novo.faseCodigo, conteudo: novo.conteudo, modeloOrigemCodigo: novo.modeloOrigemCodigo ?? null };
   }
   const outras = formulario.outrasFinalidades.filter((outro) => outro.finalidade !== novo.finalidade);
   return { ...formulario, outrasFinalidades: emOrdemDasFinalidades([...outras, novo]) };
@@ -137,7 +142,7 @@ export function formularioDoServidorNaFinalidade(dto: ProcessoComFormularios, fi
 /** Os formulários do servidor na forma do rascunho: a inscrição nos campos dela e as outras finalidades. */
 export function formulariosDoServidor(
   dto: ProcessoComFormularios,
-): Pick<FormularioDeInscricao, 'faseCodigo' | 'conteudo' | 'outrasFinalidades'> {
+): Pick<FormularioDeInscricao, 'faseCodigo' | 'conteudo' | 'outrasFinalidades' | 'modeloOrigemCodigo'> {
   return { ...inscricaoDoServidor(dto), outrasFinalidades: outrasFinalidadesDoServidor(dto) };
 }
 

@@ -31,7 +31,7 @@ function initialDocumentos(): ExigenciasDoRascunho {
 
 const INITIAL_DRAFT: WizardDraft = {
   // Desmarcado por padrão — o usuário DEVE escolher um tipo no step-01.
-  tipoProcesso: { selected: '', rotulo: '' },
+  tipoProcesso: { selected: '', rotulo: '', codigo: '' },
   // Todos os campos do Passo 2 começam vazios para obrigar o preenchimento.
   identificacao: {
     nome: '',

@@ -33,6 +33,8 @@ export interface StepValidation {
 
 export interface TipoProcessoOption {
   value: string;
+  /** O código do tipo no catálogo — o que os modelos de formulário citam. */
+  codigo: string;
   name: string;
   description: string;
   tags: string[];
@@ -541,6 +543,8 @@ export interface FormularioDeInscricao {
    * outras existem só quando o operador as acrescenta. Um fato tem um único formulário que o coleta.
    */
   readonly outrasFinalidades: readonly FormularioDaFinalidade[];
+  /** O código do modelo de que a inscrição partiu; ausente ou nulo quando foi composta no processo. */
+  readonly modeloOrigemCodigo?: string | null;
 }
 
 /** O formulário de uma finalidade no rascunho: a fase por CÓDIGO, como a da inscrição, e o conteúdo do editor. */
@@ -548,6 +552,11 @@ export interface FormularioDaFinalidade {
   readonly finalidade: string;
   readonly faseCodigo: string;
   readonly conteudo: ConteudoDoFormulario;
+  /**
+   * O código do modelo de que o formulário partiu; ausente ou nulo quando foi composto no processo.
+   * Só o servidor o define — ao aplicar um modelo —, e editar a cópia depois não o apaga.
+   */
+  readonly modeloOrigemCodigo?: string | null;
 }
 
 /**
@@ -611,6 +620,12 @@ export interface WizardDraft {
      * tirar o nome.
      */
     rotulo: string;
+    /**
+     * Código do tipo, pela mesma razão do nome: os modelos de formulário são
+     * filtrados por ele, e o processo criado nesta sessão não tem snapshot
+     * remoto que o traga.
+     */
+    codigo: string;
   };
   /**
    * Declaração de cobrança e de quais fundamentos de isenção o processo

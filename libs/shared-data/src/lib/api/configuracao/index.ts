@@ -212,6 +212,7 @@ export type {
   EdicaoDoModeloInput,
   ItemPreVisualizadoDto,
   ModeloFormularioView,
+  ModelosFormularioQuery,
   PreVisualizacaoDoModeloDto,
   PreVisualizacaoDoModeloInput,
   TermoPreVisualizadoDto,

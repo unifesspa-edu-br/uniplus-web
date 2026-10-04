@@ -44,7 +44,7 @@ const DISTRIBUICAO = {
 function dtoCom(distribuicao: unknown): ProcessoSeletivoDto {
   return {
     nome: 'PS 2026',
-    tipoProcesso: { origemId: 'tipo-1', nome: 'SiSU' },
+    tipoProcesso: { origemId: 'tipo-1', codigo: 'SISU', nome: 'SiSU' },
     unidadeAdministradora: { origemId: 'unidade-1' },
     origemCandidatos: 'Interno',
     localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -63,6 +63,12 @@ describe('hidratarDraft — identificador legível', () => {
     const dto = { ...dtoCom([]), identificadorLegivel: null } as ProcessoSeletivoDto;
 
     expect(hidratarDraft(DRAFT, dto).identificacao.identificadorLegivel).toBe('');
+  });
+});
+
+describe('hidratarDraft — tipo do processo', () => {
+  it('guarda o código do tipo, que filtra os modelos de formulário', () => {
+    expect(hidratarDraft(DRAFT, dtoCom([])).tipoProcesso.codigo).toBe('SISU');
   });
 });
 
@@ -777,6 +783,21 @@ describe('hidratarDraft — formulário de inscrição', () => {
       ['ISENCAO_TAXA', ['RENDA']],
     ]);
     expect(draft.formulario.conteudo.itens?.map((item) => item.fatoCodigo)).not.toContain('RENDA');
+  });
+
+  it('guarda de que modelo cada formulário partiu', () => {
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({
+        formularios: [
+          formulario('INSCRICAO', { modeloOrigemId: 'm1', modeloOrigemCodigo: 'MEDICINA-INSCRICAO' }),
+          formulario('ISENCAO_TAXA', { etapas: [etapa('S1', 0)], fatosColetados: [], modeloOrigemId: 'm2', modeloOrigemCodigo: 'ISENCAO-PADRAO' }),
+        ],
+      }),
+    );
+
+    expect(draft.formulario.modeloOrigemCodigo).toBe('MEDICINA-INSCRICAO');
+    expect(draft.formulario.outrasFinalidades[0].modeloOrigemCodigo).toBe('ISENCAO-PADRAO');
   });
 
   /** A fase volta por CÓDIGO — o id não sobrevive a uma gravação de cronograma. */

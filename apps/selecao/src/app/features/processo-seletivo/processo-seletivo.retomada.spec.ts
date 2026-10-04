@@ -20,6 +20,7 @@ import {
   RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
   FatosCandidatoApi,
+  ModelosFormularioApi,
   TermosConsentimentoApi,
   TipoDeficienciaApi,
   TipoProcessoDto,
@@ -203,6 +204,8 @@ function montar(opts: CenarioOpts = {}) {
   { provide: FatosCandidatoApi, useValue: catalogoVazioStub },
   // E os termos de consentimento que ele pode exigir.
   { provide: TermosConsentimentoApi, useValue: { listarComVersoes: () => NEVER } },
+  // E os modelos de que cada formulário pode partir.
+  { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
       {
         provide: ProcessosSeletivosApi,
         useValue: {

@@ -50,6 +50,7 @@ export class TipoProcessoStepComponent {
     return [
       {
         value: snapshot.origemId,
+        codigo: snapshot.codigo,
         name: snapshot.nome,
         description: 'Tipo não disponível no catálogo atual — preservado deste processo.',
         tags: [snapshot.codigo],
@@ -121,6 +122,7 @@ export class TipoProcessoStepComponent {
     this.store.patchObjectSection('tipoProcesso', {
       selected: value,
       rotulo: escolhido?.name ?? '',
+      codigo: escolhido?.codigo ?? '',
     });
   }
 
@@ -134,6 +136,7 @@ export class TipoProcessoStepComponent {
   private toOption(tipo: TipoProcessoDto): TipoProcessoOption {
     return {
       value: tipo.id,
+      codigo: tipo.codigo,
       name: tipo.nome,
       description: tipo.descricao ?? `Código: ${tipo.codigo}`,
       tags: [tipo.codigo],

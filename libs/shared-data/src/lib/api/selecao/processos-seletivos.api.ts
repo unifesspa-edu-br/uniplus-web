@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, IDEMPOTENCY_KEY_TOKEN, withVendorMime } from '@uniplus/shared-core/http';
 import { DefinirTaxaInscricaoRequestFundamentos } from './schema';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
@@ -43,6 +43,9 @@ export type FormularioDto = components['schemas']['FormularioDto'];
 export type DefinirFormularioRequest = components['schemas']['DefinirFormularioRequest'];
 export type DefinirItensDoFormularioRequest = components['schemas']['DefinirItensDoFormularioRequest'];
 export type DefinirTermosDoFormularioRequest = components['schemas']['DefinirTermosDoFormularioRequest'];
+export type AplicacaoDeModeloInput = components['schemas']['AplicacaoDeModeloInput'];
+export type AplicacaoDeModeloDto = components['schemas']['AplicacaoDeModeloDto'];
+export type ParteDescartadaDto = components['schemas']['ParteDescartadaDto'];
 export type DefinirIdentificadorLegivelRequest =
   components['schemas']['DefinirIdentificadorLegivelRequest'];
 export type BaseLegalDto = components['schemas']['BaseLegalDto'];
@@ -357,6 +360,29 @@ export class ProcessosSeletivosApi {
    */
   removerFormulario(processoSeletivoId: string, finalidade: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade));
+  }
+
+  /**
+   * POST `…/formularios/aplicacoes-de-modelo` — copia o modelo para o processo: o formulário da
+   * finalidade do modelo é criado ou substituído por inteiro, e a resposta relata o que a cópia
+   * trouxe, manteve, descartou e derivou. Só em rascunho. A fase do formulário que já existia é
+   * preservada; o que nasce pela aplicação fica sem fase até o cabeçalho declará-la.
+   *
+   * Responde com media type próprio, então o `Accept` é o do recurso; a Idempotency-Key vem do
+   * `context` de quem chama.
+   */
+  aplicarModeloDeFormulario(
+    processoSeletivoId: string,
+    request: AplicacaoDeModeloInput,
+    context: HttpContext,
+  ): Observable<ApiResult<AplicacaoDeModeloDto>> {
+    return this.http.post<ApiResult<AplicacaoDeModeloDto>>(
+      `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formularios/aplicacoes-de-modelo`,
+      request,
+      {
+        context: withVendorMime('aplicacao-de-modelo-formulario', 1).set(IDEMPOTENCY_KEY_TOKEN, context.get(IDEMPOTENCY_KEY_TOKEN)),
+      },
+    );
   }
 
   private urlDoFormulario(processoSeletivoId: string, finalidade: string): string {
