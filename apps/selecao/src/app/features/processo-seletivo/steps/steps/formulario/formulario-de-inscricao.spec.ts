@@ -356,6 +356,13 @@ describe('campos cujo domínio sai da oferta de atendimento', () => {
     expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento', 'o tipo de deficiência']);
   });
 
+  it('acusa também o campo perguntado em outro formulário do processo', () => {
+    const habilitacao = inscricaoGravada({ itens: [item('TIPO_DEFICIENCIA', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })] });
+    const formulario = { ...comCampos(), outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao }] };
+
+    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['o tipo de deficiência']);
+  });
+
   it('cala quando a oferta declara ao menos um valor, ou quando o campo não é de seleção', () => {
     const comOferta = { ...semOferta, condicoes: [{ id: 'c1', codigo: 'PCD', nome: 'PcD' }] };
 

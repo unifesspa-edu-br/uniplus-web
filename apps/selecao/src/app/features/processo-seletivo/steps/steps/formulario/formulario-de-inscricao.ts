@@ -414,8 +414,10 @@ export function camposSemValoresOfertados(
   formulario: FormularioDeInscricao,
   atendimento: WizardDraft['atendimento'],
 ): readonly string[] {
+  // Todo formulário do processo conta: o campo na isenção ou na habilitação esbarra na mesma oferta vazia.
   const perguntados = new Set(
-    todosOsCampos(formulario.conteudo)
+    formulariosDoRascunho(formulario)
+      .flatMap((outro) => todosOsCampos(outro.conteudo))
       .filter((campo) => campo.tipoRenderizacao.startsWith('SELECAO'))
       .map((campo) => campo.fatoCodigo),
   );
