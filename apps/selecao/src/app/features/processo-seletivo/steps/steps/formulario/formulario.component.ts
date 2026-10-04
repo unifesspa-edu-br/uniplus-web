@@ -441,10 +441,14 @@ export class FormularioStepComponent {
     return [title, detail].filter((parte) => parte !== undefined && parte !== '').join(' ');
   }
 
-  /** Sem abas — sobrou um formulário só —, o foco vai ao combo de acrescentar, o controle mais próximo. */
+  /**
+   * Sem abas — sobrou um formulário só —, o foco vai ao primeiro título do painel dele, que existe
+   * sempre: o combo de acrescentar some quando não há finalidade a oferecer.
+   */
   private focarAba(finalidade: string): void {
+    const sufixo = sufixoDaFinalidade(finalidade);
     afterNextRender(
-      () => (document.getElementById(`form-aba-${sufixoDaFinalidade(finalidade)}`) ?? document.getElementById('form-finalidade-nova'))?.focus(),
+      () => (document.getElementById(`form-aba-${sufixo}`) ?? document.getElementById(`form-${sufixo}-fase-titulo`))?.focus(),
       { injector: this.injector },
     );
   }
