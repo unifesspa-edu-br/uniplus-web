@@ -164,6 +164,16 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     expect(botao().disabled).toBe(true);
   });
 
+  it('recusa decimal no fato numérico de valor único, que só admite inteiro', () => {
+    const campo = tela().querySelector('#cfg-simulacao-ANO') as HTMLInputElement;
+    campo.value = '7.5';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(botao().disabled).toBe(true);
+  });
+
   it('não oferece simular campo de grupo, cuja resposta a pré-visualização da API não recebe', () => {
     fixture.componentRef.setInput('conteudo', {
       ...conteudo,
