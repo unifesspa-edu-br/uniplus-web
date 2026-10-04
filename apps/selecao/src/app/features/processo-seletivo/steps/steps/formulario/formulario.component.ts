@@ -142,6 +142,8 @@ export class FormularioStepComponent {
   readonly resumosDaAplicacao = signal<ReadonlyMap<string, readonly string[]>>(new Map());
   /** A recusa da aplicação, por finalidade, já com o desfecho dito: fica na aba do formulário. */
   readonly recusasDaAplicacao = signal<ReadonlyMap<string, string>>(new Map());
+  /** As abas cuja recusa só diz que outra cópia está sem desfecho: saem quando ela se resolve. */
+  private readonly bloqueadasPorCopiaEmAberto = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
     this.carregarCatalogo();
@@ -171,7 +173,15 @@ export class FormularioStepComponent {
     });
   }
 
+  /** Sem cópia em aberto, a recusa das abas bloqueadas por ela não vale mais. */
+  private esquecerBloqueios(): void {
+    const bloqueadas = this.bloqueadasPorCopiaEmAberto();
+    this.recusasDaAplicacao.update((atuais) => new Map([...atuais].filter(([aba]) => !bloqueadas.has(aba))));
+    this.bloqueadasPorCopiaEmAberto.set(new Set());
+  }
+
   private esquecerOProcessoAnterior(): void {
+    this.bloqueadasPorCopiaEmAberto.set(new Set());
     this.remocaoPendente.set(null);
     this.aplicacaoPendente.set(null);
     this.modelosEscolhidos.set(new Map());
@@ -536,6 +546,7 @@ export class FormularioStepComponent {
     if (bloqueio !== undefined) {
       const [outra, emAberto] = bloqueio;
       this.mostrarRecusaDaAplicacao(finalidade, textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto));
+      this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, finalidade]));
       return;
     }
     this.aplicacaoPendente.set({ finalidade, modelo });
@@ -579,6 +590,7 @@ export class FormularioStepComponent {
     const { finalidade, modelo } = pendente;
     const faseDaAba = this.fasesDosFormularios().get(finalidade)?.escolhida ?? '';
     this.recusasDaAplicacao.update((atuais) => semChave(atuais, finalidade));
+    this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais].filter((aba) => aba !== finalidade)));
     this.resumosDaAplicacao.update((atuais) => semChave(atuais, finalidade));
 
     const geracao = this.store.geracao();
@@ -593,6 +605,7 @@ export class FormularioStepComponent {
 
     if (desfecho.ok) {
       this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, finalidade));
+      if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
     } else if (desfecho.copiaConfirmada !== null) {
       const emAberto = { modeloId: modelo.id, modeloNome: modelo.nome, copiaConfirmada: desfecho.copiaConfirmada };
       this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Map([...atuais, [finalidade, emAberto]]));
