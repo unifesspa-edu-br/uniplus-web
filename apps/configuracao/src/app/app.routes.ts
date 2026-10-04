@@ -120,6 +120,12 @@ export const appRoutes: Routes = [
           import('./features/fatos-candidato/fatos-candidato.routes').then((m) => m.FATOS_CANDIDATO_ROUTES),
       },
       {
+        path: 'modelos-formulario',
+        data: { breadcrumb: 'Modelo de Formulário' },
+        loadChildren: () =>
+          import('./features/modelos-formulario/modelos-formulario.routes').then((m) => m.MODELOS_FORMULARIO_ROUTES),
+      },
+      {
         path: 'tipos-documento',
         data: { breadcrumb: 'Tipo de Documento' },
         loadChildren: () =>
