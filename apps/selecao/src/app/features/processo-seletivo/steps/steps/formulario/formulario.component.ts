@@ -528,9 +528,14 @@ export class FormularioStepComponent {
     const escolhido = this.modelosEscolhidos().get(finalidade);
     const modelo = this.modelos().get(finalidade)?.find((oferecido) => oferecido.id === escolhido);
     if (modelo === undefined) return;
-    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
-    if (emAberto !== undefined && (emAberto.copiaConfirmada || emAberto.modeloId !== modelo.id)) {
-      this.mostrarRecusaDaAplicacao(finalidade, textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto));
+    // Uma aplicação sem desfecho, em qualquer aba, só admite a nova tentativa dela: as cópias
+    // mexem no que é do processo inteiro (fatos da inscrição, derivações) e dividem a mesma chave.
+    const bloqueio = [...this.store.aplicacoesDeModeloEmAberto()].find(
+      ([outra, emAberto]) => emAberto.copiaConfirmada || outra !== finalidade || emAberto.modeloId !== modelo.id,
+    );
+    if (bloqueio !== undefined) {
+      const [outra, emAberto] = bloqueio;
+      this.mostrarRecusaDaAplicacao(finalidade, textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto));
       return;
     }
     this.aplicacaoPendente.set({ finalidade, modelo });

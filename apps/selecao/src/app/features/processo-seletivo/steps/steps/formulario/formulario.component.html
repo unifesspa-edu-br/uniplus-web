@@ -151,14 +151,17 @@
               <span class="field__hint" [id]="aba.idBase + '-modelo-ajuda'">
                 Só aparecem os modelos ativos de {{ aba.nome }} que servem ao tipo deste processo.
                 Aplicar um modelo substitui este formulário inteiro pela cópia dele.
+                @if (store.processoSeletivoId() === null) {
+                  O modelo só pode ser aplicado depois que o processo for criado, ao gravar o primeiro passo.
+                }
               </span>
             </div>
             <button
               type="button"
               class="btn btn--secondary"
               [id]="aba.idBase + '-aplicar-modelo'"
-              [attr.aria-describedby]="aba.resumoDaAplicacao ? aba.idBase + '-resumo-modelo' : null"
-              [disabled]="!store.aceitaEdicao() || aba.modeloEscolhido === ''"
+              [attr.aria-describedby]="aba.resumoDaAplicacao ? aba.idBase + '-resumo-modelo' : aba.idBase + '-modelo-ajuda'"
+              [disabled]="!store.aceitaEdicao() || aba.modeloEscolhido === '' || store.processoSeletivoId() === null"
               (click)="pedirAplicacao(aba.finalidade)"
             >
               Aplicar modelo
