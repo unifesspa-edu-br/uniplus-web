@@ -439,6 +439,36 @@ ui-editor-de-condicoes { display: block; }
 }
 
 /*
+ * Pré-visualização de formulários (ui-pre-visualizacao-de-formularios): as respostas simuladas em
+ * grade, o resultado em tabela por formulário.
+ */
+.pre-visualizacao-formularios { display: grid; gap: var(--space-3); }
+.pre-visualizacao-formularios__respostas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-3);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.pre-visualizacao-formularios__respostas > legend,
+.pre-visualizacao-formularios__respostas > .field__hint { grid-column: 1 / -1; }
+.pre-visualizacao-formularios__acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+/* A região de status fica no DOM mesmo vazia: escondida com display none, não anunciaria. */
+.pre-visualizacao-formularios__resumo { margin: 0; }
+.pre-visualizacao-formularios__formulario { margin: 0; font-size: var(--text-base); }
+.pre-visualizacao-formularios__mensagem {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/*
  * Editor de formulário (ui-editor-de-formulario): etapas empilhadas, cada uma com os campos em
  * lista numerada; o anúncio de mover e recusar é texto visível acima das etapas.
  */

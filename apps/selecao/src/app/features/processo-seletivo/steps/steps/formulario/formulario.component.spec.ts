@@ -164,6 +164,38 @@ describe('FormularioStepComponent', () => {
     ]);
   }
 
+  it('pré-visualiza o processo gravado e mostra no campo o impedimento com a mensagem ao candidato', async () => {
+    const pcd = host.querySelector('#form-pre-visualizacao-simulacao-PCD') as HTMLSelectElement;
+    pcd.value = 'true';
+    pcd.dispatchEvent(new Event('change'));
+    const secao = Array.from(host.querySelectorAll('label.checkbox')).find((rotulo) => rotulo.textContent?.includes('Condições especiais'));
+    (secao?.querySelector('input') as HTMLInputElement).click();
+    fixture.detectChanges();
+    (Array.from(host.querySelectorAll('button')).find((botao) => botao.textContent?.trim() === 'Pré-visualizar') as HTMLButtonElement).click();
+
+    const req = controller.expectOne(`${ROTA_PROCESSO}/pre-visualizacao`);
+    expect(req.request.body).toEqual({
+      respostas: { PCD: true },
+      pressupostos: {},
+      etapasConcluidas: [{ finalidade: 'INSCRICAO', etapa: 'S1' }],
+      grupos: null,
+    });
+    req.flush({
+      formularios: [{
+        finalidade: 'INSCRICAO',
+        itens: [{ fatoCodigo: 'PCD', etapaCodigo: 'S1', visivel: 'VERDADEIRO', obrigatorio: 'VERDADEIRO', restricoesVioladas: [], impedido: 'VERDADEIRO', mensagemDoImpedimento: 'Quem já cursa pelo PARFOR não pode se inscrever.' }],
+        grupos: [],
+        termos: [],
+      }],
+      documentos: [],
+    });
+    await proximoPasso();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.pre-visualizacao-formularios__resumo')?.textContent).toContain('A inscrição seria impedida por 1 resposta(s).');
+    expect(host.textContent).toContain('Quem já cursa pelo PARFOR não pode se inscrever.');
+  });
+
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {
     expect(store.draft().formulario.faseCodigo).toBe('');
     expect(fixture.componentInstance.faseDaInscricao()).toBe('INSCRICAO');

@@ -814,4 +814,15 @@ describe('ProcessosSeletivosApi', () => {
       );
     }
   });
+  it('preVisualizar() pede o media type da pré-visualização do processo e envia o perfil simulado', async () => {
+    const simulacao = { respostas: { PARFOR: true }, grupos: null, etapasConcluidas: [{ finalidade: 'INSCRICAO', etapa: 'S1' }], pressupostos: null };
+    const promise = firstValueFrom(api.preVisualizar(ID, simulacao));
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/pre-visualizacao`);
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('pre-visualizacao-processo-seletivo', 1));
+    expect(req.request.body).toEqual(simulacao);
+    req.flush({ formularios: [], documentos: [] });
+    await promise;
+  });
 });
