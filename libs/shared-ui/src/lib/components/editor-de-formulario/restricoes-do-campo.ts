@@ -34,7 +34,7 @@ import {
             <legend class="field__label">{{ rotuloDoTipo(restricao.tipo) }}</legend>
 
             @if (soParaLeitura(restricao)) {
-              <p class="field__hint">Declarada fora desta tela; mantida como está ao salvar.</p>
+              <p class="field__hint">Declarada fora desta tela: não se edita aqui. É mantida como está ao salvar, salvo se for removida.</p>
             } @else {
               @switch (restricao.tipo) {
                 @case (faixa) {
