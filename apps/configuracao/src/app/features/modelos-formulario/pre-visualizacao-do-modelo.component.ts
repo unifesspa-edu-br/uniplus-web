@@ -11,7 +11,6 @@ import {
   SpinnerComponent,
   etapasEmOrdem,
   fatoEscolhivel,
-  fatosCitadosPelasRegras,
   todosOsCampos,
   type ConteudoDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -50,9 +49,9 @@ const ESTADOS: Readonly<Record<string, string>> = {
       </div>
 
       <p class="field__hint">
-        Simule as respostas do candidato aos campos que as regras citam e veja quais campos e termos ele
-        veria, quais seriam obrigatórios e se a inscrição seria impedida. A pré-visualização usa o modelo
-        gravado.
+        Simule as respostas do candidato e veja quais campos e termos ele veria, quais seriam obrigatórios,
+        que restrição a resposta violaria e se a inscrição seria impedida. Deixe em branco o que ele não
+        respondeu. A pré-visualização usa o modelo gravado.
       </p>
 
       @if (fatos().length > 0) {
@@ -90,16 +89,25 @@ const ESTADOS: Readonly<Record<string, string>> = {
                   </select>
                 }
                 @default {
-                  <input class="input" type="text" [id]="'cfg-simulacao-' + fato.codigo" (input)="responder(fato, valorDe($event))" />
+                  <input
+                    class="input"
+                    type="text"
+                    [id]="'cfg-simulacao-' + fato.codigo"
+                    [attr.aria-describedby]="fato.multiplo ? 'cfg-simulacao-' + fato.codigo + '-nota' : null"
+                    (input)="responder(fato, valorDe($event))"
+                  />
+                  @if (fato.multiplo) {
+                    <span class="field__hint" [id]="'cfg-simulacao-' + fato.codigo + '-nota'">Separe os valores por vírgula.</span>
+                  }
                 }
               }
             </div>
           }
         </fieldset>
-      } @else if (semCatalogo()) {
+      } @else if (simulaveis().length > 0) {
         <p class="field__hint">Sem o catálogo de fatos não é possível simular as respostas.</p>
       } @else {
-        <p class="field__hint">Nenhuma regra do modelo cita outro campo: todos aparecem sempre, como declarados.</p>
+        <p class="field__hint">O modelo ainda não tem campos para simular.</p>
       }
 
       <fieldset class="cfg-pre-visualizacao__respostas">
@@ -231,26 +239,26 @@ export class PreVisualizacaoDoModeloComponent {
 
   protected readonly secoes = computed(() => etapasEmOrdem(this.conteudo()).filter((etapa) => etapa.tipo === 'SECAO'));
 
-  protected readonly fatos = computed<readonly FatoSimulado[]>(() => {
+  /**
+   * Tudo o que o candidato responde: os campos do formulário e os pressupostos. Uma regra pode citar
+   * um derivado, que a API resolve a partir das respostas, e uma restrição confere a resposta do
+   * próprio campo — simular só os fatos citados deixaria os dois de fora.
+   */
+  protected readonly simulaveis = computed(() => {
     const conteudo = this.conteudo();
-    const doFormulario = new Set(todosOsCampos(conteudo).map((campo) => campo.fatoCodigo));
-    const pressupostos = new Set(conteudo.pressupostos ?? []);
-    const porCodigo = new Map(this.catalogo().map((fato) => [fato.codigo, fato]));
-    // O campo com restrição ou impedimento também: é a resposta dele que a restrição confere.
-    const comRegraPropria = todosOsCampos(conteudo)
-      .filter((campo) => (campo.restricoes?.length ?? 0) > 0 || campo.impedimento != null)
-      .map((campo) => campo.fatoCodigo);
-    // Só o que o candidato responde: o derivado citado é resolvido pela API a partir das respostas.
-    return [...new Set([...fatosCitadosPelasRegras(conteudo), ...comRegraPropria])]
-      .filter((codigo) => doFormulario.has(codigo) || pressupostos.has(codigo))
-      .flatMap((codigo) => {
-        const fato = porCodigo.get(codigo);
-        return fato === undefined ? [] : [simulado(fato, doFormulario.has(codigo) ? 'resposta' : 'pressuposto')];
-      });
+    return [
+      ...todosOsCampos(conteudo).map((campo) => ({ codigo: campo.fatoCodigo, origem: 'resposta' as const })),
+      ...(conteudo.pressupostos ?? []).map((codigo) => ({ codigo, origem: 'pressuposto' as const })),
+    ];
   });
 
-  /** As regras citam fatos que a simulação não consegue oferecer: o catálogo não chegou. */
-  protected readonly semCatalogo = computed(() => this.catalogo().length === 0 && fatosCitadosPelasRegras(this.conteudo()).length > 0);
+  protected readonly fatos = computed<readonly FatoSimulado[]>(() => {
+    const porCodigo = new Map(this.catalogo().map((fato) => [fato.codigo, fato]));
+    return this.simulaveis().flatMap(({ codigo, origem }) => {
+      const fato = porCodigo.get(codigo);
+      return fato === undefined ? [] : [simulado(fato, origem)];
+    });
+  });
 
   protected readonly resumo = computed(() => {
     const r = this.resultado();
@@ -280,7 +288,16 @@ export class PreVisualizacaoDoModeloComponent {
 
   /** A resposta em texto, como o controle a dá, no JSON que a API compara; vazio é sem resposta. */
   protected responder(fato: FatoSimulado, texto: string): void {
-    const valor = texto === '' ? undefined : fato.controle === 'booleano' ? texto === 'true' : fato.controle === 'numero' ? Number(texto) : texto;
+    const valor =
+      texto.trim() === ''
+        ? undefined
+        : fato.controle === 'booleano'
+          ? texto === 'true'
+          : fato.controle === 'numero'
+            ? Number(texto)
+            : fato.multiplo
+              ? texto.split(',').map((parte) => parte.trim()).filter((parte) => parte !== '')
+              : texto;
     this.respostas.update((atual) => comResposta(atual, fato.codigo, valor));
   }
 
