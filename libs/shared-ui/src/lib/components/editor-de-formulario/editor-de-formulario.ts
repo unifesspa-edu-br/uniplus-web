@@ -19,7 +19,18 @@ import {
   LIMITES_DO_FORMULARIO,
   SECAO_DADOS_BASICOS,
   TIPO_SECAO,
+  FINALIDADE_INSCRICAO,
   acrescentarBloco,
+  acrescentarPressuposto,
+  acrescentarTermo,
+  comTermo,
+  fatosCitaveisPelosTermos,
+  moverTermo,
+  pressupostosParaAcrescentar,
+  removerPressuposto,
+  removerTermo,
+  termosEmOrdem,
+  termosParaAcrescentar,
   acrescentarItem,
   acrescentarSecao,
   blocosAdmitidos,
@@ -45,9 +56,11 @@ import {
   type PredicadoNoWire,
   type RecusasDoConteudo,
   type ResultadoDaEdicao,
+  type TermoDisponivel,
 } from './formulario-editavel';
 import { ItemDoFormularioComponent } from './item-do-formulario';
 import { SecaoDoFormularioComponent } from './secao-do-formulario';
+import { TermoDoFormularioComponent } from './termo-do-formulario';
 
 const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
   [BLOCO_COMPROVACAO_DOCUMENTAL]: 'O candidato envia os documentos que o processo exige nesta fase.',
@@ -71,7 +84,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-editor-de-formulario',
   standalone: true,
-  imports: [ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent],
+  imports: [ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'editor-formulario' },
   template: `
@@ -92,8 +105,58 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 
     <p class="editor-formulario__anuncio" role="status" [class.is-vazio]="anuncio() === ''">{{ anuncio() }}</p>
 
-    @if (termosEPressupostos(); as resumo) {
-      <p class="field__hint">{{ resumo }}</p>
+    @if (temPressupostos()) {
+      <section class="editor-formulario__etapa" [attr.aria-labelledby]="idBase() + '-pressupostos'">
+        <h3 class="editor-formulario__titulo-etapa" [id]="idBase() + '-pressupostos'">Fatos pressupostos</h3>
+        <p class="field__hint">
+          Fatos que o candidato já respondeu num formulário anterior, como o de inscrição. As regras deste
+          formulário podem citá-los como se tivessem sido respondidos antes de tudo.
+        </p>
+        @if ((conteudo().pressupostos ?? []).length > 0) {
+          <ul class="editor-formulario__basicos">
+            @for (fato of conteudo().pressupostos ?? []; track fato) {
+              <li>
+                {{ nomeDoFato(fato) }}
+                <button
+                  class="btn btn--tertiary btn--sm"
+                  type="button"
+                  [disabled]="disabled()"
+                  [attr.aria-label]="'Retirar o pressuposto ' + nomeDoFato(fato)"
+                  (click)="retirarPressuposto(fato)"
+                >
+                  Retirar
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="field__hint">Nenhum fato pressuposto.</p>
+        }
+        <div class="editor-formulario__acrescentar">
+          <div class="field">
+            <label class="field__label" [for]="idBase() + '-pressuposto'">Fato a pressupor</label>
+            <select
+              class="select"
+              [id]="idBase() + '-pressuposto'"
+              [disabled]="disabled() || pressupostosPossiveis().length === 0"
+              (change)="escolher(chavePressuposto, $event)"
+            >
+              <option value="" [selected]="escolhaDePressuposto() === ''">Escolha o fato do candidato</option>
+              @for (fato of pressupostosPossiveis(); track fato.codigo) {
+                <option [value]="fato.codigo" [selected]="escolhaDePressuposto() === fato.codigo">{{ fato.nome }}</option>
+              }
+            </select>
+          </div>
+          <button
+            class="btn btn--secondary btn--sm"
+            type="button"
+            [disabled]="disabled() || escolhaDePressuposto() === ''"
+            (click)="acrescentarOPressuposto()"
+          >
+            <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar pressuposto
+          </button>
+        </div>
+      </section>
     }
 
     @for (etapa of etapas(); track etapa.codigo; let posicaoDaEtapa = $index) {
@@ -131,6 +194,59 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           </ol>
         } @else if (etapa.tipo !== secao) {
           <p class="field__hint">{{ descricaoDoBloco(etapa) }}</p>
+          @if (etapa.bloco === revisaoEAceite) {
+            <h4 class="editor-formulario__titulo-item">Termos de consentimento exigidos</h4>
+            @if (termos().length > 0) {
+              <ol class="editor-formulario__itens" aria-label="Termos exigidos">
+                @for (termo of termos(); track termo.codigo; let posicao = $index) {
+                  <li>
+                    <ui-termo-do-formulario
+                      [termo]="termo"
+                      [disponivel]="termoDisponivel(termo.termoId)"
+                      [posicao]="posicao + 1"
+                      [fatos]="fatosDosTermos()"
+                      [idBase]="idDoTermo(termo.codigo)"
+                      [podeSubir]="posicao > 0"
+                      [podeDescer]="posicao < termos().length - 1"
+                      [disabled]="disabled()"
+                      [erros]="errosDoTermo(termo.codigo)"
+                      (termoChange)="emitir(comTermo(conteudo(), $event))"
+                      (mover)="moverOTermo(termo.codigo, $event)"
+                      (remover)="removerOTermo(termo.codigo)"
+                    />
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="field__hint">Nenhum termo exigido.</p>
+            }
+            <div class="editor-formulario__acrescentar">
+              <div class="field">
+                <label class="field__label" [for]="idBase() + '-termo'">Termo a exigir</label>
+                <select
+                  class="select"
+                  [id]="idBase() + '-termo'"
+                  [disabled]="disabled() || termosPossiveis().length === 0"
+                  [attr.aria-describedby]="idBase() + '-termo-nota'"
+                  (change)="escolher(chaveTermo, $event)"
+                >
+                  <option value="" [selected]="escolhaDeTermo() === ''">Escolha o termo de consentimento</option>
+                  @for (termo of termosPossiveis(); track termo.termoId) {
+                    <option [value]="termo.termoId" [selected]="escolhaDeTermo() === termo.termoId">{{ termo.nome }}</option>
+                  }
+                </select>
+                <span class="field__hint" [id]="idBase() + '-termo-nota'">Só termos com versão promovida podem ser exigidos.</span>
+              </div>
+              <button
+                class="btn btn--secondary btn--sm"
+                type="button"
+                [disabled]="disabled() || escolhaDeTermo() === ''"
+                (click)="acrescentarOTermo()"
+              >
+                <i class="pi pi-plus" aria-hidden="true"></i> Exigir termo
+              </button>
+            </div>
+          }
         } @else {
           <ui-secao-do-formulario
             [etapa]="etapa"
@@ -269,6 +385,8 @@ export class EditorDeFormularioComponent {
   readonly disabled = input<boolean>(false);
   /** As recusas da última gravação, já distribuídas por item e etapa. */
   readonly recusas = input<RecusasDoConteudo | null>(null);
+  /** Os termos de consentimento que o formulário pode exigir, com as versões promovidas. */
+  readonly termosDisponiveis = input<readonly TermoDisponivel[]>([]);
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
 
@@ -283,6 +401,11 @@ export class EditorDeFormularioComponent {
 
   protected readonly anuncio = signal('');
   private readonly escolhas = signal<ReadonlyMap<string, string>>(new Map());
+  // As escolhas dos combos fora das seções, com chaves que não colidem com código de etapa.
+  protected readonly chaveTermo = '#termo';
+  protected readonly chavePressuposto = '#pressuposto';
+  protected readonly revisaoEAceite = BLOCO_REVISAO_E_ACEITE;
+  protected readonly comTermo = comTermo;
 
   protected readonly etapas = computed(() => etapasEmOrdem(this.conteudo()));
   private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
@@ -315,12 +438,89 @@ export class EditorDeFormularioComponent {
     );
   });
 
-  protected readonly termosEPressupostos = computed(() => {
-    const termos = this.conteudo().termos?.length ?? 0;
-    const pressupostos = this.conteudo().pressupostos?.length ?? 0;
-    if (termos === 0 && pressupostos === 0) return null;
-    return `Este formulário tem ${termos} termo(s) e ${pressupostos} fato(s) pressuposto(s). Esta tela ainda não os edita; eles são mantidos como estão ao salvar.`;
+  protected readonly termos = computed(() => termosEmOrdem(this.conteudo()));
+  protected readonly termosPossiveis = computed(() => termosParaAcrescentar(this.conteudo(), this.termosDisponiveis()));
+  protected readonly fatosDosTermos = computed(() => {
+    const conteudo = this.conteudo();
+    return this.escolhiveis(
+      fatosCitaveisPelosTermos(conteudo),
+      (conteudo.termos ?? []).flatMap((termo) => [termo.exibicao, termo.predicadoObrigatoriedade]),
+    );
   });
+  /** O formulário de inscrição é o primeiro respondido: não tem pressuposto, salvo o que já veio gravado. */
+  protected readonly temPressupostos = computed(
+    () => this.finalidade() !== FINALIDADE_INSCRICAO || (this.conteudo().pressupostos?.length ?? 0) > 0,
+  );
+  protected readonly pressupostosPossiveis = computed(() =>
+    pressupostosParaAcrescentar(this.conteudo(), this.catalogo(), this.finalidade()),
+  );
+
+  protected nomeDoFato(codigo: string): string {
+    return this.nomes().get(codigo) ?? codigo;
+  }
+
+  protected termoDisponivel(termoId: string): TermoDisponivel | undefined {
+    return this.termosDisponiveis().find((termo) => termo.termoId === termoId);
+  }
+
+  protected idDoTermo(codigo: string): string {
+    return `${this.idBase()}-termo-${codigo}`;
+  }
+
+  protected escolhaDeTermo(): string {
+    const escolhido = this.escolhas().get(this.chaveTermo) ?? '';
+    return this.termosPossiveis().some((termo) => termo.termoId === escolhido) ? escolhido : '';
+  }
+
+  protected escolhaDePressuposto(): string {
+    const escolhido = this.escolhas().get(this.chavePressuposto) ?? '';
+    return this.pressupostosPossiveis().some((fato) => fato.codigo === escolhido) ? escolhido : '';
+  }
+
+  protected acrescentarOTermo(): void {
+    const termo = this.termosPossiveis().find((t) => t.termoId === this.escolhaDeTermo());
+    if (termo === undefined) return;
+    const conteudo = acrescentarTermo(this.conteudo(), termo);
+    this.emitir(conteudo);
+    this.escolhas.update((escolhas) => new Map(escolhas).set(this.chaveTermo, ''));
+    this.anuncio.set(`Termo “${termo.nome}” exigido na revisão e aceite.`);
+    const novo = termosEmOrdem(conteudo).at(-1);
+    if (novo !== undefined) this.focarDepois(`${this.idDoTermo(novo.codigo)}-versao`);
+  }
+
+  protected moverOTermo(codigo: string, direcao: -1 | 1): void {
+    const conteudo = moverTermo(this.conteudo(), codigo, direcao);
+    this.emitir(conteudo);
+    const termos = termosEmOrdem(conteudo);
+    const posicao = termos.findIndex((termo) => termo.codigo === codigo) + 1;
+    const termo = termos[posicao - 1];
+    this.anuncio.set(`Termo “${this.termoDisponivel(termo?.termoId ?? '')?.nome ?? codigo}” movido para a posição ${posicao} de ${termos.length}.`);
+    this.focarBotaoDeMover(this.idDoTermo(codigo), direcao);
+  }
+
+  protected removerOTermo(codigo: string): void {
+    const termo = (this.conteudo().termos ?? []).find((t) => t.codigo === codigo);
+    this.emitir(removerTermo(this.conteudo(), codigo));
+    this.anuncio.set(`Termo “${this.termoDisponivel(termo?.termoId ?? '')?.nome ?? codigo}” deixou de ser exigido.`);
+    this.focarDepois(`${this.idBase()}-termo`, `${this.idBase()}-titulo`);
+  }
+
+  protected acrescentarOPressuposto(): void {
+    const fato = this.escolhaDePressuposto();
+    if (fato === '') return;
+    this.emitir(acrescentarPressuposto(this.conteudo(), fato));
+    this.escolhas.update((escolhas) => new Map(escolhas).set(this.chavePressuposto, ''));
+    this.anuncio.set(`“${this.nomeDoFato(fato)}” passa a ser pressuposto.`);
+    this.focarDepois(`${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
+  }
+
+  protected retirarPressuposto(fato: string): void {
+    this.aplicar(removerPressuposto(this.conteudo(), fato, this.nomes()), () => {
+      this.anuncio.set(`“${this.nomeDoFato(fato)}” deixou de ser pressuposto.`);
+      // Sem o combo, que some quando a seção some ou fica sem opção, o foco volta ao título do formulário.
+      this.focarDepois(`${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
+    });
+  }
 
   protected entradasDe(etapa: EtapaDoFormulario): ReturnType<typeof entradasDaSecao> {
     return entradasDaSecao(this.conteudo(), etapa.codigo);
@@ -348,6 +548,10 @@ export class EditorDeFormularioComponent {
 
   protected errosDoItem(fatoCodigo: string): readonly string[] {
     return this.recusas()?.porItem.get(fatoCodigo) ?? [];
+  }
+
+  protected errosDoTermo(codigo: string): readonly string[] {
+    return this.recusas()?.porTermo.get(codigo) ?? [];
   }
 
   protected errosDaEtapa(codigo: string): readonly string[] {

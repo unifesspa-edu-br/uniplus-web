@@ -119,6 +119,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     controller.expectOne(MODELO).flush(modelo);
     controller.expectOne(`${BASE}/api/configuracao/fatos-candidato`).flush([fato('NOME'), fato('ESCOLA_PUBLICA')]);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`).flush([]);
     return propagar();
   }
 
