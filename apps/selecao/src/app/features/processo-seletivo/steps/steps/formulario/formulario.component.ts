@@ -599,12 +599,16 @@ export class FormularioStepComponent {
     }
     if (!desfecho.ok) {
       // Enquanto houver cópia sem desfecho — desta tentativa ou de uma anterior —, a aba diz o
-      // mesmo que a trava do passo: uma recusa nova não desfaz a cópia que pode ter chegado.
+      // mesmo que a trava do passo: uma recusa nova não desfaz a cópia que pode ter chegado. A
+      // recusa da nova tentativa vem antes, para o operador saber o que corrigir.
       const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
+      const textoEmAberto = emAberto === undefined ? null : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
       const texto =
-        emAberto === undefined
+        textoEmAberto === null
           ? `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${desfecho.recusa}`
-          : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
+          : desfecho.copiaConfirmada === null
+            ? `A nova tentativa foi recusada: ${desfecho.recusa} ${textoEmAberto}`
+            : textoEmAberto;
       this.mostrarRecusaDaAplicacao(finalidade, texto);
       return;
     }

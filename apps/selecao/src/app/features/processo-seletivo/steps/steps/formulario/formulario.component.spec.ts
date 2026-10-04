@@ -583,7 +583,9 @@ describe('FormularioStepComponent', () => {
       );
       await nova;
       fixture.detectChanges();
-      expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
+      const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
+      expect(naAba, 'o operador sabe o que corrigir').toContain('A nova tentativa foi recusada: O modelo não serve a este processo.');
+      expect(naAba).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
     });
 
     it('com a cópia confirmada e a releitura falhando, a aba diz que o modelo foi aplicado e pede recarregar', async () => {
