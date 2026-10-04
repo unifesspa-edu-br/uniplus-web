@@ -109,6 +109,11 @@ const ESTADOS: Readonly<Record<string, string>> = {
                 [values]="municipiosRespondidos(fato)"
                 (valuesChange)="responderMunicipios(fato, $event)"
               />
+              @if (municipiosRespondidos(fato).length > 0) {
+                <button type="button" class="btn btn--tertiary btn--sm" (click)="responderMunicipios(fato, [])">
+                  Deixar {{ fato.nome }} sem resposta
+                </button>
+              }
             } @else {
             <label class="field__label" [for]="idDoFato(fato)">
               {{ fato.nome }}{{ fato.origem === 'pressuposto' ? ' (de outro formulário)' : '' }}
