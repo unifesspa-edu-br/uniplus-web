@@ -57,7 +57,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
       </p>
 
       @if (fatos().length > 0) {
-        <fieldset class="cfg-pre-visualizacao__respostas">
+        <fieldset class="cfg-pre-visualizacao__respostas" [disabled]="carregando()">
           <legend class="field__label">Respostas simuladas</legend>
           @for (fato of fatos(); track fato.codigo) {
             <div class="field">
@@ -132,7 +132,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
         <p class="field__hint">O modelo ainda não tem campos para simular.</p>
       }
 
-      <fieldset class="cfg-pre-visualizacao__respostas">
+      <fieldset class="cfg-pre-visualizacao__respostas" [disabled]="carregando()">
         <legend class="field__label">Etapas já concluídas pelo candidato</legend>
         <p class="field__hint">Numa etapa concluída, o campo opcional deixado em branco conta como respondido em branco.</p>
         @for (etapa of secoes(); track etapa.codigo) {
@@ -249,7 +249,7 @@ export class PreVisualizacaoDoModeloComponent {
     source: () => this.conteudo(),
     computation: () => new Map(),
   });
-  /** Os campos de vários valores com valor escrito que não se reconhece: não se simula o que não foi informado. */
+  /** Os campos com valor escrito que não se reconhece no domínio do fato: não se simula o que não foi informado. */
   protected readonly invalidos = linkedSignal<ConteudoDoFormulario, ReadonlySet<string>>({
     source: () => this.conteudo(),
     computation: () => new Set(),
@@ -323,7 +323,7 @@ export class PreVisualizacaoDoModeloComponent {
 
   /** A resposta em texto, como o controle a dá, no JSON que a API compara; vazio é sem resposta. */
   protected responder(fato: FatoSimulado, texto: string): void {
-    const valor =
+    let valor: unknown =
       texto.trim() === ''
         ? undefined
         : fato.controle === 'booleano'
@@ -337,6 +337,8 @@ export class PreVisualizacaoDoModeloComponent {
                   .filter((parte) => parte !== '')
                   .map((parte) => valorNoDominio(fato.dominio, parte))
               : texto;
+    // Só separadores, sem valor nenhum, é sem resposta — a lista vazia diria que ele respondeu.
+    if (Array.isArray(valor) && valor.length === 0) valor = undefined;
     const invalido = valor === NAO_RECONHECIDO || (Array.isArray(valor) && valor.includes(NAO_RECONHECIDO));
     this.invalidos.update((atual) => {
       const novos = new Set(atual);
