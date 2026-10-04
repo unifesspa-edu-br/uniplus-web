@@ -232,3 +232,18 @@ export function inscricaoDoServidor(dto: ProcessoComFormularios): {
   const { faseCodigo, conteudo, modeloOrigemCodigo } = formularioDoServidor(dto, inscricao);
   return { faseCodigo, conteudo, modeloOrigemCodigo };
 }
+
+/**
+ * Se os formulários do rascunho diferem dos gravados no que a gravação enviaria — conteúdo, e
+ * formulário acrescentado ou removido. A fase fica de fora: não muda o que uma simulação avalia.
+ */
+export function rascunhoDifereDoGravado(
+  gravados: readonly FormularioDto[],
+  rascunho: readonly { readonly finalidade: string; readonly conteudo: ConteudoDoFormulario }[],
+): boolean {
+  if (gravados.length !== rascunho.length) return true;
+  return rascunho.some(({ finalidade, conteudo }) => {
+    const gravado = formularioDaFinalidade(gravados, finalidade);
+    return gravado === null || planoDeGravacao({ faseId: '', conteudo: conteudoDoFormulario(gravado) }, { faseId: '', conteudo }).length > 0;
+  });
+}

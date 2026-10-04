@@ -164,7 +164,25 @@ describe('FormularioStepComponent', () => {
     ]);
   }
 
+  /** O processo como a hidratação o deixa: o gravado é o que a pré-visualização pergunta. */
+  function comProcessoLido(): void {
+    store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'rascunho' } as never);
+    fixture.detectChanges();
+  }
+
+  it('a pré-visualização pergunta o processo gravado e não pré-visualiza alteração ainda não gravada', () => {
+    comProcessoLido();
+    expect(fixture.componentInstance.previaDesatualizada()).toBe(false);
+
+    store.patchObjectSection('formulario', { conteudo: { ...conteudoDoFormulario(GRAVADO), titulo: 'Outro título' } });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.previaDesatualizada()).toBe(true);
+    expect(fixture.componentInstance.formulariosParaSimular()[0].conteudo.titulo, 'pergunta o gravado, não o rascunho').toBe(GRAVADO.titulo);
+  });
+
   it('pré-visualiza o processo gravado e mostra no campo o impedimento com a mensagem ao candidato', async () => {
+    comProcessoLido();
     const pcd = host.querySelector('#form-pre-visualizacao-simulacao-PCD') as HTMLSelectElement;
     pcd.value = 'true';
     pcd.dispatchEvent(new Event('change'));
