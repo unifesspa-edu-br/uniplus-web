@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { problemaDaCondicao, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { LIMITES_DO_FORMULARIO, type EtapaDoFormulario, type PredicadoNoWire } from './formulario-editavel';
-import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 /**
  * O que a seção diz ao candidato — título, descrição e aviso — e quando ela aparece. Devolve a
@@ -93,14 +93,7 @@ export class SecaoDoFormularioComponent {
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly problemas = computed(() => {
-    const fatos = new Map(this.fatos().map((fato) => [fato.codigo, fato]));
-    const problemas: Record<number, string | undefined> = {};
-    this.condicoes().forEach((condicao, indice) => {
-      problemas[indice] = problemaDaCondicao(condicao, fatos) ?? undefined;
-    });
-    return problemas;
-  });
+  protected readonly problemas = computed(() => problemasDasCondicoes(this.condicoes(), this.fatos()));
 
   protected idDe(parte: string): string {
     return `${this.idBase()}-${parte}`;

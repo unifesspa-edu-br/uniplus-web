@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { problemaDaCondicao, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import {
   OBRIGATORIEDADE_NUNCA,
   OBRIGATORIEDADE_QUANDO,
@@ -10,7 +10,7 @@ import {
   type TermoDisponivel,
   type TermoDoFormulario,
 } from './formulario-editavel';
-import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 const ACEITES = [
   { valor: OBRIGATORIEDADE_SEMPRE, rotulo: 'Aceite obrigatório' },
@@ -130,8 +130,6 @@ export class TermoDoFormularioComponent {
       : [{ versaoId: this.termo().versaoId, rotulo: 'Versão gravada (fora do catálogo)' }, ...versoes];
   });
 
-  private readonly fatosPorCodigo = computed(() => new Map(this.fatos().map((fato) => [fato.codigo, fato])));
-
   protected readonly condicoesDaExibicao = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
     source: () => this.termo().exibicao,
     computation: recopiarSeMudouPorFora,
@@ -151,11 +149,7 @@ export class TermoDoFormularioComponent {
   }
 
   protected problemas(condicoes: readonly CondicaoEmClausula[]): Readonly<Record<number, string | undefined>> {
-    const problemas: Record<number, string | undefined> = {};
-    condicoes.forEach((condicao, indice) => {
-      problemas[indice] = problemaDaCondicao(condicao, this.fatosPorCodigo()) ?? undefined;
-    });
-    return problemas;
+    return problemasDasCondicoes(condicoes, this.fatos());
   }
 
   protected trocar(mudanca: Partial<TermoDoFormulario>): void {
