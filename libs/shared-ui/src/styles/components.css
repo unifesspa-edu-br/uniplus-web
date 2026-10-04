@@ -461,6 +461,23 @@ ui-editor-de-condicoes { display: block; }
 }
 /* A região de status fica no DOM mesmo vazia: escondida com display none, não anunciaria. */
 .pre-visualizacao-formularios__resumo { margin: 0; }
+/* Cada grupo repetível simulado: as ocorrências, cada uma com os campos dela, dentro da moldura do grupo. */
+.pre-visualizacao-formularios__grupo {
+  display: grid;
+  gap: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin: 0;
+}
+.pre-visualizacao-formularios__grupo-avaliado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+.pre-visualizacao-formularios__grupo-avaliado dt { font-size: var(--text-xs); color: var(--text-secondary); }
+.pre-visualizacao-formularios__grupo-avaliado dd { margin: 0; }
 /* A tabela de campos avaliados é o próprio contêiner de rolagem: elemento em linha não rolaria. */
 ui-tabela-de-campos-avaliados { display: block; }
 .pre-visualizacao-formularios__formulario { margin: 0; font-size: var(--text-base); }

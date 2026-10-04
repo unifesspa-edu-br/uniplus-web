@@ -298,10 +298,10 @@ export class FormularioStepComponent {
   }
 
   /**
-   * A pré-visualização do processo, sem as ocorrências de grupo repetível, que esta tela não simula.
-   * A API avalia a configuração viva do processo que está no servidor, e não a da tela: os
-   * formulários, as derivações e as exigências juntos, e o que foi alterado em qualquer passo só
-   * entra depois de gravado. Nula antes de o processo existir no servidor e em consulta, em que o
+   * A pré-visualização do processo, com as ocorrências simuladas dos grupos repetíveis. A API
+   * avalia a configuração viva do processo que está no servidor, e não a da tela: os formulários,
+   * as derivações e as exigências juntos, e o que foi alterado em qualquer passo só entra depois de
+   * gravado. Nula antes de o processo existir no servidor e em consulta, em que o
    * passo mostra o gravado como texto e não há configuração em edição a conferir.
    */
   readonly avaliarProcesso = computed<AvaliacaoDeFormularios | null>(() => {
@@ -309,7 +309,7 @@ export class FormularioStepComponent {
     if (processoId === null || this.store.emConsulta()) return null;
     return (simulacao) =>
       this.api
-        .preVisualizar(processoId, { ...simulacao, grupos: null })
+        .preVisualizar(processoId, simulacao)
         .pipe(map((resultado) => (resultado.ok ? { ...resultado, data: resultado.data.formularios } : resultado)));
   });
 
