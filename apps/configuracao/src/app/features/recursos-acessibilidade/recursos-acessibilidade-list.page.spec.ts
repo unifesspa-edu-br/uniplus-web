@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationRef } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,6 +9,7 @@ import {
   RecursoAcessibilidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { RecursosAcessibilidadeListPage } from './recursos-acessibilidade-list.page.js';
 
 const BASE = 'http://localhost:5000';
@@ -19,6 +20,7 @@ const recurso_acessibilidade_seed: RecursoAcessibilidadeDto = {
   descricao: 'Leitura da prova em voz alta por fiscal designado.',
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
 };
+const URL_REMOCAO = `${BASE}/api/configuracao/admin/recursos-acessibilidade/${RECURSO_ACESSIBILIDADE_ID}`;
 
 describe('RecursosAcessibilidadeListPage', () => {
   let fixture: ComponentFixture<RecursosAcessibilidadeListPage>;
@@ -289,7 +291,7 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Recursos de acessibilidade, com descrição e situação de uso',
+      'Recursos de acessibilidade, com nome e descrição',
     );
   });
   it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
@@ -299,5 +301,65 @@ describe('RecursosAcessibilidadeListPage', () => {
       fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual(['Nome', 'Descrição', 'Ações']);
+    expect(fixture.nativeElement.querySelector('td[data-label="Status"]')).toBeNull();
+  });
+
+  it('CA-03/CA-04/CA-06: botão e diálogo falam em remover, com o botão principal travado durante a remoção', async () => {
+    await flushLista([recurso_acessibilidade_seed]);
+    fixture.detectChanges();
+    const lixeira = getRemoverButtonEl();
+    expect(lixeira.getAttribute('data-tooltip')).toBe('Remover recurso de acessibilidade');
+    expect(lixeira.querySelector('.pi-trash')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Inativar');
+
+    lixeira.click();
+    fixture.detectChanges();
+    const dialogo = (
+      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
+    ).find((d) => d.textContent?.includes('prestes a')) as HTMLElement;
+    expect(dialogo.textContent).toContain('Remover recurso de acessibilidade?');
+    expect(dialogo.textContent).toContain('Você está prestes a remover o recurso Ledor.');
+    const principal = () =>
+      Array.from(
+        dialogo.querySelectorAll('button.btn--danger') as NodeListOf<HTMLButtonElement>,
+      )[0];
+    expect(principal().textContent?.trim()).toBe('Remover');
+
+    principal().click();
+    fixture.detectChanges();
+    expect(principal().disabled).toBe(true);
+    expect(principal().textContent?.trim()).toBe('Removendo...');
+
+    controller
+      .expectOne((r) => r.url === URL_REMOCAO && r.method === 'DELETE')
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([]);
+  });
+
+  it('CA-11: falha na remoção avisa o usuário e mantém o registro e o diálogo', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    await flushLista([recurso_acessibilidade_seed]);
+    component['abrirRemoverRecurso'](recurso_acessibilidade_seed);
+    component['removerConfirmado']();
+
+    controller.expectOne(URL_REMOCAO).flush(
+      {
+        type: 'about:blank',
+        title: 'Recurso de acessibilidade não encontrado',
+        status: 404,
+        code: 'uniplus.configuracao.recurso_acessibilidade.nao_encontrado',
+      },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalled();
+    expect(component['confirmOpen']()).toBe(true);
+    expect(component['saving']()).toBe(false);
+    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`);
   });
 });
