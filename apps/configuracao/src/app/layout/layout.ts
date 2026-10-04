@@ -105,6 +105,7 @@ export class LayoutComponent {
           routerLink: '/fatos-candidato',
           exact: true,
         },
+        { label: 'Modelo de Formulário', icon: 'pi-file', routerLink: '/modelos-formulario' },
         {
           label: 'Termo de Consentimento',
           icon: 'pi-file-edit',

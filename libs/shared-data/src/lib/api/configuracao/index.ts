@@ -204,3 +204,11 @@ export type {
   RegrasPadraoInput,
   ValorDominioInput,
 } from './fatos-candidato.api';
+
+export { ModelosFormularioApi } from './modelos-formulario.api';
+export type {
+  ConteudoDoModeloInput,
+  CriarModeloFormularioCommand,
+  EdicaoDoModeloInput,
+  ModeloFormularioView,
+} from './modelos-formulario.api';
