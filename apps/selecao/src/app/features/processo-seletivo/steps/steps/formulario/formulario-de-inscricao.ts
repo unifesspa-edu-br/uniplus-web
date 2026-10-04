@@ -19,6 +19,7 @@ import type {
   CriterioDesempateConfigurado,
   DerivacaoDeFato,
   ExigenciasDoRascunho,
+  FormularioDaFinalidade,
   FormularioDeInscricao,
   ReferenciaTemporalConfig,
   WizardDraft,
@@ -26,6 +27,7 @@ import type {
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { desempateUsaDataDeNascimento, FATO_DATA_NASCIMENTO } from '../desempate/desempate-por-idade';
 import { fatosColetadosPor } from './formulario-do-processo';
+import { formulariosDoRascunho, nomeDaFinalidade } from './formularios-por-finalidade';
 
 /**
  * O formulário de inscrição do certame e o que o resto do processo exige dele.
@@ -105,11 +107,12 @@ export function fatosCitadosPelasExigencias(exigencias: ExigenciasDoRascunho): R
   return citados;
 }
 
-/** O que o processo cita, fora do próprio formulário: exigências, derivação e desempate. */
+/** O que o processo cita, fora do próprio formulário: exigências, derivação, desempate e os formulários das outras finalidades. */
 export interface CitantesNoProcesso {
   readonly documentos: ExigenciasDoRascunho;
   readonly derivacao: readonly DerivacaoDeFato[];
   readonly desempate: readonly CriterioDesempateConfigurado[];
+  readonly outrasFinalidades?: readonly FormularioDaFinalidade[];
 }
 
 /** Como a frase de recusa nomeia o documento e o fato. */
@@ -123,7 +126,8 @@ const SEM_NOMES: NomesDosCitantes = { documento: (id) => id, fato: (codigo) => c
 
 /**
  * Quem, no processo, cita cada fato: os documentos cujo gatilho o usa, as regras de derivação que
- * dependem dele e o desempate por maior idade, que ordena pela data de nascimento. É a fonte única
+ * dependem dele, o desempate por maior idade, que ordena pela data de nascimento, e os formulários
+ * das outras finalidades, cujas regras citam o que a inscrição coleta. É a fonte única
  * do que o formulário de inscrição precisa coletar (o campo entra sozinho) e do que não pode sair
  * dele (a remoção é recusada com o motivo). As citações de dentro do formulário ficam com o editor.
  */
@@ -148,6 +152,13 @@ export function quemCitaNoProcesso(
     }
   }
   if (desempateUsaDataDeNascimento(processo.desempate)) citar(FATO_DATA_NASCIMENTO, 'o desempate por maior idade');
+  for (const outra of processo.outrasFinalidades ?? []) {
+    // O que o formulário cita dos próprios campos não depende da inscrição.
+    const proprios = new Set(fatosColetadosPor(outra.conteudo));
+    for (const fato of fatosCitadosPeloConteudo(outra.conteudo)) {
+      if (!proprios.has(fato)) citar(fato, `o formulário de ${nomeDaFinalidade(outra.finalidade)}`);
+    }
+  }
 
   return citantes;
 }
@@ -278,8 +289,10 @@ export function problemasDoFormulario(
 ): readonly string[] {
   const problemas: string[] = [];
 
-  if (todosOsCampos(formulario.conteudo).some((campo) => campo.rotulo.trim() === '')) {
-    problemas.push('Todo campo do formulário precisa do rótulo que o candidato vai ler.');
+  for (const { finalidade, conteudo } of formulariosDoRascunho(formulario)) {
+    if (todosOsCampos(conteudo).some((campo) => campo.rotulo.trim() === '')) {
+      problemas.push(`Todo campo do formulário de ${nomeDaFinalidade(finalidade)} precisa do rótulo que o candidato vai ler.`);
+    }
   }
 
   const referencia = formulario.referenciaTemporal;
@@ -310,7 +323,8 @@ export function problemasDoFormulario(
 /**
  * Os campos que o formulário coleta e nada no certame usa: nenhuma exigência os cita, nenhuma
  * regra de derivação depende deles, o desempate não os usa e nenhuma regra do próprio formulário
- * os cita. Os dados básicos ficam de fora: a API os coleta em toda inscrição.
+ * nem dos formulários das outras finalidades os cita. Os dados básicos ficam de fora: a API os
+ * coleta em toda inscrição.
  *
  * Não é erro — um edital pode querer coletar algo por outra razão —, e por isso não bloqueia a
  * gravação. É aviso porque a maior parte destes campos entrou sozinha, por causa de um gatilho
@@ -323,7 +337,7 @@ export function camposSemUsoDeclarado(
   desempate: readonly CriterioDesempateConfigurado[] = [],
 ): readonly ItemDoFormulario[] {
   const usados = new Set([
-    ...quemCitaNoProcesso({ documentos: exigencias, derivacao: formulario.derivacao, desempate }).keys(),
+    ...quemCitaNoProcesso({ documentos: exigencias, derivacao: formulario.derivacao, desempate, outrasFinalidades: formulario.outrasFinalidades }).keys(),
     ...fatosCitadosPeloConteudo(formulario.conteudo),
   ]);
 

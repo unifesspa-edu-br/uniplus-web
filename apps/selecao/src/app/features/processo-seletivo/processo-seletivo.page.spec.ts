@@ -187,7 +187,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
       Desempate: 'sel-step-desempate',
       Eliminação: 'sel-step-eliminacao',
       'Atend. especial': 'sel-step-atendimento',
-      Formulário: 'sel-step-formulario',
+      Formulários: 'sel-step-formulario',
       'Revisão e publicação': 'sel-step-revisao',
     };
 

@@ -56,7 +56,7 @@ const FATOS_DO_CANDIDATO = [
  * idoso compara a faixa etária, que só existe com a apuração da idade declarada. O maior idade
  * ordena pela data de nascimento, que é dado básico de toda inscrição e por isso não falta.
  *
- * Cobre os alertas do passo Desempate, os do passo Formulário e o caminho de um ao outro.
+ * Cobre os alertas do passo Desempate, os do passo Formulários e o caminho de um ao outro.
  *
  * O CI do frontend sobe Keycloak, mas não a API: o catálogo de regras e o de fatos são servidos
  * por rota e toda outra consulta responde vazia. O cenário parte do rascunho novo, em que o
@@ -88,11 +88,11 @@ test.describe('Desempate por idade e formulário — matriz DS @ds', () => {
       });
     });
 
-    test.describe('passo Formulário', () => {
+    test.describe('passo Formulários', () => {
       test.beforeEach(async ({ page }, testInfo) => {
         await declararCriterio(page, testInfo, 'DESEMPATE-IDOSO');
         await page.locator('#desemp-ir-formulario-apuracao').click();
-        await expect(page.getByRole('heading', { level: 1 })).toContainText('Formulário');
+        await expect(page.getByRole('heading', { level: 1 })).toContainText('Formulários');
       });
 
       test('avisa a incoerência e não viola WCAG 2.1 AA', async ({ page }) => {

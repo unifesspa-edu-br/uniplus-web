@@ -1,14 +1,17 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
 import { FatoCandidatoView, FatosCandidatoApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import {
+  ConfirmDialogComponent,
   EditorDeFormularioComponent,
   FINALIDADE_INSCRICAO,
+  FINALIDADES,
   OBRIGATORIEDADES,
   ValorEmConsultaComponent,
+  conteudoInicial,
   distribuirRecusas,
   entradasDaSecao,
   etapasEmOrdem,
@@ -20,7 +23,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
-import type { StepValidation } from '../../processo-seletivo.models';
+import type { FormularioDaFinalidade, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -40,20 +43,45 @@ import {
   quemCitaNoProcesso,
   remocoesTravadasPor,
 } from './formulario-de-inscricao';
-import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade, inscricaoDoServidor } from './formulario-do-processo';
+import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade } from './formulario-do-processo';
+import {
+  abaPelaTecla,
+  comFormulario,
+  faseEfetiva,
+  faseServeAFinalidade,
+  fatosColetadosPelasOutras,
+  fatosDaInscricaoQueOutrasExigem,
+  finalidadesParaAcrescentar,
+  formularioDoServidorNaFinalidade,
+  formulariosDoRascunho,
+  formulariosDoServidor,
+  nomeDaFinalidade,
+  ordemDeGravacao,
+  sufixoDaFinalidade,
+} from './formularios-por-finalidade';
+
+
+/** O que a gravação de um formulário precisa: a fase resolvida para id e o conteúdo desejado. */
+interface FormularioParaEnvio {
+  readonly finalidade: string;
+  readonly faseId: string;
+  readonly conteudo: ConteudoDoFormulario;
+}
 
 /**
- * Formulário de inscrição — as etapas, os campos e os termos que o candidato responde ao se
- * inscrever, editados pelo editor de formulário compartilhado com os modelos da Configuração.
+ * Formulários — um por finalidade do processo (inscrição, isenção da taxa, habilitação), cada um
+ * numa aba, com as etapas, os campos e os termos editados pelo editor de formulário compartilhado
+ * com os modelos da Configuração.
  *
- * O passo vem depois do Cronograma porque depende dele em três frentes: a inscrição é respondida
- * numa fase dele, a apuração da idade pode ancorar no início ou no fim de uma fase, e os campos
- * que as exigências documentais pressupõem só são conhecidos depois que elas foram declaradas.
+ * O passo vem depois do Cronograma porque depende dele em três frentes: cada formulário é
+ * respondido numa fase dele, a apuração da idade pode ancorar no início ou no fim de uma fase, e
+ * os campos que as exigências documentais pressupõem só são conhecidos depois que elas foram
+ * declaradas.
  */
 @Component({
   selector: 'sel-step-formulario',
   standalone: true,
-  imports: [DateBrPipe, EditorDeFormularioComponent, ValorEmConsultaComponent],
+  imports: [ConfirmDialogComponent, DateBrPipe, EditorDeFormularioComponent, ValorEmConsultaComponent],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormularioStepComponent)],
@@ -67,8 +95,8 @@ export class FormularioStepComponent {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
-  protected readonly finalidade = FINALIDADE_INSCRICAO;
   protected readonly ancoras = ANCORAS_DA_IDADE;
 
   readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
@@ -78,8 +106,18 @@ export class FormularioStepComponent {
   readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
   readonly termosComErro = signal(false);
 
-  /** As recusas da última gravação, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */
-  readonly recusas = signal<RecusasDoConteudo | null>(null);
+  /** As recusas da última gravação, por finalidade, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */
+  readonly recusas = signal<ReadonlyMap<string, RecusasDoConteudo>>(new Map());
+  /** A recusa da remoção, por finalidade: fica na aba do formulário que não saiu. */
+  readonly recusasDaRemocao = signal<ReadonlyMap<string, string>>(new Map());
+
+  /** A finalidade da aba escolhida; a inscrição quando a escolhida deixou de existir. */
+  private readonly abaEscolhida = signal(FINALIDADE_INSCRICAO);
+  readonly finalidadeAAcrescentar = signal('');
+  /** A finalidade cuja remoção aguarda confirmação. */
+  readonly remocaoPendente = signal<string | null>(null);
+  /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário. */
+  readonly anuncio = signal('');
 
   constructor() {
     this.carregarCatalogo();
@@ -131,33 +169,58 @@ export class FormularioStepComponent {
       });
   }
 
+  /** Os formulários do rascunho, a inscrição primeiro. */
+  readonly formularios = computed(() => formulariosDoRascunho(this.store.draft().formulario));
+
   readonly conteudo = computed(() => this.store.draft().formulario.conteudo);
 
-  /**
-   * O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos
-   * dela, e se a resposta é obrigatória. Em consulta os passos mostram o gravado, não um
-   * formulário desabilitado.
-   */
-  readonly leitura = computed(() => {
-    const conteudo = this.conteudo();
-    const resposta = (obrigatoriedade: string | null): string =>
-      OBRIGATORIEDADES.find((opcao) => opcao.valor === obrigatoriedade)?.rotulo ?? 'Opcional';
-    return etapasEmOrdem(conteudo).map((etapa) => ({
-      codigo: etapa.codigo,
-      titulo: etapa.titulo,
-      entradas: entradasDaSecao(conteudo, etapa.codigo).map((entrada) =>
-        entrada.tipo === 'item'
-          ? { chave: entrada.item.fatoCodigo, rotulo: entrada.item.rotulo, resposta: resposta(entrada.item.obrigatoriedade) }
-          : { chave: entrada.grupo.codigo, rotulo: entrada.grupo.rotulo, resposta: `Grupo repetível — ${resposta(entrada.grupo.obrigatoriedade).toLocaleLowerCase('pt-BR')}` },
-      ),
-    }));
+  readonly abaAtiva = computed(() => {
+    const escolhida = this.abaEscolhida();
+    return this.formularios().some((formulario) => formulario.finalidade === escolhida) ? escolhida : FINALIDADE_INSCRICAO;
   });
 
-  /** Os fatos fora do combo de campos: os das outras finalidades e o conjunto básico ainda não gravado. */
-  readonly fatosIndisponiveis = computed(() => {
-    const formulario = this.store.draft().formulario;
-    return fatosForaDaColetaDaInscricao(formulario.conteudo, formulario.fatosDasOutrasFinalidades);
+  /** As fases do cronograma, com o que decide a finalidade que cada uma atende. */
+  private readonly fasesDoCronograma = computed(() => {
+    const fasePorId = this.catalogos.fasePorId();
+    return this.store.draft().cronograma.fases.map((fase) => {
+      const descricao = descreverFase(fase, fasePorId);
+      return {
+        codigo: fase.codigo,
+        nome: descricao.nome,
+        coletaInscricao: descricao.coletaInscricao,
+        coletaSolicitacaoIsencao: descricao.coletaSolicitacaoIsencao,
+      };
+    });
   });
+
+  /**
+   * A fase de cada formulário: a escolhida, enquanto estiver entre as que servem à finalidade, ou
+   * a única que serve. A API recusa fase de outra finalidade, e enviar a fase nula apagaria a
+   * gravada — a publicação recusa formulário sem fase.
+   */
+  private readonly fasesDosFormularios = computed(
+    () =>
+      new Map(
+        this.formularios().map((formulario) => {
+          const opcoes = this.fasesDoCronograma().filter((fase) => faseServeAFinalidade(formulario.finalidade, fase));
+          return [formulario.finalidade, { opcoes, escolhida: faseEfetiva(formulario.faseCodigo, opcoes) }] as const;
+        }),
+      ),
+  );
+
+  readonly faseDaInscricao = computed(() => this.fasesDosFormularios().get(FINALIDADE_INSCRICAO)?.escolhida ?? '');
+
+  /** As finalidades que o operador pode acrescentar agora. */
+  readonly finalidadesOferecidas = computed(() =>
+    finalidadesParaAcrescentar(
+      this.formularios().map((formulario) => formulario.finalidade),
+      this.store.draft().pagamento.cobra === true,
+      this.fasesDoCronograma(),
+    ),
+  );
+
+  /** Os fatos que a inscrição coleta, o conjunto básico ainda não gravado inclusive: as outras finalidades os citam. */
+  private readonly fatosDaInscricao = computed(() => [...fatosColetadosPelaInscricao(this.conteudo())]);
 
   /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
   readonly citantes = computed(() => {
@@ -165,7 +228,12 @@ export class FormularioStepComponent {
     const tipoDocumento = this.catalogos.tipoDocumentoPorId();
     const nomeDoFato = new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome]));
     return quemCitaNoProcesso(
-      { documentos: draft.documentos, derivacao: draft.formulario.derivacao, desempate: draft.desempate },
+      {
+        documentos: draft.documentos,
+        derivacao: draft.formulario.derivacao,
+        desempate: draft.desempate,
+        outrasFinalidades: draft.formulario.outrasFinalidades,
+      },
       {
         documento: (id) => tipoDocumento.get(id)?.nome ?? id,
         fato: (codigo) => nomeDoFato.get(codigo) ?? codigo,
@@ -176,9 +244,65 @@ export class FormularioStepComponent {
   readonly remocoesTravadas = computed(() => remocoesTravadasPor(this.citantes()));
 
   /**
-   * Põe no formulário o que o processo pressupõe e tira o que nada cita mais. Roda a cada mudança
-   * das exigências, da derivação e do desempate: são declarados noutros passos, e o operador não
-   * deveria precisar lembrar que mudá-los mexe aqui.
+   * Uma aba por formulário, com o que o editor dela recebe. Na inscrição, o combo deixa de fora o
+   * que as outras finalidades coletam, e os fatos que elas citam por negação são obrigatórios. Nas
+   * outras, os fatos da inscrição são citáveis — o candidato já os respondeu — e nunca coletados de
+   * novo.
+   */
+  readonly abas = computed(() => {
+    const formularios = this.formularios();
+    const outras = this.store.draft().formulario.outrasFinalidades;
+    const fases = this.fasesDosFormularios();
+    return formularios.map((formulario) => {
+      const ehInscricao = formulario.finalidade === FINALIDADE_INSCRICAO;
+      const sufixo = sufixoDaFinalidade(formulario.finalidade);
+      const fase = fases.get(formulario.finalidade) ?? { opcoes: [], escolhida: '' };
+      const recusaDaRemocao = this.recusasDaRemocao().get(formulario.finalidade) ?? null;
+      return {
+        finalidade: formulario.finalidade,
+        rotulo: FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ?? formulario.finalidade,
+        nome: nomeDaFinalidade(formulario.finalidade),
+        ehInscricao,
+        aba: `form-aba-${sufixo}`,
+        painel: `form-painel-${sufixo}`,
+        idBase: `form-${sufixo}`,
+        campoDaFase: `form-fase-${sufixo}`,
+        conteudo: formulario.conteudo,
+        fases: fase.opcoes,
+        fase: fase.escolhida,
+        nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
+        recusas: this.recusas().get(formulario.finalidade) ?? null,
+        recusaDaRemocao,
+        recusada: this.recusas().has(formulario.finalidade) || recusaDaRemocao !== null,
+        fatosDaInscricao: ehInscricao ? null : this.fatosDaInscricao(),
+        fatosIndisponiveis: ehInscricao
+          ? fatosForaDaColetaDaInscricao(formulario.conteudo, fatosColetadosPelasOutras(formularios, FINALIDADE_INSCRICAO))
+          : fatosColetadosPelasOutras(formularios, formulario.finalidade),
+        fatosQueExigemRespostaPorFora: ehInscricao ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, outras) : [],
+        leitura: leituraDe(formulario.conteudo),
+      };
+    });
+  });
+
+  selecionarAba(finalidade: string): void {
+    this.abaEscolhida.set(finalidade);
+  }
+
+  /** Setas, Home e End trocam de aba e levam o foco a ela: só a aba ativa entra na ordem do Tab. */
+  navegarNasAbas(evento: KeyboardEvent, indice: number): void {
+    const abas = this.abas();
+    const destino = abaPelaTecla(evento.key, indice, abas.length);
+    if (destino === null) return;
+    evento.preventDefault();
+    this.selecionarAba(abas[destino].finalidade);
+    document.getElementById(abas[destino].aba)?.focus();
+  }
+
+  /**
+   * Põe no formulário de inscrição o que o processo pressupõe e tira o que nada cita mais. Roda a
+   * cada mudança das exigências, da derivação, do desempate e dos formulários das outras
+   * finalidades: são declarados noutros lugares, e o operador não deveria precisar lembrar que
+   * mudá-los mexe aqui.
    */
   reconciliar(): void {
     const formulario = this.store.draft().formulario;
@@ -188,7 +312,7 @@ export class FormularioStepComponent {
       new Set(this.citantes().keys()),
       this.catalogo(),
       this.store.camposPostosPelasExigencias(),
-      formulario.fatosDasOutrasFinalidades,
+      fatosColetadosPelasOutras(this.formularios(), FINALIDADE_INSCRICAO),
     );
     if (reconciliado === formulario.conteudo) return;
 
@@ -202,43 +326,120 @@ export class FormularioStepComponent {
   }
 
   /**
-   * A edição feita no editor. O campo que o operador tira deixa de ser "posto pela exigência": se
-   * voltar, voltou por decisão dele.
+   * A edição feita no editor de uma aba. Na inscrição, o campo que o operador tira deixa de ser
+   * "posto pela exigência": se voltar, voltou por decisão dele.
    */
-  editar(conteudo: ConteudoDoFormulario): void {
-    const presentes = new Set(fatosColetadosPor(conteudo));
-    this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual].filter((codigo) => presentes.has(codigo))));
-    this.store.patchSection('formulario', { ...this.store.draft().formulario, conteudo });
+  editar(finalidade: string, conteudo: ConteudoDoFormulario): void {
+    if (finalidade === FINALIDADE_INSCRICAO) {
+      const presentes = new Set(fatosColetadosPor(conteudo));
+      this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual].filter((codigo) => presentes.has(codigo))));
+    }
+    this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, conteudo }));
   }
 
-  /** As fases do cronograma em que a inscrição pode ser respondida: as que coletam inscrição. */
-  readonly fasesDaInscricao = computed(() => {
-    const fasePorId = this.catalogos.fasePorId();
-    return this.store
-      .draft()
-      .cronograma.fases.map((fase) => ({ fase, descricao: descreverFase(fase, fasePorId) }))
-      .filter(({ descricao }) => descricao.coletaInscricao)
-      .map(({ fase, descricao }) => ({ codigo: fase.codigo, nome: descricao.nome }));
-  });
+  escreverFase(finalidade: string, codigo: string): void {
+    this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, faseCodigo: codigo }));
+  }
+
+  private atualizarFormulario(finalidade: string, mudar: (formulario: FormularioDaFinalidade) => FormularioDaFinalidade): void {
+    const atual = this.formularios().find((formulario) => formulario.finalidade === finalidade);
+    if (atual === undefined) return;
+    this.store.patchSection('formulario', comFormulario(this.store.draft().formulario, mudar(atual)));
+  }
 
   /**
-   * A fase em que a inscrição é respondida: a escolhida, enquanto estiver entre as que servem, ou
-   * a única que serve. A API recusa fase que não coleta inscrição, e enviar a fase nula apagaria a
-   * gravada — a publicação recusa formulário sem fase.
+   * Acrescenta o formulário da finalidade escolhida com a revisão e aceite, que toda finalidade
+   * exige como última etapa. Ele é criado no servidor quando o passo for gravado. A aba nova recebe
+   * o foco, e o leitor de tela ouve o que aconteceu.
    */
-  readonly faseDaInscricao = computed(() => {
-    const opcoes = this.fasesDaInscricao();
-    const escolhida = this.store.draft().formulario.faseCodigo;
-    if (opcoes.some((opcao) => opcao.codigo === escolhida)) return escolhida;
-    return opcoes.length === 1 ? opcoes[0].codigo : '';
+  acrescentarFinalidade(): void {
+    const finalidade = this.finalidadeAAcrescentar();
+    if (!this.finalidadesOferecidas().some((opcao) => opcao.valor === finalidade)) return;
+
+    this.store.patchSection(
+      'formulario',
+      comFormulario(this.store.draft().formulario, { finalidade, faseCodigo: '', conteudo: conteudoInicial() }),
+    );
+    this.finalidadeAAcrescentar.set('');
+    this.selecionarAba(finalidade);
+    this.anuncio.set(`Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`);
+    this.focarAba(finalidade);
+  }
+
+  pedirRemocao(finalidade: string): void {
+    if (finalidade === FINALIDADE_INSCRICAO) return;
+    this.remocaoPendente.set(finalidade);
+  }
+
+  readonly avisoDaRemocao = computed(() => {
+    const finalidade = this.remocaoPendente();
+    return finalidade === null
+      ? ''
+      : `O formulário de ${nomeDaFinalidade(finalidade)} sai do processo com as etapas, os campos e os termos dele. Não há como desfazer.`;
   });
 
-  readonly nomeDaFaseDaInscricao = computed(
-    () => this.fasesDaInscricao().find((opcao) => opcao.codigo === this.faseDaInscricao())?.nome ?? null,
-  );
+  cancelarRemocao(): void {
+    this.remocaoPendente.set(null);
+  }
 
-  escreverFase(codigo: string): void {
-    this.store.patchSection('formulario', { ...this.store.draft().formulario, faseCodigo: codigo });
+  /**
+   * Remove o formulário confirmado. O que já está no servidor sai pela API na hora — a remoção não
+   * espera a gravação do passo —, e o que só existe no rascunho sai dele. A recusa fica em texto na
+   * aba, que continua; depois da remoção, o foco vai à aba da inscrição.
+   */
+  async confirmarRemocao(): Promise<void> {
+    const finalidade = this.remocaoPendente();
+    this.remocaoPendente.set(null);
+    if (finalidade === null || finalidade === FINALIDADE_INSCRICAO) return;
+    this.recusasDaRemocao.update((atuais) => semChave(atuais, finalidade));
+
+    const processoId = this.store.processoSeletivoId();
+    if (processoId !== null) {
+      const geracao = this.store.geracao();
+      // Trava avançar, gravar e editar: um PUT da aba chegando depois do DELETE recriaria o formulário.
+      this.store.salvando.set(true);
+      let recusa: string | null;
+      try {
+        recusa = await this.removerDoServidor(processoId, finalidade);
+      } finally {
+        if (geracao === this.store.geracao()) this.store.salvando.set(false);
+      }
+      if (geracao !== this.store.geracao()) return;
+      if (recusa !== null) {
+        this.recusasDaRemocao.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
+        this.anuncio.set(`O formulário de ${nomeDaFinalidade(finalidade)} não foi removido. ${recusa}`);
+        return;
+      }
+    }
+
+    const formulario = this.store.draft().formulario;
+    this.store.patchSection('formulario', {
+      ...formulario,
+      outrasFinalidades: formulario.outrasFinalidades.filter((outro) => outro.finalidade !== finalidade),
+    });
+    this.recusas.update((atuais) => semChave(atuais, finalidade));
+    this.selecionarAba(FINALIDADE_INSCRICAO);
+    this.anuncio.set(`Formulário de ${nomeDaFinalidade(finalidade)} removido.`);
+    this.focarAba(FINALIDADE_INSCRICAO);
+  }
+
+  /**
+   * Tira o formulário do servidor, quando ele está lá. Devolve a recusa a mostrar, ou nulo quando
+   * o formulário não está mais no processo — inclusive o que nunca foi gravado.
+   */
+  private async removerDoServidor(processoId: string, finalidade: string): Promise<string | null> {
+    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    if (!isApiOk(detalhe)) return 'Não foi possível reler o processo para remover o formulário. Tente de novo.';
+    if (formularioDaFinalidade(detalhe.data.formularios, finalidade) === null) return null;
+
+    const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
+    if (remocao.ok) return null;
+    const { title, detail } = this.problemI18n.resolve(remocao.problem);
+    return [title, detail].filter((parte) => parte !== undefined && parte !== '').join(' ');
+  }
+
+  private focarAba(finalidade: string): void {
+    afterNextRender(() => document.getElementById(`form-aba-${sufixoDaFinalidade(finalidade)}`)?.focus(), { injector: this.injector });
   }
 
   readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);
@@ -313,13 +514,9 @@ export class FormularioStepComponent {
   validate(): StepValidation {
     const draft = this.store.draft();
     const mensagens = [
-      ...(this.faseDaInscricao() === ''
-        ? [
-            this.fasesDaInscricao().length === 0
-              ? 'O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição no passo Cronograma.'
-              : 'Escolha em que fase do cronograma a inscrição é respondida.',
-          ]
-        : []),
+      ...this.abas()
+        .filter((aba) => aba.fase === '')
+        .map((aba) => mensagemDaFaseQueFalta(aba.finalidade, aba.fases.length === 0)),
       ...problemasDoFormulario(draft.formulario, draft.documentos, new Set(draft.cronograma.fases.map((fase) => fase.codigo))),
       ...this.camposSemValoresOfertados().map(
         (campo) =>
@@ -335,18 +532,19 @@ export class FormularioStepComponent {
   }
 
   /**
-   * Grava o formulário de inscrição e a política que ancora a apuração da idade.
+   * Grava os formulários de cada finalidade e a política que ancora a apuração da idade.
    *
-   * A fase e o formulário gravado vêm de uma releitura FRESCA: a fase pode ter sido acrescentada
-   * nesta sessão, e o plano de gravação compara cada parte com o que o servidor tem — inclusive o
-   * que uma tentativa anterior deixou gravado pela metade.
+   * As fases e os formulários gravados vêm de uma releitura FRESCA: a fase pode ter sido
+   * acrescentada nesta sessão, e o plano de gravação compara cada parte com o que o servidor tem —
+   * inclusive o que uma tentativa anterior deixou gravado pela metade. As finalidades gravam na
+   * ordem em que a API aceita cada uma, e a primeira recusa para a gravação e vai à aba dela.
    */
   async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {
         valid: false,
-        messages: ['O cadastro do processo precisa estar concluído antes de declarar o formulário.'],
+        messages: ['O cadastro do processo precisa estar concluído antes de declarar os formulários.'],
       };
     }
 
@@ -361,48 +559,66 @@ export class FormularioStepComponent {
       if (!isApiOk(detalhe)) {
         return {
           valid: false,
-          messages: ['Não foi possível reler o processo para gravar o formulário de inscrição. Tente gravar de novo.'],
+          messages: ['Não foi possível reler o processo para gravar os formulários. Tente gravar de novo.'],
         };
       }
 
       const faseIdPorCodigo = new Map(detalhe.data.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const));
-      const faseId = faseIdPorCodigo.get(this.faseDaInscricao());
-      if (faseId === undefined) {
-        return {
-          valid: false,
-          messages: ['A fase da inscrição ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.'],
-        };
+      const paraEnvio: FormularioParaEnvio[] = [];
+      for (const aba of this.abas()) {
+        const faseId = faseIdPorCodigo.get(aba.fase);
+        if (faseId === undefined) {
+          return {
+            valid: false,
+            messages: [`A fase do formulário de ${aba.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`],
+          };
+        }
+        paraEnvio.push({ finalidade: aba.finalidade, faseId, conteudo: aba.conteudo });
       }
 
-      const formulario = this.store.draft().formulario;
-      const gravado = formularioDaFinalidade(detalhe.data.formularios, FINALIDADE_INSCRICAO);
-      const gravacao = await this.cadastro.gravarFormulario(
-        processoId,
-        FINALIDADE_INSCRICAO,
-        gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
-        { faseId, conteudo: formulario.conteudo },
+      const gravados = (finalidade: string) => formularioDaFinalidade(detalhe.data.formularios, finalidade);
+      const ordem = ordemDeGravacao(
+        paraEnvio.map((formulario) => {
+          const gravado = gravados(formulario.finalidade);
+          return { finalidade: formulario.finalidade, servidor: gravado === null ? null : conteudoDoFormulario(gravado), desejado: formulario.conteudo };
+        }),
       );
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!gravacao.ok) {
-        const mensagens = this.aplicarRecusa(gravacao.problem, formulario.conteudo);
-        await this.reconciliarComOServidor(processoId, geracao, false);
-        return { valid: false, messages: [...mensagens] };
+
+      const gravadas: string[] = [];
+      for (const finalidade of ordem) {
+        const desejado = paraEnvio.find((formulario) => formulario.finalidade === finalidade);
+        if (desejado === undefined) continue;
+        const gravado = gravados(finalidade);
+        const gravacao = await this.cadastro.gravarFormulario(
+          processoId,
+          finalidade,
+          gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
+          { faseId: desejado.faseId, conteudo: desejado.conteudo },
+        );
+        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+        if (!gravacao.ok) {
+          const mensagens = this.aplicarRecusa(finalidade, gravacao.problem, desejado.conteudo);
+          this.selecionarAba(finalidade);
+          await this.reconciliarComOServidor(processoId, geracao, gravadas);
+          return { valid: false, messages: [...mensagens] };
+        }
+        gravadas.push(finalidade);
       }
-      this.recusas.set(null);
+      this.recusas.set(new Map());
 
       const temporal = await this.cadastro.definirReferenciaTemporalFatos(
         processoId,
-        comoComandoDeReferenciaTemporal(formulario.referenciaTemporal, faseIdPorCodigo),
+        comoComandoDeReferenciaTemporal(this.store.draft().formulario.referenciaTemporal, faseIdPorCodigo),
       );
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!temporal.ok) {
         return {
           valid: false,
-          messages: [`O formulário de inscrição foi gravado. ${this.problemI18n.resolve(temporal.problem).title}`],
+          messages: [`Os formulários foram gravados. ${this.problemI18n.resolve(temporal.problem).title}`],
         };
       }
 
-      await this.reconciliarComOServidor(processoId, geracao, true);
+      await this.reconciliarComOServidor(processoId, geracao, null);
       return { valid: true };
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -410,33 +626,76 @@ export class FormularioStepComponent {
   }
 
   /**
-   * A recusa que aponta um item, uma etapa, um grupo ou um termo vai para ele no editor; o resto —
-   * a do grafo, que só cita o fato na mensagem — volta como mensagem do passo.
+   * A recusa que aponta um item, uma etapa, um grupo ou um termo vai para ele no editor da aba; o
+   * resto — a do grafo, que só cita o fato na mensagem — volta como mensagem do passo.
    */
-  private aplicarRecusa(problem: ProblemDetails, conteudo: ConteudoDoFormulario): readonly string[] {
+  private aplicarRecusa(finalidade: string, problem: ProblemDetails, conteudo: ConteudoDoFormulario): readonly string[] {
     const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? (problem.errors ?? []) : [];
     if (erros.length === 0) {
-      this.recusas.set(null);
-      return [this.problemI18n.resolve(problem).title];
+      this.recusas.set(new Map());
+      return [`O formulário de ${nomeDaFinalidade(finalidade)} não foi gravado. ${this.problemI18n.resolve(problem).title}`];
     }
     const recusas = distribuirRecusas(erros, semDadosBasicos(conteudo));
-    this.recusas.set(recusas);
-    return recusas.gerais.length > 0 ? recusas.gerais : ['O formulário de inscrição foi recusado: veja os campos marcados no editor.'];
+    this.recusas.set(new Map([[finalidade, recusas]]));
+    return recusas.gerais.length > 0
+      ? recusas.gerais
+      : [`O formulário de ${nomeDaFinalidade(finalidade)} foi recusado: veja os campos marcados na aba dele.`];
   }
 
   /**
-   * Relê o processo e projeta no rascunho o que o servidor tem do formulário. Depois de gravar, o
-   * conteúdo inteiro — a API repõe os dados básicos e pode deslocar a ordem. Depois de uma recusa,
-   * só os fatos das outras finalidades: o conteúdo na tela é o que o operador quer, e a próxima
+   * Relê o processo e projeta no rascunho o que o servidor tem dos formulários. Depois de gravar
+   * tudo, todos — a API repõe os dados básicos e pode deslocar a ordem. Depois de uma recusa, só os
+   * que gravaram antes dela: o conteúdo dos outros, na tela, é o que o operador quer, e a próxima
    * tentativa se compara com a releitura que fizer.
    */
-  private async reconciliarComOServidor(processoId: string, geracao: number, gravou: boolean): Promise<void> {
+  private async reconciliarComOServidor(processoId: string, geracao: number, gravadas: readonly string[] | null): Promise<void> {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
-    const servidor = inscricaoDoServidor(detalhe.data);
-    this.store.projetarSecao(
-      'formulario',
-      gravou ? servidor : { fatosDasOutrasFinalidades: servidor.fatosDasOutrasFinalidades },
-    );
+    if (gravadas === null) {
+      this.store.projetarSecao('formulario', formulariosDoServidor(detalhe.data));
+      return;
+    }
+
+    let formulario = this.store.draft().formulario;
+    for (const finalidade of gravadas) {
+      const servidor = formularioDoServidorNaFinalidade(detalhe.data, finalidade);
+      if (servidor !== null) formulario = comFormulario(formulario, servidor);
+    }
+    this.store.projetarSecao('formulario', formulario);
   }
+}
+
+/** O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos dela, e se a resposta é obrigatória. */
+function leituraDe(conteudo: ConteudoDoFormulario) {
+  const resposta = (obrigatoriedade: string | null): string =>
+    OBRIGATORIEDADES.find((opcao) => opcao.valor === obrigatoriedade)?.rotulo ?? 'Opcional';
+  return etapasEmOrdem(conteudo).map((etapa) => ({
+    codigo: etapa.codigo,
+    titulo: etapa.titulo,
+    entradas: entradasDaSecao(conteudo, etapa.codigo).map((entrada) =>
+      entrada.tipo === 'item'
+        ? { chave: entrada.item.fatoCodigo, rotulo: entrada.item.rotulo, resposta: resposta(entrada.item.obrigatoriedade) }
+        : {
+            chave: entrada.grupo.codigo,
+            rotulo: entrada.grupo.rotulo,
+            resposta: `Grupo repetível — ${resposta(entrada.grupo.obrigatoriedade).toLocaleLowerCase('pt-BR')}`,
+          },
+    ),
+  }));
+}
+
+/** Por que o formulário não tem fase: o cronograma não tem a que serve, ou o operador ainda não escolheu entre as que servem. */
+function mensagemDaFaseQueFalta(finalidade: string, semFaseQueServe: boolean): string {
+  if (finalidade === FINALIDADE_INSCRICAO) {
+    return semFaseQueServe
+      ? 'O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição no passo Cronograma.'
+      : 'Escolha em que fase do cronograma a inscrição é respondida.';
+  }
+  return semFaseQueServe
+    ? `O cronograma não tem fase em que o formulário de ${nomeDaFinalidade(finalidade)} é respondido. Acrescente a fase no passo Cronograma, ou remova o formulário.`
+    : `Escolha em que fase do cronograma o formulário de ${nomeDaFinalidade(finalidade)} é respondido.`;
+}
+
+function semChave<V>(mapa: ReadonlyMap<string, V>, chave: string): ReadonlyMap<string, V> {
+  return new Map([...mapa].filter(([atual]) => atual !== chave));
 }

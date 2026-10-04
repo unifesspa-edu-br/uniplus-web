@@ -82,7 +82,7 @@ const INITIAL_DRAFT: WizardDraft = {
     conteudo: conteudoInicial(),
     referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
     derivacao: [],
-    fatosDasOutrasFinalidades: [],
+    outrasFinalidades: [],
   },
   atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   publicacao: {

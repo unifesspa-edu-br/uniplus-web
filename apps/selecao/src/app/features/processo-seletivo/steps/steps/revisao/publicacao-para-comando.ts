@@ -208,10 +208,10 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   // persistir() do passo Eliminação.
   ['classificacao', 'Eliminação'],
   ['atendimento_especializado', 'Atend. especial'],
-  // O formulário de inscrição é onde os fatos coletados, as regras de derivação e a
+  // Os formulários são onde os fatos coletados, as regras de derivação e a
   // referência temporal são declarados. Três itens desta dimensão se resolvem noutro passo, e
   // estão nomeados em DESTINO_POR_ITEM.
-  ['coleta_de_fatos', 'Formulário'],
+  ['coleta_de_fatos', 'Formulários'],
 ]);
 
 /**

@@ -344,14 +344,14 @@ describe('destino de cada pendência no painel', () => {
    * no formulário de inscrição — antes de ele existir como passo, esta dimensão inteira ficava
    * sem destino e o operador lia a pendência sem ter para onde ir.
    */
-  it('leva ao formulário de inscrição a pendência de coleta de fatos', () => {
+  it('leva ao passo Formulários a pendência de coleta de fatos', () => {
     expect(rotuloDoItem('derivacao_fatos_citados_inexistentes', 'coleta_de_fatos')).toBe(
-      'Formulário',
+      'Formulários',
     );
     expect(rotuloDoItem('referencia_temporal_ausente_com_gatilho_etario', 'coleta_de_fatos')).toBe(
-      'Formulário',
+      'Formulários',
     );
-    expect(rotuloDoItem('grafo_dependencia_com_ciclo', 'coleta_de_fatos')).toBe('Formulário');
+    expect(rotuloDoItem('grafo_dependencia_com_ciclo', 'coleta_de_fatos')).toBe('Formulários');
   });
 
   /**

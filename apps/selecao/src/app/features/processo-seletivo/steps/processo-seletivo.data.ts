@@ -34,11 +34,7 @@ const DEFINICOES = [
   // Continua, como sempre esteve, depois do Cronograma — a política que ancora a apuração de
   // idade pode apontar o início ou o fim de uma fase, e parte dos campos sai dos fatos que as
   // exigências documentais citam.
-  {
-    rotulo: 'Formulário',
-    titulo: 'Formulário de inscrição',
-    revisao: 'Formulário de inscrição',
-  },
+  { rotulo: 'Formulários' },
   { rotulo: 'Revisão e publicação' },
 ] as const satisfies readonly DefinicaoDePasso[];
 

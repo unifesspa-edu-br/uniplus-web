@@ -25,7 +25,7 @@ import {
   ehRamoFederal,
   quantidadeEhDeclarada,
 } from '../steps/vagas/distribuicao-de-vagas';
-import { inscricaoDoServidor } from '../steps/formulario/formulario-do-processo';
+import { formulariosDoServidor } from '../steps/formulario/formularios-por-finalidade';
 import { exigenciasDe } from './exigencias-documentais';
 import { formatarValorEmReais } from './valor-em-reais';
 
@@ -69,9 +69,8 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
 }
 
 /**
- * O formulário de inscrição — o conteúdo pelo mesmo mapeamento da gravação, e a fase em que é
- * respondido —, a política que ancora a apuração de idade e as regras de derivação. Os
- * formulários das outras finalidades entram só pelos fatos que coletam: este passo não os edita.
+ * Os formulários de cada finalidade — o conteúdo pelo mesmo mapeamento da gravação, e a fase em
+ * que cada um é respondido —, a política que ancora a apuração de idade e as regras de derivação.
  *
  * As fases voltam traduzidas para CÓDIGO — o rascunho não guarda id de fase, porque ele não
  * sobrevive a uma gravação de cronograma que remova e reacrescente a fase.
@@ -81,7 +80,7 @@ function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
   const referencia = dto.referenciaTemporalFatos;
 
   return {
-    ...inscricaoDoServidor({ formularios: dto.formularios ?? [], cronogramaFases: dto.cronogramaFases ?? [] }),
+    ...formulariosDoServidor({ formularios: dto.formularios ?? [], cronogramaFases: dto.cronogramaFases ?? [] }),
     referenciaTemporal: {
       tipo: referencia?.tipo ?? '',
       data: referencia?.data ?? '',

@@ -536,11 +536,18 @@ export interface FormularioDeInscricao {
   readonly referenciaTemporal: ReferenciaTemporalConfig;
   readonly derivacao: readonly DerivacaoDeFato[];
   /**
-   * Os fatos que os formulários das OUTRAS finalidades (isenção da taxa, habilitação) coletam no
-   * servidor. Só leitura: um fato tem um único formulário que o coleta, e a inscrição não pode
-   * acrescentar o que outra finalidade já pergunta.
+   * Os formulários das OUTRAS finalidades (isenção da taxa, habilitação), na ordem das finalidades.
+   * A inscrição fica nos campos de cima porque todo processo a tem e o resto do assistente a lê; as
+   * outras existem só quando o operador as acrescenta. Um fato tem um único formulário que o coleta.
    */
-  readonly fatosDasOutrasFinalidades: readonly string[];
+  readonly outrasFinalidades: readonly FormularioDaFinalidade[];
+}
+
+/** O formulário de uma finalidade no rascunho: a fase por CÓDIGO, como a da inscrição, e o conteúdo do editor. */
+export interface FormularioDaFinalidade {
+  readonly finalidade: string;
+  readonly faseCodigo: string;
+  readonly conteudo: ConteudoDoFormulario;
 }
 
 /**

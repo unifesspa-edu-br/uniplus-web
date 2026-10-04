@@ -193,20 +193,28 @@ export function faseDaInscricao<T extends { readonly coletaInscricao: boolean }>
   return fases.find((fase) => fase.coletaInscricao) ?? null;
 }
 
-/**
- * O formulário de inscrição do servidor, na forma do rascunho: o conteúdo pelo mesmo mapeamento da
- * gravação, a fase pelo código, e os fatos das outras finalidades. Sem formulário de inscrição, o
- * conteúdo é o inicial — a revisão e aceite —, e a seção dos dados básicos chega com a criação.
- */
-export function inscricaoDoServidor(dto: {
+/** O processo como a leitura dos formulários o precisa: os formulários e as fases, para resolver a fase pelo código. */
+export interface ProcessoComFormularios {
   readonly formularios: readonly FormularioDto[];
   readonly cronogramaFases: readonly { readonly id: string; readonly codigo: string }[];
-}): { readonly faseCodigo: string; readonly conteudo: ConteudoDoFormulario; readonly fatosDasOutrasFinalidades: readonly string[] } {
+}
+
+/** O formulário do servidor na forma do rascunho: o conteúdo pelo mesmo mapeamento da gravação e a fase pelo código. */
+export function formularioDoServidor(
+  dto: ProcessoComFormularios,
+  formulario: FormularioDto,
+): { readonly finalidade: string; readonly faseCodigo: string; readonly conteudo: ConteudoDoFormulario } {
+  const fase = formulario.faseId === null ? undefined : dto.cronogramaFases.find((f) => f.id === formulario.faseId);
+  return { finalidade: formulario.finalidade, faseCodigo: fase?.codigo ?? '', conteudo: conteudoDoFormulario(formulario) };
+}
+
+/**
+ * O formulário de inscrição do servidor, na forma do rascunho. Sem formulário de inscrição, o
+ * conteúdo é o inicial — a revisão e aceite —, e a seção dos dados básicos chega com a criação.
+ */
+export function inscricaoDoServidor(dto: ProcessoComFormularios): { readonly faseCodigo: string; readonly conteudo: ConteudoDoFormulario } {
   const inscricao = formularioDaFinalidade(dto.formularios, FINALIDADE_INSCRICAO);
-  const fase = inscricao?.faseId === null || inscricao === null ? undefined : dto.cronogramaFases.find((f) => f.id === inscricao.faseId);
-  return {
-    faseCodigo: fase?.codigo ?? '',
-    conteudo: inscricao === null ? conteudoInicial() : conteudoDoFormulario(inscricao),
-    fatosDasOutrasFinalidades: fatosDasOutrasFinalidades(dto.formularios, FINALIDADE_INSCRICAO),
-  };
+  if (inscricao === null) return { faseCodigo: '', conteudo: conteudoInicial() };
+  const { faseCodigo, conteudo } = formularioDoServidor(dto, inscricao);
+  return { faseCodigo, conteudo };
 }
