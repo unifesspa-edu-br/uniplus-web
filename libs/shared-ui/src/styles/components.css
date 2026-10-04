@@ -461,6 +461,8 @@ ui-editor-de-condicoes { display: block; }
 }
 /* A região de status fica no DOM mesmo vazia: escondida com display none, não anunciaria. */
 .pre-visualizacao-formularios__resumo { margin: 0; }
+/* A tabela de campos avaliados é o próprio contêiner de rolagem: elemento em linha não rolaria. */
+ui-tabela-de-campos-avaliados { display: block; }
 .pre-visualizacao-formularios__formulario { margin: 0; font-size: var(--text-base); }
 .pre-visualizacao-formularios__mensagem {
   display: block;
