@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { fatoEscolhivel, problemaDaCondicao, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { fatoEscolhivel, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { TagComponent } from '../tag/tag';
 import {
   FATO_PARENTESCO,
@@ -18,6 +18,8 @@ import {
   fatosCitaveisPeloGrupo,
   fatosOferecidos,
   fatosDeMembroParaAcrescentar,
+  fontesDasOpcoes,
+  predicadosSobreRespostasAnteriores,
   motivoDaRemocaoTravadaDoGrupo,
   quantidadeNoTeto,
   moverCampoNoGrupo,
@@ -27,11 +29,12 @@ import {
   type GrupoDoFormulario,
   type ItemDoFormulario,
   type PredicadoNoWire,
+  type RecusaDaRestricao,
   type ResultadoDoGrupo,
 } from './formulario-editavel';
 import { focarDepois } from './foco';
 import { ItemDoFormularioComponent } from './item-do-formulario';
-import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 /**
  * Um grupo repetível do formulário (UNI-REQ-0146): o candidato responde os mesmos campos para cada
@@ -185,6 +188,8 @@ import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
               [disabled]="disabled()"
               [erros]="errosPorCampo().get(campo.fatoCodigo) ?? []"
               [valoresConhecidos]="valoresConhecidos().get(campo.fatoCodigo) ?? []"
+              [fontesDeOpcoes]="fontesDeOpcoes().get(campo.fatoCodigo) ?? []"
+              [recusasDasRestricoes]="recusasDasRestricoes().get(campo.fatoCodigo) ?? []"
               [travadoPor]="travaDo(campo)"
               [remocaoTravadaPor]="remocoesTravadas().get(campo.fatoCodigo) ?? null"
               (itemChange)="emitir(comCampoDoGrupo(grupo(), $event))"
@@ -256,6 +261,8 @@ export class GrupoDoFormularioComponent {
   /** As recusas da API que apontam o grupo, e as que apontam cada campo dele. */
   readonly erros = input<readonly string[]>([]);
   readonly errosPorCampo = input<ReadonlyMap<string, readonly string[]>>(new Map());
+  /** As recusas da API que apontam uma restrição de um campo do grupo, pelo fato do campo. */
+  readonly recusasDasRestricoes = input<ReadonlyMap<string, readonly RecusaDaRestricao[]>>(new Map());
   /** Os campos que não podem sair, com o motivo. */
   readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
   /** Os fatos de outra finalidade, que não podem entrar neste formulário. */
@@ -300,11 +307,24 @@ export class GrupoDoFormularioComponent {
       new Map(
         this.campos().map((campo) => [
           campo.fatoCodigo,
-          fatosOferecidos(this.catalogo(), fatosCitaveisPeloCampoDoGrupo(this.conteudo(), this.grupo(), campo.fatoCodigo), [
-            campo.precondicao,
-            campo.predicadoObrigatoriedade ?? null,
-            ...(campo.restricoes ?? []).flatMap((restricao) => (restricao.entradas ?? []).map((entrada) => entrada.quando)),
-          ]),
+          fatosOferecidos(
+            this.catalogo(),
+            fatosCitaveisPeloCampoDoGrupo(this.conteudo(), this.grupo(), campo.fatoCodigo),
+            predicadosSobreRespostasAnteriores(campo),
+          ),
+        ]),
+      ),
+  );
+
+  /** Os campos de onde as opções de cada campo podem vir: os citáveis por ele cujas opções cabem nas dele. */
+  protected readonly fontesDeOpcoes = computed(
+    () =>
+      new Map(
+        this.campos().map((campo) => [
+          campo.fatoCodigo,
+          fontesDasOpcoes(this.catalogo(), fatosCitaveisPeloCampoDoGrupo(this.conteudo(), this.grupo(), campo.fatoCodigo), campo.fatoCodigo).map(
+            (fonte) => ({ codigo: fonte.codigo, nome: fonte.nome }),
+          ),
         ]),
       ),
   );
@@ -358,12 +378,7 @@ export class GrupoDoFormularioComponent {
   }
 
   protected problemas(condicoes: readonly CondicaoEmClausula[], fatos: readonly FatoEscolhivel[]): Readonly<Record<number, string | undefined>> {
-    const porCodigo = new Map(fatos.map((fato) => [fato.codigo, fato]));
-    const problemas: Record<number, string | undefined> = {};
-    condicoes.forEach((condicao, indice) => {
-      problemas[indice] = problemaDaCondicao(condicao, porCodigo) ?? undefined;
-    });
-    return problemas;
+    return problemasDasCondicoes(condicoes, fatos);
   }
 
   protected emitir(grupo: GrupoDoFormulario): void {

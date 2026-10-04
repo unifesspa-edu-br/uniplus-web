@@ -707,34 +707,40 @@ const TIPOS_DE_SELECAO = new Set(['SELECAO_UNICA', 'SELECAO_MULTIPLA']);
 
 /**
  * As restrições que o administrador pode acrescentar ao campo: a faixa no numérico, o tamanho no de
- * texto e as opções permitidas na seleção de valores conhecidos — uma por tipo. A do município é
- * posta pela própria tela, e as opções das respostas anteriores ficam para depois.
+ * texto e, na seleção, as opções permitidas — quando os valores do domínio são conhecidos, para
+ * serem marcados — e as opções das respostas anteriores — quando há campo anterior de onde elas
+ * venham. Uma por tipo. A do município é posta pela própria tela.
  */
-export function restricoesParaAcrescentar(item: ItemDoFormulario, temValoresConhecidos: boolean): readonly OpcaoDoFormulario[] {
+export function restricoesParaAcrescentar(
+  item: ItemDoFormulario,
+  temValoresConhecidos: boolean,
+  temFontesDeOpcoes = false,
+): readonly OpcaoDoFormulario[] {
   const presentes = new Set((item.restricoes ?? []).map((restricao) => restricao.tipo));
+  const selecao = TIPOS_DE_SELECAO.has(item.tipoRenderizacao);
   const cabe = (tipo: string): boolean =>
     (tipo === RESTRICAO_FAIXA_NUMERICA && item.tipoRenderizacao === 'NUMERO') ||
     (tipo === RESTRICAO_TAMANHO_TEXTO && item.tipoRenderizacao === 'TEXTO') ||
-    (tipo === RESTRICAO_OPCOES_PERMITIDAS && TIPOS_DE_SELECAO.has(item.tipoRenderizacao) && temValoresConhecidos);
+    (tipo === RESTRICAO_OPCOES_PERMITIDAS && selecao && temValoresConhecidos) ||
+    (tipo === RESTRICAO_OPCOES_DAS_RESPOSTAS && selecao && temFontesDeOpcoes);
   return RESTRICOES.filter((restricao) => cabe(restricao.valor) && !presentes.has(restricao.valor));
 }
 
 /** A restrição recém-acrescentada, ainda sem limite nem valor: o problema dela orienta o preenchimento. */
 export function restricaoNova(tipo: string): RestricaoDeValor {
-  return tipo === RESTRICAO_OPCOES_PERMITIDAS
-    ? { tipo, entradas: [{ quando: null, valores: [] }] }
-    : { tipo, minimo: null, maximo: null };
+  switch (tipo) {
+    case RESTRICAO_OPCOES_PERMITIDAS:
+      return { tipo, entradas: [entradaDeOpcoesNova()] };
+    case RESTRICAO_OPCOES_DAS_RESPOSTAS:
+      return { tipo, fatos: [] };
+    default:
+      return { tipo, minimo: null, maximo: null };
+  }
 }
 
-/**
- * A restrição que a tela mostra sem editar e grava como veio: opções condicionadas a respostas
- * anteriores e opções formadas pelas respostas, que este editor ainda não declara.
- */
-export function restricaoSoParaLeitura(restricao: RestricaoDeValor): boolean {
-  return (
-    restricao.tipo === RESTRICAO_OPCOES_DAS_RESPOSTAS ||
-    (restricao.tipo === RESTRICAO_OPCOES_PERMITIDAS && (restricao.entradas ?? []).some((entrada) => (entrada.quando ?? []).length > 0))
-  );
+/** O grupo de opções novo: sem condição — vale sempre — e sem valor, que o problema dele pede. */
+export function entradaDeOpcoesNova(): OpcoesCondicionadas {
+  return { quando: null, valores: [] };
 }
 
 /** O que impede a restrição de ser gravada, nos termos da API (`RestricaoValor.Violacao`); nulo quando nada. */
@@ -756,14 +762,62 @@ export function problemaDaRestricao(restricao: RestricaoDeValor): string | null 
       }
       return minimo !== null && maximo !== null && Number(minimo) > Number(maximo) ? 'O mínimo é maior que o máximo.' : null;
     case RESTRICAO_OPCOES_PERMITIDAS:
-      return (restricao.entradas ?? []).length === 0 || (restricao.entradas ?? []).some((entrada) => entrada.valores.length === 0)
-        ? 'Escolha ao menos um valor permitido.'
-        : null;
+      // O grupo sem valor tem o problema dele, mostrado no próprio grupo (`problemaDoGrupoDeOpcoes`).
+      return (restricao.entradas ?? []).length === 0 ? 'Declare ao menos um grupo de opções.' : null;
+    case RESTRICAO_OPCOES_DAS_RESPOSTAS:
+      return (restricao.fatos ?? []).length === 0 ? 'Escolha ao menos um campo de onde vêm as opções.' : null;
     case RESTRICAO_MUNICIPIOS_DA_UF:
       return (restricao.fatos ?? []).length === 1 ? null : 'Escolha o campo de UF de onde vêm os municípios.';
     default:
       return null;
   }
+}
+
+/** O que impede o grupo de opções de ser gravado (`OpcoesCondicionadas.Violacao`); nulo quando nada. */
+export function problemaDoGrupoDeOpcoes(entrada: OpcoesCondicionadas): string | null {
+  return entrada.valores.length === 0 ? 'Escolha ao menos um valor permitido.' : null;
+}
+
+/**
+ * Se toda resposta possível do campo de onde vêm as opções é opção do campo que as recebe
+ * (`ConferenciaNoCatalogo.OpcoesDaFonteCabemNoAlvo`): o mesmo domínio e, quando os dois enumeram os
+ * valores, os da fonte contidos nos do alvo; quando nenhum enumera, a mesma fonte de valores.
+ */
+export function opcoesDaFonteCabemNoAlvo(
+  alvo: FatoComValores,
+  fonte: FatoComValores,
+  dominiosDinamicos: ReadonlyMap<string, readonly string[]> = new Map(),
+): boolean {
+  if (fonte.dominio !== alvo.dominio) return false;
+  const daFonte = valoresDoDominio(fonte, dominiosDinamicos);
+  const doAlvo = valoresDoDominio(alvo, dominiosDinamicos);
+  if (daFonte === null && doAlvo === null) return (fonte.fonteValores ?? null) === (alvo.fonteValores ?? null);
+  return daFonte !== null && doAlvo !== null && [...daFonte].every((valor) => doAlvo.has(valor));
+}
+
+/**
+ * Os campos de onde as opções do campo podem vir: os citáveis por ele — anteriores ou conhecidos
+ * antes do formulário — cujas opções cabem nas dele, em ordem de nome.
+ */
+export function fontesDasOpcoes(
+  catalogo: readonly FatoDoFormulario[],
+  citaveis: ReadonlySet<string>,
+  alvoCodigo: string,
+): readonly FatoDoFormulario[] {
+  const alvo = catalogo.find((fato) => fato.codigo === alvoCodigo);
+  if (alvo === undefined) return [];
+  return catalogo
+    .filter((fato) => fato.codigo !== alvoCodigo && citaveis.has(fato.codigo) && opcoesDaFonteCabemNoAlvo(alvo, fato))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+type FatoComValores = Pick<FatoDoFormulario, 'codigo' | 'dominio' | 'fonteValores' | 'valoresDominio'>;
+
+/** Os valores enumerados do domínio — do catálogo ou do processo —; nulo no domínio que não os enumera. */
+function valoresDoDominio(fato: FatoComValores, dominiosDinamicos: ReadonlyMap<string, readonly string[]>): ReadonlySet<string> | null {
+  if ((fato.valoresDominio ?? []).length > 0) return new Set(fato.valoresDominio);
+  const dinamicos = dominiosDinamicos.get(fato.codigo);
+  return dinamicos === undefined ? null : new Set(dinamicos);
 }
 
 /** Os tipos de campo que o impedimento admite (`Impedimento.CabeNoCampo`). */
@@ -1105,9 +1159,21 @@ export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormu
   };
 }
 
-/** As recusas da API distribuídas pelo que a tela mostra: o item, a etapa, ou o resumo. */
+/**
+ * A recusa que aponta uma restrição do campo, pela posição dela na lista enviada, e o grupo de
+ * opções dela quando aponta um (`restricoes[0].entradas[1].quando`); nulo quando aponta a restrição.
+ */
+export interface RecusaDaRestricao {
+  readonly restricao: number;
+  readonly grupo: number | null;
+  readonly mensagem: string;
+}
+
+/** As recusas da API distribuídas pelo que a tela mostra: o item, a restrição dele, a etapa, ou o resumo. */
 export interface RecusasDoConteudo {
   readonly porItem: ReadonlyMap<string, readonly string[]>;
+  /** As que apontam uma restrição, pelo fato do campo — do item ou do campo de grupo. */
+  readonly porRestricao: ReadonlyMap<string, readonly RecusaDaRestricao[]>;
   readonly porEtapa: ReadonlyMap<string, readonly string[]>;
   readonly porTermo: ReadonlyMap<string, readonly string[]>;
   readonly porGrupo: ReadonlyMap<string, readonly string[]>;
@@ -1123,6 +1189,7 @@ export function distribuirRecusas(
   enviado: ConteudoDoFormulario,
 ): RecusasDoConteudo {
   const porItem = new Map<string, string[]>();
+  const porRestricao = new Map<string, RecusaDaRestricao[]>();
   const porEtapa = new Map<string, string[]>();
   const porTermo = new Map<string, string[]>();
   const porGrupo = new Map<string, string[]>();
@@ -1132,7 +1199,7 @@ export function distribuirRecusas(
     // O campo do grupo tem código único no formulário: a recusa dele vai ao campo, como a de um item.
     const campoDoGrupo = grupo === undefined ? undefined : elementoApontado(recusa.field, 'subitens', grupo.subitens);
     if (campoDoGrupo !== undefined) {
-      acumular(porItem, campoDoGrupo.fatoCodigo, recusa.message);
+      acumularNoCampo(porItem, porRestricao, campoDoGrupo.fatoCodigo, recusa);
       continue;
     }
     if (grupo !== undefined) {
@@ -1142,12 +1209,32 @@ export function distribuirRecusas(
     const item = elementoApontado(recusa.field, 'itens', enviado.itens ?? []);
     const etapa = elementoApontado(recusa.field, 'etapas', enviado.etapas ?? []);
     const termo = elementoApontado(recusa.field, 'termos', enviado.termos ?? []);
-    if (item !== undefined) acumular(porItem, item.fatoCodigo, recusa.message);
+    if (item !== undefined) acumularNoCampo(porItem, porRestricao, item.fatoCodigo, recusa);
     else if (etapa !== undefined) acumular(porEtapa, etapa.codigo, recusa.message);
     else if (termo !== undefined) acumular(porTermo, termo.codigo, recusa.message);
     else gerais.push(recusa.message);
   }
-  return { porItem, porEtapa, porTermo, porGrupo, gerais };
+  return { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais };
+}
+
+/** A recusa do campo vai à restrição que ela aponta, ou ao campo quando não aponta nenhuma. */
+function acumularNoCampo(
+  porItem: Map<string, string[]>,
+  porRestricao: Map<string, RecusaDaRestricao[]>,
+  fatoCodigo: string,
+  recusa: { readonly field: string; readonly message: string },
+): void {
+  const apontada = /\.restricoes\[(\d+)\](?:\.entradas\[(\d+)\])?/iu.exec(recusa.field);
+  if (apontada === null) {
+    acumular(porItem, fatoCodigo, recusa.message);
+    return;
+  }
+  const recusaDaRestricao: RecusaDaRestricao = {
+    restricao: Number(apontada[1]),
+    grupo: apontada[2] === undefined ? null : Number(apontada[2]),
+    mensagem: recusa.message,
+  };
+  porRestricao.set(fatoCodigo, [...(porRestricao.get(fatoCodigo) ?? []), recusaDaRestricao]);
 }
 
 function elementoApontado<T>(campo: string, lista: string, elementos: readonly T[]): T | undefined {
@@ -1205,13 +1292,20 @@ export function fatosCitadosPeloConteudo(conteudo: ConteudoDoFormulario): Readon
   ]);
 }
 
-function predicadosDoCampo(campo: ItemDoFormulario): readonly PredicadoNoWire[] {
+/**
+ * Os predicados do campo que citam só respostas anteriores a ele: a exibição, a obrigatoriedade e a
+ * condição de cada grupo de opções. O impedimento fica de fora: cita a resposta do próprio campo.
+ */
+export function predicadosSobreRespostasAnteriores(campo: ItemDoFormulario): readonly PredicadoNoWire[] {
   return [
     campo.precondicao,
     campo.predicadoObrigatoriedade ?? null,
-    campo.impedimento?.quando ?? null,
     ...(campo.restricoes ?? []).flatMap((restricao) => (restricao.entradas ?? []).map((entrada) => entrada.quando)),
   ];
+}
+
+function predicadosDoCampo(campo: ItemDoFormulario): readonly PredicadoNoWire[] {
+  return [...predicadosSobreRespostasAnteriores(campo), campo.impedimento?.quando ?? null];
 }
 
 function fatosCitadosPeloCampo(campo: ItemDoFormulario): readonly string[] {
