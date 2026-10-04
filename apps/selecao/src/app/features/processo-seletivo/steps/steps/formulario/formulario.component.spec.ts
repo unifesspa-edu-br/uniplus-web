@@ -359,8 +359,8 @@ describe('FormularioStepComponent', () => {
     });
 
     it('lê o formulário como texto, sem controle nem ação de edição', () => {
-      // As abas continuam: são navegação entre os formulários, não ação de edição.
-      expect(host.querySelector('input, select, textarea, button:not([role="tab"]), ui-editor-de-formulario')).toBeNull();
+      // Com a inscrição só, não há aba: nada entre o que navegar.
+      expect(host.querySelector('input, select, textarea, button, ui-editor-de-formulario')).toBeNull();
       expect(valor('Título do formulário')).toEqual(['Inscrição — Medicina 2027']);
       expect(valor('Fase da inscrição')).toEqual(['INSCRICAO']);
       expect(host.textContent).toContain('Condições especiais');

@@ -30,7 +30,9 @@
 <p class="sr-only" role="status" aria-live="polite" id="form-anuncio">{{ anuncio() }}</p>
 
 <div class="form-abas">
-  <!-- O tablist só contém abas: acrescentar formulário é outro controle, logo depois dele. -->
+  <!-- O tablist só contém abas: acrescentar formulário é outro controle, logo depois dele. Com um
+       formulário só, não há entre o que navegar, e a consulta fica sem controle algum. -->
+  @if (comAbas()) {
   <div class="form-abas__lista" role="tablist" aria-label="Formulários do processo">
     @for (aba of abas(); track aba.finalidade; let indice = $index) {
       <button
@@ -51,6 +53,7 @@
       </button>
     }
   </div>
+  }
 
   @if (!store.emConsulta() && finalidadesOferecidas().length > 0) {
     <div class="form-abas__acrescentar">
@@ -90,10 +93,10 @@
 
 @for (aba of abas(); track aba.finalidade) {
   <div
-    role="tabpanel"
+    [attr.role]="comAbas() ? 'tabpanel' : null"
     class="form-abas__painel"
     [id]="aba.painel"
-    [attr.aria-labelledby]="aba.aba"
+    [attr.aria-labelledby]="comAbas() ? aba.aba : null"
     [hidden]="aba.finalidade !== abaAtiva()"
   >
     @if (aba.recusaDaRemocao; as recusa) {

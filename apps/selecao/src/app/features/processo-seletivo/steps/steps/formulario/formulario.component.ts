@@ -243,6 +243,9 @@ export class FormularioStepComponent {
 
   readonly remocoesTravadas = computed(() => remocoesTravadasPor(this.citantes()));
 
+  /** Abas só quando há entre o que navegar: com um formulário só, o painel basta. */
+  readonly comAbas = computed(() => this.abas().length > 1);
+
   /**
    * Uma aba por formulário, com o que o editor dela recebe. Na inscrição, o combo deixa de fora o
    * que as outras finalidades coletam, e os fatos que elas citam por negação são obrigatórios. Nas
@@ -438,8 +441,12 @@ export class FormularioStepComponent {
     return [title, detail].filter((parte) => parte !== undefined && parte !== '').join(' ');
   }
 
+  /** Sem abas — sobrou um formulário só —, o foco vai ao combo de acrescentar, o controle mais próximo. */
   private focarAba(finalidade: string): void {
-    afterNextRender(() => document.getElementById(`form-aba-${sufixoDaFinalidade(finalidade)}`)?.focus(), { injector: this.injector });
+    afterNextRender(
+      () => (document.getElementById(`form-aba-${sufixoDaFinalidade(finalidade)}`) ?? document.getElementById('form-finalidade-nova'))?.focus(),
+      { injector: this.injector },
+    );
   }
 
   readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);
