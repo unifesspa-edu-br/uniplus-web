@@ -126,10 +126,12 @@ const ESTADOS: Readonly<Record<string, string>> = {
             </div>
           }
         </fieldset>
-      } @else if (simulaveis().length > 0) {
-        <p class="field__hint">Sem o catálogo de fatos não é possível simular as respostas.</p>
-      } @else {
+      } @else if (simulaveis().length === 0) {
         <p class="field__hint">O modelo ainda não tem campos para simular.</p>
+      } @else if (catalogo().length === 0) {
+        <p class="field__hint">O catálogo de fatos ainda não está disponível: sem ele não é possível simular as respostas.</p>
+      } @else {
+        <p class="field__hint">Nenhum campo do modelo tem resposta que se simule aqui; o endereço, por exemplo, não é simulado.</p>
       }
 
       <fieldset class="cfg-pre-visualizacao__respostas" [disabled]="carregando()">
