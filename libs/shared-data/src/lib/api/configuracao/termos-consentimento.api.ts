@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
+import { ApiResult, apiOk, coletarPaginas, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -97,6 +97,28 @@ export class TermosConsentimentoApi {
       {
         context: withVendorMime('termo-consentimento', 1),
       },
+    );
+  }
+
+  /**
+   * Todos os termos com as versões promovidas — o que um formulário pode exigir. A listagem,
+   * colhida por todas as páginas, não traz as versões, e cada termo é lido por inteiro. A
+   * primeira recusa é entregue como está: uma lista parcial ofereceria menos termos do que há.
+   */
+  listarComVersoes(): Observable<ApiResult<readonly TermoConsentimentoDto[]>> {
+    return coletarPaginas((cursor) => this.listar({ cursor })).pipe(
+      switchMap((lista): Observable<ApiResult<readonly TermoConsentimentoDto[]>> => {
+        if (!lista.ok) return of(lista);
+        if (lista.data.length === 0) return of(apiOk<readonly TermoConsentimentoDto[]>([], lista.status, lista.headers));
+        return forkJoin(lista.data.map((termo) => this.obter(termo.id))).pipe(
+          map((termos) => {
+            const recusa = termos.find((termo) => !termo.ok);
+            return recusa !== undefined && !recusa.ok
+              ? recusa
+              : apiOk(termos.flatMap((termo) => (termo.ok ? [termo.data] : [])), lista.status, lista.headers);
+          }),
+        );
+      }),
     );
   }
 

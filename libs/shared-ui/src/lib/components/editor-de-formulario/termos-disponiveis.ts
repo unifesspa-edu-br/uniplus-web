@@ -1,5 +1,11 @@
-import type { TermoConsentimentoDto } from '@uniplus/shared-data/configuracao';
-import type { TermoDisponivel } from '@uniplus/shared-ui/components';
+import type { TermoDisponivel } from './formulario-editavel';
+
+/** O termo de consentimento como o cadastro o devolve, só no que o editor usa. */
+export interface TermoComVersoes {
+  readonly id: string;
+  readonly nome: string;
+  readonly versoes: readonly { readonly id: string; readonly promovidaEm: string }[];
+}
 
 const DATA = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -7,7 +13,7 @@ const DATA = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: '
  * O termo de consentimento como o editor o oferece: as versões promovidas, a mais nova primeiro —
  * é a que um termo recém-exigido recebe —, nomeadas pela data da promoção.
  */
-export function termoDisponivelDe(termo: TermoConsentimentoDto): TermoDisponivel {
+export function termoDisponivelDe(termo: TermoComVersoes): TermoDisponivel {
   return {
     termoId: termo.id,
     nome: termo.nome,
