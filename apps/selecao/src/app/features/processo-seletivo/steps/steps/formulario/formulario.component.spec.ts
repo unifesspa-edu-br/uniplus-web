@@ -432,6 +432,15 @@ describe('FormularioStepComponent', () => {
       expect(host.querySelector('#form-inscricao-modelo')?.getAttribute('aria-describedby')).toBe('form-inscricao-modelo-ajuda');
     });
 
+    it('antes de o processo existir, aplicar fica indisponível e a ajuda diz por quê', () => {
+      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      store.processoSeletivoId.set(null);
+      fixture.detectChanges();
+
+      expect((host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).disabled).toBe(true);
+      expect(host.querySelector('#form-inscricao-modelo-ajuda')?.textContent).toContain('depois que o processo for criado');
+    });
+
     it('pede confirmação antes de substituir, dizendo que as edições não gravadas saem', () => {
       fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
       fixture.detectChanges();
@@ -543,7 +552,7 @@ describe('FormularioStepComponent', () => {
     });
 
     it('sem saber se a cópia aconteceu, só o mesmo modelo pode ser aplicado de novo', async () => {
-      fixture.componentInstance.modelos.set(new Map([['INSCRICAO', [{ id: 'insc', nome: 'Inscrição de Medicina' }, { id: 'outro', nome: 'Outra inscrição' }]]]) as never);
+      fixture.componentInstance.modelos.set(new Map([['INSCRICAO', [{ id: 'insc', nome: 'Inscrição de Medicina' }, { id: 'outro', nome: 'Outra inscrição' }]], ['HABILITACAO', [{ id: 'hab', nome: 'Habilitação padrão' }]]]) as never);
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
@@ -556,6 +565,9 @@ describe('FormularioStepComponent', () => {
       fixture.componentInstance.escolherModelo('INSCRICAO', 'outro');
       fixture.componentInstance.pedirAplicacao('INSCRICAO');
       expect(fixture.componentInstance.aplicacaoPendente(), 'outro modelo trocaria a chave, e a primeira cópia ainda pode chegar').toBeNull();
+      fixture.componentInstance.escolherModelo('HABILITACAO', 'hab');
+      fixture.componentInstance.pedirAplicacao('HABILITACAO');
+      expect(fixture.componentInstance.aplicacaoPendente(), 'nem em outra aba: as cópias mexem no que é do processo inteiro').toBeNull();
 
       fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
       fixture.componentInstance.pedirAplicacao('INSCRICAO');
