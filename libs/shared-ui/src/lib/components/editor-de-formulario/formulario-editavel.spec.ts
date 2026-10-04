@@ -4,6 +4,7 @@ import {
   acrescentarItem,
   acrescentarSecao,
   distribuirRecusas,
+  fatosCitadosPelasRegras,
   fatosCitaveisPeloItem,
   fatosParaAcrescentar,
   fatosQueExigemResposta,
@@ -272,6 +273,18 @@ describe('regras espelhadas', () => {
     });
 
     expect([...fatosQueExigemResposta(atual)].sort()).toEqual(['IMPEDIDO', 'NEGADO']);
+  });
+
+  it('os fatos citados pelas regras incluem os do impedimento e os da exibição da seção, sem repetir', () => {
+    const atual = conteudo({
+      etapas: [secao('S1', 0, exibidoQuando('P'))],
+      itens: [
+        item('A', 0, 'S1', { impedimento: { quando: exibidoQuando('A'), mensagem: null } }),
+        item('B', 1, 'S1', { precondicao: exibidoQuando('A') }),
+      ],
+    });
+
+    expect(fatosCitadosPelasRegras(atual)).toEqual(['A', 'P']);
   });
 
   it('o envio deixa de fora a seção dos dados básicos, que a API repõe', () => {

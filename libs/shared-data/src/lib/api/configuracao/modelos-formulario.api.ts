@@ -9,6 +9,20 @@ export type ModeloFormularioView = components['schemas']['ModeloFormularioView']
 export type CriarModeloFormularioCommand = components['schemas']['CriarModeloFormularioCommand'];
 export type EdicaoDoModeloInput = components['schemas']['EdicaoDoModeloInput'];
 export type ConteudoDoModeloInput = components['schemas']['ConteudoDoModeloInput'];
+export type PreVisualizacaoDoModeloDto = components['schemas']['PreVisualizacaoDoModeloDto'];
+export type ItemPreVisualizadoDto = components['schemas']['ItemPreVisualizadoDto'];
+export type TermoPreVisualizadoDto = components['schemas']['TermoPreVisualizadoDto'];
+
+/**
+ * As respostas simuladas, por código de fato, com o valor em JSON (`true`, `18`, `"PRETA"`,
+ * `["A", "B"]`). O schema gerado tipa o dicionário de `JsonElement` como `Record<string, never>`,
+ * que não aceita valor nenhum; a forma aqui é a que a API recebe.
+ */
+export interface PreVisualizacaoDoModeloInput {
+  readonly respostas: Readonly<Record<string, unknown>> | null;
+  readonly etapasConcluidas: readonly string[] | null;
+  readonly pressupostos: Readonly<Record<string, unknown>> | null;
+}
 
 /**
  * Cliente dos modelos de formulário: o formulário composto por tipo de processo e finalidade
@@ -51,6 +65,16 @@ export class ModelosFormularioApi {
   /** POST `/api/configuracao/admin/modelos-formulario/{id}/ativacao` — reativa o modelo. */
   ativar(id: string, context: HttpContext): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(this.admin(id, 'ativacao'), null, { context });
+  }
+
+  /**
+   * POST `/api/configuracao/admin/modelos-formulario/{id}/pre-visualizacao` — avalia o modelo
+   * gravado contra respostas simuladas. É leitura: não leva Idempotency-Key.
+   */
+  preVisualizar(id: string, input: PreVisualizacaoDoModeloInput): Observable<ApiResult<PreVisualizacaoDoModeloDto>> {
+    return this.http.post<ApiResult<PreVisualizacaoDoModeloDto>>(this.admin(id, 'pre-visualizacao'), input, {
+      context: withVendorMime('pre-visualizacao-modelo-formulario', 1),
+    });
   }
 
   private admin(...segmentos: readonly string[]): string {

@@ -503,6 +503,20 @@ export function fatosQueExigemResposta(conteudo: ConteudoDoFormulario): Readonly
   return fatos;
 }
 
+/**
+ * Os fatos que alguma regra do formulário cita — exibição, obrigatoriedade, impedimento e
+ * restrição de campos, seções, grupos e termos —, na ordem em que aparecem. São as respostas que
+ * mudam o que a pré-visualização mostra.
+ */
+export function fatosCitadosPelasRegras(conteudo: ConteudoDoFormulario): readonly string[] {
+  return [
+    ...new Set([
+      ...todosOsPredicados(conteudo).flatMap(fatosDoPredicado),
+      ...todosOsCampos(conteudo).flatMap((campo) => (campo.restricoes ?? []).flatMap((restricao) => restricao.fatos ?? [])),
+    ]),
+  ];
+}
+
 /** O conteúdo sem a seção dos dados básicos: a API a repõe, e o envio que a altera é recusado. */
 export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   return {
@@ -580,7 +594,7 @@ function citaveisAntesDe(conteudo: ConteudoDoFormulario, limite: number, excluid
 }
 
 /** Todos os campos: os itens e os campos dos grupos. */
-function todosOsCampos(conteudo: ConteudoDoFormulario): readonly ItemDoFormulario[] {
+export function todosOsCampos(conteudo: ConteudoDoFormulario): readonly ItemDoFormulario[] {
   return [...(conteudo.itens ?? []), ...(conteudo.grupos ?? []).flatMap((grupo) => grupo.subitens)];
 }
 

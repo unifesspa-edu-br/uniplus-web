@@ -43,6 +43,7 @@ import {
   type ConteudoDoFormulario,
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
+import { PreVisualizacaoDoModeloComponent } from './pre-visualizacao-do-modelo.component';
 
 interface CabecalhoForm {
   nome: FormControl<string>;
@@ -57,7 +58,15 @@ interface CabecalhoForm {
 @Component({
   selector: 'cfg-modelo-formulario-edicao-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AlertComponent, EditorDeFormularioComponent, SpinnerComponent, TagComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    AlertComponent,
+    EditorDeFormularioComponent,
+    PreVisualizacaoDoModeloComponent,
+    SpinnerComponent,
+    TagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-header page-header--form">
@@ -148,6 +157,13 @@ interface CabecalhoForm {
         />
       }
 
+      <cfg-pre-visualizacao-do-modelo
+        [modeloId]="m.id"
+        [conteudo]="m.conteudo"
+        [catalogo]="fatos()"
+        [desatualizado]="conteudoAlterado()"
+      />
+
       <div class="cfg-form-footer">
         <a class="btn btn--tertiary btn--rect" routerLink="/modelos-formulario">Voltar sem salvar</a>
         <button type="submit" form="cfg-modelo-edicao" class="btn btn--primary" [disabled]="salvando()">
@@ -196,6 +212,10 @@ export class ModeloFormularioEdicaoPage {
   protected readonly fatos = computed(() => this.catalogo.data() ?? []);
   protected readonly catalogoComErro = computed(() => this.catalogo.problem() !== null || this.catalogo.error() !== undefined);
   protected readonly tiposDeProcesso = computed(() => this.tipos.data() ?? []);
+  /** O conteúdo na tela difere do gravado: a pré-visualização, que avalia o gravado, não o refletiria. */
+  protected readonly conteudoAlterado = computed(
+    () => JSON.stringify(this.conteudo()) !== JSON.stringify(this.modelo()?.conteudo ?? null),
+  );
 
   protected readonly form = new FormGroup<CabecalhoForm>({
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),

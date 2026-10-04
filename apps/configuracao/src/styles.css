@@ -240,6 +240,20 @@ cfg-pesos-enem-page {
 .cfg-modelo-resumo:focus { outline: none; }
 .cfg-modelo-resumo:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
+.cfg-pre-visualizacao { margin-top: var(--space-4); display: grid; gap: var(--space-3); }
+.cfg-pre-visualizacao__respostas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-3);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.cfg-pre-visualizacao__respostas > legend,
+.cfg-pre-visualizacao__respostas > .field__hint { grid-column: 1 / -1; }
+/* A região de status fica no DOM mesmo vazia: escondida com display none, não anunciaria. */
+.cfg-pre-visualizacao__resumo { margin: 0; }
+
 .table-responsive__actions {
   justify-content: flex-end;
 }
