@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, linkedSignal, output } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { condicaoNova, problemaDaCondicao, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { condicaoNova, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { alternativaSemOProprioCampo, comImpedimento, type ItemDoFormulario, type PredicadoNoWire } from './formulario-editavel';
 import { focarDepois } from './foco';
-import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 /** O tamanho da mensagem ao candidato (`FormaDoItem.MensagemDoImpedimentoMaxLength`). */
 const MENSAGEM_MAX = 500;
@@ -102,14 +102,7 @@ export class ImpedimentoDoCampoComponent {
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly problemas = computed(() => {
-    const fatos = new Map(this.fatos().map((fato) => [fato.codigo, fato]));
-    const problemas: Record<number, string | undefined> = {};
-    this.condicoes().forEach((condicao, indice) => {
-      problemas[indice] = problemaDaCondicao(condicao, fatos) ?? undefined;
-    });
-    return problemas;
-  });
+  protected readonly problemas = computed(() => problemasDasCondicoes(this.condicoes(), this.fatos()));
 
   /** Ligar põe a condição sobre o próprio campo e torna o campo obrigatório; desligar tira o impedimento inteiro. */
   protected alternar(): void {

@@ -1,7 +1,9 @@
 import {
   deClausulasDoWire,
   paraClausulasDoWire,
+  problemaDaCondicao,
   type CondicaoEmClausula,
+  type FatoEscolhivel,
 } from '../editor-de-condicoes/condicoes-de-fatos';
 import type { PredicadoNoWire } from './formulario-editavel';
 
@@ -23,4 +25,17 @@ export function recopiarSeMudouPorFora(
     return anterior.value;
   }
   return deClausulasDoWire(predicado);
+}
+
+/** O problema de cada condição em edição, pela posição dela — a forma que o editor de condições mostra. */
+export function problemasDasCondicoes(
+  condicoes: readonly CondicaoEmClausula[],
+  fatos: readonly FatoEscolhivel[],
+): Readonly<Record<number, string | undefined>> {
+  const porCodigo = new Map(fatos.map((fato) => [fato.codigo, fato]));
+  const problemas: Record<number, string | undefined> = {};
+  condicoes.forEach((condicao, indice) => {
+    problemas[indice] = problemaDaCondicao(condicao, porCodigo) ?? undefined;
+  });
+  return problemas;
 }
