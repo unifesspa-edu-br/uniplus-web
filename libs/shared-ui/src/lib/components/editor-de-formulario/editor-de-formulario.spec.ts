@@ -175,6 +175,18 @@ describe('EditorDeFormularioComponent', () => {
       expect(ofertados, 'o fato que a inscrição coleta não é oferecido como campo').not.toContain('DA_INSCRICAO');
     });
 
+    it('o campo de membro de um grupo da inscrição não é citável nas outras finalidades', () => {
+      fixture.componentRef.setInput('finalidade', 'HABILITACAO');
+      fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('PARENTESCO'), escopo: 'MEMBRO_GRUPO' }]);
+      fixture.componentRef.setInput('fatosDaInscricao', ['PARENTESCO']);
+      fixture.detectChanges();
+
+      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0]
+        .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
+
+      expect(alternativa.disabled, 'só o fato de membro viria antes, e ele não é citável').toBe(true);
+    });
+
     it('na própria inscrição, os fatos dela não viram conhecidos antes: o primeiro campo não cita o que vem depois', () => {
       fixture.componentRef.setInput('fatosDaInscricao', ['A', 'B', 'C']);
       fixture.detectChanges();
