@@ -67,6 +67,16 @@ export {
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
+export {
+  PreVisualizacaoDeFormulariosComponent,
+  type AvaliacaoDeFormularios,
+  type EtapaConcluida,
+  type FormularioAvaliado,
+  type FormularioParaSimular,
+  type ItemAvaliado,
+  type SimulacaoDeFormularios,
+  type TermoAvaliado,
+} from '../../src/lib/components/pre-visualizacao-de-formularios/pre-visualizacao-de-formularios';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';

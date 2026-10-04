@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
 import { FatoCandidatoView, FatosCandidatoApi, ModelosFormularioApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
@@ -12,6 +12,7 @@ import {
   FINALIDADE_INSCRICAO,
   FINALIDADES,
   OBRIGATORIEDADES,
+  PreVisualizacaoDeFormulariosComponent,
   ValorEmConsultaComponent,
   conteudoInicial,
   distribuirRecusas,
@@ -19,7 +20,9 @@ import {
   etapasEmOrdem,
   semDadosBasicos,
   termoDisponivelDe,
+  type AvaliacaoDeFormularios,
   type ConteudoDoFormulario,
+  type FormularioParaSimular,
   type RecusasDoConteudo,
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
@@ -93,7 +96,7 @@ interface FormularioParaEnvio {
 @Component({
   selector: 'sel-step-formulario',
   standalone: true,
-  imports: [ConfirmDialogComponent, DateBrPipe, EditorDeFormularioComponent, ValorEmConsultaComponent],
+  imports: [ConfirmDialogComponent, DateBrPipe, EditorDeFormularioComponent, PreVisualizacaoDeFormulariosComponent, ValorEmConsultaComponent],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
@@ -263,6 +266,27 @@ export class FormularioStepComponent {
   readonly formularios = computed(() => formulariosDoRascunho(this.store.draft().formulario));
 
   readonly conteudo = computed(() => this.store.draft().formulario.conteudo);
+
+  /** Os formulários que a pré-visualização do processo pergunta e cujo resultado mostra. */
+  readonly formulariosParaSimular = computed<readonly FormularioParaSimular[]>(() =>
+    this.formularios().map(({ finalidade, conteudo }) => ({ finalidade, nome: nomeDaFinalidade(finalidade), conteudo })),
+  );
+
+  /**
+   * A pré-visualização do processo, sem as ocorrências de grupo repetível, que esta tela não simula.
+   * A API avalia a configuração viva do processo que está no servidor, e não a da tela: os
+   * formulários, as derivações e as exigências juntos, e o que foi alterado em qualquer passo só
+   * entra depois de gravado. Nula antes de o processo existir no servidor e em consulta, em que o
+   * passo mostra o gravado como texto e não há configuração em edição a conferir.
+   */
+  readonly avaliarProcesso = computed<AvaliacaoDeFormularios | null>(() => {
+    const processoId = this.store.processoSeletivoId();
+    if (processoId === null || this.store.emConsulta()) return null;
+    return (simulacao) =>
+      this.api
+        .preVisualizar(processoId, { ...simulacao, grupos: null })
+        .pipe(map((resultado) => (resultado.ok ? { ...resultado, data: resultado.data.formularios } : resultado)));
+  });
 
   readonly abaAtiva = computed(() => {
     const escolhida = this.abaEscolhida();
