@@ -21,7 +21,7 @@ interface FatoSimulado {
   readonly nome: string;
   /** Resposta de um campo deste formulário, ou fato pressuposto de outro formulário. */
   readonly origem: 'resposta' | 'pressuposto';
-  readonly controle: 'booleano' | 'numero' | 'lista' | 'texto';
+  readonly controle: 'booleano' | 'numero' | 'data' | 'lista' | 'texto';
   readonly multiplo: boolean;
   /** O domínio, para converter cada valor escrito no tipo que a API compara. */
   readonly dominio: string;
@@ -75,8 +75,8 @@ const ESTADOS: Readonly<Record<string, string>> = {
                 @case ('numero') {
                   <input
                     class="input"
-                    type="number"
-                    step="1"
+                    type="text"
+                    inputmode="numeric"
                     [id]="'cfg-simulacao-' + fato.codigo"
                     [attr.aria-invalid]="invalidos().has(fato.codigo) ? 'true' : null"
                     [attr.aria-describedby]="invalidos().has(fato.codigo) ? 'cfg-simulacao-' + fato.codigo + '-nota' : null"
@@ -85,6 +85,9 @@ const ESTADOS: Readonly<Record<string, string>> = {
                   @if (invalidos().has(fato.codigo)) {
                     <span class="field__error" [id]="'cfg-simulacao-' + fato.codigo + '-nota'">Valor não reconhecido. Escreva um número inteiro.</span>
                   }
+                }
+                @case ('data') {
+                  <input class="input" type="date" [id]="'cfg-simulacao-' + fato.codigo" (input)="responder(fato, valorDe($event))" />
                 }
                 @case ('lista') {
                   <select
@@ -287,7 +290,8 @@ export class PreVisualizacaoDoModeloComponent {
     const porCodigo = new Map(this.catalogo().map((fato) => [fato.codigo, fato]));
     return this.simulaveis().flatMap(({ codigo, origem }) => {
       const fato = porCodigo.get(codigo);
-      return fato === undefined ? [] : [simulado(fato, origem)];
+      // O endereço é valor estruturado, que nenhuma regra cita e que não se escreve num campo só.
+      return fato === undefined || fato.dominio === 'ENDERECO' ? [] : [simulado(fato, origem)];
     });
   });
 
@@ -409,7 +413,9 @@ function simulado(fato: FatoCandidatoView, origem: FatoSimulado['origem']): Fato
       ? 'booleano'
       : fato.dominio === 'NUMERICO'
         ? 'numero'
-        : escolhivel?.tipoDominio === 'CATEGORICO_ESTATICO'
+        : fato.dominio === 'DATA'
+          ? 'data'
+          : escolhivel?.tipoDominio === 'CATEGORICO_ESTATICO'
           ? 'lista'
           : 'texto';
   return {
