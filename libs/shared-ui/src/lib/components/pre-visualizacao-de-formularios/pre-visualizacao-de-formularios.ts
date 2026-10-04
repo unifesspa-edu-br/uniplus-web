@@ -5,16 +5,11 @@ import type { Observable } from 'rxjs';
 
 import { AlertComponent } from '../alert/alert';
 import { etapasEmOrdem, todosOsCampos, type ConteudoDoFormulario, type FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
-import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
 import { SpinnerComponent } from '../spinner/spinner';
-import {
-  comResposta,
-  dicaDosValores,
-  naoReconhecida,
-  respostaDoTexto,
-  simulado,
-  type FatoSimulado,
-} from './simulacao-de-respostas';
+import { rotuloDoEstado } from './estado-avaliado';
+import { RespostaSimuladaComponent, type RespostaDada } from './resposta-simulada';
+import { comResposta, simulado, type FatoSimulado } from './simulacao-de-respostas';
+import { TabelaDeCamposAvaliadosComponent } from './tabela-de-campos-avaliados';
 
 /** Um formulário que a simulação pergunta e cujo resultado mostra. */
 export interface FormularioParaSimular {
@@ -65,12 +60,6 @@ export interface FormularioAvaliado {
 /** Pede à API a avaliação do que está gravado contra o perfil simulado. */
 export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Observable<ApiResult<readonly FormularioAvaliado[]>>;
 
-const ESTADOS: Readonly<Record<string, string>> = {
-  VERDADEIRO: 'Sim',
-  FALSO: 'Não',
-  INDETERMINADO: 'Depende de resposta ainda não dada',
-};
-
 /**
  * A pré-visualização de formulários gravados (UNI-REQ-0145): quem configura simula as respostas do
  * candidato aos campos e aos pressupostos e vê, por campo e por termo, o que ele veria, o que seria
@@ -83,7 +72,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-pre-visualizacao-de-formularios',
   standalone: true,
-  imports: [AlertComponent, SpinnerComponent, ValorDeMunicipioComponent],
+  imports: [AlertComponent, RespostaSimuladaComponent, SpinnerComponent, TabelaDeCamposAvaliadosComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'pre-visualizacao-formularios' },
   template: `
@@ -97,83 +86,14 @@ const ESTADOS: Readonly<Record<string, string>> = {
       <fieldset class="pre-visualizacao-formularios__respostas" [disabled]="carregando()">
         <legend class="field__label">Respostas simuladas</legend>
         @for (fato of fatos(); track fato.codigo) {
-          <div class="field">
-            @if (fato.controle === 'municipio') {
-              <label class="field__label" [attr.for]="municipioCampo.campoId()">
-                {{ fato.nome }}{{ fato.origem === 'pressuposto' ? ' (de outro formulário)' : '' }}
-              </label>
-              <ui-valor-de-municipio
-                #municipioCampo
-                [rotulo]="fato.nome"
-                [multiplo]="fato.multiplo"
-                [values]="municipiosRespondidos(fato)"
-                (valuesChange)="responderMunicipios(fato, $event)"
-              />
-              @if (municipiosRespondidos(fato).length > 0) {
-                <button type="button" class="btn btn--tertiary btn--sm" (click)="responderMunicipios(fato, [])">
-                  Deixar {{ fato.nome }} sem resposta
-                </button>
-              }
-            } @else {
-            <label class="field__label" [for]="idDoFato(fato)">
-              {{ fato.nome }}{{ fato.origem === 'pressuposto' ? ' (de outro formulário)' : '' }}
-            </label>
-            }
-            @switch (fato.controle) {
-              @case ('booleano') {
-                <select class="select" [id]="idDoFato(fato)" (change)="responder(fato, valorDe($event))">
-                  <option value="">Sem resposta</option>
-                  <option value="true">Sim</option>
-                  <option value="false">Não</option>
-                </select>
-              }
-              @case ('numero') {
-                <input
-                  class="input"
-                  type="text"
-                  inputmode="numeric"
-                  [id]="idDoFato(fato)"
-                  [attr.aria-invalid]="invalidos().has(fato.codigo) ? 'true' : null"
-                  [attr.aria-describedby]="invalidos().has(fato.codigo) ? idDoFato(fato) + '-nota' : null"
-                  (input)="responder(fato, valorDe($event))"
-                />
-                @if (invalidos().has(fato.codigo)) {
-                  <span class="field__error" [id]="idDoFato(fato) + '-nota'">Valor não reconhecido. Escreva um número inteiro.</span>
-                }
-              }
-              @case ('data') {
-                <input class="input" type="date" [id]="idDoFato(fato)" (input)="responder(fato, valorDe($event))" />
-              }
-              @case ('municipio') {
-                <!-- O campo de município fica com o rótulo dele, acima: a busca é que o liga ao controle. -->
-              }
-              @case ('lista') {
-                <select class="select" [id]="idDoFato(fato)" [multiple]="fato.multiplo" (change)="responderLista(fato, $event)">
-                  @if (!fato.multiplo) {
-                    <option value="">Sem resposta</option>
-                  }
-                  @for (valor of fato.valores; track valor) {
-                    <option [value]="valor">{{ valor }}</option>
-                  }
-                </select>
-              }
-              @default {
-                <input
-                  class="input"
-                  type="text"
-                  [id]="idDoFato(fato)"
-                  [attr.aria-invalid]="invalidos().has(fato.codigo) ? 'true' : null"
-                  [attr.aria-describedby]="fato.multiplo ? idDoFato(fato) + '-nota' : null"
-                  (input)="responder(fato, valorDe($event))"
-                />
-                @if (fato.multiplo) {
-                  <span [class]="invalidos().has(fato.codigo) ? 'field__error' : 'field__hint'" [id]="idDoFato(fato) + '-nota'">
-                    {{ invalidos().has(fato.codigo) ? 'Valor não reconhecido. ' : '' }}{{ dica(fato) }}
-                  </span>
-                }
-              }
-            }
-          </div>
+          <ui-resposta-simulada
+            [fato]="fato"
+            [controleId]="idDoFato(fato)"
+            [rotulo]="fato.nome + (fato.origem === 'pressuposto' ? ' (de outro formulário)' : '')"
+            [municipios]="municipiosRespondidos(fato)"
+            [invalido]="invalidos().has(fato.codigo)"
+            (respondida)="responder(fato, $event)"
+          />
         }
       </fieldset>
     } @else if (simulaveis().length === 0) {
@@ -228,38 +148,12 @@ const ESTADOS: Readonly<Record<string, string>> = {
         @if (varios()) {
           <h3 class="pre-visualizacao-formularios__formulario">Formulário de {{ nomeDe(avaliado.finalidade) }}</h3>
         }
-        <div class="table-responsive">
-          <table>
-            <caption class="sr-only">Campos do formulário{{ varios() ? ' de ' + nomeDe(avaliado.finalidade) : '' }} diante das respostas simuladas</caption>
-            <thead>
-              <tr>
-                <th scope="col">Campo</th>
-                <th scope="col">Seção</th>
-                <th scope="col">Exibido</th>
-                <th scope="col">Obrigatório</th>
-                <th scope="col">Impede a inscrição</th>
-                <th scope="col">Restrição violada</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of avaliado.itens; track item.fatoCodigo) {
-                <tr>
-                  <td data-label="Campo">{{ rotuloDoCampo(avaliado.finalidade, item.fatoCodigo) }}</td>
-                  <td data-label="Seção">{{ tituloDaEtapa(avaliado.finalidade, item.etapaCodigo) }}</td>
-                  <td data-label="Exibido">{{ estado(item.visivel) }}</td>
-                  <td data-label="Obrigatório">{{ estado(item.obrigatorio) }}</td>
-                  <td data-label="Impede a inscrição">
-                    {{ estado(item.impedido) }}
-                    @if (item.impedido === 'VERDADEIRO' && item.mensagemDoImpedimento) {
-                      <span class="pre-visualizacao-formularios__mensagem">{{ item.mensagemDoImpedimento }}</span>
-                    }
-                  </td>
-                  <td data-label="Restrição violada">{{ item.restricoesVioladas.join(', ') || '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ui-tabela-de-campos-avaliados
+          [itens]="avaliado.itens"
+          [legenda]="'Campos do formulário' + (varios() ? ' de ' + nomeDe(avaliado.finalidade) : '') + ' diante das respostas simuladas'"
+          [rotuloDoCampo]="leitores().get(avaliado.finalidade)?.rotuloDoCampo ?? semRotulo"
+          [tituloDaEtapa]="leitores().get(avaliado.finalidade)?.tituloDaEtapa ?? semRotulo"
+        />
 
         @if (avaliado.termos.length > 0) {
           <div class="table-responsive">
@@ -398,42 +292,43 @@ export class PreVisualizacaoDeFormulariosComponent {
     return `${this.idBase()}-simulacao-${fato.codigo}`;
   }
 
-  protected valorDe(evento: Event): string {
-    return (evento.target as HTMLInputElement | HTMLSelectElement).value;
-  }
-
   protected estado(token: string): string {
-    return ESTADOS[token] ?? token;
-  }
-
-  protected dica(fato: FatoSimulado): string {
-    return dicaDosValores(fato);
+    return rotuloDoEstado(token);
   }
 
   protected nomeDe(finalidade: string): string {
     return this.formularios().find((formulario) => formulario.finalidade === finalidade)?.nome ?? finalidade;
   }
 
-  protected rotuloDoCampo(finalidade: string, fatoCodigo: string): string {
-    const conteudo = this.conteudoDe(finalidade);
-    return (conteudo === null ? undefined : todosOsCampos(conteudo).find((campo) => campo.fatoCodigo === fatoCodigo)?.rotulo) ?? fatoCodigo;
-  }
+  /** Como ler os campos e as seções de cada formulário no resultado: pelo rótulo e pelo título que o formulário dá. */
+  protected readonly leitores = computed(
+    () =>
+      new Map(
+        this.formularios().map(({ finalidade, conteudo }) => {
+          const campos = todosOsCampos(conteudo);
+          const etapas = conteudo.etapas ?? [];
+          return [
+            finalidade,
+            {
+              rotuloDoCampo: (fatoCodigo: string) => campos.find((campo) => campo.fatoCodigo === fatoCodigo)?.rotulo ?? fatoCodigo,
+              tituloDaEtapa: (codigo: string | null) => (codigo === null ? '—' : (etapas.find((etapa) => etapa.codigo === codigo)?.titulo ?? codigo)),
+            },
+          ] as const;
+        }),
+      ),
+  );
 
-  protected tituloDaEtapa(finalidade: string, codigo: string | null): string {
-    if (codigo === null) return '—';
-    return (this.conteudoDe(finalidade)?.etapas ?? []).find((etapa) => etapa.codigo === codigo)?.titulo ?? codigo;
-  }
+  /** O código como veio, para o formulário que a tela já não tem. */
+  protected readonly semRotulo = (codigo: string | null): string => codigo ?? '—';
 
-  protected responder(fato: FatoSimulado, texto: string): void {
-    const valor = respostaDoTexto(fato, texto);
-    const invalido = naoReconhecida(valor);
+  protected responder(fato: FatoSimulado, { valor, invalido }: RespostaDada): void {
     this.invalidos.update((atual) => {
       const novos = new Set(atual);
       if (invalido) novos.add(fato.codigo);
       else novos.delete(fato.codigo);
       return novos;
     });
-    this.respostas.update((atual) => comResposta(atual, fato.codigo, invalido ? undefined : valor));
+    this.respostas.update((atual) => comResposta(atual, fato.codigo, valor));
     this.descartarAvaliacao();
   }
 
@@ -441,23 +336,6 @@ export class PreVisualizacaoDeFormulariosComponent {
   protected municipiosRespondidos(fato: FatoSimulado): readonly string[] {
     const resposta = this.respostas().get(fato.codigo);
     return Array.isArray(resposta) ? resposta : typeof resposta === 'string' ? [resposta] : [];
-  }
-
-  protected responderMunicipios(fato: FatoSimulado, codigos: readonly string[]): void {
-    const resposta = codigos.length === 0 ? undefined : fato.multiplo ? codigos : codigos[0];
-    this.respostas.update((atual) => comResposta(atual, fato.codigo, resposta));
-    this.descartarAvaliacao();
-  }
-
-  protected responderLista(fato: FatoSimulado, evento: Event): void {
-    const select = evento.target as HTMLSelectElement;
-    if (!fato.multiplo) {
-      this.responder(fato, select.value);
-      return;
-    }
-    const escolhidos = Array.from(select.selectedOptions, (opcao) => opcao.value);
-    this.respostas.update((atual) => comResposta(atual, fato.codigo, escolhidos.length === 0 ? undefined : escolhidos));
-    this.descartarAvaliacao();
   }
 
   protected alternarEtapa(chave: string): void {
@@ -506,10 +384,6 @@ export class PreVisualizacaoDeFormulariosComponent {
   private descartarAvaliacao(): void {
     this.resultado.set(null);
     this.erro.set(null);
-  }
-
-  private conteudoDe(finalidade: string): ConteudoDoFormulario | null {
-    return this.formularios().find((formulario) => formulario.finalidade === finalidade)?.conteudo ?? null;
   }
 }
 
