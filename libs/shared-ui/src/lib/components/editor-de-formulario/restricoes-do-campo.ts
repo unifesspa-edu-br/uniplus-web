@@ -10,6 +10,8 @@ import {
   RESTRICOES,
   entradaDeOpcoesNova,
   problemaDaRestricao,
+  recusasDaRestricao,
+  recusasDoGrupoDeOpcoes,
   restricaoNova,
   restricoesParaAcrescentar,
   type ItemDoFormulario,
@@ -41,7 +43,7 @@ interface CampoCitavel {
         <legend class="field__label">Restrições da resposta</legend>
 
         @for (restricao of restricoes(); track restricao.tipo; let indice = $index) {
-          <fieldset class="editor-formulario__restricao" [attr.aria-describedby]="descricaoDa(restricao, indice)">
+          <fieldset class="editor-formulario__restricao" [attr.aria-describedby]="descricaoDa(restricao)">
             <legend class="field__label">{{ rotuloDoTipo(restricao.tipo) }}</legend>
 
             @switch (restricao.tipo) {
@@ -83,7 +85,7 @@ interface CampoCitavel {
                     [idBase]="idDe(restricao, 'grupo-' + grupo)"
                     [disabled]="disabled()"
                     [removivel]="(restricao.entradas ?? []).length > 1"
-                    [recusas]="recusasDoGrupo(indice, grupo)"
+                    [recusas]="recusasDoGrupo(entrada)"
                     (entradaChange)="trocarEntrada(indice, grupo, $event)"
                     (remover)="removerEntrada(indice, grupo)"
                   />
@@ -120,9 +122,9 @@ interface CampoCitavel {
             @if (problema(restricao); as texto) {
               <p class="field__error" [id]="idDe(restricao, 'erro')">{{ texto }}</p>
             }
-            @if (recusasDaRestricao(indice).length > 0) {
+            @if (recusasDaRestricao(restricao).length > 0) {
               <ul class="editor-formulario__erros" [id]="idDe(restricao, 'recusas')">
-                @for (recusa of recusasDaRestricao(indice); track $index) {
+                @for (recusa of recusasDaRestricao(restricao); track $index) {
                   <li class="field__error">{{ recusa }}</li>
                 }
               </ul>
@@ -202,22 +204,18 @@ export class RestricoesDoCampoComponent {
     return (evento.target as HTMLInputElement | HTMLSelectElement).value;
   }
 
-  protected recusasDaRestricao(indice: number): readonly string[] {
-    return this.recusas()
-      .filter((recusa) => recusa.restricao === indice && recusa.grupo === null)
-      .map((recusa) => recusa.mensagem);
+  protected recusasDaRestricao(restricao: RestricaoDeValor): readonly string[] {
+    return recusasDaRestricao(this.recusas(), restricao.tipo);
   }
 
-  protected recusasDoGrupo(indice: number, grupo: number): readonly string[] {
-    return this.recusas()
-      .filter((recusa) => recusa.restricao === indice && recusa.grupo === grupo)
-      .map((recusa) => recusa.mensagem);
+  protected recusasDoGrupo(grupo: OpcoesCondicionadas): readonly string[] {
+    return recusasDoGrupoDeOpcoes(this.recusas(), grupo);
   }
 
-  protected descricaoDa(restricao: RestricaoDeValor, indice: number): string | null {
+  protected descricaoDa(restricao: RestricaoDeValor): string | null {
     const ids = [
       this.problema(restricao) === null ? null : this.idDe(restricao, 'erro'),
-      this.recusasDaRestricao(indice).length > 0 ? this.idDe(restricao, 'recusas') : null,
+      this.recusasDaRestricao(restricao).length > 0 ? this.idDe(restricao, 'recusas') : null,
     ];
     return ids.filter((id) => id !== null).join(' ') || null;
   }
