@@ -8,6 +8,7 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, OPTIONS',
   'access-control-allow-headers': 'authorization, accept',
+  'access-control-expose-headers': 'Link',
 };
 
 const ROTA_LISTA = /\/api\/selecao\/processos-seletivos(\?.*)?$/;
@@ -78,6 +79,39 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
     expect(await transbordo(page)).toBe(false);
   });
 
+  /**
+   * A tabela fica num `.panel` com `overflow: hidden`, dentro do `.page` que rola. Se o
+   * host da página encolher abaixo do conteúdo, o painel corta as últimas linhas e o
+   * rodapé de paginação, e o transbordo horizontal não acusa nada. A rolagem é a da roda
+   * do mouse, como a do operador: `scrollIntoView` rolaria também o painel, que aceita
+   * rolagem programática mesmo com `overflow: hidden`. `toBeInViewport` considera o
+   * recorte dos ancestrais, então a linha cortada não conta como visível.
+   */
+  test('alcança a última linha e a paginação rolando a página', async ({ page }) => {
+    const muitos = Array.from({ length: 60 }, (_, indice) => ({
+      ...PROCESSOS[0],
+      id: `019f41cf-69fd-759a-ac6d-${String(indice).padStart(12, '0')}`,
+      nome: `Processo Seletivo ${indice + 1}`,
+    }));
+    await responderLista(
+      page,
+      muitos,
+      '<http://localhost/api/selecao/processos-seletivos?cursor=pagina-2&direction=next>; rel="next"',
+    );
+    await page.goto('/processo-seletivo');
+    await expect(page.getByRole('table')).toBeVisible();
+
+    await page.getByRole('table').hover();
+    for (let giro = 0; giro < 10; giro++) {
+      await page.mouse.wheel(0, 2000);
+    }
+
+    await expect(page.locator('tbody tr').last()).toBeInViewport();
+    const proxima = page.locator('[data-pager="next"]');
+    await expect(proxima).toBeInViewport();
+    await expect(proxima).toBeEnabled();
+  });
+
   test('mantém um único landmark main', async ({ page }) => {
     await responderLista(page, PROCESSOS);
     await page.goto('/processo-seletivo');
@@ -119,6 +153,7 @@ test.describe('Listagem de processos seletivos — matriz DS @ds', () => {
 async function responderLista(
   page: Page,
   itens: readonly unknown[] | null,
+  link?: string,
 ): Promise<void> {
   await page.route(ROTA_LISTA, async (route: Route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -143,7 +178,7 @@ async function responderLista(
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      headers: CORS_HEADERS,
+      headers: link ? { ...CORS_HEADERS, link } : CORS_HEADERS,
       body: JSON.stringify(itens),
     });
   });

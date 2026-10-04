@@ -175,6 +175,7 @@ describe('ProcessosSeletivosListaPage', () => {
 
     expect(host().querySelector('.empty-state')).not.toBeNull();
     expect(host().querySelector('tbody tr')).toBeNull();
+    expect(host().querySelector('[data-pager="next"]')).toBeNull();
   });
 
   it('navega para a próxima página com o cursor do header Link', async () => {
@@ -212,6 +213,12 @@ describe('ProcessosSeletivosListaPage', () => {
 
   it('recarrega a primeira página, sem cursor, ao trocar os itens por página', async () => {
     await flushLista([processo()], `<${URL_LISTA}?cursor=pagina-2&direction=next>; rel="next"`);
+    (host().querySelector('[data-pager="next"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await flushLista(
+      [processo({ id: 'outro-id', nome: 'Vestibular 2026.2' })],
+      `<${URL_LISTA}?cursor=pagina-1&direction=prev>; rel="prev"`,
+    );
 
     const select = host().querySelector<HTMLSelectElement>('[data-pager="page-size"]');
     select!.value = '25';
@@ -221,6 +228,7 @@ describe('ProcessosSeletivosListaPage', () => {
     const req = controller.expectOne((r) => r.url === URL_LISTA);
     expect(req.request.params.get('limit')).toBe('25');
     expect(req.request.params.get('cursor')).toBeNull();
+    expect(req.request.params.get('direction')).toBeNull();
     req.flush([processo()]);
     await propagate();
   });
