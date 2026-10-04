@@ -1870,6 +1870,54 @@ describe('CronogramaStepComponent', () => {
       detectar();
     }
 
+    /**
+     * A modalidade da convocação só existe depois do resultado final: o documento cobrado antes
+     * dele não pode depender dela, e a conferência diz para onde levar a exigência.
+     */
+    it('acusa o gatilho que cita dado conhecido só depois da fase da exigência, com o que fazer', () => {
+      TestBed.inject(CatalogosDoCronogramaService).fatos.set([
+        {
+          codigo: 'MODALIDADE_CONVOCACAO', nome: 'Modalidade da convocação', dominio: 'CATEGORICO', origem: 'DERIVADO',
+          cardinalidade: 'ESCALAR', binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO', escopo: 'CANDIDATO', fonteValores: 'MODALIDADE',
+          ativo: true, valoresDominio: null, pontoResolucao: 'RESULTADO_FINAL',
+        } as unknown as FatoCandidatoView,
+      ]);
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        { aplicabilidade: 'CONDICIONAL', condicoes: [{ clausula: 1, fato: 'MODALIDADE_CONVOCACAO', operador: 'IGUAL', valor: '"AC"' }] },
+      );
+      comFases(ID_AVALIACAO, ID_RESULTADO);
+
+      expect(componente.problemas()).toContainEqual(
+        expect.stringContaining(
+          '“Modalidade da convocação” só é conhecido na fase Resultado final, depois da fase em que o documento é exigido. Como resolver: exija o documento na fase Resultado final.',
+        ),
+      );
+    });
+
+    it('diz o que fazer quando o servidor recusa o gatilho pela fase', async () => {
+      comExigenciaDeclarada([{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }]);
+
+      const gravacao = (
+        componente as unknown as { gravarExigenciasDocumentais(processoId: string): Promise<{ messages?: string[] }> }
+      ).gravarExigenciasDocumentais(PROCESSO_ID);
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+      await proximoPasso();
+      controller.expectOne(ROTA_DOCUMENTOS).flush(
+        {
+          type: 'about:blank',
+          title: 'O fato citado na condição de gatilho só é conhecido numa fase posterior à fase em que o documento é exigido',
+          status: 422,
+          code: 'uniplus.selecao.documento_exigido.fato_resolvido_em_fase_posterior',
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+
+      expect((await gravacao).messages?.[0]).toContain(
+        'Exija o documento numa fase em que o dado já seja conhecido, ou colete o dado num formulário respondido até a fase da exigência.',
+      );
+    });
+
     it('não põe na inscrição o fato que outra finalidade do rascunho, ainda não gravada, já coleta', async () => {
       TestBed.inject(CatalogosDoCronogramaService).fatos.set([
         {

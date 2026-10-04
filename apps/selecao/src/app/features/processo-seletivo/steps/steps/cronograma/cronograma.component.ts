@@ -47,11 +47,14 @@ import {
   todasAsExigencias,
 } from '../../shared/exigencias-documentais';
 import {
+  dominiosDoGatilho,
   fatosParaGatilho,
   nomesDoCatalogo,
   podeAlcancarModalidade,
   problemasDoGatilho,
+  recusasDeFaseDoGatilho,
 } from '../../shared/gatilho-de-exigencia';
+import { producaoDoRascunho, recusaDeFaseDoServidor } from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
 import {
   comCamposQueAsExigenciasPressupoem,
@@ -352,15 +355,21 @@ export class CronogramaStepComponent {
     const fatoPorCodigo = new Map(
       fatosParaGatilho(
         this.catalogos.fatos(),
-        new Map([
-          [
-            'CONDICAO_ATENDIMENTO',
-            this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
-          ],
-        ]),
+        dominiosDoGatilho(
+          this.catalogos.fatos(),
+          this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
+          [...ofertadas],
+        ),
       ).map((fato) => [fato.codigo, fato]),
     );
     const nomePorCodigo = nomesDoCatalogo(this.catalogos.fatos());
+    // A fase de cada fato é lida das fases como estão na tela, não das gravadas: reordenar o
+    // cronograma pode deixar um gatilho citando o que só se conhece depois da exigência.
+    const producao = producaoDoRascunho(this.store.draft().formulario, fases, this.catalogos.fatos());
+    const nomes = {
+      fato: (codigo: string) => nomePorCodigo.get(codigo) ?? codigo,
+      fase: this.catalogos.nomeDaFase(),
+    };
 
     return todasAsExigencias(this.store.draft().documentos).map((exigencia) => {
       const fase = fasePorCodigo.get(exigencia.faseCodigo);
@@ -381,6 +390,9 @@ export class CronogramaStepComponent {
         reenvioSemComplementacao:
           exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
         problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
+        problemasDeFase: [
+          ...new Set(recusasDeFaseDoGatilho(exigencia, producao, nomes).map((recusa) => recusa.orientacao)),
+        ],
       };
     });
   });
@@ -1405,7 +1417,7 @@ export class CronogramaStepComponent {
       return {
         valid: false,
         messages: [
-          `As etapas, o cronograma, o formulário de inscrição e as regras de modalidade foram gravados. ${this.problemI18n.resolve(gravacao.problem).title}`,
+          `As etapas, o cronograma, o formulário de inscrição e as regras de modalidade foram gravados. ${recusaDeFaseDoServidor(gravacao.problem.code) ?? this.problemI18n.resolve(gravacao.problem).title}`,
         ],
       };
     }

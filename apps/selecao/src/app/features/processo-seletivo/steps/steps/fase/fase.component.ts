@@ -26,9 +26,13 @@ import {
 } from '../../shared/exigencias-documentais';
 import {
   clausulasDoGatilho,
+  dominiosDoGatilho,
+  fatosDoGatilhoNaFase,
   fatosParaGatilho,
+  recusasDeFaseDoGatilho,
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
+import { producaoDoRascunho } from '../../shared/fase-do-fato';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -109,6 +113,9 @@ const UNIDADES = [
   { valor: 'diasUteis', rotulo: 'dias úteis' },
   { valor: 'horas', rotulo: 'horas' },
 ] as const;
+
+/** O gatilho sem condição recusada pela fase — a mesma referência, para o editor não se redesenhar. */
+const SEM_ERROS: Readonly<Record<number, string>> = {};
 
 /**
  * A fase como o seletor a apresenta: posição na linha do tempo e nome resolvido
@@ -1324,28 +1331,93 @@ export class FaseStepComponent {
   // escrevem — e a modalidade fica de fora deles, porque tem o seu próprio ali ao lado.
 
   /**
-   * Os fatos que o editor oferece, vindos do catálogo institucional.
+   * Os valores dos fatos cujo domínio vem do próprio processo — as condições de atendimento e as
+   * modalidades que ele oferta —, porque é o que ele oferta que vale, não um catálogo global.
+   */
+  private readonly dominiosDoGatilho = computed(() =>
+    dominiosDoGatilho(
+      this.catalogos.fatos(),
+      this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
+      this.store.modalidadesDoProcesso(),
+    ),
+  );
+
+  /**
+   * Todos os fatos do catálogo que um gatilho sabe avaliar, sem o recorte de fase. É o
+   * vocabulário com que a tela lê o público de uma exigência já declarada.
    *
    * A lista não se escreve aqui: acrescentar um fato é mudança de software — só serve o fato
-   * que exista código sabendo resolver — e o catálogo é semeado por migration. O domínio das
-   * condições de atendimento é a exceção que vem do próprio processo, porque é o que ele
-   * oferta que vale, não um catálogo global.
+   * que exista código sabendo resolver — e o catálogo é semeado por migration.
    */
   readonly fatosDoGatilho = computed<readonly FatoEscolhivel[]>(() =>
-    fatosParaGatilho(
-      this.catalogos.fatos(),
-      new Map([
-        [
-          'CONDICAO_ATENDIMENTO',
-          this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
-        ],
-      ]),
-    ),
+    fatosParaGatilho(this.catalogos.fatos(), this.dominiosDoGatilho()),
   );
 
   private readonly fatoPorCodigo = computed(
     () => new Map(this.fatosDoGatilho().map((fato) => [fato.codigo, fato])),
   );
+
+  /** O que o rascunho diz sobre o formulário e a fase em que cada fato é conhecido. */
+  private readonly producaoDosFatos = computed(() =>
+    producaoDoRascunho(this.store.draft().formulario, this.fasesDoCronograma(), this.catalogos.fatos()),
+  );
+
+  /**
+   * O que o editor de cada documento da fase oferece e recusa: os fatos que o gatilho pode citar
+   * nesta fase — de qualquer formulário do processo, derivados e da classificação, já conhecidos
+   * aqui — e, por condição, a recusa de fase com o que fazer para resolvê-la.
+   */
+  private readonly gatilhoPorDocumento = computed(() => {
+    const producao = this.producaoDosFatos();
+    const nomeDoFato = new Map(this.catalogos.fatos().map((fato) => [fato.codigo, fato.nome]));
+    const nomes = {
+      fato: (codigo: string) => nomeDoFato.get(codigo) ?? codigo,
+      fase: this.catalogos.nomeDaFase(),
+    };
+
+    return new Map(
+      this.documentosDaFase().map((doc) => {
+        const exigencia = this.exigenciaDoDocumento(doc.id);
+        const erros: Record<number, string> = {};
+        for (const recusa of recusasDeFaseDoGatilho(exigencia, producao, nomes)) {
+          erros[recusa.indice] = recusa.orientacao;
+        }
+        return [
+          doc.id,
+          {
+            fatos: fatosDoGatilhoNaFase(
+              this.catalogos.fatos(),
+              exigencia.faseCodigo,
+              producao,
+              this.dominiosDoGatilho(),
+              exigencia.condicoes.map((condicao) => condicao.fato),
+            ),
+            erros,
+          },
+        ] as const;
+      }),
+    );
+  });
+
+  /** Os fatos que o gatilho do documento pode citar na fase aberta. */
+  fatosDoGatilhoDoDocumento(id: string): readonly FatoEscolhivel[] {
+    return this.gatilhoPorDocumento().get(id)?.fatos ?? [];
+  }
+
+  /**
+   * O que o editor diz quando não tem fato a oferecer: com o catálogo carregado, a falta é da
+   * fase — nada do candidato é conhecido até ela —, e mandar recarregar a página não resolveria.
+   */
+  readonly textoSemFatosDoGatilho = computed(() =>
+    this.catalogos.fatos().length === 0
+      ? 'O catálogo de fatos do candidato não foi carregado. Recarregue a página para declarar condições.'
+      : 'Nenhum dado do candidato é conhecido até esta fase para condicionar o documento.',
+  );
+
+  /** A recusa de fase de cada condição do gatilho do documento, com a orientação, pela posição. */
+  errosDeFaseDoGatilho(id: string): Readonly<Record<number, string>> {
+    return this.gatilhoPorDocumento().get(id)?.erros ?? SEM_ERROS;
+  }
 
   /** Se a exigência é cobrada de todo candidato — é DECLARADO, não deduzido do gatilho. */
   ehExigidoDeTodos(id: string): boolean {

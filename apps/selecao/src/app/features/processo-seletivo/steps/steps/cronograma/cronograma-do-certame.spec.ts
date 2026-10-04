@@ -145,6 +145,7 @@ function exigenciaDeclarada(parcial: Partial<ExigenciaDeclarada>): ExigenciaDecl
     alcancaModalidade: true,
     reenvioSemComplementacao: false,
     problemasDeGatilho: [],
+    problemasDeFase: [],
     ...parcial,
   };
 }
@@ -671,6 +672,22 @@ describe('o que impede gravar o cronograma', () => {
 
     expect(problemas).toContainEqual(expect.stringContaining('complementação'));
     expect(problemas).toContainEqual(expect.stringContaining('Contracheque'));
+  });
+
+  it('acusa a condição que cita dado ainda não conhecido na fase, com o que fazer', () => {
+    const orientacao = '“Laudo” só é conhecido na fase Habilitação. Como resolver: exija o documento na fase Habilitação.';
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ nome: 'Laudo médico', problemasDeFase: [orientacao] })],
+    );
+
+    expect(problemas).toContain(`Na condição de "Laudo médico": ${orientacao}`);
   });
 
   /** Controle negativo: exigência conforme não produz nenhuma das três queixas. */

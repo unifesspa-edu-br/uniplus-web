@@ -22,6 +22,14 @@ import {
 
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-seletivo.models';
 import { FATO_MODALIDADE, exigidoDeTodos, numerosDeClausula } from './exigencias-documentais';
+import {
+  oProcessoResolve,
+  orientacaoDaRecusaDeFase,
+  recusaDeFaseDoGatilho,
+  type FatoComFase,
+  type NomesDaOrientacao,
+  type ProducaoDosFatos,
+} from './fase-do-fato';
 
 /**
  * O gatilho de uma exigência documental: a condição sobre fatos do candidato que diz de quem
@@ -70,7 +78,9 @@ export type CondicaoPosicionada = CondicaoPosicionadaGenerica<CondicaoGatilhoCon
 export type ClausulaDeGatilho = ClausulaDeCondicoes<CondicaoGatilhoConfig>;
 
 /**
- * Os fatos que o editor de gatilho oferece, na ordem do catálogo.
+ * Os fatos que um gatilho sabe avaliar, na ordem do catálogo, sem o recorte de fase da
+ * exigência — o vocabulário com que a tela lê e confere condições já escritas. O que o editor
+ * de uma exigência oferece é `fatosDoGatilhoNaFase`.
  *
  * A modalidade fica de fora: ela tem controle próprio — "quem deve entregar" —, alimentado
  * pelo quadro de vagas, e oferecê-la duas vezes deixaria duas telas escrevendo a mesma
@@ -81,6 +91,78 @@ export function fatosParaGatilho(
   dominiosDinamicos: ReadonlyMap<string, readonly string[]> = new Map(),
 ): readonly FatoEscolhivel[] {
   return fatosEscolhiveis(fatos, dominiosDinamicos, [FATO_MODALIDADE]);
+}
+
+/** A fonte dos valores do fato cujo domínio são as modalidades que o processo oferta. */
+const FONTE_MODALIDADE = 'MODALIDADE';
+
+/** O fato cujas opções são as condições de atendimento que o processo oferta. */
+const FATO_CONDICAO_ATENDIMENTO = 'CONDICAO_ATENDIMENTO';
+
+/**
+ * Os valores que o processo oferta para os fatos de domínio dinâmico que o gatilho cita: as
+ * condições de atendimento, e as modalidades para todo fato cujos valores são modalidades — a
+ * modalidade da convocação inclusive. Decide pela fonte dos valores que o catálogo declara, como
+ * o servidor ao conferir o gatilho, e não pelo código do fato.
+ */
+export function dominiosDoGatilho(
+  fatos: readonly FatoCandidatoView[],
+  condicoesDeAtendimento: readonly string[],
+  modalidades: readonly string[],
+): ReadonlyMap<string, readonly string[]> {
+  return new Map([
+    [FATO_CONDICAO_ATENDIMENTO, condicoesDeAtendimento],
+    ...fatos
+      .filter((fato) => fato.fonteValores === FONTE_MODALIDADE)
+      .map((fato): [string, readonly string[]] => [fato.codigo, modalidades]),
+  ]);
+}
+
+/** Como a opção nomeia o fato que a condição já cita e que esta exigência não pode citar. */
+const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
+
+/**
+ * Os fatos que o gatilho de uma exigência da fase dada oferece: os que o processo resolve — de
+ * qualquer formulário, derivados e produzidos pela classificação — e que já são conhecidos até a
+ * fase da exigência. Os que a exigência já cita e deixaram de ser citáveis vêm depois, marcados,
+ * para a condição gravada continuar visível com o motivo ao lado.
+ */
+export function fatosDoGatilhoNaFase(
+  fatos: readonly FatoComFase[],
+  faseDaExigencia: string,
+  producao: ProducaoDosFatos,
+  dominiosDinamicos: ReadonlyMap<string, readonly string[]>,
+  citados: readonly string[] = [],
+): readonly FatoEscolhivel[] {
+  const citaveis = fatos.filter(
+    (fato) => oProcessoResolve(fato, producao) && recusaDeFaseDoGatilho(fato.codigo, faseDaExigencia, producao) === null,
+  );
+  const naoCitaveis = fatos
+    .filter((fato) => citados.includes(fato.codigo) && !citaveis.includes(fato))
+    .map((fato) => ({ ...fato, nome: `${fato.nome}${MARCA_DO_FATO_NAO_CITAVEL}` }));
+  return fatosEscolhiveis([...citaveis, ...naoCitaveis], dominiosDinamicos, [FATO_MODALIDADE]);
+}
+
+/** A recusa de fase de uma condição do gatilho, com a orientação de como resolvê-la. */
+export interface RecusaDeFaseNaCondicao {
+  /** A posição da condição em `condicoes`. */
+  readonly indice: number;
+  readonly orientacao: string;
+}
+
+/** As condições do gatilho que citam fato ainda não conhecido na fase da exigência. */
+export function recusasDeFaseDoGatilho(
+  documento: ExigenciaDeDocumento,
+  producao: ProducaoDosFatos,
+  nomes: NomesDaOrientacao,
+): readonly RecusaDeFaseNaCondicao[] {
+  return documento.condicoes.flatMap((condicao, indice) => {
+    if (condicao.fato.trim() === '') return [];
+    const recusa = recusaDeFaseDoGatilho(condicao.fato, documento.faseCodigo, producao);
+    return recusa === null
+      ? []
+      : [{ indice, orientacao: orientacaoDaRecusaDeFase(recusa, documento.faseCodigo, producao, nomes) }];
+  });
 }
 
 /**
