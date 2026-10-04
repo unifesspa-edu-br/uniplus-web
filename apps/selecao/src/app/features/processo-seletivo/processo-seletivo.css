@@ -2823,8 +2823,9 @@
   font-weight: var(--weight-medium);
 }
 
-/* Sem `.table-responsive__actions`: aquela classe é `display: flex`, e num `td`
-   isso descarta o `table-cell` — a célula para de acompanhar a altura da linha. */
+/* Classe própria, sem `.table-responsive__actions`: no desktop a célula de ações das vagas
+   fica `table-cell` e acompanha a altura da linha; abaixo de 768 px o DS a empilha no cartão,
+   como as demais células. */
 .vagas-table__acoes {
   text-align: right;
   white-space: nowrap;
