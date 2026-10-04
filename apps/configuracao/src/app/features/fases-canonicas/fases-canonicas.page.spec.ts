@@ -4,8 +4,9 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FasesCanonicasPage } from './fases-canonicas.page';
 
 const BASE = 'http://localhost:5000';
@@ -25,6 +26,16 @@ const faseAvaliacaoSeed: FaseCanonicaDto = {
   origemData: 'PROPRIA',
   criadoEm: '2026-06-10T12:00:00Z',
 };
+
+const faseRecursoSeed: FaseCanonicaDto = {
+  ...faseAvaliacaoSeed,
+  id: '01960000-0000-7000-0000-0000000000f2',
+  codigo: 'RECURSO',
+  nome: 'Recurso',
+};
+
+const urlRemocao = (fase: FaseCanonicaDto): string =>
+  `${BASE}/api/configuracao/admin/fases-canonicas/${fase.id}`;
 
 describe('FasesCanonicasPage', () => {
   let fixture: ComponentFixture<FasesCanonicasPage>;
@@ -270,7 +281,8 @@ describe('FasesCanonicasPage', () => {
     );
   });
 
-  it('CA-15: remover uma fase canônica após confirmação', async () => {
+  it('CA-08/CA-09/CA-10: remove uma fase canônica após confirmação e recarrega a lista', async () => {
+    const sucessoSpy = vi.spyOn(TestBed.inject(NotificationService), 'success');
     await flushLista([faseAvaliacaoSeed]);
     component['pedirRemocao'](faseAvaliacaoSeed);
     component['removerConfirmado']();
@@ -282,6 +294,82 @@ describe('FasesCanonicasPage', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);
+    expect(sucessoSpy).toHaveBeenCalledWith('Fase canônica removida', 'AVALIACAO');
+  });
+
+  it('CA-01/CA-03/CA-04/CA-05/CA-06/CA-07: lixeira e confirmação falam em remover e identificam a fase', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    fixture.detectChanges();
+    const lixeira = fixture.nativeElement.querySelector(
+      'button[aria-label="Remover fase canônica AVALIACAO"]',
+    ) as HTMLButtonElement;
+    expect(lixeira.getAttribute('data-tooltip')).toBe('Remover fase canônica');
+    expect(lixeira.querySelector('.pi-trash')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('button[aria-label^="Inativar"]')).toBeNull();
+
+    lixeira.click();
+    fixture.detectChanges();
+    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
+    expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover fase canônica');
+    expect(dialogo.querySelector('.uni-dialog__body')?.textContent).toContain(
+      'Deseja remover a fase AVALIACAO?',
+    );
+    expect(
+      dialogo.querySelector('[data-testid="confirm-dialog-confirm"]')?.textContent?.trim(),
+    ).toBe('Remover');
+    expect(dialogo.textContent).not.toMatch(/inativ/iu);
+  });
+
+  it('CA-11: falha na remoção avisa o usuário e mantém a lista', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    await flushLista([faseAvaliacaoSeed]);
+    component['pedirRemocao'](faseAvaliacaoSeed);
+    component['removerConfirmado']();
+
+    controller.expectOne(urlRemocao(faseAvaliacaoSeed)).flush(
+      {
+        type: 'about:blank',
+        title: 'Fase canônica não encontrada',
+        status: 404,
+        code: 'uniplus.configuracao.fase_canonica.nao_encontrada',
+      },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalled();
+    expect(component['savingRemover']()).toBe(false);
+    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
+  });
+
+  it('CA-12: a remoção pendente não é reenviada e não descarta a remoção de outra fase', async () => {
+    await flushLista([faseAvaliacaoSeed, faseRecursoSeed]);
+    component['pedirRemocao'](faseAvaliacaoSeed);
+    component['removerConfirmado']();
+    // O diálogo fecha ao confirmar; a lixeira continua acionável durante o DELETE.
+    component['confirmOpen'].set(false);
+    const deleteAvaliacao = controller.expectOne(urlRemocao(faseAvaliacaoSeed));
+
+    component['pedirRemocao'](faseAvaliacaoSeed);
+    expect(component['confirmOpen']()).toBe(false);
+
+    component['pedirRemocao'](faseRecursoSeed);
+    component['removerConfirmado']();
+    const deleteRecurso = controller.expectOne(urlRemocao(faseRecursoSeed));
+
+    deleteAvaliacao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([faseRecursoSeed]);
+    expect(component['faseParaRemover']()).toEqual(faseRecursoSeed);
+
+    deleteRecurso.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([]);
+    expect(component['faseParaRemover']()).toBeNull();
   });
 
   it('expõe legenda acessível descrevendo a tabela', async () => {
