@@ -103,9 +103,11 @@ describe('PreVisualizacaoDeFormulariosComponent com campo de município', () => 
     // A resposta volta a "sem resposta", como nos outros campos.
     const limpar = (): HTMLButtonElement | undefined =>
       Array.from(host.querySelectorAll<HTMLButtonElement>('button')).find((botao) => botao.textContent?.includes('sem resposta'));
-    limpar()?.click();
+    const botao = limpar();
+    expect(botao, 'com resposta, há o que limpar').toBeDefined();
+    botao?.click();
     fixture.detectChanges();
     expect(limpar(), 'sem resposta, não há o que limpar').toBeUndefined();
-    expect(host.querySelector('[role="option"][aria-selected="true"]')).toBeNull();
+    expect((host.querySelector('input[role="combobox"]') as HTMLInputElement).value).toBe('');
   });
 });
