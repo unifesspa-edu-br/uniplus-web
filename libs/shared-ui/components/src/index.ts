@@ -61,6 +61,7 @@ export { EditorDeCondicoesComponent } from '../../src/lib/components/editor-de-c
 export * from '../../src/lib/components/editor-de-condicoes/condicoes-de-fatos';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
+export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';

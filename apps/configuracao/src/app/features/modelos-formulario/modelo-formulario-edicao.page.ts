@@ -12,13 +12,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, map, of, switchMap } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   ProblemDetails,
   ProblemI18nService,
-  coletarPaginas,
   STATUS_HTTP,
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -43,12 +41,12 @@ import {
   TagComponent,
   distribuirRecusas,
   semDadosBasicos,
+  termoDisponivelDe,
   type ConteudoDoFormulario,
   type RecusasDoConteudo,
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
 import { PreVisualizacaoDoModeloComponent } from './pre-visualizacao-do-modelo.component';
-import { termoDisponivelDe } from './termos-disponiveis';
 
 interface CabecalhoForm {
   nome: FormControl<string>;
@@ -250,25 +248,15 @@ export class ModeloFormularioEdicaoPage {
   /** Os termos com as versões: a lista, colhida por todas as páginas, não as traz, e cada termo é lido por inteiro. */
   protected carregarTermos(): void {
     this.termosComErro.set(false);
-    coletarPaginas((cursor) => this.termosApi.listar({ cursor }))
-      .pipe(
-        switchMap((lista) =>
-          !lista.ok
-            ? of(null)
-            : lista.data.length === 0
-              ? of([])
-              : forkJoin(lista.data.map((termo) => this.termosApi.obter(termo.id))).pipe(
-                  map((termos) => (termos.every((termo) => termo.ok) ? termos.map((termo) => termoDisponivelDe(termo.data)) : null)),
-                ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
+    this.termosApi
+      .listarComVersoes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((termos) => {
-        if (termos === null) {
+        if (!termos.ok) {
           this.termosComErro.set(true);
           return;
         }
-        this.termosDisponiveis.set(termos);
+        this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
       });
   }
 

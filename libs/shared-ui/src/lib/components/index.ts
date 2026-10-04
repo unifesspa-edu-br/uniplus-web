@@ -43,6 +43,7 @@ export { EditorDeCondicoesComponent } from './editor-de-condicoes/editor-de-cond
 export * from './editor-de-condicoes/condicoes-de-fatos';
 export { EditorDeFormularioComponent } from './editor-de-formulario/editor-de-formulario';
 export * from './editor-de-formulario/formulario-editavel';
+export * from './editor-de-formulario/termos-disponiveis';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';
 export { SpinnerComponent } from './spinner/spinner';

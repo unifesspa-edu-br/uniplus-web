@@ -124,6 +124,21 @@ describe('TermosConsentimentoApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
+  it('listarComVersoes() lê cada termo listado e entrega a recusa de qualquer leitura, nunca uma lista parcial', async () => {
+    const promise = firstValueFrom(api.listarComVersoes());
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`).flush([termoResumoSeed, { ...termoResumoSeed, id: 'outro' }]);
+    controller.expectOne(`${BASE}/api/configuracao/termos-consentimento/${ID}`).flush(termoDtoSeed);
+    controller
+      .expectOne(`${BASE}/api/configuracao/termos-consentimento/outro`)
+      .flush(
+        { type: 'about:blank', title: 'Indisponível.', status: 503, code: 'uniplus.indisponivel', traceId: 't' },
+        { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+      );
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(false);
+  });
+
   it('criar() faz POST /api/configuracao/admin/termos-consentimento com Idempotency-Key e Accept JSON', async () => {
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/termos-consentimento`);
