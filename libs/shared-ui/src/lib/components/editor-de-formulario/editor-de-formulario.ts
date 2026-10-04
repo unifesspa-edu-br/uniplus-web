@@ -539,7 +539,7 @@ export class EditorDeFormularioComponent {
    * fatos que a condição dele cita, o próprio campo primeiro, para a alternativa nova nascer com ele.
    */
   protected readonly regrasProprias = computed(() => {
-    const conteudo = this.conteudo();
+    const conteudo = this.conteudoParaCitacoes();
     const escolhiveis = new Map(fatosEscolhiveis(this.catalogo()).map((fato) => [fato.codigo, fato]));
     return new Map(
       (conteudo.itens ?? []).map((item) => {
@@ -746,7 +746,7 @@ export class EditorDeFormularioComponent {
   protected acrescentarOItem(etapa: EtapaDoFormulario): void {
     const fato = this.paraAcrescentar().find((f) => f.codigo === this.escolhaDe(etapa.codigo));
     if (fato === undefined) return;
-    this.aplicar(acrescentarCampo(this.conteudo(), fato, etapa.codigo, this.catalogo()), () => {
+    this.aplicar(acrescentarCampo(this.conteudo(), fato, etapa.codigo, this.catalogo(), this.conteudoParaCitacoes().pressupostos ?? []), () => {
       this.escolhas.update((escolhas) => new Map(escolhas).set(etapa.codigo, ''));
       this.anuncio.set(`Campo “${fato.nome}” acrescentado ao fim de ${etapa.titulo}.`);
       focarDepois(this.injector, `${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);

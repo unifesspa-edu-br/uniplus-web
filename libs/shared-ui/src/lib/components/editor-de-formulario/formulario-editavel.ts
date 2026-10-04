@@ -341,11 +341,12 @@ export function acrescentarCampo(
   fato: FatoDoFormulario,
   etapaCodigo: string,
   catalogo: readonly FatoDoFormulario[],
+  fatosConhecidosAntes: readonly string[] = [],
 ): ResultadoDaEdicao {
   const comCampo = acrescentarItem(conteudo, fato, etapaCodigo);
   if (fato.fonteValores !== FONTE_GEO_MUNICIPIO) return { ok: true, conteudo: comCampo };
 
-  const uf = ufsAnteriores(comCampo, catalogo, fato.codigo).at(-1);
+  const uf = ufsAnteriores(comFatosConhecidosAntes(comCampo, fatosConhecidosAntes), catalogo, fato.codigo).at(-1);
   if (uf === undefined) {
     return { ok: false, recusa: `Acrescente antes o campo de UF: “${fato.nome}” escolhe entre os municípios da UF respondida antes.` };
   }
@@ -355,7 +356,8 @@ export function acrescentarCampo(
 
 /**
  * Os campos de UF anteriores ao campo dado, do mais antigo ao mais próximo: o município cita a UF
- * respondida antes, de resposta única e com a lista de UFs do Geo.
+ * respondida antes, de resposta única e com a lista de UFs do Geo. Os pressupostos, conhecidos
+ * antes de todo o formulário, vêm primeiro.
  */
 export function ufsAnteriores(
   conteudo: ConteudoDoFormulario,
@@ -364,13 +366,14 @@ export function ufsAnteriores(
 ): readonly FatoDoFormulario[] {
   const ordem = Number((conteudo.itens ?? []).find((item) => item.fatoCodigo === fatoCodigo)?.ordem ?? Infinity);
   const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
-  return [...(conteudo.itens ?? [])]
+  const anteriores = [...(conteudo.itens ?? [])]
     .filter((item) => Number(item.ordem) < ordem)
     .sort((a, b) => Number(a.ordem) - Number(b.ordem))
-    .flatMap((item) => {
-      const fato = porCodigo.get(item.fatoCodigo);
-      return fato?.fonteValores === FONTE_GEO_UF && fato.cardinalidade !== MULTIVALORADO ? [fato] : [];
-    });
+    .map((item) => item.fatoCodigo);
+  return [...(conteudo.pressupostos ?? []), ...anteriores].flatMap((codigo) => {
+    const fato = porCodigo.get(codigo);
+    return fato?.fonteValores === FONTE_GEO_UF && fato.cardinalidade !== MULTIVALORADO ? [fato] : [];
+  });
 }
 
 /** Troca o item pelo editado, sem mexer na ordem. */
