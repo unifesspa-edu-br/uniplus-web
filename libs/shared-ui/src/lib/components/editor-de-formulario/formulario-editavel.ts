@@ -1005,6 +1005,10 @@ export function comCandidatoComoMembro(
     if (fato === undefined || !ehColetavel(fato, ESCOPO_MEMBRO)) {
       return { ok: false, recusa: 'O catálogo não tem o fato de parentesco do membro, que identifica a ocorrência do candidato.' };
     }
+    // Fato desativado não entra em vínculo novo (ADR-0136): reative o parentesco no catálogo antes.
+    if (!fato.ativo) {
+      return { ok: false, recusa: 'O fato de parentesco está desativado no catálogo: reative-o antes de incluir o candidato como membro.' };
+    }
     const teto = recusaDoTeto(conteudo, grupo);
     if (teto !== null) return { ok: false, recusa: teto };
   }
