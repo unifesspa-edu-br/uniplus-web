@@ -270,6 +270,11 @@ export interface ExigenciaDeclarada {
    * gatilho nenhum.
    */
   readonly problemasDeGatilho: readonly string[];
+  /**
+   * As condições do gatilho que citam fato ainda não conhecido na fase da exigência, cada uma
+   * dita com o que fazer para resolvê-la. Vazio quando todas valem nesta fase.
+   */
+  readonly problemasDeFase: readonly string[];
 }
 
 /**
@@ -301,6 +306,12 @@ function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readon
     problemas.push(
       `A condição de "${exigencia.nome}" ainda não está completa: ${exigencia.problemasDeGatilho.join('; ')}.`,
     );
+  }
+
+  for (const exigencia of exigencias.filter((e) => e.faseViva)) {
+    for (const problema of exigencia.problemasDeFase) {
+      problemas.push(`Na condição de "${exigencia.nome}": ${problema}`);
+    }
   }
 
   const semComplementacao = exigencias

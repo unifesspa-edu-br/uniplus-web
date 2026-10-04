@@ -14,17 +14,21 @@ import {
   comValorEscalar,
   comValoresDeLista,
   condicaoNova,
+  dominiosDoGatilho,
   fatoEscolhivel,
+  fatosDoGatilhoNaFase,
   fatosParaGatilho,
   nomesDoCatalogo,
   operadoresDoFato,
   problemasDoGatilho,
+  recusasDeFaseDoGatilho,
   semClausula,
   semCondicao,
   valorEscalarDe,
   valoresDeListaDe,
   type FatoEscolhivel,
 } from './gatilho-de-exigencia';
+import type { ProducaoDosFatos } from './fase-do-fato';
 
 /** Um fato do catálogo, na forma em que a API o entrega. */
 function view(parcial: Partial<FatoCandidatoView> & Pick<FatoCandidatoView, 'codigo'>): FatoCandidatoView {
@@ -539,3 +543,75 @@ describe('o recorte por modalidade e o alcance declarado', () => {
 function catalogo(): ReadonlyMap<string, FatoEscolhivel> {
   return new Map(fatosParaGatilho(CATALOGO).map((fato) => [fato.codigo, fato]));
 }
+
+describe('os fatos que o gatilho oferece na fase da exigência', () => {
+  const doProcesso = (parcial: Partial<FatoCandidatoView> & Pick<FatoCandidatoView, 'codigo'>): FatoCandidatoView =>
+    view({ escopo: 'CANDIDATO', ativo: true, fonteValores: null, binding: `CAMPO_FORMULARIO:${parcial.codigo}`, ...parcial });
+
+  const DEFICIENCIA = doProcesso({ codigo: 'PCD', nome: 'Pessoa com deficiência', dominio: 'BOOLEANO' });
+  const LAUDO = doProcesso({ codigo: 'LAUDO_RECENTE', nome: 'Laudo recente', dominio: 'BOOLEANO' });
+  const CONVOCACAO = doProcesso({
+    codigo: 'MODALIDADE_CONVOCACAO',
+    nome: 'Modalidade da convocação',
+    fonteValores: 'MODALIDADE',
+    origem: 'DERIVADO',
+    binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO',
+    pontoResolucao: 'RESULTADO_FINAL',
+  });
+  const CONCORRENCIA = doProcesso({ ...MODALIDADE, fonteValores: 'MODALIDADE', escopo: 'CANDIDATO' });
+  const FATOS = [DEFICIENCIA, LAUDO, CONVOCACAO, CONCORRENCIA];
+
+  const PRODUCAO: ProducaoDosFatos = {
+    fases: [
+      { codigo: 'INSCRICAO', ordem: 1 },
+      { codigo: 'RESULTADO_FINAL', ordem: 2 },
+      { codigo: 'HABILITACAO', ordem: 3 },
+    ],
+    formularios: [
+      { finalidade: 'INSCRICAO', faseCodigo: 'INSCRICAO', fatos: new Set(['PCD']) },
+      { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', fatos: new Set(['LAUDO_RECENTE']) },
+    ],
+    derivacoes: new Map(),
+    catalogo: new Map(FATOS.map((fato) => [fato.codigo, fato])),
+  };
+  const MODALIDADES = ['AC', 'LB_PPI'];
+  const DOMINIOS = dominiosDoGatilho(FATOS, [], MODALIDADES);
+  const codigos = (fatos: readonly FatoEscolhivel[]): readonly string[] => fatos.map((fato) => fato.codigo);
+
+  it('na habilitação, os fatos de todos os formulários e a modalidade da convocação, com as modalidades ofertadas', () => {
+    const oferecidos = fatosDoGatilhoNaFase(FATOS, 'HABILITACAO', PRODUCAO, DOMINIOS);
+
+    expect(codigos(oferecidos)).toEqual(['PCD', 'LAUDO_RECENTE', 'MODALIDADE_CONVOCACAO']);
+    expect(oferecidos.find((fato) => fato.codigo === 'MODALIDADE_CONVOCACAO')?.valores).toEqual(MODALIDADES);
+  });
+
+  it('na inscrição, só o que já é conhecido nela', () => {
+    expect(codigos(fatosDoGatilhoNaFase(FATOS, 'INSCRICAO', PRODUCAO, DOMINIOS))).toEqual(['PCD']);
+  });
+
+  it('o fato que a exigência já cita e não pode citar vem por último, marcado', () => {
+    const oferecidos = fatosDoGatilhoNaFase(FATOS, 'INSCRICAO', PRODUCAO, DOMINIOS, ['LAUDO_RECENTE']);
+
+    expect(codigos(oferecidos)).toEqual(['PCD', 'LAUDO_RECENTE']);
+    expect(oferecidos[1]?.nome).toBe('Laudo recente (não citável nesta exigência)');
+  });
+
+  it('as modalidades valem para todo fato cujos valores são modalidades, não só pelo código', () => {
+    expect(DOMINIOS.get('MODALIDADE_CONVOCACAO')).toEqual(MODALIDADES);
+    expect(DOMINIOS.get('MODALIDADE')).toEqual(MODALIDADES);
+  });
+
+  it('a recusa de fase vem na posição da condição que cita o fato', () => {
+    const documento = exigencia({
+      condicoes: [
+        { clausula: 1, fato: 'PCD', operador: 'IGUAL', valor: 'true' },
+        { clausula: 1, fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: 'true' },
+      ],
+    });
+
+    const recusas = recusasDeFaseDoGatilho(documento, PRODUCAO, { fato: (codigo) => codigo, fase: (codigo) => codigo });
+
+    expect(recusas.map((recusa) => recusa.indice)).toEqual([1]);
+    expect(recusas[0]?.orientacao).toContain('Como resolver: exija o documento na fase HABILITACAO');
+  });
+});

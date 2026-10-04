@@ -125,6 +125,15 @@ export class CatalogosDoCronogramaService {
   );
 
   /**
+   * O nome da fase canônica pelo código — o que nomeia também a fase que o cronograma ainda não
+   * tem. Sem o catálogo carregado, o próprio código.
+   */
+  readonly nomeDaFase = computed<(codigo: string) => string>(() => {
+    const nomePorCodigo = new Map(this.fases().map((fase) => [fase.codigo, fase.nome]));
+    return (codigo) => nomePorCodigo.get(codigo) ?? codigo;
+  });
+
+  /**
    * Tipos de etapa escolhíveis. O catálogo devolve ativos e inativos juntos, e
    * um inativo não volta a ser opção nova — mas continua exibível quando já
    * referenciado, o que `rotuloDoTipoEtapa` resolve.

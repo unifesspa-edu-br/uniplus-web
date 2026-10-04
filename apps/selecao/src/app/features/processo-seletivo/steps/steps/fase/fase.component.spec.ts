@@ -710,6 +710,96 @@ describe('FaseStepComponent', () => {
     });
 
     /**
+     * O gatilho só cita o que já se sabe do candidato na fase em que o documento é cobrado: o
+     * dado coletado pela habilitação não condiciona documento da avaliação, que vem antes.
+     */
+    describe('gatilho com fatos de outros formulários', () => {
+      const LAUDO = {
+        id: '01960000-0000-7000-0000-0000000000e1',
+        codigo: 'LAUDO_RECENTE',
+        nome: 'Laudo recente',
+        descricao: null,
+        dominio: 'BOOLEANO',
+        origem: 'DECLARADO',
+        cardinalidade: 'ESCALAR',
+        valoresDominio: null,
+        pontoResolucao: 'AVALIACAO',
+        binding: 'CAMPO_FORMULARIO:LAUDO_RECENTE',
+        valoresDominioDeclarados: null,
+        fonteValores: null,
+        ativo: true,
+        escopo: 'CANDIDATO',
+      };
+
+      beforeEach(() => {
+        TestBed.inject(CatalogosDoCronogramaService).fatos.set([LAUDO]);
+        comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+        store.patchObjectSection('formulario', {
+          outrasFinalidades: [
+            {
+              finalidade: 'HABILITACAO',
+              faseCodigo: 'RECURSOS',
+              conteudo: {
+                titulo: null,
+                etapas: [],
+                termos: [],
+                pressupostos: null,
+                grupos: [],
+                itens: [
+                  {
+                    fatoCodigo: 'LAUDO_RECENTE',
+                    ordem: 0,
+                    rotulo: 'Laudo recente',
+                    tipoRenderizacao: 'BOOLEANO',
+                    obrigatoriedade: 'SEMPRE',
+                    precondicao: null,
+                    etapaCodigo: null,
+                    predicadoObrigatoriedade: null,
+                    ajuda: null,
+                    pedirConfirmacao: false,
+                  },
+                ],
+              },
+            },
+          ],
+        });
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        componente.escolherExigidoDe(ID_CPF, 'quem');
+        detectar();
+      });
+
+      it('não oferece na fase anterior o dado que a habilitação coleta', () => {
+        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
+        expect(nativo.querySelector('.doc-item__gatilho')?.textContent).toContain(
+          'Nenhum dado do candidato é conhecido até esta fase para condicionar o documento.',
+        );
+      });
+
+      it('oferece na fase da habilitação o dado que ela coleta', () => {
+        componente.abrirFase(ID_RECURSOS);
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        componente.escolherExigidoDe(ID_CPF, 'quem');
+        detectar();
+
+        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['LAUDO_RECENTE']);
+      });
+
+      it('mostra na condição gravada o que fazer para o gatilho valer', () => {
+        componente.escreverCondicoes(ID_CPF, [
+          { clausula: 1, fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: 'true' },
+        ]);
+        detectar();
+
+        const alerta = nativo.querySelector('.doc-item__gatilho [role="alert"]');
+        expect(alerta?.textContent).toContain(
+          '“Laudo recente” só é conhecido na fase Recursos, depois da fase em que o documento é exigido. Como resolver: exija o documento na fase Recursos',
+        );
+      });
+    });
+
+    /**
      * Congelar o conjunto de fases vivas preserva o que estava valendo; começar
      * do zero apagaria a exigência das outras fases por causa de uma decisão
      * tomada numa só.
