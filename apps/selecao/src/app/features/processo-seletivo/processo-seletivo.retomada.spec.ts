@@ -262,13 +262,15 @@ const propagar = async (): Promise<void> => {
 describe('ProcessoSeletivoPage — retomada por endereço', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
+  // O primeiro teste do arquivo compila a página inteira do assistente, com todos os passos: no
+  // runner do CI isso passa dos 5 s padrão, embora o teste em si leve milissegundos.
   it('lê o detalhe do processo indicado pela rota', async () => {
     const cenario = montar();
     await propagar();
 
     expect(cenario.obter).toHaveBeenCalledWith(PROCESSO_ID);
     expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID);
-  });
+  }, 30_000);
 
   /**
    * CA-05: as dimensões sem tela própria não podem sumir só porque o wizard
