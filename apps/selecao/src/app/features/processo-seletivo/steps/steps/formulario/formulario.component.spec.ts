@@ -536,6 +536,32 @@ describe('FormularioStepComponent', () => {
       const validacao = fixture.componentInstance.validate();
       expect(validacao.valid).toBe(false);
       expect(validacao.messages?.join(' ')).toContain('Não foi possível confirmar se o modelo foi aplicado ao formulário de inscrição');
+      fixture.detectChanges();
+      const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
+      expect(naAba, 'a aba não desmente a trava').toContain('Não foi possível confirmar se o modelo foi aplicado');
+      expect(naAba).not.toContain('não foi aplicado');
+    });
+
+    it('a troca de processo descarta a aplicação que aguardava confirmação', () => {
+      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+
+      store.reset();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.aplicacaoPendente()).toBeNull();
+    });
+
+    it('a lista de um tipo já trocado não chega por cima da do tipo atual', () => {
+      fixture.componentInstance.carregarModelos();
+      const doTipoAnterior = controller.expectOne((r) => r.url === ROTA_MODELOS);
+
+      store.patchObjectSection('tipoProcesso', { codigo: 'PSIQ' });
+      fixture.detectChanges();
+      controller.expectOne((r) => r.url === ROTA_MODELOS && r.params.get('tipoProcesso') === 'PSIQ').flush([modelo('psiq', 'Inscrição do PSIQ', 'INSCRICAO')]);
+      doTipoAnterior.flush(MODELOS);
+
+      expect(fixture.componentInstance.modelos().get('INSCRICAO')?.map((m) => m.id)).toEqual(['psiq']);
     });
   });
 
