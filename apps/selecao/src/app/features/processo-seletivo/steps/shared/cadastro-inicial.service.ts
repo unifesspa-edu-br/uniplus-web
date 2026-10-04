@@ -11,6 +11,7 @@ import {
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
+  AplicacaoDeModeloDto,
   ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
   CriterioDesempateInput,
@@ -157,6 +158,7 @@ export class CadastroInicialService {
   private readonly chaveCabecalhoDoFormulario = new ChaveDeSubstituicao();
   private readonly chaveItensDoFormulario = new ChaveDeSubstituicao();
   private readonly chaveTermosDoFormulario = new ChaveDeSubstituicao();
+  private readonly chaveAplicacaoDeModelo = new ChaveDeSubstituicao();
   private readonly chaveRegrasDerivacao = new ChaveDeSubstituicao();
   private readonly chaveReferenciaTemporal = new ChaveDeSubstituicao();
   private readonly chaveIdentificadorLegivel = new ChaveDeSubstituicao();
@@ -637,6 +639,30 @@ export class CadastroInicialService {
     const result = await firstValueFrom(this.api.removerFormulario(processoSeletivoId, finalidade));
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
     return isApiOk(result) ? { ok: true } : { ok: false, problem: result.problem };
+  }
+
+  /**
+   * Aplica um modelo de formulário ao processo: o formulário da finalidade do modelo é criado ou
+   * substituído por inteiro. Devolve o relato da cópia — o que ela trouxe, manteve, descartou e
+   * derivou —, que só o servidor sabe.
+   */
+  async aplicarModeloDeFormulario(
+    processoSeletivoId: string,
+    modeloId: string,
+  ): Promise<{ readonly ok: true; readonly relato: AplicacaoDeModeloDto } | FalhaOperacao> {
+    const geracao = this.geracao;
+    const corpo = { modeloId };
+    const result = await firstValueFrom(
+      this.api.aplicarModeloDeFormulario(processoSeletivoId, corpo, this.chaveAplicacaoDeModelo.contextoPara(corpo)),
+    );
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+
+    if (isApiOk(result)) {
+      this.chaveAplicacaoDeModelo.renovar();
+      return { ok: true, relato: result.data };
+    }
+    this.chaveAplicacaoDeModelo.recusada(result);
+    return { ok: false, problem: result.problem };
   }
 
   /** Um comando de substituição sob a chave dele, girando-a como `ChaveDeSubstituicao` manda. */

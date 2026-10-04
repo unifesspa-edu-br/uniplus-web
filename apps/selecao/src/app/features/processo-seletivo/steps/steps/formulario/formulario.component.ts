@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRend
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
-import { FatoCandidatoView, FatosCandidatoApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { FatoCandidatoView, FatosCandidatoApi, ModelosFormularioApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
+import { ProcessosSeletivosApi, type AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
 import {
   ConfirmDialogComponent,
   EditorDeFormularioComponent,
@@ -44,6 +44,14 @@ import {
   remocoesTravadasPor,
 } from './formulario-de-inscricao';
 import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade } from './formulario-do-processo';
+import {
+  comAplicacaoDoServidor,
+  faseQueAAplicacaoDeclara,
+  modelosPorFinalidade,
+  resumoDaAplicacao,
+  type ModeloOferecido,
+  type ProcessoAposAplicacao,
+} from './modelo-de-formulario';
 import {
   abaPelaTecla,
   comFormulario,
@@ -93,6 +101,7 @@ export class FormularioStepComponent {
   readonly catalogos = inject(CatalogosDoCronogramaService);
   private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly termosApi = inject(TermosConsentimentoApi);
+  private readonly modelosApi = inject(ModelosFormularioApi);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -117,8 +126,21 @@ export class FormularioStepComponent {
   readonly finalidadeAAcrescentar = signal('');
   /** A finalidade cuja remoção aguarda confirmação. */
   readonly remocaoPendente = signal<string | null>(null);
-  /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário. */
+  /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário, ou de aplicar um modelo. */
   readonly anuncio = signal('');
+
+  /** Os modelos ativos que servem ao tipo do processo, por finalidade. */
+  readonly modelos = signal<ReadonlyMap<string, readonly ModeloOferecido[]>>(new Map());
+  readonly modelosCarregando = signal(false);
+  readonly modelosErro = signal<string | null>(null);
+  /** O modelo escolhido em cada aba, pelo id. */
+  readonly modelosEscolhidos = signal<ReadonlyMap<string, string>>(new Map());
+  /** A aplicação que aguarda confirmação: a finalidade e o modelo. */
+  readonly aplicacaoPendente = signal<{ readonly finalidade: string; readonly modelo: ModeloOferecido } | null>(null);
+  /** O resumo da última aplicação, por finalidade: fica na aba do formulário que a recebeu. */
+  readonly resumosDaAplicacao = signal<ReadonlyMap<string, readonly string[]>>(new Map());
+  /** A recusa da aplicação, por finalidade: fica na aba do formulário, que continua como estava. */
+  readonly recusasDaAplicacao = signal<ReadonlyMap<string, string>>(new Map());
 
   constructor() {
     this.carregarCatalogo();
@@ -133,6 +155,35 @@ export class FormularioStepComponent {
       this.citantes();
       if (this.catalogo().length > 0) untracked(() => this.reconciliar());
     });
+
+    // Os modelos só servem para editar, e dependem do tipo, que o passo 1 escolhe.
+    effect(() => {
+      if (this.store.emConsulta() || this.tipoDoProcesso() === '') return;
+      untracked(() => this.carregarModelos());
+    });
+  }
+
+  /** O código do tipo do processo — o que filtra os modelos oferecidos. */
+  private readonly tipoDoProcesso = computed(() => this.store.draft().tipoProcesso.codigo);
+
+  /**
+   * Busca os modelos ativos que servem ao tipo do processo. Exposto porque a tela oferece nova
+   * tentativa, como no catálogo.
+   */
+  carregarModelos(): void {
+    this.modelosCarregando.set(true);
+    this.modelosErro.set(null);
+    this.modelosApi
+      .listar({ tipoProcesso: this.tipoDoProcesso(), ativo: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => {
+        this.modelosCarregando.set(false);
+        if (!isApiOk(resultado)) {
+          this.modelosErro.set(this.problemI18n.resolve(resultado.problem).title);
+          return;
+        }
+        this.modelos.set(modelosPorFinalidade(resultado.data));
+      });
   }
 
   /**
@@ -262,6 +313,7 @@ export class FormularioStepComponent {
       const sufixo = sufixoDaFinalidade(formulario.finalidade);
       const fase = fases.get(formulario.finalidade) ?? { opcoes: [], escolhida: '' };
       const recusaDaRemocao = this.recusasDaRemocao().get(formulario.finalidade) ?? null;
+      const recusaDaAplicacao = this.recusasDaAplicacao().get(formulario.finalidade) ?? null;
       return {
         finalidade: formulario.finalidade,
         rotulo: FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ?? formulario.finalidade,
@@ -277,7 +329,12 @@ export class FormularioStepComponent {
         nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
         recusas: this.recusas().get(formulario.finalidade) ?? null,
         recusaDaRemocao,
-        recusada: this.recusas().has(formulario.finalidade) || recusaDaRemocao !== null,
+        recusada: this.recusas().has(formulario.finalidade) || recusaDaRemocao !== null || recusaDaAplicacao !== null,
+        modelos: this.modelos().get(formulario.finalidade) ?? [],
+        modeloEscolhido: this.modelosEscolhidos().get(formulario.finalidade) ?? '',
+        modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
+        recusaDaAplicacao,
+        resumoDaAplicacao: this.resumosDaAplicacao().get(formulario.finalidade) ?? null,
         fatosDaInscricao: ehInscricao ? null : this.fatosDaInscricao(),
         fatosIndisponiveis: ehInscricao
           ? fatosForaDaColetaDaInscricao(formulario.conteudo, fatosColetadosPelasOutras(formularios, FINALIDADE_INSCRICAO))
@@ -308,7 +365,7 @@ export class FormularioStepComponent {
    * finalidades: são declarados noutros lugares, e o operador não deveria precisar lembrar que
    * mudá-los mexe aqui.
    */
-  reconciliar(): void {
+  reconciliar(): readonly string[] {
     const formulario = this.store.draft().formulario;
     const antes = new Set(fatosColetadosPor(formulario.conteudo));
     const reconciliado = comCamposQueAsExigenciasPressupoem(
@@ -318,7 +375,7 @@ export class FormularioStepComponent {
       this.store.camposPostosPelasExigencias(),
       fatosColetadosPelasOutras(this.formularios(), FINALIDADE_INSCRICAO),
     );
-    if (reconciliado === formulario.conteudo) return;
+    if (reconciliado === formulario.conteudo) return [];
 
     // Registra o que ENTROU agora: é esse conjunto que a reconciliação seguinte pode remover
     // quando a exigência que o pediu deixar de existir.
@@ -327,6 +384,7 @@ export class FormularioStepComponent {
       this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
     }
     this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });
+    return acrescentados;
   }
 
   /**
@@ -438,8 +496,141 @@ export class FormularioStepComponent {
 
     const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
     if (remocao.ok) return null;
-    const { title, detail } = this.problemI18n.resolve(remocao.problem);
-    return [title, detail].filter((parte) => parte !== undefined && parte !== '').join(' ');
+    return this.textoDaRecusa(remocao.problem);
+  }
+
+  escolherModelo(finalidade: string, modeloId: string): void {
+    this.modelosEscolhidos.update((atuais) => new Map([...atuais, [finalidade, modeloId]]));
+  }
+
+  pedirAplicacao(finalidade: string): void {
+    const escolhido = this.modelosEscolhidos().get(finalidade);
+    const modelo = this.modelos().get(finalidade)?.find((oferecido) => oferecido.id === escolhido);
+    if (modelo !== undefined) this.aplicacaoPendente.set({ finalidade, modelo });
+  }
+
+  cancelarAplicacao(): void {
+    this.aplicacaoPendente.set(null);
+  }
+
+  /** O que a confirmação diz antes de substituir: o formulário sai inteiro, com o que não foi gravado. */
+  readonly avisoDaAplicacao = computed(() => {
+    const pendente = this.aplicacaoPendente();
+    if (pendente === null) return '';
+    const inscricao =
+      pendente.finalidade === FINALIDADE_INSCRICAO
+        ? ' Os campos do modelo que outro formulário coleta passam para a inscrição, e esse formulário volta ao que está gravado no processo.'
+        : '';
+    return (
+      `O formulário de ${nomeDaFinalidade(pendente.finalidade)} passa a ser a cópia do modelo "${pendente.modelo.nome}": ` +
+      `as etapas, os campos e os termos que ele tem agora saem, inclusive as edições desta aba ainda não gravadas.${inscricao} Não há como desfazer.`
+    );
+  });
+
+  /**
+   * Aplica o modelo confirmado. A aplicação vai à API na hora — não espera a gravação do passo — e
+   * trava o passo enquanto está no ar: um PUT da aba chegando depois substituiria a cópia pelo que
+   * estava na tela. Depois, o rascunho recebe o que o servidor ficou tendo, e a reconciliação
+   * devolve ao formulário o que o processo pressupõe e o modelo não trazia — a cópia não confere as
+   * exigências. O resumo e a recusa ficam em texto na aba.
+   */
+  async confirmarAplicacao(): Promise<void> {
+    const pendente = this.aplicacaoPendente();
+    this.aplicacaoPendente.set(null);
+    const processoId = this.store.processoSeletivoId();
+    if (pendente === null || processoId === null) return;
+    const { finalidade, modelo } = pendente;
+    const faseDaAba = this.fasesDosFormularios().get(finalidade)?.escolhida ?? '';
+    this.recusasDaAplicacao.update((atuais) => semChave(atuais, finalidade));
+    this.resumosDaAplicacao.update((atuais) => semChave(atuais, finalidade));
+
+    const geracao = this.store.geracao();
+    this.store.salvando.set(true);
+    let desfecho: DesfechoDaAplicacao;
+    try {
+      desfecho = await this.aplicarNoServidor(processoId, finalidade, modelo.id, faseDaAba);
+    } finally {
+      if (geracao === this.store.geracao()) this.store.salvando.set(false);
+    }
+    if (geracao !== this.store.geracao()) return;
+
+    if (!desfecho.ok) {
+      const { recusa } = desfecho;
+      this.recusasDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
+      this.anuncio.set(`O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${recusa}`);
+      return;
+    }
+
+    // O que o rascunho marcava como posto pelas exigências era do formulário que saiu: a cópia é
+    // decisão do modelo, e só o que a reconciliação acrescentar agora volta a ser dela.
+    if (finalidade === FINALIDADE_INSCRICAO) this.store.camposPostosPelasExigencias.set(new Set());
+    this.store.projetarSecao('formulario', comAplicacaoDoServidor(this.store.draft().formulario, desfecho.servidor, desfecho.relato, faseDaAba));
+    const acrescentados = this.reconciliar();
+    this.recusas.update((atuais) => semChave(atuais, finalidade));
+
+    const nomeDoFato = new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome]));
+    const resumo = [
+      ...resumoDaAplicacao(desfecho.relato, modelo.nome, acrescentados, (codigo) => nomeDoFato.get(codigo) ?? codigo),
+      ...(desfecho.avisoDaFase === null ? [] : [desfecho.avisoDaFase]),
+    ];
+    this.resumosDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, resumo]]));
+    this.anuncio.set(resumo.join(' '));
+  }
+
+  /**
+   * A aplicação no servidor: relê o processo para saber se o formulário existe e com que fase, aplica
+   * o modelo, declara a fase quando a cópia ficou sem ela e relê de novo para projetar o resultado.
+   * A fase precisa estar no cronograma gravado ANTES da cópia: sem ela, o formulário nasceria sem
+   * fase, e a publicação o recusa.
+   */
+  private async aplicarNoServidor(processoId: string, finalidade: string, modeloId: string, faseDaAba: string): Promise<DesfechoDaAplicacao> {
+    const antes = await firstValueFrom(this.api.obter(processoId));
+    if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.' };
+    const fase = faseQueAAplicacaoDeclara(formularioDaFinalidade(antes.data.formularios, finalidade), faseDaAba, antes.data.cronogramaFases);
+    if (fase.declarar && fase.faseId === null) {
+      return {
+        ok: false,
+        recusa: `O formulário de ${nomeDaFinalidade(finalidade)} precisa de uma fase do cronograma gravado antes de partir de um modelo. Escolha a fase nesta aba; se ela é nova, grave antes o passo Cronograma.`,
+      };
+    }
+
+    const aplicacao = await this.cadastro.aplicarModeloDeFormulario(processoId, modeloId);
+    if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem) };
+
+    const depois = await firstValueFrom(this.api.obter(processoId));
+    if (!isApiOk(depois)) {
+      return {
+        ok: false,
+        recusa: 'O modelo foi aplicado, mas não foi possível reler o processo. Recarregue a página antes de continuar, para não gravar por cima da cópia.',
+      };
+    }
+
+    let avisoDaFase: string | null = null;
+    const copiado = formularioDaFinalidade(depois.data.formularios, finalidade);
+    if (fase.declarar && copiado !== null) {
+      const conteudo = conteudoDoFormulario(copiado);
+      const cabecalho = await this.cadastro.gravarFormulario(processoId, finalidade, { faseId: copiado.faseId, conteudo }, { faseId: fase.faseId, conteudo });
+      if (!cabecalho.ok) avisoDaFase = `A fase do formulário não foi gravada: ${this.textoDaRecusa(cabecalho.problem)} Grave o passo para declará-la.`;
+    }
+
+    return {
+      ok: true,
+      relato: aplicacao.relato,
+      avisoDaFase,
+      servidor: {
+        formularios: depois.data.formularios,
+        cronogramaFases: depois.data.cronogramaFases,
+        regrasDerivacao: depois.data.regrasDerivacao.map((config) => ({ codigoFato: config.codigoFato, regras: config.regras })),
+      },
+    };
+  }
+
+  /** A recusa em texto: o título e, quando houver, o detalhe e o que cada erro de validação diz. */
+  private textoDaRecusa(problem: ProblemDetails): string {
+    const { title, detail } = this.problemI18n.resolve(problem);
+    return [title, detail, ...(problem.errors ?? []).map((erro) => erro.message)]
+      .filter((parte): parte is string => parte !== undefined && parte !== '')
+      .join(' ');
   }
 
   /**
@@ -682,6 +873,16 @@ export class FormularioStepComponent {
     this.store.projetarSecao('formulario', formulario);
   }
 }
+
+/** O desfecho da aplicação de um modelo: a recusa a mostrar, ou o que o servidor relatou e ficou tendo. */
+type DesfechoDaAplicacao =
+  | { readonly ok: false; readonly recusa: string }
+  | {
+      readonly ok: true;
+      readonly relato: AplicacaoDeModeloDto;
+      readonly servidor: ProcessoAposAplicacao;
+      readonly avisoDaFase: string | null;
+    };
 
 /** O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos dela, e se a resposta é obrigatória. */
 function leituraDe(conteudo: ConteudoDoFormulario) {

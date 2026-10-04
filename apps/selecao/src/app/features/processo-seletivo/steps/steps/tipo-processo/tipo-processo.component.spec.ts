@@ -60,7 +60,7 @@ describe('TipoProcessoStepComponent', () => {
     return fixture.componentInstance;
   }
 
-  it('exibe os tipos retornados pela API e guarda o UUID selecionado', () => {
+  it('exibe os tipos retornados pela API e guarda o UUID e o código do selecionado', () => {
     const component = montar();
     const host = fixture.nativeElement as HTMLElement;
 
@@ -74,12 +74,14 @@ describe('TipoProcessoStepComponent', () => {
     fixture.detectChanges();
 
     expect(component.store.draft().tipoProcesso.selected).toBe(ID_SISU);
+    // O código filtra os modelos de formulário, e o processo criado nesta sessão não tem outra fonte dele.
+    expect(component.store.draft().tipoProcesso.codigo).toBe('SISU');
   });
 
   it('em consulta, lê o tipo gravado como texto, com a descrição do catálogo', () => {
     const component = montar();
     const host = fixture.nativeElement as HTMLElement;
-    component.store.patchSection('tipoProcesso', { selected: ID_SISU, rotulo: 'SiSU' });
+    component.store.patchSection('tipoProcesso', { selected: ID_SISU, rotulo: 'SiSU', codigo: 'SISU' });
     component.store.remoteSnapshot.set({ status: 'publicado' } as never);
     fixture.detectChanges();
 

@@ -43,6 +43,7 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     tipoProcesso: {
       selected: dto.tipoProcesso.origemId,
       rotulo: dto.tipoProcesso.nome,
+      codigo: dto.tipoProcesso.codigo,
     },
     pagamento: pagamentoDe(dto),
     vagas: { ofertas: distribuicoesDe(dto), cascata: cascataDe(dto) },

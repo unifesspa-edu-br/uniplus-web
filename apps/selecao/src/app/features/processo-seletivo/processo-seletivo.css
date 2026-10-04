@@ -3086,3 +3086,16 @@
   gap: var(--space-3);
   padding-block-end: var(--space-3);
 }
+
+/* O combo dos modelos e o botão que aplica, lado a lado enquanto couberem. */
+.sel-processo .form-modelo__escolha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.sel-processo .form-modelo__resumo {
+  margin: 0;
+  padding-inline-start: var(--space-4);
+}

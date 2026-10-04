@@ -105,6 +105,85 @@
       </p>
     }
 
+    <!-- Partir de um modelo substitui o formulário: só em rascunho, e a consulta só lê a origem. -->
+    @if (!store.emConsulta()) {
+      <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-modelo-titulo'">
+        <h2 [id]="aba.idBase + '-modelo-titulo'" class="step-section__title">Partir de um modelo</h2>
+
+        @if (aba.modeloOrigemCodigo; as origem) {
+          <p class="field__hint" [id]="aba.idBase + '-origem'">
+            Este formulário partiu do modelo {{ origem }}. A cópia é a que vale: mudar o modelo
+            depois não muda o processo.
+          </p>
+        }
+
+        @if (modelosCarregando()) {
+          <p class="field__hint" role="status">Carregando os modelos de formulário…</p>
+        } @else if (modelosErro(); as erro) {
+          <p class="alert alert--warning" role="alert">
+            Não foi possível carregar os modelos de formulário. {{ erro }}
+            <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarModelos()">
+              Tentar novamente
+            </button>
+          </p>
+        } @else if (aba.modelos.length === 0) {
+          <p class="field__hint" [id]="aba.idBase + '-sem-modelo'">
+            Não há modelo ativo de {{ aba.nome }} para o tipo deste processo.
+          </p>
+        } @else {
+          <div class="form-modelo__escolha">
+            <div class="form-field">
+              <label class="label" [for]="aba.idBase + '-modelo'">Modelo de {{ aba.nome }}</label>
+              <select
+                class="select"
+                [id]="aba.idBase + '-modelo'"
+                [attr.aria-describedby]="aba.idBase + '-modelo-ajuda'"
+                [disabled]="!store.aceitaEdicao()"
+                (change)="escolherModelo(aba.finalidade, $any($event.target).value)"
+              >
+                <option value="" [selected]="aba.modeloEscolhido === ''">Escolha o modelo</option>
+                @for (modelo of aba.modelos; track modelo.id) {
+                  <option [value]="modelo.id" [selected]="modelo.id === aba.modeloEscolhido">
+                    {{ modelo.nome }} ({{ modelo.codigo }})
+                  </option>
+                }
+              </select>
+              <span class="field__hint" [id]="aba.idBase + '-modelo-ajuda'">
+                Só aparecem os modelos ativos de {{ aba.nome }} que servem ao tipo deste processo.
+                Aplicar um modelo substitui este formulário inteiro pela cópia dele.
+              </span>
+            </div>
+            <button
+              type="button"
+              class="btn btn--secondary"
+              [id]="aba.idBase + '-aplicar-modelo'"
+              [attr.aria-describedby]="aba.resumoDaAplicacao ? aba.idBase + '-resumo-modelo' : null"
+              [disabled]="!store.aceitaEdicao() || aba.modeloEscolhido === ''"
+              (click)="pedirAplicacao(aba.finalidade)"
+            >
+              Aplicar modelo
+            </button>
+          </div>
+        }
+
+        @if (aba.recusaDaAplicacao; as recusa) {
+          <p class="alert alert--danger" role="alert" [id]="aba.idBase + '-recusa-modelo'">
+            O modelo não foi aplicado ao formulário de {{ aba.nome }}. {{ recusa }}
+          </p>
+        }
+
+        @if (aba.resumoDaAplicacao; as resumo) {
+          <div class="alert alert--info" [id]="aba.idBase + '-resumo-modelo'">
+            <ul class="form-modelo__resumo">
+              @for (frase of resumo; track $index) {
+                <li>{{ frase }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </section>
+    }
+
     <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-fase-titulo'">
       <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title" tabindex="-1">Quando o candidato responde</h2>
 
@@ -197,6 +276,12 @@
             rotulo="Título do formulário"
             seVazio="Sem título"
             [valor]="aba.conteudo.titulo"
+          />
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Modelo de origem"
+            seVazio="Composto no processo, sem modelo"
+            [valor]="aba.modeloOrigemCodigo"
           />
         </div>
         @for (etapa of aba.leitura; track etapa.codigo) {
@@ -382,5 +467,15 @@
     confirmVariant="danger"
     (confirmed)="confirmarRemocao()"
     (cancelled)="cancelarRemocao()"
+  />
+  <ui-confirm-dialog
+    [visible]="aplicacaoPendente() !== null"
+    heading="Aplicar modelo"
+    [message]="avisoDaAplicacao()"
+    confirmLabel="Substituir pelo modelo"
+    cancelLabel="Manter o formulário"
+    confirmVariant="danger"
+    (confirmed)="confirmarAplicacao()"
+    (cancelled)="cancelarAplicacao()"
   />
 }

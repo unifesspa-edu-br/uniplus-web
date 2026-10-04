@@ -9,6 +9,9 @@ export {
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
 export type {
+  AplicacaoDeModeloDto,
+  AplicacaoDeModeloInput,
+  ParteDescartadaDto,
   ConfiguracaoDistribuicaoVagasDto,
   ConfiguracaoDistribuicaoVagasInput,
   ConfiguracaoBonusRegionalDto,

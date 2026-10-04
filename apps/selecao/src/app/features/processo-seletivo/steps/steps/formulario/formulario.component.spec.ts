@@ -378,10 +378,165 @@ describe('FormularioStepComponent', () => {
     });
   });
 
+  describe('partindo de um modelo', () => {
+    const ROTA_MODELOS = `${BASE}/api/configuracao/admin/modelos-formulario`;
+    const ROTA_APLICACAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/aplicacoes-de-modelo`;
+    const ROTA_HABILITACAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/HABILITACAO`;
+    const modelo = (id: string, nome: string, finalidade: string) => ({
+      id,
+      codigo: id.toUpperCase(),
+      nome,
+      descricao: null,
+      finalidade,
+      tipoProcessoCodigo: 'MEDICINA',
+      ativo: true,
+      conteudo: {},
+    });
+    const MODELOS = [modelo('insc', 'Inscrição de Medicina', 'INSCRICAO'), modelo('hab', 'Habilitação padrão', 'HABILITACAO')];
+    const relato = (finalidade: string) => ({
+      finalidade,
+      fatosTrazidosParaAInscricao: [],
+      fatosMantidosNaInscricao: [],
+      descartados: [],
+      derivacoesCopiadas: [],
+      derivacoesMantidas: [],
+    });
+    /** A inscrição que a cópia deixa no servidor: sem PCD, que o modelo não traz. */
+    const INSCRICAO_COPIADA = { ...GRAVADO, modeloOrigemId: 'insc', modeloOrigemCodigo: 'INSC', fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')] } as unknown as FormularioDto;
+    const PROCESSO_COM_DERIVACOES = { ...PROCESSO, regrasDerivacao: [] };
+
+    beforeEach(() => {
+      store.patchObjectSection('tipoProcesso', { codigo: 'MEDICINA' });
+      fixture.detectChanges();
+      controller.expectOne((r) => r.url === ROTA_MODELOS).flush(MODELOS);
+      fixture.detectChanges();
+    });
+
+    function escolherEAplicar(finalidade: string, modeloId: string): Promise<void> {
+      fixture.componentInstance.escolherModelo(finalidade, modeloId);
+      fixture.componentInstance.pedirAplicacao(finalidade);
+      return fixture.componentInstance.confirmarAplicacao();
+    }
+
+    it('lista os modelos ativos do tipo do processo, e cada aba só os da finalidade dela', () => {
+      // O beforeEach já respondeu; a requisição é refeita para conferir os filtros que ela leva.
+      fixture.componentInstance.carregarModelos();
+      const listagem = controller.expectOne((r) => r.url === ROTA_MODELOS);
+      expect(listagem.request.params.get('tipoProcesso')).toBe('MEDICINA');
+      expect(listagem.request.params.get('ativo')).toBe('true');
+      listagem.flush(MODELOS);
+      fixture.detectChanges();
+
+      const opcoes = Array.from(host.querySelectorAll<HTMLOptionElement>('#form-inscricao-modelo option')).map((opcao) => opcao.value);
+      expect(opcoes).toEqual(['', 'insc']);
+      expect(host.querySelector('#form-inscricao-modelo')?.getAttribute('aria-describedby')).toBe('form-inscricao-modelo-ajuda');
+    });
+
+    it('pede confirmação antes de substituir, dizendo que as edições não gravadas saem', () => {
+      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      fixture.detectChanges();
+      (host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      // Nenhuma requisição saiu: o afterEach confere.
+      expect(fixture.componentInstance.aplicacaoPendente()?.modelo.id).toBe('insc');
+      expect(fixture.componentInstance.avisoDaAplicacao()).toContain('inclusive as edições desta aba ainda não gravadas');
+      fixture.componentInstance.cancelarAplicacao();
+      expect(fixture.componentInstance.aplicacaoPendente()).toBeNull();
+    });
+
+    it('relê o processo e devolve ao formulário o que as exigências pressupõem, trava o passo enquanto aplica e mostra o resumo e a origem', async () => {
+      const exigencia = {
+        ...exigenciaNova('01960000-0000-7000-0000-0000000000d1', 'INSCRICAO'),
+        aplicabilidade: 'CONDICIONAL',
+        condicoes: [{ clausula: 0, ordem: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
+      } as ExigenciaDeDocumento;
+      store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
+
+      const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
+      expect(store.operacaoEmAndamento(), 'um PUT da aba durante a aplicação gravaria por cima da cópia').toBe(true);
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      const post = controller.expectOne((r) => r.method === 'POST' && r.url === ROTA_APLICACAO);
+      expect(post.request.body).toEqual({ modeloId: 'insc' });
+      expect(post.request.headers.get('Accept')).toBe('application/vnd.uniplus.aplicacao-de-modelo-formulario.v1+json');
+      expect(post.request.headers.has('Idempotency-Key')).toBe(true);
+      post.flush(relato('INSCRICAO'));
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
+      await aplicacao;
+      fixture.detectChanges();
+
+      expect(store.operacaoEmAndamento()).toBe(false);
+      expect(store.draft().formulario.conteudo.itens?.map((i) => i.fatoCodigo)).toEqual(['NOME', 'PCD']);
+      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain('Acrescentados porque o processo os pressupõe');
+      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain('Pessoa com deficiência');
+      expect(host.querySelector('#form-inscricao-origem')?.textContent).toContain('INSC');
+    });
+
+    it('a finalidade que nasce da cópia recebe em seguida o cabeçalho com a fase da aba', async () => {
+      const FASE_HABILITACAO: FaseDoCronograma = { ...FASE_INSCRICAO, faseCanonicaId: 'fc-habilitacao', codigo: 'HABILITACAO', ordem: 1, congelados: { ...FASE_INSCRICAO.congelados, coletaInscricao: false } };
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE_INSCRICAO, FASE_HABILITACAO] });
+      store.patchObjectSection('formulario', { outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo: conteudoInicial() }] });
+      const fases = [...PROCESSO.cronogramaFases, { id: 'F-HABILITACAO', codigo: 'HABILITACAO', coletaInscricao: false }];
+      const copiada = { ...GRAVADO, finalidade: 'HABILITACAO', faseId: null, modeloOrigemId: 'hab', modeloOrigemCodigo: 'HAB', etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')], fatosColetados: [] };
+
+      const aplicacao = escolherEAplicar('HABILITACAO', 'hab');
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, cronogramaFases: fases });
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(relato('HABILITACAO'));
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, cronogramaFases: fases, formularios: [GRAVADO, copiada] });
+      await proximoPasso();
+      const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_HABILITACAO);
+      expect(cabecalho.request.body.faseId).toBe('F-HABILITACAO');
+      cabecalho.flush(null, { status: 204, statusText: 'No Content' });
+      await aplicacao;
+
+      const habilitacao = store.draft().formulario.outrasFinalidades.find((outra) => outra.finalidade === 'HABILITACAO');
+      expect(habilitacao?.faseCodigo).toBe('HABILITACAO');
+      expect(habilitacao?.modeloOrigemCodigo).toBe('HAB');
+    });
+
+    it('a recusa da aplicação aparece em texto na aba, que continua como estava', async () => {
+      const antes = store.draft().formulario.conteudo;
+
+      const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(
+        {
+          type: 'about:blank',
+          title: 'O modelo não serve a este processo.',
+          status: 422,
+          code: 'uniplus.selecao.validacao',
+          traceId: '00000000000000000000000000000005',
+          errors: [{ field: 'modelo.pressupostos[0]', code: 'AplicacaoDeModelo.PressupostoAusente', message: "O modelo cita 'RENDA', que a inscrição do processo não coleta." }],
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+      );
+      await aplicacao;
+      fixture.detectChanges();
+
+      expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain("O modelo cita 'RENDA', que a inscrição do processo não coleta.");
+      expect(store.draft().formulario.conteudo).toBe(antes);
+    });
+  });
+
   describe('em consulta', () => {
     beforeEach(() => {
       store.remoteSnapshot.set({ status: 'publicado' } as never);
       fixture.detectChanges();
+    });
+
+    it('não oferece partir de um modelo, e lê de que modelo o formulário partiu', () => {
+      // Pelo sinal, porque a consulta não aceita edição: com o tipo conhecido, a listagem não sai.
+      store.draft.update((draft) => ({ ...draft, tipoProcesso: { ...draft.tipoProcesso, codigo: 'MEDICINA' } }));
+      store.projetarSecao('formulario', { modeloOrigemCodigo: 'INSC' });
+      fixture.detectChanges();
+
+      expect(host.querySelector('#form-inscricao-modelo-titulo')).toBeNull();
+      expect(valor('Modelo de origem')).toEqual(['INSC']);
     });
 
     it('lê o formulário como texto, sem controle nem ação de edição', () => {

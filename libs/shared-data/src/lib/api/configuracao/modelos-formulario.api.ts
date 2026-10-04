@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
@@ -25,11 +25,23 @@ export interface PreVisualizacaoDoModeloInput {
 }
 
 /**
+ * Os filtros da listagem: o tipo de processo traz os modelos que servem a ele, inclusive os que
+ * servem a todos os tipos; a finalidade é o token canônico.
+ */
+export interface ModelosFormularioQuery {
+  readonly tipoProcesso?: string;
+  readonly finalidade?: string;
+  readonly ativo?: boolean;
+  readonly limit?: number;
+}
+
+/**
  * Cliente dos modelos de formulário: o formulário composto por tipo de processo e finalidade
  * que o processo copia ao partir de um modelo (ADR-0136, UNI-REQ-0144).
  *
- * A listagem paginada é lida pela página com `useApiResource`; aqui ficam a leitura de um
- * modelo e as escritas. O PUT substitui o conteúdo inteiro, e o DELETE desativa — o modelo
+ * A listagem paginada da manutenção é lida pela página com `useApiResource`; aqui ficam a
+ * listagem filtrada que o processo consulta ao partir de um modelo, a leitura de um modelo e as
+ * escritas. O PUT substitui o conteúdo inteiro, e o DELETE desativa — o modelo
  * desativado deixa de ser oferecido a processo novo, e a ativação o devolve.
  *
  * API thin (ADR-0013): tipos do `schema.ts` gerado; resposta envelopada em `ApiResult<T>`;
@@ -39,6 +51,18 @@ export interface PreVisualizacaoDoModeloInput {
 export class ModelosFormularioApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+
+  /** GET `/api/configuracao/admin/modelos-formulario` — a primeira página da listagem filtrada. */
+  listar(query: ModelosFormularioQuery = {}): Observable<ApiResult<readonly ModeloFormularioView[]>> {
+    let params = new HttpParams().set('limit', String(query.limit ?? 100));
+    if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
+    if (query.finalidade !== undefined) params = params.set('finalidade', query.finalidade);
+    if (query.ativo !== undefined) params = params.set('ativo', String(query.ativo));
+    return this.http.get<ApiResult<readonly ModeloFormularioView[]>>(this.admin(), {
+      params,
+      context: withVendorMime('modelo-formulario', 1),
+    });
+  }
 
   /** GET `/api/configuracao/admin/modelos-formulario/{id}` — o modelo com o conteúdo. */
   obter(id: string): Observable<ApiResult<ModeloFormularioView>> {
