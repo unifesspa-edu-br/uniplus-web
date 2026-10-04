@@ -203,6 +203,19 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     expect(tela().querySelector('[role="status"]')?.textContent?.trim()).toBe('');
   });
 
+  it('esconde o resultado quando o rascunho passa a divergir do modelo avaliado', async () => {
+    botao().click();
+    controller.expectOne((r) => r.url.endsWith('/pre-visualizacao')).flush({ itens: [], termos: [] });
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('desatualizado', true);
+    fixture.detectChanges();
+
+    expect(tela().querySelector('[role="status"]')?.textContent?.trim()).toBe('');
+  });
+
   it('com alteração não salva, não pré-visualiza e diz por quê', () => {
     fixture.componentRef.setInput('desatualizado', true);
     fixture.detectChanges();
