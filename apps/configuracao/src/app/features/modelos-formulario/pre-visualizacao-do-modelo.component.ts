@@ -264,7 +264,7 @@ export class PreVisualizacaoDoModeloComponent {
     source: () => this.conteudo(),
     computation: () => null,
   });
-  /** O resultado vale para o conteúdo avaliado: o conteúdo gravado de novo o descarta. */
+  /** O resultado vale para o conteúdo e a simulação avaliados: gravar de novo ou mudar uma resposta o descarta. */
   protected readonly resultado = linkedSignal<ConteudoDoFormulario, PreVisualizacaoDoModeloDto | null>({
     source: () => this.conteudo(),
     computation: () => null,
@@ -347,6 +347,7 @@ export class PreVisualizacaoDoModeloComponent {
       return novos;
     });
     this.respostas.update((atual) => comResposta(atual, fato.codigo, invalido ? undefined : valor));
+    this.resultado.set(null);
   }
 
   protected dicaDosValores(fato: FatoSimulado): string {
@@ -364,6 +365,7 @@ export class PreVisualizacaoDoModeloComponent {
     }
     const escolhidos = Array.from(select.selectedOptions, (opcao) => opcao.value);
     this.respostas.update((atual) => comResposta(atual, fato.codigo, escolhidos.length === 0 ? undefined : escolhidos));
+    this.resultado.set(null);
   }
 
   protected alternarEtapa(codigo: string): void {
@@ -372,6 +374,7 @@ export class PreVisualizacaoDoModeloComponent {
       if (!nova.delete(codigo)) nova.add(codigo);
       return nova;
     });
+    this.resultado.set(null);
   }
 
   protected preVisualizar(): void {

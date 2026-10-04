@@ -189,6 +189,20 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     expect(tela().querySelector('#cfg-simulacao-IDADE_DEPENDENTE')).toBeNull();
   });
 
+  it('descarta o resultado quando uma resposta simulada muda, para não mostrar avaliação de outros valores', async () => {
+    botao().click();
+    controller.expectOne((r) => r.url.endsWith('/pre-visualizacao')).flush({ itens: [], termos: [] });
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    fixture.detectChanges();
+    expect(tela().querySelector('[role="status"]')?.textContent?.trim()).not.toBe('');
+
+    escolher('cfg-simulacao-CONCLUIU', 'true');
+    fixture.detectChanges();
+
+    expect(tela().querySelector('[role="status"]')?.textContent?.trim()).toBe('');
+  });
+
   it('com alteração não salva, não pré-visualiza e diz por quê', () => {
     fixture.componentRef.setInput('desatualizado', true);
     fixture.detectChanges();
