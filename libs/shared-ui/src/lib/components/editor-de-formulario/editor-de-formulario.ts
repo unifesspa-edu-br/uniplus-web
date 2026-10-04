@@ -303,7 +303,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                         [conteudo]="conteudoParaCitacoes()"
                         [catalogo]="catalogo()"
                         [remocoesTravadas]="remocoesTravadas()"
-                        [fatosIndisponiveis]="fatosIndisponiveis()"
+                        [fatosIndisponiveis]="naoColetaveisAqui()"
                         [posicao]="posicao + 1"
                         [idBase]="idDoGrupo(entrada.grupo.codigo)"
                         [exigemResposta]="exigemResposta()"
@@ -493,13 +493,21 @@ export class EditorDeFormularioComponent {
   protected readonly etapas = computed(() => etapasEmOrdem(this.conteudo()));
   private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
   protected readonly paraAcrescentar = computed(() =>
-    fatosParaAcrescentar(this.conteudoParaCitacoes(), this.catalogo(), ESCOPO_CANDIDATO, this.fatosIndisponiveis()),
+    fatosParaAcrescentar(this.conteudo(), this.catalogo(), ESCOPO_CANDIDATO, this.naoColetaveisAqui()),
   );
   /** O conteúdo para as citações: com os fatos da inscrição conhecidos antes de tudo, que nunca são gravados. */
   protected readonly conteudoParaCitacoes = computed(() =>
     // Na própria inscrição os fatos dela têm posição: torná-los conhecidos antes deixaria um campo citar outro que vem depois.
     this.finalidade() === FINALIDADE_INSCRICAO ? this.conteudo() : comFatosConhecidosAntes(this.conteudo(), this.fatosDaInscricaoCitaveis()),
   );
+  /**
+   * O que este formulário não pode coletar: o que outra finalidade coleta e, fora da inscrição,
+   * TODO fato da inscrição — o de membro inclusive, que não é citável, mas também não se repete.
+   */
+  protected readonly naoColetaveisAqui = computed(() => [
+    ...this.fatosIndisponiveis(),
+    ...(this.finalidade() === FINALIDADE_INSCRICAO ? [] : (this.fatosDaInscricao() ?? [])),
+  ]);
   /** Só os fatos do candidato: o de membro existe uma vez por ocorrência do grupo e não tem valor fora dele. */
   private readonly fatosDaInscricaoCitaveis = computed(() => {
     const doCandidato = new Set(this.catalogo().filter((fato) => fato.escopo === ESCOPO_CANDIDATO).map((fato) => fato.codigo));
@@ -565,7 +573,7 @@ export class EditorDeFormularioComponent {
   protected readonly podeMoverEntrada = podeMoverEntrada;
   protected readonly comGrupo = comGrupo;
   protected readonly fatosDeMembro = computed(() =>
-    fatosDeMembroParaAcrescentar(this.conteudoParaCitacoes(), this.catalogo(), this.fatosIndisponiveis()),
+    fatosDeMembroParaAcrescentar(this.conteudo(), this.catalogo(), this.naoColetaveisAqui()),
   );
   protected readonly termosPossiveis = computed(() => termosParaAcrescentar(this.conteudo(), this.termosDisponiveis()));
   protected readonly fatosDosTermos = computed(() => {

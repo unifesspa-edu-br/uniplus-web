@@ -185,6 +185,9 @@ describe('EditorDeFormularioComponent', () => {
         .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
 
       expect(alternativa.disabled, 'só o fato de membro viria antes, e ele não é citável').toBe(true);
+
+      const grupoNovo = [...(tela().querySelector('#f-etapa-S1-grupo-campo') as HTMLSelectElement | null)?.options ?? []].map((o) => o.value);
+      expect(grupoNovo, 'nem por isso o fato de membro da inscrição volta a ser coletável aqui').not.toContain('PARENTESCO');
     });
 
     it('na própria inscrição, os fatos dela não viram conhecidos antes: o primeiro campo não cita o que vem depois', () => {
