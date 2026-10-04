@@ -586,6 +586,17 @@ describe('FormularioStepComponent', () => {
       const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
       expect(naAba, 'o operador sabe o que corrigir').toContain('A nova tentativa foi recusada: O modelo não serve a este processo.');
       expect(naAba).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
+      // A cópia em aberto se resolve: a outra aba deixa de ser recusada por causa dela.
+      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+      const resolvida = fixture.componentInstance.confirmarAplicacao();
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(relato('INSCRICAO'));
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
+      await resolvida;
+      expect(fixture.componentInstance.recusasDaAplicacao().has('HABILITACAO'), 'a recusa da habilitação era só o bloqueio').toBe(false);
     });
 
     it('com a cópia confirmada e a releitura falhando, a aba diz que o modelo foi aplicado e pede recarregar', async () => {
