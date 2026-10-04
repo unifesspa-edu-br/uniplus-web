@@ -1160,12 +1160,14 @@ export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormu
 }
 
 /**
- * A recusa que aponta uma restrição do campo, pela posição dela na lista enviada, e o grupo de
- * opções dela quando aponta um (`restricoes[0].entradas[1].quando`); nulo quando aponta a restrição.
+ * A recusa que aponta uma restrição do campo. A API aponta pela posição na lista enviada
+ * (`restricoes[0].entradas[1].quando`), que muda quando o administrador remove uma restrição ou um
+ * grupo depois da recusa; por isso ela é guardada pelo que não muda: o tipo da restrição — um por
+ * campo — e o conteúdo do grupo de opções enviado. Nulo no grupo quando aponta a restrição inteira.
  */
 export interface RecusaDaRestricao {
-  readonly restricao: number;
-  readonly grupo: number | null;
+  readonly tipo: string;
+  readonly grupo: string | null;
   readonly mensagem: string;
 }
 
@@ -1199,7 +1201,7 @@ export function distribuirRecusas(
     // O campo do grupo tem código único no formulário: a recusa dele vai ao campo, como a de um item.
     const campoDoGrupo = grupo === undefined ? undefined : elementoApontado(recusa.field, 'subitens', grupo.subitens);
     if (campoDoGrupo !== undefined) {
-      acumularNoCampo(porItem, porRestricao, campoDoGrupo.fatoCodigo, recusa);
+      acumularNoCampo(porItem, porRestricao, campoDoGrupo, recusa);
       continue;
     }
     if (grupo !== undefined) {
@@ -1209,7 +1211,7 @@ export function distribuirRecusas(
     const item = elementoApontado(recusa.field, 'itens', enviado.itens ?? []);
     const etapa = elementoApontado(recusa.field, 'etapas', enviado.etapas ?? []);
     const termo = elementoApontado(recusa.field, 'termos', enviado.termos ?? []);
-    if (item !== undefined) acumularNoCampo(porItem, porRestricao, item.fatoCodigo, recusa);
+    if (item !== undefined) acumularNoCampo(porItem, porRestricao, item, recusa);
     else if (etapa !== undefined) acumular(porEtapa, etapa.codigo, recusa.message);
     else if (termo !== undefined) acumular(porTermo, termo.codigo, recusa.message);
     else gerais.push(recusa.message);
@@ -1217,24 +1219,49 @@ export function distribuirRecusas(
   return { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais };
 }
 
-/** A recusa do campo vai à restrição que ela aponta, ou ao campo quando não aponta nenhuma. */
+/**
+ * A recusa do campo vai à restrição que ela aponta — e ao grupo de opções, quando aponta um —, ou
+ * ao campo quando não aponta restrição que o envio tenha.
+ */
 function acumularNoCampo(
   porItem: Map<string, string[]>,
   porRestricao: Map<string, RecusaDaRestricao[]>,
-  fatoCodigo: string,
+  enviado: ItemDoFormulario,
   recusa: { readonly field: string; readonly message: string },
 ): void {
   const apontada = /\.restricoes\[(\d+)\](?:\.entradas\[(\d+)\])?/iu.exec(recusa.field);
-  if (apontada === null) {
-    acumular(porItem, fatoCodigo, recusa.message);
+  const restricao = apontada === null ? undefined : (enviado.restricoes ?? [])[Number(apontada[1])];
+  if (apontada === null || restricao === undefined) {
+    acumular(porItem, enviado.fatoCodigo, recusa.message);
     return;
   }
+  const grupo = apontada[2] === undefined ? undefined : (restricao.entradas ?? [])[Number(apontada[2])];
   const recusaDaRestricao: RecusaDaRestricao = {
-    restricao: Number(apontada[1]),
-    grupo: apontada[2] === undefined ? null : Number(apontada[2]),
+    tipo: restricao.tipo,
+    grupo: grupo === undefined ? null : chaveDoGrupoDeOpcoes(grupo),
     mensagem: recusa.message,
   };
-  porRestricao.set(fatoCodigo, [...(porRestricao.get(fatoCodigo) ?? []), recusaDaRestricao]);
+  porRestricao.set(enviado.fatoCodigo, [...(porRestricao.get(enviado.fatoCodigo) ?? []), recusaDaRestricao]);
+}
+
+/** O conteúdo do grupo de opções como chave: a condição como veio e os valores sem depender da ordem. */
+function chaveDoGrupoDeOpcoes(grupo: OpcoesCondicionadas): string {
+  return JSON.stringify({ quando: grupo.quando ?? null, valores: [...grupo.valores].sort() });
+}
+
+/** As recusas que apontam a restrição do tipo dado inteira, e não um grupo dela. */
+export function recusasDaRestricao(recusas: readonly RecusaDaRestricao[], tipo: string): readonly string[] {
+  return recusas.filter((recusa) => recusa.tipo === tipo && recusa.grupo === null).map((recusa) => recusa.mensagem);
+}
+
+/**
+ * As recusas do grupo de opções atual: as que apontaram, no envio, um grupo de mesmo conteúdo. O
+ * grupo removido ou editado depois da recusa não tem mais a quem mostrá-la, e ela não migra para o
+ * grupo que passou a ocupar a posição dele. Só as opções permitidas têm grupos.
+ */
+export function recusasDoGrupoDeOpcoes(recusas: readonly RecusaDaRestricao[], grupo: OpcoesCondicionadas): readonly string[] {
+  const chave = chaveDoGrupoDeOpcoes(grupo);
+  return recusas.filter((recusa) => recusa.grupo === chave).map((recusa) => recusa.mensagem);
 }
 
 function elementoApontado<T>(campo: string, lista: string, elementos: readonly T[]): T | undefined {

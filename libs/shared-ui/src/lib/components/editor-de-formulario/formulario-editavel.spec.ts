@@ -25,6 +25,9 @@ import {
   fontesDasOpcoes,
   opcoesDaFonteCabemNoAlvo,
   problemaDoGrupoDeOpcoes,
+  recusasDaRestricao,
+  recusasDoGrupoDeOpcoes,
+  type RecusaDaRestricao,
   fatosParaAcrescentar,
   fatosQueExigemResposta,
   moverEtapa,
@@ -687,23 +690,52 @@ describe('grupos repetíveis', () => {
     expect(recusas.porGrupo.get('FAMILIA')).toEqual(['Mínimo incoerente.']);
   });
 
-  it('a recusa que aponta uma restrição vai a ela — e ao grupo de opções, quando aponta um —, não ao resumo do campo', () => {
-    const enviado = conteudo({ itens: [item('A', 0, 'S1')], grupos: [grupo()] });
+  describe('recusa que aponta uma restrição', () => {
+    const sempre = { quando: null, valores: ['MED'] };
+    const quandoA = { quando: exibidoQuando('A'), valores: ['DIR'] };
+    const quandoB = { quando: exibidoQuando('B'), valores: ['ENG'] };
+    const opcoes = { tipo: 'OPCOES_PERMITIDAS', entradas: [sempre, quandoA, quandoB] };
+    const dasRespostas = { tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['OPCOES'] };
+    const enviado = conteudo({ itens: [item('ESPERA', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA', restricoes: [opcoes, dasRespostas] })] });
+    const recusasDe = (field: string): readonly RecusaDaRestricao[] =>
+      distribuirRecusas([{ field, message: 'Recusada.' }], enviado).porRestricao.get('ESPERA') ?? [];
 
-    const recusas = distribuirRecusas(
-      [
-        { field: 'conteudo.itens[0].restricoes[0].entradas[1].quando', message: 'Condição inválida.' },
-        { field: 'Conteudo.Itens[0].Restricoes[1].Fatos', message: 'Opções de outro domínio.' },
-        { field: 'conteudo.grupos[0].subitens[1].restricoes[0].entradas[0].valores', message: 'Valor fora do domínio.' },
-      ],
-      enviado,
-    );
+    it('vai ao grupo de opções que ela aponta, e a da restrição inteira, à restrição — não ao resumo do campo', () => {
+      const recusas = distribuirRecusas(
+        [
+          { field: 'conteudo.itens[0].restricoes[0].entradas[1].quando', message: 'Condição inválida.' },
+          { field: 'Conteudo.Itens[0].Restricoes[1].Fatos', message: 'Opções de outro domínio.' },
+        ],
+        enviado,
+      );
+      const doCampo = recusas.porRestricao.get('ESPERA') ?? [];
 
-    expect(recusas.porRestricao.get('A')).toEqual([
-      { restricao: 0, grupo: 1, mensagem: 'Condição inválida.' },
-      { restricao: 1, grupo: null, mensagem: 'Opções de outro domínio.' },
-    ]);
-    expect(recusas.porRestricao.get('IDADE')).toEqual([{ restricao: 0, grupo: 0, mensagem: 'Valor fora do domínio.' }]);
-    expect(recusas.porItem.size).toBe(0);
+      expect(recusasDoGrupoDeOpcoes(doCampo, quandoA)).toEqual(['Condição inválida.']);
+      expect(recusasDoGrupoDeOpcoes(doCampo, sempre)).toEqual([]);
+      expect(recusasDaRestricao(doCampo, 'OPCOES_DAS_RESPOSTAS')).toEqual(['Opções de outro domínio.']);
+      expect(recusas.porItem.size).toBe(0);
+    });
+
+    it('não passa para o grupo que ocupou a posição do grupo apontado, removido depois da recusa', () => {
+      const recusas = recusasDe('conteudo.itens[0].restricoes[0].entradas[1].quando');
+
+      // Sem o grupo apontado, o grupo seguinte passa a ser o segundo.
+      expect([sempre, quandoB].flatMap((grupo) => recusasDoGrupoDeOpcoes(recusas, grupo))).toEqual([]);
+    });
+
+    it('não passa para a restrição que ocupou a posição da restrição apontada, removida depois da recusa', () => {
+      const recusas = recusasDe('conteudo.itens[0].restricoes[0].entradas');
+
+      // Sem as opções permitidas, as opções das respostas passam a ser a primeira restrição.
+      expect(recusasDaRestricao(recusas, 'OPCOES_DAS_RESPOSTAS')).toEqual([]);
+    });
+
+    it('a recusa no campo do grupo repetível vai à restrição do campo', () => {
+      const comGrupo = conteudo({ grupos: [{ ...grupo(), subitens: [item('IDADE', 0, 'S1', { restricoes: [opcoes] })] }] });
+
+      const recusas = distribuirRecusas([{ field: 'conteudo.grupos[0].subitens[0].restricoes[0].entradas[0].valores', message: 'Fora do domínio.' }], comGrupo);
+
+      expect(recusasDoGrupoDeOpcoes(recusas.porRestricao.get('IDADE') ?? [], sempre)).toEqual(['Fora do domínio.']);
+    });
   });
 });

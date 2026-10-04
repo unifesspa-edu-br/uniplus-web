@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { EditorDeFormularioComponent } from './editor-de-formulario';
-import type { ConteudoDoFormulario, FatoDoFormulario, ItemDoFormulario, RecusasDoConteudo } from './formulario-editavel';
+import { distribuirRecusas, type ConteudoDoFormulario, type FatoDoFormulario, type ItemDoFormulario, type RecusasDoConteudo } from './formulario-editavel';
 
 const fato = (codigo: string): FatoDoFormulario => ({
   codigo,
@@ -140,20 +140,50 @@ describe('EditorDeFormularioComponent', () => {
       expect(restricao.entradas[1].valores).toEqual(['DIR']);
     });
 
+    const recusaNoGrupo = (grupo: number): RecusasDoConteudo =>
+      distribuirRecusas(
+        [{ field: `conteudo.itens[1].restricoes[0].entradas[${grupo}].quando`, message: 'Condição inválida.' }],
+        fixture.componentInstance.conteudo(),
+      );
+
     it('a recusa da API aparece no grupo de opções que ela aponta', () => {
       comOpcoesPermitidas();
-      const recusas: RecusasDoConteudo = {
-        porItem: new Map(),
-        porRestricao: new Map([['ESPERA', [{ restricao: 0, grupo: 0, mensagem: 'Condição inválida.' }]]]),
-        porEtapa: new Map(),
-        porTermo: new Map(),
-        porGrupo: new Map(),
-        gerais: [],
-      };
-      fixture.componentRef.setInput('recusas', recusas);
+      fixture.componentRef.setInput('recusas', recusaNoGrupo(0));
       fixture.detectChanges();
 
       expect(grupoDeOpcoes(1).textContent).toContain('Condição inválida.');
+    });
+
+    it('removido o grupo recusado, a recusa não passa para o grupo que ficou na posição dele', () => {
+      const quando = (valor: boolean): [[{ fato: string; operador: string; valor: boolean }]] => [[{ fato: 'A', operador: 'IGUAL', valor }]];
+      fixture.componentRef.setInput('catalogo', [fato('A'), curso('ESPERA', ['MED', 'DIR'], 'ESCALAR')]);
+      fixture.componentRef.setInput('conteudo', {
+        ...conteudo,
+        itens: [
+          item('A', 0),
+          item('ESPERA', 1, {
+            tipoRenderizacao: 'SELECAO_UNICA',
+            restricoes: [
+              {
+                tipo: 'OPCOES_PERMITIDAS',
+                entradas: [
+                  { quando: null, valores: ['MED'] },
+                  { quando: quando(true), valores: ['DIR'] },
+                  { quando: quando(false), valores: ['DIR'] },
+                ],
+              },
+            ],
+          }),
+        ],
+      });
+      fixture.componentRef.setInput('recusas', recusaNoGrupo(1));
+      fixture.detectChanges();
+      expect(grupoDeOpcoes(2).textContent).toContain('Condição inválida.');
+
+      botao(grupoDeOpcoes(2), 'Remover o grupo de opções 2').click();
+      fixture.detectChanges();
+
+      expect(restricaoDe('ESPERA').textContent).not.toContain('Condição inválida.');
     });
 
     it('as opções das respostas escolhem entre os campos anteriores cujas opções cabem nas do campo', () => {
