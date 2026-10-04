@@ -296,7 +296,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-    test('lista não tem violações serious/critical', async ({ page }) => {
+  test('lista não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
     await assertSemViolacoesGraves(page);
