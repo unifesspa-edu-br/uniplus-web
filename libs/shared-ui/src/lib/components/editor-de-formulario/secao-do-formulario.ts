@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, outp
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
 import { problemaDaCondicao, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { LIMITES_DO_FORMULARIO, type EtapaDoFormulario, type PredicadoNoWire } from './formulario-editavel';
-import { paraPredicado, recopiarSeMudouPorFora } from './item-do-formulario';
+import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 /**
  * O que a seção diz ao candidato — título, descrição e aviso — e quando ela aparece. Devolve a

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  acrescentarCampo,
   acrescentarItem,
+  alternativaSemOProprioCampo,
+  comImpedimento,
+  impedimentoCabe,
+  problemaDaRestricao,
+  quantidadeNoTeto,
+  restricoesParaAcrescentar,
   acrescentarTermo,
   pressupostosParaAcrescentar,
   removerPressuposto,
@@ -88,7 +95,7 @@ describe('renderizacaoDe', () => {
 });
 
 describe('fatosParaAcrescentar', () => {
-  it('oferece só o coletável ativo do candidato que o formulário ainda não tem, sem o município', () => {
+  it('oferece só o coletável ativo do candidato que o formulário ainda não tem', () => {
     const catalogo = [
       fato('JA_NO_FORMULARIO'),
       fato('NOVO'),
@@ -100,7 +107,7 @@ describe('fatosParaAcrescentar', () => {
     ];
     const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('JA_NO_FORMULARIO', 0, 'S1')] });
 
-    expect(fatosParaAcrescentar(atual, catalogo).map((f) => f.codigo)).toEqual(['NOVO']);
+    expect(fatosParaAcrescentar(atual, catalogo).map((f) => f.codigo)).toEqual(['MUNICIPIO', 'NOVO']);
   });
 });
 
@@ -351,5 +358,92 @@ describe('termos e pressupostos', () => {
       ok: false,
       recusa: 'Não é possível retirar “Forma de conclusão”: o campo “A” cita esse fato.',
     });
+  });
+});
+
+describe('restrições, município e impedimento', () => {
+  it.each([
+    [{ tipo: 'FAIXA_NUMERICA', minimo: null, maximo: null }, 'Informe ao menos um limite.'],
+    [{ tipo: 'FAIXA_NUMERICA', minimo: 10, maximo: 5 }, 'O mínimo é maior que o máximo.'],
+    [{ tipo: 'FAIXA_NUMERICA', minimo: 0.12345, maximo: null }, 'Use no máximo 4 casas decimais.'],
+    [{ tipo: 'FAIXA_NUMERICA', minimo: 0.0000001, maximo: null }, 'Use no máximo 4 casas decimais.'],
+    [{ tipo: 'TAMANHO_TEXTO', minimo: 1.5, maximo: null }, 'Os limites são números inteiros, a partir de zero.'],
+    [{ tipo: 'TAMANHO_TEXTO', minimo: -1, maximo: null }, 'Os limites são números inteiros, a partir de zero.'],
+    [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: [] }] }, 'Escolha ao menos um valor permitido.'],
+  ])('a restrição %o é recusada antes de ir à API', (restricao, problema) => {
+    expect(problemaDaRestricao(restricao)).toBe(problema);
+  });
+
+  it('a faixa com um limite só e o tamanho coerente passam', () => {
+    expect(problemaDaRestricao({ tipo: 'FAIXA_NUMERICA', minimo: null, maximo: 99.5 })).toBeNull();
+    expect(problemaDaRestricao({ tipo: 'TAMANHO_TEXTO', minimo: 0, maximo: 200 })).toBeNull();
+  });
+
+  it('oferece só a restrição que cabe no tipo do campo, uma por tipo', () => {
+    const numero = item('IDADE', 0, 'S1', { tipoRenderizacao: 'NUMERO' });
+    const selecao = item('COR', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' });
+
+    expect(restricoesParaAcrescentar(numero, false).map((r) => r.valor)).toEqual(['FAIXA_NUMERICA']);
+    expect(restricoesParaAcrescentar({ ...numero, restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 0 }] }, false)).toEqual([]);
+    expect(restricoesParaAcrescentar(selecao, false), 'sem valores conhecidos não há o que marcar').toEqual([]);
+    expect(restricoesParaAcrescentar(selecao, true).map((r) => r.valor)).toEqual(['OPCOES_PERMITIDAS']);
+  });
+
+  const uf = fato('UF', { dominio: 'CATEGORICO', fonteValores: 'GEO_UF' });
+  const municipio = fato('MUNICIPIO', { dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' });
+
+  it('o município nasce restrito à UF respondida antes', () => {
+    const comUf = conteudo({ etapas: [secao('S1', 0)], itens: [item('UF', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' })] });
+
+    const resultado = acrescentarCampo(comUf, municipio, 'S1', [uf, municipio]);
+
+    expect(resultado.ok && resultado.conteudo.itens?.find((i) => i.fatoCodigo === 'MUNICIPIO')?.restricoes).toEqual([
+      { tipo: 'MUNICIPIOS_DA_UF', fatos: ['UF'] },
+    ]);
+  });
+
+  it('sem campo de UF antes, o município é recusado com a orientação', () => {
+    const resultado = acrescentarCampo(conteudo({ etapas: [secao('S1', 0)] }), municipio, 'S1', [uf, municipio]);
+
+    expect(resultado).toEqual({
+      ok: false,
+      recusa: 'Acrescente antes o campo de UF: “MUNICIPIO” escolhe entre os municípios da UF respondida antes.',
+    });
+  });
+
+  it('o impedimento só cabe na inscrição, em tipo admitido e com o próprio campo citável', () => {
+    expect(impedimentoCabe('INSCRICAO', 'BOOLEANO', true)).toBe(true);
+    expect(impedimentoCabe('HABILITACAO', 'BOOLEANO', true)).toBe(false);
+    expect(impedimentoCabe('INSCRICAO', 'TEXTO', true)).toBe(false);
+    expect(impedimentoCabe('INSCRICAO', 'MUNICIPIO', true)).toBe(false);
+    expect(impedimentoCabe('INSCRICAO', 'SELECAO_UNICA', false)).toBe(false);
+  });
+
+  it('ligar o impedimento deixa o campo obrigatório sempre na mesma edição', () => {
+    const opcional = item('VINCULO', 0, 'S1', { obrigatoriedade: 'QUANDO', predicadoObrigatoriedade: exibidoQuando('X') });
+
+    const ligado = comImpedimento(opcional, exibidoQuando('VINCULO'));
+
+    expect([ligado.obrigatoriedade, ligado.predicadoObrigatoriedade]).toEqual(['SEMPRE', null]);
+  });
+
+  it('acusa a alternativa do impedimento que não cita o próprio campo', () => {
+    expect(alternativaSemOProprioCampo([[{ fato: 'V', operador: 'IGUAL', valor: true }]], 'V')).toBe(false);
+    expect(alternativaSemOProprioCampo([[{ fato: 'V', operador: 'IGUAL', valor: true }], [{ fato: 'X', operador: 'IGUAL', valor: true }]], 'V')).toBe(true);
+    expect(alternativaSemOProprioCampo(null, 'V')).toBe(true);
+  });
+
+  it('o teto conta itens, grupos e campos de grupo, como a API', () => {
+    const atual = conteudo({
+      itens: [item('A', 0, 'S1')],
+      grupos: [
+        {
+          codigo: 'G', ordem: 1, rotulo: 'G', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
+          obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, subitens: [item('M1', 0, 'S1'), item('M2', 1, 'S1')], incluiCandidato: false,
+        },
+      ],
+    });
+
+    expect(quantidadeNoTeto(atual)).toBe(4);
   });
 });

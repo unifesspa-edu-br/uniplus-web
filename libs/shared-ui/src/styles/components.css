@@ -507,6 +507,22 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
 .editor-formulario__erros { margin: 0; padding-left: var(--space-4); }
 .editor-formulario__grupo { margin: 0; color: var(--text-secondary); }
 
+.editor-formulario__restricoes,
+.editor-formulario__restricao {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3);
+  justify-items: start;
+}
+
+.editor-formulario__restricoes > .editor-formulario__campos,
+.editor-formulario__restricao > .editor-formulario__campos { width: 100%; }
+
+.editor-formulario__opcoes { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+
 .editor-formulario__anuncio {
   margin: 0;
   padding: var(--space-2) var(--space-3);
