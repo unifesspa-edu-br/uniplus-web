@@ -170,7 +170,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
         <ui-alert variant="danger" heading="Não foi possível pré-visualizar">{{ erro() }}</ui-alert>
       }
 
-      @if (resultado(); as r) {
+      @if (resultadoVisivel(); as r) {
         <div class="table-responsive">
           <table>
             <caption class="sr-only">Campos do formulário diante das respostas simuladas</caption>
@@ -295,8 +295,11 @@ export class PreVisualizacaoDoModeloComponent {
     });
   });
 
+  /** O resultado só aparece enquanto o rascunho na tela é o modelo gravado que a API avaliou. */
+  protected readonly resultadoVisivel = computed(() => (this.desatualizado() ? null : this.resultado()));
+
   protected readonly resumo = computed(() => {
-    const r = this.resultado();
+    const r = this.resultadoVisivel();
     if (r === null) return '';
     const exibidos = r.itens.filter((item) => item.visivel === 'VERDADEIRO').length;
     const obrigatorios = r.itens.filter((item) => item.obrigatorio === 'VERDADEIRO').length;
