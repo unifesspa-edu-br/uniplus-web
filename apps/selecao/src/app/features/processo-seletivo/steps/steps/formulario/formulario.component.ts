@@ -554,6 +554,11 @@ export class FormularioStepComponent {
     }
     if (geracao !== this.store.geracao()) return;
 
+    if (desfecho.ok) {
+      this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Set([...atuais].filter((outra) => outra !== finalidade)));
+    } else if (desfecho.emAberto) {
+      this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Set([...atuais, finalidade]));
+    }
     if (!desfecho.ok) {
       const { recusa } = desfecho;
       this.recusasDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
@@ -585,23 +590,25 @@ export class FormularioStepComponent {
    */
   private async aplicarNoServidor(processoId: string, finalidade: string, modeloId: string, faseDaAba: string): Promise<DesfechoDaAplicacao> {
     const antes = await firstValueFrom(this.api.obter(processoId));
-    if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.' };
+    if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.', emAberto: false };
     const fase = faseQueAAplicacaoDeclara(formularioDaFinalidade(antes.data.formularios, finalidade), faseDaAba, antes.data.cronogramaFases);
     if (fase.declarar && fase.faseId === null) {
       return {
         ok: false,
         recusa: `O formulário de ${nomeDaFinalidade(finalidade)} precisa de uma fase do cronograma gravado antes de partir de um modelo. Escolha a fase nesta aba; se ela é nova, grave antes o passo Cronograma.`,
+        emAberto: false,
       };
     }
 
     const aplicacao = await this.cadastro.aplicarModeloDeFormulario(processoId, modeloId);
-    if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem) };
+    if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem), emAberto: aplicacao.inconclusiva };
 
     const depois = await firstValueFrom(this.api.obter(processoId));
     if (!isApiOk(depois)) {
       return {
         ok: false,
         recusa: 'O modelo foi aplicado, mas não foi possível reler o processo. Recarregue a página antes de continuar, para não gravar por cima da cópia.',
+        emAberto: true,
       };
     }
 
@@ -726,6 +733,10 @@ export class FormularioStepComponent {
           (aba) =>
             `O processo não cobra taxa de inscrição, e o formulário de ${aba.nome} só existe quando há cobrança. Remova o formulário, ou volte a cobrar a taxa em "Pagamento".`,
         ),
+      ...[...this.store.aplicacoesDeModeloEmAberto()].map(
+        (finalidade) =>
+          `Não foi possível confirmar se o modelo foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}, e gravar agora passaria por cima da cópia. Aplique o modelo de novo ou recarregue o processo.`,
+      ),
       ...problemasDoFormulario(draft.formulario, draft.documentos, new Set(draft.cronograma.fases.map((fase) => fase.codigo))),
       ...this.camposSemValoresOfertados().map(
         (campo) =>
@@ -876,7 +887,8 @@ export class FormularioStepComponent {
 
 /** O desfecho da aplicação de um modelo: a recusa a mostrar, ou o que o servidor relatou e ficou tendo. */
 type DesfechoDaAplicacao =
-  | { readonly ok: false; readonly recusa: string }
+  /** `emAberto`: o servidor pode ter feito a cópia, e o rascunho ainda é o de antes. */
+  | { readonly ok: false; readonly recusa: string; readonly emAberto: boolean }
   | {
       readonly ok: true;
       readonly relato: AplicacaoDeModeloDto;
