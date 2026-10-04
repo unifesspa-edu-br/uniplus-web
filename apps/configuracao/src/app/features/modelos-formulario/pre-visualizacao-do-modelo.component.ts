@@ -347,7 +347,7 @@ export class PreVisualizacaoDoModeloComponent {
       return novos;
     });
     this.respostas.update((atual) => comResposta(atual, fato.codigo, invalido ? undefined : valor));
-    this.resultado.set(null);
+    this.descartarAvaliacao();
   }
 
   protected dicaDosValores(fato: FatoSimulado): string {
@@ -365,7 +365,13 @@ export class PreVisualizacaoDoModeloComponent {
     }
     const escolhidos = Array.from(select.selectedOptions, (opcao) => opcao.value);
     this.respostas.update((atual) => comResposta(atual, fato.codigo, escolhidos.length === 0 ? undefined : escolhidos));
+    this.descartarAvaliacao();
+  }
+
+  /** A simulação mudou: o resultado e a falha eram dos valores anteriores. */
+  private descartarAvaliacao(): void {
     this.resultado.set(null);
+    this.erro.set(null);
   }
 
   protected alternarEtapa(codigo: string): void {
@@ -374,7 +380,7 @@ export class PreVisualizacaoDoModeloComponent {
       if (!nova.delete(codigo)) nova.add(codigo);
       return nova;
     });
-    this.resultado.set(null);
+    this.descartarAvaliacao();
   }
 
   protected preVisualizar(): void {
