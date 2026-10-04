@@ -582,7 +582,11 @@ export class FormularioStepComponent {
     if (formularioDaFinalidade(detalhe.data.formularios, finalidade) === null) return null;
 
     const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
-    if (remocao.ok) return null;
+    if (remocao.ok) {
+      // A leitura guardada é de antes do DELETE: sem o formulário removido, ela volta a ser o gravado.
+      this.processoLido.update((lido) => (lido === null ? lido : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade !== finalidade) }));
+      return null;
+    }
     return this.textoDaRecusa(remocao.problem);
   }
 

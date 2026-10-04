@@ -404,7 +404,7 @@ describe('FormularioStepComponent', () => {
     it('removido o penúltimo formulário, sem abas, o foco vai ao título do painel que sobra', async () => {
       fixture.componentInstance.pedirRemocao('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, id: PROCESSO_ID, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
       await proximoPasso();
       controller.expectOne((r) => r.method === 'DELETE' && r.url === ROTA_HABILITACAO).flush(null, { status: 204, statusText: 'No Content' });
       await remocao;
@@ -413,6 +413,7 @@ describe('FormularioStepComponent', () => {
 
       expect(abas()).toEqual([]);
       expect(document.activeElement?.id).toBe('form-inscricao-fase-titulo');
+      expect(fixture.componentInstance.previaDesatualizada(), 'o servidor já está como o rascunho').toBe(false);
     });
 
     it('acrescentar uma finalidade abre a aba dela, leva o foco até ela e anuncia', async () => {
