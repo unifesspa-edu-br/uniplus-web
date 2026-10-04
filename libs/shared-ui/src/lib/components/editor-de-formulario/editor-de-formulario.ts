@@ -463,6 +463,11 @@ export class EditorDeFormularioComponent {
   readonly fatosDaInscricao = input<readonly string[] | null>(null);
   /** Os fatos coletados por outra finalidade: um fato tem um formulário só que o coleta. */
   readonly fatosIndisponiveis = input<readonly string[]>([]);
+  /**
+   * Os fatos deste formulário que uma regra de OUTRO formulário cita por negação ou com impedimento:
+   * precisam ser obrigatórios aqui, e este editor não vê aquela regra (UNI-REQ-0074).
+   */
+  readonly fatosQueExigemRespostaPorFora = input<readonly string[]>([]);
   /** Os campos que não podem sair, com o motivo — uma exigência ou outra regra do processo os cita. */
   readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
 
@@ -496,7 +501,9 @@ export class EditorDeFormularioComponent {
     this.finalidade() === FINALIDADE_INSCRICAO ? this.conteudo() : comFatosConhecidosAntes(this.conteudo(), this.fatosDaInscricao() ?? []),
   );
   protected readonly noTeto = computed(() => quantidadeNoTeto(this.conteudo()) >= LIMITES_DO_FORMULARIO.itens);
-  protected readonly exigemResposta = computed(() => fatosQueExigemResposta(this.conteudo()));
+  protected readonly exigemResposta = computed(
+    () => new Set([...fatosQueExigemResposta(this.conteudo()), ...this.fatosQueExigemRespostaPorFora()]),
+  );
   protected readonly desativados = computed(() => new Set(this.catalogo().filter((fato) => !fato.ativo).map((fato) => fato.codigo)));
   protected readonly blocosParaAcrescentar = computed(() =>
     blocosAdmitidos(this.finalidade()).filter((bloco) => !this.etapas().some((etapa) => etapa.bloco === bloco.valor)),
