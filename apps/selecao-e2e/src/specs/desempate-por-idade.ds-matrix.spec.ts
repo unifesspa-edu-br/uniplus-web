@@ -52,17 +52,16 @@ const FATOS_DO_CANDIDATO = [
 ];
 
 /**
- * Matriz do Uni+ DS para as incoerências entre o desempate por idade e o formulário (web#909):
- *
- * - maior idade ordena pela data de nascimento, que o formulário precisa coletar;
- * - idoso compara a faixa etária, que só existe com a apuração da idade declarada.
+ * Matriz do Uni+ DS para a incoerência entre o desempate por idoso e o formulário (web#909): o
+ * idoso compara a faixa etária, que só existe com a apuração da idade declarada. O maior idade
+ * ordena pela data de nascimento, que é dado básico de toda inscrição e por isso não falta.
  *
  * Cobre os alertas do passo Desempate, os do passo Formulário e o caminho de um ao outro.
  *
  * O CI do frontend sobe Keycloak, mas não a API: o catálogo de regras e o de fatos são servidos
  * por rota e toda outra consulta responde vazia. O cenário parte do rascunho novo, em que o
- * formulário nasce sem campos e em "Não apura idade". A consulta não tem os alertas (não há o que
- * corrigir num processo publicado) e é coberta pelos testes do componente.
+ * formulário nasce em "Não apura idade". A consulta não tem os alertas (não há o que corrigir
+ * num processo publicado) e é coberta pelos testes do componente.
  */
 test.describe('Desempate por idade e formulário — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -70,82 +69,6 @@ test.describe('Desempate por idade e formulário — matriz DS @ds', () => {
     await instalarPreferencia(page, temaDoProject(testInfo.project.name));
     await page.goto('/processo-seletivo/novo');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  });
-
-  test.describe('maior idade sem data de nascimento', () => {
-    test.describe('passo Desempate', () => {
-      test.beforeEach(async ({ page }, testInfo) => {
-        await declararCriterio(page, testInfo, 'DESEMPATE-MAIOR-IDADE');
-      });
-
-      test('avisa a incoerência e não viola WCAG 2.1 AA', async ({ page }) => {
-        await expect(page.locator('#desemp-sem-data-nascimento')).toBeVisible();
-        expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
-      });
-
-      test('não transborda horizontalmente com o alerta à vista', async ({ page }) => {
-        await expect(page.locator('#desemp-sem-data-nascimento')).toBeVisible();
-        await conferirSemTransbordo(page);
-      });
-
-      test('não cobra a apuração da idade, que o maior idade não usa', async ({ page }) => {
-        await expect(page.locator('#desemp-sem-data-nascimento')).toBeVisible();
-        await expect(page.locator('#desemp-idoso-sem-apuracao')).toBeHidden();
-      });
-
-      test('o botão tem nome acessível completo e leva ao Formulário por teclado', async ({
-        page,
-      }) => {
-        const botao = page.getByRole('button', {
-          name: 'Ir para Formulário e acrescentar a data de nascimento',
-        });
-        await botao.focus();
-        await expect(botao).toBeFocused();
-
-        await page.keyboard.press('Enter');
-        await expect(page.getByRole('heading', { level: 1 })).toContainText('Formulário');
-        await expect(page.locator('#form-desempate-sem-nascimento')).toBeVisible();
-      });
-
-      test('o alerta sai quando o critério é retirado', async ({ page }) => {
-        await page.getByRole('button', { name: 'Remover critério de desempate 1' }).click();
-        await expect(page.locator('#desemp-sem-data-nascimento')).toBeHidden();
-      });
-    });
-
-    test.describe('passo Formulário', () => {
-      test.beforeEach(async ({ page }, testInfo) => {
-        await declararCriterio(page, testInfo, 'DESEMPATE-MAIOR-IDADE');
-        await page.locator('#desemp-ir-formulario-nascimento').click();
-        await expect(page.getByRole('heading', { level: 1 })).toContainText('Formulário');
-      });
-
-      test('avisa a incoerência e não viola WCAG 2.1 AA', async ({ page }) => {
-        await expect(page.locator('#form-desempate-sem-nascimento')).toBeVisible();
-        expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
-      });
-
-      test('não transborda horizontalmente com o alerta à vista', async ({ page }) => {
-        await expect(page.locator('#form-desempate-sem-nascimento')).toBeVisible();
-        await conferirSemTransbordo(page);
-      });
-
-      test('o botão leva de volta ao Desempate', async ({ page }) => {
-        await page.getByRole('button', { name: 'Ir para Desempate' }).click();
-        await expect(page.getByRole('heading', { level: 1 })).toContainText('Desempate');
-      });
-
-      test('o alerta sai quando a data de nascimento é acrescentada, sem virar campo sem uso', async ({
-        page,
-      }) => {
-        await page.getByRole('combobox', { name: 'Acrescentar um dado' }).click();
-        await page.getByRole('option', { name: 'Data de nascimento' }).click();
-        await page.getByRole('button', { name: 'Acrescentar ao formulário' }).click();
-
-        await expect(page.locator('#form-desempate-sem-nascimento')).toBeHidden();
-        await expect(page.getByText('Nada no certame usa')).toBeHidden();
-      });
-    });
   });
 
   test.describe('idoso sem apuração da idade', () => {

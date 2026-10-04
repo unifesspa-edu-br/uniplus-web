@@ -25,6 +25,7 @@ import {
   ehRamoFederal,
   quantidadeEhDeclarada,
 } from '../steps/vagas/distribuicao-de-vagas';
+import { inscricaoDoServidor } from '../steps/formulario/formulario-do-processo';
 import { exigenciasDe } from './exigencias-documentais';
 import { formatarValorEmReais } from './valor-em-reais';
 
@@ -68,29 +69,19 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
 }
 
 /**
- * O formulário de inscrição: o cabeçalho que o candidato lê, os campos que ele preenche, a
- * política que ancora a apuração de idade e as regras de derivação.
+ * O formulário de inscrição — o conteúdo pelo mesmo mapeamento da gravação, e a fase em que é
+ * respondido —, a política que ancora a apuração de idade e as regras de derivação. Os
+ * formulários das outras finalidades entram só pelos fatos que coletam: este passo não os edita.
  *
- * A fase da referência temporal volta traduzida para CÓDIGO — o rascunho não guarda id de fase,
- * porque ele não sobrevive a uma gravação de cronograma que remova e reacrescente a fase.
+ * As fases voltam traduzidas para CÓDIGO — o rascunho não guarda id de fase, porque ele não
+ * sobrevive a uma gravação de cronograma que remova e reacrescente a fase.
  */
 function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
   const codigoPorFaseId = new Map((dto.cronogramaFases ?? []).map((f) => [f.id, f.codigo]));
   const referencia = dto.referenciaTemporalFatos;
 
   return {
-    titulo: dto.formularioTitulo ?? '',
-    termoAceiteTexto: dto.formularioTermoAceiteTexto ?? '',
-    fatos: [...(dto.fatosColetados ?? [])]
-      .sort((um, outro) => comoInteiro(um.ordem) - comoInteiro(outro.ordem))
-      .map((fato) => ({
-        fatoCodigo: fato.fatoCodigo,
-        ordem: comoInteiro(fato.ordem),
-        rotulo: fato.rotulo,
-        tipoRenderizacao: fato.tipoRenderizacao,
-        obrigatorio: fato.obrigatorio,
-        precondicao: fato.precondicao,
-      })),
+    ...inscricaoDoServidor({ formularios: dto.formularios ?? [], cronogramaFases: dto.cronogramaFases ?? [] }),
     referenciaTemporal: {
       tipo: referencia?.tipo ?? '',
       data: referencia?.data ?? '',

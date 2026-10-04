@@ -12,6 +12,7 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi, type ConfiguracaoDerivacaoInput } from '@uniplus/shared-data/selecao';
+import { conteudoInicial, FINALIDADE_INSCRICAO, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 
 import {
   PAPEL_DEFINITIVO,
@@ -55,9 +56,17 @@ import { etapasDe } from '../../shared/hidratacao';
 import {
   comCamposQueAsExigenciasPressupoem,
   fatosCitadosPelaDerivacao,
-  comoComandoDeFatosColetados,
-  divergeDoServidor,
+  quemCitaNoProcesso,
 } from '../formulario/formulario-de-inscricao';
+import {
+  conteudoDoFormulario,
+  faseDaInscricao,
+  fatosColetadosPor,
+  fatosDasOutrasFinalidades,
+  formularioDaFinalidade,
+  inscricaoDoServidor,
+  type FormularioParaGravar,
+} from '../formulario/formulario-do-processo';
 import {
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
@@ -1408,60 +1417,118 @@ export class CronogramaStepComponent {
    * Põe no formulário de inscrição os campos que as exigências deste cronograma pressupõem, e
    * grava. Devolve `null` quando deu certo, ou a recusa a ser exibida.
    *
-   * Nada é gravado quando não há o que mudar: o comando substitui a coleção inteira, e uma
-   * chamada por gravação de cronograma seria escrita à toa na maioria das vezes.
+   * Parte do estado do SERVIDOR e aplica a ele só o que as exigências e a derivação acrescentam:
+   * as edições ainda não gravadas do passo Formulário são dele, e ir junto aqui as gravaria por um
+   * caminho que o operador não escolheu. Nada é gravado quando não há o que acrescentar.
+   *
+   * Sem formulário de inscrição no servidor, ele é criado pelo cabeçalho — a seção dos outros
+   * dados, a revisão e aceite e a fase que coleta inscrição — e relido: a API o cria com a seção
+   * dos dados básicos, e os itens se conferem contra ela.
    */
   private async garantirCamposQueAsExigenciasPressupoem(
     processoId: string,
     servidor: ProcessoSeletivoDto,
     dependenciasDaDerivacao: readonly string[],
   ): Promise<StepValidation | null> {
+    const geracao = this.store.geracao();
     const draft = this.store.draft();
-    const antes = new Set(draft.formulario.fatos.map((campo) => campo.fatoCodigo));
-
+    const citados = new Set([
+      ...quemCitaNoProcesso({
+        documentos: draft.documentos,
+        derivacao: servidor.regrasDerivacao ?? [],
+        desempate: draft.desempate,
+      }).keys(),
+      ...dependenciasDaDerivacao,
+    ]);
+    const outras = fatosDasOutrasFinalidades(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
+    const gravado = formularioDaFinalidade(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
+    const conteudoGravado = gravado === null ? conteudoInicial() : conteudoDoFormulario(gravado);
     // Este caminho só ACRESCENTA — o conjunto de "postos por exigência" vai vazio de propósito.
     // Quem decide TIRAR campo é o passo do formulário, que sabe distinguir o que entrou por
     // causa de um gatilho do que foi declarado de propósito.
-    const reconciliado = comCamposQueAsExigenciasPressupoem(
-      draft.formulario,
-      draft.documentos,
-      this.catalogos.fatos(),
-      new Set(),
-      dependenciasDaDerivacao,
-    );
+    const pressuposto = (conteudo: ConteudoDoFormulario): ConteudoDoFormulario =>
+      comCamposQueAsExigenciasPressupoem(conteudo, citados, this.catalogos.fatos(), new Set(), outras);
 
-    if (reconciliado !== draft.formulario) {
-      // O que entrou aqui entrou SOZINHO, e precisa ficar registrado como tal: sem isso, o
-      // formulário não reconhece o campo como posto por exigência e o preserva mesmo depois
-      // de o gatilho que o pediu ser apagado — a inscrição seguiria coletando dado pessoal
-      // que já não tem finalidade declarada.
-      const acrescentados = reconciliado.fatos
-        .map((campo) => campo.fatoCodigo)
-        .filter((codigo) => !antes.has(codigo));
-      if (acrescentados.length > 0) {
-        this.store.camposPostosPelasExigencias.update(
-          (atual) => new Set([...atual, ...acrescentados]),
-        );
-      }
+    const desejado = pressuposto(conteudoGravado);
+    if (desejado === conteudoGravado) return null;
 
-      this.store.patchSection('formulario', reconciliado);
+    const recusa = (motivo: string): StepValidation => ({
+      valid: false,
+      messages: [`As etapas e o cronograma foram gravados. ${motivo}`],
+    });
+    const faseId = gravado?.faseId ?? faseDaInscricao(servidor.cronogramaFases)?.id ?? null;
+    if (faseId === null) {
+      return recusa(
+        'Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
+      );
     }
 
-    // A decisão de gravar é contra o SERVIDOR, não contra o rascunho. Comparando com o
-    // rascunho, a retentativa pulava justamente o comando que tinha falhado: a primeira
-    // tentativa já havia aplicado a mudança localmente, e a segunda não via mais diferença.
-    const desejados = comoComandoDeFatosColetados(reconciliado);
-    if (!divergeDoServidor(desejados, servidor.fatosColetados ?? [])) return null;
+    let base: FormularioParaGravar | null = gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoGravado };
+    let final = desejado;
+    if (gravado === null) {
+      const criacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, null, {
+        faseId,
+        conteudo: { ...desejado, itens: [], grupos: [], termos: [] },
+      });
+      if (geracao !== this.store.geracao()) return null;
+      if (!criacao.ok) return recusa(this.problemI18n.resolve(criacao.problem).title);
 
-    const gravacao = await this.cadastro.definirFatosColetados(processoId, desejados);
-    if (gravacao.ok) return null;
+      const relido = await firstValueFrom(this.api.obter(processoId));
+      if (geracao !== this.store.geracao()) return null;
+      const criado = isApiOk(relido) ? formularioDaFinalidade(relido.data.formularios, FINALIDADE_INSCRICAO) : null;
+      if (criado === null) {
+        return recusa('O formulário de inscrição foi criado, mas não foi possível relê-lo para acrescentar os campos. Tente gravar de novo.');
+      }
+      base = { faseId: criado.faseId, conteudo: conteudoDoFormulario(criado) };
+      final = pressuposto(base.conteudo);
+    }
 
-    return {
-      valid: false,
-      messages: [
-        `As etapas e o cronograma foram gravados. ${this.problemI18n.resolve(gravacao.problem).title}`,
-      ],
-    };
+    const gravacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, base, { faseId, conteudo: final });
+    if (geracao !== this.store.geracao()) return null;
+    if (!gravacao.ok) return recusa(this.problemI18n.resolve(gravacao.problem).title);
+
+    await this.acompanharNoRascunho(processoId, conteudoGravado, pressuposto);
+    return null;
+  }
+
+  /**
+   * Leva ao rascunho o que entrou no formulário gravado. Sem edição pendente no passo Formulário,
+   * o rascunho passa a ser o que o servidor tem — com a seção dos dados básicos, se o formulário
+   * acabou de nascer. Com edição pendente, ela fica, e só os campos acrescentados entram nela.
+   *
+   * O que entrou aqui entrou SOZINHO, e fica registrado como tal: sem isso, o formulário não
+   * reconhece o campo como posto por exigência e o preserva mesmo depois de o gatilho que o pediu
+   * ser apagado.
+   */
+  private async acompanharNoRascunho(
+    processoId: string,
+    conteudoGravadoAntes: ConteudoDoFormulario,
+    pressuposto: (conteudo: ConteudoDoFormulario) => ConteudoDoFormulario,
+  ): Promise<void> {
+    const geracao = this.store.geracao();
+    const formulario = this.store.draft().formulario;
+    const antes = new Set(fatosColetadosPor(formulario.conteudo));
+    const semEdicaoPendente = JSON.stringify(formulario.conteudo) === JSON.stringify(conteudoGravadoAntes);
+
+    let depois: ConteudoDoFormulario | null = null;
+    if (semEdicaoPendente) {
+      const relido = await firstValueFrom(this.api.obter(processoId));
+      if (geracao !== this.store.geracao()) return;
+      if (isApiOk(relido)) {
+        const servidor = inscricaoDoServidor(relido.data);
+        this.store.projetarSecao('formulario', servidor);
+        depois = servidor.conteudo;
+      }
+    }
+    if (depois === null) {
+      depois = pressuposto(formulario.conteudo);
+      if (depois !== formulario.conteudo) this.store.patchSection('formulario', { ...formulario, conteudo: depois });
+    }
+
+    const acrescentados = fatosColetadosPor(depois).filter((codigo) => !antes.has(codigo));
+    if (acrescentados.length > 0) {
+      this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
+    }
   }
 
   /**

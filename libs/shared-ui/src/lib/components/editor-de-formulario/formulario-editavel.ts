@@ -1188,6 +1188,17 @@ export function todosOsCampos(conteudo: ConteudoDoFormulario): readonly ItemDoFo
   return [...(conteudo.itens ?? []), ...(conteudo.grupos ?? []).flatMap((grupo) => grupo.subitens)];
 }
 
+/**
+ * Os fatos que alguma regra do próprio formulário cita: exibição, obrigatoriedade, impedimento e
+ * restrições dos campos, e a exibição e a obrigatoriedade das seções, dos grupos e dos termos.
+ */
+export function fatosCitadosPeloConteudo(conteudo: ConteudoDoFormulario): ReadonlySet<string> {
+  return new Set([
+    ...todosOsPredicados(conteudo).flatMap(fatosDoPredicado),
+    ...todosOsCampos(conteudo).flatMap((campo) => (campo.restricoes ?? []).flatMap((restricao) => restricao.fatos ?? [])),
+  ]);
+}
+
 function predicadosDoCampo(campo: ItemDoFormulario): readonly PredicadoNoWire[] {
   return [
     campo.precondicao,

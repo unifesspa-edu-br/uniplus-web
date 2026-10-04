@@ -32,7 +32,8 @@ const ANCORAS = [
 
 /**
  * Matriz do Uni+ DS para o editor do passo Formulário, com o processo da Medicina 2027 em
- * rascunho: título, termo de aceite, campos coletados e a apuração da idade em cada âncora.
+ * rascunho: o editor de formulário compartilhado (título, etapas, campos e termos) e a apuração da
+ * idade em cada âncora.
  *
  * A consulta do mesmo passo (processo publicado, lido como texto) é coberta por
  * `consulta-como-texto.ds-matrix.spec.ts`, e os alertas de incoerência com o desempate por
@@ -55,11 +56,8 @@ test.describe('Formulário — editor, matriz DS @ds', () => {
     expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
   });
 
-  test('é editável: título, termo e apuração da idade são controles com rótulo', async ({
-    page,
-  }) => {
+  test('é editável: título e apuração da idade são controles com rótulo', async ({ page }) => {
     await expect(page.getByLabel('Título do formulário', { exact: true })).toBeEditable();
-    await expect(page.getByLabel('Termo de aceite', { exact: true })).toBeEditable();
     await expect(page.getByLabel('Apurar a idade em', { exact: true })).toBeEnabled();
   });
 

@@ -238,6 +238,20 @@ describe('DesempateStepComponent', () => {
   });
 
   it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {
+    // A data de nascimento é dos dados básicos: só falta quando a seção deles veio sem ela.
+    const secao = { codigo: 'DADOS_BASICOS', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Dados', descricao: null, aviso: null, exibicao: null };
+    const item = (fatoCodigo: string, ordem: number) => ({
+      fatoCodigo,
+      ordem,
+      rotulo: fatoCodigo,
+      tipoRenderizacao: 'TEXTO',
+      obrigatoriedade: 'SEMPRE',
+      precondicao: null,
+      etapaCodigo: 'DADOS_BASICOS',
+      pedirConfirmacao: false,
+    });
+    const conteudo = (...itens: ReturnType<typeof item>[]) => ({ titulo: null, etapas: [secao], itens, termos: [], pressupostos: [], grupos: [] });
+    store.patchObjectSection('formulario', { conteudo: conteudo(item('NOME', 0)) });
     expect(componente.semDataDeNascimento()).toBe(false);
 
     store.patchSection('desempate', [
@@ -248,32 +262,18 @@ describe('DesempateStepComponent', () => {
     componente.irParaFormulario();
     expect(store.currentStep()).toBe(PASSO_FORMULARIO);
 
-    store.patchObjectSection('formulario', {
-      fatos: [
-        {
-          fatoCodigo: 'DATA_NASCIMENTO',
-          ordem: 1,
-          rotulo: 'Data de nascimento',
-          tipoRenderizacao: 'DATA',
-          obrigatorio: true,
-          precondicao: null,
-        },
-      ],
-    });
+    store.patchObjectSection('formulario', { conteudo: conteudo(item('NOME', 0), item('DATA_NASCIMENTO', 1)) });
     expect(componente.semDataDeNascimento()).toBe(false);
   });
 
   it('em consulta, não acusa a idade: o processo publicado não admite a correção', () => {
     store.patchSection('desempate', [
-      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
       criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
     ]);
-    expect(componente.semDataDeNascimento()).toBe(true);
     expect(componente.idosoSemApuracao()).toBe(true);
 
     store.remoteSnapshot.set({ status: 'publicado' } as never);
 
-    expect(componente.semDataDeNascimento()).toBe(false);
     expect(componente.idosoSemApuracao()).toBe(false);
   });
 

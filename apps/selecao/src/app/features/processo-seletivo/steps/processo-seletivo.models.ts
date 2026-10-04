@@ -1,5 +1,6 @@
 import { CaraterEtapa, OrigemCandidatos, UnidadePrazo } from '@uniplus/shared-data/selecao';
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
+import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 
 export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
 
@@ -494,27 +495,6 @@ export interface NoDeExigencia {
 }
 
 /**
- * Um fato que o certame coleta do candidato — um campo do formulário de inscrição.
- *
- * A lista destes fatos É o formulário: a renderização pública projeta exatamente estes, na
- * ordem declarada, juntando os valores de domínio do catálogo. Só fato declarado pelo candidato
- * é coletável; modalidade e faixa etária são derivados e resolvem por outro caminho.
- */
-export interface FatoColetadoConfig {
-  readonly fatoCodigo: string;
-  readonly ordem: number;
-  readonly rotulo: string;
-  readonly tipoRenderizacao: string;
-  readonly obrigatorio: boolean;
-  /**
-   * Campo que só aparece quando outro foi respondido de certa forma. A tela ainda não edita
-   * isso, e o rascunho o carrega como veio: o `PUT` substitui a coleção inteira, e sintetizá-la
-   * do zero apagaria a pré-condição de quem a tivesse declarado por outro caminho.
-   */
-  readonly precondicao: unknown;
-}
-
-/**
  * O instante contra o qual a idade do candidato é apurada — uma política por certame, que
  * ancora todos os gatilhos etários dele.
  *
@@ -539,14 +519,28 @@ export interface DerivacaoDeFato {
 }
 
 /**
- * O formulário de inscrição do certame: o que o candidato lê no topo, e os campos que preenche.
+ * O formulário de inscrição do certame e o que, do processo, ele sustenta.
+ *
+ * O conteúdo é o do editor de formulário (etapas, itens, grupos e termos), com a seção dos dados
+ * básicos que a API acrescenta: ela fica no rascunho para o editor mostrá-la e para as citações a
+ * enxergarem, e sai do envio. A fase em que a inscrição é respondida entra por CÓDIGO, pela mesma
+ * razão da referência temporal: o id da fase não sobrevive a uma gravação de cronograma que a
+ * remova e reacrescente, e só a releitura do processo o resolve.
+ *
+ * A política temporal e as regras de derivação são do processo, não do formulário, e viajam por
+ * rotas próprias; ficam aqui porque é este passo que as edita e as usa.
  */
 export interface FormularioDeInscricao {
-  readonly titulo: string;
-  readonly termoAceiteTexto: string;
-  readonly fatos: readonly FatoColetadoConfig[];
+  readonly faseCodigo: string;
+  readonly conteudo: ConteudoDoFormulario;
   readonly referenciaTemporal: ReferenciaTemporalConfig;
   readonly derivacao: readonly DerivacaoDeFato[];
+  /**
+   * Os fatos que os formulários das OUTRAS finalidades (isenção da taxa, habilitação) coletam no
+   * servidor. Só leitura: um fato tem um único formulário que o coleta, e a inscrição não pode
+   * acrescentar o que outra finalidade já pergunta.
+   */
+  readonly fatosDasOutrasFinalidades: readonly string[];
 }
 
 /**

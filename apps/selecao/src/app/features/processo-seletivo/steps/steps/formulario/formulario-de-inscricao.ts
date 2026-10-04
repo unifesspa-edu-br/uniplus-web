@@ -1,55 +1,98 @@
-import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
-import type { FatoColetadoInput } from '@uniplus/shared-data/selecao';
-import { renderizacaoDe } from '@uniplus/shared-ui/components';
+import {
+  acrescentarItem,
+  comEtapa,
+  ehColetavel,
+  entradasDaSecao,
+  etapasEmOrdem,
+  fatosCitadosPeloConteudo,
+  renumerar,
+  SECAO_DADOS_BASICOS,
+  TIPO_BLOCO,
+  TIPO_SECAO,
+  todosOsCampos,
+  type ConteudoDoFormulario,
+  type FatoDoFormulario,
+  type ItemDoFormulario,
+} from '@uniplus/shared-ui/components';
 
 import type {
   CriterioDesempateConfigurado,
+  DerivacaoDeFato,
   ExigenciasDoRascunho,
-  FatoColetadoConfig,
   FormularioDeInscricao,
   ReferenciaTemporalConfig,
   WizardDraft,
 } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { desempateUsaDataDeNascimento, FATO_DATA_NASCIMENTO } from '../desempate/desempate-por-idade';
+import { fatosColetadosPor } from './formulario-do-processo';
 
 /**
- * O formulário de inscrição do certame: o que o candidato lê no topo e os campos que preenche.
+ * O formulário de inscrição do certame e o que o resto do processo exige dele.
  *
- * Os campos SÃO os fatos coletados — a renderização pública projeta exatamente esta lista, na
- * ordem declarada, juntando os valores de domínio do catálogo. Por isso "declarar um campo" e
- * "declarar que o certame coleta um fato" são a mesma decisão.
+ * Os campos SÃO os fatos coletados — a renderização pública projeta exatamente os itens, na ordem
+ * declarada. Por isso "declarar um campo" e "declarar que o certame coleta um fato" são a mesma
+ * decisão, e uma exigência condicionada a um fato pressupõe o campo dele.
  */
-
-/** O prefixo de binding que separa o fato coletável do derivado. */
-const BINDING_DE_CAMPO = 'CAMPO_INSCRICAO:';
-
-/** A origem que diz que o valor vem do candidato, não de cálculo. */
-const ORIGEM_DECLARADO = 'DECLARADO';
 
 /**
- * Só um fato declarado pelo candidato, com binding de campo de inscrição e um tipo de campo que
- * o colete, pode virar campo do formulário. Modalidade e faixa etária são derivados: resolvem por
- * outro caminho, e o servidor recusa qualquer tentativa de coletá-los.
- *
- * O tipo de campo (`renderizacaoDe`) não é escolha da tela: deriva do domínio e da cardinalidade
- * do fato, e o servidor recusa o que não bate.
+ * Os fatos do conjunto básico do candidato, que a API põe na seção reservada de todo formulário de
+ * inscrição (`ConjuntoBasicoDaInscricao`). Valem como coletados antes de o formulário existir no
+ * servidor: acrescentar um deles fora da seção reservada seria recusado como alteração dos dados
+ * básicos. Depois da criação, a referência é a seção que o servidor devolve.
  */
-export function ehColetavel(fato: FatoCandidatoView): boolean {
-  return (
-    fato.origem === ORIGEM_DECLARADO &&
-    typeof fato.binding === 'string' &&
-    fato.binding.startsWith(BINDING_DE_CAMPO) &&
-    fato.binding.length > BINDING_DE_CAMPO.length &&
-    renderizacaoDe(fato) !== null
-  );
+export const FATOS_DO_CONJUNTO_BASICO: readonly string[] = [
+  'NOME',
+  'DESEJA_NOME_SOCIAL',
+  'NOME_SOCIAL',
+  'NACIONALIDADE',
+  'CPF',
+  'RG_NUMERO',
+  'RG_ORGAO_EMISSOR',
+  'RG_UF',
+  'RG_DATA_EMISSAO',
+  'DOCUMENTO_ESTRANGEIRO_TIPO',
+  'DOCUMENTO_ESTRANGEIRO_NUMERO',
+  'DATA_NASCIMENTO',
+  'NATURALIDADE_UF',
+  'NATURALIDADE_MUNICIPIO',
+  'NOME_MAE',
+  'NOME_PAI',
+  'ESTADO_CIVIL',
+  'SEXO',
+  'COR_RACA',
+  'EMAIL',
+  'TELEFONE',
+  'ENDERECO_RESIDENCIAL',
+];
+
+/** A seção em que entram os campos que as exigências pressupõem. Código fixo: é reaproveitada. */
+export const SECAO_OUTROS_DADOS = 'OUTROS_DADOS_EXIGIDOS';
+export const TITULO_SECAO_OUTROS_DADOS = 'Outros dados exigidos pelo certame';
+
+/** O conjunto básico enquanto a seção dele ainda não chegou do servidor; depois, a seção o traz. */
+function basicosAindaNaoGravados(conteudo: ConteudoDoFormulario): readonly string[] {
+  return (conteudo.etapas ?? []).some((etapa) => etapa.codigo === SECAO_DADOS_BASICOS) ? [] : FATOS_DO_CONJUNTO_BASICO;
 }
 
 /**
- * Os fatos que alguma exigência documental cita no gatilho dela.
- *
- * É o conjunto que o formulário precisa conter: uma exigência condicionada a um fato que o
- * certame não coleta nunca se resolve para candidato nenhum. Percorre a árvore inteira, porque
+ * Os fatos que o formulário de inscrição coleta, contando o conjunto básico enquanto a seção dele
+ * ainda não chegou do servidor.
+ */
+export function fatosColetadosPelaInscricao(conteudo: ConteudoDoFormulario): ReadonlySet<string> {
+  return new Set([...fatosColetadosPor(conteudo), ...basicosAindaNaoGravados(conteudo)]);
+}
+
+/**
+ * O que o editor da inscrição não oferece para coletar: o que as outras finalidades coletam e o
+ * conjunto básico ainda não gravado, que a API põe na seção reservada e recusa em outra seção.
+ */
+export function fatosForaDaColetaDaInscricao(conteudo: ConteudoDoFormulario, dasOutrasFinalidades: readonly string[]): readonly string[] {
+  return [...dasOutrasFinalidades, ...basicosAindaNaoGravados(conteudo)];
+}
+
+/**
+ * Os fatos que alguma exigência documental cita no gatilho dela. Percorre a árvore inteira, porque
  * a exigência pode estar dentro de um grupo.
  */
 export function fatosCitadosPelasExigencias(exigencias: ExigenciasDoRascunho): ReadonlySet<string> {
@@ -62,118 +105,144 @@ export function fatosCitadosPelasExigencias(exigencias: ExigenciasDoRascunho): R
   return citados;
 }
 
+/** O que o processo cita, fora do próprio formulário: exigências, derivação e desempate. */
+export interface CitantesNoProcesso {
+  readonly documentos: ExigenciasDoRascunho;
+  readonly derivacao: readonly DerivacaoDeFato[];
+  readonly desempate: readonly CriterioDesempateConfigurado[];
+}
+
+/** Como a frase de recusa nomeia o documento e o fato. */
+export interface NomesDosCitantes {
+  readonly documento: (tipoDocumentoId: string) => string;
+  readonly fato: (codigo: string) => string;
+}
+
+/** Para quem só quer saber QUEM cita, não como a frase o nomeia. */
+const SEM_NOMES: NomesDosCitantes = { documento: (id) => id, fato: (codigo) => codigo };
+
 /**
- * O formulário com os campos que as exigências pressupõem já incluídos, e sem os que **este
- * mecanismo** acrescentou e nenhuma exigência cita mais.
+ * Quem, no processo, cita cada fato: os documentos cujo gatilho o usa, as regras de derivação que
+ * dependem dele e o desempate por maior idade, que ordena pela data de nascimento. É a fonte única
+ * do que o formulário de inscrição precisa coletar (o campo entra sozinho) e do que não pode sair
+ * dele (a remoção é recusada com o motivo). As citações de dentro do formulário ficam com o editor.
+ */
+export function quemCitaNoProcesso(
+  processo: CitantesNoProcesso,
+  nomes: NomesDosCitantes = SEM_NOMES,
+): ReadonlyMap<string, readonly string[]> {
+  const citantes = new Map<string, string[]>();
+  const citar = (fato: string, quem: string): void => {
+    const atuais = citantes.get(fato) ?? [];
+    if (!atuais.includes(quem)) citantes.set(fato, [...atuais, quem]);
+  };
+
+  for (const exigencia of todasAsExigencias(processo.documentos)) {
+    for (const condicao of exigencia.condicoes) {
+      citar(condicao.fato, `o documento “${nomes.documento(exigencia.tipoDocumentoId)}”`);
+    }
+  }
+  for (const config of processo.derivacao) {
+    for (const fato of fatosCitadosPelaDerivacao(config.regras)) {
+      if (fato !== config.codigoFato) citar(fato, `as regras que calculam “${nomes.fato(config.codigoFato)}”`);
+    }
+  }
+  if (desempateUsaDataDeNascimento(processo.desempate)) citar(FATO_DATA_NASCIMENTO, 'o desempate por maior idade');
+
+  return citantes;
+}
+
+/** O motivo, por fato, de o campo não poder sair: alguém no processo o cita. */
+export function remocoesTravadasPor(citantes: ReadonlyMap<string, readonly string[]>): ReadonlyMap<string, string> {
+  return new Map(
+    [...citantes].map(([fato, quem]) => [
+      fato,
+      `Não pode sair: ${quem.join(', ')} ${quem.length > 1 ? 'dependem' : 'depende'} deste dado. Desfaça a dependência antes de remover o campo.`,
+    ]),
+  );
+}
+
+/**
+ * O formulário de inscrição com os campos que o processo pressupõe já incluídos, e sem os que
+ * **este mecanismo** acrescentou e nada cita mais.
  *
- * As duas direções importam. Faltar o campo é configuração que não resolve; sobrar é coletar
- * dado do candidato sem finalidade — e `SEXO`, `COR_RACA` e afins são dado sensível, então o
- * campo órfão não é só ruído, é coleta indevida.
+ * As duas direções importam. Faltar o campo é configuração que não resolve; sobrar é coletar dado
+ * do candidato sem finalidade — e `SEXO`, `COR_RACA` e afins são dado sensível.
  *
- * `tambemCitados` são os fatos que algo ALÉM das exigências pressupõe — hoje, as regras que
- * derivam a modalidade, que perguntam ao candidato se ele quer concorrer a cada cota e se é
- * egresso de escola pública. Eles entram pelo mesmo caminho porque a recusa é a mesma: uma
- * regra que cita fato que o processo não coleta é recusada na gravação.
+ * "Presente" é o fato coletado por qualquer formulário do processo — `fatosDeOutrasFinalidades`
+ * conta, porque um fato tem um só formulário que o coleta — e o conjunto básico, que a API põe na
+ * seção reservada. O campo novo entra na seção "Outros dados exigidos pelo certame", sem exibição
+ * condicional (o campo oculto para parte dos candidatos nunca dispararia o gatilho para eles) e
+ * antes do primeiro bloco do sistema. A seção sai quando este mecanismo a esvazia.
  *
- * Mas só sai sozinho o que entrou sozinho: `postosPelasExigencias` é a memória do que ESTA
- * sessão acrescentou. Campo que veio da configuração gravada, ou que o operador declarou à
- * mão, permanece — ele foi declarado de propósito, e removê-lo ao reabrir o processo apagaria
- * no servidor, na gravação seguinte, uma configuração que ninguém pediu para tirar.
+ * Só sai sozinho o que entrou sozinho, e nada cita mais: `postosPelasExigencias` é a memória do
+ * que ESTA sessão acrescentou. Campo que veio da configuração gravada, ou que o operador declarou à mão,
+ * permanece — removê-lo apagaria no servidor uma configuração que ninguém pediu para tirar.
+ *
+ * Devolve o MESMO objeto quando nada muda: quem chama decide gravar por identidade.
  */
 export function comCamposQueAsExigenciasPressupoem(
-  formulario: FormularioDeInscricao,
-  exigencias: ExigenciasDoRascunho,
-  catalogo: readonly FatoCandidatoView[],
+  conteudo: ConteudoDoFormulario,
+  citados: ReadonlySet<string>,
+  catalogo: readonly FatoDoFormulario[],
   postosPelasExigencias: ReadonlySet<string>,
-  tambemCitados: Iterable<string> = [],
-): FormularioDeInscricao {
-  const citados = new Set([...fatosCitadosPelasExigencias(exigencias), ...tambemCitados]);
-  const coletaveis = new Map(catalogo.filter(ehColetavel).map((fato) => [fato.codigo, fato]));
-
-  const sobreviventes = formulario.fatos.filter(
-    (campo) => citados.has(campo.fatoCodigo) || !postosPelasExigencias.has(campo.fatoCodigo),
+  fatosDeOutrasFinalidades: readonly string[],
+): ConteudoDoFormulario {
+  // O campo que outra regra do próprio formulário cita fica: tirá-lo deixaria a regra citando o que
+  // ninguém coleta.
+  const citadosNoFormulario = fatosCitadosPeloConteudo(conteudo);
+  const orfaos = (conteudo.itens ?? []).filter(
+    (item) => postosPelasExigencias.has(item.fatoCodigo) && !citados.has(item.fatoCodigo) && !citadosNoFormulario.has(item.fatoCodigo),
   );
+  let resultado = orfaos.length === 0 ? conteudo : renumerar({ ...conteudo, itens: (conteudo.itens ?? []).filter((item) => !orfaos.includes(item)) });
 
-  const presentes = new Set(sobreviventes.map((campo) => campo.fatoCodigo));
-  const novos: FatoColetadoConfig[] = [];
+  const presentes = new Set([...fatosColetadosPelaInscricao(resultado), ...fatosDeOutrasFinalidades]);
+  const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
+  // Fato citado que não é coletável — modalidade, faixa etária — não vira campo: ele resolve por
+  // derivação ou por atributo do candidato, não por pergunta no formulário.
+  const novos = [...citados]
+    .filter((codigo) => !presentes.has(codigo))
+    .map((codigo) => porCodigo.get(codigo))
+    .filter((fato): fato is FatoDoFormulario => fato !== undefined && ehColetavel(fato));
 
-  for (const codigo of citados) {
-    if (presentes.has(codigo)) continue;
-    // Fato citado que não é coletável — modalidade, faixa etária — não vira campo: ele resolve
-    // por derivação ou por atributo do candidato, não por pergunta no formulário.
-    const fato = coletaveis.get(codigo);
-    const tipoRenderizacao = fato === undefined ? null : renderizacaoDe(fato);
-    if (fato === undefined || tipoRenderizacao === null) continue;
-
-    novos.push({
-      fatoCodigo: codigo,
-      ordem: 0,
-      rotulo: fato.nome,
-      tipoRenderizacao,
-      obrigatorio: true,
-      precondicao: null,
-    });
+  if (novos.length > 0) {
+    resultado = comSecaoDeOutrosDados(resultado);
+    for (const fato of novos) resultado = acrescentarItem(resultado, fato, SECAO_OUTROS_DADOS);
   }
 
-  // Devolve o MESMO objeto quando nada muda. Quem chama decide gravar por identidade, e um
-  // array novo a cada chamada faria a gravação do cronograma disparar um PUT de formulário
-  // toda vez, inclusive quando não há campo a acrescentar nem a tirar.
-  if (novos.length === 0 && sobreviventes.length === formulario.fatos.length) {
-    return formulario;
+  const esvaziouOutrosDados =
+    orfaos.some((item) => item.etapaCodigo === SECAO_OUTROS_DADOS) && entradasDaSecao(resultado, SECAO_OUTROS_DADOS).length === 0;
+  if (esvaziouOutrosDados) {
+    resultado = renumerar({ ...resultado, etapas: (resultado.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_OUTROS_DADOS) });
   }
 
-  return { ...formulario, fatos: renumerar([...sobreviventes, ...novos]) };
+  return resultado;
 }
 
-/**
- * Se os campos que se quer gravar diferem dos que o servidor já tem.
- *
- * Compara conteúdo, não identidade: a decisão de gravar precisa ser contra o servidor, senão a
- * retentativa de uma gravação que falhou pula o comando exatamente quando ele mais importa —
- * o rascunho já foi atualizado pela tentativa anterior.
- */
-export function divergeDoServidor(
-  desejados: readonly FatoColetadoInput[],
-  noServidor: readonly {
-    readonly fatoCodigo: string;
-    readonly rotulo: string;
-    readonly obrigatorio: boolean;
-    readonly tipoRenderizacao: string;
-  }[],
-): boolean {
-  if (desejados.length !== noServidor.length) return true;
+/** A seção dos outros dados, sem exibição condicional; criada antes do primeiro bloco do sistema se faltar. */
+function comSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
+  const existente = (conteudo.etapas ?? []).find((etapa) => etapa.codigo === SECAO_OUTROS_DADOS);
+  if (existente !== undefined) {
+    return existente.exibicao === null || existente.exibicao === undefined ? conteudo : comEtapa(conteudo, { ...existente, exibicao: null });
+  }
 
-  const porCodigo = new Map(noServidor.map((campo) => [campo.fatoCodigo, campo]));
-  return desejados.some((campo) => {
-    const atual = porCodigo.get(campo.fatoCodigo);
-    return (
-      atual === undefined ||
-      atual.rotulo !== campo.rotulo ||
-      atual.obrigatorio !== campo.obrigatorio ||
-      atual.tipoRenderizacao !== campo.tipoRenderizacao
-    );
+  const primeiroBloco = etapasEmOrdem(conteudo).find((etapa) => etapa.tipo === TIPO_BLOCO);
+  return renumerar({
+    ...conteudo,
+    etapas: [
+      ...(conteudo.etapas ?? []),
+      {
+        codigo: SECAO_OUTROS_DADOS,
+        ordem: primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : Number(primeiroBloco.ordem) - 0.5,
+        tipo: TIPO_SECAO,
+        bloco: null,
+        titulo: TITULO_SECAO_OUTROS_DADOS,
+        descricao: null,
+        aviso: null,
+        exibicao: null,
+      },
+    ],
   });
-}
-
-/** A ordem é posicional e sem buracos — o servidor recusa ordem repetida. */
-export function renumerar(campos: readonly FatoColetadoConfig[]): readonly FatoColetadoConfig[] {
-  return campos.map((campo, indice) => ({ ...campo, ordem: indice }));
-}
-
-/** Os campos do formulário no que o comando recebe. */
-export function comoComandoDeFatosColetados(
-  formulario: FormularioDeInscricao,
-): readonly FatoColetadoInput[] {
-  return renumerar(formulario.fatos).map((campo) => ({
-    fatoCodigo: campo.fatoCodigo,
-    ordem: campo.ordem,
-    rotulo: campo.rotulo.trim(),
-    tipoRenderizacao: campo.tipoRenderizacao as FatoColetadoInput['tipoRenderizacao'],
-    obrigatorio: campo.obrigatorio,
-    // A pré-condição não é editável nesta tela e viaja como veio: o comando substitui a
-    // coleção inteira, e sintetizá-la do zero apagaria o que outro caminho declarou.
-    precondicao: campo.precondicao as FatoColetadoInput['precondicao'],
-  }));
 }
 
 /**
@@ -209,15 +278,8 @@ export function problemasDoFormulario(
 ): readonly string[] {
   const problemas: string[] = [];
 
-  if (formulario.fatos.some((campo) => campo.rotulo.trim() === '')) {
+  if (todosOsCampos(formulario.conteudo).some((campo) => campo.rotulo.trim() === '')) {
     problemas.push('Todo campo do formulário precisa do rótulo que o candidato vai ler.');
-  }
-
-  const repetidos = formulario.fatos
-    .map((campo) => campo.fatoCodigo)
-    .filter((codigo, indice, todos) => todos.indexOf(codigo) !== indice);
-  if (repetidos.length > 0) {
-    problemas.push(`O mesmo dado foi declarado duas vezes no formulário: ${[...new Set(repetidos)].join(', ')}.`);
   }
 
   const referencia = formulario.referenciaTemporal;
@@ -247,71 +309,27 @@ export function problemasDoFormulario(
 
 /**
  * Os campos que o formulário coleta e nada no certame usa: nenhuma exigência os cita, nenhuma
- * regra de derivação depende deles e nenhum outro campo os tem como pré-condição.
+ * regra de derivação depende deles, o desempate não os usa e nenhuma regra do próprio formulário
+ * os cita. Os dados básicos ficam de fora: a API os coleta em toda inscrição.
  *
  * Não é erro — um edital pode querer coletar algo por outra razão —, e por isso não bloqueia a
  * gravação. É aviso porque a maior parte destes campos entrou sozinha, por causa de um gatilho
- * que depois foi apagado: a remoção automática só alcança o que ESTA sessão acrescentou, e um
- * campo posto ontem sobrevive à remoção do gatilho de hoje. Enquanto sobrevive, é dado pessoal
- * pedido ao candidato sem finalidade declarada.
+ * que depois foi apagado: a remoção automática só alcança o que ESTA sessão acrescentou.
+ * Enquanto sobrevive, é dado pessoal pedido ao candidato sem finalidade declarada.
  */
 export function camposSemUsoDeclarado(
   formulario: FormularioDeInscricao,
   exigencias: ExigenciasDoRascunho,
   desempate: readonly CriterioDesempateConfigurado[] = [],
-): readonly FatoColetadoConfig[] {
-  const usados = new Set(fatosCitadosPelasExigencias(exigencias));
+): readonly ItemDoFormulario[] {
+  const usados = new Set([
+    ...quemCitaNoProcesso({ documentos: exigencias, derivacao: formulario.derivacao, desempate }).keys(),
+    ...fatosCitadosPeloConteudo(formulario.conteudo),
+  ]);
 
-  // O desempate por maior idade ordena pela data de nascimento: é a finalidade que o dado tem.
-  if (desempateUsaDataDeNascimento(desempate)) usados.add(FATO_DATA_NASCIMENTO);
-
-  for (const config of formulario.derivacao) {
-    for (const codigo of fatosCitadosPelaDerivacao(config.regras)) {
-      usados.add(codigo);
-    }
-  }
-
-  for (const campo of formulario.fatos) {
-    for (const codigo of fatosCitadosPelaPrecondicao(campo.precondicao)) {
-      usados.add(codigo);
-    }
-  }
-
-  return formulario.fatos.filter((campo) => !usados.has(campo.fatoCodigo));
-}
-
-/**
- * O que, dentro do próprio formulário, depende deste dado — a derivação de outro fato ou a
- * condição de exibição de outro campo. Devolve uma frase por dependência, para a recusa de
- * remoção dizer onde mexer em vez de só dizer que não dá.
- *
- * A dependência que o próprio campo declara não conta: ela sai junto com ele.
- */
-export function regrasQueDependemDoFato(
-  formulario: FormularioDeInscricao,
-  codigo: string,
-): readonly string[] {
-  const dependem: string[] = [];
-
-  for (const config of formulario.derivacao) {
-    if (config.codigoFato === codigo) continue;
-    if (fatosCitadosPelaDerivacao(config.regras).includes(codigo)) {
-      dependem.push(`a derivação de ${config.codigoFato}`);
-    }
-  }
-
-  for (const campo of formulario.fatos) {
-    if (campo.fatoCodigo === codigo) continue;
-    if (fatosCitadosPelaPrecondicao(campo.precondicao).includes(codigo)) {
-      dependem.push(`a condição de "${nomeDoCampo(campo)}"`);
-    }
-  }
-
-  return dependem;
-}
-
-function nomeDoCampo(campo: FatoColetadoConfig): string {
-  return campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo;
+  return todosOsCampos(formulario.conteudo).filter(
+    (campo) => campo.etapaCodigo !== SECAO_DADOS_BASICOS && !usados.has(campo.fatoCodigo),
+  );
 }
 
 /**
@@ -322,17 +340,16 @@ export function fatosCitadosPelaDerivacao(regras: unknown): readonly string[] {
   if (!Array.isArray(regras)) return [];
   return regras.flatMap((regra: unknown) =>
     typeof regra === 'object' && regra !== null && 'quando' in regra
-      ? fatosCitadosPelaPrecondicao((regra as { quando: unknown }).quando)
+      ? fatosCitadosPeloPredicado((regra as { quando: unknown }).quando)
       : [],
   );
 }
 
 /**
- * Os fatos citados num predicado em forma normal disjuntiva — a lista de cláusulas, cada uma
- * com as suas condições. É a mesma forma na pré-condição de um campo e no `quando` de uma
- * regra de derivação, e as duas chegam ao rascunho como valor opaco.
+ * Os fatos citados num predicado em forma normal disjuntiva — a lista de cláusulas, cada uma com
+ * as suas condições. O `quando` de uma regra de derivação chega ao rascunho como valor opaco.
  */
-function fatosCitadosPelaPrecondicao(predicado: unknown): readonly string[] {
+function fatosCitadosPeloPredicado(predicado: unknown): readonly string[] {
   if (!Array.isArray(predicado)) return [];
   return predicado.flatMap((clausula: unknown) =>
     Array.isArray(clausula)
@@ -376,16 +393,15 @@ const FATOS_COM_DOMINIO_NA_OFERTA = [
  * Campos que o formulário pergunta e para os quais a oferta não declara valor nenhum a escolher.
  *
  * O acoplamento é real e a publicação o cobra: um campo de seleção sobre um desses fatos com
- * oferta vazia é pendência estrutural. Dizê-lo aqui, no passo que acrescenta o campo, é o que
- * evita ao operador descobrir na revisão com o caminho inteiro a refazer — a oferta é declarada
- * no passo imediatamente anterior.
+ * oferta vazia é pendência estrutural. Dizê-lo no passo que acrescenta o campo, e no da oferta,
+ * evita ao operador descobrir na revisão com o caminho inteiro a refazer.
  */
 export function camposSemValoresOfertados(
   formulario: FormularioDeInscricao,
   atendimento: WizardDraft['atendimento'],
 ): readonly string[] {
   const perguntados = new Set(
-    formulario.fatos
+    todosOsCampos(formulario.conteudo)
       .filter((campo) => campo.tipoRenderizacao.startsWith('SELECAO'))
       .map((campo) => campo.fatoCodigo),
   );
