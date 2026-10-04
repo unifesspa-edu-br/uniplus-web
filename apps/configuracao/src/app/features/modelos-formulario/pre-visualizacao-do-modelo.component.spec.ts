@@ -166,7 +166,7 @@ describe('PreVisualizacaoDoModeloComponent', () => {
 
   it('recusa decimal no fato numérico de valor único, que só admite inteiro', () => {
     const campo = tela().querySelector('#cfg-simulacao-ANO') as HTMLInputElement;
-    campo.value = '7.5';
+    campo.value = '7,5';
     campo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
