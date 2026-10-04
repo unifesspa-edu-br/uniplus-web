@@ -61,10 +61,15 @@ export function faseEfetiva(escolhida: string, opcoes: readonly { readonly codig
   return opcoes.length === 1 ? opcoes[0].codigo : '';
 }
 
+/** A isenção só existe em processo que cobra taxa de inscrição; as outras finalidades, sempre. */
+export function finalidadeCabeNaCobranca(finalidade: string, cobraTaxa: boolean): boolean {
+  return finalidade !== FINALIDADE_ISENCAO_TAXA || cobraTaxa;
+}
+
 /**
- * As finalidades que ainda podem ganhar formulário: as que faltam, com fase no cronograma em que
- * são respondidas — sem ela a fase do formulário ficaria nula, e a publicação a recusa. A isenção
- * só existe em processo que cobra taxa de inscrição.
+ * As finalidades que ainda podem ganhar formulário: as que faltam, que cabem na cobrança do
+ * processo e com fase no cronograma em que são respondidas — sem ela a fase do formulário ficaria
+ * nula, e a publicação a recusa.
  */
 export function finalidadesParaAcrescentar(
   existentes: readonly string[],
@@ -74,7 +79,7 @@ export function finalidadesParaAcrescentar(
   return FINALIDADES.filter(
     (opcao) =>
       !existentes.includes(opcao.valor) &&
-      (opcao.valor !== FINALIDADE_ISENCAO_TAXA || cobraTaxa) &&
+      finalidadeCabeNaCobranca(opcao.valor, cobraTaxa) &&
       fases.some((fase) => faseServeAFinalidade(opcao.valor, fase)),
   );
 }
