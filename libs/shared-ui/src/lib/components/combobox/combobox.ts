@@ -321,8 +321,9 @@ export class ComboboxComponent {
       // diferentes: sem busca, o campo mostra o resumo do que já está marcado, e quem digita
       // a próxima consulta a acrescenta a "RG, CPF", filtrando por essa frase inteira e não
       // achando nada. O resumo volta quando a lista fecha, que é quando ele serve para
-      // conferir a escolha sem reabrir.
-      this.buscar('');
+      // conferir a escolha sem reabrir. Só o termo exibido volta a vazio: na busca externa, os
+      // resultados da consulta continuam, para marcar outros dela sem repeti-la.
+      this.busca.set('');
       return;
     }
 

@@ -405,3 +405,46 @@ describe('ComboboxComponent com a busca do hospedeiro', () => {
     expect([...nativo.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim())).toEqual(['Marabá (PA)']);
   });
 });
+
+@Component({
+  standalone: true,
+  imports: [ComboboxComponent],
+  template: `
+    <ui-combobox
+      rotulo="Municípios"
+      buscaExterna
+      multiplo
+      textoSemResultado="Buscando municípios…"
+      [grupos]="grupos()"
+      [values]="marcados()"
+      (valuesChange)="marcados.set($event)"
+      (buscaChange)="termos.push($event)"
+    />
+  `,
+})
+class HospedeiroDaBuscaExternaMultipla {
+  readonly grupos = signal<readonly UiComboboxGroup[]>([
+    { label: 'Encontrados', options: [{ value: '1504208', label: 'Marabá (PA)' }, { value: '1500107', label: 'Abaetetuba (PA)' }] },
+  ]);
+  readonly marcados = signal<readonly string[]>([]);
+  readonly termos: string[] = [];
+}
+
+describe('ComboboxComponent com a busca do hospedeiro e escolha múltipla', () => {
+  it('marcar um resultado não refaz a busca: os outros da mesma consulta continuam para marcar', async () => {
+    await TestBed.configureTestingModule({ imports: [HospedeiroDaBuscaExternaMultipla] }).compileComponents();
+    const fixture = TestBed.createComponent(HospedeiroDaBuscaExternaMultipla);
+    fixture.detectChanges();
+    const nativo = fixture.nativeElement as HTMLElement;
+    const campo = nativo.querySelector('input[role="combobox"]') as HTMLInputElement;
+
+    campo.value = 'pa';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    nativo.querySelector('[role="option"]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.marcados()).toEqual(['1504208']);
+    expect(fixture.componentInstance.termos, 'nenhuma busca vazia ao hospedeiro').toEqual(['pa']);
+  });
+});
