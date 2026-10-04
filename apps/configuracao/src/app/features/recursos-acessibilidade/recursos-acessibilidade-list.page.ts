@@ -166,7 +166,7 @@ const PAGE_SIZE = 50;
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Recursos de acessibilidade, com descrição e situação de uso
+                Recursos de acessibilidade, com nome e descrição
               </caption>
               <thead>
                 <tr>
@@ -339,8 +339,16 @@ const PAGE_SIZE = 50;
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
-          Confirmar remoção
+        <button
+          type="button"
+          class="btn btn--danger"
+          [disabled]="saving()"
+          (click)="removerConfirmado()"
+        >
+          @if (saving()) {
+            <ui-spinner size="sm" />
+          }
+          {{ saving() ? 'Removendo...' : 'Remover' }}
         </button>
       </div>
     </ui-dialog>
@@ -656,7 +664,9 @@ export class RecursosAcessibilidadeListPage {
       this.recarregar();
       return;
     }
-    this.aplicarFalha(result.problem);
+    // A falha da remoção é mostrada no toast: aplicarFalha() escreve no formulário,
+    // que está fechado enquanto o diálogo de confirmação está aberto.
+    this.notifications.errorFromProblem(result.problem);
   }
 
   protected proximaPagina(): void {
