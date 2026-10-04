@@ -18,6 +18,7 @@ import {
   fatosCitaveisPeloGrupo,
   fatosOferecidos,
   fatosDeMembroParaAcrescentar,
+  motivoDaRemocaoTravadaDoGrupo,
   quantidadeNoTeto,
   moverCampoNoGrupo,
   removerCampoDoGrupo,
@@ -185,6 +186,7 @@ import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
               [erros]="errosPorCampo().get(campo.fatoCodigo) ?? []"
               [valoresConhecidos]="valoresConhecidos().get(campo.fatoCodigo) ?? []"
               [travadoPor]="travaDo(campo)"
+              [remocaoTravadaPor]="remocoesTravadas().get(campo.fatoCodigo) ?? null"
               (itemChange)="emitir(comCampoDoGrupo(grupo(), $event))"
               (mover)="moverOCampo(campo, $event)"
               (remover)="removerOCampo(campo)"
@@ -213,6 +215,10 @@ import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
         </button>
       </div>
 
+      @if (remocaoDoGrupoTravada(); as motivo) {
+        <p class="field__hint" [id]="idDe('remocao-travada')">O grupo não pode ser removido: {{ motivo }}</p>
+      }
+
       <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do grupo ' + nome()">
         <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para cima'" (click)="mover.emit(-1)">
           <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir
@@ -220,7 +226,14 @@ import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
         <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para baixo'" (click)="mover.emit(1)">
           <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer
         </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" [attr.aria-label]="'Remover o grupo ' + nome()" (click)="remover.emit()">
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [disabled]="disabled() || remocaoDoGrupoTravada() !== null"
+          [attr.aria-label]="'Remover o grupo ' + nome()"
+          [attr.aria-describedby]="remocaoDoGrupoTravada() !== null ? idDe('remocao-travada') : null"
+          (click)="remover.emit()"
+        >
           <i class="pi pi-trash" aria-hidden="true"></i> Remover grupo
         </button>
       </div>
@@ -243,6 +256,10 @@ export class GrupoDoFormularioComponent {
   /** As recusas da API que apontam o grupo, e as que apontam cada campo dele. */
   readonly erros = input<readonly string[]>([]);
   readonly errosPorCampo = input<ReadonlyMap<string, readonly string[]>>(new Map());
+  /** Os campos que não podem sair, com o motivo. */
+  readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
+  /** Os fatos de outra finalidade, que não podem entrar neste formulário. */
+  readonly fatosIndisponiveis = input<readonly string[]>([]);
 
   readonly grupoChange = output<GrupoDoFormulario>();
   readonly mover = output<-1 | 1>();
@@ -263,7 +280,9 @@ export class GrupoDoFormularioComponent {
   protected readonly desativados = computed(() => new Set(this.catalogo().filter((fato) => !fato.ativo).map((fato) => fato.codigo)));
   private readonly nomes = computed(() => new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome])));
 
-  protected readonly paraAcrescentar = computed(() => fatosDeMembroParaAcrescentar(this.conteudo(), this.catalogo()));
+  /** Remover o grupo leva os campos dele: o campo travado trava o grupo. */
+  protected readonly remocaoDoGrupoTravada = computed(() => motivoDaRemocaoTravadaDoGrupo(this.grupo(), this.remocoesTravadas()));
+  protected readonly paraAcrescentar = computed(() => fatosDeMembroParaAcrescentar(this.conteudo(), this.catalogo(), this.fatosIndisponiveis()));
   protected readonly noTeto = computed(
     () => quantidadeNoTeto(this.conteudo()) >= LIMITES_DO_FORMULARIO.itens || this.grupo().subitens.length >= MAXIMO_DE_CAMPOS_DO_GRUPO,
   );
@@ -381,7 +400,9 @@ export class GrupoDoFormularioComponent {
   protected alternarCandidato(evento: Event): void {
     // O navegador marca a caixa antes da recusa: ela volta ao estado real, que só muda se a edição for aceita.
     (evento.target as HTMLInputElement).checked = this.grupo().incluiCandidato;
-    this.aplicar(comCandidatoComoMembro(this.conteudo(), this.grupo(), !this.grupo().incluiCandidato, this.catalogo(), this.nomes()), (grupo) =>
+    this.aplicar(
+      comCandidatoComoMembro(this.conteudo(), this.grupo(), !this.grupo().incluiCandidato, this.catalogo(), this.nomes(), this.fatosIndisponiveis()),
+      (grupo) =>
       grupo.incluiCandidato
         ? 'O candidato passa a ser um dos membros: o parentesco é o primeiro campo, sempre obrigatório.'
         : 'O candidato deixa de ser um dos membros.',
@@ -408,6 +429,11 @@ export class GrupoDoFormularioComponent {
   }
 
   protected removerOCampo(campo: ItemDoFormulario): void {
+    const travado = this.remocoesTravadas().get(campo.fatoCodigo);
+    if (travado !== undefined) {
+      this.anuncio.emit(travado);
+      return;
+    }
     this.aplicar(removerCampoDoGrupo(this.grupo(), campo.fatoCodigo, this.nomes()), () => {
       focarDepois(this.injector, this.idDe('acrescentar'));
       return `Campo “${campo.rotulo}” removido de ${this.nome()}.`;

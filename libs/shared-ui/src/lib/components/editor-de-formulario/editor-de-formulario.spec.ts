@@ -153,4 +153,55 @@ describe('EditorDeFormularioComponent', () => {
     expect(caixas[1].checked).toBe(false);
     expect(status()).toContain('O parentesco já é campo de outro grupo');
   });
+
+  describe('no processo', () => {
+    it('as condições citam os fatos da inscrição, que não são gravados, e a seção de pressupostos some', () => {
+      fixture.componentRef.setInput('finalidade', 'HABILITACAO');
+      fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DA_INSCRICAO')]);
+      fixture.componentRef.setInput('fatosDaInscricao', ['DA_INSCRICAO']);
+      fixture.detectChanges();
+
+      // O campo A é o primeiro: só o fato da inscrição é conhecido antes dele, e a condição nova nasce sobre ele.
+      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0]
+        .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
+      alternativa.click();
+      fixture.detectChanges();
+
+      const editado = emitidos.at(-1);
+      expect(editado?.itens?.find((i) => i.fatoCodigo === 'A')?.precondicao?.[0]?.[0]?.fato).toBe('DA_INSCRICAO');
+      expect(editado?.pressupostos ?? [], 'o fato da inscrição não é gravado').toEqual([]);
+      expect(tela().textContent).not.toContain('Fatos pressupostos');
+      const ofertados = [...(tela().querySelector('#f-etapa-S1-acrescentar') as HTMLSelectElement).options].map((o) => o.value);
+      expect(ofertados, 'o fato que a inscrição coleta não é oferecido como campo').not.toContain('DA_INSCRICAO');
+    });
+
+    it('o fato de outra finalidade não é oferecido, e o campo travado não sai e diz por quê', () => {
+      fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DE_OUTRA'), fato('LIVRE')]);
+      fixture.componentRef.setInput('fatosIndisponiveis', ['DE_OUTRA']);
+      fixture.componentRef.setInput('remocoesTravadas', new Map([['A', 'Uma exigência documental cita este campo.']]));
+      fixture.detectChanges();
+
+      const ofertados = [...(tela().querySelector('#f-etapa-S1-acrescentar') as HTMLSelectElement).options].map((o) => o.value);
+      expect(ofertados).toContain('LIVRE');
+      expect(ofertados).not.toContain('DE_OUTRA');
+
+      const remover = [...tela().querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Remover o campo Campo A') as HTMLButtonElement;
+      expect(remover.disabled).toBe(true);
+      expect(tela().textContent).toContain('Uma exigência documental cita este campo.');
+    });
+
+    it('o grupo cujo campo está travado não pode ser removido, e diz por quê', () => {
+      const grupo = {
+        codigo: 'FAMILIA', ordem: 3, rotulo: 'Família', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
+        obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, incluiCandidato: false, subitens: [item('RENDA', 0, { etapaCodigo: null })],
+      };
+      fixture.componentRef.setInput('conteudo', { ...conteudo, grupos: [grupo] });
+      fixture.componentRef.setInput('remocoesTravadas', new Map([['RENDA', 'Uma exigência documental cita a renda.']]));
+      fixture.detectChanges();
+
+      const remover = [...tela().querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Remover o grupo Família') as HTMLButtonElement;
+      expect(remover.disabled).toBe(true);
+      expect(tela().textContent).toContain('O grupo não pode ser removido: Uma exigência documental cita a renda.');
+    });
+  });
 });

@@ -57,6 +57,10 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         }
       </div>
 
+      @if (remocaoTravadaPor(); as motivo) {
+        <p class="field__hint" [id]="idDe('remocao-travada')">{{ motivo }}</p>
+      }
+
       @if (travadoPor(); as motivo) {
         <p class="field__hint" [id]="idDe('trava')">{{ motivo }}</p>
       }
@@ -202,8 +206,9 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         <button
           class="btn btn--tertiary btn--sm"
           type="button"
-          [disabled]="disabled()"
+          [disabled]="disabled() || remocaoTravadaPor() !== null"
           [attr.aria-label]="'Remover o campo ' + nome()"
+          [attr.aria-describedby]="remocaoTravadaPor() !== null ? idDe('remocao-travada') : null"
           (click)="remover.emit()"
         >
           <i class="pi pi-trash" aria-hidden="true"></i> Remover
@@ -236,6 +241,8 @@ export class ItemDoFormularioComponent {
   readonly impedimentoPermitido = input<boolean>(false);
   /** O nível do título: 4 no item da seção, 5 no campo do grupo, que fica sob o título do grupo. */
   readonly nivelDoTitulo = input<4 | 5>(4);
+  /** Por que o campo não pode ser removido — no processo, uma exigência ou outra regra o cita. */
+  readonly remocaoTravadaPor = input<string | null>(null);
   /** Por que a obrigatoriedade e a exibição não se editam — o parentesco do grupo que inclui o candidato. */
   readonly travadoPor = input<string | null>(null);
   /** Os fatos que a condição do impedimento cita, o próprio campo primeiro. */
