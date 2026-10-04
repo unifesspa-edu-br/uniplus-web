@@ -1,5 +1,5 @@
 import { HttpParams } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
@@ -26,11 +26,13 @@ import {
   CONFIGURACAO_BASE_PATH,
   FaseCanonicaDto,
   FatoCandidatoDto,
+  FatoCandidatoView,
   FatosCandidatoApi,
 } from '@uniplus/shared-data/configuracao';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO, sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
 import {
   AlertComponent,
+  ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
@@ -50,12 +52,16 @@ import {
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
   ORIGENS,
+  acaoDeAtivacao,
   campoDaRecusa,
   classificacoesDoDominio,
+  fatosDeMembroAgregaveis,
   hipotesesDaClassificacao,
+  resumoDoAgregado,
   rotuloDe,
   temFonteDeValores,
   temFormato,
+  type AcaoDeAtivacao,
   type OpcaoDeVocabulario,
 } from './fato-candidato.regras';
 
@@ -64,8 +70,17 @@ const PAGE_SIZE = 50;
 /** O código do fato já existe — ativo ou desativado: código de fato nunca se reutiliza. */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.fato_candidato.codigo_ja_existe';
 
-/** O que o administrador cria: um fato perguntado ao candidato, ou um derivado por regra. */
-type TipoDeCriacao = 'DECLARADO' | 'DERIVADO';
+/**
+ * O que o administrador cria: um fato perguntado ao candidato, um derivado por regra, ou um agregado
+ * que resume o que os membros de um grupo repetível responderam.
+ */
+type TipoDeCriacao = 'DECLARADO' | 'DERIVADO' | 'AGREGADO';
+
+/** A desativação ou reativação que aguarda a confirmação do administrador. */
+interface PedidoDeAtivacao {
+  readonly fato: FatoCandidatoDto;
+  readonly acao: AcaoDeAtivacao;
+}
 
 interface CriacaoForm {
   tipo: FormControl<TipoDeCriacao>;
@@ -73,6 +88,7 @@ interface CriacaoForm {
   nome: FormControl<string>;
   descricao: FormControl<string>;
   dominio: FormControl<string>;
+  fatoDeMembro: FormControl<string>;
   cardinalidade: FormControl<string>;
   fonteValores: FormControl<string>;
   formato: FormControl<string>;
@@ -96,6 +112,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
   imports: [
     ReactiveFormsModule,
     AlertComponent,
+    ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
     FatoCandidatoEdicaoComponent,
@@ -147,7 +164,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     <section class="panel" aria-labelledby="cfg-fatos-list-title">
       <div class="panel-head">
         <div class="panel-head__title">
-          <h2 id="cfg-fatos-list-title">Fatos do candidato</h2>
+          <h2 #tituloDaLista id="cfg-fatos-list-title" tabindex="-1">Fatos do candidato</h2>
           @if (loading()) {
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
@@ -195,6 +212,26 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                       [isDisabled]="loading()"
                       (triggered)="abrirEdicao(fato.id)"
                     />
+                    @switch (acaoDeAtivacao(fato)) {
+                      @case ('DESATIVAR') {
+                        <ui-icon-button
+                          icon="pi-power-off"
+                          [accessibleName]="'Desativar o fato ' + fato.codigo"
+                          tooltip="Desativar fato"
+                          [isDisabled]="loading() || ativando()"
+                          (triggered)="pedirAtivacao(fato, 'DESATIVAR')"
+                        />
+                      }
+                      @case ('REATIVAR') {
+                        <ui-icon-button
+                          icon="pi-replay"
+                          [accessibleName]="'Reativar o fato ' + fato.codigo"
+                          tooltip="Reativar fato"
+                          [isDisabled]="loading() || ativando()"
+                          (triggered)="pedirAtivacao(fato, 'REATIVAR')"
+                        />
+                      }
+                    }
                   </td>
                 </tr>
               }
@@ -247,6 +284,11 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
               <span class="radio__circle"></span>
               Derivado por regra de outros fatos
             </label>
+            <label class="radio">
+              <input type="radio" formControlName="tipo" value="AGREGADO" />
+              <span class="radio__circle"></span>
+              Resumo das respostas dos membros de um grupo (ex.: composição familiar)
+            </label>
           </fieldset>
 
           <div class="form-grid form-grid--pair">
@@ -280,7 +322,47 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             }
           </label>
 
+          @if (agregado()) {
+            @if (catalogoComErro()) {
+              <ui-alert variant="warning" heading="Fatos de membro não carregados">
+                Sem o catálogo de fatos não é possível escolher o fato de membro que o agregado resume.
+                <div class="cfg-list__retry">
+                  <button type="button" class="btn btn--secondary btn--sm" (click)="catalogo.reload()">Tentar novamente</button>
+                </div>
+              </ui-alert>
+            }
+            <label class="field field--full" [class.is-error]="erro('fatoDeMembro')">
+              <span class="field__label is-required">Fato de membro resumido</span>
+              <select
+                class="select"
+                formControlName="fatoDeMembro"
+                [attr.aria-busy]="catalogo.isLoading() ? 'true' : null"
+                [attr.aria-invalid]="erro('fatoDeMembro') ? 'true' : null"
+                [attr.aria-describedby]="erro('fatoDeMembro') ? 'cfg-fato-membro-dica cfg-fato-fatoDeMembro-erro' : 'cfg-fato-membro-dica'"
+              >
+                <option value="">Selecione…</option>
+                @for (membro of fatosDeMembro(); track membro.codigo) {
+                  <option [value]="membro.codigo">{{ membro.nome }} ({{ membro.codigo }})</option>
+                }
+              </select>
+              <span class="field__hint" id="cfg-fato-membro-dica" aria-live="polite">
+                @if (membroEscolhido(); as membro) {
+                  {{ resumo(membro.dominio) }} O fato de membro é conhecido a partir da fase {{ nomeDaFase(membro.pontoResolucao) }};
+                  o agregado não pode ser conhecido antes dela nem ter proteção de dados mais fraca.
+                } @else if (!catalogo.isLoading() && !catalogoComErro() && fatosDeMembro().length === 0) {
+                  Nenhum fato de membro de grupo ativo, de sim ou não ou de lista de valores, no catálogo.
+                } @else {
+                  Fatos declarados de membro de grupo, de sim ou não ou de lista de valores.
+                }
+              </span>
+              @if (erro('fatoDeMembro')) {
+                <span class="field__error" id="cfg-fato-fatoDeMembro-erro">{{ erro('fatoDeMembro') }}</span>
+              }
+            </label>
+          }
+
           <div class="form-grid form-grid--pair">
+            @if (!agregado()) {
             <label class="field" [class.is-error]="erro('dominio')">
               <span class="field__label is-required">Tipo de dado</span>
               <select class="select" formControlName="dominio" [attr.aria-invalid]="erro('dominio') ? 'true' : null" [attr.aria-describedby]="erro('dominio') ? 'cfg-fato-dominio-erro' : null">
@@ -293,6 +375,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 <span class="field__error" id="cfg-fato-dominio-erro">{{ erro('dominio') }}</span>
               }
             </label>
+            }
             @if (declarado()) {
               <label class="field" [class.is-error]="erro('cardinalidade')">
                 <span class="field__label is-required">Quantos valores</span>
@@ -334,6 +417,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 }
               </label>
             }
+            @if (!agregado()) {
             <label class="field" [class.is-error]="erro('escopo')">
               <span class="field__label is-required">De quem é o dado</span>
               <select class="select" formControlName="escopo" [attr.aria-invalid]="erro('escopo') ? 'true' : null" [attr.aria-describedby]="erro('escopo') ? 'cfg-fato-escopo-erro' : null">
@@ -345,6 +429,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 <span class="field__error" id="cfg-fato-escopo-erro">{{ erro('escopo') }}</span>
               }
             </label>
+            }
             <label class="field" [class.is-error]="erro('pontoResolucao')">
               <span class="field__label is-required">Conhecido a partir da fase</span>
               <select class="select" formControlName="pontoResolucao" [attr.aria-busy]="fases.isLoading() ? 'true' : null" [attr.aria-invalid]="erro('pontoResolucao') ? 'true' : null" [attr.aria-describedby]="erro('pontoResolucao') ? 'cfg-fato-pontoResolucao-erro' : null">
@@ -408,6 +493,15 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
         </div>
       }
     </ui-drawer>
+
+    <ui-confirm-dialog
+      [(visible)]="confirmacaoAberta"
+      [heading]="pedidoDeAtivacao()?.acao === 'REATIVAR' ? 'Reativar fato do candidato' : 'Desativar fato do candidato'"
+      [message]="mensagemDaConfirmacao()"
+      [confirmLabel]="pedidoDeAtivacao()?.acao === 'REATIVAR' ? 'Reativar' : 'Desativar'"
+      [confirmVariant]="pedidoDeAtivacao()?.acao === 'REATIVAR' ? 'primary' : 'danger'"
+      (confirmed)="confirmarAtivacao()"
+    />
   `,
   host: { class: 'cfg-page' },
 })
@@ -425,6 +519,8 @@ export class FatosCandidatoPage {
   protected readonly formatos = FORMATOS_DE_TEXTO;
   protected readonly escopos = ESCOPOS;
   protected readonly rotulo = rotuloDe;
+  protected readonly resumo = resumoDoAgregado;
+  protected readonly acaoDeAtivacao = acaoDeAtivacao;
 
   protected readonly origemChips: readonly UiFilterChipOption[] = [
     { value: '', label: 'Todas' },
@@ -452,6 +548,13 @@ export class FatosCandidatoPage {
   private chaveDaCriacao = idempotencyKey.create();
   private ultimaSugestao = '';
 
+  protected readonly confirmacaoAberta = signal(false);
+  protected readonly pedidoDeAtivacao = signal<PedidoDeAtivacao | null>(null);
+  protected readonly ativando = signal(false);
+  private readonly erroDaAtivacao = signal<string | null>(null);
+  private chaveDaAtivacao = idempotencyKey.create();
+  private readonly tituloDaLista = viewChild<ElementRef<HTMLElement>>('tituloDaLista');
+
   private readonly lista = useApiResource<readonly FatoCandidatoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/admin/fatos-candidato`,
     params: this.montarParams(),
@@ -478,6 +581,21 @@ export class FatosCandidatoPage {
         'Recarregamos a listagem do começo.',
       ),
   });
+
+  /**
+   * O catálogo de onde sai o fato de membro do agregado. Só é pedido enquanto a criação de agregado
+   * está aberta, e cada abertura busca de novo: o fato de membro pode ter sido criado há pouco.
+   */
+  protected readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() =>
+    this.drawerAberto() && this.fatoEmEdicao() === null && this.agregado()
+      ? { url: `${this.basePath}/api/configuracao/fatos-candidato`, context: withVendorMime('fato-candidato', 1) }
+      : undefined,
+  );
+  protected readonly catalogoComErro = computed(() => this.catalogo.problem() !== null || this.catalogo.error() !== undefined);
+  protected readonly fatosDeMembro = computed(() => fatosDeMembroAgregaveis(this.catalogo.data() ?? []));
+  protected readonly membroEscolhido = computed(
+    () => this.fatosDeMembro().find((fato) => fato.codigo === this.valores().fatoDeMembro) ?? null,
+  );
 
   protected readonly fasesCanonicas = computed(() => this.fases.data() ?? []);
   protected readonly fasesComErro = computed(() => this.fases.problem() !== null || this.fases.error() !== undefined);
@@ -519,6 +637,18 @@ export class FatosCandidatoPage {
     return this.lista.error() ? 'Erro inesperado ao carregar os fatos.' : null;
   });
 
+  protected readonly mensagemDaConfirmacao = computed(() => {
+    const erro = this.erroDaAtivacao();
+    if (erro !== null) return erro;
+    const pedido = this.pedidoDeAtivacao();
+    if (pedido === null) return '';
+    return pedido.acao === 'DESATIVAR'
+      ? `Deseja desativar o fato ${pedido.fato.codigo}? Formulários, exigências documentais e critérios novos deixam de ` +
+          'poder citá-lo; o que já o cita continua valendo. O fato pode ser reativado depois.'
+      : `Deseja reativar o fato ${pedido.fato.codigo}? Ele volta a poder ser citado por formulários, exigências ` +
+          'documentais e critérios novos.';
+  });
+
   protected readonly tituloDoDrawer = computed(() => (this.fatoEmEdicao() === null ? 'Novo fato do candidato' : 'Fato do candidato'));
 
   protected readonly form = new FormGroup<CriacaoForm>({
@@ -530,6 +660,7 @@ export class FatosCandidatoPage {
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
     dominio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    fatoDeMembro: new FormControl('', { nonNullable: true }),
     cardinalidade: new FormControl('ESCALAR', { nonNullable: true }),
     fonteValores: new FormControl('', { nonNullable: true }),
     formato: new FormControl('', { nonNullable: true }),
@@ -545,6 +676,7 @@ export class FatosCandidatoPage {
   });
 
   protected readonly declarado = computed(() => this.valores().tipo === 'DECLARADO');
+  protected readonly agregado = computed(() => this.valores().tipo === 'AGREGADO');
   protected readonly dominiosDaCriacao = computed(() => (this.declarado() ? DOMINIOS : DOMINIOS_DO_DERIVADO));
   protected readonly temFonte = computed(() => temFonteDeValores(this.valores().dominio));
   protected readonly temFormatoDeTexto = computed(() => temFormato(this.valores().dominio));
@@ -569,13 +701,17 @@ export class FatosCandidatoPage {
       });
     });
 
-    // A fonte é obrigatória no categórico e o formato no texto — e só neles existem.
+    // A fonte é obrigatória no categórico e o formato no texto — e só neles existem. O agregado
+    // não escolhe o tipo de dado, que sai do fato de membro escolhido.
     effect(() => {
       const exigeFonte = this.declarado() && this.temFonte();
       const exigeFormato = this.declarado() && this.temFormatoDeTexto();
+      const agregado = this.agregado();
       untracked(() => {
         exigirSe(this.form.controls.fonteValores, exigeFonte);
         exigirSe(this.form.controls.formato, exigeFormato);
+        exigirSe(this.form.controls.dominio, !agregado);
+        exigirSe(this.form.controls.fatoDeMembro, agregado);
       });
     });
 
@@ -611,30 +747,32 @@ export class FatosCandidatoPage {
     this.salvando.set(true);
     this.erroDaCriacao.set(null);
     const v = this.form.getRawValue();
-    const comum = {
+    const identificacao = {
       codigo: v.codigo.trim(),
       nome: v.nome.trim(),
       descricao: v.descricao.trim() || null,
-      dominio: v.dominio,
       pontoResolucao: v.pontoResolucao,
-      escopo: v.escopo,
       classificacaoProtecao: v.classificacaoProtecao,
       finalidadeTratamento: v.finalidadeTratamento.trim(),
       hipoteseLegal: v.hipoteseLegal,
     };
+    const comum = { ...identificacao, dominio: v.dominio, escopo: v.escopo };
     const contexto = withIdempotencyKey(this.chaveDaCriacao);
+    // O agregado não manda tipo de dado nem escopo: os dois saem do fato de membro na API.
     const escrita =
-      v.tipo === 'DECLARADO'
-        ? this.api.criar(
-            {
-              ...comum,
-              cardinalidade: v.cardinalidade,
-              fonteValores: temFonteDeValores(v.dominio) ? v.fonteValores : null,
-              formato: temFormato(v.dominio) ? v.formato : null,
-            },
-            contexto,
-          )
-        : this.api.criarDerivado(comum, contexto);
+      v.tipo === 'AGREGADO'
+        ? this.api.criarAgregado({ ...identificacao, fatoDeMembro: v.fatoDeMembro }, contexto)
+        : v.tipo === 'DECLARADO'
+          ? this.api.criar(
+              {
+                ...comum,
+                cardinalidade: v.cardinalidade,
+                fonteValores: temFonteDeValores(v.dominio) ? v.fonteValores : null,
+                formato: temFormato(v.dominio) ? v.formato : null,
+              },
+              contexto,
+            )
+          : this.api.criarDerivado(comum, contexto);
 
     escrita.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
       this.salvando.set(false);
@@ -648,6 +786,48 @@ export class FatosCandidatoPage {
       }
       this.aplicarFalha(resultado.problem);
     });
+  }
+
+  protected pedirAtivacao(fato: FatoCandidatoDto, acao: AcaoDeAtivacao): void {
+    this.pedidoDeAtivacao.set({ fato, acao });
+    this.erroDaAtivacao.set(null);
+    this.chaveDaAtivacao = idempotencyKey.create();
+    this.confirmacaoAberta.set(true);
+  }
+
+  /**
+   * Desativa ou reativa o fato confirmado. No sucesso o foco vai ao título da lista: a linha do fato
+   * pode sair dela pelo filtro de situação, e o botão que tinha o foco sumiria junto. Na recusa o
+   * diálogo reabre com a mensagem da API — o fato pode ter mudado em outra sessão.
+   */
+  protected confirmarAtivacao(): void {
+    const pedido = this.pedidoDeAtivacao();
+    if (pedido === null || this.ativando()) return;
+    this.ativando.set(true);
+    const { fato, acao } = pedido;
+    const escrita =
+      acao === 'DESATIVAR' ? this.api.desativar(fato.id) : this.api.ativar(fato.id, withIdempotencyKey(this.chaveDaAtivacao));
+    escrita.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
+      this.ativando.set(false);
+      if (resultado.ok) {
+        this.notifications.success(acao === 'DESATIVAR' ? 'Fato desativado' : 'Fato reativado', fato.codigo);
+        this.pedidoDeAtivacao.set(null);
+        this.recarregar();
+        this.tituloDaLista()?.nativeElement.focus();
+        return;
+      }
+      if (deveRotacionarIdempotencyKey(resultado.problem)) {
+        this.chaveDaAtivacao = idempotencyKey.create();
+      }
+      const titulo = this.problemI18n.resolve(resultado.problem).title;
+      this.erroDaAtivacao.set(titulo);
+      this.confirmacaoAberta.set(true);
+      if (resultado.problem.status >= 500) this.notifications.errorFromProblem(resultado.problem, { title: titulo });
+    });
+  }
+
+  protected nomeDaFase(codigo: string): string {
+    return this.fasesCanonicas().find((fase) => fase.codigo === codigo)?.nome ?? codigo;
   }
 
   protected erro(campo: CampoDaCriacao): string | null {

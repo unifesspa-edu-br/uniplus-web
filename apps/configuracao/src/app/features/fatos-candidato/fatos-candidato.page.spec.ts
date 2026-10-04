@@ -11,6 +11,7 @@ import { FatosCandidatoPage } from './fatos-candidato.page';
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/admin/fatos-candidato`;
 const FASES = `${BASE}/api/configuracao/fases-canonicas`;
+const CATALOGO = `${BASE}/api/configuracao/fatos-candidato`;
 const PROBLEMA = (status: number) => ({ status, statusText: 'Recusa', headers: { 'content-type': 'application/problem+json' } });
 
 describe('FatosCandidatoPage', () => {
@@ -165,5 +166,129 @@ describe('FatosCandidatoPage', () => {
     );
     await propagar();
     expect(component['erro']('codigo')).not.toBeNull();
+  });
+
+  const fatoDoAdministrador = {
+    id: '01960000-0000-7000-0000-0000000000a1',
+    codigo: 'TRABALHA',
+    nome: 'Trabalha',
+    descricao: null,
+    dominio: 'BOOLEANO',
+    origem: 'DECLARADO',
+    cardinalidade: 'ESCALAR',
+    fonteValores: null,
+    formato: null,
+    pontoResolucao: 'INSCRICAO',
+    binding: 'CAMPO_INSCRICAO:TRABALHA',
+    escopo: 'CANDIDATO',
+    classificacaoProtecao: 'PESSOAL',
+    finalidadeTratamento: 'Classificar a reserva de vagas.',
+    hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    sistema: false,
+    ativo: true,
+    valores: [],
+    regrasPadrao: [],
+  };
+
+  it('CA-01: o agregado vai à API com o fato de membro, sem tipo de dado nem escopo, e a recusa do membro chega ao campo', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([]);
+    await propagar();
+    component['abrirCriacao']();
+    fixture.detectChanges();
+    await propagar();
+    expect(controller.match(CATALOGO), 'o catálogo só é pedido para o agregado').toHaveLength(0);
+
+    component['form'].patchValue({ tipo: 'AGREGADO' });
+    fixture.detectChanges();
+    await propagar();
+    controller.expectOne(CATALOGO).flush([
+      { id: 'm', codigo: 'MEMBRO_TRABALHA', nome: 'Membro trabalha', descricao: null, dominio: 'BOOLEANO', origem: 'DECLARADO',
+        cardinalidade: 'ESCALAR', valoresDominio: null, pontoResolucao: 'INSCRICAO', binding: 'CAMPO_FORMULARIO:MEMBRO_TRABALHA',
+        valoresDominioDeclarados: null, fonteValores: null, ativo: true, escopo: 'MEMBRO_GRUPO' },
+    ]);
+    await propagar();
+    component['form'].patchValue({
+      nome: 'Família com quem trabalha',
+      codigo: 'FAMILIA_TRABALHA',
+      fatoDeMembro: 'MEMBRO_TRABALHA',
+      pontoResolucao: 'INSCRICAO',
+      classificacaoProtecao: 'PESSOAL',
+      finalidadeTratamento: 'Avaliar a renda familiar.',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    });
+
+    component['criar']();
+    const agregado = controller.expectOne(`${LISTA}/agregados`);
+    expect(agregado.request.body).toEqual({
+      codigo: 'FAMILIA_TRABALHA',
+      nome: 'Família com quem trabalha',
+      descricao: null,
+      fatoDeMembro: 'MEMBRO_TRABALHA',
+      pontoResolucao: 'INSCRICAO',
+      classificacaoProtecao: 'PESSOAL',
+      finalidadeTratamento: 'Avaliar a renda familiar.',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    });
+    expect(agregado.request.headers.has('Idempotency-Key')).toBe(true);
+    agregado.flush(
+      JSON.stringify({
+        status: 422,
+        code: 'uniplus.validation_failed',
+        title: 'Requisição inválida',
+        errors: [{ field: 'fatoDeMembro', code: 'uniplus.vinculo_catalogo.fato_desativado', message: 'O fato está desativado.' }],
+      }),
+      PROBLEMA(422),
+    );
+    await propagar();
+    expect(component['erro']('fatoDeMembro')).toBe('O fato está desativado.');
+  });
+
+  it('CA-02: o fato de sistema não oferece desativar nem reativar', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([{ ...fatoDoAdministrador, sistema: true }]);
+    await propagar();
+    fixture.detectChanges();
+    const tela = fixture.nativeElement as HTMLElement;
+    expect(tela.querySelector('[aria-label^="Desativar"], [aria-label^="Reativar"]')).toBeNull();
+  });
+
+  it('CA-02: desativar confirmado vai à API e recarrega a lista; o foco passa ao título dela', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([fatoDoAdministrador]);
+    await propagar();
+
+    component['pedirAtivacao'](fatoDoAdministrador, 'DESATIVAR');
+    // O diálogo fecha ao confirmar.
+    component['confirmacaoAberta'].set(false);
+    component['confirmarAtivacao']();
+    controller
+      .expectOne((r) => r.method === 'DELETE' && r.url === `${LISTA}/${fatoDoAdministrador.id}`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+
+    controller.expectOne((r) => r.url === LISTA).flush([]);
+    expect(document.activeElement?.id).toBe('cfg-fatos-list-title');
+  });
+
+  it('CA-02: reativar leva a chave de idempotência, e a recusa reabre a confirmação com a mensagem da API', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([{ ...fatoDoAdministrador, ativo: false }]);
+    await propagar();
+
+    component['pedirAtivacao']({ ...fatoDoAdministrador, ativo: false }, 'REATIVAR');
+    // O diálogo fecha ao confirmar.
+    component['confirmacaoAberta'].set(false);
+    component['confirmarAtivacao']();
+    const ativacao = controller.expectOne(`${LISTA}/${fatoDoAdministrador.id}/ativacao`);
+    expect(ativacao.request.headers.has('Idempotency-Key')).toBe(true);
+    ativacao.flush(
+      JSON.stringify({ status: 422, code: 'uniplus.configuracao.fato_candidato.ja_ativo', title: 'O fato já está ativo.' }),
+      PROBLEMA(422),
+    );
+    await propagar();
+
+    expect(component['confirmacaoAberta']()).toBe(true);
+    expect(component['mensagemDaConfirmacao']()).not.toContain('Deseja reativar');
   });
 });

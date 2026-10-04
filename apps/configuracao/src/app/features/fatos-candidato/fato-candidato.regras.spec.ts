@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  acaoDeAtivacao,
   classificacoesDoDominio,
+  fatosDeMembroAgregaveis,
   fatosCitaveisPelaRegra,
   hipotesesDaClassificacao,
   indiceDaRegra,
   podeTerRegras,
   podeTerValores,
+  resumoDoAgregado,
 } from './fato-candidato.regras';
 
 const fato = (binding: string, extra: Partial<{ sistema: boolean; dominio: string; fonteValores: string | null }> = {}) => ({
@@ -62,5 +65,33 @@ describe('o que a API recusa e a tela não oferece', () => {
     expect(indiceDaRegra('regras[2].quando[0][1]')).toBe(2);
     expect(indiceDaRegra('regras[0]')).toBe(0);
     expect(indiceDaRegra('nome')).toBeNull();
+  });
+});
+
+describe('agregado de grupo', () => {
+  it('resume só fato declarado ativo de membro de grupo, sim ou não ou lista de valores', () => {
+    const membro = { ativo: true, escopo: 'MEMBRO_GRUPO', origem: 'DECLARADO', dominio: 'BOOLEANO' };
+    const catalogo = [
+      { ...membro, codigo: 'TRABALHA' },
+      { ...membro, codigo: 'PARENTESCO', dominio: 'CATEGORICO' },
+      { ...membro, codigo: 'RENDA', dominio: 'NUMERICO' },
+      { ...membro, codigo: 'ANTIGO', ativo: false },
+      { ...membro, codigo: 'QUILOMBOLA', escopo: 'CANDIDATO' },
+      { ...membro, codigo: 'IDOSO', origem: 'DERIVADO' },
+    ];
+    expect(fatosDeMembroAgregaveis(catalogo).map((f) => f.codigo)).toEqual(['TRABALHA', 'PARENTESCO']);
+  });
+
+  it('o membro sim ou não dá "existe membro que…"; o de lista de valores, os valores presentes', () => {
+    expect(resumoDoAgregado('BOOLEANO')).toContain('ao menos um membro');
+    expect(resumoDoAgregado('CATEGORICO')).toContain('valores que aparecem');
+  });
+});
+
+describe('ativação do fato', () => {
+  it('o fato de sistema não se desativa nem se reativa; o do administrador alterna', () => {
+    expect(acaoDeAtivacao({ sistema: true, ativo: true })).toBeNull();
+    expect(acaoDeAtivacao({ sistema: false, ativo: true })).toBe('DESATIVAR');
+    expect(acaoDeAtivacao({ sistema: false, ativo: false })).toBe('REATIVAR');
   });
 });
