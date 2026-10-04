@@ -124,6 +124,12 @@ export class ComboboxComponent {
   readonly value = input<string>('');
   readonly placeholder = input<string>('');
   readonly disabled = input<boolean>(false);
+  /**
+   * Na busca externa, o estado dela dito pelo hospedeiro — buscando, falha, nada achado. Vale
+   * sobre a contagem enquanto há termo: as opções já escolhidas, que seguem na lista, não são
+   * resultado da busca, e contá-las calaria o estado.
+   */
+  readonly estadoDaBusca = input<string | null>(null);
   /** A resposta não vale: o campo se anuncia inválido. */
   readonly invalido = input<boolean>(false);
   /** Ids de fora que descrevem o campo — o erro dele, por exemplo —, somados à contagem da lista. */
@@ -213,6 +219,8 @@ export class ComboboxComponent {
     if (termo === '') {
       return total === 1 ? '1 opção disponível.' : `${total} opções disponíveis.`;
     }
+    const estado = this.estadoDaBusca();
+    if (this.buscaExterna() && estado !== null) return estado;
     // Na busca externa, a lista vazia pode ser busca em curso ou termo curto demais, e só o
     // hospedeiro sabe dizer qual.
     if (total === 0) return this.buscaExterna() ? this.textoSemResultado() : `Nada encontrado para “${termo}”.`;

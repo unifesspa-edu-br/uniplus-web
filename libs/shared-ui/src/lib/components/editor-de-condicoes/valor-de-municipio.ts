@@ -92,6 +92,7 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         [grupos]="grupos()"
         [values]="values()"
         [disabled]="disabled()"
+        [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
         [descritoPor]="descritoPor()"
         (buscaChange)="buscar($event)"
@@ -106,6 +107,7 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         [grupos]="grupos()"
         [value]="values()[0] ?? ''"
         [disabled]="disabled()"
+        [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
         [descritoPor]="descritoPor()"
         (buscaChange)="buscar($event)"
@@ -174,6 +176,9 @@ export class ValorDeMunicipioComponent {
     if (this.buscando()) return 'Buscando municípios…';
     return 'Nenhum município com esse nome.';
   });
+
+  /** O estado da busca enquanto ela não achou nada a escolher: os já escolhidos não contam. */
+  protected readonly estadoDaBusca = computed(() => (this.encontrados().length === 0 ? this.textoSemResultado() : null));
 
   protected readonly grupos = computed<readonly UiComboboxGroup[]>(() => {
     const escolhidos = this.values();

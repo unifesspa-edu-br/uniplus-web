@@ -99,5 +99,13 @@ describe('PreVisualizacaoDeFormulariosComponent com campo de município', () => 
     (Array.from(host.querySelectorAll('button')).find((botao) => botao.textContent?.trim() === 'Pré-visualizar') as HTMLButtonElement).click();
 
     expect(enviada).toMatchObject({ respostas: { MUNICIPIO_RESIDENCIA: '1504208' } });
+
+    // A resposta volta a "sem resposta", como nos outros campos.
+    const limpar = (): HTMLButtonElement | undefined =>
+      Array.from(host.querySelectorAll<HTMLButtonElement>('button')).find((botao) => botao.textContent?.includes('sem resposta'));
+    limpar()?.click();
+    fixture.detectChanges();
+    expect(limpar(), 'sem resposta, não há o que limpar').toBeUndefined();
+    expect(host.querySelector('[role="option"][aria-selected="true"]')).toBeNull();
   });
 });

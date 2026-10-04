@@ -463,3 +463,24 @@ describe('ComboboxComponent com erro de fora', () => {
     expect(campo.getAttribute('aria-describedby')?.split(' ')).toContain('condicao-erro');
   });
 });
+
+describe('ComboboxComponent com o estado da busca do hospedeiro', () => {
+  it('anuncia o estado da busca mesmo com opções já escolhidas na lista', () => {
+    const fixture = TestBed.createComponent(ComboboxComponent);
+    fixture.componentRef.setInput('rotulo', 'Municípios');
+    fixture.componentRef.setInput('buscaExterna', true);
+    fixture.componentRef.setInput('multiplo', true);
+    fixture.componentRef.setInput('values', ['1504208']);
+    fixture.componentRef.setInput('grupos', [{ label: 'Escolhido', options: [{ value: '1504208', label: 'Marabá (PA)' }] }]);
+    fixture.componentRef.setInput('estadoDaBusca', 'Não foi possível buscar os municípios: serviço indisponível');
+    fixture.detectChanges();
+    const nativo = fixture.nativeElement as HTMLElement;
+    const campo = nativo.querySelector('input[role="combobox"]') as HTMLInputElement;
+
+    campo.value = 'Bel';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(nativo.querySelector('[role="status"]')?.textContent).toContain('Não foi possível buscar os municípios');
+  });
+});
