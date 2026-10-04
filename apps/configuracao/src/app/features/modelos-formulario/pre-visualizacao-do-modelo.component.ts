@@ -73,7 +73,18 @@ const ESTADOS: Readonly<Record<string, string>> = {
                   </select>
                 }
                 @case ('numero') {
-                  <input class="input" type="number" step="1" [id]="'cfg-simulacao-' + fato.codigo" (input)="responder(fato, valorDe($event))" />
+                  <input
+                    class="input"
+                    type="number"
+                    step="1"
+                    [id]="'cfg-simulacao-' + fato.codigo"
+                    [attr.aria-invalid]="invalidos().has(fato.codigo) ? 'true' : null"
+                    [attr.aria-describedby]="invalidos().has(fato.codigo) ? 'cfg-simulacao-' + fato.codigo + '-nota' : null"
+                    (input)="responder(fato, valorDe($event))"
+                  />
+                  @if (invalidos().has(fato.codigo)) {
+                    <span class="field__error" [id]="'cfg-simulacao-' + fato.codigo + '-nota'">Valor não reconhecido. Escreva um número inteiro.</span>
+                  }
                 }
                 @case ('lista') {
                   <select
@@ -314,7 +325,7 @@ export class PreVisualizacaoDoModeloComponent {
         : fato.controle === 'booleano'
           ? texto === 'true'
           : fato.controle === 'numero'
-            ? Number(texto)
+            ? valorNoDominio('NUMERICO', texto.trim())
             : fato.multiplo
               ? texto
                   .split(';')
@@ -322,7 +333,7 @@ export class PreVisualizacaoDoModeloComponent {
                   .filter((parte) => parte !== '')
                   .map((parte) => valorNoDominio(fato.dominio, parte))
               : texto;
-    const invalido = Array.isArray(valor) && valor.includes(NAO_RECONHECIDO);
+    const invalido = valor === NAO_RECONHECIDO || (Array.isArray(valor) && valor.includes(NAO_RECONHECIDO));
     this.invalidos.update((atual) => {
       const novos = new Set(atual);
       if (invalido) novos.add(fato.codigo);
