@@ -410,6 +410,17 @@ describe('restrições, município e impedimento', () => {
     ]);
   });
 
+  it('a UF conhecida antes do formulário — pressuposto ou coletada pela inscrição — também serve ao município', () => {
+    const semUf = conteudo({ etapas: [secao('S1', 0)] });
+
+    const resultado = acrescentarCampo(semUf, municipio, 'S1', [uf, municipio], ['UF']);
+
+    expect(resultado.ok && resultado.conteudo.itens?.find((i) => i.fatoCodigo === 'MUNICIPIO')?.restricoes).toEqual([
+      { tipo: 'MUNICIPIOS_DA_UF', fatos: ['UF'] },
+    ]);
+    expect(resultado.ok && resultado.conteudo.pressupostos, 'o fato conhecido antes não entra no conteúdo').toEqual([]);
+  });
+
   it('sem campo de UF antes, o município é recusado com a orientação', () => {
     const resultado = acrescentarCampo(conteudo({ etapas: [secao('S1', 0)] }), municipio, 'S1', [uf, municipio]);
 
