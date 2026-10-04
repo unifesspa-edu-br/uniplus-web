@@ -185,6 +185,14 @@ describe('EditorDeFormularioComponent', () => {
       expect(alternativa.disabled, 'nada vem antes do primeiro campo da inscrição').toBe(true);
     });
 
+    it('o campo citado por negação noutro formulário fica obrigatório também aqui', () => {
+      fixture.componentRef.setInput('fatosQueExigemRespostaPorFora', ['C']);
+      fixture.detectChanges();
+
+      const opcional = (tela().querySelector('#f-item-C-obrigatoriedade') as HTMLSelectElement).querySelector('option[value="NUNCA"]') as HTMLOptionElement;
+      expect(opcional.disabled).toBe(true);
+    });
+
     it('o fato de outra finalidade não é oferecido, e o campo travado não sai e diz por quê', () => {
       fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DE_OUTRA'), fato('LIVRE')]);
       fixture.componentRef.setInput('fatosIndisponiveis', ['DE_OUTRA']);
