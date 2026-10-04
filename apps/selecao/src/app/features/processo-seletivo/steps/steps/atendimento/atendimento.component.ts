@@ -54,12 +54,13 @@ function mensagemDeInativos(
  * Configuração — condições, recursos de acessibilidade e tipos de deficiência
  * —, referenciados por id; nenhuma delas é vocabulário local.
  *
- * **A regra do PcD vive no agregado, não aqui.** `tipoDeficienciaIds` só é
+ * **A regra do PcD é bicondicional (ADR-0067):** `tipoDeficienciaIds` só é
  * aceito quando a condição de código canônico `PCD` está entre `condicaoIds`
- * (`OfertaAtendimentoEspecializado.CodigoCondicaoPcd`, ADR-0067) — o
- * `CondicaoAtendimentoDto` não tem campo que vincule condição a tipo de
- * deficiência, então a checagem é por código, não por relação declarada no
- * contrato.
+ * (`OfertaAtendimentoEspecializado.CodigoCondicaoPcd`), e a condição `PCD`
+ * exige ao menos um tipo de deficiência. A tela recusa as duas direções antes
+ * de gravar — o `CondicaoAtendimentoDto` não tem campo que vincule condição a
+ * tipo de deficiência, então a checagem é por código, não por relação
+ * declarada no contrato.
  */
 @Component({
   selector: 'sel-step-atendimento',
@@ -419,6 +420,12 @@ export class AtendimentoStepComponent {
     if (this.atendimento().tiposDeficiencia.length > 0 && !this.pcdSelecionada()) {
       mensagens.push(
         'Tipos de deficiência exigem a condição "Pessoa com deficiência" marcada entre as condições aceitas.',
+      );
+    }
+
+    if (this.atendimento().tiposDeficiencia.length === 0 && this.pcdSelecionada()) {
+      mensagens.push(
+        'A condição "Pessoa com deficiência" exige ao menos um tipo de deficiência marcado. Marque um tipo ou desmarque a condição.',
       );
     }
 

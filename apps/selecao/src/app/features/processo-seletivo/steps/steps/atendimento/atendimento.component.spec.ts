@@ -193,17 +193,30 @@ describe('AtendimentoStepComponent', () => {
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
 
+  it('recusa a condição PcD sem tipo de deficiência antes de gravar (ADR-0067)', async () => {
+    componente.toggleCondicao(CONDICOES[0], true);
+    detectar();
+
+    expect(componente.validate().messages).toContain(
+      'A condição "Pessoa com deficiência" exige ao menos um tipo de deficiência marcado. Marque um tipo ou desmarque a condição.',
+    );
+    const resultado = await componente.persistir();
+    controller.expectNone(ROTA_ATENDIMENTO);
+    expect(resultado.valid).toBe(false);
+    expect(store.draft().atendimento.condicoes).toHaveLength(1);
+  });
+
   it('preserva o rascunho quando a API recusa', async () => {
     componente.toggleCondicao(CONDICOES[0], true);
+    componente.toggleTipoDeficiencia(TIPOS_DEFICIENCIA[0], true);
     detectar();
 
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_ATENDIMENTO).flush(
       {
         type: 'about:blank',
-        title: 'Tipo de deficiência sem condição PcD.',
+        title: 'Recusado.',
         status: 422,
-        code: 'uniplus.selecao.oferta_atendimento.tipo_deficiencia_sem_condicao_pcd',
         traceId: 'trace-1',
       },
       { status: 422, statusText: 'Unprocessable Entity' },
