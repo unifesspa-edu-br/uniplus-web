@@ -127,6 +127,21 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     expect(tela().querySelector('#cfg-simulacao-IDADE')).not.toBeNull();
   });
 
+  it('não oferece simular campo de grupo, cuja resposta a pré-visualização da API não recebe', () => {
+    fixture.componentRef.setInput('conteudo', {
+      ...conteudo,
+      grupos: [{
+        codigo: 'DEPENDENTES', ordem: 2, rotulo: 'Dependentes', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
+        obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, incluiCandidato: false,
+        subitens: [{ fatoCodigo: 'IDADE_DEPENDENTE', ordem: 0, rotulo: 'Idade', tipoRenderizacao: 'NUMERO', obrigatoriedade: 'SEMPRE', precondicao: null, pedirConfirmacao: false }],
+      }],
+    });
+    fixture.componentRef.setInput('catalogo', [fato('CERTIFICADO'), fato('ANO', 'NUMERICO'), fato('CONCLUIU'), fato('IDADE_DEPENDENTE', 'NUMERICO')]);
+    fixture.detectChanges();
+
+    expect(tela().querySelector('#cfg-simulacao-IDADE_DEPENDENTE')).toBeNull();
+  });
+
   it('com alteração não salva, não pré-visualiza e diz por quê', () => {
     fixture.componentRef.setInput('desatualizado', true);
     fixture.detectChanges();

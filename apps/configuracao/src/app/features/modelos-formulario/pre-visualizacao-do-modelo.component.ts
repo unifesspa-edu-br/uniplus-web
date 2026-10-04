@@ -15,7 +15,7 @@ import {
   type ConteudoDoFormulario,
 } from '@uniplus/shared-ui/components';
 
-/** Como o candidato responderia um fato citado pelas regras, na simulação. */
+/** Como o candidato responderia um campo do formulário ou um pressuposto, na simulação. */
 interface FatoSimulado {
   readonly codigo: string;
   readonly nome: string;
@@ -33,8 +33,8 @@ const ESTADOS: Readonly<Record<string, string>> = {
 };
 
 /**
- * A pré-visualização do modelo GRAVADO (UNI-REQ-0145): o administrador simula as respostas dos
- * fatos que as regras citam e vê, por campo e por termo, o que o candidato veria. A avaliação é a
+ * A pré-visualização do modelo GRAVADO (UNI-REQ-0145): o administrador simula as respostas aos
+ * campos do formulário e aos pressupostos e vê, por campo e por termo, o que o candidato veria. A avaliação é a
  * da API — a mesma da inscrição —, e o resumo é anunciado ao leitor de tela.
  */
 @Component({
@@ -220,7 +220,7 @@ export class PreVisualizacaoDoModeloComponent {
   readonly desatualizado = input<boolean>(false);
 
   // A simulação pertence ao conteúdo gravado: gravado de novo, recomeça — uma resposta guardada de
-  // fato que saiu das regras seguiria no envio sem controle na tela.
+  // campo que saiu do formulário seguiria no envio sem controle na tela.
   private readonly respostas = linkedSignal<ConteudoDoFormulario, ReadonlyMap<string, unknown>>({
     source: () => this.conteudo(),
     computation: () => new Map(),
@@ -240,14 +240,15 @@ export class PreVisualizacaoDoModeloComponent {
   protected readonly secoes = computed(() => etapasEmOrdem(this.conteudo()).filter((etapa) => etapa.tipo === 'SECAO'));
 
   /**
-   * Tudo o que o candidato responde: os campos do formulário e os pressupostos. Uma regra pode citar
-   * um derivado, que a API resolve a partir das respostas, e uma restrição confere a resposta do
-   * próprio campo — simular só os fatos citados deixaria os dois de fora.
+   * Os campos do formulário e os pressupostos. Uma regra pode citar um derivado, que a API resolve a
+   * partir das respostas, e uma restrição confere a resposta do próprio campo — simular só os fatos
+   * citados deixaria os dois de fora. Os campos de grupo ficam de fora: a pré-visualização da API não
+   * recebe respostas por ocorrência de grupo, e a resposta simulada não teria efeito.
    */
   protected readonly simulaveis = computed(() => {
     const conteudo = this.conteudo();
     return [
-      ...todosOsCampos(conteudo).map((campo) => ({ codigo: campo.fatoCodigo, origem: 'resposta' as const })),
+      ...(conteudo.itens ?? []).map((item) => ({ codigo: item.fatoCodigo, origem: 'resposta' as const })),
       ...(conteudo.pressupostos ?? []).map((codigo) => ({ codigo, origem: 'pressuposto' as const })),
     ];
   });
