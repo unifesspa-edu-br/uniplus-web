@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationRef } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,6 +9,7 @@ import {
   CondicaoAtendimentoDto,
 } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CondicoesAtendimentoListPage } from './condicoes-atendimento-list';
 
 const BASE = 'http://localhost:5000';
@@ -20,6 +21,14 @@ const condicao_atendimento_seed: CondicaoAtendimentoDto = {
   descricao: 'LBI (Lei 13.146/2015), art. 30',
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
 };
+const condicaoRemovivel: CondicaoAtendimentoDto = {
+  id: '019f41cf-69fd-759a-ac6d-09acabc1b028',
+  codigo: 'LEDOR',
+  nome: 'Ledor',
+  descricao: null,
+  criadoEm: '2026-07-07T13:23:42.707136+00:00',
+};
+const URL_REMOCAO = `${BASE}/api/configuracao/admin/condicoes-atendimento/${condicaoRemovivel.id}`;
 
 describe('CondicoesAtendimentoListPage', () => {
   let fixture: ComponentFixture<CondicoesAtendimentoListPage>;
@@ -335,7 +344,7 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Condições de atendimento especializado, com código, nome e situação',
+      'Condições de atendimento especializado, com código e nome',
     );
   });
   it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
@@ -345,5 +354,65 @@ describe('CondicoesAtendimentoListPage', () => {
       fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual(['Código', 'Nome', 'Ações']);
+    expect(fixture.nativeElement.querySelector('td[data-label="Status"]')).toBeNull();
+  });
+
+  it('CA-03/CA-04/CA-06: botão e diálogo falam em remover, com o botão principal travado durante a remoção', async () => {
+    await flushLista([condicaoRemovivel]);
+    fixture.detectChanges();
+    const lixeira = getRemoverButtonEl();
+    expect(lixeira.getAttribute('data-tooltip')).toBe('Remover condição de atendimento');
+    expect(lixeira.querySelector('.pi-trash')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Inativar');
+
+    lixeira.click();
+    fixture.detectChanges();
+    const dialogo = (
+      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
+    ).find((d) => d.textContent?.includes('prestes a')) as HTMLElement;
+    expect(dialogo.textContent).toContain('Remover condição de atendimento?');
+    expect(dialogo.textContent).toContain('Ledor/LEDOR');
+    const principal = () =>
+      Array.from(
+        dialogo.querySelectorAll('button.btn--danger') as NodeListOf<HTMLButtonElement>,
+      )[0];
+    expect(principal().textContent?.trim()).toBe('Remover');
+
+    principal().click();
+    fixture.detectChanges();
+    expect(principal().disabled).toBe(true);
+    expect(principal().textContent?.trim()).toBe('Removendo...');
+
+    controller
+      .expectOne((r) => r.url === URL_REMOCAO && r.method === 'DELETE')
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([]);
+  });
+
+  it('CA-11: falha na remoção avisa o usuário e mantém o registro e o diálogo', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    await flushLista([condicaoRemovivel]);
+    component['abrirRemoverCondicao'](condicaoRemovivel);
+    component['removerConfirmado']();
+
+    controller.expectOne(URL_REMOCAO).flush(
+      {
+        type: 'about:blank',
+        title: 'Condição de atendimento não encontrada',
+        status: 404,
+        code: 'uniplus.configuracao.condicao_atendimento.nao_encontrada',
+      },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalled();
+    expect(component['confirmOpen']()).toBe(true);
+    expect(component['saving']()).toBe(false);
+    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
   });
 });
