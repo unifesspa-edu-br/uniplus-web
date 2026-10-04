@@ -22,6 +22,9 @@ import {
   acrescentarSecao,
   distribuirRecusas,
   fatosCitaveisPeloItem,
+  fontesDasOpcoes,
+  opcoesDaFonteCabemNoAlvo,
+  problemaDoGrupoDeOpcoes,
   fatosParaAcrescentar,
   fatosQueExigemResposta,
   moverEtapa,
@@ -214,6 +217,18 @@ describe('moverItem', () => {
     });
   });
 
+  it.each([
+    ['a condição de um grupo das opções permitidas', { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: exibidoQuando('A'), valores: ['X'] }] }],
+    ['o campo de onde vêm as opções formadas pelas respostas', { tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['A'] }],
+  ])('recusa pôr o campo antes do que %s cita', (_caso, restricao) => {
+    const atual = conteudo({
+      etapas: [secao('S1', 0), REVISAO],
+      itens: [item('A', 0, 'S1'), item('B', 1, 'S1', { tipoRenderizacao: 'SELECAO_UNICA', restricoes: [restricao] })],
+    });
+
+    expect(moverItem(atual, 'B', -1, NOMES)).toEqual({ ok: false, recusa: '“B” cita “Campo A”, que ficaria depois. Mova primeiro o campo citado.' });
+  });
+
   it('o pressuposto é conhecido antes de todo item e não trava o movimento', () => {
     const comPressuposto = conteudo({ ...base, pressupostos: ['A'], itens: [item('B', 0, 'S1', { precondicao: exibidoQuando('A') }), item('C', 1, 'S1')] });
 
@@ -377,7 +392,8 @@ describe('restrições, município e impedimento', () => {
     [{ tipo: 'FAIXA_NUMERICA', minimo: 0.0000001, maximo: null }, 'Use no máximo 4 casas decimais.'],
     [{ tipo: 'TAMANHO_TEXTO', minimo: 1.5, maximo: null }, 'Os limites são números inteiros, a partir de zero.'],
     [{ tipo: 'TAMANHO_TEXTO', minimo: -1, maximo: null }, 'Os limites são números inteiros, a partir de zero.'],
-    [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: [] }] }, 'Escolha ao menos um valor permitido.'],
+    [{ tipo: 'OPCOES_PERMITIDAS', entradas: [] }, 'Declare ao menos um grupo de opções.'],
+    [{ tipo: 'OPCOES_DAS_RESPOSTAS', fatos: [] }, 'Escolha ao menos um campo de onde vêm as opções.'],
   ])('a restrição %o é recusada antes de ir à API', (restricao, problema) => {
     expect(problemaDaRestricao(restricao)).toBe(problema);
   });
@@ -395,6 +411,53 @@ describe('restrições, município e impedimento', () => {
     expect(restricoesParaAcrescentar({ ...numero, restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 0 }] }, false)).toEqual([]);
     expect(restricoesParaAcrescentar(selecao, false), 'sem valores conhecidos não há o que marcar').toEqual([]);
     expect(restricoesParaAcrescentar(selecao, true).map((r) => r.valor)).toEqual(['OPCOES_PERMITIDAS']);
+  });
+
+  it('oferece as opções das respostas anteriores na seleção só quando há campo anterior de onde elas venham', () => {
+    const selecao = item('LISTA_DE_ESPERA', 1, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' });
+
+    expect(restricoesParaAcrescentar(selecao, false, false)).toEqual([]);
+    expect(restricoesParaAcrescentar(selecao, false, true).map((r) => r.valor)).toEqual(['OPCOES_DAS_RESPOSTAS']);
+  });
+
+  it('cada grupo das opções permitidas precisa de ao menos um valor, com ou sem condição', () => {
+    expect(problemaDoGrupoDeOpcoes({ quando: exibidoQuando('A'), valores: [] })).toBe('Escolha ao menos um valor permitido.');
+  });
+
+  describe('de onde vêm as opções formadas pelas respostas', () => {
+    const curso = (codigo: string, valores: readonly string[] | null, extra: Partial<FatoDoFormulario> = {}): FatoDoFormulario =>
+      fato(codigo, { dominio: 'CATEGORICO', cardinalidade: 'MULTIVALORADO', fonteValores: 'GLOBAL', valoresDominio: valores, ...extra });
+
+    it.each([
+      ['os valores da fonte estão entre os do alvo', true, curso('ESPERA', ['MED', 'DIR', 'ENG']), curso('OPCOES', ['MED', 'DIR'])],
+      ['a fonte tem valor que o alvo não oferece', false, curso('ESPERA', ['MED']), curso('OPCOES', ['MED', 'DIR'])],
+      ['o domínio é outro', false, curso('ESPERA', ['MED']), curso('OPCOES', ['MED'], { dominio: 'TEXTO' })],
+      ['nenhum enumera e a fonte dos valores é a mesma', true, curso('ESPERA', null, { fonteValores: 'PROCESSO' }), curso('OPCOES', null, { fonteValores: 'PROCESSO' })],
+      ['nenhum enumera e a fonte dos valores é outra', false, curso('ESPERA', null, { fonteValores: 'PROCESSO' }), curso('OPCOES', null, { fonteValores: 'GEO_UF' })],
+      ['só um enumera', false, curso('ESPERA', ['MED']), curso('OPCOES', null, { fonteValores: 'PROCESSO' })],
+    ])('%s: cabe = %s', (_caso, cabe, alvo, fonte) => {
+      expect(opcoesDaFonteCabemNoAlvo(alvo, fonte)).toBe(cabe);
+    });
+
+    it('o domínio do processo, quando conhecido, conta como os valores enumerados', () => {
+      const alvo = curso('ESPERA', null, { fonteValores: 'PROCESSO' });
+      const fonte = curso('OPCOES', null, { fonteValores: 'PROCESSO' });
+
+      expect(opcoesDaFonteCabemNoAlvo(alvo, fonte, new Map([['ESPERA', ['MED']], ['OPCOES', ['MED', 'DIR']]]))).toBe(false);
+    });
+
+    it('oferece só os citáveis pelo campo cujas opções cabem nas dele, nunca o próprio', () => {
+      const catalogo = [
+        curso('ESPERA', ['MED', 'DIR']),
+        curso('OPCOES', ['MED']),
+        curso('POSTERIOR', ['MED']),
+        curso('OUTRO_DOMINIO', ['XYZ']),
+      ];
+
+      const fontes = fontesDasOpcoes(catalogo, new Set(['OPCOES', 'OUTRO_DOMINIO', 'ESPERA']), 'ESPERA');
+
+      expect(fontes.map((fonte) => fonte.codigo)).toEqual(['OPCOES']);
+    });
   });
 
   const uf = fato('UF', { dominio: 'CATEGORICO', fonteValores: 'GEO_UF' });
@@ -622,5 +685,25 @@ describe('grupos repetíveis', () => {
 
     expect(recusas.porItem.get('IDADE')).toEqual(['Rótulo vazio.']);
     expect(recusas.porGrupo.get('FAMILIA')).toEqual(['Mínimo incoerente.']);
+  });
+
+  it('a recusa que aponta uma restrição vai a ela — e ao grupo de opções, quando aponta um —, não ao resumo do campo', () => {
+    const enviado = conteudo({ itens: [item('A', 0, 'S1')], grupos: [grupo()] });
+
+    const recusas = distribuirRecusas(
+      [
+        { field: 'conteudo.itens[0].restricoes[0].entradas[1].quando', message: 'Condição inválida.' },
+        { field: 'Conteudo.Itens[0].Restricoes[1].Fatos', message: 'Opções de outro domínio.' },
+        { field: 'conteudo.grupos[0].subitens[1].restricoes[0].entradas[0].valores', message: 'Valor fora do domínio.' },
+      ],
+      enviado,
+    );
+
+    expect(recusas.porRestricao.get('A')).toEqual([
+      { restricao: 0, grupo: 1, mensagem: 'Condição inválida.' },
+      { restricao: 1, grupo: null, mensagem: 'Opções de outro domínio.' },
+    ]);
+    expect(recusas.porRestricao.get('IDADE')).toEqual([{ restricao: 0, grupo: 0, mensagem: 'Valor fora do domínio.' }]);
+    expect(recusas.porItem.size).toBe(0);
   });
 });

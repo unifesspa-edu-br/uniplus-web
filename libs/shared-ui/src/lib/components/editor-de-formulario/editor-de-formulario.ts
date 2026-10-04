@@ -42,7 +42,9 @@ import {
   podeMoverEntrada,
   removerGrupo,
   fatosOferecidos,
+  fontesDasOpcoes,
   impedimentoCabe,
+  predicadosSobreRespostasAnteriores,
   quantidadeNoTeto,
   ufsAnteriores,
   acrescentarSecao,
@@ -67,6 +69,7 @@ import {
   type FatoDoFormulario,
   type ItemDoFormulario,
   type PredicadoNoWire,
+  type RecusaDaRestricao,
   type RecusasDoConteudo,
   type ResultadoDaEdicao,
   type TermoDisponivel,
@@ -90,8 +93,8 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
  * formulário do processo, na Seleção.
  *
  * Não guarda o conteúdo: recebe e devolve o conteúdo inteiro a cada mudança. Edita também os
- * termos, os pressupostos, os grupos repetíveis, as restrições e o impedimento de cada campo. Só as
- * restrições de opções condicionadas ou formadas por respostas anteriores ainda viajam como vieram.
+ * termos, os pressupostos, os grupos repetíveis, as restrições — inclusive as opções condicionadas
+ * a respostas anteriores e as formadas por elas — e o impedimento de cada campo.
  *
  * Acessibilidade: cada etapa é uma região nomeada pelo título; mover, acrescentar e remover são
  * anunciados numa região de status visível, que também mostra a recusa; o foco volta ao botão
@@ -292,6 +295,8 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                         [remocaoTravadaPor]="remocoesTravadas().get(entrada.item.fatoCodigo) ?? null"
                         [valoresConhecidos]="regrasProprias().get(entrada.item.fatoCodigo)?.valoresConhecidos ?? []"
                         [ufs]="regrasProprias().get(entrada.item.fatoCodigo)?.ufs ?? []"
+                        [fontesDeOpcoes]="regrasProprias().get(entrada.item.fatoCodigo)?.fontesDeOpcoes ?? []"
+                        [recusasDasRestricoes]="recusas()?.porRestricao?.get(entrada.item.fatoCodigo) ?? []"
                         [impedimentoPermitido]="regrasProprias().get(entrada.item.fatoCodigo)?.impedimentoPermitido ?? false"
                         [fatosDoImpedimento]="regrasProprias().get(entrada.item.fatoCodigo)?.fatosDoImpedimento ?? []"
                         (itemChange)="emitir(comItem(conteudo(), $event))"
@@ -313,6 +318,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                         [disabled]="disabled()"
                         [erros]="errosDoGrupo(entrada.grupo.codigo)"
                         [errosPorCampo]="recusas()?.porItem ?? semRecusas"
+                        [recusasDasRestricoes]="recusas()?.porRestricao ?? semRecusasDeRestricao"
                         (grupoChange)="emitir(comGrupo(conteudo(), $event))"
                         (anuncio)="anuncio.set($event)"
                         (mover)="moverOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, $event, etapa)"
@@ -531,14 +537,15 @@ export class EditorDeFormularioComponent {
     return new Map(
       (conteudo.itens ?? []).map((item) => [
         item.fatoCodigo,
-        this.escolhiveis(fatosCitaveisPeloItem(conteudo, item.fatoCodigo), [item.precondicao, item.predicadoObrigatoriedade ?? null]),
+        this.escolhiveis(fatosCitaveisPeloItem(conteudo, item.fatoCodigo), predicadosSobreRespostasAnteriores(item)),
       ]),
     );
   });
 
   /**
    * O que cada item precisa para as regras sobre a própria resposta: os valores que as opções
-   * permitidas marcam, as UFs de onde o município tira a lista, e se cabe o impedimento — com os
+   * permitidas marcam, os campos anteriores de onde as opções podem vir, as UFs de onde o
+   * município tira a lista, e se cabe o impedimento — com os
    * fatos que a condição dele cita, o próprio campo primeiro, para a alternativa nova nascer com ele.
    */
   protected readonly regrasProprias = computed(() => {
@@ -552,6 +559,9 @@ export class EditorDeFormularioComponent {
           item.fatoCodigo,
           {
             valoresConhecidos: proprio?.tipoDominio === 'CATEGORICO_ESTATICO' ? proprio.valores : [],
+            fontesDeOpcoes: fontesDasOpcoes(this.catalogo(), fatosCitaveisPeloItem(conteudo, item.fatoCodigo), item.fatoCodigo).map(
+              (fonte) => ({ codigo: fonte.codigo, nome: fonte.nome }),
+            ),
             ufs: ufsAnteriores(conteudo, this.catalogo(), item.fatoCodigo).map((uf) => ({ codigo: uf.codigo, nome: uf.nome })),
             impedimentoPermitido: impedimentoCabe(this.finalidade(), item.tipoRenderizacao, proprio !== undefined),
             fatosDoImpedimento: proprio === undefined ? anteriores : [proprio, ...anteriores],
@@ -573,6 +583,7 @@ export class EditorDeFormularioComponent {
 
   protected readonly termos = computed(() => termosEmOrdem(this.conteudo()));
   protected readonly semRecusas: ReadonlyMap<string, readonly string[]> = new Map();
+  protected readonly semRecusasDeRestricao: ReadonlyMap<string, readonly RecusaDaRestricao[]> = new Map();
   protected readonly podeMoverEntrada = podeMoverEntrada;
   protected readonly comGrupo = comGrupo;
   protected readonly fatosDeMembro = computed(() =>

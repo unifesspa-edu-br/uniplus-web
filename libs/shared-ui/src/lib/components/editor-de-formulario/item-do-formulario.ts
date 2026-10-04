@@ -1,11 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import {
-  problemaDaCondicao,
-  type CondicaoEmClausula,
-  type FatoEscolhivel,
-} from '../editor-de-condicoes/condicoes-de-fatos';
+import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { TagComponent } from '../tag/tag';
 import {
   LIMITES_DO_FORMULARIO,
@@ -14,9 +10,10 @@ import {
   OBRIGATORIEDADE_SEMPRE,
   type ItemDoFormulario,
   type PredicadoNoWire,
+  type RecusaDaRestricao,
 } from './formulario-editavel';
 import { ImpedimentoDoCampoComponent } from './impedimento-do-campo';
-import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 import { RestricoesDoCampoComponent } from './restricoes-do-campo';
 
 /** Como o candidato responde, pelo tipo de campo. */
@@ -165,6 +162,9 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
       <ui-restricoes-do-campo
         [item]="item()"
         [valoresConhecidos]="valoresConhecidos()"
+        [fatos]="fatos()"
+        [fontesDeOpcoes]="fontesDeOpcoes()"
+        [recusas]="recusasDasRestricoes()"
         [ufs]="ufs()"
         [idBase]="idBase()"
         [disabled]="disabled()"
@@ -235,6 +235,10 @@ export class ItemDoFormularioComponent {
   readonly erros = input<readonly string[]>([]);
   /** Os valores do domínio do próprio fato, quando conhecidos: os que as opções permitidas marcam. */
   readonly valoresConhecidos = input<readonly string[]>([]);
+  /** Os campos anteriores de onde as opções da seleção podem vir: os de opções que cabem nas dele. */
+  readonly fontesDeOpcoes = input<readonly { readonly codigo: string; readonly nome: string }[]>([]);
+  /** As recusas da API que apontam uma restrição do campo. */
+  readonly recusasDasRestricoes = input<readonly RecusaDaRestricao[]>([]);
   /** Os campos de UF anteriores, para o município escolher de onde vêm os municípios. */
   readonly ufs = input<readonly { readonly codigo: string; readonly nome: string }[]>([]);
   /** Se o impedimento cabe neste campo (finalidade, tipo e próprio fato citável). */
@@ -265,8 +269,6 @@ export class ItemDoFormularioComponent {
   protected readonly obrigatoriedade = computed(() => this.item().obrigatoriedade ?? OBRIGATORIEDADE_SEMPRE);
   protected readonly opcionalQueExigeResposta = computed(() => this.exigeResposta() && this.obrigatoriedade() !== OBRIGATORIEDADE_SEMPRE);
 
-  private readonly fatosPorCodigo = computed(() => new Map(this.fatos().map((fato) => [fato.codigo, fato])));
-
   protected readonly condicoesDaExibicao = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
     source: () => this.item().precondicao,
     computation: recopiarSeMudouPorFora,
@@ -286,11 +288,7 @@ export class ItemDoFormularioComponent {
   }
 
   protected problemas(condicoes: readonly CondicaoEmClausula[]): Readonly<Record<number, string | undefined>> {
-    const problemas: Record<number, string | undefined> = {};
-    condicoes.forEach((condicao, indice) => {
-      problemas[indice] = problemaDaCondicao(condicao, this.fatosPorCodigo()) ?? undefined;
-    });
-    return problemas;
+    return problemasDasCondicoes(condicoes, this.fatos());
   }
 
   protected trocar(mudanca: Partial<ItemDoFormulario>): void {
