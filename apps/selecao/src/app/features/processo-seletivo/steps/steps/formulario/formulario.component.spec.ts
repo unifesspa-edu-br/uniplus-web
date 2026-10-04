@@ -125,6 +125,7 @@ describe('FormularioStepComponent em consulta', () => {
     expect(valor('Apurar a idade em')).toEqual(['Uma data fixa']);
     expect(valor('Data de apuração')).toEqual(['15/01/2027']);
   });
+
   function declararDesempate(regraCodigo: string): void {
     // O rascunho só aceita edição fora de consulta.
     store.remoteSnapshot.set({ status: 'rascunho' } as never);
@@ -141,6 +142,27 @@ describe('FormularioStepComponent em consulta', () => {
       },
     ]);
   }
+
+  it('em consulta, não mostra os avisos de idade: o processo publicado não admite a correção', () => {
+    declararDesempate('DESEMPATE-MAIOR-IDADE');
+    store.patchObjectSection('formulario', {
+      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+    });
+    store.patchSection('desempate', [
+      ...store.draft().desempate,
+      { ...store.draft().desempate[0], regraCodigo: 'DESEMPATE-IDOSO', idadeMinima: '60' },
+    ]);
+    expect(fixture.componentInstance.desempateSemDataDeNascimento()).toBe(true);
+    expect(fixture.componentInstance.desempateIdosoSemApuracao()).toBe(true);
+
+    store.remoteSnapshot.set({ status: 'publicado' } as never);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.desempateSemDataDeNascimento()).toBe(false);
+    expect(fixture.componentInstance.desempateIdosoSemApuracao()).toBe(false);
+    expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
+    expect(host.querySelector('#form-idoso-sem-apuracao')).toBeNull();
+  });
 
   it('avisa do desempate por maior idade sem data de nascimento e leva ao passo Desempate', () => {
     expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
