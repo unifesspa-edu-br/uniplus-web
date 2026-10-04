@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import {
   ComboboxComponent,
+  renderizacaoDe,
   type UiComboboxGroup,
   ValorEmConsultaComponent,
 } from '@uniplus/shared-ui/components';
@@ -35,7 +36,6 @@ import {
   fatosCitadosPelasExigencias,
   problemasDoFormulario,
   regrasQueDependemDoFato,
-  renderizacaoDe,
   renumerar,
 } from './formulario-de-inscricao';
 
@@ -246,6 +246,8 @@ export class FormularioStepComponent {
 
     const fato = this.catalogo().find((item) => item.codigo === codigo);
     if (fato === undefined || !ehColetavel(fato)) return;
+    const tipoRenderizacao = renderizacaoDe(fato);
+    if (tipoRenderizacao === null) return;
 
     const formulario = this.store.draft().formulario;
     this.store.patchSection('formulario', {
@@ -256,7 +258,7 @@ export class FormularioStepComponent {
           fatoCodigo: fato.codigo,
           ordem: 0,
           rotulo: fato.nome,
-          tipoRenderizacao: renderizacaoDe(fato),
+          tipoRenderizacao,
           obrigatorio: true,
           precondicao: null,
         },

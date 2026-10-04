@@ -1,5 +1,6 @@
 import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import type { FatoColetadoInput } from '@uniplus/shared-data/selecao';
+import { renderizacaoDe } from '@uniplus/shared-ui/components';
 
 import type {
   CriterioDesempateConfigurado,
@@ -27,29 +28,21 @@ const BINDING_DE_CAMPO = 'CAMPO_INSCRICAO:';
 const ORIGEM_DECLARADO = 'DECLARADO';
 
 /**
- * Só um fato declarado pelo candidato, com binding de campo de inscrição, pode virar campo do
- * formulário. Modalidade e faixa etária são derivados: resolvem por outro caminho, e o servidor
- * recusa qualquer tentativa de coletá-los.
+ * Só um fato declarado pelo candidato, com binding de campo de inscrição e um tipo de campo que
+ * o colete, pode virar campo do formulário. Modalidade e faixa etária são derivados: resolvem por
+ * outro caminho, e o servidor recusa qualquer tentativa de coletá-los.
+ *
+ * O tipo de campo (`renderizacaoDe`) não é escolha da tela: deriva do domínio e da cardinalidade
+ * do fato, e o servidor recusa o que não bate.
  */
 export function ehColetavel(fato: FatoCandidatoView): boolean {
   return (
     fato.origem === ORIGEM_DECLARADO &&
     typeof fato.binding === 'string' &&
     fato.binding.startsWith(BINDING_DE_CAMPO) &&
-    fato.binding.length > BINDING_DE_CAMPO.length
+    fato.binding.length > BINDING_DE_CAMPO.length &&
+    renderizacaoDe(fato) !== null
   );
-}
-
-/**
- * Como o campo é apresentado, derivado do domínio e da cardinalidade do fato.
- *
- * Não é escolha da tela: o servidor confere a coerência entre os dois e recusa o que não bate —
- * um booleano renderizado como seleção múltipla não tem o que oferecer.
- */
-export function renderizacaoDe(fato: FatoCandidatoView): string {
-  if (fato.dominio === 'BOOLEANO') return 'BOOLEANO';
-  if (fato.dominio === 'NUMERICO') return 'NUMERO';
-  return fato.cardinalidade === 'MULTIVALORADO' ? 'SELECAO_MULTIPLA' : 'SELECAO_UNICA';
 }
 
 /**
@@ -109,13 +102,14 @@ export function comCamposQueAsExigenciasPressupoem(
     // Fato citado que não é coletável — modalidade, faixa etária — não vira campo: ele resolve
     // por derivação ou por atributo do candidato, não por pergunta no formulário.
     const fato = coletaveis.get(codigo);
-    if (fato === undefined) continue;
+    const tipoRenderizacao = fato === undefined ? null : renderizacaoDe(fato);
+    if (fato === undefined || tipoRenderizacao === null) continue;
 
     novos.push({
       fatoCodigo: codigo,
       ordem: 0,
       rotulo: fato.nome,
-      tipoRenderizacao: renderizacaoDe(fato),
+      tipoRenderizacao,
       obrigatorio: true,
       precondicao: null,
     });
