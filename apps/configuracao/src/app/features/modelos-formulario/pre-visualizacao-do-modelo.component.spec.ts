@@ -127,6 +127,25 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     expect(tela().querySelector('#cfg-simulacao-IDADE')).not.toBeNull();
   });
 
+  it('envia como lista a resposta de um fato numérico com vários valores', () => {
+    fixture.componentRef.setInput('conteudo', {
+      ...conteudo,
+      itens: [{ fatoCodigo: 'NOTAS', ordem: 0, rotulo: 'Notas', tipoRenderizacao: 'NUMERO', obrigatoriedade: 'SEMPRE', precondicao: null, etapaCodigo: 'S1', pedirConfirmacao: false }],
+      pressupostos: [],
+    });
+    fixture.componentRef.setInput('catalogo', [{ ...fato('NOTAS', 'NUMERICO'), cardinalidade: 'MULTIVALORADO' }]);
+    fixture.detectChanges();
+
+    const campo = tela().querySelector('#cfg-simulacao-NOTAS') as HTMLInputElement;
+    campo.value = '7, 8';
+    campo.dispatchEvent(new Event('input'));
+    botao().click();
+
+    const req = controller.expectOne((r) => r.url.endsWith('/pre-visualizacao'));
+    expect(req.request.body.respostas).toEqual({ NOTAS: [7, 8] });
+    req.flush({ itens: [], termos: [] });
+  });
+
   it('não oferece simular campo de grupo, cuja resposta a pré-visualização da API não recebe', () => {
     fixture.componentRef.setInput('conteudo', {
       ...conteudo,

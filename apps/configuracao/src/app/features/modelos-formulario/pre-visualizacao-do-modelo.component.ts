@@ -23,6 +23,8 @@ interface FatoSimulado {
   readonly origem: 'resposta' | 'pressuposto';
   readonly controle: 'booleano' | 'numero' | 'lista' | 'texto';
   readonly multiplo: boolean;
+  /** O domínio, para converter cada valor escrito no tipo que a API compara. */
+  readonly dominio: string;
   readonly valores: readonly string[];
 }
 
@@ -297,7 +299,11 @@ export class PreVisualizacaoDoModeloComponent {
           : fato.controle === 'numero'
             ? Number(texto)
             : fato.multiplo
-              ? texto.split(',').map((parte) => parte.trim()).filter((parte) => parte !== '')
+              ? texto
+                  .split(',')
+                  .map((parte) => parte.trim())
+                  .filter((parte) => parte !== '')
+                  .map((parte) => valorNoDominio(fato.dominio, parte))
               : texto;
     this.respostas.update((atual) => comResposta(atual, fato.codigo, valor));
   }
@@ -352,8 +358,12 @@ export class PreVisualizacaoDoModeloComponent {
 
 function simulado(fato: FatoCandidatoView, origem: FatoSimulado['origem']): FatoSimulado {
   const escolhivel = fatoEscolhivel(fato);
+  const multiplo = fato.cardinalidade === 'MULTIVALORADO';
+  // Vários sim/não ou vários números não cabem num controle de valor único: são escritos separados por vírgula.
   const controle: FatoSimulado['controle'] =
-    fato.dominio === 'BOOLEANO'
+    multiplo && escolhivel?.tipoDominio !== 'CATEGORICO_ESTATICO'
+      ? 'texto'
+      : fato.dominio === 'BOOLEANO'
       ? 'booleano'
       : fato.dominio === 'NUMERICO'
         ? 'numero'
@@ -365,9 +375,17 @@ function simulado(fato: FatoCandidatoView, origem: FatoSimulado['origem']): Fato
     nome: fato.nome,
     origem,
     controle,
-    multiplo: fato.cardinalidade === 'MULTIVALORADO',
+    multiplo,
+    dominio: fato.dominio,
     valores: escolhivel?.valores ?? [],
   };
+}
+
+/** O valor escrito no tipo do domínio: sim e não viram booleano, número vira número. */
+function valorNoDominio(dominio: string, texto: string): unknown {
+  if (dominio === 'BOOLEANO') return ['true', 'sim'].includes(texto.toLocaleLowerCase('pt-BR'));
+  if (dominio === 'NUMERICO') return Number(texto);
+  return texto;
 }
 
 function comResposta(atual: ReadonlyMap<string, unknown>, codigo: string, valor: unknown): ReadonlyMap<string, unknown> {
