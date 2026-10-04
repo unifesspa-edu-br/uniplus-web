@@ -7,6 +7,7 @@ import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { conteudoInicial } from '@uniplus/shared-ui/components';
 
 import type { BancaRequeridaDaFase, ProdutoDaFase } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -1868,6 +1869,27 @@ describe('CronogramaStepComponent', () => {
       });
       detectar();
     }
+
+    it('não põe na inscrição o fato que outra finalidade do rascunho, ainda não gravada, já coleta', async () => {
+      TestBed.inject(CatalogosDoCronogramaService).fatos.set([
+        {
+          codigo: 'RENDA_FAMILIAR', nome: 'Renda familiar', dominio: 'NUMERICO', origem: 'DECLARADO', cardinalidade: 'UNIVALORADO',
+          binding: 'CAMPO_FORMULARIO:RENDA_FAMILIAR', escopo: 'CANDIDATO', fonteValores: null, ativo: true, valoresDominio: null,
+        } as unknown as FatoCandidatoView,
+      ]);
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        { aplicabilidade: 'CONDICIONAL', condicoes: [{ clausula: 0, ordem: 0, fato: 'RENDA_FAMILIAR', operador: 'MENOR_QUE', valor: '1500' }] },
+      );
+      const habilitacao = { ...conteudoInicial(), itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, etapaCodigo: null } as never] };
+      store.patchObjectSection('formulario', { outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao }] });
+
+      const resultado = await (
+        componente as unknown as { garantirCamposQueAsExigenciasPressupoem(id: string, servidor: unknown, dependencias: readonly string[]): Promise<unknown> }
+      ).garantirCamposQueAsExigenciasPressupoem(PROCESSO_ID, { formularios: [], cronogramaFases: [], regrasDerivacao: [] }, []);
+
+      expect(resultado, 'nada a acrescentar: nenhuma gravação').toBeNull();
+    });
 
     /**
      * Processo novo: o formulário de inscrição ainda não existe, e os itens só se gravam nele. O
