@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   acrescentarItem,
+  acrescentarTermo,
+  pressupostosParaAcrescentar,
+  removerPressuposto,
   acrescentarSecao,
   distribuirRecusas,
   fatosCitaveisPeloItem,
@@ -303,5 +306,50 @@ describe('distribuirRecusas', () => {
     expect(recusas.porItem.get('B')).toEqual(['Rótulo longo.']);
     expect(recusas.porEtapa.get('S1')).toEqual(['Título vazio.']);
     expect(recusas.gerais).toEqual(['O item B cita fato posterior.']);
+  });
+});
+
+describe('termos e pressupostos', () => {
+  const lgpd = { termoId: 'T1', nome: 'Consentimento à LGPD', versoes: [{ versaoId: 'V2', rotulo: 'nova' }, { versaoId: 'V1', rotulo: 'antiga' }] };
+
+  it('exige o termo na versão mais nova, com código do nome sem acento e sem repetir o de outro termo', () => {
+    const comUm = acrescentarTermo(conteudo({}), lgpd);
+    const comDois = acrescentarTermo(comUm, { ...lgpd, termoId: 'T2' });
+
+    expect(comDois.termos?.map((t) => [t.codigo, t.versaoId, t.ordem])).toEqual([
+      ['CONSENTIMENTO_A_LGPD', 'V2', 0],
+      ['CONSENTIMENTO_A_LGPD_2', 'V2', 1],
+    ]);
+  });
+
+  it('o fato pressuposto não é oferecido como campo: vem do formulário anterior ou é coletado aqui, nunca os dois', () => {
+    const atual = conteudo({ etapas: [secao('S1', 0)], pressupostos: ['P'] });
+
+    expect(fatosParaAcrescentar(atual, [fato('P'), fato('Q')]).map((f) => f.codigo)).toEqual(['Q']);
+  });
+
+  it('o termo novo vem depois da maior ordem gravada, mesmo com buraco na numeração', () => {
+    const gravado = conteudo({
+      termos: [{ codigo: 'A', ordem: 2, termoId: 'TA', versaoId: 'VA', exibicao: null, obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null }],
+    });
+
+    expect(acrescentarTermo(gravado, lgpd).termos?.at(-1)?.ordem).toBe(3);
+  });
+
+  it('a inscrição não tem pressuposto, e o fato já coletado pelo formulário não é oferecido', () => {
+    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
+    const catalogo = [fato('A'), fato('B')];
+
+    expect(pressupostosParaAcrescentar(atual, catalogo, 'INSCRICAO')).toEqual([]);
+    expect(pressupostosParaAcrescentar(atual, catalogo, 'HABILITACAO').map((f) => f.codigo)).toEqual(['B']);
+  });
+
+  it('recusa retirar o pressuposto que uma regra cita', () => {
+    const atual = conteudo({ etapas: [secao('S1', 0)], pressupostos: ['P'], itens: [item('A', 0, 'S1', { precondicao: exibidoQuando('P') })] });
+
+    expect(removerPressuposto(atual, 'P', new Map([['P', 'Forma de conclusão']]))).toEqual({
+      ok: false,
+      recusa: 'Não é possível retirar “Forma de conclusão”: o campo “A” cita esse fato.',
+    });
   });
 });

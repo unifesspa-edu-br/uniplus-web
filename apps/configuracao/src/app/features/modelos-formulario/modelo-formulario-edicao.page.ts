@@ -12,11 +12,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin, map, of, switchMap } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   ProblemDetails,
   ProblemI18nService,
+  coletarPaginas,
   STATUS_HTTP,
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -30,6 +32,7 @@ import {
   FatoCandidatoView,
   ModeloFormularioView,
   ModelosFormularioApi,
+  TermosConsentimentoApi,
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
@@ -42,8 +45,10 @@ import {
   semDadosBasicos,
   type ConteudoDoFormulario,
   type RecusasDoConteudo,
+  type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
 import { PreVisualizacaoDoModeloComponent } from './pre-visualizacao-do-modelo.component';
+import { termoDisponivelDe } from './termos-disponiveis';
 
 interface CabecalhoForm {
   nome: FormControl<string>;
@@ -107,6 +112,15 @@ interface CabecalhoForm {
         }
       </div>
 
+      @if (termosComErro()) {
+        <ui-alert variant="warning" heading="Termos de consentimento não carregados">
+          Sem a lista de termos não é possível exigir um termo novo nem trocar a versão.
+          <div class="cfg-list__retry">
+            <button type="button" class="btn btn--secondary btn--sm" (click)="carregarTermos()">Tentar novamente</button>
+          </div>
+        </ui-alert>
+      }
+
       @if (catalogoComErro()) {
         <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
           Sem o catálogo não é possível acrescentar campos nem declarar condições.
@@ -153,6 +167,7 @@ interface CabecalhoForm {
           [finalidade]="m.finalidade"
           [disabled]="salvando()"
           [recusas]="recusas()"
+          [termosDisponiveis]="termosDisponiveis()"
           (conteudoChange)="conteudo.set($event)"
         />
       }
@@ -179,6 +194,7 @@ interface CabecalhoForm {
 })
 export class ModeloFormularioEdicaoPage {
   private readonly api = inject(ModelosFormularioApi);
+  private readonly termosApi = inject(TermosConsentimentoApi);
   private readonly route = inject(ActivatedRoute);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
@@ -223,8 +239,37 @@ export class ModeloFormularioEdicaoPage {
     tipoProcessoCodigo: new FormControl('', { nonNullable: true }),
   });
 
+  protected readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
+  protected readonly termosComErro = signal(false);
+
   constructor() {
     this.carregar();
+    this.carregarTermos();
+  }
+
+  /** Os termos com as versões: a lista, colhida por todas as páginas, não as traz, e cada termo é lido por inteiro. */
+  protected carregarTermos(): void {
+    this.termosComErro.set(false);
+    coletarPaginas((cursor) => this.termosApi.listar({ cursor }))
+      .pipe(
+        switchMap((lista) =>
+          !lista.ok
+            ? of(null)
+            : lista.data.length === 0
+              ? of([])
+              : forkJoin(lista.data.map((termo) => this.termosApi.obter(termo.id))).pipe(
+                  map((termos) => (termos.every((termo) => termo.ok) ? termos.map((termo) => termoDisponivelDe(termo.data)) : null)),
+                ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((termos) => {
+        if (termos === null) {
+          this.termosComErro.set(true);
+          return;
+        }
+        this.termosDisponiveis.set(termos);
+      });
   }
 
   protected rotuloDaFinalidade(valor: string): string {

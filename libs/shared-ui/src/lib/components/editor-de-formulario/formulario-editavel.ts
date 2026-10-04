@@ -107,6 +107,13 @@ export interface FatoDoFormulario extends FatoDoCatalogo {
   readonly ativo: boolean;
 }
 
+/** Um termo de consentimento que o formulário pode exigir, com as versões promovidas — a mais nova primeiro. */
+export interface TermoDisponivel {
+  readonly termoId: string;
+  readonly nome: string;
+  readonly versoes: readonly { readonly versaoId: string; readonly rotulo: string }[];
+}
+
 /** O desfecho de uma edição que a tela pode recusar: o conteúdo novo, ou o motivo da recusa. */
 export type ResultadoDaEdicao =
   | { readonly ok: true; readonly conteudo: ConteudoDoFormulario }
@@ -239,7 +246,8 @@ export function fatosParaAcrescentar(
   conteudo: ConteudoDoFormulario,
   catalogo: readonly FatoDoFormulario[],
 ): readonly FatoDoFormulario[] {
-  const presentes = new Set(todosOsCampos(conteudo).map((campo) => campo.fatoCodigo));
+  // O pressuposto também: o fato vem do formulário anterior ou é coletado aqui, nunca os dois.
+  const presentes = new Set([...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo), ...(conteudo.pressupostos ?? [])]);
   return catalogo
     .filter((fato) => fato.ativo && ehColetavel(fato) && fato.fonteValores !== FONTE_GEO_MUNICIPIO && !presentes.has(fato.codigo))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -503,6 +511,104 @@ export function fatosQueExigemResposta(conteudo: ConteudoDoFormulario): Readonly
   return fatos;
 }
 
+/**
+ * Os fatos que um termo pode citar: todos os campos do formulário e os pressupostos — o termo é
+ * aceito na revisão e aceite, depois de tudo respondido.
+ */
+export function fatosCitaveisPelosTermos(conteudo: ConteudoDoFormulario): ReadonlySet<string> {
+  return citaveisAntesDe(conteudo, Infinity, null);
+}
+
+/** Os termos em ordem. */
+export function termosEmOrdem(conteudo: ConteudoDoFormulario): readonly TermoDoFormulario[] {
+  return [...(conteudo.termos ?? [])].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+}
+
+/** Os termos que ainda podem ser exigidos: os que têm versão promovida e o formulário não exige. */
+export function termosParaAcrescentar(
+  conteudo: ConteudoDoFormulario,
+  disponiveis: readonly TermoDisponivel[],
+): readonly TermoDisponivel[] {
+  const exigidos = new Set((conteudo.termos ?? []).map((termo) => termo.termoId));
+  return disponiveis.filter((termo) => termo.versoes.length > 0 && !exigidos.has(termo.termoId));
+}
+
+/**
+ * Exige o termo na versão mais nova, com aceite obrigatório, depois dos demais. O código do termo no
+ * formulário vem do nome, em caixa alta e sem acento, e não repete o de outro termo.
+ */
+export function acrescentarTermo(conteudo: ConteudoDoFormulario, termo: TermoDisponivel): ConteudoDoFormulario {
+  const termos = termosEmOrdem(conteudo);
+  const novo: TermoDoFormulario = {
+    codigo: codigoLivre(codigoDoNome(termo.nome), new Set(termos.map((t) => t.codigo))),
+    // Depois da maior ordem gravada: a gravada pode ter buraco, e ordem repetida é recusada.
+    ordem: Math.max(-1, ...termos.map((t) => Number(t.ordem))) + 1,
+    termoId: termo.termoId,
+    versaoId: termo.versoes[0]?.versaoId ?? '',
+    exibicao: null,
+    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
+    predicadoObrigatoriedade: null,
+  };
+  return { ...conteudo, termos: [...termos, novo] };
+}
+
+/** Troca o termo pelo editado, sem mexer na ordem. */
+export function comTermo(conteudo: ConteudoDoFormulario, editado: TermoDoFormulario): ConteudoDoFormulario {
+  return { ...conteudo, termos: (conteudo.termos ?? []).map((termo) => (termo.codigo === editado.codigo ? editado : termo)) };
+}
+
+/** Troca o termo de lugar com o vizinho; a ordem dos termos não depende de citação. */
+export function moverTermo(conteudo: ConteudoDoFormulario, codigo: string, direcao: -1 | 1): ConteudoDoFormulario {
+  const termos = [...termosEmOrdem(conteudo)];
+  const indice = termos.findIndex((termo) => termo.codigo === codigo);
+  const alvo = indice + direcao;
+  if (indice < 0 || alvo < 0 || alvo >= termos.length) return conteudo;
+  [termos[indice], termos[alvo]] = [termos[alvo], termos[indice]];
+  return { ...conteudo, termos: termos.map((termo, posicao) => ({ ...termo, ordem: posicao })) };
+}
+
+export function removerTermo(conteudo: ConteudoDoFormulario, codigo: string): ConteudoDoFormulario {
+  return {
+    ...conteudo,
+    termos: termosEmOrdem(conteudo)
+      .filter((termo) => termo.codigo !== codigo)
+      .map((termo, posicao) => ({ ...termo, ordem: posicao })),
+  };
+}
+
+/**
+ * Os fatos que podem ser pressupostos: os coletáveis ativos que o formulário não coleta nem já
+ * pressupõe. A inscrição não tem pressuposto — nenhum formulário é respondido antes dela.
+ */
+export function pressupostosParaAcrescentar(
+  conteudo: ConteudoDoFormulario,
+  catalogo: readonly FatoDoFormulario[],
+  finalidade: string,
+): readonly FatoDoFormulario[] {
+  if (finalidade === FINALIDADE_INSCRICAO) return [];
+  const usados = new Set([...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo), ...(conteudo.pressupostos ?? [])]);
+  return catalogo
+    .filter((fato) => fato.ativo && ehColetavel(fato) && !usados.has(fato.codigo))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+export function acrescentarPressuposto(conteudo: ConteudoDoFormulario, fatoCodigo: string): ConteudoDoFormulario {
+  return { ...conteudo, pressupostos: [...(conteudo.pressupostos ?? []), fatoCodigo] };
+}
+
+/** Remove o pressuposto. Recusa quando uma regra o cita: a condição ficaria sobre fato desconhecido. */
+export function removerPressuposto(
+  conteudo: ConteudoDoFormulario,
+  fatoCodigo: string,
+  nomes: ReadonlyMap<string, string>,
+): ResultadoDaEdicao {
+  const quem = quemCita(conteudo, fatoCodigo)[0];
+  if (quem !== undefined) {
+    return { ok: false, recusa: `Não é possível retirar “${nome(nomes, fatoCodigo)}”: ${quem.descricao} cita esse fato.` };
+  }
+  return { ok: true, conteudo: { ...conteudo, pressupostos: (conteudo.pressupostos ?? []).filter((fato) => fato !== fatoCodigo) } };
+}
+
 /** O conteúdo sem a seção dos dados básicos: a API a repõe, e o envio que a altera é recusado. */
 export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   return {
@@ -516,6 +622,7 @@ export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormu
 export interface RecusasDoConteudo {
   readonly porItem: ReadonlyMap<string, readonly string[]>;
   readonly porEtapa: ReadonlyMap<string, readonly string[]>;
+  readonly porTermo: ReadonlyMap<string, readonly string[]>;
   readonly gerais: readonly string[];
 }
 
@@ -529,15 +636,18 @@ export function distribuirRecusas(
 ): RecusasDoConteudo {
   const porItem = new Map<string, string[]>();
   const porEtapa = new Map<string, string[]>();
+  const porTermo = new Map<string, string[]>();
   const gerais: string[] = [];
   for (const recusa of recusas) {
     const item = elementoApontado(recusa.field, 'itens', enviado.itens ?? []);
-    const etapa = item === undefined ? elementoApontado(recusa.field, 'etapas', enviado.etapas ?? []) : undefined;
+    const etapa = elementoApontado(recusa.field, 'etapas', enviado.etapas ?? []);
+    const termo = elementoApontado(recusa.field, 'termos', enviado.termos ?? []);
     if (item !== undefined) acumular(porItem, item.fatoCodigo, recusa.message);
     else if (etapa !== undefined) acumular(porEtapa, etapa.codigo, recusa.message);
+    else if (termo !== undefined) acumular(porTermo, termo.codigo, recusa.message);
     else gerais.push(recusa.message);
   }
-  return { porItem, porEtapa, gerais };
+  return { porItem, porEtapa, porTermo, gerais };
 }
 
 function elementoApontado<T>(campo: string, lista: string, elementos: readonly T[]): T | undefined {
@@ -680,6 +790,24 @@ function conferirOrdem(conteudo: ConteudoDoFormulario, nomes: ReadonlyMap<string
     }
   }
   return { ok: true, conteudo };
+}
+
+/** O código a partir do nome: sem acento, em caixa alta, com sublinhado no lugar do resto. */
+function codigoDoNome(nome: string): string {
+  const codigo = nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/gu, '_')
+    .replace(/^_+|_+$/gu, '')
+    .slice(0, 50);
+  return codigo === '' ? 'TERMO' : codigo;
+}
+
+function codigoLivre(base: string, usados: ReadonlySet<string>): string {
+  let codigo = base;
+  for (let numero = 2; usados.has(codigo); numero++) codigo = `${base}_${numero}`;
+  return codigo;
 }
 
 function nome(nomes: ReadonlyMap<string, string>, fato: string): string {
