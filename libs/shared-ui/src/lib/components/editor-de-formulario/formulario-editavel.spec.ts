@@ -556,6 +556,12 @@ describe('grupos repetíveis', () => {
     expect(acrescentarCampoAoGrupo(noTeto, grupo(), membro('NOVO')).ok, '197 itens + grupo + 2 campos = 200').toBe(false);
   });
 
+  it('não acrescenta o parentesco desativado no catálogo', () => {
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, [{ ...parentesco, ativo: false }], new Map());
+
+    expect(resultado.ok).toBe(false);
+  });
+
   it('não repete o parentesco que já é campo de outro grupo do formulário', () => {
     const outro = grupo({ codigo: 'OUTRO', subitens: [item('PARENTESCO', 0, 'S1')] });
 
