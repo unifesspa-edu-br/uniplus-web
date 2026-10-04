@@ -137,7 +137,7 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     fixture.detectChanges();
 
     const campo = tela().querySelector('#cfg-simulacao-NOTAS') as HTMLInputElement;
-    campo.value = '7, 8';
+    campo.value = '7; 8';
     campo.dispatchEvent(new Event('input'));
     botao().click();
 
@@ -156,7 +156,7 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     fixture.detectChanges();
 
     const campo = tela().querySelector('#cfg-simulacao-NOTAS') as HTMLInputElement;
-    campo.value = '7, dez';
+    campo.value = '7; 7,5';
     campo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
