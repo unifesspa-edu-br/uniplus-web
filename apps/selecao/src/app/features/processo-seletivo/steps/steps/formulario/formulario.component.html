@@ -1,88 +1,90 @@
 <p class="step-subtitle">
-  O que o candidato lê e preenche ao se inscrever. Os campos são os dados que o certame coleta:
-  é essa lista que a inscrição pública renderiza.
+  O que o candidato lê e preenche ao se inscrever: as etapas, os campos e os termos que aceita.
+  É esse formulário que a inscrição pública renderiza.
 </p>
 
-<!-- O catálogo só serve para acrescentar campo: em consulta, carga e falha dele não interessam. -->
+<!-- O catálogo e os termos só servem para editar: em consulta, carga e falha deles não interessam. -->
 @if (!store.emConsulta()) {
   @if (catalogoCarregando()) {
     <p class="alert alert--info" role="status">Carregando os dados que o candidato pode declarar…</p>
   } @else if (catalogoErro(); as erro) {
     <p class="alert alert--danger" role="alert">
-      {{ erro }} Sem esses dados não é possível acrescentar campo nenhum ao formulário.
+      {{ erro }} Sem esses dados não é possível acrescentar campos nem declarar condições.
       <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarCatalogo()">
+        Tentar novamente
+      </button>
+    </p>
+  }
+  @if (termosComErro()) {
+    <p class="alert alert--warning" role="alert">
+      Não foi possível carregar os termos de consentimento. Sem eles não é possível exigir um termo
+      novo nem trocar a versão.
+      <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarTermos()">
         Tentar novamente
       </button>
     </p>
   }
 }
 
-<section class="step-section" aria-labelledby="form-cabecalho-titulo">
-  <h2 id="form-cabecalho-titulo" class="step-section__title">O que o candidato lê</h2>
+<section class="step-section" aria-labelledby="form-fase-titulo">
+  <h2 id="form-fase-titulo" class="step-section__title">Quando o candidato responde</h2>
 
   @if (store.emConsulta()) {
     <div class="form-grid">
       <ui-valor-em-consulta
-        class="form-grid__full"
-        rotulo="Título do formulário"
-        [valor]="titulo()"
-      />
-      <ui-valor-em-consulta
-        class="form-grid__full"
-        rotulo="Termo de aceite"
-        seVazio="Nenhum termo exibido"
-        [valor]="termoAceite()"
+        rotulo="Fase da inscrição"
+        seVazio="Nenhuma fase declarada"
+        [valor]="nomeDaFaseDaInscricao()"
       />
     </div>
+  } @else if (fasesDaInscricao().length === 0) {
+    <p class="field__hint" role="status" id="form-sem-fase-de-inscricao">
+      O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição no
+      passo Cronograma.
+    </p>
   } @else {
     <div class="form-grid">
       <div class="form-field">
-        <label class="label" for="form-titulo">Título do formulário</label>
-        <input
-          class="input"
-          id="form-titulo"
-          type="text"
-          placeholder="Inscrição — Processo Seletivo 2027"
-          [value]="titulo()"
+        <label class="label" for="form-fase-inscricao">Fase da inscrição</label>
+        <select
+          class="select"
+          id="form-fase-inscricao"
+          aria-describedby="form-fase-inscricao-ajuda"
           [disabled]="!store.aceitaEdicao()"
-          (input)="escreverTitulo($any($event.target).value)"
-        />
-      </div>
-
-      <div class="form-field form-grid__full">
-        <label class="label" for="form-termo">Termo de aceite</label>
-        <textarea
-          class="input"
-          id="form-termo"
-          rows="4"
-          placeholder="O que o candidato declara aceitar ao enviar a inscrição."
-          [value]="termoAceite()"
-          [disabled]="!store.aceitaEdicao()"
-          (input)="escreverTermo($any($event.target).value)"
-        ></textarea>
-        <span class="field__hint">
-          Aparece no formulário público, acima dos campos. Deixar em branco não exibe termo algum.
+          (change)="escreverFase($any($event.target).value)"
+        >
+          @if (faseDaInscricao() === '') {
+            <option value="" selected>Escolha a fase</option>
+          }
+          @for (opcao of fasesDaInscricao(); track opcao.codigo) {
+            <option [value]="opcao.codigo" [selected]="opcao.codigo === faseDaInscricao()">
+              {{ opcao.nome }}
+            </option>
+          }
+        </select>
+        <span class="field__hint" id="form-fase-inscricao-ajuda">
+          Só as fases do cronograma que coletam inscrição aparecem aqui.
         </span>
       </div>
     </div>
   }
 </section>
 
-<section class="step-section" aria-labelledby="form-campos-titulo">
-  <h2 id="form-campos-titulo" class="step-section__title">O que o candidato preenche</h2>
+<section class="step-section" aria-labelledby="form-conteudo-titulo">
+  <h2 id="form-conteudo-titulo" class="step-section__title">O que o candidato preenche</h2>
 
   <p class="field__hint">
-    Cada campo é um dado que o certame coleta na inscrição. O que alguma exigência documental
-    pede para decidir de quem o documento é cobrado entra aqui sozinho — e não sai enquanto ela
-    existir.
+    Os dados básicos do candidato entram sempre, numa seção que não se altera. O que alguma
+    exigência documental pede para decidir de quem o documento é cobrado entra sozinho, na seção
+    "Outros dados exigidos pelo certame" — e não sai enquanto for citado.
   </p>
 
   @if (desempateSemDataDeNascimento()) {
     <div class="alert alert--warning" role="status" id="form-desempate-sem-nascimento">
       <p>
         O desempate por maior idade ordena pela data de nascimento, e ela não está entre os campos
-        do formulário. Acrescente "Data de nascimento" em "Acrescentar um dado", ou retire o
-        critério no passo Desempate.
+        do formulário. Acrescente "Data de nascimento" ao formulário, ou retire o critério no passo
+        Desempate.
       </p>
       <button
         type="button"
@@ -95,119 +97,44 @@
     </div>
   }
 
-  @if (!store.emConsulta()) {
+  @if (store.emConsulta()) {
     <div class="form-grid">
-      <div class="form-field">
-        <label class="label" [attr.for]="fatoDisponivel.campoId">Acrescentar um dado</label>
-        <ui-combobox
-          #fatoDisponivel
-          rotulo="Dados que o candidato pode declarar"
-          placeholder="Escolha um dado"
-          textoSemResultado="Nenhum dado do catálogo casa com o que você digitou."
-          [grupos]="fatosDisponiveis()"
-          [value]="fatoAAcrescentar()"
-          [disabled]="!store.aceitaEdicao()"
-          (valueChange)="escolherFato($event)"
-        />
-      </div>
-      <div class="form-field">
-        <button
-          class="btn btn--secondary"
-          type="button"
-          [disabled]="!store.aceitaEdicao() || fatoAAcrescentar() === ''"
-          (click)="acrescentarCampo()"
-        >
-          Acrescentar ao formulário
-        </button>
-      </div>
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Título do formulário"
+        seVazio="Sem título"
+        [valor]="conteudo().titulo"
+      />
     </div>
-  }
-
-  <ul class="doc-list">
-    @for (campo of campos(); track campo.fatoCodigo) {
-      <li class="doc-item doc-item--exigido">
-        <div class="doc-item__head">
-          <span class="doc-item__name">{{ campo.rotulo }}</span>
-          @if (exigidoPorDocumento(campo.fatoCodigo)) {
-            <span class="tag tag--info">Exigido pela configuração</span>
-          }
-        </div>
-
-        @if (store.emConsulta()) {
-          <ui-valor-em-consulta
-            rotulo="Resposta"
-            [valor]="campo.obrigatorio ? 'Obrigatória' : 'Opcional'"
-          />
-        } @else {
-          <div class="form-grid">
-            <div class="form-field">
-              <label class="label" [attr.for]="'form-rotulo-' + campo.fatoCodigo">
-                Como o candidato lê este campo
-              </label>
-              <input
-                class="input"
-                [attr.id]="'form-rotulo-' + campo.fatoCodigo"
-                type="text"
-                [value]="campo.rotulo"
-                [disabled]="!store.aceitaEdicao()"
-                (input)="escreverCampo(campo.fatoCodigo, { rotulo: $any($event.target).value })"
-              />
+    @for (etapa of leitura(); track etapa.codigo) {
+      <h3 class="form-section__title">{{ etapa.titulo }}</h3>
+      <ul class="doc-list">
+        @for (entrada of etapa.entradas; track entrada.chave) {
+          <li class="doc-item">
+            <div class="doc-item__head">
+              <span class="doc-item__name">{{ entrada.rotulo }}</span>
             </div>
-
-            <div class="form-field">
-              <label class="label" [attr.for]="'form-obrig-' + campo.fatoCodigo">Resposta</label>
-              <select
-                class="select"
-                [attr.id]="'form-obrig-' + campo.fatoCodigo"
-                [disabled]="!store.aceitaEdicao()"
-                (change)="
-                  escreverCampo(campo.fatoCodigo, {
-                    obrigatorio: $any($event.target).value === 'sim',
-                  })
-                "
-              >
-                <option value="sim" [selected]="campo.obrigatorio">Obrigatória</option>
-                <option value="nao" [selected]="!campo.obrigatorio">Opcional</option>
-              </select>
-            </div>
-          </div>
+            <ui-valor-em-consulta rotulo="Resposta" [valor]="entrada.resposta" />
+          </li>
+        } @empty {
+          <li class="field__hint">Nenhum campo nesta etapa.</li>
         }
-
-        @if (!store.emConsulta()) {
-          @if (exigidoPorDocumento(campo.fatoCodigo)) {
-            <p class="field__hint">
-              Não pode sair: {{ documentosQueCitam(campo.fatoCodigo).join(', ') }} decide de quem é
-              cobrado a partir deste dado. Retire a condição no passo do cronograma para poder
-              remover o campo.
-            </p>
-          } @else if (regrasQueDependem(campo.fatoCodigo).length > 0) {
-            <p class="field__hint">
-              Não pode sair: {{ regrasQueDependem(campo.fatoCodigo).join(', ') }} depende deste
-              dado. Desfaça essa dependência antes de remover o campo.
-            </p>
-          } @else {
-            <button
-              class="btn btn--tertiary btn--sm"
-              type="button"
-              [disabled]="!store.aceitaEdicao()"
-              (click)="removerCampo(campo.fatoCodigo)"
-            >
-              Remover campo
-            </button>
-          }
-        }
-      </li>
-    } @empty {
-      <li class="field__hint">
-        @if (store.emConsulta()) {
-          O formulário não pede dado nenhum.
-        } @else {
-          O formulário ainda não pede dado nenhum. Acrescente o que o certame precisa saber, ou
-          declare uma exigência condicionada no cronograma — o campo entra aqui sozinho.
-        }
-      </li>
+      </ul>
     }
-  </ul>
+  } @else {
+    <ui-editor-de-formulario
+      idBase="form-inscricao"
+      [finalidade]="finalidade"
+      [conteudo]="conteudo()"
+      [catalogo]="catalogo()"
+      [disabled]="!store.aceitaEdicao()"
+      [recusas]="recusas()"
+      [termosDisponiveis]="termosDisponiveis()"
+      [fatosIndisponiveis]="fatosIndisponiveis()"
+      [remocoesTravadas]="remocoesTravadas()"
+      (conteudoChange)="editar($event)"
+    />
+  }
 
   @if (camposSemUso().length > 0 && !store.emConsulta()) {
     <!--
@@ -215,7 +142,7 @@
       campo que entrou por causa de um gatilho apagado depois, noutra sessão — a saída
       automática só alcança o que a sessão em curso acrescentou.
     -->
-    <p class="field__hint">
+    <p class="field__hint" id="form-campos-sem-uso">
       Nada no certame usa {{ camposSemUso().join(', ') }}: nenhuma exigência documental, nenhuma
       regra de modalidade e nenhum outro campo depende desse dado. Confira se ainda há motivo
       para pedi-lo ao candidato.

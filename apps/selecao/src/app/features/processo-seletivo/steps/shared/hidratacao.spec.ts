@@ -722,63 +722,59 @@ describe('hidratarDraft — formulário de inscrição', () => {
     });
   }
 
-  it('lê título, termo de aceite e os campos declarados', () => {
-    const draft = hidratarDraft(
-      DRAFT,
-      dtoComFormulario({
-        formularioTitulo: 'Inscrição 2027',
-        formularioTermoAceiteTexto: 'Declaro que li o edital.',
-        fatosColetados: [
-          {
-            fatoCodigo: 'SEXO',
-            ordem: 1,
-            rotulo: 'Sexo',
-            tipoRenderizacao: 'SELECAO_UNICA',
-            obrigatorio: true,
-            precondicao: null,
-          },
-        ],
-      }),
-    );
-
-    expect(draft.formulario.titulo).toBe('Inscrição 2027');
-    expect(draft.formulario.termoAceiteTexto).toBe('Declaro que li o edital.');
-    expect(draft.formulario.fatos).toHaveLength(1);
-    expect(draft.formulario.fatos[0]).toMatchObject({
-      fatoCodigo: 'SEXO',
-      rotulo: 'Sexo',
-      tipoRenderizacao: 'SELECAO_UNICA',
-      obrigatorio: true,
-    });
+  const campo = (fatoCodigo: string, ordem: number, etapaCodigo: string) => ({
+    fatoCodigo,
+    ordem,
+    rotulo: fatoCodigo,
+    tipoRenderizacao: 'SELECAO_UNICA',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo,
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  });
+  const etapa = (codigo: string, ordem: number) => ({ codigo, ordem, tipo: 'SECAO', bloco: null, titulo: codigo, descricao: null, aviso: null, exibicao: null });
+  const formulario = (finalidade: string, extra: Record<string, unknown> = {}) => ({
+    finalidade,
+    faseId: ID_INSCRICAO,
+    titulo: 'Inscrição 2027',
+    modeloOrigemId: null,
+    modeloOrigemCodigo: null,
+    etapas: [etapa('DADOS_BASICOS', 0), etapa('S1', 1)],
+    fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS'), campo('SEXO', 1, 'S1')],
+    termos: [],
+    grupos: [],
+    ...extra,
   });
 
-  it('devolve os campos na ordem declarada, não na ordem em que vieram', () => {
-    const draft = hidratarDraft(
-      DRAFT,
-      dtoComFormulario({
-        fatosColetados: [
-          { fatoCodigo: 'B', ordem: 2, rotulo: 'B', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao: null },
-          { fatoCodigo: 'A', ordem: 1, rotulo: 'A', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao: null },
-        ],
-      }),
-    );
+  it('lê o formulário de inscrição no conteúdo do editor, com a fase pelo código', () => {
+    const draft = hidratarDraft(DRAFT, dtoComFormulario({ formularios: [formulario('INSCRICAO')] }));
 
-    expect(draft.formulario.fatos.map((f) => f.fatoCodigo)).toEqual(['A', 'B']);
+    expect(draft.formulario.faseCodigo).toBe('INSCRICAO');
+    expect(draft.formulario.conteudo.titulo).toBe('Inscrição 2027');
+    expect(draft.formulario.conteudo.itens?.map((item) => [item.fatoCodigo, item.obrigatoriedade])).toEqual([
+      ['NOME', 'SEMPRE'],
+      ['SEXO', 'SEMPRE'],
+    ]);
   });
 
-  /** A pré-condição não é editável na tela, e por isso mesmo precisa sobreviver intocada. */
-  it('carrega a pré-condição que a tela não edita', () => {
-    const precondicao = [[{ fato: 'COR_RACA', operador: 'IGUAL', valor: 'PRETA' }]];
+  it('das outras finalidades, guarda só os fatos que coletam: o passo não as edita', () => {
     const draft = hidratarDraft(
       DRAFT,
       dtoComFormulario({
-        fatosColetados: [
-          { fatoCodigo: 'BAIXA_RENDA', ordem: 1, rotulo: 'Baixa renda', tipoRenderizacao: 'BOOLEANO', obrigatorio: false, precondicao },
+        formularios: [
+          formulario('INSCRICAO'),
+          formulario('ISENCAO_TAXA', { etapas: [etapa('S1', 0)], fatosColetados: [campo('RENDA', 0, 'S1')] }),
         ],
       }),
     );
 
-    expect(draft.formulario.fatos[0].precondicao).toEqual(precondicao);
+    expect(draft.formulario.fatosDasOutrasFinalidades).toEqual(['RENDA']);
+    expect(draft.formulario.conteudo.itens?.map((item) => item.fatoCodigo)).not.toContain('RENDA');
   });
 
   /** A fase volta por CÓDIGO — o id não sobrevive a uma gravação de cronograma. */
@@ -830,8 +826,11 @@ describe('hidratarDraft — formulário de inscrição', () => {
   it('processo sem formulário declarado hidrata vazio, sem quebrar', () => {
     const draft = hidratarDraft(DRAFT, dtoComFormulario({}));
 
-    expect(draft.formulario.titulo).toBe('');
-    expect(draft.formulario.fatos).toEqual([]);
+    // Sem formulário de inscrição, o conteúdo nasce só com a revisão e aceite; a seção dos dados
+    // básicos chega com a criação.
+    expect(draft.formulario.faseCodigo).toBe('');
+    expect(draft.formulario.conteudo.etapas?.map((e) => e.codigo)).toEqual(['REVISAO_E_ACEITE']);
+    expect(draft.formulario.conteudo.itens).toEqual([]);
     expect(draft.formulario.derivacao).toEqual([]);
   });
 });

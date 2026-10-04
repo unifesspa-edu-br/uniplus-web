@@ -1870,21 +1870,25 @@ describe('CronogramaStepComponent', () => {
     }
 
     /**
-     * O campo que o cronograma acrescenta sozinho precisa ficar registrado como tal. Sem o
-     * registro, o passo do formulário não o reconhece como posto por exigência e o preserva
-     * mesmo depois de o gatilho que o pediu ser apagado — a inscrição segue coletando dado
-     * pessoal que já não tem finalidade declarada.
+     * Processo novo: o formulário de inscrição ainda não existe, e os itens só se gravam nele. O
+     * cronograma o cria pelo cabeçalho (a seção dos outros dados, a revisão e aceite e a fase que
+     * coleta inscrição), relê para ter a seção dos dados básicos que a API acrescenta, e só então
+     * manda os itens — sem os dados básicos. O campo que entrou sozinho fica registrado como tal:
+     * é esse registro que autoriza tirá-lo quando o gatilho sair.
      */
-    it('registra como posto por exigência o campo que acrescenta sozinho', async () => {
+    it('cria o formulário de inscrição que falta, relê e grava os campos que as exigências pressupõem', async () => {
       const catalogos = TestBed.inject(CatalogosDoCronogramaService);
       catalogos.fatos.set([
         {
-          codigo: 'SEXO',
-          nome: 'Sexo',
-          dominio: 'CATEGORICO',
+          codigo: 'RENDA_FAMILIAR',
+          nome: 'Renda familiar',
+          dominio: 'NUMERICO',
           origem: 'DECLARADO',
           cardinalidade: 'UNIVALORADO',
-          binding: 'CAMPO_INSCRICAO:SEXO',
+          binding: 'CAMPO_INSCRICAO:RENDA_FAMILIAR',
+          escopo: 'CANDIDATO',
+          fonteValores: null,
+          ativo: true,
           valoresDominio: null,
         } as unknown as FatoCandidatoView,
       ]);
@@ -1893,11 +1897,31 @@ describe('CronogramaStepComponent', () => {
         [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
         {
           aplicabilidade: 'CONDICIONAL',
-          condicoes: [{ clausula: 0, ordem: 0, fato: 'SEXO', operador: 'IGUAL', valor: '"MASCULINO"' }],
+          condicoes: [{ clausula: 0, ordem: 0, fato: 'RENDA_FAMILIAR', operador: 'MENOR_QUE', valor: '1500' }],
         },
       );
 
-      expect(store.camposPostosPelasExigencias().has('SEXO')).toBe(false);
+      const FASE = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
+      const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
+        codigo, ordem, tipo: bloco === null ? 'SECAO' : 'BLOCO', bloco, titulo: codigo, descricao: null, aviso: null, exibicao: null,
+      });
+      const criado = {
+        finalidade: 'INSCRICAO',
+        faseId: FASE.id,
+        titulo: null,
+        modeloOrigemId: null,
+        modeloOrigemCodigo: null,
+        etapas: [etapa('DADOS_BASICOS', 0), etapa('OUTROS_DADOS_EXIGIDOS', 1), etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE')],
+        fatosColetados: [
+          {
+            fatoCodigo: 'NOME', ordem: 0, rotulo: 'Nome', tipoRenderizacao: 'TEXTO', obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+            precondicao: null, opcoes: null, etapaCodigo: 'DADOS_BASICOS', formato: null, ajuda: null, pedirConfirmacao: false, restricoes: [], impedimento: null,
+          },
+        ],
+        termos: [],
+        grupos: [],
+      };
+      const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
       const garantir = (
         componente as unknown as {
@@ -1907,17 +1931,36 @@ describe('CronogramaStepComponent', () => {
             dependencias: readonly string[],
           ): Promise<unknown>;
         }
-      ).garantirCamposQueAsExigenciasPressupoem(PROCESSO_ID, { fatosColetados: [] }, []);
+      ).garantirCamposQueAsExigenciasPressupoem(
+        PROCESSO_ID,
+        { formularios: [], cronogramaFases: [FASE], regrasDerivacao: [] },
+        [],
+      );
 
-      const gravacao = controller.expectOne((r) => r.url.includes('fatos-coletados'));
-      gravacao.flush(null, { status: 204, statusText: 'No Content' });
+      const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
+      expect(cabecalho.request.body).toMatchObject({ faseId: FASE.id });
+      expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toEqual(['OUTROS_DADOS_EXIGIDOS', 'REVISAO_E_ACEITE']);
+      cabecalho.flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+
+      controller.expectOne(ROTA_PROCESSO).flush({ formularios: [criado], cronogramaFases: [FASE] });
+      await proximoPasso();
+
+      const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
+      expect(itens.request.body.itens.map((i: { fatoCodigo: string; etapaCodigo: string }) => [i.fatoCodigo, i.etapaCodigo])).toEqual([
+        ['RENDA_FAMILIAR', 'OUTROS_DADOS_EXIGIDOS'],
+      ]);
+      expect(itens.request.body.grupos).toEqual([]);
+      itens.flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+
+      const comCampo = { ...criado, fatosColetados: [...criado.fatosColetados, { ...criado.fatosColetados[0], fatoCodigo: 'RENDA_FAMILIAR', ordem: 1, etapaCodigo: 'OUTROS_DADOS_EXIGIDOS' }] };
+      controller.expectOne(ROTA_PROCESSO).flush({ formularios: [comCampo], cronogramaFases: [FASE] });
       await garantir;
 
-      expect(store.draft().formulario.fatos.map((c) => c.fatoCodigo)).toContain('SEXO');
-      expect(store.camposPostosPelasExigencias().has('SEXO')).toBe(
-        true,
-        'o campo entrou sozinho, e é esse registro que autoriza tirá-lo quando o gatilho sair',
-      );
+      expect(store.draft().formulario.conteudo.itens?.map((c) => c.fatoCodigo)).toEqual(['NOME', 'RENDA_FAMILIAR']);
+      expect(store.draft().formulario.faseCodigo).toBe('INSCRICAO');
+      expect(store.camposPostosPelasExigencias().has('RENDA_FAMILIAR')).toBe(true);
     });
 
     /**

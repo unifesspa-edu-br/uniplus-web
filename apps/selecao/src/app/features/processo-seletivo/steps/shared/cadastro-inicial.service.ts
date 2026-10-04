@@ -1,7 +1,8 @@
 import { HttpContext, HttpEventType } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import {
+  ApiResult,
   ProblemDetails,
   SignedUploadClient,
   idempotencyKey,
@@ -26,12 +27,18 @@ import {
   ProcessosSeletivosApi,
   PublicarProcessoSeletivoRequest,
   ConfiguracaoDerivacaoInput,
-  DefinirFormularioRequest,
   DefinirIdentificadorLegivelRequest,
   DefinirReferenciaTemporalFatosRequest,
-  FatoColetadoInput,
 } from '@uniplus/shared-data/selecao';
 
+import {
+  cabecalhoParaEnvio,
+  itensParaEnvio,
+  planoDeGravacao,
+  termosParaEnvio,
+  type FormularioParaGravar,
+  type PassoDaGravacao,
+} from '../steps/formulario/formulario-do-processo';
 import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
 
 /** Recusa nomeada por `ProblemDetails`, para o chamador exibir e decidir o retry. */
@@ -147,10 +154,11 @@ export class CadastroInicialService {
   private readonly chavePublicacao = new ChaveDeSubstituicao();
   // Cada comando tem a sua: a chave é de substituição por recurso, e compartilhá-la faria a
   // gravação de um recurso invalidar a do outro.
-  private readonly chaveFatosColetados = new ChaveDeSubstituicao();
+  private readonly chaveCabecalhoDoFormulario = new ChaveDeSubstituicao();
+  private readonly chaveItensDoFormulario = new ChaveDeSubstituicao();
+  private readonly chaveTermosDoFormulario = new ChaveDeSubstituicao();
   private readonly chaveRegrasDerivacao = new ChaveDeSubstituicao();
   private readonly chaveReferenciaTemporal = new ChaveDeSubstituicao();
-  private readonly chaveFormulario = new ChaveDeSubstituicao();
   private readonly chaveIdentificadorLegivel = new ChaveDeSubstituicao();
 
   /**
@@ -490,36 +498,6 @@ export class CadastroInicialService {
    * `null` é a forma de declarar "sem bônus" — não existe rota separada para
    * desligá-lo.
    */
-  /**
-   * Declara os campos do formulário de inscrição — quais fatos do candidato o certame coleta.
-   *
-   * Precisa sair ANTES da gravação das exigências documentais: um gatilho que cita um fato só
-   * é aceito quando o processo resolve aquele fato, e quem o torna resolvível é esta lista.
-   */
-  async definirFatosColetados(
-    processoSeletivoId: string,
-    fatos: readonly FatoColetadoInput[],
-  ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirFatosColetados(
-        processoSeletivoId,
-        fatos,
-        this.chaveFatosColetados.contextoPara(fatos),
-      ),
-    );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveFatosColetados.renovar();
-      return { ok: true };
-    }
-
-    this.chaveFatosColetados.recusada(result);
-    return { ok: false, problem: result.problem };
-  }
-
   /** Declara como os fatos derivados do certame são calculados a partir dos coletados. */
   async definirRegrasDerivacao(
     processoSeletivoId: string,
@@ -599,28 +577,73 @@ export class CadastroInicialService {
     return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /** Título e termo de aceite do formulário — os campos vêm por `definirFatosColetados`. */
-  async definirFormulario(
+  /**
+   * Grava o formulário de uma finalidade seguindo o plano: só o que difere do servidor, na ordem
+   * em que a API aceita cada parte. Para no primeiro passo recusado; os anteriores ficaram
+   * gravados, e quem chama relê o processo para comparar a próxima tentativa com o que ficou.
+   *
+   * Cada parte tem a sua chave, e o corpo leva a finalidade: a mesma lista enviada a duas
+   * finalidades é outro comando.
+   */
+  async gravarFormulario(
     processoSeletivoId: string,
-    request: DefinirFormularioRequest,
+    finalidade: string,
+    servidor: FormularioParaGravar | null,
+    desejado: FormularioParaGravar & { readonly faseId: string },
+  ): Promise<ResultadoGravacao> {
+    for (const passo of planoDeGravacao(servidor, desejado)) {
+      const resultado = await this.gravarPassoDoFormulario(processoSeletivoId, finalidade, passo, desejado);
+      if (!resultado.ok) return resultado;
+    }
+    return { ok: true };
+  }
+
+  private async gravarPassoDoFormulario(
+    processoSeletivoId: string,
+    finalidade: string,
+    passo: PassoDaGravacao,
+    desejado: FormularioParaGravar & { readonly faseId: string },
+  ): Promise<ResultadoGravacao> {
+    switch (passo) {
+      case 'cabecalho': {
+        const corpo = cabecalhoParaEnvio(desejado.faseId, desejado.conteudo);
+        return this.gravarComChave(this.chaveCabecalhoDoFormulario, { finalidade, corpo }, (contexto) =>
+          this.api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        );
+      }
+      case 'itensSemSecao':
+      case 'itens': {
+        const corpo = itensParaEnvio(desejado.conteudo, passo === 'itensSemSecao');
+        return this.gravarComChave(this.chaveItensDoFormulario, { finalidade, corpo }, (contexto) =>
+          this.api.definirItensDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        );
+      }
+      case 'termos': {
+        const corpo = termosParaEnvio(desejado.conteudo);
+        return this.gravarComChave(this.chaveTermosDoFormulario, { finalidade, corpo }, (contexto) =>
+          this.api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        );
+      }
+    }
+  }
+
+  /** Um comando de substituição sob a chave dele, girando-a como `ChaveDeSubstituicao` manda. */
+  private async gravarComChave(
+    chave: ChaveDeSubstituicao,
+    intencao: unknown,
+    enviar: (contexto: HttpContext) => Observable<ApiResult<void>>,
   ): Promise<ResultadoGravacao> {
     const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirFormulario(
-        processoSeletivoId,
-        request,
-        this.chaveFormulario.contextoPara(request),
-      ),
-    );
+    const result = await firstValueFrom(enviar(chave.contextoPara(intencao)));
 
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
 
     if (isApiOk(result)) {
-      this.chaveFormulario.renovar();
+      chave.renovar();
       return { ok: true };
     }
 
-    this.chaveFormulario.recusada(result);
+    chave.recusada(result);
     return { ok: false, problem: result.problem };
   }
 

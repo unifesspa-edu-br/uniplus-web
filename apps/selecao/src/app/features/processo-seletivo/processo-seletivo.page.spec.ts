@@ -15,6 +15,7 @@ import {
   RecursoAcessibilidadeApi,
   ReservaDemograficaApi,
   FatosCandidatoApi,
+  TermosConsentimentoApi,
   TipoDeficienciaApi,
   TipoProcessoDto,
   TiposProcessoApi,
@@ -125,6 +126,8 @@ const PAGE_PROVIDERS = [
   // O passo do formulário carrega o catálogo de fatos do candidato ao montar — é dele que
   // saem os dados que o certame pode coletar.
   { provide: FatosCandidatoApi, useValue: catalogoVazioStub },
+  // E os termos de consentimento que ele pode exigir.
+  { provide: TermosConsentimentoApi, useValue: { listarComVersoes: () => NEVER } },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
 ];
 

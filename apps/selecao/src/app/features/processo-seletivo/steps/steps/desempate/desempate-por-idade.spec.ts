@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import type {
   CriterioDesempateConfigurado,
-  FatoColetadoConfig,
   ReferenciaTemporalConfig,
 } from '../../processo-seletivo.models';
 import {
@@ -24,16 +23,7 @@ function criterio(regraCodigo: string): CriterioDesempateConfigurado {
   };
 }
 
-function campo(fatoCodigo: string): FatoColetadoConfig {
-  return {
-    fatoCodigo,
-    ordem: 1,
-    rotulo: fatoCodigo,
-    tipoRenderizacao: 'DATA',
-    obrigatorio: true,
-    precondicao: null,
-  };
-}
+const coletados = (...fatos: string[]): ReadonlySet<string> => new Set(fatos);
 
 const SEM_APURACAO: ReferenciaTemporalConfig = { tipo: '', data: '', faseCodigo: '' };
 const FIM_INSCRICAO: ReferenciaTemporalConfig = { ...SEM_APURACAO, tipo: 'FIM_INSCRICAO' };
@@ -43,17 +33,17 @@ const IDOSO = criterio('DESEMPATE-IDOSO');
 
 describe('desempateSemDataDeNascimento', () => {
   it('acusa o maior idade quando o formulário não coleta a data de nascimento', () => {
-    expect(desempateSemDataDeNascimento([MAIOR_IDADE], [campo('COR_RACA')])).toBe(true);
-    expect(desempateSemDataDeNascimento([MAIOR_IDADE], [])).toBe(true);
+    expect(desempateSemDataDeNascimento([MAIOR_IDADE], coletados('COR_RACA'))).toBe(true);
+    expect(desempateSemDataDeNascimento([MAIOR_IDADE], coletados())).toBe(true);
   });
 
   it('não acusa quando a data de nascimento é coletada', () => {
-    expect(desempateSemDataDeNascimento([MAIOR_IDADE], [campo('DATA_NASCIMENTO')])).toBe(false);
+    expect(desempateSemDataDeNascimento([MAIOR_IDADE], coletados('DATA_NASCIMENTO'))).toBe(false);
   });
 
   it('não acusa sem o critério de maior idade', () => {
-    expect(desempateSemDataDeNascimento([criterio('DESEMPATE-OUTRO')], [])).toBe(false);
-    expect(desempateSemDataDeNascimento([], [])).toBe(false);
+    expect(desempateSemDataDeNascimento([criterio('DESEMPATE-OUTRO')], coletados())).toBe(false);
+    expect(desempateSemDataDeNascimento([], coletados())).toBe(false);
   });
 
   it('não depende da apuração da idade: o maior idade compara datas de nascimento', () => {

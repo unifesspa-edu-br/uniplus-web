@@ -99,37 +99,6 @@ test.describe('Consulta como texto — matriz DS @ds', () => {
     });
   }
 
-  /**
-   * O valor longo quebra linha dentro da coluna, em vez de ser cortado pela largura, e as
-   * quebras que o termo de aceite traz continuam quebras: cada declaração começa uma linha.
-   */
-  test('mostra o termo de aceite inteiro, com as quebras de linha dele', async ({
-    page,
-  }, testInfo) => {
-    await abrirPasso(page, testInfo, 'publicado', passoPeloRotulo('Formulário'));
-    const termo = page
-      .locator('.valor-em-consulta')
-      .filter({ hasText: 'Termo de aceite' })
-      .locator('dd');
-    await expect(termo).toBeVisible();
-
-    const medida = await termo.evaluate((dd) => {
-      const trecho = 'Declaro que as informações';
-      const texto = Array.from(dd.childNodes).find((no) => no.textContent?.includes(trecho));
-      const intervalo = document.createRange();
-      const inicio = texto?.textContent?.indexOf(trecho) ?? 0;
-      if (texto) intervalo.setStart(texto, inicio);
-      if (texto) intervalo.setEnd(texto, inicio + 1);
-      return {
-        cortado: dd.scrollWidth - dd.clientWidth,
-        recuoDaSegundaDeclaracao:
-          intervalo.getBoundingClientRect().left - dd.getBoundingClientRect().left,
-      };
-    });
-    expect(medida.cortado).toBeLessThanOrEqual(1);
-    expect(medida.recuoDaSegundaDeclaracao).toBeLessThanOrEqual(1);
-  });
-
   /** Em rascunho o passo continua sendo formulário: a leitura como texto é só da consulta. */
   test('mantém o formulário em rascunho', async ({ page }, testInfo) => {
     await abrirPasso(page, testInfo, 'rascunho', passoPeloRotulo('Pagamento'));

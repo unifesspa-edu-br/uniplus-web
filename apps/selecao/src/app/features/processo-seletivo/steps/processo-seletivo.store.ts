@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
 import { exigenciasVazias } from './shared/exigencias-documentais';
 import { desempateDe, hidratarDraft } from './shared/hidratacao';
@@ -73,14 +74,15 @@ const INITIAL_DRAFT: WizardDraft = {
   },
   desempate: [],
   documentos: initialDocumentos(),
-  // O formulário nasce vazio: título, termo e campos são declaração do certame, e semear
-  // qualquer coisa aqui poria no formulário do candidato um campo que ninguém escolheu.
+  // O formulário nasce só com a revisão e aceite: os campos são declaração do certame, e semear
+  // qualquer coisa aqui poria no formulário do candidato um campo que ninguém escolheu. A seção
+  // dos dados básicos vem da API, quando o formulário é criado.
   formulario: {
-    titulo: '',
-    termoAceiteTexto: '',
-    fatos: [],
+    faseCodigo: '',
+    conteudo: conteudoInicial(),
     referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
     derivacao: [],
+    fatosDasOutrasFinalidades: [],
   },
   atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   publicacao: {

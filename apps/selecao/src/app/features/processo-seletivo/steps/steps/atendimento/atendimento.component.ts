@@ -25,6 +25,7 @@ import {
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { camposSemValoresOfertados } from '../formulario/formulario-de-inscricao';
 import { CatalogosDeAtendimentoService, CODIGO_CONDICAO_PCD } from './catalogos-de-atendimento.service';
 
 /**
@@ -386,23 +387,9 @@ export class AtendimentoStepComponent {
    * sem nada indicando o problema, descobre na revisão, e o botão "Ir para Atend. especial" o
    * traz de volta a uma tela que não menciona por que ele veio.
    */
-  readonly fatosQueDependemDaOferta = computed<readonly string[]>(() => {
-    const perguntados = new Set(
-      this.store
-        .draft()
-        .formulario.fatos.filter((campo) => campo.tipoRenderizacao.startsWith('SELECAO'))
-        .map((campo) => campo.fatoCodigo),
-    );
-
-    const pendentes: string[] = [];
-    if (perguntados.has('CONDICAO_ATENDIMENTO') && this.atendimento().condicoes.length === 0) {
-      pendentes.push('a condição de atendimento');
-    }
-    if (perguntados.has('TIPO_DEFICIENCIA') && this.atendimento().tiposDeficiencia.length === 0) {
-      pendentes.push('o tipo de deficiência');
-    }
-    return pendentes;
-  });
+  readonly fatosQueDependemDaOferta = computed<readonly string[]>(() =>
+    camposSemValoresOfertados(this.store.draft().formulario, this.atendimento()),
+  );
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {

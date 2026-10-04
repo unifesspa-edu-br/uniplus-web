@@ -33,6 +33,7 @@ import {
 import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 
 import { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
+import { fatosColetadosPelaInscricao } from '../formulario/formulario-de-inscricao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -386,7 +387,10 @@ export class DesempateStepComponent {
   readonly semDataDeNascimento = computed(
     () =>
       !this.store.emConsulta() &&
-      desempateSemDataDeNascimento(this.criterios(), this.store.draft().formulario.fatos),
+      desempateSemDataDeNascimento(
+        this.criterios(),
+        fatosColetadosPelaInscricao(this.store.draft().formulario.conteudo),
+      ),
   );
 
   /** O desempate por idoso sem a apuração da idade no formulário. */

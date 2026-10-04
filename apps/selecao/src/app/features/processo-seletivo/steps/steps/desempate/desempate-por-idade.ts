@@ -1,7 +1,6 @@
 import { STEP_LABELS } from '../../processo-seletivo.data';
 import type {
   CriterioDesempateConfigurado,
-  FatoColetadoConfig,
   ReferenciaTemporalConfig,
 } from '../../processo-seletivo.models';
 
@@ -36,12 +35,9 @@ export function desempateUsaDataDeNascimento(
  */
 export function desempateSemDataDeNascimento(
   criterios: readonly CriterioDesempateConfigurado[],
-  fatosColetados: readonly FatoColetadoConfig[],
+  fatosColetados: ReadonlySet<string>,
 ): boolean {
-  return (
-    desempateUsaDataDeNascimento(criterios) &&
-    !fatosColetados.some((campo) => campo.fatoCodigo === FATO_DATA_NASCIMENTO)
-  );
+  return desempateUsaDataDeNascimento(criterios) && !fatosColetados.has(FATO_DATA_NASCIMENTO);
 }
 
 /**

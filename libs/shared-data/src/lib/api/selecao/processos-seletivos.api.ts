@@ -39,7 +39,10 @@ export type ConfiguracaoDerivacaoInput = components['schemas']['ConfiguracaoDeri
 export type ReferenciaTemporalFatosDto = components['schemas']['ReferenciaTemporalFatosDto'];
 export type DefinirReferenciaTemporalFatosRequest =
   components['schemas']['DefinirReferenciaTemporalFatosRequest'];
+export type FormularioDto = components['schemas']['FormularioDto'];
 export type DefinirFormularioRequest = components['schemas']['DefinirFormularioRequest'];
+export type DefinirItensDoFormularioRequest = components['schemas']['DefinirItensDoFormularioRequest'];
+export type DefinirTermosDoFormularioRequest = components['schemas']['DefinirTermosDoFormularioRequest'];
 export type DefinirIdentificadorLegivelRequest =
   components['schemas']['DefinirIdentificadorLegivelRequest'];
 export type BaseLegalDto = components['schemas']['BaseLegalDto'];
@@ -230,29 +233,6 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/fatos-coletados` — declara QUAIS fatos do
-   * candidato o certame coleta na inscrição, e como cada um é apresentado.
-   *
-   * É a lista de campos do formulário público: `GET /processos-seletivos/{id}/formulario`
-   * renderiza exatamente estes fatos, na ordem declarada, juntando os valores de domínio do
-   * catálogo. Só fato DECLARADO com binding de campo de inscrição é coletável — derivado
-   * (modalidade, faixa etária) resolve por outro caminho e o servidor o recusa aqui.
-   *
-   * Substitui a coleção inteira. Responde 204 sem corpo.
-   */
-  definirFatosColetados(
-    processoSeletivoId: string,
-    fatos: readonly FatoColetadoInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/fatos-coletados`,
-      fatos,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
    * PUT `/api/selecao/processos-seletivos/{id}/regras-derivacao` — declara como os fatos
    * derivados do certame são calculados a partir dos coletados.
    *
@@ -319,25 +299,68 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/admin/processos-seletivos/{id}/formulario` — título e termo de aceite do
-   * formulário de inscrição.
+   * PUT `/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}` — cria ou
+   * substitui o cabeçalho do formulário de uma finalidade (inscrição, isenção da taxa,
+   * habilitação — ADR-0136): a fase em que é respondido, o título e as etapas. Na inscrição, a
+   * API repõe a seção dos dados básicos.
    *
-   * **A rota é outra**: mora sob `admin/` e exige o papel de administração da plataforma,
-   * enquanto a leitura do formulário é pública e anônima. Os CAMPOS do formulário não vêm por
-   * aqui — são os fatos coletados.
+   * A leitura vem com o processo (`ProcessoSeletivoDto.formularios`). As escritas são três,
+   * separadas porque a API confere cada parte contra o que está gravado da outra: o cabeçalho,
+   * os itens e grupos, e os termos. O `If-Match` é aceito e ignorado no rascunho.
    *
    * Responde 204 sem corpo.
    */
-  definirFormulario(
+  definirCabecalhoDoFormulario(
     processoSeletivoId: string,
+    finalidade: string,
     request: DefinirFormularioRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formulario`,
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
+    return this.http.put<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade), request, {
+      context,
+      headers: new HttpHeaders({ Accept: 'application/json' }),
+    });
+  }
+
+  /**
+   * PUT `…/formularios/{finalidade}/itens` — substitui os itens e os grupos; `grupos` nulo deixa
+   * os grupos como estão. Exige o formulário criado. Responde 204 sem corpo.
+   */
+  definirItensDoFormulario(
+    processoSeletivoId: string,
+    finalidade: string,
+    request: DefinirItensDoFormularioRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(`${this.urlDoFormulario(processoSeletivoId, finalidade)}/itens`, request, {
+      context,
+      headers: new HttpHeaders({ Accept: 'application/json' }),
+    });
+  }
+
+  /** PUT `…/formularios/{finalidade}/termos` — substitui os termos exigidos. Responde 204 sem corpo. */
+  definirTermosDoFormulario(
+    processoSeletivoId: string,
+    finalidade: string,
+    request: DefinirTermosDoFormularioRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(`${this.urlDoFormulario(processoSeletivoId, finalidade)}/termos`, request, {
+      context,
+      headers: new HttpHeaders({ Accept: 'application/json' }),
+    });
+  }
+
+  /**
+   * DELETE `…/formularios/{finalidade}` — só em rascunho; a inscrição é recusada se outra
+   * finalidade cita fato dela. Responde 204 sem corpo.
+   */
+  removerFormulario(processoSeletivoId: string, finalidade: string): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade));
+  }
+
+  private urlDoFormulario(processoSeletivoId: string, finalidade: string): string {
+    return `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formularios/${encodeURIComponent(finalidade)}`;
   }
 
   /**

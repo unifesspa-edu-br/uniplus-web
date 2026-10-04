@@ -90,6 +90,8 @@ export interface paths {
                         readonly "X-Certames-Ultimos-Dias"?: number;
                         /** @description Quantos certames divulgados já encerraram, no instante da consulta. Presente só quando incluir_contadores=true. */
                         readonly "X-Certames-Encerrados"?: number;
+                        /** @description Revisão do recorte percorrido: marcador opaco dos certames que a consulta seleciona (situação, modalidade e busca) e do que cada um tem de ordenável e exibível — a versão divulgada e a situação da janela de inscrição —, no instante em que a travessia começou. Não depende da ordenação pedida, que o cursor já fixa. É o mesmo em todas as páginas da mesma travessia e muda quando uma publicação, uma retificação ou a passagem do tempo altera esse conjunto. Quem compõe a vitrine compara o valor entre páginas para saber que precisa recomeçar. */
+                        readonly "X-Certames-Revisao"?: string;
                         readonly [name: string]: unknown;
                     };
                     content: {
@@ -156,6 +158,7 @@ export interface paths {
                     readonly "If-None-Match"?: string;
                 };
                 readonly path: {
+                    /** @description Guid do processo seletivo ou identificador legível do certame (kebab-case, congelado na publicação). */
                     readonly id: string;
                 };
                 readonly cookie?: never;
@@ -346,7 +349,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -452,7 +455,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -570,7 +573,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/formulario": {
+    readonly "/api/selecao/processos-seletivos/{id}/formularios/{finalidade}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -583,6 +586,7 @@ export interface paths {
                 readonly header?: never;
                 readonly path: {
                     readonly id: string;
+                    readonly finalidade: string;
                 };
                 readonly cookie?: never;
             };
@@ -594,7 +598,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.formulario-inscricao.v1+json": components["schemas"]["FormularioRenderizavelDto"];
+                        readonly "application/vnd.uniplus.formulario.v1+json": components["schemas"]["FormularioRenderizavelDto"];
                     };
                 };
                 /** @description Not Found */
@@ -634,7 +638,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/admin/processos-seletivos/{id}/formulario": {
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -652,6 +656,7 @@ export interface paths {
                 };
                 readonly path: {
                     readonly id: string;
+                    readonly finalidade: string;
                 };
                 readonly cookie?: never;
             };
@@ -708,7 +713,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -755,6 +760,748 @@ export interface paths {
                 };
             };
         };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                    readonly finalidade: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/itens": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly finalidade: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DefinirItensDoFormularioRequest"];
+                    readonly "text/json": components["schemas"]["DefinirItensDoFormularioRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirItensDoFormularioRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/termos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly finalidade: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DefinirTermosDoFormularioRequest"];
+                    readonly "text/json": components["schemas"]["DefinirTermosDoFormularioRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirTermosDoFormularioRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/admin/processos-seletivos/{id}/formularios/aplicacoes-de-modelo": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AplicacaoDeModeloInput"];
+                    readonly "text/json": components["schemas"]["AplicacaoDeModeloInput"];
+                    readonly "application/*+json": components["schemas"]["AplicacaoDeModeloInput"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.aplicacao-de-modelo-formulario.v1+json": components["schemas"]["AplicacaoDeModeloDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/modelos-de-documento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["IniciarEnvioDoModeloDeDocumentoRequest"];
+                    readonly "text/json": components["schemas"]["IniciarEnvioDoModeloDeDocumentoRequest"];
+                    readonly "application/*+json": components["schemas"]["IniciarEnvioDoModeloDeDocumentoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["IniciarEnvioDoModeloDeDocumentoDto"];
+                        readonly "application/json": components["schemas"]["IniciarEnvioDoModeloDeDocumentoDto"];
+                        readonly "text/json": components["schemas"]["IniciarEnvioDoModeloDeDocumentoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/modelos-de-documento/{modeloDeDocumentoId}/confirmacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                    readonly modeloDeDocumentoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["ModeloDeDocumentoDto"];
+                        readonly "application/json": components["schemas"]["ModeloDeDocumentoDto"];
+                        readonly "text/json": components["schemas"]["ModeloDeDocumentoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/modelos-de-documento/{modeloDeDocumentoId}/acesso": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                    readonly modeloDeDocumentoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.acesso-modelo-de-documento.v1+json": components["schemas"]["AcessoModeloDeDocumentoDto"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
@@ -1072,7 +1819,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -1172,7 +1919,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -1256,7 +2003,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2014,7 +2761,136 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{id}/fatos/{fatoCodigo}/opcoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly fatoCodigo: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DefinirOpcoesDeclaradasRequest"];
+                    readonly "text/json": components["schemas"]["DefinirOpcoesDeclaradasRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirOpcoesDeclaradasRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2142,7 +3018,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2274,7 +3150,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2425,6 +3301,103 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{id}/pre-visualizacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["PreVisualizacaoDoProcessoInput"];
+                    readonly "text/json": components["schemas"]["PreVisualizacaoDoProcessoInput"];
+                    readonly "application/*+json": components["schemas"]["PreVisualizacaoDoProcessoInput"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.pre-visualizacao-processo-seletivo.v1+json": components["schemas"]["PreVisualizacaoDoProcessoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{id}/criterios-desempate": {
         readonly parameters: {
             readonly query?: never;
@@ -2499,7 +3472,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2627,7 +3600,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2755,7 +3728,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -2883,7 +3856,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3011,7 +3984,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3139,7 +4112,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3267,7 +4240,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3395,7 +4368,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3651,7 +4624,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3779,7 +4752,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -3907,135 +4880,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/selecao/processos-seletivos/{id}/fatos-coletados": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    readonly "If-Match"?: string;
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": readonly components["schemas"]["FatoColetadoInput"][];
-                    readonly "text/json": readonly components["schemas"]["FatoColetadoInput"][];
-                    readonly "application/*+json": readonly components["schemas"]["FatoColetadoInput"][];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -4163,7 +5008,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -5315,7 +6160,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -5757,11 +6602,35 @@ export interface components {
             /** Format: date-time */
             readonly expiraEm: string;
         };
+        readonly AcessoModeloDeDocumentoDto: {
+            /** Format: uri */
+            readonly url: string;
+            /** Format: date-time */
+            readonly expiraEm: string;
+        };
         readonly AlterarMotivoRetificacaoRequest: {
             readonly motivo: string;
         };
+        readonly AlternativasSimuladasDto: {
+            /** Format: uuid */
+            readonly grupoId: string;
+            /** Format: int32 */
+            readonly minimo: number | string;
+        };
         /** @enum {string} */
         readonly AncoraDoRecurso: AncoraDoRecurso;
+        readonly AplicacaoDeModeloDto: {
+            readonly finalidade: string;
+            readonly fatosTrazidosParaAInscricao: readonly string[];
+            readonly fatosMantidosNaInscricao: readonly string[];
+            readonly descartados: readonly components["schemas"]["ParteDescartadaDto"][];
+            readonly derivacoesCopiadas: readonly string[];
+            readonly derivacoesMantidas: readonly string[];
+        };
+        readonly AplicacaoDeModeloInput: {
+            /** Format: uuid */
+            readonly modeloId: string;
+        };
         readonly AreaPesoAreaEnemCongeladaDto: {
             readonly codigo: string;
             readonly rotulo: string;
@@ -5884,6 +6753,7 @@ export interface components {
         readonly CertameNaVitrineDto: {
             /** Format: uuid */
             readonly processoSeletivoId: string;
+            readonly identificadorLegivel: string;
             readonly numero: null | string;
             readonly nome: string;
             readonly tipoProcesso: components["schemas"]["TipoCatalogadoCertameDto"];
@@ -5899,6 +6769,7 @@ export interface components {
         readonly CertamePublicadoDto: {
             /** Format: uuid */
             readonly processoSeletivoId: string;
+            readonly identificadorLegivel: string;
             /** Format: uuid */
             readonly atoCriadorId: string;
             readonly nome: string;
@@ -6187,11 +7058,17 @@ export interface components {
             readonly justificativa: null | string;
         };
         readonly DefinirFormularioRequest: {
+            /** Format: uuid */
+            readonly faseId: null | string;
             readonly titulo: null | string;
-            readonly termoAceiteTexto: null | string;
+            readonly etapas: readonly components["schemas"]["EtapaFormularioInput"][];
         };
         readonly DefinirIdentificadorLegivelRequest: {
             readonly identificadorLegivel: null | string;
+        };
+        readonly DefinirItensDoFormularioRequest: {
+            readonly itens: readonly components["schemas"]["FatoColetadoInput"][];
+            readonly grupos?: null | readonly components["schemas"]["GrupoColetadoInput"][];
         };
         readonly DefinirLocalidadeRequest: {
             readonly codigoIbge: null | string;
@@ -6202,6 +7079,9 @@ export interface components {
             readonly condicaoIds: readonly string[];
             readonly recursoIds: readonly string[];
             readonly tipoDeficienciaIds: readonly string[];
+        };
+        readonly DefinirOpcoesDeclaradasRequest: {
+            readonly opcoes: readonly components["schemas"]["OpcaoDeclaradaRequest"][];
         };
         readonly DefinirReferenciaTemporalFatosRequest: {
             readonly tipo: null | string;
@@ -6215,6 +7095,9 @@ export interface components {
             /** Format: double */
             readonly valor: null | number | string;
             readonly fundamentos: null | readonly DefinirTaxaInscricaoRequestFundamentos[];
+        };
+        readonly DefinirTermosDoFormularioRequest: {
+            readonly termos: readonly components["schemas"]["TermoExigidoInput"][];
         };
         readonly DestinoRemanejamentoDto: {
             /** Format: uuid */
@@ -6272,6 +7155,21 @@ export interface components {
             readonly tamanhoMaximoBytes: null | number | string;
             /** Format: uuid */
             readonly exigidoNaEtapaId: null | string;
+            readonly modelo: null | components["schemas"]["ModeloDaExigenciaDto"];
+        };
+        readonly DocumentoSimuladoDto: {
+            /** Format: uuid */
+            readonly exigenciaId: string;
+            readonly tipoDocumentoCodigo: string;
+            readonly tipoDocumentoNome: string;
+            readonly obrigatorio: boolean;
+            /** Format: uuid */
+            readonly faseId: string;
+            /** Format: uuid */
+            readonly etapaId: null | string;
+            readonly situacao: string;
+            readonly entidadeId: null | string;
+            readonly alternativas: readonly components["schemas"]["AlternativasSimuladasDto"][];
         };
         readonly EtapaCertameDto: {
             readonly nome: string;
@@ -6287,6 +7185,32 @@ export interface components {
             /** Format: date-time */
             readonly fim: null | string;
             readonly emiteParecerIndividual: boolean;
+        };
+        readonly EtapaConcluidaInput: {
+            readonly finalidade: string;
+            readonly etapa: string;
+        };
+        readonly EtapaFormularioDto: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly tipo: string;
+            readonly bloco: null | string;
+            readonly titulo: string;
+            readonly descricao: null | string;
+            readonly aviso: null | string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+        };
+        readonly EtapaFormularioInput: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly tipo: string;
+            readonly bloco: null | string;
+            readonly titulo: string;
+            readonly descricao: null | string;
+            readonly aviso: null | string;
+            readonly exibicao?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
         };
         readonly EtapaProcessoDto: {
             /** Format: uuid */
@@ -6339,6 +7263,7 @@ export interface components {
             readonly aplicabilidade: string;
             readonly obrigatorio: boolean;
             readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
+            readonly modelo: null | components["schemas"]["ModeloDocumentalCertameDto"];
         };
         readonly FaseCronogramaCertameDto: {
             /** Format: int32 */
@@ -6398,8 +7323,15 @@ export interface components {
             readonly ordem: number | string;
             readonly rotulo: string;
             readonly tipoRenderizacao: string;
-            readonly obrigatorio: boolean;
+            readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
             readonly precondicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly opcoes: null | readonly components["schemas"]["OpcaoDoProcessoDto"][];
+            readonly etapaCodigo: null | string;
+            readonly formato: null | string;
+            readonly ajuda: null | string;
+            readonly pedirConfirmacao: boolean;
+            readonly restricoes: readonly components["schemas"]["RestricaoValorDto"][];
+            readonly impedimento: null | components["schemas"]["ImpedimentoDto"];
         };
         readonly FatoColetadoInput: {
             readonly fatoCodigo: string;
@@ -6407,8 +7339,15 @@ export interface components {
             readonly ordem: number | string;
             readonly rotulo: string;
             readonly tipoRenderizacao: string;
-            readonly obrigatorio: boolean;
+            readonly obrigatoriedade: null | string;
             readonly precondicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly etapaCodigo?: null | string;
+            readonly predicadoObrigatoriedade?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly ajuda?: null | string;
+            /** @default false */
+            readonly pedirConfirmacao: boolean;
+            readonly restricoes?: null | readonly components["schemas"]["RestricaoValorInput"][];
+            readonly impedimento?: null | components["schemas"]["ImpedimentoInput"];
         };
         readonly FatoFormularioRenderizavelDto: {
             readonly fatoCodigo: string;
@@ -6416,9 +7355,15 @@ export interface components {
             readonly ordem: number | string;
             readonly rotulo: string;
             readonly tipoRenderizacao: string;
-            readonly obrigatorio: boolean;
+            readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
             readonly precondicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
             readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavelDto"][];
+            readonly etapaCodigo: null | string;
+            readonly formato: null | string;
+            readonly ajuda: null | string;
+            readonly pedirConfirmacao: boolean;
+            readonly restricoes: readonly components["schemas"]["RestricaoValorDto"][];
+            readonly impedimento: null | components["schemas"]["ImpedimentoDto"];
         };
         readonly FecharRetificacaoRequest: {
             readonly numero: null | string;
@@ -6434,10 +7379,33 @@ export interface components {
             readonly qualquer: boolean;
             readonly lista: null | readonly string[];
         };
-        readonly FormularioRenderizavelDto: {
+        readonly FormularioDto: {
+            readonly finalidade: string;
+            /** Format: uuid */
+            readonly faseId: null | string;
             readonly titulo: null | string;
-            readonly termoAceiteTexto: null | string;
+            /** Format: uuid */
+            readonly modeloOrigemId: null | string;
+            readonly modeloOrigemCodigo: null | string;
+            readonly etapas: readonly components["schemas"]["EtapaFormularioDto"][];
+            readonly fatosColetados: readonly components["schemas"]["FatoColetadoDto"][];
+            readonly termos: readonly components["schemas"]["TermoExigidoDto"][];
+            readonly grupos: readonly components["schemas"]["GrupoColetadoDto"][];
+        };
+        readonly FormularioRenderizavelDto: {
+            readonly finalidade: string;
+            readonly titulo: null | string;
+            readonly etapas: readonly components["schemas"]["EtapaFormularioDto"][];
+            readonly termos: readonly components["schemas"]["TermoExigidoDto"][];
             readonly fatosColetados: readonly components["schemas"]["FatoFormularioRenderizavelDto"][];
+            readonly comprovacaoDocumental: null | readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
+            readonly grupos: readonly components["schemas"]["GrupoFormularioRenderizavelDto"][];
+        };
+        readonly FormularioSimuladoDto: {
+            readonly finalidade: string;
+            readonly itens: readonly components["schemas"]["ItemSimuladoDto"][];
+            readonly grupos: readonly components["schemas"]["GrupoSimuladoDto"][];
+            readonly termos: readonly components["schemas"]["TermoSimuladoDto"][];
         };
         readonly FundamentoIsencaoDto: {
             readonly codigo: string;
@@ -6448,10 +7416,66 @@ export interface components {
             readonly codigo: string;
             readonly rotulo: string;
         };
+        readonly GrupoColetadoDto: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly etapaCodigo: null | string;
+            readonly rotulo: string;
+            /** Format: int32 */
+            readonly minimo: number | string;
+            /** Format: int32 */
+            readonly maximo: null | number | string;
+            readonly incluiCandidato: boolean;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
+            readonly subitens: readonly components["schemas"]["FatoColetadoDto"][];
+        };
+        readonly GrupoColetadoInput: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly rotulo: string;
+            readonly etapaCodigo: null | string;
+            /** Format: int32 */
+            readonly minimo: number | string;
+            /** Format: int32 */
+            readonly maximo: null | number | string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly obrigatoriedade: null | string;
+            readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
+            /** @default false */
+            readonly incluiCandidato: boolean;
+        };
+        readonly GrupoFormularioRenderizavelDto: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly etapaCodigo: null | string;
+            readonly rotulo: string;
+            /** Format: int32 */
+            readonly minimo: number | string;
+            /** Format: int32 */
+            readonly maximo: null | number | string;
+            readonly incluiCandidato: boolean;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
+            readonly subitens: readonly components["schemas"]["FatoFormularioRenderizavelDto"][];
+        };
         readonly GrupoPesoAreaEnemCongeladoDto: {
             readonly grupoAreaEnem: components["schemas"]["GrupoAreaEnemSnapshotDto"];
             readonly baseLegal: string;
             readonly areas: readonly components["schemas"]["AreaPesoAreaEnemCongeladaDto"][];
+        };
+        readonly GrupoSimuladoDto: {
+            readonly codigo: string;
+            readonly etapaCodigo: null | string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
+            readonly contagemValida: boolean;
+            readonly ocorrenciaDoCandidatoValida: boolean;
+            readonly ocorrencias: readonly components["schemas"]["OcorrenciaSimuladaDto"][];
         };
         readonly IdadeMaximaEmissaoDto: {
             /** Format: int32 */
@@ -6472,6 +7496,27 @@ export interface components {
             readonly data: null | string;
             /** Format: uuid */
             readonly referenciaFaseId: null | string;
+        };
+        readonly ImpedimentoDto: {
+            readonly quando: readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly mensagem: string;
+        };
+        readonly ImpedimentoInput: {
+            readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly mensagem: null | string;
+        };
+        readonly IniciarEnvioDoModeloDeDocumentoDto: {
+            /** Format: uuid */
+            readonly modeloDeDocumentoId: string;
+            /** Format: uri */
+            readonly urlUpload: string;
+            readonly contentTypeExigido: string;
+            /** Format: date-time */
+            readonly expiraEm: string;
+        };
+        readonly IniciarEnvioDoModeloDeDocumentoRequest: {
+            readonly nomeArquivo: null | string;
+            readonly formato: null | string;
         };
         readonly IniciarUploadDocumentoEditalDto: {
             /** Format: uuid */
@@ -6504,6 +7549,17 @@ export interface components {
             readonly tamanhoMaximoBytes: null | number | string;
             /** Format: uuid */
             readonly exigidoNaEtapaId?: null | string;
+            /** Format: uuid */
+            readonly modeloId?: null | string;
+        };
+        readonly ItemSimuladoDto: {
+            readonly fatoCodigo: string;
+            readonly etapaCodigo: null | string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
+            readonly restricoesVioladas: readonly string[];
+            readonly impedido: string;
+            readonly mensagemDoImpedimento: null | string;
         };
         readonly JsonElement: unknown;
         readonly JsonNode: unknown;
@@ -6537,6 +7593,36 @@ export interface components {
             readonly baseLegal: string;
             /** Format: int32 */
             readonly quantidadeDeclarada: null | number | string;
+        };
+        readonly ModeloDaExigenciaDto: {
+            /** Format: uuid */
+            readonly modeloId: string;
+            readonly nomeArquivo: string;
+            readonly formato: string;
+            readonly hashSha256: string;
+        };
+        readonly ModeloDeDocumentoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly processoSeletivoId: string;
+            readonly nomeArquivo: string;
+            readonly formato: string;
+            readonly status: string;
+            /** Format: date-time */
+            readonly criadoEm: string;
+            /** Format: date-time */
+            readonly expiraEm: string;
+            /** Format: int64 */
+            readonly tamanhoBytes: null | number | string;
+            readonly hashSha256: null | string;
+            /** Format: date-time */
+            readonly confirmadoEm: null | string;
+        };
+        readonly ModeloDocumentalCertameDto: {
+            readonly nomeArquivo: string;
+            readonly formato: string;
+            readonly hashSha256: string;
         };
         readonly MotivoDecisaoIsencaoDto: {
             /** Format: uuid */
@@ -6580,6 +7666,10 @@ export interface components {
             readonly ocorrenciasEsperadas?: null | readonly string[];
             readonly repetePorEntidade?: null | string;
         };
+        readonly ObrigatoriedadeDto: {
+            readonly tipo: string;
+            readonly predicado: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+        };
         readonly ObrigatoriedadeLegalDto: {
             /** Format: uuid */
             readonly id: string;
@@ -6600,6 +7690,14 @@ export interface components {
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly OcorrenciaSimuladaDto: {
+            readonly id: string;
+            readonly itens: readonly components["schemas"]["ItemSimuladoDto"][];
+        };
+        readonly OcorrenciaSimuladaInput: {
+            readonly id: null | string;
+            readonly respostas: null | Record<string, never>;
         };
         readonly OfertaAtendimentoEspecializadoDto: {
             /** Format: uuid */
@@ -6630,8 +7728,31 @@ export interface components {
             readonly tipoDeficienciaOrigemId: string;
             readonly tipoDeficienciaNome: string;
         };
+        readonly OpcaoDeclaradaRequest: {
+            readonly codigo: string;
+            readonly rotulo: string;
+        };
+        readonly OpcaoDoProcessoDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+        };
+        readonly OpcoesCondicionadasDto: {
+            readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly valores: readonly string[];
+        };
+        readonly OpcoesCondicionadasInput: {
+            readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly valores: readonly string[];
+        };
         /** @enum {string} */
         readonly OrigemCandidatos: OrigemCandidatos;
+        readonly ParteDescartadaDto: {
+            readonly parte: string;
+            readonly codigo: string;
+            readonly motivo: string;
+        };
         readonly PeriodoInscricaoCertameDto: {
             readonly numero: null | string;
             /** Format: date-time */
@@ -6675,6 +7796,18 @@ export interface components {
             readonly $tipo?: PredicadoObrigatoriedadeModalidadesMinimas$tipo;
             readonly codigos: readonly string[];
         };
+        readonly PreVisualizacaoDoProcessoDto: {
+            readonly formularios: readonly components["schemas"]["FormularioSimuladoDto"][];
+            readonly documentos: readonly components["schemas"]["DocumentoSimuladoDto"][];
+        };
+        readonly PreVisualizacaoDoProcessoInput: {
+            readonly respostas: null | Record<string, never>;
+            readonly grupos: null | {
+                readonly [key: string]: readonly components["schemas"]["OcorrenciaSimuladaInput"][];
+            };
+            readonly etapasConcluidas: null | readonly components["schemas"]["EtapaConcluidaInput"][];
+            readonly pressupostos: null | Record<string, never>;
+        };
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -6682,6 +7815,8 @@ export interface components {
             readonly status?: null | number | string;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
+            readonly retryable?: boolean;
         };
         readonly ProcessoSeletivoDto: {
             /** Format: uuid */
@@ -6704,10 +7839,8 @@ export interface components {
             readonly documentosExigidos: readonly components["schemas"]["DocumentoExigidoDto"][];
             readonly raizesExigencia: readonly components["schemas"]["NoExigenciaDto"][];
             readonly referenciaTemporalFatos: null | components["schemas"]["ReferenciaTemporalFatosDto"];
-            readonly fatosColetados: readonly components["schemas"]["FatoColetadoDto"][];
             readonly regrasDerivacao: readonly components["schemas"]["ConfiguracaoDerivacaoDto"][];
-            readonly formularioTitulo: null | string;
-            readonly formularioTermoAceiteTexto: null | string;
+            readonly formularios: readonly components["schemas"]["FormularioDto"][];
             readonly configuracaoDivulgacao: null | components["schemas"]["ConfiguracaoDivulgacaoDto"];
             readonly configuracaoTaxaInscricao: null | components["schemas"]["ConfiguracaoTaxaInscricaoDto"];
             readonly algoritmoContagemPrazo: null | components["schemas"]["ReferenciaRegraDto"];
@@ -6860,13 +7993,13 @@ export interface components {
         readonly RegraDerivacaoDto: {
             /** Format: int32 */
             readonly ordem: number | string;
-            readonly contribui: string;
+            readonly contribui: null | string;
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoDerivacaoDto"][])[];
         };
         readonly RegraDerivacaoInput: {
             /** Format: int32 */
             readonly ordem: number | string;
-            readonly contribui: string;
+            readonly contribui: null | string;
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoDerivacaoInput"][])[];
         };
         readonly RegraEliminacaoDto: {
@@ -6913,6 +8046,24 @@ export interface components {
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+        };
+        readonly RestricaoValorDto: {
+            readonly tipo: string;
+            /** Format: double */
+            readonly minimo: null | number | string;
+            /** Format: double */
+            readonly maximo: null | number | string;
+            readonly entradas: null | readonly components["schemas"]["OpcoesCondicionadasDto"][];
+            readonly fatos: null | readonly string[];
+        };
+        readonly RestricaoValorInput: {
+            readonly tipo: string;
+            /** Format: double */
+            readonly minimo?: null | number | string;
+            /** Format: double */
+            readonly maximo?: null | number | string;
+            readonly entradas?: null | readonly components["schemas"]["OpcoesCondicionadasInput"][];
+            readonly fatos?: null | readonly string[];
         };
         readonly RetificacaoCertameDto: {
             /** Format: uuid */
@@ -6971,6 +8122,39 @@ export interface components {
             readonly cobra: boolean;
             readonly valor: null | string;
             readonly fundamentos: readonly string[];
+        };
+        readonly TermoExigidoDto: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            /** Format: uuid */
+            readonly termoId: string;
+            /** Format: uuid */
+            readonly versaoId: string;
+            readonly nome: string;
+            readonly texto: string;
+            readonly baseLegal: string;
+            readonly formaAceite: string;
+            readonly hashVersao: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+            readonly obrigatoriedade: components["schemas"]["ObrigatoriedadeDto"];
+        };
+        readonly TermoExigidoInput: {
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            /** Format: uuid */
+            readonly termoId: string;
+            /** Format: uuid */
+            readonly versaoId: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly obrigatoriedade: string;
+            readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+        };
+        readonly TermoSimuladoDto: {
+            readonly codigo: string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
         };
         readonly TipoCatalogadoCertameDto: {
             readonly codigo: string;

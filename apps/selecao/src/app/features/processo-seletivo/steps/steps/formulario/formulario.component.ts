@@ -1,56 +1,59 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DestroyRef } from '@angular/core';
-import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { firstValueFrom } from 'rxjs';
+import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
+import { FatoCandidatoView, FatosCandidatoApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import {
-  ComboboxComponent,
-  renderizacaoDe,
-  type UiComboboxGroup,
+  EditorDeFormularioComponent,
+  FINALIDADE_INSCRICAO,
+  OBRIGATORIEDADES,
   ValorEmConsultaComponent,
+  distribuirRecusas,
+  entradasDaSecao,
+  etapasEmOrdem,
+  semDadosBasicos,
+  termoDisponivelDe,
+  type ConteudoDoFormulario,
+  type RecusasDoConteudo,
+  type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
 
-import type { FatoColetadoConfig, StepValidation } from '../../processo-seletivo.models';
+import type { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { todasAsExigencias } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import {
-  desempateIdosoSemApuracao,
-  desempateSemDataDeNascimento,
-  PASSO_DESEMPATE,
-} from '../desempate/desempate-por-idade';
+import { descreverFase } from '../cronograma/cronograma-do-certame';
+import { desempateIdosoSemApuracao, desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import {
   ANCORAS_DA_IDADE,
   camposSemUsoDeclarado,
   camposSemValoresOfertados,
   comCamposQueAsExigenciasPressupoem,
-  comoComandoDeFatosColetados,
   comoComandoDeReferenciaTemporal,
-  ehColetavel,
-  fatosCitadosPelaDerivacao,
   fatosCitadosPelasExigencias,
+  fatosColetadosPelaInscricao,
+  fatosForaDaColetaDaInscricao,
   problemasDoFormulario,
-  regrasQueDependemDoFato,
-  renumerar,
+  quemCitaNoProcesso,
+  remocoesTravadasPor,
 } from './formulario-de-inscricao';
+import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade, inscricaoDoServidor } from './formulario-do-processo';
 
 /**
- * Formulário de inscrição — o que o candidato lê no topo e os campos que ele preenche.
+ * Formulário de inscrição — as etapas, os campos e os termos que o candidato responde ao se
+ * inscrever, editados pelo editor de formulário compartilhado com os modelos da Configuração.
  *
- * Os campos são os fatos que o certame coleta: a renderização pública projeta exatamente esta
- * lista. O passo vem depois do Cronograma porque depende dele em duas frentes — a apuração da
- * idade pode ancorar no início ou no fim de uma fase, e os campos que as exigências
- * documentais pressupõem só são conhecidos depois que elas foram declaradas.
+ * O passo vem depois do Cronograma porque depende dele em três frentes: a inscrição é respondida
+ * numa fase dele, a apuração da idade pode ancorar no início ou no fim de uma fase, e os campos
+ * que as exigências documentais pressupõem só são conhecidos depois que elas foram declaradas.
  */
 @Component({
   selector: 'sel-step-formulario',
   standalone: true,
-  imports: [ComboboxComponent, DateBrPipe, ValorEmConsultaComponent],
+  imports: [DateBrPipe, EditorDeFormularioComponent, ValorEmConsultaComponent],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormularioStepComponent)],
@@ -60,46 +63,42 @@ export class FormularioStepComponent {
   private readonly cadastro = inject(CadastroInicialService);
   readonly catalogos = inject(CatalogosDoCronogramaService);
   private readonly fatosApi = inject(FatosCandidatoApi);
+  private readonly termosApi = inject(TermosConsentimentoApi);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
+  protected readonly finalidade = FINALIDADE_INSCRICAO;
+  protected readonly ancoras = ANCORAS_DA_IDADE;
+
+  readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
   readonly catalogoCarregando = signal(true);
   readonly catalogoErro = signal<string | null>(null);
 
-  /**
-   * Os campos que a reconciliação acrescentou nesta sessão, por causa de um gatilho.
-   *
-   * Só o que entrou sozinho sai sozinho. Sem essa memória, reabrir um processo já configurado
-   * esvaziaria o formulário — nenhum gatilho tinha sido lido ainda —, e a gravação seguinte
-   * apagaria no servidor uma configuração que ninguém pediu para tirar.
-   */
+  readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
+  readonly termosComErro = signal(false);
 
-  readonly fatoAAcrescentar = signal('');
-
-  protected readonly ancoras = ANCORAS_DA_IDADE;
+  /** As recusas da última gravação, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */
+  readonly recusas = signal<RecusasDoConteudo | null>(null);
 
   constructor() {
     this.carregarCatalogo();
+    this.carregarTermos();
 
-    // Reconcilia a cada mudança das exigências, e não só quando o catálogo responde. Os passos
-    // do wizard ficam todos montados, então "abrir o passo" não executa nada: sem este efeito,
-    // o campo que um gatilho trouxe sobrevivia à remoção desse gatilho pelo resto da sessão —
-    // inclusive o que o passo do cronograma acrescenta, já que aquele caminho só acrescenta.
-    // Sobra dado pessoal no formulário sem nada que o justifique.
+    // Reconcilia a cada mudança do que cita fatos no processo, e não só quando o catálogo
+    // responde. Os passos do wizard ficam todos montados, então "abrir o passo" não executa nada:
+    // sem este efeito, o campo que um gatilho trouxe sobrevivia à remoção desse gatilho pelo resto
+    // da sessão — inclusive o que o passo do cronograma acrescenta, já que aquele caminho só
+    // acrescenta. Sobra dado pessoal no formulário sem nada que o justifique.
     effect(() => {
-      const exigencias = this.store.draft().documentos;
-      if (exigencias !== null && this.catalogo().length > 0) {
-        untracked(() => this.reconciliar());
-      }
+      this.citantes();
+      if (this.catalogo().length > 0) untracked(() => this.reconciliar());
     });
   }
 
   /**
-   * Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa: sem ela, uma
-   * falha passageira deixava o catálogo vazio pelo resto da sessão, e não havia como
-   * acrescentar campo nenhum ao formulário sem recarregar a página inteira.
+   * Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa: sem ela, uma falha
+   * passageira deixava o catálogo vazio pelo resto da sessão, e não havia como acrescentar campo.
    */
   carregarCatalogo(): void {
     this.catalogoCarregando.set(true);
@@ -114,49 +113,133 @@ export class FormularioStepComponent {
           return;
         }
         this.catalogo.set(resultado.data);
-        this.reconciliar();
       });
   }
 
+  /** Os termos de consentimento com as versões promovidas, que o formulário pode exigir. */
+  carregarTermos(): void {
+    this.termosComErro.set(false);
+    this.termosApi
+      .listarComVersoes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((termos) => {
+        if (!termos.ok) {
+          this.termosComErro.set(true);
+          return;
+        }
+        this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
+      });
+  }
+
+  readonly conteudo = computed(() => this.store.draft().formulario.conteudo);
+
   /**
-   * Põe no formulário o que as exigências pressupõem e tira o que nenhuma cita mais.
-   *
-   * Roda ao carregar o catálogo e a cada abertura do passo: a exigência é declarada noutro
-   * passo, e o operador não deveria precisar lembrar que mudá-la mexe aqui.
+   * O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos
+   * dela, e se a resposta é obrigatória. Em consulta os passos mostram o gravado, não um
+   * formulário desabilitado.
+   */
+  readonly leitura = computed(() => {
+    const conteudo = this.conteudo();
+    const resposta = (obrigatoriedade: string | null): string =>
+      OBRIGATORIEDADES.find((opcao) => opcao.valor === obrigatoriedade)?.rotulo ?? 'Opcional';
+    return etapasEmOrdem(conteudo).map((etapa) => ({
+      codigo: etapa.codigo,
+      titulo: etapa.titulo,
+      entradas: entradasDaSecao(conteudo, etapa.codigo).map((entrada) =>
+        entrada.tipo === 'item'
+          ? { chave: entrada.item.fatoCodigo, rotulo: entrada.item.rotulo, resposta: resposta(entrada.item.obrigatoriedade) }
+          : { chave: entrada.grupo.codigo, rotulo: entrada.grupo.rotulo, resposta: `Grupo repetível — ${resposta(entrada.grupo.obrigatoriedade).toLocaleLowerCase('pt-BR')}` },
+      ),
+    }));
+  });
+
+  /** Os fatos fora do combo de campos: os das outras finalidades e o conjunto básico ainda não gravado. */
+  readonly fatosIndisponiveis = computed(() => {
+    const formulario = this.store.draft().formulario;
+    return fatosForaDaColetaDaInscricao(formulario.conteudo, formulario.fatosDasOutrasFinalidades);
+  });
+
+  /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
+  readonly citantes = computed(() => {
+    const draft = this.store.draft();
+    const tipoDocumento = this.catalogos.tipoDocumentoPorId();
+    const nomeDoFato = new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome]));
+    return quemCitaNoProcesso(
+      { documentos: draft.documentos, derivacao: draft.formulario.derivacao, desempate: draft.desempate },
+      {
+        documento: (id) => tipoDocumento.get(id)?.nome ?? id,
+        fato: (codigo) => nomeDoFato.get(codigo) ?? codigo,
+      },
+    );
+  });
+
+  readonly remocoesTravadas = computed(() => remocoesTravadasPor(this.citantes()));
+
+  /**
+   * Põe no formulário o que o processo pressupõe e tira o que nada cita mais. Roda a cada mudança
+   * das exigências, da derivação e do desempate: são declarados noutros passos, e o operador não
+   * deveria precisar lembrar que mudá-los mexe aqui.
    */
   reconciliar(): void {
-    const draft = this.store.draft();
-    const antes = new Set(draft.formulario.fatos.map((campo) => campo.fatoCodigo));
+    const formulario = this.store.draft().formulario;
+    const antes = new Set(fatosColetadosPor(formulario.conteudo));
     const reconciliado = comCamposQueAsExigenciasPressupoem(
-      draft.formulario,
-      draft.documentos,
+      formulario.conteudo,
+      new Set(this.citantes().keys()),
       this.catalogo(),
       this.store.camposPostosPelasExigencias(),
-      // As regras que derivam a modalidade também pressupõem campos — se o candidato quer
-      // concorrer a cada cota, se veio de escola pública. Sem contá-los aqui, um campo que
-      // entrou por um gatilho e depois passou a sustentar a matriz sairia quando o gatilho
-      // fosse apagado, deixando a matriz gravada citando o que o processo não coleta mais.
-      draft.formulario.derivacao.flatMap((config) => fatosCitadosPelaDerivacao(config.regras)),
+      formulario.fatosDasOutrasFinalidades,
     );
-    if (reconciliado === draft.formulario) return;
+    if (reconciliado === formulario.conteudo) return;
 
     // Registra o que ENTROU agora: é esse conjunto que a reconciliação seguinte pode remover
     // quando a exigência que o pediu deixar de existir.
-    const acrescentados = reconciliado.fatos
-      .map((campo) => campo.fatoCodigo)
-      .filter((codigo) => !antes.has(codigo));
+    const acrescentados = fatosColetadosPor(reconciliado).filter((codigo) => !antes.has(codigo));
     if (acrescentados.length > 0) {
       this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
     }
-
-    this.store.patchSection('formulario', reconciliado);
+    this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });
   }
 
-  readonly campos = computed(() => this.store.draft().formulario.fatos);
+  /**
+   * A edição feita no editor. O campo que o operador tira deixa de ser "posto pela exigência": se
+   * voltar, voltou por decisão dele.
+   */
+  editar(conteudo: ConteudoDoFormulario): void {
+    const presentes = new Set(fatosColetadosPor(conteudo));
+    this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual].filter((codigo) => presentes.has(codigo))));
+    this.store.patchSection('formulario', { ...this.store.draft().formulario, conteudo });
+  }
 
-  readonly titulo = computed(() => this.store.draft().formulario.titulo);
+  /** As fases do cronograma em que a inscrição pode ser respondida: as que coletam inscrição. */
+  readonly fasesDaInscricao = computed(() => {
+    const fasePorId = this.catalogos.fasePorId();
+    return this.store
+      .draft()
+      .cronograma.fases.map((fase) => ({ fase, descricao: descreverFase(fase, fasePorId) }))
+      .filter(({ descricao }) => descricao.coletaInscricao)
+      .map(({ fase, descricao }) => ({ codigo: fase.codigo, nome: descricao.nome }));
+  });
 
-  readonly termoAceite = computed(() => this.store.draft().formulario.termoAceiteTexto);
+  /**
+   * A fase em que a inscrição é respondida: a escolhida, enquanto estiver entre as que servem, ou
+   * a única que serve. A API recusa fase que não coleta inscrição, e enviar a fase nula apagaria a
+   * gravada — a publicação recusa formulário sem fase.
+   */
+  readonly faseDaInscricao = computed(() => {
+    const opcoes = this.fasesDaInscricao();
+    const escolhida = this.store.draft().formulario.faseCodigo;
+    if (opcoes.some((opcao) => opcao.codigo === escolhida)) return escolhida;
+    return opcoes.length === 1 ? opcoes[0].codigo : '';
+  });
+
+  readonly nomeDaFaseDaInscricao = computed(
+    () => this.fasesDaInscricao().find((opcao) => opcao.codigo === this.faseDaInscricao())?.nome ?? null,
+  );
+
+  escreverFase(codigo: string): void {
+    this.store.patchSection('formulario', { ...this.store.draft().formulario, faseCodigo: codigo });
+  }
 
   readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);
 
@@ -175,7 +258,7 @@ export class FormularioStepComponent {
   readonly desempateSemDataDeNascimento = computed(() => {
     if (this.store.emConsulta()) return false;
     const draft = this.store.draft();
-    return desempateSemDataDeNascimento(draft.desempate, draft.formulario.fatos);
+    return desempateSemDataDeNascimento(draft.desempate, fatosColetadosPelaInscricao(draft.formulario.conteudo));
   });
 
   /** O desempate por idoso declarado sem apuração da idade neste formulário. */
@@ -195,149 +278,19 @@ export class FormularioStepComponent {
   );
 
   /** As fases do cronograma, para ancorar a apuração da idade. */
-  readonly fasesEscolhiveis = computed(() =>
-    this.store.draft().cronograma.fases.map((fase) => fase.codigo),
-  );
+  readonly fasesEscolhiveis = computed(() => this.store.draft().cronograma.fases.map((fase) => fase.codigo));
 
   /**
-   * O catálogo menos o que já está no formulário. Só fato coletável entra: derivado resolve por
-   * outro caminho e o servidor recusa coletá-lo.
-   */
-  readonly fatosDisponiveis = computed<readonly UiComboboxGroup[]>(() => {
-    const declarados = new Set(this.campos().map((campo) => campo.fatoCodigo));
-    const opcoes = this.catalogo()
-      .filter((fato) => ehColetavel(fato) && !declarados.has(fato.codigo))
-      .map((fato) => ({ value: fato.codigo, label: fato.nome }));
-
-    return opcoes.length === 0 ? [] : [{ label: 'Dados que o candidato pode declarar', options: opcoes }];
-  });
-
-  /** Se o campo está ali porque uma exigência o cita — e por isso não pode simplesmente sair. */
-  exigidoPorDocumento(codigo: string): boolean {
-    return fatosCitadosPelasExigencias(this.store.draft().documentos).has(codigo);
-  }
-
-  /**
-   * Os documentos cujo gatilho cita este dado.
-   *
-   * A recusa de remoção nomeia TODOS, não um: o operador precisa saber onde mexer, e dizer
-   * apenas o primeiro o faria descobrir os outros um a um.
-   */
-  documentosQueCitam(codigo: string): readonly string[] {
-    const nomePorId = this.catalogos.tipoDocumentoPorId();
-    const nomes = todasAsExigencias(this.store.draft().documentos)
-      .filter((exigencia) => exigencia.condicoes.some((condicao) => condicao.fato === codigo))
-      .map(
-        (exigencia) =>
-          nomePorId.get(exigencia.tipoDocumentoId)?.nome ?? exigencia.tipoDocumentoId,
-      );
-
-    return [...new Set(nomes)];
-  }
-
-  escolherFato(codigo: string): void {
-    this.fatoAAcrescentar.set(codigo);
-  }
-
-  /** Acrescenta ao formulário um dado que nenhuma exigência pediu — decisão própria do operador. */
-  acrescentarCampo(): void {
-    const codigo = this.fatoAAcrescentar();
-    if (codigo === '') return;
-
-    const fato = this.catalogo().find((item) => item.codigo === codigo);
-    if (fato === undefined || !ehColetavel(fato)) return;
-    const tipoRenderizacao = renderizacaoDe(fato);
-    if (tipoRenderizacao === null) return;
-
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      fatos: renumerar([
-        ...formulario.fatos,
-        {
-          fatoCodigo: fato.codigo,
-          ordem: 0,
-          rotulo: fato.nome,
-          tipoRenderizacao,
-          obrigatorio: true,
-          precondicao: null,
-        },
-      ]),
-    });
-    // Declarado à mão: sai da memória do que foi posto por exigência, se lá estava — a partir
-    // de agora ele permanece mesmo que nenhum gatilho o cite.
-    this.store.camposPostosPelasExigencias.update((atual) => {
-      const seguinte = new Set(atual);
-      seguinte.delete(fato.codigo);
-      return seguinte;
-    });
-    this.fatoAAcrescentar.set('');
-  }
-
-  /**
-   * Os campos que nada no certame usa — nenhuma exigência os cita, nenhuma regra de derivação
-   * depende deles, nenhum outro campo os tem como pré-condição.
-   *
-   * Existem porque a remoção automática só alcança o que a sessão em curso acrescentou: um
-   * campo que entrou ontem por causa de um gatilho sobrevive quando o gatilho é apagado hoje.
-   * Enquanto sobrevive, é dado pessoal pedido ao candidato sem finalidade declarada — e é por
-   * isso que a tela o aponta em vez de deixá-lo passar calado.
+   * Os campos que nada no certame usa. Existem porque a remoção automática só alcança o que a
+   * sessão em curso acrescentou: um campo que entrou ontem por causa de um gatilho sobrevive
+   * quando o gatilho é apagado hoje — dado pessoal pedido sem finalidade declarada.
    */
   readonly camposSemUso = computed(() => {
     const draft = this.store.draft();
-    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map(
-      (campo) => campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo,
+    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map((campo) =>
+      campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo,
     );
   });
-
-  /**
-   * As regras do próprio formulário que dependem deste dado. O gatilho de documento é a outra
-   * razão para o campo não poder sair, e tem aviso próprio porque se resolve noutro passo.
-   */
-  regrasQueDependem(codigo: string): readonly string[] {
-    return regrasQueDependemDoFato(this.store.draft().formulario, codigo);
-  }
-
-  /**
-   * Tira o campo do formulário. Recusado enquanto alguma exigência o citar OU alguma regra do
-   * formulário depender dele: removê-lo deixaria a regra citando um fato que ninguém coleta
-   * mais, e a incoerência só apareceria lá no gate da publicação.
-   */
-  removerCampo(codigo: string): void {
-    if (this.exigidoPorDocumento(codigo) || this.regrasQueDependem(codigo).length > 0) return;
-
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      fatos: renumerar(formulario.fatos.filter((campo) => campo.fatoCodigo !== codigo)),
-    });
-    this.store.camposPostosPelasExigencias.update((atual) => {
-      const seguinte = new Set(atual);
-      seguinte.delete(codigo);
-      return seguinte;
-    });
-  }
-
-  escreverCampo(codigo: string, patch: Partial<FatoColetadoConfig>): void {
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      fatos: formulario.fatos.map((campo) =>
-        campo.fatoCodigo === codigo ? { ...campo, ...patch } : campo,
-      ),
-    });
-  }
-
-  escreverTitulo(valor: string): void {
-    this.store.patchSection('formulario', { ...this.store.draft().formulario, titulo: valor });
-  }
-
-  escreverTermo(valor: string): void {
-    this.store.patchSection('formulario', {
-      ...this.store.draft().formulario,
-      termoAceiteTexto: valor,
-    });
-  }
 
   escreverReferencia(patch: Partial<{ tipo: string; data: string; faseCodigo: string }>): void {
     const formulario = this.store.draft().formulario;
@@ -349,12 +302,8 @@ export class FormularioStepComponent {
 
   /**
    * Os campos que este formulário pergunta e cujos valores escolhíveis saem da oferta de
-   * atendimento especializado, declarada no passo anterior.
-   *
-   * O acoplamento é real e a publicação o cobra: um campo de seleção sobre um desses fatos com
-   * oferta vazia é pendência estrutural. O aviso mora aqui porque é aqui que o operador cria o
-   * problema — ele acabou de acrescentar o campo, e a oferta que lhe daria valores ficou para
-   * trás vazia. Dizê-lo só na revisão obrigaria a refazer o caminho.
+   * atendimento especializado, declarada no passo anterior. O aviso mora aqui porque é aqui que o
+   * operador cria o problema; dizê-lo só na revisão obrigaria a refazer o caminho.
    */
   readonly camposSemValoresOfertados = computed(() => {
     const draft = this.store.draft();
@@ -364,11 +313,14 @@ export class FormularioStepComponent {
   validate(): StepValidation {
     const draft = this.store.draft();
     const mensagens = [
-      ...problemasDoFormulario(
-        draft.formulario,
-        draft.documentos,
-        new Set(draft.cronograma.fases.map((fase) => fase.codigo)),
-      ),
+      ...(this.faseDaInscricao() === ''
+        ? [
+            this.fasesDaInscricao().length === 0
+              ? 'O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição no passo Cronograma.'
+              : 'Escolha em que fase do cronograma a inscrição é respondida.',
+          ]
+        : []),
+      ...problemasDoFormulario(draft.formulario, draft.documentos, new Set(draft.cronograma.fases.map((fase) => fase.codigo))),
       ...this.camposSemValoresOfertados().map(
         (campo) =>
           `O formulário pergunta ${campo} ao candidato, e a oferta de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend. especial", ou retire o campo daqui.`,
@@ -383,10 +335,11 @@ export class FormularioStepComponent {
   }
 
   /**
-   * Grava o formulário: cabeçalho, campos e a política que ancora a apuração da idade.
+   * Grava o formulário de inscrição e a política que ancora a apuração da idade.
    *
-   * Os campos vão como coleção inteira, porque o comando a substitui. O cabeçalho vive numa
-   * rota administrativa à parte — a leitura do formulário é pública, a escrita não.
+   * A fase e o formulário gravado vêm de uma releitura FRESCA: a fase pode ter sido acrescentada
+   * nesta sessão, e o plano de gravação compara cada parte com o que o servidor tem — inclusive o
+   * que uma tentativa anterior deixou gravado pela metade.
    */
   async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
@@ -403,57 +356,87 @@ export class FormularioStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const formulario = this.store.draft().formulario;
-
-      const campos = await this.cadastro.definirFatosColetados(
-        processoId,
-        comoComandoDeFatosColetados(formulario),
-      );
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!campos.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(campos.problem).title] };
-      }
-
-      // A fase âncora é resolvida contra uma releitura FRESCA, não contra o retrato que a
-      // hidratação guardou: a fase pode ter sido acrescentada nesta sessão, e aí ela não tem
-      // id no retrato antigo — a apuração viajaria sem âncora e o servidor recusaria uma
-      // escolha que o operador acabou de fazer na tela.
       const detalhe = await firstValueFrom(this.api.obter(processoId));
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!isApiOk(detalhe)) {
         return {
           valid: false,
-          messages: [
-            'Os campos do formulário foram gravados, mas não foi possível reler as fases para ancorar a apuração da idade. Tente gravar de novo.',
-          ],
+          messages: ['Não foi possível reler o processo para gravar o formulário de inscrição. Tente gravar de novo.'],
         };
       }
 
-      const faseIdPorCodigo = new Map(
-        detalhe.data.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const),
+      const faseIdPorCodigo = new Map(detalhe.data.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const));
+      const faseId = faseIdPorCodigo.get(this.faseDaInscricao());
+      if (faseId === undefined) {
+        return {
+          valid: false,
+          messages: ['A fase da inscrição ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.'],
+        };
+      }
+
+      const formulario = this.store.draft().formulario;
+      const gravado = formularioDaFinalidade(detalhe.data.formularios, FINALIDADE_INSCRICAO);
+      const gravacao = await this.cadastro.gravarFormulario(
+        processoId,
+        FINALIDADE_INSCRICAO,
+        gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
+        { faseId, conteudo: formulario.conteudo },
       );
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!gravacao.ok) {
+        const mensagens = this.aplicarRecusa(gravacao.problem, formulario.conteudo);
+        await this.reconciliarComOServidor(processoId, geracao, false);
+        return { valid: false, messages: [...mensagens] };
+      }
+      this.recusas.set(null);
+
       const temporal = await this.cadastro.definirReferenciaTemporalFatos(
         processoId,
         comoComandoDeReferenciaTemporal(formulario.referenciaTemporal, faseIdPorCodigo),
       );
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!temporal.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(temporal.problem).title] };
+        return {
+          valid: false,
+          messages: [`O formulário de inscrição foi gravado. ${this.problemI18n.resolve(temporal.problem).title}`],
+        };
       }
 
-      const cabecalho = await this.cadastro.definirFormulario(processoId, {
-        titulo: formulario.titulo.trim() === '' ? null : formulario.titulo.trim(),
-        termoAceiteTexto:
-          formulario.termoAceiteTexto.trim() === '' ? null : formulario.termoAceiteTexto.trim(),
-      });
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!cabecalho.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(cabecalho.problem).title] };
-      }
-
+      await this.reconciliarComOServidor(processoId, geracao, true);
       return { valid: true };
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  /**
+   * A recusa que aponta um item, uma etapa, um grupo ou um termo vai para ele no editor; o resto —
+   * a do grafo, que só cita o fato na mensagem — volta como mensagem do passo.
+   */
+  private aplicarRecusa(problem: ProblemDetails, conteudo: ConteudoDoFormulario): readonly string[] {
+    const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? (problem.errors ?? []) : [];
+    if (erros.length === 0) {
+      this.recusas.set(null);
+      return [this.problemI18n.resolve(problem).title];
+    }
+    const recusas = distribuirRecusas(erros, semDadosBasicos(conteudo));
+    this.recusas.set(recusas);
+    return recusas.gerais.length > 0 ? recusas.gerais : ['O formulário de inscrição foi recusado: veja os campos marcados no editor.'];
+  }
+
+  /**
+   * Relê o processo e projeta no rascunho o que o servidor tem do formulário. Depois de gravar, o
+   * conteúdo inteiro — a API repõe os dados básicos e pode deslocar a ordem. Depois de uma recusa,
+   * só os fatos das outras finalidades: o conteúdo na tela é o que o operador quer, e a próxima
+   * tentativa se compara com a releitura que fizer.
+   */
+  private async reconciliarComOServidor(processoId: string, geracao: number, gravou: boolean): Promise<void> {
+    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
+    const servidor = inscricaoDoServidor(detalhe.data);
+    this.store.projetarSecao(
+      'formulario',
+      gravou ? servidor : { fatosDasOutrasFinalidades: servidor.fatosDasOutrasFinalidades },
+    );
   }
 }
