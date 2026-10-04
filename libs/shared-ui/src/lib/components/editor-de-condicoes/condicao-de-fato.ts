@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
+import { ValorDeMunicipioComponent } from './valor-de-municipio';
 import {
   RESPOSTAS_BOOLEANAS,
   alcanceDaCondicao,
@@ -22,7 +23,7 @@ import {
  * lado do servidor, e digitar "=" onde ele espera "IGUAL" era recusado no 422 sem dizer qual
  * dos três campos estava errado. O valor muda de controle com o domínio: lista de escolha
  * para "é um de", duas respostas fechadas para sim-ou-não, seleção para categórico e campo
- * numérico para o resto.
+ * numérico para o resto. O município, que não vem em lista, é escolhido pela busca no Geo.
  *
  * O componente não guarda estado: recebe a condição e devolve a condição inteira a cada
  * mudança. Os campos extras que a condição trouxer (a cláusula, por exemplo) seguem junto.
@@ -35,7 +36,7 @@ import {
 @Component({
   selector: 'ui-condicao-de-fato',
   standalone: true,
-  imports: [ComboboxComponent],
+  imports: [ComboboxComponent, ValorDeMunicipioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="form-field">
@@ -79,7 +80,25 @@ import {
         </select>
       </div>
 
-      @if (comparaComLista(condicao().operador)) {
+      @if (fatoAtual()?.municipio) {
+        <!--
+          Município: a lista do país não vem inteira, e o valor é escolhido pela busca no Geo e
+          gravado pelo código IBGE — um só, ou vários na comparação com lista.
+        -->
+        <div class="form-field">
+          <label class="label" [attr.for]="municipioCampo.campoId()">
+            {{ comparaComLista(condicao().operador) ? 'Municípios' : 'Município' }}
+          </label>
+          <ui-valor-de-municipio
+            #municipioCampo
+            [rotulo]="comparaComLista(condicao().operador) ? rotuloDosValores() : 'Município que satisfaz a condição'"
+            [multiplo]="comparaComLista(condicao().operador)"
+            [values]="municipiosEscolhidos()"
+            [disabled]="disabled()"
+            (valuesChange)="escolherMunicipios($event)"
+          />
+        </div>
+      } @else if (comparaComLista(condicao().operador)) {
         <div class="form-field">
           <label class="label" [attr.for]="valoresCampo.campoId">Valores</label>
           <ui-combobox
@@ -227,6 +246,12 @@ export class CondicaoDeFatoComponent {
 
   protected readonly valorEscalar = computed(() => valorEscalarDe(this.condicao()));
   protected readonly valoresDaLista = computed(() => valoresDeListaDe(this.condicao()));
+  /** Os códigos IBGE da condição sobre município, na forma de lista nos dois casos. */
+  protected readonly municipiosEscolhidos = computed(() =>
+    comparaComLista(this.condicao().operador)
+      ? this.valoresDaLista()
+      : [this.valorEscalar()].filter((codigo) => codigo !== ''),
+  );
 
   protected readonly alcance = computed(() => {
     const fato = this.fatoAtual();
@@ -287,6 +312,14 @@ export class CondicaoDeFatoComponent {
     if (fato === undefined) return;
 
     this.condicaoChange.emit(comValorEscalar(this.condicao(), fato, valor));
+  }
+
+  protected escolherMunicipios(codigos: readonly string[]): void {
+    if (comparaComLista(this.condicao().operador)) {
+      this.escolherValores(codigos);
+      return;
+    }
+    this.escolherValor(codigos[0] ?? '');
   }
 
   protected escolherValores(valores: readonly string[]): void {

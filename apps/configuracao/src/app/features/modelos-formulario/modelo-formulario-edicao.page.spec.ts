@@ -5,6 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type FatoCandidatoView, type ModeloFormularioView } from '@uniplus/shared-data/configuracao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
 
@@ -98,6 +99,7 @@ describe('ModeloFormularioEdicaoPage', () => {
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: GEO_BASE_PATH, useValue: BASE },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: ID }) } } },
       ],
     });

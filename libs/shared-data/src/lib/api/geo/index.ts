@@ -8,3 +8,4 @@ export {
   type LogradouroAlternativoDto,
   type NivelResolucao,
 } from './geo.api';
+export { buscaDeMunicipiosNoGeo } from './busca-de-municipios';

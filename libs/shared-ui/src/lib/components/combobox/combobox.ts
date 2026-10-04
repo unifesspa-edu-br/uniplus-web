@@ -133,8 +133,16 @@ export class ComboboxComponent {
   readonly multiplo = input(false, { transform: booleanAttribute });
   readonly values = input<readonly string[]>([]);
 
+  /**
+   * A busca é do hospedeiro: o que se digita sai por `buscaChange`, e `grupos` já chega com o
+   * que ela alcançou. É o caso da lista grande demais para vir inteira, como a dos municípios do
+   * país; filtrar aqui de novo esconderia o que o servidor achou por outra grafia.
+   */
+  readonly buscaExterna = input(false, { transform: booleanAttribute });
+
   readonly valueChange = output<string>();
   readonly valuesChange = output<readonly string[]>();
+  readonly buscaChange = output<string>();
 
   protected readonly aberto = signal(false);
   protected readonly destacada = signal<string | null>(null);
@@ -177,7 +185,7 @@ export class ComboboxComponent {
    */
   protected readonly gruposVisiveis = computed<readonly UiComboboxGroup[]>(() => {
     const termo = normalizarParaBusca(this.busca() ?? '');
-    if (termo === '') return this.grupos();
+    if (termo === '' || this.buscaExterna()) return this.grupos();
 
     return this.grupos()
       .map((grupo) => ({
@@ -199,7 +207,9 @@ export class ComboboxComponent {
     if (termo === '') {
       return total === 1 ? '1 opção disponível.' : `${total} opções disponíveis.`;
     }
-    if (total === 0) return `Nada encontrado para “${termo}”.`;
+    // Na busca externa, a lista vazia pode ser busca em curso ou termo curto demais, e só o
+    // hospedeiro sabe dizer qual.
+    if (total === 0) return this.buscaExterna() ? this.textoSemResultado() : `Nada encontrado para “${termo}”.`;
     return total === 1 ? `1 opção casa com “${termo}”.` : `${total} opções casam com “${termo}”.`;
   });
 
@@ -222,12 +232,12 @@ export class ComboboxComponent {
     // digita a consulta ali mesmo, e ela seria inserida no rótulo — o filtro passaria a
     // procurar por "RGcpf" e não acharia nada até apagar o antigo à mão. O rótulo volta ao
     // fechar. Só na abertura: chamado de novo com a lista já aberta, apagaria a busca em curso.
-    if (!this.aberto()) this.busca.set('');
+    if (!this.aberto()) this.buscar('');
     this.aberto.set(true);
   }
 
   protected digitar(termo: string): void {
-    this.busca.set(termo);
+    this.buscar(termo);
     this.aberto.set(true);
     // Sem destacar nada: com a lista apenas sugerida, quem aperta a seta para baixo espera
     // chegar à PRIMEIRA opção. Destacar ao digitar faria a primeira seta pular para a
@@ -312,7 +322,7 @@ export class ComboboxComponent {
       // a próxima consulta a acrescenta a "RG, CPF", filtrando por essa frase inteira e não
       // achando nada. O resumo volta quando a lista fecha, que é quando ele serve para
       // conferir a escolha sem reabrir.
-      this.busca.set('');
+      this.buscar('');
       return;
     }
 
@@ -320,6 +330,11 @@ export class ComboboxComponent {
     this.busca.set(null);
     this.destacada.set(null);
     this.aberto.set(false);
+  }
+
+  private buscar(termo: string): void {
+    this.busca.set(termo);
+    if (this.buscaExterna()) this.buscaChange.emit(termo);
   }
 
   private fechar(): void {

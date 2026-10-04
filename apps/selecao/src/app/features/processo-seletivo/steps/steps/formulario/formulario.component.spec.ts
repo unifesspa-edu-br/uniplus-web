@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH, type FormularioDto } from '@uniplus/shared-data/selecao';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
@@ -127,6 +128,7 @@ describe('FormularioStepComponent', () => {
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
+        { provide: GEO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 

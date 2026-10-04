@@ -59,6 +59,11 @@ export { SelectComponent, type UiSelectOption } from '../../src/lib/components/s
 export { CondicaoDeFatoComponent } from '../../src/lib/components/editor-de-condicoes/condicao-de-fato';
 export { EditorDeCondicoesComponent } from '../../src/lib/components/editor-de-condicoes/editor-de-condicoes';
 export * from '../../src/lib/components/editor-de-condicoes/condicoes-de-fatos';
+export {
+  BUSCA_DE_MUNICIPIOS,
+  type BuscaDeMunicipios,
+  type MunicipioEncontrado,
+} from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
