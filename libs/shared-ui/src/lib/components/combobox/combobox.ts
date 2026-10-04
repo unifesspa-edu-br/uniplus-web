@@ -58,7 +58,8 @@ let comboboxIdSeed = 0;
         [attr.aria-controls]="listaId"
         [attr.aria-activedescendant]="aberto() && destacada() !== null ? opcaoId(destacada()!) : null"
         aria-autocomplete="list"
-        [attr.aria-describedby]="contagemId"
+        [attr.aria-describedby]="descricoes()"
+        [attr.aria-invalid]="invalido() ? 'true' : null"
         [attr.placeholder]="placeholder()"
         [disabled]="disabled()"
         [value]="texto()"
@@ -123,6 +124,11 @@ export class ComboboxComponent {
   readonly value = input<string>('');
   readonly placeholder = input<string>('');
   readonly disabled = input<boolean>(false);
+  /** A resposta não vale: o campo se anuncia inválido. */
+  readonly invalido = input<boolean>(false);
+  /** Ids de fora que descrevem o campo — o erro dele, por exemplo —, somados à contagem da lista. */
+  readonly descritoPor = input<string | null>(null);
+  protected readonly descricoes = computed(() => [this.contagemId, this.descritoPor()].filter((id) => id !== null && id !== '').join(' '));
   /** O que dizer quando a busca não alcança nada — o assunto é de quem usa o campo. */
   readonly textoSemResultado = input<string>('Nada encontrado.');
 

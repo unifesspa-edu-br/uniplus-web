@@ -92,6 +92,8 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         [grupos]="grupos()"
         [values]="values()"
         [disabled]="disabled()"
+        [invalido]="invalido()"
+        [descritoPor]="descritoPor()"
         (buscaChange)="buscar($event)"
         (valuesChange)="valuesChange.emit($event)"
       />
@@ -104,6 +106,8 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         [grupos]="grupos()"
         [value]="values()[0] ?? ''"
         [disabled]="disabled()"
+        [invalido]="invalido()"
+        [descritoPor]="descritoPor()"
         (buscaChange)="buscar($event)"
         (valueChange)="valuesChange.emit([$event])"
       />
@@ -121,6 +125,8 @@ export class ValorDeMunicipioComponent {
   readonly values = input.required<readonly string[]>();
   readonly multiplo = input<boolean>(false);
   readonly disabled = input<boolean>(false);
+  readonly invalido = input<boolean>(false);
+  readonly descritoPor = input<string | null>(null);
 
   readonly valuesChange = output<readonly string[]>();
 

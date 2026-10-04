@@ -448,3 +448,18 @@ describe('ComboboxComponent com a busca do hospedeiro e escolha múltipla', () =
     expect(fixture.componentInstance.termos, 'nenhuma busca vazia ao hospedeiro').toEqual(['pa']);
   });
 });
+
+describe('ComboboxComponent com erro de fora', () => {
+  it('se anuncia inválido e liga a descrição de fora junto da contagem', () => {
+    const fixture = TestBed.createComponent(ComboboxComponent);
+    fixture.componentRef.setInput('rotulo', 'Municípios');
+    fixture.componentRef.setInput('grupos', []);
+    fixture.componentRef.setInput('invalido', true);
+    fixture.componentRef.setInput('descritoPor', 'condicao-erro');
+    fixture.detectChanges();
+    const campo = (fixture.nativeElement as HTMLElement).querySelector('input[role="combobox"]') as HTMLInputElement;
+
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(campo.getAttribute('aria-describedby')?.split(' ')).toContain('condicao-erro');
+  });
+});
