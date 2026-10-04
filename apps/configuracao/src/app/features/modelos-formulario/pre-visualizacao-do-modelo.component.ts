@@ -245,7 +245,11 @@ export class PreVisualizacaoDoModeloComponent {
     computation: () => new Set(),
   });
   protected readonly carregando = signal(false);
-  protected readonly erro = signal<string | null>(null);
+  /** A falha da pré-visualização vale para o conteúdo avaliado, como o resultado. */
+  protected readonly erro = linkedSignal<ConteudoDoFormulario, string | null>({
+    source: () => this.conteudo(),
+    computation: () => null,
+  });
   /** O resultado vale para o conteúdo avaliado: o conteúdo gravado de novo o descarta. */
   protected readonly resultado = linkedSignal<ConteudoDoFormulario, PreVisualizacaoDoModeloDto | null>({
     source: () => this.conteudo(),
@@ -313,7 +317,7 @@ export class PreVisualizacaoDoModeloComponent {
             ? Number(texto)
             : fato.multiplo
               ? texto
-                  .split(',')
+                  .split(';')
                   .map((parte) => parte.trim())
                   .filter((parte) => parte !== '')
                   .map((parte) => valorNoDominio(fato.dominio, parte))
@@ -329,9 +333,10 @@ export class PreVisualizacaoDoModeloComponent {
   }
 
   protected dicaDosValores(fato: FatoSimulado): string {
-    if (fato.dominio === 'BOOLEANO') return 'Escreva sim ou não, separados por vírgula.';
-    if (fato.dominio === 'NUMERICO') return 'Escreva números inteiros, separados por vírgula.';
-    return 'Separe os valores por vírgula.';
+    // Ponto e vírgula, e não vírgula, que é a separação decimal em pt-BR.
+    if (fato.dominio === 'BOOLEANO') return 'Escreva sim ou não, separados por ponto e vírgula.';
+    if (fato.dominio === 'NUMERICO') return 'Escreva números inteiros, separados por ponto e vírgula.';
+    return 'Separe os valores por ponto e vírgula.';
   }
 
   protected responderLista(fato: FatoSimulado, evento: Event): void {
@@ -385,7 +390,7 @@ export class PreVisualizacaoDoModeloComponent {
 function simulado(fato: FatoCandidatoView, origem: FatoSimulado['origem']): FatoSimulado {
   const escolhivel = fatoEscolhivel(fato);
   const multiplo = fato.cardinalidade === 'MULTIVALORADO';
-  // Vários sim/não ou vários números não cabem num controle de valor único: são escritos separados por vírgula.
+  // Vários sim/não ou vários números não cabem num controle de valor único: são escritos separados por ponto e vírgula.
   const controle: FatoSimulado['controle'] =
     multiplo && escolhivel?.tipoDominio !== 'CATEGORICO_ESTATICO'
       ? 'texto'
