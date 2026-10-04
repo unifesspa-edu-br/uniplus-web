@@ -237,6 +237,8 @@ export class ModeloFormularioEdicaoPage {
     const enviado = semDadosBasicos(conteudo);
     const v = this.form.getRawValue();
     this.salvando.set(true);
+    // O cabeçalho trava com o editor: a resposta relê o modelo e apagaria o que mudasse durante a gravação.
+    this.form.disable();
     this.api
       .atualizar(
         this.id,
@@ -251,6 +253,7 @@ export class ModeloFormularioEdicaoPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.salvando.set(false);
+        this.form.enable();
         if (resultado.ok) {
           this.chaveDaGravacao = idempotencyKey.create();
           this.notifications.success('Modelo salvo', this.modelo()?.codigo ?? '');
