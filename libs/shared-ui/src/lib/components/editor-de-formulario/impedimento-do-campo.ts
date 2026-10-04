@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, input, linkedSignal, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, linkedSignal, output } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
 import { condicaoNova, problemaDaCondicao, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { alternativaSemOProprioCampo, comImpedimento, type ItemDoFormulario, type PredicadoNoWire } from './formulario-editavel';
+import { focarDepois } from './foco';
 import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 /** O tamanho da mensagem ao candidato (`FormaDoItem.MensagemDoImpedimentoMaxLength`). */
@@ -121,7 +122,7 @@ export class ImpedimentoDoCampoComponent {
     const condicoes = [condicaoNova(proprio, 1)];
     this.condicoes.set(condicoes);
     this.itemChange.emit(comImpedimento(this.item(), paraPredicado(condicoes)));
-    afterNextRender(() => document.getElementById(`${this.idBase()}-impedimento-mensagem`)?.focus(), { injector: this.injector });
+    focarDepois(this.injector, `${this.idBase()}-impedimento-mensagem`);
   }
 
   protected trocarCondicoes(condicoes: readonly CondicaoEmClausula[]): void {

@@ -46,14 +46,20 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">
       <div class="editor-formulario__cabecalho">
-        <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">
-          {{ posicao() }}. {{ item().rotulo.trim() || item().fatoCodigo }}
-        </h4>
+        @if (nivelDoTitulo() === 5) {
+          <h5 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h5>
+        } @else {
+          <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h4>
+        }
         <ui-tag variant="neutral">{{ tipoDeCampo() }}</ui-tag>
         @if (fatoDesativado()) {
           <ui-tag variant="warning">Fato desativado</ui-tag>
         }
       </div>
+
+      @if (travadoPor(); as motivo) {
+        <p class="field__hint" [id]="idDe('trava')">{{ motivo }}</p>
+      }
 
       @if (erros().length > 0) {
         <ul class="editor-formulario__erros" [id]="idDe('erros')">
@@ -87,8 +93,8 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
           <select
             class="select"
             [id]="idDe('obrigatoriedade')"
-            [disabled]="disabled()"
-            [attr.aria-describedby]="exigeResposta() ? idDe('obrigatoriedade-nota') : null"
+            [disabled]="disabled() || travadoPor() !== null"
+            [attr.aria-describedby]="travadoPor() !== null ? idDe('trava') : exigeResposta() ? idDe('obrigatoriedade-nota') : null"
             [attr.aria-invalid]="opcionalQueExigeResposta() ? 'true' : null"
             (change)="trocarObrigatoriedade(valorDe($event))"
           >
@@ -146,7 +152,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         [condicoes]="condicoesDaExibicao()"
         [fatos]="fatos()"
         [idBase]="idDe('exibicao')"
-        [disabled]="disabled()"
+        [disabled]="disabled() || travadoPor() !== null"
         [textoSemFatos]="textoSemFatos"
         [erros]="problemas(condicoesDaExibicao())"
         (condicoesChange)="trocarExibicao($event)"
@@ -228,6 +234,10 @@ export class ItemDoFormularioComponent {
   readonly ufs = input<readonly { readonly codigo: string; readonly nome: string }[]>([]);
   /** Se o impedimento cabe neste campo (finalidade, tipo e próprio fato citável). */
   readonly impedimentoPermitido = input<boolean>(false);
+  /** O nível do título: 4 no item da seção, 5 no campo do grupo, que fica sob o título do grupo. */
+  readonly nivelDoTitulo = input<4 | 5>(4);
+  /** Por que a obrigatoriedade e a exibição não se editam — o parentesco do grupo que inclui o candidato. */
+  readonly travadoPor = input<string | null>(null);
   /** Os fatos que a condição do impedimento cita, o próprio campo primeiro. */
   readonly fatosDoImpedimento = input<readonly FatoEscolhivel[]>([]);
 

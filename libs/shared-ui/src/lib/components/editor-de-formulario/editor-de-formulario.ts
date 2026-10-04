@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   Injector,
-  afterNextRender,
   computed,
   inject,
   input,
@@ -31,7 +30,14 @@ import {
   removerTermo,
   termosEmOrdem,
   termosParaAcrescentar,
+  fatosDeMembroParaAcrescentar,
   acrescentarCampo,
+  acrescentarGrupo,
+  comGrupo,
+  moverEntrada,
+  podeMoverEntrada,
+  removerGrupo,
+  fatosOferecidos,
   impedimentoCabe,
   quantidadeNoTeto,
   ufsAnteriores,
@@ -61,6 +67,8 @@ import {
   type ResultadoDaEdicao,
   type TermoDisponivel,
 } from './formulario-editavel';
+import { focarDepois } from './foco';
+import { GrupoDoFormularioComponent } from './grupo-do-formulario';
 import { ItemDoFormularioComponent } from './item-do-formulario';
 import { SecaoDoFormularioComponent } from './secao-do-formulario';
 import { TermoDoFormularioComponent } from './termo-do-formulario';
@@ -88,7 +96,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-editor-de-formulario',
   standalone: true,
-  imports: [ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
+  imports: [GrupoDoFormularioComponent, ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'editor-formulario' },
   template: `
@@ -286,10 +294,23 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                         (remover)="removerOItem(entrada.item, etapa)"
                       />
                     } @else {
-                      <p class="editor-formulario__grupo">
-                        {{ posicao + 1 }}. Grupo “{{ entrada.grupo.rotulo }}”, com {{ entrada.grupo.subitens.length }}
-                        campo(s) por ocorrência. Esta tela ainda não edita grupos; ele é mantido como está ao salvar.
-                      </p>
+                      <ui-grupo-do-formulario
+                        [grupo]="entrada.grupo"
+                        [conteudo]="conteudo()"
+                        [catalogo]="catalogo()"
+                        [posicao]="posicao + 1"
+                        [idBase]="idDoGrupo(entrada.grupo.codigo)"
+                        [exigemResposta]="exigemResposta()"
+                        [podeSubir]="podeMoverEntrada(conteudo(), { tipo: 'grupo', codigo: entrada.grupo.codigo }, -1)"
+                        [podeDescer]="podeMoverEntrada(conteudo(), { tipo: 'grupo', codigo: entrada.grupo.codigo }, 1)"
+                        [disabled]="disabled()"
+                        [erros]="errosDoGrupo(entrada.grupo.codigo)"
+                        [errosPorCampo]="recusas()?.porItem ?? semRecusas"
+                        (grupoChange)="emitir(comGrupo(conteudo(), $event))"
+                        (anuncio)="anuncio.set($event)"
+                        (mover)="moverOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, $event, etapa)"
+                        (remover)="removerOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, etapa)"
+                      />
                     }
                   </li>
                 }
@@ -324,6 +345,40 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
               <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar campo
             </button>
           </div>
+
+          @if (fatosDeMembro().length > 0) {
+            <div class="editor-formulario__acrescentar">
+              <div class="field">
+                <label class="field__label" [for]="idDaEtapa(etapa) + '-grupo-rotulo'">Rótulo do grupo repetível</label>
+                <input
+                  class="input"
+                  type="text"
+                  [id]="idDaEtapa(etapa) + '-grupo-rotulo'"
+                  [value]="escolhaLivre('#grupo-rotulo:' + etapa.codigo)"
+                  [maxLength]="limites.rotulo"
+                  [disabled]="disabled()"
+                  (input)="escolher('#grupo-rotulo:' + etapa.codigo, $event)"
+                />
+              </div>
+              <div class="field">
+                <label class="field__label" [for]="idDaEtapa(etapa) + '-grupo-campo'">Primeiro campo de cada ocorrência</label>
+                <select class="select" [id]="idDaEtapa(etapa) + '-grupo-campo'" [disabled]="disabled()" (change)="escolher('#grupo-campo:' + etapa.codigo, $event)">
+                  <option value="" [selected]="escolhaDeMembro(etapa.codigo) === ''">Escolha o fato do membro</option>
+                  @for (fato of fatosDeMembro(); track fato.codigo) {
+                    <option [value]="fato.codigo" [selected]="escolhaDeMembro(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
+                  }
+                </select>
+              </div>
+              <button
+                class="btn btn--secondary btn--sm"
+                type="button"
+                [disabled]="disabled() || escolhaLivre('#grupo-rotulo:' + etapa.codigo).trim() === '' || escolhaDeMembro(etapa.codigo) === ''"
+                (click)="acrescentarOGrupo(etapa)"
+              >
+                <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar grupo repetível
+              </button>
+            </div>
+          }
         }
 
         @if (!fixa(etapa)) {
@@ -472,6 +527,10 @@ export class EditorDeFormularioComponent {
   });
 
   protected readonly termos = computed(() => termosEmOrdem(this.conteudo()));
+  protected readonly semRecusas: ReadonlyMap<string, readonly string[]> = new Map();
+  protected readonly podeMoverEntrada = podeMoverEntrada;
+  protected readonly comGrupo = comGrupo;
+  protected readonly fatosDeMembro = computed(() => fatosDeMembroParaAcrescentar(this.conteudo(), this.catalogo()));
   protected readonly termosPossiveis = computed(() => termosParaAcrescentar(this.conteudo(), this.termosDisponiveis()));
   protected readonly fatosDosTermos = computed(() => {
     const conteudo = this.conteudo();
@@ -518,7 +577,7 @@ export class EditorDeFormularioComponent {
     this.escolhas.update((escolhas) => new Map(escolhas).set(this.chaveTermo, ''));
     this.anuncio.set(`Termo “${termo.nome}” exigido na revisão e aceite.`);
     const novo = termosEmOrdem(conteudo).at(-1);
-    if (novo !== undefined) this.focarDepois(`${this.idDoTermo(novo.codigo)}-versao`);
+    if (novo !== undefined) focarDepois(this.injector, `${this.idDoTermo(novo.codigo)}-versao`);
   }
 
   protected moverOTermo(codigo: string, direcao: -1 | 1): void {
@@ -535,7 +594,7 @@ export class EditorDeFormularioComponent {
     const termo = (this.conteudo().termos ?? []).find((t) => t.codigo === codigo);
     this.emitir(removerTermo(this.conteudo(), codigo));
     this.anuncio.set(`Termo “${this.termoDisponivel(termo?.termoId ?? '')?.nome ?? codigo}” deixou de ser exigido.`);
-    this.focarDepois(`${this.idBase()}-termo`, `${this.idBase()}-titulo`);
+    focarDepois(this.injector, `${this.idBase()}-termo`, `${this.idBase()}-titulo`);
   }
 
   protected acrescentarOPressuposto(): void {
@@ -544,14 +603,14 @@ export class EditorDeFormularioComponent {
     this.emitir(acrescentarPressuposto(this.conteudo(), fato));
     this.escolhas.update((escolhas) => new Map(escolhas).set(this.chavePressuposto, ''));
     this.anuncio.set(`“${this.nomeDoFato(fato)}” passa a ser pressuposto.`);
-    this.focarDepois(`${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
+    focarDepois(this.injector, `${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
   }
 
   protected retirarPressuposto(fato: string): void {
     this.aplicar(removerPressuposto(this.conteudo(), fato, this.nomes()), () => {
       this.anuncio.set(`“${this.nomeDoFato(fato)}” deixou de ser pressuposto.`);
       // Sem o combo, que some quando a seção some ou fica sem opção, o foco volta ao título do formulário.
-      this.focarDepois(`${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
+      focarDepois(this.injector, `${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
     });
   }
 
@@ -581,6 +640,25 @@ export class EditorDeFormularioComponent {
 
   protected errosDoItem(fatoCodigo: string): readonly string[] {
     return this.recusas()?.porItem.get(fatoCodigo) ?? [];
+  }
+
+  protected errosDoGrupo(codigo: string): readonly string[] {
+    return this.recusas()?.porGrupo.get(codigo) ?? [];
+  }
+
+  protected idDoGrupo(codigo: string): string {
+    return `${this.idBase()}-grupo-${codigo}`;
+  }
+
+  /** O texto que o administrador digitou num controle de acréscimo, como veio. */
+  protected escolhaLivre(chave: string): string {
+    return this.escolhas().get(chave) ?? '';
+  }
+
+  /** O fato de membro escolhido para o grupo novo da seção, enquanto ainda pode ser usado. */
+  protected escolhaDeMembro(etapaCodigo: string): string {
+    const escolhido = this.escolhas().get(`#grupo-campo:${etapaCodigo}`) ?? '';
+    return this.fatosDeMembro().some((fato) => fato.codigo === escolhido) ? escolhido : '';
   }
 
   protected errosDoTermo(codigo: string): readonly string[] {
@@ -617,7 +695,34 @@ export class EditorDeFormularioComponent {
     this.aplicar(acrescentarCampo(this.conteudo(), fato, etapa.codigo, this.catalogo()), () => {
       this.escolhas.update((escolhas) => new Map(escolhas).set(etapa.codigo, ''));
       this.anuncio.set(`Campo “${fato.nome}” acrescentado ao fim de ${etapa.titulo}.`);
-      this.focarDepois(`${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);
+      focarDepois(this.injector, `${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);
+    });
+  }
+
+  protected moverOGrupo(codigo: string, rotulo: string, direcao: -1 | 1, etapa: EtapaDoFormulario): void {
+    this.aplicar(moverEntrada(this.conteudo(), { tipo: 'grupo', codigo }, direcao, this.nomes()), (conteudo) => {
+      const entradas = entradasDaSecao(conteudo, etapa.codigo);
+      const posicao = entradas.findIndex((entrada) => entrada.tipo === 'grupo' && entrada.grupo.codigo === codigo) + 1;
+      this.anuncio.set(`Grupo “${rotulo}” movido para a posição ${posicao} de ${entradas.length} em ${etapa.titulo}.`);
+      this.focarBotaoDeMover(this.idDoGrupo(codigo), direcao);
+    });
+  }
+
+  protected removerOGrupo(codigo: string, rotulo: string, etapa: EtapaDoFormulario): void {
+    this.emitir(removerGrupo(this.conteudo(), codigo));
+    this.anuncio.set(`Grupo “${rotulo}” removido de ${etapa.titulo}.`);
+    focarDepois(this.injector, `${this.idDaEtapa(etapa)}-acrescentar`);
+  }
+
+  protected acrescentarOGrupo(etapa: EtapaDoFormulario): void {
+    const rotulo = this.escolhaLivre(`#grupo-rotulo:${etapa.codigo}`);
+    const fato = this.fatosDeMembro().find((f) => f.codigo === this.escolhaDeMembro(etapa.codigo));
+    if (fato === undefined) return;
+    this.aplicar(acrescentarGrupo(this.conteudo(), rotulo, etapa.codigo, fato, this.catalogo()), (conteudo) => {
+      const novo = (conteudo.grupos ?? []).find((grupo) => !(this.conteudo().grupos ?? []).some((g) => g.codigo === grupo.codigo));
+      this.escolhas.update((escolhas) => new Map(escolhas).set(`#grupo-rotulo:${etapa.codigo}`, '').set(`#grupo-campo:${etapa.codigo}`, ''));
+      this.anuncio.set(`Grupo repetível “${rotulo.trim()}” acrescentado ao fim de ${etapa.titulo}.`);
+      if (novo !== undefined) focarDepois(this.injector, `${this.idDoGrupo(novo.codigo)}-rotulo`);
     });
   }
 
@@ -633,7 +738,7 @@ export class EditorDeFormularioComponent {
   protected removerOItem(item: ItemDoFormulario, etapa: EtapaDoFormulario): void {
     this.aplicar(removerItem(this.conteudo(), item.fatoCodigo, this.nomes()), () => {
       this.anuncio.set(`Campo “${item.rotulo}” removido de ${etapa.titulo}.`);
-      this.focarDepois(`${this.idDaEtapa(etapa)}-acrescentar`);
+      focarDepois(this.injector, `${this.idDaEtapa(etapa)}-acrescentar`);
     });
   }
 
@@ -649,7 +754,7 @@ export class EditorDeFormularioComponent {
   protected removerAEtapa(etapa: EtapaDoFormulario): void {
     this.aplicar(removerEtapa(this.conteudo(), etapa.codigo), () => {
       this.anuncio.set(`${etapa.titulo} removida.`);
-      this.focarDepois(`${this.idBase()}-titulo`);
+      focarDepois(this.injector, `${this.idBase()}-titulo`);
     });
   }
 
@@ -658,7 +763,7 @@ export class EditorDeFormularioComponent {
     const nova = (conteudo.etapas ?? []).find((etapa) => !(this.conteudo().etapas ?? []).some((e) => e.codigo === etapa.codigo));
     this.emitir(conteudo);
     this.anuncio.set('Seção nova acrescentada antes da revisão e aceite.');
-    if (nova !== undefined) this.focarDepois(`${this.idDaEtapa(nova)}-titulo`);
+    if (nova !== undefined) focarDepois(this.injector, `${this.idDaEtapa(nova)}-titulo`);
   }
 
   protected acrescentarOBloco(valor: string): void {
@@ -679,26 +784,15 @@ export class EditorDeFormularioComponent {
   }
 
   private escolhiveis(citaveis: ReadonlySet<string>, predicados: readonly PredicadoNoWire[]): readonly FatoEscolhivel[] {
-    const citados = new Set(predicados.flatMap((predicado) => (predicado ?? []).flat().map((condicao) => condicao.fato)));
-    return fatosEscolhiveis(this.catalogo().filter((fato) => citaveis.has(fato.codigo) || citados.has(fato.codigo)));
+    return fatosOferecidos(this.catalogo(), citaveis, predicados);
   }
 
   /** Mover tira o nó do lugar e o foco com ele: o foco volta ao mesmo botão, ou ao oposto quando chegou à ponta. */
   private focarBotaoDeMover(prefixo: string, direcao: -1 | 1): void {
     const mesmo = `${prefixo}-${direcao < 0 ? 'subir' : 'descer'}`;
     const oposto = `${prefixo}-${direcao < 0 ? 'descer' : 'subir'}`;
-    this.focarDepois(mesmo, oposto);
+    focarDepois(this.injector, mesmo, oposto);
   }
 
-  private focarDepois(...ids: readonly string[]): void {
-    afterNextRender(
-      () => {
-        const alvo = ids
-          .map((id) => document.getElementById(id))
-          .find((elemento): elemento is HTMLElement => elemento !== null && !(elemento as HTMLButtonElement).disabled);
-        alvo?.focus();
-      },
-      { injector: this.injector },
-    );
-  }
+
 }
