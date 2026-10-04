@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
 import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
@@ -48,7 +48,7 @@ import {
   quemCitaNoProcesso,
   remocoesTravadasPor,
 } from './formulario-de-inscricao';
-import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade } from './formulario-do-processo';
+import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade, rascunhoDifereDoGravado } from './formulario-do-processo';
 import {
   comAplicacaoDoServidor,
   faseQueAAplicacaoDeclara,
@@ -73,6 +73,7 @@ import {
   nomeDaFinalidade,
   ordemDeGravacao,
   sufixoDaFinalidade,
+  emOrdemDasFinalidades,
 } from './formularios-por-finalidade';
 
 
@@ -267,10 +268,34 @@ export class FormularioStepComponent {
 
   readonly conteudo = computed(() => this.store.draft().formulario.conteudo);
 
-  /** Os formulários que a pré-visualização do processo pergunta e cujo resultado mostra. */
+  /**
+   * O processo como o servidor o tem, da última leitura: a hidratação ou a releitura de uma
+   * gravação, aplicação ou remoção deste passo.
+   */
+  private readonly processoLido = linkedSignal(() => this.store.remoteSnapshot());
+
+  /**
+   * Os formulários que a pré-visualização do processo pergunta e cujo resultado mostra: os
+   * gravados, porque é o processo gravado que a API avalia — os do rascunho perguntariam o que ela
+   * não vê e rotulariam o resultado com o que ela não tem.
+   */
   readonly formulariosParaSimular = computed<readonly FormularioParaSimular[]>(() =>
-    this.formularios().map(({ finalidade, conteudo }) => ({ finalidade, nome: nomeDaFinalidade(finalidade), conteudo })),
+    emOrdemDasFinalidades(this.processoLido()?.formularios ?? []).map((formulario) => ({
+      finalidade: formulario.finalidade,
+      nome: nomeDaFinalidade(formulario.finalidade),
+      conteudo: conteudoDoFormulario(formulario),
+    })),
   );
+
+  /** Há alteração nos formulários ainda não gravada: a pré-visualização não a veria. */
+  readonly previaDesatualizada = computed(() => rascunhoDifereDoGravado(this.processoLido()?.formularios ?? [], this.formularios()));
+
+  /** Relê o processo e guarda a leitura, quando ela ainda é do processo em edição. */
+  private async lerProcesso(processoId: string) {
+    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    if (isApiOk(detalhe) && detalhe.data.id === this.store.processoSeletivoId()) this.processoLido.set(detalhe.data);
+    return detalhe;
+  }
 
   /**
    * A pré-visualização do processo, sem as ocorrências de grupo repetível, que esta tela não simula.
@@ -552,7 +577,7 @@ export class FormularioStepComponent {
    * o formulário não está mais no processo — inclusive o que nunca foi gravado.
    */
   private async removerDoServidor(processoId: string, finalidade: string): Promise<string | null> {
-    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    const detalhe = await this.lerProcesso(processoId);
     if (!isApiOk(detalhe)) return 'Não foi possível reler o processo para remover o formulário. Tente de novo.';
     if (formularioDaFinalidade(detalhe.data.formularios, finalidade) === null) return null;
 
@@ -680,7 +705,7 @@ export class FormularioStepComponent {
    * fase, e a publicação o recusa.
    */
   private async aplicarNoServidor(processoId: string, finalidade: string, modeloId: string, faseDaAba: string): Promise<DesfechoDaAplicacao> {
-    const antes = await firstValueFrom(this.api.obter(processoId));
+    const antes = await this.lerProcesso(processoId);
     if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.', copiaConfirmada: null };
     const fase = faseQueAAplicacaoDeclara(formularioDaFinalidade(antes.data.formularios, finalidade), faseDaAba, antes.data.cronogramaFases);
     if (fase.declarar && fase.faseId === null) {
@@ -694,7 +719,7 @@ export class FormularioStepComponent {
     const aplicacao = await this.cadastro.aplicarModeloDeFormulario(processoId, modeloId);
     if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem), copiaConfirmada: aplicacao.inconclusiva ? false : null };
 
-    const depois = await firstValueFrom(this.api.obter(processoId));
+    const depois = await this.lerProcesso(processoId);
     if (!isApiOk(depois)) {
       return { ok: false, recusa: '', copiaConfirmada: true };
     }
@@ -860,7 +885,7 @@ export class FormularioStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const detalhe = await firstValueFrom(this.api.obter(processoId));
+      const detalhe = await this.lerProcesso(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!isApiOk(detalhe)) {
         return {
@@ -955,7 +980,7 @@ export class FormularioStepComponent {
    * tentativa se compara com a releitura que fizer.
    */
   private async reconciliarComOServidor(processoId: string, geracao: number, gravadas: readonly string[] | null): Promise<void> {
-    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    const detalhe = await this.lerProcesso(processoId);
     if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
     if (gravadas === null) {
       this.store.projetarSecao('formulario', formulariosDoServidor(detalhe.data));
