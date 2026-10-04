@@ -5,6 +5,7 @@ import type { Observable } from 'rxjs';
 
 import { AlertComponent } from '../alert/alert';
 import { etapasEmOrdem, todosOsCampos, type ConteudoDoFormulario, type FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
+import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
 import { SpinnerComponent } from '../spinner/spinner';
 import {
   comResposta,
@@ -82,7 +83,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-pre-visualizacao-de-formularios',
   standalone: true,
-  imports: [AlertComponent, SpinnerComponent],
+  imports: [AlertComponent, SpinnerComponent, ValorDeMunicipioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'pre-visualizacao-formularios' },
   template: `
@@ -97,9 +98,22 @@ const ESTADOS: Readonly<Record<string, string>> = {
         <legend class="field__label">Respostas simuladas</legend>
         @for (fato of fatos(); track fato.codigo) {
           <div class="field">
+            @if (fato.controle === 'municipio') {
+              <label class="field__label" [attr.for]="municipioCampo.campoId()">
+                {{ fato.nome }}{{ fato.origem === 'pressuposto' ? ' (de outro formulário)' : '' }}
+              </label>
+              <ui-valor-de-municipio
+                #municipioCampo
+                [rotulo]="fato.nome"
+                [multiplo]="fato.multiplo"
+                [values]="municipiosRespondidos(fato)"
+                (valuesChange)="responderMunicipios(fato, $event)"
+              />
+            } @else {
             <label class="field__label" [for]="idDoFato(fato)">
               {{ fato.nome }}{{ fato.origem === 'pressuposto' ? ' (de outro formulário)' : '' }}
             </label>
+            }
             @switch (fato.controle) {
               @case ('booleano') {
                 <select class="select" [id]="idDoFato(fato)" (change)="responder(fato, valorDe($event))">
@@ -124,6 +138,9 @@ const ESTADOS: Readonly<Record<string, string>> = {
               }
               @case ('data') {
                 <input class="input" type="date" [id]="idDoFato(fato)" (input)="responder(fato, valorDe($event))" />
+              }
+              @case ('municipio') {
+                <!-- O campo de município fica com o rótulo dele, acima: a busca é que o liga ao controle. -->
               }
               @case ('lista') {
                 <select class="select" [id]="idDoFato(fato)" [multiple]="fato.multiplo" (change)="responderLista(fato, $event)">
@@ -412,6 +429,18 @@ export class PreVisualizacaoDeFormulariosComponent {
       return novos;
     });
     this.respostas.update((atual) => comResposta(atual, fato.codigo, invalido ? undefined : valor));
+    this.descartarAvaliacao();
+  }
+
+  /** Os códigos IBGE respondidos, como o campo de município os mostra. */
+  protected municipiosRespondidos(fato: FatoSimulado): readonly string[] {
+    const resposta = this.respostas().get(fato.codigo);
+    return Array.isArray(resposta) ? resposta : typeof resposta === 'string' ? [resposta] : [];
+  }
+
+  protected responderMunicipios(fato: FatoSimulado, codigos: readonly string[]): void {
+    const resposta = codigos.length === 0 ? undefined : fato.multiplo ? codigos : codigos[0];
+    this.respostas.update((atual) => comResposta(atual, fato.codigo, resposta));
     this.descartarAvaliacao();
   }
 

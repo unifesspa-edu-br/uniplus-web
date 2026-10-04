@@ -1,4 +1,4 @@
-import { fatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { FONTE_GEO_MUNICIPIO, fatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import type { FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
 
 /** Como o candidato responderia um campo do formulário ou um pressuposto, na simulação. */
@@ -7,7 +7,7 @@ export interface FatoSimulado {
   readonly nome: string;
   /** Resposta de um campo do formulário, ou fato pressuposto de outro formulário. */
   readonly origem: 'resposta' | 'pressuposto';
-  readonly controle: 'booleano' | 'numero' | 'data' | 'lista' | 'texto';
+  readonly controle: 'booleano' | 'numero' | 'data' | 'lista' | 'municipio' | 'texto';
   readonly multiplo: boolean;
   /** O domínio, para converter cada valor escrito no tipo que a API compara. */
   readonly dominio: string;
@@ -27,8 +27,11 @@ export function simulado(fato: FatoDoFormulario, origem: FatoSimulado['origem'])
   const escolhivel = fatoEscolhivel(fato);
   const multiplo = fato.cardinalidade === 'MULTIVALORADO';
   // Vários sim/não ou vários números não cabem num controle de valor único: são escritos separados por ponto e vírgula.
+  // O município é respondido pelo código IBGE, que se escolhe pelo nome na busca do Geo.
   const controle: FatoSimulado['controle'] =
-    multiplo && escolhivel?.tipoDominio !== 'CATEGORICO_ESTATICO'
+    fato.fonteValores === FONTE_GEO_MUNICIPIO
+      ? 'municipio'
+      : multiplo && escolhivel?.tipoDominio !== 'CATEGORICO_ESTATICO'
       ? 'texto'
       : fato.dominio === 'BOOLEANO'
         ? 'booleano'
