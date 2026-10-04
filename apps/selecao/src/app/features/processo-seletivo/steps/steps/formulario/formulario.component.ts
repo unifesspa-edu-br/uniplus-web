@@ -51,6 +51,7 @@ import {
   faseServeAFinalidade,
   fatosColetadosPelasOutras,
   fatosDaInscricaoQueOutrasExigem,
+  finalidadeCabeNaCobranca,
   finalidadesParaAcrescentar,
   formularioDoServidorNaFinalidade,
   formulariosDoRascunho,
@@ -528,6 +529,12 @@ export class FormularioStepComponent {
       ...this.abas()
         .filter((aba) => aba.fase === '')
         .map((aba) => mensagemDaFaseQueFalta(aba.finalidade, aba.fases.length === 0)),
+      ...this.abas()
+        .filter((aba) => !finalidadeCabeNaCobranca(aba.finalidade, draft.pagamento.cobra === true))
+        .map(
+          (aba) =>
+            `O processo não cobra taxa de inscrição, e o formulário de ${aba.nome} só existe quando há cobrança. Remova o formulário, ou volte a cobrar a taxa em "Pagamento".`,
+        ),
       ...problemasDoFormulario(draft.formulario, draft.documentos, new Set(draft.cronograma.fases.map((fase) => fase.codigo))),
       ...this.camposSemValoresOfertados().map(
         (campo) =>

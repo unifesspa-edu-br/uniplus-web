@@ -176,6 +176,18 @@ describe('FormularioStepComponent', () => {
     expect(fixture.componentInstance.abas()[0].fatosIndisponiveis).toContain('SEXO');
   });
 
+  it('o formulário de isenção que já existe barra o passo quando o processo deixa de cobrar taxa', () => {
+    store.patchObjectSection('formulario', {
+      outrasFinalidades: [{ finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', conteudo: conteudoInicial() }],
+    });
+    store.patchObjectSection('pagamento', { cobra: false });
+
+    const validacao = fixture.componentInstance.validate();
+
+    expect(validacao.valid).toBe(false);
+    expect(validacao.messages?.join(' ')).toContain('O processo não cobra taxa de inscrição, e o formulário de isenção');
+  });
+
   it('o campo que uma exigência documental cita não sai, e o editor diz por quê', () => {
     const exigencia = {
       ...exigenciaNova('01960000-0000-7000-0000-0000000000d1', 'INSCRICAO'),
