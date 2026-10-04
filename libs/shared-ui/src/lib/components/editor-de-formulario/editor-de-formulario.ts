@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { fatosEscolhiveis, nomesDoCatalogo, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { TagComponent } from '../tag/tag';
 import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
@@ -443,6 +444,8 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 })
 export class EditorDeFormularioComponent {
   private readonly injector = inject(Injector);
+  /** As condições citam município só quando o hospedeiro provê a busca de onde sai o valor. */
+  private readonly comMunicipios = inject(BUSCA_DE_MUNICIPIOS, { optional: true }) !== null;
 
   readonly conteudo = input.required<ConteudoDoFormulario>();
   /** O catálogo de fatos inteiro, desativados inclusive — os itens que já os usam precisam do nome. */
@@ -540,7 +543,7 @@ export class EditorDeFormularioComponent {
    */
   protected readonly regrasProprias = computed(() => {
     const conteudo = this.conteudoParaCitacoes();
-    const escolhiveis = new Map(fatosEscolhiveis(this.catalogo()).map((fato) => [fato.codigo, fato]));
+    const escolhiveis = new Map(fatosEscolhiveis(this.catalogo(), new Map(), [], this.comMunicipios).map((fato) => [fato.codigo, fato]));
     return new Map(
       (conteudo.itens ?? []).map((item) => {
         const proprio = escolhiveis.get(item.fatoCodigo);
@@ -849,7 +852,7 @@ export class EditorDeFormularioComponent {
   }
 
   private escolhiveis(citaveis: ReadonlySet<string>, predicados: readonly PredicadoNoWire[]): readonly FatoEscolhivel[] {
-    return fatosOferecidos(this.catalogo(), citaveis, predicados);
+    return fatosOferecidos(this.catalogo(), citaveis, predicados, this.comMunicipios);
   }
 
   /** Mover tira o nó do lugar e o foco com ele: o foco volta ao mesmo botão, ou ao oposto quando chegou à ponta. */

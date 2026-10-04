@@ -766,14 +766,14 @@ export function problemaDaRestricao(restricao: RestricaoDeValor): string | null 
   }
 }
 
-/** Os tipos de campo que o impedimento admite (`Impedimento.CabeNoCampo`), sem o município — ver `impedimentoCabe`. */
-const CAMPOS_COM_IMPEDIMENTO = new Set(['BOOLEANO', 'NUMERO', 'SELECAO_UNICA', 'SELECAO_MULTIPLA']);
+/** Os tipos de campo que o impedimento admite (`Impedimento.CabeNoCampo`). */
+const CAMPOS_COM_IMPEDIMENTO = new Set(['BOOLEANO', 'NUMERO', 'SELECAO_UNICA', 'SELECAO_MULTIPLA', 'MUNICIPIO']);
 
 /**
  * Se o campo pode ter impedimento: só na inscrição — ele impede a inscrição —, num tipo de campo que
  * o admite e quando a condição consegue citar a resposta do próprio campo, que toda alternativa do
- * impedimento cita. O município e a seleção de valores dinâmicos não entram: o editor de condições
- * não tem a lista deles para oferecer.
+ * impedimento cita. A seleção de valores dinâmicos não entra: o editor de condições não tem a lista
+ * dela para oferecer. O município entra quando há a busca de onde a condição tira o valor.
  */
 export function impedimentoCabe(finalidade: string, tipoRenderizacao: string, proprioFatoCitavel: boolean): boolean {
   return finalidade === FINALIDADE_INSCRICAO && CAMPOS_COM_IMPEDIMENTO.has(tipoRenderizacao) && proprioFatoCitavel;
@@ -1077,9 +1077,15 @@ export function fatosOferecidos(
   catalogo: readonly FatoDoFormulario[],
   citaveis: ReadonlySet<string>,
   predicados: readonly PredicadoNoWire[],
+  comMunicipios = false,
 ): readonly FatoEscolhivel[] {
   const citados = new Set(predicados.flatMap(fatosDoPredicado));
-  return fatosEscolhiveis(catalogo.filter((fato) => citaveis.has(fato.codigo) || citados.has(fato.codigo)));
+  return fatosEscolhiveis(
+    catalogo.filter((fato) => citaveis.has(fato.codigo) || citados.has(fato.codigo)),
+    new Map(),
+    [],
+    comMunicipios,
+  );
 }
 
 /**

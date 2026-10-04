@@ -25,8 +25,8 @@ const MENSAGEM_MAX = 500;
 
       @if (!permitido()) {
         <p class="field__error" [id]="idBase() + '-impedimento-nota'">
-          O impedimento só cabe na inscrição, em campo de sim ou não, número ou seleção de valores conhecidos. Desligue-o
-          para salvar.
+          O impedimento só cabe na inscrição, em campo de sim ou não, número, seleção de valores conhecidos ou município.
+          Desligue-o para salvar.
         </p>
       }
 

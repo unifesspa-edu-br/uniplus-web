@@ -370,3 +370,38 @@ describe('ComboboxComponent', () => {
     return nativo.querySelector(`#${id}`)?.textContent?.trim() ?? '';
   }
 });
+
+@Component({
+  standalone: true,
+  imports: [ComboboxComponent],
+  template: `
+    <ui-combobox
+      rotulo="Municípios"
+      buscaExterna
+      textoSemResultado="Buscando municípios…"
+      [grupos]="grupos()"
+      (buscaChange)="termos.push($event)"
+    />
+  `,
+})
+class HospedeiroDaBuscaExterna {
+  readonly grupos = signal<readonly UiComboboxGroup[]>([{ label: 'Encontrados', options: [{ value: '1504208', label: 'Marabá (PA)' }] }]);
+  readonly termos: string[] = [];
+}
+
+describe('ComboboxComponent com a busca do hospedeiro', () => {
+  it('entrega o termo ao hospedeiro e mostra o que ele achou, sem filtrar de novo', async () => {
+    await TestBed.configureTestingModule({ imports: [HospedeiroDaBuscaExterna] }).compileComponents();
+    const fixture = TestBed.createComponent(HospedeiroDaBuscaExterna);
+    fixture.detectChanges();
+    const nativo = fixture.nativeElement as HTMLElement;
+    const campo = nativo.querySelector('input[role="combobox"]') as HTMLInputElement;
+
+    campo.value = 'maraba pa';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.termos).toEqual(['maraba pa']);
+    expect([...nativo.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim())).toEqual(['Marabá (PA)']);
+  });
+});

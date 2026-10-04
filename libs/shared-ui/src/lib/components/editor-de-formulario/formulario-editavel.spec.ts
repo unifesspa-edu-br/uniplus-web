@@ -434,8 +434,11 @@ describe('restrições, município e impedimento', () => {
     expect(impedimentoCabe('INSCRICAO', 'BOOLEANO', true)).toBe(true);
     expect(impedimentoCabe('HABILITACAO', 'BOOLEANO', true)).toBe(false);
     expect(impedimentoCabe('INSCRICAO', 'TEXTO', true)).toBe(false);
-    expect(impedimentoCabe('INSCRICAO', 'MUNICIPIO', true)).toBe(false);
     expect(impedimentoCabe('INSCRICAO', 'SELECAO_UNICA', false)).toBe(false);
+  });
+
+  it('o campo de município admite impedimento', () => {
+    expect(impedimentoCabe('INSCRICAO', 'MUNICIPIO', true)).toBe(true);
   });
 
   it('ligar o impedimento deixa o campo obrigatório sempre na mesma edição', () => {

@@ -3,8 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
 import { FatoCandidatoView, FatosCandidatoApi, ModelosFormularioApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
+import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import { ProcessosSeletivosApi, type AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
 import {
+  BUSCA_DE_MUNICIPIOS,
   ConfirmDialogComponent,
   EditorDeFormularioComponent,
   FINALIDADE_INSCRICAO,
@@ -94,7 +96,12 @@ interface FormularioParaEnvio {
   imports: [ConfirmDialogComponent, DateBrPipe, EditorDeFormularioComponent, ValorEmConsultaComponent],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(FormularioStepComponent)],
+  providers: [
+    provePassoDoWizard(FormularioStepComponent),
+    // A condição sobre município — o impedimento do campo de município, inclusive — escolhe o
+    // valor pela busca no Geo.
+    { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo },
+  ],
 })
 export class FormularioStepComponent {
   readonly store = inject(ProcessoSeletivoStore);

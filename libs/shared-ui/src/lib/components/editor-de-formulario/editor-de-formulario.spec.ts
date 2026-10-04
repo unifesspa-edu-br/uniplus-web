@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { EMPTY } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { EditorDeFormularioComponent } from './editor-de-formulario';
 import type { ConteudoDoFormulario, FatoDoFormulario, ItemDoFormulario } from './formulario-editavel';
 
@@ -236,5 +238,27 @@ describe('EditorDeFormularioComponent', () => {
       expect(remover.disabled).toBe(true);
       expect(tela().textContent).toContain('O grupo não pode ser removido: Uma exigência documental cita a renda.');
     });
+  });
+});
+
+describe('EditorDeFormularioComponent com a busca de municípios', () => {
+  it('oferece o impedimento no campo de município, com a condição sobre a resposta dele', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: BUSCA_DE_MUNICIPIOS, useValue: () => EMPTY }] });
+    const fixture = TestBed.createComponent(EditorDeFormularioComponent);
+    const municipio: FatoDoFormulario = { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' };
+    fixture.componentRef.setInput('conteudo', { ...conteudo, itens: [item('MUNICIPIO', 0, { tipoRenderizacao: 'MUNICIPIO' })] });
+    fixture.componentRef.setInput('catalogo', [municipio]);
+    fixture.componentRef.setInput('finalidade', 'INSCRICAO');
+    fixture.componentRef.setInput('idBase', 'f');
+    const emitidos: ConteudoDoFormulario[] = [];
+    fixture.componentInstance.conteudoChange.subscribe((novo) => emitidos.push(novo));
+    fixture.detectChanges();
+
+    const caixa = [...(fixture.nativeElement as HTMLElement).querySelectorAll('input[type="checkbox"]')].find((c) =>
+      c.parentElement?.textContent?.includes('Impedir a inscrição'),
+    ) as HTMLInputElement | undefined;
+    caixa?.click();
+
+    expect(emitidos.at(-1)?.itens?.[0]?.impedimento?.quando).toEqual([[{ fato: 'MUNICIPIO', operador: 'IGUAL', valor: '' }]]);
   });
 });

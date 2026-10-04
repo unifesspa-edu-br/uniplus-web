@@ -33,8 +33,10 @@ import {
   TermosConsentimentoApi,
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
+import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   AlertComponent,
+  BUSCA_DE_MUNICIPIOS,
   EditorDeFormularioComponent,
   FINALIDADES,
   SpinnerComponent,
@@ -71,6 +73,9 @@ interface CabecalhoForm {
     TagComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // A condição sobre município — o impedimento do campo de município, inclusive — escolhe o valor
+  // pela busca no Geo.
+  providers: [{ provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo }],
   template: `
     <div class="page-header page-header--form">
       <a class="btn btn--tertiary btn--sm btn--rect cfg-voltar" routerLink="/modelos-formulario">

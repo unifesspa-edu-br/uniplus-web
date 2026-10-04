@@ -38,6 +38,8 @@ export interface FatoDoCatalogo {
   readonly dominio: string;
   readonly valoresDominio?: readonly string[] | null;
   readonly binding: string;
+  /** De onde vêm os valores do categórico (`GEO_MUNICIPIO`, `PROCESSO`...); nulo nos demais. */
+  readonly fonteValores?: string | null;
 }
 
 /**
@@ -55,6 +57,11 @@ export interface FatoEscolhivel {
    * etária, renda — resolve por outro caminho e nunca vira campo.
    */
   readonly coletavel: boolean;
+  /**
+   * O valor é um município, escolhido pela busca no Geo e gravado pelo código IBGE. O domínio não
+   * é enumerado: o servidor confere só a forma do código (ADR-0090).
+   */
+  readonly municipio?: boolean;
 }
 
 /** Um operador (ou resposta) oferecido para um fato, com a leitura que a tela faz dele. */
@@ -86,6 +93,9 @@ export interface ClausulaDeCondicoes<T extends CondicaoEmClausula = CondicaoEmCl
   readonly numero: number;
   readonly condicoes: readonly CondicaoPosicionada<T>[];
 }
+
+/** A fonte dos valores do fato de município. */
+const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
 
 /** Os prefixos de binding que marcam o fato perguntado ao candidato no formulário. */
 const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
@@ -129,11 +139,14 @@ export function fatoEscolhivel(fato: FatoDoCatalogo): FatoEscolhivel | null {
  * Os fatos de domínio dinâmico só entram quando o chamador sabe dizer que valores o processo
  * oferta para eles: sem isso, a tela proporia um valor que o servidor recusaria por não
  * conseguir conferir o domínio. `omitidos` são os fatos que outro controle da tela já escreve.
+ * O fato de município é a exceção: entra quando `comMunicipios` diz que o hospedeiro tem a busca
+ * de onde a tela tira o valor.
  */
 export function fatosEscolhiveis(
   fatos: readonly FatoDoCatalogo[],
   dominiosDinamicos: ReadonlyMap<string, readonly string[]> = new Map(),
   omitidos: readonly string[] = [],
+  comMunicipios = false,
 ): readonly FatoEscolhivel[] {
   const escolhiveis: FatoEscolhivel[] = [];
 
@@ -145,6 +158,11 @@ export function fatosEscolhiveis(
 
     if (fato.tipoDominio !== 'CATEGORICO_DINAMICO') {
       escolhiveis.push(fato);
+      continue;
+    }
+
+    if (comMunicipios && view.fonteValores === FONTE_GEO_MUNICIPIO) {
+      escolhiveis.push({ ...fato, municipio: true });
       continue;
     }
 
