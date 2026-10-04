@@ -168,7 +168,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Condições de atendimento especializado, com código, nome e situação
+                Condições de atendimento especializado, com código e nome
               </caption>
               <thead>
                 <tr>
@@ -360,15 +360,23 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
       <p>
         Você está prestes a remover a condição
         <strong>{{ condicaoParaRemover()?.nome }}/{{ condicaoParaRemover()?.codigo }}.</strong>
-        A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a
+        A remoção impede novos editais de utilizá-la, mas não altera ofertas já congeladas — a
         cópia por valor de cada processo permanece íntegra.
       </p>
       <div uiDialogFooter>
         <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" (click)="removerConfirmado()">
-          Confirmar remoção
+        <button
+          type="button"
+          class="btn btn--danger"
+          [disabled]="saving()"
+          (click)="removerConfirmado()"
+        >
+          @if (saving()) {
+            <ui-spinner size="sm" />
+          }
+          {{ saving() ? 'Removendo...' : 'Remover' }}
         </button>
       </div>
     </ui-dialog>
@@ -652,7 +660,9 @@ export class CondicoesAtendimentoListPage implements OnInit {
       this.recarregar();
       return;
     }
-    this.aplicarFalha(result.problem);
+    // A falha da remoção é mostrada no toast: aplicarFalha() escreve no formulário,
+    // que está fechado enquanto o diálogo de confirmação está aberto.
+    this.notifications.errorFromProblem(result.problem);
   }
 
   protected salvar(): void {
