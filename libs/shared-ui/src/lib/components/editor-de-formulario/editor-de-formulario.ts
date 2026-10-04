@@ -31,7 +31,10 @@ import {
   removerTermo,
   termosEmOrdem,
   termosParaAcrescentar,
-  acrescentarItem,
+  acrescentarCampo,
+  impedimentoCabe,
+  quantidadeNoTeto,
+  ufsAnteriores,
   acrescentarSecao,
   blocosAdmitidos,
   comEtapa,
@@ -74,8 +77,9 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
  * poria uma condição antes do campo que ela cita. Serve ao modelo, na Configuração, e ao
  * formulário do processo, na Seleção.
  *
- * Não guarda o conteúdo: recebe e devolve o conteúdo inteiro a cada mudança. Termos, grupos,
- * pressupostos, restrições e impedimentos ainda não se editam aqui e viajam como vieram.
+ * Não guarda o conteúdo: recebe e devolve o conteúdo inteiro a cada mudança. Edita também os
+ * termos, os pressupostos, as restrições e o impedimento de cada campo. Ainda viajam como vieram os
+ * grupos e as restrições de opções condicionadas ou formadas por respostas anteriores.
  *
  * Acessibilidade: cada etapa é uma região nomeada pelo título; mover, acrescentar e remover são
  * anunciados numa região de status visível, que também mostra a recusa; o foco volta ao botão
@@ -273,6 +277,10 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                         [podeDescer]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, 1)"
                         [disabled]="disabled()"
                         [erros]="errosDoItem(entrada.item.fatoCodigo)"
+                        [valoresConhecidos]="regrasProprias().get(entrada.item.fatoCodigo)?.valoresConhecidos ?? []"
+                        [ufs]="regrasProprias().get(entrada.item.fatoCodigo)?.ufs ?? []"
+                        [impedimentoPermitido]="regrasProprias().get(entrada.item.fatoCodigo)?.impedimentoPermitido ?? false"
+                        [fatosDoImpedimento]="regrasProprias().get(entrada.item.fatoCodigo)?.fatosDoImpedimento ?? []"
                         (itemChange)="emitir(comItem(conteudo(), $event))"
                         (mover)="moverOItem(entrada.item, $event, etapa)"
                         (remover)="removerOItem(entrada.item, etapa)"
@@ -410,7 +418,7 @@ export class EditorDeFormularioComponent {
   protected readonly etapas = computed(() => etapasEmOrdem(this.conteudo()));
   private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
   protected readonly paraAcrescentar = computed(() => fatosParaAcrescentar(this.conteudo(), this.catalogo()));
-  protected readonly noTeto = computed(() => (this.conteudo().itens?.length ?? 0) >= LIMITES_DO_FORMULARIO.itens);
+  protected readonly noTeto = computed(() => quantidadeNoTeto(this.conteudo()) >= LIMITES_DO_FORMULARIO.itens);
   protected readonly exigemResposta = computed(() => fatosQueExigemResposta(this.conteudo()));
   protected readonly desativados = computed(() => new Set(this.catalogo().filter((fato) => !fato.ativo).map((fato) => fato.codigo)));
   protected readonly blocosParaAcrescentar = computed(() =>
@@ -425,6 +433,31 @@ export class EditorDeFormularioComponent {
         item.fatoCodigo,
         this.escolhiveis(fatosCitaveisPeloItem(conteudo, item.fatoCodigo), [item.precondicao, item.predicadoObrigatoriedade ?? null]),
       ]),
+    );
+  });
+
+  /**
+   * O que cada item precisa para as regras sobre a própria resposta: os valores que as opções
+   * permitidas marcam, as UFs de onde o município tira a lista, e se cabe o impedimento — com os
+   * fatos que a condição dele cita, o próprio campo primeiro, para a alternativa nova nascer com ele.
+   */
+  protected readonly regrasProprias = computed(() => {
+    const conteudo = this.conteudo();
+    const escolhiveis = new Map(fatosEscolhiveis(this.catalogo()).map((fato) => [fato.codigo, fato]));
+    return new Map(
+      (conteudo.itens ?? []).map((item) => {
+        const proprio = escolhiveis.get(item.fatoCodigo);
+        const anteriores = (this.fatosDoItem().get(item.fatoCodigo) ?? []).filter((fato) => fato.codigo !== item.fatoCodigo);
+        return [
+          item.fatoCodigo,
+          {
+            valoresConhecidos: proprio?.tipoDominio === 'CATEGORICO_ESTATICO' ? proprio.valores : [],
+            ufs: ufsAnteriores(conteudo, this.catalogo(), item.fatoCodigo).map((uf) => ({ codigo: uf.codigo, nome: uf.nome })),
+            impedimentoPermitido: impedimentoCabe(this.finalidade(), item.tipoRenderizacao, proprio !== undefined),
+            fatosDoImpedimento: proprio === undefined ? anteriores : [proprio, ...anteriores],
+          },
+        ] as const;
+      }),
     );
   });
 
@@ -581,10 +614,11 @@ export class EditorDeFormularioComponent {
   protected acrescentarOItem(etapa: EtapaDoFormulario): void {
     const fato = this.paraAcrescentar().find((f) => f.codigo === this.escolhaDe(etapa.codigo));
     if (fato === undefined) return;
-    this.emitir(acrescentarItem(this.conteudo(), fato, etapa.codigo));
-    this.escolhas.update((escolhas) => new Map(escolhas).set(etapa.codigo, ''));
-    this.anuncio.set(`Campo “${fato.nome}” acrescentado ao fim de ${etapa.titulo}.`);
-    this.focarDepois(`${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);
+    this.aplicar(acrescentarCampo(this.conteudo(), fato, etapa.codigo, this.catalogo()), () => {
+      this.escolhas.update((escolhas) => new Map(escolhas).set(etapa.codigo, ''));
+      this.anuncio.set(`Campo “${fato.nome}” acrescentado ao fim de ${etapa.titulo}.`);
+      this.focarDepois(`${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);
+    });
   }
 
   protected moverOItem(item: ItemDoFormulario, direcao: -1 | 1, etapa: EtapaDoFormulario): void {

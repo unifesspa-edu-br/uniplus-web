@@ -73,4 +73,36 @@ describe('EditorDeFormularioComponent', () => {
     expect(emitidos).toHaveLength(1);
     expect(status()).toBe('“Campo C” movido para a posição 2 de 3 em Escolaridade.');
   });
+
+  it('ligar o impedimento cita a resposta do próprio campo e torna o campo obrigatório', () => {
+    const opcional: ConteudoDoFormulario = { ...conteudo, itens: [item('A', 0, { obrigatoriedade: 'NUNCA' })] };
+    fixture.componentRef.setInput('conteudo', opcional);
+    fixture.detectChanges();
+
+    const caixa = [...tela().querySelectorAll('input[type="checkbox"]')].find((c) =>
+      c.parentElement?.textContent?.includes('Impedir a inscrição'),
+    ) as HTMLInputElement;
+    caixa.click();
+    fixture.detectChanges();
+
+    const ligado = emitidos.at(-1)?.itens?.[0];
+    expect(ligado?.obrigatoriedade).toBe('SEMPRE');
+    expect(ligado?.impedimento?.quando?.[0]?.[0]?.fato).toBe('A');
+  });
+
+  it('recusa acrescentar município sem campo de UF antes, dizendo o que fazer', () => {
+    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }]);
+    fixture.detectChanges();
+    const combo = tela().querySelector('#f-etapa-S1-acrescentar') as HTMLSelectElement;
+    combo.value = 'MUNICIPIO';
+    combo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const botao = [...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar campo')) as HTMLButtonElement;
+    botao.click();
+    fixture.detectChanges();
+
+    expect(emitidos).toEqual([]);
+    expect(status()).toContain('Acrescente antes o campo de UF');
+  });
 });

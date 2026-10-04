@@ -10,7 +10,7 @@ import {
   type TermoDisponivel,
   type TermoDoFormulario,
 } from './formulario-editavel';
-import { paraPredicado, recopiarSeMudouPorFora } from './item-do-formulario';
+import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
 
 const ACEITES = [
   { valor: OBRIGATORIEDADE_SEMPRE, rotulo: 'Aceite obrigatório' },

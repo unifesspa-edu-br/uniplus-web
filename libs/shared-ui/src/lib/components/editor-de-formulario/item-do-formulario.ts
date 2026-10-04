@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, outp
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
 import {
-  deClausulasDoWire,
-  paraClausulasDoWire,
   problemaDaCondicao,
   type CondicaoEmClausula,
   type FatoEscolhivel,
@@ -17,6 +15,9 @@ import {
   type ItemDoFormulario,
   type PredicadoNoWire,
 } from './formulario-editavel';
+import { ImpedimentoDoCampoComponent } from './impedimento-do-campo';
+import { paraPredicado, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { RestricoesDoCampoComponent } from './restricoes-do-campo';
 
 /** Como o candidato responde, pelo tipo de campo. */
 const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
@@ -40,7 +41,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-item-do-formulario',
   standalone: true,
-  imports: [EditorDeCondicoesComponent, TagComponent],
+  imports: [EditorDeCondicoesComponent, ImpedimentoDoCampoComponent, RestricoesDoCampoComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">
@@ -151,6 +152,26 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         (condicoesChange)="trocarExibicao($event)"
       />
 
+      <ui-restricoes-do-campo
+        [item]="item()"
+        [valoresConhecidos]="valoresConhecidos()"
+        [ufs]="ufs()"
+        [idBase]="idBase()"
+        [disabled]="disabled()"
+        (restricoesChange)="trocar({ restricoes: $event })"
+      />
+
+      @if (impedimentoPermitido() || item().impedimento) {
+        <ui-impedimento-do-campo
+          [item]="item()"
+          [fatos]="fatosDoImpedimento()"
+          [permitido]="impedimentoPermitido()"
+          [idBase]="idBase()"
+          [disabled]="disabled()"
+          (itemChange)="itemChange.emit($event)"
+        />
+      }
+
       <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do campo ' + nome()">
         <button
           class="btn btn--tertiary btn--sm"
@@ -201,6 +222,14 @@ export class ItemDoFormularioComponent {
   readonly disabled = input<boolean>(false);
   /** As recusas da API que apontam este item. */
   readonly erros = input<readonly string[]>([]);
+  /** Os valores do domínio do próprio fato, quando conhecidos: os que as opções permitidas marcam. */
+  readonly valoresConhecidos = input<readonly string[]>([]);
+  /** Os campos de UF anteriores, para o município escolher de onde vêm os municípios. */
+  readonly ufs = input<readonly { readonly codigo: string; readonly nome: string }[]>([]);
+  /** Se o impedimento cabe neste campo (finalidade, tipo e próprio fato citável). */
+  readonly impedimentoPermitido = input<boolean>(false);
+  /** Os fatos que a condição do impedimento cita, o próprio campo primeiro. */
+  readonly fatosDoImpedimento = input<readonly FatoEscolhivel[]>([]);
 
   readonly itemChange = output<ItemDoFormulario>();
   readonly mover = output<-1 | 1>();
@@ -270,24 +299,4 @@ export class ItemDoFormularioComponent {
     this.condicoesDaExibicao.set(condicoes);
     this.trocar({ precondicao: paraPredicado(condicoes) });
   }
-}
-
-/** O predicado na forma da API; sem condição, nulo — é como a API diz "sempre". */
-export function paraPredicado(condicoes: readonly CondicaoEmClausula[]): PredicadoNoWire {
-  const clausulas = paraClausulasDoWire(condicoes);
-  return clausulas.length === 0 ? null : clausulas;
-}
-
-/**
- * Mantém as condições em edição enquanto elas são o predicado recebido; recopia quando o
- * predicado mudou por fora — outro item, a recarga do servidor.
- */
-export function recopiarSeMudouPorFora(
-  predicado: PredicadoNoWire,
-  anterior: { readonly value: readonly CondicaoEmClausula[] } | undefined,
-): readonly CondicaoEmClausula[] {
-  if (anterior !== undefined && JSON.stringify(paraPredicado(anterior.value)) === JSON.stringify(predicado)) {
-    return anterior.value;
-  }
-  return deClausulasDoWire(predicado);
 }

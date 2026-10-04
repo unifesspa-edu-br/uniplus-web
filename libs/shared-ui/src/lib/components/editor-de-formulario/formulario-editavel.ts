@@ -199,6 +199,7 @@ export function conteudoInicial(): ConteudoDoFormulario {
 
 const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
 const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
+const FONTE_GEO_UF = 'GEO_UF';
 const MULTIVALORADO = 'MULTIVALORADO';
 
 /**
@@ -239,8 +240,7 @@ export function ehColetavel(fato: FatoDoFormulario): boolean {
 
 /**
  * Os fatos que o administrador pode acrescentar: os coletáveis ativos que o formulário ainda não
- * tem — um fato aparece uma vez por formulário —, em ordem de nome. O município fica de fora: o
- * campo dele exige a restrição aos municípios da UF, que este editor ainda não declara.
+ * tem — um fato aparece uma vez por formulário —, em ordem de nome.
  */
 export function fatosParaAcrescentar(
   conteudo: ConteudoDoFormulario,
@@ -249,7 +249,7 @@ export function fatosParaAcrescentar(
   // O pressuposto também: o fato vem do formulário anterior ou é coletado aqui, nunca os dois.
   const presentes = new Set([...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo), ...(conteudo.pressupostos ?? [])]);
   return catalogo
-    .filter((fato) => fato.ativo && ehColetavel(fato) && fato.fonteValores !== FONTE_GEO_MUNICIPIO && !presentes.has(fato.codigo))
+    .filter((fato) => fato.ativo && ehColetavel(fato) && !presentes.has(fato.codigo))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
@@ -320,6 +320,48 @@ export function acrescentarItem(
     pedirConfirmacao: false,
   };
   return renumerar({ ...conteudo, itens: [...(conteudo.itens ?? []), novo] });
+}
+
+/**
+ * Acrescenta o campo do fato no fim da seção. O de município nasce restrito aos municípios da UF
+ * respondida no campo de UF anterior mais próximo: a API recusa município sem a UF, e sem campo de
+ * UF antes a tela recusa o acréscimo, em vez de criar um campo que não se grava.
+ */
+export function acrescentarCampo(
+  conteudo: ConteudoDoFormulario,
+  fato: FatoDoFormulario,
+  etapaCodigo: string,
+  catalogo: readonly FatoDoFormulario[],
+): ResultadoDaEdicao {
+  const comCampo = acrescentarItem(conteudo, fato, etapaCodigo);
+  if (fato.fonteValores !== FONTE_GEO_MUNICIPIO) return { ok: true, conteudo: comCampo };
+
+  const uf = ufsAnteriores(comCampo, catalogo, fato.codigo).at(-1);
+  if (uf === undefined) {
+    return { ok: false, recusa: `Acrescente antes o campo de UF: “${fato.nome}” escolhe entre os municípios da UF respondida antes.` };
+  }
+  const item = (comCampo.itens ?? []).find((i) => i.fatoCodigo === fato.codigo) as ItemDoFormulario;
+  return { ok: true, conteudo: comItem(comCampo, { ...item, restricoes: [{ tipo: RESTRICAO_MUNICIPIOS_DA_UF, fatos: [uf.codigo] }] }) };
+}
+
+/**
+ * Os campos de UF anteriores ao campo dado, do mais antigo ao mais próximo: o município cita a UF
+ * respondida antes, de resposta única e com a lista de UFs do Geo.
+ */
+export function ufsAnteriores(
+  conteudo: ConteudoDoFormulario,
+  catalogo: readonly FatoDoFormulario[],
+  fatoCodigo: string,
+): readonly FatoDoFormulario[] {
+  const ordem = Number((conteudo.itens ?? []).find((item) => item.fatoCodigo === fatoCodigo)?.ordem ?? Infinity);
+  const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
+  return [...(conteudo.itens ?? [])]
+    .filter((item) => Number(item.ordem) < ordem)
+    .sort((a, b) => Number(a.ordem) - Number(b.ordem))
+    .flatMap((item) => {
+      const fato = porCodigo.get(item.fatoCodigo);
+      return fato?.fonteValores === FONTE_GEO_UF && fato.cardinalidade !== MULTIVALORADO ? [fato] : [];
+    });
 }
 
 /** Troca o item pelo editado, sem mexer na ordem. */
@@ -607,6 +649,124 @@ export function removerPressuposto(
     return { ok: false, recusa: `Não é possível retirar “${nome(nomes, fatoCodigo)}”: ${quem.descricao} cita esse fato.` };
   }
   return { ok: true, conteudo: { ...conteudo, pressupostos: (conteudo.pressupostos ?? []).filter((fato) => fato !== fatoCodigo) } };
+}
+
+export const RESTRICAO_FAIXA_NUMERICA = 'FAIXA_NUMERICA';
+export const RESTRICAO_TAMANHO_TEXTO = 'TAMANHO_TEXTO';
+export const RESTRICAO_OPCOES_PERMITIDAS = 'OPCOES_PERMITIDAS';
+export const RESTRICAO_OPCOES_DAS_RESPOSTAS = 'OPCOES_DAS_RESPOSTAS';
+export const RESTRICAO_MUNICIPIOS_DA_UF = 'MUNICIPIOS_DA_UF';
+
+export const RESTRICOES: readonly OpcaoDoFormulario[] = [
+  { valor: RESTRICAO_FAIXA_NUMERICA, rotulo: 'Faixa de valores' },
+  { valor: RESTRICAO_TAMANHO_TEXTO, rotulo: 'Tamanho do texto' },
+  { valor: RESTRICAO_OPCOES_PERMITIDAS, rotulo: 'Opções permitidas' },
+  { valor: RESTRICAO_OPCOES_DAS_RESPOSTAS, rotulo: 'Opções das respostas anteriores' },
+  { valor: RESTRICAO_MUNICIPIOS_DA_UF, rotulo: 'Municípios da UF respondida' },
+];
+
+/** As casas decimais que a faixa admite: as do edital (`FormaDoItem.CasasDecimaisDaFaixa`). */
+const CASAS_DECIMAIS_DA_FAIXA = 4;
+const TIPOS_DE_SELECAO = new Set(['SELECAO_UNICA', 'SELECAO_MULTIPLA']);
+
+/**
+ * As restrições que o administrador pode acrescentar ao campo: a faixa no numérico, o tamanho no de
+ * texto e as opções permitidas na seleção de valores conhecidos — uma por tipo. A do município é
+ * posta pela própria tela, e as opções das respostas anteriores ficam para depois.
+ */
+export function restricoesParaAcrescentar(item: ItemDoFormulario, temValoresConhecidos: boolean): readonly OpcaoDoFormulario[] {
+  const presentes = new Set((item.restricoes ?? []).map((restricao) => restricao.tipo));
+  const cabe = (tipo: string): boolean =>
+    (tipo === RESTRICAO_FAIXA_NUMERICA && item.tipoRenderizacao === 'NUMERO') ||
+    (tipo === RESTRICAO_TAMANHO_TEXTO && item.tipoRenderizacao === 'TEXTO') ||
+    (tipo === RESTRICAO_OPCOES_PERMITIDAS && TIPOS_DE_SELECAO.has(item.tipoRenderizacao) && temValoresConhecidos);
+  return RESTRICOES.filter((restricao) => cabe(restricao.valor) && !presentes.has(restricao.valor));
+}
+
+/** A restrição recém-acrescentada, ainda sem limite nem valor: o problema dela orienta o preenchimento. */
+export function restricaoNova(tipo: string): RestricaoDeValor {
+  return tipo === RESTRICAO_OPCOES_PERMITIDAS
+    ? { tipo, entradas: [{ quando: null, valores: [] }] }
+    : { tipo, minimo: null, maximo: null };
+}
+
+/**
+ * A restrição que a tela mostra sem editar e grava como veio: opções condicionadas a respostas
+ * anteriores e opções formadas pelas respostas, que este editor ainda não declara.
+ */
+export function restricaoSoParaLeitura(restricao: RestricaoDeValor): boolean {
+  return (
+    restricao.tipo === RESTRICAO_OPCOES_DAS_RESPOSTAS ||
+    (restricao.tipo === RESTRICAO_OPCOES_PERMITIDAS && (restricao.entradas ?? []).some((entrada) => (entrada.quando ?? []).length > 0))
+  );
+}
+
+/** O que impede a restrição de ser gravada, nos termos da API (`RestricaoValor.Violacao`); nulo quando nada. */
+export function problemaDaRestricao(restricao: RestricaoDeValor): string | null {
+  const minimo = restricao.minimo ?? null;
+  const maximo = restricao.maximo ?? null;
+  switch (restricao.tipo) {
+    case RESTRICAO_FAIXA_NUMERICA:
+      if (minimo === null && maximo === null) return 'Informe ao menos um limite.';
+      if ([minimo, maximo].some((limite) => limite !== null && !Number.isFinite(Number(limite)))) return 'Os limites são números.';
+      if ([minimo, maximo].some((limite) => limite !== null && Number(Number(limite).toFixed(CASAS_DECIMAIS_DA_FAIXA)) !== Number(limite))) {
+        return `Use no máximo ${CASAS_DECIMAIS_DA_FAIXA} casas decimais.`;
+      }
+      return minimo !== null && maximo !== null && Number(minimo) > Number(maximo) ? 'O mínimo é maior que o máximo.' : null;
+    case RESTRICAO_TAMANHO_TEXTO:
+      if (minimo === null && maximo === null) return 'Informe ao menos um limite.';
+      if ([minimo, maximo].some((limite) => limite !== null && !(Number.isInteger(Number(limite)) && Number(limite) >= 0))) {
+        return 'Os limites são números inteiros, a partir de zero.';
+      }
+      return minimo !== null && maximo !== null && Number(minimo) > Number(maximo) ? 'O mínimo é maior que o máximo.' : null;
+    case RESTRICAO_OPCOES_PERMITIDAS:
+      return (restricao.entradas ?? []).length === 0 || (restricao.entradas ?? []).some((entrada) => entrada.valores.length === 0)
+        ? 'Escolha ao menos um valor permitido.'
+        : null;
+    case RESTRICAO_MUNICIPIOS_DA_UF:
+      return (restricao.fatos ?? []).length === 1 ? null : 'Escolha o campo de UF de onde vêm os municípios.';
+    default:
+      return null;
+  }
+}
+
+/** Os tipos de campo que o impedimento admite (`Impedimento.CabeNoCampo`), sem o município — ver `impedimentoCabe`. */
+const CAMPOS_COM_IMPEDIMENTO = new Set(['BOOLEANO', 'NUMERO', 'SELECAO_UNICA', 'SELECAO_MULTIPLA']);
+
+/**
+ * Se o campo pode ter impedimento: só na inscrição — ele impede a inscrição —, num tipo de campo que
+ * o admite e quando a condição consegue citar a resposta do próprio campo, que toda alternativa do
+ * impedimento cita. O município e a seleção de valores dinâmicos não entram: o editor de condições
+ * não tem a lista deles para oferecer.
+ */
+export function impedimentoCabe(finalidade: string, tipoRenderizacao: string, proprioFatoCitavel: boolean): boolean {
+  return finalidade === FINALIDADE_INSCRICAO && CAMPOS_COM_IMPEDIMENTO.has(tipoRenderizacao) && proprioFatoCitavel;
+}
+
+/**
+ * O item com o impedimento ligado: a condição inicial é sobre o próprio campo, e o campo fica
+ * obrigatório sempre na mesma edição — em branco, o impedimento nunca se cumpriria (UNI-REQ-0074).
+ */
+export function comImpedimento(item: ItemDoFormulario, quando: PredicadoNoWire): ItemDoFormulario {
+  return {
+    ...item,
+    impedimento: { quando, mensagem: item.impedimento?.mensagem ?? '' },
+    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
+    predicadoObrigatoriedade: null,
+  };
+}
+
+/** Se alguma alternativa do impedimento deixou de citar o próprio campo — a API recusa (`ImpedimentoSemOProprioCampo`). */
+export function alternativaSemOProprioCampo(quando: PredicadoNoWire, fatoCodigo: string): boolean {
+  return (quando ?? []).length === 0 || (quando ?? []).some((clausula) => !clausula.some((condicao) => condicao.fato === fatoCodigo));
+}
+
+/** Quantos campos o formulário tem no teto da API: itens, grupos e campos de grupo (`QuantidadeNoTeto`). */
+export function quantidadeNoTeto(conteudo: ConteudoDoFormulario): number {
+  return (
+    (conteudo.itens ?? []).length +
+    (conteudo.grupos ?? []).reduce((total, grupo) => total + 1 + grupo.subitens.length, 0)
+  );
 }
 
 /** O conteúdo sem a seção dos dados básicos: a API a repõe, e o envio que a altera é recusado. */
