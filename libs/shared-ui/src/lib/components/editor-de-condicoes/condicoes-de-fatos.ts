@@ -95,7 +95,7 @@ export interface ClausulaDeCondicoes<T extends CondicaoEmClausula = CondicaoEmCl
 }
 
 /** A fonte dos valores do fato de município. */
-const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
+export const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
 
 /** Os prefixos de binding que marcam o fato perguntado ao candidato no formulário. */
 const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
