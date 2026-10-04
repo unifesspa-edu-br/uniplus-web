@@ -51,15 +51,24 @@ export type FormularioSimuladoDto = components['schemas']['FormularioSimuladoDto
 export type ItemSimuladoDto = components['schemas']['ItemSimuladoDto'];
 export type EtapaConcluidaInput = components['schemas']['EtapaConcluidaInput'];
 
+export type GrupoSimuladoDto = components['schemas']['GrupoSimuladoDto'];
+export type DocumentoSimuladoDto = components['schemas']['DocumentoSimuladoDto'];
+
+/** Uma ocorrência simulada de grupo repetível: a identidade, única no grupo, e as respostas dos campos dela. */
+export interface OcorrenciaSimuladaDoProcessoInput {
+  readonly id: string;
+  readonly respostas: Readonly<Record<string, unknown>> | null;
+}
+
 /**
  * O perfil simulado da pré-visualização do processo, com o valor de cada resposta em JSON (`true`,
  * `18`, `"PRETA"`, `["A", "B"]`). O schema gerado tipa o dicionário de `JsonElement` como
- * `Record<string, never>`, que não aceita valor nenhum; a forma aqui é a que a API recebe. As
- * ocorrências de grupo repetível não são simuladas por esta tela, e o campo vai nulo.
+ * `Record<string, never>`, que não aceita valor nenhum; a forma aqui é a que a API recebe. Nos
+ * grupos, sem a chave o grupo não foi respondido, e a lista vazia declara que não há ocorrência.
  */
 export interface PreVisualizacaoDoProcessoInput {
   readonly respostas: Readonly<Record<string, unknown>> | null;
-  readonly grupos: null;
+  readonly grupos: Readonly<Record<string, readonly OcorrenciaSimuladaDoProcessoInput[]>> | null;
   readonly etapasConcluidas: readonly EtapaConcluidaInput[] | null;
   readonly pressupostos: Readonly<Record<string, unknown>> | null;
 }

@@ -73,7 +73,10 @@ export {
   type EtapaConcluida,
   type FormularioAvaliado,
   type FormularioParaSimular,
+  type GrupoAvaliado,
   type ItemAvaliado,
+  type OcorrenciaAvaliada,
+  type OcorrenciaSimulada,
   type SimulacaoDeFormularios,
   type TermoAvaliado,
 } from '../../src/lib/components/pre-visualizacao-de-formularios/pre-visualizacao-de-formularios';

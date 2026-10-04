@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import type { Observable } from 'rxjs';
@@ -7,7 +7,24 @@ import { AlertComponent } from '../alert/alert';
 import { etapasEmOrdem, todosOsCampos, type ConteudoDoFormulario, type FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
 import { SpinnerComponent } from '../spinner/spinner';
 import { rotuloDoEstado } from './estado-avaliado';
+import { resumoDaPreVisualizacao } from './leitura-do-resultado';
 import { RespostaSimuladaComponent, type RespostaDada } from './resposta-simulada';
+import {
+  acrescentarOcorrencia,
+  comRespostaNaOcorrencia,
+  declararSemOcorrencia,
+  ehDoCandidato,
+  estadoDoGrupo,
+  gruposDoEnvio,
+  gruposSimulaveis,
+  haValorNaoReconhecido,
+  noLimite,
+  removerOcorrencia,
+  type GrupoSimulavel,
+  type OcorrenciaEmSimulacao,
+  type OcorrenciaSimulada,
+  type SimulacaoDosGrupos,
+} from './simulacao-de-grupos';
 import { comResposta, simulado, type FatoSimulado } from './simulacao-de-respostas';
 import { TabelaDeCamposAvaliadosComponent } from './tabela-de-campos-avaliados';
 
@@ -25,11 +42,19 @@ export interface EtapaConcluida {
   readonly etapa: string;
 }
 
-/** O perfil simulado: as respostas aos campos, os pressupostos e as seções concluídas. */
+export type { OcorrenciaSimulada } from './simulacao-de-grupos';
+
+/** O perfil simulado: as respostas aos campos, os pressupostos, as seções concluídas e as ocorrências dos grupos. */
 export interface SimulacaoDeFormularios {
   readonly respostas: Readonly<Record<string, unknown>>;
   readonly pressupostos: Readonly<Record<string, unknown>>;
   readonly etapasConcluidas: readonly EtapaConcluida[];
+  /**
+   * As ocorrências por código de grupo. Sem a chave, o grupo não foi respondido; com a lista vazia,
+   * o candidato declarou que não há ocorrência. Nulo quando nenhum grupo foi respondido — sempre,
+   * quando o hospedeiro não simula grupos.
+   */
+  readonly grupos: Readonly<Record<string, readonly OcorrenciaSimulada[]>> | null;
 }
 
 /** Um campo avaliado. Os estados são `VERDADEIRO`, `FALSO` ou `INDETERMINADO`. */
@@ -50,10 +75,31 @@ export interface TermoAvaliado {
   readonly obrigatorio: string;
 }
 
+/** Uma ocorrência avaliada, pela identidade enviada, com os campos dela. */
+export interface OcorrenciaAvaliada {
+  readonly id: string;
+  readonly itens: readonly ItemAvaliado[];
+}
+
+/**
+ * Um grupo repetível avaliado. As ocorrências só são avaliadas com o grupo exibido; a contagem e a
+ * ocorrência do candidato dizem se as ocorrências simuladas valem como resposta.
+ */
+export interface GrupoAvaliado {
+  readonly codigo: string;
+  readonly etapaCodigo: string | null;
+  readonly visivel: string;
+  readonly obrigatorio: string;
+  readonly contagemValida: boolean;
+  readonly ocorrenciaDoCandidatoValida: boolean;
+  readonly ocorrencias: readonly OcorrenciaAvaliada[];
+}
+
 /** O formulário de uma finalidade avaliado contra o perfil simulado. */
 export interface FormularioAvaliado {
   readonly finalidade: string;
   readonly itens: readonly ItemAvaliado[];
+  readonly grupos: readonly GrupoAvaliado[];
   readonly termos: readonly TermoAvaliado[];
 }
 
@@ -97,12 +143,66 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
         }
       </fieldset>
     } @else if (simulaveis().length === 0) {
-      <p class="field__hint">O formulário ainda não tem campos para simular.</p>
+      @if (grupos().length === 0) {
+        <p class="field__hint">O formulário ainda não tem campos para simular.</p>
+      }
     } @else if (catalogo().length === 0) {
       <p class="field__hint">O catálogo de fatos ainda não está disponível: sem ele não é possível simular as respostas.</p>
     } @else {
       <p class="field__hint">Nenhum campo do formulário tem resposta que se simule aqui; o endereço, por exemplo, não é simulado.</p>
     }
+
+    @for (grupo of grupos(); track grupo.codigo) {
+      @let simulado = estadoDoGrupo(ocorrencias(), grupo.codigo);
+      <fieldset class="pre-visualizacao-formularios__grupo" [disabled]="carregando()" [attr.aria-describedby]="idDoGrupo(grupo) + '-nota'">
+        <legend class="field__label">{{ grupo.rotulo }} — grupo repetível{{ varios() ? ' (formulário de ' + nomeDe(grupo.finalidade) + ')' : '' }}</legend>
+        <p class="field__hint" [id]="idDoGrupo(grupo) + '-nota'">{{ notaDoGrupo(grupo) }}</p>
+        @for (ocorrencia of simulado.ocorrencias ?? []; track ocorrencia.sequencia; let posicao = $index) {
+          <fieldset class="pre-visualizacao-formularios__respostas" [id]="idDaOcorrenciaNaTela(grupo, ocorrencia)">
+            <legend class="field__label">Ocorrência {{ posicao + 1 }}{{ ehDoCandidato(ocorrencia) ? ' — o próprio candidato' : '' }}</legend>
+            @for (campo of grupo.campos; track campo.codigo) {
+              <ui-resposta-simulada
+                [fato]="campo"
+                [controleId]="idDaOcorrenciaNaTela(grupo, ocorrencia) + '-' + campo.codigo"
+                [rotulo]="campo.nome"
+                [municipios]="codigosIbge(ocorrencia.respostas.get(campo.codigo))"
+                [invalido]="ocorrencia.invalidos.has(campo.codigo)"
+                (respondida)="responderNaOcorrencia(grupo, ocorrencia, campo.codigo, $event)"
+              />
+            }
+            <div class="pre-visualizacao-formularios__acoes">
+              <button type="button" class="btn btn--tertiary btn--sm" (click)="remover(grupo, ocorrencia, posicao)">
+                Remover a ocorrência {{ posicao + 1 }} de {{ grupo.rotulo }}
+              </button>
+            </div>
+          </fieldset>
+        }
+        @if ((simulado.ocorrencias ?? []).length === 0) {
+          <label class="checkbox">
+            <input type="checkbox" [checked]="simulado.ocorrencias !== null" (change)="alternarSemOcorrencia(grupo)" />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            O candidato declarou que não há nenhuma ocorrência
+          </label>
+        }
+        <div class="pre-visualizacao-formularios__acoes">
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [id]="idDoGrupo(grupo) + '-acrescentar'"
+            [disabled]="noLimite(ocorrencias(), grupo)"
+            (click)="acrescentar(grupo)"
+          >
+            Acrescentar ocorrência a {{ grupo.rotulo }}
+          </button>
+          @if (noLimite(ocorrencias(), grupo)) {
+            <span class="field__hint">O grupo admite no máximo {{ grupo.maximo }} ocorrência(s).</span>
+          }
+        </div>
+      </fieldset>
+    }
+
+    <!-- Anuncia a remoção de ocorrência: o foco salta para outra, e quem não vê não saberia o que saiu. -->
+    <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
 
     <fieldset class="pre-visualizacao-formularios__respostas" [disabled]="carregando()">
       <legend class="field__label">Etapas já concluídas pelo candidato</legend>
@@ -120,8 +220,8 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
       <button
         type="button"
         class="btn btn--secondary"
-        [disabled]="desatualizado() || carregando() || invalidos().size > 0"
-        [attr.aria-describedby]="desatualizado() ? idBase() + '-desatualizado' : invalidos().size > 0 ? idBase() + '-invalido' : null"
+        [disabled]="desatualizado() || carregando() || haInvalido()"
+        [attr.aria-describedby]="desatualizado() ? idBase() + '-desatualizado' : haInvalido() ? idBase() + '-invalido' : null"
         (click)="preVisualizar()"
       >
         @if (carregando()) {
@@ -131,7 +231,7 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
       </button>
       @if (desatualizado()) {
         <span class="field__hint" [id]="idBase() + '-desatualizado'">{{ textoDesatualizado() }}</span>
-      } @else if (invalidos().size > 0) {
+      } @else if (haInvalido()) {
         <span class="field__hint" [id]="idBase() + '-invalido'">Corrija os valores não reconhecidos para pré-visualizar.</span>
       }
     </div>
@@ -154,6 +254,54 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
           [rotuloDoCampo]="leitores().get(avaliado.finalidade)?.rotuloDoCampo ?? semRotulo"
           [tituloDaEtapa]="leitores().get(avaliado.finalidade)?.tituloDaEtapa ?? semRotulo"
         />
+
+        @for (grupo of avaliado.grupos; track grupo.codigo) {
+          @let definicao = grupoDe(grupo.codigo);
+          @let rotulo = definicao?.rotulo ?? grupo.codigo;
+          @let simuladas = (estadoDoGrupo(ocorrencias(), grupo.codigo).ocorrencias ?? []).length;
+          @if (varios()) {
+            <h4 class="pre-visualizacao-formularios__formulario">Grupo: {{ rotulo }}</h4>
+          } @else {
+            <h3 class="pre-visualizacao-formularios__formulario">Grupo: {{ rotulo }}</h3>
+          }
+          <dl class="pre-visualizacao-formularios__grupo-avaliado">
+            <div>
+              <dt>Seção</dt>
+              <dd>{{ (leitores().get(avaliado.finalidade)?.tituloDaEtapa ?? semRotulo)(grupo.etapaCodigo) }}</dd>
+            </div>
+            <div>
+              <dt>Exibido</dt>
+              <dd>{{ estado(grupo.visivel) }}</dd>
+            </div>
+            <div>
+              <dt>Obrigatório</dt>
+              <dd>{{ estado(grupo.obrigatorio) }}</dd>
+            </div>
+            @if (grupo.visivel === 'VERDADEIRO') {
+              <div>
+                <dt>Quantidade de ocorrências</dt>
+                <dd>{{ quantidadeAvaliada(grupo, definicao) }}</dd>
+              </div>
+              @if (definicao?.incluiCandidato && simuladas > 0) {
+                <div>
+                  <dt>Ocorrência do candidato</dt>
+                  <dd>{{ grupo.ocorrenciaDoCandidatoValida ? 'Válida' : 'Inválida (falta, ou há mais de uma)' }}</dd>
+                </div>
+              }
+            }
+          </dl>
+          @if (grupo.visivel !== 'VERDADEIRO' && simuladas > 0) {
+            <p class="field__hint">As ocorrências simuladas só são avaliadas com o grupo exibido.</p>
+          }
+          @for (ocorrencia of grupo.ocorrencias; track ocorrencia.id; let posicao = $index) {
+            <ui-tabela-de-campos-avaliados
+              [itens]="ocorrencia.itens"
+              [legenda]="'Campos da ocorrência ' + (posicao + 1) + ' do grupo ' + rotulo"
+              [comSecao]="false"
+              [rotuloDoCampo]="leitores().get(avaliado.finalidade)?.rotuloDoCampo ?? semRotulo"
+            />
+          }
+        }
 
         @if (avaliado.termos.length > 0) {
           <div class="table-responsive">
@@ -197,14 +345,21 @@ export class PreVisualizacaoDeFormulariosComponent {
   /** Há alteração não salva que a avaliação precisaria ver: não se pré-visualiza. */
   readonly desatualizado = input<boolean>(false);
   readonly textoDesatualizado = input<string>('Salve para pré-visualizar as alterações.');
+  /**
+   * A avaliação do hospedeiro aceita as ocorrências dos grupos repetíveis. A do modelo da
+   * Configuração não aceita: simular grupos ali não teria efeito, e os campos de grupo ficam de fora.
+   */
+  readonly simulaGrupos = input<boolean>(false);
+
+  private readonly injector = inject(Injector);
 
   protected readonly varios = computed(() => this.formularios().length > 1);
 
   /**
    * Os campos dos formulários e os pressupostos. Uma regra pode citar um derivado, que a API resolve
    * a partir das respostas, e uma restrição confere a resposta do próprio campo — simular só os fatos
-   * citados deixaria os dois de fora. Os campos de grupo ficam de fora: a resposta simulada é por
-   * fato, não por ocorrência de grupo, e não teria efeito.
+   * citados deixaria os dois de fora. Os campos de grupo ficam de fora: são respondidos por
+   * ocorrência, em cada grupo.
    */
   protected readonly simulaveis = computed(() => {
     // A resposta é por fato: o pressuposto de um formulário que outro coleta é a mesma pergunta.
@@ -226,6 +381,9 @@ export class PreVisualizacaoDeFormulariosComponent {
     });
   });
 
+  /** Os grupos repetíveis que a simulação pergunta, quando a avaliação do hospedeiro os aceita. */
+  protected readonly grupos = computed(() => (this.simulaGrupos() ? gruposSimulaveis(this.formularios(), this.catalogo()) : []));
+
   /** As seções de cada formulário, que o candidato pode ter concluído. */
   protected readonly secoes = computed(() =>
     this.formularios().flatMap(({ finalidade, nome, conteudo }) =>
@@ -243,8 +401,12 @@ export class PreVisualizacaoDeFormulariosComponent {
    * O que a simulação pergunta. As respostas valem enquanto as perguntas são as mesmas: a resposta
    * guardada de um campo que saiu seguiria no envio sem controle na tela.
    */
-  private readonly perguntas = computed(
-    () => `${this.fatos().map((fato) => fato.codigo).join(',')}|${this.secoes().map((secao) => secao.chave).join(',')}`,
+  private readonly perguntas = computed(() =>
+    JSON.stringify([
+      this.fatos().map((fato) => fato.codigo),
+      this.secoes().map((secao) => secao.chave),
+      this.grupos().map((grupo) => [grupo.codigo, grupo.campos.map((campo) => campo.codigo)]),
+    ]),
   );
 
   private readonly respostas = linkedSignal<string, ReadonlyMap<string, unknown>>({
@@ -260,6 +422,12 @@ export class PreVisualizacaoDeFormulariosComponent {
     source: () => this.perguntas(),
     computation: () => new Set(),
   });
+  protected readonly ocorrencias = linkedSignal<string, SimulacaoDosGrupos>({
+    source: () => this.perguntas(),
+    computation: () => new Map(),
+  });
+  protected readonly haInvalido = computed(() => this.invalidos().size > 0 || haValorNaoReconhecido(this.ocorrencias()));
+  protected readonly anuncio = signal('');
 
   protected readonly carregando = signal(false);
   /** A falha vale para os formulários avaliados, como o resultado. */
@@ -279,14 +447,17 @@ export class PreVisualizacaoDeFormulariosComponent {
 
   protected readonly resumo = computed(() => {
     const avaliados = this.resultadoVisivel();
-    if (avaliados === null) return '';
-    const itens = avaliados.flatMap((avaliado) => avaliado.itens);
-    const exibidos = itens.filter((item) => item.visivel === 'VERDADEIRO').length;
-    const obrigatorios = itens.filter((item) => item.obrigatorio === 'VERDADEIRO').length;
-    const impedimentos = itens.filter((item) => item.impedido === 'VERDADEIRO').length;
-    const impede = impedimentos > 0 ? ` A inscrição seria impedida por ${impedimentos} resposta(s).` : '';
-    return `Pré-visualização pronta: ${exibidos} de ${itens.length} campos exibidos, ${obrigatorios} obrigatórios.${impede}`;
+    return avaliados === null ? '' : resumoDaPreVisualizacao(avaliados);
   });
+
+  /** A definição de cada grupo dos formulários, pelo código — único no processo inteiro. */
+  private readonly definicoesDosGrupos = computed(
+    () => new Map(gruposSimulaveis(this.formularios(), []).map((grupo) => [grupo.codigo, grupo])),
+  );
+
+  protected readonly estadoDoGrupo = estadoDoGrupo;
+  protected readonly noLimite = noLimite;
+  protected readonly ehDoCandidato = ehDoCandidato;
 
   protected idDoFato(fato: FatoSimulado): string {
     return `${this.idBase()}-simulacao-${fato.codigo}`;
@@ -334,8 +505,80 @@ export class PreVisualizacaoDeFormulariosComponent {
 
   /** Os códigos IBGE respondidos, como o campo de município os mostra. */
   protected municipiosRespondidos(fato: FatoSimulado): readonly string[] {
-    const resposta = this.respostas().get(fato.codigo);
+    return this.codigosIbge(this.respostas().get(fato.codigo));
+  }
+
+  protected codigosIbge(resposta: unknown): readonly string[] {
     return Array.isArray(resposta) ? resposta : typeof resposta === 'string' ? [resposta] : [];
+  }
+
+  protected grupoDe(codigo: string): GrupoSimulavel | undefined {
+    return this.definicoesDosGrupos().get(codigo);
+  }
+
+  protected idDoGrupo(grupo: GrupoSimulavel): string {
+    return `${this.idBase()}-grupo-${grupo.codigo}`;
+  }
+
+  /** O id na tela leva a sequência, e não a identidade do envio, que tem caractere a escapar em seletor. */
+  protected idDaOcorrenciaNaTela(grupo: GrupoSimulavel, ocorrencia: OcorrenciaEmSimulacao): string {
+    return `${this.idDoGrupo(grupo)}-${ocorrencia.sequencia}`;
+  }
+
+  protected notaDoGrupo(grupo: GrupoSimulavel): string {
+    const quantidade =
+      grupo.maximo === null ? `Ao menos ${grupo.minimo} ocorrência(s), sem máximo.` : `De ${grupo.minimo} a ${grupo.maximo} ocorrência(s).`;
+    const candidato = grupo.incluiCandidato ? ' Uma das ocorrências é a do próprio candidato, escolhida no parentesco.' : '';
+    return `${quantidade}${candidato} Sem ocorrência e sem a declaração de que não há, o grupo fica sem resposta.`;
+  }
+
+  /** A quantidade avaliada, válida ou não segundo a API, com o limite do grupo quando não vale. */
+  protected quantidadeAvaliada(grupo: GrupoAvaliado, definicao: GrupoSimulavel | undefined): string {
+    if (estadoDoGrupo(this.ocorrencias(), grupo.codigo).ocorrencias === null) return 'Sem resposta: o grupo não foi simulado';
+    const quantas = grupo.ocorrencias.length;
+    if (grupo.contagemValida) return `${quantas} — dentro do limite`;
+    if (definicao === undefined) return `${quantas} — fora do limite`;
+    return definicao.maximo === null
+      ? `${quantas} — fora do limite de ao menos ${definicao.minimo}`
+      : `${quantas} — fora do limite de ${definicao.minimo} a ${definicao.maximo}`;
+  }
+
+  protected responderNaOcorrencia(grupo: GrupoSimulavel, ocorrencia: OcorrenciaEmSimulacao, fato: string, resposta: RespostaDada): void {
+    this.ocorrencias.update((atual) => comRespostaNaOcorrencia(atual, grupo.codigo, ocorrencia.sequencia, fato, resposta));
+    this.descartarAvaliacao();
+  }
+
+  protected acrescentar(grupo: GrupoSimulavel): void {
+    const antes = this.ocorrencias();
+    const depois = acrescentarOcorrencia(antes, grupo);
+    if (depois === antes) return;
+    this.ocorrencias.set(depois);
+    this.descartarAvaliacao();
+    // O leitor de tela lê a legenda da nova ocorrência ao entrar nela: o foco basta como anúncio.
+    const nova = estadoDoGrupo(depois, grupo.codigo).ocorrencias?.at(-1);
+    if (nova !== undefined) this.focarDepoisDeRenderizar(this.idDaOcorrenciaNaTela(grupo, nova));
+  }
+
+  /**
+   * Remove a ocorrência e leva o foco à que assumiu a posição dela, ou à anterior, ou, sem nenhuma,
+   * ao botão de acrescentar — nunca ao corpo da página.
+   */
+  protected remover(grupo: GrupoSimulavel, ocorrencia: OcorrenciaEmSimulacao, posicao: number): void {
+    const depois = removerOcorrencia(this.ocorrencias(), grupo.codigo, ocorrencia.sequencia);
+    this.ocorrencias.set(depois);
+    this.descartarAvaliacao();
+    const restantes = estadoDoGrupo(depois, grupo.codigo).ocorrencias ?? [];
+    const destino = restantes[posicao] ?? restantes[posicao - 1];
+    this.focarDepoisDeRenderizar(
+      destino === undefined ? `${this.idDoGrupo(grupo)}-acrescentar` : this.idDaOcorrenciaNaTela(grupo, destino),
+      `Ocorrência ${posicao + 1} removida de ${grupo.rotulo}.`,
+    );
+  }
+
+  protected alternarSemOcorrencia(grupo: GrupoSimulavel): void {
+    const declarado = estadoDoGrupo(this.ocorrencias(), grupo.codigo).ocorrencias !== null;
+    this.ocorrencias.update((atual) => declararSemOcorrencia(atual, grupo.codigo, !declarado));
+    this.descartarAvaliacao();
   }
 
   protected alternarEtapa(chave: string): void {
@@ -348,7 +591,7 @@ export class PreVisualizacaoDeFormulariosComponent {
   }
 
   protected preVisualizar(): void {
-    if (this.desatualizado() || this.carregando() || this.invalidos().size > 0) return;
+    if (this.desatualizado() || this.carregando() || this.haInvalido()) return;
     // Só é pressuposto o fato que nenhum formulário avaliado coleta: o campo da inscrição que a
     // habilitação pressupõe é resposta da inscrição, e enviado como pressuposto ficaria sem resposta.
     const pressupostos = new Set(this.simulaveis().filter(({ origem }) => origem === 'pressuposto').map(({ codigo }) => codigo));
@@ -365,7 +608,8 @@ export class PreVisualizacaoDeFormulariosComponent {
     // A região de status passa pelo vazio: um resumo igual ao anterior não seria anunciado de novo.
     this.resultado.set(null);
     const avaliados = this.formularios();
-    this.avaliar()({ respostas, pressupostos: conhecidos, etapasConcluidas })
+    const grupos = this.simulaGrupos() ? gruposDoEnvio(this.ocorrencias()) : null;
+    this.avaliar()({ respostas, pressupostos: conhecidos, etapasConcluidas, grupos })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.carregando.set(false);
@@ -378,6 +622,23 @@ export class PreVisualizacaoDeFormulariosComponent {
         this.resultado.set(null);
         this.erro.set(this.problemI18n.resolve(resultado.problem).title);
       });
+  }
+
+  /**
+   * Leva o foco ao primeiro controle do elemento — ou ao próprio elemento, quando ele é o controle —
+   * depois que a tela mostra a mudança. O anúncio passa pelo vazio, para repetir o texto anterior.
+   */
+  private focarDepoisDeRenderizar(id: string, anuncio?: string): void {
+    if (anuncio !== undefined) this.anuncio.set('');
+    afterNextRender(
+      () => {
+        const alvo = document.getElementById(id);
+        const controle = alvo?.matches('button, input, select') ? alvo : alvo?.querySelector<HTMLElement>('input, select, button');
+        controle?.focus();
+        if (anuncio !== undefined) this.anuncio.set(anuncio);
+      },
+      { injector: this.injector },
+    );
   }
 
   /** A simulação mudou: o resultado e a falha eram dos valores anteriores. */
