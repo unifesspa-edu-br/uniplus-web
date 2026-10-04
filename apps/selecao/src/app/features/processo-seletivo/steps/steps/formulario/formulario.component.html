@@ -168,7 +168,7 @@
 
         @if (aba.recusaDaAplicacao; as recusa) {
           <p class="alert alert--danger" role="alert" [id]="aba.idBase + '-recusa-modelo'">
-            O modelo não foi aplicado ao formulário de {{ aba.nome }}. {{ recusa }}
+            {{ recusa }}
           </p>
         }
 

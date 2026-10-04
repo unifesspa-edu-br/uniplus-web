@@ -139,7 +139,7 @@ export class FormularioStepComponent {
   readonly aplicacaoPendente = signal<{ readonly finalidade: string; readonly modelo: ModeloOferecido } | null>(null);
   /** O resumo da última aplicação, por finalidade: fica na aba do formulário que a recebeu. */
   readonly resumosDaAplicacao = signal<ReadonlyMap<string, readonly string[]>>(new Map());
-  /** A recusa da aplicação, por finalidade: fica na aba do formulário, que continua como estava. */
+  /** A recusa da aplicação, por finalidade, já com o desfecho dito: fica na aba do formulário. */
   readonly recusasDaAplicacao = signal<ReadonlyMap<string, string>>(new Map());
 
   constructor() {
@@ -156,11 +156,28 @@ export class FormularioStepComponent {
       if (this.catalogo().length > 0) untracked(() => this.reconciliar());
     });
 
+    // O componente sobrevive à troca de processo na mesma rota: o que ele guarda de um processo —
+    // confirmação pendente, escolhas, recusas e resumos — não pode valer para o seguinte.
+    effect(() => {
+      this.store.geracao();
+      untracked(() => this.esquecerOProcessoAnterior());
+    });
+
     // Os modelos só servem para editar, e dependem do tipo, que o passo 1 escolhe.
     effect(() => {
       if (this.store.emConsulta() || this.tipoDoProcesso() === '') return;
       untracked(() => this.carregarModelos());
     });
+  }
+
+  private esquecerOProcessoAnterior(): void {
+    this.remocaoPendente.set(null);
+    this.aplicacaoPendente.set(null);
+    this.modelosEscolhidos.set(new Map());
+    this.resumosDaAplicacao.set(new Map());
+    this.recusasDaAplicacao.set(new Map());
+    this.recusasDaRemocao.set(new Map());
+    this.recusas.set(new Map());
   }
 
   /** O código do tipo do processo — o que filtra os modelos oferecidos. */
@@ -171,12 +188,15 @@ export class FormularioStepComponent {
    * tentativa, como no catálogo.
    */
   carregarModelos(): void {
+    const tipo = this.tipoDoProcesso();
     this.modelosCarregando.set(true);
     this.modelosErro.set(null);
     this.modelosApi
-      .listar({ tipoProcesso: this.tipoDoProcesso(), ativo: true })
+      .listar({ tipoProcesso: tipo, ativo: true })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
+        // A resposta de um tipo já trocado chegaria por cima da do tipo atual.
+        if (tipo !== this.tipoDoProcesso()) return;
         this.modelosCarregando.set(false);
         if (!isApiOk(resultado)) {
           this.modelosErro.set(this.problemI18n.resolve(resultado.problem).title);
@@ -560,9 +580,13 @@ export class FormularioStepComponent {
       this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Set([...atuais, finalidade]));
     }
     if (!desfecho.ok) {
-      const { recusa } = desfecho;
-      this.recusasDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
-      this.anuncio.set(`O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${recusa}`);
+      // Em aberto, a cópia pode ter acontecido: dizer "não foi aplicado" desmentiria a trava do passo.
+      const desfechoDito = desfecho.emAberto
+        ? `Não foi possível confirmar se o modelo foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}.`
+        : `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}.`;
+      const texto = `${desfechoDito} ${desfecho.recusa}`;
+      this.recusasDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, texto]]));
+      this.anuncio.set(texto);
       return;
     }
 
