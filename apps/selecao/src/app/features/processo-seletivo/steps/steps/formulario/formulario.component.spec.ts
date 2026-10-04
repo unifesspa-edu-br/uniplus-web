@@ -560,6 +560,18 @@ describe('FormularioStepComponent', () => {
       fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
       fixture.componentInstance.pedirAplicacao('INSCRICAO');
       expect(fixture.componentInstance.aplicacaoPendente()?.modelo.id).toBe('insc');
+
+      // A nova tentativa recusada de vez não desfaz a cópia que a primeira pode ter feito.
+      const nova = fixture.componentInstance.confirmarAplicacao();
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(
+        { type: 'about:blank', title: 'O modelo não serve a este processo.', status: 422, code: 'uniplus.selecao.validacao', traceId: '00000000000000000000000000000009' },
+        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+      );
+      await nova;
+      fixture.detectChanges();
+      expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
     });
 
     it('com a cópia confirmada e a releitura falhando, a aba diz que o modelo foi aplicado e pede recarregar', async () => {

@@ -593,9 +593,11 @@ export class FormularioStepComponent {
       this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Map([...atuais, [finalidade, emAberto]]));
     }
     if (!desfecho.ok) {
+      // Enquanto houver cópia sem desfecho — desta tentativa ou de uma anterior —, a aba diz o
+      // mesmo que a trava do passo: uma recusa nova não desfaz a cópia que pode ter chegado.
       const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
       const texto =
-        desfecho.copiaConfirmada === null || emAberto === undefined
+        emAberto === undefined
           ? `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${desfecho.recusa}`
           : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
       this.mostrarRecusaDaAplicacao(finalidade, texto);
