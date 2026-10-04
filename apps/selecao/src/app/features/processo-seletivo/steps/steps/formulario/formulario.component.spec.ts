@@ -337,6 +337,20 @@ describe('FormularioStepComponent', () => {
       expect(store.draft().formulario.outrasFinalidades.map((outra) => outra.finalidade)).toEqual(['HABILITACAO']);      expect(store.operacaoEmAndamento()).toBe(false);
     });
 
+    it('removido o penúltimo formulário, sem abas, o foco vai ao título do painel que sobra', async () => {
+      fixture.componentInstance.pedirRemocao('HABILITACAO');
+      const remocao = fixture.componentInstance.confirmarRemocao();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
+      await proximoPasso();
+      controller.expectOne((r) => r.method === 'DELETE' && r.url === ROTA_HABILITACAO).flush(null, { status: 204, statusText: 'No Content' });
+      await remocao;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(abas()).toEqual([]);
+      expect(document.activeElement?.id).toBe('form-inscricao-fase-titulo');
+    });
+
     it('acrescentar uma finalidade abre a aba dela, leva o foco até ela e anuncia', async () => {
       store.patchObjectSection('formulario', { outrasFinalidades: [] });
       fixture.detectChanges();

@@ -106,7 +106,7 @@
     }
 
     <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-fase-titulo'">
-      <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title">Quando o candidato responde</h2>
+      <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title" tabindex="-1">Quando o candidato responde</h2>
 
       @if (store.emConsulta()) {
         <div class="form-grid">
