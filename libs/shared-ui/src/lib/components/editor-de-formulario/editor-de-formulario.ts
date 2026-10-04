@@ -1,0 +1,466 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+
+import { fatosEscolhiveis, nomesDoCatalogo, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { TagComponent } from '../tag/tag';
+import {
+  BLOCO_COMPROVACAO_DOCUMENTAL,
+  BLOCO_MODALIDADES_CALCULADAS,
+  BLOCO_REVISAO_E_ACEITE,
+  LIMITES_DO_FORMULARIO,
+  SECAO_DADOS_BASICOS,
+  TIPO_SECAO,
+  acrescentarBloco,
+  acrescentarItem,
+  acrescentarSecao,
+  blocosAdmitidos,
+  comEtapa,
+  comItem,
+  entradasDaSecao,
+  etapaFixa,
+  etapasEmOrdem,
+  fatosCitaveisPelaSecao,
+  fatosCitaveisPeloItem,
+  fatosParaAcrescentar,
+  fatosQueExigemResposta,
+  moverEtapa,
+  moverItem,
+  podeMoverEtapa,
+  podeMoverItem,
+  removerEtapa,
+  removerItem,
+  type ConteudoDoFormulario,
+  type EtapaDoFormulario,
+  type FatoDoFormulario,
+  type ItemDoFormulario,
+  type PredicadoNoWire,
+  type RecusasDoConteudo,
+  type ResultadoDaEdicao,
+} from './formulario-editavel';
+import { ItemDoFormularioComponent } from './item-do-formulario';
+import { SecaoDoFormularioComponent } from './secao-do-formulario';
+
+const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
+  [BLOCO_COMPROVACAO_DOCUMENTAL]: 'O candidato envia os documentos que o processo exige nesta fase.',
+  [BLOCO_MODALIDADES_CALCULADAS]: 'O candidato vê as modalidades a que concorre, calculadas das respostas dele.',
+  [BLOCO_REVISAO_E_ACEITE]: 'O candidato revisa as respostas e aceita os termos. É sempre a última etapa.',
+};
+
+/**
+ * O editor de um formulário por finalidade (ADR-0136): etapas e blocos, os campos de cada seção,
+ * quando cada um é obrigatório e exibido, e a ordem — com a recusa explicada do movimento que
+ * poria uma condição antes do campo que ela cita. Serve ao modelo, na Configuração, e ao
+ * formulário do processo, na Seleção.
+ *
+ * Não guarda o conteúdo: recebe e devolve o conteúdo inteiro a cada mudança. Termos, grupos,
+ * pressupostos, restrições e impedimentos ainda não se editam aqui e viajam como vieram.
+ *
+ * Acessibilidade: cada etapa é uma região nomeada pelo título; mover, acrescentar e remover são
+ * anunciados numa região de status visível, que também mostra a recusa; o foco volta ao botão
+ * que moveu o campo, ou vai ao campo acrescentado.
+ */
+@Component({
+  selector: 'ui-editor-de-formulario',
+  standalone: true,
+  imports: [ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'editor-formulario' },
+  template: `
+    <div class="field">
+      <label class="field__label" [for]="idBase() + '-titulo'">Título do formulário</label>
+      <input
+        class="input"
+        type="text"
+        [id]="idBase() + '-titulo'"
+        [value]="conteudo().titulo ?? ''"
+        [maxLength]="limites.tituloDoFormulario"
+        [disabled]="disabled()"
+        [attr.aria-describedby]="idBase() + '-titulo-nota'"
+        (input)="trocarTitulo($event)"
+      />
+      <span class="field__hint" [id]="idBase() + '-titulo-nota'">O que o candidato lê no topo do formulário.</span>
+    </div>
+
+    <p class="editor-formulario__anuncio" role="status" [class.is-vazio]="anuncio() === ''">{{ anuncio() }}</p>
+
+    @if (termosEPressupostos(); as resumo) {
+      <p class="field__hint">{{ resumo }}</p>
+    }
+
+    @for (etapa of etapas(); track etapa.codigo; let posicaoDaEtapa = $index) {
+      <section class="editor-formulario__etapa" [attr.aria-labelledby]="idDaEtapa(etapa) + '-nome'">
+        <div class="editor-formulario__cabecalho">
+          <h3 class="editor-formulario__titulo-etapa" [id]="idDaEtapa(etapa) + '-nome'">
+            {{ posicaoDaEtapa + 1 }}. {{ etapa.titulo.trim() || 'Seção sem título' }}
+          </h3>
+          <ui-tag [variant]="etapa.tipo === secao ? 'neutral' : 'info'">
+            {{ etapa.tipo === secao ? 'Seção' : 'Bloco do sistema' }}
+          </ui-tag>
+        </div>
+
+        @if (errosDaEtapa(etapa.codigo); as erros) {
+          @if (erros.length > 0) {
+            <ul class="editor-formulario__erros">
+              @for (erro of erros; track $index) {
+                <li class="field__error">{{ erro }}</li>
+              }
+            </ul>
+          }
+        }
+
+        @if (etapa.codigo === dadosBasicos) {
+          <p class="field__hint">
+            Os dados de identificação e contato que toda inscrição coleta. O sistema mantém esta seção, que
+            não pode ser alterada.
+          </p>
+          <ol class="editor-formulario__basicos">
+            @for (entrada of entradasDe(etapa); track $index) {
+              @if (entrada.tipo === 'item') {
+                <li>{{ entrada.item.rotulo }}</li>
+              }
+            }
+          </ol>
+        } @else if (etapa.tipo !== secao) {
+          <p class="field__hint">{{ descricaoDoBloco(etapa) }}</p>
+        } @else {
+          <ui-secao-do-formulario
+            [etapa]="etapa"
+            [fatos]="fatosDaSecao().get(etapa.codigo) ?? []"
+            [idBase]="idDaEtapa(etapa)"
+            [disabled]="disabled()"
+            (etapaChange)="emitir(comEtapa(conteudo(), $event))"
+          />
+
+          @if (entradasDe(etapa); as entradas) {
+            @if (entradas.length > 0) {
+              <ol class="editor-formulario__itens" [attr.aria-label]="'Campos de ' + etapa.titulo">
+                @for (entrada of entradas; track chaveDa(entrada); let posicao = $index) {
+                  <li>
+                    @if (entrada.tipo === 'item') {
+                      <ui-item-do-formulario
+                        [item]="entrada.item"
+                        [posicao]="posicao + 1"
+                        [fatos]="fatosDoItem().get(entrada.item.fatoCodigo) ?? []"
+                        [idBase]="idDoItem(entrada.item)"
+                        [exigeResposta]="exigemResposta().has(entrada.item.fatoCodigo)"
+                        [fatoDesativado]="desativados().has(entrada.item.fatoCodigo)"
+                        [podeSubir]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, -1)"
+                        [podeDescer]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, 1)"
+                        [disabled]="disabled()"
+                        [erros]="errosDoItem(entrada.item.fatoCodigo)"
+                        (itemChange)="emitir(comItem(conteudo(), $event))"
+                        (mover)="moverOItem(entrada.item, $event, etapa)"
+                        (remover)="removerOItem(entrada.item, etapa)"
+                      />
+                    } @else {
+                      <p class="editor-formulario__grupo">
+                        {{ posicao + 1 }}. Grupo “{{ entrada.grupo.rotulo }}”, com {{ entrada.grupo.subitens.length }}
+                        campo(s) por ocorrência. Esta tela ainda não edita grupos; ele é mantido como está ao salvar.
+                      </p>
+                    }
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="field__hint">Nenhum campo nesta seção.</p>
+            }
+          }
+
+          <div class="editor-formulario__acrescentar">
+            <div class="field">
+              <label class="field__label" [for]="idDaEtapa(etapa) + '-acrescentar'">Campo a acrescentar</label>
+              <select
+                class="select"
+                [id]="idDaEtapa(etapa) + '-acrescentar'"
+                [disabled]="disabled() || noTeto() || paraAcrescentar().length === 0"
+                [attr.aria-describedby]="noTeto() ? idBase() + '-teto' : null"
+                (change)="escolher(etapa.codigo, $event)"
+              >
+                <option value="" [selected]="escolhaDe(etapa.codigo) === ''">Escolha o fato do candidato</option>
+                @for (fato of paraAcrescentar(); track fato.codigo) {
+                  <option [value]="fato.codigo" [selected]="escolhaDe(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
+                }
+              </select>
+            </div>
+            <button
+              class="btn btn--secondary btn--sm"
+              type="button"
+              [disabled]="disabled() || noTeto() || escolhaDe(etapa.codigo) === ''"
+              (click)="acrescentarOItem(etapa)"
+            >
+              <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar campo
+            </button>
+          </div>
+        }
+
+        @if (!fixa(etapa)) {
+          <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações de ' + nomeDaEtapa(etapa)">
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              [id]="idDaEtapa(etapa) + '-subir'"
+              [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, -1)"
+              [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para cima'"
+              (click)="moverAEtapa(etapa, -1)"
+            >
+              <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir etapa
+            </button>
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              [id]="idDaEtapa(etapa) + '-descer'"
+              [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, 1)"
+              [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para baixo'"
+              (click)="moverAEtapa(etapa, 1)"
+            >
+              <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer etapa
+            </button>
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              [disabled]="disabled()"
+              [attr.aria-label]="'Remover ' + nomeDaEtapa(etapa)"
+              (click)="removerAEtapa(etapa)"
+            >
+              <i class="pi pi-trash" aria-hidden="true"></i> Remover etapa
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (noTeto()) {
+      <p class="field__hint" [id]="idBase() + '-teto'">
+        O formulário chegou a {{ limites.itens }} campos, contando os dados básicos: é o máximo.
+      </p>
+    }
+
+    <div class="editor-formulario__acrescentar">
+      <button class="btn btn--secondary btn--sm" type="button" [disabled]="disabled()" (click)="acrescentarASecao()">
+        <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar seção
+      </button>
+      @for (bloco of blocosParaAcrescentar(); track bloco.valor) {
+        <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" (click)="acrescentarOBloco(bloco.valor)">
+          <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar bloco “{{ bloco.rotulo }}”
+        </button>
+      }
+    </div>
+  `,
+})
+export class EditorDeFormularioComponent {
+  private readonly injector = inject(Injector);
+
+  readonly conteudo = input.required<ConteudoDoFormulario>();
+  /** O catálogo de fatos inteiro, desativados inclusive — os itens que já os usam precisam do nome. */
+  readonly catalogo = input.required<readonly FatoDoFormulario[]>();
+  /** A finalidade decide os blocos admitidos. */
+  readonly finalidade = input.required<string>();
+  /** Prefixo dos ids — único na tela. */
+  readonly idBase = input<string>('formulario');
+  readonly disabled = input<boolean>(false);
+  /** As recusas da última gravação, já distribuídas por item e etapa. */
+  readonly recusas = input<RecusasDoConteudo | null>(null);
+
+  readonly conteudoChange = output<ConteudoDoFormulario>();
+
+  protected readonly limites = LIMITES_DO_FORMULARIO;
+  protected readonly secao = TIPO_SECAO;
+  protected readonly dadosBasicos = SECAO_DADOS_BASICOS;
+  protected readonly comItem = comItem;
+  protected readonly comEtapa = comEtapa;
+  protected readonly podeMoverItem = podeMoverItem;
+  protected readonly podeMoverEtapa = podeMoverEtapa;
+  protected readonly fixa = etapaFixa;
+
+  protected readonly anuncio = signal('');
+  private readonly escolhas = signal<ReadonlyMap<string, string>>(new Map());
+
+  protected readonly etapas = computed(() => etapasEmOrdem(this.conteudo()));
+  private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
+  protected readonly paraAcrescentar = computed(() => fatosParaAcrescentar(this.conteudo(), this.catalogo()));
+  protected readonly noTeto = computed(() => (this.conteudo().itens?.length ?? 0) >= LIMITES_DO_FORMULARIO.itens);
+  protected readonly exigemResposta = computed(() => fatosQueExigemResposta(this.conteudo()));
+  protected readonly desativados = computed(() => new Set(this.catalogo().filter((fato) => !fato.ativo).map((fato) => fato.codigo)));
+  protected readonly blocosParaAcrescentar = computed(() =>
+    blocosAdmitidos(this.finalidade()).filter((bloco) => !this.etapas().some((etapa) => etapa.bloco === bloco.valor)),
+  );
+
+  /** Os fatos que as condições de cada item podem citar, e os que ele já cita — para a condição gravada aparecer. */
+  protected readonly fatosDoItem = computed(() => {
+    const conteudo = this.conteudo();
+    return new Map(
+      (conteudo.itens ?? []).map((item) => [
+        item.fatoCodigo,
+        this.escolhiveis(fatosCitaveisPeloItem(conteudo, item.fatoCodigo), [item.precondicao, item.predicadoObrigatoriedade ?? null]),
+      ]),
+    );
+  });
+
+  protected readonly fatosDaSecao = computed(() => {
+    const conteudo = this.conteudo();
+    return new Map(
+      (conteudo.etapas ?? []).map((etapa) => [
+        etapa.codigo,
+        this.escolhiveis(fatosCitaveisPelaSecao(conteudo, etapa.codigo), [etapa.exibicao ?? null]),
+      ]),
+    );
+  });
+
+  protected readonly termosEPressupostos = computed(() => {
+    const termos = this.conteudo().termos?.length ?? 0;
+    const pressupostos = this.conteudo().pressupostos?.length ?? 0;
+    if (termos === 0 && pressupostos === 0) return null;
+    return `Este formulário tem ${termos} termo(s) e ${pressupostos} fato(s) pressuposto(s). Esta tela ainda não os edita; eles são mantidos como estão ao salvar.`;
+  });
+
+  protected entradasDe(etapa: EtapaDoFormulario): ReturnType<typeof entradasDaSecao> {
+    return entradasDaSecao(this.conteudo(), etapa.codigo);
+  }
+
+  protected chaveDa(entrada: ReturnType<typeof entradasDaSecao>[number]): string {
+    return entrada.tipo === 'item' ? `item:${entrada.item.fatoCodigo}` : `grupo:${entrada.grupo.codigo}`;
+  }
+
+  protected idDaEtapa(etapa: Pick<EtapaDoFormulario, 'codigo'>): string {
+    return `${this.idBase()}-etapa-${etapa.codigo}`;
+  }
+
+  protected idDoItem(item: Pick<ItemDoFormulario, 'fatoCodigo'>): string {
+    return `${this.idBase()}-item-${item.fatoCodigo}`;
+  }
+
+  protected nomeDaEtapa(etapa: EtapaDoFormulario): string {
+    return `a etapa ${etapa.titulo.trim() || 'sem título'}`;
+  }
+
+  protected descricaoDoBloco(etapa: EtapaDoFormulario): string {
+    return DESCRICAO_DO_BLOCO[etapa.bloco ?? ''] ?? '';
+  }
+
+  protected errosDoItem(fatoCodigo: string): readonly string[] {
+    return this.recusas()?.porItem.get(fatoCodigo) ?? [];
+  }
+
+  protected errosDaEtapa(codigo: string): readonly string[] {
+    return this.recusas()?.porEtapa.get(codigo) ?? [];
+  }
+
+  /** O fato escolhido para a seção, enquanto ainda pode ser acrescentado — outra seção pode tê-lo levado. */
+  protected escolhaDe(etapaCodigo: string): string {
+    const escolhido = this.escolhas().get(etapaCodigo) ?? '';
+    return this.paraAcrescentar().some((fato) => fato.codigo === escolhido) ? escolhido : '';
+  }
+
+  protected escolher(etapaCodigo: string, evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    this.escolhas.update((escolhas) => new Map(escolhas).set(etapaCodigo, valor));
+  }
+
+  protected emitir(conteudo: ConteudoDoFormulario): void {
+    this.conteudoChange.emit(conteudo);
+  }
+
+  protected trocarTitulo(evento: Event): void {
+    const titulo = (evento.target as HTMLInputElement).value;
+    this.emitir({ ...this.conteudo(), titulo: titulo.trim() === '' ? null : titulo });
+  }
+
+  protected acrescentarOItem(etapa: EtapaDoFormulario): void {
+    const fato = this.paraAcrescentar().find((f) => f.codigo === this.escolhaDe(etapa.codigo));
+    if (fato === undefined) return;
+    this.emitir(acrescentarItem(this.conteudo(), fato, etapa.codigo));
+    this.escolhas.update((escolhas) => new Map(escolhas).set(etapa.codigo, ''));
+    this.anuncio.set(`Campo “${fato.nome}” acrescentado ao fim de ${etapa.titulo}.`);
+    this.focarDepois(`${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);
+  }
+
+  protected moverOItem(item: ItemDoFormulario, direcao: -1 | 1, etapa: EtapaDoFormulario): void {
+    this.aplicar(moverItem(this.conteudo(), item.fatoCodigo, direcao, this.nomes()), (conteudo) => {
+      const entradas = entradasDaSecao(conteudo, etapa.codigo);
+      const posicao = entradas.findIndex((entrada) => entrada.tipo === 'item' && entrada.item.fatoCodigo === item.fatoCodigo) + 1;
+      this.anuncio.set(`“${item.rotulo}” movido para a posição ${posicao} de ${entradas.length} em ${etapa.titulo}.`);
+      this.focarBotaoDeMover(this.idDoItem(item), direcao);
+    });
+  }
+
+  protected removerOItem(item: ItemDoFormulario, etapa: EtapaDoFormulario): void {
+    this.aplicar(removerItem(this.conteudo(), item.fatoCodigo, this.nomes()), () => {
+      this.anuncio.set(`Campo “${item.rotulo}” removido de ${etapa.titulo}.`);
+      this.focarDepois(`${this.idDaEtapa(etapa)}-acrescentar`);
+    });
+  }
+
+  protected moverAEtapa(etapa: EtapaDoFormulario, direcao: -1 | 1): void {
+    this.aplicar(moverEtapa(this.conteudo(), etapa.codigo, direcao, this.nomes()), (conteudo) => {
+      const etapas = etapasEmOrdem(conteudo);
+      const posicao = etapas.findIndex((e) => e.codigo === etapa.codigo) + 1;
+      this.anuncio.set(`${etapa.titulo} movida para a posição ${posicao} de ${etapas.length}.`);
+      this.focarBotaoDeMover(this.idDaEtapa(etapa), direcao);
+    });
+  }
+
+  protected removerAEtapa(etapa: EtapaDoFormulario): void {
+    this.aplicar(removerEtapa(this.conteudo(), etapa.codigo), () => {
+      this.anuncio.set(`${etapa.titulo} removida.`);
+      this.focarDepois(`${this.idBase()}-titulo`);
+    });
+  }
+
+  protected acrescentarASecao(): void {
+    const conteudo = acrescentarSecao(this.conteudo(), 'Nova seção');
+    const nova = (conteudo.etapas ?? []).find((etapa) => !(this.conteudo().etapas ?? []).some((e) => e.codigo === etapa.codigo));
+    this.emitir(conteudo);
+    this.anuncio.set('Seção nova acrescentada antes da revisão e aceite.');
+    if (nova !== undefined) this.focarDepois(`${this.idDaEtapa(nova)}-titulo`);
+  }
+
+  protected acrescentarOBloco(valor: string): void {
+    const bloco = this.blocosParaAcrescentar().find((b) => b.valor === valor);
+    if (bloco === undefined) return;
+    this.emitir(acrescentarBloco(this.conteudo(), bloco));
+    this.anuncio.set(`Bloco “${bloco.rotulo}” acrescentado antes da revisão e aceite.`);
+  }
+
+  /** Aplica a edição aceita, ou anuncia a recusa sem mexer no conteúdo. */
+  private aplicar(resultado: ResultadoDaEdicao, depois: (conteudo: ConteudoDoFormulario) => void): void {
+    if (!resultado.ok) {
+      this.anuncio.set(resultado.recusa);
+      return;
+    }
+    this.emitir(resultado.conteudo);
+    depois(resultado.conteudo);
+  }
+
+  private escolhiveis(citaveis: ReadonlySet<string>, predicados: readonly PredicadoNoWire[]): readonly FatoEscolhivel[] {
+    const citados = new Set(predicados.flatMap((predicado) => (predicado ?? []).flat().map((condicao) => condicao.fato)));
+    return fatosEscolhiveis(this.catalogo().filter((fato) => citaveis.has(fato.codigo) || citados.has(fato.codigo)));
+  }
+
+  /** Mover tira o nó do lugar e o foco com ele: o foco volta ao mesmo botão, ou ao oposto quando chegou à ponta. */
+  private focarBotaoDeMover(prefixo: string, direcao: -1 | 1): void {
+    const mesmo = `${prefixo}-${direcao < 0 ? 'subir' : 'descer'}`;
+    const oposto = `${prefixo}-${direcao < 0 ? 'descer' : 'subir'}`;
+    this.focarDepois(mesmo, oposto);
+  }
+
+  private focarDepois(...ids: readonly string[]): void {
+    afterNextRender(
+      () => {
+        const alvo = ids
+          .map((id) => document.getElementById(id))
+          .find((elemento): elemento is HTMLElement => elemento !== null && !(elemento as HTMLButtonElement).disabled);
+        alvo?.focus();
+      },
+      { injector: this.injector },
+    );
+  }
+}

@@ -438,6 +438,84 @@ ui-editor-de-condicoes { display: block; }
   margin: 0;
 }
 
+/*
+ * Editor de formulário (ui-editor-de-formulario): etapas empilhadas, cada uma com os campos em
+ * lista numerada; o anúncio de mover e recusar é texto visível acima das etapas.
+ */
+ui-editor-de-formulario { display: grid; gap: var(--space-4); }
+ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-3); }
+
+.editor-formulario__etapa {
+  display: grid;
+  gap: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-4);
+}
+
+.editor-formulario__cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.editor-formulario__titulo-etapa,
+.editor-formulario__titulo-item {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.editor-formulario__titulo-item { font-size: var(--text-base); }
+
+.editor-formulario__itens,
+.editor-formulario__basicos {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor-formulario__basicos { list-style: decimal; padding-left: var(--space-5); gap: var(--space-1); }
+
+.editor-formulario__item {
+  display: grid;
+  gap: var(--space-3);
+  border-left: 3px solid var(--border-subtle);
+  padding-left: var(--space-3);
+}
+
+.editor-formulario__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-3);
+}
+
+.editor-formulario__largo { grid-column: 1 / -1; }
+
+.editor-formulario__acoes,
+.editor-formulario__acrescentar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.editor-formulario__erros { margin: 0; padding-left: var(--space-4); }
+.editor-formulario__grupo { margin: 0; color: var(--text-secondary); }
+
+.editor-formulario__anuncio {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-primary);
+  background: var(--surface-subtle, transparent);
+}
+
+.editor-formulario__anuncio.is-vazio { padding: 0; border: 0; }
+
 /* Switch (toggle) */
 .switch {
   display: inline-flex; align-items: center; gap: var(--space-3);
