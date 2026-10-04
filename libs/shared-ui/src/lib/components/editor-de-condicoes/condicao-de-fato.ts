@@ -95,6 +95,8 @@ import {
             [multiplo]="comparaComLista(condicao().operador)"
             [values]="municipiosEscolhidos()"
             [disabled]="disabled()"
+            [invalido]="erro() !== ''"
+            [descritoPor]="ligacoes()"
             (valuesChange)="escolherMunicipios($event)"
           />
         </div>
@@ -110,6 +112,8 @@ import {
             [grupos]="grupos()"
             [values]="valoresDaLista()"
             [disabled]="disabled()"
+            [invalido]="erro() !== ''"
+            [descritoPor]="ligacoes()"
             (valuesChange)="escolherValores($event)"
           />
         </div>
