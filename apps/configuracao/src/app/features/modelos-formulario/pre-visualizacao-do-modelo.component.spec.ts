@@ -113,6 +113,20 @@ describe('PreVisualizacaoDoModeloComponent', () => {
     controller.expectOne((r) => r.url.endsWith('/pre-visualizacao')).flush(resposta);
   });
 
+  it('oferece simular o campo com restrição de valor, que nenhuma regra cita', () => {
+    fixture.componentRef.setInput('conteudo', {
+      ...conteudo,
+      itens: [...(conteudo.itens ?? []), {
+        fatoCodigo: 'IDADE', ordem: 2, rotulo: 'Idade', tipoRenderizacao: 'NUMERO', obrigatoriedade: 'SEMPRE',
+        precondicao: null, etapaCodigo: 'S1', pedirConfirmacao: false, restricoes: [{ tipo: 'FAIXA', minimo: 16, maximo: null }],
+      }],
+    });
+    fixture.componentRef.setInput('catalogo', [fato('CERTIFICADO'), fato('ANO', 'NUMERICO'), fato('CONCLUIU'), fato('IDADE', 'NUMERICO')]);
+    fixture.detectChanges();
+
+    expect(tela().querySelector('#cfg-simulacao-IDADE')).not.toBeNull();
+  });
+
   it('com alteração não salva, não pré-visualiza e diz por quê', () => {
     fixture.componentRef.setInput('desatualizado', true);
     fixture.detectChanges();
