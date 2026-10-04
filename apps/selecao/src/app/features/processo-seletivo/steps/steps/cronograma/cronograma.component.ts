@@ -1440,7 +1440,14 @@ export class CronogramaStepComponent {
       }).keys(),
       ...dependenciasDaDerivacao,
     ]);
-    const outras = fatosDasOutrasFinalidades(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
+    // As outras finalidades contam também como estão no rascunho: o fato que uma aba ainda não
+    // gravada coleta entraria na inscrição e ficaria em dois formulários.
+    const outras = [
+      ...new Set([
+        ...fatosDasOutrasFinalidades(servidor.formularios ?? [], FINALIDADE_INSCRICAO),
+        ...draft.formulario.outrasFinalidades.flatMap((outra) => fatosColetadosPor(outra.conteudo)),
+      ]),
+    ];
     const gravado = formularioDaFinalidade(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
     const conteudoGravado = gravado === null ? conteudoInicial() : conteudoDoFormulario(gravado);
     // Este caminho só ACRESCENTA — o conjunto de "postos por exigência" vai vazio de propósito.
