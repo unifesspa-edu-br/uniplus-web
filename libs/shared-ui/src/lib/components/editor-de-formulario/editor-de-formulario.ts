@@ -491,7 +491,10 @@ export class EditorDeFormularioComponent {
     fatosParaAcrescentar(this.conteudoParaCitacoes(), this.catalogo(), ESCOPO_CANDIDATO, this.fatosIndisponiveis()),
   );
   /** O conteúdo para as citações: com os fatos da inscrição conhecidos antes de tudo, que nunca são gravados. */
-  protected readonly conteudoParaCitacoes = computed(() => comFatosConhecidosAntes(this.conteudo(), this.fatosDaInscricao() ?? []));
+  protected readonly conteudoParaCitacoes = computed(() =>
+    // Na própria inscrição os fatos dela têm posição: torná-los conhecidos antes deixaria um campo citar outro que vem depois.
+    this.finalidade() === FINALIDADE_INSCRICAO ? this.conteudo() : comFatosConhecidosAntes(this.conteudo(), this.fatosDaInscricao() ?? []),
+  );
   protected readonly noTeto = computed(() => quantidadeNoTeto(this.conteudo()) >= LIMITES_DO_FORMULARIO.itens);
   protected readonly exigemResposta = computed(() => fatosQueExigemResposta(this.conteudo()));
   protected readonly desativados = computed(() => new Set(this.catalogo().filter((fato) => !fato.ativo).map((fato) => fato.codigo)));

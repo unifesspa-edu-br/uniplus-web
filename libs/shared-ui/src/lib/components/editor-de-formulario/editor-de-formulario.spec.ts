@@ -175,6 +175,16 @@ describe('EditorDeFormularioComponent', () => {
       expect(ofertados, 'o fato que a inscrição coleta não é oferecido como campo').not.toContain('DA_INSCRICAO');
     });
 
+    it('na própria inscrição, os fatos dela não viram conhecidos antes: o primeiro campo não cita o que vem depois', () => {
+      fixture.componentRef.setInput('fatosDaInscricao', ['A', 'B', 'C']);
+      fixture.detectChanges();
+
+      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0]
+        .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
+
+      expect(alternativa.disabled, 'nada vem antes do primeiro campo da inscrição').toBe(true);
+    });
+
     it('o fato de outra finalidade não é oferecido, e o campo travado não sai e diz por quê', () => {
       fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DE_OUTRA'), fato('LIVRE')]);
       fixture.componentRef.setInput('fatosIndisponiveis', ['DE_OUTRA']);
