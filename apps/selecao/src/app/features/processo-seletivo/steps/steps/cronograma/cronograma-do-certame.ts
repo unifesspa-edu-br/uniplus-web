@@ -81,6 +81,7 @@ export function descreverFase(
       donoTipico: congelados.donoTipico,
       publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
       coletaInscricao: congelados.coletaInscricao,
+      coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
       permiteComplementacao: congelados.permiteComplementacao,
       exigencias: exigenciasDe(congelados, fase.produtos),
       foraDoCatalogo: canonica === undefined,
@@ -92,6 +93,7 @@ export function descreverFase(
     donoTipico: canonica?.donoTipico ?? '—',
     publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
     coletaInscricao: canonica?.coletaInscricao ?? false,
+    coletaSolicitacaoIsencao: canonica?.coletaSolicitacaoIsencao ?? false,
     permiteComplementacao: canonica?.permiteComplementacao ?? false,
     exigencias: canonica === undefined ? null : exigenciasDe(canonica, fase.produtos),
     foraDoCatalogo: canonica === undefined,
@@ -104,6 +106,8 @@ export interface DescricaoDaFase {
   readonly donoTipico: string;
   readonly publicaResultadoDefinitivo: boolean;
   readonly coletaInscricao: boolean;
+  /** Se é nela que o candidato pede isenção da taxa — a fase do formulário de isenção. */
+  readonly coletaSolicitacaoIsencao: boolean;
   /**
    * Se a fase admite reenvio depois da análise. O que a fase congelou tem precedência sobre o
    * catálogo, pela mesma razão dos demais atributos: editar a fase canônica depois não pode

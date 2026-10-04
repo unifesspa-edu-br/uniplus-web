@@ -120,7 +120,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
    * na matriz do próprio passo.
    */
   test('mantém o ritmo vertical entre título, alerta e dica', async ({ page }) => {
-    for (const passo of ['Tipo do processo', 'Identificação', 'Pagamento', 'Vagas', 'Formulário']) {
+    for (const passo of ['Tipo do processo', 'Identificação', 'Pagamento', 'Vagas', 'Formulários']) {
       const posicao = await page.evaluate((rotulo) => {
         const botoes = Array.from(
           document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),

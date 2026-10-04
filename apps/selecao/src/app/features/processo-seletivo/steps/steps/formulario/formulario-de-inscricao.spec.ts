@@ -100,7 +100,7 @@ function formularioCom(conteudo: ConteudoDoFormulario, extra: Partial<Formulario
     conteudo,
     referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
     derivacao: [],
-    fatosDasOutrasFinalidades: [],
+    outrasFinalidades: [],
     ...extra,
   };
 }
@@ -159,6 +159,35 @@ describe('quem cita cada fato no processo', () => {
     expect(citantes.get('PCD')).toEqual(['o documento “Título de eleitor”', 'as regras que calculam “modalidade”']);
     expect(citantes.get('DATA_NASCIMENTO')).toEqual(['o desempate por maior idade']);
     expect(remocoesTravadasPor(citantes).get('PCD')).toContain('dependem deste dado');
+  });
+
+  it('trava na inscrição o fato que outra finalidade cita, nomeando a finalidade; o que ela cita dos próprios campos fica de fora', () => {
+    const habilitacao = conteudoInicial();
+    const citaPcd = [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]];
+    const citantes = quemCitaNoProcesso({
+      documentos: NENHUMA_EXIGENCIA,
+      derivacao: [],
+      desempate: [],
+      outrasFinalidades: [
+        {
+          finalidade: 'HABILITACAO',
+          faseCodigo: 'HABILITACAO',
+          conteudo: {
+            ...habilitacao,
+            etapas: [secao('H1', 0), ...(habilitacao.etapas ?? [])],
+            itens: [
+              item('LAUDO', 0, 'H1', { precondicao: citaPcd }),
+              item('CID', 1, 'H1', { precondicao: [[{ fato: 'LAUDO', operador: 'IGUAL', valor: 'true' }]] }),
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(remocoesTravadasPor(citantes).get('PCD')).toBe(
+      'Não pode sair: o formulário de habilitação depende deste dado. Desfaça a dependência antes de remover o campo.',
+    );
+    expect(citantes.has('LAUDO')).toBe(false);
   });
 });
 

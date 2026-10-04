@@ -31,7 +31,7 @@ const ANCORAS = [
 ] as const;
 
 /**
- * Matriz do Uni+ DS para o editor do passo Formulário, com o processo da Medicina 2027 em
+ * Matriz do Uni+ DS para o editor do passo Formulários, com o processo da Medicina 2027 em
  * rascunho: o editor de formulário compartilhado (título, etapas, campos e termos) e a apuração da
  * idade em cada âncora.
  *
@@ -42,7 +42,7 @@ const ANCORAS = [
  * O CI do frontend sobe Keycloak, mas não a API: o processo e os catálogos são servidos por rota,
  * e toda outra consulta responde vazia.
  */
-test.describe('Formulário — editor, matriz DS @ds', () => {
+test.describe('Formulários — editor, matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     await abrirFormulario(page, testInfo);
   });
@@ -94,7 +94,7 @@ async function abrirFormulario(page: Page, testInfo: TestInfo): Promise<void> {
   await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_DA_MEDICINA.id}`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  await irAoPasso(page, 'Formulário', testInfo);
+  await irAoPasso(page, 'Formulários', testInfo);
   // O wizard mantém os passos montados; o título diz qual deles está aberto.
   await expect(page.getByRole('heading', { level: 1, name: /^Passo 11:/ })).toBeVisible();
   await expect(page.getByLabel('Apurar a idade em', { exact: true })).toBeVisible();

@@ -169,11 +169,11 @@ describe('FormularioStepComponent', () => {
   });
 
   it('antes de o formulário existir no servidor, o combo não oferece o conjunto básico, que a API põe na seção reservada', () => {
-    expect(fixture.componentInstance.fatosIndisponiveis(), 'com a seção dos dados básicos, ela é a referência').not.toContain('SEXO');
+    expect(fixture.componentInstance.abas()[0].fatosIndisponiveis, 'com a seção dos dados básicos, ela é a referência').not.toContain('SEXO');
 
     store.patchObjectSection('formulario', { conteudo: conteudoInicial() });
 
-    expect(fixture.componentInstance.fatosIndisponiveis()).toContain('SEXO');
+    expect(fixture.componentInstance.abas()[0].fatosIndisponiveis).toContain('SEXO');
   });
 
   it('o campo que uma exigência documental cita não sai, e o editor diz por quê', () => {
@@ -237,7 +237,7 @@ describe('FormularioStepComponent', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(fixture.componentInstance.recusas()?.porItem.get('PCD')).toEqual(['Rótulo recusado.']);
+    expect(fixture.componentInstance.recusas().get('INSCRICAO')?.porItem.get('PCD')).toEqual(['Rótulo recusado.']);
   });
 
   it('avisa do desempate por idoso sem apuração da idade e leva ao passo Desempate', () => {
@@ -252,6 +252,106 @@ describe('FormularioStepComponent', () => {
     expect(store.currentStep()).toBe(PASSO_DESEMPATE);
   });
 
+  describe('com um formulário por finalidade', () => {
+    const ROTA_HABILITACAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/HABILITACAO`;
+    const FASE_HABILITACAO: FaseDoCronograma = {
+      ...FASE_INSCRICAO,
+      faseCanonicaId: 'fc-habilitacao',
+      codigo: 'HABILITACAO',
+      ordem: 1,
+      congelados: { donoTipico: 'CEPS', origemData: 'PROPRIA', agrupaEtapas: false, coletaInscricao: false, permiteComplementacao: false, coletaSolicitacaoIsencao: false, bancas: [] },
+    };
+    const HABILITACAO_GRAVADA = { ...GRAVADO, finalidade: 'HABILITACAO', faseId: 'F-HABILITACAO', etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')], fatosColetados: [] } as unknown as FormularioDto;
+
+    const abas = (): HTMLButtonElement[] => Array.from(host.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const teclar = (aba: HTMLButtonElement, key: string): void => {
+      aba.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE_INSCRICAO, FASE_HABILITACAO] });
+      store.patchObjectSection('formulario', {
+        outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo: conteudoDoFormulario(HABILITACAO_GRAVADA) }],
+      });
+      fixture.detectChanges();
+    });
+
+    it('só a aba ativa entra no Tab, e setas, Home e End trocam de aba levando o foco', () => {
+      const [inscricao, habilitacao] = abas();
+      expect([inscricao.tabIndex, habilitacao.tabIndex]).toEqual([0, -1]);
+      expect(host.querySelector(`#${inscricao.getAttribute('aria-controls')}`)?.getAttribute('aria-labelledby')).toBe(inscricao.id);
+
+      teclar(inscricao, 'ArrowRight');
+      expect(abas().map((aba) => aba.getAttribute('aria-selected'))).toEqual(['false', 'true']);
+      expect([inscricao.tabIndex, habilitacao.tabIndex]).toEqual([-1, 0]);
+      expect(document.activeElement).toBe(habilitacao);
+      expect((host.querySelector('#form-painel-habilitacao') as HTMLElement).hidden).toBe(false);
+
+      teclar(habilitacao, 'Home');
+      expect(document.activeElement).toBe(inscricao);
+      teclar(inscricao, 'End');
+      expect(document.activeElement).toBe(habilitacao);
+    });
+
+    it('a inscrição não oferece remoção; as outras finalidades, sim', () => {
+      expect(host.querySelector('#form-inscricao-remover')).toBeNull();
+      expect(host.querySelector('#form-habilitacao-remover')).not.toBeNull();
+    });
+
+    it('os fatos da inscrição são citáveis na habilitação, e o fato que ela cita não sai da inscrição', () => {
+      const habilitacao = fixture.componentInstance.abas().find((aba) => aba.finalidade === 'HABILITACAO');
+      expect(habilitacao?.fatosDaInscricao).toContain('PCD');
+
+      const conteudo = conteudoDoFormulario(HABILITACAO_GRAVADA);
+      store.patchObjectSection('formulario', {
+        outrasFinalidades: [
+          {
+            finalidade: 'HABILITACAO',
+            faseCodigo: '',
+            conteudo: { ...conteudo, termos: [{ codigo: 'T', ordem: 0, termoId: 't', versaoId: 'v', exibicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]], obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null }] },
+          },
+        ],
+      });
+
+      expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(/o formulário de habilitação depende deste dado/);
+    });
+
+    it('a recusa da remoção aparece em texto na aba, que continua, e a remoção trava o passo enquanto está no ar', async () => {
+      fixture.componentInstance.pedirRemocao('HABILITACAO');
+      const remocao = fixture.componentInstance.confirmarRemocao();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
+      await proximoPasso();
+      expect(store.operacaoEmAndamento(), 'um PUT da aba depois do DELETE recriaria o formulário').toBe(true);
+      controller
+        .expectOne((r) => r.method === 'DELETE' && r.url === ROTA_HABILITACAO)
+        .flush(
+          { type: 'about:blank', title: 'A remoção foi recusada.', status: 422, code: 'uniplus.selecao.formulario.remocao_so_em_rascunho', traceId: '00000000000000000000000000000004' },
+          { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+        );
+      await remocao;
+      fixture.detectChanges();
+
+      expect(host.querySelector('#form-habilitacao-recusa-remocao')?.textContent).toContain('A remoção foi recusada.');
+      expect(abas()[1].textContent).toContain('(recusado)');
+      expect(store.draft().formulario.outrasFinalidades.map((outra) => outra.finalidade)).toEqual(['HABILITACAO']);      expect(store.operacaoEmAndamento()).toBe(false);
+    });
+
+    it('acrescentar uma finalidade abre a aba dela, leva o foco até ela e anuncia', async () => {
+      store.patchObjectSection('formulario', { outrasFinalidades: [] });
+      fixture.detectChanges();
+
+      fixture.componentInstance.finalidadeAAcrescentar.set('HABILITACAO');
+      fixture.componentInstance.acrescentarFinalidade();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.abaAtiva()).toBe('HABILITACAO');
+      expect(document.activeElement?.id).toBe('form-aba-habilitacao');
+      expect(host.querySelector('#form-anuncio')?.textContent).toContain('Formulário de habilitação acrescentado');
+    });
+  });
+
   describe('em consulta', () => {
     beforeEach(() => {
       store.remoteSnapshot.set({ status: 'publicado' } as never);
@@ -259,7 +359,8 @@ describe('FormularioStepComponent', () => {
     });
 
     it('lê o formulário como texto, sem controle nem ação de edição', () => {
-      expect(host.querySelector('input, select, textarea, button, ui-editor-de-formulario')).toBeNull();
+      // As abas continuam: são navegação entre os formulários, não ação de edição.
+      expect(host.querySelector('input, select, textarea, button:not([role="tab"]), ui-editor-de-formulario')).toBeNull();
       expect(valor('Título do formulário')).toEqual(['Inscrição — Medicina 2027']);
       expect(valor('Fase da inscrição')).toEqual(['INSCRICAO']);
       expect(host.textContent).toContain('Condições especiais');

@@ -27,7 +27,7 @@ const PASSOS = [
   { rotulo: 'Identificação', numero: 2, valor: 'medicina-2027' },
   { rotulo: 'Pagamento', numero: 3, valor: 'R$ 120,50' },
   { rotulo: 'Atend. especial', numero: 10, valor: 'Prova ampliada' },
-  { rotulo: 'Formulário', numero: 11, valor: 'Opcional' },
+  { rotulo: 'Formulários', numero: 11, valor: 'Opcional' },
 ] as const;
 
 type Passo = (typeof PASSOS)[number];

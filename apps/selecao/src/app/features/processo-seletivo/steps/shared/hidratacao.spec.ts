@@ -762,7 +762,7 @@ describe('hidratarDraft — formulário de inscrição', () => {
     ]);
   });
 
-  it('das outras finalidades, guarda só os fatos que coletam: o passo não as edita', () => {
+  it('guarda o formulário de cada outra finalidade, fora da inscrição: o passo edita cada um na sua aba', () => {
     const draft = hidratarDraft(
       DRAFT,
       dtoComFormulario({
@@ -773,7 +773,9 @@ describe('hidratarDraft — formulário de inscrição', () => {
       }),
     );
 
-    expect(draft.formulario.fatosDasOutrasFinalidades).toEqual(['RENDA']);
+    expect(draft.formulario.outrasFinalidades.map((outra) => [outra.finalidade, outra.conteudo.itens?.map((item) => item.fatoCodigo)])).toEqual([
+      ['ISENCAO_TAXA', ['RENDA']],
+    ]);
     expect(draft.formulario.conteudo.itens?.map((item) => item.fatoCodigo)).not.toContain('RENDA');
   });
 

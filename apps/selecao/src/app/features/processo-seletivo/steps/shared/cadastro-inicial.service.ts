@@ -627,6 +627,18 @@ export class CadastroInicialService {
     }
   }
 
+  /**
+   * Remove o formulário de uma finalidade, com os itens e os termos dele. A API só remove em
+   * rascunho e não pede chave de idempotência nesta rota: repetir a remoção encontra o formulário
+   * já removido, e quem chama confere o desfecho relendo o processo.
+   */
+  async removerFormulario(processoSeletivoId: string, finalidade: string): Promise<ResultadoGravacao> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(this.api.removerFormulario(processoSeletivoId, finalidade));
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+    return isApiOk(result) ? { ok: true } : { ok: false, problem: result.problem };
+  }
+
   /** Um comando de substituição sob a chave dele, girando-a como `ChaveDeSubstituicao` manda. */
   private async gravarComChave(
     chave: ChaveDeSubstituicao,

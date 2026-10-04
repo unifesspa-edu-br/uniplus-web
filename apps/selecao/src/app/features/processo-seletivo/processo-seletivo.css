@@ -3035,3 +3035,54 @@
   flex-wrap: wrap;
   margin-bottom: var(--space-2);
 }
+
+/* ---- Abas dos formulários por finalidade (passo Formulários) ----
+ * A aba ativa se distingue pelo sublinhado e pelo peso, não só pela cor; a recusa vem em texto
+ * dentro da própria aba. Em tela estreita as abas quebram linha em vez de rolar na horizontal. */
+.sel-processo .form-abas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-block-end: var(--space-5);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.sel-processo .form-abas__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.sel-processo .form-abas__aba {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  background: transparent;
+  border: none;
+  border-block-end: 3px solid transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.sel-processo .form-abas__aba[aria-selected="true"] {
+  border-block-end-color: var(--text-link);
+  color: var(--text-link);
+  font-weight: var(--weight-semibold);
+}
+
+.sel-processo .form-abas__recusa {
+  color: var(--color-danger-600);
+  font-weight: var(--weight-semibold);
+}
+
+.sel-processo .form-abas__acrescentar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding-block-end: var(--space-3);
+}

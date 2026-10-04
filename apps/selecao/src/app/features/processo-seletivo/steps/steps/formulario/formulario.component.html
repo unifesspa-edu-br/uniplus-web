@@ -1,6 +1,7 @@
 <p class="step-subtitle">
-  O que o candidato lê e preenche ao se inscrever: as etapas, os campos e os termos que aceita.
-  É esse formulário que a inscrição pública renderiza.
+  O que o candidato lê e preenche em cada finalidade do processo — a inscrição e, quando houver, a
+  solicitação de isenção da taxa e a habilitação: as etapas, os campos e os termos que aceita. O
+  portal do candidato renderiza cada um deles.
 </p>
 
 <!-- O catálogo e os termos só servem para editar: em consulta, carga e falha deles não interessam. -->
@@ -26,130 +27,236 @@
   }
 }
 
-<section class="step-section" aria-labelledby="form-fase-titulo">
-  <h2 id="form-fase-titulo" class="step-section__title">Quando o candidato responde</h2>
+<p class="sr-only" role="status" aria-live="polite" id="form-anuncio">{{ anuncio() }}</p>
 
-  @if (store.emConsulta()) {
-    <div class="form-grid">
-      <ui-valor-em-consulta
-        rotulo="Fase da inscrição"
-        seVazio="Nenhuma fase declarada"
-        [valor]="nomeDaFaseDaInscricao()"
-      />
-    </div>
-  } @else if (fasesDaInscricao().length === 0) {
-    <p class="field__hint" role="status" id="form-sem-fase-de-inscricao">
-      O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição no
-      passo Cronograma.
-    </p>
-  } @else {
-    <div class="form-grid">
+<div class="form-abas">
+  <!-- O tablist só contém abas: acrescentar formulário é outro controle, logo depois dele. -->
+  <div class="form-abas__lista" role="tablist" aria-label="Formulários do processo">
+    @for (aba of abas(); track aba.finalidade; let indice = $index) {
+      <button
+        type="button"
+        role="tab"
+        class="form-abas__aba"
+        [id]="aba.aba"
+        [attr.aria-selected]="aba.finalidade === abaAtiva()"
+        [attr.aria-controls]="aba.painel"
+        [attr.tabindex]="aba.finalidade === abaAtiva() ? 0 : -1"
+        (click)="selecionarAba(aba.finalidade)"
+        (keydown)="navegarNasAbas($event, indice)"
+      >
+        {{ aba.rotulo }}
+        @if (aba.recusada) {
+          <span class="form-abas__recusa">(recusado)</span>
+        }
+      </button>
+    }
+  </div>
+
+  @if (!store.emConsulta() && finalidadesOferecidas().length > 0) {
+    <div class="form-abas__acrescentar">
       <div class="form-field">
-        <label class="label" for="form-fase-inscricao">Fase da inscrição</label>
+        <label class="label" for="form-finalidade-nova">Acrescentar formulário de</label>
         <select
           class="select"
-          id="form-fase-inscricao"
-          aria-describedby="form-fase-inscricao-ajuda"
+          id="form-finalidade-nova"
+          aria-describedby="form-finalidade-nova-ajuda"
           [disabled]="!store.aceitaEdicao()"
-          (change)="escreverFase($any($event.target).value)"
+          (change)="finalidadeAAcrescentar.set($any($event.target).value)"
         >
-          @if (faseDaInscricao() === '') {
-            <option value="" selected>Escolha a fase</option>
-          }
-          @for (opcao of fasesDaInscricao(); track opcao.codigo) {
-            <option [value]="opcao.codigo" [selected]="opcao.codigo === faseDaInscricao()">
-              {{ opcao.nome }}
+          <option value="" [selected]="finalidadeAAcrescentar() === ''">Escolha a finalidade</option>
+          @for (opcao of finalidadesOferecidas(); track opcao.valor) {
+            <option [value]="opcao.valor" [selected]="opcao.valor === finalidadeAAcrescentar()">
+              {{ opcao.rotulo }}
             </option>
           }
         </select>
-        <span class="field__hint" id="form-fase-inscricao-ajuda">
-          Só as fases do cronograma que coletam inscrição aparecem aqui.
+        <span class="field__hint" id="form-finalidade-nova-ajuda">
+          Só aparecem as finalidades com fase no cronograma; a isenção, só quando o processo cobra
+          taxa de inscrição.
         </span>
       </div>
-    </div>
-  }
-</section>
-
-<section class="step-section" aria-labelledby="form-conteudo-titulo">
-  <h2 id="form-conteudo-titulo" class="step-section__title">O que o candidato preenche</h2>
-
-  <p class="field__hint">
-    Os dados básicos do candidato entram sempre, numa seção que não se altera. O que alguma
-    exigência documental pede para decidir de quem o documento é cobrado entra sozinho, na seção
-    "Outros dados exigidos pelo certame" — e não sai enquanto for citado.
-  </p>
-
-  @if (desempateSemDataDeNascimento()) {
-    <div class="alert alert--warning" role="status" id="form-desempate-sem-nascimento">
-      <p>
-        O desempate por maior idade ordena pela data de nascimento, e ela não está entre os campos
-        do formulário. Acrescente "Data de nascimento" ao formulário, ou retire o critério no passo
-        Desempate.
-      </p>
       <button
         type="button"
-        class="btn btn--secondary btn--sm"
-        id="form-ir-desempate-nascimento"
-        (click)="irParaDesempate()"
+        class="btn btn--secondary"
+        id="form-acrescentar-finalidade"
+        [disabled]="!store.aceitaEdicao() || finalidadeAAcrescentar() === ''"
+        (click)="acrescentarFinalidade()"
       >
-        Ir para Desempate
+        Acrescentar formulário
       </button>
     </div>
   }
+</div>
 
-  @if (store.emConsulta()) {
-    <div class="form-grid">
-      <ui-valor-em-consulta
-        class="form-grid__full"
-        rotulo="Título do formulário"
-        seVazio="Sem título"
-        [valor]="conteudo().titulo"
-      />
-    </div>
-    @for (etapa of leitura(); track etapa.codigo) {
-      <h3 class="form-section__title">{{ etapa.titulo }}</h3>
-      <ul class="doc-list">
-        @for (entrada of etapa.entradas; track entrada.chave) {
-          <li class="doc-item">
-            <div class="doc-item__head">
-              <span class="doc-item__name">{{ entrada.rotulo }}</span>
-            </div>
-            <ui-valor-em-consulta rotulo="Resposta" [valor]="entrada.resposta" />
-          </li>
-        } @empty {
-          <li class="field__hint">Nenhum campo nesta etapa.</li>
-        }
-      </ul>
+@for (aba of abas(); track aba.finalidade) {
+  <div
+    role="tabpanel"
+    class="form-abas__painel"
+    [id]="aba.painel"
+    [attr.aria-labelledby]="aba.aba"
+    [hidden]="aba.finalidade !== abaAtiva()"
+  >
+    @if (aba.recusaDaRemocao; as recusa) {
+      <p class="alert alert--danger" role="alert" [id]="aba.idBase + '-recusa-remocao'">
+        O formulário de {{ aba.nome }} não foi removido. {{ recusa }}
+      </p>
     }
-  } @else {
-    <ui-editor-de-formulario
-      idBase="form-inscricao"
-      [finalidade]="finalidade"
-      [conteudo]="conteudo()"
-      [catalogo]="catalogo()"
-      [disabled]="!store.aceitaEdicao()"
-      [recusas]="recusas()"
-      [termosDisponiveis]="termosDisponiveis()"
-      [fatosIndisponiveis]="fatosIndisponiveis()"
-      [remocoesTravadas]="remocoesTravadas()"
-      (conteudoChange)="editar($event)"
-    />
-  }
 
-  @if (camposSemUso().length > 0 && !store.emConsulta()) {
-    <!--
-      Pedir dado pessoal sem finalidade declarada é coleta indevida, e o caso mais comum é o
-      campo que entrou por causa de um gatilho apagado depois, noutra sessão — a saída
-      automática só alcança o que a sessão em curso acrescentou.
-    -->
-    <p class="field__hint" id="form-campos-sem-uso">
-      Nada no certame usa {{ camposSemUso().join(', ') }}: nenhuma exigência documental, nenhuma
-      regra de modalidade e nenhum outro campo depende desse dado. Confira se ainda há motivo
-      para pedi-lo ao candidato.
-    </p>
-  }
-</section>
+    <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-fase-titulo'">
+      <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title">Quando o candidato responde</h2>
 
+      @if (store.emConsulta()) {
+        <div class="form-grid">
+          <ui-valor-em-consulta
+            [rotulo]="aba.ehInscricao ? 'Fase da inscrição' : 'Fase do formulário'"
+            seVazio="Nenhuma fase declarada"
+            [valor]="aba.nomeDaFase"
+          />
+        </div>
+      } @else if (aba.fases.length === 0) {
+        <p class="field__hint" role="status" [id]="aba.idBase + '-sem-fase'">
+          @if (aba.ehInscricao) {
+            O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição
+            no passo Cronograma.
+          } @else {
+            O cronograma não tem fase em que o formulário de {{ aba.nome }} é respondido. Acrescente a
+            fase no passo Cronograma, ou remova o formulário.
+          }
+        </p>
+      } @else {
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="label" [for]="aba.campoDaFase">
+              {{ aba.ehInscricao ? 'Fase da inscrição' : 'Fase do formulário' }}
+            </label>
+            <select
+              class="select"
+              [id]="aba.campoDaFase"
+              [attr.aria-describedby]="aba.idBase + '-fase-ajuda'"
+              [disabled]="!store.aceitaEdicao()"
+              (change)="escreverFase(aba.finalidade, $any($event.target).value)"
+            >
+              @if (aba.fase === '') {
+                <option value="" selected>Escolha a fase</option>
+              }
+              @for (opcao of aba.fases; track opcao.codigo) {
+                <option [value]="opcao.codigo" [selected]="opcao.codigo === aba.fase">
+                  {{ opcao.nome }}
+                </option>
+              }
+            </select>
+            <span class="field__hint" [id]="aba.idBase + '-fase-ajuda'">
+              Só as fases do cronograma em que este formulário pode ser respondido aparecem aqui.
+            </span>
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-conteudo-titulo'">
+      <h2 [id]="aba.idBase + '-conteudo-titulo'" class="step-section__title">O que o candidato preenche</h2>
+
+      @if (aba.ehInscricao) {
+        <p class="field__hint">
+          Os dados básicos do candidato entram sempre, numa seção que não se altera. O que alguma
+          exigência documental pede para decidir de quem o documento é cobrado entra sozinho, na
+          seção "Outros dados exigidos pelo certame" — e não sai enquanto for citado.
+        </p>
+
+        @if (desempateSemDataDeNascimento()) {
+          <div class="alert alert--warning" role="status" id="form-desempate-sem-nascimento">
+            <p>
+              O desempate por maior idade ordena pela data de nascimento, e ela não está entre os
+              campos do formulário. Acrescente "Data de nascimento" ao formulário, ou retire o
+              critério no passo Desempate.
+            </p>
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              id="form-ir-desempate-nascimento"
+              (click)="irParaDesempate()"
+            >
+              Ir para Desempate
+            </button>
+          </div>
+        }
+      } @else {
+        <p class="field__hint">
+          O que a inscrição já coleta pode ser citado nas condições deste formulário, e não é
+          perguntado de novo: cada dado do candidato é coletado por um formulário só.
+        </p>
+      }
+
+      @if (store.emConsulta()) {
+        <div class="form-grid">
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Título do formulário"
+            seVazio="Sem título"
+            [valor]="aba.conteudo.titulo"
+          />
+        </div>
+        @for (etapa of aba.leitura; track etapa.codigo) {
+          <h3 class="form-section__title">{{ etapa.titulo }}</h3>
+          <ul class="doc-list">
+            @for (entrada of etapa.entradas; track entrada.chave) {
+              <li class="doc-item">
+                <div class="doc-item__head">
+                  <span class="doc-item__name">{{ entrada.rotulo }}</span>
+                </div>
+                <ui-valor-em-consulta rotulo="Resposta" [valor]="entrada.resposta" />
+              </li>
+            } @empty {
+              <li class="field__hint">Nenhum campo nesta etapa.</li>
+            }
+          </ul>
+        }
+      } @else {
+        <ui-editor-de-formulario
+          [idBase]="aba.idBase"
+          [finalidade]="aba.finalidade"
+          [conteudo]="aba.conteudo"
+          [catalogo]="catalogo()"
+          [disabled]="!store.aceitaEdicao()"
+          [recusas]="aba.recusas"
+          [termosDisponiveis]="termosDisponiveis()"
+          [fatosDaInscricao]="aba.fatosDaInscricao"
+          [fatosIndisponiveis]="aba.fatosIndisponiveis"
+          [fatosQueExigemRespostaPorFora]="aba.fatosQueExigemRespostaPorFora"
+          [remocoesTravadas]="remocoesTravadas()"
+          (conteudoChange)="editar(aba.finalidade, $event)"
+        />
+      }
+
+      @if (aba.ehInscricao && camposSemUso().length > 0 && !store.emConsulta()) {
+        <!--
+          Pedir dado pessoal sem finalidade declarada é coleta indevida, e o caso mais comum é o
+          campo que entrou por causa de um gatilho apagado depois, noutra sessão — a saída
+          automática só alcança o que a sessão em curso acrescentou.
+        -->
+        <p class="field__hint" id="form-campos-sem-uso">
+          Nada no certame usa {{ camposSemUso().join(', ') }}: nenhuma exigência documental, nenhuma
+          regra de modalidade e nenhum outro campo depende desse dado. Confira se ainda há motivo
+          para pedi-lo ao candidato.
+        </p>
+      }
+    </section>
+
+    @if (!aba.ehInscricao && !store.emConsulta()) {
+      <button
+        type="button"
+        class="btn btn--tertiary"
+        [id]="aba.idBase + '-remover'"
+        [disabled]="!store.aceitaEdicao() || store.salvando()"
+        (click)="pedirRemocao(aba.finalidade)"
+      >
+        Remover o formulário de {{ aba.nome }}
+      </button>
+    }
+  </div>
+}
+
+<!-- Fora das abas: a apuração da idade é uma política do processo, não de um formulário. -->
 <section class="step-section" aria-labelledby="form-idade-titulo">
   <h2 id="form-idade-titulo" class="step-section__title">Apuração da idade</h2>
 
@@ -256,4 +363,21 @@
     de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um de
     cada em "Atend. especial", ou retire o campo daqui.
   </p>
+}
+
+<!--
+  Permanece no DOM enquanto o processo é editável: é o componente que devolve o foco ao botão que
+  abriu a confirmação, e destruí-lo por um `@if` da própria confirmação pularia esse caminho.
+-->
+@if (!store.emConsulta()) {
+  <ui-confirm-dialog
+    [visible]="remocaoPendente() !== null"
+    heading="Remover formulário"
+    [message]="avisoDaRemocao()"
+    confirmLabel="Remover formulário"
+    cancelLabel="Manter formulário"
+    confirmVariant="danger"
+    (confirmed)="confirmarRemocao()"
+    (cancelled)="cancelarRemocao()"
+  />
 }
