@@ -166,8 +166,8 @@ const ESTADOS: Readonly<Record<string, string>> = {
 
       <p class="cfg-pre-visualizacao__resumo" role="status">{{ resumo() }}</p>
 
-      @if (erro()) {
-        <ui-alert variant="danger" heading="Não foi possível pré-visualizar">{{ erro() }}</ui-alert>
+      @if (erroVisivel(); as falha) {
+        <ui-alert variant="danger" heading="Não foi possível pré-visualizar">{{ falha }}</ui-alert>
       }
 
       @if (resultadoVisivel(); as r) {
@@ -295,8 +295,9 @@ export class PreVisualizacaoDoModeloComponent {
     });
   });
 
-  /** O resultado só aparece enquanto o rascunho na tela é o modelo gravado que a API avaliou. */
+  /** O resultado e a falha só aparecem enquanto o rascunho na tela é o modelo gravado que a API avaliou. */
   protected readonly resultadoVisivel = computed(() => (this.desatualizado() ? null : this.resultado()));
+  protected readonly erroVisivel = computed(() => (this.desatualizado() ? null : this.erro()));
 
   protected readonly resumo = computed(() => {
     const r = this.resultadoVisivel();
@@ -339,7 +340,7 @@ export class PreVisualizacaoDoModeloComponent {
                   .map((parte) => parte.trim())
                   .filter((parte) => parte !== '')
                   .map((parte) => valorNoDominio(fato.dominio, parte))
-              : texto;
+              : texto.trim();
     // Só separadores, sem valor nenhum, é sem resposta — a lista vazia diria que ele respondeu.
     if (Array.isArray(valor) && valor.length === 0) valor = undefined;
     const invalido = valor === NAO_RECONHECIDO || (Array.isArray(valor) && valor.includes(NAO_RECONHECIDO));
