@@ -1,4 +1,5 @@
 import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { renderizacaoDe } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import type {
@@ -18,7 +19,6 @@ import {
   fatosCitadosPelasExigencias,
   problemasDoFormulario,
   regrasQueDependemDoFato,
-  renderizacaoDe,
 } from './formulario-de-inscricao';
 
 const ID_TITULO = '01960000-0000-7000-0000-0000000000d1';
@@ -140,6 +140,10 @@ describe('o que pode virar campo do formulário', () => {
     expect(renderizacaoDe(IDADE)).toBe('NUMERO');
     expect(renderizacaoDe(MODALIDADE)).toBe('SELECAO_MULTIPLA');
   });
+
+  it('não oferece como campo o fato sem tipo de campo que o colete', () => {
+    expect(ehColetavel(fato({ dominio: 'TEXTO', cardinalidade: 'MULTIVALORADO' }))).toBe(false);
+  });
 });
 
 describe('os fatos que as exigências citam', () => {
@@ -197,6 +201,32 @@ describe('os fatos que as exigências citam', () => {
 });
 
 describe('a combinação automática entre exigência e formulário', () => {
+  /**
+   * A data de nascimento que o desempate por maior idade cita é fato de domínio DATA: montada
+   * como seleção, a API recusaria a gravação do formulário.
+   */
+  it('põe a data de nascimento citada com o campo de data', () => {
+    const NASCIMENTO = fato({
+      codigo: 'DATA_NASCIMENTO',
+      nome: 'Data de nascimento',
+      dominio: 'DATA',
+      valoresDominio: null,
+      binding: 'CAMPO_INSCRICAO:DATA_NASCIMENTO',
+    });
+
+    const resultado = comCamposQueAsExigenciasPressupoem(
+      formularioVazio(),
+      rascunhoCom(),
+      [...CATALOGO, NASCIMENTO],
+      new Set(),
+      ['DATA_NASCIMENTO'],
+    );
+
+    expect(resultado.fatos.map((c) => [c.fatoCodigo, c.tipoRenderizacao])).toEqual([
+      ['DATA_NASCIMENTO', 'DATA'],
+    ]);
+  });
+
   /**
    * O caso que motiva a frente: o título de eleitor não se cobra de estrangeiro nem de mulher,
    * e para isso o certame precisa perguntar nacionalidade e sexo. O administrador não deveria
