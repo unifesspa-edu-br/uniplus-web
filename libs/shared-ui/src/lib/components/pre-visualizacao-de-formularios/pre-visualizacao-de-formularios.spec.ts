@@ -7,8 +7,9 @@ import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import type { ConteudoDoFormulario, FatoDoFormulario, GrupoDoFormulario } from '../editor-de-formulario/formulario-editavel';
 import {
   PreVisualizacaoDeFormulariosComponent,
-  type FormularioAvaliado,
+  type DocumentoAvaliado,
   type GrupoAvaliado,
+  type ResultadoDaPreVisualizacao,
   type SimulacaoDeFormularios,
 } from './pre-visualizacao-de-formularios';
 
@@ -138,16 +139,30 @@ describe('PreVisualizacaoDeFormulariosComponent com grupo repetível', () => {
     etapas: [{ codigo: 'S1', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Família', descricao: null, aviso: null }],
     grupos: [MEMBROS],
   };
-  const avaliado = (grupo: Partial<GrupoAvaliado>): readonly FormularioAvaliado[] => [
-    {
-      finalidade: 'INSCRICAO',
-      itens: [],
-      termos: [],
-      grupos: [{ codigo: 'MEMBROS', etapaCodigo: 'S1', visivel: 'VERDADEIRO', obrigatorio: 'VERDADEIRO', contagemValida: true, ocorrenciaDoCandidatoValida: true, ocorrencias: [], ...grupo }],
-    },
-  ];
+  const avaliado = (grupo: Partial<GrupoAvaliado>, documentos: readonly DocumentoAvaliado[] | null = []): ResultadoDaPreVisualizacao => ({
+    formularios: [
+      {
+        finalidade: 'INSCRICAO',
+        itens: [],
+        termos: [],
+        grupos: [{ codigo: 'MEMBROS', etapaCodigo: 'S1', visivel: 'VERDADEIRO', obrigatorio: 'VERDADEIRO', contagemValida: true, ocorrenciaDoCandidatoValida: true, ocorrencias: [], ...grupo }],
+      },
+    ],
+    documentos,
+  });
+  const RG: DocumentoAvaliado = {
+    exigenciaId: 'e-rg',
+    nome: 'RG do membro',
+    obrigatorio: true,
+    fase: { chave: 'INSCRICAO', nome: 'Inscrição', ordem: 0 },
+    etapa: null,
+    situacao: 'EXIGIDO',
+    grupo: 'MEMBROS',
+    ocorrenciaId: 'MEMBROS#2',
+    alternativas: [],
+  };
 
-  function montar(opcoes: { simulaGrupos?: boolean; resposta?: () => Observable<ApiResult<readonly FormularioAvaliado[]>> } = {}) {
+  function montar(opcoes: { simulaGrupos?: boolean; resposta?: () => Observable<ApiResult<ResultadoDaPreVisualizacao>> } = {}) {
     const enviadas: SimulacaoDeFormularios[] = [];
     const fixture = TestBed.createComponent(PreVisualizacaoDeFormulariosComponent);
     fixture.componentRef.setInput('formularios', [{ finalidade: 'INSCRICAO', nome: 'inscrição', conteudo: inscricao }]);
@@ -270,6 +285,35 @@ describe('PreVisualizacaoDeFormulariosComponent com grupo repetível', () => {
 
     expect(document.activeElement).toBe(host.querySelector('#previa-grupo-MEMBROS-acrescentar'));
     expect(host.querySelector('[aria-live="polite"]')?.textContent?.trim()).toBe('Ocorrência 1 removida de Composição familiar.');
+  });
+
+  it('o documento por membro diz o grupo e a posição da ocorrência, ou que nenhuma foi avaliada', async () => {
+    const semOcorrencia: DocumentoAvaliado = { ...RG, exigenciaId: 'e-cpf', nome: 'CPF do membro', situacao: 'NAO_EXIGIDO', ocorrenciaId: null };
+    const { host, botao, acrescentar, fixture } = montar({ resposta: () => of(ok(avaliado({}, [RG, semOcorrencia]))) });
+    await acrescentar();
+    await acrescentar();
+    botao('Remover a ocorrência 1').click();
+    fixture.detectChanges();
+    await acrescentar();
+
+    botao('Pré-visualizar').click();
+    fixture.detectChanges();
+
+    const ocorrencias = Array.from(host.querySelectorAll('td[data-label="Ocorrência"]'), (celula) => celula.textContent?.trim());
+    expect(ocorrencias, 'MEMBROS#2 é a primeira depois de remover a MEMBROS#1').toEqual([
+      'Composição familiar, ocorrência 1',
+      'Composição familiar — sem ocorrência avaliada',
+    ]);
+  });
+
+  it('sem lista de documentos, a pré-visualização não fala de documentos', async () => {
+    const { host, botao, fixture } = montar({ resposta: () => of(ok(avaliado({}, null))) });
+
+    botao('Pré-visualizar').click();
+    fixture.detectChanges();
+
+    expect(host.textContent, 'o resultado aparece').toContain('Grupo: Composição familiar');
+    expect(host.textContent).not.toContain('Documentos exigidos');
   });
 });
 

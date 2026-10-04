@@ -49,6 +49,7 @@ import {
   remocoesTravadasPor,
 } from './formulario-de-inscricao';
 import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade, rascunhoDifereDoGravado } from './formulario-do-processo';
+import { resultadoDoProcesso } from './pre-visualizacao-do-processo';
 import {
   comAplicacaoDoServidor,
   faseQueAAplicacaoDeclara,
@@ -298,10 +299,10 @@ export class FormularioStepComponent {
   }
 
   /**
-   * A pré-visualização do processo, com as ocorrências simuladas dos grupos repetíveis. A API
-   * avalia a configuração viva do processo que está no servidor, e não a da tela: os formulários,
-   * as derivações e as exigências juntos, e o que foi alterado em qualquer passo só entra depois de
-   * gravado. Nula antes de o processo existir no servidor e em consulta, em que o
+   * A pré-visualização do processo, com as ocorrências simuladas dos grupos repetíveis e os
+   * documentos exigidos. A API avalia a configuração viva do processo que está no servidor, e não a
+   * da tela: os formulários, as derivações e as exigências juntos, e o que foi alterado em qualquer
+   * passo só entra depois de gravado. Os documentos são nomeados pelo processo lido. Nula antes de o processo existir no servidor e em consulta, em que o
    * passo mostra o gravado como texto e não há configuração em edição a conferir.
    */
   readonly avaliarProcesso = computed<AvaliacaoDeFormularios | null>(() => {
@@ -310,7 +311,13 @@ export class FormularioStepComponent {
     return (simulacao) =>
       this.api
         .preVisualizar(processoId, simulacao)
-        .pipe(map((resultado) => (resultado.ok ? { ...resultado, data: resultado.data.formularios } : resultado)));
+        .pipe(
+          map((resultado) =>
+            resultado.ok
+              ? { ...resultado, data: resultadoDoProcesso(resultado.data, this.processoLido(), this.catalogos.fasePorId()) }
+              : resultado,
+          ),
+        );
   });
 
   readonly abaAtiva = computed(() => {

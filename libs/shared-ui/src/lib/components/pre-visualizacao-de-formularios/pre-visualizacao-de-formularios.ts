@@ -6,8 +6,8 @@ import type { Observable } from 'rxjs';
 import { AlertComponent } from '../alert/alert';
 import { etapasEmOrdem, todosOsCampos, type ConteudoDoFormulario, type FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
 import { SpinnerComponent } from '../spinner/spinner';
-import { rotuloDoEstado } from './estado-avaliado';
-import { resumoDaPreVisualizacao } from './leitura-do-resultado';
+import { rotuloDaSituacao, rotuloDoEstado } from './estado-avaliado';
+import { documentosPorFase, letrasDasAlternativas, resumoDaPreVisualizacao, textoDasAlternativas } from './leitura-do-resultado';
 import { RespostaSimuladaComponent, type RespostaDada } from './resposta-simulada';
 import {
   acrescentarOcorrencia,
@@ -20,6 +20,7 @@ import {
   haValorNaoReconhecido,
   noLimite,
   removerOcorrencia,
+  rotuloDaOcorrencia,
   type GrupoSimulavel,
   type OcorrenciaEmSimulacao,
   type OcorrenciaSimulada,
@@ -103,8 +104,34 @@ export interface FormularioAvaliado {
   readonly termos: readonly TermoAvaliado[];
 }
 
+/** Um documento da árvore de exigências diante do perfil simulado, com a fase já nomeada pelo hospedeiro. */
+export interface DocumentoAvaliado {
+  readonly exigenciaId: string;
+  readonly nome: string;
+  readonly obrigatorio: boolean;
+  /** A fase em que o documento é exigido; a ordem é a do cronograma. */
+  readonly fase: { readonly chave: string; readonly nome: string; readonly ordem: number };
+  /** O nome da etapa da fase, quando o documento é exigido numa etapa. */
+  readonly etapa: string | null;
+  /** `EXIGIDO`, `NAO_EXIGIDO` ou `INDETERMINADO`. */
+  readonly situacao: string;
+  /** O código do grupo repetível que a exigência repete por ocorrência; nulo fora de repetição. */
+  readonly grupo: string | null;
+  /** A identidade da ocorrência a que o documento se refere; nula quando nenhuma ocorrência foi avaliada. */
+  readonly ocorrenciaId: string | null;
+  /** Os grupos de alternativas que contêm o documento, do mais externo ao mais interno. */
+  readonly alternativas: readonly { readonly grupoId: string; readonly minimo: number }[];
+}
+
+/** O que a avaliação devolve: os formulários e, quando o hospedeiro tem exigências, os documentos. */
+export interface ResultadoDaPreVisualizacao {
+  readonly formularios: readonly FormularioAvaliado[];
+  /** Nulo quando o hospedeiro não tem exigências documentais — o modelo da Configuração. */
+  readonly documentos: readonly DocumentoAvaliado[] | null;
+}
+
 /** Pede à API a avaliação do que está gravado contra o perfil simulado. */
-export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Observable<ApiResult<readonly FormularioAvaliado[]>>;
+export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Observable<ApiResult<ResultadoDaPreVisualizacao>>;
 
 /**
  * A pré-visualização de formulários gravados (UNI-REQ-0145): quem configura simula as respostas do
@@ -243,8 +270,8 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
       <ui-alert variant="danger" heading="Não foi possível pré-visualizar">{{ falha }}</ui-alert>
     }
 
-    @if (resultadoVisivel(); as avaliados) {
-      @for (avaliado of avaliados; track avaliado.finalidade) {
+    @if (resultadoVisivel(); as resultado) {
+      @for (avaliado of resultado.formularios; track avaliado.finalidade) {
         @if (varios()) {
           <h3 class="pre-visualizacao-formularios__formulario">Formulário de {{ nomeDe(avaliado.finalidade) }}</h3>
         }
@@ -325,6 +352,51 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
               </tbody>
             </table>
           </div>
+        }
+      }
+
+      @if (resultado.documentos; as documentos) {
+        <h3 class="pre-visualizacao-formularios__formulario">Documentos exigidos</h3>
+        <p class="field__hint">
+          O documento pedido por membro aparece uma vez por ocorrência avaliada; sem ocorrência avaliada, aparece uma vez,
+          com o grupo a que se refere.
+        </p>
+        @let letras = letrasDasAlternativas(documentos);
+        @for (fase of documentosPorFase(documentos); track fase.chave) {
+          @let comEtapa = temEtapa(fase.documentos);
+          <div class="table-responsive">
+            <table>
+              <caption>Documentos da fase {{ fase.nome }} diante das respostas simuladas</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Documento</th>
+                  @if (comEtapa) {
+                    <th scope="col">Etapa</th>
+                  }
+                  <th scope="col">Ocorrência</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col">Obrigatoriedade</th>
+                  <th scope="col">Alternativas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (documento of fase.documentos; track $index) {
+                  <tr>
+                    <td data-label="Documento">{{ documento.nome }}</td>
+                    @if (comEtapa) {
+                      <td data-label="Etapa">{{ documento.etapa ?? '—' }}</td>
+                    }
+                    <td data-label="Ocorrência">{{ ocorrenciaDoDocumento(documento) }}</td>
+                    <td data-label="Situação">{{ situacao(documento.situacao) }}</td>
+                    <td data-label="Obrigatoriedade">{{ documento.obrigatorio ? 'Obrigatório' : 'Opcional' }}</td>
+                    <td data-label="Alternativas">{{ textoDasAlternativas(documento, letras) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @empty {
+          <p class="field__hint">Nenhuma exigência documental gravada no processo.</p>
         }
       }
     }
@@ -436,7 +508,7 @@ export class PreVisualizacaoDeFormulariosComponent {
     computation: () => null,
   });
   /** O resultado vale para os formulários e a simulação avaliados: mudar um ou outro o descarta. */
-  protected readonly resultado = linkedSignal<readonly FormularioParaSimular[], readonly FormularioAvaliado[] | null>({
+  protected readonly resultado = linkedSignal<readonly FormularioParaSimular[], ResultadoDaPreVisualizacao | null>({
     source: () => this.formularios(),
     computation: () => null,
   });
@@ -446,8 +518,8 @@ export class PreVisualizacaoDeFormulariosComponent {
   protected readonly erroVisivel = computed(() => (this.desatualizado() ? null : this.erro()));
 
   protected readonly resumo = computed(() => {
-    const avaliados = this.resultadoVisivel();
-    return avaliados === null ? '' : resumoDaPreVisualizacao(avaliados);
+    const resultado = this.resultadoVisivel();
+    return resultado === null ? '' : resumoDaPreVisualizacao(resultado);
   });
 
   /** A definição de cada grupo dos formulários, pelo código — único no processo inteiro. */
@@ -458,6 +530,9 @@ export class PreVisualizacaoDeFormulariosComponent {
   protected readonly estadoDoGrupo = estadoDoGrupo;
   protected readonly noLimite = noLimite;
   protected readonly ehDoCandidato = ehDoCandidato;
+  protected readonly documentosPorFase = documentosPorFase;
+  protected readonly letrasDasAlternativas = letrasDasAlternativas;
+  protected readonly textoDasAlternativas = textoDasAlternativas;
 
   protected idDoFato(fato: FatoSimulado): string {
     return `${this.idBase()}-simulacao-${fato.codigo}`;
@@ -465,6 +540,22 @@ export class PreVisualizacaoDeFormulariosComponent {
 
   protected estado(token: string): string {
     return rotuloDoEstado(token);
+  }
+
+  protected situacao(situacao: string): string {
+    return rotuloDaSituacao(situacao);
+  }
+
+  protected temEtapa(documentos: readonly DocumentoAvaliado[]): boolean {
+    return documentos.some((documento) => documento.etapa !== null);
+  }
+
+  /** A ocorrência que o documento cita, pelo grupo e pela posição; o documento por membro sem ocorrência avaliada diz o grupo. */
+  protected ocorrenciaDoDocumento(documento: DocumentoAvaliado): string {
+    if (documento.grupo === null) return '—';
+    const rotulo = this.grupoDe(documento.grupo)?.rotulo ?? documento.grupo;
+    if (documento.ocorrenciaId === null) return `${rotulo} — sem ocorrência avaliada`;
+    return rotuloDaOcorrencia(this.ocorrencias(), documento.grupo, rotulo, documento.ocorrenciaId) ?? `${rotulo}, ${documento.ocorrenciaId}`;
   }
 
   protected nomeDe(finalidade: string): string {
