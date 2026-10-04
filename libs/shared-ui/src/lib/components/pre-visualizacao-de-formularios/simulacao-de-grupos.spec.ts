@@ -4,6 +4,7 @@ import {
   declararSemOcorrencia,
   gruposDoEnvio,
   removerOcorrencia,
+  rotuloDaOcorrencia,
   type GrupoSimulavel,
   type SimulacaoDosGrupos,
 } from './simulacao-de-grupos';
@@ -39,6 +40,12 @@ describe('simulação das ocorrências de grupo', () => {
 
   it('sem máximo, acrescenta quantas ocorrências o candidato informaria', () => {
     expect(gruposDoEnvio(vezes(nenhum, BENS, 12))?.['BENS']).toHaveLength(12);
+  });
+
+  it('a ocorrência é nomeada pela posição atual no grupo, e não pela identidade', () => {
+    const semAPrimeira = removerOcorrencia(vezes(nenhum, MEMBROS, 2), 'MEMBROS', 1);
+
+    expect(rotuloDaOcorrencia(semAPrimeira, 'MEMBROS', 'Composição familiar', 'MEMBROS#2')).toBe('Composição familiar, ocorrência 1');
   });
 
   it('remover a última ocorrência devolve o grupo a não respondido', () => {

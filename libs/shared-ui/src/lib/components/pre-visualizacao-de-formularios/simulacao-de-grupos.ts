@@ -146,6 +146,18 @@ export function gruposDoEnvio(estado: SimulacaoDosGrupos): Readonly<Record<strin
   );
 }
 
+/**
+ * Como a tela nomeia a ocorrência que um documento cita: pela posição atual no grupo, e não pela
+ * identidade, que é interna; e como a do próprio candidato, quando o parentesco simulado o diz.
+ * Nula quando o grupo já não tem a ocorrência.
+ */
+export function rotuloDaOcorrencia(estado: SimulacaoDosGrupos, codigo: string, rotuloDoGrupo: string, id: string): string | null {
+  const ocorrencias = estadoDoGrupo(estado, codigo).ocorrencias ?? [];
+  const posicao = ocorrencias.findIndex((ocorrencia) => idDaOcorrencia(codigo, ocorrencia.sequencia) === id);
+  if (posicao < 0) return null;
+  return `${rotuloDoGrupo}, ocorrência ${posicao + 1}${ehDoCandidato(ocorrencias[posicao]) ? ' (o próprio candidato)' : ''}`;
+}
+
 /** Se a resposta simulada diz que a ocorrência é a do próprio candidato. */
 export function ehDoCandidato(ocorrencia: OcorrenciaEmSimulacao): boolean {
   return ocorrencia.respostas.get(FATO_PARENTESCO) === PROPRIO_CANDIDATO;

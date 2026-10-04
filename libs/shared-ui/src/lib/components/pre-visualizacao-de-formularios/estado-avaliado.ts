@@ -9,3 +9,10 @@ const ESTADOS: Readonly<Record<string, string>> = {
 export function rotuloDoEstado(token: string): string {
   return ESTADOS[token] ?? token;
 }
+
+/** A situação do documento (`EXIGIDO`, `NAO_EXIGIDO` ou `INDETERMINADO`); o indeterminado se lê como o dos campos. */
+export function rotuloDaSituacao(situacao: string): string {
+  if (situacao === 'EXIGIDO') return 'Exigido';
+  if (situacao === 'NAO_EXIGIDO') return 'Não exigido';
+  return rotuloDoEstado(situacao);
+}

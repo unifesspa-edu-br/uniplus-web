@@ -11,8 +11,8 @@ import {
 /**
  * A pré-visualização do modelo GRAVADO (UNI-REQ-0145): o administrador simula as respostas aos
  * campos do formulário e aos pressupostos e vê, por campo e por termo, o que o candidato veria.
- * A API do modelo não aceita ocorrências de grupo repetível nem devolve os grupos avaliados: a
- * simulação de grupos fica para o processo.
+ * A API do modelo não aceita ocorrências de grupo repetível nem devolve os grupos avaliados, e o
+ * modelo não tem exigências documentais: os grupos e os documentos ficam para o processo.
  */
 @Component({
   selector: 'cfg-pre-visualizacao-do-modelo',
@@ -58,7 +58,7 @@ export class PreVisualizacaoDoModeloComponent {
         etapasConcluidas: simulacao.etapasConcluidas.map((concluida) => concluida.etapa),
         pressupostos: simulacao.pressupostos,
       })
-      .pipe(map((resultado) => (resultado.ok ? { ...resultado, data: [{ finalidade: MODELO, ...resultado.data, grupos: [] }] } : resultado)));
+      .pipe(map((resultado) => (resultado.ok ? { ...resultado, data: { formularios: [{ finalidade: MODELO, ...resultado.data, grupos: [] }], documentos: null } } : resultado)));
 }
 
 const MODELO = 'MODELO';

@@ -214,6 +214,34 @@ describe('FormularioStepComponent', () => {
     expect(host.textContent).toContain('Quem já cursa pelo PARFOR não pode se inscrever.');
   });
 
+  it('mostra os documentos exigidos na fase do cronograma gravado, com a situação de cada um', async () => {
+    comProcessoLido();
+    (Array.from(host.querySelectorAll('button')).find((botao) => botao.textContent?.trim() === 'Pré-visualizar') as HTMLButtonElement).click();
+
+    controller.expectOne(`${ROTA_PROCESSO}/pre-visualizacao`).flush({
+      formularios: [{ finalidade: 'INSCRICAO', itens: [], grupos: [], termos: [] }],
+      documentos: [
+        {
+          exigenciaId: 'e-rg',
+          tipoDocumentoCodigo: 'RG',
+          tipoDocumentoNome: 'Documento de identidade',
+          obrigatorio: true,
+          faseId: 'F-INSCRICAO',
+          etapaId: null,
+          situacao: 'EXIGIDO',
+          entidadeId: null,
+          alternativas: [],
+        },
+      ],
+    });
+    await proximoPasso();
+    fixture.detectChanges();
+
+    const tabela = Array.from(host.querySelectorAll('table')).find((elemento) => elemento.querySelector('caption')?.textContent?.includes('Documentos da fase'));
+    expect(tabela?.querySelector('caption')?.textContent?.trim()).toBe('Documentos da fase INSCRICAO diante das respostas simuladas');
+    expect(tabela?.querySelector('td[data-label="Situação"]')?.textContent?.trim()).toBe('Exigido');
+  });
+
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {
     expect(store.draft().formulario.faseCodigo).toBe('');
     expect(fixture.componentInstance.faseDaInscricao()).toBe('INSCRICAO');
