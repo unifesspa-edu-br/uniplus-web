@@ -236,8 +236,12 @@ export class PreVisualizacaoDoModeloComponent {
     const doFormulario = new Set(todosOsCampos(conteudo).map((campo) => campo.fatoCodigo));
     const pressupostos = new Set(conteudo.pressupostos ?? []);
     const porCodigo = new Map(this.catalogo().map((fato) => [fato.codigo, fato]));
+    // O campo com restrição ou impedimento também: é a resposta dele que a restrição confere.
+    const comRegraPropria = todosOsCampos(conteudo)
+      .filter((campo) => (campo.restricoes?.length ?? 0) > 0 || campo.impedimento != null)
+      .map((campo) => campo.fatoCodigo);
     // Só o que o candidato responde: o derivado citado é resolvido pela API a partir das respostas.
-    return fatosCitadosPelasRegras(conteudo)
+    return [...new Set([...fatosCitadosPelasRegras(conteudo), ...comRegraPropria])]
       .filter((codigo) => doFormulario.has(codigo) || pressupostos.has(codigo))
       .flatMap((codigo) => {
         const fato = porCodigo.get(codigo);
