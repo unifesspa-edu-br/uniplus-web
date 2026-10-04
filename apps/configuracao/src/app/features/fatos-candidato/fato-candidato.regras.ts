@@ -1,4 +1,4 @@
-import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import type { FatoCandidatoDto, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 
 /**
  * As regras do catálogo de fatos que a tela espelha da API (ADR-0136). A API continua a autoridade
@@ -159,6 +159,37 @@ export function fatosCitaveisPelaRegra<T extends Pick<FatoCandidatoDto, 'codigo'
   codigoDoDerivado: string,
 ): readonly T[] {
   return catalogo.filter((fato) => fato.ativo && fato.escopo === 'CANDIDATO' && fato.codigo !== codigoDoDerivado);
+}
+
+/**
+ * Os fatos de membro que um agregado de grupo pode resumir: os declarados ativos de membro de grupo,
+ * sim ou não ou lista de valores — só esses dois domínios a API sabe agregar.
+ */
+export function fatosDeMembroAgregaveis<T extends Pick<FatoCandidatoView, 'ativo' | 'escopo' | 'origem' | 'dominio'>>(
+  catalogo: readonly T[],
+): readonly T[] {
+  return catalogo.filter(
+    (fato) =>
+      fato.ativo && fato.escopo === 'MEMBRO_GRUPO' && fato.origem === 'DECLARADO' && ['BOOLEANO', 'CATEGORICO'].includes(fato.dominio),
+  );
+}
+
+/**
+ * O que o agregado diz do grupo, pelo domínio do fato de membro: o booleano vira "existe membro
+ * que…" e o categórico, os valores presentes no grupo.
+ */
+export function resumoDoAgregado(dominioDoMembro: string): string {
+  return dominioDoMembro === 'CATEGORICO'
+    ? 'O agregado será uma lista com os valores que aparecem entre os membros do grupo.'
+    : 'O agregado será "sim" quando existir no grupo ao menos um membro com resposta "sim".';
+}
+
+/** A ação de ativação que o fato oferece: o fato de sistema não se desativa nem se reativa. */
+export type AcaoDeAtivacao = 'DESATIVAR' | 'REATIVAR';
+
+export function acaoDeAtivacao(fato: Pick<FatoCandidatoDto, 'sistema' | 'ativo'>): AcaoDeAtivacao | null {
+  if (fato.sistema) return null;
+  return fato.ativo ? 'DESATIVAR' : 'REATIVAR';
 }
 
 /**

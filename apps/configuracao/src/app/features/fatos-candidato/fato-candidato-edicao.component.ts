@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -150,10 +150,16 @@ interface RegraEmEdicao {
                         <ui-tag [variant]="valor.ativo ? 'success' : 'neutral'">{{ valor.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                       </td>
                       <td class="table-responsive__actions" data-label="Ações">
-                        @if (valor.ativo && temValores()) {
-                          <button type="button" class="btn btn--tertiary btn--sm" [disabled]="ocupado()" (click)="desativarValor(valor.codigo)">
-                            Desativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
-                          </button>
+                        @if (temValores()) {
+                          @if (valor.ativo) {
+                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="ocupado()" (click)="desativarValor(valor.codigo)">
+                              Desativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                            </button>
+                          } @else {
+                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="ocupado()" (click)="reativarValor(valor.codigo)">
+                              Reativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                            </button>
+                          }
                         }
                       </td>
                     </tr>
@@ -270,6 +276,7 @@ export class FatoCandidatoEdicaoComponent {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  private readonly injector = inject(Injector);
 
   /** O fato em edição. */
   readonly id = input.required<string>();
@@ -354,6 +361,12 @@ export class FatoCandidatoEdicaoComponent {
   private chaveDescritivo = idempotencyKey.create();
   private chaveValor = idempotencyKey.create();
   private chaveRegras = idempotencyKey.create();
+  private chaveReativacaoDeValor = idempotencyKey.create();
+  /**
+   * O botão que recebe o foco quando o fato recarregado chegar: desativar ou reativar um valor
+   * troca o botão da linha, e o foco iria para o corpo da página.
+   */
+  private focoAposRecarga: string | null = null;
 
   protected readonly descritivo = new FormGroup({
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
@@ -393,6 +406,7 @@ export class FatoCandidatoEdicaoComponent {
         this.secoesCopiadasDe = fato.id;
         this.recopiarDescritivo = false;
         this.recopiarRegras = false;
+        this.focarAposRecarga();
       });
     });
   }
@@ -443,7 +457,32 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected desativarValor(codigo: string): void {
-    this.executar(this.api.desativarValor(this.id(), codigo), `Valor ${codigo} desativado`);
+    this.executar(this.api.desativarValor(this.id(), codigo), `Valor ${codigo} desativado`, () => {
+      this.focoAposRecarga = this.idDaAcaoDoValor(codigo);
+    });
+  }
+
+  /** Reativa um valor desativado: condições novas voltam a poder citá-lo. */
+  protected reativarValor(codigo: string): void {
+    this.executar(
+      this.api.reativarValor(this.id(), codigo, withIdempotencyKey(this.chaveReativacaoDeValor)),
+      `Valor ${codigo} reativado`,
+      () => {
+        this.chaveReativacaoDeValor = idempotencyKey.create();
+        this.focoAposRecarga = this.idDaAcaoDoValor(codigo);
+      },
+    );
+  }
+
+  protected idDaAcaoDoValor(codigo: string): string {
+    return `cfg-fato-valor-${codigo}-acao`;
+  }
+
+  private focarAposRecarga(): void {
+    const id = this.focoAposRecarga;
+    if (id === null) return;
+    this.focoAposRecarga = null;
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
   }
 
   protected acrescentarRegra(): void {
@@ -565,6 +604,7 @@ export class FatoCandidatoEdicaoComponent {
         this.chaveDescritivo = idempotencyKey.create();
         this.chaveValor = idempotencyKey.create();
         this.chaveRegras = idempotencyKey.create();
+        this.chaveReativacaoDeValor = idempotencyKey.create();
       }
       if (!aoRecusar(resultado.problem)) {
         this.erro.set(this.problemI18n.resolve(resultado.problem).title);

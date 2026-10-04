@@ -77,6 +77,27 @@ describe('FatoCandidatoEdicaoComponent', () => {
     expect(administrador.textContent).toContain('Desativar');
   });
 
+  it('o valor desativado se reativa com chave de idempotência, e o foco volta ao botão da linha', async () => {
+    const comDesativado = { ...corRaca(false), valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: false }] };
+    const tela = await carregar(comDesativado);
+    const reativar = tela.querySelector<HTMLButtonElement>('#cfg-fato-valor-PRETA-acao');
+    expect(reativar?.textContent).toContain('Reativar');
+
+    reativar?.click();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}/valores/PRETA/ativacao`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.headers.has('Idempotency-Key')).toBe(true);
+    post.flush(null, { status: 204, statusText: 'No Content' });
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`).flush(corRaca(false));
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+
+    expect(document.activeElement?.id).toBe('cfg-fato-valor-PRETA-acao');
+    expect(document.activeElement?.textContent).toContain('Desativar');
+  });
+
   it('CA-05: a regra incompleta é barrada na tela, e a completa vai à API com o predicado aninhado', async () => {
     const perfil: FatoCandidatoDto = {
       ...corRaca(false),
