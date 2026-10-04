@@ -89,8 +89,8 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
  * formulário do processo, na Seleção.
  *
  * Não guarda o conteúdo: recebe e devolve o conteúdo inteiro a cada mudança. Edita também os
- * termos, os pressupostos, as restrições e o impedimento de cada campo. Ainda viajam como vieram os
- * grupos e as restrições de opções condicionadas ou formadas por respostas anteriores.
+ * termos, os pressupostos, os grupos repetíveis, as restrições e o impedimento de cada campo. Só as
+ * restrições de opções condicionadas ou formadas por respostas anteriores ainda viajam como vieram.
  *
  * Acessibilidade: cada etapa é uma região nomeada pelo título; mover, acrescentar e remover são
  * anunciados numa região de status visível, que também mostra a recusa; o foco volta ao botão
