@@ -535,11 +535,50 @@ describe('FormularioStepComponent', () => {
 
       const validacao = fixture.componentInstance.validate();
       expect(validacao.valid).toBe(false);
-      expect(validacao.messages?.join(' ')).toContain('Não foi possível confirmar se o modelo foi aplicado ao formulário de inscrição');
+      expect(validacao.messages?.join(' ')).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado ao formulário de inscrição');
       fixture.detectChanges();
       const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
-      expect(naAba, 'a aba não desmente a trava').toContain('Não foi possível confirmar se o modelo foi aplicado');
+      expect(naAba, 'a aba não desmente a trava').toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
       expect(naAba).not.toContain('não foi aplicado');
+    });
+
+    it('sem saber se a cópia aconteceu, só o mesmo modelo pode ser aplicado de novo', async () => {
+      fixture.componentInstance.modelos.set(new Map([['INSCRICAO', [{ id: 'insc', nome: 'Inscrição de Medicina' }, { id: 'outro', nome: 'Outra inscrição' }]]]) as never);
+      const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(
+        { type: 'about:blank', title: 'Serviço indisponível.', status: 503, traceId: '00000000000000000000000000000007' },
+        { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
+      );
+      await aplicacao;
+
+      fixture.componentInstance.escolherModelo('INSCRICAO', 'outro');
+      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+      expect(fixture.componentInstance.aplicacaoPendente(), 'outro modelo trocaria a chave, e a primeira cópia ainda pode chegar').toBeNull();
+
+      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+      expect(fixture.componentInstance.aplicacaoPendente()?.modelo.id).toBe('insc');
+    });
+
+    it('com a cópia confirmada e a releitura falhando, a aba diz que o modelo foi aplicado e pede recarregar', async () => {
+      const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(relato('INSCRICAO'));
+      await proximoPasso();
+      controller.expectOne(ROTA_PROCESSO).flush(
+        { type: 'about:blank', title: 'Serviço indisponível.', status: 503, traceId: '00000000000000000000000000000008' },
+        { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
+      );
+      await aplicacao;
+      fixture.detectChanges();
+
+      const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
+      expect(naAba).toContain('foi aplicado ao formulário de inscrição, mas não foi possível reler o processo. Recarregue o processo');
+      expect(naAba).not.toContain('Não foi possível confirmar');
+      expect(fixture.componentInstance.validate().valid).toBe(false);
     });
 
     it('a troca de processo descarta a aplicação que aguardava confirmação', () => {

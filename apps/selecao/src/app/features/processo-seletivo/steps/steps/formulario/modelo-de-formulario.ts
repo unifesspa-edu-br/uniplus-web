@@ -144,3 +144,22 @@ export function resumoDaAplicacao(
   return frases;
 }
 
+
+/**
+ * A aplicação que ficou sem desfecho conhecido no rascunho. Sem confirmação, o envio falhou por
+ * rede ou 5xx e a cópia pode ter acontecido: só a nova tentativa do MESMO modelo, idempotente pela
+ * mesma chave, resolve — outro modelo trocaria a chave, e a primeira cópia ainda poderia chegar
+ * por cima dele. Sem releitura, a cópia aconteceu e só recarregar o processo traz o que ela fez.
+ */
+export interface AplicacaoEmAberto {
+  readonly modeloId: string;
+  readonly modeloNome: string;
+  readonly copiaConfirmada: boolean;
+}
+
+/** O que a aba e a trava do passo dizem da aplicação em aberto, com o que resolve cada caso. */
+export function textoDaAplicacaoEmAberto(nomeDaFinalidade: string, emAberto: AplicacaoEmAberto): string {
+  return emAberto.copiaConfirmada
+    ? `O modelo “${emAberto.modeloNome}” foi aplicado ao formulário de ${nomeDaFinalidade}, mas não foi possível reler o processo. Recarregue o processo antes de continuar, para não gravar por cima da cópia.`
+    : `Não foi possível confirmar se o modelo “${emAberto.modeloNome}” foi aplicado ao formulário de ${nomeDaFinalidade}. Aplique o mesmo modelo de novo ou recarregue o processo antes de continuar, para não gravar por cima da cópia.`;
+}

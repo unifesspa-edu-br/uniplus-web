@@ -6,6 +6,7 @@ import { STEP_LABELS } from './processo-seletivo.data';
 import { exigenciasVazias } from './shared/exigencias-documentais';
 import { desempateDe, hidratarDraft } from './shared/hidratacao';
 import type { MotivoDaReleitura } from './shared/motivo-da-releitura';
+import type { AplicacaoEmAberto } from './steps/formulario/modelo-de-formulario';
 import {
   mesmoQuadro,
   quadroCongelado,
@@ -191,11 +192,10 @@ export class ProcessoSeletivoStore {
   readonly camposPostosPelasExigencias = signal<ReadonlySet<string>>(new Set());
 
   /**
-   * As finalidades em que a aplicação de um modelo pode ter acontecido sem confirmação — falha de
-   * rede ou 5xx no envio, ou a releitura que falhou depois da cópia. O rascunho ainda é o de antes:
+   * As aplicações de modelo sem desfecho conhecido, por finalidade. O rascunho ainda é o de antes:
    * gravá-lo passaria por cima da cópia. Fica no store para sobreviver à troca de passo.
    */
-  readonly aplicacoesDeModeloEmAberto = signal<ReadonlySet<string>>(new Set());
+  readonly aplicacoesDeModeloEmAberto = signal<ReadonlyMap<string, AplicacaoEmAberto>>(new Map());
 
   readonly documentosParaEscolha = signal<readonly DocumentoEditalDto[]>([]);
 
@@ -544,7 +544,7 @@ export class ProcessoSeletivoStore {
     this.falhaDeLeitura.set(null);
     this.documentosParaEscolha.set([]);
     this.camposPostosPelasExigencias.set(new Set());
-    this.aplicacoesDeModeloEmAberto.set(new Set());
+    this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
     this.recusaDaResolucaoPesoAreaEnem.set(null);
     this.recusaPeloDesempatePorArea.set(null);

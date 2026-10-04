@@ -51,6 +51,7 @@ import {
   resumoDaAplicacao,
   type ModeloOferecido,
   type ProcessoAposAplicacao,
+  textoDaAplicacaoEmAberto,
 } from './modelo-de-formulario';
 import {
   abaPelaTecla,
@@ -526,7 +527,18 @@ export class FormularioStepComponent {
   pedirAplicacao(finalidade: string): void {
     const escolhido = this.modelosEscolhidos().get(finalidade);
     const modelo = this.modelos().get(finalidade)?.find((oferecido) => oferecido.id === escolhido);
-    if (modelo !== undefined) this.aplicacaoPendente.set({ finalidade, modelo });
+    if (modelo === undefined) return;
+    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
+    if (emAberto !== undefined && (emAberto.copiaConfirmada || emAberto.modeloId !== modelo.id)) {
+      this.mostrarRecusaDaAplicacao(finalidade, textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto));
+      return;
+    }
+    this.aplicacaoPendente.set({ finalidade, modelo });
+  }
+
+  private mostrarRecusaDaAplicacao(finalidade: string, texto: string): void {
+    this.recusasDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, texto]]));
+    this.anuncio.set(texto);
   }
 
   cancelarAplicacao(): void {
@@ -575,18 +587,18 @@ export class FormularioStepComponent {
     if (geracao !== this.store.geracao()) return;
 
     if (desfecho.ok) {
-      this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Set([...atuais].filter((outra) => outra !== finalidade)));
-    } else if (desfecho.emAberto) {
-      this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Set([...atuais, finalidade]));
+      this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, finalidade));
+    } else if (desfecho.copiaConfirmada !== null) {
+      const emAberto = { modeloId: modelo.id, modeloNome: modelo.nome, copiaConfirmada: desfecho.copiaConfirmada };
+      this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Map([...atuais, [finalidade, emAberto]]));
     }
     if (!desfecho.ok) {
-      // Em aberto, a cópia pode ter acontecido: dizer "não foi aplicado" desmentiria a trava do passo.
-      const desfechoDito = desfecho.emAberto
-        ? `Não foi possível confirmar se o modelo foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}.`
-        : `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}.`;
-      const texto = `${desfechoDito} ${desfecho.recusa}`;
-      this.recusasDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, texto]]));
-      this.anuncio.set(texto);
+      const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
+      const texto =
+        desfecho.copiaConfirmada === null || emAberto === undefined
+          ? `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${desfecho.recusa}`
+          : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
+      this.mostrarRecusaDaAplicacao(finalidade, texto);
       return;
     }
 
@@ -614,26 +626,22 @@ export class FormularioStepComponent {
    */
   private async aplicarNoServidor(processoId: string, finalidade: string, modeloId: string, faseDaAba: string): Promise<DesfechoDaAplicacao> {
     const antes = await firstValueFrom(this.api.obter(processoId));
-    if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.', emAberto: false };
+    if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.', copiaConfirmada: null };
     const fase = faseQueAAplicacaoDeclara(formularioDaFinalidade(antes.data.formularios, finalidade), faseDaAba, antes.data.cronogramaFases);
     if (fase.declarar && fase.faseId === null) {
       return {
         ok: false,
         recusa: `O formulário de ${nomeDaFinalidade(finalidade)} precisa de uma fase do cronograma gravado antes de partir de um modelo. Escolha a fase nesta aba; se ela é nova, grave antes o passo Cronograma.`,
-        emAberto: false,
+        copiaConfirmada: null,
       };
     }
 
     const aplicacao = await this.cadastro.aplicarModeloDeFormulario(processoId, modeloId);
-    if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem), emAberto: aplicacao.inconclusiva };
+    if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem), copiaConfirmada: aplicacao.inconclusiva ? false : null };
 
     const depois = await firstValueFrom(this.api.obter(processoId));
     if (!isApiOk(depois)) {
-      return {
-        ok: false,
-        recusa: 'O modelo foi aplicado, mas não foi possível reler o processo. Recarregue a página antes de continuar, para não gravar por cima da cópia.',
-        emAberto: true,
-      };
+      return { ok: false, recusa: '', copiaConfirmada: true };
     }
 
     let avisoDaFase: string | null = null;
@@ -757,9 +765,8 @@ export class FormularioStepComponent {
           (aba) =>
             `O processo não cobra taxa de inscrição, e o formulário de ${aba.nome} só existe quando há cobrança. Remova o formulário, ou volte a cobrar a taxa em "Pagamento".`,
         ),
-      ...[...this.store.aplicacoesDeModeloEmAberto()].map(
-        (finalidade) =>
-          `Não foi possível confirmar se o modelo foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}, e gravar agora passaria por cima da cópia. Aplique o modelo de novo ou recarregue o processo.`,
+      ...[...this.store.aplicacoesDeModeloEmAberto()].map(([finalidade, emAberto]) =>
+        textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
       ),
       ...problemasDoFormulario(draft.formulario, draft.documentos, new Set(draft.cronograma.fases.map((fase) => fase.codigo))),
       ...this.camposSemValoresOfertados().map(
@@ -911,8 +918,11 @@ export class FormularioStepComponent {
 
 /** O desfecho da aplicação de um modelo: a recusa a mostrar, ou o que o servidor relatou e ficou tendo. */
 type DesfechoDaAplicacao =
-  /** `emAberto`: o servidor pode ter feito a cópia, e o rascunho ainda é o de antes. */
-  | { readonly ok: false; readonly recusa: string; readonly emAberto: boolean }
+  /**
+   * `copiaConfirmada`: nulo quando a recusa é definitiva e nada foi copiado; `false` quando a cópia
+   * pode ter acontecido; `true` quando aconteceu e a releitura falhou.
+   */
+  | { readonly ok: false; readonly recusa: string; readonly copiaConfirmada: boolean | null }
   | {
       readonly ok: true;
       readonly relato: AplicacaoDeModeloDto;
