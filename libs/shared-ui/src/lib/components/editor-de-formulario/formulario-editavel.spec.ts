@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   acrescentarCampo,
+  acrescentarCampoAoGrupo,
+  acrescentarGrupo,
+  comCandidatoComoMembro,
+  fatosCitaveisPeloCampoDoGrupo,
+  moverCampoNoGrupo,
+  moverEntrada,
+  removerCampoDoGrupo,
   acrescentarItem,
   alternativaSemOProprioCampo,
   comImpedimento,
@@ -25,6 +32,7 @@ import {
   type ConteudoDoFormulario,
   type EtapaDoFormulario,
   type FatoDoFormulario,
+  type GrupoDoFormulario,
   type ItemDoFormulario,
 } from './formulario-editavel';
 
@@ -445,5 +453,145 @@ describe('restrições, município e impedimento', () => {
     });
 
     expect(quantidadeNoTeto(atual)).toBe(4);
+  });
+});
+
+describe('grupos repetíveis', () => {
+  const membro = (codigo: string, extra: Partial<FatoDoFormulario> = {}): FatoDoFormulario => fato(codigo, { escopo: 'MEMBRO_GRUPO', ...extra });
+  const parentesco = membro('PARENTESCO', { dominio: 'CATEGORICO', valoresDominio: ['PROPRIO_CANDIDATO', 'MAE'] });
+
+  function grupo(extra: Partial<GrupoDoFormulario> = {}): GrupoDoFormulario {
+    return {
+      codigo: 'FAMILIA', ordem: 1, rotulo: 'Composição familiar', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
+      obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, incluiCandidato: false,
+      subitens: [item('RENDA', 0, 'S1', { etapaCodigo: null }), item('IDADE', 1, 'S1', { etapaCodigo: null })],
+      ...extra,
+    };
+  }
+
+  it('o grupo nasce com o primeiro campo, sem seção própria, e com código do rótulo que não colide com fato', () => {
+    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
+
+    const resultado = acrescentarGrupo(atual, 'Renda', 'S1', membro('RENDA'), [fato('RENDA'), membro('RENDA')]);
+
+    const novo = resultado.ok ? resultado.conteudo.grupos?.[0] : undefined;
+    expect(novo?.codigo, 'RENDA é código de fato').toBe('RENDA_2');
+    expect(novo?.subitens.map((c) => [c.fatoCodigo, c.etapaCodigo])).toEqual([['RENDA', null]]);
+    expect(novo?.ordem).toBe(1);
+  });
+
+  it('o grupo sem rótulo é recusado antes de existir', () => {
+    expect(acrescentarGrupo(conteudo({ etapas: [secao('S1', 0)] }), '  ', 'S1', membro('RENDA'), []).ok).toBe(false);
+  });
+
+  it('incluir o candidato põe o parentesco primeiro, obrigatório, sem exibição e com o próprio candidato entre as opções fixas', () => {
+    const comParentescoCondicional = grupo({
+      subitens: [
+        item('RENDA', 0, 'S1', { etapaCodigo: null }),
+        item('PARENTESCO', 1, 'S1', {
+          etapaCodigo: null,
+          obrigatoriedade: 'NUNCA',
+          precondicao: exibidoQuando('X'),
+          restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['MAE'] }] }],
+        }),
+      ],
+    });
+
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [comParentescoCondicional] }), comParentescoCondicional, true, [parentesco], new Map());
+
+    const ligado = resultado.ok ? resultado.grupo : undefined;
+    expect(ligado?.minimo).toBe(1);
+    expect(ligado?.subitens[0]).toMatchObject({ fatoCodigo: 'PARENTESCO', ordem: 0, obrigatoriedade: 'SEMPRE', precondicao: null });
+    expect(ligado?.subitens[0].restricoes?.[0].entradas?.[0].valores).toEqual(['MAE', 'PROPRIO_CANDIDATO']);
+  });
+
+  it('incluir o candidato acrescenta o parentesco quando o grupo não o tem', () => {
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, [parentesco], new Map());
+
+    expect(resultado.ok && resultado.grupo.subitens.map((c) => c.fatoCodigo)).toEqual(['PARENTESCO', 'RENDA', 'IDADE']);
+  });
+
+  it('recusa remover o último campo e o parentesco do grupo que inclui o candidato', () => {
+    const nomes = new Map<string, string>();
+    expect(removerCampoDoGrupo(grupo({ subitens: [item('RENDA', 0, 'S1')] }), 'RENDA', nomes).ok).toBe(false);
+    const comCandidato = grupo({ incluiCandidato: true, subitens: [item('PARENTESCO', 0, 'S1'), item('RENDA', 1, 'S1')] });
+    expect(removerCampoDoGrupo(comCandidato, 'PARENTESCO', nomes).ok).toBe(false);
+    expect(removerCampoDoGrupo(comCandidato, 'RENDA', nomes).ok).toBe(true);
+  });
+
+  it('recusa mover dentro do grupo o campo que passaria a citar outro que vem depois', () => {
+    const citante = grupo({ subitens: [item('RENDA', 0, 'S1'), item('IDADE', 1, 'S1', { precondicao: exibidoQuando('RENDA') })] });
+
+    expect(moverCampoNoGrupo(citante, 'IDADE', -1, new Map()).ok).toBe(false);
+    expect(moverCampoNoGrupo(grupo(), 'IDADE', -1, new Map()).ok).toBe(true);
+  });
+
+  it('o campo do grupo cita o conhecido antes do grupo e os campos anteriores da ocorrência', () => {
+    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1'), item('DEPOIS', 2, 'S1')], grupos: [grupo()] });
+
+    expect([...fatosCitaveisPeloCampoDoGrupo(atual, grupo(), 'IDADE')].sort()).toEqual(['A', 'RENDA']);
+  });
+
+  it('o grupo chega ao teto de trinta campos', () => {
+    const cheio = grupo({ subitens: Array.from({ length: 30 }, (_, i) => item(`C${i}`, i, 'S1')) });
+    expect(acrescentarCampoAoGrupo(conteudo({ grupos: [cheio] }), cheio, membro('NOVO')).ok).toBe(false);
+  });
+
+  it('o campo novo vai ao fim do grupo mesmo quando a ordem gravada começa acima de zero', () => {
+    const gravado = grupo({ subitens: [item('RENDA', 1, 'S1'), item('IDADE', 2, 'S1')] });
+
+    const resultado = acrescentarCampoAoGrupo(conteudo({ grupos: [gravado] }), gravado, membro('NOVO'));
+
+    expect(resultado.ok && resultado.grupo.subitens.map((c) => [c.fatoCodigo, c.ordem])).toEqual([
+      ['RENDA', 0],
+      ['IDADE', 1],
+      ['NOVO', 2],
+    ]);
+  });
+
+  it('o campo do grupo respeita também o teto do formulário inteiro', () => {
+    const itens = Array.from({ length: 197 }, (_, i) => item(`I${i}`, i, 'S1'));
+    const noTeto = conteudo({ itens, grupos: [grupo()] });
+
+    expect(acrescentarCampoAoGrupo(noTeto, grupo(), membro('NOVO')).ok, '197 itens + grupo + 2 campos = 200').toBe(false);
+  });
+
+  it('não repete o parentesco que já é campo de outro grupo do formulário', () => {
+    const outro = grupo({ codigo: 'OUTRO', subitens: [item('PARENTESCO', 0, 'S1')] });
+
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [outro, grupo()] }), grupo(), true, [parentesco], new Map());
+
+    expect(resultado.ok).toBe(false);
+  });
+
+  it('recusa pôr o parentesco em primeiro quando ele cita um campo anterior do grupo', () => {
+    const citante = grupo({
+      subitens: [item('RENDA', 0, 'S1'), item('PARENTESCO', 1, 'S1', { precondicao: null, restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: exibidoQuando('RENDA'), valores: ['MAE'] }] }] })],
+    });
+
+    expect(comCandidatoComoMembro(conteudo({ grupos: [citante] }), citante, true, [parentesco], new Map()).ok).toBe(false);
+  });
+
+  it('o grupo troca de lugar com o item vizinho como qualquer entrada da seção', () => {
+    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')], grupos: [grupo()] });
+
+    const resultado = moverEntrada(atual, { tipo: 'grupo', codigo: 'FAMILIA' }, -1, new Map());
+
+    expect(resultado.ok && [resultado.conteudo.grupos?.[0].ordem, resultado.conteudo.itens?.[0].ordem]).toEqual([0, 1]);
+  });
+
+  it('a recusa da API no campo do grupo vai ao campo, e a do grupo, ao grupo', () => {
+    const enviado = conteudo({ grupos: [grupo()] });
+
+    const recusas = distribuirRecusas(
+      [
+        { field: 'conteudo.grupos[0].subitens[1].rotulo', message: 'Rótulo vazio.' },
+        { field: 'conteudo.grupos[0].minimo', message: 'Mínimo incoerente.' },
+      ],
+      enviado,
+    );
+
+    expect(recusas.porItem.get('IDADE')).toEqual(['Rótulo vazio.']);
+    expect(recusas.porGrupo.get('FAMILIA')).toEqual(['Mínimo incoerente.']);
   });
 });

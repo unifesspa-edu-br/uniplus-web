@@ -105,4 +105,52 @@ describe('EditorDeFormularioComponent', () => {
     expect(emitidos).toEqual([]);
     expect(status()).toContain('Acrescente antes o campo de UF');
   });
+
+  it('cria o grupo pela seção e, ao incluir o candidato, põe o parentesco primeiro e o mínimo em um', () => {
+    const membro = (codigo: string): FatoDoFormulario => ({ ...fato(codigo), escopo: 'MEMBRO_GRUPO' });
+    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), membro('RENDA'), { ...membro('PARENTESCO'), dominio: 'CATEGORICO', valoresDominio: ['PROPRIO_CANDIDATO'] }]);
+    fixture.detectChanges();
+
+    const rotulo = tela().querySelector('#f-etapa-S1-grupo-rotulo') as HTMLInputElement;
+    rotulo.value = 'Composição familiar';
+    rotulo.dispatchEvent(new Event('input'));
+    const campo = tela().querySelector('#f-etapa-S1-grupo-campo') as HTMLSelectElement;
+    campo.value = 'RENDA';
+    campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    ([...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar grupo repetível')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const grupo = emitidos.at(-1)?.grupos?.[0];
+    expect(grupo?.codigo).toBe('COMPOSICAO_FAMILIAR');
+    expect(status()).toBe('Grupo repetível “Composição familiar” acrescentado ao fim de Escolaridade.');
+
+    const incluir = [...tela().querySelectorAll('input[type="checkbox"]')].find((c) =>
+      c.parentElement?.textContent?.includes('O próprio candidato é um dos membros'),
+    ) as HTMLInputElement;
+    incluir.click();
+    fixture.detectChanges();
+
+    const comCandidato = emitidos.at(-1)?.grupos?.[0];
+    expect(comCandidato?.minimo).toBe(1);
+    expect(comCandidato?.subitens.map((c) => c.fatoCodigo)).toEqual(['PARENTESCO', 'RENDA']);
+  });
+
+  it('a caixa do candidato como membro volta a desmarcada quando a inclusão é recusada', () => {
+    const grupoDe = (codigo: string, campos: string[]): NonNullable<ConteudoDoFormulario['grupos']>[number] => ({
+      codigo, ordem: 3, rotulo: codigo, etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null, obrigatoriedade: 'SEMPRE',
+      predicadoObrigatoriedade: null, incluiCandidato: false, subitens: campos.map((c, i) => item(c, i, { etapaCodigo: null })),
+    });
+    fixture.componentRef.setInput('conteudo', { ...conteudo, grupos: [grupoDe('A_GRUPO', ['PARENTESCO']), { ...grupoDe('B_GRUPO', ['RENDA']), ordem: 4 }] });
+    fixture.detectChanges();
+
+    const caixas = [...tela().querySelectorAll('input[type="checkbox"]')].filter((c) =>
+      c.parentElement?.textContent?.includes('O próprio candidato é um dos membros'),
+    ) as HTMLInputElement[];
+    caixas[1].click();
+    fixture.detectChanges();
+
+    expect(caixas[1].checked).toBe(false);
+    expect(status()).toContain('O parentesco já é campo de outro grupo');
+  });
 });

@@ -1,8 +1,10 @@
 import {
   OPERADOR_DIFERENTE,
   OPERADOR_NAO_EM,
+  fatosEscolhiveis,
   type CondicaoNoWire,
   type FatoDoCatalogo,
+  type FatoEscolhivel,
 } from '../editor-de-condicoes/condicoes-de-fatos';
 
 /**
@@ -198,6 +200,11 @@ export function conteudoInicial(): ConteudoDoFormulario {
 }
 
 const BINDINGS_DE_CAMPO = ['CAMPO_INSCRICAO:', 'CAMPO_FORMULARIO:'];
+
+/** Do candidato, ou de cada membro de um grupo repetível: o de membro só existe dentro do grupo. */
+export type EscopoDoCampo = 'CANDIDATO' | 'MEMBRO_GRUPO';
+export const ESCOPO_CANDIDATO: EscopoDoCampo = 'CANDIDATO';
+export const ESCOPO_MEMBRO: EscopoDoCampo = 'MEMBRO_GRUPO';
 const FONTE_GEO_MUNICIPIO = 'GEO_MUNICIPIO';
 const FONTE_GEO_UF = 'GEO_UF';
 const MULTIVALORADO = 'MULTIVALORADO';
@@ -230,10 +237,10 @@ export function renderizacaoDe(fato: Pick<FatoDoFormulario, 'dominio' | 'cardina
  * Se o fato pode virar campo do formulário: perguntado ao candidato (vínculo de campo), do próprio
  * candidato — o de membro só existe dentro de um grupo — e com um tipo de campo que o colete.
  */
-export function ehColetavel(fato: FatoDoFormulario): boolean {
+export function ehColetavel(fato: FatoDoFormulario, escopo: EscopoDoCampo = ESCOPO_CANDIDATO): boolean {
   return (
     BINDINGS_DE_CAMPO.some((prefixo) => fato.binding.startsWith(prefixo)) &&
-    fato.escopo === 'CANDIDATO' &&
+    fato.escopo === escopo &&
     renderizacaoDe(fato) !== null
   );
 }
@@ -245,11 +252,12 @@ export function ehColetavel(fato: FatoDoFormulario): boolean {
 export function fatosParaAcrescentar(
   conteudo: ConteudoDoFormulario,
   catalogo: readonly FatoDoFormulario[],
+  escopo: EscopoDoCampo = ESCOPO_CANDIDATO,
 ): readonly FatoDoFormulario[] {
   // O pressuposto também: o fato vem do formulário anterior ou é coletado aqui, nunca os dois.
   const presentes = new Set([...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo), ...(conteudo.pressupostos ?? [])]);
   return catalogo
-    .filter((fato) => fato.ativo && ehColetavel(fato) && !presentes.has(fato.codigo))
+    .filter((fato) => fato.ativo && ehColetavel(fato, escopo) && !presentes.has(fato.codigo))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
@@ -448,47 +456,71 @@ export function moverEtapa(
   return conferirOrdem(trocado, nomes);
 }
 
-/** Se o item pode trocar de lugar com a entrada vizinha da mesma seção. */
-export function podeMoverItem(conteudo: ConteudoDoFormulario, fatoCodigo: string, direcao: -1 | 1): boolean {
-  const item = (conteudo.itens ?? []).find((i) => i.fatoCodigo === fatoCodigo);
-  if (item?.etapaCodigo == null || item.etapaCodigo === SECAO_DADOS_BASICOS) return false;
-  const entradas = entradasDaSecao(conteudo, item.etapaCodigo);
-  const indice = entradas.findIndex((e) => e.tipo === 'item' && e.item.fatoCodigo === fatoCodigo);
-  return entradas[indice + direcao] !== undefined;
+/** Um item ou um grupo, pelo que o identifica no formulário. */
+export type ChaveDaEntrada = { readonly tipo: 'item'; readonly fatoCodigo: string } | { readonly tipo: 'grupo'; readonly codigo: string };
+
+function ehAEntrada(entrada: EntradaDaSecao, chave: ChaveDaEntrada): boolean {
+  return chave.tipo === 'item'
+    ? entrada.tipo === 'item' && entrada.item.fatoCodigo === chave.fatoCodigo
+    : entrada.tipo === 'grupo' && entrada.grupo.codigo === chave.codigo;
+}
+
+function etapaDaEntrada(conteudo: ConteudoDoFormulario, chave: ChaveDaEntrada): string | null {
+  const etapa =
+    chave.tipo === 'item'
+      ? (conteudo.itens ?? []).find((item) => item.fatoCodigo === chave.fatoCodigo)?.etapaCodigo
+      : (conteudo.grupos ?? []).find((grupo) => grupo.codigo === chave.codigo)?.etapaCodigo;
+  return etapa ?? null;
+}
+
+/** Se o item ou o grupo pode trocar de lugar com a entrada vizinha da mesma seção. */
+export function podeMoverEntrada(conteudo: ConteudoDoFormulario, chave: ChaveDaEntrada, direcao: -1 | 1): boolean {
+  const etapa = etapaDaEntrada(conteudo, chave);
+  if (etapa === null || etapa === SECAO_DADOS_BASICOS) return false;
+  const entradas = entradasDaSecao(conteudo, etapa);
+  const indice = entradas.findIndex((entrada) => ehAEntrada(entrada, chave));
+  return indice >= 0 && entradas[indice + direcao] !== undefined;
 }
 
 /**
- * Troca o item de lugar com a entrada vizinha da seção. Recusa o movimento que põe o item antes de
- * um fato que ele cita, ou que passa para depois dele um item que o cita.
+ * Troca o item ou o grupo de lugar com a entrada vizinha da seção. Recusa o movimento que põe uma
+ * regra antes de um fato que ela cita, ou que passa para depois dele uma regra que o cita.
  */
+export function moverEntrada(
+  conteudo: ConteudoDoFormulario,
+  chave: ChaveDaEntrada,
+  direcao: -1 | 1,
+  nomes: ReadonlyMap<string, string>,
+): ResultadoDaEdicao {
+  if (!podeMoverEntrada(conteudo, chave, direcao)) return { ok: false, recusa: 'Não é possível mover nessa direção.' };
+  const entradas = entradasDaSecao(conteudo, etapaDaEntrada(conteudo, chave) as string);
+  const indice = entradas.findIndex((entrada) => ehAEntrada(entrada, chave));
+  const [atual, vizinha] = [entradas[indice], entradas[indice + direcao]];
+  // A entrada e a vizinha trocam de ordem; a renumeração fecha a numeração.
+  const ordemTrocada = (alvo: ChaveDaEntrada): number | undefined =>
+    ehAEntrada(atual, alvo) ? ordemDa(vizinha) : ehAEntrada(vizinha, alvo) ? ordemDa(atual) : undefined;
+
+  const trocado = renumerar({
+    ...conteudo,
+    itens: (conteudo.itens ?? []).map((item) => ({ ...item, ordem: ordemTrocada({ tipo: 'item', fatoCodigo: item.fatoCodigo }) ?? item.ordem })),
+    grupos: (conteudo.grupos ?? []).map((grupo) => ({ ...grupo, ordem: ordemTrocada({ tipo: 'grupo', codigo: grupo.codigo }) ?? grupo.ordem })),
+  });
+  return conferirOrdem(trocado, nomes);
+}
+
+/** Se o item pode trocar de lugar com a entrada vizinha da mesma seção. */
+export function podeMoverItem(conteudo: ConteudoDoFormulario, fatoCodigo: string, direcao: -1 | 1): boolean {
+  return podeMoverEntrada(conteudo, { tipo: 'item', fatoCodigo }, direcao);
+}
+
+/** Troca o item de lugar com a entrada vizinha da seção, com a recusa de `moverEntrada`. */
 export function moverItem(
   conteudo: ConteudoDoFormulario,
   fatoCodigo: string,
   direcao: -1 | 1,
   nomes: ReadonlyMap<string, string>,
 ): ResultadoDaEdicao {
-  if (!podeMoverItem(conteudo, fatoCodigo, direcao)) return { ok: false, recusa: 'O campo não pode ir nessa direção.' };
-  const item = (conteudo.itens ?? []).find((i) => i.fatoCodigo === fatoCodigo) as ItemDoFormulario;
-  const entradas = entradasDaSecao(conteudo, item.etapaCodigo as string);
-  const indice = entradas.findIndex((e) => e.tipo === 'item' && e.item.fatoCodigo === fatoCodigo);
-  const vizinha = entradas[indice + direcao];
-  const ordemDoItem = item.ordem;
-  const ordemDaVizinha = vizinha.tipo === 'item' ? vizinha.item.ordem : vizinha.grupo.ordem;
-
-  const trocado = renumerar({
-    ...conteudo,
-    itens: (conteudo.itens ?? []).map((i) =>
-      i.fatoCodigo === fatoCodigo
-        ? { ...i, ordem: ordemDaVizinha }
-        : vizinha.tipo === 'item' && i.fatoCodigo === vizinha.item.fatoCodigo
-          ? { ...i, ordem: ordemDoItem }
-          : i,
-    ),
-    grupos: (conteudo.grupos ?? []).map((g) =>
-      vizinha.tipo === 'grupo' && g.codigo === vizinha.grupo.codigo ? { ...g, ordem: ordemDoItem } : g,
-    ),
-  });
-  return conferirOrdem(trocado, nomes);
+  return moverEntrada(conteudo, { tipo: 'item', fatoCodigo }, direcao, nomes);
 }
 
 /**
@@ -582,7 +614,7 @@ export function termosParaAcrescentar(
 export function acrescentarTermo(conteudo: ConteudoDoFormulario, termo: TermoDisponivel): ConteudoDoFormulario {
   const termos = termosEmOrdem(conteudo);
   const novo: TermoDoFormulario = {
-    codigo: codigoLivre(codigoDoNome(termo.nome), new Set(termos.map((t) => t.codigo))),
+    codigo: codigoLivre(codigoDoNome(termo.nome, 'TERMO'), new Set(termos.map((t) => t.codigo))),
     // Depois da maior ordem gravada: a gravada pode ter buraco, e ordem repetida é recusada.
     ordem: Math.max(-1, ...termos.map((t) => Number(t.ordem))) + 1,
     termoId: termo.termoId,
@@ -769,6 +801,262 @@ export function quantidadeNoTeto(conteudo: ConteudoDoFormulario): number {
   );
 }
 
+/** O campo de membro que diz o parentesco de cada ocorrência, e a resposta que identifica a ocorrência do próprio candidato. */
+export const FATO_PARENTESCO = 'PARENTESCO';
+export const PROPRIO_CANDIDATO = 'PROPRIO_CANDIDATO';
+
+/** O teto de campos de cada ocorrência de um grupo (`FormaDoGrupo.MaximoDeSubitens`). */
+export const MAXIMO_DE_CAMPOS_DO_GRUPO = 30;
+
+/** O campo de membro, sem seção própria: aparece onde o grupo aparece. Nasce obrigatório, como o item. */
+function campoDeMembro(fato: FatoDoFormulario, ordem: number): ItemDoFormulario {
+  return {
+    fatoCodigo: fato.codigo,
+    ordem,
+    rotulo: fato.nome.slice(0, LIMITES_DO_FORMULARIO.rotulo),
+    tipoRenderizacao: renderizacaoDe(fato) ?? '',
+    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
+    precondicao: null,
+    etapaCodigo: null,
+    predicadoObrigatoriedade: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+  };
+}
+
+/**
+ * Um grupo repetível novo no fim da seção, já com o primeiro campo — a API recusa grupo sem campo —,
+ * obrigatório e sem limite de ocorrências. O código vem do rótulo e não repete nenhum código do
+ * catálogo nem do formulário: o grafo recusa grupo com o código de um fato.
+ */
+export function acrescentarGrupo(
+  conteudo: ConteudoDoFormulario,
+  rotulo: string,
+  etapaCodigo: string,
+  primeiroCampo: FatoDoFormulario,
+  catalogo: readonly FatoDoFormulario[],
+): ResultadoDaEdicao {
+  if (rotulo.trim() === '') return { ok: false, recusa: 'Dê um rótulo ao grupo antes de acrescentá-lo.' };
+  if (quantidadeNoTeto(conteudo) + 2 > LIMITES_DO_FORMULARIO.itens) {
+    return { ok: false, recusa: `O formulário chegou ao máximo de ${LIMITES_DO_FORMULARIO.itens} campos, contando grupos e campos de grupo.` };
+  }
+  const usados = new Set([
+    ...catalogo.map((fato) => fato.codigo),
+    ...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo),
+    ...(conteudo.grupos ?? []).map((grupo) => grupo.codigo),
+    ...(conteudo.pressupostos ?? []),
+  ]);
+  const ultima = entradasDaSecao(conteudo, etapaCodigo).at(-1);
+  const etapa = (conteudo.etapas ?? []).find((e) => e.codigo === etapaCodigo);
+  const grupo: GrupoDoFormulario = {
+    codigo: codigoLivre(codigoDoNome(rotulo, 'GRUPO'), usados),
+    ordem: ultima !== undefined ? ordemDa(ultima) + 0.5 : primeiraOrdemDaEtapa(conteudo, Number(etapa?.ordem ?? 0)) - 0.5,
+    rotulo: rotulo.trim().slice(0, LIMITES_DO_FORMULARIO.rotulo),
+    etapaCodigo,
+    minimo: 0,
+    maximo: null,
+    exibicao: null,
+    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
+    predicadoObrigatoriedade: null,
+    subitens: [campoDeMembro(primeiroCampo, 0)],
+    incluiCandidato: false,
+  };
+  return { ok: true, conteudo: renumerar({ ...conteudo, grupos: [...(conteudo.grupos ?? []), grupo] }) };
+}
+
+/** Troca o grupo pelo editado, sem mexer na posição dele. */
+export function comGrupo(conteudo: ConteudoDoFormulario, editado: GrupoDoFormulario): ConteudoDoFormulario {
+  return { ...conteudo, grupos: (conteudo.grupos ?? []).map((grupo) => (grupo.codigo === editado.codigo ? editado : grupo)) };
+}
+
+/** Remove o grupo. Nada fora dele cita o grupo nem os campos dele — o grafo da API recusa —, então não há a quem recusar. */
+export function removerGrupo(conteudo: ConteudoDoFormulario, codigo: string): ConteudoDoFormulario {
+  return renumerar({ ...conteudo, grupos: (conteudo.grupos ?? []).filter((grupo) => grupo.codigo !== codigo) });
+}
+
+/** Os campos do grupo em ordem. */
+export function camposDoGrupo(grupo: GrupoDoFormulario): readonly ItemDoFormulario[] {
+  return [...grupo.subitens].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+}
+
+/**
+ * Os fatos de membro que podem entrar num grupo: os coletáveis de membro que o formulário ainda não
+ * tem. O município fica de fora: a UF dele seria a de outro membro.
+ */
+export function fatosDeMembroParaAcrescentar(conteudo: ConteudoDoFormulario, catalogo: readonly FatoDoFormulario[]): readonly FatoDoFormulario[] {
+  return fatosParaAcrescentar(conteudo, catalogo, ESCOPO_MEMBRO).filter((fato) => fato.fonteValores !== FONTE_GEO_MUNICIPIO);
+}
+
+/** A recusa do campo a mais quando o grupo ou o formulário chegou ao teto; nula quando cabe. */
+function recusaDoTeto(conteudo: ConteudoDoFormulario, grupo: GrupoDoFormulario): string | null {
+  if (grupo.subitens.length >= MAXIMO_DE_CAMPOS_DO_GRUPO) return `O grupo chegou ao máximo de ${MAXIMO_DE_CAMPOS_DO_GRUPO} campos por ocorrência.`;
+  return quantidadeNoTeto(conteudo) + 1 > LIMITES_DO_FORMULARIO.itens
+    ? `O formulário chegou ao máximo de ${LIMITES_DO_FORMULARIO.itens} campos, contando grupos e campos de grupo.`
+    : null;
+}
+
+/** O campo de membro no fim do grupo, se cabem mais um no grupo (trinta) e no formulário (o teto global). */
+export function acrescentarCampoAoGrupo(conteudo: ConteudoDoFormulario, grupo: GrupoDoFormulario, fato: FatoDoFormulario): ResultadoDoGrupo {
+  const teto = recusaDoTeto(conteudo, grupo);
+  if (teto !== null) return { ok: false, recusa: teto };
+  // Renumera o grupo inteiro: a ordem gravada pode começar acima de zero ou ter buraco.
+  return {
+    ok: true,
+    grupo: { ...grupo, subitens: [...camposDoGrupo(grupo), campoDeMembro(fato, 0)].map((campo, ordem) => ({ ...campo, ordem })) },
+  };
+}
+
+/** Troca o campo do grupo pelo editado. */
+export function comCampoDoGrupo(grupo: GrupoDoFormulario, editado: ItemDoFormulario): GrupoDoFormulario {
+  return { ...grupo, subitens: grupo.subitens.map((campo) => (campo.fatoCodigo === editado.fatoCodigo ? editado : campo)) };
+}
+
+/**
+ * Remove o campo do grupo. Recusa o último — o grupo tem ao menos um campo —, o parentesco do
+ * grupo que inclui o candidato e o campo que outro campo do grupo cita.
+ */
+export function removerCampoDoGrupo(grupo: GrupoDoFormulario, fatoCodigo: string, nomes: ReadonlyMap<string, string>): ResultadoDoGrupo {
+  if (grupo.subitens.length <= 1) return { ok: false, recusa: 'O grupo precisa de ao menos um campo: remova o grupo inteiro se não precisar dele.' };
+  if (grupo.incluiCandidato && fatoCodigo === FATO_PARENTESCO) {
+    return { ok: false, recusa: 'O grupo inclui o candidato e precisa do parentesco: é por ele que se reconhece a ocorrência do candidato.' };
+  }
+  const quem = grupo.subitens.find((campo) => campo.fatoCodigo !== fatoCodigo && fatosCitadosPeloCampo(campo).includes(fatoCodigo));
+  if (quem !== undefined) {
+    return { ok: false, recusa: `Não é possível remover “${nome(nomes, fatoCodigo)}”: o campo “${quem.rotulo}” cita esse campo.` };
+  }
+  return {
+    ok: true,
+    grupo: { ...grupo, subitens: camposDoGrupo(grupo).filter((campo) => campo.fatoCodigo !== fatoCodigo).map((campo, ordem) => ({ ...campo, ordem })) },
+  };
+}
+
+/**
+ * Troca o campo do grupo de lugar com o vizinho. Recusa quando um campo passaria a citar outro do
+ * grupo que vem nele ou depois dele: a ocorrência ainda não teria a resposta.
+ */
+export function moverCampoNoGrupo(
+  grupo: GrupoDoFormulario,
+  fatoCodigo: string,
+  direcao: -1 | 1,
+  nomes: ReadonlyMap<string, string>,
+): ResultadoDoGrupo {
+  const campos = [...camposDoGrupo(grupo)];
+  const indice = campos.findIndex((campo) => campo.fatoCodigo === fatoCodigo);
+  const alvo = indice + direcao;
+  if (indice < 0 || alvo < 0 || alvo >= campos.length) return { ok: false, recusa: 'Não é possível mover nessa direção.' };
+  [campos[indice], campos[alvo]] = [campos[alvo], campos[indice]];
+  return comCamposEmOrdem(grupo, campos, nomes);
+}
+
+/**
+ * O grupo com os campos na ordem dada, renumerados — ou a recusa, quando um campo citaria outro do
+ * grupo que vem nele ou depois dele: a ocorrência ainda não teria a resposta (`CitaFatoPosterior`).
+ */
+function comCamposEmOrdem(grupo: GrupoDoFormulario, campos: readonly ItemDoFormulario[], nomes: ReadonlyMap<string, string>): ResultadoDoGrupo {
+  const posicao = new Map(campos.map((campo, ordem) => [campo.fatoCodigo, ordem]));
+  for (const [ordem, campo] of campos.entries()) {
+    const posterior = fatosCitadosPeloCampo(campo).find((citado) => (posicao.get(citado) ?? -Infinity) >= ordem && citado !== campo.fatoCodigo);
+    if (posterior !== undefined) {
+      return { ok: false, recusa: `“${campo.rotulo}” cita “${nome(nomes, posterior)}”, que ficaria depois. Mova primeiro o campo citado.` };
+    }
+  }
+  return { ok: true, grupo: { ...grupo, subitens: campos.map((campo, ordem) => ({ ...campo, ordem })) } };
+}
+
+/**
+ * Os fatos que um campo do grupo pode citar: os conhecidos antes do grupo e os campos anteriores
+ * da mesma ocorrência, que ela já respondeu — nunca o próprio.
+ */
+export function fatosCitaveisPeloCampoDoGrupo(conteudo: ConteudoDoFormulario, grupo: GrupoDoFormulario, fatoCodigo: string): ReadonlySet<string> {
+  const campos = camposDoGrupo(grupo);
+  const posicao = campos.findIndex((campo) => campo.fatoCodigo === fatoCodigo);
+  return new Set([
+    ...citaveisAntesDe(conteudo, Number(grupo.ordem), null),
+    ...campos.slice(0, Math.max(posicao, 0)).map((campo) => campo.fatoCodigo),
+  ]);
+}
+
+/** Os fatos que a exibição e a obrigatoriedade do grupo podem citar: os conhecidos antes dele. */
+export function fatosCitaveisPeloGrupo(conteudo: ConteudoDoFormulario, grupo: GrupoDoFormulario): ReadonlySet<string> {
+  return citaveisAntesDe(conteudo, Number(grupo.ordem), null);
+}
+
+/**
+ * Liga ou desliga o próprio candidato como membro do grupo (UNI-REQ-0146). Ligado, o grupo tem ao
+ * menos uma ocorrência — a do candidato — e o parentesco como primeiro campo, sempre exibido e
+ * obrigatório, com o próprio candidato entre as opções que valem sempre: é a resposta que
+ * identifica a ocorrência dele (`CandidatoComoMembro`).
+ */
+export function comCandidatoComoMembro(
+  conteudo: ConteudoDoFormulario,
+  grupo: GrupoDoFormulario,
+  ligado: boolean,
+  catalogo: readonly FatoDoFormulario[],
+  nomes: ReadonlyMap<string, string>,
+): ResultadoDoGrupo {
+  if (!ligado) return { ok: true, grupo: { ...grupo, incluiCandidato: false } };
+  const atual = grupo.subitens.find((campo) => campo.fatoCodigo === FATO_PARENTESCO);
+  if (atual === undefined) {
+    // O fato aparece uma vez por formulário: o parentesco já coletado em outro lugar não se repete aqui.
+    if (todosOsCampos(conteudo).some((campo) => campo.fatoCodigo === FATO_PARENTESCO)) {
+      return { ok: false, recusa: 'O parentesco já é campo de outro grupo do formulário, e um fato aparece uma vez só: o candidato só pode ser membro daquele grupo.' };
+    }
+    const fato = catalogo.find((f) => f.codigo === FATO_PARENTESCO);
+    if (fato === undefined || !ehColetavel(fato, ESCOPO_MEMBRO)) {
+      return { ok: false, recusa: 'O catálogo não tem o fato de parentesco do membro, que identifica a ocorrência do candidato.' };
+    }
+    const teto = recusaDoTeto(conteudo, grupo);
+    if (teto !== null) return { ok: false, recusa: teto };
+  }
+  const base = atual ?? campoDeMembro(catalogo.find((f) => f.codigo === FATO_PARENTESCO) as FatoDoFormulario, -1);
+  const parentesco: ItemDoFormulario = {
+    ...base,
+    precondicao: null,
+    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
+    predicadoObrigatoriedade: null,
+    restricoes: comOProprioCandidato(base.restricoes ?? null),
+  };
+  const demais = camposDoGrupo(grupo).filter((campo) => campo.fatoCodigo !== FATO_PARENTESCO);
+  const resultado = comCamposEmOrdem({ ...grupo, incluiCandidato: true, minimo: Math.max(1, Number(grupo.minimo) || 0) }, [parentesco, ...demais], nomes);
+  return resultado;
+}
+
+/** As opções do parentesco admitem sempre o próprio candidato; as formadas por respostas não o garantem e saem. */
+function comOProprioCandidato(restricoes: readonly RestricaoDeValor[] | null): readonly RestricaoDeValor[] | null {
+  const ajustadas = (restricoes ?? [])
+    .filter((restricao) => restricao.tipo !== RESTRICAO_OPCOES_DAS_RESPOSTAS)
+    .map((restricao) => {
+      if (restricao.tipo !== RESTRICAO_OPCOES_PERMITIDAS) return restricao;
+      const entradas = restricao.entradas ?? [];
+      if (entradas.some((entrada) => (entrada.quando ?? []).length === 0 && entrada.valores.includes(PROPRIO_CANDIDATO))) return restricao;
+      const fixa = entradas.findIndex((entrada) => (entrada.quando ?? []).length === 0);
+      return {
+        ...restricao,
+        entradas:
+          fixa < 0
+            ? [...entradas, { quando: null, valores: [PROPRIO_CANDIDATO] }]
+            : entradas.map((entrada, indice) => (indice === fixa ? { ...entrada, valores: [...entrada.valores, PROPRIO_CANDIDATO] } : entrada)),
+      };
+    });
+  return ajustadas.length === 0 ? null : ajustadas;
+}
+
+/** O desfecho de uma edição de grupo que a tela pode recusar. */
+export type ResultadoDoGrupo = { readonly ok: true; readonly grupo: GrupoDoFormulario } | { readonly ok: false; readonly recusa: string };
+
+/**
+ * Os fatos que um editor de condições oferece: os citáveis e os que as condições já citam — para a
+ * condição gravada aparecer mesmo que o fato tenha deixado de ser citável.
+ */
+export function fatosOferecidos(
+  catalogo: readonly FatoDoFormulario[],
+  citaveis: ReadonlySet<string>,
+  predicados: readonly PredicadoNoWire[],
+): readonly FatoEscolhivel[] {
+  const citados = new Set(predicados.flatMap(fatosDoPredicado));
+  return fatosEscolhiveis(catalogo.filter((fato) => citaveis.has(fato.codigo) || citados.has(fato.codigo)));
+}
+
 /** O conteúdo sem a seção dos dados básicos: a API a repõe, e o envio que a altera é recusado. */
 export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   return {
@@ -783,6 +1071,7 @@ export interface RecusasDoConteudo {
   readonly porItem: ReadonlyMap<string, readonly string[]>;
   readonly porEtapa: ReadonlyMap<string, readonly string[]>;
   readonly porTermo: ReadonlyMap<string, readonly string[]>;
+  readonly porGrupo: ReadonlyMap<string, readonly string[]>;
   readonly gerais: readonly string[];
 }
 
@@ -797,8 +1086,20 @@ export function distribuirRecusas(
   const porItem = new Map<string, string[]>();
   const porEtapa = new Map<string, string[]>();
   const porTermo = new Map<string, string[]>();
+  const porGrupo = new Map<string, string[]>();
   const gerais: string[] = [];
   for (const recusa of recusas) {
+    const grupo = elementoApontado(recusa.field, 'grupos', enviado.grupos ?? []);
+    // O campo do grupo tem código único no formulário: a recusa dele vai ao campo, como a de um item.
+    const campoDoGrupo = grupo === undefined ? undefined : elementoApontado(recusa.field, 'subitens', grupo.subitens);
+    if (campoDoGrupo !== undefined) {
+      acumular(porItem, campoDoGrupo.fatoCodigo, recusa.message);
+      continue;
+    }
+    if (grupo !== undefined) {
+      acumular(porGrupo, grupo.codigo, recusa.message);
+      continue;
+    }
     const item = elementoApontado(recusa.field, 'itens', enviado.itens ?? []);
     const etapa = elementoApontado(recusa.field, 'etapas', enviado.etapas ?? []);
     const termo = elementoApontado(recusa.field, 'termos', enviado.termos ?? []);
@@ -807,7 +1108,7 @@ export function distribuirRecusas(
     else if (termo !== undefined) acumular(porTermo, termo.codigo, recusa.message);
     else gerais.push(recusa.message);
   }
-  return { porItem, porEtapa, porTermo, gerais };
+  return { porItem, porEtapa, porTermo, porGrupo, gerais };
 }
 
 function elementoApontado<T>(campo: string, lista: string, elementos: readonly T[]): T | undefined {
@@ -953,7 +1254,7 @@ function conferirOrdem(conteudo: ConteudoDoFormulario, nomes: ReadonlyMap<string
 }
 
 /** O código a partir do nome: sem acento, em caixa alta, com sublinhado no lugar do resto. */
-function codigoDoNome(nome: string): string {
+function codigoDoNome(nome: string, reserva: string): string {
   const codigo = nome
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/gu, '')
@@ -961,7 +1262,7 @@ function codigoDoNome(nome: string): string {
     .replace(/[^A-Z0-9]+/gu, '_')
     .replace(/^_+|_+$/gu, '')
     .slice(0, 50);
-  return codigo === '' ? 'TERMO' : codigo;
+  return codigo === '' ? reserva : codigo;
 }
 
 function codigoLivre(base: string, usados: ReadonlySet<string>): string {
