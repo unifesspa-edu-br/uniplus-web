@@ -253,11 +253,12 @@ export function fatosParaAcrescentar(
   conteudo: ConteudoDoFormulario,
   catalogo: readonly FatoDoFormulario[],
   escopo: EscopoDoCampo = ESCOPO_CANDIDATO,
+  indisponiveis: readonly string[] = [],
 ): readonly FatoDoFormulario[] {
   // O pressuposto também: o fato vem do formulário anterior ou é coletado aqui, nunca os dois.
   const presentes = new Set([...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo), ...(conteudo.pressupostos ?? [])]);
   return catalogo
-    .filter((fato) => fato.ativo && ehColetavel(fato, escopo) && !presentes.has(fato.codigo))
+    .filter((fato) => fato.ativo && ehColetavel(fato, escopo) && !presentes.has(fato.codigo) && !indisponiveis.includes(fato.codigo))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
@@ -883,8 +884,12 @@ export function camposDoGrupo(grupo: GrupoDoFormulario): readonly ItemDoFormular
  * Os fatos de membro que podem entrar num grupo: os coletáveis de membro que o formulário ainda não
  * tem. O município fica de fora: a UF dele seria a de outro membro.
  */
-export function fatosDeMembroParaAcrescentar(conteudo: ConteudoDoFormulario, catalogo: readonly FatoDoFormulario[]): readonly FatoDoFormulario[] {
-  return fatosParaAcrescentar(conteudo, catalogo, ESCOPO_MEMBRO).filter((fato) => fato.fonteValores !== FONTE_GEO_MUNICIPIO);
+export function fatosDeMembroParaAcrescentar(
+  conteudo: ConteudoDoFormulario,
+  catalogo: readonly FatoDoFormulario[],
+  indisponiveis: readonly string[] = [],
+): readonly FatoDoFormulario[] {
+  return fatosParaAcrescentar(conteudo, catalogo, ESCOPO_MEMBRO, indisponiveis).filter((fato) => fato.fonteValores !== FONTE_GEO_MUNICIPIO);
 }
 
 /** A recusa do campo a mais quando o grupo ou o formulário chegou ao teto; nula quando cabe. */
@@ -993,13 +998,21 @@ export function comCandidatoComoMembro(
   ligado: boolean,
   catalogo: readonly FatoDoFormulario[],
   nomes: ReadonlyMap<string, string>,
+  indisponiveis: readonly string[] = [],
 ): ResultadoDoGrupo {
   if (!ligado) return { ok: true, grupo: { ...grupo, incluiCandidato: false } };
   const atual = grupo.subitens.find((campo) => campo.fatoCodigo === FATO_PARENTESCO);
   if (atual === undefined) {
-    // O fato aparece uma vez por formulário: o parentesco já coletado em outro lugar não se repete aqui.
+    // O fato aparece uma vez por formulário — e, no processo, num formulário só: o parentesco
+    // coletado em outro lugar, ou por outra finalidade, não se repete aqui.
     if (todosOsCampos(conteudo).some((campo) => campo.fatoCodigo === FATO_PARENTESCO)) {
-      return { ok: false, recusa: 'O parentesco já é campo de outro grupo do formulário, e um fato aparece uma vez só: o candidato só pode ser membro daquele grupo.' };
+      return { ok: false, recusa: 'O parentesco já é campo de outro grupo deste formulário, e um fato aparece uma vez só: o candidato só pode ser membro daquele grupo.' };
+    }
+    if ([...(conteudo.pressupostos ?? []), ...indisponiveis].includes(FATO_PARENTESCO)) {
+      return {
+        ok: false,
+        recusa: 'O parentesco é respondido em outro formulário — o anterior ou outra finalidade do processo — e por isso não pode ser coletado aqui.',
+      };
     }
     const fato = catalogo.find((f) => f.codigo === FATO_PARENTESCO);
     if (fato === undefined || !ehColetavel(fato, ESCOPO_MEMBRO)) {
@@ -1045,6 +1058,11 @@ function comOProprioCandidato(restricoes: readonly RestricaoDeValor[] | null): r
   return ajustadas.length === 0 ? null : ajustadas;
 }
 
+/** Por que o grupo não pode ser removido: remover o grupo leva os campos dele, e um campo travado trava o grupo. */
+export function motivoDaRemocaoTravadaDoGrupo(grupo: GrupoDoFormulario, remocoesTravadas: ReadonlyMap<string, string>): string | null {
+  return grupo.subitens.map((campo) => remocoesTravadas.get(campo.fatoCodigo)).find((motivo) => motivo !== undefined) ?? null;
+}
+
 /** O desfecho de uma edição de grupo que a tela pode recusar. */
 export type ResultadoDoGrupo = { readonly ok: true; readonly grupo: GrupoDoFormulario } | { readonly ok: false; readonly recusa: string };
 
@@ -1059,6 +1077,14 @@ export function fatosOferecidos(
 ): readonly FatoEscolhivel[] {
   const citados = new Set(predicados.flatMap(fatosDoPredicado));
   return fatosEscolhiveis(catalogo.filter((fato) => citaveis.has(fato.codigo) || citados.has(fato.codigo)));
+}
+
+/**
+ * O conteúdo com os fatos de outro formulário conhecidos antes de tudo — no processo, os da
+ * inscrição, que as outras finalidades citam sem coletar. Serve só às citações: nunca é gravado.
+ */
+export function comFatosConhecidosAntes(conteudo: ConteudoDoFormulario, fatos: readonly string[]): ConteudoDoFormulario {
+  return fatos.length === 0 ? conteudo : { ...conteudo, pressupostos: [...new Set([...(conteudo.pressupostos ?? []), ...fatos])] };
 }
 
 /** O conteúdo sem a seção dos dados básicos: a API a repõe, e o envio que a altera é recusado. */

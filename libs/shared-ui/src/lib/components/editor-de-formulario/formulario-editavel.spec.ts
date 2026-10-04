@@ -570,6 +570,15 @@ describe('grupos repetíveis', () => {
     expect(resultado.ok).toBe(false);
   });
 
+  it('não acrescenta o parentesco que outra finalidade do processo já coleta', () => {
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, [parentesco], new Map(), ['PARENTESCO']);
+
+    expect(resultado).toEqual({
+      ok: false,
+      recusa: 'O parentesco é respondido em outro formulário — o anterior ou outra finalidade do processo — e por isso não pode ser coletado aqui.',
+    });
+  });
+
   it('recusa pôr o parentesco em primeiro quando ele cita um campo anterior do grupo', () => {
     const citante = grupo({
       subitens: [item('RENDA', 0, 'S1'), item('PARENTESCO', 1, 'S1', { precondicao: null, restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: exibidoQuando('RENDA'), valores: ['MAE'] }] }] })],

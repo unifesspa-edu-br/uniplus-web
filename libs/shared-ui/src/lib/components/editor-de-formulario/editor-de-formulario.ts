@@ -30,6 +30,9 @@ import {
   removerTermo,
   termosEmOrdem,
   termosParaAcrescentar,
+  ESCOPO_CANDIDATO,
+  comFatosConhecidosAntes,
+  motivoDaRemocaoTravadaDoGrupo,
   fatosDeMembroParaAcrescentar,
   acrescentarCampo,
   acrescentarGrupo,
@@ -285,6 +288,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                         [podeDescer]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, 1)"
                         [disabled]="disabled()"
                         [erros]="errosDoItem(entrada.item.fatoCodigo)"
+                        [remocaoTravadaPor]="remocoesTravadas().get(entrada.item.fatoCodigo) ?? null"
                         [valoresConhecidos]="regrasProprias().get(entrada.item.fatoCodigo)?.valoresConhecidos ?? []"
                         [ufs]="regrasProprias().get(entrada.item.fatoCodigo)?.ufs ?? []"
                         [impedimentoPermitido]="regrasProprias().get(entrada.item.fatoCodigo)?.impedimentoPermitido ?? false"
@@ -296,8 +300,10 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                     } @else {
                       <ui-grupo-do-formulario
                         [grupo]="entrada.grupo"
-                        [conteudo]="conteudo()"
+                        [conteudo]="conteudoParaCitacoes()"
                         [catalogo]="catalogo()"
+                        [remocoesTravadas]="remocoesTravadas()"
+                        [fatosIndisponiveis]="fatosIndisponiveis()"
                         [posicao]="posicao + 1"
                         [idBase]="idDoGrupo(entrada.grupo.codigo)"
                         [exigemResposta]="exigemResposta()"
@@ -450,6 +456,15 @@ export class EditorDeFormularioComponent {
   readonly recusas = input<RecusasDoConteudo | null>(null);
   /** Os termos de consentimento que o formulário pode exigir, com as versões promovidas. */
   readonly termosDisponiveis = input<readonly TermoDisponivel[]>([]);
+  /**
+   * No processo, os fatos coletados pela inscrição: as outras finalidades os citam como conhecidos
+   * antes, e a seção de pressupostos não aparece. Nulo no modelo, que declara os pressupostos.
+   */
+  readonly fatosDaInscricao = input<readonly string[] | null>(null);
+  /** Os fatos coletados por outra finalidade: um fato tem um formulário só que o coleta. */
+  readonly fatosIndisponiveis = input<readonly string[]>([]);
+  /** Os campos que não podem sair, com o motivo — uma exigência ou outra regra do processo os cita. */
+  readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
 
@@ -472,7 +487,11 @@ export class EditorDeFormularioComponent {
 
   protected readonly etapas = computed(() => etapasEmOrdem(this.conteudo()));
   private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
-  protected readonly paraAcrescentar = computed(() => fatosParaAcrescentar(this.conteudo(), this.catalogo()));
+  protected readonly paraAcrescentar = computed(() =>
+    fatosParaAcrescentar(this.conteudoParaCitacoes(), this.catalogo(), ESCOPO_CANDIDATO, this.fatosIndisponiveis()),
+  );
+  /** O conteúdo para as citações: com os fatos da inscrição conhecidos antes de tudo, que nunca são gravados. */
+  protected readonly conteudoParaCitacoes = computed(() => comFatosConhecidosAntes(this.conteudo(), this.fatosDaInscricao() ?? []));
   protected readonly noTeto = computed(() => quantidadeNoTeto(this.conteudo()) >= LIMITES_DO_FORMULARIO.itens);
   protected readonly exigemResposta = computed(() => fatosQueExigemResposta(this.conteudo()));
   protected readonly desativados = computed(() => new Set(this.catalogo().filter((fato) => !fato.ativo).map((fato) => fato.codigo)));
@@ -482,7 +501,7 @@ export class EditorDeFormularioComponent {
 
   /** Os fatos que as condições de cada item podem citar, e os que ele já cita — para a condição gravada aparecer. */
   protected readonly fatosDoItem = computed(() => {
-    const conteudo = this.conteudo();
+    const conteudo = this.conteudoParaCitacoes();
     return new Map(
       (conteudo.itens ?? []).map((item) => [
         item.fatoCodigo,
@@ -517,7 +536,7 @@ export class EditorDeFormularioComponent {
   });
 
   protected readonly fatosDaSecao = computed(() => {
-    const conteudo = this.conteudo();
+    const conteudo = this.conteudoParaCitacoes();
     return new Map(
       (conteudo.etapas ?? []).map((etapa) => [
         etapa.codigo,
@@ -530,21 +549,29 @@ export class EditorDeFormularioComponent {
   protected readonly semRecusas: ReadonlyMap<string, readonly string[]> = new Map();
   protected readonly podeMoverEntrada = podeMoverEntrada;
   protected readonly comGrupo = comGrupo;
-  protected readonly fatosDeMembro = computed(() => fatosDeMembroParaAcrescentar(this.conteudo(), this.catalogo()));
+  protected readonly fatosDeMembro = computed(() =>
+    fatosDeMembroParaAcrescentar(this.conteudoParaCitacoes(), this.catalogo(), this.fatosIndisponiveis()),
+  );
   protected readonly termosPossiveis = computed(() => termosParaAcrescentar(this.conteudo(), this.termosDisponiveis()));
   protected readonly fatosDosTermos = computed(() => {
-    const conteudo = this.conteudo();
+    const conteudo = this.conteudoParaCitacoes();
     return this.escolhiveis(
       fatosCitaveisPelosTermos(conteudo),
       (conteudo.termos ?? []).flatMap((termo) => [termo.exibicao, termo.predicadoObrigatoriedade]),
     );
   });
-  /** O formulário de inscrição é o primeiro respondido: não tem pressuposto, salvo o que já veio gravado. */
-  protected readonly temPressupostos = computed(
-    () => this.finalidade() !== FINALIDADE_INSCRICAO || (this.conteudo().pressupostos?.length ?? 0) > 0,
+  /**
+   * O modelo declara pressupostos fora da inscrição. O processo não os tem — cita os fatos da
+   * inscrição —, e a seção só aparece nele se algum veio gravado, para poder ser retirado.
+   */
+  protected readonly temPressupostos = computed(() =>
+    this.fatosDaInscricao() === null
+      ? this.finalidade() !== FINALIDADE_INSCRICAO || (this.conteudo().pressupostos?.length ?? 0) > 0
+      : (this.conteudo().pressupostos?.length ?? 0) > 0,
   );
+  /** No processo não se acrescenta pressuposto: a seção, quando aparece, só retira o que veio gravado. */
   protected readonly pressupostosPossiveis = computed(() =>
-    pressupostosParaAcrescentar(this.conteudo(), this.catalogo(), this.finalidade()),
+    this.fatosDaInscricao() === null ? pressupostosParaAcrescentar(this.conteudo(), this.catalogo(), this.finalidade()) : [],
   );
 
   protected nomeDoFato(codigo: string): string {
@@ -607,7 +634,11 @@ export class EditorDeFormularioComponent {
   }
 
   protected retirarPressuposto(fato: string): void {
-    this.aplicar(removerPressuposto(this.conteudo(), fato, this.nomes()), () => {
+    // No processo, o fato que a inscrição coleta continua conhecido sem o pressuposto: as regras que o citam seguem válidas.
+    const resultado: ResultadoDaEdicao = (this.fatosDaInscricao() ?? []).includes(fato)
+      ? { ok: true, conteudo: { ...this.conteudo(), pressupostos: (this.conteudo().pressupostos ?? []).filter((p) => p !== fato) } }
+      : removerPressuposto(this.conteudo(), fato, this.nomes());
+    this.aplicar(resultado, () => {
       this.anuncio.set(`“${this.nomeDoFato(fato)}” deixou de ser pressuposto.`);
       // Sem o combo, que some quando a seção some ou fica sem opção, o foco volta ao título do formulário.
       focarDepois(this.injector, `${this.idBase()}-pressuposto`, `${this.idBase()}-titulo`);
@@ -709,6 +740,12 @@ export class EditorDeFormularioComponent {
   }
 
   protected removerOGrupo(codigo: string, rotulo: string, etapa: EtapaDoFormulario): void {
+    const grupo = (this.conteudo().grupos ?? []).find((g) => g.codigo === codigo);
+    const travado = grupo === undefined ? null : motivoDaRemocaoTravadaDoGrupo(grupo, this.remocoesTravadas());
+    if (travado !== null) {
+      this.anuncio.set(`O grupo “${rotulo}” não pode ser removido: ${travado}`);
+      return;
+    }
     this.emitir(removerGrupo(this.conteudo(), codigo));
     this.anuncio.set(`Grupo “${rotulo}” removido de ${etapa.titulo}.`);
     focarDepois(this.injector, `${this.idDaEtapa(etapa)}-acrescentar`);
@@ -736,6 +773,11 @@ export class EditorDeFormularioComponent {
   }
 
   protected removerOItem(item: ItemDoFormulario, etapa: EtapaDoFormulario): void {
+    const travado = this.remocoesTravadas().get(item.fatoCodigo);
+    if (travado !== undefined) {
+      this.anuncio.set(travado);
+      return;
+    }
     this.aplicar(removerItem(this.conteudo(), item.fatoCodigo, this.nomes()), () => {
       this.anuncio.set(`Campo “${item.rotulo}” removido de ${etapa.titulo}.`);
       focarDepois(this.injector, `${this.idDaEtapa(etapa)}-acrescentar`);
