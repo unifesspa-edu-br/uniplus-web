@@ -520,6 +520,22 @@ describe('FormularioStepComponent', () => {
 
       expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain("O modelo cita 'RENDA', que a inscrição do processo não coleta.");
       expect(store.draft().formulario.conteudo).toBe(antes);
+      expect(store.aplicacoesDeModeloEmAberto().size, 'a recusa é definitiva: nada foi copiado').toBe(0);
+    });
+
+    it('sem saber se a cópia aconteceu, o passo não grava o rascunho antigo por cima dela', async () => {
+      const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
+      controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
+      await proximoPasso();
+      controller.expectOne(ROTA_APLICACAO).flush(
+        { type: 'about:blank', title: 'Serviço indisponível.', status: 503, traceId: '00000000000000000000000000000006' },
+        { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
+      );
+      await aplicacao;
+
+      const validacao = fixture.componentInstance.validate();
+      expect(validacao.valid).toBe(false);
+      expect(validacao.messages?.join(' ')).toContain('Não foi possível confirmar se o modelo foi aplicado ao formulário de inscrição');
     });
   });
 

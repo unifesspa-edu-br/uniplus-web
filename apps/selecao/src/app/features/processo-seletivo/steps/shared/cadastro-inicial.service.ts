@@ -649,20 +649,19 @@ export class CadastroInicialService {
   async aplicarModeloDeFormulario(
     processoSeletivoId: string,
     modeloId: string,
-  ): Promise<{ readonly ok: true; readonly relato: AplicacaoDeModeloDto } | FalhaOperacao> {
+  ): Promise<{ readonly ok: true; readonly relato: AplicacaoDeModeloDto } | (FalhaOperacao & { readonly inconclusiva: boolean })> {
     const geracao = this.geracao;
     const corpo = { modeloId };
     const result = await firstValueFrom(
       this.api.aplicarModeloDeFormulario(processoSeletivoId, corpo, this.chaveAplicacaoDeModelo.contextoPara(corpo)),
     );
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
 
     if (isApiOk(result)) {
       this.chaveAplicacaoDeModelo.renovar();
       return { ok: true, relato: result.data };
     }
-    this.chaveAplicacaoDeModelo.recusada(result);
-    return { ok: false, problem: result.problem };
+    return { ok: false, problem: result.problem, inconclusiva: this.chaveAplicacaoDeModelo.recusada(result) };
   }
 
   /** Um comando de substituição sob a chave dele, girando-a como `ChaveDeSubstituicao` manda. */
