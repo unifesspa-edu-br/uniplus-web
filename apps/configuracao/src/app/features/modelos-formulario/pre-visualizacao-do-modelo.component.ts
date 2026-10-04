@@ -95,11 +95,17 @@ const ESTADOS: Readonly<Record<string, string>> = {
                     class="input"
                     type="text"
                     [id]="'cfg-simulacao-' + fato.codigo"
+                    [attr.aria-invalid]="invalidos().has(fato.codigo) ? 'true' : null"
                     [attr.aria-describedby]="fato.multiplo ? 'cfg-simulacao-' + fato.codigo + '-nota' : null"
                     (input)="responder(fato, valorDe($event))"
                   />
                   @if (fato.multiplo) {
-                    <span class="field__hint" [id]="'cfg-simulacao-' + fato.codigo + '-nota'">Separe os valores por vírgula.</span>
+                    <span
+                      [class]="invalidos().has(fato.codigo) ? 'field__error' : 'field__hint'"
+                      [id]="'cfg-simulacao-' + fato.codigo + '-nota'"
+                    >
+                      {{ invalidos().has(fato.codigo) ? 'Valor não reconhecido. ' : '' }}{{ dicaDosValores(fato) }}
+                    </span>
                   }
                 }
               }
@@ -128,8 +134,8 @@ const ESTADOS: Readonly<Record<string, string>> = {
         <button
           type="button"
           class="btn btn--secondary"
-          [disabled]="desatualizado() || carregando()"
-          [attr.aria-describedby]="desatualizado() ? 'cfg-pre-visualizacao-desatualizado' : null"
+          [disabled]="desatualizado() || carregando() || invalidos().size > 0"
+          [attr.aria-describedby]="desatualizado() ? 'cfg-pre-visualizacao-desatualizado' : invalidos().size > 0 ? 'cfg-pre-visualizacao-invalido' : null"
           (click)="preVisualizar()"
         >
           @if (carregando()) {
@@ -139,6 +145,8 @@ const ESTADOS: Readonly<Record<string, string>> = {
         </button>
         @if (desatualizado()) {
           <span class="field__hint" id="cfg-pre-visualizacao-desatualizado">Salve para pré-visualizar as alterações.</span>
+        } @else if (invalidos().size > 0) {
+          <span class="field__hint" id="cfg-pre-visualizacao-invalido">Corrija os valores não reconhecidos para pré-visualizar.</span>
         }
       </div>
 
@@ -227,6 +235,11 @@ export class PreVisualizacaoDoModeloComponent {
     source: () => this.conteudo(),
     computation: () => new Map(),
   });
+  /** Os campos de vários valores com valor escrito que não se reconhece: não se simula o que não foi informado. */
+  protected readonly invalidos = linkedSignal<ConteudoDoFormulario, ReadonlySet<string>>({
+    source: () => this.conteudo(),
+    computation: () => new Set(),
+  });
   protected readonly concluidas = linkedSignal<ConteudoDoFormulario, ReadonlySet<string>>({
     source: () => this.conteudo(),
     computation: () => new Set(),
@@ -305,7 +318,20 @@ export class PreVisualizacaoDoModeloComponent {
                   .filter((parte) => parte !== '')
                   .map((parte) => valorNoDominio(fato.dominio, parte))
               : texto;
-    this.respostas.update((atual) => comResposta(atual, fato.codigo, valor));
+    const invalido = Array.isArray(valor) && valor.includes(NAO_RECONHECIDO);
+    this.invalidos.update((atual) => {
+      const novos = new Set(atual);
+      if (invalido) novos.add(fato.codigo);
+      else novos.delete(fato.codigo);
+      return novos;
+    });
+    this.respostas.update((atual) => comResposta(atual, fato.codigo, invalido ? undefined : valor));
+  }
+
+  protected dicaDosValores(fato: FatoSimulado): string {
+    if (fato.dominio === 'BOOLEANO') return 'Escreva sim ou não, separados por vírgula.';
+    if (fato.dominio === 'NUMERICO') return 'Escreva números inteiros, separados por vírgula.';
+    return 'Separe os valores por vírgula.';
   }
 
   protected responderLista(fato: FatoSimulado, evento: Event): void {
@@ -327,7 +353,7 @@ export class PreVisualizacaoDoModeloComponent {
   }
 
   protected preVisualizar(): void {
-    if (this.desatualizado() || this.carregando()) return;
+    if (this.desatualizado() || this.carregando() || this.invalidos().size > 0) return;
     const pressupostos = new Set(this.conteudo().pressupostos ?? []);
     const respostas: Record<string, unknown> = {};
     const conhecidos: Record<string, unknown> = {};
@@ -381,10 +407,17 @@ function simulado(fato: FatoCandidatoView, origem: FatoSimulado['origem']): Fato
   };
 }
 
-/** O valor escrito no tipo do domínio: sim e não viram booleano, número vira número. */
+const NAO_RECONHECIDO = Symbol('não reconhecido');
+const SIM = new Set(['sim', 'true']);
+const NAO = new Set(['não', 'nao', 'false']);
+/** O inteiro na gramática do JSON, a mesma que a condição sobre fato numérico aceita. */
+const INTEIRO = /^-?(0|[1-9]\d*)$/u;
+
+/** O valor escrito no tipo do domínio, ou a marca de não reconhecido — nunca outro valor no lugar. */
 function valorNoDominio(dominio: string, texto: string): unknown {
-  if (dominio === 'BOOLEANO') return ['true', 'sim'].includes(texto.toLocaleLowerCase('pt-BR'));
-  if (dominio === 'NUMERICO') return Number(texto);
+  const normalizado = texto.toLocaleLowerCase('pt-BR');
+  if (dominio === 'BOOLEANO') return SIM.has(normalizado) ? true : NAO.has(normalizado) ? false : NAO_RECONHECIDO;
+  if (dominio === 'NUMERICO') return INTEIRO.test(texto) ? Number(texto) : NAO_RECONHECIDO;
   return texto;
 }
 
