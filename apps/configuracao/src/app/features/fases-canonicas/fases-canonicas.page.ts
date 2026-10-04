@@ -116,7 +116,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
     >
       As fases canônicas pertencem a um vocabulário fixo, provisionado pela instituição no seed da
       API e congelado por snapshot nos cronogramas dos editais. Esta tela não cria fases nem altera
-      o código de uma fase — aqui você apenas edita os atributos de fases existentes ou as remover.
+      o código de uma fase — aqui você apenas edita os atributos de fases existentes ou as remove.
     </ui-alert>
 
     @if (errorMessage()) {
@@ -475,6 +475,14 @@ export class FasesCanonicasPage {
   protected readonly formError = signal<string | null>(null);
   protected readonly faseEmEdicaoId = signal<string | null>(null);
   protected readonly faseParaRemover = signal<FaseCanonicaDto | null>(null);
+  protected readonly savingRemover = signal(false);
+  /** Incrementado a cada abertura da confirmação — identifica a que pedido uma resposta pertence. */
+  private readonly remocaoSessao = signal(0);
+  /**
+   * Fases com DELETE pendente. O diálogo fecha ao confirmar, então é aqui que se barra o
+   * reenvio da mesma remoção; a lixeira continua habilitada para devolver o foco a ela.
+   */
+  private readonly remocoesEmAndamento = new Set<string>();
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
   protected readonly donoTipicoFiltro = signal('');
@@ -676,31 +684,47 @@ export class FasesCanonicasPage {
   }
 
   protected pedirRemocao(fase: FaseCanonicaDto): void {
+    if (this.remocoesEmAndamento.has(fase.id)) {
+      return;
+    }
+    this.remocaoSessao.update((atual) => atual + 1);
+    this.savingRemover.set(false);
     this.faseParaRemover.set(fase);
     this.confirmOpen.set(true);
   }
 
   protected removerConfirmado(): void {
     const fase = this.faseParaRemover();
-    if (fase === null || this.saving()) {
+    if (fase === null || this.savingRemover()) {
       return;
     }
-    this.saving.set(true);
+    this.savingRemover.set(true);
+    this.remocoesEmAndamento.add(fase.id);
+    const sessao = this.remocaoSessao();
     this.api
       .remover(fase.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
-        this.saving.set(false);
+        this.remocoesEmAndamento.delete(fase.id);
+        // O desfecho no backend independe de qual diálogo está na tela agora: sucesso
+        // recarrega a lista e falha notifica, sempre. Fechar o diálogo e liberar o botão
+        // só valem se nenhum pedido mais novo tiver assumido o estado compartilhado.
         if (result.ok) {
           this.notifications.success('Fase canônica removida', fase.codigo);
-          this.confirmOpen.set(false);
-          this.faseParaRemover.set(null);
           this.recarregar();
+        } else {
+          this.notifications.errorFromProblem(result.problem, {
+            title: this.problemI18n.resolve(result.problem).title,
+          });
+        }
+        if (sessao !== this.remocaoSessao()) {
           return;
         }
-        this.notifications.errorFromProblem(result.problem, {
-          title: this.problemI18n.resolve(result.problem).title,
-        });
+        this.savingRemover.set(false);
+        if (result.ok) {
+          this.confirmOpen.set(false);
+          this.faseParaRemover.set(null);
+        }
       });
   }
 
