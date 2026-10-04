@@ -9,8 +9,6 @@ import {
   desempateIdosoSemApuracao,
   desempateSemDataDeNascimento,
   desempateUsaDataDeNascimento,
-  PASSO_DESEMPATE,
-  PASSO_FORMULARIO,
 } from './desempate-por-idade';
 
 function criterio(regraCodigo: string): CriterioDesempateConfigurado {
@@ -76,12 +74,5 @@ describe('desempateIdosoSemApuracao', () => {
   it('não acusa o maior idade, que não usa a faixa etária', () => {
     expect(desempateIdosoSemApuracao([MAIOR_IDADE], SEM_APURACAO)).toBe(false);
     expect(desempateIdosoSemApuracao([], SEM_APURACAO)).toBe(false);
-  });
-});
-
-describe('passos que as incoerências ligam', () => {
-  it('são resolvidos pela ordem única dos passos', () => {
-    expect(PASSO_DESEMPATE).toBeGreaterThanOrEqual(0);
-    expect(PASSO_FORMULARIO).toBeGreaterThan(PASSO_DESEMPATE);
   });
 });

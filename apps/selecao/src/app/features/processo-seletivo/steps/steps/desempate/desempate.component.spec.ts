@@ -263,6 +263,20 @@ describe('DesempateStepComponent', () => {
     expect(componente.semDataDeNascimento()).toBe(false);
   });
 
+  it('em consulta, não acusa a idade: o processo publicado não admite a correção', () => {
+    store.patchSection('desempate', [
+      criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
+      criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: 'v1', idadeMinima: '60' }),
+    ]);
+    expect(componente.semDataDeNascimento()).toBe(true);
+    expect(componente.idosoSemApuracao()).toBe(true);
+
+    store.remoteSnapshot.set({ status: 'publicado' } as never);
+
+    expect(componente.semDataDeNascimento()).toBe(false);
+    expect(componente.idosoSemApuracao()).toBe(false);
+  });
+
   it('não exige a apuração da idade do maior idade, só do idoso', () => {
     store.patchSection('desempate', [
       criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: 'v1' }),
