@@ -164,6 +164,37 @@ describe('FormularioStepComponent em consulta', () => {
     expect(host.querySelector('#form-idoso-sem-apuracao')).toBeNull();
   });
 
+  it('acrescenta a data de nascimento com o campo de data, que a API aceita', () => {
+    store.remoteSnapshot.set({ status: 'rascunho' } as never);
+    fixture.componentInstance.carregarCatalogo();
+    for (const requisicao of controller.match(() => true)) {
+      requisicao.flush([
+        {
+          id: 'f-nascimento',
+          codigo: 'DATA_NASCIMENTO',
+          nome: 'Data de nascimento',
+          descricao: null,
+          dominio: 'DATA',
+          origem: 'DECLARADO',
+          cardinalidade: 'ESCALAR',
+          valoresDominio: null,
+          pontoResolucao: 'INSCRICAO',
+          binding: 'CAMPO_INSCRICAO:DATA_NASCIMENTO',
+          valoresDominioDeclarados: null,
+          fonteValores: null,
+          ativo: true,
+          escopo: 'CANDIDATO',
+        },
+      ]);
+    }
+
+    fixture.componentInstance.fatoAAcrescentar.set('DATA_NASCIMENTO');
+    fixture.componentInstance.acrescentarCampo();
+
+    const campo = store.draft().formulario.fatos.find((f) => f.fatoCodigo === 'DATA_NASCIMENTO');
+    expect(campo?.tipoRenderizacao).toBe('DATA');
+  });
+
   it('avisa do desempate por maior idade sem data de nascimento e leva ao passo Desempate', () => {
     expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
 
