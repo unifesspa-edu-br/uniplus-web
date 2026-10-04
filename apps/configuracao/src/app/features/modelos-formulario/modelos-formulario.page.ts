@@ -213,9 +213,9 @@ type CampoDaCriacao = keyof CriacaoForm;
     <ui-drawer class="cfg-form-drawer" [(visible)]="drawerAberto" heading="Novo modelo de formulário" ariaLabel="Novo modelo de formulário" position="right">
       @if (drawerAberto()) {
         <form [formGroup]="form" id="cfg-modelo-criacao" class="cfg-form" (ngSubmit)="criar()" novalidate>
-          <ui-alert variant="info" heading="O modelo nasce ativo" [dynamic]="false">
-            Ele passa a ser oferecido a processos novos assim que é criado. Se ainda estiver em montagem,
-            desative-o na lista até terminar.
+          <ui-alert variant="info" heading="O modelo nasce desativado" [dynamic]="false">
+            Monte o formulário com calma: o modelo só é oferecido a processos novos depois de ativado na
+            lista.
           </ui-alert>
           @if (erroDaCriacao()) {
             <ui-alert variant="danger" heading="Não foi possível criar o modelo">{{ erroDaCriacao() }}</ui-alert>
