@@ -3133,6 +3133,12 @@
   padding-block-end: var(--space-3);
 }
 
+/* A ajuda fica fora do campo e ocupa a linha de baixo: dentro dele, o botão se alinharia à última linha dela. */
+.sel-processo .form-abas__ajuda {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 /* O combo dos modelos e o botão que aplica, lado a lado enquanto couberem. */
 .sel-processo .form-modelo__escolha {
   display: flex;

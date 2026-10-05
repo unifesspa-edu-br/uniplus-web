@@ -254,7 +254,6 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                     <option [value]="termo.termoId" [selected]="escolhaDeTermo() === termo.termoId">{{ termo.nome }}</option>
                   }
                 </select>
-                <span class="field__hint" [id]="idBase() + '-termo-nota'">Só termos com versão promovida podem ser exigidos.</span>
               </div>
               <button
                 class="btn btn--secondary btn--sm"
@@ -265,6 +264,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                 <i class="pi pi-plus" aria-hidden="true"></i> Exigir termo
               </button>
             </div>
+            <span class="field__hint" [id]="idBase() + '-termo-nota'">Só termos com versão promovida podem ser exigidos.</span>
           }
         } @else {
           <ui-secao-do-formulario
