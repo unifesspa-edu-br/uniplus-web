@@ -111,7 +111,7 @@ const PAGE_SIZE = 50;
     </div>
 
     @if (errorMessage()) {
-      <ui-alert variant="danger" heading="Não foi possível carregar as condições de atendimento">
+      <ui-alert variant="danger" heading="Não foi possível carregar os recursos de acessibilidade">
         {{ errorMessage() }}
         <div class="cfg-campi__retry">
           <button
@@ -152,7 +152,7 @@ const PAGE_SIZE = 50;
         <div class="panel-head">
           <div class="panel-head__title">
             <h2 id="cfg-unidades-list-title">Recursos de acessibilidade</h2>
-            <span class="list-count" aria-label="Total de recursos carregadas">
+            <span class="list-count" aria-label="Total de recursos carregados">
               {{ recursosFiltrados().length }}
             </span>
           </div>
