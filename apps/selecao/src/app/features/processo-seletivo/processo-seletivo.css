@@ -721,18 +721,6 @@
   cursor: pointer;
 }
 
-/* ---- Form grid (step 2+) ---- */
-.sel-processo .form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4) var(--space-5);
-  align-items: start;
-}
-
-.sel-processo .form-grid__full {
-  grid-column: 1 / -1;
-}
-
 /*
  * O que a etapa publica fica num bloco próprio dentro da linha da etapa: são
  * declarações de outra natureza que nome, peso e caráter — o que sai da etapa,
@@ -1465,17 +1453,6 @@
   align-self: end;
 }
 
-/*
- * Item de grid tem `min-width: auto`, então o conteúdo intrínseco decide o piso
- * da largura: um `<select>` com opção longa — nome de unidade, rótulo de origem
- * dos candidatos — esticava a coluna e o passo transbordava na horizontal em
- * 320 px. O piso zero devolve a decisão à coluna; o campo então respeita a
- * largura disponível qualquer que seja a fonte em uso.
- */
-.sel-processo .form-grid > * {
-  min-width: 0;
-}
-
 .sel-processo .form-field .input,
 .sel-processo .form-field select.input {
   max-width: 100%;
@@ -1504,16 +1481,6 @@
 .sel-processo .field__erro p {
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-@media (max-width: 479px) {
-  .sel-processo .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sel-processo .form-grid__full {
-    grid-column: auto;
-  }
 }
 
 /* Step card (mobile wrapper) */
@@ -2138,12 +2105,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-@media (max-width: 767px) {
-  .bonus-config .form-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /*

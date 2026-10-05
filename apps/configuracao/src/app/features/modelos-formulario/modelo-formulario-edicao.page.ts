@@ -133,7 +133,7 @@ interface CabecalhoForm {
         </ui-alert>
       }
 
-      <form [formGroup]="form" id="cfg-modelo-edicao" class="cfg-modelo-cabecalho" (ngSubmit)="salvar()" novalidate>
+      <form [formGroup]="form" id="cfg-modelo-edicao" class="form-grid cfg-modelo-cabecalho" (ngSubmit)="salvar()" novalidate>
         <label class="field" [class.is-error]="erro('nome')">
           <span class="field__label is-required">Nome</span>
           <input class="input" type="text" formControlName="nome" maxlength="200" [attr.aria-invalid]="erro('nome') ? 'true' : null" [attr.aria-describedby]="erro('nome') ? 'cfg-modelo-ed-nome-erro' : null" />
@@ -153,7 +153,7 @@ interface CabecalhoForm {
             <span class="field__error" id="cfg-modelo-ed-tipo-erro">{{ erro('tipoProcessoCodigo') }}</span>
           }
         </label>
-        <label class="field cfg-modelo-cabecalho__largo" [class.is-error]="erro('descricao')">
+        <label class="field form-grid__full" [class.is-error]="erro('descricao')">
           <span class="field__label">Descrição</span>
           <textarea class="textarea" formControlName="descricao" rows="2" maxlength="1000" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'cfg-modelo-ed-descricao-erro' : null"></textarea>
           @if (erro('descricao')) {

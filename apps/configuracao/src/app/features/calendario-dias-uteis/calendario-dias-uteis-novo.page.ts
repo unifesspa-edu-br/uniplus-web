@@ -118,7 +118,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
       >
         <h2 id="cfg-sec-dados-gerais" class="form-section__title">Dados Gerais</h2>
         <div class="form-grid cfg-calendario-form__versao">
-          <label class="field field--full" [class.is-error]="erroDoCampo('versaoDataset')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('versaoDataset')">
             <span class="field__label is-required">Versão do dataset</span>
             <input
               type="text"
@@ -249,7 +249,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
 
                 @if (diaNaoUtil.controls.abrangencia.value === 'MUNICIPAL') {
                   <div
-                    class="field field--full cfg-dia-card__municipio"
+                    class="field form-grid__full cfg-dia-card__municipio"
                     [class.is-error]="erroDoCampoDiasNaoUteis('codigoMunicipio', index)"
                   >
                     <label [for]="'busca-municipio-' + index" class="field__label is-required">
@@ -337,7 +337,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
                 </label>
 
                 <label
-                  class="field field--full cfg-dia-card__descricao-field"
+                  class="field form-grid__full cfg-dia-card__descricao-field"
                   [class.is-error]="erroDoCampoDiasNaoUteis('descricao', index)"
                 >
                   <span class="field__label is-required">Descrição</span>

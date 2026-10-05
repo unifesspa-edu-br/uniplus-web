@@ -355,10 +355,6 @@ sel-layout {
   margin-bottom: 0;
 }
 
-.form-grid .field--full {
-  grid-column: 1 / -1;
-}
-
 /* Realce visual (não normativo) para campos de código curto — o valor
    digitado não é forçado a maiúsculas, só exibido assim (Tipo de Documento,
    issue #392 §3.1). */
@@ -386,10 +382,6 @@ sel-layout {
   border-radius: var(--radius-sm);
 }
 
-.cfg-form-drawer .form-grid--compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .form-section__title {
   margin: 0 0 var(--space-4);
   color: var(--text-heading);
@@ -413,16 +405,6 @@ sel-layout {
   .cfg-form-drawer .uni-drawer__panel {
     max-width: min(760px, 100vw);
   }
-
-  .cfg-form-drawer .form-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Vocabulários fechados (Fase canônica, Tipo de banca): formulário compacto
-   com poucos campos — mantém 1 coluna mesmo em telas largas (issue #393). */
-.cfg-form-drawer .form-grid--1col {
-  grid-template-columns: 1fr;
 }
 
 @media (max-width: 767px) {

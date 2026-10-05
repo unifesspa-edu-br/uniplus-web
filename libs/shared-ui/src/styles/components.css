@@ -211,6 +211,49 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 .textarea { min-height: 96px; resize: vertical; line-height: var(--leading-normal); }
 
 /* ============================================================================
+ * FORM GRID — como os campos de um formulário se distribuem
+ * Decide pelo espaço do próprio formulário, não pela largura da tela: o mesmo
+ * formulário vive num drawer estreito, num cartão aninhado ou numa coluna larga.
+ *   - no máximo dois campos por linha, dividindo a largura;
+ *   - o campo sozinho na linha ocupa a linha inteira;
+ *   - um campo por linha quando não cabem dois de 16rem.
+ * Modificadores: `.form-grid__full` (linha inteira de propósito: descrição,
+ * ajuda, texto longo), `.form-grid--pair` (par correlato sempre lado a lado:
+ * mínimo e máximo, latitude e longitude) e `.form-grid--1col` (um campo por
+ * linha). Ação dentro da grade não cresce: fica do tamanho do rótulo.
+ * Regra documentada em docs/leiaute-de-formulario.md.
+ * ========================================================================== */
+.form-grid,
+.form-grid--pair {
+  --form-grid-gap: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--form-grid-gap);
+}
+
+.form-grid > *,
+.form-grid--pair > * {
+  flex: 1 1 calc(50% - var(--form-grid-gap));
+  min-width: min(16rem, 100%);
+}
+
+.form-grid > .form-grid__full,
+.form-grid--1col > * {
+  flex-basis: 100%;
+}
+
+.form-grid--pair > * {
+  min-width: 0;
+}
+
+.form-grid > .btn {
+  flex: 0 0 auto;
+  min-width: 0;
+  align-self: flex-end;
+}
+
+/* ============================================================================
  * VALOR EM CONSULTA — o campo lido, não preenchido (<ui-valor-em-consulta>)
  * O rótulo repete o do campo em edição, em cor secundária; o valor fica no texto
  * primário e quebra linha em vez de ser cortado pela largura do campo.
@@ -627,14 +670,6 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
   padding-left: var(--space-3);
 }
 
-.editor-formulario__campos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-  gap: var(--space-3);
-}
-
-.editor-formulario__largo { grid-column: 1 / -1; }
-
 .editor-formulario__acoes,
 .editor-formulario__acrescentar {
   display: flex;
@@ -657,8 +692,8 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
   justify-items: start;
 }
 
-.editor-formulario__restricoes > .editor-formulario__campos,
-.editor-formulario__restricao > .editor-formulario__campos { width: 100%; }
+.editor-formulario__restricoes > .form-grid,
+.editor-formulario__restricao > .form-grid { width: 100%; }
 
 .editor-formulario__opcoes { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
 

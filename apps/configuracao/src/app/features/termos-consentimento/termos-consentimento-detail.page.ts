@@ -139,7 +139,7 @@ function ultimaChaveDoCaminho(field: string): string {
             <h2 id="cfg-termo-novo" class="form-section__title">Novo termo</h2>
             <div class="form-grid">
               <label
-                class="field field--full"
+                class="field form-grid__full"
                 [class.is-error]="erroDoCampo(criarForm.controls.nome)"
               >
                 <span class="field__label is-required">Nome</span>
@@ -155,7 +155,7 @@ function ultimaChaveDoCaminho(field: string): string {
               </label>
 
               <label
-                class="field field--full"
+                class="field form-grid__full"
                 [class.is-error]="erroDoCampo(criarForm.controls.texto)"
               >
                 <span class="field__label">Texto do rascunho</span>
@@ -222,7 +222,7 @@ function ultimaChaveDoCaminho(field: string): string {
               <legend class="sr-only">Campos do rascunho</legend>
               <div class="form-grid">
                 <label
-                  class="field field--full"
+                  class="field form-grid__full"
                   [class.is-error]="erroDoCampo(rascunhoForm.controls.texto)"
                 >
                   <span class="field__label">Texto</span>

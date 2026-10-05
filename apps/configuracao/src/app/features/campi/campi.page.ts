@@ -236,7 +236,7 @@ interface CampusForm {
                 <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome</span>
               <input
                 class="input"

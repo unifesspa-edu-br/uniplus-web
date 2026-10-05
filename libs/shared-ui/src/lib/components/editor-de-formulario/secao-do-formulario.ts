@@ -15,7 +15,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
   imports: [EditorDeCondicoesComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="editor-formulario__campos">
+    <div class="form-grid">
       <div class="field" [class.is-error]="tituloVazio()">
         <label class="field__label is-required" [for]="idDe('titulo')">Título da seção</label>
         <input
@@ -34,7 +34,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         }
       </div>
 
-      <div class="field editor-formulario__largo">
+      <div class="field form-grid__full">
         <label class="field__label" [for]="idDe('descricao')">Descrição</label>
         <textarea
           class="textarea"
@@ -47,7 +47,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         ></textarea>
       </div>
 
-      <div class="field editor-formulario__largo">
+      <div class="field form-grid__full">
         <label class="field__label" [for]="idDe('aviso')">Aviso</label>
         <textarea
           class="textarea"

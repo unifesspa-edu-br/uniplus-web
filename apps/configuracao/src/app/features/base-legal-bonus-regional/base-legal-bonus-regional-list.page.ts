@@ -330,7 +330,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             }
           </label>
 
-          <label class="field field--full" [class.is-error]="erroDoCampo('identificacao')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('identificacao')">
             <span class="field__label is-required">Identificação</span>
             <input
               #identificacaoInput
@@ -350,7 +350,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             }
           </label>
 
-          <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
             <span class="field__label is-required">Descrição</span>
             <textarea
               #descricaoTextarea
@@ -367,7 +367,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
             }
           </label>
 
-          <div class="field field--full" [class.is-error]="municipiosErro() !== null">
+          <div class="field form-grid__full" [class.is-error]="municipiosErro() !== null">
             <span class="field__label is-required" id="cfg-blbr-municipios-label">Municípios</span>
             <div class="cfg-municipio-busca">
               <div class="cfg-municipio-busca__input">

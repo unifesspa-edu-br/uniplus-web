@@ -275,7 +275,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
               <article class="cfg-dia-card">
                 <div class="form-grid form-grid--1col">
                   <label
-                    class="field field--full"
+                    class="field form-grid__full"
                     [class.is-error]="erroDoCampoDiasNaoUteis('abrangencia')"
                     [attr.for]="'abrangencia'"
                   >
@@ -301,7 +301,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
                     form.controls.abrangencia.value === 'ESTADUAL'
                   ) {
                     <label
-                      class="field field--full"
+                      class="field form-grid__full"
                       [class.is-error]="erroDoCampoDiasNaoUteis('uf')"
                     >
                       <span class="field__label is-required">
@@ -335,7 +335,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 
                   @if (this.form.controls.abrangencia.value === 'MUNICIPAL') {
                     <div
-                      class="field field--full cfg-dia-card__municipio"
+                      class="field form-grid__full cfg-dia-card__municipio"
                       [class.is-error]="erroDoCampoDiasNaoUteis('codigoMunicipio')"
                     >
                       <label [for]="'busca-municipio-'" class="field__label is-required">
@@ -425,7 +425,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
                   </label>
                   @let erroDoCampoDescricao = erroDoCampoDiasNaoUteis('descricao');
                   <label
-                    class="field field--full cfg-dia-card__descricao-field"
+                    class="field form-grid__full cfg-dia-card__descricao-field"
                     [class.is-error]="erroDoCampoDescricao"
                   >
                     <span class="field__label is-required">Descrição</span>

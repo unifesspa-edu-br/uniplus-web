@@ -48,7 +48,7 @@ interface CampoCitavel {
 
             @switch (restricao.tipo) {
               @case (faixa) {
-                <div class="editor-formulario__campos">
+                <div class="form-grid form-grid--pair">
                   <div class="field">
                     <label class="field__label" [for]="idDe(restricao, 'minimo')">Mínimo</label>
                     <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" (change)="trocarLimite(indice, 'minimo', $event)" />
@@ -60,7 +60,7 @@ interface CampoCitavel {
                 </div>
               }
               @case (tamanho) {
-                <div class="editor-formulario__campos">
+                <div class="form-grid form-grid--pair">
                   <div class="field">
                     <label class="field__label" [for]="idDe(restricao, 'minimo')">Mínimo de caracteres</label>
                     <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" (change)="trocarLimite(indice, 'minimo', $event)" />

@@ -43,7 +43,7 @@ const ACEITES = [
         </ul>
       }
 
-      <div class="editor-formulario__campos">
+      <div class="form-grid">
         <div class="field">
           <label class="field__label" [for]="idDe('versao')">Versão aceita</label>
           <select class="select" [id]="idDe('versao')" [disabled]="disabled()" (change)="trocar({ versaoId: valorDe($event) })">
