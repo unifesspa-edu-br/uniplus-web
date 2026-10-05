@@ -189,7 +189,7 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await mockApi(page, capturado, SEED);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: `Inativar ${RESOLUCAO}`, exact: true, }).click();
+    await page.getByRole('button', { name: `Inativar resolução ${RESOLUCAO}`, exact: true, }).click();
     await page
       .locator('dialog.uni-dialog')
       .getByRole('button', { name: 'Confirmar inativação', exact: true, })
