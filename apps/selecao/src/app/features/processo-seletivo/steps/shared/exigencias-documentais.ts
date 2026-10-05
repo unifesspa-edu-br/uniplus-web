@@ -135,6 +135,7 @@ export function exigenciaNova(
     idadeMaximaEmissao: null,
     formatosPermitidos: tokens.length > 0 ? [...tokens] : QUALQUER_FORMATO,
     tamanhoMaximoBytes: tetoEmBytes(restricao?.tamanhoMaximoMb),
+    modelo: null,
   };
 }
 
@@ -971,6 +972,7 @@ function folha(
     idadeMaximaEmissao: comoIdadeMaxima(documento.idadeMaximaEmissao, faseIdPorCodigo),
     formatosPermitidos: documento.formatosPermitidos as ItemDocumentoExigidoInput['formatosPermitidos'],
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
+    modeloId: documento.modelo?.modeloId ?? null,
   };
 }
 
@@ -1193,6 +1195,15 @@ function documentoDe(
           },
     formatosPermitidos: dto.formatosPermitidos,
     tamanhoMaximoBytes: comoNumero(dto.tamanhoMaximoBytes),
+    modelo:
+      dto.modelo === null || dto.modelo === undefined
+        ? null
+        : {
+            modeloId: dto.modelo.modeloId,
+            nomeArquivo: dto.modelo.nomeArquivo,
+            formato: dto.modelo.formato,
+            hashSha256: dto.modelo.hashSha256,
+          },
   };
 }
 

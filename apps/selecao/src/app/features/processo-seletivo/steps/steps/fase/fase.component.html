@@ -1005,6 +1005,15 @@
                                 }
                               </div>
 
+                              <sel-modelo-da-exigencia
+                                class="doc-item__modelo"
+                                [modelo]="modeloDoDocumento(doc.id)"
+                                [desabilitado]="!store.aceitaEdicao()"
+                                [idBase]="idDaFase('doc-modelo-' + doc.id)"
+                                [nomeDoDocumento]="doc.nome"
+                                (modeloChange)="definirModelo(doc.id, $event)"
+                              />
+
                               <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
                                  federal somada à cláusula do edital é o caso comum. -->
                               @for (base of basesLegaisDoDocumento(doc.id); track $index) {

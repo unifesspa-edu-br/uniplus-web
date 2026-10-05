@@ -1,6 +1,8 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import type { DebugElement } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
@@ -24,6 +26,7 @@ import {
 } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
+import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -189,6 +192,7 @@ describe('FaseStepComponent', () => {
   let controller: HttpTestingController;
   let detectar: () => void;
   let nativo: HTMLElement;
+  let raiz: DebugElement;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -211,6 +215,7 @@ describe('FaseStepComponent', () => {
     controller = TestBed.inject(HttpTestingController);
     detectar = () => fixture.detectChanges();
     nativo = fixture.nativeElement as HTMLElement;
+    raiz = fixture.debugElement;
 
     detectar();
 
@@ -989,6 +994,23 @@ describe('FaseStepComponent', () => {
         detectar();
 
         expect(campoDeEntrega()).not.toBeNull();
+      });
+
+      it('vincula à exigência da fase o modelo que o envio confirma', () => {
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        detectar();
+        const modelo = {
+          modeloId: '01960000-0000-7000-0000-00000000a0de',
+          nomeArquivo: 'declaracao.odt',
+          formato: 'ODT',
+          hashSha256: 'cd'.repeat(32),
+        };
+
+        const envio = raiz.query(By.directive(ModeloDaExigenciaComponent));
+        (envio.componentInstance as ModeloDaExigenciaComponent).modeloChange.emit(modelo);
+
+        expect(componente.exigenciaDoDocumento(ID_CPF).modelo).toEqual(modelo);
       });
 
       it('filtra os documentos pelo público e diz quantos sobraram', () => {

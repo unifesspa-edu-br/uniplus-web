@@ -479,6 +479,24 @@ export interface ExigenciaDeDocumento {
    */
   readonly formatosPermitidos: unknown;
   readonly tamanhoMaximoBytes: number | null;
+  /**
+   * O modelo de documento que a exigência oferece ao candidato para baixar, preencher e devolver;
+   * `null` quando não oferece. O `PUT` da árvore substitui tudo: sem ler e reenviar o modelo, cada
+   * gravação o desvincularia.
+   */
+  readonly modelo: ModeloDaExigencia | null;
+}
+
+/**
+ * O modelo confirmado que a exigência referencia, como o servidor o copiou: o arquivo é imutável,
+ * e o hash é o que congela no edital.
+ */
+export interface ModeloDaExigencia {
+  readonly modeloId: string;
+  readonly nomeArquivo: string;
+  /** `DOCX` ou `ODT`. */
+  readonly formato: string;
+  readonly hashSha256: string;
 }
 
 /**

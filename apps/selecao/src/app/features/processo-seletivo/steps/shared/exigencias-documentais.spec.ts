@@ -466,6 +466,7 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
         formatosPermitidos: 'QUALQUER',
         tamanhoMaximoBytes: null,
         exigidoNaEtapaId: null,
+        modelo: null,
         ...patch,
       },
     };
@@ -722,6 +723,21 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     });
     expect(raizes[0].documento?.basesLegais).toHaveLength(2);
     expect(raizes[0].documento?.basesLegais[0].observacao).toBe('cotas');
+  });
+
+  /** O `PUT` substitui a árvore inteira: o modelo que não volta no comando é desvinculado. */
+  it('regrava o modelo de documento que a exigência oferece', () => {
+    const modelo = {
+      modeloId: '01960000-0000-7000-0000-00000000a0de',
+      nomeArquivo: 'autodeclaracao.docx',
+      formato: 'DOCX',
+      hashSha256: 'ab'.repeat(32),
+    };
+    const lido = exigenciasDe(detalhe([folhaDto({ modelo })]));
+
+    const raizes = arvoreDeExigencias(lido, FASES, ['AC'], ETAPAS_VIVAS, FINALIDADES_POR_FASE);
+
+    expect(raizes[0].documento?.modeloId).toBe(modelo.modeloId);
   });
 });
 
