@@ -1125,6 +1125,20 @@ describe('o formulário em que o documento é apresentado', () => {
     );
   });
 
+  it('no regime de todas as fases, a cópia não herda o formulário do modelo: cada fase resolve o seu', () => {
+    const fases = new Map([...FASES, ['RESULTADO', '01960000-0000-7000-0000-0000000000f3']]);
+    const finalidades = new Map([...FINALIDADES_POR_FASE, ['RESULTADO', []]]);
+    const modelo = exigencia({ faseCodigo: 'ISENCAO', finalidade: 'INSCRICAO' });
+
+    const raizes = arvoreDeExigencias({ raizes: [folhaDe(modelo)], emTodasAsFases: [ID_RG] }, fases, ['AC'], ETAPAS_VIVAS, finalidades);
+
+    expect(raizes.map((raiz) => [raiz.documento?.exigidoNaFaseId, raiz.documento?.finalidade])).toEqual([
+      [ID_ISENCAO, 'INSCRICAO'],
+      [ID_HABILITACAO, 'HABILITACAO'],
+      ['01960000-0000-7000-0000-0000000000f3', null],
+    ]);
+  });
+
   it('os documentos de um grupo viajam com o formulário declarado na raiz', () => {
     const grupo = grupoOu(
       exigencia({ faseCodigo: 'ISENCAO', finalidade: 'ISENCAO_TAXA' }),

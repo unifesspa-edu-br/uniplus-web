@@ -962,7 +962,7 @@ export class FaseStepComponent {
     const modelo = exigencias.emTodasAsFases.includes(id)
       ? exigenciasDaRaiz(exigencias).find((exigencia) => exigencia.tipoDocumentoId === id)
       : undefined;
-    if (modelo !== undefined) return { ...modelo, faseCodigo: codigo, etapaId: null };
+    if (modelo !== undefined) return { ...modelo, faseCodigo: codigo, etapaId: null, finalidade: null };
 
     return exigenciaNova(id, codigo, this.catalogos.tipoDocumentoPorId().get(id));
   }

@@ -37,6 +37,7 @@ import {
   CONSEQUENCIA_REENVIO,
   FATO_MODALIDADE,
   arvoreDeExigencias,
+  comAlcanceDeTodasAsFases,
   exigenciaDecideResultado,
   exigenciasDaFase,
   faltaOFormulario,
@@ -378,7 +379,14 @@ export class CronogramaStepComponent {
       fase: this.catalogos.nomeDaFase(),
     };
 
-    return todasAsExigencias(this.store.draft().documentos).map((exigencia) => {
+    // Confere o que a gravação envia: o documento que vale em todas as fases é materializado
+    // também na fase acrescentada depois do regime, e só assim a cópia dela é conferida antes do
+    // envio, em vez de chegar ao servidor sem ninguém a ter visto.
+    const materializadas = comAlcanceDeTodasAsFases(
+      this.store.draft().documentos,
+      fases.map((fase) => fase.codigo),
+    );
+    return todasAsExigencias(materializadas).map((exigencia) => {
       const fase = fasePorCodigo.get(exigencia.faseCodigo);
       const admiteComplementacao =
         fase === undefined

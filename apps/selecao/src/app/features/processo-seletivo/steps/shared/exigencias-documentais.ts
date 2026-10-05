@@ -853,7 +853,10 @@ export function comAlcanceDeTodasAsFases(
       );
       if (jaTemNaRaiz) continue;
 
-      resultado = comExigenciaNaRaiz(resultado, { ...modelo, faseCodigo, etapaId: null });
+      // O formulário é próprio de cada declaração, como a fase e a etapa: o do modelo pode não ser
+      // respondido na fase de destino, e herdá-lo travaria a fase numa recusa. A cópia nasce sem
+      // declaração, e a fase de destino resolve o formulário que vale nela.
+      resultado = comExigenciaNaRaiz(resultado, { ...modelo, faseCodigo, etapaId: null, finalidade: null });
     }
   }
 
