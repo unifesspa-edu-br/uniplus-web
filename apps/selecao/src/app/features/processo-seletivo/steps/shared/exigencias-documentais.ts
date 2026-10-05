@@ -1112,6 +1112,8 @@ function assinaturaDaDeclaracao(exigencia: ExigenciaDeDocumento): string {
     idadeMaximaEmissao: exigencia.idadeMaximaEmissao,
     formatosPermitidos: exigencia.formatosPermitidos,
     tamanhoMaximoBytes: exigencia.tamanhoMaximoBytes,
+    // O modelo oferecido é conteúdo: fases com modelos diferentes são declarações independentes.
+    modeloId: exigencia.modelo?.modeloId ?? null,
   });
 }
 
