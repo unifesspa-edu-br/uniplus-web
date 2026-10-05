@@ -1463,6 +1463,40 @@ describe('FaseStepComponent', () => {
       expect(seletor()).toBeNull();
     });
 
+    it('o formulário declarado que a fase não responde mais não é trocado: o campo aparece com o erro e a gravação o leva como declarado', () => {
+      exigirCpfNa({ coletaInscricao: true });
+      componente.escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
+      detectar();
+
+      expect(seletor()?.value).toBe('');
+      expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
+      expect(nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent?.trim()).toBe(
+        'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
+      );
+      const raizes = arvoreDeExigencias(
+        store.draft().documentos,
+        new Map([['AVALIACAO', ID_AVALIACAO]]),
+        [],
+        new Set<string>(),
+        new Map([['AVALIACAO', ['INSCRICAO']]]),
+      );
+      expect(raizes[0].documento?.finalidade).toBe('ISENCAO_TAXA');
+    });
+
+    it('na fase que não responde formulário nenhum, o formulário declarado antes se desfaz pela opção "Nenhum"', () => {
+      exigirCpfNa(null);
+      componente.escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
+      detectar();
+      const campo = seletor() as HTMLSelectElement;
+
+      campo.value = 'SEM_FORMULARIO';
+      campo.dispatchEvent(new Event('change'));
+      detectar();
+
+      expect(componente.exigenciaDoDocumento(ID_CPF).finalidade).toBeNull();
+      expect(seletor()).toBeNull();
+    });
+
     it('na fase dividida, a escolha vai ao rascunho e a conferência passa a listar o documento sob o formulário', () => {
       exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
       const titulos = () => Array.from(nativo.querySelectorAll('h4'), (titulo) => titulo.textContent?.trim());

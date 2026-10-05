@@ -744,9 +744,11 @@
                               <!--
                               O formulário em cujo bloco de comprovação o candidato apresenta o documento.
                               Some na fase que não responde formulário nenhum; na de um formulário só, vem
-                              preenchido, e na que divide inscrição e isenção a escolha é do operador.
+                              preenchido, e na que divide inscrição e isenção a escolha é do operador. O
+                              formulário declarado que a fase deixou de responder não é trocado: o campo
+                              aparece com o erro até o operador escolher.
                             -->
-                              @if (formulariosEscolhiveis().length > 0) {
+                              @if (mostraFormulario(doc.id)) {
                                 @let formularioDoDoc = finalidadeDoDocumento(doc.id);
                                 @let faltaFormularioDoDoc = faltaFormulario(doc.id);
                                 <div class="form-field">

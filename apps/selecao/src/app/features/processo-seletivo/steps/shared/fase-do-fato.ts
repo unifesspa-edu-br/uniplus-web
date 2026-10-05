@@ -65,7 +65,7 @@ export function fasesNoCronograma(
 /** Onde a exigência é cobrada: a fase e o formulário em que o candidato apresenta o documento. */
 export interface LugarDaExigencia {
   readonly faseCodigo: string;
-  /** O formulário declarado; o efetivo sai da fase, por `finalidadeDaExigencia`. */
+  /** O formulário declarado; o que vale sai da fase, por `finalidadeDaExigencia`. */
   readonly finalidade: string | null;
 }
 
@@ -146,8 +146,9 @@ export function recusaDeFaseDoGatilho(
 ): RecusaDeFase | null {
   const daExigencia = producao.fases.find((fase) => fase.codigo === lugar.faseCodigo);
   if (daExigencia === undefined) return null;
-  const finalidade = finalidadeDaExigencia(lugar.finalidade, daExigencia.finalidades);
-  if (finalidade === null && daExigencia.finalidades.length > 0) return null;
+  const formulario = finalidadeDaExigencia(lugar.finalidade, daExigencia.finalidades);
+  if (formulario.situacao !== 'DEFINIDO') return null;
+  const { finalidade } = formulario;
 
   const efetiva = faseEfetiva(fato, producao, new Set());
   if ('foraDoCronograma' in efetiva) {

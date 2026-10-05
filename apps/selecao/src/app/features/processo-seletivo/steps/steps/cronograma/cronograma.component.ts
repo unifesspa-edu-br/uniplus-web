@@ -398,7 +398,7 @@ export class CronogramaStepComponent {
           exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
         semFormulario:
           fase !== undefined &&
-          faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, this.catalogos.fasePorId())),
+          faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, this.catalogos.fasePorId())) !== null,
         problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
         problemasDeFase: [
           ...new Set(recusasDeFaseDoGatilho(exigencia, producao, nomes).map((recusa) => recusa.orientacao)),

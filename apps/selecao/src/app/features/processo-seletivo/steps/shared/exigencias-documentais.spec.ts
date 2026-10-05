@@ -13,6 +13,7 @@ import {
   comAlcanceDeTodasAsFases,
   comExigencia,
   comFinalidade,
+  faltaOFormulario,
   comExigenciaNaRaiz,
   comModalidades,
   exigenciaNova,
@@ -1113,6 +1114,15 @@ describe('o formulário em que o documento é apresentado', () => {
     );
 
     expect(raizes.map((raiz) => raiz.documento?.finalidade)).toEqual(['HABILITACAO', 'ISENCAO_TAXA', null]);
+  });
+
+  it('o formulário declarado que a fase não responde mais não é trocado pelo que ela responde, e a falta é dita', () => {
+    const raizes = comando(rascunho(exigencia({ faseCodigo: 'HABILITACAO', finalidade: 'ISENCAO_TAXA' })));
+
+    expect(raizes[0].documento?.finalidade).toBe('ISENCAO_TAXA');
+    expect(faltaOFormulario('ISENCAO_TAXA', ['HABILITACAO'])).toBe(
+      'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
+    );
   });
 
   it('os documentos de um grupo viajam com o formulário declarado na raiz', () => {
