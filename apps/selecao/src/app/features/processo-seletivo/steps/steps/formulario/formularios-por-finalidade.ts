@@ -53,6 +53,14 @@ export function faseServeAFinalidade(finalidade: string, fase: FaseQueRespondeFo
 }
 
 /**
+ * As finalidades cujo formulário se responde na fase, na ordem em que o candidato as responde — a
+ * mesma lista que a API confere na exigência documental. Inscrição e isenção podem dividir a fase.
+ */
+export function finalidadesQueAtende(fase: FaseQueRespondeFormulario): readonly string[] {
+  return FINALIDADES.map((opcao) => opcao.valor).filter((finalidade) => faseServeAFinalidade(finalidade, fase));
+}
+
+/**
  * A fase do formulário: a escolhida, enquanto estiver entre as que servem à finalidade, ou a única
  * que serve — preenchida sozinha. Sem nenhuma das duas, vazia, e o passo pede a escolha.
  */

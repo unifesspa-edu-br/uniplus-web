@@ -144,6 +144,7 @@ function exigenciaDeclarada(parcial: Partial<ExigenciaDeclarada>): ExigenciaDecl
     faseViva: true,
     alcancaModalidade: true,
     reenvioSemComplementacao: false,
+    semFormulario: false,
     problemasDeGatilho: [],
     problemasDeFase: [],
     ...parcial,
@@ -656,6 +657,23 @@ describe('o que impede gravar o cronograma', () => {
     );
 
     expect(problemas).not.toContainEqual(expect.stringContaining('modalidade'));
+  });
+
+  it('acusa a exigência sem o formulário em que o documento é apresentado, nomeando o documento', () => {
+    const problemas = problemasDoCronograma(
+      [faseDeAvaliacao],
+      [],
+      catalogo,
+      [],
+      SEM_CATALOGO,
+      nomeDaBanca,
+      tipoQueAdmiteTudo,
+      [exigenciaDeclarada({ nome: 'Comprovante de renda', semFormulario: true })],
+    );
+
+    expect(problemas).toContainEqual(
+      'Há documento exigido sem o formulário em que o candidato o apresenta: Comprovante de renda. Na fase dele, escolha o formulário.',
+    );
   });
 
   it('acusa o reenvio declarado em fase que não admite complementação', () => {

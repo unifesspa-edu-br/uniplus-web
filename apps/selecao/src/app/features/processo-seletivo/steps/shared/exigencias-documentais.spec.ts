@@ -7,10 +7,12 @@ import type {
   NoDeExigencia,
 } from '../processo-seletivo.models';
 import {
+  agrupadosPorFormulario,
   arvoreDeExigencias,
   baseLegalNova,
   comAlcanceDeTodasAsFases,
   comExigencia,
+  comFinalidade,
   comExigenciaNaRaiz,
   comModalidades,
   exigenciaNova,
@@ -43,6 +45,12 @@ const FASES = new Map([
   ['HABILITACAO', ID_HABILITACAO],
 ]);
 
+/** A fase da isenção divide o formulário com a inscrição; a de habilitação responde só o dela. */
+const FINALIDADES_POR_FASE: ReadonlyMap<string, readonly string[]> = new Map([
+  ['ISENCAO', ['INSCRICAO', 'ISENCAO_TAXA']],
+  ['HABILITACAO', ['HABILITACAO']],
+]);
+
 /** O cadastro de tipos de documento, de onde saem formato aceito e tamanho máximo. */
 const RESTRICAO_RG = { formatosAceitos: 'PDF,JPEG,PNG', tamanhoMaximoMb: 5 };
 
@@ -58,7 +66,7 @@ function rascunho(...exigencias: readonly ExigenciaDeDocumento[]): ExigenciasDoR
 }
 
 function comando(rascunhoDado: ExigenciasDoRascunho, modalidades: readonly string[] = ['AC']) {
-  return arvoreDeExigencias(rascunhoDado, FASES, modalidades, ETAPAS_VIVAS);
+  return arvoreDeExigencias(rascunhoDado, FASES, modalidades, ETAPAS_VIVAS, FINALIDADES_POR_FASE);
 }
 
 describe('arvoreDeExigencias — do rascunho para o comando', () => {
@@ -677,6 +685,12 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
   });
 
   /** O ida-e-volta completo: ler e regravar não pode mudar nada. */
+  it('lê o formulário declarado e o regrava', () => {
+    const lido = exigenciasDe(detalhe([folhaDto({ exigidoNaFaseId: ID_ISENCAO, finalidade: 'ISENCAO_TAXA' })]));
+
+    expect(comando(lido)[0].documento?.finalidade).toBe('ISENCAO_TAXA');
+  });
+
   it('lê e regrava sem perder nada', () => {
     const lido = exigenciasDe(
       detalhe([
@@ -694,7 +708,7 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
       ]),
     );
 
-    const raizes = arvoreDeExigencias(lido, FASES, ['AC'], ETAPAS_VIVAS);
+    const raizes = arvoreDeExigencias(lido, FASES, ['AC'], ETAPAS_VIVAS, FINALIDADES_POR_FASE);
 
     expect(raizes[0].documento).toMatchObject({
       exigidoNaFaseId: ID_HABILITACAO,
@@ -1077,5 +1091,67 @@ describe('onde cada exigência está na árvore', () => {
     );
 
     expect(pendentes).toEqual([]);
+  });
+});
+
+describe('o formulário em que o documento é apresentado', () => {
+  const folhaNoGrupo = (documento: ExigenciaDeDocumento): NoDeExigencia => folhaDe(documento);
+  const grupoOu = (...documentos: readonly ExigenciaDeDocumento[]): NoDeExigencia => ({
+    ...folhaDe(documentos[0]),
+    tipo: 'OU',
+    documento: null,
+    filhos: documentos.map(folhaNoGrupo),
+  });
+
+  it('viaja o declarado, ou o único que a fase responde; na fase dividida sem declaração, nenhum', () => {
+    const raizes = comando(
+      rascunho(
+        exigencia({ faseCodigo: 'HABILITACAO' }),
+        exigencia({ tipoDocumentoId: ID_DIPLOMA, faseCodigo: 'ISENCAO', finalidade: 'ISENCAO_TAXA' }),
+        exigencia({ tipoDocumentoId: ID_CONTRACHEQUE, faseCodigo: 'ISENCAO' }),
+      ),
+    );
+
+    expect(raizes.map((raiz) => raiz.documento?.finalidade)).toEqual(['HABILITACAO', 'ISENCAO_TAXA', null]);
+  });
+
+  it('os documentos de um grupo viajam com o formulário declarado na raiz', () => {
+    const grupo = grupoOu(
+      exigencia({ faseCodigo: 'ISENCAO', finalidade: 'ISENCAO_TAXA' }),
+      exigencia({ tipoDocumentoId: ID_CONTRACHEQUE, faseCodigo: 'ISENCAO', finalidade: 'INSCRICAO' }),
+    );
+
+    const [raiz] = comando({ raizes: [grupo], emTodasAsFases: [] });
+
+    expect(raiz.filhos?.map((filho) => filho.documento?.finalidade)).toEqual(['ISENCAO_TAXA', 'ISENCAO_TAXA']);
+  });
+
+  it('declarar o formulário de um documento de grupo declara o do grupo inteiro, e só dele', () => {
+    const grupo = grupoOu(
+      exigencia({ faseCodigo: 'ISENCAO' }),
+      exigencia({ tipoDocumentoId: ID_CONTRACHEQUE, faseCodigo: 'ISENCAO' }),
+    );
+    const solta = folhaDe(exigencia({ tipoDocumentoId: ID_DIPLOMA, faseCodigo: 'ISENCAO' }));
+
+    const declarado = comFinalidade({ raizes: [grupo, solta], emTodasAsFases: [] }, ID_CONTRACHEQUE, 'ISENCAO', 'ISENCAO_TAXA');
+
+    expect(todasAsExigencias(declarado).map((documento) => documento.finalidade)).toEqual(['ISENCAO_TAXA', 'ISENCAO_TAXA', null]);
+  });
+
+  it('na fase dividida, agrupa por formulário com o que falta escolher por último; a de um formulário só não se divide', () => {
+    const itens = [
+      { nome: 'sem', finalidade: null },
+      { nome: 'isenção', finalidade: 'ISENCAO_TAXA' },
+      { nome: 'inscrição', finalidade: 'INSCRICAO' },
+    ];
+    const agrupar = (atendidas: readonly string[]) =>
+      agrupadosPorFormulario(itens, (item) => item.finalidade, atendidas).map((grupo) => [grupo.finalidade, grupo.itens.map((item) => item.nome)]);
+
+    expect(agrupar(['INSCRICAO', 'ISENCAO_TAXA'])).toEqual([
+      ['INSCRICAO', ['inscrição']],
+      ['ISENCAO_TAXA', ['isenção']],
+      [null, ['sem']],
+    ]);
+    expect(agrupar(['HABILITACAO'])).toEqual([['HABILITACAO', ['sem', 'isenção', 'inscrição']]]);
   });
 });

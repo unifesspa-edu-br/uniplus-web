@@ -27,6 +27,7 @@ import {
   orientacaoDaRecusaDeFase,
   recusaDeFaseDoGatilho,
   type FatoComFase,
+  type LugarDaExigencia,
   type NomesDaOrientacao,
   type ProducaoDosFatos,
 } from './fase-do-fato';
@@ -122,20 +123,20 @@ export function dominiosDoGatilho(
 const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
 
 /**
- * Os fatos que o gatilho de uma exigência da fase dada oferece: os que o processo resolve — de
+ * Os fatos que o gatilho de uma exigência oferece onde ela é cobrada: os que o processo resolve — de
  * qualquer formulário, derivados e produzidos pela classificação — e que já são conhecidos até a
- * fase da exigência. Os que a exigência já cita e deixaram de ser citáveis vêm depois, marcados,
+ * fase da exigência, sem o que só o formulário de isenção coleta no documento de outro formulário. Os que a exigência já cita e deixaram de ser citáveis vêm depois, marcados,
  * para a condição gravada continuar visível com o motivo ao lado.
  */
 export function fatosDoGatilhoNaFase(
   fatos: readonly FatoComFase[],
-  faseDaExigencia: string,
+  lugar: LugarDaExigencia,
   producao: ProducaoDosFatos,
   dominiosDinamicos: ReadonlyMap<string, readonly string[]>,
   citados: readonly string[] = [],
 ): readonly FatoEscolhivel[] {
   const citaveis = fatos.filter(
-    (fato) => oProcessoResolve(fato, producao) && recusaDeFaseDoGatilho(fato.codigo, faseDaExigencia, producao) === null,
+    (fato) => oProcessoResolve(fato, producao) && recusaDeFaseDoGatilho(fato.codigo, lugar, producao) === null,
   );
   const naoCitaveis = fatos
     .filter((fato) => citados.includes(fato.codigo) && !citaveis.includes(fato))
@@ -158,10 +159,10 @@ export function recusasDeFaseDoGatilho(
 ): readonly RecusaDeFaseNaCondicao[] {
   return documento.condicoes.flatMap((condicao, indice) => {
     if (condicao.fato.trim() === '') return [];
-    const recusa = recusaDeFaseDoGatilho(condicao.fato, documento.faseCodigo, producao);
+    const recusa = recusaDeFaseDoGatilho(condicao.fato, documento, producao);
     return recusa === null
       ? []
-      : [{ indice, orientacao: orientacaoDaRecusaDeFase(recusa, documento.faseCodigo, producao, nomes) }];
+      : [{ indice, orientacao: orientacaoDaRecusaDeFase(recusa, documento, producao, nomes) }];
   });
 }
 

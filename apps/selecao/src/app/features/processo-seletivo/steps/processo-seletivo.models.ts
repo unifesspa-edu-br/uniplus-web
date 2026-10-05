@@ -460,6 +460,13 @@ export interface ExigenciaDeDocumento {
   readonly faseCodigo: string;
   /** A etapa daquela fase que coleta o documento; `null` quando é da fase inteira. */
   readonly etapaId: string | null;
+  /**
+   * O formulário em cujo bloco de comprovação o candidato apresenta o documento (`INSCRICAO`,
+   * `ISENCAO_TAXA` ou `HABILITACAO`), como o operador o declarou; `null` enquanto não declarou.
+   * A fase não basta para dizê-lo, porque inscrição e isenção podem dividir a mesma fase. O
+   * que viaja é o formulário efetivo (`finalidadeDaExigencia`), conferido contra a fase.
+   */
+  readonly finalidade: string | null;
   readonly aplicabilidade: string;
   readonly obrigatorio: boolean;
   readonly consequenciaIndeferimento: string;

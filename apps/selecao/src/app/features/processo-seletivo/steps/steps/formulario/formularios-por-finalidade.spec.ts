@@ -5,6 +5,7 @@ import {
   abaPelaTecla,
   faseEfetiva,
   finalidadesParaAcrescentar,
+  finalidadesQueAtende,
   ordemDeGravacao,
   type FaseQueRespondeFormulario,
 } from './formularios-por-finalidade';
@@ -91,6 +92,14 @@ describe('as finalidades que podem ganhar formulário', () => {
 
   it('não oferece habilitação sem a fase de habilitação no cronograma', () => {
     expect(oferecidas(['INSCRICAO'], true, [INSCRICAO, ISENCAO])).toEqual(['ISENCAO_TAXA']);
+  });
+});
+
+describe('as finalidades que a fase atende', () => {
+  it('a fase que coleta inscrição e isenção atende os dois formulários, e a de habilitação, o dela', () => {
+    expect(finalidadesQueAtende(fase('INSCRICAO', { coletaInscricao: true, coletaSolicitacaoIsencao: true }))).toEqual(['INSCRICAO', 'ISENCAO_TAXA']);
+    expect(finalidadesQueAtende(HABILITACAO)).toEqual(['HABILITACAO']);
+    expect(finalidadesQueAtende(fase('RESULTADO'))).toEqual([]);
   });
 });
 

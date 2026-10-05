@@ -123,6 +123,9 @@ export function exigenciaNova(
     tipoDocumentoId,
     faseCodigo,
     etapaId: null,
+    // Sem declaração, vale o formulário efetivo: o único que a fase responde, ou a escolha que a
+    // fase dividida entre inscrição e isenção pede ao operador.
+    finalidade: null,
     aplicabilidade: APLICABILIDADE_GERAL,
     obrigatorio: true,
     consequenciaIndeferimento: '',
@@ -469,6 +472,77 @@ export function semAEtapa(exigencias: ExigenciasDoRascunho, etapaId: string): Ex
   };
 }
 
+/**
+ * O formulário em que o documento é apresentado, como viaja ao servidor: o declarado, enquanto a
+ * fase o responde, ou o único que a fase responde. A fase que divide inscrição e isenção não tem
+ * formulário efetivo sem declaração — a escolha é do operador —, e a que não responde formulário
+ * nenhum não tem formulário a declarar.
+ */
+export function finalidadeDaExigencia(declarada: string | null, atendidas: readonly string[]): string | null {
+  if (declarada !== null && atendidas.includes(declarada)) return declarada;
+  return atendidas.length === 1 ? atendidas[0] : null;
+}
+
+/**
+ * Se a exigência ainda não diz em que formulário o documento é apresentado, numa fase que responde
+ * formulário: só acontece na que divide inscrição e isenção, e o servidor a recusa assim.
+ */
+export function faltaOFormulario(declarada: string | null, atendidas: readonly string[]): boolean {
+  return atendidas.length > 0 && finalidadeDaExigencia(declarada, atendidas) === null;
+}
+
+/** Os itens de uma fase que o candidato apresenta num mesmo formulário; `null` é o que ainda não tem formulário. */
+export interface ItensDoFormulario<T> {
+  readonly finalidade: string | null;
+  readonly itens: readonly T[];
+}
+
+/**
+ * Os itens de uma fase agrupados pelo formulário efetivo, na ordem dos formulários que a fase
+ * responde, e os que ainda não têm formulário por último. A fase que responde um formulário só, ou
+ * nenhum, não se divide: um grupo leva todos.
+ */
+export function agrupadosPorFormulario<T>(
+  itens: readonly T[],
+  finalidadeDe: (item: T) => string | null,
+  atendidas: readonly string[],
+): readonly ItensDoFormulario<T>[] {
+  if (atendidas.length <= 1) return [{ finalidade: atendidas[0] ?? null, itens }];
+
+  return [...atendidas, null]
+    .map((finalidade) => ({ finalidade, itens: itens.filter((item) => finalidadeDe(item) === finalidade) }))
+    .filter((grupo) => grupo.itens.length > 0);
+}
+
+/**
+ * Declara o formulário da exigência de (documento, fase), e de toda a árvore de raiz que a contém.
+ *
+ * As alternativas de um grupo se satisfazem num bloco de comprovação só, e o servidor recusa o
+ * grupo com documentos de formulários diferentes: o formulário é da raiz, e os filhos o herdam.
+ * Trocá-lo só na folha editada deixaria o grupo dividido entre dois formulários.
+ */
+export function comFinalidade(
+  exigencias: ExigenciasDoRascunho,
+  tipoDocumentoId: string,
+  faseCodigo: string,
+  finalidade: string | null,
+): ExigenciasDoRascunho {
+  // A mesma declaração que `comExigencia` edita: a primeira que casa, na ordem da árvore.
+  const posicao = exigencias.raizes.findIndex((raiz) =>
+    documentosDe([raiz]).some(
+      (documento) => documento.tipoDocumentoId === tipoDocumentoId && documento.faseCodigo === faseCodigo,
+    ),
+  );
+  if (posicao === -1) return exigencias;
+
+  return {
+    ...exigencias,
+    raizes: exigencias.raizes.flatMap((raiz, indice) =>
+      indice === posicao ? transformar([raiz], (documento) => ({ ...documento, finalidade })) : [raiz],
+    ),
+  };
+}
+
 /** As exigências declaradas numa fase, na ordem em que a árvore as guarda. */
 export function exigenciasDaFase(
   exigencias: ExigenciasDoRascunho,
@@ -570,7 +644,7 @@ export function gruposSemNormaResolvida(
       if (decideResultado && !temNormaResolvida(no.basesLegais ?? [])) {
         // Os documentos de TODA a subárvore, não só as folhas diretas: um grupo que reúne
         // outros grupos ficaria sem nome nenhum na mensagem, que é o oposto do que ela serve.
-        pendentes.push({ documentos: documentosDaSubarvore(no.filhos ?? []) });
+        pendentes.push({ documentos: documentosDe(no.filhos ?? []).map((documento) => documento.tipoDocumentoId) });
       }
 
       visitar(no.filhos ?? []);
@@ -579,17 +653,6 @@ export function gruposSemNormaResolvida(
 
   visitar(exigencias.raizes);
   return pendentes;
-}
-
-/** Os tipos de documento de todas as folhas de uma subárvore, em qualquer profundidade. */
-function documentosDaSubarvore(nos: readonly NoDeExigencia[]): readonly string[] {
-  return nos.flatMap((no) =>
-    no.tipo === 'FOLHA'
-      ? no.documento === null
-        ? []
-        : [no.documento.tipoDocumentoId]
-      : documentosDaSubarvore(no.filhos ?? []),
-  );
 }
 
 /**
@@ -611,18 +674,14 @@ export function exigenciasDaRaiz(
 export function todasAsExigencias(
   exigencias: ExigenciasDoRascunho,
 ): readonly ExigenciaDeDocumento[] {
-  const achados: ExigenciaDeDocumento[] = [];
-  const visitar = (nos: readonly NoDeExigencia[]): void => {
-    for (const no of nos) {
-      if (no.tipo === 'FOLHA') {
-        if (no.documento !== null) achados.push(no.documento);
-        continue;
-      }
-      visitar(no.filhos ?? []);
-    }
-  };
-  visitar(exigencias.raizes);
-  return achados;
+  return documentosDe(exigencias.raizes);
+}
+
+/** As exigências das folhas, em qualquer profundidade, na ordem da árvore. */
+function documentosDe(nos: readonly NoDeExigencia[]): readonly ExigenciaDeDocumento[] {
+  return nos.flatMap((no) =>
+    no.tipo === 'FOLHA' ? (no.documento === null ? [] : [no.documento]) : documentosDe(no.filhos ?? []),
+  );
 }
 
 /**
@@ -691,9 +750,33 @@ export function arvoreDeExigencias(
   faseIdPorCodigo: ReadonlyMap<string, string>,
   modalidadesOfertadas: readonly string[],
   etapasVivas: ReadonlySet<string>,
+  finalidadesPorFase: ReadonlyMap<string, readonly string[]>,
 ): readonly NoExigenciaInput[] {
   const completas = comAlcanceDeTodasAsFases(exigencias, [...faseIdPorCodigo.keys()]);
-  return podar(completas.raizes, faseIdPorCodigo, modalidadesOfertadas, etapasVivas);
+  return completas.raizes.flatMap((raiz) =>
+    podar(
+      [raiz],
+      faseIdPorCodigo,
+      modalidadesOfertadas,
+      etapasVivas,
+      finalidadeDaRaiz(raiz, faseIdPorCodigo, finalidadesPorFase),
+    ),
+  );
+}
+
+/**
+ * O formulário da árvore de raiz, declarado na primeira folha que sobrevive à poda e herdado por
+ * todas as outras: o servidor recusa grupo com documentos de formulários diferentes.
+ */
+function finalidadeDaRaiz(
+  raiz: NoDeExigencia,
+  faseIdPorCodigo: ReadonlyMap<string, string>,
+  finalidadesPorFase: ReadonlyMap<string, readonly string[]>,
+): string | null {
+  const declarante = documentosDe([raiz]).find((documento) => faseIdPorCodigo.has(documento.faseCodigo));
+  return declarante === undefined
+    ? null
+    : finalidadeDaExigencia(declarante.finalidade, finalidadesPorFase.get(declarante.faseCodigo) ?? []);
 }
 
 /**
@@ -740,6 +823,7 @@ function podar(
   faseIdPorCodigo: ReadonlyMap<string, string>,
   modalidadesOfertadas: readonly string[],
   etapasVivas: ReadonlySet<string>,
+  finalidade: string | null,
 ): readonly NoExigenciaInput[] {
   const vivos: NoExigenciaInput[] = [];
 
@@ -751,13 +835,13 @@ function podar(
 
       vivos.push({
         ...comoNo(no),
-        documento: folha(documento, faseIdPorCodigo, modalidadesOfertadas, etapasVivas),
+        documento: folha(documento, faseIdPorCodigo, modalidadesOfertadas, etapasVivas, finalidade),
         filhos: null,
       });
       continue;
     }
 
-    const filhos = podar(no.filhos ?? [], faseIdPorCodigo, modalidadesOfertadas, etapasVivas);
+    const filhos = podar(no.filhos ?? [], faseIdPorCodigo, modalidadesOfertadas, etapasVivas, finalidade);
     // Grupo que perdeu todos os filhos deixa de existir — mandá-lo vazio derrubaria a
     // gravação inteira, e um grupo sem alternativa nenhuma não exige coisa alguma.
     if (filhos.length === 0) continue;
@@ -804,6 +888,7 @@ function folha(
   faseIdPorCodigo: ReadonlyMap<string, string>,
   modalidadesOfertadas: readonly string[],
   etapasVivas: ReadonlySet<string>,
+  finalidade: string | null,
 ): ItemDocumentoExigidoInput {
   const recorte = recorteDeModalidades(documento, modalidadesOfertadas);
   // A etapa que coletava saiu do cronograma: o documento volta a ser da fase inteira em vez
@@ -816,6 +901,7 @@ function folha(
   return {
     exigidoNaFaseId: faseIdPorCodigo.get(documento.faseCodigo) ?? '',
     exigidoNaEtapaId: etapaId,
+    finalidade,
     tipoDocumentoId: documento.tipoDocumentoId,
     // A aplicabilidade é DECLARADA, nunca inferida das condições (ADR-0071): "exigida de quem
     // satisfaz" com gatilho vazio é estado legítimo — exigida de ninguém —, e derivá-la da
@@ -1035,6 +1121,7 @@ function documentoDe(
     tipoDocumentoNome: dto.tipoDocumentoNome,
     faseCodigo,
     etapaId: dto.exigidoNaEtapaId ?? null,
+    finalidade: dto.finalidade ?? null,
     aplicabilidade: dto.aplicabilidade,
     obrigatorio: dto.obrigatorio,
     consequenciaIndeferimento: dto.consequenciaIndeferimento ?? '',

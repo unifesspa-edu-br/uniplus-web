@@ -7156,6 +7156,7 @@ export interface components {
             /** Format: uuid */
             readonly exigidoNaEtapaId: null | string;
             readonly modelo: null | components["schemas"]["ModeloDaExigenciaDto"];
+            readonly finalidade: null | string;
         };
         readonly DocumentoSimuladoDto: {
             /** Format: uuid */
@@ -7165,6 +7166,7 @@ export interface components {
             readonly obrigatorio: boolean;
             /** Format: uuid */
             readonly faseId: string;
+            readonly finalidade: null | string;
             /** Format: uuid */
             readonly etapaId: null | string;
             readonly situacao: string;
@@ -7551,6 +7553,7 @@ export interface components {
             readonly exigidoNaEtapaId?: null | string;
             /** Format: uuid */
             readonly modeloId?: null | string;
+            readonly finalidade?: null | string;
         };
         readonly ItemSimuladoDto: {
             readonly fatoCodigo: string;

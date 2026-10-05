@@ -16,7 +16,10 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
   arvoreDeExigencias,
+  comExigencia,
+  exigenciaNova,
   exigenciasDaFase,
+  exigenciasVazias,
   todasAsExigencias,
 } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
@@ -1428,6 +1431,53 @@ describe('FaseStepComponent', () => {
    * teste da API a alcança, e antes desta cobertura o único tipo restrito do catálogo local
    * era resíduo de smoke que nenhum certame usava.
    */
+  /**
+   * O documento é apresentado no bloco de comprovação de um formulário, e inscrição e isenção podem
+   * dividir a fase: a fase dividida pede a escolha, a de um formulário só a preenche e a que não
+   * responde formulário nenhum não a mostra.
+   */
+  describe('formulário em que o documento é apresentado', () => {
+    const ID_FORMULARIO = `fase-AVALIACAO-doc-formulario-${ID_CPF}`;
+    const seletor = () => nativo.querySelector<HTMLSelectElement>(`#${ID_FORMULARIO}`);
+
+    function exigirCpfNa(congelados: Partial<AtributosCongeladosDaFase> | null): void {
+      comCronograma(fase({ congelados: congelados === null ? null : congeladosDaFase(congelados) }));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      detectar();
+    }
+
+    it('na fase dividida obriga a escolher; na de um formulário só vem preenchido; na que não responde nenhum some', () => {
+      exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
+      expect(seletor()?.value).toBe('');
+      expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
+      expect(nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent).toContain(
+        'Escolha em que formulário o candidato apresenta este documento.',
+      );
+
+      exigirCpfNa({ coletaInscricao: true });
+      expect(seletor()?.value).toBe('INSCRICAO');
+      expect(seletor()?.getAttribute('aria-invalid')).toBeNull();
+
+      exigirCpfNa(null);
+      expect(seletor()).toBeNull();
+    });
+
+    it('na fase dividida, a escolha vai ao rascunho e a conferência passa a listar o documento sob o formulário', () => {
+      exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
+      const titulos = () => Array.from(nativo.querySelectorAll('h4'), (titulo) => titulo.textContent?.trim());
+      expect(titulos()).toEqual(['Formulário a escolher']);
+
+      const campo = seletor() as HTMLSelectElement;
+      campo.value = 'ISENCAO_TAXA';
+      campo.dispatchEvent(new Event('change'));
+      detectar();
+
+      expect(componente.exigenciaDoDocumento(ID_CPF).finalidade).toBe('ISENCAO_TAXA');
+      expect(titulos()).toEqual(['Formulário de isenção da taxa de inscrição']);
+    });
+  });
+
   describe('formato e tamanho derivados do cadastro', () => {
     it('a exigência nasce com o que o cadastro do tipo declara', () => {
       comCronograma(fase({}));
@@ -1452,6 +1502,7 @@ describe('FaseStepComponent', () => {
         new Map([['AVALIACAO', ID_AVALIACAO]]),
         [],
         new Set<string>(),
+        new Map(),
       );
 
       expect(raizes[0].documento?.formatosPermitidos).toEqual(['PDF', 'JPEG']);
@@ -1512,6 +1563,26 @@ describe('FaseStepComponent', () => {
       expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')).toEqual([]);
       expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')).toHaveLength(1);
       expect(store.draft().documentos.emTodasAsFases).not.toContain(ID_CPF);
+    });
+
+    it('ligar o alcance de todas as fases preserva o formulário que cada fase declara', () => {
+      const dividida = congeladosDaFase({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
+      comCronograma(
+        fase({ congelados: dividida }),
+        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2, congelados: dividida }),
+      );
+      store.patchSection(
+        'documentos',
+        comExigencia(comExigencia(exigenciasVazias(), { ...exigenciaNova(ID_CPF, 'AVALIACAO'), finalidade: 'INSCRICAO' }), {
+          ...exigenciaNova(ID_CPF, 'RECURSOS'),
+          finalidade: 'ISENCAO_TAXA',
+        }),
+      );
+
+      componente.valerEmTodasAsFases(ID_CPF);
+      detectar();
+
+      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')[0].finalidade).toBe('ISENCAO_TAXA');
     });
 
     /** A fase alcançada mas ainda não materializada mostra o que será gravado. */
