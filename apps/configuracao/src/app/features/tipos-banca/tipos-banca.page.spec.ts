@@ -251,7 +251,7 @@ describe('TiposBancaPage', () => {
     );
   });
 
-  it('CA-15: inativa um tipo de banca após confirmação', async () => {
+  it('CA-15: remover um tipo de banca após confirmação', async () => {
     await flushLista([bancaSeed]);
     component['pedirRemocao'](bancaSeed);
     component['removerConfirmado']();
