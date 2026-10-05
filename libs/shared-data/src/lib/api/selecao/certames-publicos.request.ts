@@ -6,6 +6,9 @@ import { SituacaoDoCertame } from './schema';
 export type CertameNaVitrineDto = components['schemas']['CertameNaVitrineDto'];
 export { SituacaoDoCertame };
 export type TipoCatalogadoCertameDto = components['schemas']['TipoCatalogadoCertameDto'];
+export type CertamePublicadoDto = components['schemas']['CertamePublicadoDto'];
+export type ExigenciaDocumentalCertameDto = components['schemas']['ExigenciaDocumentalCertameDto'];
+export type ModeloDocumentalCertameDto = components['schemas']['ModeloDocumentalCertameDto'];
 
 /** Caminho da vitrine pública, a partir do `SELECAO_BASE_PATH`. */
 export const CERTAMES_PUBLICOS_PATH = '/api/selecao/certames';
@@ -45,6 +48,18 @@ export function certamesPublicosRequest(
   return {
     url: `${basePath}${CERTAMES_PUBLICOS_PATH}`,
     params: certamesPublicosParams(query),
+    context: withVendorMime('certame', 1),
+  };
+}
+
+/**
+ * Requisição do certame publicado — a projeção que o candidato lê do edital: vagas, cronograma e
+ * os documentos exigidos, com o link público do modelo de documento que a exigência oferece.
+ * Mesmo vendor MIME da vitrine: o recurso é o certame, num item ou em coleção.
+ */
+export function certamePublicoRequest(basePath: string, processoSeletivoId: string): HttpResourceRequest {
+  return {
+    url: `${basePath}${CERTAMES_PUBLICOS_PATH}/${encodeURIComponent(processoSeletivoId)}`,
     context: withVendorMime('certame', 1),
   };
 }

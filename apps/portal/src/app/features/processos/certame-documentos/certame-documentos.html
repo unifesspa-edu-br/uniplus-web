@@ -1,0 +1,70 @@
+<button
+  type="button"
+  class="documentos-toggle"
+  [id]="botaoId()"
+  [attr.aria-expanded]="aberto()"
+  [attr.aria-controls]="painelId()"
+  (click)="alternar()"
+>
+  <i class="pi pi-caret-down documentos-toggle__icon" aria-hidden="true"></i>
+  <span class="documentos-toggle__label">Documentos exigidos</span>
+  @if (certameNome()) {
+    <span class="sr-only"> — {{ certameNome() }}</span>
+  }
+</button>
+
+<div
+  class="documentos-painel"
+  [id]="painelId()"
+  role="region"
+  [attr.aria-labelledby]="botaoId()"
+  [hidden]="!aberto()"
+>
+  @if (aberto()) {
+    @if (falhou()) {
+      <ui-alert variant="danger" heading="Não foi possível carregar os documentos exigidos">
+        Recarregue a página para tentar outra vez.
+      </ui-alert>
+    } @else if (carregando()) {
+      <div class="documentos-loading" role="status">
+        <ui-spinner spinnerSize="sm" accessibleName="Carregando documentos exigidos" />
+        Carregando documentos exigidos…
+      </div>
+    } @else if (documentos().length > 0) {
+      <ul class="documentos-lista" role="list">
+        @for (exigencia of documentos(); track $index) {
+          <li class="documentos-lista__item">
+            <div class="documentos-lista__cabeca">
+              <span class="documentos-lista__rotulo">{{ exigencia.rotulo }}</span>
+              <ui-tag [variant]="exigencia.obrigatorio ? 'warning' : 'neutral'">
+                {{ exigencia.obrigatorio ? 'Obrigatório' : 'Facultativo' }}
+              </ui-tag>
+            </div>
+            <p class="documentos-lista__meta">
+              {{ aQuemSeAplica(exigencia) }} · {{ formatos(exigencia) }}
+            </p>
+            <!--
+              Navegação simples ao acervo público: o arquivo é servido com o nome do download, sem
+              passar pela API — nada de fetch nem de CORS.
+            -->
+            @if (exigencia.modelo; as modelo) {
+              <a class="documentos-lista__modelo" [href]="modelo.urlDownload">
+                <i class="pi pi-download" aria-hidden="true"></i>
+                Baixar o modelo ({{ modelo.formato }})
+                <span class="sr-only">
+                  de {{ exigencia.rotulo }}{{ certameNome() ? ' — ' + certameNome() : '' }}:
+                  {{ modelo.nomeArquivo }}
+                </span>
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum documento exigido"
+        description="O edital deste processo seletivo não pede documento ao candidato."
+      />
+    }
+  }
+</div>

@@ -165,8 +165,10 @@
   box-shadow: var(--focus-ring);
 }
 
-/* Accordion "Ver publicações": ocupa a largura toda do item (na lista, a linha
-   abaixo das duas colunas do grid) e é separado do resto por um filete. */
+/* Accordions "Documentos exigidos" e "Ver publicações": ocupam a largura toda do
+   item (na lista, a linha abaixo das duas colunas do grid) e são separados do resto
+   por um filete. */
+.edital-row__documentos,
 .edital-row__publicacoes {
   grid-column: 1 / -1;
   padding-top: var(--space-2);
