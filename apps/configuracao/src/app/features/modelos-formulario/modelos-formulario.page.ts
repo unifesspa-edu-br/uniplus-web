@@ -159,7 +159,13 @@ type CampoDaCriacao = keyof CriacaoForm;
                   <td data-label="Código"><code>{{ modelo.codigo }}</code></td>
                   <td data-label="Nome">{{ modelo.nome }}</td>
                   <td data-label="Finalidade">{{ rotuloDaFinalidade(modelo.finalidade) }}</td>
-                  <td data-label="Tipo de processo">{{ rotuloDoTipo(modelo.tipoProcessoCodigo) }}</td>
+                  <td data-label="Tipo de processo">
+                    @if (modelo.tipoProcessoCodigo; as codigo) {
+                      <code [attr.title]="rotuloDoTipo(codigo)">{{ codigo }}</code>
+                    } @else {
+                      Qualquer tipo
+                    }
+                  </td>
                   <td data-label="Situação">
                     <ui-tag [variant]="modelo.ativo ? 'success' : 'neutral'">{{ modelo.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                   </td>
@@ -413,8 +419,7 @@ export class ModelosFormularioPage {
     return FINALIDADES.find((finalidade) => finalidade.valor === valor)?.rotulo ?? valor;
   }
 
-  protected rotuloDoTipo(codigo: string | null): string {
-    if (codigo === null) return 'Qualquer tipo';
+  protected rotuloDoTipo(codigo: string): string {
     return this.tiposDeProcesso().find((tipo) => tipo.codigo === codigo)?.nome ?? codigo;
   }
 
