@@ -104,19 +104,19 @@ test.describe('Reserva demográfica — CRUD (#394)', () => {
     });
   });
 
-  test('CA-07: inativar faz soft-delete após confirmação', async ({ page }) => {
+  test('CA-07: remover faz soft-delete após confirmação', async ({ page }) => {
     const capturado: { deleted?: boolean } = {};
     await mockApi(page, capturado, [SEED]);
     await abrirPagina(page);
 
     await page
       .getByRole('button', {
-        name: `Inativar reserva demográfica do censo ${SEED.censoReferencia}`,
+        name: `Remover reserva demográfica do censo ${SEED.censoReferencia}`,
         exact: true,
       })
       .click();
     // confirma no dialog (escopo ao <dialog> para não pegar o botão da linha)
-    await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Inativar' }).click();
+    await page.locator('dialog.uni-dialog').getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deleted).toBe(true);
   });

@@ -101,8 +101,8 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     >
       Cada linha registra os percentuais de um Censo. Quando um processo adota a regra de
       distribuição da Lei 12.711, os percentuais e o Censo são copiados por valor para o snapshot do
-      edital (ADR-0061). Por isso editar ou inativar uma referência não impacta editais já
-      publicados, e a inativação não fica bloqueada. Processos SiSU não usam esta configuração. Base
+      edital (ADR-0061). Por isso editar ou remover uma referência não impacta editais já
+      publicados, e a remoção não fica bloqueada. Processos SiSU não usam esta configuração. Base
       legal: Lei 12.711/2012, art. 10, III (atualizada pela Lei 14.723/2023).
     </ui-alert>
 
@@ -170,7 +170,6 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                   <th scope="col">Quilombola %</th>
                   <th scope="col">PcD %</th>
                   <th scope="col">Base legal</th>
-                  <th scope="col">Status</th>
                   <th scope="col"><span class="sr-only">Ações</span></th>
                 </tr>
               </thead>
@@ -186,7 +185,6 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                     </td>
                     <td data-label="PcD %" class="cfg-num">{{ pct(ref.pcdPercentual) }}</td>
                     <td data-label="Base legal">{{ ref.baseLegal }}</td>
-                    <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
@@ -198,11 +196,11 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                         (triggered)="abrirEdicao(ref)"
                       />
                       <ui-icon-button
-                        icon="pi-power-off"
+                        icon="pi-trash"
                         [accessibleName]="
-                          'Inativar reserva demográfica do censo ' + ref.censoReferencia
+                          'Remover reserva demográfica do censo ' + ref.censoReferencia
                         "
-                        tooltip="Inativar reserva demográfica"
+                        tooltip="Remover reserva demográfica"
                         [isDisabled]="loading()"
                         (triggered)="pedirRemocao(ref)"
                       />
@@ -390,9 +388,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
 
     <ui-confirm-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar referência demográfica"
-      message="A referência é inativada (soft-delete) e mantida na trilha de auditoria. Edições e inativações não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem. Confirma?"
-      confirmLabel="Inativar"
+      heading="Remover referência demográfica"
+      message="A referência é removida (soft-delete) e mantida na trilha de auditoria. Edições e remoções não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem. Confirma?"
+      confirmLabel="Remover"
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
     />
@@ -611,7 +609,7 @@ export class ReservaDemograficaListPage {
       .subscribe((result) => {
         this.saving.set(false);
         if (result.ok) {
-          this.notifications.success('Referência inativada', ref.censoReferencia);
+          this.notifications.success('Referência removida', ref.censoReferencia);
           this.confirmOpen.set(false);
           this.refParaRemover.set(null);
           this.recarregar();

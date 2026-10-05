@@ -112,7 +112,6 @@ describe('ReservaDemograficaListPage', () => {
     const texto = fixture.nativeElement.textContent;
     expect(texto).toContain('2022');
     expect(texto).toContain('78.50');
-    expect(texto).toContain('Ativa');
   });
 
   it('CA-01: busca por Censo filtra client-side', async () => {
@@ -179,7 +178,7 @@ describe('ReservaDemograficaListPage', () => {
 
     expect(component['formOpen']()).toBe(true);
     // O title distingue 'ativa' de 'cadastrada': o índice único é parcial, e uma
-    // referência inativada com o mesmo Censo não conflita — quem lê precisa saber
+    // referência removida com o mesmo Censo não conflita — quem lê precisa saber
     // que o caminho é reativar a linha existente, não procurar na lista.
     expect(component['form'].controls.censoReferencia.errors?.['backend']).toMatchObject({
       code: CENSO_JA_EXISTE_CODE,
@@ -270,7 +269,7 @@ describe('ReservaDemograficaListPage', () => {
     expect(component['form'].controls.ppiPercentual.disabled).toBe(false);
   });
 
-  it('CA-07: inativar faz soft-delete (DELETE) e recarrega', async () => {
+  it('CA-07: remover faz soft-delete (DELETE) e recarrega', async () => {
     await flushLista([seed]);
     component['pedirRemocao'](seed);
     component['removerConfirmado']();
@@ -293,5 +292,20 @@ describe('ReservaDemograficaListPage', () => {
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base legal e situação',
     );
+  });
+  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+    await flushLista([seed]);
+    fixture.detectChanges();
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+    expect(cabecalhos).toEqual([
+      'Censo',
+      'PPI %',
+      'Quilombola %',
+      'PcD %',
+      'Base legal',
+      'Ações',
+    ]);
   });
 });
