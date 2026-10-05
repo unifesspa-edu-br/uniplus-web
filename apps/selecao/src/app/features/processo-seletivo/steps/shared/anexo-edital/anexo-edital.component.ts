@@ -13,6 +13,7 @@ import { DocumentoEditalDto, IniciarUploadDocumentoEditalDto } from '@uniplus/sh
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { UploadItem } from '../../processo-seletivo.models';
 import { CadastroInicialService } from '../cadastro-inicial.service';
+import { abrirAcessoEmNovaAba, destinoExpirado } from '../envio-pre-assinado';
 import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../hidratacao';
 
 /** Limite do documento do edital no domínio: 20 MB. */
@@ -224,7 +225,7 @@ export class AnexoEditalComponent {
     }
 
     let iniciacao = this.iniciacaoAtual;
-    if (iniciacao === null || iniciacaoExpirada(iniciacao)) {
+    if (iniciacao === null || destinoExpirado(iniciacao)) {
       this.atualizarAnexo({ fase: 'iniciando', progress: 0, mensagemErro: undefined });
       const inicio = await this.cadastro.iniciarUpload(processoId);
       if (!inicio.ok) {
@@ -349,77 +350,35 @@ export class AnexoEditalComponent {
     return descreverDocumento(documento);
   }
 
-  /** Refaz a leitura que falhou, para o anexo deixar de ser uma aposta. */
   /**
-   * Abre o PDF de um documento confirmado numa aba nova, pedindo o acesso à
-   * API no clique.
-   *
-   * A URL assinada é credencial de acesso ao objeto: não vai para o store, não
-   * é guardada em campo do componente e não vira `href` de link — o servidor a
-   * emite por pedido justamente para que o prazo comece agora e para que ela
-   * não sobreviva à ação. Sai daqui direto para `window.open` e nada mais a
-   * retém.
+   * Abre o PDF de um documento confirmado numa aba nova, pedindo o acesso à API no clique
+   * (`abrirAcessoEmNovaAba`, que explica por que a URL não fica guardada).
    */
   async abrirDocumento(documentoEditalId: string): Promise<void> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null || this.abrindoDocumento() !== null) return;
 
-    // A aba nasce aqui, ainda dentro do clique. Abri-la depois do `await`
-    // custaria a ativação do usuário que o navegador exige, e o bloqueador de
-    // pop-ups recusaria a abertura justamente no caminho feliz — sem erro de
-    // API para explicar por que nada aconteceu.
-    //
-    // Sem `noopener` na chamada, e de propósito: com ele `window.open` devolve
-    // `null` por especificação, e é justamente a referência que se precisa
-    // para levar a aba ao endereço quando ele chegar. O desacoplamento vem
-    // depois, zerando `opener` antes de navegar — mesmo efeito, na ordem que
-    // este fluxo permite.
-    const aba = window.open('', '_blank');
-    if (aba === null) {
-      // Recusa antes de pedir o acesso: a URL é emitida por requisição, com o
-      // prazo correndo a partir dela, e pedir uma que não será usada é
-      // exatamente o que o endpoint sob demanda existe para evitar. A URL
-      // também não vira link na tela — deixaria de ser credencial de uso único
-      // e passaria a viver no DOM.
-      this.erroDeAbertura.set(
-        'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.',
-      );
-      return;
-    }
-
     const geracao = this.store.geracao();
     this.abrindoDocumento.set(documentoEditalId);
     this.erroDeAbertura.set(null);
     try {
-      const resultado = await this.cadastro.obterAcessoAoDocumento(processoId, documentoEditalId);
-
-      // O editor pode ter passado a outro processo enquanto o acesso era
-      // pedido; abrir agora mostraria o edital de um processo que já saiu da
-      // tela.
-      if (geracao !== this.store.geracao()) {
-        aba.close();
-        return;
+      const desfecho = await abrirAcessoEmNovaAba(
+        () => this.cadastro.obterAcessoAoDocumento(processoId, documentoEditalId),
+        () => geracao === this.store.geracao(),
+      );
+      if (desfecho.situacao === 'bloqueada') {
+        this.erroDeAbertura.set(
+          'O navegador bloqueou a abertura do edital. Permita pop-ups para este endereço e tente de novo.',
+        );
+      } else if (desfecho.situacao === 'recusada') {
+        this.erroDeAbertura.set(this.problemI18n.resolve(desfecho.problem).title);
       }
-
-      if (!isApiOk(resultado)) {
-        aba.close();
-        this.erroDeAbertura.set(this.problemI18n.resolve(resultado.problem).title);
-        return;
-      }
-
-      // Zerado antes de navegar: a aba passa a carregar um endereço assinado do
-      // storage, fora do controle da aplicação, e não deve alcançar esta
-      // janela pelo `window.opener`.
-      aba.opener = null;
-      aba.location.href = resultado.data.url;
-    } catch (erro) {
-      aba.close();
-      throw erro;
     } finally {
       this.abrindoDocumento.set(null);
     }
   }
 
+  /** Refaz a leitura que falhou, para o anexo deixar de ser uma aposta. */
   async reverificarDocumentos(): Promise<void> {
     const id = this.store.processoSeletivoId();
     if (id === null || this.reverificando()) return;
@@ -468,10 +427,4 @@ function recusarArquivo(arquivo: File): string | null {
     return 'O arquivo está vazio.';
   }
   return null;
-}
-
-/** A URL pré-assinada tem TTL curto; passado o prazo, só uma nova iniciação serve. */
-function iniciacaoExpirada(iniciacao: IniciarUploadDocumentoEditalDto): boolean {
-  const expiraEm = Date.parse(iniciacao.expiraEm);
-  return Number.isNaN(expiraEm) || expiraEm <= Date.now();
 }
