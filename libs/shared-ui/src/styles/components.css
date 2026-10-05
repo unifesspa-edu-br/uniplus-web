@@ -414,16 +414,34 @@ ui-editor-de-condicoes { display: block; }
   text-transform: lowercase;
 }
 
+/*
+ * Uma linha por condição: fato, comparação, valor e a ação de remover. O alinhamento é pelo
+ * topo, porque o campo de lista carrega a contagem de opções embaixo do controle — pela base,
+ * ele subia e o rótulo saía da altura dos vizinhos. O valor é o que mais precisa de largura
+ * (mostra os valores escolhidos dentro do campo), e por isso cresce o dobro dos outros.
+ */
 .editor-condicoes__condicao {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-2) var(--space-3);
-  align-items: end;
 }
 
 .editor-condicoes__condicao .form-field {
+  flex: 1 1 12rem;
   margin: 0;
   min-width: 0;
+}
+
+.editor-condicoes__condicao .condicao-de-fato__valor {
+  flex: 2 1 18rem;
+}
+
+/* A ação desce a altura do rótulo e tem a altura do controle, para ficar na linha dos campos. */
+.editor-condicoes__condicao > ui-condicao-de-fato > .btn {
+  --btn-height: var(--touch-comfortable);
+  flex: 0 0 auto;
+  margin-top: calc(var(--text-base) * var(--leading-normal));
 }
 
 .editor-condicoes__acoes {
@@ -435,6 +453,7 @@ ui-editor-de-condicoes { display: block; }
 /* O que a condição alcança e o erro são prosa: ocupam a linha inteira, não um campo ao lado dos outros. */
 .condicao-de-fato__nota {
   grid-column: 1 / -1;
+  flex-basis: 100%;
   margin: 0;
 }
 
