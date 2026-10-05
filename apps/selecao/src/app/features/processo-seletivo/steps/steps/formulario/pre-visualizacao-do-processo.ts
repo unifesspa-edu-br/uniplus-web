@@ -34,6 +34,7 @@ export function resultadoDoProcesso(
         obrigatorio: documento.obrigatorio,
         // A fase fora do cronograma lido só acontece sem leitura ou com ela defasada: fica pela identidade, no fim.
         fase: fases.get(documento.faseId) ?? { chave: documento.faseId, nome: documento.faseId, ordem: Number.POSITIVE_INFINITY },
+        finalidade: documento.finalidade,
         etapa: documento.etapaId === null ? null : (etapas.get(documento.etapaId) ?? documento.etapaId),
         situacao: documento.situacao,
         grupo: grupos.get(documento.exigenciaId) ?? null,

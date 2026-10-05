@@ -1,3 +1,4 @@
+import { FINALIDADES } from '../editor-de-formulario/formulario-editavel';
 import type { DocumentoAvaliado, ResultadoDaPreVisualizacao } from './pre-visualizacao-de-formularios';
 
 /** Os documentos de uma fase, na ordem da árvore de exigências. */
@@ -46,6 +47,28 @@ export function documentosPorFase(documentos: readonly DocumentoAvaliado[]): rea
   return [...porFase.values()]
     .sort((a, b) => a.fase.ordem - b.fase.ordem)
     .map(({ fase, documentos: daFase }) => ({ chave: fase.chave, nome: fase.nome, documentos: daFase }));
+}
+
+/** Os documentos de um formulário, por fase; `finalidade` nula é o que se exige fora de formulário. */
+export interface DocumentosDoFormulario {
+  readonly finalidade: string | null;
+  readonly fases: readonly DocumentosDaFase[];
+}
+
+/**
+ * Os documentos agrupados pelo formulário em cujo bloco de comprovação são apresentados — inscrição
+ * e isenção podem dividir a fase, e cada formulário lista só os seus —, na ordem em que o candidato
+ * responde os formulários, e o que se exige fora de formulário por último. Dentro de cada um, por fase.
+ */
+export function documentosPorFormulario(documentos: readonly DocumentoAvaliado[]): readonly DocumentosDoFormulario[] {
+  const ordem: readonly (string | null)[] = [...FINALIDADES.map((opcao) => opcao.valor), null];
+  const finalidades = [...new Set(documentos.map((documento) => documento.finalidade))].sort(
+    (uma, outra) => ordem.indexOf(uma) - ordem.indexOf(outra),
+  );
+  return finalidades.map((finalidade) => ({
+    finalidade,
+    fases: documentosPorFase(documentos.filter((documento) => documento.finalidade === finalidade)),
+  }));
 }
 
 /**

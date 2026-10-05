@@ -155,6 +155,7 @@ describe('PreVisualizacaoDeFormulariosComponent com grupo repetível', () => {
     nome: 'RG do membro',
     obrigatorio: true,
     fase: { chave: 'INSCRICAO', nome: 'Inscrição', ordem: 0 },
+    finalidade: 'INSCRICAO',
     etapa: null,
     situacao: 'EXIGIDO',
     grupo: 'MEMBROS',
@@ -303,6 +304,21 @@ describe('PreVisualizacaoDeFormulariosComponent com grupo repetível', () => {
     expect(ocorrencias, 'MEMBROS#2 é a primeira depois de remover a MEMBROS#1').toEqual([
       'Composição familiar, ocorrência 1',
       'Composição familiar — sem ocorrência avaliada',
+    ]);
+  });
+
+  it('separa os documentos por formulário, nomeando pela finalidade o formulário que o processo ainda não tem', async () => {
+    const laudo: DocumentoAvaliado = { ...RG, exigenciaId: 'e-laudo', nome: 'Laudo', grupo: null, ocorrenciaId: null, finalidade: 'HABILITACAO' };
+    const termo: DocumentoAvaliado = { ...RG, exigenciaId: 'e-termo', nome: 'Termo de matrícula', grupo: null, ocorrenciaId: null, finalidade: null };
+    const { host, botao, fixture } = montar({ resposta: () => of(ok(avaliado({}, [termo, laudo, RG]))) });
+
+    botao('Pré-visualizar').click();
+    fixture.detectChanges();
+
+    expect(Array.from(host.querySelectorAll('h4'), (titulo) => titulo.textContent?.trim())).toEqual([
+      'Formulário de inscrição',
+      'Formulário de habilitação',
+      'Fora de formulário',
     ]);
   });
 
