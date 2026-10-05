@@ -272,7 +272,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
           </ui-alert>
         }
         <form [formGroup]="form" id="cfg-fato-criacao" class="cfg-form" (ngSubmit)="criar()" novalidate>
-          <fieldset class="field field--full">
+          <fieldset class="field form-grid__full">
             <legend class="field__label is-required">O que o fato é</legend>
             <label class="radio">
               <input type="radio" formControlName="tipo" value="DECLARADO" />
@@ -291,7 +291,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             </label>
           </fieldset>
 
-          <div class="form-grid form-grid--pair">
+          <div class="form-grid">
             <label class="field" [class.is-error]="erro('nome')">
               <span class="field__label is-required">Nome</span>
               <input class="input" type="text" formControlName="nome" [attr.aria-invalid]="erro('nome') ? 'true' : null" [attr.aria-describedby]="erro('nome') ? 'cfg-fato-nome-erro' : null" />
@@ -314,7 +314,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             </label>
           </div>
 
-          <label class="field field--full" [class.is-error]="erro('descricao')">
+          <label class="field form-grid__full" [class.is-error]="erro('descricao')">
             <span class="field__label">Descrição</span>
             <textarea class="textarea" rows="2" formControlName="descricao" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'cfg-fato-descricao-erro' : null"></textarea>
             @if (erro('descricao')) {
@@ -331,7 +331,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 </div>
               </ui-alert>
             }
-            <label class="field field--full" [class.is-error]="erro('fatoDeMembro')">
+            <label class="field form-grid__full" [class.is-error]="erro('fatoDeMembro')">
               <span class="field__label is-required">Fato de membro resumido</span>
               <select
                 class="select"
@@ -361,7 +361,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             </label>
           }
 
-          <div class="form-grid form-grid--pair">
+          <div class="form-grid">
             @if (!agregado()) {
             <label class="field" [class.is-error]="erro('dominio')">
               <span class="field__label is-required">Tipo de dado</span>
@@ -444,9 +444,9 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             </label>
           </div>
 
-          <fieldset class="field field--full">
+          <fieldset class="field form-grid__full">
             <legend class="field__label">Proteção de dados (LGPD)</legend>
-            <div class="form-grid form-grid--pair">
+            <div class="form-grid">
               <label class="field" [class.is-error]="erro('classificacaoProtecao')">
                 <span class="field__label is-required">Classificação</span>
                 <select class="select" formControlName="classificacaoProtecao" [attr.aria-invalid]="erro('classificacaoProtecao') ? 'true' : null" [attr.aria-describedby]="erro('classificacaoProtecao') ? 'cfg-fato-classificacaoProtecao-erro' : null">
@@ -472,7 +472,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 }
               </label>
             </div>
-            <label class="field field--full" [class.is-error]="erro('finalidadeTratamento')">
+            <label class="field form-grid__full" [class.is-error]="erro('finalidadeTratamento')">
               <span class="field__label is-required">Finalidade do tratamento</span>
               <textarea class="textarea" rows="2" formControlName="finalidadeTratamento" [attr.aria-invalid]="erro('finalidadeTratamento') ? 'true' : null" [attr.aria-describedby]="erro('finalidadeTratamento') ? 'cfg-fato-finalidadeTratamento-erro' : null"></textarea>
               @if (erro('finalidadeTratamento')) {

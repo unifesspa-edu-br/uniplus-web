@@ -269,7 +269,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         <section aria-labelledby="cfg-reserva-dados">
           <h3 id="cfg-reserva-dados" class="form-section__title">Dados do Censo</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('censoReferencia')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('censoReferencia')">
               <span class="field__label is-required">Censo de referência</span>
               <input
                 class="input"
@@ -328,7 +328,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
               </label>
             </div>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('pcdPercentual')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('pcdPercentual')">
               <span class="field__label is-required">PcD %</span>
               <input
                 class="input"
@@ -348,7 +348,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
               }
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('baseLegal')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('baseLegal')">
               <span class="field__label is-required">Base legal</span>
               <input
                 class="input"

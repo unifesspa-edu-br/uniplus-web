@@ -110,7 +110,7 @@ interface ModalidadeForm {
         <section aria-labelledby="cfg-mod-identificacao" class="form-section">
           <h2 id="cfg-mod-identificacao" class="form-section__title">Identificação</h2>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('codigo')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
               <span class="field__label is-required">Código</span>
               <input
                 class="input"
@@ -132,7 +132,7 @@ interface ModalidadeForm {
               }
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
               <span class="field__label">Descrição</span>
               <input
                 class="input"
@@ -152,7 +152,7 @@ interface ModalidadeForm {
         <section aria-labelledby="cfg-mod-vagas" class="form-section">
           <h2 id="cfg-mod-vagas" class="form-section__title">Composição de vagas</h2>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('naturezaLegal')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('naturezaLegal')">
               <span class="field__label is-required">Natureza legal</span>
               <select
                 class="select"
@@ -167,7 +167,7 @@ interface ModalidadeForm {
               <span class="field__hint">Governa as regras de remanejamento disponíveis.</span>
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('composicaoVagas')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('composicaoVagas')">
               <span class="field__label is-required">Composição de vagas</span>
               <select
                 class="select"
@@ -183,7 +183,7 @@ interface ModalidadeForm {
             </label>
 
             @if (mostraOrigem()) {
-              <label class="field field--full" [class.is-error]="erroDoCampo('composicaoOrigem')">
+              <label class="field form-grid__full" [class.is-error]="erroDoCampo('composicaoOrigem')">
                 <span class="field__label is-required">Origem (modalidade)</span>
                 <select
                   class="select"
@@ -208,7 +208,7 @@ interface ModalidadeForm {
           <section aria-labelledby="cfg-mod-remanejamento" class="form-section">
             <h2 id="cfg-mod-remanejamento" class="form-section__title">Remanejamento</h2>
             <div class="form-grid">
-              <label class="field field--full" [class.is-error]="erroDoCampo('regraRemanejamento')">
+              <label class="field form-grid__full" [class.is-error]="erroDoCampo('regraRemanejamento')">
                 <span class="field__label is-required">Regra de remanejamento</span>
                 <select
                   class="select"
@@ -230,7 +230,7 @@ interface ModalidadeForm {
               </label>
 
               @if (mostraDestino()) {
-                <label class="field field--full" [class.is-error]="erroDoCampo('remanejamentoDestino')">
+                <label class="field form-grid__full" [class.is-error]="erroDoCampo('remanejamentoDestino')">
                   <span class="field__label is-required">Destino</span>
                   <select
                     class="select"
@@ -249,7 +249,7 @@ interface ModalidadeForm {
               }
 
               @if (mostraParFallback()) {
-                <div class="form-grid--pair">
+                <div class="form-grid">
                   <label class="field" [class.is-error]="erroDoCampo('remanejamentoPar')">
                     <span class="field__label is-required">Par</span>
                     <select
@@ -291,7 +291,7 @@ interface ModalidadeForm {
         <section aria-labelledby="cfg-mod-criterios" class="form-section">
           <h2 id="cfg-mod-criterios" class="form-section__title">Critérios e enquadramento</h2>
           <div class="form-grid">
-            <div class="field field--full">
+            <div class="field form-grid__full">
               <span class="field__label" id="cfg-mod-criterios-label">Critérios cumulativos</span>
               <div class="cfg-chips-input">
                 <input
@@ -330,7 +330,7 @@ interface ModalidadeForm {
               <span class="field__hint">Lista aberta (renda, autodeclaração, laudo, etc.).</span>
             </div>
 
-            <label class="field field--full">
+            <label class="field form-grid__full">
               <span class="field__label">Ação quando indeferido</span>
               <select class="select" formControlName="acaoQuandoIndeferido">
                 <option value="">Não se aplica</option>
@@ -341,7 +341,7 @@ interface ModalidadeForm {
               <span class="field__hint">Destino do candidato indeferido nesta modalidade (aplicável a cotas).</span>
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('baseLegal')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('baseLegal')">
               <span class="field__label">Base legal</span>
               <input
                 class="input"

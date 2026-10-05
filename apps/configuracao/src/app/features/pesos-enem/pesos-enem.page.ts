@@ -466,7 +466,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
         class="cfg-form"
       >
         <div class="form-grid">
-          <label class="field field--full" [class.is-error]="erroDoCampoLote('resolucao')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampoLote('resolucao')">
             <span class="field__label is-required">Número/ano da resolução</span>
             <input
               class="input"
@@ -483,7 +483,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
               <span class="field__error" role="alert">{{ erroDoCampoLote('resolucao') }}</span>
             }
           </label>
-          <label class="field field--full" [class.is-error]="erroDoCampoLote('baseLegalGlobal')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampoLote('baseLegalGlobal')">
             <span class="field__label is-required">Base legal (padrão para todos os grupos)</span>
             <input
               class="input"
@@ -569,7 +569,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                     }
                   </label>
                 }
-                <label class="field field--full">
+                <label class="field form-grid__full">
                   <span class="field__label is-required">Base legal</span>
                   <input class="input" type="text" formControlName="baseLegal" />
                   @if (erroDoCampoGrupo(gi, 'baseLegal'); as erro) {

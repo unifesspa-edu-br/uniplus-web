@@ -148,7 +148,7 @@ interface EnderecoFormControls {
         </div>
 
         @if (modoManual()) {
-          <div class="field field--full">
+          <div class="field form-grid__full">
             <label [for]="id('cidade-busca')" class="field__label is-required">Cidade</label>
             <input
               [id]="id('cidade-busca')"
@@ -188,7 +188,7 @@ interface EnderecoFormControls {
             }
           </div>
         } @else if (cidade(); as c) {
-          <div class="field field--full">
+          <div class="field form-grid__full">
             <span class="field__label">Cidade</span>
             <output class="field__readonly" [attr.aria-label]="'Cidade resolvida pelo CEP'">
               {{ c.nome }} — {{ c.uf }}
@@ -199,7 +199,7 @@ interface EnderecoFormControls {
         <!-- Detalhes do endereço só quando há CEP resolvido: sem resolução o
              backend não persiste endereço estruturado (só a cidade). #412 -->
         @if (mostrarDetalheEndereco()) {
-        <div class="field field--full">
+        <div class="field form-grid__full">
           <label [for]="id('logradouro')" class="field__label">Logradouro</label>
           <input
             [id]="id('logradouro')"

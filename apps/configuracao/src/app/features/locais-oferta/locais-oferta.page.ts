@@ -274,7 +274,7 @@ interface LocalOfertaForm {
                 <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
               }
             </label>
-            <label class="field field--full">
+            <label class="field form-grid__full">
               <span class="field__label">Campus responsável</span>
               <select class="select" formControlName="campusResponsavelId">
                 <option value="">(Sem campus responsável)</option>

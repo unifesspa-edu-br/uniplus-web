@@ -79,14 +79,14 @@ interface RegraEmEdicao {
       }
 
       <form [formGroup]="descritivo" id="cfg-fato-descritivo" (ngSubmit)="salvarDescritivo()" novalidate>
-        <label class="field field--full" [class.is-error]="erroDescritivo('nome')">
+        <label class="field form-grid__full" [class.is-error]="erroDescritivo('nome')">
           <span class="field__label is-required">Nome</span>
           <input class="input" type="text" formControlName="nome" [attr.aria-invalid]="erroDescritivo('nome') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('nome') ? 'cfg-fato-ed-nome-erro' : null" />
           @if (erroDescritivo('nome')) {
             <span class="field__error" id="cfg-fato-ed-nome-erro">{{ erroDescritivo('nome') }}</span>
           }
         </label>
-        <label class="field field--full" [class.is-error]="erroDescritivo('descricao')">
+        <label class="field form-grid__full" [class.is-error]="erroDescritivo('descricao')">
           <span class="field__label">Descrição</span>
           <textarea class="textarea" rows="3" formControlName="descricao" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
           @if (erroDescritivo('descricao')) {
@@ -173,7 +173,7 @@ interface RegraEmEdicao {
 
           @if (temValores()) {
           <form [formGroup]="novoValor" (ngSubmit)="acrescentarValor()" novalidate>
-            <div class="form-grid form-grid--pair">
+            <div class="form-grid">
               <label class="field" [class.is-error]="erroNovoValor('codigo')">
                 <span class="field__label is-required">Código do valor</span>
                 <input class="input cfg-input-uppercase" type="text" formControlName="codigo" [attr.aria-invalid]="erroNovoValor('codigo') ? 'true' : null" [attr.aria-describedby]="erroNovoValor('codigo') ? 'cfg-fato-valor-codigo-erro' : null" />
@@ -217,7 +217,7 @@ interface RegraEmEdicao {
             }
           </p>
           @for (regra of regras(); track $index; let i = $index) {
-            <fieldset class="field field--full">
+            <fieldset class="field form-grid__full">
               <legend class="field__label">Regra {{ i + 1 }}</legend>
               @if (f.dominio === 'CATEGORICO') {
                 <label class="field">

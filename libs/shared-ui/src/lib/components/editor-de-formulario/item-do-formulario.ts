@@ -70,7 +70,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         </ul>
       }
 
-      <div class="editor-formulario__campos">
+      <div class="form-grid">
         <div class="field" [class.is-error]="rotuloVazio()">
           <label class="field__label is-required" [for]="idDe('rotulo')">Rótulo</label>
           <input
@@ -117,7 +117,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
           }
         </div>
 
-        <div class="field editor-formulario__largo">
+        <div class="field form-grid__full">
           <label class="field__label" [for]="idDe('ajuda')">Ajuda</label>
           <textarea
             class="textarea"

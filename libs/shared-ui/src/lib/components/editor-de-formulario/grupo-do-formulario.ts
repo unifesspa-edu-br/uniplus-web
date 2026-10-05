@@ -62,7 +62,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         </ul>
       }
 
-      <div class="editor-formulario__campos">
+      <div class="form-grid">
         <div class="field" [class.is-error]="rotuloVazio()">
           <label class="field__label is-required" [for]="idDe('rotulo')">Rótulo do grupo</label>
           <input
@@ -93,7 +93,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
 
       <fieldset class="editor-formulario__restricao" [attr.aria-describedby]="problemaDasOcorrencias() ? idDe('ocorrencias-erro') : null">
         <legend class="field__label">Ocorrências</legend>
-        <div class="editor-formulario__campos">
+        <div class="form-grid form-grid--pair">
           <div class="field">
             <label class="field__label" [for]="idDe('minimo')">Mínimo</label>
             <input
