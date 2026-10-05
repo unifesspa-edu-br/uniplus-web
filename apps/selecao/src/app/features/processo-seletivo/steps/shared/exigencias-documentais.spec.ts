@@ -13,6 +13,7 @@ import {
   comAlcanceDeTodasAsFases,
   comExigencia,
   comFinalidade,
+  comRepeticao,
   faltaOFormulario,
   comExigenciaNaRaiz,
   comModalidades,
@@ -537,6 +538,21 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     const lido = exigenciasDe(
       detalhe([
         folhaDto({ exigidoNaFaseId: ID_ISENCAO, modelo }),
+        folhaDto({ exigidoNaFaseId: ID_HABILITACAO }),
+      ]),
+    );
+
+    expect(lido.emTodasAsFases).toEqual([]);
+  });
+
+  /**
+   * A repetição é da folha: "um por membro" numa fase e "um por candidato" noutra são declarações
+   * diferentes, e lidas como alcance global a gravação seguinte igualaria as duas sem ninguém pedir.
+   */
+  it('não infere alcance global quando só uma fase repete o documento por um grupo', () => {
+    const lido = exigenciasDe(
+      detalhe([
+        { ...folhaDto({ exigidoNaFaseId: ID_ISENCAO }), repetePorEntidade: 'FAMILIA' },
         folhaDto({ exigidoNaFaseId: ID_HABILITACAO }),
       ]),
     );
@@ -1209,5 +1225,45 @@ describe('o formulário em que o documento é apresentado', () => {
       [null, ['sem']],
     ]);
     expect(agrupar(['HABILITACAO'])).toEqual([['HABILITACAO', ['sem', 'isenção', 'inscrição']]]);
+  });
+});
+
+describe('a repetição pelas ocorrências de um grupo do formulário', () => {
+  const repetida = (documento: ExigenciaDeDocumento, grupo: string): NoDeExigencia => ({ ...folhaDe(documento), repetePorEntidade: grupo });
+
+  it('localiza a repetição da própria folha e a herdada do grupo de alternativas que se repete', () => {
+    const alternativas: NoDeExigencia = {
+      ...folhaDe(exigencia()),
+      tipo: 'OU',
+      documento: null,
+      filhos: [folhaDe(exigencia({ tipoDocumentoId: ID_CONTRACHEQUE })), folhaDe(exigencia({ tipoDocumentoId: ID_DIPLOMA }))],
+      repetePorEntidade: 'FAMILIA',
+    };
+    const arvore: ExigenciasDoRascunho = { raizes: [repetida(exigencia(), 'EMPRESAS'), alternativas], emTodasAsFases: [] };
+
+    expect(exigenciasLocalizadasDaFase(arvore, 'HABILITACAO').map(({ repeticao }) => repeticao)).toEqual([
+      { grupo: 'EMPRESAS', herdada: false },
+      { grupo: 'FAMILIA', herdada: true },
+      { grupo: 'FAMILIA', herdada: true },
+    ]);
+  });
+
+  it('declara a repetição só na folha do documento na fase escolhida', () => {
+    const arvore = rascunho(exigencia({ faseCodigo: 'ISENCAO' }), exigencia());
+
+    const comFamilia = comRepeticao(arvore, ID_RG, 'HABILITACAO', 'FAMILIA');
+
+    expect(comFamilia.raizes.map((no) => no.repetePorEntidade)).toEqual([null, 'FAMILIA']);
+  });
+
+  it('o documento que vale em todas as fases leva a repetição para a fase em que é materializado', () => {
+    const arvore: ExigenciasDoRascunho = { raizes: [repetida(exigencia({ faseCodigo: 'ISENCAO' }), 'FAMILIA')], emTodasAsFases: [ID_RG] };
+
+    const materializada = comAlcanceDeTodasAsFases(arvore, ['ISENCAO', 'HABILITACAO']);
+
+    expect(materializada.raizes.map((no) => [no.documento?.faseCodigo, no.repetePorEntidade])).toEqual([
+      ['ISENCAO', 'FAMILIA'],
+      ['HABILITACAO', 'FAMILIA'],
+    ]);
   });
 });

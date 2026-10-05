@@ -12,6 +12,8 @@ import {
   comExigenciaNaRaiz,
   comExigidoDeTodos,
   comRecorteEscolhido,
+  comRepeticao,
+  comRepeticaoEmTodasAsFases,
   exigenciaDecideResultado,
   exigenciaNova,
   exigenciasDaFase,
@@ -27,6 +29,7 @@ import {
   todasAsExigencias,
   type ExigenciaLocalizada,
   type GrupoDaExigencia,
+  type RepeticaoDaExigencia,
 } from '../../shared/exigencias-documentais';
 import {
   clausulasDoGatilho,
@@ -36,7 +39,16 @@ import {
   recusasDeFaseDoGatilho,
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
-import { fasesNoCronograma, producaoDoRascunho } from '../../shared/fase-do-fato';
+import {
+  camposDaRepeticao,
+  fasesNoCronograma,
+  motivoDoGrupoForaDoLugar,
+  orientacaoDaRecusaDaRepeticao,
+  producaoDoRascunho,
+  recusaDaRepeticao,
+  type GrupoDaProducao,
+  type NomesDaOrientacao,
+} from '../../shared/fase-do-fato';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -105,6 +117,7 @@ import {
   descreverPublico,
   normaComum,
   publicoDaExigencia,
+  repeticaoResumida,
   rotuloDaConsequencia,
   type FiltroDePublico,
   type NormaDescrita,
@@ -814,6 +827,7 @@ export class FaseStepComponent {
         aplicaA: descreverPublico(publico),
         entrega: exigencia.obrigatorio ? 'Obrigatória' : 'Facultativa',
         composicao: composicaoResumida(this.grupoDoDocumento(doc.id)),
+        repeticao: this.repeticaoResumidaDoDocumento(doc.id),
         consequencia: rotuloDaConsequencia(
           exigencia.consequenciaIndeferimento,
           exigencia.obrigatorio,
@@ -1285,6 +1299,8 @@ export class FaseStepComponent {
     id: string,
   ): ExigenciasDoRascunho {
     const modelo = this.exigenciaDoDocumento(id);
+    // A repetição faz parte da declaração, como o gatilho que pode citar os campos do grupo.
+    const repeticao = this.repeticaoDeclarada(id);
 
     return {
       ...exigencias,
@@ -1292,6 +1308,7 @@ export class FaseStepComponent {
         no.tipo === 'FOLHA' && no.documento !== null && no.documento.tipoDocumentoId === id
           ? {
               ...no,
+              repetePorEntidade: repeticao?.herdada === true ? no.repetePorEntidade : (repeticao?.grupo ?? null),
               documento: {
                 ...modelo,
                 faseCodigo: no.documento.faseCodigo,
@@ -1473,6 +1490,15 @@ export class FaseStepComponent {
     ),
   );
 
+  /** Como a orientação nomeia o fato e a fase. */
+  private readonly nomesDaOrientacao = computed<NomesDaOrientacao>(() => {
+    const nomeDoFato = new Map(this.catalogos.fatos().map((fato) => [fato.codigo, fato.nome]));
+    return {
+      fato: (codigo: string) => nomeDoFato.get(codigo) ?? codigo,
+      fase: this.catalogos.nomeDaFase(),
+    };
+  });
+
   /**
    * O que o editor de cada documento da fase oferece e recusa: os fatos que o gatilho pode citar
    * nesta fase — de qualquer formulário do processo, derivados e da classificação, já conhecidos
@@ -1480,17 +1506,15 @@ export class FaseStepComponent {
    */
   private readonly gatilhoPorDocumento = computed(() => {
     const producao = this.producaoDosFatos();
-    const nomeDoFato = new Map(this.catalogos.fatos().map((fato) => [fato.codigo, fato.nome]));
-    const nomes = {
-      fato: (codigo: string) => nomeDoFato.get(codigo) ?? codigo,
-      fase: this.catalogos.nomeDaFase(),
-    };
+    const nomes = this.nomesDaOrientacao();
 
     return new Map(
       this.documentosDaFase().map((doc) => {
         const exigencia = this.exigenciaDoDocumento(doc.id);
+        // Os campos do grupo pelo qual o documento se repete: o gatilho os cita além dos do candidato.
+        const doGrupo = camposDaRepeticao(this.repeticaoDeclarada(doc.id)?.grupo ?? null, producao);
         const erros: Record<number, string> = {};
-        for (const recusa of recusasDeFaseDoGatilho(exigencia, producao, nomes)) {
+        for (const recusa of recusasDeFaseDoGatilho(exigencia, producao, nomes, doGrupo)) {
           erros[recusa.indice] = recusa.orientacao;
         }
         return [
@@ -1502,6 +1526,7 @@ export class FaseStepComponent {
               producao,
               this.dominiosDoGatilho(),
               exigencia.condicoes.map((condicao) => condicao.fato),
+              doGrupo,
             ),
             erros,
           },
@@ -1509,6 +1534,88 @@ export class FaseStepComponent {
       }),
     );
   });
+
+  /**
+   * A repetição de cada documento da fase pelas ocorrências de um grupo dos formulários
+   * (ADR-0138, UNI-REQ-0069): a declarada ou a herdada do grupo de alternativas, os grupos que ela
+   * pode escolher onde o documento é cobrado, os que não pode e por quê, e o que fazer quando a
+   * escolhida deixou de valer — grupo removido, respondido depois da fase ou só na isenção.
+   */
+  private readonly repeticaoPorDocumento = computed(() => {
+    const producao = this.producaoDosFatos();
+    const nomes = this.nomesDaOrientacao();
+    const grupos = [...producao.grupos.values()];
+
+    return new Map(
+      this.documentosDaFase().map((doc): [string, RepeticaoDoDocumento] => {
+        const exigencia = this.exigenciaDoDocumento(doc.id);
+        const atual = this.repeticaoDeclarada(doc.id);
+        const avaliados = grupos.map((grupo) => ({ grupo, recusa: recusaDaRepeticao(grupo.codigo, exigencia, producao) }));
+        const recusaAtual = atual === null ? null : recusaDaRepeticao(atual.grupo, exigencia, producao);
+        return [
+          doc.id,
+          {
+            atual,
+            rotulo: atual === null ? '' : (producao.grupos.get(atual.grupo)?.rotulo ?? atual.grupo),
+            semGrupo: grupos.length === 0,
+            oferecidos: avaliados.filter(({ recusa }) => recusa === null).map(({ grupo }) => grupo),
+            naoOferecidos: avaliados.flatMap(({ recusa }) =>
+              recusa?.tipo === 'GRUPO_FORA_DO_LUGAR' ? [motivoDoGrupoForaDoLugar(recusa, nomes)] : [],
+            ),
+            erro:
+              recusaAtual === null || atual === null
+                ? null
+                : orientacaoDaRecusaDaRepeticao(recusaAtual, producao, nomes, atual.herdada),
+          },
+        ];
+      }),
+    );
+  });
+
+  private repeticaoResumidaDoDocumento(id: string): string {
+    const repeticao = this.repeticaoDoDocumento(id);
+    return repeticaoResumida(repeticao.atual === null ? null : repeticao.rotulo);
+  }
+
+  /** A repetição do documento na fase aberta, com o que o campo "Repetir por" oferece. */
+  repeticaoDoDocumento(id: string): RepeticaoDoDocumento {
+    return this.repeticaoPorDocumento().get(id) ?? SEM_REPETICAO;
+  }
+
+  /**
+   * A repetição declarada para o documento nesta fase. Na fase alcançada por "vale em todas as
+   * fases" e ainda não materializada, é a do modelo de raiz, que a gravação copia para ela.
+   */
+  private repeticaoDeclarada(id: string): RepeticaoDaExigencia | null {
+    const declarada = (this.declaracoesPorDocumento().get(id) ?? [])[0];
+    if (declarada !== undefined) return declarada.repeticao;
+
+    const exigencias = this.store.draft().documentos;
+    if (!exigencias.emTodasAsFases.includes(id)) return null;
+    const modelo = exigencias.raizes.find((no) => no.tipo === 'FOLHA' && no.documento?.tipoDocumentoId === id);
+    return modelo === undefined || modelo.repetePorEntidade === null
+      ? null
+      : { grupo: modelo.repetePorEntidade, herdada: false };
+  }
+
+  /**
+   * Declara pelas ocorrências de que grupo o documento se repete, ou nenhum. O documento que vale em
+   * todas as fases continua valendo: a repetição é a mesma declaração em cada uma, como o gatilho.
+   * As condições que citam campo do grupo anterior ficam, marcadas, até o operador decidir.
+   */
+  escolherRepeticao(id: string, valor: string): void {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return;
+
+    const grupo = valor === '' ? null : valor;
+    const exigencias = this.store.draft().documentos;
+    this.store.patchSection(
+      'documentos',
+      this.valeEmTodasAsFases(id)
+        ? comRepeticaoEmTodasAsFases(exigencias, id, grupo)
+        : comRepeticao(exigencias, id, fase.codigo, grupo),
+    );
+  }
 
   /** Os fatos que o gatilho do documento pode citar na fase aberta. */
   fatosDoGatilhoDoDocumento(id: string): readonly FatoEscolhivel[] {
@@ -1776,6 +1883,29 @@ function canonico(valor: unknown): string {
   );
 }
 
+/** A repetição do documento na fase e o que o campo "Repetir por" oferece. */
+interface RepeticaoDoDocumento {
+  readonly atual: RepeticaoDaExigencia | null;
+  /** O rótulo do grupo da repetição atual; o código, quando o grupo saiu dos formulários. */
+  readonly rotulo: string;
+  /** Se nenhum formulário do processo tem grupo repetível. */
+  readonly semGrupo: boolean;
+  readonly oferecidos: readonly GrupoDaProducao[];
+  /** Os grupos que o documento não pode escolher aqui, com o motivo. */
+  readonly naoOferecidos: readonly string[];
+  /** O que fazer quando a repetição atual deixou de valer. */
+  readonly erro: string | null;
+}
+
+const SEM_REPETICAO: RepeticaoDoDocumento = {
+  atual: null,
+  rotulo: '',
+  semGrupo: true,
+  oferecidos: [],
+  naoOferecidos: [],
+  erro: null,
+};
+
 /** O que a conferência mostra de um documento exigido. */
 interface ResumoDoDocumento {
   readonly id: string;
@@ -1786,6 +1916,8 @@ interface ResumoDoDocumento {
   readonly entrega: string;
   /** Como o documento compõe um grupo; vazio quando é exigido por si. */
   readonly composicao: string;
+  /** Pelas ocorrências de que grupo do formulário o documento se repete; vazio quando é um por candidato. */
+  readonly repeticao: string;
   readonly consequencia: string;
   readonly coleta: string;
   readonly bases: readonly BaseLegalConfig[];

@@ -40,6 +40,7 @@ import {
   comAlcanceDeTodasAsFases,
   exigenciaDecideResultado,
   exigenciasDaFase,
+  exigenciasLocalizadas,
   faltaOFormulario,
   gruposSemNormaResolvida,
   modalidadesDaExigencia,
@@ -47,6 +48,7 @@ import {
   semAFase,
   temNormaResolvida,
   todasAsExigencias,
+  type RepeticaoDaExigencia,
 } from '../../shared/exigencias-documentais';
 import {
   dominiosDoGatilho,
@@ -56,7 +58,17 @@ import {
   problemasDoGatilho,
   recusasDeFaseDoGatilho,
 } from '../../shared/gatilho-de-exigencia';
-import { fasesNoCronograma, producaoDoRascunho, recusaDaExigenciaDoServidor } from '../../shared/fase-do-fato';
+import {
+  camposDaRepeticao,
+  fasesNoCronograma,
+  orientacaoDaRecusaDaRepeticao,
+  producaoDoRascunho,
+  recusaDaExigenciaDoServidor,
+  recusaDaRepeticao,
+  type LugarDaExigencia,
+  type NomesDaOrientacao,
+  type ProducaoDosFatos,
+} from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
 import {
   comCamposQueAsExigenciasPressupoem,
@@ -386,7 +398,7 @@ export class CronogramaStepComponent {
       this.store.draft().documentos,
       fases.map((fase) => fase.codigo),
     );
-    return todasAsExigencias(materializadas).map((exigencia) => {
+    return exigenciasLocalizadas(materializadas).map(({ documento: exigencia, repeticao }) => {
       const fase = fasePorCodigo.get(exigencia.faseCodigo);
       const admiteComplementacao =
         fase === undefined
@@ -409,7 +421,12 @@ export class CronogramaStepComponent {
           faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, this.catalogos.fasePorId())) !== null,
         problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
         problemasDeFase: [
-          ...new Set(recusasDeFaseDoGatilho(exigencia, producao, nomes).map((recusa) => recusa.orientacao)),
+          ...new Set([
+            ...problemaDaRepeticao(repeticao, exigencia, producao, nomes),
+            ...recusasDeFaseDoGatilho(exigencia, producao, nomes, camposDaRepeticao(repeticao?.grupo ?? null, producao)).map(
+              (recusa) => recusa.orientacao,
+            ),
+          ]),
         ],
       };
     });
@@ -1872,4 +1889,17 @@ function rotuloDoPapel(papel: string | null): string {
   if (papel === PAPEL_PRELIMINAR) return 'resultado preliminar';
   if (papel === PAPEL_DEFINITIVO) return 'resultado definitivo';
   return papel ?? 'não é resultado';
+}
+
+/** A repetição que não vale onde o documento é cobrado, dita com o que fazer; nada quando vale ou não há. */
+function problemaDaRepeticao(
+  repeticao: RepeticaoDaExigencia | null,
+  lugar: LugarDaExigencia,
+  producao: ProducaoDosFatos,
+  nomes: NomesDaOrientacao,
+): readonly string[] {
+  const recusa = repeticao === null ? null : recusaDaRepeticao(repeticao.grupo, lugar, producao);
+  return recusa === null || repeticao === null
+    ? []
+    : [orientacaoDaRecusaDaRepeticao(recusa, producao, nomes, repeticao.herdada)];
 }

@@ -254,3 +254,8 @@ export function composicaoResumida(grupo: GrupoDaExigencia | null): string {
     ? `Basta 1 entre ${grupo.alternativas} alternativas`
     : `${minima} entre ${grupo.alternativas} alternativas`;
 }
+
+/** A repetição do documento pelas ocorrências de um grupo do formulário; vazio quando é um por candidato. */
+export function repeticaoResumida(rotuloDoGrupo: string | null): string {
+  return rotuloDoGrupo === null ? '' : `Um por ocorrência de ${rotuloDoGrupo}`;
+}

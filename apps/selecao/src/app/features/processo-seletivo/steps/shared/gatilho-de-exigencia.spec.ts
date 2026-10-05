@@ -575,6 +575,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     ],
     derivacoes: new Map(),
     catalogo: new Map(FATOS.map((fato) => [fato.codigo, fato])),
+    grupos: new Map(),
   };
   const MODALIDADES = ['AC', 'LB_PPI'];
   const DOMINIOS = dominiosDoGatilho(FATOS, [], MODALIDADES);
@@ -616,6 +617,44 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   it('as modalidades valem para todo fato cujos valores são modalidades, não só pelo código', () => {
     expect(DOMINIOS.get('MODALIDADE_CONVOCACAO')).toEqual(MODALIDADES);
     expect(DOMINIOS.get('MODALIDADE')).toEqual(MODALIDADES);
+  });
+
+  describe('o campo de membro de grupo repetível', () => {
+    const PARENTESCO = doProcesso({
+      codigo: 'PARENTESCO',
+      nome: 'Parentesco',
+      dominio: 'CATEGORICO',
+      valoresDominio: ['FILHO', 'CONJUGE'],
+      escopo: 'MEMBRO_GRUPO',
+    });
+    const comParentesco: ProducaoDosFatos = { ...PRODUCAO, catalogo: new Map([...PRODUCAO.catalogo, ['PARENTESCO', PARENTESCO]]) };
+
+    it('só é oferecido ao documento que se repete pelo grupo que o coleta', () => {
+      const oferecidos = (repeticao: ReadonlySet<string>) =>
+        codigos(fatosDoGatilhoNaFase([...FATOS, PARENTESCO], na('INSCRICAO'), comParentesco, DOMINIOS, [], repeticao));
+
+      expect(oferecidos(new Set())).toEqual(['PCD']);
+      expect(oferecidos(new Set(['PARENTESCO']))).toEqual(['PCD', 'PARENTESCO']);
+    });
+
+    it('citado fora da repetição, recusa a condição e leva ao grupo que o coleta', () => {
+      const comFamilia: ProducaoDosFatos = {
+        ...comParentesco,
+        grupos: new Map([['FAMILIA', { codigo: 'FAMILIA', rotulo: 'Composição familiar', campos: ['PARENTESCO'] }]]),
+      };
+      const documento = exigencia({ condicoes: [{ clausula: 1, fato: 'PARENTESCO', operador: 'IGUAL', valor: 'FILHO' }] });
+      const nomes = { fato: (codigo: string) => codigo, fase: (codigo: string) => codigo };
+
+      expect(recusasDeFaseDoGatilho(documento, comFamilia, nomes)).toEqual([
+        {
+          indice: 0,
+          orientacao:
+            '“PARENTESCO” é campo do grupo “Composição familiar” e só condiciona documento que se repete por ele. ' +
+            'Como resolver: escolha “Composição familiar” em “Repetir por”; ou retire esta condição.',
+        },
+      ]);
+      expect(recusasDeFaseDoGatilho(documento, comFamilia, nomes, new Set(['PARENTESCO']))).toEqual([]);
+    });
   });
 
   it('a recusa de fase vem na posição da condição que cita o fato', () => {

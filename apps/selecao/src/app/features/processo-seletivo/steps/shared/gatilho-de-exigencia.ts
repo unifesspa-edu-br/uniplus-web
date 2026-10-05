@@ -23,8 +23,10 @@ import {
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-seletivo.models';
 import { FATO_MODALIDADE, exigidoDeTodos, numerosDeClausula } from './exigencias-documentais';
 import {
+  ehCampoDeMembro,
   oProcessoResolve,
   orientacaoDaRecusaDeFase,
+  orientacaoDoCampoDeMembroForaDaRepeticao,
   recusaDeFaseDoGatilho,
   type FatoComFase,
   type LugarDaExigencia,
@@ -127,6 +129,9 @@ const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
  * qualquer formulário, derivados e produzidos pela classificação — e que já são conhecidos até a
  * fase da exigência, sem o que só o formulário de isenção coleta no documento de outro formulário. Os que a exigência já cita e deixaram de ser citáveis vêm depois, marcados,
  * para a condição gravada continuar visível com o motivo ao lado.
+ *
+ * O campo de membro de grupo repetível só entra quando o documento se repete pelo grupo que o
+ * coleta (`camposDaRepeticao`): ele tem um valor por ocorrência, e fora dela não há de quem lê-lo.
  */
 export function fatosDoGatilhoNaFase(
   fatos: readonly FatoComFase[],
@@ -134,9 +139,13 @@ export function fatosDoGatilhoNaFase(
   producao: ProducaoDosFatos,
   dominiosDinamicos: ReadonlyMap<string, readonly string[]>,
   citados: readonly string[] = [],
+  camposDaRepeticao: ReadonlySet<string> = new Set(),
 ): readonly FatoEscolhivel[] {
   const citaveis = fatos.filter(
-    (fato) => oProcessoResolve(fato, producao) && recusaDeFaseDoGatilho(fato.codigo, lugar, producao) === null,
+    (fato) =>
+      (!ehCampoDeMembro(fato) || camposDaRepeticao.has(fato.codigo)) &&
+      oProcessoResolve(fato, producao) &&
+      recusaDeFaseDoGatilho(fato.codigo, lugar, producao) === null,
   );
   const naoCitaveis = fatos
     .filter((fato) => citados.includes(fato.codigo) && !citaveis.includes(fato))
@@ -151,14 +160,22 @@ export interface RecusaDeFaseNaCondicao {
   readonly orientacao: string;
 }
 
-/** As condições do gatilho que citam fato ainda não conhecido na fase da exigência. */
+/**
+ * As condições do gatilho que citam fato ainda não conhecido na fase da exigência, ou campo de membro
+ * de grupo repetível em documento que não se repete pelo grupo que o coleta.
+ */
 export function recusasDeFaseDoGatilho(
   documento: ExigenciaDeDocumento,
   producao: ProducaoDosFatos,
   nomes: NomesDaOrientacao,
+  camposDaRepeticao: ReadonlySet<string> = new Set(),
 ): readonly RecusaDeFaseNaCondicao[] {
   return documento.condicoes.flatMap((condicao, indice) => {
     if (condicao.fato.trim() === '') return [];
+    const doCatalogo = producao.catalogo.get(condicao.fato);
+    if (doCatalogo !== undefined && ehCampoDeMembro(doCatalogo) && !camposDaRepeticao.has(condicao.fato)) {
+      return [{ indice, orientacao: orientacaoDoCampoDeMembroForaDaRepeticao(condicao.fato, producao, nomes) }];
+    }
     const recusa = recusaDeFaseDoGatilho(condicao.fato, documento, producao);
     return recusa === null
       ? []
