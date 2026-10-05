@@ -1530,6 +1530,14 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_InativacaoParcial_ExibeAvisoERecarrega', async () => {
     await carregarUmaPagina([...linhas805]);
+    const inativacaoButtonEl = fixture.nativeElement.querySelector(
+      '.button-actions > .btn--tertiary',
+    ) as HTMLButtonElement;
+    expect(inativacaoButtonEl).toBeTruthy();
+    expect(inativacaoButtonEl.getAttribute('aria-label')).toBe('Inativar resolução ' + RES_805);
+    expect(inativacaoButtonEl.textContent).toContain(
+      'Inativar resolução',
+    );
     component.pedirInativacao(RES_805);
     component.confirmarInativacao();
     await propagate();
