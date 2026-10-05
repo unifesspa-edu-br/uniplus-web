@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 
 /**
- * Pares de blocos visíveis do passo mais próximos que o ritmo vertical pede:
+ * Pares de blocos visíveis do passo (o texto só para leitor de tela, `.sr-only`, não conta) mais próximos que o ritmo vertical pede:
  * - título de seção a menos de 20 px do bloco anterior;
  * - alerta ou dica a menos de 16 px do bloco seguinte.
  *
@@ -19,7 +19,9 @@ export async function blocosColados(page: Page): Promise<string[]> {
     if (!raiz) {
       return ['.wiz-content ausente'];
     }
-    const visivel = (e: Element): boolean => e.getBoundingClientRect().height > 0;
+    // `.sr-only` sai do fluxo (position: absolute): não ocupa lugar na página, não é vizinho de ninguém.
+    const visivel = (e: Element): boolean =>
+      !e.matches('.sr-only') && e.getBoundingClientRect().height > 0;
     const anterior = (e: Element): Element | null => {
       let irmao = e.previousElementSibling;
       while (irmao && !visivel(irmao)) irmao = irmao.previousElementSibling;

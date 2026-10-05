@@ -431,11 +431,14 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
 
   test('em consulta, rola a área de trabalho pelo teclado e pela roda fora do conteúdo do passo', async ({
     page,
-  }) => {
+  }, testInfo) => {
     await mockarAtoPublicado(page);
     await mockarProcesso(page, { status: 'publicado', cronogramaFases: [FASE_DE_COLETA] });
     await page.goto(`/processo-seletivo/${PROCESSO_ID}`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // O passo de abertura (Tipo do processo) cabe em 640 px de altura; é preciso um que passe da área.
+    await irAoPasso(page, 'Cronograma', testInfo);
+    await expect(page.getByRole('heading', { level: 1, name: /Cronograma/ })).toBeVisible();
     await encurtarJanela(page);
 
     await conferirRolagemPorTeclado(page);

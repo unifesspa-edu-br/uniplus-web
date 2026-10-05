@@ -287,38 +287,36 @@ test.describe('Cronograma — matriz DS @ds', () => {
     );
 
     /*
-     * Em 1440 px a grade dos eixos tem três colunas estreitas, e a observação divide a linha
-     * com o alcance e a identificação da norma: um rótulo que quebra em duas linhas desce o
-     * input em relação aos vizinhos. O viewport desktop da matriz (1366 px) tem duas colunas
-     * largas, onde o rótulo cabe em qualquer caso.
+     * Em 1440 px a grade dos eixos tem três colunas estreitas, e os campos que dividem uma linha
+     * (a norma, o alcance e a identificação, por exemplo) precisam alinhar os inputs: um rótulo
+     * que quebra em duas linhas desce o input em relação aos vizinhos. O viewport desktop da
+     * matriz (1366 px) tem duas colunas largas, onde o rótulo cabe em qualquer caso.
      */
     if (testInfo.project.metadata['viewport'] === 'desktop') {
       const original = page.viewportSize();
       await page.setViewportSize({ width: 1440, height: 900 });
-      const alinhamento = await card.evaluate((elemento) => {
+      const linhas = await card.evaluate((elemento) => {
         const topoDoInput = (campo: Element) =>
           campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
-        const campo = elemento
-          .querySelector('[id*="-doc-obs-legal-"]')
-          ?.closest('.form-field') as Element;
-        const linha = campo.getBoundingClientRect().top;
-        const referencia = topoDoInput(campo) ?? 0;
-        const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
-          .filter((outro) => outro !== campo)
-          .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
-          .map(topoDoInput)
-          .filter((topo): topo is number => topo !== null);
-        return { vizinhos: vizinhos.length, diferencas: vizinhos.map((topo) => topo - referencia) };
+        const porLinha = new Map<number, number[]>();
+        for (const campo of Array.from(
+          elemento.querySelectorAll('.doc-item__eixos > .form-field'),
+        )) {
+          const topo = topoDoInput(campo);
+          if (topo === null) continue;
+          const linha = Math.round(campo.getBoundingClientRect().top);
+          const chave = [...porLinha.keys()].find((outra) => Math.abs(outra - linha) <= 1) ?? linha;
+          porLinha.set(chave, [...(porLinha.get(chave) ?? []), topo]);
+        }
+        return [...porLinha.values()].filter((topos) => topos.length > 1);
       });
       if (original) await page.setViewportSize(original);
 
-      expect(alinhamento.vizinhos, 'a observação divide a linha com outros campos').toBeGreaterThan(
-        0,
-      );
-      for (const diferenca of alinhamento.diferencas) {
+      expect(linhas.length, 'algum campo divide a linha com outros').toBeGreaterThan(0);
+      for (const topos of linhas) {
         expect(
-          Math.abs(diferenca),
-          'o input da observação alinha com os vizinhos',
+          Math.max(...topos) - Math.min(...topos),
+          'os inputs da mesma linha alinham entre si',
         ).toBeLessThanOrEqual(1);
       }
     }
