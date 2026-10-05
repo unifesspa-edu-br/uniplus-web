@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 import type { FormularioDeInscricao } from '../processo-seletivo.models';
 import {
   oProcessoResolve,
+  orientacaoDaRecusaDaRepeticao,
   orientacaoDaRecusaDeFase,
   producaoDoRascunho,
+  recusaDaRepeticao,
   recusaDeFaseDoGatilho,
   recusaDaExigenciaDoServidor,
+  type GrupoDaProducao,
   type FatoComFase,
   type FormularioQueColeta,
   type LugarDaExigencia,
@@ -70,6 +73,7 @@ function producao(parcial: Partial<ProducaoDosFatos> = {}): ProducaoDosFatos {
         f,
       ]),
     ),
+    grupos: new Map(),
     ...parcial,
   };
 }
@@ -283,11 +287,97 @@ describe('a produção dos fatos no rascunho', () => {
     expect(recusaDeFaseDoGatilho('PERFIL', na('INSCRICAO'), lida)?.faseCodigo).toBe('HABILITACAO');
     expect(recusaDeFaseDoGatilho('PERFIL', na('HABILITACAO'), lida)).toBeNull();
   });
+
+  it('lê os grupos repetíveis de cada formulário, com os campos que eles coletam', () => {
+    const familia = {
+      codigo: 'FAMILIA',
+      ordem: 0,
+      rotulo: 'Composição familiar',
+      etapaCodigo: null,
+      minimo: 1,
+      maximo: null,
+      exibicao: null,
+      obrigatoriedade: 'SEMPRE',
+      predicadoObrigatoriedade: null,
+      subitens: [item('SEM_RENDA')],
+      incluiCandidato: true,
+    };
+    const rascunho: FormularioDeInscricao = {
+      faseCodigo: 'INSCRICAO',
+      conteudo: conteudoInicial(),
+      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+      derivacao: [],
+      outrasFinalidades: [
+        { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: { ...conteudoInicial(), grupos: [familia] } },
+      ],
+    };
+
+    const lida = producaoDoRascunho(rascunho, FASES, [PCD, SEM_RENDA]);
+
+    expect(lida.grupos.get('FAMILIA')).toEqual({ codigo: 'FAMILIA', rotulo: 'Composição familiar', campos: ['SEM_RENDA'] });
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), lida)?.tipo).toBe('GRUPO_FORA_DO_LUGAR');
+  });
+});
+
+describe('a repetição do documento pelas ocorrências de um grupo do formulário', () => {
+  const FAMILIA: GrupoDaProducao = { codigo: 'FAMILIA', rotulo: 'Composição familiar', campos: ['SEM_RENDA'] };
+  const familiaNa = (finalidade: string, faseCodigo: string, base: Partial<ProducaoDosFatos> = {}): ProducaoDosFatos =>
+    producao({
+      ...base,
+      formularios: [...(base.formularios ?? [formulario('INSCRICAO', 'INSCRICAO', 'PCD')]), formulario(finalidade, faseCodigo, 'SEM_RENDA')],
+      grupos: new Map([['FAMILIA', FAMILIA]]),
+    });
+
+  it('o grupo respondido na habilitação só repete documento da habilitação em diante', () => {
+    const naHabilitacao = familiaNa('HABILITACAO', 'HABILITACAO');
+
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), naHabilitacao)).toEqual({
+      tipo: 'GRUPO_FORA_DO_LUGAR',
+      grupo: FAMILIA,
+      recusa: { tipo: 'FASE_POSTERIOR', fato: 'SEM_RENDA', faseCodigo: 'HABILITACAO' },
+    });
+    expect(recusaDaRepeticao('FAMILIA', na('HABILITACAO'), naHabilitacao)).toBeNull();
+  });
+
+  it('o grupo só da isenção não repete documento do outro formulário da mesma fase', () => {
+    const dividida = familiaNa('ISENCAO_TAXA', 'INSCRICAO', { fases: FASE_DIVIDIDA.fases });
+
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO', 'INSCRICAO'), dividida)?.tipo).toBe('GRUPO_FORA_DO_LUGAR');
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO', 'ISENCAO_TAXA'), dividida)).toBeNull();
+  });
+
+  it('a fase em que o catálogo situa o campo de membro não restringe a repetição, como no servidor', () => {
+    const tardioNoCatalogo = familiaNa('INSCRICAO', 'INSCRICAO', {
+      catalogo: new Map([['SEM_RENDA', { ...SEM_RENDA, pontoResolucao: 'HABILITACAO' }]]),
+    });
+
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), tardioNoCatalogo)).toBeNull();
+  });
+
+  it('o grupo que nenhum formulário tem não repete documento algum', () => {
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), producao())).toEqual({ tipo: 'GRUPO_INEXISTENTE', grupo: 'FAMILIA' });
+  });
+
+  it('a orientação nomeia o grupo e leva o documento para onde ele é respondido', () => {
+    const naHabilitacao = familiaNa('HABILITACAO', 'HABILITACAO');
+    const recusa = recusaDaRepeticao('FAMILIA', na('INSCRICAO'), naHabilitacao);
+
+    expect(recusa === null ? '' : orientacaoDaRecusaDaRepeticao(recusa, naHabilitacao, NOMES)).toBe(
+      'O grupo “Composição familiar” é respondido na fase habilitacao, depois da fase em que o documento é exigido. ' +
+        'Como resolver: exija o documento na fase habilitacao; ou escolha outro grupo em “Repetir por”, ou “Não repete”.',
+    );
+  });
 });
 
 describe('a recusa do servidor sobre onde o documento é cobrado', () => {
   const recusa = (code: string, errors: readonly { field: string; code: string; message: string }[] = []) =>
     recusaDaExigenciaDoServidor({ code, errors });
+
+  it('diz o que fazer quando a repetição nomeia grupo que não existe ou se aninha', () => {
+    expect(recusa('uniplus.selecao.no_exigencia.tipo_entidade_invalido')).toContain('campo “Repetir por”');
+    expect(recusa('uniplus.selecao.no_exigencia.repeticao_de_entidade_aninhada')).toContain('Escolha “Não repete”');
+    expect(recusa('uniplus.predicado_dnf.fato_nao_coletado_pelo_processo')).toContain('Escolha o grupo no campo “Repetir por”');
+  });
 
   it('diz o que fazer para cada recusa de fase, e nada para as outras', () => {
     expect(recusa('uniplus.selecao.documento_exigido.fato_resolvido_em_fase_posterior')).toContain(

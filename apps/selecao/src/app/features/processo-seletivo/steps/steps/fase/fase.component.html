@@ -676,6 +676,9 @@
                       </th>
                       <td class="doc-conferencia__largo" data-label="A quem se aplica">
                         {{ resumo.aplicaA }}
+                        @if (resumo.repeticao !== '') {
+                          <span class="doc-conferencia__meta">{{ resumo.repeticao }}</span>
+                        }
                       </td>
                       <td data-label="Entrega">
                         {{ resumo.entrega }}
@@ -891,6 +894,85 @@
                                   />
                                 </div>
                               }
+
+                              <!--
+                              Antes de "Exigido de": a repetição muda o que o gatilho pode citar. O documento
+                              repetido é cobrado uma vez por ocorrência do grupo do formulário, e o gatilho
+                              passa a ler, em cada ocorrência, os campos dela.
+                            -->
+                              @let repeticaoDoDoc = repeticaoDoDocumento(doc.id);
+                              <div class="form-field">
+                                @if (repeticaoDoDoc.atual?.herdada) {
+                                  <span class="label">Repetir por</span>
+                                  <p class="field__hint">
+                                    {{ repeticaoDoDoc.rotulo }}, declarado no grupo de alternativas: o
+                                    documento é cobrado uma vez por ocorrência do grupo.
+                                  </p>
+                                  @if (repeticaoDoDoc.erro; as erro) {
+                                    <p class="field__erro">{{ erro }}</p>
+                                  }
+                                } @else if (repeticaoDoDoc.semGrupo && repeticaoDoDoc.atual === null) {
+                                  <span class="label">Repetir por</span>
+                                  <p class="field__hint">
+                                    Nenhum formulário do processo tem grupo repetível, como a composição
+                                    familiar. Os grupos vêm dos formulários: acrescente um no passo
+                                    Formulários para cobrar o documento uma vez por ocorrência.
+                                  </p>
+                                } @else {
+                                  <label class="label" [attr.for]="idDaFase('doc-repeticao-' + doc.id)"
+                                    >Repetir por</label
+                                  >
+                                  <select
+                                    class="select"
+                                    [attr.id]="idDaFase('doc-repeticao-' + doc.id)"
+                                    [disabled]="!store.aceitaEdicao()"
+                                    [attr.aria-invalid]="repeticaoDoDoc.erro !== null ? 'true' : null"
+                                    [attr.aria-describedby]="
+                                      repeticaoDoDoc.erro !== null
+                                        ? idDaFase('doc-repeticao-erro-' + doc.id) +
+                                          ' ' +
+                                          idDaFase('doc-repeticao-ajuda-' + doc.id)
+                                        : idDaFase('doc-repeticao-ajuda-' + doc.id)
+                                    "
+                                    (change)="escolherRepeticao(doc.id, $any($event.target).value)"
+                                  >
+                                    <option value="" [selected]="repeticaoDoDoc.atual === null">
+                                      Não repete: um por candidato
+                                    </option>
+                                    @for (grupo of repeticaoDoDoc.oferecidos; track grupo.codigo) {
+                                      <option
+                                        [value]="grupo.codigo"
+                                        [selected]="repeticaoDoDoc.atual?.grupo === grupo.codigo"
+                                      >
+                                        {{ grupo.rotulo }} ({{ grupo.codigo }})
+                                      </option>
+                                    }
+                                    @if (repeticaoDoDoc.erro !== null && repeticaoDoDoc.atual; as atual) {
+                                      <option [value]="atual.grupo" selected>
+                                        {{ repeticaoDoDoc.rotulo }} (não vale mais)
+                                      </option>
+                                    }
+                                  </select>
+                                  <span
+                                    class="field__hint"
+                                    [attr.id]="idDaFase('doc-repeticao-ajuda-' + doc.id)"
+                                  >
+                                    Cobra o documento uma vez por ocorrência do grupo, como cada membro
+                                    da composição familiar, e deixa o gatilho citar os campos dele.
+                                    @if (repeticaoDoDoc.naoOferecidos.length > 0) {
+                                      Não oferecidos aqui: {{ repeticaoDoDoc.naoOferecidos.join('; ') }}.
+                                    }
+                                  </span>
+                                  @if (repeticaoDoDoc.erro; as erro) {
+                                    <p
+                                      class="field__erro"
+                                      [attr.id]="idDaFase('doc-repeticao-erro-' + doc.id)"
+                                    >
+                                      {{ erro }}
+                                    </p>
+                                  }
+                                }
+                              </div>
 
                               <div class="form-field">
                                 <label

@@ -1,6 +1,7 @@
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 import {
+  ESCOPO_MEMBRO,
   FINALIDADE_INSCRICAO,
   ehColetavel,
   todosOsCampos,
@@ -76,6 +77,14 @@ export interface FormularioQueColeta {
   readonly fatos: ReadonlySet<string>;
 }
 
+/** Um grupo repetível de um formulário do processo: as ocorrências pelas quais um documento pode se repetir. */
+export interface GrupoDaProducao {
+  readonly codigo: string;
+  readonly rotulo: string;
+  /** Os fatos de membro que o grupo coleta em cada ocorrência. */
+  readonly campos: readonly string[];
+}
+
 /** O que decide a fase de cada fato no processo. */
 export interface ProducaoDosFatos {
   readonly fases: readonly FaseNoCronograma[];
@@ -83,6 +92,8 @@ export interface ProducaoDosFatos {
   /** Os fatos de que cada fato derivado por regra do processo depende, pelo código do derivado. */
   readonly derivacoes: ReadonlyMap<string, readonly string[]>;
   readonly catalogo: ReadonlyMap<string, FatoComFase>;
+  /** Os grupos repetíveis dos formulários do processo, pelo código, que é único no processo. */
+  readonly grupos: ReadonlyMap<string, GrupoDaProducao>;
 }
 
 /** Por que o gatilho de uma exigência não pode citar o fato na fase dela. */
@@ -117,6 +128,14 @@ export function producaoDoRascunho(
       ]),
     ),
     catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])),
+    grupos: new Map(
+      formulariosDoRascunho(formulario).flatMap((daFinalidade) =>
+        (daFinalidade.conteudo.grupos ?? []).map((grupo): [string, GrupoDaProducao] => [
+          grupo.codigo,
+          { codigo: grupo.codigo, rotulo: grupo.rotulo, campos: grupo.subitens.map((campo) => campo.fatoCodigo) },
+        ]),
+      ),
+    ),
   };
 }
 
@@ -164,6 +183,105 @@ export function recusaDeFaseDoGatilho(
   }
 
   return null;
+}
+
+/** Por que um documento não pode se repetir pelo grupo nomeado onde ele é cobrado. */
+export type RecusaDaRepeticao =
+  /** Nenhum formulário do processo tem o grupo. */
+  | { readonly tipo: 'GRUPO_INEXISTENTE'; readonly grupo: string }
+  /** O grupo existe, mas é respondido depois da fase do documento, ou só na isenção. */
+  | { readonly tipo: 'GRUPO_FORA_DO_LUGAR'; readonly grupo: GrupoDaProducao; readonly recusa: RecusaDeFase };
+
+/**
+ * Por que o documento cobrado em `lugar` não pode se repetir pelo grupo de código dado, ou `null`
+ * quando pode. É a regra com que o servidor confere a repetição (ADR-0138): cada campo do grupo
+ * precisa ser conhecido na fase e no formulário do documento. O servidor faz essa conferência sem
+ * o catálogo — o lugar em que o catálogo situa o fato de membro é conferido nos gatilhos que o
+ * citam —, e por isso ela é feita aqui com o catálogo vazio, para não recusar o que ele aceita.
+ */
+export function recusaDaRepeticao(
+  codigo: string,
+  lugar: LugarDaExigencia,
+  producao: ProducaoDosFatos,
+): RecusaDaRepeticao | null {
+  const grupo = producao.grupos.get(codigo);
+  if (grupo === undefined) return { tipo: 'GRUPO_INEXISTENTE', grupo: codigo };
+
+  const semCatalogo = { ...producao, catalogo: new Map() };
+  for (const campo of grupo.campos) {
+    const recusa = recusaDeFaseDoGatilho(campo, lugar, semCatalogo);
+    if (recusa !== null) return { tipo: 'GRUPO_FORA_DO_LUGAR', grupo, recusa };
+  }
+  return null;
+}
+
+/** Os campos que o gatilho cita além dos do candidato quando o documento se repete pelo grupo dado. */
+export function camposDaRepeticao(codigo: string | null, producao: ProducaoDosFatos): ReadonlySet<string> {
+  return new Set(codigo === null ? [] : (producao.grupos.get(codigo)?.campos ?? []));
+}
+
+/** Se o fato é de membro de grupo repetível: só o gatilho de documento repetido pelo grupo o cita. */
+export function ehCampoDeMembro(fato: Pick<FatoDoFormulario, 'escopo'>): boolean {
+  return fato.escopo === ESCOPO_MEMBRO;
+}
+
+/**
+ * O que fazer quando o documento não pode se repetir pelo grupo escolhido. A repetição herdada é do
+ * grupo de alternativas, que a tela não edita: a saída é devolver o grupo a um formulário que o
+ * responda até a fase, ou tirar o documento dela — nunca um campo que o documento não tem.
+ */
+export function orientacaoDaRecusaDaRepeticao(
+  recusa: RecusaDaRepeticao,
+  producao: ProducaoDosFatos,
+  nomes: NomesDaOrientacao,
+  herdada = false,
+): string {
+  const outraEscolha = herdada
+    ? 'no passo Formulários, ponha o grupo num formulário respondido até a fase do documento; ou retire este documento da fase'
+    : 'escolha outro grupo em “Repetir por”, ou “Não repete”';
+  if (recusa.tipo === 'GRUPO_INEXISTENTE') {
+    return `Nenhum formulário do processo tem mais o grupo “${recusa.grupo}”, pelo qual o documento se repete. Como resolver: ${outraEscolha}.`;
+  }
+
+  const grupo = `O grupo “${recusa.grupo.rotulo}”`;
+  const fase = nomes.fase(recusa.recusa.faseCodigo);
+  const causa =
+    recusa.recusa.tipo === 'SO_DA_ISENCAO'
+      ? `${grupo} é respondido no formulário de isenção e só repete documento apresentado nele, na fase ${fase}.`
+      : recusa.recusa.tipo === 'FASE_POSTERIOR'
+        ? `${grupo} é respondido na fase ${fase}, depois da fase em que o documento é exigido.`
+        : `${grupo} é respondido na fase ${fase}, que o cronograma não tem.`;
+  const saidas = herdada
+    ? [outraEscolha]
+    : [...saidaPorOutroLugar(recusa.recusa.fato, { ...producao, catalogo: new Map() }, nomes), outraEscolha];
+  return `${causa} Como resolver: ${saidas.join('; ou ')}.`;
+}
+
+/** Por que o grupo não é oferecido para a repetição do documento, curto o bastante para a dica do campo. */
+export function motivoDoGrupoForaDoLugar(
+  recusa: Extract<RecusaDaRepeticao, { tipo: 'GRUPO_FORA_DO_LUGAR' }>,
+  nomes: NomesDaOrientacao,
+): string {
+  const fase = nomes.fase(recusa.recusa.faseCodigo);
+  return recusa.recusa.tipo === 'SO_DA_ISENCAO'
+    ? `“${recusa.grupo.rotulo}”, respondido só no formulário de isenção`
+    : `“${recusa.grupo.rotulo}”, respondido na fase ${fase}, depois desta`;
+}
+
+/**
+ * O que fazer quando o gatilho cita campo de membro fora da repetição pelo grupo que o coleta: o
+ * campo só tem valor em cada ocorrência do grupo, e fora dela não há de quem lê-lo.
+ */
+export function orientacaoDoCampoDeMembroForaDaRepeticao(
+  fato: string,
+  producao: ProducaoDosFatos,
+  nomes: NomesDaOrientacao,
+): string {
+  const coletor = [...producao.grupos.values()].find((grupo) => grupo.campos.includes(fato));
+  const campo = `“${nomes.fato(fato)}”`;
+  return coletor === undefined
+    ? `${campo} é campo de grupo repetível, e nenhum grupo dos formulários do processo o coleta. Como resolver: retire esta condição.`
+    : `${campo} é campo do grupo “${coletor.rotulo}” e só condiciona documento que se repete por ele. Como resolver: escolha “${coletor.rotulo}” em “Repetir por”; ou retire esta condição.`;
 }
 
 /** Como a tela nomeia o fato e a fase na orientação. */
@@ -380,6 +498,18 @@ const RECUSA_DA_EXIGENCIA_DO_SERVIDOR: ReadonlyMap<string, string> = new Map([
   [
     'uniplus.estrutura_formulario.finalidade_invalida',
     `Um documento exigido declara um formulário que não existe. Escolha ${CAMPO_DO_FORMULARIO} em que ele é exigido, um dos formulários que ela responde.`,
+  ],
+  [
+    'uniplus.selecao.no_exigencia.tipo_entidade_invalido',
+    'Um documento exigido se repete por um grupo que nenhum formulário do processo tem. Escolha outro grupo, ou “Não repete”, no campo “Repetir por” do documento, na fase; quando a repetição é do grupo de alternativas, ponha o grupo de volta num formulário, no passo Formulários.',
+  ],
+  [
+    'uniplus.selecao.no_exigencia.repeticao_de_entidade_aninhada',
+    'Um documento exigido se repete por um grupo dentro de um grupo de alternativas que já se repete. Escolha “Não repete” no campo “Repetir por” do documento: ele já se repete pelo grupo de alternativas.',
+  ],
+  [
+    'uniplus.predicado_dnf.fato_nao_coletado_pelo_processo',
+    'Uma condição de documento exigido cita dado que o processo não coleta, ou campo de grupo repetível em documento que não se repete por esse grupo. Escolha o grupo no campo “Repetir por” do documento, colete o dado num formulário, ou retire a condição.',
   ],
   [
     'uniplus.selecao.no_exigencia.grupo_com_finalidades_diferentes',

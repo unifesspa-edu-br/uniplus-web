@@ -1897,6 +1897,24 @@ describe('CronogramaStepComponent', () => {
       );
     });
 
+    /**
+     * A repetição pelo grupo do formulário é conferida antes do envio, como o gatilho: o grupo que
+     * saiu do formulário depois de escolhido derrubaria a gravação da árvore inteira.
+     */
+    it('acusa a repetição por grupo que nenhum formulário tem, com o que fazer', () => {
+      comExigenciaDeclarada([{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }]);
+      const documentos = store.draft().documentos;
+      store.patchSection('documentos', {
+        ...documentos,
+        raizes: documentos.raizes.map((no) => ({ ...no, repetePorEntidade: 'FAMILIA' })),
+      });
+      detectar();
+
+      expect(componente.problemas()).toContainEqual(
+        expect.stringContaining('Nenhum formulário do processo tem mais o grupo “FAMILIA”, pelo qual o documento se repete.'),
+      );
+    });
+
     it('diz o que fazer quando o servidor recusa o gatilho pela fase', async () => {
       comExigenciaDeclarada([{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }]);
 

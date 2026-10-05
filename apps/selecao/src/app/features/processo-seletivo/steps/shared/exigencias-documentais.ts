@@ -622,11 +622,23 @@ export interface GrupoDaExigencia {
   readonly alternativas: number;
 }
 
+/**
+ * Pelas ocorrências de que grupo repetível do formulário a exigência se repete (ADR-0138): a da
+ * própria folha, ou a herdada do grupo de alternativas mais próximo que se repete — a repetição
+ * não aninha, e a folha dentro dele não declara outra.
+ */
+export interface RepeticaoDaExigencia {
+  readonly grupo: string;
+  readonly herdada: boolean;
+}
+
 /** Uma exigência com a posição que ela ocupa na árvore. */
 export interface ExigenciaLocalizada {
   readonly documento: ExigenciaDeDocumento;
   /** `null` quando a exigência está solta, fora de qualquer grupo. */
   readonly grupo: GrupoDaExigencia | null;
+  /** `null` quando a exigência é uma por candidato. */
+  readonly repeticao: RepeticaoDaExigencia | null;
 }
 
 /**
@@ -640,13 +652,28 @@ export function exigenciasLocalizadasDaFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigo: string,
 ): readonly ExigenciaLocalizada[] {
+  return exigenciasLocalizadas(exigencias).filter(({ documento }) => documento.faseCodigo === faseCodigo);
+}
+
+/** Todas as exigências da árvore, de qualquer fase, com a posição de cada uma. */
+export function exigenciasLocalizadas(exigencias: ExigenciasDoRascunho): readonly ExigenciaLocalizada[] {
   const achados: ExigenciaLocalizada[] = [];
 
-  const visitar = (nos: readonly NoDeExigencia[], grupo: GrupoDaExigencia | null): void => {
+  const visitar = (
+    nos: readonly NoDeExigencia[],
+    grupo: GrupoDaExigencia | null,
+    herdada: string | null,
+  ): void => {
     for (const no of nos) {
       if (no.tipo === 'FOLHA') {
-        if (no.documento !== null && no.documento.faseCodigo === faseCodigo) {
-          achados.push({ documento: no.documento, grupo });
+        if (no.documento !== null) {
+          const repeticao =
+            herdada !== null
+              ? { grupo: herdada, herdada: true }
+              : no.repetePorEntidade === null
+                ? null
+                : { grupo: no.repetePorEntidade, herdada: false };
+          achados.push({ documento: no.documento, grupo, repeticao });
         }
         continue;
       }
@@ -654,15 +681,15 @@ export function exigenciasLocalizadasDaFase(
       const filhos = no.filhos ?? [];
       // Conta TODOS os filhos, não só as folhas: um grupo pode reunir outros grupos, e contar
       // só as folhas diretas diria "uma das 1 alternativas" onde há duas.
-      visitar(filhos, {
-        tipo: no.tipo,
-        quantidadeMinima: no.quantidadeMinima,
-        alternativas: filhos.length,
-      });
+      visitar(
+        filhos,
+        { tipo: no.tipo, quantidadeMinima: no.quantidadeMinima, alternativas: filhos.length },
+        herdada ?? no.repetePorEntidade,
+      );
     }
   };
 
-  visitar(exigencias.raizes, null);
+  visitar(exigencias.raizes, null, null);
   return achados;
 }
 
@@ -758,6 +785,47 @@ export function comExigencia(
   };
 }
 
+/**
+ * Declara pelas ocorrências de que grupo repetível a exigência de (documento, fase) se repete, ou
+ * `null` para uma por candidato. Escreve na folha, a primeira que casa, pela mesma razão de
+ * `comExigencia`; a repetição herdada de um grupo de alternativas é do grupo, que a tela não edita.
+ */
+export function comRepeticao(
+  exigencias: ExigenciasDoRascunho,
+  tipoDocumentoId: string,
+  faseCodigo: string,
+  grupo: string | null,
+): ExigenciasDoRascunho {
+  let trocou = false;
+  const naArvore = (nos: readonly NoDeExigencia[]): readonly NoDeExigencia[] =>
+    nos.map((no) => {
+      if (trocou) return no;
+      if (no.tipo !== 'FOLHA') return { ...no, filhos: naArvore(no.filhos ?? []) };
+      if (no.documento?.tipoDocumentoId !== tipoDocumentoId || no.documento.faseCodigo !== faseCodigo) return no;
+      trocou = true;
+      return { ...no, repetePorEntidade: grupo };
+    });
+
+  return { ...exigencias, raizes: naArvore(exigencias.raizes) };
+}
+
+/**
+ * Declara a repetição em todas as declarações de raiz do documento: o que vale em todas as fases é
+ * a mesma declaração em cada uma, e a fase ainda não materializada a recebe do modelo de raiz.
+ */
+export function comRepeticaoEmTodasAsFases(
+  exigencias: ExigenciasDoRascunho,
+  tipoDocumentoId: string,
+  grupo: string | null,
+): ExigenciasDoRascunho {
+  return {
+    ...exigencias,
+    raizes: exigencias.raizes.map((no) =>
+      no.tipo === 'FOLHA' && no.documento?.tipoDocumentoId === tipoDocumentoId ? { ...no, repetePorEntidade: grupo } : no,
+    ),
+  };
+}
+
 /** Remove a exigência de (documento, fase), colapsando o grupo que ficar vazio. */
 export function semAExigencia(
   exigencias: ExigenciasDoRascunho,
@@ -838,10 +906,11 @@ export function comAlcanceDeTodasAsFases(
   let resultado = exigencias;
 
   for (const tipoDocumentoId of exigencias.emTodasAsFases) {
-    const modelo = exigenciasDaRaiz(resultado).find(
-      (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
+    const folhaModelo = resultado.raizes.find(
+      (no) => no.tipo === 'FOLHA' && no.documento?.tipoDocumentoId === tipoDocumentoId,
     );
-    if (modelo === undefined) continue;
+    const modelo = folhaModelo?.documento;
+    if (folhaModelo === undefined || modelo === undefined || modelo === null) continue;
 
     for (const faseCodigo of fasesVivas) {
       // Só declaração de RAIZ conta como "já tem". O mesmo documento pode estar na fase como
@@ -857,7 +926,11 @@ export function comAlcanceDeTodasAsFases(
       // O formulário é próprio de cada declaração, como a fase e a etapa: o do modelo pode não ser
       // respondido na fase de destino, e herdá-lo travaria a fase numa recusa. A cópia nasce sem
       // declaração, e a fase de destino resolve o formulário que vale nela.
-      resultado = comExigenciaNaRaiz(resultado, { ...modelo, faseCodigo, etapaId: null, finalidade: null });
+      // A repetição vai junto com o gatilho que a cópia leva: sem ela, a condição sobre campo do
+      // grupo ficaria sem de quem ser lida, e "um por membro" viraria "um por candidato" em silêncio.
+      // Se a repetição vale na fase de destino, quem diz é a conferência da fase, como para o gatilho.
+      const copia = folhaDe({ ...modelo, faseCodigo, etapaId: null, finalidade: null });
+      resultado = { ...resultado, raizes: [...resultado.raizes, { ...copia, repetePorEntidade: folhaModelo.repetePorEntidade }] };
     }
   }
 
@@ -1079,19 +1152,25 @@ function alcanceDeTodasAsFasesReconstruido(
   // OU é alternativa, não exigência. Contá-la como presença fazia o documento que é exigido
   // numa fase e apenas alternativo noutra ser lido como global — e a gravação seguinte
   // materializaria exigências novas, transformando a alternativa em documento cobrado.
-  const daRaiz = exigenciasDaRaiz(exigencias);
+  const daRaiz = exigencias.raizes.filter(
+    (no): no is NoDeExigencia & { readonly documento: ExigenciaDeDocumento } => no.tipo === 'FOLHA' && no.documento !== null,
+  );
 
   return [...candidatos].filter((tipoDocumentoId) => {
     const porFase = fases.map((faseCodigo) =>
-      daRaiz.filter((e) => e.tipoDocumentoId === tipoDocumentoId && e.faseCodigo === faseCodigo),
+      daRaiz.filter((no) => no.documento.tipoDocumentoId === tipoDocumentoId && no.documento.faseCodigo === faseCodigo),
     );
 
     // Uma declaração por fase, em todas elas — duas na mesma fase já são configuração que o
     // alcance global não sabe reproduzir.
     if (!porFase.every((declaracoes) => declaracoes.length === 1)) return false;
 
-    const referencia = assinaturaDaDeclaracao(porFase[0][0]);
-    return porFase.every(([declaracao]) => assinaturaDaDeclaracao(declaracao) === referencia);
+    // A repetição é da folha, não do documento, e entra na comparação: "um por membro" numa fase e
+    // "um por candidato" noutra são declarações diferentes, que a materialização igualaria.
+    const assinatura = (no: NoDeExigencia & { readonly documento: ExigenciaDeDocumento }): string =>
+      `${assinaturaDaDeclaracao(no.documento)}|${no.repetePorEntidade ?? ''}`;
+    const referencia = assinatura(porFase[0][0]);
+    return porFase.every(([declaracao]) => assinatura(declaracao) === referencia);
   });
 }
 
