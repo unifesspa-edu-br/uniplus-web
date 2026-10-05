@@ -2019,10 +2019,6 @@
   overflow-wrap: anywhere;
 }
 
-.peso-area__acoes {
-  margin-top: var(--space-2);
-}
-
 .peso-area__legenda {
   caption-side: top;
   text-align: left;

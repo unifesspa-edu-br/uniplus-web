@@ -952,7 +952,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
 
       // O clique não pediu outra leitura nem apagou o anúncio da anterior.
       expect(m.controller.match((r) => r.url.endsWith(ROTA_PESOS))).toHaveLength(1);
-      expect(texto(m.el.querySelector('.peso-area__acoes [role="status"]'))).toBe(
+      expect(texto(m.el.querySelector('#f-resolucao-peso-area-lista'))).toBe(
         'Lista de resoluções de Peso por Área atualizada.',
       );
       m.controller.match((r) => r.url.endsWith(ROTA_AREAS)).forEach((r) => r.flush([]));
@@ -969,7 +969,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
 
       const opcoes = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
       expect(opcoes).toContain('Resolução criada agora');
-      expect(texto(m.el.querySelector('.peso-area__acoes [role="status"]'))).toBe(
+      expect(texto(m.el.querySelector('#f-resolucao-peso-area-lista'))).toBe(
         'Lista de resoluções de Peso por Área atualizada.',
       );
     });
