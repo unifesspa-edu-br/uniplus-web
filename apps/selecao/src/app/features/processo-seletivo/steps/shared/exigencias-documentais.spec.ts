@@ -529,6 +529,22 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
   });
 
   /**
+   * O modelo oferecido é conteúdo da exigência: lidas como alcance global, a fase criada depois
+   * receberia o modelo de uma das fases, ou nenhum, sem que ninguém o tivesse escolhido.
+   */
+  it('não infere alcance global quando as fases oferecem modelos diferentes', () => {
+    const modelo = { modeloId: 'modelo-1', nomeArquivo: 'autodeclaracao.odt', formato: 'ODT', hashSha256: 'a'.repeat(64), urlDownload: null };
+    const lido = exigenciasDe(
+      detalhe([
+        folhaDto({ exigidoNaFaseId: ID_ISENCAO, modelo }),
+        folhaDto({ exigidoNaFaseId: ID_HABILITACAO }),
+      ]),
+    );
+
+    expect(lido.emTodasAsFases).toEqual([]);
+  });
+
+  /**
    * Exigido numa fase e apenas ALTERNATIVO noutra não é alcance global. Lido como se fosse, a
    * gravação seguinte materializaria exigências novas — a alternativa do grupo viraria
    * documento cobrado, e uma fase criada depois também o cobraria.
