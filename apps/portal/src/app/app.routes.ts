@@ -61,11 +61,6 @@ export const appRoutes: Routes = [
         loadChildren: () =>
           import('./features/documentos/documentos.routes').then((m) => m.DOCUMENTOS_ROUTES),
       },
-      {
-        path: 'perfil',
-        canActivate: [authGuard],
-        loadChildren: () => import('./features/perfil/perfil.routes').then((m) => m.PERFIL_ROUTES),
-      },
     ],
   },
   {
@@ -83,5 +78,5 @@ export const appRoutes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'processos' },
 ];

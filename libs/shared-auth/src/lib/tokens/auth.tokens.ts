@@ -31,3 +31,10 @@ export const AUTH_ALLOWED_URLS = new InjectionToken<readonly string[]>('AUTH_ALL
   providedIn: 'root',
   factory: () => [],
 });
+
+/**
+ * Origin absoluta da API que serve `GET /api/profile/me` (o perfil do usuário
+ * autenticado). Provida por `provideRuntimeConfig()` a partir do `apiUrl` —
+ * mantém `shared-auth` desacoplado de `shared-data`, como `AUTH_CONFIG`.
+ */
+export const PROFILE_BASE_PATH = new InjectionToken<string>('PROFILE_BASE_PATH');

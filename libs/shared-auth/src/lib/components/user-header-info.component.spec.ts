@@ -1,5 +1,9 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { signal, computed } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { PROFILE_BASE_PATH } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from './user-header-info.component';
 import { AuthService } from '../services/auth.service';
 import { UserContextService } from '../services/user-context.service';
@@ -47,6 +51,9 @@ describe('UserHeaderInfoComponent', () => {
       providers: [
         { provide: AuthService, useValue: authServiceMock },
         { provide: UserContextService, useValue: userContextMock },
+        { provide: PROFILE_BASE_PATH, useValue: 'http://api.test' },
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
       ],
     });
 
@@ -97,10 +104,11 @@ describe('UserHeaderInfoComponent', () => {
     expect(menu?.getAttribute('aria-label')).toBe('Conta');
     const account = fixture.nativeElement.querySelector<HTMLElement>('.menu__account');
     expect(account?.getAttribute('role')).toBe('presentation');
-    // O cabeçalho de identidade não é navegável — o único menuitem é "Sair".
+    // O cabeçalho de identidade não é navegável — os menuitems são "Meu perfil" e "Sair", nessa ordem.
     const items = fixture.nativeElement.querySelectorAll('[role="menuitem"]');
-    expect(items.length).toBe(1);
-    expect(items[0].textContent).toContain('Sair');
+    expect(items.length).toBe(2);
+    expect(items[0].textContent).toContain('Meu perfil');
+    expect(items[1].textContent).toContain('Sair');
   });
 
   it('exibe rótulos pt-BR das roles do realm', () => {
@@ -158,7 +166,7 @@ describe('UserHeaderInfoComponent', () => {
     trigger.click();
     fixture.detectChanges();
 
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[role="menuitem"]');
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.menu__item--danger');
     btn.click();
     expect(logout).toHaveBeenCalledOnce();
   });
@@ -169,6 +177,102 @@ describe('UserHeaderInfoComponent', () => {
     expect(el.textContent?.trim()).toBe('Entrar');
     expect(el.querySelector('button.user-chip')).toBeNull();
     expect(el.querySelector('[role="menu"]')).toBeNull();
+    expect(el.textContent).not.toContain('Meu perfil');
+  });
+
+  describe('Meu perfil', () => {
+    const resposta = {
+      userId: 'abc-123',
+      name: 'Usuário Candidato',
+      email: 'candidato@teste.unifesspa.edu.br',
+      cpf: '24843803480',
+      nomeSocial: 'Candidato Teste',
+      roles: ['candidato', 'offline_access'],
+      timestamp: '2026-10-05T12:00:00Z',
+    };
+
+    function abrirPerfil() {
+      const ctx = setup();
+      const http = TestBed.inject(HttpTestingController);
+      ctx.fixture.nativeElement.querySelector('button.user-chip').click();
+      ctx.fixture.detectChanges();
+      ctx.fixture.nativeElement.querySelector('[data-testid="auth-user-profile-item"]').click();
+      ctx.fixture.detectChanges();
+      return { ...ctx, http };
+    }
+
+    it('só consulta /api/profile/me depois de pedir o perfil', () => {
+      const { fixture } = setup();
+      const http = TestBed.inject(HttpTestingController);
+      fixture.nativeElement.querySelector('button.user-chip').click();
+      fixture.detectChanges();
+      http.expectNone('http://api.test/api/profile/me');
+      expect(fixture.nativeElement.querySelector('auth-user-profile-dialog')).toBeNull();
+    });
+
+    it('fecha o menu e abre o modal exibindo os dados retornados pela API', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('.menu')?.hasAttribute('hidden')).toBe(true);
+      const dados = el.querySelector('[data-testid="auth-profile-data"]');
+      expect(dados?.textContent).toContain('Usuário Candidato');
+      expect(dados?.textContent).toContain('Candidato Teste');
+      expect(dados?.textContent).toContain('candidato@teste.unifesspa.edu.br');
+      // CPF abre mascarado (só os dois últimos dígitos).
+      expect(dados?.textContent).toContain('***.***.***-80');
+      expect(dados?.textContent).not.toContain('248.438.034');
+      expect(dados?.textContent).toContain('Candidato');
+      expect(dados?.textContent).not.toContain('offline_access');
+    });
+
+    it('revela e volta a ocultar o CPF pelo botão de olho', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      const toggle = el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]');
+      const cpf = () => el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim();
+      expect(toggle?.getAttribute('aria-label')).toBe('Mostrar CPF');
+      expect(toggle?.getAttribute('aria-pressed')).toBe('false');
+
+      toggle?.click();
+      fixture.detectChanges();
+      expect(cpf()).toBe('248.438.034-80');
+      expect(toggle?.getAttribute('aria-label')).toBe('Ocultar CPF');
+      expect(toggle?.getAttribute('aria-pressed')).toBe('true');
+
+      toggle?.click();
+      fixture.detectChanges();
+      expect(cpf()).toBe('***.***.***-80');
+    });
+
+    it('mostra mensagem de erro quando a API falha', () => {
+      const { fixture, http } = abrirPerfil();
+      http
+        .expectOne('http://api.test/api/profile/me')
+        .flush(null, { status: 500, statusText: 'Server Error' });
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('[data-testid="auth-profile-error"]'),
+      ).toBeTruthy();
+    });
+
+    it('desmonta o modal e devolve o foco ao chip quando ele fecha', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+
+      const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
+      dialog.dispatchEvent(new Event('close'));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('auth-user-profile-dialog')).toBeNull();
+      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('button.user-chip'));
+    });
   });
 
   it('chama authService.login() ao clicar em Entrar', () => {
@@ -241,7 +345,7 @@ describe('UserHeaderInfoComponent', () => {
   it('dispara logout() a cada clique (sem debounce)', () => {
     const { fixture, logout } = setup();
     const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('button.user-chip');
-    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('[role="menuitem"]');
+    const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.menu__item--danger');
 
     trigger.click();
     fixture.detectChanges();
