@@ -373,6 +373,14 @@ describe('EditorDeFormularioComponent', () => {
     expect([tela().textContent ?? '', ...nomesAcessiveis].join(' ')).not.toMatch(/\betapas?\b/i);
   });
 
+  it('põe as ações do campo na linha do título, como as da seção', () => {
+    const subir = tela().querySelector('#f-item-C-subir') as HTMLButtonElement;
+
+    expect(subir.closest('.editor-formulario__cabecalho')).not.toBeNull();
+    expect(subir.textContent?.trim()).toBe('Subir');
+    expect(subir.getAttribute('aria-label')).toBe('Mover Campo C para cima');
+  });
+
   it('recolhe e expande a etapa pelo título, mantendo à vista o resumo do que ela tem', () => {
     const alternar = tela().querySelector('#f-etapa-S1-nome button') as HTMLButtonElement;
     const corpo = tela().querySelector('#f-etapa-S1-corpo') as HTMLElement;

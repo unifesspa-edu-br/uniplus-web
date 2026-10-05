@@ -25,14 +25,16 @@ import {
         <div class="panel-head__title"><h2 id="cfg-pre-visualizacao-titulo">Pré-visualização</h2></div>
       </div>
 
-      <ui-pre-visualizacao-de-formularios
-        idBase="cfg"
-        origem="A pré-visualização usa o modelo gravado."
-        [formularios]="formularios()"
-        [catalogo]="catalogo()"
-        [avaliar]="avaliar"
-        [desatualizado]="desatualizado()"
-      />
+      <div class="panel-body">
+        <ui-pre-visualizacao-de-formularios
+          idBase="cfg"
+          origem="A pré-visualização usa o modelo gravado."
+          [formularios]="formularios()"
+          [catalogo]="catalogo()"
+          [avaliar]="avaliar"
+          [desatualizado]="desatualizado()"
+        />
+      </div>
     </section>
   `,
 })

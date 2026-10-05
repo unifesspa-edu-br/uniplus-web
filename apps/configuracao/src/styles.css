@@ -109,6 +109,11 @@ cfg-pesos-enem-page {
   flex-wrap: wrap;
 }
 
+/* Conteúdo que não é tabela nem paginação: o mesmo respiro lateral do cabeçalho. */
+.panel-body {
+  padding: var(--space-4) var(--space-5);
+}
+
 .panel-head__title {
   display: flex;
   align-items: center;
