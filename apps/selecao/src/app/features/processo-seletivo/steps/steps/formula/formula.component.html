@@ -190,58 +190,63 @@
           [valor]="resolucaoEscolhida()"
         />
       } @else {
-        <div class="form-field">
-          <label class="label" [for]="idDoCampoResolucao">Resolução de Peso por Área</label
-          ><select
-            class="input"
-            [id]="idDoCampoResolucao"
-            [class.is-invalid]="erroDaResolucao() !== null"
-            [attr.aria-invalid]="erroDaResolucao() !== null ? 'true' : null"
-            [attr.aria-describedby]="descricaoDaResolucao()"
-            [attr.aria-busy]="catalogos.pesosCarregando() ? 'true' : null"
-            [disabled]="
-              !store.aceitaEdicao() ||
-              (catalogos.pesosCarregando() && catalogos.pesosAreaEnem().length === 0)
-            "
-            (change)="aoEscolherResolucao($event)"
-          >
-            <!-- [selected] em cada opção, e não [value] no select: as opções nascem depois do
-                 binding, e com [value] a escolha hidratada ficava no rascunho sem chegar à tela. -->
-            <option value="" [selected]="resolucaoEscolhida() === ''">— escolher —</option>
-            @for (resolucao of resolucoesEscolhiveis(); track resolucao.valor) {
-              <option [value]="resolucao.valor" [selected]="resolucao.valor === resolucaoEscolhida()">
-                {{ resolucao.rotulo }}
-              </option>
-            }
-          </select>
-          @if (erroDaResolucao(); as erro) {
-            <p class="field__error" [id]="idDoCampoResolucao + '-erro'">{{ erro }}</p>
-          }
-          <p class="field__hint" [id]="idDoCampoResolucao + '-dica'">
-            Os pesos e os cortes vêm do cadastro de Peso por Área e são copiados para o processo
-            quando a classificação é gravada, no passo Eliminação.
-            @if (administraPlataforma()) {
-              <a [href]="linkDoCadastroDePesos()" target="_blank" rel="noopener"
-                >Abrir o cadastro de Peso por Área<span class="sr-only"> (abre em nova aba)</span></a
-              >
-            } @else {
-              As resoluções são cadastradas pela administração da plataforma.
-            }
-          </p>
+        <div class="escolher-e-acrescentar">
+          <div class="form-field">
+            <label class="label" [for]="idDoCampoResolucao">Resolução de Peso por Área</label
+            ><select
+              class="input"
+              [id]="idDoCampoResolucao"
+              [class.is-invalid]="erroDaResolucao() !== null"
+              [attr.aria-invalid]="erroDaResolucao() !== null ? 'true' : null"
+              [attr.aria-describedby]="descricaoDaResolucao()"
+              [attr.aria-busy]="catalogos.pesosCarregando() ? 'true' : null"
+              [disabled]="
+                !store.aceitaEdicao() ||
+                (catalogos.pesosCarregando() && catalogos.pesosAreaEnem().length === 0)
+              "
+              (change)="aoEscolherResolucao($event)"
+            >
+              <!-- [selected] em cada opção, e não [value] no select: as opções nascem depois do
+                   binding, e com [value] a escolha hidratada ficava no rascunho sem chegar à tela. -->
+              <option value="" [selected]="resolucaoEscolhida() === ''">— escolher —</option>
+              @for (resolucao of resolucoesEscolhiveis(); track resolucao.valor) {
+                <option
+                  [value]="resolucao.valor"
+                  [selected]="resolucao.valor === resolucaoEscolhida()"
+                >
+                  {{ resolucao.rotulo }}
+                </option>
+              }
+            </select>
+          </div>
           @if (store.edicaoPermitida()) {
-            <div class="peso-area__acoes">
-              <button
-                type="button"
-                class="btn btn--secondary btn--sm"
-                [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
-                (click)="atualizarListaDePesos()"
-              >
-                Atualizar lista
-              </button>
-              <span class="sr-only" role="status">{{ avisoDaLista() }}</span>
-            </div>
+            <button
+              type="button"
+              class="btn btn--secondary"
+              [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
+              (click)="atualizarListaDePesos()"
+            >
+              Atualizar lista
+            </button>
           }
         </div>
+        @if (erroDaResolucao(); as erro) {
+          <p class="field__error" [id]="idDoCampoResolucao + '-erro'">{{ erro }}</p>
+        }
+        <p class="field__hint escolher-e-acrescentar__ajuda" [id]="idDoCampoResolucao + '-dica'">
+          Os pesos e os cortes vêm do cadastro de Peso por Área e são copiados para o processo
+          quando a classificação é gravada, no passo Eliminação.
+          @if (administraPlataforma()) {
+            <a [href]="linkDoCadastroDePesos()" target="_blank" rel="noopener"
+              >Abrir o cadastro de Peso por Área<span class="sr-only"> (abre em nova aba)</span></a
+            >
+          } @else {
+            As resoluções são cadastradas pela administração da plataforma.
+          }
+        </p>
+        <span class="sr-only" role="status" [id]="idDoCampoResolucao + '-lista'">{{
+          avisoDaLista()
+        }}</span>
       }
 
       @if (avisaForaDoCadastro()) {
