@@ -126,6 +126,18 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(component['recursos']()).toHaveLength(1);
   });
 
+  it('falha na carga mostra o alerta com o título de recursos de acessibilidade', async () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`)
+      .flush(null, { status: 500, statusText: 'Error' });
+    await propagate();
+    fixture.detectChanges();
+
+    const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--danger');
+    expect(alerta.textContent).toContain('Não foi possível carregar os recursos de acessibilidade');
+    expect(alerta.textContent).not.toContain('condições de atendimento');
+  });
+
   it('renderiza a lista de recursos de acessibilidade', async () => {
     await flushLista([recurso_acessibilidade_seed]);
     expect(component['recursos']()).toHaveLength(1);
