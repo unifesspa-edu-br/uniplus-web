@@ -289,11 +289,92 @@ describe('ReservaDemograficaListPage', () => {
     const caption = fixture.nativeElement.querySelector('table > caption');
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base legal e situação',
+    expect(caption?.textContent?.trim()).toBe(
+      'Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD e respectiva base legal.',
     );
   });
-  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
+
+  it('ação de remoção possui ícone, tooltip e nome acessível', async () => {
+    await flushLista([seed]);
+    fixture.detectChanges();
+
+    const botao = fixture.nativeElement.querySelector('ui-icon-button[icon="pi-trash"] button');
+
+    expect(botao).not.toBeNull();
+    expect(botao?.querySelector('i')?.classList.contains('pi-trash')).toBe(true);
+    expect(botao?.getAttribute('data-tooltip')).toBe('Remover reserva demográfica');
+    expect(botao?.getAttribute('aria-label')).toBe('Remover reserva demográfica do censo 2022');
+  });
+
+  it('não exibe ação de Inativar', async () => {
+    await flushLista([seed]);
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.textContent;
+
+    expect(texto).not.toContain('Inativar');
+    expect(texto).not.toContain('inativar');
+  });
+
+  it('CA-13: erro na remoção mantém o registro na tabela', async () => {
+    await flushLista([seed]);
+
+    component['pedirRemocao'](seed);
+    component['removerConfirmado']();
+
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/referencias-reserva-demografica/${seed.id}`,
+    );
+
+    flushProblem(
+      req,
+      'uniplus.configuracao.referencia_reserva_demografica.remocao_falhou',
+      'Não foi possível remover a referência',
+      409,
+    );
+
+    await propagate();
+
+    expect(component['saving']()).toBe(false);
+    expect(component['referencias']()).toEqual([seed]);
+  });
+
+  it('não permite duas remoções simultâneas', async () => {
+    await flushLista([seed]);
+
+    component['pedirRemocao'](seed);
+    component['removerConfirmado']();
+
+    const primeira = controller.expectOne(
+      `${BASE}/api/configuracao/admin/referencias-reserva-demografica/${seed.id}`,
+    );
+
+    expect(component['saving']()).toBe(true);
+
+    component['removerConfirmado']();
+
+    controller.expectNone(
+      `${BASE}/api/configuracao/admin/referencias-reserva-demografica/${seed.id}`,
+    );
+
+    primeira.flush(null, { status: 204, statusText: 'No Content' });
+
+    await propagate();
+    await flushLista([]);
+  });
+
+  it('CA-06/CA-07: diálogo de remoção identifica a Reserva demográfica', async () => {
+    await flushLista([seed]);
+
+    component['pedirRemocao'](seed);
+
+    expect(component['confirmOpen']()).toBe(true);
+    expect(component['mensagemRemocao']()).toContain('removendo');
+    expect(component['mensagemRemocao']()).toContain('2022');
+    expect(component['mensagemRemocao']()).not.toContain('Inativar');
+  });
+
+  it('CA-09/CA-10: remove a coluna Status e preserva as demais colunas', async () => {
     await flushLista([seed]);
     fixture.detectChanges();
     const cabecalhos = Array.from(

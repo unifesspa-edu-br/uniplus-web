@@ -160,8 +160,8 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base
-                legal e situação
+                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD e
+                respectiva base legal.
               </caption>
               <thead>
                 <tr>
@@ -389,11 +389,12 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     <ui-confirm-dialog
       [(visible)]="confirmOpen"
       heading="Remover referência demográfica"
-      message="A referência é removida (soft-delete) e mantida na trilha de auditoria. Edições e remoções não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem. Confirma?"
+      [message]="mensagemRemocao()"
       confirmLabel="Remover"
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
-    />
+    >
+    </ui-confirm-dialog>
   `,
   host: { class: 'cfg-page' },
 })
@@ -411,6 +412,15 @@ export class ReservaDemograficaListPage {
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly idEmEdicao = signal<string | null>(null);
   protected readonly refParaRemover = signal<ReferenciaReservaDemograficaDto | null>(null);
+  protected readonly mensagemRemocao = computed(() => {
+    const ref = this.refParaRemover();
+
+    if (ref === null) {
+      return 'Confirma a remoção desta referência demográfica?';
+    }
+
+    return `Você está removendo a referência demográfica do Censo ${ref.censoReferencia}. A referência será removida (soft-delete) e mantida na trilha de auditoria. Edições e remoções não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem. Confirma?`;
+  });
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly busca = signal('');
 
@@ -616,7 +626,7 @@ export class ReservaDemograficaListPage {
           return;
         }
         this.notifications.errorFromProblem(result.problem, {
-          title: this.problemI18n.resolve(result.problem).title,
+          title: 'Não foi possível remover a referência demográfica',
         });
       });
   }
