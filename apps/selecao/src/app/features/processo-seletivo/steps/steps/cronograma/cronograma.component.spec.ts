@@ -1854,6 +1854,7 @@ describe('CronogramaStepComponent', () => {
               tipoDocumentoId: '01960000-0000-7000-0000-0000000000d9',
               faseCodigo: FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo ?? '',
               etapaId: null,
+              finalidade: null,
               aplicabilidade: 'GERAL',
               obrigatorio: true,
               consequenciaIndeferimento: '',
@@ -2157,6 +2158,22 @@ describe('CronogramaStepComponent', () => {
       const resultado = componente.validate();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('complementação');
+    });
+
+    /**
+     * O documento da isenção numa fase que passou a responder só a inscrição não vira documento da
+     * inscrição — que seria cobrado de todo candidato: o passo barra até o operador escolher.
+     */
+    it('barra o documento cujo formulário declarado a fase não responde mais', () => {
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        { faseCodigo: 'COLETA_INSCRICAO', finalidade: 'ISENCAO_TAXA' },
+      );
+      comFases(ID_INSCRICAO);
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('sem o formulário em que o candidato o apresenta');
     });
 
     /** Exigência ancorada em fase que saiu do cronograma é nomeada, não descartada em silêncio. */

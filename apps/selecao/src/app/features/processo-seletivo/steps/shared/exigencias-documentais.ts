@@ -13,6 +13,7 @@ import type {
   ExigenciasDoRascunho,
   NoDeExigencia,
 } from '../processo-seletivo.models';
+import { nomeDaFinalidade } from '../steps/formulario/formularios-por-finalidade';
 
 /**
  * Tradução entre o rascunho do wizard e a árvore de exigências documentais do contrato
@@ -473,22 +474,63 @@ export function semAEtapa(exigencias: ExigenciasDoRascunho, etapaId: string): Ex
 }
 
 /**
- * O formulário em que o documento é apresentado, como viaja ao servidor: o declarado, enquanto a
- * fase o responde, ou o único que a fase responde. A fase que divide inscrição e isenção não tem
- * formulário efetivo sem declaração — a escolha é do operador —, e a que não responde formulário
- * nenhum não tem formulário a declarar.
+ * O formulário da exigência diante dos que a fase responde: definido — um formulário, ou nenhum na
+ * fase que não responde formulário —, a escolher, ou declarado para um formulário que a fase não
+ * responde mais.
  */
-export function finalidadeDaExigencia(declarada: string | null, atendidas: readonly string[]): string | null {
-  if (declarada !== null && atendidas.includes(declarada)) return declarada;
-  return atendidas.length === 1 ? atendidas[0] : null;
+export type FormularioDaExigencia =
+  | { readonly situacao: 'DEFINIDO'; readonly finalidade: string | null }
+  | { readonly situacao: 'A_ESCOLHER' }
+  | { readonly situacao: 'NAO_RESPONDIDO'; readonly declarada: string };
+
+/**
+ * O formulário em que o documento é apresentado. O declarado vale enquanto a fase o responde; sem
+ * declaração, a fase de um formulário só o preenche, e a que não responde nenhum deixa o documento
+ * fora de formulário. A fase que divide inscrição e isenção pede a escolha.
+ *
+ * O declarado que a fase deixou de responder não é trocado por outro: o formulário diz de quem o
+ * documento é cobrado — o da isenção só de quem pede isenção, o da inscrição de todo candidato —,
+ * e reatribuí-lo mudaria a regra sem que ninguém a decidisse. Fica indefinido até o operador
+ * escolher.
+ */
+export function finalidadeDaExigencia(declarada: string | null, atendidas: readonly string[]): FormularioDaExigencia {
+  if (declarada !== null) {
+    return atendidas.includes(declarada) ? { situacao: 'DEFINIDO', finalidade: declarada } : { situacao: 'NAO_RESPONDIDO', declarada };
+  }
+  if (atendidas.length === 0) return { situacao: 'DEFINIDO', finalidade: null };
+  return atendidas.length === 1 ? { situacao: 'DEFINIDO', finalidade: atendidas[0] } : { situacao: 'A_ESCOLHER' };
 }
 
 /**
- * Se a exigência ainda não diz em que formulário o documento é apresentado, numa fase que responde
- * formulário: só acontece na que divide inscrição e isenção, e o servidor a recusa assim.
+ * O que falta para a exigência ter formulário, dito ao operador; `null` quando ela já tem. O servidor
+ * recusa as duas faltas: a escolha que a fase dividida pede e o formulário que a fase não responde.
  */
-export function faltaOFormulario(declarada: string | null, atendidas: readonly string[]): boolean {
-  return atendidas.length > 0 && finalidadeDaExigencia(declarada, atendidas) === null;
+export function faltaOFormulario(declarada: string | null, atendidas: readonly string[]): string | null {
+  const formulario = finalidadeDaExigencia(declarada, atendidas);
+  switch (formulario.situacao) {
+    case 'DEFINIDO':
+      return null;
+    case 'A_ESCOLHER':
+      return 'Escolha em que formulário o candidato apresenta este documento.';
+    case 'NAO_RESPONDIDO':
+      return `O formulário de ${nomeDaFinalidade(formulario.declarada)} não é respondido nesta fase; escolha o formulário.`;
+  }
+}
+
+/**
+ * A finalidade que o comando leva: a definida, ou a declarada que a fase não responde mais — nunca
+ * outra no lugar dela; o servidor a recusa, e a recusa diz o que a conferência da tela já diz.
+ */
+function finalidadeEnviada(declarada: string | null, atendidas: readonly string[]): string | null {
+  const formulario = finalidadeDaExigencia(declarada, atendidas);
+  switch (formulario.situacao) {
+    case 'DEFINIDO':
+      return formulario.finalidade;
+    case 'A_ESCOLHER':
+      return null;
+    case 'NAO_RESPONDIDO':
+      return formulario.declarada;
+  }
 }
 
 /** Os itens de uma fase que o candidato apresenta num mesmo formulário; `null` é o que ainda não tem formulário. */
@@ -776,7 +818,7 @@ function finalidadeDaRaiz(
   const declarante = documentosDe([raiz]).find((documento) => faseIdPorCodigo.has(documento.faseCodigo));
   return declarante === undefined
     ? null
-    : finalidadeDaExigencia(declarante.finalidade, finalidadesPorFase.get(declarante.faseCodigo) ?? []);
+    : finalidadeEnviada(declarante.finalidade, finalidadesPorFase.get(declarante.faseCodigo) ?? []);
 }
 
 /**

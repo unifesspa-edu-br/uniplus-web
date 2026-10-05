@@ -119,6 +119,9 @@ const UNIDADES = [
   { valor: 'horas', rotulo: 'horas' },
 ] as const;
 
+/** A opção que deixa o documento fora de formulário, na fase que não responde nenhum. */
+const SEM_FORMULARIO = 'SEM_FORMULARIO';
+
 /** O gatilho sem condição recusada pela fase — a mesma referência, para o editor não se redesenhar. */
 const SEM_ERROS: Readonly<Record<number, string>> = {};
 
@@ -991,28 +994,38 @@ export class FaseStepComponent {
     return fase === null ? [] : finalidadesDaFase(fase, this.catalogos.fasePorId());
   });
 
-  /** Os formulários que a escolha oferece, como o seletor os nomeia. */
-  readonly formulariosEscolhiveis = computed(() =>
-    this.finalidadesDaFaseAberta().map((finalidade) => ({
-      valor: finalidade,
-      rotulo: `Formulário de ${nomeDaFinalidade(finalidade)}`,
-    })),
-  );
+  /**
+   * Os formulários que a escolha oferece, como o seletor os nomeia. Na fase que não responde
+   * formulário nenhum, a escolha só aparece para desfazer um formulário declarado antes, e a saída
+   * é deixar o documento fora de formulário.
+   */
+  readonly formulariosEscolhiveis = computed(() => {
+    const atendidas = this.finalidadesDaFaseAberta();
+    return atendidas.length === 0
+      ? [{ valor: SEM_FORMULARIO, rotulo: 'Nenhum: a fase não responde formulário' }]
+      : atendidas.map((finalidade) => ({ valor: finalidade, rotulo: `Formulário de ${nomeDaFinalidade(finalidade)}` }));
+  });
 
-  /** O formulário em que o documento é apresentado: o declarado, ou o único que a fase responde. */
+  /** O formulário em que o documento é apresentado; `null` enquanto não está definido. */
   finalidadeDoDocumento(id: string): string | null {
-    return finalidadeDaExigencia(this.exigenciaDoDocumento(id).finalidade, this.finalidadesDaFaseAberta());
+    const formulario = finalidadeDaExigencia(this.exigenciaDoDocumento(id).finalidade, this.finalidadesDaFaseAberta());
+    return formulario.situacao === 'DEFINIDO' ? formulario.finalidade : null;
   }
 
   /**
-   * O aviso de que o documento ainda não diz em que formulário é apresentado. Só a fase que divide
-   * inscrição e isenção o pede: a de um formulário só o preenche, e o servidor recusa o documento
-   * de fase de formulário sem ele.
+   * O que falta para o documento ter formulário: a escolha na fase que divide inscrição e isenção,
+   * ou outra escolha quando a fase deixou de responder o formulário declarado.
    */
   faltaFormulario(id: string): string | null {
-    return faltaOFormulario(this.exigenciaDoDocumento(id).finalidade, this.finalidadesDaFaseAberta())
-      ? 'Escolha em que formulário o candidato apresenta este documento.'
-      : null;
+    return faltaOFormulario(this.exigenciaDoDocumento(id).finalidade, this.finalidadesDaFaseAberta());
+  }
+
+  /**
+   * Se a escolha do formulário aparece: na fase que responde algum, e em qualquer fase enquanto o
+   * formulário declarado não é respondido nela — escondê-la deixaria a falta sem o campo que a resolve.
+   */
+  mostraFormulario(id: string): boolean {
+    return this.finalidadesDaFaseAberta().length > 0 || this.faltaFormulario(id) !== null;
   }
 
   /**
@@ -1028,7 +1041,12 @@ export class FaseStepComponent {
 
     this.store.patchSection(
       'documentos',
-      comFinalidade(this.store.draft().documentos, id, fase.codigo, finalidade === '' ? null : finalidade),
+      comFinalidade(
+        this.store.draft().documentos,
+        id,
+        fase.codigo,
+        finalidade === '' || finalidade === SEM_FORMULARIO ? null : finalidade,
+      ),
     );
   }
 

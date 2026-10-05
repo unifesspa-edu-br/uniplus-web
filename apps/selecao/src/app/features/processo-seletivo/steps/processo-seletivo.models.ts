@@ -463,8 +463,8 @@ export interface ExigenciaDeDocumento {
   /**
    * O formulário em cujo bloco de comprovação o candidato apresenta o documento (`INSCRICAO`,
    * `ISENCAO_TAXA` ou `HABILITACAO`), como o operador o declarou; `null` enquanto não declarou.
-   * A fase não basta para dizê-lo, porque inscrição e isenção podem dividir a mesma fase. O
-   * que viaja é o formulário efetivo (`finalidadeDaExigencia`), conferido contra a fase.
+   * A fase não basta para dizê-lo, porque inscrição e isenção podem dividir a mesma fase. O que
+   * vale diante da fase sai de `finalidadeDaExigencia`, que nunca troca o declarado por outro.
    */
   readonly finalidade: string | null;
   readonly aplicabilidade: string;
