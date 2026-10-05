@@ -242,8 +242,10 @@ cfg-pesos-enem-page {
 
 .cfg-pre-visualizacao { margin-top: var(--space-4); }
 
+/* Os ícones de ação ficam juntos: com quebra, a tabela estreitava a coluna até um ícone por linha. */
 .table-responsive__actions {
   justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 
 .panel > .pager {
