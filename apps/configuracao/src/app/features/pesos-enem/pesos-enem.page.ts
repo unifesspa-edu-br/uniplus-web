@@ -251,7 +251,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
             <button
               class="btn btn--tertiary btn--sm"
               type="button"
-              [attr.aria-label]="'Inativar ' + resolucao"
+              [attr.aria-label]="'Inativar resolução ' + resolucao"
               (click)="pedirInativacao(resolucao)"
             >
               Inativar resolução
