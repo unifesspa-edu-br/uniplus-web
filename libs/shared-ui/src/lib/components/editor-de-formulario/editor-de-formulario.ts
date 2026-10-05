@@ -181,12 +181,25 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
     @for (etapa of etapas(); track etapa.codigo; let posicaoDaEtapa = $index) {
       <section class="editor-formulario__etapa" [attr.aria-labelledby]="idDaEtapa(etapa) + '-nome'">
         <div class="editor-formulario__cabecalho">
+          <!-- O título abre e fecha a etapa: o formulário inteiro aberto é longo demais para achar a seção. -->
           <h3 class="editor-formulario__titulo-etapa" [id]="idDaEtapa(etapa) + '-nome'">
-            {{ posicaoDaEtapa + 1 }}. {{ etapa.titulo.trim() || 'Seção sem título' }}
+            <button
+              class="editor-formulario__alternar"
+              type="button"
+              [attr.aria-expanded]="etapaAberta(etapa)"
+              [attr.aria-controls]="idDaEtapa(etapa) + '-corpo'"
+              (click)="alternarEtapa(etapa)"
+            >
+              <span class="editor-formulario__seta" aria-hidden="true"></span>
+              <span>{{ posicaoDaEtapa + 1 }}. {{ etapa.titulo.trim() || 'Seção sem título' }}</span>
+            </button>
           </h3>
           <ui-tag [variant]="etapa.tipo === secao ? 'neutral' : 'info'">
             {{ etapa.tipo === secao ? 'Seção' : 'Bloco do sistema' }}
           </ui-tag>
+          @if (resumoDaEtapa(etapa); as resumo) {
+            <span class="editor-formulario__resumo">{{ resumo }}</span>
+          }
         </div>
 
         @if (errosDaEtapa(etapa.codigo); as erros) {
@@ -199,200 +212,202 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           }
         }
 
-        @if (etapa.codigo === dadosBasicos) {
-          <p class="field__hint">
-            Os dados de identificação e contato que toda inscrição coleta. O sistema mantém esta seção, que
-            não pode ser alterada.
-          </p>
-          <ol class="editor-formulario__basicos">
-            @for (entrada of entradasDe(etapa); track $index) {
-              @if (entrada.tipo === 'item') {
-                <li>{{ entrada.item.rotulo }}</li>
+        <div class="editor-formulario__corpo" [id]="idDaEtapa(etapa) + '-corpo'" [hidden]="!etapaAberta(etapa)">
+          @if (etapa.codigo === dadosBasicos) {
+            <p class="field__hint">
+              Os dados de identificação e contato que toda inscrição coleta. O sistema mantém esta seção, que
+              não pode ser alterada.
+            </p>
+            <ol class="editor-formulario__basicos">
+              @for (entrada of entradasDe(etapa); track $index) {
+                @if (entrada.tipo === 'item') {
+                  <li>{{ entrada.item.rotulo }}</li>
+                }
+              }
+            </ol>
+          } @else if (etapa.tipo !== secao) {
+            <p class="field__hint">{{ descricaoDoBloco(etapa) }}</p>
+            @if (etapa.bloco === revisaoEAceite) {
+              <h4 class="editor-formulario__titulo-item">Termos de consentimento exigidos</h4>
+              @if (termos().length > 0) {
+                <ol class="editor-formulario__itens" aria-label="Termos exigidos">
+                  @for (termo of termos(); track termo.codigo; let posicao = $index) {
+                    <li>
+                      <ui-termo-do-formulario
+                        [termo]="termo"
+                        [disponivel]="termoDisponivel(termo.termoId)"
+                        [posicao]="posicao + 1"
+                        [fatos]="fatosDosTermos()"
+                        [idBase]="idDoTermo(termo.codigo)"
+                        [podeSubir]="posicao > 0"
+                        [podeDescer]="posicao < termos().length - 1"
+                        [disabled]="disabled()"
+                        [erros]="errosDoTermo(termo.codigo)"
+                        (termoChange)="emitir(comTermo(conteudo(), $event))"
+                        (mover)="moverOTermo(termo.codigo, $event)"
+                        (remover)="removerOTermo(termo.codigo)"
+                      />
+                    </li>
+                  }
+                </ol>
+              } @else {
+                <p class="field__hint">Nenhum termo exigido.</p>
+              }
+              <div class="editor-formulario__acrescentar">
+                <div class="field">
+                  <label class="field__label" [for]="idBase() + '-termo'">Termo a exigir</label>
+                  <select
+                    class="select"
+                    [id]="idBase() + '-termo'"
+                    [disabled]="disabled() || termosPossiveis().length === 0"
+                    [attr.aria-describedby]="idBase() + '-termo-nota'"
+                    (change)="escolher(chaveTermo, $event)"
+                  >
+                    <option value="" [selected]="escolhaDeTermo() === ''">Escolha o termo de consentimento</option>
+                    @for (termo of termosPossiveis(); track termo.termoId) {
+                      <option [value]="termo.termoId" [selected]="escolhaDeTermo() === termo.termoId">{{ termo.nome }}</option>
+                    }
+                  </select>
+                </div>
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="disabled() || escolhaDeTermo() === ''"
+                  (click)="acrescentarOTermo()"
+                >
+                  <i class="pi pi-plus" aria-hidden="true"></i> Exigir termo
+                </button>
+              </div>
+              <span class="field__hint" [id]="idBase() + '-termo-nota'">Só termos com versão promovida podem ser exigidos.</span>
+            }
+          } @else {
+            <ui-secao-do-formulario
+              [etapa]="etapa"
+              [fatos]="fatosDaSecao().get(etapa.codigo) ?? []"
+              [idBase]="idDaEtapa(etapa)"
+              [disabled]="disabled()"
+              (etapaChange)="emitir(comEtapa(conteudo(), $event))"
+            />
+
+            @if (entradasDe(etapa); as entradas) {
+              @if (entradas.length > 0) {
+                <ol class="editor-formulario__itens" [attr.aria-label]="'Campos de ' + etapa.titulo">
+                  @for (entrada of entradas; track chaveDa(entrada); let posicao = $index) {
+                    <li>
+                      @if (entrada.tipo === 'item') {
+                        <ui-item-do-formulario
+                          [item]="entrada.item"
+                          [posicao]="posicao + 1"
+                          [fatos]="fatosDoItem().get(entrada.item.fatoCodigo) ?? []"
+                          [idBase]="idDoItem(entrada.item)"
+                          [exigeResposta]="exigemResposta().has(entrada.item.fatoCodigo)"
+                          [fatoDesativado]="desativados().has(entrada.item.fatoCodigo)"
+                          [podeSubir]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, -1)"
+                          [podeDescer]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, 1)"
+                          [disabled]="disabled()"
+                          [erros]="errosDoItem(entrada.item.fatoCodigo)"
+                          [remocaoTravadaPor]="remocoesTravadas().get(entrada.item.fatoCodigo) ?? null"
+                          [valoresConhecidos]="regrasProprias().get(entrada.item.fatoCodigo)?.valoresConhecidos ?? []"
+                          [ufs]="regrasProprias().get(entrada.item.fatoCodigo)?.ufs ?? []"
+                          [fontesDeOpcoes]="regrasProprias().get(entrada.item.fatoCodigo)?.fontesDeOpcoes ?? []"
+                          [recusasDasRestricoes]="recusas()?.porRestricao?.get(entrada.item.fatoCodigo) ?? []"
+                          [impedimentoPermitido]="regrasProprias().get(entrada.item.fatoCodigo)?.impedimentoPermitido ?? false"
+                          [fatosDoImpedimento]="regrasProprias().get(entrada.item.fatoCodigo)?.fatosDoImpedimento ?? []"
+                          (itemChange)="emitir(comItem(conteudo(), $event))"
+                          (mover)="moverOItem(entrada.item, $event, etapa)"
+                          (remover)="removerOItem(entrada.item, etapa)"
+                        />
+                      } @else {
+                        <ui-grupo-do-formulario
+                          [grupo]="entrada.grupo"
+                          [conteudo]="conteudoParaCitacoes()"
+                          [catalogo]="catalogo()"
+                          [remocoesTravadas]="remocoesTravadas()"
+                          [fatosIndisponiveis]="naoColetaveisAqui()"
+                          [posicao]="posicao + 1"
+                          [idBase]="idDoGrupo(entrada.grupo.codigo)"
+                          [exigemResposta]="exigemResposta()"
+                          [podeSubir]="podeMoverEntrada(conteudo(), { tipo: 'grupo', codigo: entrada.grupo.codigo }, -1)"
+                          [podeDescer]="podeMoverEntrada(conteudo(), { tipo: 'grupo', codigo: entrada.grupo.codigo }, 1)"
+                          [disabled]="disabled()"
+                          [erros]="errosDoGrupo(entrada.grupo.codigo)"
+                          [errosPorCampo]="recusas()?.porItem ?? semRecusas"
+                          [recusasDasRestricoes]="recusas()?.porRestricao ?? semRecusasDeRestricao"
+                          (grupoChange)="emitir(comGrupo(conteudo(), $event))"
+                          (anuncio)="anuncio.set($event)"
+                          (mover)="moverOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, $event, etapa)"
+                          (remover)="removerOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, etapa)"
+                        />
+                      }
+                    </li>
+                  }
+                </ol>
+              } @else {
+                <p class="field__hint">Nenhum campo nesta seção.</p>
               }
             }
-          </ol>
-        } @else if (etapa.tipo !== secao) {
-          <p class="field__hint">{{ descricaoDoBloco(etapa) }}</p>
-          @if (etapa.bloco === revisaoEAceite) {
-            <h4 class="editor-formulario__titulo-item">Termos de consentimento exigidos</h4>
-            @if (termos().length > 0) {
-              <ol class="editor-formulario__itens" aria-label="Termos exigidos">
-                @for (termo of termos(); track termo.codigo; let posicao = $index) {
-                  <li>
-                    <ui-termo-do-formulario
-                      [termo]="termo"
-                      [disponivel]="termoDisponivel(termo.termoId)"
-                      [posicao]="posicao + 1"
-                      [fatos]="fatosDosTermos()"
-                      [idBase]="idDoTermo(termo.codigo)"
-                      [podeSubir]="posicao > 0"
-                      [podeDescer]="posicao < termos().length - 1"
-                      [disabled]="disabled()"
-                      [erros]="errosDoTermo(termo.codigo)"
-                      (termoChange)="emitir(comTermo(conteudo(), $event))"
-                      (mover)="moverOTermo(termo.codigo, $event)"
-                      (remover)="removerOTermo(termo.codigo)"
-                    />
-                  </li>
-                }
-              </ol>
-            } @else {
-              <p class="field__hint">Nenhum termo exigido.</p>
-            }
+
             <div class="editor-formulario__acrescentar">
               <div class="field">
-                <label class="field__label" [for]="idBase() + '-termo'">Termo a exigir</label>
+                <label class="field__label" [for]="idDaEtapa(etapa) + '-acrescentar'">Campo a acrescentar</label>
                 <select
                   class="select"
-                  [id]="idBase() + '-termo'"
-                  [disabled]="disabled() || termosPossiveis().length === 0"
-                  [attr.aria-describedby]="idBase() + '-termo-nota'"
-                  (change)="escolher(chaveTermo, $event)"
+                  [id]="idDaEtapa(etapa) + '-acrescentar'"
+                  [disabled]="disabled() || noTeto() || paraAcrescentar().length === 0"
+                  [attr.aria-describedby]="noTeto() ? idBase() + '-teto' : null"
+                  (change)="escolher(etapa.codigo, $event)"
                 >
-                  <option value="" [selected]="escolhaDeTermo() === ''">Escolha o termo de consentimento</option>
-                  @for (termo of termosPossiveis(); track termo.termoId) {
-                    <option [value]="termo.termoId" [selected]="escolhaDeTermo() === termo.termoId">{{ termo.nome }}</option>
+                  <option value="" [selected]="escolhaDe(etapa.codigo) === ''">Escolha o fato do candidato</option>
+                  @for (fato of paraAcrescentar(); track fato.codigo) {
+                    <option [value]="fato.codigo" [selected]="escolhaDe(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
                   }
                 </select>
               </div>
               <button
                 class="btn btn--secondary btn--sm"
                 type="button"
-                [disabled]="disabled() || escolhaDeTermo() === ''"
-                (click)="acrescentarOTermo()"
+                [disabled]="disabled() || noTeto() || escolhaDe(etapa.codigo) === ''"
+                (click)="acrescentarOItem(etapa)"
               >
-                <i class="pi pi-plus" aria-hidden="true"></i> Exigir termo
+                <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar campo
               </button>
             </div>
-            <span class="field__hint" [id]="idBase() + '-termo-nota'">Só termos com versão promovida podem ser exigidos.</span>
-          }
-        } @else {
-          <ui-secao-do-formulario
-            [etapa]="etapa"
-            [fatos]="fatosDaSecao().get(etapa.codigo) ?? []"
-            [idBase]="idDaEtapa(etapa)"
-            [disabled]="disabled()"
-            (etapaChange)="emitir(comEtapa(conteudo(), $event))"
-          />
 
-          @if (entradasDe(etapa); as entradas) {
-            @if (entradas.length > 0) {
-              <ol class="editor-formulario__itens" [attr.aria-label]="'Campos de ' + etapa.titulo">
-                @for (entrada of entradas; track chaveDa(entrada); let posicao = $index) {
-                  <li>
-                    @if (entrada.tipo === 'item') {
-                      <ui-item-do-formulario
-                        [item]="entrada.item"
-                        [posicao]="posicao + 1"
-                        [fatos]="fatosDoItem().get(entrada.item.fatoCodigo) ?? []"
-                        [idBase]="idDoItem(entrada.item)"
-                        [exigeResposta]="exigemResposta().has(entrada.item.fatoCodigo)"
-                        [fatoDesativado]="desativados().has(entrada.item.fatoCodigo)"
-                        [podeSubir]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, -1)"
-                        [podeDescer]="podeMoverItem(conteudo(), entrada.item.fatoCodigo, 1)"
-                        [disabled]="disabled()"
-                        [erros]="errosDoItem(entrada.item.fatoCodigo)"
-                        [remocaoTravadaPor]="remocoesTravadas().get(entrada.item.fatoCodigo) ?? null"
-                        [valoresConhecidos]="regrasProprias().get(entrada.item.fatoCodigo)?.valoresConhecidos ?? []"
-                        [ufs]="regrasProprias().get(entrada.item.fatoCodigo)?.ufs ?? []"
-                        [fontesDeOpcoes]="regrasProprias().get(entrada.item.fatoCodigo)?.fontesDeOpcoes ?? []"
-                        [recusasDasRestricoes]="recusas()?.porRestricao?.get(entrada.item.fatoCodigo) ?? []"
-                        [impedimentoPermitido]="regrasProprias().get(entrada.item.fatoCodigo)?.impedimentoPermitido ?? false"
-                        [fatosDoImpedimento]="regrasProprias().get(entrada.item.fatoCodigo)?.fatosDoImpedimento ?? []"
-                        (itemChange)="emitir(comItem(conteudo(), $event))"
-                        (mover)="moverOItem(entrada.item, $event, etapa)"
-                        (remover)="removerOItem(entrada.item, etapa)"
-                      />
-                    } @else {
-                      <ui-grupo-do-formulario
-                        [grupo]="entrada.grupo"
-                        [conteudo]="conteudoParaCitacoes()"
-                        [catalogo]="catalogo()"
-                        [remocoesTravadas]="remocoesTravadas()"
-                        [fatosIndisponiveis]="naoColetaveisAqui()"
-                        [posicao]="posicao + 1"
-                        [idBase]="idDoGrupo(entrada.grupo.codigo)"
-                        [exigemResposta]="exigemResposta()"
-                        [podeSubir]="podeMoverEntrada(conteudo(), { tipo: 'grupo', codigo: entrada.grupo.codigo }, -1)"
-                        [podeDescer]="podeMoverEntrada(conteudo(), { tipo: 'grupo', codigo: entrada.grupo.codigo }, 1)"
-                        [disabled]="disabled()"
-                        [erros]="errosDoGrupo(entrada.grupo.codigo)"
-                        [errosPorCampo]="recusas()?.porItem ?? semRecusas"
-                        [recusasDasRestricoes]="recusas()?.porRestricao ?? semRecusasDeRestricao"
-                        (grupoChange)="emitir(comGrupo(conteudo(), $event))"
-                        (anuncio)="anuncio.set($event)"
-                        (mover)="moverOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, $event, etapa)"
-                        (remover)="removerOGrupo(entrada.grupo.codigo, entrada.grupo.rotulo, etapa)"
-                      />
+            @if (fatosDeMembro().length > 0) {
+              <div class="editor-formulario__acrescentar">
+                <div class="field">
+                  <label class="field__label" [for]="idDaEtapa(etapa) + '-grupo-rotulo'">Rótulo do grupo repetível</label>
+                  <input
+                    class="input"
+                    type="text"
+                    [id]="idDaEtapa(etapa) + '-grupo-rotulo'"
+                    [value]="escolhaLivre('#grupo-rotulo:' + etapa.codigo)"
+                    [maxLength]="limites.rotulo"
+                    [disabled]="disabled()"
+                    (input)="escolher('#grupo-rotulo:' + etapa.codigo, $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field__label" [for]="idDaEtapa(etapa) + '-grupo-campo'">Primeiro campo de cada ocorrência</label>
+                  <select class="select" [id]="idDaEtapa(etapa) + '-grupo-campo'" [disabled]="disabled()" (change)="escolher('#grupo-campo:' + etapa.codigo, $event)">
+                    <option value="" [selected]="escolhaDeMembro(etapa.codigo) === ''">Escolha o fato do membro</option>
+                    @for (fato of fatosDeMembro(); track fato.codigo) {
+                      <option [value]="fato.codigo" [selected]="escolhaDeMembro(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
                     }
-                  </li>
-                }
-              </ol>
-            } @else {
-              <p class="field__hint">Nenhum campo nesta seção.</p>
+                  </select>
+                </div>
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="disabled() || escolhaLivre('#grupo-rotulo:' + etapa.codigo).trim() === '' || escolhaDeMembro(etapa.codigo) === ''"
+                  (click)="acrescentarOGrupo(etapa)"
+                >
+                  <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar grupo repetível
+                </button>
+              </div>
             }
           }
-
-          <div class="editor-formulario__acrescentar">
-            <div class="field">
-              <label class="field__label" [for]="idDaEtapa(etapa) + '-acrescentar'">Campo a acrescentar</label>
-              <select
-                class="select"
-                [id]="idDaEtapa(etapa) + '-acrescentar'"
-                [disabled]="disabled() || noTeto() || paraAcrescentar().length === 0"
-                [attr.aria-describedby]="noTeto() ? idBase() + '-teto' : null"
-                (change)="escolher(etapa.codigo, $event)"
-              >
-                <option value="" [selected]="escolhaDe(etapa.codigo) === ''">Escolha o fato do candidato</option>
-                @for (fato of paraAcrescentar(); track fato.codigo) {
-                  <option [value]="fato.codigo" [selected]="escolhaDe(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
-                }
-              </select>
-            </div>
-            <button
-              class="btn btn--secondary btn--sm"
-              type="button"
-              [disabled]="disabled() || noTeto() || escolhaDe(etapa.codigo) === ''"
-              (click)="acrescentarOItem(etapa)"
-            >
-              <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar campo
-            </button>
-          </div>
-
-          @if (fatosDeMembro().length > 0) {
-            <div class="editor-formulario__acrescentar">
-              <div class="field">
-                <label class="field__label" [for]="idDaEtapa(etapa) + '-grupo-rotulo'">Rótulo do grupo repetível</label>
-                <input
-                  class="input"
-                  type="text"
-                  [id]="idDaEtapa(etapa) + '-grupo-rotulo'"
-                  [value]="escolhaLivre('#grupo-rotulo:' + etapa.codigo)"
-                  [maxLength]="limites.rotulo"
-                  [disabled]="disabled()"
-                  (input)="escolher('#grupo-rotulo:' + etapa.codigo, $event)"
-                />
-              </div>
-              <div class="field">
-                <label class="field__label" [for]="idDaEtapa(etapa) + '-grupo-campo'">Primeiro campo de cada ocorrência</label>
-                <select class="select" [id]="idDaEtapa(etapa) + '-grupo-campo'" [disabled]="disabled()" (change)="escolher('#grupo-campo:' + etapa.codigo, $event)">
-                  <option value="" [selected]="escolhaDeMembro(etapa.codigo) === ''">Escolha o fato do membro</option>
-                  @for (fato of fatosDeMembro(); track fato.codigo) {
-                    <option [value]="fato.codigo" [selected]="escolhaDeMembro(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
-                  }
-                </select>
-              </div>
-              <button
-                class="btn btn--secondary btn--sm"
-                type="button"
-                [disabled]="disabled() || escolhaLivre('#grupo-rotulo:' + etapa.codigo).trim() === '' || escolhaDeMembro(etapa.codigo) === ''"
-                (click)="acrescentarOGrupo(etapa)"
-              >
-                <i class="pi pi-plus" aria-hidden="true"></i> Acrescentar grupo repetível
-              </button>
-            </div>
-          }
-        }
+        </div>
 
         @if (!fixa(etapa)) {
           <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações de ' + nomeDaEtapa(etapa)">
@@ -492,6 +507,8 @@ export class EditorDeFormularioComponent {
   protected readonly fixa = etapaFixa;
 
   protected readonly anuncio = signal('');
+  /** As etapas que o usuário recolheu, pelo código — que acompanha a etapa quando ela é movida. */
+  private readonly etapasRecolhidas = signal<ReadonlySet<string>>(new Set());
   private readonly escolhas = signal<ReadonlyMap<string, string>>(new Map());
   // As escolhas dos combos fora das seções, com chaves que não colidem com código de etapa.
   protected readonly chaveTermo = '#termo';
@@ -688,6 +705,37 @@ export class EditorDeFormularioComponent {
 
   protected chaveDa(entrada: ReturnType<typeof entradasDaSecao>[number]): string {
     return entrada.tipo === 'item' ? `item:${entrada.item.fatoCodigo}` : `grupo:${entrada.grupo.codigo}`;
+  }
+
+  protected etapaAberta(etapa: Pick<EtapaDoFormulario, 'codigo'>): boolean {
+    return !this.etapasRecolhidas().has(etapa.codigo);
+  }
+
+  protected alternarEtapa(etapa: Pick<EtapaDoFormulario, 'codigo'>): void {
+    this.etapasRecolhidas.update((recolhidas) => {
+      const proximas = new Set(recolhidas);
+      if (proximas.has(etapa.codigo)) {
+        proximas.delete(etapa.codigo);
+      } else {
+        proximas.add(etapa.codigo);
+      }
+      return proximas;
+    });
+  }
+
+  /** O que a etapa tem, para quem a vê recolhida; bloco do sistema não tem campos a contar. */
+  protected resumoDaEtapa(etapa: EtapaDoFormulario): string {
+    if (etapa.tipo !== this.secao) {
+      return '';
+    }
+    const entradas = this.entradasDe(etapa);
+    const campos = entradas.filter((entrada) => entrada.tipo === 'item').length;
+    const grupos = entradas.length - campos;
+    const partes = [campos === 1 ? '1 campo' : `${campos} campos`];
+    if (grupos > 0) {
+      partes.push(grupos === 1 ? '1 grupo repetível' : `${grupos} grupos repetíveis`);
+    }
+    return partes.join(' · ');
   }
 
   protected idDaEtapa(etapa: Pick<EtapaDoFormulario, 'codigo'>): string {

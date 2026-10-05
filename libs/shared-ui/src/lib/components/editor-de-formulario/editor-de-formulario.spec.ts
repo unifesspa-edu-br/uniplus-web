@@ -361,6 +361,29 @@ describe('EditorDeFormularioComponent', () => {
       expect(tela().textContent).toContain('O grupo não pode ser removido: Uma exigência documental cita a renda.');
     });
   });
+
+  it('recolhe e expande a etapa pelo título, mantendo à vista o resumo do que ela tem', () => {
+    const alternar = tela().querySelector('#f-etapa-S1-nome button') as HTMLButtonElement;
+    const corpo = tela().querySelector('#f-etapa-S1-corpo') as HTMLElement;
+
+    expect(alternar.getAttribute('aria-expanded')).toBe('true');
+    expect(alternar.getAttribute('aria-controls')).toBe('f-etapa-S1-corpo');
+    expect(corpo.hidden).toBe(false);
+    expect(tela().querySelector('.editor-formulario__resumo')?.textContent?.trim()).toBe('3 campos');
+
+    alternar.click();
+    fixture.detectChanges();
+
+    expect(alternar.getAttribute('aria-expanded')).toBe('false');
+    expect(corpo.hidden).toBe(true);
+    expect(tela().querySelector('#f-etapa-S1-nome')?.textContent).toContain('1. Escolaridade');
+
+    alternar.click();
+    fixture.detectChanges();
+
+    expect(alternar.getAttribute('aria-expanded')).toBe('true');
+    expect(corpo.hidden).toBe(false);
+  });
 });
 
 describe('EditorDeFormularioComponent com a busca de municípios', () => {
