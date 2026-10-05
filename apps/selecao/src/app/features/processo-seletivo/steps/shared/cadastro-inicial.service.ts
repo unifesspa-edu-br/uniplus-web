@@ -1,4 +1,4 @@
-import { HttpContext, HttpEventType } from '@angular/common/http';
+import { HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
@@ -41,6 +41,7 @@ import {
   type PassoDaGravacao,
 } from '../steps/formulario/formulario-do-processo';
 import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
+import { enviarAoStorage, type ResultadoEnvio } from './envio-pre-assinado';
 
 /** Recusa nomeada por `ProblemDetails`, para o chamador exibir e decidir o retry. */
 export interface FalhaOperacao {
@@ -79,32 +80,11 @@ export type ResultadoIniciacao =
   | FalhaOperacao;
 
 /**
- * Falha do envio ao storage. `expirada` separa o caso em que repetir o mesmo
- * PUT é inútil — a assinatura da URL não volta a valer.
- */
-export interface EnvioFalhou {
-  readonly ok: false;
-  readonly status: number;
-  readonly expirada: boolean;
-}
-
-export type ResultadoEnvio = { readonly ok: true } | EnvioFalhou;
-
-/**
  * Resposta que chegou depois de o editor passar a outro cadastro. Não descreve
  * uma recusa do servidor — é o resultado de um comando que já não pertence ao
  * que está em tela, e por isso não pode virar mensagem para o operador nem
  * mexer nas chaves do cadastro atual.
  */
-/**
- * O PUT ao storage não passa pelos interceptors nem pelo contrato REST do Uni+: quem
- * responde é o object store, e ele recusa assinatura inválida com 403. `STATUS_HTTP`
- * cataloga o que a `uniplus-api` devolve, e lá 403 é falta de papel na rota — outra
- * coisa. O nome fica local para não afirmar a autorização da aplicação onde ela não
- * está em jogo.
- */
-const STATUS_ASSINATURA_RECUSADA_PELO_STORAGE = 403;
-
 const SUPERADO: ProblemDetails = {
   type: 'about:blank',
   title: 'Operação abandonada ao trocar de processo.',
@@ -836,40 +816,13 @@ export class CadastroInicialService {
     return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Passo 2: envia o arquivo direto ao storage, relatando o progresso em bytes.
-   *
-   * Este PUT não passa pelos interceptors da aplicação, então a falha chega
-   * como erro HTTP de verdade. 403 é como o storage recusa assinatura inválida
-   * — na prática, URL expirada: repetir o mesmo PUT nunca funciona, e o
-   * chamador precisa recomeçar da iniciação.
-   */
+  /** Passo 2: envia o arquivo direto ao storage (`enviarAoStorage`). */
   enviarArquivo(
     iniciacao: IniciarUploadDocumentoEditalDto,
     arquivo: File,
     onProgresso: (percentual: number) => void,
   ): Promise<ResultadoEnvio> {
-    return new Promise<ResultadoEnvio>((resolve) => {
-      this.upload.enviar(iniciacao.urlUpload, arquivo, iniciacao.contentTypeExigido).subscribe({
-        next: (evento) => {
-          if (evento.type === HttpEventType.UploadProgress) {
-            onProgresso(percentualDe(evento.loaded, evento.total));
-          }
-        },
-        error: (erro: unknown) => {
-          const status = statusDe(erro);
-          resolve({
-            ok: false,
-            status,
-            expirada: status === STATUS_ASSINATURA_RECUSADA_PELO_STORAGE,
-          });
-        },
-        complete: () => {
-          onProgresso(100);
-          resolve({ ok: true });
-        },
-      });
-    });
+    return enviarAoStorage(this.upload, iniciacao, arquivo, onProgresso);
   }
 
   /**
@@ -918,17 +871,4 @@ export class CadastroInicialService {
 
 function contextoCom(chave: string): HttpContext {
   return withIdempotencyKey(chave);
-}
-
-function percentualDe(loaded: number, total: number | undefined): number {
-  if (total === undefined || total <= 0) return 0;
-  return Math.min(100, Math.max(0, Math.round((loaded / total) * 100)));
-}
-
-function statusDe(erro: unknown): number {
-  if (typeof erro === 'object' && erro !== null && 'status' in erro) {
-    const status = (erro as { status: unknown }).status;
-    return typeof status === 'number' ? status : 0;
-  }
-  return 0;
 }
