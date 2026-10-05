@@ -1,7 +1,7 @@
 import { HttpParams } from '@angular/common/http';
 import { VENDOR_MIME_TOKEN, createCursor } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
-import { certamesPublicosRequest } from './certames-publicos.request';
+import { certamePublicoRequest, certamesPublicosRequest } from './certames-publicos.request';
 import { SituacaoDoCertame } from './schema';
 
 const BASE = 'http://localhost:5000';
@@ -47,5 +47,15 @@ describe('certamesPublicosRequest', () => {
 
     expect(params(request).has('q')).toBe(false);
     expect(params(request).has('situacao')).toBe(false);
+  });
+});
+
+describe('certamePublicoRequest', () => {
+  /** Sem o vendor MIME do recurso, a API responde 406 em vez do certame. */
+  it('pede o certame publicado pelo id, com o vendor MIME do certame', () => {
+    const request = certamePublicoRequest(BASE, 'a/b');
+
+    expect(request.url).toBe(`${BASE}/api/selecao/certames/a%2Fb`);
+    expect(request.context?.get(VENDOR_MIME_TOKEN)).toEqual({ resource: 'certame', version: 1 });
   });
 });

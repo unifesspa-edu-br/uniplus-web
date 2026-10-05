@@ -45,6 +45,7 @@ import {
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
+import { CertameDocumentosComponent } from './certame-documentos/certame-documentos';
 import {
   eventoDoEditalDeAbertura,
   type EventoHistoricoPublicacao,
@@ -189,6 +190,7 @@ function numeroDoHeader(
     RouterOutlet,
     DateBrPipe,
     AlertComponent,
+    CertameDocumentosComponent,
     CertamePublicacoesComponent,
     EmptyStateComponent,
     FilterBarComponent,

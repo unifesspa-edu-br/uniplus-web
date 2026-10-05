@@ -1,0 +1,123 @@
+/* ── Accordion "Documentos exigidos" de um item de Editais ───────────── */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Mesmo desenho do "Ver publicações": botão com cara de link, sublinhado para não
+   depender só da cor (WCAG 1.4.1) e alvo de toque mínimo. */
+.documentos-toggle {
+  /* Âncora do `.sr-only`: sem ancestral posicionado ele ancora na página e estende a
+     rolagem do documento inteiro. */
+  position: relative;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-link);
+  font: inherit;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.documentos-toggle__label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.documentos-toggle:hover {
+  color: var(--text-on-primary-tint);
+}
+
+.documentos-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.documentos-toggle__icon {
+  font-size: var(--text-sm);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.documentos-toggle[aria-expanded='true'] .documentos-toggle__icon {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .documentos-toggle__icon {
+    transition: none;
+  }
+}
+
+.documentos-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.documentos-lista {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 68ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documentos-lista__item {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.documentos-lista__cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.documentos-lista__rotulo {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.documentos-lista__meta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* Sublinhado: link nu não pode depender só da cor (WCAG 1.4.1). */
+.documentos-lista__modelo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  color: var(--text-link);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.documentos-lista__modelo:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--focus-ring);
+}

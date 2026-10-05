@@ -2,8 +2,12 @@ export { SELECAO_BASE_PATH } from './tokens';
 export {
   CERTAMES_PUBLICOS_PATH,
   SituacaoDoCertame,
+  certamePublicoRequest,
   certamesPublicosRequest,
   type CertameNaVitrineDto,
+  type CertamePublicadoDto,
+  type ExigenciaDocumentalCertameDto,
+  type ModeloDocumentalCertameDto,
   type CertamesPublicosQuery,
   type TipoCatalogadoCertameDto,
 } from './certames-publicos.request';
