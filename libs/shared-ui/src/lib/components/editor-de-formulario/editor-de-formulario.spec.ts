@@ -362,6 +362,17 @@ describe('EditorDeFormularioComponent', () => {
     });
   });
 
+  it('põe as ações da seção na linha do título e não chama a seção de etapa', () => {
+    const cabecalho = tela().querySelector('#f-etapa-S1-nome')?.parentElement as HTMLElement;
+    const subir = tela().querySelector('#f-etapa-S1-subir') as HTMLButtonElement;
+
+    expect(cabecalho.contains(subir)).toBe(true);
+    expect(subir.textContent?.trim()).toBe('Subir');
+    expect(subir.getAttribute('aria-label')).toBe('Mover a seção Escolaridade para cima');
+    const nomesAcessiveis = [...tela().querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label') ?? '');
+    expect([tela().textContent ?? '', ...nomesAcessiveis].join(' ')).not.toMatch(/\betapas?\b/i);
+  });
+
   it('recolhe e expande a etapa pelo título, mantendo à vista o resumo do que ela tem', () => {
     const alternar = tela().querySelector('#f-etapa-S1-nome button') as HTMLButtonElement;
     const corpo = tela().querySelector('#f-etapa-S1-corpo') as HTMLElement;

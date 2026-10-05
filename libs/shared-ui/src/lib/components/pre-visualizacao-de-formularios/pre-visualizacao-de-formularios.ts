@@ -237,8 +237,8 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
     <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
 
     <fieldset class="pre-visualizacao-formularios__respostas" [disabled]="carregando()">
-      <legend class="field__label">Etapas já concluídas pelo candidato</legend>
-      <p class="field__hint">Numa etapa concluída, o campo opcional deixado em branco conta como respondido em branco.</p>
+      <legend class="field__label">Seções já concluídas pelo candidato</legend>
+      <p class="field__hint">Numa seção concluída, o campo opcional deixado em branco conta como respondido em branco.</p>
       @for (secao of secoes(); track secao.chave) {
         <label class="checkbox">
           <input type="checkbox" [checked]="concluidas().has(secao.chave)" (change)="alternarEtapa(secao.chave)" />

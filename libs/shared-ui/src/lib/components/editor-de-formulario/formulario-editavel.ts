@@ -446,7 +446,7 @@ export function moverEtapa(
   direcao: -1 | 1,
   nomes: ReadonlyMap<string, string>,
 ): ResultadoDaEdicao {
-  if (!podeMoverEtapa(conteudo, codigo, direcao)) return { ok: false, recusa: 'A etapa não pode ir nessa direção.' };
+  if (!podeMoverEtapa(conteudo, codigo, direcao)) return { ok: false, recusa: 'Não há para onde mover nessa direção.' };
   const etapas = etapasEmOrdem(conteudo);
   const indice = etapas.findIndex((etapa) => etapa.codigo === codigo);
   const atual = etapas[indice];
@@ -546,7 +546,7 @@ export function removerItem(
 /** Remove a etapa. A seção com itens não sai: os itens ficariam sem seção. */
 export function removerEtapa(conteudo: ConteudoDoFormulario, codigo: string): ResultadoDaEdicao {
   const etapa = (conteudo.etapas ?? []).find((e) => e.codigo === codigo);
-  if (etapa === undefined || etapaFixa(etapa)) return { ok: false, recusa: 'Esta etapa não pode ser removida.' };
+  if (etapa === undefined || etapaFixa(etapa)) return { ok: false, recusa: 'Esta parte do formulário não pode ser removida.' };
   if (entradasDaSecao(conteudo, codigo).length > 0) {
     return { ok: false, recusa: `Remova ou mova os campos de “${etapa.titulo}” antes de remover a seção.` };
   }
