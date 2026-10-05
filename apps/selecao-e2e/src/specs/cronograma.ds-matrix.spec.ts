@@ -170,7 +170,11 @@ test.describe('Cronograma — matriz DS @ds', () => {
     await acrescentarFase(page);
     await declararConvencaoDeContagem(page);
 
-    await expect(page.getByText('O que esta convenção faz')).toBeVisible();
+    const resumo = page.getByText('O que esta convenção faz');
+    await expect(resumo).toBeVisible();
+    await expect(page.getByText('o dia da âncora não conta')).toBeHidden();
+
+    await resumo.click();
     await expect(page.getByText('o dia da âncora não conta')).toBeVisible();
   });
 
