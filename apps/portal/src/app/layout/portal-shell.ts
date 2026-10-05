@@ -144,11 +144,10 @@ interface PortalFooterGroup {
 export class PortalShellComponent {
   private readonly userContext = inject(UserContextService);
 
-  // "Meu perfil" fecha o caminho de volta: sem ele, quem chega em /processos
-  // por link direto não alcança a área da conta por nenhum menu. "Documentos"
-  // fica de fora enquanto for placeholder vazio — pô-lo no menu principal cria
-  // uma expectativa que a tela não entrega; a rota continua acessível por URL
-  // direta e ganha link aqui quando houver conteúdo por trás.
+  // "Meu perfil" vive no menu do avatar (auth-user-header-info), não aqui.
+  // "Documentos" fica de fora enquanto for placeholder vazio — pô-lo no menu
+  // principal cria uma expectativa que a tela não entrega; a rota continua
+  // acessível por URL direta e ganha link aqui quando houver conteúdo por trás.
   private readonly allNavItems: readonly PortalNavItem[] = [
     { label: 'Editais', icon: 'pi-calendar', routerLink: '/processos' },
     {
@@ -157,7 +156,6 @@ export class PortalShellComponent {
       routerLink: '/inscricao',
       requiresAuth: true,
     },
-    { label: 'Meu perfil', icon: 'pi-user', routerLink: '/perfil' },
     { label: 'Ajuda', icon: 'pi-question-circle' },
   ];
 

@@ -5,6 +5,7 @@ import {
   ElementRef,
   HostListener,
   inject,
+  signal,
   viewChild,
 } from '@angular/core';
 import { createDisclosureController } from '@uniplus/shared-core/dom';
@@ -14,6 +15,7 @@ import {
   DOMAIN_ROLES,
   ROLE_LABELS,
 } from '@uniplus/shared-auth/bootstrap';
+import { UserProfileDialogComponent } from './user-profile-dialog.component';
 
 /**
  * Bloco de identificação do usuário para uso em headers.
@@ -24,6 +26,7 @@ import {
 @Component({
   selector: 'auth-user-header-info',
   standalone: true,
+  imports: [UserProfileDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (userContext.user(); as profile) {
@@ -92,6 +95,28 @@ import {
           <li role="none">
             <button
               type="button"
+              class="menu__item"
+              role="menuitem"
+              data-testid="auth-user-profile-item"
+              (keydown)="onMenuKeydown($event)"
+              (click)="openProfile()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Meu perfil
+            </button>
+          </li>
+          <li role="none">
+            <button
+              type="button"
               class="menu__item menu__item--danger"
               role="menuitem"
               (keydown)="onMenuKeydown($event)"
@@ -111,6 +136,9 @@ import {
           </li>
         </ul>
       </div>
+      @if (profileOpen()) {
+        <auth-user-profile-dialog (closed)="onProfileClosed()" />
+      }
     } @else {
       <button type="button" class="btn btn--sm" (click)="login()">Entrar</button>
     }
@@ -134,6 +162,7 @@ export class UserHeaderInfoComponent {
   });
 
   protected readonly menuOpen = this.disclosure.open;
+  protected readonly profileOpen = signal(false);
   protected readonly buttonId = `auth-user-menu-button-${++UserHeaderInfoComponent.idSeed}`;
   protected readonly menuId = `auth-user-menu-${UserHeaderInfoComponent.idSeed}`;
 
@@ -191,6 +220,17 @@ export class UserHeaderInfoComponent {
               : currentIndex + 1;
 
     items[nextIndex]?.focus();
+  }
+
+  protected openProfile(): void {
+    // O foco volta ao chip (não ao item, que some com o menu) quando o modal fecha.
+    this.disclosure.close(false);
+    this.profileOpen.set(true);
+  }
+
+  protected onProfileClosed(): void {
+    this.profileOpen.set(false);
+    this.triggerRef()?.nativeElement.focus();
   }
 
   protected logout(): void {

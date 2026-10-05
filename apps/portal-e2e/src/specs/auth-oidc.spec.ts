@@ -36,8 +36,8 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   });
 
   test.describe('Rotas autenticadas — candidato', () => {
-    test('redireciona para o provedor OIDC ao acessar /perfil sem sessão', async ({ page }) => {
-      await page.goto('/perfil');
+    test('redireciona para o provedor OIDC ao acessar /acompanhamento sem sessão', async ({ page }) => {
+      await page.goto('/acompanhamento');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
       });
@@ -46,7 +46,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
 
     test('candidato consegue acessar o portal após login', async ({ page }) => {
       const user = USERS.candidato;
-      await page.goto('/perfil');
+      await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
 
       await expect(page).toHaveURL(/localhost:4202/);
@@ -54,7 +54,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
 
     test('header exibe nome social do candidato (RN02)', async ({ page }) => {
       const user = USERS.candidato;
-      await page.goto('/perfil');
+      await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
 
       // Nome social "Candidato Teste" tem prioridade sobre nome civil "Usuário Candidato"
@@ -78,7 +78,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   test.describe('Admin no Portal', () => {
     test('admin também consegue acessar o portal (sem restrição de role)', async ({ page }) => {
       const user = USERS.admin;
-      await page.goto('/perfil');
+      await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
 
       await expect(page).toHaveURL(/localhost:4202/);
@@ -89,13 +89,13 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   test.describe('Logout', () => {
     test('botão Sair encerra sessão e rota protegida redireciona ao provedor OIDC', async ({ page }) => {
       const user = USERS.candidato;
-      await page.goto('/perfil');
+      await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
 
       await keycloakLogout(page);
 
       // Tentar acessar rota protegida novamente
-      await page.goto('/perfil');
+      await page.goto('/acompanhamento');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
       });
@@ -106,7 +106,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   test.describe('Navegação autenticada', () => {
     test('navegação entre rotas protegidas mantém sessão', async ({ page }) => {
       const user = USERS.candidato;
-      await page.goto('/perfil');
+      await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
 
       // Navegar para outra rota protegida — /acompanhamento vive no shell
