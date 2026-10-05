@@ -1619,6 +1619,26 @@ describe('FaseStepComponent', () => {
       expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')[0].finalidade).toBe('ISENCAO_TAXA');
     });
 
+    it('a fase acrescentada depois do regime não herda o formulário do modelo que ela não responde', () => {
+      const daInscricao = congeladosDaFase({ coletaInscricao: true });
+      comCronograma(fase({ congelados: daInscricao }));
+      componente.escolherDocumento(ID_CPF);
+      componente.acrescentarDocumento();
+      componente.escolherFinalidade(ID_CPF, 'INSCRICAO');
+      componente.valerEmTodasAsFases(ID_CPF);
+      detectar();
+
+      comCronograma(
+        fase({ congelados: daInscricao }),
+        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2, congelados: congeladosDaFase() }),
+      );
+      componente.abrirFase(ID_RECURSOS);
+      detectar();
+
+      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
+      expect(componente.faltaFormulario(ID_CPF)).toBeNull();
+    });
+
     /** A fase alcançada mas ainda não materializada mostra o que será gravado. */
     it('mostra na fase herdada o que o modelo declara, não um formulário em branco', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));

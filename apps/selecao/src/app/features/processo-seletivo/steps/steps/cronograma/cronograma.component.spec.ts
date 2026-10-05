@@ -2176,6 +2176,49 @@ describe('CronogramaStepComponent', () => {
       expect(resultado.messages?.join(' ')).toContain('sem o formulário em que o candidato o apresenta');
     });
 
+    /**
+     * O documento que vale em todas as fases só ganha a cópia da fase acrescentada depois na
+     * gravação. A conferência olha o que vai ser gravado: a fase nova que divide inscrição e
+     * isenção pede a escolha do formulário antes do envio, e não numa recusa do servidor.
+     */
+    it('confere o formulário da cópia na fase acrescentada depois do regime de todas as fases', () => {
+      comExigenciaDeclarada(
+        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        { faseCodigo: 'COLETA_INSCRICAO', finalidade: 'INSCRICAO' },
+      );
+      store.patchSection('documentos', {
+        ...store.draft().documentos,
+        emTodasAsFases: ['01960000-0000-7000-0000-0000000000d9'],
+      });
+      comFases(ID_INSCRICAO);
+      const inscricao = store.draft().cronograma.fases[0];
+      store.patchObjectSection('cronograma', {
+        fases: [
+          inscricao,
+          {
+            ...inscricao,
+            faseCanonicaId: ID_AVALIACAO,
+            codigo: 'DIVIDIDA',
+            ordem: 2,
+            congelados: {
+              donoTipico: 'CEPS',
+              origemData: 'PROPRIA',
+              agrupaEtapas: false,
+              coletaInscricao: true,
+              permiteComplementacao: false,
+              coletaSolicitacaoIsencao: true,
+              bancas: [],
+            },
+          },
+        ],
+      });
+      detectar();
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('sem o formulário em que o candidato o apresenta');
+    });
+
     /** Exigência ancorada em fase que saiu do cronograma é nomeada, não descartada em silêncio. */
     it('acusa a exigência cuja fase saiu do cronograma', () => {
       comExigenciaDeclarada(
