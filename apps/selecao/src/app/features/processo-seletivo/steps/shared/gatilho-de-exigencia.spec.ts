@@ -111,6 +111,7 @@ function exigencia(parcial: Partial<ExigenciaDeDocumento> = {}): ExigenciaDeDocu
     idadeMaximaEmissao: null,
     formatosPermitidos: 'QUALQUER',
     tamanhoMaximoBytes: null,
+    modelo: null,
     ...parcial,
   };
 }

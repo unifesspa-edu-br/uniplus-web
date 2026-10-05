@@ -71,6 +71,7 @@ import {
   type ExigenciasDoRascunho,
   type ExigenciaDeDocumento,
   type EtapaPontuada,
+  type ModeloDaExigencia,
   type FaseDoCronograma,
   type ProdutoDaFase,
   type StepValidation,
@@ -96,6 +97,7 @@ import {
   type ProblemaDaFase,
 } from './configuracao-da-fase';
 import { faseDaConfiguracao, grupoDaConfiguracaoDaFase, type FaseConfigForm } from './fase-form';
+import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 import {
   alcancaOPublico,
   composicaoResumida,
@@ -148,7 +150,13 @@ interface FaseNoSeletor {
  */
 @Component({
   selector: 'sel-step-fase',
-  imports: [ComboboxComponent, EditorDeCondicoesComponent, FormsModule, ReactiveFormsModule],
+  imports: [
+    ComboboxComponent,
+    EditorDeCondicoesComponent,
+    FormsModule,
+    ModeloDaExigenciaComponent,
+    ReactiveFormsModule,
+  ],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FaseStepComponent)],
@@ -1084,6 +1092,16 @@ export class FaseStepComponent {
    */
   escolherObrigatoriedade(id: string, valor: string): void {
     this.escreverExigencia(id, { obrigatorio: valor === 'sim' });
+  }
+
+  /** O modelo que a exigência oferece ao candidato nesta fase; `null` quando não oferece. */
+  modeloDoDocumento(id: string): ModeloDaExigencia | null {
+    return this.exigenciaDoDocumento(id).modelo;
+  }
+
+  /** Vincula o modelo confirmado à exigência desta fase, ou o desvincula com `null`. */
+  definirModelo(id: string, modelo: ModeloDaExigencia | null): void {
+    this.escreverExigencia(id, { modelo });
   }
 
   consequenciaDoDocumento(id: string): string {

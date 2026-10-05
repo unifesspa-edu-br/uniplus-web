@@ -14,6 +14,13 @@ export type IniciarUploadDocumentoEditalDto =
   components['schemas']['IniciarUploadDocumentoEditalDto'];
 export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
 export type AcessoDocumentoEditalDto = components['schemas']['AcessoDocumentoEditalDto'];
+export type IniciarEnvioDoModeloDeDocumentoRequest =
+  components['schemas']['IniciarEnvioDoModeloDeDocumentoRequest'];
+export type IniciarEnvioDoModeloDeDocumentoDto =
+  components['schemas']['IniciarEnvioDoModeloDeDocumentoDto'];
+export type ModeloDeDocumentoDto = components['schemas']['ModeloDeDocumentoDto'];
+export type AcessoModeloDeDocumentoDto = components['schemas']['AcessoModeloDeDocumentoDto'];
+export type ModeloDaExigenciaDto = components['schemas']['ModeloDaExigenciaDto'];
 export type ConfiguracaoTaxaInscricaoDto = components['schemas']['ConfiguracaoTaxaInscricaoDto'];
 export type DefinirTaxaInscricaoRequest = components['schemas']['DefinirTaxaInscricaoRequest'];
 export type FundamentoIsencaoDto = components['schemas']['FundamentoIsencaoDto'];
@@ -870,6 +877,55 @@ export class ProcessosSeletivosApi {
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital/${encodeURIComponent(documentoEditalId)}/confirmacao`,
       null,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/modelos-de-documento` — primeiro dos três passos
+   * do envio do modelo de documento que uma exigência oferece ao candidato: cria o modelo pendente
+   * com o nome que o candidato recebe no download e o formato editável (`DOCX` ou `ODT`), e
+   * devolve a URL pré-assinada de PUT, o content type que ela exige e o instante em que expira.
+   */
+  iniciarEnvioModeloDeDocumento(
+    processoSeletivoId: string,
+    request: IniciarEnvioDoModeloDeDocumentoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<IniciarEnvioDoModeloDeDocumentoDto>> {
+    return this.http.post<ApiResult<IniciarEnvioDoModeloDeDocumentoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/modelos-de-documento`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * Terceiro passo: a API lê o arquivo no storage, confere que é documento de texto do formato
+   * declarado e sem macro, calcula o hash e sela o modelo como imutável. Não recebe corpo.
+   */
+  confirmarEnvioModeloDeDocumento(
+    processoSeletivoId: string,
+    modeloDeDocumentoId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<ModeloDeDocumentoDto>> {
+    return this.http.post<ApiResult<ModeloDeDocumentoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/modelos-de-documento/${encodeURIComponent(modeloDeDocumentoId)}/confirmacao`,
+      null,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/modelos-de-documento/{modeloId}/acesso` — o acesso
+   * de leitura a um modelo confirmado, para conferi-lo antes da publicação. A URL vem assinada,
+   * com validade curta e emitida a cada chamada, pela mesma razão do acesso ao edital.
+   */
+  obterAcessoModeloDeDocumento(
+    processoSeletivoId: string,
+    modeloDeDocumentoId: string,
+  ): Observable<ApiResult<AcessoModeloDeDocumentoDto>> {
+    return this.http.get<ApiResult<AcessoModeloDeDocumentoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/modelos-de-documento/${encodeURIComponent(modeloDeDocumentoId)}/acesso`,
+      { context: withVendorMime('acesso-modelo-de-documento', 1) },
     );
   }
 }

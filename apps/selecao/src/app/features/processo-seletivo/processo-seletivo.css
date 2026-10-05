@@ -807,6 +807,52 @@
 }
 
 /*
+ * O modelo de documento atravessa o grid dos eixos, como o editor de condições: o aviso de
+ * publicação e o hash não cabem numa coluna de campo curto.
+ */
+.sel-processo .doc-item__modelo {
+  grid-column: 1 / -1;
+}
+
+.sel-processo .modelo-da-exigencia {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sel-processo .modelo-da-exigencia__dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.sel-processo .modelo-da-exigencia__dados dt {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.sel-processo .modelo-da-exigencia__dados dd {
+  margin: 0;
+  min-width: 0;
+}
+
+/* O hash tem 64 caracteres sem espaço: sem quebra, estoura a largura a 320 px. */
+.sel-processo .modelo-da-exigencia__hash {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .modelo-da-exigencia__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
  * O nome e a ação ficam na mesma linha, com a ação encostada à direita. Quando não sobra
  * largura para o nome, a ação desce para a linha de baixo, em vez de espremer o nome numa
  * coluna estreita ou passar por cima dele.

@@ -1863,6 +1863,7 @@ describe('CronogramaStepComponent', () => {
               idadeMaximaEmissao: null,
               formatosPermitidos: 'QUALQUER',
               tamanhoMaximoBytes: null,
+              modelo: null,
               ...patch,
             },
           },

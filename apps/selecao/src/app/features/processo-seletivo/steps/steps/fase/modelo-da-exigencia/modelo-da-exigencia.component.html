@@ -1,0 +1,97 @@
+<fieldset class="modelo-da-exigencia">
+  <legend class="label">Modelo para o candidato preencher (opcional)</legend>
+  <p class="field__hint">
+    Uma declaração que o candidato baixa junto do campo de envio, preenche, assina e devolve.
+  </p>
+
+  <!--
+    O aviso vem antes do campo e é a descrição dele: quem chega ao campo pelo teclado ou pelo leitor
+    de tela ouve o aviso antes de escolher o arquivo, e não depois de o arquivo já estar no servidor.
+  -->
+  <div class="alert alert--warning" [id]="idBase() + '-aviso'">
+    <div class="alert__body">
+      <p class="alert__title">O modelo fica público na publicação do edital</p>
+      <p class="alert__msg">
+        Qualquer pessoa poderá baixá-lo. Antes de enviar, remova do documento os dados de quem o
+        editou — autor, últimos editores, comentários e revisões — pela inspeção de documento do
+        editor de texto (no Word, "Inspecionar documento"; no LibreOffice, "Remover informações
+        pessoais ao salvar"). O sistema publica o arquivo exatamente como foi enviado, sem alterar o
+        conteúdo.
+      </p>
+    </div>
+  </div>
+
+  @if (modelo(); as vinculado) {
+    <dl class="modelo-da-exigencia__dados">
+      <div>
+        <dt>Arquivo</dt>
+        <dd>{{ vinculado.nomeArquivo }}</dd>
+      </div>
+      <div>
+        <dt>Formato</dt>
+        <dd>{{ vinculado.formato }}</dd>
+      </div>
+      <div>
+        <dt>Hash SHA-256</dt>
+        <dd><code class="modelo-da-exigencia__hash">{{ vinculado.hashSha256 }}</code></dd>
+      </div>
+    </dl>
+    <div class="modelo-da-exigencia__acoes">
+      <button
+        class="btn btn--tertiary btn--sm"
+        type="button"
+        [disabled]="abrindo()"
+        [attr.aria-busy]="abrindo() || null"
+        [attr.aria-label]="'Conferir o modelo de ' + nomeDoDocumento() + ' (abre em nova aba)'"
+        (click)="conferir()"
+      >
+        {{ abrindo() ? 'Abrindo…' : 'Conferir o modelo' }}
+      </button>
+      <button
+        class="btn btn--tertiary btn--sm"
+        type="button"
+        [disabled]="bloqueado()"
+        [attr.aria-label]="'Remover o modelo de ' + nomeDoDocumento()"
+        (click)="remover()"
+      >
+        Remover o modelo
+      </button>
+    </div>
+    @if (erroDeAbertura(); as erro) {
+      <p class="field__erro" role="alert">{{ erro }}</p>
+    }
+  }
+
+  <div class="form-field">
+    <label class="label" [attr.for]="idBase() + '-arquivo'">
+      {{ modelo() === null ? 'Enviar o modelo' : 'Trocar por outro modelo' }}
+    </label>
+    <input
+      class="input"
+      type="file"
+      accept=".docx,.odt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
+      [id]="idBase() + '-arquivo'"
+      [disabled]="bloqueado()"
+      [attr.aria-describedby]="idBase() + '-aviso ' + idBase() + '-formatos'"
+      [attr.aria-invalid]="recusa() !== null || envio()?.erro ? 'true' : null"
+      (change)="onArquivo($event)"
+    />
+    <p class="field__hint" [id]="idBase() + '-formatos'">
+      DOCX ou ODT, até 10 MB. PDF e imagem não servem: o candidato precisa editar o documento.
+    </p>
+    @if (recusa(); as mensagem) {
+      <p class="field__erro" role="alert">{{ mensagem }}</p>
+    }
+    @if (envio(); as atual) {
+      <p class="field__hint" role="status">{{ descricao(atual) }}</p>
+      @if (atual.erro; as erro) {
+        <p class="field__erro" role="alert">{{ erro }}</p>
+        @if (atual.retomavel) {
+          <button class="btn btn--tertiary btn--sm" type="button" (click)="retomar()">
+            Tentar novamente
+          </button>
+        }
+      }
+    }
+  </div>
+</fieldset>
