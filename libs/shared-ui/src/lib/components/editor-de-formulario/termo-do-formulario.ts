@@ -88,10 +88,10 @@ const ACEITES = [
       />
 
       <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do termo ' + nome()">
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover ' + nome() + ' para cima'" (click)="mover.emit(-1)">
+        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Subir ' + nome()" (click)="mover.emit(-1)">
           <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir
         </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover ' + nome() + ' para baixo'" (click)="mover.emit(1)">
+        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Descer ' + nome()" (click)="mover.emit(1)">
           <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer
         </button>
         <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" [attr.aria-label]="'Deixar de exigir o termo ' + nome()" (click)="remover.emit()">

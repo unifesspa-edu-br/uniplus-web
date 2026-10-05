@@ -208,7 +208,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                 type="button"
                 [id]="idDaEtapa(etapa) + '-subir'"
                 [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, -1)"
-                [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para cima'"
+                [attr.aria-label]="'Subir ' + nomeDaEtapa(etapa)"
                 (click)="moverAEtapa(etapa, -1)"
               >
                 Subir
@@ -218,7 +218,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
                 type="button"
                 [id]="idDaEtapa(etapa) + '-descer'"
                 [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, 1)"
-                [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para baixo'"
+                [attr.aria-label]="'Descer ' + nomeDaEtapa(etapa)"
                 (click)="moverAEtapa(etapa, 1)"
               >
                 Descer

@@ -368,7 +368,7 @@ describe('EditorDeFormularioComponent', () => {
 
     expect(cabecalho.contains(subir)).toBe(true);
     expect(subir.textContent?.trim()).toBe('Subir');
-    expect(subir.getAttribute('aria-label')).toBe('Mover a seção Escolaridade para cima');
+    expect(subir.getAttribute('aria-label')).toBe('Subir a seção Escolaridade');
     const nomesAcessiveis = [...tela().querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label') ?? '');
     expect([tela().textContent ?? '', ...nomesAcessiveis].join(' ')).not.toMatch(/\betapas?\b/i);
   });
