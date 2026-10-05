@@ -435,7 +435,10 @@ ui-editor-de-condicoes { display: block; }
   border-radius: var(--radius-md, 8px);
   padding: var(--space-3) var(--space-4);
   margin: 0;
+  /* O fieldset tem largura mínima do conteúdo por padrão; sem o zero, não encolhe em 320 px. */
+  min-inline-size: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   justify-items: start;
 }
@@ -444,6 +447,7 @@ ui-editor-de-condicoes { display: block; }
 .editor-condicoes__clausula {
   width: 100%;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   border-left: 3px solid var(--border-subtle);
   padding-left: var(--space-3);
@@ -493,6 +497,15 @@ ui-editor-de-condicoes { display: block; }
   gap: var(--space-2);
 }
 
+/* Rótulos de ação mais largos que a tela estreita ("Acrescentar condição que também precisa valer",
+   "Acrescentar grupo repetível"): o rótulo quebra em vez de empurrar a página. */
+.editor-condicoes__acoes > .btn,
+.editor-formulario__acrescentar > .btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: start;
+}
+
 /* O que a condição alcança e o erro são prosa: ocupam a linha inteira, não um campo ao lado dos outros. */
 .condicao-de-fato__nota {
   grid-column: 1 / -1;
@@ -515,6 +528,16 @@ ui-editor-de-condicoes { display: block; }
 }
 .pre-visualizacao-formularios__respostas > legend,
 .pre-visualizacao-formularios__respostas > .field__hint { grid-column: 1 / -1; }
+/* Rótulo, controle e nota em três linhas compartilhadas pelos vizinhos: com rótulos de uma, duas
+   ou três linhas, os controles da mesma fileira ficam na mesma altura. */
+.pre-visualizacao-formularios__respostas > ui-resposta-simulada {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--space-1);
+  align-content: start;
+}
+.pre-visualizacao-formularios__respostas > ui-resposta-simulada > .field__label { align-self: end; }
 .pre-visualizacao-formularios__acoes {
   display: flex;
   align-items: center;
@@ -554,10 +577,13 @@ ui-tabela-de-campos-avaliados { display: block; }
  * lista numerada; o anúncio de mover e recusar é texto visível acima das etapas.
  */
 ui-editor-de-formulario { display: grid; gap: var(--space-4); }
-ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-3); }
+/* Uma coluna que não passa da largura de quem a contém: sem o piso zero, um controle com opção longa
+   esticava a coluna e o editor transbordava na horizontal em 320 px. */
+ui-item-do-formulario, ui-secao-do-formulario { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
 
 .editor-formulario__etapa {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md, 8px);
@@ -569,6 +595,12 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* Código de termo é uma palavra só ("CONSULTA_AO_BANCO_CENTRAL"): quebra em vez de passar da borda. */
+.editor-formulario__cabecalho > code {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .editor-formulario__titulo-etapa,
@@ -635,8 +667,11 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
   color: var(--text-secondary);
 }
 
-/* Subir, descer e remover à direita do título, como na fase do cronograma; em tela estreita, descem. */
-.editor-formulario__acoes-da-secao {
+/*
+ * Subir, descer e remover à direita do título — da seção, do campo, do grupo e do termo —, como
+ * na fase do cronograma; em tela estreita, descem.
+ */
+.editor-formulario__acoes-do-cabecalho {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
@@ -646,6 +681,7 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
 /* O corpo repete o espaçamento da etapa; com display próprio, o atributo hidden precisa de regra. */
 .editor-formulario__corpo {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
 }
@@ -655,6 +691,7 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
 .editor-formulario__itens,
 .editor-formulario__basicos {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   margin: 0;
   padding: 0;
@@ -665,12 +702,12 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
 
 .editor-formulario__item {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   border-left: 3px solid var(--border-subtle);
   padding-left: var(--space-3);
 }
 
-.editor-formulario__acoes,
 .editor-formulario__acrescentar {
   display: flex;
   flex-wrap: wrap;
@@ -686,6 +723,8 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
   display: grid;
   gap: var(--space-3);
   margin: 0;
+  /* O fieldset tem largura mínima do conteúdo por padrão; sem o zero, não encolhe em 320 px. */
+  min-inline-size: 0;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md, 8px);
   padding: var(--space-3);

@@ -33,6 +33,17 @@ const ACEITES = [
       <div class="editor-formulario__cabecalho">
         <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h4>
         <code>{{ termo().codigo }}</code>
+        <div class="editor-formulario__acoes-do-cabecalho" role="group" [attr.aria-label]="'Ações do termo ' + nome()">
+          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover ' + nome() + ' para cima'" (click)="mover.emit(-1)">
+            Subir
+          </button>
+          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover ' + nome() + ' para baixo'" (click)="mover.emit(1)">
+            Descer
+          </button>
+          <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" [attr.aria-label]="'Deixar de exigir o termo ' + nome()" (click)="remover.emit()">
+            Remover
+          </button>
+        </div>
       </div>
 
       @if (erros().length > 0) {
@@ -87,17 +98,6 @@ const ACEITES = [
         (condicoesChange)="trocarExibicao($event)"
       />
 
-      <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do termo ' + nome()">
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover ' + nome() + ' para cima'" (click)="mover.emit(-1)">
-          <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir
-        </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover ' + nome() + ' para baixo'" (click)="mover.emit(1)">
-          <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer
-        </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" [attr.aria-label]="'Deixar de exigir o termo ' + nome()" (click)="remover.emit()">
-          <i class="pi pi-trash" aria-hidden="true"></i> Remover
-        </button>
-      </div>
     </article>
   `,
 })

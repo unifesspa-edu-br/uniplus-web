@@ -52,6 +52,38 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         @if (fatoDesativado()) {
           <ui-tag variant="warning">Fato desativado</ui-tag>
         }
+        <div class="editor-formulario__acoes-do-cabecalho" role="group" [attr.aria-label]="'Ações do campo ' + nome()">
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('subir')"
+            [disabled]="disabled() || !podeSubir()"
+            [attr.aria-label]="'Mover ' + nome() + ' para cima'"
+            (click)="mover.emit(-1)"
+          >
+            Subir
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('descer')"
+            [disabled]="disabled() || !podeDescer()"
+            [attr.aria-label]="'Mover ' + nome() + ' para baixo'"
+            (click)="mover.emit(1)"
+          >
+            Descer
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [disabled]="disabled() || remocaoTravadaPor() !== null"
+            [attr.aria-label]="'Remover o campo ' + nome()"
+            [attr.aria-describedby]="remocaoTravadaPor() !== null ? idDe('remocao-travada') : null"
+            (click)="remover.emit()"
+          >
+            Remover
+          </button>
+        </div>
       </div>
 
       @if (remocaoTravadaPor(); as motivo) {
@@ -182,38 +214,6 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         />
       }
 
-      <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do campo ' + nome()">
-        <button
-          class="btn btn--tertiary btn--sm"
-          type="button"
-          [id]="idDe('subir')"
-          [disabled]="disabled() || !podeSubir()"
-          [attr.aria-label]="'Mover ' + nome() + ' para cima'"
-          (click)="mover.emit(-1)"
-        >
-          <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir
-        </button>
-        <button
-          class="btn btn--tertiary btn--sm"
-          type="button"
-          [id]="idDe('descer')"
-          [disabled]="disabled() || !podeDescer()"
-          [attr.aria-label]="'Mover ' + nome() + ' para baixo'"
-          (click)="mover.emit(1)"
-        >
-          <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer
-        </button>
-        <button
-          class="btn btn--tertiary btn--sm"
-          type="button"
-          [disabled]="disabled() || remocaoTravadaPor() !== null"
-          [attr.aria-label]="'Remover o campo ' + nome()"
-          [attr.aria-describedby]="remocaoTravadaPor() !== null ? idDe('remocao-travada') : null"
-          (click)="remover.emit()"
-        >
-          <i class="pi pi-trash" aria-hidden="true"></i> Remover
-        </button>
-      </div>
     </article>
   `,
 })

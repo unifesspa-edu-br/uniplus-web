@@ -202,7 +202,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           }
           <!-- Na linha do título, como na fase do cronograma: com tudo recolhido, reordenar e remover são rápidos. -->
           @if (!fixa(etapa)) {
-            <div class="editor-formulario__acoes-da-secao" role="group" [attr.aria-label]="'Ações ' + daEtapa(etapa)">
+            <div class="editor-formulario__acoes-do-cabecalho" role="group" [attr.aria-label]="'Ações ' + daEtapa(etapa)">
               <button
                 class="btn btn--tertiary btn--sm"
                 type="button"

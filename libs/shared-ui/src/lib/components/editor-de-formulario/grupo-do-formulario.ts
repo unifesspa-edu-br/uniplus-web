@@ -52,6 +52,24 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
       <div class="editor-formulario__cabecalho">
         <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h4>
         <ui-tag variant="info">Grupo repetível</ui-tag>
+        <div class="editor-formulario__acoes-do-cabecalho" role="group" [attr.aria-label]="'Ações do grupo ' + nome()">
+          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para cima'" (click)="mover.emit(-1)">
+            Subir
+          </button>
+          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para baixo'" (click)="mover.emit(1)">
+            Descer
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [disabled]="disabled() || remocaoDoGrupoTravada() !== null"
+            [attr.aria-label]="'Remover o grupo ' + nome()"
+            [attr.aria-describedby]="remocaoDoGrupoTravada() !== null ? idDe('remocao-travada') : null"
+            (click)="remover.emit()"
+          >
+            Remover
+          </button>
+        </div>
       </div>
 
       @if (erros().length > 0) {
@@ -224,24 +242,6 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         <p class="field__hint" [id]="idDe('remocao-travada')">O grupo não pode ser removido: {{ motivo }}</p>
       }
 
-      <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do grupo ' + nome()">
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para cima'" (click)="mover.emit(-1)">
-          <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir
-        </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para baixo'" (click)="mover.emit(1)">
-          <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer
-        </button>
-        <button
-          class="btn btn--tertiary btn--sm"
-          type="button"
-          [disabled]="disabled() || remocaoDoGrupoTravada() !== null"
-          [attr.aria-label]="'Remover o grupo ' + nome()"
-          [attr.aria-describedby]="remocaoDoGrupoTravada() !== null ? idDe('remocao-travada') : null"
-          (click)="remover.emit()"
-        >
-          <i class="pi pi-trash" aria-hidden="true"></i> Remover grupo
-        </button>
-      </div>
     </article>
   `,
 })
