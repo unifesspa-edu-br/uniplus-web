@@ -85,7 +85,7 @@ import {
           Município: a lista do país não vem inteira, e o valor é escolhido pela busca no Geo e
           gravado pelo código IBGE — um só, ou vários na comparação com lista.
         -->
-        <div class="form-field">
+        <div class="form-field condicao-de-fato__valor">
           <label class="label" [attr.for]="municipioCampo.campoId()">
             {{ comparaComLista(condicao().operador) ? 'Municípios' : 'Município' }}
           </label>
@@ -101,7 +101,7 @@ import {
           />
         </div>
       } @else if (comparaComLista(condicao().operador)) {
-        <div class="form-field">
+        <div class="form-field condicao-de-fato__valor">
           <label class="label" [attr.for]="valoresCampo.campoId">Valores</label>
           <ui-combobox
             #valoresCampo
@@ -118,7 +118,7 @@ import {
           />
         </div>
       } @else if (fatoAtual()?.tipoDominio === 'BOOLEANO') {
-        <div class="form-field">
+        <div class="form-field condicao-de-fato__valor">
           <label class="label" [attr.for]="idDe('valor')">Resposta</label>
           <!--
             Duas opções fechadas, nunca texto livre: um campo de texto aqui aceitaria "Sim" e
@@ -142,7 +142,7 @@ import {
           </select>
         </div>
       } @else if (valoresEscolhiveis().length > 0) {
-        <div class="form-field">
+        <div class="form-field condicao-de-fato__valor">
           <label class="label" [attr.for]="idDe('valor')">Valor</label>
           <select
             class="select"
@@ -163,7 +163,7 @@ import {
           Fato numérico: o domínio não tem lista de valores, e o que ele aceita é um inteiro —
           decimal é recusado pelo servidor.
         -->
-        <div class="form-field">
+        <div class="form-field condicao-de-fato__valor">
           <label class="label" [attr.for]="idDe('valor')">Valor</label>
           <input
             class="input"
