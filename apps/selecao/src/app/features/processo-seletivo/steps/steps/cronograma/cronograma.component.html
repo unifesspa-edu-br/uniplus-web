@@ -1148,17 +1148,25 @@
         da outra, e é onde o operador confere se escolheu a que o edital declara.
       -->
       @if (invariantesDaContagem().length > 0) {
-        <div class="convencao-detalhe">
-          <h3 class="label">O que esta convenção faz</h3>
-          <ul class="convencao-detalhe__lista">
+        <details class="regra-explicada">
+          <summary>
+            O que esta convenção faz
+            <span class="regra-explicada__contagem"
+              >{{ invariantesDaContagem().length }} garantias</span
+            >
+          </summary>
+
+          <ul class="regra-explicada__invariantes">
             @for (invariante of invariantesDaContagem(); track invariante) {
               <li>{{ invariante }}</li>
             }
           </ul>
+
           @if (baseLegalDaContagem() !== '') {
-            <p class="field__hint">{{ baseLegalDaContagem() }}</p>
+            <p class="regra-explicada__rotulo">Base legal</p>
+            <p class="regra-explicada__legal">{{ baseLegalDaContagem() }}</p>
           }
-        </div>
+        </details>
       }
     </div>
   </form>
