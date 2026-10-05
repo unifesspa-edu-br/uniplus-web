@@ -73,10 +73,6 @@
             </option>
           }
         </select>
-        <span class="field__hint" id="form-finalidade-nova-ajuda">
-          Só aparecem as finalidades com fase no cronograma; a isenção, só quando o processo cobra
-          taxa de inscrição.
-        </span>
       </div>
       <button
         type="button"
@@ -87,6 +83,10 @@
       >
         Acrescentar formulário
       </button>
+      <span class="field__hint form-abas__ajuda" id="form-finalidade-nova-ajuda">
+        Só aparecem as finalidades com fase no cronograma; a isenção, só quando o processo cobra
+        taxa de inscrição.
+      </span>
     </div>
   }
 </div>
@@ -148,13 +148,6 @@
                   </option>
                 }
               </select>
-              <span class="field__hint" [id]="aba.idBase + '-modelo-ajuda'">
-                Só aparecem os modelos ativos de {{ aba.nome }} que servem ao tipo deste processo.
-                Aplicar um modelo substitui este formulário inteiro pela cópia dele.
-                @if (store.processoSeletivoId() === null) {
-                  O modelo só pode ser aplicado depois que o processo for criado, ao gravar o primeiro passo.
-                }
-              </span>
             </div>
             <button
               type="button"
@@ -167,6 +160,13 @@
               Aplicar modelo
             </button>
           </div>
+          <span class="field__hint" [id]="aba.idBase + '-modelo-ajuda'">
+            Só aparecem os modelos ativos de {{ aba.nome }} que servem ao tipo deste processo.
+            Aplicar um modelo substitui este formulário inteiro pela cópia dele.
+            @if (store.processoSeletivoId() === null) {
+              O modelo só pode ser aplicado depois que o processo for criado, ao gravar o primeiro passo.
+            }
+          </span>
         }
 
         @if (aba.recusaDaAplicacao; as recusa) {
