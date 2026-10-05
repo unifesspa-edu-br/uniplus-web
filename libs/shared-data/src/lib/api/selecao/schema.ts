@@ -7626,6 +7626,8 @@ export interface components {
             readonly nomeArquivo: string;
             readonly formato: string;
             readonly hashSha256: string;
+            /** Format: uri */
+            readonly urlDownload: string;
         };
         readonly MotivoDecisaoIsencaoDto: {
             /** Format: uuid */
