@@ -538,6 +538,69 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
 
 .editor-formulario__titulo-item { font-size: var(--text-base); }
 
+/*
+ * O título da etapa abre e fecha o corpo, como a fase no cronograma. Recolhida, ficam o título,
+ * o tipo, o resumo do que ela tem, os erros e as ações de mover e remover.
+ */
+.editor-formulario__alternar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-formulario__alternar > span:not([aria-hidden]) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.editor-formulario__alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+/* Triângulo que gira: o estado aberto/fechado visível sem depender de cor. */
+.editor-formulario__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+
+.editor-formulario__alternar[aria-expanded='true'] > .editor-formulario__seta {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-formulario__seta { transition: none; }
+}
+
+.editor-formulario__resumo {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* O corpo repete o espaçamento da etapa; com display próprio, o atributo hidden precisa de regra. */
+.editor-formulario__corpo {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.editor-formulario__corpo[hidden] { display: none; }
+
 .editor-formulario__itens,
 .editor-formulario__basicos {
   display: grid;
