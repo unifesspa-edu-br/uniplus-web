@@ -4,9 +4,11 @@ import {
   CONSEQUENCIA_REENVIO,
   FATO_MODALIDADE,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  agrupadosPorFormulario,
   baseLegalNova,
   comAlcanceDeTodasAsFases,
   comExigencia,
+  comFinalidade,
   comExigenciaNaRaiz,
   comExigidoDeTodos,
   comRecorteEscolhido,
@@ -16,6 +18,8 @@ import {
   exigenciasDaRaiz,
   exigenciasLocalizadasDaFase,
   exigidoDeTodos,
+  faltaOFormulario,
+  finalidadeDaExigencia,
   formatosDeclarados,
   modalidadesDaExigencia,
   semAExigencia,
@@ -32,7 +36,7 @@ import {
   recusasDeFaseDoGatilho,
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
-import { producaoDoRascunho } from '../../shared/fase-do-fato';
+import { fasesNoCronograma, producaoDoRascunho } from '../../shared/fase-do-fato';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -80,7 +84,8 @@ import {
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { descreverFase } from '../cronograma/cronograma-do-certame';
+import { descreverFase, finalidadesDaFase } from '../cronograma/cronograma-do-certame';
+import { nomeDaFinalidade } from '../formulario/formularios-por-finalidade';
 import {
   PAPEIS_ESCOLHIVEIS,
   problemasDaFase,
@@ -807,9 +812,24 @@ export class FaseStepComponent {
         normas: exigencia.basesLegais.map(descreverNorma),
         faltaNorma: this.faltaNormaResolvida(doc.id),
         repetido: this.declaradoMaisDeUmaVez(doc.id),
+        finalidade: this.finalidadeDoDocumento(doc.id),
       };
     }),
   );
+
+  /**
+   * A conferência por formulário: na fase que divide inscrição e isenção, o candidato apresenta
+   * cada documento no bloco de comprovação de um deles, e a lista única misturaria os dois. A fase
+   * de um formulário só, ou de nenhum, segue numa lista.
+   */
+  readonly conferenciaPorFormulario = computed(() =>
+    agrupadosPorFormulario(this.resumosVisiveis(), (resumo) => resumo.finalidade, this.finalidadesDaFaseAberta()),
+  );
+
+  /** Como a conferência nomeia o grupo de um formulário; o grupo sem formulário pede a escolha. */
+  tituloDoFormulario(finalidade: string | null): string {
+    return finalidade === null ? 'Formulário a escolher' : `Formulário de ${nomeDaFinalidade(finalidade)}`;
+  }
 
   /**
    * A norma que sustenta todos os documentos da fase, quando é uma só e resolvida. Ela aparece
@@ -960,6 +980,56 @@ export class FaseStepComponent {
   /** A etapa que coleta o documento nesta fase; vazio quando ele é da fase inteira. */
   etapaDoDocumento(id: string): string {
     return this.exigenciaDoDocumento(id).etapaId ?? '';
+  }
+
+  /**
+   * Os formulários que se respondem na fase aberta — onde o documento pode ser apresentado. Vazio
+   * na fase que não responde formulário nenhum, e aí não há o que escolher.
+   */
+  readonly finalidadesDaFaseAberta = computed<readonly string[]>(() => {
+    const fase = this.faseDoRascunho();
+    return fase === null ? [] : finalidadesDaFase(fase, this.catalogos.fasePorId());
+  });
+
+  /** Os formulários que a escolha oferece, como o seletor os nomeia. */
+  readonly formulariosEscolhiveis = computed(() =>
+    this.finalidadesDaFaseAberta().map((finalidade) => ({
+      valor: finalidade,
+      rotulo: `Formulário de ${nomeDaFinalidade(finalidade)}`,
+    })),
+  );
+
+  /** O formulário em que o documento é apresentado: o declarado, ou o único que a fase responde. */
+  finalidadeDoDocumento(id: string): string | null {
+    return finalidadeDaExigencia(this.exigenciaDoDocumento(id).finalidade, this.finalidadesDaFaseAberta());
+  }
+
+  /**
+   * O aviso de que o documento ainda não diz em que formulário é apresentado. Só a fase que divide
+   * inscrição e isenção o pede: a de um formulário só o preenche, e o servidor recusa o documento
+   * de fase de formulário sem ele.
+   */
+  faltaFormulario(id: string): string | null {
+    return faltaOFormulario(this.exigenciaDoDocumento(id).finalidade, this.finalidadesDaFaseAberta())
+      ? 'Escolha em que formulário o candidato apresenta este documento.'
+      : null;
+  }
+
+  /**
+   * Declara o formulário do documento nesta fase. Vale para a árvore de raiz inteira: as
+   * alternativas de um grupo se satisfazem num formulário só.
+   */
+  escolherFinalidade(id: string, finalidade: string): void {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return;
+
+    // A declaração passa a ser própria desta fase, como qualquer outra edição dela.
+    if (this.valeEmTodasAsFases(id)) this.recortarPorFase(id);
+
+    this.store.patchSection(
+      'documentos',
+      comFinalidade(this.store.draft().documentos, id, fase.codigo, finalidade === '' ? null : finalidade),
+    );
   }
 
   /**
@@ -1171,8 +1241,8 @@ export class FaseStepComponent {
    * primeira que aparecesse, e a releitura ao reabrir o processo perdendo a marca porque as
    * declarações não batem. Alinhar pela fase aberta é o que o operador vê ao ligar o regime.
    *
-   * Fase e etapa ficam como estão: são próprias de cada declaração, e é por isso que a
-   * comparação que relê a intenção também as ignora.
+   * Fase, etapa e formulário ficam como estão: são próprios de cada declaração — cada fase responde
+   * os seus formulários —, e é por isso que a comparação que relê a intenção também os ignora.
    */
   private normalizarDeclaracoesDoDocumento(
     exigencias: ExigenciasDoRascunho,
@@ -1190,6 +1260,7 @@ export class FaseStepComponent {
                 ...modelo,
                 faseCodigo: no.documento.faseCodigo,
                 etapaId: no.documento.etapaId,
+                finalidade: no.documento.finalidade,
               },
             }
           : no,
@@ -1359,7 +1430,11 @@ export class FaseStepComponent {
 
   /** O que o rascunho diz sobre o formulário e a fase em que cada fato é conhecido. */
   private readonly producaoDosFatos = computed(() =>
-    producaoDoRascunho(this.store.draft().formulario, this.fasesDoCronograma(), this.catalogos.fatos()),
+    producaoDoRascunho(
+      this.store.draft().formulario,
+      fasesNoCronograma(this.fasesDoCronograma(), this.catalogos.fasePorId()),
+      this.catalogos.fatos(),
+    ),
   );
 
   /**
@@ -1387,7 +1462,7 @@ export class FaseStepComponent {
           {
             fatos: fatosDoGatilhoNaFase(
               this.catalogos.fatos(),
-              exigencia.faseCodigo,
+              exigencia,
               producao,
               this.dominiosDoGatilho(),
               exigencia.condicoes.map((condicao) => condicao.fato),
@@ -1681,6 +1756,8 @@ interface ResumoDoDocumento {
   readonly normas: readonly NormaDescrita[];
   readonly faltaNorma: boolean;
   readonly repetido: string;
+  /** O formulário em que o documento é apresentado; `null` enquanto a fase dividida pede a escolha. */
+  readonly finalidade: string | null;
 }
 
 /** Um público que a conferência oferece, com o valor que o seletor guarda. */

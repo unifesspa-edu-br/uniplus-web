@@ -39,6 +39,7 @@ import {
   arvoreDeExigencias,
   exigenciaDecideResultado,
   exigenciasDaFase,
+  faltaOFormulario,
   gruposSemNormaResolvida,
   modalidadesDaExigencia,
   semAEtapa,
@@ -54,7 +55,7 @@ import {
   problemasDoGatilho,
   recusasDeFaseDoGatilho,
 } from '../../shared/gatilho-de-exigencia';
-import { producaoDoRascunho, recusaDeFaseDoServidor } from '../../shared/fase-do-fato';
+import { fasesNoCronograma, producaoDoRascunho, recusaDaExigenciaDoServidor } from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
 import {
   comCamposQueAsExigenciasPressupoem,
@@ -70,6 +71,7 @@ import {
   inscricaoDoServidor,
   type FormularioParaGravar,
 } from '../formulario/formulario-do-processo';
+import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 import {
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
@@ -79,6 +81,7 @@ import {
   componeNota,
   declaraNotaDoEnem,
   descreverFase,
+  finalidadesDaFase,
   recusaDaEtapaDeNotaDoEnem,
   problemasDoCronograma,
   renumerar,
@@ -365,7 +368,11 @@ export class CronogramaStepComponent {
     const nomePorCodigo = nomesDoCatalogo(this.catalogos.fatos());
     // A fase de cada fato é lida das fases como estão na tela, não das gravadas: reordenar o
     // cronograma pode deixar um gatilho citando o que só se conhece depois da exigência.
-    const producao = producaoDoRascunho(this.store.draft().formulario, fases, this.catalogos.fatos());
+    const producao = producaoDoRascunho(
+      this.store.draft().formulario,
+      fasesNoCronograma(fases, this.catalogos.fasePorId()),
+      this.catalogos.fatos(),
+    );
     const nomes = {
       fato: (codigo: string) => nomePorCodigo.get(codigo) ?? codigo,
       fase: this.catalogos.nomeDaFase(),
@@ -389,6 +396,9 @@ export class CronogramaStepComponent {
         ),
         reenvioSemComplementacao:
           exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
+        semFormulario:
+          fase !== undefined &&
+          faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, this.catalogos.fasePorId())),
         problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
         problemasDeFase: [
           ...new Set(recusasDeFaseDoGatilho(exigencia, producao, nomes).map((recusa) => recusa.orientacao)),
@@ -1382,6 +1392,9 @@ export class CronogramaStepComponent {
       faseIdPorCodigo,
       this.store.modalidadesDoProcesso(),
       new Set(detalhe.data.etapas.map((etapa) => etapa.id)),
+      // O formulário de cada fase pelas fases que acabaram de ser gravadas: é contra elas que o
+      // servidor confere o formulário de cada documento.
+      new Map(detalhe.data.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)])),
     );
 
     // Os campos do formulário saem ANTES das exigências, e não é preferência de ordem: uma
@@ -1417,7 +1430,7 @@ export class CronogramaStepComponent {
       return {
         valid: false,
         messages: [
-          `As etapas, o cronograma, o formulário de inscrição e as regras de modalidade foram gravados. ${recusaDeFaseDoServidor(gravacao.problem.code) ?? this.problemI18n.resolve(gravacao.problem).title}`,
+          `As etapas, o cronograma, o formulário de inscrição e as regras de modalidade foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
         ],
       };
     }

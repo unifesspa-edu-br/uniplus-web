@@ -102,6 +102,7 @@ function exigencia(parcial: Partial<ExigenciaDeDocumento> = {}): ExigenciaDeDocu
     tipoDocumentoId: 'titulo-de-eleitor',
     faseCodigo: 'INSCRICAO',
     etapaId: null,
+    finalidade: null,
     aplicabilidade: 'CONDICIONAL',
     obrigatorio: true,
     consequenciaIndeferimento: '',
@@ -563,9 +564,9 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
 
   const PRODUCAO: ProducaoDosFatos = {
     fases: [
-      { codigo: 'INSCRICAO', ordem: 1 },
-      { codigo: 'RESULTADO_FINAL', ordem: 2 },
-      { codigo: 'HABILITACAO', ordem: 3 },
+      { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO'] },
+      { codigo: 'RESULTADO_FINAL', ordem: 2, finalidades: [] },
+      { codigo: 'HABILITACAO', ordem: 3, finalidades: ['HABILITACAO'] },
     ],
     formularios: [
       { finalidade: 'INSCRICAO', faseCodigo: 'INSCRICAO', fatos: new Set(['PCD']) },
@@ -577,20 +578,35 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   const MODALIDADES = ['AC', 'LB_PPI'];
   const DOMINIOS = dominiosDoGatilho(FATOS, [], MODALIDADES);
   const codigos = (fatos: readonly FatoEscolhivel[]): readonly string[] => fatos.map((fato) => fato.codigo);
+  const na = (faseCodigo: string, finalidade: string | null = null) => ({ faseCodigo, finalidade });
 
   it('na habilitação, os fatos de todos os formulários e a modalidade da convocação, com as modalidades ofertadas', () => {
-    const oferecidos = fatosDoGatilhoNaFase(FATOS, 'HABILITACAO', PRODUCAO, DOMINIOS);
+    const oferecidos = fatosDoGatilhoNaFase(FATOS, na('HABILITACAO'), PRODUCAO, DOMINIOS);
 
     expect(codigos(oferecidos)).toEqual(['PCD', 'LAUDO_RECENTE', 'MODALIDADE_CONVOCACAO']);
     expect(oferecidos.find((fato) => fato.codigo === 'MODALIDADE_CONVOCACAO')?.valores).toEqual(MODALIDADES);
   });
 
   it('na inscrição, só o que já é conhecido nela', () => {
-    expect(codigos(fatosDoGatilhoNaFase(FATOS, 'INSCRICAO', PRODUCAO, DOMINIOS))).toEqual(['PCD']);
+    expect(codigos(fatosDoGatilhoNaFase(FATOS, na('INSCRICAO'), PRODUCAO, DOMINIOS))).toEqual(['PCD']);
+  });
+
+  it('na fase que divide inscrição e isenção, o documento da inscrição não oferece o fato que só a isenção coleta', () => {
+    const BOLSISTA = doProcesso({ codigo: 'BOLSISTA', nome: 'Bolsista', dominio: 'BOOLEANO' });
+    const dividida: ProducaoDosFatos = {
+      ...PRODUCAO,
+      fases: [{ codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO', 'ISENCAO_TAXA'] }, ...PRODUCAO.fases.slice(1)],
+      formularios: [...PRODUCAO.formularios, { finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', fatos: new Set(['BOLSISTA']) }],
+      catalogo: new Map([...PRODUCAO.catalogo, ['BOLSISTA', BOLSISTA]]),
+    };
+    const oferecidos = (finalidade: string) => codigos(fatosDoGatilhoNaFase([...FATOS, BOLSISTA], na('INSCRICAO', finalidade), dividida, DOMINIOS));
+
+    expect(oferecidos('INSCRICAO')).toEqual(['PCD']);
+    expect(oferecidos('ISENCAO_TAXA')).toEqual(['PCD', 'BOLSISTA']);
   });
 
   it('o fato que a exigência já cita e não pode citar vem por último, marcado', () => {
-    const oferecidos = fatosDoGatilhoNaFase(FATOS, 'INSCRICAO', PRODUCAO, DOMINIOS, ['LAUDO_RECENTE']);
+    const oferecidos = fatosDoGatilhoNaFase(FATOS, na('INSCRICAO'), PRODUCAO, DOMINIOS, ['LAUDO_RECENTE']);
 
     expect(codigos(oferecidos)).toEqual(['PCD', 'LAUDO_RECENTE']);
     expect(oferecidos[1]?.nome).toBe('Laudo recente (não citável nesta exigência)');

@@ -13,6 +13,7 @@ import {
   publicaResultadoDefinitivo,
   type AtoDoCatalogo,
 } from '../fase/configuracao-da-fase';
+import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 
 /** Origem de data que obriga a fase a declarar janela. */
 export const ORIGEM_DATA_PROPRIA = 'PROPRIA';
@@ -98,6 +99,18 @@ export function descreverFase(
     exigencias: canonica === undefined ? null : exigenciasDe(canonica, fase.produtos),
     foraDoCatalogo: canonica === undefined,
   };
+}
+
+/**
+ * As finalidades cujo formulário se responde na fase, com os atributos que a fase congelou ou, na
+ * fase recém-acrescentada, os do catálogo.
+ */
+export function finalidadesDaFase(
+  fase: FaseDoCronograma,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): readonly string[] {
+  const { coletaInscricao, coletaSolicitacaoIsencao } = descreverFase(fase, fasePorId);
+  return finalidadesQueAtende({ codigo: fase.codigo, coletaInscricao, coletaSolicitacaoIsencao });
 }
 
 /** A fase resolvida, como tela e validação precisam vê-la. */
@@ -265,6 +278,11 @@ export interface ExigenciaDeclarada {
   /** Se pede reenvio numa fase que não admite complementação. */
   readonly reenvioSemComplementacao: boolean;
   /**
+   * Se a fase responde mais de um formulário e a exigência ainda não diz em qual o candidato
+   * apresenta o documento — o servidor a recusa sem ele.
+   */
+  readonly semFormulario: boolean;
+  /**
    * O que impede o gatilho de ser gravado — fato fora do catálogo, comparação que o domínio
    * não admite, condição sem valor. Vazio quando o gatilho está íntegro, ou quando não há
    * gatilho nenhum.
@@ -305,6 +323,13 @@ function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readon
   for (const exigencia of comGatilhoIncompleto) {
     problemas.push(
       `A condição de "${exigencia.nome}" ainda não está completa: ${exigencia.problemasDeGatilho.join('; ')}.`,
+    );
+  }
+
+  const semFormulario = exigencias.filter((e) => e.faseViva && e.semFormulario).map((e) => e.nome);
+  if (semFormulario.length > 0) {
+    problemas.push(
+      `Há documento exigido sem o formulário em que o candidato o apresenta: ${[...new Set(semFormulario)].join(', ')}. Na fase dele, escolha o formulário.`,
     );
   }
 

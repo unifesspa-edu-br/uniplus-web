@@ -10936,7 +10936,8 @@
           "formatosPermitidos",
           "tamanhoMaximoBytes",
           "exigidoNaEtapaId",
-          "modelo"
+          "modelo",
+          "finalidade"
         ],
         "type": "object",
         "properties": {
@@ -11023,6 +11024,12 @@
                 "$ref": "#/components/schemas/ModeloDaExigenciaDto"
               }
             ]
+          },
+          "finalidade": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -11033,6 +11040,7 @@
           "tipoDocumentoNome",
           "obrigatorio",
           "faseId",
+          "finalidade",
           "etapaId",
           "situacao",
           "entidadeId",
@@ -11056,6 +11064,12 @@
           "faseId": {
             "type": "string",
             "format": "uuid"
+          },
+          "finalidade": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "etapaId": {
             "type": [
@@ -12934,6 +12948,12 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "finalidade": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
