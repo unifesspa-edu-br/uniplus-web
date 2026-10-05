@@ -592,6 +592,14 @@ ui-item-do-formulario, ui-secao-do-formulario { display: grid; gap: var(--space-
   color: var(--text-secondary);
 }
 
+/* Subir, descer e remover à direita do título, como na fase do cronograma; em tela estreita, descem. */
+.editor-formulario__acoes-da-secao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
 /* O corpo repete o espaçamento da etapa; com display próprio, o atributo hidden precisa de regra. */
 .editor-formulario__corpo {
   display: grid;

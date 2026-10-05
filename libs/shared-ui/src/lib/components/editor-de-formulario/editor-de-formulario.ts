@@ -83,7 +83,7 @@ import { TermoDoFormularioComponent } from './termo-do-formulario';
 const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
   [BLOCO_COMPROVACAO_DOCUMENTAL]: 'O candidato envia os documentos que o processo exige nesta fase.',
   [BLOCO_MODALIDADES_CALCULADAS]: 'O candidato vê as modalidades a que concorre, calculadas das respostas dele.',
-  [BLOCO_REVISAO_E_ACEITE]: 'O candidato revisa as respostas e aceita os termos. É sempre a última etapa.',
+  [BLOCO_REVISAO_E_ACEITE]: 'O candidato revisa as respostas e aceita os termos. Vem sempre por último.',
 };
 
 /**
@@ -199,6 +199,40 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           </ui-tag>
           @if (resumoDaEtapa(etapa); as resumo) {
             <span class="editor-formulario__resumo">{{ resumo }}</span>
+          }
+          <!-- Na linha do título, como na fase do cronograma: com tudo recolhido, reordenar e remover são rápidos. -->
+          @if (!fixa(etapa)) {
+            <div class="editor-formulario__acoes-da-secao" role="group" [attr.aria-label]="'Ações ' + daEtapa(etapa)">
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [id]="idDaEtapa(etapa) + '-subir'"
+                [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, -1)"
+                [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para cima'"
+                (click)="moverAEtapa(etapa, -1)"
+              >
+                Subir
+              </button>
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [id]="idDaEtapa(etapa) + '-descer'"
+                [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, 1)"
+                [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para baixo'"
+                (click)="moverAEtapa(etapa, 1)"
+              >
+                Descer
+              </button>
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [disabled]="disabled()"
+                [attr.aria-label]="'Remover ' + nomeDaEtapa(etapa)"
+                (click)="removerAEtapa(etapa)"
+              >
+                Remover
+              </button>
+            </div>
           }
         </div>
 
@@ -409,39 +443,6 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           }
         </div>
 
-        @if (!fixa(etapa)) {
-          <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações de ' + nomeDaEtapa(etapa)">
-            <button
-              class="btn btn--tertiary btn--sm"
-              type="button"
-              [id]="idDaEtapa(etapa) + '-subir'"
-              [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, -1)"
-              [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para cima'"
-              (click)="moverAEtapa(etapa, -1)"
-            >
-              <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir etapa
-            </button>
-            <button
-              class="btn btn--tertiary btn--sm"
-              type="button"
-              [id]="idDaEtapa(etapa) + '-descer'"
-              [disabled]="disabled() || !podeMoverEtapa(conteudo(), etapa.codigo, 1)"
-              [attr.aria-label]="'Mover ' + nomeDaEtapa(etapa) + ' para baixo'"
-              (click)="moverAEtapa(etapa, 1)"
-            >
-              <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer etapa
-            </button>
-            <button
-              class="btn btn--tertiary btn--sm"
-              type="button"
-              [disabled]="disabled()"
-              [attr.aria-label]="'Remover ' + nomeDaEtapa(etapa)"
-              (click)="removerAEtapa(etapa)"
-            >
-              <i class="pi pi-trash" aria-hidden="true"></i> Remover etapa
-            </button>
-          </div>
-        }
       </section>
     }
 
@@ -746,8 +747,15 @@ export class EditorDeFormularioComponent {
     return `${this.idBase()}-item-${item.fatoCodigo}`;
   }
 
+  /** Como a tela chama a etapa: seção ou bloco do sistema — "etapa" é termo do cronograma do processo. */
   protected nomeDaEtapa(etapa: EtapaDoFormulario): string {
-    return `a etapa ${etapa.titulo.trim() || 'sem título'}`;
+    const titulo = etapa.titulo.trim() || 'sem título';
+    return etapa.tipo === this.secao ? `a seção ${titulo}` : `o bloco ${titulo}`;
+  }
+
+  protected daEtapa(etapa: EtapaDoFormulario): string {
+    const titulo = etapa.titulo.trim() || 'sem título';
+    return etapa.tipo === this.secao ? `da seção ${titulo}` : `do bloco ${titulo}`;
   }
 
   protected descricaoDoBloco(etapa: EtapaDoFormulario): string {
@@ -873,7 +881,7 @@ export class EditorDeFormularioComponent {
     this.aplicar(moverEtapa(this.conteudo(), etapa.codigo, direcao, this.nomes()), (conteudo) => {
       const etapas = etapasEmOrdem(conteudo);
       const posicao = etapas.findIndex((e) => e.codigo === etapa.codigo) + 1;
-      this.anuncio.set(`${etapa.titulo} movida para a posição ${posicao} de ${etapas.length}.`);
+      this.anuncio.set(`“${etapa.titulo}” foi para a posição ${posicao} de ${etapas.length}.`);
       this.focarBotaoDeMover(this.idDaEtapa(etapa), direcao);
     });
   }
