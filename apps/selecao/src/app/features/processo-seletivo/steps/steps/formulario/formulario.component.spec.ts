@@ -227,6 +227,7 @@ describe('FormularioStepComponent', () => {
           tipoDocumentoNome: 'Documento de identidade',
           obrigatorio: true,
           faseId: 'F-INSCRICAO',
+          finalidade: 'INSCRICAO',
           etapaId: null,
           situacao: 'EXIGIDO',
           entidadeId: null,
@@ -238,7 +239,7 @@ describe('FormularioStepComponent', () => {
     fixture.detectChanges();
 
     const tabela = Array.from(host.querySelectorAll('table')).find((elemento) => elemento.querySelector('caption')?.textContent?.includes('Documentos da fase'));
-    expect(tabela?.querySelector('caption')?.textContent?.trim()).toBe('Documentos da fase INSCRICAO diante das respostas simuladas');
+    expect(tabela?.querySelector('caption')?.textContent?.trim()).toBe('Documentos da fase INSCRICAO, no formulário de inscrição, diante das respostas simuladas');
     expect(tabela?.querySelector('td[data-label="Situação"]')?.textContent?.trim()).toBe('Exigido');
   });
 

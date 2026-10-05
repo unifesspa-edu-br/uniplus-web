@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { documentosPorFase, letrasDasAlternativas, resumoDaPreVisualizacao, textoDasAlternativas } from './leitura-do-resultado';
+import { documentosPorFase, documentosPorFormulario, letrasDasAlternativas, resumoDaPreVisualizacao, textoDasAlternativas } from './leitura-do-resultado';
 import type { DocumentoAvaliado, GrupoAvaliado } from './pre-visualizacao-de-formularios';
 
 const GRUPO: GrupoAvaliado = {
@@ -17,6 +17,7 @@ const DOCUMENTO: DocumentoAvaliado = {
   nome: 'RG',
   obrigatorio: true,
   fase: { chave: 'INSCRICAO', nome: 'Inscrição', ordem: 1 },
+  finalidade: 'INSCRICAO',
   etapa: null,
   situacao: 'EXIGIDO',
   grupo: null,
@@ -50,6 +51,22 @@ describe('documentos da pré-visualização', () => {
       ['INSCRICAO', 2],
       ['HABILITACAO', 1],
       ['RESULTADO', 1],
+    ]);
+  });
+
+  it('cada formulário lista só os seus documentos, na ordem dos formulários, e o que é de fora de formulário por último', () => {
+    const daIsencao = { ...DOCUMENTO, nome: 'Comprovante de renda', finalidade: 'ISENCAO_TAXA' };
+    const foraDeFormulario = { ...DOCUMENTO, nome: 'Termo', finalidade: null, fase: { chave: 'MATRICULA', nome: 'Matrícula', ordem: 6 } };
+
+    expect(
+      documentosPorFormulario([foraDeFormulario, daIsencao, DOCUMENTO]).map((formulario) => [
+        formulario.finalidade,
+        formulario.fases.flatMap((fase) => fase.documentos.map((documento) => documento.nome)),
+      ]),
+    ).toEqual([
+      ['INSCRICAO', ['RG']],
+      ['ISENCAO_TAXA', ['Comprovante de renda']],
+      [null, ['Termo']],
     ]);
   });
 

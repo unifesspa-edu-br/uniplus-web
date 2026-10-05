@@ -5,7 +5,7 @@ import { resultadoDoProcesso } from './pre-visualizacao-do-processo';
 const no = (campos: Partial<NoExigenciaDto>): NoExigenciaDto => ({ documento: null, filhos: [], repetePorEntidade: null, ...campos }) as NoExigenciaDto;
 const folha = (id: string): NoExigenciaDto => no({ documento: { id } as NoExigenciaDto['documento'] });
 const documento = (exigenciaId: string) =>
-  ({ exigenciaId, tipoDocumentoNome: 'RG', obrigatorio: true, faseId: 'f', etapaId: null, situacao: 'EXIGIDO', entidadeId: null, alternativas: [] }) as unknown as PreVisualizacaoDoProcessoDto['documentos'][number];
+  ({ exigenciaId, tipoDocumentoNome: 'RG', obrigatorio: true, faseId: 'f', finalidade: 'INSCRICAO', etapaId: null, situacao: 'EXIGIDO', entidadeId: null, alternativas: [] }) as unknown as PreVisualizacaoDoProcessoDto['documentos'][number];
 
 describe('resultado da pré-visualização do processo', () => {
   it('a exigência repetida por ocorrência leva o grupo do ancestral mais próximo que repete', () => {

@@ -4,10 +4,10 @@ import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import type { Observable } from 'rxjs';
 
 import { AlertComponent } from '../alert/alert';
-import { etapasEmOrdem, todosOsCampos, type ConteudoDoFormulario, type FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
+import { FINALIDADES, etapasEmOrdem, todosOsCampos, type ConteudoDoFormulario, type FatoDoFormulario } from '../editor-de-formulario/formulario-editavel';
 import { SpinnerComponent } from '../spinner/spinner';
 import { rotuloDaSituacao, rotuloDoEstado } from './estado-avaliado';
-import { documentosPorFase, letrasDasAlternativas, resumoDaPreVisualizacao, textoDasAlternativas } from './leitura-do-resultado';
+import { documentosPorFormulario, letrasDasAlternativas, resumoDaPreVisualizacao, textoDasAlternativas } from './leitura-do-resultado';
 import { RespostaSimuladaComponent, type RespostaDada } from './resposta-simulada';
 import {
   acrescentarOcorrencia,
@@ -111,6 +111,11 @@ export interface DocumentoAvaliado {
   readonly obrigatorio: boolean;
   /** A fase em que o documento é exigido; a ordem é a do cronograma. */
   readonly fase: { readonly chave: string; readonly nome: string; readonly ordem: number };
+  /**
+   * O formulário em cujo bloco de comprovação o documento é apresentado; nulo quando a fase não
+   * responde formulário nenhum.
+   */
+  readonly finalidade: string | null;
   /** O nome da etapa da fase, quando o documento é exigido numa etapa. */
   readonly etapa: string | null;
   /** `EXIGIDO`, `NAO_EXIGIDO` ou `INDETERMINADO`. */
@@ -362,11 +367,16 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
           com o grupo a que se refere.
         </p>
         @let letras = letrasDasAlternativas(documentos);
-        @for (fase of documentosPorFase(documentos); track fase.chave) {
+        @for (formulario of documentosPorFormulario(documentos); track formulario.finalidade ?? '') {
+          @let noFormulario = formulario.finalidade === null ? 'fora de formulário' : 'no formulário de ' + nomeDe(formulario.finalidade);
+          <h4 class="pre-visualizacao-formularios__formulario">
+            {{ formulario.finalidade === null ? 'Fora de formulário' : 'Formulário de ' + nomeDe(formulario.finalidade) }}
+          </h4>
+        @for (fase of formulario.fases; track fase.chave) {
           @let comEtapa = temEtapa(fase.documentos);
           <div class="table-responsive">
             <table>
-              <caption>Documentos da fase {{ fase.nome }} diante das respostas simuladas</caption>
+              <caption>Documentos da fase {{ fase.nome }}, {{ noFormulario }}, diante das respostas simuladas</caption>
               <thead>
                 <tr>
                   <th scope="col">Documento</th>
@@ -395,6 +405,7 @@ export type AvaliacaoDeFormularios = (simulacao: SimulacaoDeFormularios) => Obse
               </tbody>
             </table>
           </div>
+        }
         } @empty {
           <p class="field__hint">Nenhuma exigência documental gravada no processo.</p>
         }
@@ -530,7 +541,7 @@ export class PreVisualizacaoDeFormulariosComponent {
   protected readonly estadoDoGrupo = estadoDoGrupo;
   protected readonly noLimite = noLimite;
   protected readonly ehDoCandidato = ehDoCandidato;
-  protected readonly documentosPorFase = documentosPorFase;
+  protected readonly documentosPorFormulario = documentosPorFormulario;
   protected readonly letrasDasAlternativas = letrasDasAlternativas;
   protected readonly textoDasAlternativas = textoDasAlternativas;
 
@@ -558,8 +569,17 @@ export class PreVisualizacaoDeFormulariosComponent {
     return rotuloDaOcorrencia(this.ocorrencias(), documento.grupo, rotulo, documento.ocorrenciaId) ?? `${rotulo}, ${documento.ocorrenciaId}`;
   }
 
+  /**
+   * O nome do formulário na frase "formulário de …". O documento pode citar o formulário que o
+   * hospedeiro ainda não tem — a exigência se declara pela fase, em qualquer ordem —, e então vale o
+   * nome da finalidade.
+   */
   protected nomeDe(finalidade: string): string {
-    return this.formularios().find((formulario) => formulario.finalidade === finalidade)?.nome ?? finalidade;
+    return (
+      this.formularios().find((formulario) => formulario.finalidade === finalidade)?.nome ??
+      FINALIDADES.find((opcao) => opcao.valor === finalidade)?.rotulo.toLocaleLowerCase('pt-BR') ??
+      finalidade
+    );
   }
 
   /** Como ler os campos e as seções de cada formulário no resultado: pelo rótulo e pelo título que o formulário dá. */
