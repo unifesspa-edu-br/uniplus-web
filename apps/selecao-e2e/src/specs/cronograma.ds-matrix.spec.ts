@@ -315,7 +315,10 @@ test.describe('Cronograma — matriz DS @ds', () => {
             .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
             .map(topoDoInput)
             .filter((topo): topo is number => topo !== null);
-          return { vizinhos: vizinhos.length, diferencas: vizinhos.map((topo) => topo - referencia) };
+          return {
+            vizinhos: vizinhos.length,
+            diferencas: vizinhos.map((topo) => topo - referencia),
+          };
         });
         if (alinhamento.vizinhos === 0) continue;
         larguraComVizinhos ??= largura;
