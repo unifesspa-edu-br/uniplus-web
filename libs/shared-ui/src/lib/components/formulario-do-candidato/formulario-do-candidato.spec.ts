@@ -623,17 +623,26 @@ describe('FormularioDoCandidatoComponent', () => {
     });
   });
 
-  it('sem CEP, a cidade escolhida na busca do Geo é a resposta', async () => {
+  it('sem CEP, a cidade escolhida no campo com busca do Geo é a resposta', async () => {
     const tela = montar(RESIDENCIA);
 
     clicar(botao(tela, 'preencher sem CEP'));
-    const cidades = tela.querySelector('select') as HTMLSelectElement;
+    const uf = tela.querySelector('select[id$="-uf"]') as HTMLSelectElement;
+    uf.value = 'PA';
+    uf.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const campo = tela.querySelector('input[role="combobox"]') as HTMLInputElement;
+    campo.value = 'Mara';
+    campo.dispatchEvent(new Event('input'));
+    let marabaNaLista: HTMLElement | undefined;
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(cidades.options).toHaveLength(2);
+      marabaNaLista = [...tela.querySelectorAll<HTMLElement>('[role="option"]')].find((item) =>
+        item.textContent?.includes('Marabá (PA)'),
+      );
+      expect(marabaNaLista).toBeDefined();
     });
-    cidades.value = MARABA.codigoIbge;
-    cidades.dispatchEvent(new Event('change'));
+    marabaNaLista?.dispatchEvent(new MouseEvent('mousedown'));
     fixture.detectChanges();
 
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
@@ -660,7 +669,8 @@ describe('FormularioDoCandidatoComponent', () => {
     fixture.detectChanges();
 
     const tela = fixture.nativeElement as HTMLElement;
-    expect(tela.querySelector('output')?.textContent).toContain('Marabá — PA');
+    expect((tela.querySelector('input[id$="-cidade"]') as HTMLInputElement).value).toBe('Marabá');
+    expect((tela.querySelector('input[id$="-uf"]') as HTMLInputElement).value).toBe('PA');
     expect((tela.querySelector('input[id$="-logradouro"]') as HTMLInputElement).value).toBe(
       'Rua Folha 31',
     );

@@ -103,6 +103,18 @@ describe('ComboboxComponent', () => {
     expect(contagem?.textContent).toContain('1 opção casa com “rg”');
   });
 
+  it('a contagem fora da vista continua anunciada ao leitor de tela', () => {
+    const solto = TestBed.createComponent(ComboboxComponent);
+    solto.componentRef.setInput('rotulo', 'Documentos');
+    solto.componentRef.setInput('grupos', GRUPOS);
+    solto.componentRef.setInput('contagemVisivel', false);
+    solto.detectChanges();
+
+    const contagem = (solto.nativeElement as HTMLElement).querySelector('[role="status"]');
+    expect(contagem?.classList).toContain('sr-only');
+    expect(contagem?.textContent).toContain('4 opções disponíveis.');
+  });
+
   it('diz quando não alcança nada, sem deixar a lista muda', () => {
     digitar('inexistente');
 
