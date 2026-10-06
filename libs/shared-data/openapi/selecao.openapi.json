@@ -16661,6 +16661,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "orientacao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       }

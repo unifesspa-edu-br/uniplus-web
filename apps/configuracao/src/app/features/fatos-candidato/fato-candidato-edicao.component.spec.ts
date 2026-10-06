@@ -135,17 +135,44 @@ describe('FatoCandidatoEdicaoComponent', () => {
     controller.match(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`).forEach((req) => req.flush(perfil));
   });
 
+  it('o valor acrescentado leva a orientação sem os espaços das pontas, e a orientação em branco vai nula', async () => {
+    await carregar(corRaca(false));
+    const componente = fixture.componentInstance as unknown as {
+      novoValor: { setValue(v: { codigo: string; descricao: string; orientacao: string }): void };
+      acrescentarValor(): void;
+    };
+    const acrescentar = async (orientacao: string): Promise<unknown> => {
+      componente.novoValor.setValue({ codigo: 'PARDA', descricao: 'Parda', orientacao });
+      componente.acrescentarValor();
+      const post = controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}/valores`);
+      const corpo = post.request.body;
+      post.flush(null, { status: 204, statusText: 'No Content' });
+      await Promise.resolve();
+      TestBed.inject(ApplicationRef).tick();
+      controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`).flush(corRaca(false));
+      await Promise.resolve();
+      TestBed.inject(ApplicationRef).tick();
+      return corpo;
+    };
+
+    expect(await acrescentar('  Passa pela heteroidentificação.  ')).toMatchObject({
+      codigo: 'PARDA',
+      orientacao: 'Passa pela heteroidentificação.',
+    });
+    expect(await acrescentar('   ')).toMatchObject({ orientacao: null });
+  });
+
   it('acrescentar o valor que falta não apaga a regra que está sendo montada', async () => {
     const perfil: FatoCandidatoDto = { ...corRaca(false), codigo: 'PERFIL', origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:PERFIL', valores: [] };
     await carregar(perfil);
     const componente = fixture.componentInstance as unknown as {
       acrescentarRegra(): void;
       regras(): readonly unknown[];
-      novoValor: { setValue(v: { codigo: string; descricao: string }): void };
+      novoValor: { setValue(v: { codigo: string; descricao: string; orientacao: string }): void };
       acrescentarValor(): void;
     };
     componente.acrescentarRegra();
-    componente.novoValor.setValue({ codigo: 'B', descricao: '' });
+    componente.novoValor.setValue({ codigo: 'B', descricao: '', orientacao: '' });
 
     componente.acrescentarValor();
     controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}/valores`).flush(null, { status: 204, statusText: 'No Content' });

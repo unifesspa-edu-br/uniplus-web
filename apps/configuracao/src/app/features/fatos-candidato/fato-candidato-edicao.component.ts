@@ -145,7 +145,12 @@ interface RegraEmEdicao {
                   @for (valor of f.valores; track valor.codigo) {
                     <tr>
                       <td data-label="Código"><code>{{ valor.codigo }}</code></td>
-                      <td data-label="Descrição">{{ valor.descricao || '—' }}</td>
+                      <td data-label="Descrição">
+                        {{ valor.descricao || '—' }}
+                        @if (valor.orientacao) {
+                          <p class="cfg-muted">{{ valor.orientacao }}</p>
+                        }
+                      </td>
                       <td data-label="Situação">
                         <ui-tag [variant]="valor.ativo ? 'success' : 'neutral'">{{ valor.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                       </td>
@@ -186,6 +191,14 @@ interface RegraEmEdicao {
                 <input class="input" type="text" formControlName="descricao" [attr.aria-invalid]="erroNovoValor('descricao') ? 'true' : null" [attr.aria-describedby]="erroNovoValor('descricao') ? 'cfg-fato-valor-descricao-erro' : null" />
                 @if (erroNovoValor('descricao')) {
                   <span class="field__error" id="cfg-fato-valor-descricao-erro">{{ erroNovoValor('descricao') }}</span>
+                }
+              </label>
+              <label class="field form-grid__full" [class.is-error]="erroNovoValor('orientacao')">
+                <span class="field__label">Orientação ao candidato</span>
+                <textarea class="textarea" rows="2" formControlName="orientacao" [attr.aria-describedby]="erroNovoValor('orientacao') ? 'cfg-fato-valor-orientacao-ajuda cfg-fato-valor-orientacao-erro' : 'cfg-fato-valor-orientacao-ajuda'" [attr.aria-invalid]="erroNovoValor('orientacao') ? 'true' : null"></textarea>
+                <span class="field__hint" id="cfg-fato-valor-orientacao-ajuda">Aparece abaixo da opção, no formulário. Use só quando o candidato precisa saber algo sobre ela.</span>
+                @if (erroNovoValor('orientacao')) {
+                  <span class="field__error" id="cfg-fato-valor-orientacao-erro">{{ erroNovoValor('orientacao') }}</span>
                 }
               </label>
             </div>
@@ -376,6 +389,7 @@ export class FatoCandidatoEdicaoComponent {
   protected readonly novoValor = new FormGroup({
     codigo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(50)] }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
+    orientacao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
   });
 
   /**
@@ -429,7 +443,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected acrescentarValor(): void {
-    // A descrição do valor é obrigatória no fato declarado: é o rótulo que o candidato lê.
+    // A descrição do valor é obrigatória no fato declarado: é o nome da opção que o candidato lê.
     const controleDaDescricao = this.novoValor.controls.descricao;
     if (this.fato()?.origem === 'DECLARADO' && controleDaDescricao.value.trim() === '') {
       controleDaDescricao.setErrors({ required: true });
@@ -439,12 +453,17 @@ export class FatoCandidatoEdicaoComponent {
       this.novoValor.markAllAsTouched();
       return;
     }
-    const { codigo, descricao } = this.novoValor.getRawValue();
+    const { codigo, descricao, orientacao } = this.novoValor.getRawValue();
     const ordem = this.fato()?.valores.length ?? 0;
     this.executar(
       this.api.acrescentarValor(
         this.id(),
-        { codigo: codigo.trim().toLocaleUpperCase('pt-BR'), descricao: descricao.trim() || null, ordem },
+        {
+          codigo: codigo.trim().toLocaleUpperCase('pt-BR'),
+          descricao: descricao.trim() || null,
+          ordem,
+          orientacao: orientacao.trim() || null,
+        },
         withIdempotencyKey(this.chaveValor),
       ),
       'Valor acrescentado',
@@ -570,7 +589,7 @@ export class FatoCandidatoEdicaoComponent {
     return mensagemDoControle(this.descritivo.controls[campo]);
   }
 
-  protected erroNovoValor(campo: 'codigo' | 'descricao'): string | null {
+  protected erroNovoValor(campo: 'codigo' | 'descricao' | 'orientacao'): string | null {
     return mensagemDoControle(this.novoValor.controls[campo]);
   }
 
