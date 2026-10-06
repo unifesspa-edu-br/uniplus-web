@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom, map } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import {
   ProblemI18nService,
   STATUS_HTTP,
@@ -35,7 +35,6 @@ import {
   FINALIDADE_INSCRICAO,
   FINALIDADES,
   OBRIGATORIEDADES,
-  PreVisualizacaoDeFormulariosComponent,
   ValorEmConsultaComponent,
   conteudoInicial,
   distribuirRecusas,
@@ -43,9 +42,7 @@ import {
   etapasEmOrdem,
   semDadosBasicos,
   termoDisponivelDe,
-  type AvaliacaoDeFormularios,
   type ConteudoDoFormulario,
-  type FormularioParaSimular,
   type RecusasDoConteudo,
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
@@ -81,7 +78,6 @@ import {
   formularioDaFinalidade,
   rascunhoDifereDoGravado,
 } from './formulario-do-processo';
-import { resultadoDoProcesso } from './pre-visualizacao-do-processo';
 import {
   comAplicacaoDoServidor,
   faseQueAAplicacaoDeclara,
@@ -133,7 +129,6 @@ interface FormularioParaEnvio {
     ConfirmDialogComponent,
     DateBrPipe,
     EditorDeFormularioComponent,
-    PreVisualizacaoDeFormulariosComponent,
     RouterLink,
     ValorEmConsultaComponent,
   ],
@@ -319,20 +314,18 @@ export class FormularioStepComponent {
   private readonly processoLido = linkedSignal(() => this.store.remoteSnapshot());
 
   /**
-   * Os formulários que a pré-visualização do processo pergunta e cujo resultado mostra: os
-   * gravados, porque é o processo gravado que a API avalia — os do rascunho perguntariam o que ela
-   * não vê e rotulariam o resultado com o que ela não tem.
+   * Os formulários que se pode simular: os gravados, porque a simulação abre o formulário que a API
+   * monta do processo gravado.
    */
-  readonly formulariosParaSimular = computed<readonly FormularioParaSimular[]>(() =>
+  readonly formulariosParaSimular = computed(() =>
     emOrdemDasFinalidades(this.processoLido()?.formularios ?? []).map((formulario) => ({
       finalidade: formulario.finalidade,
       nome: nomeDaFinalidade(formulario.finalidade),
-      conteudo: conteudoDoFormulario(formulario),
     })),
   );
 
-  /** Há alteração nos formulários ainda não gravada: a pré-visualização não a veria. */
-  readonly previaDesatualizada = computed(() =>
+  /** Há alteração nos formulários ainda não gravada: a simulação não a veria. */
+  readonly simulacaoDesatualizada = computed(() =>
     rascunhoDifereDoGravado(this.processoLido()?.formularios ?? [], this.formularios()),
   );
 
@@ -343,35 +336,6 @@ export class FormularioStepComponent {
       this.processoLido.set(detalhe.data);
     return detalhe;
   }
-
-  /**
-   * A pré-visualização do processo, com as ocorrências simuladas dos grupos repetíveis e os
-   * documentos exigidos. A API avalia a configuração viva do processo que está no servidor, e não a
-   * da tela: os formulários, as derivações e as exigências juntos, e o que foi alterado em qualquer
-   * passo só entra depois de gravado. Os documentos são nomeados pelo processo lido. Nula antes de o processo existir no servidor e em consulta, em que o
-   * passo mostra o gravado como texto e não há configuração em edição a conferir.
-   */
-  readonly avaliarProcesso = computed<AvaliacaoDeFormularios | null>(() => {
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null || this.store.emConsulta()) return null;
-    return (simulacao) =>
-      this.api
-        .preVisualizar(processoId, simulacao)
-        .pipe(
-          map((resultado) =>
-            resultado.ok
-              ? {
-                  ...resultado,
-                  data: resultadoDoProcesso(
-                    resultado.data,
-                    this.processoLido(),
-                    this.catalogos.fasePorId(),
-                  ),
-                }
-              : resultado,
-          ),
-        );
-  });
 
   readonly abaAtiva = computed(() => {
     const escolhida = this.abaEscolhida();

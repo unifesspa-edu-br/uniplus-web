@@ -469,6 +469,12 @@
         Responda o formulário como o candidato responderia, sem gravar nada. A simulação usa o
         processo gravado: grave o passo para simular as alterações.
       </p>
+      <!-- A região fica sempre na página: um leitor de tela só anuncia a mudança de uma região que já existia. -->
+      <p class="field__hint" role="status">
+        @if (simulacaoDesatualizada()) {
+          Há alteração nos formulários ainda não gravada: grave o passo para simulá-la.
+        }
+      </p>
       <ul class="form-simulacao__links">
         @for (formulario of formulariosParaSimular(); track formulario.finalidade) {
           <li>
@@ -487,25 +493,6 @@
       </ul>
     </section>
   }
-}
-
-<!-- A pré-visualização avalia o processo gravado no servidor: o que está na tela só entra depois de gravado. -->
-@if (avaliarProcesso(); as avaliar) {
-  <section class="step-section" aria-labelledby="form-pre-visualizacao-titulo">
-    <h2 id="form-pre-visualizacao-titulo" class="step-section__title">
-      Pré-visualização do processo
-    </h2>
-    <ui-pre-visualizacao-de-formularios
-      idBase="form-pre-visualizacao"
-      origem="A pré-visualização usa o processo gravado: o que foi alterado e ainda não foi gravado, neste ou em outro passo, não entra. Grave o passo para pré-visualizar as alterações."
-      [formularios]="formulariosParaSimular()"
-      [desatualizado]="previaDesatualizada()"
-      textoDesatualizado="Há alteração nos formulários ainda não gravada. Grave o passo para pré-visualizar com ela."
-      [catalogo]="catalogo()"
-      [avaliar]="avaliar"
-      [simulaGrupos]="true"
-    />
-  </section>
 }
 
 @if (camposSemValoresOfertados().length > 0 && !store.emConsulta()) {

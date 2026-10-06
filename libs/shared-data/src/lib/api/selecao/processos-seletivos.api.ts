@@ -56,32 +56,6 @@ export type DefinirTermosDoFormularioRequest =
 export type AplicacaoDeModeloInput = components['schemas']['AplicacaoDeModeloInput'];
 export type AplicacaoDeModeloDto = components['schemas']['AplicacaoDeModeloDto'];
 export type ParteDescartadaDto = components['schemas']['ParteDescartadaDto'];
-export type PreVisualizacaoDoProcessoDto = components['schemas']['PreVisualizacaoDoProcessoDto'];
-export type FormularioSimuladoDto = components['schemas']['FormularioSimuladoDto'];
-export type ItemSimuladoDto = components['schemas']['ItemSimuladoDto'];
-export type EtapaConcluidaInput = components['schemas']['EtapaConcluidaInput'];
-
-export type GrupoSimuladoDto = components['schemas']['GrupoSimuladoDto'];
-export type DocumentoSimuladoDto = components['schemas']['DocumentoSimuladoDto'];
-
-/** Uma ocorrência simulada de grupo repetível: a identidade, única no grupo, e as respostas dos campos dela. */
-export interface OcorrenciaSimuladaDoProcessoInput {
-  readonly id: string;
-  readonly respostas: Readonly<Record<string, unknown>> | null;
-}
-
-/**
- * O perfil simulado da pré-visualização do processo, com o valor de cada resposta em JSON (`true`,
- * `18`, `"PRETA"`, `["A", "B"]`). O schema gerado tipa o dicionário de `JsonElement` como
- * `Record<string, never>`, que não aceita valor nenhum; a forma aqui é a que a API recebe. Nos
- * grupos, sem a chave o grupo não foi respondido, e a lista vazia declara que não há ocorrência.
- */
-export interface PreVisualizacaoDoProcessoInput {
-  readonly respostas: Readonly<Record<string, unknown>> | null;
-  readonly grupos: Readonly<Record<string, readonly OcorrenciaSimuladaDoProcessoInput[]>> | null;
-  readonly etapasConcluidas: readonly EtapaConcluidaInput[] | null;
-  readonly pressupostos: Readonly<Record<string, unknown>> | null;
-}
 export type DefinirIdentificadorLegivelRequest =
   components['schemas']['DefinirIdentificadorLegivelRequest'];
 export type BaseLegalDto = components['schemas']['BaseLegalDto'];
@@ -433,23 +407,6 @@ export class ProcessosSeletivosApi {
           context.get(IDEMPOTENCY_KEY_TOKEN),
         ),
       },
-    );
-  }
-
-  /**
-   * POST `/api/selecao/processos-seletivos/{id}/pre-visualizacao` — avalia a configuração viva do
-   * processo contra um perfil simulado de candidato: o que cada formulário mostra e exige, com o
-   * impedimento e a mensagem dele, e os documentos que as exigências pediriam. É leitura: não grava
-   * nem leva Idempotency-Key.
-   */
-  preVisualizar(
-    processoSeletivoId: string,
-    simulacao: PreVisualizacaoDoProcessoInput,
-  ): Observable<ApiResult<PreVisualizacaoDoProcessoDto>> {
-    return this.http.post<ApiResult<PreVisualizacaoDoProcessoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/pre-visualizacao`,
-      simulacao,
-      { context: withVendorMime('pre-visualizacao-processo-seletivo', 1) },
     );
   }
 

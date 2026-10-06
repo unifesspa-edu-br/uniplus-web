@@ -130,22 +130,20 @@ describe('TermosConsentimentoApi', () => {
       .expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`)
       .flush([termoResumoSeed, { ...termoResumoSeed, id: 'outro' }]);
     controller.expectOne(`${BASE}/api/configuracao/termos-consentimento/${ID}`).flush(termoDtoSeed);
-    controller
-      .expectOne(`${BASE}/api/configuracao/termos-consentimento/outro`)
-      .flush(
-        {
-          type: 'about:blank',
-          title: 'Indisponível.',
-          status: 503,
-          code: 'uniplus.indisponivel',
-          traceId: 't',
-        },
-        {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: { 'content-type': 'application/problem+json' },
-        },
-      );
+    controller.expectOne(`${BASE}/api/configuracao/termos-consentimento/outro`).flush(
+      {
+        type: 'about:blank',
+        title: 'Indisponível.',
+        status: 503,
+        code: 'uniplus.indisponivel',
+        traceId: 't',
+      },
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
 
     const result = await promise;
     expect(isApiOk(result)).toBe(false);

@@ -238,8 +238,6 @@ cfg-pesos-enem-page {
 .cfg-modelo-resumo:focus { outline: none; }
 .cfg-modelo-resumo:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-.cfg-pre-visualizacao { margin-top: var(--space-4); }
-
 /* Os ícones de ação ficam juntos: com quebra, a tabela estreitava a coluna até um ícone por linha. */
 .table-responsive__actions {
   justify-content: flex-end;

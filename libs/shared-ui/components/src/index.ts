@@ -71,21 +71,6 @@ export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
 export {
-  PreVisualizacaoDeFormulariosComponent,
-  type AvaliacaoDeFormularios,
-  type DocumentoAvaliado,
-  type EtapaConcluida,
-  type FormularioAvaliado,
-  type FormularioParaSimular,
-  type GrupoAvaliado,
-  type ItemAvaliado,
-  type OcorrenciaAvaliada,
-  type OcorrenciaSimulada,
-  type ResultadoDaPreVisualizacao,
-  type SimulacaoDeFormularios,
-  type TermoAvaliado,
-} from '../../src/lib/components/pre-visualizacao-de-formularios/pre-visualizacao-de-formularios';
-export {
   FormularioDoCandidatoComponent,
   type DocumentoDoFormulario,
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';

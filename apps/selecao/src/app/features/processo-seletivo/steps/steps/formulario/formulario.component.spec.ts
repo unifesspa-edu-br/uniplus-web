@@ -179,26 +179,23 @@ describe('FormularioStepComponent', () => {
     ]);
   }
 
-  /** O processo como a hidratação o deixa: o gravado é o que a pré-visualização pergunta. */
+  /** O processo como a hidratação o deixa: o gravado é o que a simulação abre. */
   function comProcessoLido(): void {
     store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'rascunho' } as never);
     fixture.detectChanges();
   }
 
-  it('a pré-visualização pergunta o processo gravado e não pré-visualiza alteração ainda não gravada', () => {
+  it('a simulação usa o processo gravado e avisa a alteração ainda não gravada', () => {
     comProcessoLido();
-    expect(fixture.componentInstance.previaDesatualizada()).toBe(false);
+    expect(fixture.componentInstance.simulacaoDesatualizada()).toBe(false);
 
     store.patchObjectSection('formulario', {
       conteudo: { ...conteudoDoFormulario(GRAVADO), titulo: 'Outro título' },
     });
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.previaDesatualizada()).toBe(true);
-    expect(
-      fixture.componentInstance.formulariosParaSimular()[0].conteudo.titulo,
-      'pergunta o gravado, não o rascunho',
-    ).toBe(GRAVADO.titulo);
+    expect(fixture.componentInstance.simulacaoDesatualizada()).toBe(true);
+    expect(host.textContent).toContain('Há alteração nos formulários ainda não gravada');
   });
 
   it('cada formulário gravado tem o link que abre a simulação dele em nova aba', () => {
@@ -207,96 +204,6 @@ describe('FormularioStepComponent', () => {
     const link = host.querySelector('.form-simulacao__links a') as HTMLAnchorElement;
     expect(link.getAttribute('href')).toMatch(/\/processo-seletivo\/.+\/simulacao\/INSCRICAO$/);
     expect(link.target).toBe('_blank');
-  });
-
-  it('pré-visualiza o processo gravado e mostra no campo o impedimento com a mensagem ao candidato', async () => {
-    comProcessoLido();
-    const pcd = host.querySelector('#form-pre-visualizacao-simulacao-PCD') as HTMLSelectElement;
-    pcd.value = 'true';
-    pcd.dispatchEvent(new Event('change'));
-    const secao = Array.from(host.querySelectorAll('label.checkbox')).find((rotulo) =>
-      rotulo.textContent?.includes('Condições especiais'),
-    );
-    (secao?.querySelector('input') as HTMLInputElement).click();
-    fixture.detectChanges();
-    (
-      Array.from(host.querySelectorAll('button')).find(
-        (botao) => botao.textContent?.trim() === 'Pré-visualizar',
-      ) as HTMLButtonElement
-    ).click();
-
-    const req = controller.expectOne(`${ROTA_PROCESSO}/pre-visualizacao`);
-    expect(req.request.body).toEqual({
-      respostas: { PCD: true },
-      pressupostos: {},
-      etapasConcluidas: [{ finalidade: 'INSCRICAO', etapa: 'S1' }],
-      grupos: null,
-    });
-    req.flush({
-      formularios: [
-        {
-          finalidade: 'INSCRICAO',
-          itens: [
-            {
-              fatoCodigo: 'PCD',
-              etapaCodigo: 'S1',
-              visivel: 'VERDADEIRO',
-              obrigatorio: 'VERDADEIRO',
-              restricoesVioladas: [],
-              impedido: 'VERDADEIRO',
-              mensagemDoImpedimento: 'Quem já cursa pelo PARFOR não pode se inscrever.',
-            },
-          ],
-          grupos: [],
-          termos: [],
-        },
-      ],
-      documentos: [],
-    });
-    await proximoPasso();
-    fixture.detectChanges();
-
-    expect(host.querySelector('.pre-visualizacao-formularios__resumo')?.textContent).toContain(
-      'A inscrição seria impedida por 1 resposta(s).',
-    );
-    expect(host.textContent).toContain('Quem já cursa pelo PARFOR não pode se inscrever.');
-  });
-
-  it('mostra os documentos exigidos na fase do cronograma gravado, com a situação de cada um', async () => {
-    comProcessoLido();
-    (
-      Array.from(host.querySelectorAll('button')).find(
-        (botao) => botao.textContent?.trim() === 'Pré-visualizar',
-      ) as HTMLButtonElement
-    ).click();
-
-    controller.expectOne(`${ROTA_PROCESSO}/pre-visualizacao`).flush({
-      formularios: [{ finalidade: 'INSCRICAO', itens: [], grupos: [], termos: [] }],
-      documentos: [
-        {
-          exigenciaId: 'e-rg',
-          tipoDocumentoCodigo: 'RG',
-          tipoDocumentoNome: 'Documento de identidade',
-          obrigatorio: true,
-          faseId: 'F-INSCRICAO',
-          finalidade: 'INSCRICAO',
-          etapaId: null,
-          situacao: 'EXIGIDO',
-          entidadeId: null,
-          alternativas: [],
-        },
-      ],
-    });
-    await proximoPasso();
-    fixture.detectChanges();
-
-    const tabela = Array.from(host.querySelectorAll('table')).find((elemento) =>
-      elemento.querySelector('caption')?.textContent?.includes('Documentos da fase'),
-    );
-    expect(tabela?.querySelector('caption')?.textContent?.trim()).toBe(
-      'Documentos da fase INSCRICAO, no formulário de inscrição, diante das respostas simuladas',
-    );
-    expect(tabela?.querySelector('td[data-label="Situação"]')?.textContent?.trim()).toBe('Exigido');
   });
 
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {
@@ -600,7 +507,7 @@ describe('FormularioStepComponent', () => {
       expect(abas()).toEqual([]);
       expect(document.activeElement?.id).toBe('form-inscricao-fase-titulo');
       expect(
-        fixture.componentInstance.previaDesatualizada(),
+        fixture.componentInstance.simulacaoDesatualizada(),
         'o servidor já está como o rascunho',
       ).toBe(false);
     });

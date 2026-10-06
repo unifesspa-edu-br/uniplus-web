@@ -217,11 +217,7 @@ export type {
   ConteudoDoModeloInput,
   CriarModeloFormularioCommand,
   EdicaoDoModeloInput,
-  ItemPreVisualizadoDto,
   FormularioRenderizavel,
   ModeloFormularioView,
   ModelosFormularioQuery,
-  PreVisualizacaoDoModeloDto,
-  PreVisualizacaoDoModeloInput,
-  TermoPreVisualizadoDto,
 } from './modelos-formulario.api';
