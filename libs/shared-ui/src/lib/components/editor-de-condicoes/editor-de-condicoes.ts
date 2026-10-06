@@ -133,7 +133,9 @@ export class EditorDeCondicoesComponent {
 
   readonly condicoesChange = output<readonly CondicaoEmClausula[]>();
 
-  protected readonly clausulas = computed(() => clausulasDe(this.condicoes(), this.fatoDoRecorte()));
+  protected readonly clausulas = computed(() =>
+    clausulasDe(this.condicoes(), this.fatoDoRecorte()),
+  );
 
   protected trocar(indice: number, nova: CondicaoDeFato): void {
     const atual = this.condicoes()[indice];

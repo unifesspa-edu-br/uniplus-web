@@ -91,7 +91,11 @@ import {
           </label>
           <ui-valor-de-municipio
             #municipioCampo
-            [rotulo]="comparaComLista(condicao().operador) ? rotuloDosValores() : 'Município que satisfaz a condição'"
+            [rotulo]="
+              comparaComLista(condicao().operador)
+                ? rotuloDosValores()
+                : 'Município que satisfaz a condição'
+            "
             [multiplo]="comparaComLista(condicao().operador)"
             [values]="municipiosEscolhidos()"
             [disabled]="disabled()"

@@ -5,17 +5,23 @@ import {
   Injectable,
   InjectionToken,
   computed,
+  effect,
   inject,
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import { Subject, of, switchMap, timer, type Observable } from 'rxjs';
 
-import { ComboboxComponent, type UiComboboxGroup, type UiComboboxOption } from '../combobox/combobox';
+import {
+  ComboboxComponent,
+  type UiComboboxGroup,
+  type UiComboboxOption,
+} from '../combobox/combobox';
 
 /** Um município achado pela busca. É estrutural: o resumo de cidade do Geo satisfaz esta forma. */
 export interface MunicipioEncontrado {
@@ -24,8 +30,11 @@ export interface MunicipioEncontrado {
   readonly uf: string;
 }
 
-/** Busca os municípios cujo nome casa com o termo. */
-export type BuscaDeMunicipios = (termo: string) => Observable<ApiResult<readonly MunicipioEncontrado[]>>;
+/** Busca os municípios cujo nome casa com o termo; com a UF, só os dela. */
+export type BuscaDeMunicipios = (
+  termo: string,
+  uf?: string,
+) => Observable<ApiResult<readonly MunicipioEncontrado[]>>;
 
 /**
  * A busca de municípios que o editor de condições usa para declarar condição sobre fato de
@@ -49,7 +58,10 @@ export class NomesDeMunicipios {
   private readonly nomes = signal<ReadonlyMap<string, string>>(new Map());
 
   lembrar(municipios: readonly MunicipioEncontrado[]): void {
-    this.nomes.update((atual) => new Map([...atual, ...municipios.map((m) => [m.codigoIbge, rotuloDe(m)] as const)]));
+    this.nomes.update(
+      (atual) =>
+        new Map([...atual, ...municipios.map((m) => [m.codigoIbge, rotuloDe(m)] as const)]),
+    );
   }
 
   /**
@@ -129,6 +141,8 @@ export class ValorDeMunicipioComponent {
   readonly disabled = input<boolean>(false);
   readonly invalido = input<boolean>(false);
   readonly descritoPor = input<string | null>(null);
+  /** A UF a que a busca se limita, como no campo de município da UF respondida antes. */
+  readonly uf = input<string | null>(null);
 
   readonly valuesChange = output<readonly string[]>();
 
@@ -149,7 +163,10 @@ export class ValorDeMunicipioComponent {
       .pipe(
         switchMap((termo) => {
           if (termo.length < TERMO_MINIMO) return of(null);
-          return timer(ESPERA_DA_DIGITACAO_MS).pipe(switchMap(() => this.busca(termo)));
+          const uf = this.uf();
+          return timer(ESPERA_DA_DIGITACAO_MS).pipe(
+            switchMap(() => (uf ? this.busca(termo, uf) : this.busca(termo))),
+          );
         }),
         takeUntilDestroyed(inject(DestroyRef)),
       )
@@ -167,27 +184,47 @@ export class ValorDeMunicipioComponent {
         this.nomes.lembrar(resultado.data);
         this.encontrados.set(resultado.data);
       });
+
+    // Trocar a UF refaz a busca do termo na UF nova: os municípios achados na anterior não ficam
+    // escolhíveis.
+    effect(() => {
+      this.uf();
+      untracked(() => this.buscar(this.termo()));
+    });
   }
 
   protected readonly textoSemResultado = computed(() => {
     const falha = this.falha();
     if (falha !== null) return `Não foi possível buscar os municípios: ${falha}`;
-    if (this.termo().length < TERMO_MINIMO) return 'Digite ao menos três letras do nome do município.';
+    if (this.termo().length < TERMO_MINIMO)
+      return 'Digite ao menos três letras do nome do município.';
     if (this.buscando()) return 'Buscando municípios…';
     return 'Nenhum município com esse nome.';
   });
 
   /** O estado da busca enquanto ela não achou nada a escolher: os já escolhidos não contam. */
-  protected readonly estadoDaBusca = computed(() => (this.encontrados().length === 0 ? this.textoSemResultado() : null));
+  protected readonly estadoDaBusca = computed(() =>
+    this.encontrados().length === 0 ? this.textoSemResultado() : null,
+  );
 
   protected readonly grupos = computed<readonly UiComboboxGroup[]>(() => {
     const escolhidos = this.values();
-    const opcao = (codigo: string): UiComboboxOption => ({ value: codigo, label: this.nomes.rotulo(codigo) });
+    const opcao = (codigo: string): UiComboboxOption => ({
+      value: codigo,
+      label: this.nomes.rotulo(codigo),
+    });
     const achados = this.encontrados()
       .filter((municipio) => !escolhidos.includes(municipio.codigoIbge))
       .map((municipio) => opcao(municipio.codigoIbge));
     return [
-      ...(escolhidos.length > 0 ? [{ label: escolhidos.length > 1 ? 'Escolhidos' : 'Escolhido', options: escolhidos.map(opcao) }] : []),
+      ...(escolhidos.length > 0
+        ? [
+            {
+              label: escolhidos.length > 1 ? 'Escolhidos' : 'Escolhido',
+              options: escolhidos.map(opcao),
+            },
+          ]
+        : []),
       ...(achados.length > 0 ? [{ label: 'Encontrados', options: achados }] : []),
     ];
   });

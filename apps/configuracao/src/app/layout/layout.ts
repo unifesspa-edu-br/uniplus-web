@@ -107,6 +107,11 @@ export class LayoutComponent {
         },
         { label: 'Modelo de Formulário', icon: 'pi-file', routerLink: '/modelos-formulario' },
         {
+          label: 'Simulador de Formulário',
+          icon: 'pi-play',
+          routerLink: '/simulador-de-formulario',
+        },
+        {
           label: 'Termo de Consentimento',
           icon: 'pi-file-edit',
           routerLink: '/termos-consentimento',

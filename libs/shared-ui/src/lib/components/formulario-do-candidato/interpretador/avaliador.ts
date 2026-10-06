@@ -27,8 +27,13 @@ import {
   VERDADEIRO,
 } from './logica';
 import { avaliarOuVerdadeiro, avaliarPredicado, fatosCitadosPor } from './predicado';
-import type { OpcoesVigentes, ValorJson } from './regras-do-formulario';
-import { compararOrdinal, juntarOpcoes, type Restricao } from './restricoes';
+import type { ValorJson } from './regras-do-formulario';
+import {
+  compararOrdinal,
+  juntarOpcoes,
+  type OpcoesDaRestricao,
+  type Restricao,
+} from './restricoes';
 
 /** O fato do parentesco, que identifica a ocorrência do próprio candidato no grupo que o inclui. */
 const FATO_PARENTESCO = 'PARENTESCO';
@@ -54,7 +59,7 @@ export interface ItemAvaliado {
   readonly obrigatorio: Ternario;
   readonly restricoesVioladas: readonly string[];
   readonly impedido: Ternario;
-  readonly opcoes: OpcoesVigentes | null;
+  readonly opcoes: OpcoesDaRestricao | null;
 }
 
 export interface OcorrenciaAvaliadaInterna {
@@ -395,7 +400,7 @@ function avaliarItem(
       ? null
       : item.restricoesDaResposta
           .map((r) => r.opcoes(fatos))
-          .reduce<OpcoesVigentes | null>(
+          .reduce<OpcoesDaRestricao | null>(
             (juntas, uma) =>
               uma === null ? juntas : juntas === null ? uma : juntarOpcoes(juntas, uma),
             null,

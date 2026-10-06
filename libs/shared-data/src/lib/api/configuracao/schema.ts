@@ -5313,6 +5313,92 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/avaliacoes-de-formulario": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AvaliacaoSemCadastroInput"];
+                    readonly "text/json": components["schemas"]["AvaliacaoSemCadastroInput"];
+                    readonly "application/*+json": components["schemas"]["AvaliacaoSemCadastroInput"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.avaliacao-de-formulario.v1+json": components["schemas"]["AvaliacaoPortavel"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/admin/modelos-formulario/{id}/pre-visualizacao": {
         readonly parameters: {
             readonly query?: never;
@@ -10459,6 +10545,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        readonly AgregadoPortavel: {
+            readonly codigo: string;
+            readonly grupoCodigo: string;
+            readonly fatoDeMembro: string;
+            readonly operacao: string;
+        };
         readonly AreaPesoAreaEnemDto: {
             readonly codigo: string;
             readonly rotulo: string;
@@ -10644,6 +10736,21 @@ export interface components {
             /** Format: date-time */
             readonly timestamp: string;
         };
+        readonly AvaliacaoPortavel: {
+            readonly etapas: readonly components["schemas"]["EtapaAvaliada"][];
+            readonly campos: readonly components["schemas"]["CampoAvaliado"][];
+            readonly grupos: readonly components["schemas"]["GrupoAvaliado"][];
+            readonly termos: readonly components["schemas"]["TermoAvaliado"][];
+        };
+        readonly AvaliacaoSemCadastroInput: {
+            readonly regras: components["schemas"]["FormularioPortavel"];
+            readonly respostas: null | Record<string, never>;
+            readonly grupos: null | {
+                readonly [key: string]: readonly components["schemas"]["OcorrenciaRecebida"][];
+            };
+            readonly etapasConcluidas: null | readonly string[];
+            readonly pressupostos: null | Record<string, never>;
+        };
         readonly BaseLegalBonusRegionalDto: {
             /** Format: uuid */
             readonly id: string;
@@ -10684,6 +10791,16 @@ export interface components {
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly CampoAvaliado: {
+            readonly fatoCodigo: string;
+            readonly etapaCodigo: string;
+            readonly estado: string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
+            readonly restricoesVioladas: readonly string[];
+            readonly impedido: string;
+            readonly opcoes: null | components["schemas"]["OpcoesVigentes"];
         };
         readonly CampusDto: {
             /** Format: uuid */
@@ -10986,6 +11103,11 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly DerivacaoPortavel: {
+            readonly fatoCodigo: string;
+            readonly booleano: boolean;
+            readonly regras: readonly components["schemas"]["RegraDerivacaoPortavel"][];
+        };
         readonly DescritivoDoFatoInput: {
             readonly nome: string;
             readonly descricao: null | string;
@@ -11057,6 +11179,10 @@ export interface components {
             readonly nivelResolucao: null | string;
             readonly origem: null | string;
         };
+        readonly EtapaAvaliada: {
+            readonly codigo: string;
+            readonly visivel: string;
+        };
         readonly EtapaFormularioInput: {
             readonly codigo: string;
             /** Format: int32 */
@@ -11067,6 +11193,12 @@ export interface components {
             readonly descricao: null | string;
             readonly aviso: null | string;
             readonly exibicao?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+        };
+        readonly EtapaPortavel: {
+            readonly codigo: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly itens: readonly components["schemas"]["ItemPortavel"][];
+            readonly grupos: readonly components["schemas"]["GrupoPortavel"][];
         };
         readonly FaseCanonicaDto: {
             /** Format: uuid */
@@ -11162,9 +11294,25 @@ export interface components {
             readonly ordem: number | string;
             readonly ativo: boolean;
         };
+        readonly FormularioPortavel: {
+            readonly etapas: readonly components["schemas"]["EtapaPortavel"][];
+            readonly termos: readonly components["schemas"]["TermoPortavel"][];
+            readonly derivacoes: readonly components["schemas"]["DerivacaoPortavel"][];
+            readonly agregados: readonly components["schemas"]["AgregadoPortavel"][];
+        };
         readonly GrupoAreaEnemDto: {
             readonly codigo: string;
             readonly rotulo: string;
+        };
+        readonly GrupoAvaliado: {
+            readonly codigo: string;
+            readonly etapaCodigo: string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
+            readonly estado: string;
+            readonly contagemValida: boolean;
+            readonly ocorrenciaDoCandidatoValida: boolean;
+            readonly ocorrencias: readonly components["schemas"]["OcorrenciaAvaliada"][];
         };
         readonly GrupoColetadoInput: {
             readonly codigo: string;
@@ -11183,9 +11331,31 @@ export interface components {
             /** @default false */
             readonly incluiCandidato: boolean;
         };
+        readonly GrupoPortavel: {
+            readonly codigo: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly obrigatoriedade: string;
+            readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            /** Format: int32 */
+            readonly minimo: number | string;
+            /** Format: int32 */
+            readonly maximo: null | number | string;
+            readonly incluiCandidato: boolean;
+            readonly subitens: readonly components["schemas"]["ItemPortavel"][];
+        };
         readonly ImpedimentoInput: {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly mensagem: null | string;
+        };
+        readonly ItemPortavel: {
+            readonly fatoCodigo: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly obrigatoriedade: string;
+            readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly restricoes: readonly components["schemas"]["RestricaoValorInput"][];
+            readonly impedimento: null | components["schemas"]["ImpedimentoInput"];
+            readonly oferta: null | readonly string[];
+            readonly formato?: null | string;
         };
         readonly ItemPreVisualizadoDto: {
             readonly fatoCodigo: string;
@@ -11244,6 +11414,15 @@ export interface components {
             readonly ativo: boolean;
             readonly conteudo: components["schemas"]["ConteudoDoModeloInput"];
         };
+        readonly OcorrenciaAvaliada: {
+            readonly id: string;
+            readonly estado: string;
+            readonly campos: readonly components["schemas"]["CampoAvaliado"][];
+        };
+        readonly OcorrenciaRecebida: {
+            readonly id: null | string;
+            readonly respostas: null | Record<string, never>;
+        };
         readonly OfertaCursoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11272,6 +11451,10 @@ export interface components {
         readonly OpcoesCondicionadasInput: {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly valores: readonly string[];
+        };
+        readonly OpcoesVigentes: {
+            readonly codigos?: null | readonly string[];
+            readonly definitivas: boolean;
         };
         readonly PesoAreaEnemAreaCommand: {
             readonly codigo: null | string;
@@ -11360,6 +11543,10 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly RegraDerivacaoPortavel: {
+            readonly quando: readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly contribui: null | string;
+        };
         readonly RegraPadraoDto: {
             readonly contribui: null | string;
             readonly quando: readonly (readonly components["schemas"]["CondicaoRegraPadraoDto"][])[];
@@ -11379,6 +11566,11 @@ export interface components {
             readonly maximo?: null | number | string;
             readonly entradas?: null | readonly components["schemas"]["OpcoesCondicionadasInput"][];
             readonly fatos?: null | readonly string[];
+        };
+        readonly TermoAvaliado: {
+            readonly codigo: string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
         };
         readonly TermoConsentimentoDto: {
             /** Format: uuid */
@@ -11427,6 +11619,12 @@ export interface components {
             readonly termoId: string;
             /** Format: uuid */
             readonly versaoId: string;
+            readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly obrigatoriedade: string;
+            readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+        };
+        readonly TermoPortavel: {
+            readonly codigo: string;
             readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly obrigatoriedade: string;
             readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];

@@ -129,7 +129,8 @@ export interface SimulacaoDoFormulario {
 
 /** As opções que o campo de escolha permite; definitivas quando nenhuma resposta pendente pode mudá-las. */
 export interface OpcoesVigentes {
-  readonly codigos: readonly string[];
+  /** Opcional e anulável no contrato da API; o interpretador sempre o preenche. */
+  readonly codigos?: readonly string[] | null;
   readonly definitivas: boolean;
 }
 
