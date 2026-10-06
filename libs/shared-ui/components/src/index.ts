@@ -53,6 +53,7 @@ export {
   ListFooterComponent,
 } from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export { RecolhivelComponent } from '../../src/lib/components/recolhivel/recolhivel';
 export { RolagemFocavelDirective } from '../../src/lib/directives/rolagem-focavel.directive';
 export {
   SegmentedComponent,

@@ -209,9 +209,16 @@ type CampoDaCriacao = keyof CriacaoForm;
                       tooltip="Editar modelo"
                       [link]="[modelo.id]"
                     />
+                    <ui-icon-button
+                      icon="pi-play"
+                      [accessibleName]="'Simular o modelo ' + modelo.codigo + ' (abre em nova aba)'"
+                      tooltip="Simular formulário"
+                      [link]="[modelo.id, 'simulacao']"
+                      novaAba
+                    />
                     @if (modelo.ativo) {
                       <ui-icon-button
-                        icon="pi-eye-slash"
+                        icon="pi-power-off"
                         [accessibleName]="'Desativar o modelo ' + modelo.codigo"
                         tooltip="Desativar: deixa de ser oferecido a processos novos"
                         [isDisabled]="emAndamento() !== null"
@@ -219,7 +226,7 @@ type CampoDaCriacao = keyof CriacaoForm;
                       />
                     } @else {
                       <ui-icon-button
-                        icon="pi-eye"
+                        icon="pi-replay"
                         [accessibleName]="'Ativar o modelo ' + modelo.codigo"
                         tooltip="Ativar: volta a ser oferecido a processos novos"
                         [isDisabled]="emAndamento() !== null"

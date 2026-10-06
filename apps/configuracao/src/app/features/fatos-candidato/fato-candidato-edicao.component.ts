@@ -22,6 +22,7 @@ import {
 import {
   AlertComponent,
   EditorDeCondicoesComponent,
+  RecolhivelComponent,
   SpinnerComponent,
   TagComponent,
   deClausulasDoWire,
@@ -64,11 +65,17 @@ interface RegraEmEdicao {
 @Component({
   selector: 'cfg-fato-candidato-edicao',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, EditorDeCondicoesComponent, SpinnerComponent, TagComponent],
+  imports: [ReactiveFormsModule, AlertComponent, EditorDeCondicoesComponent, RecolhivelComponent, SpinnerComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O corpo do drawer não rola: o host ocupa a altura dele e o .cfg-form de dentro é o único
   // container de rolagem, com o recuo do conteúdo.
-  styles: [':host { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }'],
+  styles: [
+    ':host { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }',
+    // No drawer a lista da definição não tem o recuo do card; as colunas se ajustam ao rótulo mais longo.
+    '.cfg-fato-definicao { padding: 0; grid-template-columns: minmax(8rem, max-content) 1fr; }',
+    '.cfg-fato-definicao dd { overflow-wrap: anywhere; }',
+    '.cfg-fato-descritivo { display: grid; gap: var(--space-4); }',
+  ],
   template: `
     <div class="cfg-form">
     @if (fato(); as f) {
@@ -78,29 +85,30 @@ interface RegraEmEdicao {
         </ui-alert>
       }
 
-      <form [formGroup]="descritivo" id="cfg-fato-descritivo" (ngSubmit)="salvarDescritivo()" novalidate>
-        <label class="field form-grid__full" [class.is-error]="erroDescritivo('nome')">
+      <form class="cfg-fato-descritivo" [formGroup]="descritivo" id="cfg-fato-descritivo" (ngSubmit)="salvarDescritivo()" novalidate>
+        <label class="field" [class.is-error]="erroDescritivo('nome')">
           <span class="field__label is-required">Nome</span>
-          <input class="input" type="text" formControlName="nome" [attr.aria-invalid]="erroDescritivo('nome') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('nome') ? 'cfg-fato-ed-nome-erro' : null" />
+          <input class="input" type="text" formControlName="nome" [readonly]="somenteLeitura()" [attr.aria-invalid]="erroDescritivo('nome') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('nome') ? 'cfg-fato-ed-nome-erro' : null" />
           @if (erroDescritivo('nome')) {
             <span class="field__error" id="cfg-fato-ed-nome-erro">{{ erroDescritivo('nome') }}</span>
           }
         </label>
-        <label class="field form-grid__full" [class.is-error]="erroDescritivo('descricao')">
+        <label class="field" [class.is-error]="erroDescritivo('descricao')">
           <span class="field__label">Descrição</span>
-          <textarea class="textarea" rows="3" formControlName="descricao" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
+          <textarea class="textarea" rows="3" formControlName="descricao" [readonly]="somenteLeitura()" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
           @if (erroDescritivo('descricao')) {
             <span class="field__error" id="cfg-fato-ed-descricao-erro">{{ erroDescritivo('descricao') }}</span>
           }
         </label>
-        <div class="cfg-form-actions">
-          <button type="submit" class="btn btn--primary btn--sm" [disabled]="ocupado()">Salvar nome e descrição</button>
-        </div>
+        @if (!somenteLeitura()) {
+          <div class="cfg-form-actions">
+            <button type="submit" class="btn btn--primary btn--sm" [disabled]="ocupado()">Salvar nome e descrição</button>
+          </div>
+        }
       </form>
 
-      <section aria-labelledby="cfg-fato-estrutura">
-        <h3 id="cfg-fato-estrutura" class="form-section__title">Definição</h3>
-        <dl>
+      <ui-recolhivel titulo="Definição" [aberto]="somenteLeitura()">
+        <dl class="cfg-detail-list cfg-fato-definicao">
           <dt>Código</dt>
           <dd><code>{{ f.codigo }}</code></dd>
           <dt>Origem</dt>
@@ -120,15 +128,16 @@ interface RegraEmEdicao {
           <dt>Conhecido a partir da fase</dt>
           <dd><code>{{ f.pontoResolucao }}</code></dd>
           <dt>Proteção de dados</dt>
-          <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }} — {{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
+          <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }}</dd>
+          <dt>Base legal</dt>
+          <dd>{{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
           <dt>Finalidade do tratamento</dt>
           <dd>{{ f.finalidadeTratamento }}</dd>
         </dl>
-      </section>
+      </ui-recolhivel>
 
       @if (temValores() || f.valores.length > 0) {
-        <section aria-labelledby="cfg-fato-valores">
-          <h3 id="cfg-fato-valores" class="form-section__title">Valores</h3>
+        <ui-recolhivel titulo="Valores" [aberto]="somenteLeitura()">
           @if (f.valores.length > 0) {
             <div class="table-responsive">
               <table>
@@ -155,7 +164,7 @@ interface RegraEmEdicao {
                         <ui-tag [variant]="valor.ativo ? 'success' : 'neutral'">{{ valor.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                       </td>
                       <td class="table-responsive__actions" data-label="Ações">
-                        @if (temValores()) {
+                        @if (temValores() && !somenteLeitura()) {
                           @if (valor.ativo) {
                             <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="ocupado()" (click)="desativarValor(valor.codigo)">
                               Desativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
@@ -176,7 +185,7 @@ interface RegraEmEdicao {
             <p class="u-caption">Nenhum valor cadastrado.</p>
           }
 
-          @if (temValores()) {
+          @if (temValores() && !somenteLeitura()) {
           <form [formGroup]="novoValor" (ngSubmit)="acrescentarValor()" novalidate>
             <div class="form-grid">
               <label class="field" [class.is-error]="erroNovoValor('codigo')">
@@ -207,7 +216,7 @@ interface RegraEmEdicao {
             </div>
           </form>
           }
-        </section>
+        </ui-recolhivel>
       }
 
       @if (temRegras()) {
@@ -237,6 +246,7 @@ interface RegraEmEdicao {
                   <span class="field__label is-required">Valor que a regra acrescenta</span>
                   <select
                     class="select"
+                    [disabled]="somenteLeitura()"
                     [attr.aria-invalid]="contribuicoesFaltando().has(i) ? 'true' : null"
                     [attr.aria-describedby]="contribuicoesFaltando().has(i) ? 'cfg-fato-regra-' + i + '-erro' : null"
                     (change)="trocarContribuicao(i, valorDoSelect($event))"
@@ -253,22 +263,26 @@ interface RegraEmEdicao {
                 [fatos]="fatosDaRegra()"
                 [idBase]="'cfg-fato-regra-' + i"
                 legenda="Quando"
-                [disabled]="ocupado()"
+                [disabled]="ocupado() || somenteLeitura()"
                 [erros]="errosDasCondicoes()[i] ?? {}"
                 (condicoesChange)="trocarCondicoes(i, $event)"
               />
               @if (errosDasRegras()[i]; as erro) {
                 <span class="field__error" role="alert" [id]="'cfg-fato-regra-' + i + '-erro'">{{ erro }}</span>
               }
-              <button type="button" class="btn btn--tertiary btn--sm" [disabled]="ocupado()" (click)="removerRegra(i)">
-                Remover a regra {{ i + 1 }}
-              </button>
+              @if (!somenteLeitura()) {
+                <button type="button" class="btn btn--tertiary btn--sm" [disabled]="ocupado()" (click)="removerRegra(i)">
+                  Remover a regra {{ i + 1 }}
+                </button>
+              }
             </fieldset>
           }
-          <div class="cfg-form-actions">
-            <button type="button" class="btn btn--secondary btn--sm" [disabled]="ocupado()" (click)="acrescentarRegra()">Acrescentar regra</button>
-            <button type="button" class="btn btn--primary btn--sm" [disabled]="ocupado()" (click)="salvarRegras()">Salvar regras</button>
-          </div>
+          @if (!somenteLeitura()) {
+            <div class="cfg-form-actions">
+              <button type="button" class="btn btn--secondary btn--sm" [disabled]="ocupado()" (click)="acrescentarRegra()">Acrescentar regra</button>
+              <button type="button" class="btn btn--primary btn--sm" [disabled]="ocupado()" (click)="salvarRegras()">Salvar regras</button>
+            </div>
+          }
         </section>
       }
 
@@ -293,6 +307,8 @@ export class FatoCandidatoEdicaoComponent {
 
   /** O fato em edição. */
   readonly id = input.required<string>();
+  /** Só para consultar: os campos não se editam, as ações somem e a definição chega aberta. */
+  readonly somenteLeitura = input(false);
   /** Avisa a lista de que o fato mudou. */
   readonly alterado = output<void>();
 
@@ -426,6 +442,8 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected salvarDescritivo(): void {
+    // Só para consultar, nada se grava — nem pelo Enter que envia o formulário.
+    if (this.somenteLeitura()) return;
     if (this.descritivo.invalid) {
       this.descritivo.markAllAsTouched();
       return;
@@ -443,6 +461,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected acrescentarValor(): void {
+    if (this.somenteLeitura()) return;
     // A descrição do valor é obrigatória no fato declarado: é o nome da opção que o candidato lê.
     const controleDaDescricao = this.novoValor.controls.descricao;
     if (this.fato()?.origem === 'DECLARADO' && controleDaDescricao.value.trim() === '') {
@@ -476,6 +495,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected desativarValor(codigo: string): void {
+    if (this.somenteLeitura()) return;
     this.executar(this.api.desativarValor(this.id(), codigo), `Valor ${codigo} desativado`, () => {
       this.focoAposRecarga = this.idDaAcaoDoValor(codigo);
     });
@@ -483,6 +503,7 @@ export class FatoCandidatoEdicaoComponent {
 
   /** Reativa um valor desativado: condições novas voltam a poder citá-lo. */
   protected reativarValor(codigo: string): void {
+    if (this.somenteLeitura()) return;
     this.executar(
       this.api.reativarValor(this.id(), codigo, withIdempotencyKey(this.chaveReativacaoDeValor)),
       `Valor ${codigo} reativado`,
@@ -538,6 +559,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected salvarRegras(): void {
+    if (this.somenteLeitura()) return;
     const fatosPorCodigo = new Map(this.fatosDaRegra().map((fato) => [fato.codigo, fato]));
     const problemas: Record<number, string> = {};
     const contribuicoesFaltando = new Set<number>();
