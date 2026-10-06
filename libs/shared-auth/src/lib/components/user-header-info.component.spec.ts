@@ -221,9 +221,10 @@ describe('UserHeaderInfoComponent', () => {
       expect(dados?.textContent).toContain('Usuário Candidato');
       expect(dados?.textContent).toContain('Candidato Teste');
       expect(dados?.textContent).toContain('candidato@teste.unifesspa.edu.br');
-      // CPF abre mascarado (só os dois últimos dígitos).
-      expect(dados?.textContent).toContain('***.***.***-80');
-      expect(dados?.textContent).not.toContain('248.438.034');
+      // CPF abre mascarado no padrão do Uni+ (***.999.999-**): sem os verificadores.
+      expect(dados?.textContent).toContain('***.438.034-**');
+      expect(dados?.textContent).not.toContain('248.');
+      expect(dados?.textContent).not.toContain('-80');
       expect(dados?.textContent).toContain('Candidato');
       expect(dados?.textContent).not.toContain('offline_access');
     });
@@ -247,7 +248,58 @@ describe('UserHeaderInfoComponent', () => {
 
       toggle?.click();
       fixture.detectChanges();
-      expect(cpf()).toBe('***.***.***-80');
+      expect(cpf()).toBe('***.438.034-**');
+    });
+
+    it('não oferece o botão de olho quando o CPF não tem 11 dígitos', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush({ ...resposta, cpf: '123' });
+      fixture.detectChanges();
+
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('[data-testid="auth-profile-cpf-toggle"]')).toBeNull();
+      expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
+        '***.***.***-**',
+      );
+    });
+
+    it('volta a mascarar o CPF ao reabrir o modal', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]')?.click();
+      fixture.detectChanges();
+      expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
+        '248.438.034-80',
+      );
+
+      el.querySelector('dialog')?.dispatchEvent(new Event('close'));
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('button.user-chip')?.click();
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('[data-testid="auth-user-profile-item"]')?.click();
+      fixture.detectChanges();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+
+      expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
+        '***.438.034-**',
+      );
+    });
+
+    it('fecha ao clicar fora do painel, mas não ao clicar dentro dele', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+      const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
+      expect(dialog.open).toBe(true);
+
+      dialog.querySelector<HTMLElement>('.uni-dialog__panel')?.click();
+      expect(dialog.open).toBe(true);
+
+      dialog.click();
+      expect(dialog.open).toBe(false);
     });
 
     it('mostra mensagem de erro quando a API falha', () => {
