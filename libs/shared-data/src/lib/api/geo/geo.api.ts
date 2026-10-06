@@ -13,24 +13,6 @@ export type LogradouroAlternativoDto = components['schemas']['LogradouroAlternat
 /** Cidade no formato resumido do seletor (`GET /api/cidades`). */
 export type CidadeResumoDto = components['schemas']['CidadeResumoDto'];
 
-/**
- * Nível até onde o DNE resolveu o CEP — governa, no formulário de endereço,
- * quais campos vêm como âncora (read-only) e quais ficam editáveis (entrada
- * manual). Cascata: `logradouro` (mais específico) → `bairro` → `distrito` →
- * `cidade` (faixa/CEP único de município). O contrato expõe `nivelResolucao`
- * como `string`; este union é o roster conhecido para o front decidir o
- * comportamento, tolerando valores fora dele como o nível mais raso.
- */
-export type NivelResolucao = 'logradouro' | 'bairro' | 'distrito' | 'cidade';
-
-/** Roster ordenado do mais específico ao mais raso (cascata do DNE). */
-export const NIVEIS_RESOLUCAO: readonly NivelResolucao[] = [
-  'logradouro',
-  'bairro',
-  'distrito',
-  'cidade',
-] as const;
-
 /** Filtro do seletor de cidade do fluxo "sem CEP" (`GET /api/cidades`). */
 export interface CidadesFiltro {
   /** Sigla da UF (2 letras) — restringe a busca a um estado. */
@@ -44,7 +26,7 @@ export interface CidadesFiltro {
 /**
  * Cliente Angular standalone do módulo Geo. Expõe a resolução de endereço por
  * CEP (autofill) e o seletor de cidades (fluxo manual, sem CEP) consumidos pelo
- * componente de endereço estruturado (`ui-endereco-form`).
+ * componente de endereço estruturado (`ui-endereco-geo`).
  *
  * API thin (ADR-0013): tipos vêm do `schema.ts` gerado, a resposta é envelopada
  * em `ApiResult<T>` pelo `apiResultInterceptor` (ADR-0011) — não lança; o caller

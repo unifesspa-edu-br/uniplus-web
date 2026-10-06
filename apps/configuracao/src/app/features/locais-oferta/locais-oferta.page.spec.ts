@@ -12,7 +12,7 @@ import { CONFIGURACAO_BASE_PATH, LocalOfertaDto } from '@uniplus/shared-data/con
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LocaisOfertaPage } from './locais-oferta.page';
-import type { EnderecoEstruturado } from '../../shared/endereco';
+import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 
 const BASE = 'http://localhost:5000';
 // Teto de página aceito pela API (ADR-0026 do uniplus-api): `limit` fora da

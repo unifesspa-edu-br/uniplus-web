@@ -10,13 +10,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { AvaliacoesDeFormularioApi } from '@uniplus/shared-data/configuracao';
-import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
+import { buscaDeCepNoGeo, buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   ProcessosSeletivosApi,
   type FormularioRenderizavelDto,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
+  BUSCA_DE_CEP,
   BUSCA_DE_MUNICIPIOS,
   FINALIDADES,
   SimulacaoDeFormularioComponent,
@@ -37,7 +38,10 @@ import {
   imports: [AlertComponent, RouterLink, SimulacaoDeFormularioComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O campo de município escolhe o município pela busca no Geo, limitada à UF respondida.
-  providers: [{ provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo }],
+  providers: [
+    { provide: BUSCA_DE_CEP, useFactory: buscaDeCepNoGeo },
+    { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo },
+  ],
   template: `
     <div class="page-header">
       <div class="page-header__content">

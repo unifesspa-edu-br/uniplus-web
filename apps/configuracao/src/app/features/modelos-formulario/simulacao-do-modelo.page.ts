@@ -3,15 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { AvaliacoesDeFormularioApi, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
-import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   AlertComponent,
-  BUSCA_DE_MUNICIPIOS,
   SimulacaoDeFormularioComponent,
   SpinnerComponent,
   type ConferenciaComOServidor,
   type FormularioDoCandidato,
 } from '@uniplus/shared-ui/components';
+import { ENDERECO_NO_GEO } from '../../shared/endereco';
 
 /**
  * A simulação de um modelo de formulário: o modelo como o candidato o veria, montado pela API com o
@@ -24,7 +23,7 @@ import {
   imports: [AlertComponent, RouterLink, SimulacaoDeFormularioComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O campo de município escolhe o município pela busca no Geo, limitada à UF respondida.
-  providers: [{ provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo }],
+  providers: [ENDERECO_NO_GEO],
   template: `
     <div class="page-header page-header--form">
       <a
