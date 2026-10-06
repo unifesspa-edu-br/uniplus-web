@@ -36,8 +36,10 @@ import { ENDERECO_NO_GEO } from '../../shared/endereco';
       <div class="page-header__content">
         <h1 class="page-header__title">Simulação do modelo de formulário</h1>
         <p class="page-header__desc">
-          Responda como o candidato responderia. Simula o modelo gravado; as opções que só o
-          processo oferta aparecem pelo código.
+          Responda como o candidato responderia. Simula o modelo gravado. Sem processo, a condição
+          de atendimento e o tipo de deficiência mostram todo o cadastro institucional; no processo,
+          as opções são as que ele oferece. As demais opções que só o processo oferta aparecem pelo
+          código.
         </p>
       </div>
     </div>
