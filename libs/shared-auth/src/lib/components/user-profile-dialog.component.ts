@@ -90,11 +90,12 @@ type Estado =
                     <dt>CPF</dt>
                     <dd class="auth-profile__cpf">
                       <span data-testid="auth-profile-cpf"
-                        >@let c = cpfPartes(p.cpf, cpfVisivel());
-                        @if (c.mascara) {<span class="auth-profile__mask">{{ c.mascara }}</span
-                          >}{{ c.aberto }}</span
+                        >@for (parte of cpfSegmentos(p.cpf, cpfVisivel()); track $index) {@if (
+                          parte.mascara
+                        ) {<span class="auth-profile__mask">{{ parte.texto }}</span
+                          >} @else {{{ parte.texto }}}}</span
                       >
-                      @if (p.cpf) {
+                      @if (cpfValido(p.cpf)) {
                         <button
                           type="button"
                           class="btn btn--tertiary btn--icon-only btn--rect"
@@ -214,21 +215,35 @@ export class UserProfileDialogComponent {
     }
   }
 
-  /** `mascara` recebe o ajuste de altura do asterisco; `aberto` é o que aparece como digitado. */
-  protected cpfPartes(
+  protected cpfValido(cpf: string | null): boolean {
+    return (cpf?.replace(/\D/g, '').length ?? 0) === 11;
+  }
+
+  /**
+   * O CPF na ordem de exibição. Mascarado, segue o padrão do Uni+ (`***.999.999-**`, o da CGU
+   * que a API também aplica): os três primeiros dígitos e os dois verificadores ficam ocultos.
+   * Os trechos `mascara` recebem o ajuste de altura do asterisco.
+   */
+  protected cpfSegmentos(
     cpf: string | null,
     visivel: boolean,
-  ): { readonly mascara: string; readonly aberto: string } {
-    const digitos = cpf?.replace(/\D/g, '') ?? '';
-    if (!cpf) return { mascara: '', aberto: '—' };
-    if (digitos.length !== 11) return { mascara: '***.***.***', aberto: '-**' };
+  ): readonly { readonly texto: string; readonly mascara: boolean }[] {
+    if (!cpf) return [{ texto: '—', mascara: false }];
+    const digitos = cpf.replace(/\D/g, '');
+    if (digitos.length !== 11) return [{ texto: '***.***.***-**', mascara: true }];
     if (visivel) {
-      return {
-        mascara: '',
-        aberto: digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'),
-      };
+      return [
+        {
+          texto: digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'),
+          mascara: false,
+        },
+      ];
     }
-    return { mascara: '***.***.***', aberto: `-${digitos.slice(9)}` };
+    return [
+      { texto: '***', mascara: true },
+      { texto: `.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-`, mascara: false },
+      { texto: '**', mascara: true },
+    ];
   }
 
   protected perfisDeAcesso(roles: readonly string[]): string {
