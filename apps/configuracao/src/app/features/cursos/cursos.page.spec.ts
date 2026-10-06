@@ -654,7 +654,7 @@ describe('CursosPage', () => {
       fixture.detectChanges();
       await propagate();
 
-      expect(erroSpy).toHaveBeenCalled();
+      expect(erroSpy).toHaveBeenCalledTimes(1);
       expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha')).not.toBeNull();
     });
 
