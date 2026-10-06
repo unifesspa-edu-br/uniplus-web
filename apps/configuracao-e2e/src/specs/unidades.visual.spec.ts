@@ -344,7 +344,10 @@ test.describe('Unidade — cobertura visual DS', () => {
         formOverflowY: getComputedStyle(form).overflowY,
         formScrolls: form.scrollHeight > form.clientHeight,
         bodyOverflow: getComputedStyle(document.body).overflow,
-        gridColumns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+        // A grade é flex (quebra por espaço): as colunas são as posições à esquerda distintas.
+        gridColumns: new Set(
+          Array.from(grid.children, (campo) => Math.round(campo.getBoundingClientRect().left)),
+        ).size,
         panelWidth: panelRect.width,
         footerInsideViewport: footerRect.bottom <= window.innerHeight + 1,
       };
