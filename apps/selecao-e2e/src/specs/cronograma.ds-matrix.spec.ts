@@ -5,6 +5,9 @@ import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 
+/** Larguras em que a grade dos eixos da exigência tem de três a cinco colunas. */
+const LARGURAS_DA_GRADE_DOS_EIXOS = [1440, 1680, 1920, 2200] as const;
+
 type DsTheme = 'light' | 'dark' | 'contrast';
 
 /** Abaixo desta largura o stepper lateral dá lugar à barra com diálogo. */
@@ -287,40 +290,48 @@ test.describe('Cronograma — matriz DS @ds', () => {
     );
 
     /*
-     * Em 1440 px a grade dos eixos tem três colunas estreitas, e a observação divide a linha
-     * com o alcance e a identificação da norma: um rótulo que quebra em duas linhas desce o
-     * input em relação aos vizinhos. O viewport desktop da matriz (1366 px) tem duas colunas
-     * largas, onde o rótulo cabe em qualquer caso.
+     * Na grade dos eixos, a observação divide a linha com a norma, o alcance e a identificação
+     * quando há colunas para os quatro: um rótulo que quebra em duas linhas desce o input em
+     * relação aos vizinhos. Em 1440 px são três colunas estreitas e a observação fica sozinha na
+     * linha de baixo, então o alinhamento só se verifica numa largura em que ela tenha vizinhos.
+     * O viewport desktop da matriz (1366 px) tem menos colunas ainda, onde o rótulo cabe em
+     * qualquer caso.
      */
     if (testInfo.project.metadata['viewport'] === 'desktop') {
       const original = page.viewportSize();
-      await page.setViewportSize({ width: 1440, height: 900 });
-      const alinhamento = await card.evaluate((elemento) => {
-        const topoDoInput = (campo: Element) =>
-          campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
-        const campo = elemento
-          .querySelector('[id*="-doc-obs-legal-"]')
-          ?.closest('.form-field') as Element;
-        const linha = campo.getBoundingClientRect().top;
-        const referencia = topoDoInput(campo) ?? 0;
-        const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
-          .filter((outro) => outro !== campo)
-          .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
-          .map(topoDoInput)
-          .filter((topo): topo is number => topo !== null);
-        return { vizinhos: vizinhos.length, diferencas: vizinhos.map((topo) => topo - referencia) };
-      });
+      let larguraComVizinhos: number | null = null;
+      for (const largura of LARGURAS_DA_GRADE_DOS_EIXOS) {
+        await page.setViewportSize({ width: largura, height: 900 });
+        const alinhamento = await card.evaluate((elemento) => {
+          const topoDoInput = (campo: Element) =>
+            campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
+          const campo = elemento
+            .querySelector('[id*="-doc-obs-legal-"]')
+            ?.closest('.form-field') as Element;
+          const linha = campo.getBoundingClientRect().top;
+          const referencia = topoDoInput(campo) ?? 0;
+          const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
+            .filter((outro) => outro !== campo)
+            .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
+            .map(topoDoInput)
+            .filter((topo): topo is number => topo !== null);
+          return { vizinhos: vizinhos.length, diferencas: vizinhos.map((topo) => topo - referencia) };
+        });
+        if (alinhamento.vizinhos === 0) continue;
+        larguraComVizinhos ??= largura;
+        for (const diferenca of alinhamento.diferencas) {
+          expect(
+            Math.abs(diferenca),
+            `o input da observação alinha com os vizinhos em ${largura} px`,
+          ).toBeLessThanOrEqual(1);
+        }
+      }
       if (original) await page.setViewportSize(original);
 
-      expect(alinhamento.vizinhos, 'a observação divide a linha com outros campos').toBeGreaterThan(
-        0,
-      );
-      for (const diferenca of alinhamento.diferencas) {
-        expect(
-          Math.abs(diferenca),
-          'o input da observação alinha com os vizinhos',
-        ).toBeLessThanOrEqual(1);
-      }
+      expect(
+        larguraComVizinhos,
+        `a observação divide a linha com outros campos em alguma de ${LARGURAS_DA_GRADE_DOS_EIXOS.join(', ')} px`,
+      ).not.toBeNull();
     }
 
     // O aviso segue a regra da publicação: alguma norma declarada E resolvida.
