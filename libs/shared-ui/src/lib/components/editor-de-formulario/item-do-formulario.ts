@@ -58,7 +58,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             type="button"
             [id]="idDe('subir')"
             [disabled]="disabled() || !podeSubir()"
-            [attr.aria-label]="'Mover ' + nome() + ' para cima'"
+            [attr.aria-label]="'Subir ' + nome()"
             (click)="mover.emit(-1)"
           >
             Subir
@@ -68,7 +68,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             type="button"
             [id]="idDe('descer')"
             [disabled]="disabled() || !podeDescer()"
-            [attr.aria-label]="'Mover ' + nome() + ' para baixo'"
+            [attr.aria-label]="'Descer ' + nome()"
             (click)="mover.emit(1)"
           >
             Descer
