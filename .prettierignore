@@ -9,3 +9,8 @@
 # do gerador (4 espaços, aspas duplas). Reformatar aqui só causa diff/churn a
 # cada regeneração, sem ganho: o arquivo nunca é escrito à mão.
 libs/shared-data/src/lib/api/*/schema.ts
+
+# Corpus de casos do formulário, copiado do uniplus-api por
+# libs/shared-ui/scripts/sincronizar-casos-do-formulario.sh: fica idêntico à
+# fonte, para a cópia não divergir só por formatação.
+libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/casos/
