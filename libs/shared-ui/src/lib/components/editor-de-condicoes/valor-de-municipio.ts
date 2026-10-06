@@ -111,13 +111,14 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         (valuesChange)="valuesChange.emit($event)"
       />
     } @else {
+      @let value = values().length > 0 ? values()[0] : null;
       <ui-combobox
         buscaExterna
         [rotulo]="rotulo()"
         placeholder="Digite o nome do município"
         [textoSemResultado]="textoSemResultado()"
         [grupos]="grupos()"
-        [value]="values()[0] ?? ''"
+        [value]="value ?? ''"
         [disabled]="disabled()"
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
