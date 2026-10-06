@@ -61,6 +61,41 @@ function botaoPorTexto(fixture: ComponentFixture<HostComponent>, texto: string):
   return alvo;
 }
 
+/** Escolhe a UF do endereço sem CEP. */
+function escolherUf(fixture: ComponentFixture<HostComponent>, sigla: string): void {
+  const uf = fixture.nativeElement.querySelector('#t-uf') as HTMLSelectElement;
+  uf.value = sigla;
+  uf.dispatchEvent(new Event('change'));
+  fixture.detectChanges();
+}
+
+/** Escolhe a UF e busca a cidade no campo de município, escolhendo a opção achada pelo Geo. */
+async function escolherCidade(
+  fixture: ComponentFixture<HostComponent>,
+  controller: HttpTestingController,
+): Promise<void> {
+  escolherUf(fixture, 'PA');
+  const campo = fixture.nativeElement.querySelector('input[role="combobox"]') as HTMLInputElement;
+  campo.value = 'Mara';
+  campo.dispatchEvent(new Event('input'));
+  fixture.detectChanges();
+  // Aguarda a espera da digitação da busca (ambiente de teste zoneless).
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  const busca = controller.expectOne((r) => r.url === `${BASE}/api/cidades`);
+  expect(busca.request.params.get('q')).toBe('Mara');
+  expect(busca.request.params.get('uf')).toBe('PA');
+  busca.flush([{ id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
+  fixture.detectChanges();
+  const opcao = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="option"]')].find(
+    (item) => item.textContent?.includes('Marabá (PA)'),
+  );
+  if (opcao === undefined) {
+    throw new Error('A cidade buscada não apareceu entre as opções');
+  }
+  opcao.dispatchEvent(new MouseEvent('mousedown'));
+  fixture.detectChanges();
+}
+
 describe('camposAncorados (governança por nivelResolucao — CA-01)', () => {
   it('logradouro ancora cep, logradouro, bairro, distrito e cidade', () => {
     expect([...camposAncorados('logradouro')].sort()).toEqual(
@@ -520,21 +555,12 @@ describe('EnderecoGeoComponent com o Geo', () => {
     expect(erro.textContent).toContain('8 dígitos');
   });
 
-  it('CA-02: fluxo sem CEP seleciona cidade pelo seletor e compõe o valor', async () => {
+  it('CA-02: fluxo sem CEP escolhe a cidade no campo com busca e compõe o valor', async () => {
     botaoPorTexto(fixture, 'preencher sem CEP').click();
     fixture.detectChanges();
-    // Aguarda o debounce real da busca de cidade (ambiente de teste zoneless).
-    await new Promise((resolve) => setTimeout(resolve, 350));
+    expect(fixture.nativeElement.querySelectorAll('input[role="combobox"]')).toHaveLength(1);
 
-    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
-      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
-    ]);
-    fixture.detectChanges();
-
-    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    select.value = '1504208';
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    await escolherCidade(fixture, controller);
 
     expect(host.ctrl.value).toMatchObject({
       cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -554,16 +580,7 @@ describe('EnderecoGeoComponent com o Geo', () => {
 
     botaoPorTexto(fixture, 'preencher sem CEP').click();
     fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
-      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
-    ]);
-    fixture.detectChanges();
-
-    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    select.value = '1504208';
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    await escolherCidade(fixture, controller);
 
     expect(host.ctrl.value?.cep).toBeNull();
     // O mapeamento para o command não deve montar `endereco` (só cidade).
@@ -574,15 +591,7 @@ describe('EnderecoGeoComponent com o Geo', () => {
   it('CEP que falha (404) durante o modo manual não vira endereço — #412', async () => {
     botaoPorTexto(fixture, 'preencher sem CEP').click();
     fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
-      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
-    ]);
-    fixture.detectChanges();
-    const select = fixture.nativeElement.querySelector('select') as HTMLSelectElement;
-    select.value = '1504208';
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    await escolherCidade(fixture, controller);
 
     setInput(fixture, 't-cep', '00000000');
     botaoPorTexto(fixture, 'Buscar CEP').click();
@@ -597,8 +606,13 @@ describe('EnderecoGeoComponent com o Geo', () => {
     expect(host.ctrl.value?.cidade?.codigoIbge).toBe('1504208');
   });
 
-  it('S1: falha na busca de cidades sinaliza erro e permite retry', async () => {
+  it('S1: falha na busca de cidades é dita no campo, sem escolher cidade', async () => {
     botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+    escolherUf(fixture, 'PA');
+    const campo = fixture.nativeElement.querySelector('input[role="combobox"]') as HTMLInputElement;
+    campo.value = 'Mara';
+    campo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 350));
     controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush(null, {
@@ -606,14 +620,90 @@ describe('EnderecoGeoComponent com o Geo', () => {
       statusText: 'Server Error',
     });
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Não foi possível carregar as cidades');
 
-    botaoPorTexto(fixture, 'Tentar novamente').click();
-    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([
-      { id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
-    ]);
+    expect(fixture.nativeElement.textContent).toContain('Não foi possível buscar os municípios');
+    expect(host.ctrl.value?.cidade ?? null).toBeNull();
+  });
+
+  it('o campo que o CEP resolveu sem valor não aparece; com valor, aparece travado', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('Não foi possível carregar as cidades');
+    expect(fixture.nativeElement.querySelector('#t-bairro')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#t-distrito')).toBeNull();
+    expect(host.ctrl.value?.distrito).toBeNull();
+
+    botaoPorTexto(fixture, 'Trocar CEP').click();
+    fixture.detectChanges();
+    setInput(fixture, 't-cep', '68514959');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller
+      .expectOne(`${BASE}/api/cep/68514959`)
+      .flush({ ...cepLogradouro, cep: '68514959', bairro: 'Morada Nova', distrito: 'Morada Nova' });
+    fixture.detectChanges();
+    const distrito = fixture.nativeElement.querySelector('#t-distrito') as HTMLInputElement;
+    expect(distrito.value).toBe('Morada Nova');
+    expect(distrito.readOnly).toBe(true);
+  });
+
+  it('o CEP preenche a UF e a cidade, cada uma no seu campo, travadas', () => {
+    setInput(fixture, 't-cep', '68507590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller.expectOne(`${BASE}/api/cep/68507590`).flush(cepLogradouro);
+    fixture.detectChanges();
+
+    const uf = fixture.nativeElement.querySelector('#t-uf') as HTMLInputElement;
+    const cidade = fixture.nativeElement.querySelector('#t-cidade') as HTMLInputElement;
+    expect(uf.value).toBe('PA');
+    expect(cidade.value).toBe('Marabá');
+    expect(uf.readOnly && cidade.readOnly).toBe(true);
+  });
+
+  it('sem CEP, a cidade espera a UF, e trocar a UF tira a cidade de outra UF', async () => {
+    botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+    const campo = fixture.nativeElement.querySelector('input[role="combobox"]') as HTMLInputElement;
+    expect(campo.disabled).toBe(true);
+
+    await escolherCidade(fixture, controller);
+    expect(host.ctrl.value?.cidade?.codigoIbge).toBe('1504208');
+
+    escolherUf(fixture, 'MA');
+    expect(host.ctrl.value?.cidade ?? null).toBeNull();
+  });
+
+  it('a cidade escolhida sem CEP pode ser tirada, e o endereço volta a vazio', async () => {
+    botaoPorTexto(fixture, 'preencher sem CEP').click();
+    fixture.detectChanges();
+    await escolherCidade(fixture, controller);
+    expect(host.ctrl.value?.cidade?.codigoIbge).toBe('1504208');
+
+    botaoPorTexto(fixture, 'Limpar').click();
+    fixture.detectChanges();
+
+    expect(host.ctrl.value?.cidade ?? null).toBeNull();
+    expect(enderecoParaCommand(host.ctrl.value).cidadeCodigoIbge).toBeNull();
+  });
+
+  it('o endereço gravado sem CEP reabre com o nome da cidade no campo', () => {
+    host.ctrl.setValue({
+      cep: null,
+      logradouro: null,
+      numero: null,
+      complemento: null,
+      bairro: null,
+      distrito: null,
+      cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+      latitude: null,
+      longitude: null,
+      nivelResolucao: null,
+      origem: 'manual',
+    });
+    fixture.detectChanges();
+
+    const campo = fixture.nativeElement.querySelector('input[role="combobox"]') as HTMLInputElement;
+    expect(campo.value).toBe('Marabá (PA)');
   });
 
   it('trocar para "sem CEP" após resolver limpa e oculta os campos de endereço — #412', async () => {
@@ -633,10 +723,9 @@ describe('EnderecoGeoComponent com o Geo', () => {
     expect(host.ctrl.value?.logradouro ?? null).toBeNull();
     expect(host.ctrl.value?.cep).toBeNull();
     expect(enderecoParaCommand(host.ctrl.value).endereco).toBeNull();
-
-    // Drena a busca de cidades disparada pelo modo manual.
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    controller.expectOne((r) => r.url === `${BASE}/api/cidades`).flush([]);
+    // A cidade resolvida pelo CEP segue no campo de município, pelo nome.
+    const campo = fixture.nativeElement.querySelector('input[role="combobox"]') as HTMLInputElement;
+    expect(campo.value).toBe('Marabá (PA)');
   });
 
   it('ignora resposta obsoleta de CEP quando o campo já mudou — #412', () => {
@@ -653,14 +742,18 @@ describe('EnderecoGeoComponent com o Geo', () => {
     expect(fixture.nativeElement.querySelector('#t-logradouro')).toBeNull();
   });
 
-  it('autofill preenche o complemento vindo do Geo — #412', () => {
+  it('o complemento do CEP no DNE não preenche o do endereço: o usuário o informa', () => {
     setInput(fixture, 't-cep', '68507590');
     botaoPorTexto(fixture, 'Buscar CEP').click();
     controller
       .expectOne(`${BASE}/api/cep/68507590`)
-      .flush({ ...cepLogradouro, complemento: 'Bloco A' });
+      .flush({ ...cepLogradouro, complemento: 'Clique e Retire Correios' });
     fixture.detectChanges();
-    expect(host.ctrl.value?.complemento).toBe('Bloco A');
+
+    const complemento = fixture.nativeElement.querySelector('#t-complemento') as HTMLInputElement;
+    expect(complemento.value).toBe('');
+    expect(complemento.readOnly).toBe(false);
+    expect(host.ctrl.value?.complemento).toBeNull();
   });
 
   it('bloqueia o save enquanto o CEP digitado não é resolvido (Validator) — #412', () => {

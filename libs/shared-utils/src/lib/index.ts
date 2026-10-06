@@ -6,3 +6,4 @@ export {
 } from './utils/codigo-cadastro.util';
 export { formatCpfProgressive } from './utils/cpf.util';
 export { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from './utils/numero.util';
+export { UNIDADES_FEDERATIVAS, type UnidadeFederativa } from './utils/unidades-federativas';
