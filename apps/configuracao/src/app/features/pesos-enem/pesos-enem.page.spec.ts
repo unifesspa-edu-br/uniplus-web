@@ -367,6 +367,59 @@ describe('PesosEnemPage', () => {
     expect(cabecalhos).toContain('MATEMATICA');
   });
 
+  it('PesosEnemPage_AreaSemCodigoUtilizavel_NaoGeraColunaNemCampo', async () => {
+    const invalidas = [
+      { rotulo: 'Sem código' },
+      { codigo: null, rotulo: 'Nulo' },
+      { codigo: '', rotulo: 'Vazio' },
+      { codigo: '   ', rotulo: 'Espaços' },
+    ] as unknown as readonly AreaPesoAreaEnemDto[];
+    await carregarUmaPagina([...linhas805], [...AREAS, ...invalidas]);
+
+    expect(component['areas']().map((a) => a.codigo)).toEqual(AREAS.map((a) => a.codigo));
+    const cabecalhos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-cell--head')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(cabecalhos).toHaveLength(AREAS.length);
+
+    component.abrirDrawerCriacao();
+    await propagate();
+    for (const grupo of component.pesoLoteForm.controls.grupos.controls) {
+      expect(grupo.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
+        AREAS.map((a) => a.codigo),
+      );
+    }
+  });
+
+  it('PesosEnemPage_AreaEGrupoComEspacosNoCodigo_UsamOCodigoAparadoNoFormulario', async () => {
+    const areas = AREAS.map((a, i) => (i === 0 ? { ...a, codigo: ` ${a.codigo} ` } : a));
+    const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
+    await carregarUmaPagina([...linhas805], areas, grupos);
+
+    component.abrirDrawerCriacao();
+    await propagate();
+    const [primeiro] = component.pesoLoteForm.controls.grupos.controls;
+    expect(primeiro?.controls.grupoCurso.value.codigo).toBe(GRUPOS[0]?.codigo);
+    expect(primeiro?.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
+      AREAS.map((a) => a.codigo),
+    );
+  });
+
+  it('PesosEnemPage_GrupoSemRotuloNemCodigo_MostraOTraco', async () => {
+    await carregarUmaPagina([
+      linha({
+        id: '01960000-0000-7000-0000-0000000000d3',
+        resolucao: RES_805,
+        grupoCurso: { codigo: ' ', rotulo: ' ' },
+      }),
+    ]);
+
+    const rotulos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label')].map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(rotulos).toEqual(['—']);
+  });
+
   it('PesosEnemPage_ListagemVoltaDepoisDoTentarDeNovo_FocoVaiAoTitulo', async () => {
     fixture.detectChanges();
     expectAreas().flush([...AREAS]);
